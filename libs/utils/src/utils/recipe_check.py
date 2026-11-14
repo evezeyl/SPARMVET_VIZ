@@ -30,6 +30,7 @@ from typing import Any, Dict, Iterable, List, Optional, Set
 
 import yaml
 
+from utils import action_names
 from utils.action_names import TIER1_ONLY
 from utils.formula_check import formula_problems
 from utils.polars_types import PARAMETER_KEYS, dtype_with_parameters, text_dtype_names
@@ -39,8 +40,8 @@ from utils.ui_schema import STEP_KEYS, step_problems
 # P05: the engine does not read `steps.tier3` yet; switched to True in the commit that adds the reader (spec 7.7).
 TIER3_READ_BY_ENGINE = False
 
-# Tier-1 steps that only remove or reorder rows: they cannot change the columns or their types (a step whose name starts with one of these).
-JOIN_KEEPS_COLUMNS = ("polars_filter", "modif_filter", "polars_sort", "polars_unique", "polars_drop_nulls", "polars_head", "polars_tail", "polars_sample", "polars_limit")
+# Tier-1 actions that only remove or reorder rows: they cannot change the columns or their types (exact names).
+JOIN_KEEPS_COLUMNS = frozenset({action_names.FILTER, action_names.SORT, action_names.UNIQUE, action_names.DROP_NULLS, action_names.SAMPLE})
 
 PROFILES = ("run", "build", "gallery", "audit")
 _AUDIT_ID = re.compile(r"^audit_[0-9a-f]{8}_\d+$")
@@ -524,14 +525,14 @@ class _Check:
         drop or cast a column: then nothing is known here and the build check stays the judge.
         """
         schema = self.schema_bodies.get(dataset_id)
-        if not isinstance(schema, dict) or not isinstance(schema.get("input_fields"), dict):
-            return None
+        if not isinstance(schema, dict) or not isinstance(schema.get("input_fields"), dict) or not schema["input_fields"]:
+            return None  # an empty input_fields makes the ingestion keep every column of the file
         wrangling = schema.get("wrangling")
         if wrangling not in (None, [], {}):
             if not isinstance(wrangling, dict) or not isinstance(wrangling.get("tier1") or [], list):
                 return None
             for step in wrangling.get("tier1") or []:
-                if not isinstance(step, dict) or not str(step.get("action", "")).startswith(JOIN_KEEPS_COLUMNS):
+                if not isinstance(step, dict) or step.get("action") not in JOIN_KEEPS_COLUMNS:
                     return None
         return schema["input_fields"]
 
@@ -562,7 +563,7 @@ class _Check:
                 return
             if "right_ingredient" in before:
                 left_tables.append(before["right_ingredient"])
-            elif not str(before.get("action", "")).startswith(JOIN_KEEPS_COLUMNS):
+            elif before.get("action") not in JOIN_KEEPS_COLUMNS:
                 return
         left_fields = [(table, self.declared_fields(table)) for table in left_tables]
         right_fields = self.declared_fields(right_id)
@@ -570,7 +571,8 @@ class _Check:
             return
         missing = []
         for key in left_keys:
-            if not any(key in fields for _, fields in left_fields):
+            suffixed = len(left_tables) > 1 and key.endswith("_right")  # Polars names a clashing column of an earlier join name_right
+            if not suffixed and not any(key in fields for _, fields in left_fields):
                 missing.append(f"{key!r} is not declared in the left table ({', '.join(table for table, _ in left_fields)})")
         for key in right_keys:
             if key not in right_fields:
@@ -581,7 +583,9 @@ class _Check:
                      "the left table is the table at this step, so a column of a table joined later is not in it yet")
             return
         for left_col, right_col in zip(left_keys, right_keys):
-            left_field = next(fields[left_col] for _, fields in left_fields if left_col in fields)
+            left_field = next((fields[left_col] for _, fields in left_fields if left_col in fields), None)
+            if left_field is None:
+                continue  # a suffixed column of an earlier join: its type is not declared
             right_field = right_fields[right_col]
             left_type, right_type = _declared_dtype(left_field), _declared_dtype(right_field)
             if left_type is None or right_type is None or left_type == right_type:

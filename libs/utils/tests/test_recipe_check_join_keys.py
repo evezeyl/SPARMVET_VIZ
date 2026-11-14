@@ -6,6 +6,7 @@ before the join may change the type or the name of a key: the build check remain
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/utils/tests/test_recipe_check_join_keys.py -q
 """
 import utils.recipe_check as recipe_check
+from utils import action_names
 from test_recipe_check import check, valid
 
 KEY_CODES = {"J09", "J10", "J11"}
@@ -117,7 +118,7 @@ def test_a_step_before_the_join_in_the_schema_keeps_the_checker_silent():
 def test_a_row_filter_in_the_schema_does_not_hide_a_difference():
     raw = valid()
     raw["data_schemas"]["B"]["input_fields"]["id"]["type"] = "Int64"
-    raw["data_schemas"]["B"]["wrangling"] = {"tier1": [{"action": "polars_filter_demo"}]}
+    raw["data_schemas"]["B"]["wrangling"] = {"tier1": [{"action": "modif_filter"}]}
     assert "J09" in codes(raw)
 
 
@@ -143,3 +144,37 @@ def test_breaking_the_rule_makes_a_test_fail(monkeypatch):
     assert "J09" not in codes(raw)
     monkeypatch.undo()
     assert "J09" in codes(raw)
+
+
+def test_an_empty_input_fields_is_unknown_the_ingestion_keeps_every_column():
+    raw = valid()
+    raw["data_schemas"]["B"]["input_fields"] = {}
+    assert codes(raw) == []
+    raw = valid()
+    raw["data_schemas"]["A"]["input_fields"] = {}
+    assert codes(raw) == []
+    raw = valid()
+    del raw["data_schemas"]["A"]["input_fields"]
+    assert "J10" not in codes(raw)
+
+
+def test_a_table_with_unknown_fields_brought_by_an_earlier_join_makes_the_checker_silent():
+    raw = valid()
+    raw["data_schemas"]["C"] = {**valid()["data_schemas"]["B"], "input_fields": {}}
+    raw["joins"]["AB"]["ingredients"].append({"dataset_id": "C"})
+    raw["joins"]["AB"]["steps"]["tier1"].append({"action": "polars_join", "right_ingredient": "C", "on": "zzz", "how": "left"})
+    assert codes(raw) == []
+
+
+def test_a_suffixed_key_of_an_earlier_join_is_not_missing():
+    raw = valid()
+    raw["data_schemas"]["C"] = {**valid()["data_schemas"]["B"], "input_fields": {"id": {"type": "String"}, "w_right": {"type": "Int64"}}}
+    raw["joins"]["AB"]["ingredients"].append({"dataset_id": "C"})
+    raw["joins"]["AB"]["steps"]["tier1"].append({"action": "polars_join", "right_ingredient": "C", "left_on": "w_right", "right_on": "w_right", "how": "left"})
+    assert "J10" not in codes(raw)
+
+
+def test_the_row_only_actions_are_constants_of_action_names():
+    """A transformer test (test_action_names.py) checks that every constant is a registered action; here the list is built only from constants."""
+    assert recipe_check.JOIN_KEEPS_COLUMNS <= set(action_names.ALL.values())
+    assert all(isinstance(name, str) for name in recipe_check.JOIN_KEEPS_COLUMNS) and len(recipe_check.JOIN_KEEPS_COLUMNS) == 5
