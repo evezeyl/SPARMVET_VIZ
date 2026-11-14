@@ -13,12 +13,14 @@ from __future__ import annotations
 
 # @deps
 # provides: function:_apply_filter_rows
-# consumes: polars
+# consumes: polars, libs/utils/src/utils/filter_values.py
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
 
 import polars as pl
+
+from utils.filter_values import coerce_filter_value
 
 
 def _op_label(op: str) -> str:
@@ -99,22 +101,6 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
             t in str(dt) for t in ("Int", "UInt", "Float", "Decimal")
         )
 
-    def _coerce_to_dtype(value, dt):
-        """Best-effort string→native coercion based on actual column dtype."""
-        try:
-            s = str(dt) if dt is not None else ""
-            if "Float" in s or "Decimal" in s:
-                return float(value)
-            if "Int" in s or "UInt" in s:
-                return int(float(value))  # tolerate "90.0" → 90
-            if "Boolean" in s:
-                if isinstance(value, bool):
-                    return value
-                return str(value).strip().lower() in ("true", "1", "yes")
-        except (ValueError, TypeError):
-            pass
-        return value
-
     for f in filter_rows:
         col = f.get("column")
         op = f.get("op", "eq")
@@ -140,8 +126,8 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
         if op == "between" and isinstance(val, (list, tuple)) and len(val) == 2:
             lo, hi = val
             if is_numeric:
-                lo = _coerce_to_dtype(lo, actual_dt)
-                hi = _coerce_to_dtype(hi, actual_dt)
+                lo = coerce_filter_value(lo, actual_dt)
+                hi = coerce_filter_value(hi, actual_dt)
             bt_closed = f.get("closed", "both")
             lf = lf.filter(pl.col(col).is_between(lo, hi, closed=bt_closed))
             continue
@@ -152,7 +138,7 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
                 # Coerce values to the column's native dtype — avoids the
                 # Float64→Utf8 mismatch ("2022.0" != "2022") that occurs when
                 # the column is cast to string instead of the values.
-                coerced_vals = [_coerce_to_dtype(v, actual_dt) for v in vals]
+                coerced_vals = [coerce_filter_value(v, actual_dt) for v in vals]
                 expr = pl.col(col).is_in(coerced_vals)
             else:
                 str_vals = [str(v) for v in vals]
@@ -169,7 +155,7 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
                     f"{col!r} ({actual_dt}); coercing {val!r}"
                 )
             if is_numeric:
-                val = _coerce_to_dtype(val, actual_dt)
+                val = coerce_filter_value(val, actual_dt)
             if op == "eq":
                 lf = lf.filter(pl.col(col) == val)
             elif op == "ne":

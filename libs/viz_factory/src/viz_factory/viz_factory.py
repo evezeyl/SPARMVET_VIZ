@@ -5,12 +5,13 @@ from typing import Dict, Any, List
 from viz_factory.registry import get_component
 from viz_factory.plot_config_resolver import resolve_plot_config
 from utils.errors import VisualizationError
+from utils.filter_values import coerce_filter_value
 from utils.pipeline_error import PipelineError
 import difflib
 
 # @deps
 # provides: class:VizFactory, function:VizFactory.render, constant:DEFAULT_RANDOM_STATE
-# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py
+# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/tests/test_render_every_plot.py, libs/viz_factory/tests/
 # doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-081, ADR-090, ADR-094)
 # @end_deps
@@ -162,17 +163,6 @@ class VizFactory:
                     t in str(dt) for t in ("Int", "UInt", "Float", "Decimal")
                 )
 
-            def _coerce_to_dtype(value, dt):
-                try:
-                    s = str(dt) if dt is not None else ""
-                    if "Float" in s or "Decimal" in s:
-                        return float(value)
-                    if "Int" in s or "UInt" in s:
-                        return int(float(value))
-                except (ValueError, TypeError):
-                    pass
-                return value
-
             for f in ui_filters:
                 col = f.get("column")
                 op = f.get("op", "eq")
@@ -197,8 +187,8 @@ class VizFactory:
                 if op == "between" and isinstance(val, (list, tuple)) and len(val) == 2:
                     lo, hi = val
                     if is_numeric:
-                        lo = _coerce_to_dtype(lo, actual_dt)
-                        hi = _coerce_to_dtype(hi, actual_dt)
+                        lo = coerce_filter_value(lo, actual_dt)
+                        hi = coerce_filter_value(hi, actual_dt)
                     bt_closed = f.get("closed", "both")
                     df = df.filter(pl.col(col).is_between(lo, hi, closed=bt_closed))
                     continue
@@ -217,7 +207,7 @@ class VizFactory:
                         f"{col!r} ({actual_dt}); coercing {val!r}"
                     )
                 if is_numeric:
-                    val = _coerce_to_dtype(val, actual_dt)
+                    val = coerce_filter_value(val, actual_dt)
 
                 if op == "eq":
                     df = df.filter(pl.col(col) == val)
