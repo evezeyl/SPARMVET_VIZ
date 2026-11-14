@@ -276,10 +276,15 @@ def test_the_export_uses_and_records_the_seed_home_showed(loaded):
         assert run_a2["seeds_per_plot"][pid] == seed_a, "the drawn seed must be stable for the session"
         assert same_picture(png_a2, png_a)
 
+        shown = loaded.locator(f"#plot_group_{pid}")
+        expect(shown).to_be_visible(timeout=10_000)
+        home_before = shown.screenshot()
         btn = loaded.locator(f"#plot_reshuffle_btn_{pid}")
         expect(btn).to_be_visible(timeout=10_000)
         btn.click()
         _wait_shiny(loaded)
+        loaded.wait_for_timeout(1_500)
+        assert not same_picture(shown.screenshot(), home_before), "the HOME plot did not follow the Reshuffle seed"
         _open_export_panel(loaded)
         run_b, png_b = run_and_png(_download(loaded))
         seed_b = run_b["seeds_per_plot"][pid]

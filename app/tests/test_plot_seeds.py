@@ -32,6 +32,7 @@ from app.modules.plot_seeds import (
     seeds_per_plot_record,
     unfixed_seed_warning,
 )
+from viz_factory.plot_config_resolver import PlotSeed
 from viz_factory.viz_factory import DEFAULT_RANDOM_STATE, VizFactory
 
 DEFAULT = DEFAULT_RANDOM_STATE
@@ -276,3 +277,29 @@ def test_baking_leaves_plots_without_jitter_untouched():
     seeds = export_plot_seeds({"p": {"layers": layers}}, {}, {}, default=DEFAULT, draw=lambda: 7)
     recipe = recipe_with(layers)
     assert bake_plot_seeds(recipe, seeds) == recipe
+
+
+# ---------------------------------------------------------------------------
+# an audit pin reaches the render even when the other overrides are absent
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("recipe_layers", [jitter_layers(random_state=123), jitter_layers()])
+def test_the_bundle_plot_follows_an_audit_pin_when_the_audit_trail_is_off(df, recipe_layers):
+    """With t3_sandbox_enabled off the export has no aesthetic overrides at all, but Reshuffle still
+    pinned a seed in HOME: the exported plot must be the one the user saw."""
+    pin = 777
+    home = positions(df, recipe_layers, **render_seed_args(
+        home_plot_seed(recipe_layers, pin, SessionSeedDraws(draw=lambda: HOME_DRAW), "p", default=DEFAULT),
+        {"random_state": pin}))
+    seeds = export_plot_seeds({"p": {"layers": recipe_layers}}, {"p": pin}, {}, default=DEFAULT)
+    args = render_seed_args(seeds["p"], None)          # no overrides collected: flag off
+    assert np.array_equal(positions(df, recipe_layers, **args), home)
+    assert np.array_equal(home, positions(df, jitter_layers(random_state=pin)))
+
+
+def test_other_overrides_are_kept_next_to_the_seed():
+    ps = PlotSeed(5, "drawn")
+    assert render_seed_args(ps, {"alpha": 0.3}) == {"aesthetic_override": {"alpha": 0.3}, "fallback_random_state": 5}
+    assert render_seed_args(PlotSeed(777, "audit"), {"alpha": 0.3}) == {
+        "aesthetic_override": {"alpha": 0.3, "random_state": 777}, "fallback_random_state": None}
+    assert render_seed_args(PlotSeed(None, "none"), None) == {"aesthetic_override": None, "fallback_random_state": None}
