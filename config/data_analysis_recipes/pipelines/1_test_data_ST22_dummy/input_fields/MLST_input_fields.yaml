@@ -6,18 +6,22 @@ sample_id:
 scheme:
   original_name: "Scheme"
   type: Categorical
+  null_values: ["N/A"]
   label: "MLST Scheme"
 sequence_type:
   original_name: "Sequence Type"
   type: Categorical
+  null_values: ["-"]
   label: "Sequence Type"
 locus_1:
   original_name: "Locus 1"
   type: Categorical
+  null_values: ["-"]
   label: "Locus 1"
 locus_2:
   original_name: "Locus 2"
   type: Categorical
+  null_values: ["N/A"]
   label: "Locus 2"
 locus_3:
   original_name: "Locus 3"
@@ -26,6 +30,7 @@ locus_3:
 locus_4:
   original_name: "Locus 4"
   type: Categorical
+  null_values: ["N/A"]
   label: "Locus 4"
 locus_5:
   original_name: "Locus 5"
@@ -34,8 +39,10 @@ locus_5:
 locus_6:
   original_name: "Locus 6"
   type: Categorical
+  null_values: ["-"]
   label: "Locus 6"
 locus_7:
   original_name: "Locus 7"
   type: Categorical
+  null_values: [""]
   label: "Locus 7"

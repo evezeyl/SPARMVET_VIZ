@@ -23,6 +23,7 @@ taxon:
 genotype:
   original_name: "Genotype"
   type: Categorical
+  null_values: ["None"]
   # label ommited - I know I will do something with this data, so I will define that when I have my output_fields defined
 # keep will require wrangling
 phenotype:
@@ -32,10 +33,12 @@ phenotype:
 cge_phenotype:
   original_name: "CGE Predicted Phenotype"
   type: Categorical
+  null_values: ["-"]
 # keep will require wrangling
 plasmid:
   original_name: "Plasmid"
   type: Categorical
+  null_values: ["None"]
 # NOTE : I want to ignore this column from the output
 # NOTE I will omit it from both input and output output_fields
 # MLST_scheme:
@@ -52,6 +55,7 @@ ST:
   #  as the column has already been renamed to its logical slug (e.g., ST) 
   # by the time it reaches the output stage.
   type: Categorical
+  null_values: ["-"]
   label: "ST"
 # keep interesting for stats
 genome_length:

@@ -6,6 +6,7 @@ sample_id:
 data:
   original_name: Data
   type: Categorical
+  null_values: ["None"]
   label: Data
 data_type:
   original_name: Data Type

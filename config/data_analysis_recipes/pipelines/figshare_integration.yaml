@@ -23,7 +23,7 @@ data_schemas:
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_metadata.tsv
-    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    null_values: []
     strip: true
     input_fields: !include 'figshare_integration/input_fields/fg_metadata_input_fields.yaml'
     wrangling: !include 'figshare_integration/wrangling/fg_metadata_wrangling.yaml'
@@ -33,7 +33,7 @@ data_schemas:
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_phenotypes.tsv
-    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    null_values: []
     strip: true
     input_fields: !include 'figshare_integration/input_fields/fg_phenotypes_input_fields.yaml'
     wrangling: !include 'figshare_integration/wrangling/fg_phenotypes_wrangling.yaml'
@@ -43,7 +43,7 @@ data_schemas:
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_genotypes.tsv
-    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    null_values: []
     strip: true
     input_fields: !include 'figshare_integration/input_fields/fg_genotypes_input_fields.yaml'
     wrangling: !include 'figshare_integration/wrangling/fg_genotypes_wrangling.yaml'

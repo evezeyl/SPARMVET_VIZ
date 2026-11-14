@@ -17,6 +17,7 @@ specimen_source_tissue:
 final_diagnosis:
   original_name: final_diagnosis
   type: Categorical
+  null_values: ["NA", "n/a"]
   label: Final Diagnosis
 animal_infection_site_uti:
   original_name: animal_infection_site_uti

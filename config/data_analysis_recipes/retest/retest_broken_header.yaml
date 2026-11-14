@@ -16,7 +16,7 @@ data_schemas:
     source:
       type: local_tsv
       path: ./assets/test_data/retest/genes_renamed_header.tsv   # EDIT HERE (test 2): use genes.tsv, reload, it works
-    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    null_values: []
     strip: true
     input_fields:
       sample_id: {original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}

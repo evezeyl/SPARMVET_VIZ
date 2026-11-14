@@ -23,7 +23,7 @@ metadata_schema:
   source:
     type: "local_tsv"
     path: "assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv"
-  null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+  null_values: []
   strip: true
   input_fields: !include 2_test_data_ST22_dummy/input_fields/metadata_schema.yaml
 
@@ -32,7 +32,7 @@ data_schemas:
     source:
       type: "local_tsv"
       path: "assets/test_data/1_test_data_ST22_dummy/test_data_ResFinder_20260307_105756.tsv"
-    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    null_values: []
     strip: true
     input_fields: !include 2_test_data_ST22_dummy/input_fields/amr_data.yaml
     wrangling: !include 2_test_data_ST22_dummy/wrangling/amr_data.yaml
@@ -40,7 +40,7 @@ data_schemas:
     source:
       type: "local_tsv"
       path: "assets/test_data/1_test_data_ST22_dummy/test_data_PlasmidFinder_20260307_105756.tsv"
-    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    null_values: []
     strip: true
     input_fields: !include 2_test_data_ST22_dummy/input_fields/plasmid_data.yaml
     wrangling: !include 2_test_data_ST22_dummy/wrangling/plasmid_data.yaml

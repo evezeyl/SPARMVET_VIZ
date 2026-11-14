@@ -12,7 +12,7 @@ data_schemas:
     source:
       type: local_tsv
       path: assets/test_data/STRESS/STRESS_data.tsv
-    null_values: ["", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A."]
+    null_values: []
     strip: true
     input_fields: !include 'stress_test_master/input_fields/Stress_Source_input_fields.yaml'
     wrangling: !include 'stress_test_master/wrangling/Stress_Source_wrangling.yaml'

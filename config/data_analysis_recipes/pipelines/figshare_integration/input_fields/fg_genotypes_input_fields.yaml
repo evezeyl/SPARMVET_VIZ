@@ -17,12 +17,15 @@ gene_type:
 gene_identifier:
   original_name: gene_identifier
   type: Categorical
+  null_values: ["NA"]
   label: Gene Identifier
 gene_name_family:
   original_name: gene_name_family
   type: Categorical
+  null_values: ["NA"]
   label: Gene Name Family
 resistance_class:
   original_name: resistance_class
   type: Categorical
+  null_values: ["NA"]
   label: Resistance Class
