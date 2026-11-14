@@ -14,6 +14,9 @@ import os
 from typing import Dict, Optional
 
 import polars as pl
+from polars.exceptions import PanicException
+
+from utils.errors import TransformationError
 
 
 def write_anchor(lf: pl.LazyFrame, path, decision_hash: Optional[str] = None, metadata: Optional[Dict[str, str]] = None) -> pl.LazyFrame:
@@ -25,11 +28,19 @@ def write_anchor(lf: pl.LazyFrame, path, decision_hash: Optional[str] = None, me
     """
     path = str(path)
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    if decision_hash:
-        lf.collect().write_parquet(path, metadata={"sparmvet_decision_hash": str(decision_hash),
-                                                   **{str(k): str(v) for k, v in (metadata or {}).items()}})
-    else:
-        lf.sink_parquet(path)
+    try:
+        if decision_hash:
+            lf.collect().write_parquet(path, metadata={"sparmvet_decision_hash": str(decision_hash),
+                                                       **{str(k): str(v) for k, v in (metadata or {}).items()}})
+        else:
+            lf.sink_parquet(path)
+    except PanicException as exc:
+        # The plan of every step runs here, so this is where a Rust panic of Polars shows. A `PanicException` is a `BaseException`:
+        # it passes every `except Exception` of the engine and the app (ADR-104). Only this class is caught; KeyboardInterrupt and SystemExit pass.
+        raise TransformationError(
+            f"Polars stopped while it computed the table stored at {path}, on the input of one of the steps ({str(exc).strip()[:120]})",
+            tip="Check the durations and lists written in the steps of this join and the data they work on; the actions refuse the cases they know "
+                "before Polars runs, so this one is new: report it with the recipe") from exc
     return pl.scan_parquet(path)
 
 
