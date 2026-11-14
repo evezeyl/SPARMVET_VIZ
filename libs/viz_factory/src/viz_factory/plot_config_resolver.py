@@ -3,7 +3,7 @@
 #           function:_dedupe_layers, constant:_BUILTIN_DEFAULTS,
 #           function:normalise_plot_spec, function:serialise_plot_spec,
 #           function:layers_have_jitter (REPRO-SEED-2), function:recipe_pins_random_state (REPRO-RESHUFFLE-1),
-#           function:resolve_plot_seed, function:fixed_seed_of, function:recipe_asks_random, class:PlotSeed (SEED-HOLDS-1)
+#           function:resolve_plot_seed, function:apply_seed_to_layers, function:fixed_seed_of, function:recipe_asks_random, class:PlotSeed (SEED-HOLDS-1)
 # consumes: libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py,
 #              libs/viz_factory/tests/test_plot_config_resolver.py,
@@ -196,6 +196,20 @@ def recipe_asks_random(layers: list[dict]) -> bool:
         and _is_random_word(layer["params"]["random_state"])
         for layer in (layers or [])
     )
+
+
+def apply_seed_to_layers(layers: list[dict], seed, *, override_all: bool) -> None:
+    """Write `seed` as `random_state` on the jitter layers, in place. `override_all` True is an audit pin
+    (it replaces any number the recipe wrote); False fills only the layers that carry no number, so the
+    recipe's own numbers hold. The one place that writes a seed into layers (the cascade and the export's
+    reproducibility recipe both use it)."""
+    for layer in layers:
+        if not _is_jitter_layer(layer):
+            continue
+        lparams = layer.get("params") or {}
+        unnumbered = "random_state" not in lparams or _is_random_word(lparams["random_state"])
+        if override_all or unnumbered:
+            layer["params"] = {**lparams, "random_state": seed}
 
 
 class PlotSeed(NamedTuple):
@@ -646,21 +660,14 @@ def resolve_plot_config(
         # Mutates the already-appended L1-L4 layers in place, before dedup — a plot with no
         # jitter at all simply has no layer to match, so this is a no-op for it.
         if "random_state" in override:
-            rs = override["random_state"]
-            for layer in all_layers:
-                if _is_jitter_layer(layer):
-                    layer["params"] = {**(layer.get("params") or {}), "random_state": rs}
+            apply_seed_to_layers(all_layers, override["random_state"], override_all=True)
             provenance["random_state"] = "L5"
 
     # Fallback seed: fills only the jitter layers that still carry no number (the recipe's own
     # number holds; an L5 pin was applied above and left no unnumbered layer).
     if fallback_random_state is not None:
-        for layer in all_layers:
-            if _is_jitter_layer(layer):
-                lparams = layer.get("params") or {}
-                if "random_state" not in lparams or _is_random_word(lparams["random_state"]):
-                    layer["params"] = {**lparams, "random_state": fallback_random_state}
-                    provenance.setdefault("random_state", "fallback")
+        apply_seed_to_layers(all_layers, fallback_random_state, override_all=False)
+        provenance.setdefault("random_state", "fallback")
 
     # ── Deduplicate layers ───────────────────────────────────────────────────
     seed["layers"] = _dedupe_layers(all_layers)
