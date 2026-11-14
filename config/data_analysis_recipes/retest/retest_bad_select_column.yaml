@@ -13,6 +13,7 @@ info:
 
 data_schemas:
   Genes:
+    label: "Genes"
     source:
       type: local_tsv
       path: ./assets/test_data/retest/genes.tsv
@@ -30,6 +31,7 @@ data_schemas:
 
 joins:
   Genes_joined:
+    label: "Genes joined"
     ingredients:
       - dataset_id: Genes
     steps:
