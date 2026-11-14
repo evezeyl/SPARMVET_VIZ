@@ -215,13 +215,14 @@ from blueprint_arch.agent_tool_parser import (
 
 ```python
 from blueprint_arch.join_designer import (
-    compute_key_match,  # (left_rows, right_rows, left_dtypes, right_dtypes, sample_n) -> dict
+    check_join_keys,    # (left_schema, right_schema, left_keys, right_keys, right_id) -> verdict dict (same rule as the build)
+    compute_key_match,  # (left_rows, right_rows, sample_n) -> dict
     build_join_step,    # (right_ingredient, left_keys, right_keys, how, comment) -> dict
     parse_join_step,    # (step: dict) -> dict  normalises unquoted-'on' boolean trap
 )
 ```
 
-`compute_key_match` returns `{overlap_count, left_only, right_only, sample_matches}` — the data that drives the overlap preview in the IDE. `build_join_step` always emits the string key `"on"` (quoted) for symmetric joins, avoiding the YAML boolean trap. `parse_join_step` applies the same `step.get(True)` fallback as the assembler for loading existing data analysis recipes that contain unquoted `on:`.
+`check_join_keys` gives the same verdict as the build (JOIN-KEY-TYPES-1): `{ok, kind (length | missing | type), problem, fix, type_pairs}`; keys keep their types, nothing is cast. Call `compute_key_match` only when `ok`: it returns `{left_total, right_total, matched, left_only, right_only, match_rate, left_only_sample, right_only_sample}`, computed on the keys as they are — the data that drives the overlap preview in the IDE. `build_join_step` always emits the string key `"on"` (quoted) for symmetric joins, avoiding the YAML boolean trap. `parse_join_step` applies the same `step.get(True)` fallback as the assembler for loading existing data analysis recipes that contain unquoted `on:`.
 
 ---
 
