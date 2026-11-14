@@ -208,6 +208,8 @@ def test_import_a_bundle_reports_the_four_legs(loaded, tmp_path):
     _wait_shiny(loaded)
     report_text = loaded.locator("#import_bundle_report").inner_text()
     recipe_id_match = re.search(r"Imported as '([^']+)'", report_text)
+    from app.src.bootloader import bootloader as _bl
+    raw_before = {str(p) for p in DATA_DIR.parent.rglob("*")}
     try:
         # inside the try so a missing leg still runs the clean-up below
         for leg in ("data", "engine", "recipe", "t3 steps"):
@@ -216,26 +218,25 @@ def test_import_a_bundle_reports_the_four_legs(loaded, tmp_path):
         assert "Imported as" in report_text
         for leg in ("data", "engine", "recipe", "t3 steps"):
             assert leg in report_text.lower(), report_text
+        # IMPORT-PATH-1: the data of the import is stored by dataset id in the folder of its own import,
+        # the recipe's path is untouched, and nothing is written into the deployment's raw data.
+        recipe_id = recipe_id_match.group(1)
+        import_data = _bl.get_imports_dir() / recipe_id / "data"
+        assert import_data.is_dir() and any(import_data.glob("*.tsv")), import_data
+        assert {str(p) for p in DATA_DIR.parent.rglob("*")} == raw_before
+        # the importing user sees the data leg as match: the hash covers the files the recipe reads
+        assert re.search(r"data\s*:\s*match", report_text, re.IGNORECASE), report_text
     finally:
-        # Import writes real files into the project's own recipes/raw_data locations
-        # (not tmp_path) — clean up what this test created, same as the data-file
-        # restore above does for a different kind of on-disk side effect.
+        # Import writes real files into the project's own recipes and user_data locations
+        # (not tmp_path) - clean up what this test created.
         if recipe_id_match:
+            import shutil
             recipe_id = recipe_id_match.group(1)
-            recipe_path = Path("config/data_analysis_recipes/pipelines") / f"{recipe_id}.yaml"
-            recipe_path.unlink(missing_ok=True)
-            imported_root = DATA_DIR.parent / "_imported"
-            data_dir = imported_root / recipe_id
-            if data_dir.is_dir():
-                import shutil
-                shutil.rmtree(data_dir, ignore_errors=True)
-            # remove the _imported/ folder only when this test left it empty;
-            # rmdir refuses a non-empty folder, so other content is never touched
-            if imported_root.is_dir():
-                try:
-                    imported_root.rmdir()
-                except OSError:
-                    pass
+            (_bl.data_analysis_recipes_dir / f"{recipe_id}.yaml").unlink(missing_ok=True)
+            shutil.rmtree(_bl.get_imports_dir() / recipe_id, ignore_errors=True)
+            for p in (_bl.get_location("user_data") / "_sessions").glob("*/assembly.json"):
+                if recipe_id in p.read_text():
+                    shutil.rmtree(p.parent, ignore_errors=True)
 
 
 def test_a_data_change_after_the_view_is_opened_blocks_the_export(loaded):

@@ -36,9 +36,11 @@ info: {{display_name: Tiny}}
 data_schemas:
   T:
     source: {{type: local_tsv, path: {data_path}}}
+    null_values: []
+    strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: categorical, label: Sample, is_primary_key: true}}
-      group: {{original_name: group, type: categorical, label: Group}}
+      sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}}
+      group: {{original_name: group, type: Categorical, label: Group}}
     wrangling: {{tier1: [], tier2: []}}
 joins:
   C:
@@ -71,6 +73,9 @@ class _FakeBootloader:
 
     def get_location(self, key: str) -> Path:
         return {"raw_data": self._raw_data_dir, "user_data": self._user_data_dir}[key]
+
+    def get_imports_dir(self) -> Path:
+        return self._user_data_dir / "_imports"
 
 
 def _build_bundle(tmp_path: Path, *, recipe_id="tiny", tamper_data=False,
@@ -127,6 +132,7 @@ def _build_bundle(tmp_path: Path, *, recipe_id="tiny", tamper_data=False,
 def _fresh_bootloader(tmp_path: Path, **kw) -> _FakeBootloader:
     recipes_dir = tmp_path / "recipes"
     recipes_dir.mkdir(parents=True, exist_ok=True)
+    (tmp_path / "raw_data").mkdir(exist_ok=True)       # the deployment's data folder exists (the ingestor needs it)
     return _FakeBootloader(
         raw_data_dir=tmp_path / "raw_data",
         recipes_dir=recipes_dir,
@@ -190,15 +196,135 @@ def test_import_writes_recipe_and_session(tmp_path):
     assert set(result.legs.keys()) == {"data", "engine", "recipe", "t3_steps"}
 
 
-def test_sources_are_repointed_to_extracted_files(tmp_path):
+def _rewrite_zip(zb: bytes, *, drop=(), add=None) -> bytes:
+    """The same bundle without the entries whose name contains one of `drop`, plus the entries in `add`."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(zb)) as zf, zipfile.ZipFile(buf, "w") as out:
+        for n in zf.namelist():
+            if not any(d in n for d in drop):
+                out.writestr(n, zf.read(n))
+        for n, content in (add or {}).items():
+            out.writestr(n, content)
+    return buf.getvalue()
+
+
+def _tree(root: Path) -> set[str]:
+    return {str(p.relative_to(root)) for p in root.rglob("*") if p.is_file()} if root.exists() else set()
+
+
+def test_the_data_of_an_import_is_stored_by_dataset_id_in_its_own_folder(tmp_path):
     zb, _run, _orig = _build_bundle(tmp_path)
     bl = _fresh_bootloader(tmp_path)
     result = import_bundle(zb, bootloader=bl)
+    data_dir = tmp_path / "user_data" / "_imports" / result.recipe_id / "data"
+    assert [p.name for p in data_dir.iterdir()] == ["T.tsv"]
+    assert (data_dir / "T.tsv").read_text().startswith("sample_id\tgroup")
+
+
+def test_the_recipe_path_is_not_touched_and_nothing_is_written_to_raw_data(tmp_path):
+    zb, _run, orig = _build_bundle(tmp_path)
+    original_path = yaml.safe_load(orig.read_text())["data_schemas"]["T"]["source"]["path"]
+    bl = _fresh_bootloader(tmp_path)
+    result = import_bundle(zb, bootloader=bl)
     written = yaml.safe_load(result.imported_recipe_path.read_text())
-    new_path = Path(written["data_schemas"]["T"]["source"]["path"])
-    assert new_path.exists()
-    assert "_imported" in new_path.parts
-    assert new_path.read_text().startswith("sample_id\tgroup")
+    assert str(written["data_schemas"]["T"]["source"]["path"]) == str(original_path)
+    assert list((tmp_path / "raw_data").iterdir()) == []
+
+
+def test_the_orchestrator_reads_the_rows_of_the_import_not_the_exporting_machines_file(tmp_path):
+    from app.modules.orchestrator import DataOrchestrator
+    zb, _run, _orig = _build_bundle(tmp_path)
+    bl = _fresh_bootloader(tmp_path)
+    (tmp_path / "raw_data" / "T.tsv").write_text("sample_id\tgroup\nOTHER\tZ\n")
+    result = import_bundle(zb, bootloader=bl)
+    # the file the recipe still names (the exporting machine's path) now holds other rows
+    (tmp_path / "source" / "T.tsv").write_text("sample_id\tgroup\nELSEWHERE\tZ\n")
+    orch = DataOrchestrator(bl.data_analysis_recipes_dir, tmp_path / "raw_data", data_lookup="data_analysis_recipe_paths",
+                            imports_dir=bl.get_imports_dir())
+    frame = orch.materialize_tier1(result.recipe_id, "C", tmp_path / "anchor.parquet")
+    assert sorted(frame.collect()["sample_id"].to_list()) == ["S1", "S2"]
+
+
+def test_the_imported_recipe_passes_the_gate_of_home(tmp_path):
+    """HOME's load gate on reload (ADR-094): structure and data, with the data folder of the import."""
+    from app.modules.data_analysis_recipe_validator import validate_data_analysis_recipe_data
+    zb, _run, _orig = _build_bundle(tmp_path)
+    bl = _fresh_bootloader(tmp_path)
+    result = import_bundle(zb, bootloader=bl)
+    for mode in ("data_analysis_recipe_paths", "by_dataset_id"):
+        problems = validate_data_analysis_recipe_data(result.imported_recipe_path, tmp_path / "raw_data",
+                                                       data_lookup=mode, imports_dir=bl.get_imports_dir())
+        assert problems == [], (mode, problems)
+
+
+def test_the_session_key_and_hash_cover_the_files_the_engine_reads(tmp_path):
+    from app.modules.orchestrator import DataOrchestrator
+    zb, _run, _orig = _build_bundle(tmp_path)
+    bl = _fresh_bootloader(tmp_path)
+    result = import_bundle(zb, bootloader=bl)
+    orch = DataOrchestrator(bl.data_analysis_recipes_dir, tmp_path / "raw_data", imports_dir=bl.get_imports_dir())
+    keys = orch.compute_data_analysis_recipe_keys(result.recipe_id)
+    assert result.legs["data"].actual == keys.data_batch_hash
+    sm = SessionManager(tmp_path / "user_data")
+    assert result.session_key == sm.compute_session_key(keys.data_analysis_recipe_sha256, keys.data_batch_hash)
+
+
+def test_two_imports_of_the_same_bundle_stay_apart(tmp_path):
+    zb, _run, _orig = _build_bundle(tmp_path)
+    bl = _fresh_bootloader(tmp_path)
+    first = import_bundle(zb, bootloader=bl)
+    second = import_bundle(zb, bootloader=bl)       # same second: the timestamp alone would collide
+    assert first.recipe_id != second.recipe_id
+    assert first.imported_recipe_path != second.imported_recipe_path
+    for r in (first, second):
+        assert (tmp_path / "user_data" / "_imports" / r.recipe_id / "data" / "T.tsv").read_text().startswith("sample_id")
+    assert first.legs["data"].status == second.legs["data"].status == "match"
+
+
+def test_a_dataset_that_the_recipe_does_not_name_is_kept_apart_and_reported_not_hashed(tmp_path):
+    zb, _run, _orig = _build_bundle(tmp_path)
+    zb = _rewrite_zip(zb, add={"20261109_120000_autotest/data_reproducibility/EXTRA.tsv": b"x\n1\n"})
+    result = import_bundle(zb, bootloader=_fresh_bootloader(tmp_path))
+    assert result.legs["data"].status == "match"                 # the hash covers the files the recipe reads
+    assert "EXTRA" in result.legs["data"].detail                 # and the file that is not read is named
+
+
+def test_a_dataset_named_by_the_recipe_but_missing_in_the_bundle_is_a_data_mismatch_that_names_it(tmp_path):
+    zb, _run, _orig = _build_bundle(tmp_path)
+    zb = _rewrite_zip(zb, drop=("data_reproducibility/T.tsv",),
+                      add={"20261109_120000_autotest/data_reproducibility/T_ERROR.txt": b"could not copy",
+                           "20261109_120000_autotest/data_reproducibility/OTHER.tsv": b"x\n1\n"})
+    result = import_bundle(zb, bootloader=_fresh_bootloader(tmp_path))
+    assert result.legs["data"].status == "mismatch"
+    assert "T" in result.legs["data"].detail and "missing" in result.legs["data"].detail.lower()
+
+
+def test_one_dataset_with_a_tsv_and_a_parquet_in_the_bundle_refuses_the_import_and_leaves_nothing(tmp_path):
+    import polars as pl
+    zb, _run, _orig = _build_bundle(tmp_path)
+    pq = io.BytesIO()
+    pl.DataFrame({"sample_id": ["S9"], "group": ["Q"]}).write_parquet(pq)
+    zb = _rewrite_zip(zb, add={"20261109_120000_autotest/data_reproducibility/T.parquet": pq.getvalue()})
+    bl = _fresh_bootloader(tmp_path)
+    with pytest.raises(BundleImportError, match="T"):
+        import_bundle(zb, bootloader=bl)
+    assert _tree(tmp_path / "user_data") == set()
+    assert list((tmp_path / "recipes").iterdir()) == []
+
+
+def test_a_parquet_dataset_is_imported_and_read(tmp_path):
+    import polars as pl
+    from app.modules.orchestrator import DataOrchestrator
+    zb, _run, _orig = _build_bundle(tmp_path)
+    pq = io.BytesIO()
+    pl.DataFrame({"sample_id": ["S1", "S2"], "group": ["A", "B"]}).write_parquet(pq)
+    zb = _rewrite_zip(zb, drop=("data_reproducibility/T.tsv",),
+                      add={"20261109_120000_autotest/data_reproducibility/T.parquet": pq.getvalue()})
+    bl = _fresh_bootloader(tmp_path)
+    result = import_bundle(zb, bootloader=bl)
+    orch = DataOrchestrator(bl.data_analysis_recipes_dir, tmp_path / "raw_data", imports_dir=bl.get_imports_dir())
+    assert orch.get_source_files(result.recipe_id)["T"].name == "T.parquet"
+    assert sorted(orch.materialize_tier1(result.recipe_id, "C", tmp_path / "a.parquet").collect()["sample_id"].to_list()) == ["S1", "S2"]
 
 
 def test_data_leg_matches_on_an_intact_bundle(tmp_path):
@@ -285,3 +411,5 @@ def test_a_broken_frozen_recipe_raises_loudly_not_silently(tmp_path):
                     out.writestr(n, zf.read(n))
     with pytest.raises(BundleImportError, match="could not be loaded"):
         import_bundle(buf.getvalue(), bootloader=_fresh_bootloader(tmp_path))
+    assert _tree(tmp_path / "user_data") == set()          # a refused import leaves no data folder and no ghost
+    assert list((tmp_path / "recipes").iterdir()) == []    # and no recipe file
