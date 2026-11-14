@@ -6,12 +6,14 @@ from viz_factory.registry import get_component
 from viz_factory.plot_config_resolver import resolve_plot_config
 from utils.errors import VisualizationError
 from utils.filter_values import coerce_filter_value
+from utils.missing_values import keep_missing
+from utils.na_choice import na_of
 from utils.pipeline_error import PipelineError
 import difflib
 
 # @deps
 # provides: class:VizFactory, function:VizFactory.render, constant:DEFAULT_RANDOM_STATE
-# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py
+# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/gallery_examples.py, app/tests/test_render_every_plot.py, libs/viz_factory/tests/
 # doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-081, ADR-090, ADR-094)
 # @end_deps
@@ -167,6 +169,7 @@ class VizFactory:
                 col = f.get("column")
                 op = f.get("op", "eq")
                 val = f.get("value")
+                na = na_of(f)  # NA-RULE-63: "keep" adds the rows with no value; a row without `na` removes them
                 if col is None:
                     continue
                 # Issue #56: a filter on a column this plot's data does not have is skipped, not an error.
@@ -190,14 +193,14 @@ class VizFactory:
                         lo = coerce_filter_value(lo, actual_dt)
                         hi = coerce_filter_value(hi, actual_dt)
                     bt_closed = f.get("closed", "both")
-                    df = df.filter(pl.col(col).is_between(lo, hi, closed=bt_closed))
+                    df = df.filter(keep_missing(pl.col(col).is_between(lo, hi, closed=bt_closed), col, na))
                     continue
 
                 if op in ("in", "not_in"):
                     vals = val if is_list_val else [val]
                     str_vals = [str(v) for v in vals]
                     expr = pl.col(col).cast(pl.Utf8).is_in(str_vals)
-                    df = df.filter(expr if op == "in" else ~expr)
+                    df = df.filter(keep_missing(expr if op == "in" else ~expr, col, na))
                     continue
 
                 # String operand on a numeric column — coerce before compare.
@@ -210,17 +213,17 @@ class VizFactory:
                     val = coerce_filter_value(val, actual_dt)
 
                 if op == "eq":
-                    df = df.filter(pl.col(col) == val)
+                    df = df.filter(keep_missing(pl.col(col) == val, col, na))
                 elif op == "ne":
-                    df = df.filter(pl.col(col) != val)
+                    df = df.filter(keep_missing(pl.col(col) != val, col, na))
                 elif op == "gt":
-                    df = df.filter(pl.col(col) > val)
+                    df = df.filter(keep_missing(pl.col(col) > val, col, na))
                 elif op == "ge":
-                    df = df.filter(pl.col(col) >= val)
+                    df = df.filter(keep_missing(pl.col(col) >= val, col, na))
                 elif op == "lt":
-                    df = df.filter(pl.col(col) < val)
+                    df = df.filter(keep_missing(pl.col(col) < val, col, na))
                 elif op == "le":
-                    df = df.filter(pl.col(col) <= val)
+                    df = df.filter(keep_missing(pl.col(col) <= val, col, na))
 
         # 2. Single materialisation point — after all Polars filters (ADR-010).
         df_pandas = df.collect().to_pandas()

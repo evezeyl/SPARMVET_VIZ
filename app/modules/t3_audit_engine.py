@@ -12,8 +12,8 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:_apply_filter_rows, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
-# consumes: polars, libs/utils/src/utils/filter_values.py
+# provides: function:_apply_filter_rows, function:filter_rows_from_nodes, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
+# consumes: polars, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
@@ -21,6 +21,8 @@ from __future__ import annotations
 import polars as pl
 
 from utils.filter_values import coerce_filter_value
+from utils.missing_values import keep_missing
+from utils.na_choice import na_of
 
 
 def _op_label(op: str) -> str:
@@ -74,9 +76,31 @@ def inapplicable_filter_rows(lf, filter_rows: list) -> list:
     return [f for f in filter_rows if f.get("column") is not None and f.get("column") not in names]
 
 
+def filter_rows_from_nodes(nodes: list) -> list[dict]:
+    """The filter rows of the active `filter_row` and `exclusion_row` audit steps, with their `na` choice.
+
+    A step written before the choice existed has no `na` and is carried as "remove", what it always did.
+    """
+    rows: list[dict] = []
+    for n in nodes:
+        if not n.get("active", True) or n.get("node_type") not in ("filter_row", "exclusion_row"):
+            continue
+        p = n.get("params", {})
+        if "column" not in p:
+            continue
+        rows.append({
+            "column": p.get("column"),
+            "op": p.get("op", "eq"),
+            "value": p.get("value"),
+            "dtype": p.get("dtype", "Utf8"),
+            "na": na_of(p),
+        })
+    return rows
+
+
 def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
     """
-    Apply a list of {column, op, value, dtype} dicts to a LazyFrame.
+    Apply a list of {column, op, value, dtype, na} dicts to a LazyFrame.
 
     Type strategy (DEMO-3):
     - The filter row's stored 'dtype' field can be stale or absent. We
@@ -105,6 +129,7 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
         col = f.get("column")
         op = f.get("op", "eq")
         val = f.get("value")
+        na = na_of(f)  # NA-RULE-63: "keep" adds the rows with no value; a row without `na` removes them
         if col is None:
             continue
         # Issue #56: T1 is wide and T2 may be long, so a filter built on one view can name a
@@ -129,7 +154,7 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
                 lo = coerce_filter_value(lo, actual_dt)
                 hi = coerce_filter_value(hi, actual_dt)
             bt_closed = f.get("closed", "both")
-            lf = lf.filter(pl.col(col).is_between(lo, hi, closed=bt_closed))
+            lf = lf.filter(keep_missing(pl.col(col).is_between(lo, hi, closed=bt_closed), col, na))
             continue
 
         if op in ("in", "not_in"):
@@ -143,7 +168,7 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
             else:
                 str_vals = [str(v) for v in vals]
                 expr = pl.col(col).cast(pl.Utf8).is_in(str_vals)
-            lf = lf.filter(expr if op == "in" else ~expr)
+            lf = lf.filter(keep_missing(expr if op == "in" else ~expr, col, na))
         else:
             # Scalar ops: coerce value to column dtype before compare.
             # If the widget already emitted a native numeric, the coercion
@@ -157,15 +182,15 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
             if is_numeric:
                 val = coerce_filter_value(val, actual_dt)
             if op == "eq":
-                lf = lf.filter(pl.col(col) == val)
+                lf = lf.filter(keep_missing(pl.col(col) == val, col, na))
             elif op == "ne":
-                lf = lf.filter(pl.col(col) != val)
+                lf = lf.filter(keep_missing(pl.col(col) != val, col, na))
             elif op == "gt":
-                lf = lf.filter(pl.col(col) > val)
+                lf = lf.filter(keep_missing(pl.col(col) > val, col, na))
             elif op == "ge":
-                lf = lf.filter(pl.col(col) >= val)
+                lf = lf.filter(keep_missing(pl.col(col) >= val, col, na))
             elif op == "lt":
-                lf = lf.filter(pl.col(col) < val)
+                lf = lf.filter(keep_missing(pl.col(col) < val, col, na))
             elif op == "le":
-                lf = lf.filter(pl.col(col) <= val)
+                lf = lf.filter(keep_missing(pl.col(col) <= val, col, na))
     return lf

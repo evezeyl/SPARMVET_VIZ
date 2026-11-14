@@ -5,20 +5,17 @@ Decided by Eve on 2026-11-14: the engine follows Polars, so every comparison rem
 touches it, so it has its own count and its own sentence. Pure functions, no Shiny, no app import: the filter dialog,
 the Blueprint form and the data check call the same two functions.
 
-Also holds the choice itself, shared by the three places that filter (the HOME table, the plot, the results bundle)
-and the audit translator: `na_of` (a row or step without `na` is "remove", what it always did), `default_na` (the
-preselection of the HOME tick by operator), `keep_missing` (adds the null rows to a filter condition) and `with_na`
-(a copy of the parameters with `na` written).
+Also `keep_missing` (adds the null rows to a filter condition), used by the HOME table and the plot. The choice itself
+(`na_of`, `default_na`, `with_na`) is in `na_choice.py`, which needs no Polars so the audit translator can use it.
 
 Consumed by: app/modules/t3_audit_engine.py, libs/viz_factory/src/viz_factory/viz_factory.py,
-libs/blueprint_arch/src/blueprint_arch/t3_translator.py, app/handlers/filter_and_audit_handlers.py,
-app/modules/session_manager.py.
-If deleted: HOME and the plot cannot read the choice `na`, and the translator cannot write it.
+app/handlers/filter_and_audit_handlers.py.
+If deleted: HOME and the plot cannot apply the choice `na`, and the dialog shows no counts.
 """
 # @deps
-# provides: function:count_missing, function:missing_sentences, function:na_of, function:default_na, function:keep_missing, function:with_na
-# consumes: polars
-# consumed_by: libs/utils/tests/test_missing_values.py, app/modules/t3_audit_engine.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py, app/handlers/filter_and_audit_handlers.py, app/modules/session_manager.py
+# provides: function:count_missing, function:missing_sentences, function:keep_missing, function:dialog_missing_lines, function:na_choice_texts
+# consumes: polars, libs/utils/src/utils/na_choice.py
+# consumed_by: libs/utils/tests/test_missing_values.py, app/modules/t3_audit_engine.py, libs/viz_factory/src/viz_factory/viz_factory.py, app/handlers/filter_and_audit_handlers.py
 # doc: .claude/tasks/tasks.md#NA-RULE-63
 # @end_deps
 from dataclasses import dataclass
@@ -26,32 +23,9 @@ from typing import Optional, Union
 
 import polars as pl
 
-NA_CHOICES = ("keep", "remove")
+from utils.na_choice import NA_CHOICES
+
 _WARNING_OPERATORS = ("ne", "not_in")
-
-
-def na_of(row: Optional[dict]) -> str:
-    """Return the `na` choice of a filter row or an audit step's params: "keep" or "remove".
-
-    Data written before the choice existed has no `na`; it always removed the rows with no value, so it is "remove".
-    A value that is neither is refused, never guessed.
-    """
-    na = (row or {}).get("na")
-    if na is None:
-        return "remove"
-    if na not in NA_CHOICES:
-        raise ValueError(f"na must be one of {NA_CHOICES}, not {na!r}")
-    return na
-
-
-def default_na(op: str) -> str:
-    """The choice the HOME tick starts on: `!=` and not-in keep the rows with no value, every other operator removes them."""
-    return "keep" if op in _WARNING_OPERATORS else "remove"
-
-
-def with_na(params: dict) -> dict:
-    """A copy of `params` with `na` written (an old step without it becomes "remove")."""
-    return {**params, "na": na_of(params)}
 
 
 def keep_missing(condition: pl.Expr, column: str, na: str) -> pl.Expr:
@@ -123,3 +97,25 @@ def missing_sentences(column: str, op: str, na: str, counts: MissingCounts) -> M
                        f"here they are {fate}" + ("" if na == "keep" else "; choose na: keep to keep them"))
     nan = f"{_rows(k, 'has', 'have')} a failed calculation" if k else None
     return MissingSentences(missing=missing, nan=nan, warning=warning)
+
+
+def dialog_missing_lines(column: str, op: str, na: str, counts: MissingCounts) -> list[str]:
+    """The lines the HOME filter dialog shows under the tick: the counts (missing values and NaN apart) and the warning.
+
+    Says so when no row has a missing value, so the user sees that the choice changes nothing here.
+    """
+    s = missing_sentences(column, op, na, counts)
+    lines = [s.missing or f"No row has a missing value in {column}."]
+    if s.nan:
+        lines.append(f"{s.nan} (NaN): not changed by this choice")
+    if s.warning:
+        lines.append(s.warning)
+    return lines
+
+
+def na_choice_texts(op_words: str) -> tuple[str, str]:
+    """The label of the tick and the one-line help for an operator (`op_words`: "not equal", "any of", ...)."""
+    label = "Keep the rows with no value in this column"
+    help_ = (f"With '{op_words}', a row with no value does not match. "
+             "Tick: these rows are kept anyway. Untick: they are removed.")
+    return label, help_
