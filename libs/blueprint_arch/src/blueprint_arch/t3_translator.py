@@ -52,10 +52,11 @@ from typing import Any
 import yaml
 
 from utils import action_names
+from utils.na_choice import na_of
 
 # @deps
 # provides: function:translate_t3_node, function:translate_plot_steps, function:build_mode2_recipe, class:UntranslatableNode
-# consumes: stdlib (copy, hashlib, json), PyYAML (developer_raw_yaml fragment parsing only)
+# consumes: stdlib (copy, hashlib, json), PyYAML (developer_raw_yaml fragment parsing only), libs/utils/src/utils/na_choice.py (stdlib only)
 # consumed_by: app/handlers/export_handlers.py (REPRO-TRANSLATOR-1 wiring, #45/#48), libs/blueprint_arch/tests/test_t3_translator.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/reproducible_export_design.md#4D
 # @end_deps
@@ -123,8 +124,13 @@ def translate_t3_node(node: dict) -> list[dict]:
             )
         if op in ("in", "not_in"):
             value = value if isinstance(value, list) else [value]
-        # `na: remove`: a missing value is dropped by every comparison, as the filters of HOME and the plot have always done
-        return [{"action": FILTER, "column": column, "op": op, "value": value, "na": "remove"}]
+        # `na` is the choice the user made in the HOME dialog (keep or remove the rows with no value). A step
+        # written before the choice existed has none and always removed them, so it is exported as "remove".
+        try:
+            na = na_of(params)
+        except ValueError as exc:
+            raise UntranslatableNode(f"{exc} (na of the node) - node: {node!r}") from exc
+        return [{"action": FILTER, "column": column, "op": op, "value": value, "na": na}]
 
     if node_type == "drop_column":
         column = params.get("column")

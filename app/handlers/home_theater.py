@@ -47,7 +47,7 @@ from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
 from viz_factory.plot_config_resolver import layers_have_jitter, recipe_pins_random_state
 
-from app.modules.t3_audit_engine import _apply_filter_rows
+from app.modules.t3_audit_engine import _apply_filter_rows, filter_rows_from_nodes
 from app.modules.sidebar_registry import is_panel_active
 from app.handlers.session_handlers import define_session_server
 from app.handlers.export_handlers import define_export_server
@@ -362,23 +362,7 @@ def define_server(input, output, session, *,
         a `not_in` filter once committed). The audit-trail distinction
         between the two node types is purely documentary — see ADR-049.
         """
-        rows: list[dict] = []
-        for n in _active_plot_t3_nodes(plot_id):
-            if not n.get("active", True):
-                continue
-            nt = n.get("node_type")
-            if nt not in ("filter_row", "exclusion_row"):
-                continue
-            p = n.get("params", {})
-            if "column" not in p:
-                continue
-            rows.append({
-                "column": p.get("column"),
-                "op": p.get("op", "eq"),
-                "value": p.get("value"),
-                "dtype": p.get("dtype", "Utf8"),
-            })
-        return rows
+        return filter_rows_from_nodes(_active_plot_t3_nodes(plot_id))
 
     # _apply_filter_rows moved to app/modules/t3_audit_engine.py (Phase 24-A, ADR-051)
     # Imported at module top.
