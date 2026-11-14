@@ -32,7 +32,7 @@ from pathlib import Path
 import polars as pl
 from shiny import reactive, render, ui
 
-from app.modules.gallery_listing import READ_ONLY_LINE, GalleryListing, read_listing
+from app.modules.gallery_listing import NOTE_LINES, GalleryListing, read_listing
 from viz_gallery.taxonomy import display_axes, filter_panels
 
 
@@ -243,10 +243,11 @@ def define_server(input, output, session, *,
         notice = _listing().notice
         if not notice:
             return None
-        header, *rest = notice
+        # The title line exists only when examples were rejected; a lone note (failed check) has none.
+        header, rest = (notice[0], notice[1:]) if notice[0] not in NOTE_LINES else (None, notice)
         return ui.div(
-            ui.div(header, class_="gallery-left-out-title"),
-            *[ui.div(line, class_="gallery-left-out-line" + (" gallery-left-out-note" if line == READ_ONLY_LINE else ""))
+            *([ui.div(header, class_="gallery-left-out-title")] if header else []),
+            *[ui.div(line, class_="gallery-left-out-line" + (" gallery-left-out-note" if line in NOTE_LINES else ""))
               for line in rest],
             class_="gallery-left-out",
         )

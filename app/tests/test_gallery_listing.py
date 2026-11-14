@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from app.modules.gallery_examples import check_gallery_at_start, rebuild_gallery_index
-from app.modules.gallery_listing import READ_ONLY_LINE, build_listing, read_listing
+from app.modules.gallery_listing import FAILED_LINE, READ_ONLY_LINE, build_listing, read_listing
 
 ROOT = Path(__file__).resolve().parents[2]
 SHIPPED = ROOT / "assets" / "gallery_data"
@@ -82,3 +82,37 @@ def test_real_read_only_gallery_with_a_failing_example_in_the_old_index(tmp_path
     assert list(listing.registry) == ["bar_simple"]
     assert listing.notice[0].startswith("1 example(s) not shown") and listing.notice[1].startswith("bar_wrong, ")
     assert listing.notice[-1] == READ_ONLY_LINE
+
+
+# --- every value of the index status either shows a line or is the normal state (2026-11-14) ---
+
+def test_failed_check_shows_a_line_even_when_no_example_is_rejected():
+    listing = build_listing(INDEX, {}, "failed")
+    assert listing.notice == [FAILED_LINE]
+    assert FAILED_LINE == "The gallery check could not run, so the list may be out of date."
+    assert set(listing.registry) == {"good", "bad"}
+
+
+def test_failed_check_line_comes_after_the_rejected_lines():
+    listing = build_listing(INDEX, REJECTED, "failed")
+    assert listing.notice[0] == "1 example(s) not shown, failed the check:"
+    assert listing.notice[-1] == FAILED_LINE
+
+
+@pytest.mark.parametrize("status", ["not_run", "unchanged", "rewritten"])
+def test_the_normal_states_show_no_line_when_nothing_is_rejected(status):
+    assert build_listing(INDEX, {}, status).notice == []
+
+
+def test_every_status_the_check_can_give_is_handled():
+    """The values come from GalleryManager.sync_index and Bootloader; a new value must be added here on purpose."""
+    handled = {"not_run": [], "unchanged": [], "rewritten": [], "not_writable": [], "failed": [FAILED_LINE]}
+    for status, expected in handled.items():
+        assert build_listing(INDEX, {}, status).notice == ([] if status == "not_writable" else expected)
+
+
+def test_stale_index_on_disk_never_opens_a_rejected_id(tmp_path):
+    (tmp_path / "gallery_index.json").write_text(json.dumps(INDEX))
+    listing = read_listing(tmp_path, REJECTED, "not_writable")
+    assert listing.registry.get("bad") is None  # what the preview, data, YAML and guidance handlers look up
+    assert listing.registry.get("good") is not None

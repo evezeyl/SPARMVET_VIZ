@@ -10,7 +10,7 @@ Consumed by: app/handlers/gallery_handlers.py. App features gate: none here; the
 If deleted: the viewer would list whatever the stored index lists, failed examples included.
 
 # @deps
-# provides: function:build_listing, function:read_listing, class:GalleryListing, constant:READ_ONLY_LINE
+# provides: function:build_listing, function:read_listing, class:GalleryListing, constant:READ_ONLY_LINE, constant:FAILED_LINE, constant:NOTE_LINES
 # consumes: app/src/bootloader.py (rejected_gallery_examples, gallery_index_status, as data given by the caller)
 # consumed_by: app/handlers/gallery_handlers.py, app/tests/test_gallery_listing.py
 # doc: .claude/design/recipe_format_spec.md (section 9: D4, DEC48), .claude/design/decisions_2026-11-14/proposals_for_eve.md (G-a, G-b)
@@ -23,6 +23,9 @@ from pathlib import Path
 from typing import Union
 
 READ_ONLY_LINE = "The gallery folder is read-only, so the list was not rewritten."
+FAILED_LINE = "The gallery check could not run, so the list may be out of date."
+# Lines that are notes, not the title or an example line; the handler styles them apart.
+NOTE_LINES = (READ_ONLY_LINE, FAILED_LINE)
 
 
 @dataclass(frozen=True)
@@ -47,6 +50,8 @@ def build_listing(index: dict, rejected: dict, status: str) -> GalleryListing:
             notice.append(f"{name}, {reasons[0] if reasons else 'no reason recorded'}.")
         if status == "not_writable":
             notice.append(READ_ONLY_LINE)
+    if status == "failed":
+        notice.append(FAILED_LINE)
     return GalleryListing(registry, pivot, notice)
 
 
