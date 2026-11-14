@@ -13,6 +13,7 @@ info:
 
 data_schemas:
   Samples:
+    label: "Samples"
     source:
       type: local_tsv
       path: ./assets/test_data/retest/samples.tsv
@@ -29,6 +30,7 @@ data_schemas:
 
 joins:
   Result:
+    label: "Result"
     ingredients:
       - dataset_id: Samples
     steps:
@@ -40,6 +42,7 @@ joins:
           value: 10
           na: remove
   All_samples:
+    label: "All samples"
     ingredients:
       - dataset_id: Samples
     steps:

@@ -13,6 +13,7 @@ info:
 
 data_schemas:
   Variants:
+    label: "Variants"
     source:
       type: local_tsv
       path: ./assets/test_data/retest/variants.tsv
@@ -33,6 +34,7 @@ data_schemas:
 
 joins:
   Variants_joined:
+    label: "Variants joined"
     ingredients:
       - dataset_id: Variants
     steps:

@@ -1,11 +1,5 @@
 target_dataset: Quast_with_metadata
 title: 🐱 Miaou — Assembly Metric Distributions by Source
-family: Distribution
-pattern: 1 Numeric, 1 Categorical
-description: Violin plot showing the distribution of n50, total_length, and largest_contig
-  per source, facetted by metric. Wide bellies = wide spread, narrow tails = consistent
-  values.
-difficulty: Intermediate
 mapping:
   x: source
   y: value

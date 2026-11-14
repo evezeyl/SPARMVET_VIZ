@@ -1,19 +1,18 @@
-spec:
-  target_dataset: Plasmid_Profile_Joint
-  theme: theme_light
-  layers:
-  - name: geom_bar
-    params: {}
-  - name: position_dodge
-    params: {}
-  - name: scale_x_discrete
-    params: {}
-  - name: labs
-    params:
-      title: Plasmid Prevalence by Country
-      fill: Plasmid Type
-      x: Year
-  mapping:
+target_dataset: Plasmid_Profile_Joint
+theme: theme_light
+layers:
+- name: geom_bar
+  params: {}
+- name: position_dodge
+  params: {}
+- name: scale_x_discrete
+  params: {}
+- name: labs
+  params:
+    title: Plasmid Prevalence by Country
+    fill: Plasmid Type
     x: Year
-    fill: plasmid_name
-    facet_by: Country
+mapping:
+  x: Year
+  fill: plasmid_name
+  facet_by: Country

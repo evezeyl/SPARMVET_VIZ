@@ -17,6 +17,7 @@ info:
   version: '1.0'
 data_schemas:
   MLST:
+    label: "MLST"
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_MLST_results_20260307_105756.tsv
@@ -25,6 +26,7 @@ data_schemas:
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
 metadata_schema:
+  label: "metadata"
   source:
     type: local_tsv
     path: ./assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv
@@ -36,6 +38,7 @@ metadata_schema:
     tier2: []
 additional_datasets_schemas:
   VirulenceFinder:
+    label: "VirulenceFinder"
     source:
       type: local_tsv
       path: ./assets/test_data/2_VIGAS-P_ST22_dummy/test_data_VIGAS_VirulenceFinder_20260307_105756.tsv
@@ -44,6 +47,7 @@ additional_datasets_schemas:
     input_fields: !include '1_test_data_ST22_dummy/input_fields/VirulenceFinder_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
   APEC_STEC_virulence_genes:
+    label: "APEC STEC virulence genes"
     source:
       type: local_tsv
       path: ./assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC.tsv
@@ -55,6 +59,7 @@ additional_datasets_schemas:
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
 joins:
   AR1_MLST_Serotype_Virulence:
+    label: "AR1 MLST Serotype Virulence"
     description: Joins MLST results with metadata for the main distribution plot.
     ingredients:
     - dataset_id: MLST

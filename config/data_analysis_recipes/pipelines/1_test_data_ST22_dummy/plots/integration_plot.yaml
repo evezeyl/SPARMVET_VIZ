@@ -1,10 +1,5 @@
 target_dataset: ST22_Anchor
 title: Integrated Virulence & MLST Typing
-family: Correlation
-pattern: 2 Categorical
-description: Heatmap showing the distribution of whitelisted virulence genes, facetted
-  by the MLST sequence type.
-difficulty: Advanced
 mapping:
   x: Selected_Virulence_Genes
   y: sample_id

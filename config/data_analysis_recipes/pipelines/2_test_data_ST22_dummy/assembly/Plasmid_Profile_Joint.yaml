@@ -5,27 +5,26 @@
 # consumed_by: config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml, libs/transformer/tests/debug_assembler.py
 # doc: .claude/rules/rules_data_analysis_recipe_structure.md#7
 # @end_deps
-steps:
-  tier1:
-    # Step 1: Join metadata (Source, Year, Country) on sample_id
-    - action: polars_join
-      right_ingredient: metadata_schema
-      'on': [sample_id]
-      how: inner
-      maintain_order: left_right
+tier1:
+  # Step 1: Join metadata (Source, Year, Country) on sample_id
+  - action: polars_join
+    right_ingredient: metadata_schema
+    'on': [sample_id]
+    how: inner
+    maintain_order: left_right
 
-    # Step 2: Cast Year: float → Int64 → String for clean discrete axis
-    - action: polars_cast
-      columns: [Year]
-      dtype: Int64
+  # Step 2: Cast Year: float → Int64 → String for clean discrete axis
+  - action: polars_cast
+    columns: [Year]
+    dtype: Int64
 
-    - action: polars_cast
-      columns: [Year]
-      dtype: String
+  - action: polars_cast
+    columns: [Year]
+    dtype: String
 
-    # Step 3: Sort for reproducible output ordering
-    - action: polars_sort
-      by: [Year, Source, Country]
-      maintain_order: true
-    - action: polars_select
-      exprs: ["Year", "Source", "Country", "plasmid_name", "sample_id", "accession"]
+  # Step 3: Sort for reproducible output ordering
+  - action: polars_sort
+    by: [Year, Source, Country]
+    maintain_order: true
+  - action: polars_select
+    exprs: ["Year", "Source", "Country", "plasmid_name", "sample_id", "accession"]
