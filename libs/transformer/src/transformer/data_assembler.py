@@ -9,7 +9,7 @@ import os
 from typing import Dict, List, Any
 import polars as pl
 from transformer.registry import get_action_function
-from utils.action_names import CAST, JOIN
+from utils.action_names import CAST, JOIN, JOIN_ASOF
 from utils.errors import TransformationError
 from utils.pipeline_error import PipelineError
 
@@ -49,58 +49,70 @@ class DataAssembler:
         print(pe.format())
         raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
+    def _key_groups(self, step: Dict[str, Any]) -> List[tuple]:
+        """The key columns of a join step as (left keys, right keys, left parameter, right parameter, shared parameter).
+
+        A join has one group (`on`, or `left_on` with `right_on`); an as-of join has a second one, the groups of `by`.
+        """
+        groups = [(self._key_columns(step.get("on") or step.get("left_on")), self._key_columns(step.get("on") or step.get("right_on")),
+                   "left_on", "right_on", "on")]
+        if step["action"] == JOIN_ASOF:
+            by = step.get("by")
+            groups.append((self._key_columns(by or step.get("by_left")), self._key_columns(by or step.get("by_right")),
+                           "by_left", "by_right", "by"))
+        return groups
+
     def _check_join_key_types(self, step: Dict[str, Any], index: int, left: pl.LazyFrame, right: pl.LazyFrame) -> None:
         """Fail when the keys of a join cannot be joined: unequal key lists, a missing key column, or different types.
 
         Eve 2026-11-14: a join keeps the types the tables have; a change of type is a decision written in the
         recipe (input_fields or a polars_cast step), never done here. The same holds for the other two problems:
         they fail here with a plain message that names the recipe, the join and the step, not later with a raw
-        Polars error.
+        Polars error. The keys of `by` of an as-of join are checked the same way.
         """
-        left_keys = self._key_columns(step.get("on") or step.get("left_on"))
-        right_keys = self._key_columns(step.get("on") or step.get("right_on"))
         left_schema, right_schema = left.collect_schema(), right.collect_schema()
         right_id = step["right_ingredient"]
         where = f"in data analysis recipe '{self.recipe_id}', join '{self.join_id}', step {index} ({step['action']} with '{right_id}')"
 
-        if len(left_keys) != len(right_keys):
-            self._fail_join(
-                step, index,
-                f"The key lists of the join differ in length {where}: left_on has {len(left_keys)} column(s) {left_keys} and right_on has {len(right_keys)} column(s) {right_keys}.",
-                "Write left_on and right_on with the same number of columns, paired by position (the first of left_on with the first of right_on), "
-                "or write 'on' when the columns have the same name in both tables.",
-                {"left_keys": str(left_keys), "right_keys": str(right_keys)},
-            )
+        for left_keys, right_keys, left_name, right_name, shared_name in self._key_groups(step):
+            if len(left_keys) != len(right_keys):
+                self._fail_join(
+                    step, index,
+                    f"The key lists of the join differ in length {where}: {left_name} has {len(left_keys)} column(s) {left_keys} and {right_name} has {len(right_keys)} column(s) {right_keys}.",
+                    f"Write {left_name} and {right_name} with the same number of columns, paired by position (the first of {left_name} with the first of {right_name}), "
+                    f"or write '{shared_name}' when the columns have the same name in both tables.",
+                    {"left_keys": str(left_keys), "right_keys": str(right_keys)},
+                )
 
-        missing_left = [c for c in left_keys if c not in left_schema]
-        missing_right = [c for c in right_keys if c not in right_schema]
-        if missing_left or missing_right:
-            lacks = []
-            if missing_left:
-                lacks.append(f"key column(s) {missing_left} missing in the left table (its columns: {list(left_schema)})")
-            if missing_right:
-                lacks.append(f"key column(s) {missing_right} missing in '{right_id}' (its columns: {list(right_schema)})")
-            self._fail_join(
-                step, index,
-                f"A join key column does not exist {where}: " + "; ".join(lacks) + ".",
-                "Write the key column names as they are in each table: 'on' for a name that is the same in both, left_on and right_on for names that differ. "
-                "The left table is the table at this step: a column of a table joined later is not in it yet, and a step before the join may have renamed or dropped the column.",
-                {"missing_in_left": str(missing_left), "missing_in_right": str(missing_right)},
-            )
+            missing_left = [c for c in left_keys if c not in left_schema]
+            missing_right = [c for c in right_keys if c not in right_schema]
+            if missing_left or missing_right:
+                lacks = []
+                if missing_left:
+                    lacks.append(f"key column(s) {missing_left} missing in the left table (its columns: {list(left_schema)})")
+                if missing_right:
+                    lacks.append(f"key column(s) {missing_right} missing in '{right_id}' (its columns: {list(right_schema)})")
+                self._fail_join(
+                    step, index,
+                    f"A join key column does not exist {where}: " + "; ".join(lacks) + ".",
+                    f"Write the key column names as they are in each table: '{shared_name}' for a name that is the same in both, {left_name} and {right_name} for names that differ. "
+                    "The left table is the table at this step: a column of a table joined later is not in it yet, and a step before the join may have renamed or dropped the column.",
+                    {"missing_in_left": str(missing_left), "missing_in_right": str(missing_right)},
+                )
 
-        for left_col, right_col in zip(left_keys, right_keys):
-            left_type, right_type = left_schema[left_col], right_schema[right_col]
-            if left_type == right_type:
-                continue
-            names = f"column '{left_col}'" if left_col == right_col else f"column '{left_col}' (left) and '{right_col}' (right)"
-            self._fail_join(
-                step, index,
-                f"The join key types differ {where}: {names} is {left_type} in the left table and {right_type} in '{right_id}'.",
-                f"Declare the same type for this field in input_fields of both tables. A {CAST} step before the join changes only the left table "
-                f"(the table at this step); the type of '{right_id}' is changed in its own input_fields or in its own wrangling. "
-                "The engine does not change the type of a join key for you.",
-                {"left_column": left_col, "right_column": right_col, "left_type": str(left_type), "right_type": str(right_type)},
-            )
+            for left_col, right_col in zip(left_keys, right_keys):
+                left_type, right_type = left_schema[left_col], right_schema[right_col]
+                if left_type == right_type:
+                    continue
+                names = f"column '{left_col}'" if left_col == right_col else f"column '{left_col}' (left) and '{right_col}' (right)"
+                self._fail_join(
+                    step, index,
+                    f"The join key types differ {where}: {names} is {left_type} in the left table and {right_type} in '{right_id}'.",
+                    f"Declare the same type for this field in input_fields of both tables. A {CAST} step before the join changes only the left table "
+                    f"(the table at this step); the type of '{right_id}' is changed in its own input_fields or in its own wrangling. "
+                    "The engine does not change the type of a join key for you.",
+                    {"left_column": left_col, "right_column": right_col, "left_type": str(left_type), "right_type": str(right_type)},
+                )
 
     @staticmethod
     def _canonical_steps(steps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -191,7 +203,7 @@ class DataAssembler:
                             step.get("on_column") or
                             step.get(True))  # Handle YAML boolean 'on'
 
-                if action_name == JOIN and not join_key:
+                if action_name in (JOIN, JOIN_ASOF) and not join_key:
                     actual_keys = list(step.keys())
                     pe = PipelineError(
                         component="DataAssembler",
@@ -219,7 +231,7 @@ class DataAssembler:
                 consolidated_lf = self.ingredients[first_key]
 
 
-            if action_name == JOIN and right_id:
+            if action_name in (JOIN, JOIN_ASOF) and right_id:
                 self._check_join_key_types(step, i, consolidated_lf, self.ingredients[right_id])
 
             # Execute the action via the shared registry (ADR-018).
@@ -280,6 +292,21 @@ class DataAssembler:
                     severity="error",
                     evidence={"polars_error": str(exc)},
                     reference="rules_agent_role_bioscientist.md §3-B",
+                )
+                print(pe.format())
+                raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
+            except TransformationError as exc:
+                # an action that refuses its step already says why in plain words (a missing parameter, a table that is not sorted):
+                # keep that message and add where it happened, never reduce it to the name of the exception
+                pe = PipelineError(
+                    component="DataAssembler",
+                    problem=str(exc),
+                    location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {i}: action='{action_name}'",
+                    fix=getattr(exc, "tip", None) or "Review the step parameters and the data state at this point in the step list.",
+                    who="data_analysis_recipe_author",
+                    category="assembly",
+                    surface="plot_overlay",
+                    severity="error",
                 )
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc

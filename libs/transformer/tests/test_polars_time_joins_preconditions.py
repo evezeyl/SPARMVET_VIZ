@@ -123,3 +123,191 @@ def test_rank_text_columns_rank_alphabetically_and_equal_polars():
     got = run("polars_rank", frame, {"columns": ["s"], "method": "dense"})
     assert_frame_equal(got, frame.select(pl.col("s").rank("dense")))
     assert got["s"].to_list() == [2, 1, 2, None]
+
+
+# =========================================================================================================
+# polars_join_asof
+# =========================================================================================================
+
+import datetime  # noqa: E402
+import warnings  # noqa: E402
+
+from polars.testing import assert_frame_equal  # noqa: E402,F811
+
+LEFT = pl.DataFrame({"t": [1, 2, 3, 5], "g": ["a", "b", "a", "b"], "x": [1, 2, 3, 4]})
+RIGHT = pl.DataFrame({"t": [0, 1, 2, 3], "g": ["b", "a", "a", "b"], "v": [1, 2, 3, 4]})
+SORT_FIX = "polars_sort"
+
+
+def asof(left=LEFT, right=RIGHT, **more):
+    spec = {"right_ingredient": "R", "on": "t", "strategy": "backward", "__right_df__": right.lazy(), **more}
+    return run("polars_join_asof", left, spec)
+
+
+def polars_asof(left=LEFT, right=RIGHT, **more):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return left.lazy().join_asof(right.lazy(), on="t", **more).collect()
+
+
+def test_asof_the_result_keeps_the_rows_and_the_order_of_the_first_table_even_with_interleaved_groups():
+    out = asof(by=["g"])
+    assert out["x"].to_list() == [1, 2, 3, 4] and out["t"].to_list() == [1, 2, 3, 5]
+    assert all(asof(by=["g"]).equals(out) for _ in range(5))
+    assert_frame_equal(out, polars_asof(strategy="backward", by=["g"]))
+
+
+def test_asof_the_first_table_unsorted_without_by_fails_with_a_plain_message_and_the_fix():
+    unsorted = pl.DataFrame({"t": [5, 1], "g": ["a", "a"], "x": [1, 2]})
+    with pytest.raises(TransformationError) as caught:
+        asof(unsorted)
+    assert "'t'" in str(caught.value) and "not sorted ascending" in str(caught.value) and "table at this step" in str(caught.value)
+    assert SORT_FIX in caught.value.tip and "maintain_order" in caught.value.tip
+
+
+def test_asof_the_second_table_unsorted_without_by_fails_and_names_the_ingredient():
+    with pytest.raises(TransformationError, match="'R' is not sorted ascending"):
+        asof(right=RIGHT.sort("t", descending=True))
+
+
+def test_asof_unsorted_within_a_group_is_refused_because_polars_returns_a_wrong_result_without_a_word():
+    """The reason for the own check: Polars cannot check within groups and gives a wrong match for the row t=1."""
+    unsorted = pl.DataFrame({"t": [5, 1], "g": ["a", "a"], "x": [1, 2]})
+    right = pl.DataFrame({"t": [2, 6], "g": ["a", "a"], "v": [20, 60]})
+    wrong = polars_asof(unsorted, right, strategy="backward", by=["g"])
+    assert wrong["v"].to_list() == [20, 20], "Polars matched t=1 with the row at t=2, which lies after it: a wrong result"
+    with pytest.raises(TransformationError, match=r"not sorted ascending within each group of \['g'\]"):
+        asof(unsorted, right, by=["g"])
+
+
+def test_asof_unsorted_in_the_second_table_within_one_group_only_is_refused():
+    right = pl.DataFrame({"t": [0, 1, 4, 3], "g": ["a", "a", "b", "b"], "v": [1, 2, 3, 4]})
+    with pytest.raises(TransformationError, match="'R'"):
+        asof(LEFT, right, by=["g"])
+
+
+def test_asof_sorted_within_each_group_but_not_over_the_whole_table_works_with_by_and_fails_without():
+    left = pl.DataFrame({"t": [9, 1, 10, 2], "g": ["z", "a", "z", "a"], "x": [1, 2, 3, 4]})
+    right = pl.DataFrame({"t": [0, 8, 1, 9], "g": ["a", "z", "a", "z"], "v": [1, 2, 3, 4]})
+    out = asof(left, right, by=["g"])
+    assert out["v"].to_list() == [4, 3, 4, 3]
+    assert_frame_equal(out, polars_asof(left, right, strategy="backward", by=["g"]))
+    with pytest.raises(TransformationError, match="not sorted ascending"):
+        asof(left, right)
+
+
+def test_asof_a_step_cannot_switch_the_sortedness_check_off():
+    with pytest.raises(TransformationError, match="check_sortedness"):
+        asof(check_sortedness=False)
+
+
+def test_asof_a_null_key_before_the_values_never_matches_and_a_null_elsewhere_is_refused():
+    left = pl.DataFrame({"t": [None, 1, 5], "x": [1, 2, 3]})
+    right = pl.DataFrame({"t": [None, 0, 2], "v": [1, 2, 3]})
+    out = asof(left, right)
+    assert out["v"].to_list() == [None, 2, 3]  # the null row has no match; the null of the second table is not a match for any row
+    assert_frame_equal(out, polars_asof(left, right, strategy="backward"))
+    for bad in (pl.DataFrame({"t": [1, None, 5], "x": [1, 2, 3]}), pl.DataFrame({"t": [1, 5, None], "x": [1, 2, 3]})):
+        with pytest.raises(TransformationError, match="not sorted ascending"):
+            asof(bad, right)
+
+
+def test_asof_a_null_in_by_never_matches():
+    left = pl.DataFrame({"t": [1, 2], "g": ["a", None], "x": [1, 2]})
+    right = pl.DataFrame({"t": [0, 1], "g": ["a", None], "v": [10, 20]})
+    assert asof(left, right, by=["g"])["v"].to_list() == [10, None]
+
+
+def test_asof_a_nan_key_sorts_last_and_matches_a_nan():
+    left = pl.DataFrame({"t": [1.0, 2.0, NAN], "x": [1, 2, 3]})
+    right = pl.DataFrame({"t": [0.5, 1.5, NAN], "v": [1, 2, 3]})
+    out = asof(left, right)
+    assert out["v"].to_list() == [1, 2, 3]
+    assert_frame_equal(out, polars_asof(left, right, strategy="backward"))
+    with pytest.raises(TransformationError, match="not sorted ascending"):
+        asof(pl.DataFrame({"t": [NAN, 1.0], "x": [1, 2]}), right)
+
+
+def test_asof_a_second_table_with_no_rows_gives_nulls():
+    out = asof(right=RIGHT.head(0))
+    assert out["v"].to_list() == [None] * 4 and out.height == 4
+
+
+def test_asof_strategy_is_required_and_must_be_one_of_the_three():
+    with pytest.raises(TransformationError, match="strategy is required"):
+        run("polars_join_asof", LEFT, {"right_ingredient": "R", "on": "t", "__right_df__": RIGHT.lazy()})
+    with pytest.raises(TransformationError, match="backward, forward, nearest"):
+        asof(strategy="closest")
+
+
+def test_asof_a_half_pair_of_keys_is_refused():
+    with pytest.raises(TransformationError, match="left_on and right_on go together"):
+        asof(on=None, left_on="t")
+    with pytest.raises(TransformationError, match="by_left and by_right go together"):
+        asof(by_left=["g"])
+    with pytest.raises(TransformationError, match="exactly one of on, left_on"):
+        run("polars_join_asof", LEFT, {"right_ingredient": "R", "strategy": "backward", "__right_df__": RIGHT.lazy()})
+    with pytest.raises(TransformationError, match="cannot be given together"):
+        asof(left_on="t", right_on="t")
+
+
+def test_asof_a_missing_key_column_is_a_plain_message_naming_the_columns():
+    with pytest.raises(TransformationError, match="'nope' is not in the table at this step"):
+        asof(on="nope")
+    with pytest.raises(TransformationError, match="'g' is not in 'R'") as caught:
+        asof(right=RIGHT.drop("g"), by=["g"])
+    assert "columns" in str(caught.value)
+
+
+def test_asof_the_second_table_is_required():
+    with pytest.raises(TransformationError, match="__right_df__"):
+        run("polars_join_asof", LEFT, {"right_ingredient": "R", "on": "t", "strategy": "backward"})
+
+
+# -- the tolerance: Polars panics or reads it in units nobody wrote -------------------------------------------
+
+DAYS = pl.DataFrame({"d": [datetime.date(2022, 1, 1), datetime.date(2022, 1, 5)], "x": [1, 2]})
+DAYS_RIGHT = pl.DataFrame({"d": [datetime.date(2022, 1, 2), datetime.date(2022, 1, 4)], "v": [1, 2]})
+MOMENTS = pl.DataFrame({"d": [datetime.datetime(2022, 1, 1), datetime.datetime(2022, 1, 2)], "x": [1, 2]})
+MOMENTS_RIGHT = pl.DataFrame({"d": [datetime.datetime(2022, 1, 1, 12), datetime.datetime(2022, 1, 2, 1)], "v": [1, 2]})
+
+
+def asof_d(left, right, **more):
+    return run("polars_join_asof", left, {"right_ingredient": "R", "on": "d", "strategy": "forward", "__right_df__": right.lazy(), **more})
+
+
+def test_asof_a_duration_text_for_a_number_key_is_refused_because_polars_panics():
+    with pytest.raises(pl.exceptions.PanicException, match="timedelta string"):
+        LEFT.lazy().join_asof(RIGHT.lazy(), on="t", tolerance="1d").collect()
+    with pytest.raises(TransformationError, match="is a duration but the key 't' is Int64"):
+        asof(tolerance="1d")
+
+
+def test_asof_a_number_for_a_datetime_key_is_refused_because_polars_reads_microseconds():
+    seconds = MOMENTS.lazy().join_asof(MOMENTS_RIGHT.lazy(), on="d", strategy="forward", tolerance=7200).collect()
+    assert seconds["v"].to_list() == [None, None], "two hours written as 7200 are 7200 microseconds in Polars: nothing matches, silently"
+    with pytest.raises(TransformationError, match="microseconds"):
+        asof_d(MOMENTS, MOMENTS_RIGHT, tolerance=7200)
+    assert asof_d(MOMENTS, MOMENTS_RIGHT, tolerance="2h")["v"].to_list() == [None, 2]
+
+
+def test_asof_a_tolerance_finer_than_a_day_for_a_date_key_is_refused_and_days_and_weeks_work():
+    with pytest.raises(TransformationError, match="cannot be finer than a day"):
+        asof_d(DAYS, DAYS_RIGHT, tolerance="1h")
+    out = asof_d(DAYS, DAYS_RIGHT, tolerance="2d")
+    assert out["v"].to_list() == [1, None]
+    assert_frame_equal(out, DAYS.lazy().join_asof(DAYS_RIGHT.lazy(), on="d", strategy="forward", tolerance="2d").collect())
+    wide = pl.DataFrame({"d": [datetime.date(2022, 1, 1), datetime.date(2022, 1, 20)], "x": [1, 2]})
+    far = pl.DataFrame({"d": [datetime.date(2022, 1, 2), datetime.date(2022, 1, 25)], "v": [1, 2]})
+    assert asof_d(wide, far, tolerance="1w")["v"].to_list() == [1, 2]
+    assert asof_d(wide, far, tolerance="2d")["v"].to_list() == [1, None]
+
+
+@pytest.mark.parametrize("bad", [True, [1], -2])
+def test_asof_a_tolerance_that_is_not_a_duration_text_or_a_positive_number_is_refused(bad):
+    with pytest.raises(TransformationError):
+        asof(tolerance=bad)
+
+
+def test_asof_a_number_tolerance_for_a_number_key_equals_polars():
+    assert_frame_equal(asof(tolerance=1), polars_asof(strategy="backward", tolerance=1))

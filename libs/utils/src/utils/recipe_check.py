@@ -669,6 +669,7 @@ class _Check:
             if base_columns is None or right is None:
                 continue
             keys = set(_as_list(step.get("on", step.get(True)))) | set(_as_list(step.get("left_on"))) | set(_as_list(step.get("right_on")))
+            keys |= set(_as_list(step.get("by"))) | set(_as_list(step.get("by_left"))) | set(_as_list(step.get("by_right")))  # the `by` columns of an as-of join are merged, not renamed
             clash = sorted((set(base_columns) & set(right)) - keys)
             if clash:
                 self.add("J08", f"{path}.steps.tier1[{index}]",

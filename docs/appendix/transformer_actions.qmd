@@ -657,3 +657,18 @@ Kind: wrapper. Context: t1, t2.
   target_column: identity_rank
 ```
 
+#### `polars_join_asof`
+
+Join each row of the table of the step with one row of the second table `right_ingredient`: the nearest one before it (backward), after it (forward) or closest (nearest) on a sorted key (Polars LazyFrame.join_asof); `strategy` is written in the step. Both tables must be sorted ascending on the key, within each `by` group too, or the step fails (Polars checks only without `by`, and with `by` it returns a wrong result without a word). The result keeps the rows and the order of the first table; a row without a match gets nulls. A null key never matches and a null in `by` never matches; a NaN key sorts last and matches a NaN. Without `tolerance` a match can be as far away as the data goes.
+
+Kind: wrapper. Context: assembly.
+
+```yaml
+- action: polars_join_asof
+  right_ingredient: weather
+  'on': sample_date
+  by: [site]
+  strategy: backward
+  tolerance: 2d
+```
+

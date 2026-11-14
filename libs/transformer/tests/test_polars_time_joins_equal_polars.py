@@ -14,6 +14,7 @@ What each test proves:
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/test_polars_time_joins_equal_polars.py -q
 """
+import datetime
 import warnings
 
 import polars as pl
@@ -27,7 +28,7 @@ from test_action_recipe_pairs import ROOT, _run
 from test_polars_actions_equal_polars import Case, eager
 
 NAN = float("nan")
-GROUP = {"polars_rank"}
+GROUP = {"polars_rank", "polars_join_asof"}
 
 # one column with ties, a null and two NaN; a second one with ties and a null
 RANKED = pl.DataFrame({
@@ -35,6 +36,20 @@ RANKED = pl.DataFrame({
     "x": [3.0, 1.0, 3.0, None, NAN, 2.0, NAN],
     "n": [5, 5, 7, None, 1, 7, 5],
 })
+
+# as-of join: both tables sorted ascending on t (within each site too)
+ASOF_LEFT = pl.DataFrame({
+    "id": ["a", "b", "c", "d", "e", "f"], "site": ["s1", "s2", "s1", "s2", "s1", "s3"],
+    "t": [1, 2, 4, 6, 9, 10], "x": [10, 20, 30, 40, 50, 60],
+})
+ASOF_RIGHT = pl.DataFrame({
+    "site": ["s1", "s2", "s1", "s2", "s1"], "t": [0, 3, 5, 5, 8], "v": [100, 200, 300, 400, 500],
+})
+# the same idea with other names for the key and the group column, and a Date key
+ASOF_LEFT_RENAMED = ASOF_LEFT.rename({"t": "t_l", "site": "site_l", "x": "v_l"})
+ASOF_RIGHT_RENAMED = ASOF_RIGHT.rename({"t": "t_r", "site": "site_r", "v": "v_l"})
+DATE_LEFT = pl.DataFrame({"d": [datetime.date(2022, 1, 1), datetime.date(2022, 1, 5), datetime.date(2022, 1, 20)], "x": [1, 2, 3]})
+DATE_RIGHT = pl.DataFrame({"d": [datetime.date(2022, 1, 2), datetime.date(2022, 1, 4)], "v": [10, 20]})
 
 CASES = [
     # -- polars_rank: every method; the first case is the one the pair holds -------------------------
@@ -50,6 +65,20 @@ CASES = [
          lambda lf: lf.with_columns(pl.col("x").rank("min", descending=True))),
     Case("polars_rank", RANKED, {"columns": ["x", "n"], "method": "dense"},
          lambda lf: lf.with_columns(pl.col(["x", "n"]).rank("dense"))),
+    # -- polars_join_asof: the three strategies, with and without `by`, other key names, a Date key -----
+    Case("polars_join_asof", ASOF_LEFT, {"right_ingredient": "R", "on": "t", "by": ["site"], "strategy": "backward", "tolerance": 5, "__right_df__": ASOF_RIGHT.lazy()},
+         lambda lf: lf.join_asof(ASOF_RIGHT.lazy(), on="t", by=["site"], strategy="backward", tolerance=5)),
+    Case("polars_join_asof", ASOF_LEFT, {"right_ingredient": "R", "on": "t", "strategy": "forward", "__right_df__": ASOF_RIGHT.lazy()},
+         lambda lf: lf.join_asof(ASOF_RIGHT.lazy(), on="t", strategy="forward")),
+    Case("polars_join_asof", ASOF_LEFT, {"right_ingredient": "R", "on": "t", "by": ["site"], "strategy": "nearest", "__right_df__": ASOF_RIGHT.lazy()},
+         lambda lf: lf.join_asof(ASOF_RIGHT.lazy(), on="t", by=["site"], strategy="nearest")),
+    Case("polars_join_asof", ASOF_LEFT_RENAMED,
+         {"right_ingredient": "R", "left_on": "t_l", "right_on": "t_r", "by_left": ["site_l"], "by_right": ["site_r"], "strategy": "backward",
+          "suffix": "_other", "coalesce": False, "allow_exact_matches": False, "__right_df__": ASOF_RIGHT_RENAMED.lazy()},
+         lambda lf: lf.join_asof(ASOF_RIGHT_RENAMED.lazy(), left_on="t_l", right_on="t_r", by_left=["site_l"], by_right=["site_r"],
+                                 strategy="backward", suffix="_other", coalesce=False, allow_exact_matches=False)),
+    Case("polars_join_asof", DATE_LEFT, {"right_ingredient": "R", "on": "d", "strategy": "forward", "tolerance": "2d", "__right_df__": DATE_RIGHT.lazy()},
+         lambda lf: lf.join_asof(DATE_RIGHT.lazy(), on="d", strategy="forward", tolerance="2d")),
 ]
 
 
