@@ -45,6 +45,7 @@ import asyncio
 import hashlib
 import io
 import json
+import logging
 import re
 import subprocess
 import uuid
@@ -146,13 +147,25 @@ def _read_bp_draft(draft_dir: Path, data_analysis_recipe_path: str) -> dict | No
         return None
 
 
+_LOG = logging.getLogger(__name__)
+
+
 def _warn_on_upload(raw, name):
-    """Report the checker's errors for an uploaded recipe; the nodes are still added (ADR-094 11a)."""
-    lines = uploaded_recipe_report(raw)
-    if lines:
-        shown = "; ".join(lines[:3]) + (f"; and {len(lines) - 3} more" if len(lines) > 3 else "")
-        ui.notification_show(f"Uploaded {name} has {len(lines)} problem(s): {shown}",
-                             type="warning", duration=15)
+    """Report the problems of an uploaded file; the nodes are still added (rules_data_analysis_recipe_structure.md 11a).
+
+    Reporting never blocks: a failure of the check or of the notification is logged and the caller goes on."""
+    try:
+        lines = uploaded_recipe_report(raw)
+    except Exception:
+        _LOG.exception("upload check failed for %s", name)
+        return
+    if not lines:
+        return
+    shown = "; ".join(lines[:3]) + (f"; and {len(lines) - 3} more" if len(lines) > 3 else "")
+    try:
+        ui.notification_show(f"Uploaded {name} has {len(lines)} problem(s): {shown}", type="warning", duration=15)
+    except Exception:
+        _LOG.exception("upload warning could not be shown for %s", name)
 
 
 def define_server(input, output, session, *,

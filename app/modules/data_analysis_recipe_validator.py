@@ -112,12 +112,47 @@ def checker_catalogs() -> dict:
     return {"actions": dict(ACTION_SCHEMAS), "components": argument_catalog()}
 
 
-def uploaded_recipe_report(raw, profile: str = "build") -> list[str]:
-    """One line per error of the strict checker for an uploaded recipe (a dictionary), empty when it passes.
+def _fragment_report(raw) -> list[str]:
+    """One line per problem of the steps of a wrangling-only upload, each step against its action schema."""
+    from utils.ui_schema import step_problems
+    wrangling = raw.get("wrangling") if isinstance(raw, dict) else None
+    if isinstance(wrangling, list):
+        located = [("steps", i, s) for i, s in enumerate(wrangling)]
+    elif isinstance(wrangling, dict):
+        located = [(t, i, s) for t in ("tier1", "tier2", "tier3") for i, s in enumerate(wrangling.get(t) or [])]
+    else:
+        located = []
+    if not located:
+        return ["[UP01] the file has no wrangling steps and no data_schemas: nothing to import"]
+    actions = checker_catalogs()["actions"]
+    lines = []
+    for tier, i, step in located:
+        where = f"{tier}[{i}]"
+        if not isinstance(step, dict) or not isinstance(step.get("action"), str):
+            lines.append(f"[ST01] {where}: a step is a mapping with an action")
+            continue
+        name = step["action"]
+        if name not in actions or not isinstance(actions[name], dict):
+            lines.append(f"[ST02] {where} ({name}): {name!r} is not a registered action")
+            continue
+        flat = {**{k: v for k, v in step.items() if k != "params"}, **(step.get("params") or {})}
+        for p in step_problems(name, flat, actions[name]):
+            lines.append(f"[{p.code}] {where} ({name}): {p.message}" + (f" Fix: {p.fix}" if p.fix else ""))
+    return lines
 
-    Blueprint reports and never blocks (ADR-094 11a), so this only returns text; the caller decides what to show."""
+
+def uploaded_recipe_report(raw, profile: str = "build") -> list[str]:
+    """One line per problem of an uploaded file (a dictionary), empty when it passes.
+
+    A whole recipe (it has `data_schemas`) goes through the strict checker in the given profile; anything else is a
+    wrangling fragment, whose steps are checked one by one with the same step check the checker uses (`step_problems`).
+    Blueprint reports and never blocks (rules_data_analysis_recipe_structure.md 11a; profiles: recipe_format_spec.md
+    DEC18, line 110), so this only returns text; the caller decides what to show."""
     from utils.recipe_check import check_recipe
     try:
+        if not (isinstance(raw, dict) and "data_schemas" in raw):
+            if isinstance(raw, dict) or raw is None:
+                return _fragment_report(raw)
         result = check_recipe(raw, profile, catalogs=checker_catalogs())
     except Exception as exc:
         return [f"[CHECK] the recipe could not be checked: {exc}"]
