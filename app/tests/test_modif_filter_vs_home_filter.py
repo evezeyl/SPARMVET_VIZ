@@ -70,8 +70,20 @@ def test_home_coerces_a_text_value_to_the_number_of_the_column_but_modif_filter_
         run({**row, "na": "remove"})
 
 
-def test_home_has_no_way_to_keep_the_missing_rows_of_a_filter():
-    """HOME always drops them (what Polars does); modif_filter makes it a written choice."""
+def test_home_keeps_the_missing_rows_of_a_filter_when_na_is_keep_like_modif_filter():
+    """NA-RULE-63 part 2: HOME reads the same choice as modif_filter; without it the rows are removed."""
     row = {"column": "n", "op": "gt", "value": 1}
     assert "d" not in home([row])["id"].to_list()
-    assert "d" in run({**row, "na": "keep"})["id"].to_list()
+    assert "d" not in home([{**row, "na": "remove"}])["id"].to_list()
+    assert_frame_equal(home([{**row, "na": "keep"}]), run({**row, "na": "keep"}))
+    assert "d" in home([{**row, "na": "keep"}])["id"].to_list()
+
+
+@pytest.mark.parametrize("row", [
+    {"column": "n", "op": "ne", "value": 2},
+    {"column": "n", "op": "between", "value": [2, 3]},
+    {"column": "s", "op": "not_in", "value": ["x"]},
+    {"column": "s", "op": "in", "value": ["x", "z"]},
+])
+def test_the_home_filter_gives_the_same_rows_as_modif_filter_with_na_keep(row):
+    assert_frame_equal(home([{**row, "na": "keep"}]), run({**row, "na": "keep"}))
