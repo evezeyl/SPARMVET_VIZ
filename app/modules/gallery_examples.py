@@ -13,9 +13,9 @@ No Shiny import. App features gate: none here; the Gallery panel itself is gated
 If deleted: the examples are checked for structure only and the previews cannot be regenerated.
 
 # @deps
-# provides: function:recipe_catalogs, function:check_gallery, function:rebuild_gallery_index, function:render_example, function:example_table, constant:PREVIEW_SIZE
+# provides: function:recipe_catalogs, function:check_gallery, function:check_gallery_at_start, function:rebuild_gallery_index, function:render_example, function:example_table, constant:PREVIEW_SIZE
 # consumes: libs/viz_gallery/src/viz_gallery/gallery_manager.py, app/modules/orchestrator.py, app/modules/cache_keys.py, libs/utils/src/utils/config_loader.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/arguments.py, libs/transformer/src/transformer/actions/base.py
-# consumed_by: assets/scripts/refresh_gallery.py, assets/scripts/gallery_previews.py, app/tests/test_gallery_app_path.py
+# consumed_by: app/src/bootloader.py, assets/scripts/refresh_gallery.py, assets/scripts/gallery_previews.py, app/tests/test_gallery_app_path.py
 # doc: .claude/design/recipe_format_spec.md (section 9: G2, G3, D4, D5; section 14)
 # @end_deps
 """
@@ -55,6 +55,15 @@ def recipe_catalogs() -> dict:
 def check_gallery(gallery_dir: Union[str, Path]) -> Examples:
     """Check every example of a gallery folder with the registries; returns the accepted and the rejected with reasons."""
     return GalleryManager(str(gallery_dir)).check_examples(recipe_catalogs())
+
+
+def check_gallery_at_start(gallery_dir: Union[str, Path]) -> Tuple[Examples, str]:
+    """The check at app start (DEC48): the full check of every example, the index fixed if it disagrees with it.
+
+    The same function as the rebuild (`GalleryManager.sync_index` calls `rebuild_index`). It never raises for an
+    example: one that fails is left out of the index and its reasons are in `metadata.rejected`.
+    """
+    return GalleryManager(str(gallery_dir)).sync_index(recipe_catalogs())
 
 
 def rebuild_gallery_index(gallery_dir: Union[str, Path]) -> dict:

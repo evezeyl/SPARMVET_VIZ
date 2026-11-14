@@ -1,5 +1,5 @@
 # @deps
-# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_agent_adapter, method:get_palettes, method:get_contact, attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate)
+# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_agent_adapter, method:get_palettes, method:get_contact, attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate), attr:rejected_gallery_examples, attr:gallery_index_status (gallery check at start, DEC48)
 # consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import), app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe, validate_data_analysis_recipe_data, read_data_analysis_recipe_header, resolve_contact — ADR-094)
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
 # doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, ADR-087, ADR-094 (issue #38 closure note), project_conventions.md §"Deployment Resolution"
@@ -184,6 +184,30 @@ class Bootloader:
             self._validate_data_analysis_recipes(self._all_data_analysis_recipes)
         )
         self.default_data_analysis_recipe_name = self._resolve_default_data_analysis_recipe()
+
+        # 4. Gallery check at start (DEC48, ADR-071): only when the Gallery is mounted. An example that fails is
+        # left out of the index with its reason; the app never stops because of one.
+        self._check_gallery_if_enabled()
+
+    def _check_gallery_if_enabled(self) -> None:
+        """ADR-071: the gallery is touched only when `gallery_enabled` is on."""
+        self.rejected_gallery_examples: dict[str, list[str]] = {}
+        self.gallery_index_status = "not_run"
+        if self.is_enabled("gallery_enabled"):
+            self._check_gallery_examples()
+
+    def _check_gallery_examples(self) -> None:
+        """Run the full gallery check once at startup; record what was left out (same reasons as the index rebuild)."""
+        from app.modules.gallery_examples import check_gallery_at_start
+        try:
+            examples, self.gallery_index_status = check_gallery_at_start(self.get_location("gallery"))
+        except Exception as error:  # a broken gallery folder must not stop the app
+            self.gallery_index_status = "failed"
+            print(f"[Bootloader] WARNING: the gallery check could not run: {error}")
+            return
+        self.rejected_gallery_examples = examples.rejected
+        for name, reasons in examples.rejected.items():
+            print(f"[Bootloader] WARNING: gallery example '{name}' is left out: {'; '.join(reasons)}")
 
     def _resolve_deployment_path(self) -> tuple[Path, int]:
         """
