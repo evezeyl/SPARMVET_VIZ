@@ -146,7 +146,7 @@
     },
     "qa_facet_by_mapping": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "source:Categorical",
       "year:Float64",
       "country:Categorical",
@@ -165,7 +165,7 @@
     },
     "qa_l50_integer": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "L50:Int64"
      ],
      "rows": 42,
@@ -183,7 +183,7 @@
     },
     "qa_sequence_type_missing": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "ST:Categorical"
      ],
      "rows": 42,
@@ -191,7 +191,7 @@
     },
     "qa_year_label": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "source:Categorical",
       "year:Float64",
       "country:Categorical",
@@ -335,7 +335,7 @@
     },
     "QA_L50_integer": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "L50:Int64"
      ],
      "rows": 42,
@@ -343,7 +343,7 @@
     },
     "QA_ST_with_NA": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "ST:Categorical"
      ],
      "rows": 42,
@@ -351,7 +351,7 @@
     },
     "QA_aggregated_no_key": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "source:Categorical",
       "year:Float64",
       "country:Categorical",
@@ -381,7 +381,7 @@
     },
     "QA_year_types": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "source:Categorical",
       "year:Float64",
       "country:Categorical",
@@ -540,7 +540,7 @@
     },
     "QA_L50_integer": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "L50:Int64"
      ],
      "rows": 42,
@@ -548,7 +548,7 @@
     },
     "QA_ST_with_NA": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "ST:Categorical"
      ],
      "rows": 42,
@@ -583,7 +583,7 @@
     },
     "QA_year_types": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "source:Categorical",
       "year:Float64",
       "country:Categorical",
@@ -784,7 +784,7 @@
    "plots": {
     "sequence_type_counts": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "scheme:Categorical",
       "sequence_type:String"
      ],
@@ -795,7 +795,7 @@
    "t1": {
     "MLST": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "scheme:Categorical",
       "sequence_type:String"
      ],
@@ -806,7 +806,7 @@
    "t2": {
     "MLST": {
      "columns": [
-      "sample_id:Categorical",
+      "sample_id:String",
       "scheme:Categorical",
       "sequence_type:String"
      ],
