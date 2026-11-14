@@ -1,34 +1,41 @@
+id: area_simple
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Area Chart
+  label: Area Chart
+  description: >-
+    Emphasises the cumulative magnitude of a metric over time rather than just its direction. More visually impactful
+    than a line when the area under the curve carries meaning (e.g. total resistance burden, cumulative cases).
   submission_date: '2026-05-03'
-  family: Evolution
-  pattern: 1 Year, 1 Numeric
-  difficulty: Simple
-  geom: geom_area
-  show: trend
-  sample_size: medium+
-data_path: example_data.tsv
-plots:
-  area_simple:
-    layers:
-    - name: geom_area
-      params:
-        alpha: 0.6
-        fill: '#2196f3'
-    - name: geom_line
-      params:
-        color: '#1565c0'
-        size: 1.0
-    - name: labs
-      params:
-        x: Year
-        y: Resistance (%)
-        title: Resistance Burden Over Time
-    - name: theme_minimal
-      params: {}
-    mapping:
-      x: year
-      y: resistance_pct
-wrangling:
-  tier1: []
-  tier2: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 7 rows and 2 columns (year, resistance_pct).
+    source: {type: local_tsv, path: ./assets/gallery_data/area_simple/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      year: {type: Int64}
+      resistance_pct: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      area_simple:
+        label: Area Chart
+        description: >-
+          Drawn with geom_area; x is year, y is resistance_pct.
+        taxonomy: {family: Evolution, pattern: '1 Year, 1 Numeric', difficulty: Simple, show: trend, sample_size: medium+}
+        spec:
+          target_dataset: example
+          mapping: {x: year, y: resistance_pct}
+          layers:
+            - {name: geom_area, params: {alpha: 0.6, fill: '#2196f3'}}
+            - {name: geom_line, params: {color: '#1565c0', size: 1.0}}
+            - name: labs
+              params: {x: Year, y: Resistance (%), title: Resistance Burden Over Time}
+            - {name: theme_minimal, params: {}}

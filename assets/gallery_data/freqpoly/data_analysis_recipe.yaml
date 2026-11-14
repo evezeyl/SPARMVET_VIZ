@@ -1,29 +1,40 @@
+id: freqpoly
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Frequency Polygon
+  label: Frequency Polygon
+  description: >-
+    A line-based alternative to histogram. Connects bin midpoints with lines instead of bars — ideal for overlaying
+    multiple groups without the visual clutter of stacked/overlapping bars.
   submission_date: '2026-05-03'
-  family: Distribution
-  pattern: 1 Numeric, 1 Categorical
-  difficulty: Simple
-  geom: geom_freqpoly
-  show: frequency
-  sample_size: medium+
-data_path: example_data.tsv
-plots:
-  freqpoly:
-    layers:
-    - params:
-        binwidth: 0.5
-        size: 1.0
-      name: geom_freqpoly
-    - name: labs
-      params:
-        title: MIC Frequency Polygon by Species
-        x: MIC Value
-        y: Count
-    mapping:
-      x: mic_value
-      color: species
-wrangling:
-  tier1: []
-  tier2: []
-  tier3: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 45 rows and 2 columns (species, mic_value).
+    source: {type: local_tsv, path: ./assets/gallery_data/freqpoly/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      species: {type: String}
+      mic_value: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      freqpoly:
+        label: Frequency Polygon
+        description: >-
+          Drawn with geom_freqpoly; x is mic_value, color is species.
+        taxonomy: {family: Distribution, pattern: '1 Numeric, 1 Categorical', difficulty: Simple, show: frequency,
+          sample_size: medium+}
+        spec:
+          target_dataset: example
+          mapping: {x: mic_value, color: species}
+          layers:
+            - {name: geom_freqpoly, params: {binwidth: 0.5, size: 1.0}}
+            - name: labs
+              params: {title: MIC Frequency Polygon by Species, x: MIC Value, y: Count}

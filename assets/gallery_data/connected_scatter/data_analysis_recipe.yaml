@@ -1,34 +1,45 @@
+id: connected_scatter
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Connected Scatter Plot
+  label: Connected Scatter Plot
+  description: >-
+    Connects scatter points with lines ordered by a third implicit variable (usually time). Reveals how the relationship
+    between two variables evolves — ideal for showing consumption-resistance feedback loops.
   submission_date: '2026-05-03'
-  family: Correlation
-  pattern: 2 Numeric
-  difficulty: Intermediate
-  geom: geom_path
-  show: trend
-  sample_size: any
-data_path: example_data.tsv
-plots:
-  connected_scatter:
-    layers:
-    - params:
-        size: 0.8
-        arrow: null
-      name: geom_path
-    - params:
-        size: 3
-      name: geom_point
-    - name: labs
-      params:
-        title: Antibiotic Consumption vs Resistance (Connected by Year)
-        x: Resistance Rate (%)
-        y: Consumption (DDD/1000 inhabitants/day)
-    mapping:
-      x: resistance_rate
-      y: consumption_ddd
-      group: drug_class
-      color: drug_class
-wrangling:
-  tier1: []
-  tier2: []
-  tier3: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 16 rows and 4 columns (drug_class, year, resistance_rate, consumption_ddd).
+    source: {type: local_tsv, path: ./assets/gallery_data/connected_scatter/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      drug_class: {type: String}
+      year: {type: Int64}
+      resistance_rate: {type: Float64}
+      consumption_ddd: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      connected_scatter:
+        label: Connected Scatter Plot
+        description: >-
+          Drawn with geom_path; x is resistance_rate, y is consumption_ddd, group is drug_class, color is drug_class.
+        taxonomy: {family: Correlation, pattern: 2 Numeric, difficulty: Intermediate, show: trend, sample_size: any}
+        spec:
+          target_dataset: example
+          mapping: {x: resistance_rate, y: consumption_ddd, group: drug_class, color: drug_class}
+          layers:
+            - {name: geom_path, params: {size: 0.8, arrow: null}}
+            - {name: geom_point, params: {size: 3}}
+            - name: labs
+              params:
+                title: Antibiotic Consumption vs Resistance (Connected by Year)
+                x: Resistance Rate (%)
+                y: Consumption (DDD/1000 inhabitants/day)

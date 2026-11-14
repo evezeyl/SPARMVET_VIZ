@@ -1,22 +1,39 @@
+id: tile_simple
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Tile Simple
+  label: Tile Simple
+  description: >-
+    The 'Interaction Matrix'. Visualizes relationships between two categories using color intensity.
   submission_date: '2026-04-10'
-  family: Correlation
-  pattern: 1 Numeric, 2 Categorical
-  difficulty: Simple
-  geom: geom_tile
-  show: relationship
-  sample_size: any
-data_path: example_data.tsv
-plots:
-  tile_simple:
-    layers:
-    - name: geom_tile
-      params: {}
-    mapping:
-      fill: growth_index
-      x: species
-      y: amr_class
-wrangling:
-  tier1: []
-  tier2: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 100 rows and 4 columns (id, species, amr_class, growth_index).
+    source: {type: local_tsv, path: ./assets/gallery_data/tile_simple/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      id: {type: String}
+      species: {type: String}
+      amr_class: {type: String}
+      growth_index: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      tile_simple:
+        label: Tile Simple
+        description: >-
+          Drawn with geom_tile; fill is growth_index, x is species, y is amr_class.
+        taxonomy: {family: Correlation, pattern: '1 Numeric, 2 Categorical', difficulty: Simple, show: relationship,
+          sample_size: any}
+        spec:
+          target_dataset: example
+          mapping: {fill: growth_index, x: species, y: amr_class}
+          layers:
+            - {name: geom_tile, params: {}}

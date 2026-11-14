@@ -1,32 +1,42 @@
+id: jitter_strip
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Jitter Strip Plot
+  label: Jitter Strip Plot
+  description: >-
+    Show individual data points distributed across categories. Ideal for small to medium datasets (n < 500 per group)
+    where you want to reveal the raw distribution rather than summary statistics. Pairs well with a boxplot overlay
+    (see boxplot_simple).
   submission_date: '2026-05-03'
-  family: Comparison
-  pattern: 1 Numeric, 1 Categorical
-  difficulty: Simple
-  geom: geom_jitter
-  show: distribution
-  sample_size: individual points
-data_path: example_data.tsv
-plots:
-  jitter_strip:
-    layers:
-    - name: geom_jitter
-      params:
-        width: 0.2
-        alpha: 0.6
-        size: 2
-    - name: labs
-      params:
-        x: Species
-        y: Resistance (%)
-        color: Species
-    - name: theme_minimal
-      params: {}
-    mapping:
-      x: species
-      y: resistance_pct
-      color: species
-wrangling:
-  tier1: []
-  tier2: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 100 rows and 3 columns (id, species, resistance_pct).
+    source: {type: local_tsv, path: ./assets/gallery_data/jitter_strip/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      id: {type: String}
+      species: {type: String}
+      resistance_pct: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      jitter_strip:
+        label: Jitter Strip Plot
+        description: >-
+          Drawn with geom_jitter; x is species, y is resistance_pct, color is species.
+        taxonomy: {family: Comparison, pattern: '1 Numeric, 1 Categorical', difficulty: Simple, show: distribution,
+          sample_size: individual points}
+        spec:
+          target_dataset: example
+          mapping: {x: species, y: resistance_pct, color: species}
+          layers:
+            - {name: geom_jitter, params: {width: 0.2, alpha: 0.6, size: 2}}
+            - {name: labs, params: {x: Species, y: Resistance (%), color: Species}}
+            - {name: theme_minimal, params: {}}

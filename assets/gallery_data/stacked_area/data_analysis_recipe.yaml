@@ -1,30 +1,44 @@
+id: stacked_area
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Stacked Area Chart
+  label: Stacked Area Chart
+  description: >-
+    Shows how the total and composition of a numeric value evolves over time. Ideal for surveillance data where
+    both overall trends and species/group contributions matter simultaneously.
   submission_date: '2026-05-03'
-  family: Evolution
-  pattern: 1 Numeric, 2 Categorical
-  difficulty: Intermediate
-  geom: geom_area
-  show: proportion
-  sample_size: medium+
-data_path: example_data.tsv
-plots:
-  stacked_area:
-    layers:
-    - params:
-        position: stack
-        alpha: 0.85
-      name: geom_area
-    - name: labs
-      params:
-        title: AMR Isolate Counts Over Time by Species (Stacked)
-        x: Year
-        y: Total Isolate Count
-    mapping:
-      x: year
-      y: count
-      fill: species
-wrangling:
-  tier1: []
-  tier2: []
-  tier3: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 27 rows and 3 columns (species, year, count).
+    source: {type: local_tsv, path: ./assets/gallery_data/stacked_area/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      species: {type: String}
+      year: {type: Int64}
+      count: {type: Int64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      stacked_area:
+        label: Stacked Area Chart
+        description: >-
+          Drawn with geom_area; x is year, y is count, fill is species.
+        taxonomy: {family: Evolution, pattern: '1 Numeric, 2 Categorical', difficulty: Intermediate, show: proportion,
+          sample_size: medium+}
+        spec:
+          target_dataset: example
+          mapping: {x: year, y: count, fill: species}
+          layers:
+            - {name: geom_area, params: {position: stack, alpha: 0.85}}
+            - name: labs
+              params:
+                title: AMR Isolate Counts Over Time by Species (Stacked)
+                x: Year
+                y: Total Isolate Count

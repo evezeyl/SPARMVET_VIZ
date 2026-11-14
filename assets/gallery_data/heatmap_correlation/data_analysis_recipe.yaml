@@ -1,35 +1,42 @@
+id: heatmap_correlation
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Heatmap Correlation
+  label: Heatmap Correlation
+  description: >-
+    Displays correlation intensity between variables. Essential for multi-dimensional data exploration.
   submission_date: '2026-04-10'
-  family: Correlation
-  pattern: 3 Numeric (Matrix)
-  difficulty: Advanced
-  geom: geom_tile
-  show: relationship
-  sample_size: any
-data_path: example_data.tsv
-plots:
-  heatmap_correlation:
-    layers:
-    - name: geom_tile
-      params: {}
-    - name: geom_text
-      params:
-        color: white
-        size: 3
-    - name: scale_fill_gradient2
-      params:
-        high: red
-        low: blue
-        mid: white
-        midpoint: 0
-    - name: theme_minimal
-      params: {}
-    mapping:
-      fill: correlation
-      x: var1
-      y: var2
-      label: correlation
-wrangling:
-  tier1: []
-  tier2: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 16 rows and 4 columns (id, var1, var2, correlation).
+    source: {type: local_tsv, path: ./assets/gallery_data/heatmap_correlation/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      id: {type: String}
+      var1: {type: String}
+      var2: {type: String}
+      correlation: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      heatmap_correlation:
+        label: Heatmap Correlation
+        description: >-
+          Drawn with geom_tile; fill is correlation, x is var1, y is var2, label is correlation.
+        taxonomy: {family: Correlation, pattern: 3 Numeric (Matrix), difficulty: Advanced, show: relationship, sample_size: any}
+        spec:
+          target_dataset: example
+          mapping: {fill: correlation, x: var1, y: var2, label: correlation}
+          layers:
+            - {name: geom_tile, params: {}}
+            - {name: geom_text, params: {color: white, size: 3}}
+            - name: scale_fill_gradient2
+              params: {high: red, low: blue, mid: white, midpoint: 0}
+            - {name: theme_minimal, params: {}}

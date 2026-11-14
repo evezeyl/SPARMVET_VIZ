@@ -1,29 +1,44 @@
+id: bar_grouped
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Grouped Bar Chart
+  label: Grouped Bar Chart
+  description: >-
+    Compares a numeric value across combinations of two categorical variables. Best when you want to compare both
+    between categories on the x-axis AND between sub-groups (fill) within each category.
   submission_date: '2026-05-03'
-  family: Ranking
-  pattern: 1 Numeric, 2 Categorical
-  difficulty: Intermediate
-  geom: geom_col
-  show: ranking
-  sample_size: any
-data_path: example_data.tsv
-plots:
-  bar_grouped:
-    layers:
-    - params:
-        position: dodge
-      name: geom_col
-    - name: labs
-      params:
-        title: Resistance Rate by Species and Drug Class
-        x: Species
-        y: Resistance Rate (%)
-    mapping:
-      x: species
-      y: resistance_rate
-      fill: drug_class
-wrangling:
-  tier1: []
-  tier2: []
-  tier3: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 15 rows and 3 columns (species, drug_class, resistance_rate).
+    source: {type: local_tsv, path: ./assets/gallery_data/bar_grouped/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      species: {type: String}
+      drug_class: {type: String}
+      resistance_rate: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      bar_grouped:
+        label: Grouped Bar Chart
+        description: >-
+          Drawn with geom_col; x is species, y is resistance_rate, fill is drug_class.
+        taxonomy: {family: Ranking, pattern: '1 Numeric, 2 Categorical', difficulty: Intermediate, show: ranking,
+          sample_size: any}
+        spec:
+          target_dataset: example
+          mapping: {x: species, y: resistance_rate, fill: drug_class}
+          layers:
+            - {name: geom_col, params: {position: dodge}}
+            - name: labs
+              params:
+                title: Resistance Rate by Species and Drug Class
+                x: Species
+                y: Resistance Rate (%)

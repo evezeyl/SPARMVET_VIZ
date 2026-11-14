@@ -136,7 +136,9 @@ def test_dry_run_writes_nothing_and_apply_converts(tmp_path):
     assert json.loads(f.read_text())["data_analysis_recipe_sha256"] == "x" * 64
 
 
-def test_old_gallery_bundle_is_converted_and_then_indexed(tmp_path):
+def test_old_gallery_bundle_is_renamed_and_then_named_for_the_format_conversion(tmp_path):
+    """The file names of before ADR-091 are converted here; the result is still the old compact form of a gallery
+    example, which the index refuses and whose message names the next tool (spec section 9: an example is a recipe)."""
     from viz_gallery.gallery_manager import GalleryManager
     b = tmp_path / "gal" / "bar"
     b.mkdir(parents=True)
@@ -144,8 +146,9 @@ def test_old_gallery_bundle_is_converted_and_then_indexed(tmp_path):
     (b / "recipe_meta.md").write_text("## Bar\n")
     (b / "example_data.tsv").write_text("a\n1\n")
     before = GalleryManager(str(tmp_path / "gal")).rebuild_index()
-    assert before["registry"] == {} and before["metadata"]["legacy_bundles"] == ["bar"]
+    assert before["registry"] == {} and "migrate_config_vocabulary.py" in before["metadata"]["rejected"]["bar"][0]
     ns = type("A", (), dict(recipes=None, sessions=None, gallery=str(tmp_path / "gal"), apply=True))
     migrate.run(ns)
+    assert (b / "data_analysis_recipe.yaml").exists() and (b / "example_meta.md").exists()
     after = GalleryManager(str(tmp_path / "gal")).rebuild_index()
-    assert list(after["registry"]) == ["bar"]
+    assert after["registry"] == {} and "convert_gallery_examples.py" in after["metadata"]["rejected"]["bar"][0]

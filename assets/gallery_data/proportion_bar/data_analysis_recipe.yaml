@@ -1,31 +1,43 @@
+id: proportion_bar
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Proportion Bar Chart
+  label: Proportion Bar Chart
+  description: >-
+    Compare the proportional composition across groups when total counts vary and the relative share matters more
+    than absolute values. Ideal for showing AMR class distribution profiles across species regardless of collection
+    size.
   submission_date: '2026-05-03'
-  family: Part-to-Whole
-  pattern: 1 Numeric, 2 Categorical
-  difficulty: Intermediate
-  geom: geom_col
-  show: proportion
-  sample_size: any
-data_path: example_data.tsv
-plots:
-  proportion_bar:
-    layers:
-    - name: geom_col
-      params: {}
-    - name: position_fill
-      params: {}
-    - name: labs
-      params:
-        x: Species
-        y: Proportion
-        fill: AMR Class
-    - name: theme_minimal
-      params: {}
-    mapping:
-      x: species
-      y: count
-      fill: amr_class
-wrangling:
-  tier1: []
-  tier2: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 25 rows and 3 columns (species, amr_class, count).
+    source: {type: local_tsv, path: ./assets/gallery_data/proportion_bar/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      species: {type: String}
+      amr_class: {type: String}
+      count: {type: Int64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      proportion_bar:
+        label: Proportion Bar Chart
+        description: >-
+          Drawn with geom_col; x is species, y is count, fill is amr_class.
+        taxonomy: {family: Part-to-Whole, pattern: '1 Numeric, 2 Categorical', difficulty: Intermediate, show: proportion,
+          sample_size: any}
+        spec:
+          target_dataset: example
+          mapping: {x: species, y: count, fill: amr_class}
+          layers:
+            - {name: geom_col, params: {}}
+            - {name: position_fill, params: {}}
+            - {name: labs, params: {x: Species, y: Proportion, fill: AMR Class}}
+            - {name: theme_minimal, params: {}}

@@ -1,33 +1,43 @@
+id: lollipop_advanced
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Lollipop Advanced
+  label: Lollipop Advanced
+  description: >-
+    A cleaner alternative to Bar Charts, especially for many categories. Emphasizes the data points rather than
+    the bars.
   submission_date: '2026-04-10'
-  family: Ranking
-  pattern: 1 Numeric, 1 Categorical
-  difficulty: Intermediate
-  geom: geom_segment
-  show: ranking
-  sample_size: any
-data_path: example_data.tsv
-plots:
-  lollipop_advanced:
-    layers:
-    - name: geom_segment
-      params:
-        color: grey
-        size: 1
-    - name: geom_point
-      params:
-        color: darkred
-        size: 4
-    - name: coord_flip
-      params: {}
-    - name: theme_bw
-      params: {}
-    mapping:
-      x: species
-      y: y_zero
-      xend: species
-      yend: avg_growth
-wrangling:
-  tier1: []
-  tier2: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 4 rows and 4 columns (id, species, avg_growth, y_zero).
+    source: {type: local_tsv, path: ./assets/gallery_data/lollipop_advanced/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      id: {type: String}
+      species: {type: String}
+      avg_growth: {type: Float64}
+      y_zero: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      lollipop_advanced:
+        label: Lollipop Advanced
+        description: >-
+          Drawn with geom_segment; x is species, y is y_zero, xend is species, yend is avg_growth.
+        taxonomy: {family: Ranking, pattern: '1 Numeric, 1 Categorical', difficulty: Intermediate, show: ranking,
+          sample_size: any}
+        spec:
+          target_dataset: example
+          mapping: {x: species, y: y_zero, xend: species, yend: avg_growth}
+          layers:
+            - {name: geom_segment, params: {color: grey, size: 1}}
+            - {name: geom_point, params: {color: darkred, size: 4}}
+            - {name: coord_flip, params: {}}
+            - {name: theme_bw, params: {}}

@@ -1,22 +1,39 @@
+id: boxplot_simple
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Boxplot Simple
+  label: Boxplot Simple
+  description: >-
+    The 'Quality Control' plot. Displays median, quartiles, and outliers for numeric distributions.
   submission_date: '2026-04-10'
-  family: Distribution
-  pattern: 1 Numeric, 1 Categorical
-  difficulty: Simple
-  geom: geom_boxplot
-  show: distribution
-  sample_size: medium+
-data_path: example_data.tsv
-plots:
-  boxplot_simple:
-    layers:
-    - name: geom_boxplot
-      params: {}
-    mapping:
-      fill: species
-      x: amr_class
-      y: mic_value
-wrangling:
-  tier1: []
-  tier2: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 100 rows and 4 columns (id, amr_class, mic_value, species).
+    source: {type: local_tsv, path: ./assets/gallery_data/boxplot_simple/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      id: {type: String}
+      amr_class: {type: String}
+      mic_value: {type: Float64}
+      species: {type: String}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      boxplot_simple:
+        label: Boxplot Simple
+        description: >-
+          Drawn with geom_boxplot; fill is species, x is amr_class, y is mic_value.
+        taxonomy: {family: Distribution, pattern: '1 Numeric, 1 Categorical', difficulty: Simple, show: distribution,
+          sample_size: medium+}
+        spec:
+          target_dataset: example
+          mapping: {fill: species, x: amr_class, y: mic_value}
+          layers:
+            - {name: geom_boxplot, params: {}}

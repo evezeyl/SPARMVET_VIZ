@@ -1,32 +1,45 @@
+id: step_chart
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Step Chart
+  label: Step Chart
+  description: >-
+    Ideal for data that changes abruptly at discrete time points rather than continuously. Clinical breakpoints,
+    regulatory threshold changes, and policy decisions all change in steps — the step chart makes these discontinuities
+    explicit.
   submission_date: '2026-05-03'
-  family: Evolution
-  pattern: 1 Numeric, 1 Categorical
-  difficulty: Simple
-  geom: geom_step
-  show: trend
-  sample_size: any
-data_path: example_data.tsv
-plots:
-  step_chart:
-    layers:
-    - params:
-        size: 1.2
-      name: geom_step
-    - params:
-        size: 2.5
-      name: geom_point
-    - name: labs
-      params:
-        title: EUCAST Breakpoint Changes Over Time
-        x: Year
-        y: MIC Breakpoint (mg/L)
-    mapping:
-      x: year
-      y: breakpoint_change
-      color: drug_class
-wrangling:
-  tier1: []
-  tier2: []
-  tier3: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 15 rows and 3 columns (drug_class, year, breakpoint_change).
+    source: {type: local_tsv, path: ./assets/gallery_data/step_chart/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      drug_class: {type: String}
+      year: {type: Int64}
+      breakpoint_change: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      step_chart:
+        label: Step Chart
+        description: >-
+          Drawn with geom_step; x is year, y is breakpoint_change, color is drug_class.
+        taxonomy: {family: Evolution, pattern: '1 Numeric, 1 Categorical', difficulty: Simple, show: trend, sample_size: any}
+        spec:
+          target_dataset: example
+          mapping: {x: year, y: breakpoint_change, color: drug_class}
+          layers:
+            - {name: geom_step, params: {size: 1.2}}
+            - {name: geom_point, params: {size: 2.5}}
+            - name: labs
+              params:
+                title: EUCAST Breakpoint Changes Over Time
+                x: Year
+                y: MIC Breakpoint (mg/L)
