@@ -89,6 +89,41 @@ data_schemas:
 **Column names must match exactly.** If your TSV has a header `Sample_ID` but your data analysis recipe says `sample_id`, the column will be silently skipped. Use `head -1 yourfile.tsv` to inspect the exact headers before writing `input_fields`.
 :::
 
+### Missing values: you must say how they are read
+
+::: {.callout-warning}
+There is no default. Every data schema states `null_values` (the texts that mean "missing", `[]` is allowed) and `strip` (`true` or `false`: strip spaces around the text first). A recipe without them is refused.
+:::
+
+- Polars has **`null`** (a missing value, of any type) and **`NaN`** (a number that is not a number; it is not null). It has no `NA`. R's `NA` is a Polars `null`.
+- The text `NA` in a file is a plain string, unless you list it in `null_values`. Think before you list it: `NA` is also the code of Namibia.
+- An empty cell is read as null. Everything else stays text until the declared `type` is applied.
+- The text `NaN` read into a `Float64` field becomes a `NaN` number, not a null. Use `polars_fill_nan` to replace NaN values, `polars_drop_nans` to drop the rows that have one, and `polars_fill_null` or `polars_drop_nulls` for nulls.
+- A text that the type cannot read stops the build and names the value (for example `NA` in a `Float64` field). Either list it in `null_values` or correct the data.
+
+Example 1: `NA` means missing in this file, and it is stated.
+
+```yaml
+null_values: ['', 'NA']
+strip: true
+input_fields:
+  length:
+    type: Float64
+```
+
+Example 2: the column holds country codes, so `NA` is Namibia and must stay. The schema lists only the empty text, and a measurement field of the same schema adds its own list.
+
+```yaml
+null_values: ['']
+strip: true
+input_fields:
+  country:
+    type: String
+  length:
+    type: Float64
+    null_values: ['', 'NA']
+```
+
 ### Cleaning with tier1 wrangling
 
 The `tier1` list is a sequence of cleaning actions. Common ones:
