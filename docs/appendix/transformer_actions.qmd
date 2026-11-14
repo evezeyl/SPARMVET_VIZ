@@ -638,3 +638,22 @@ Kind: exact. Context: assembly.
   how: left
   maintain_order: left_right
 ```
+
+### 1.16 Rank, time and special joins
+
+These actions depend on row order or on sorted keys. Each one states its precondition in its description and fails with a plain message when the table does not meet it (`libs/transformer/tests/test_polars_time_joins_preconditions.py`). A null and a NaN are not the same thing: the description of each action says what it does with both.
+
+#### `polars_rank`
+
+Rank the values of the listed columns, 1 for the smallest (Polars Expr.rank). `method` says how tied values rank and is written in the step; `ordinal` numbers ties in row order, so sort first; `random` needs a `seed` and every other method refuses one. A null stays null and is not counted; a NaN ranks above every number and NaNs tie with each other.
+
+Kind: wrapper. Context: t1, t2.
+
+```yaml
+- action: polars_rank
+  columns: [identity]
+  method: min
+  descending: true
+  target_column: identity_rank
+```
+
