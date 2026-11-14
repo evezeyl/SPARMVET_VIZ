@@ -22,8 +22,8 @@ Ghost slots (per session_key, under {location_4}/_sessions/{session_key}/)
 from __future__ import annotations
 
 # @deps
-# provides: class:SessionManager, typedef:AuditStep
-# consumes: stdlib (hashlib, json, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)
+# provides: class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps
+# consumes: libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py
 # doc: .claude/rules/ui_implementation_contract.md#12d, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
@@ -38,6 +38,10 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 from app.modules.cache_keys import canonical_hash
+from utils.na_choice import with_na
+
+# The node types that are a row filter: each one records `na` (keep or remove the rows with no value).
+_FILTER_NODE_TYPES = ("filter_row", "exclusion_row")
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +82,8 @@ def make_audit_step(
         the ghost; renders as a warning banner on the audit card and as a marker in
         the export Methods section.
     """
+    if node_type in _FILTER_NODE_TYPES:
+        params = with_na(params)    # NA-RULE-63: a filter step is never written without `na`
     node: AuditStep = {
         "node_type": node_type,
         "id": node_id or uuid.uuid4().hex,
@@ -92,6 +98,22 @@ def make_audit_step(
     if gallery_source:
         node["gallery_source"] = gallery_source
     return node
+
+
+def normalise_audit_steps(by_plot: dict[str, list[dict]]) -> dict[str, list[dict]]:
+    """A copy of the per-plot audit stacks in which every filter step records `na`.
+
+    A step made before the choice existed has no `na` and always removed the rows with no value, so it is carried as
+    "remove" (shown as such, written as such when next saved or exported). A step that has `na` is left as it is.
+    The argument is not changed.
+    """
+    out: dict[str, list[dict]] = {}
+    for plot, nodes in (by_plot or {}).items():
+        out[plot] = [
+            {**n, "params": with_na(n.get("params") or {})} if n.get("node_type") in _FILTER_NODE_TYPES else dict(n)
+            for n in nodes
+        ]
+    return out
 
 
 def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
@@ -362,6 +384,9 @@ class SessionManager:
         """
         if t3_audit_steps_by_plot is None:
             t3_audit_steps_by_plot = {}
+        t3_audit_steps_by_plot = normalise_audit_steps(t3_audit_steps_by_plot)
+        if t3_audit_steps is not None:
+            t3_audit_steps = list(normalise_audit_steps({"_": t3_audit_steps})["_"])
         if t3_audit_steps is None:
             # Flatten per-plot for the legacy field — readers that don't know
             # about per-plot still get a usable list.

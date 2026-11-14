@@ -2886,6 +2886,7 @@ def define_server(input, output, session, *,
         try:
             data_problems = validate_data_analysis_recipe_data(
                 path, bootloader.get_location("raw_data"), data_lookup=bootloader.data_lookup,
+                imports_dir=bootloader.get_imports_dir(),
             )
         except Exception as e:
             data_problems = []

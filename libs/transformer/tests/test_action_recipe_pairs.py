@@ -32,6 +32,7 @@ from polars.testing import assert_frame_equal
 import transformer.actions  # noqa: F401  (loads the registry)
 from ingestion.ingestor import DataIngestor
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
+from transformer.actions.polars_aggregations import AGGREGATIONS
 from transformer.data_assembler import DataAssembler
 from transformer.data_wrangler import DataWrangler
 
@@ -51,6 +52,9 @@ OWN_EXPECTED = {"modif_filter": lambda lf: lf.filter(pl.col("n") > 1)}
 OWN_TESTS = {"modif_filter": "test_modif_filter.py", "step_top_n_other": "test_top_n_other.py"}
 # the group "rank, time and special joins": the cases live in a file of their own (their list is not the 37 planned actions)
 OWN_TESTS.update({name: "test_polars_time_joins_equal_polars.py" for name in ("polars_rank", "polars_join_asof", "polars_join_where", "polars_group_by_dynamic", "polars_rolling")})
+
+# the table aggregations have a test file of their own, with the pairs checked there (polars_aggregations.py)
+OWN_TESTS.update({f"polars_{name}": "test_polars_aggregations_equal_polars.py" for name in AGGREGATIONS})
 
 FIRST = {}  # the first case of an action is the one its pair holds
 for _c in eq.CASES:
@@ -142,3 +146,8 @@ def test_every_registered_action_has_a_behaviour_test(action):
 
 def test_the_own_tests_list_has_no_action_that_is_gone():
     assert set(OWN_TESTS) <= set(AVAILABLE_WRANGLING_ACTIONS)
+
+
+# the row actions (head, tail, slice, ...) keep their cases and pair tests in a file of their own
+OWN_TESTS.update({f"polars_{name}": "test_polars_rows_equal_polars.py" for name in
+                  ["head", "tail", "slice", "limit", "top_k", "bottom_k", "reverse", "gather_every", "with_row_index", "remove"]})

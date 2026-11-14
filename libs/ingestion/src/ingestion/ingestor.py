@@ -1,8 +1,8 @@
 # @deps
-# provides: class:DataIngestor, method:ingest, method:find_file
+# provides: class:DataIngestor, method:ingest, method:find_file, function:find_dataset_file
 # consumes: libs/ingestion/src/ingestion/declared.py
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-INGESTION-1)
-# consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
+# consumed_by: app/modules/orchestrator.py (find_dataset_file), libs/transformer/tests/debug_assembler.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-013, .claude/knowledge/architecture_decisions.md#ADR-094
 # @end_deps
 import polars as pl
@@ -10,6 +10,25 @@ from pathlib import Path
 from typing import Dict, Any, Tuple, Optional
 from utils.errors import IngestionError
 from utils.pipeline_error import PipelineError
+
+
+DATASET_FILE_SUFFIXES = (".tsv", ".parquet")
+
+
+def find_dataset_file(data_dir: Path, dataset_name: str) -> Optional[Path]:
+    """The file of a dataset in a data folder: `<dataset id>.tsv` or `<dataset id>.parquet`, the exact name.
+
+    The one rule by which a dataset is found by its id (production lookup and the folder of an imported bundle).
+    No fuzzy search (spec 7.3). WHY an error when both exist: reading one of them silently would let the
+    other one be the file the user thinks was read.
+    """
+    found = [Path(data_dir) / f"{dataset_name}{suffix}" for suffix in DATASET_FILE_SUFFIXES]
+    found = [path for path in found if path.is_file()]
+    if len(found) > 1:
+        raise IngestionError(
+            f"Dataset '{dataset_name}' has more than one file in {data_dir}: {', '.join(p.name for p in found)}.",
+            tip="Keep one file per dataset id: remove or rename the one that is not the data to read.")
+    return found[0] if found else None
 
 
 class DataIngestor:
@@ -41,11 +60,8 @@ class DataIngestor:
             raise IngestionError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
     def find_file(self, dataset_name: str) -> Optional[Path]:
-        """
-        The file of a dataset in the data folder: `<dataset id>.tsv`, the exact name (no fuzzy search; spec 7.3).
-        """
-        exact_match = self.data_dir / f"{dataset_name}.tsv"
-        return exact_match if exact_match.exists() else None
+        """The file of a dataset in the data folder (`find_dataset_file`: exact name, `.tsv` or `.parquet`)."""
+        return find_dataset_file(self.data_dir, dataset_name)
 
     def _open(self, dataset_name: str, dataset_schema: Dict[str, Any], as_text: bool = False) -> Tuple[pl.LazyFrame, Path]:
         """Locate the file of a dataset and open it lazily; with `as_text` every column is a String (no inference)."""
@@ -64,7 +80,10 @@ class DataIngestor:
             # Fallback to legacy discovery in self.data_dir
             resolved_path = self.find_file(dataset_name)
             if resolved_path and resolved_path.exists():
-                lf = pl.scan_csv(resolved_path, separator="\t", infer_schema=not as_text)
+                if resolved_path.suffix == ".parquet":
+                    lf = pl.scan_parquet(resolved_path)
+                else:
+                    lf = pl.scan_csv(resolved_path, separator="\t", infer_schema=not as_text)
             else:
                 search_context = source_path if source_path else self.data_dir
                 pe = PipelineError(

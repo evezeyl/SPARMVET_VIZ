@@ -101,6 +101,7 @@ def server(input, output, session):
         data_analysis_recipes_dir=bootloader.get_location("data_analysis_recipes"),
         raw_data_dir=bootloader.get_location("raw_data"),
         data_lookup=bootloader.data_lookup,
+        imports_dir=bootloader.get_imports_dir(),
     )
     # BP-COLOR-3: inject deployment palettes from deployment registry.
     # VizFactory works with built-ins alone when no registry is passed (library independence).
