@@ -10,6 +10,8 @@
 
 ## ADR-001: Decorator-Based Action Registry
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the rule "all registered actions MUST support a `columns` argument" no longer holds: a `polars_` action takes the Polars parameter names (ADR-100, DEC32), `modif_` and `step_` actions take one name per role, `column` for one input column (ADR-100 point 8, DEC15, DEC39); column-name aliases are removed (DEC14). The decorator registry stays.
+
 **Status:** IMPLEMENTED
 **Context:** The Transformer module required a way to execute declarative YAML-based wrangling rules without a monolithic `registry.py`.
 **Decision:** Implement a **Decorator Pattern** (`@register_action`).
@@ -21,6 +23,8 @@
 - **Polars Implementation:** Actions must use `pl.col(columns)` to enable parallel execution across the target list.
 
 ## ADR-002: Tidy Data Contract (Long Format)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** `derive_categories` is removed and `split_and_explode` is replaced by Polars actions (ADR-100 point 7, 2026-11-13). The tidy-data rule stays.
 
 **Status:** ENFORCED
 **Context:** Multi-species dashboards with variable gene counts (AMR) require a data format that remains stable even if species columns change.
@@ -38,6 +42,8 @@
 - **Agnostic Mandate:** The system MUST NOT assume domain-specific column names (e.g., 'species', 'sample_id'). All UI elements and logic chains must derive their structure from manifest introspection (**ADR-004**) or Polars schema discovery (**ADR-029b**).
 
 ## ADR-004: YAML-Only Configuration & Registry Recognition
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** "prefer the key `columns: []`" is replaced by the parameter rules of ADR-100 (DEC14, DEC15, DEC32, DEC39). YAML-only configuration and registry recognition stay.
 
 **Status:** ENFORCED
 **Context:** The "Four-Pillar Strategy" originally mentioned JSON Schema, but the current code architecture is strictly **YAML-driven**.
@@ -81,6 +87,8 @@
 
 ## ADR-009: Multi-Source Ingestion
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** never accepted; `join_on` is now `on` or `left_on`/`right_on`, `is_primary_key` is now `is_entity_key` (ADR-100, DEC13), and an undeclared join key is refused (ADR-102, J10).
+
 **Status:** PROPOSED
 **Context:** Multi-species dashboards require combining core analytical data (e.g., ResFinder, MLST) with metadata and other additional datasets.
 **Decision:** Implement a **Multi-Source Ingestion** strategy.
@@ -119,6 +127,8 @@
 - **Compliance status (2026-05-11):** All previously tracked violations resolved. `transformer→ingestion` was TYPE_CHECKING-only (not a runtime violation). All `"libs/utils"` pyproject entries corrected to `"utils"`.
 
 ## ADR-012: Staged Data Assembly
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** never accepted as written; `join_on` is now `on` or `left_on`/`right_on` (ADR-102).
 
 **Status:** PROPOSED
 **Context:** Multi-source data ingestion and complex joins can lead to monolithic, hard-to-maintain code if handled within a single class.
@@ -183,6 +193,8 @@
 
 ## ADR-018: Unified Transformer Model (Shared Registry)
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the example actions `strip_whitespace` and `split_column` no longer exist (ADR-100 points 6 and 7, DEC35, 2026-11-13). One shared registry stays.
+
 **Status:** IMPLEMENTED
 **Context:** The expansion from atomic cleaning (Layer 1) to multi-source assembly (Layer 2) required consistent transformation logic across both stages without code duplication.
 **Decision:** The `DataWrangler` and `DataAssembler` must share the same central registry for actions.
@@ -244,6 +256,8 @@
 
 ## ADR-024: Tiered Wrangling & Data Lifecycle (ADR-024 Refinement)
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** Tier 3 is no longer a transient leaf: T1, T2 and T3 are defined alike, an ordered step list with a key, and the plot entry holds an optional `steps: {tier3: [...]}` (`home_audit_steps.md` 5a point 15, 2026-11-12; ADR-100 point 9; keys ADR-101). Not built. The banner below still holds.
+
 > **To be amended by ADR-099 (not yet built):** audit mode adds audit stages (audit T1, audit T2) as derived, cached stages next to the original T1/T2. The original tiers and their rules are unchanged.
 
 **Status:** IMPLEMENTED (April 10, 2026)
@@ -291,6 +305,8 @@ All `wrangling` blocks in YAML manifests MUST use nested tier keys to separate l
 **Low-Level Coding Design Note:** This pattern is explicitly designed to support **Low-Level Coding** --- a practice where domain scientists (veterinary epidemiologists, microbiologists) interact with the system at the YAML abstraction layer rather than the Python layer. The YAML manifest *is* the code. A user who can edit a text file can produce a custom AMR visualisation. The Gallery provides the examples needed to make this self-teaching.
 
 ## ADR-026: Reactive State, Persona Logic & Reporting
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** "sidebar filters modify the Leaf view" is replaced by Exploration (the table of the stage viewed only) and audit mode (ADR-098, ADR-099, ADR-105). The persona wording is history (ADR-091).
 
 **Status:** ENFORCED (April 7, 2026)
 **Context:** Decoupling production rigidity from developer flexibility while maintaining sub-5s responsiveness for 200k+ rows.
@@ -392,6 +408,8 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
 - **External Data Joins:** Allow adding "Additional Data" files. The UI MUST provide a joining helper that uses `libs/transformer` relational logic to verify Primary Key matching before merging. (eg.can reuse parts of scripts in .assets/scripts)
 
 ## ADR-031: Data Tier, Session Persistence & Path Authority
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** Location 5 no longer receives cloned recipes (the Gallery clone was removed, ADR-093, 2026-11-08). The `decision_hash` that later ADRs attach to this entry is retired (ADR-101, 2026-11-12).
 
 **Status:** IMPLEMENTED (April 9, 2026)
 **Context:** Need a configurable, reliable way to handle session recovery and multi-location data storage.
@@ -516,6 +534,8 @@ not scale, and the Gallery is required to be a static reference browser with no 
 
 ## ADR-041: Unified Manifest Standard (Keyed-Schema & Ordered-Logic)
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** point 1 names `output_fields`, which is removed (ADR-100 point 5, DEC23). Points 1 (for `input_fields`) to 3 are confirmed by DEC08 (2026-11-13).
+
 **Status:** ENFORCED (April 20, 2026)
 **Context:** Ambiguity between List-of-Dicts and Dictionary formats for manifest components led to inconsistent structural integrity and potential backend performance penalties.
 **Decision:** Standardize on a hybrid model that respects the functional requirements of each manifest layer:
@@ -538,6 +558,8 @@ not scale, and the Gallery is required to be a static reference browser with no 
 ---
 
 ## ADR-040: Bidirectional Lineage Navigation & Blueprint Interface Fields
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the right column shows `output_fields` and `final_contract`, both removed (ADR-100 point 5, DEC23, 2026-11-13); the published columns are the last tier-1 step. `mutate` and `pre_plot_wrangling` are old names (ADR-100 point 6).
 
 **Status:** PARTIALLY IMPLEMENTED (April 20, 2026 — Phases 18-A through 18-D, 18-B-fixes, 18-C, 18-F complete; 18-E pending)
 **Context:** Phase 18 work on the Blueprint Architect Interface (Fields) tab revealed that a flat "view one component's fields" model cannot represent the real manifest topology: multi-ingredient assemblies (many Tier 1 → one Tier 2), per-plot wrangling steps, and branching outputs. More importantly, the most natural scientific workflow is **reverse lineage** — starting from a desired plot output and tracing backwards to find where a missing field must be added or computed.
@@ -723,6 +745,8 @@ The current Mermaid.js + svg-pan-zoom stack works but has limitations:
 
 ## ADR-043: Unified Home Theater — Elimination of Redundant "Analysis Theater" Nav Mode
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the tier toggle and comparison model below were replaced by ADR-086 (2026-11-05), whose target is in turn replaced by ADR-099 and ADR-105 (Exploration and audit mode). Collapsible plot and data panels stay.
+
 **Status:** IMPLEMENTED (2026-04-30) — Phase 21-A through 21-H complete. All sub-phases verified (21-H headless: 76/76 PASS).
 **Context:** The dashboard had two top-level navigation modes — "Home" and "Analysis Theater (Viz)" — that shared the same `dynamic_tabs()` render function and differed only in their header text. The `analysis_groups` manifest-driven tabs (QC, AMR, etc.) were appended identically to both modes. The "Viz" nav item was a stub falling through to Home logic. This created dead weight in the navigation, user confusion over the distinction, and a maintenance surface with no benefit.
 **Decision:** **Eliminate the "Analysis Theater" / "Viz" nav item entirely.** Merge all content into a single **Home** mode. The `analysis_groups` manifest tabs become the primary tab structure of Home.
@@ -783,6 +807,8 @@ A unified **radio-button strip** above the theater content area controls which d
 
 ## ADR-044: Persona-Gated Audit Stack & Right Sidebar Visibility
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the content of the audit stack (T2 Violet nodes, Yellow nodes, `btn_revert`, "T3 recipe pre-filled from T2") is replaced by ADR-099 and ADR-105 (step list, lineage, affected list); not built. The visibility gate stays.
+
 > **To be amended by ADR-099 (not yet built):** the content of the right Pipeline Audit panel changes (step list, lineage chain, affected list). Its gate (the sandbox flag) and the visibility rule stay.
 
 **Status:** IMPLEMENTED (2026-04-30) — Phase 21-G verified. Right sidebar suppression live in `home_theater.py:right_sidebar_content_ui`. `btn_revert` superseded by per-node 🗑 delete (Phase 22-I).
@@ -821,6 +847,8 @@ A unified **radio-button strip** above the theater content area controls which d
 ---
 
 ## ADR-045: Server Decomposition — Handlers Directory & Manifest Navigator Module
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the navigator moved to `blueprint_arch` (ADR-067) and is to be rebuilt on the shared `utils.recipe_graph` (ADR-099 point 16(d), 2026-11-12; not built). `tier_reference` and `tier3_leaf` were removed on 2026-11-06 (`rules_app_structure.md` section 3).
 
 **Status:** IMPLEMENTED (2026-04-23) — Phase 22 complete. UI smoke test passed; no regressions.
 **Context:** `app/src/server.py` had grown to ~2,362 lines containing five functionally distinct concerns: manifest introspection helpers, Home Theater UI wiring, Blueprint Architect UI wiring, Gallery UI wiring, and shared reactive state/calcs. This monolith made targeted development difficult, slowed orientation for new work, and violated the principle of modular separation already established by `WrangleStudio`, `GalleryViewer`, and `DataOrchestrator`. As Phase 21 adds further Home Theater logic, the file would grow further without decomposition.
@@ -899,6 +927,8 @@ Per the documentation standard: `ManifestNavigator (manifest_navigator.py)` for 
 
 ## ADR-046: Scientific Audit Protocol & Manifest Precision
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** `final_contract` as a strict projection guard is removed (ADR-100 point 5, DEC23, 2026-11-13): column selection is a visible `polars_select` or `polars_drop` step at the end of tier 1.
+
 **Status:** PROPOSED (2026-04-23)
 **Context:** Development of complexity-heavy AMR lineages (e.g. ST22) requires fine-grained scientific auditability. Initial builds revealed friction from "silently dropped" columns, imprecise naming (phenotype), and continuous-scale plot errors (float years).
 
@@ -923,6 +953,8 @@ Per the documentation standard: `ManifestNavigator (manifest_navigator.py)` for 
 - **Rationale:** Prevents Plotnine/ggplot from treating them as continuous scales, which causes "stretched" x-axes and incorrect legend rendering.
 
 ## ADR-047: Tier-Aware Export Bundle
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the target bundle in audit mode is described in ADR-099 point 8 and `home_audit_steps.md` section 11 (original and audit data, `exclusions.tsv`, attrition, the forked recipe; 2026-11-12); not built. ADR-097 holds the two export modes.
 
 **Status:** IMPLEMENTED (2026-04-23) — **Extended 2026-05-04** (EXPORT-REDESIGN-1/2)
 **Context:** Users require a reproducible, self-contained output package from the Home Theater — plots, data, recipes, and a Quarto report — that can be used for publication and archiving without re-running the full pipeline.
@@ -1441,6 +1473,8 @@ for `tier1_anchor`, `active_cfg`, etc.
 
 ## ADR-052: Left Sidebar Restructure & Persona Template Extensions — Phase 25
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the flag cascade gains new rules (ADR-099 point 11, P1, 2026-11-12): audit mode requires comparison, sessions and export; comparison requires the audit flag. Validator rules not built.
+
 **Status:** FULLY IMPLEMENTED (steps A–O, 2026-05-01). All substeps complete including cascade enforcement (25-L), doc rewrite (25-M), and persona name anti-pattern elimination (25-O). Remaining tech debt: 25-N (legacy test stubs).
 
 **Implementation audit (2026-05-01):**
@@ -1829,6 +1863,8 @@ Note: `breaks_integer` must be nested under `params:` — VizFactory reads `laye
 
 ## ADR-060: Notification Log Pattern — `make_notifier` + Right Sidebar Alert Accordion (UX-NOTIF-1, 2026-05-02)
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the notification log moved from the right to the left sidebar on 2026-11-08 (issue #33); the amendment is recorded in ADR-073.
+
 **Status:** IMPLEMENTED
 
 **Context:** `ui.notification_show()` toasts disappear after a few seconds. Users were missing failure notifications (e.g. session import errors, export problems, T3 apply blocks). No persistent log existed.
@@ -2063,6 +2099,8 @@ Additionally, CSS `border-radius: 0 0 7px 7px` was applied to inner navset-cards
 
 ## ADR-067: Extract `libs/blueprint_arch/` — Blueprint Architect Pure-Python Logic (2026-05-05)
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the navigator is to be rebuilt on the shared `utils.recipe_graph` in `libs/utils`, one source of truth for HOME and Blueprint (ADR-099 point 16(d), 2026-11-12); not built.
+
 **Status:** IMPLEMENTED (2026-05-05)
 
 **Context:** `blueprint_mapper.py` lived in `libs/utils/` — a general-purpose headless lib — alongside config loading, hashing, and error utilities. `manifest_navigator.py` lived in `app/modules/`, violating the Two-Category Law (ADR-045) even though it has zero Shiny dependency and was already declared headless-safe. Both files exist solely to serve the Blueprint Architect feature.
@@ -2109,6 +2147,8 @@ Additionally, CSS `border-radius: 0 0 7px 7px` was applied to inner navset-cards
 ---
 
 ## ADR-069: Complete Export Audit Trail Standard (2026-05-05)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** `decision_hash` is retired (ADR-101, 2026-11-12); the provenance record of today is the one of ADR-097 (four legs, `effective_run.yaml`). Not checked here: whether rule 1 (no opt-out) still holds for both export modes of ADR-097.
 
 **Status:** DECIDED — implementation pending
 
@@ -2559,6 +2599,8 @@ All 6 existing persona templates receive `workspaces:` sections whose default sl
 
 ## ADR-074: Lineage Infrastructure as Shared Provision (2026-05-09)
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the placement of the lineage code in `blueprint_arch` is superseded in part: the recipe graph is new shared code in `libs/utils` and the navigator is rebuilt on it (ADR-099 point 16(d), 2026-11-12); not built.
+
 **Status:** DECIDED — implementation pending
 
 **Context:** Two user spaces require manifest lineage tracing from different angles:
@@ -2668,6 +2710,8 @@ SVG/PNG export of the manifest DAG for use in pipeline publications is a **BLUEP
 ---
 
 ## ADR-075: BLUEPRINT IDE Build Mode — Design Specification (2026-05-09)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** action names now carry the prefixes `polars_`, `modif_`, `step_`, and the registry has the field `polars` beside `wraps` (ADR-100 point 6, DEC31, 2026-11-13); old action names in the examples below no longer exist.
 
 **Status:** DECIDED — implementation pending (Phase 31+)
 
@@ -2863,6 +2907,8 @@ The "Add node" picker in BLUEPRINT is a searchable, filtered catalog driven by `
 ---
 
 ## ADR-076: BLUEPRINT AI Agent Helper — Adapter Architecture and Conversational Design (2026-05-09)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the tool `get_field_contract` returns `output_fields`, and the manifest rules name `final_contract`; both are removed (ADR-100 point 5, DEC23).
 
 **Status:** MVP-1 IMPLEMENTED (2026-05-09). All six BP-AGENT-* tasks complete. Chat panel live in `app/handlers/blueprint_handlers.py`; wired into Blueprint right sidebar via `home_theater.py`. Tool-call loop (3 rounds max, `asyncio.to_thread` for non-blocking subprocess). `instructions_file` read exclusively from `bootloader.get_agent_config()` — no hardcoded path fallback (raises `ValueError` if key absent). Smoke tests: 14 passed, 3 skipped.
 
@@ -3183,6 +3229,8 @@ Because Claude Code scopes session history per project directory, running the su
 ---
 
 ## ADR-077: Configuration Validation Discipline — Fail-Fast over Silent Suppression (2026-05-09)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** new cascade rules for audit mode are decided (ADR-099 point 11, 2026-11-12; see ADR-052 note); not built.
 
 **Status:** DECIDED — applied to Group D cascades from this date forward. **Scope note (ADR-087, 2026-11-05):** applies to deployment configuration only; manifest errors raise an exception and never exit the app.
 
@@ -3752,6 +3800,8 @@ Resolution order: **plot-level palette > `plot_defaults.palette` > no palette (m
 
 ## ADR-082: BLUEPRINT Full Feature Set & Build-Mode Contract (2026-05-20)
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the 3-column viewer shows `output_fields`, removed by ADR-100 (DEC23). Q2 "BLUEPRINT never authors or previews T3": OPEN, awaiting Eve (see ADR-100: a recipe maker may write any action in the plot entry's tier-3 list, DEC17, 2026-11-13).
+
 **Status:** ACCEPTED — decided with Eve 2026-05-20. Supersedes the research draft `.claude/design/outdated/blueprint_full_feature_set_research.md` (now RESOLVED). Umbrella ADR over ADR-039/040/056/067/071/074/075/076.
 
 **Context:** BLUEPRINT is a visual IDE for building and editing SPARMVET manifests without writing code. Prior ADRs locked individual pieces (TubeMap navigation, lineage rail, shared infrastructure, the IDE build-mode design, the AI agent). No single ADR named the *full* feature set or how the parts compose into one user experience, and the design had drifted ahead of the docs: between 2026-05-09 and 2026-05-11 the form builder, searchable action picker (BP-ACTION-PARITY-1), Field Gap Analysis (BP-FIELD-GAP-1), forward-propagation hints (BP-FWD-HINT-1), and Visual Fork (BP-VISUAL-FORK-1) all shipped without an umbrella contract. A 2026-05-20 verification pass against the running implementation surfaced four mismatches with the redefined design (below). This ADR locks the feature set so a new contributor can read one document end-to-end, and so the remaining build work is scoped against an agreed target.
@@ -3950,6 +4000,8 @@ already exists — it just isn't named, shared, or invertible.
   un-gated) already fits the cascade's append-then-dedupe.
 
 ## ADR-084: TEST_LAB Toolbox Architecture (2026-05-21)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the bootstrapper output named here (`type:` key, `output_fields`, `final_contract`, old action names) is format 0; recipes must now be format 1 (ADR-100; `type:` removed by ADR-092). Test Lab is to be adapted later (Eve 2026-11-14: Blueprint and Test Lab last).
 
 **Status:** ACCEPTED. Authority: @dasharch. Design authority: `.claude/design/spaces/TEST_LAB.md`.
 **Extends:** ADR-011 (modular monorepo), ADR-016 (Clear Lines), ADR-071 (positive inclusion), ADR-074 (shared provision principle).
@@ -4514,6 +4566,8 @@ machine-assisted "start a new recipe from this gallery example" emerges, it is a
 designed on its own — not a revival of the T3 clone.
 
 ## ADR-094: HOME gates automatically on load (structure + data contract); BLUEPRINT stays manual; runtime failures get a real surface, not a traceback (2026-11-08)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the gate's checks are now the one checker `check_recipe` of `libs/utils` (ADR-100 point 3, DEC03, 2026-11-13); "data vs declared contract" no longer includes `output_fields` (DEC23). The gate itself stays.
 
 **Status:** ACCEPTED and IMPLEMENTED (Eve, 2026-11-08). Authority: @dasharch, decided with @evezeyl.
 **Completes:** ADR-087 ("Data analysis recipe errors raise an exception; the app reports and skips, it never exits") — extends its scope from structural load errors to include the data-vs-contract check, and implements what ADR-087 left as "NOT YET IMPLEMENTED". **Begins wiring:** ADR-079 (Runtime Error Discipline) — the renderer side was already fully built and unit-tested; this ADR starts the catch/dispatch side, for the path HOME needs most.
