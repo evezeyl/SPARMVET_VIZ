@@ -17,7 +17,7 @@ recipe, what is wrong and the fix, in the message style of spec P5.
 
 # @deps
 # provides: function:check_recipe, function:spec, class:Problem, class:Result
-# consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/action_names.py, libs/utils/src/utils/ui_schema.py, libs/utils/src/utils/formula_check.py, libs/utils/src/utils/recipe_paths.py, libs/utils/src/utils/polars_types.py
+# consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/engines.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/ui_schema.py, libs/utils/src/utils/formula_check.py, libs/utils/src/utils/recipe_paths.py, libs/utils/src/utils/polars_types.py
 # consumed_by: libs/utils/src/utils/recipe_loader.py, libs/utils/src/utils/recipe_factory.py, libs/utils/src/utils/recipe_migration.py, libs/utils/src/utils/strict_form_migration.py, libs/ingestion/src/ingestion/declared.py, libs/viz_gallery/src/viz_gallery/gallery_manager.py, libs/viz_gallery/src/viz_gallery/example_recipe.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, assets/scripts/convert_gallery_examples.py, assets/scripts/create_data_analysis_recipe.py, libs/utils/tests/test_recipe_check.py
 # doc: .claude/design/recipe_format_spec.md (sections 3 to 11, 14)
 # @end_deps
@@ -34,6 +34,7 @@ import yaml
 
 from utils import action_names
 from utils.action_names import TIER1_ONLY
+from utils.engines import ENGINES
 from utils.formula_check import formula_problems
 from utils.polars_types import PARAMETER_KEYS, dtype_with_parameters, text_dtype_names
 from utils.recipe_paths import containment_problems, shape_problems
@@ -63,8 +64,10 @@ def _declared_dtype(field: Any) -> Optional[Any]:
 
 @lru_cache(maxsize=1)
 def spec() -> dict:
-    """The recipe format as data (the packaged file `recipe_spec.yaml`)."""
-    return yaml.safe_load(resources.files("utils").joinpath("recipe_spec.yaml").read_text(encoding="utf-8"))
+    """The recipe format as data (the packaged file `recipe_spec.yaml`, plus the engine names of `utils.engines`)."""
+    data = yaml.safe_load(resources.files("utils").joinpath("recipe_spec.yaml").read_text(encoding="utf-8"))
+    data["engines"] = {key: list(names) for key, names in ENGINES.items()}  # one source: utils/engines.py (ADR-106 V8)
+    return data
 
 
 def _plotnine_note(name: str, kinds: dict) -> str:

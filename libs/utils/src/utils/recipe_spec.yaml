@@ -1,12 +1,9 @@
 # The recipe format as data (spec section 9, D3): the checker, the migration tool and the documentation read this file.
-# Cross-element rules and the registries stay in code. Changing a key, a requirement or the engine names changes
+# Cross-element rules, the registries and the engine names (utils/engines.py) stay in code. Changing a key, a requirement or the engine names changes
 # `format_version`; a new term of an open vocabulary (the gallery terms) does not.
 format_version: 1
 
-engines:
-  data_engine: [python-polars]
-  plot_engine: [python-plotnine]
-
+# the engine names (data_engine, plot_engine) are in utils/engines.py, one place for the checker and the libraries
 # required and optional keys of each element (the checker refuses any other key)
 elements:
   top:
