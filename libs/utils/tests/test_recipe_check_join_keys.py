@@ -5,6 +5,8 @@ before the join may change the type or the name of a key: the build check remain
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/utils/tests/test_recipe_check_join_keys.py -q
 """
+import pytest
+
 import utils.recipe_check as recipe_check
 from utils import action_names
 from test_recipe_check import check, valid
@@ -178,3 +180,87 @@ def test_the_row_only_actions_are_constants_of_action_names():
     """A transformer test (test_action_names.py) checks that every constant is a registered action; here the list is built only from constants."""
     assert recipe_check.JOIN_KEEPS_COLUMNS <= set(action_names.ALL.values())
     assert all(isinstance(name, str) for name in recipe_check.JOIN_KEEPS_COLUMNS) and len(recipe_check.JOIN_KEEPS_COLUMNS) == 5
+
+
+# -- J12: a join of a table with itself on the same key (advice) ---------------------------------
+
+def advices(raw, code):
+    return [p for p in check(raw).problems if p.code == code]
+
+
+def test_a_self_join_on_the_same_key_is_advised_j12_and_does_not_block():
+    raw = valid()
+    join_step(raw).update(right_ingredient="A")
+    problems = advices(raw, "J12")
+    assert len(problems) == 1 and problems[0].severity == "A" and problems[0].path == "joins.AB.steps.tier1[1]"
+    assert "'A'" in problems[0].message and "id" in problems[0].message and "_right" in problems[0].message and problems[0].fix
+    assert check(raw).ok or all(p.severity == "A" for p in check(raw).problems if p.code == "J12")
+    assert [p.code for p in check(raw).errors if p.code == "J12"] == []
+
+
+def test_the_same_key_pair_with_left_on_and_right_on_is_advised_too():
+    raw = valid()
+    step = join_step(raw)
+    step.pop("on")
+    step.update(right_ingredient="A", left_on="id", right_on="id")
+    assert len(advices(raw, "J12")) == 1
+
+
+def test_a_self_join_on_other_keys_is_not_advised():
+    raw = valid()
+    raw["data_schemas"]["A"]["input_fields"]["parent"] = {"type": "String"}
+    step = join_step(raw)
+    step.pop("on")
+    step.update(right_ingredient="A", left_on="parent", right_on="id")
+    assert advices(raw, "J12") == []
+
+
+def test_a_join_with_another_table_is_not_advised():
+    assert advices(valid(), "J12") == []
+
+
+def test_a_table_joined_twice_on_the_same_key_is_advised_on_the_second_step():
+    raw = valid()
+    raw["joins"]["AB"]["steps"]["tier1"].append({"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "left"})
+    problems = advices(raw, "J12")
+    assert len(problems) == 1 and problems[0].path == "joins.AB.steps.tier1[2]"
+
+
+# -- J13: a float join key (advice) --------------------------------------------------------------
+
+@pytest.mark.parametrize("dtype", ["Float32", "Float64"])
+def test_a_float_key_is_advised_j13_and_does_not_block(dtype):
+    raw = valid()
+    raw["data_schemas"]["A"]["input_fields"]["id"]["type"] = dtype
+    raw["data_schemas"]["B"]["input_fields"]["id"]["type"] = dtype
+    problems = advices(raw, "J13")
+    assert len(problems) == 2, "one advice per table that declares the key as a float"
+    assert all(p.severity == "A" for p in problems)
+    text = " ".join(p.message + " " + p.fix for p in problems)
+    assert "001" in text and "leading zeros" in text and "text type" in text
+    assert [p.code for p in check(raw).errors] == []
+
+
+def test_a_float_key_declared_on_one_side_only_is_advised_once_with_j09_as_the_error():
+    raw = valid()
+    raw["data_schemas"]["B"]["input_fields"]["id"]["type"] = "Float64"
+    assert len(advices(raw, "J13")) == 1 and codes(raw) == ["J09"]
+
+
+@pytest.mark.parametrize("dtype", ["String", "Categorical", "Int64", "Int32"])
+def test_a_text_or_integer_key_is_not_advised(dtype):
+    raw = valid()
+    raw["data_schemas"]["A"]["input_fields"]["id"]["type"] = dtype
+    raw["data_schemas"]["B"]["input_fields"]["id"]["type"] = dtype
+    assert advices(raw, "J13") == []
+
+
+def test_a_float_column_that_is_not_a_key_is_not_advised():
+    assert advices(valid(), "J13") == []  # v is Float64 and is not a join key
+
+
+def test_a_float_key_is_silent_when_a_step_may_change_the_table():
+    raw = valid()
+    raw["data_schemas"]["A"]["input_fields"]["id"]["type"] = "Float64"
+    raw["data_schemas"]["A"]["wrangling"] = {"tier1": [{"action": "polars_cast"}]}
+    assert len(advices(raw, "J13")) == 0
