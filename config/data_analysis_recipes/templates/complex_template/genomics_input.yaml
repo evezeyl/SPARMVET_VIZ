@@ -1,6 +1,6 @@
 sample_id:
   original_name: "Accession"
-  type: "Float64"
+  type: "String"
   is_entity_key: true
 gene_presence:
   original_name: "Gene_List"

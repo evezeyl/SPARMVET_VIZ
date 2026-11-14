@@ -218,9 +218,6 @@ class DataAssembler:
                 first_key = list(self.ingredients.keys())[0]
                 consolidated_lf = self.ingredients[first_key]
 
-                # If first step is a join involving original backbone, skip redundant init
-                if action_name == JOIN and right_id == first_key:
-                    continue
 
             if action_name == JOIN and right_id:
                 self._check_join_key_types(step, i, consolidated_lf, self.ingredients[right_id])

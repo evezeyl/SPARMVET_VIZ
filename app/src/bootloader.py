@@ -1,6 +1,6 @@
 # @deps
-# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_agent_adapter, method:get_palettes, method:get_contact, attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate), attr:rejected_gallery_examples, attr:gallery_index_status (gallery check at start, DEC48)
-# consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import), app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe, validate_data_analysis_recipe_data, read_data_analysis_recipe_header, resolve_contact — ADR-094), app.modules.gallery_examples (check_gallery_at_start, deferred import), app.modules.renamed_keys, utils.path_expansion
+# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_agent_adapter, method:get_palettes, method:get_contact, attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), attr:data_analysis_recipe_advices (J12/J13, never reject), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate), attr:rejected_gallery_examples, attr:gallery_index_status (gallery check at start, DEC48)
+# consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import), app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe, validate_data_analysis_recipe_data, checker_advices, read_data_analysis_recipe_header, resolve_contact — ADR-094), app.modules.gallery_examples (check_gallery_at_start, deferred import), app.modules.renamed_keys, utils.path_expansion
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
 # doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, ADR-087, ADR-094 (issue #38 closure note), project_conventions.md §"Deployment Resolution"
 # @end_deps
@@ -27,6 +27,7 @@ from app.modules.deployment_error import DeploymentError, exit_if_errors
 from app.modules.data_analysis_recipe_validator import (
     read_data_analysis_recipe_header,
     resolve_contact,
+    checker_advices,
     validate_data_analysis_recipe,
     validate_data_analysis_recipe_data,
 )
@@ -383,6 +384,7 @@ class Bootloader:
         """
         available: Dict[str, str] = {}
         rejected: Dict[str, dict] = {}
+        self.data_analysis_recipe_advices: Dict[str, list[str]] = {}  # advices never reject a recipe; HOME lists them
         raw_data_dir = self.get_location("raw_data")
         for name, path in candidates.items():
             problems = validate_data_analysis_recipe(path)
@@ -400,6 +402,12 @@ class Bootloader:
                 }
             else:
                 available[name] = path
+                try:
+                    advices = [f"{a.problem} Fix: {a.tip}" if a.tip else a.problem for a in checker_advices(path)]
+                except Exception as e:
+                    advices = [f"[CHECK] the advices of the recipe could not be read: {e}"]
+                if advices:
+                    self.data_analysis_recipe_advices[name] = advices
         return available, rejected
 
     def get_contact(self) -> str | None:
