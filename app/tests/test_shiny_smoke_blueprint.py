@@ -20,6 +20,8 @@ Notes:
 """
 
 import os
+import re
+
 import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
@@ -343,10 +345,9 @@ class TestBlueprintEscapeAndValidate:
         # Validation runs subprocess — allow up to 30 s
         _wait_shiny(page, timeout=35_000)
         result_el = page.locator("#bp_validate_ui")
-        result_text = result_el.inner_text(timeout=30_000)
-        assert "PASS" in result_text or "FAIL" in result_text, (
-            f"Validation result badge not found. Got: {result_text[:300]!r}"
-        )
+        # Wait for the badge itself: `_wait_shiny` can return before the server has started on the click (a race found
+        # 2026-11-14 when the validation got slower with the strict recipe checker), and the button text is read instead.
+        expect(result_el).to_contain_text(re.compile("PASS|FAIL"), timeout=40_000)
         _no_render_error(page)
 
     @pytest.mark.skipif(
