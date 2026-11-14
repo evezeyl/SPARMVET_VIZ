@@ -1,8 +1,8 @@
 """
 @deps
-provides: function:validate_data_analysis_recipe, function:checker_problems, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
+provides: function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
 consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/orchestrator.py
-consumed_by: app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
+consumed_by: app/tests/test_upload_recipe_check.py, app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
 @end_deps
 
@@ -110,6 +110,54 @@ def checker_catalogs() -> dict:
     from transformer.actions.base import ACTION_SCHEMAS
     from viz_factory.arguments import argument_catalog
     return {"actions": dict(ACTION_SCHEMAS), "components": argument_catalog()}
+
+
+def _fragment_report(raw) -> list[str]:
+    """One line per problem of the steps of a wrangling-only upload, each step against its action schema."""
+    from utils.ui_schema import step_problems
+    wrangling = raw.get("wrangling") if isinstance(raw, dict) else None
+    if isinstance(wrangling, list):
+        located = [("steps", i, s) for i, s in enumerate(wrangling)]
+    elif isinstance(wrangling, dict):
+        located = [(t, i, s) for t in ("tier1", "tier2", "tier3") for i, s in enumerate(wrangling.get(t) or [])]
+    else:
+        located = []
+    if not located:
+        return ["[UP01] the file has no wrangling steps and no data_schemas: nothing to import"]
+    actions = checker_catalogs()["actions"]
+    lines = []
+    for tier, i, step in located:
+        where = f"{tier}[{i}]"
+        if not isinstance(step, dict) or not isinstance(step.get("action"), str):
+            lines.append(f"[ST01] {where}: a step is a mapping with an action")
+            continue
+        name = step["action"]
+        if name not in actions or not isinstance(actions[name], dict):
+            lines.append(f"[ST02] {where} ({name}): {name!r} is not a registered action")
+            continue
+        flat = {**{k: v for k, v in step.items() if k != "params"}, **(step.get("params") or {})}
+        for p in step_problems(name, flat, actions[name]):
+            lines.append(f"[{p.code}] {where} ({name}): {p.message}" + (f" Fix: {p.fix}" if p.fix else ""))
+    return lines
+
+
+def uploaded_recipe_report(raw, profile: str = "build") -> list[str]:
+    """One line per problem of an uploaded file (a dictionary), empty when it passes.
+
+    A whole recipe (it has `data_schemas`) goes through the strict checker in the given profile; anything else is a
+    wrangling fragment, whose steps are checked one by one with the same step check the checker uses (`step_problems`).
+    Blueprint reports and never blocks (rules_data_analysis_recipe_structure.md 11a; profiles: recipe_format_spec.md
+    DEC18, line 110), so this only returns text; the caller decides what to show."""
+    from utils.recipe_check import check_recipe
+    try:
+        if not (isinstance(raw, dict) and "data_schemas" in raw):
+            if isinstance(raw, dict) or raw is None:
+                return _fragment_report(raw)
+        result = check_recipe(raw, profile, catalogs=checker_catalogs())
+    except Exception as exc:
+        return [f"[CHECK] the recipe could not be checked: {exc}"]
+    return [f"[{p.code}] {p.path + ': ' if p.path else ''}{p.message}" + (f" Fix: {p.fix}" if p.fix else "")
+            for p in result.errors]
 
 
 def checker_problems(path: Path, profile: str = "run") -> list[DataAnalysisRecipeProblem]:
