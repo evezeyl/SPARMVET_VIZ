@@ -224,10 +224,18 @@ def test_import_a_bundle_reports_the_four_legs(loaded, tmp_path):
             recipe_id = recipe_id_match.group(1)
             recipe_path = Path("config/data_analysis_recipes/pipelines") / f"{recipe_id}.yaml"
             recipe_path.unlink(missing_ok=True)
-            data_dir = DATA_DIR.parent / "_imported" / recipe_id
+            imported_root = DATA_DIR.parent / "_imported"
+            data_dir = imported_root / recipe_id
             if data_dir.is_dir():
                 import shutil
                 shutil.rmtree(data_dir, ignore_errors=True)
+            # remove the _imported/ folder only when this test left it empty;
+            # rmdir refuses a non-empty folder, so other content is never touched
+            if imported_root.is_dir():
+                try:
+                    imported_root.rmdir()
+                except OSError:
+                    pass
 
 
 def test_a_data_change_after_the_view_is_opened_blocks_the_export(loaded):
