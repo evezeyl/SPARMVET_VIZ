@@ -1,6 +1,0 @@
-wrangling:
-  tier1:
-  - action: sort
-    by:
-    - score
-    descending: true

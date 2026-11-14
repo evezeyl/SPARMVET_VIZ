@@ -1,0 +1,29 @@
+# Format 1 recipe of the 1:1:1 pair for polars_sum_horizontal; data: polars_sum_horizontal_test.tsv.
+# A TSV cannot hold a list or a struct: when the action needs one, a setup step builds it first.
+id: polars_sum_horizontal
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
+info:
+  label: Test pair of polars_sum_horizontal
+  description: One recipe and one data file for the action polars_sum_horizontal (1:1:1
+    law, rules_data_engine.md section 2). Every key is written; nothing is a default.
+source:
+  type: local_tsv
+  path: libs/transformer/tests/data/polars_sum_horizontal_test.tsv
+null_values: ['']
+strip: false
+input_fields:
+  x:
+    type: Float64
+    label: x
+  y:
+    type: Float64
+    label: y
+wrangling:
+  tier1:
+  - action: polars_sum_horizontal
+    exprs: [x, y]
+    ignore_nulls: true
+    target_column: t
+  tier2: []

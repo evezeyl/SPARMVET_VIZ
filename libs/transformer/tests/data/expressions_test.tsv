@@ -1,5 +1,0 @@
-col_int	col_str	col_fallback	col_score
-10	1	None	85
-20	2	fallback_alpha	40
-30	None	fallback_beta	60
-None	4	fallback_gamma	10

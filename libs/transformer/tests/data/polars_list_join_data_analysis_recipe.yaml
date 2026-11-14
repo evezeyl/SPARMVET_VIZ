@@ -1,0 +1,33 @@
+# Format 1 recipe of the 1:1:1 pair for polars_list_join; data: polars_list_join_test.tsv.
+# A TSV cannot hold a list or a struct: when the action needs one, a setup step builds it first.
+id: polars_list_join
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
+info:
+  label: Test pair of polars_list_join
+  description: One recipe and one data file for the action polars_list_join (1:1:1
+    law, rules_data_engine.md section 2). Every key is written; nothing is a default.
+source:
+  type: local_tsv
+  path: libs/transformer/tests/data/polars_list_join_test.tsv
+null_values: ['']
+strip: false
+input_fields:
+  id:
+    type: String
+    label: id
+  l:
+    type: String
+    label: l
+wrangling:
+  tier1:
+  - action: polars_str_split
+    columns: [l]
+    by: ','
+    inclusive: false
+  - action: polars_list_join
+    columns: [l]
+    separator: '-'
+    ignore_nulls: true
+  tier2: []

@@ -1,74 +1,77 @@
+
 # Automated Decorator Testing
 
-To maintain the architectural integrity of the "Decorator-First" pipeline, all new wrangling actions must be validated through the automated test suite. This ensures that every decorator correctly processes Polars LazyFrames and adheres to the data analysis recipe-defined data contracts.
+Every wrangling action (a function registered with `@register_action`) has a test pair, and an automatic test checks that the pair exists, runs and does something. This keeps the actions honest: an action that is registered but never tested cannot stay unnoticed.
 
-## 1. The Test Suite Architecture
-The `libs/transformer/tests/debug_decorator_suite.py` is a wrapper script that serves as a lightweight Continuous Integration (CI) tool. It performs the following steps for each decorator:
-1.  **Discovery**: Scans `libs/transformer/tests/data/` for `*_data_analysis_recipe.yaml` files.
-2.  **Execution**: Calls the `debug_wrangler.py` runner with the specific data analysis recipe.
-3.  **Validation**: Confirms the command executes successfully and produces a materialized `.tsv` outcome.
-4.  **Reporting**: Generates a Pass/Fail summary table in the terminal.
+## 1. The 1:1:1 Naming Law
 
-## 2. The 1:1:1 Naming Law
-According to **`rules_data_engine.md §2`**, every registered action MUST follow this strict naming map for its test pair:
+According to **`rules_data_engine.md §2`**, every registered action MUST follow this naming map for its test pair:
 
-- **Action Name**: `my_action`
-- **Data analysis recipe**: `libs/transformer/tests/data/my_action_data_analysis_recipe.yaml`
-- **Data**: `libs/transformer/tests/data/my_action_test.tsv`
+- **Action Name**: `polars_cast` (the registered name)
+- **Data analysis recipe**: `libs/transformer/tests/data/polars_cast_data_analysis_recipe.yaml`
+- **Data**: `libs/transformer/tests/data/polars_cast_test.tsv`
 
-This 1:1:1 mapping allows the automated `debug_decorator_suite.py` to crawl the registry and verify your logic instantly. 
+The one exception is `polars_join`: a join needs a second ingredient and runs in the assembler, so it has no pair (it is tested in `test_polars_actions_equal_polars.py` and the assembler tests).
 
-## 3. Adding a New Decorator to the Loop
-Follow these steps whenever you register a new action (e.g., `@register_action("new_action")`):
+## 2. What the test checks
 
-### Step A: Create a Test Dataset
-Add a minimal TSV file at `./libs/transformer/tests/data/new_action_test.tsv`. 
+`libs/transformer/tests/test_action_recipe_pairs.py` runs for every registered action:
 
-### Step B: Create a Test Data Analysis Recipe
-Create a corresponding YAML file at `./libs/transformer/tests/data/new_action_data_analysis_recipe.yaml` following the mandatory 3-block structure (ADR-013). Ensure the `source` block points to your new TSV file.
-
-```yaml
-id: "new_action_test"
-name: "New Action Integration Test"
-data_schemas:
-  test_dataset:
-    source:
-      type: "local_tsv"
-      path: "libs/transformer/tests/data/new_action_test.tsv"
-    input_fields:
-      sample_id:
-        original_name: "sample_id"
-        type: categorical
-        label: "Sample ID"
-        is_primary_key: true
-      target_col:
-        original_name: "target_col"
-        type: categorical
-        label: "Target Column"
-    wrangling:
-      tier1:
-        - action: "new_action"
-          param1: "value"
-    output_fields:
-      sample_id:
-        original_name: "sample_id"
-        type: categorical
-        label: "Sample ID"
-      target_col:
-        original_name: "target_col"
-        type: categorical
-        label: "Target Column"
-```
-
-### Step C: Execute the Suite
-Run the automated suite from the project root:
+1.  **The pair exists**, and no pair is left for an action that is gone.
+2.  **The recipe is format 1** (`spec_version: 1`) and its `id` is the action name.
+3.  **The pair runs** through the real ingestion (declared types, `null_values`, `strip`) and then the wrangler.
+4.  **The recipe uses the action** it is named after.
+5.  **The action acts**: the result is different from what ingestion gave. A pair that passes data through unchanged proves nothing.
+6.  **The file loses nothing**: the ingested file equals the frame of the equality test, and the result equals the direct Polars call (`test_polars_actions_equal_polars.py`). A pair with a setup step (a list or struct column cannot be written in a TSV, so a first step builds it) skips this last comparison.
 
 ```bash
-./.venv/bin/python libs/transformer/tests/debug_decorator_suite.py
+PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/test_action_recipe_pairs.py -q
 ```
 
-## 3. Mandatory Verification
+## 3. Adding a New Decorator
+
+Follow these steps whenever you register a new action (e.g. `@register_action("polars_new_action")`):
+
+### Step A: Create a Test Dataset
+Add a small TSV file at `libs/transformer/tests/data/<action>_test.tsv`. Write something the action really changes.
+
+### Step B: Create a Test Data Analysis Recipe
+Create `libs/transformer/tests/data/<action>_data_analysis_recipe.yaml` in format 1. A standalone test recipe holds the schema keys at its top level. Every key is written, nothing is a default: the `source`, `null_values` (a list, `[]` is allowed), `strip`, a Polars `type` for every field, and the step.
+
+```yaml
+id: polars_new_action
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
+source:
+  type: local_tsv
+  path: libs/transformer/tests/data/polars_new_action_test.tsv
+null_values: ['']
+strip: false
+input_fields:
+  sample_id:
+    type: String
+    label: sample_id
+  value:
+    type: Float64
+    label: value
+wrangling:
+  tier1:
+  - action: polars_new_action
+    columns: [value]
+  tier2: []
+```
+
+### Step C: Add the case to the equality test
+Add a `Case(...)` with the direct Polars call to `libs/transformer/tests/test_polars_actions_equal_polars.py`, so the pair test can compare the result with Polars.
+
+### Step D: Run the tests
+```bash
+PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests -q
+```
+
+## 4. Mandatory Verification
 According to **`rules_data_engine.md §2`**, a new decorator is not considered "Complete" until:
-1.  Its test data analysis recipe is created.
-2.  It passes the `debug_decorator_suite.py` without errors.
-3.  The results in `tmp/wrapper/` are manually verified at least once via `@verify`.
+1.  Its test pair exists and `test_action_recipe_pairs.py` passes.
+2.  It has a case in `test_polars_actions_equal_polars.py` (or, for an action that is not plain Polars, its own test of the behaviour it adds).
+3.  The result is looked at once via `@verify`: run the pair with `libs/transformer/tests/debug_wrangler.py` and check the table in `tmp/`.

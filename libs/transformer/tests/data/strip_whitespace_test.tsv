@@ -1,4 +1,0 @@
-sample_id	species	gene_list
-SAM901 	 "E. coli" 	 "gene_A, gene_B "
- SAM902	Salmonella enterica	" gene_C"
-SAM903	" Listeria "	"null"

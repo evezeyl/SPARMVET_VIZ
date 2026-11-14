@@ -1,6 +1,0 @@
-wrangling:
-  tier1:
-  - action: top_n_other
-    column: group
-    n: 2
-    new_column: group_top2

@@ -2,264 +2,81 @@
 # @deps
 # provides: script:debug_wrangler
 # mirrors: app/modules/orchestrator.py (Tier 1 wrangling path)
-# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)
-# consumed_by: libs/transformer/tests/transformer_integrity_suite.py
+# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py
+# consumed_by: libs/transformer/tests/test_debug_wrangler.py
 # doc: .claude/rules/rules_data_engine.md#3
 # @end_deps
-import argparse
-import os
-import sys
-import polars as pl
-from pathlib import Path
-from datetime import datetime
+"""Run the wrangling steps of one format 1 recipe on its data and write the result as a TSV (the @verify evidence).
 
-# Fix paths to project root for universal execution if not installed globally
-# However, ADR-016 relies on editable installs in .venv
-project_root = Path(__file__).resolve().parent.parent.parent.parent
-# if str(project_root) not in sys.path:
-# STRICT BAN: sys.path.append / sys.path.insert are explicitly forbidden. Rely on pip install -e.
+The recipe is a standalone data schema (keys `source`, `null_values`, `strip`, `input_fields`, `wrangling` at the top
+level, like the test pairs in libs/transformer/tests/data/) or a pipeline recipe whose `data_schemas` hold them.
+The data is read exactly as the app reads it (declared types, `null_values`, `strip`); nothing is cast or selected
+afterwards, because the recipe states what it wants as steps.
+
+Example:
+  ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \\
+      --data-analysis-recipe libs/transformer/tests/data/polars_cast_data_analysis_recipe.yaml --output tmpAI/cast.tsv
+"""
+import argparse
+import sys
+from pathlib import Path
 
 import yaml
 
-try:
-    from ingestion.ingestor import DataIngestor
-    from utils.config_loader import ConfigManager
-    from transformer.data_wrangler import DataWrangler
-except ImportError:
-    # Manual fallback for robustness if .venv is not yet sync'd
-    try:
-        from libs.ingestion.src.ingestion.ingestor import DataIngestor
-        from libs.utils.src.utils.config_loader import ConfigManager
-        from libs.transformer.src.transformer.data_wrangler import DataWrangler
-    except ImportError as e:
-        print(
-            f"❌  ERROR: [Layer 1 Runner] Core imports failed. Ensure libs are in PYTHONPATH or installed. {e}")
-        sys.exit(1)
+from ingestion.ingestor import DataIngestor
+from transformer.data_wrangler import DataWrangler
+
+SCHEMA_GROUPS = ("data_schemas", "metadata_schema", "additional_datasets_schemas")
 
 
-def _load_data_analysis_recipe_raw(data_analysis_recipe_path: str) -> dict:
-    """Load a data analysis recipe as a raw dict, bypassing ConfigManager validation.
-
-    Used for standalone wrangling data analysis recipes (no analysis_groups) that would
-    fail ConfigManager's full-pipeline structural checks.
-    """
-    with open(data_analysis_recipe_path, "r") as f:
-        return yaml.safe_load(f) or {}
-
-
-def run_wrangler_debug(data_analysis_recipe_path: str, data_path_override: str = None, output_path: str = None, tier: str = "all"):
-    """
-    Consolidated Layer 1 Debugger & Universal Runner (ADR 005 / ADR 013-015).
-    tier: 'tier1', 'tier2', or 'all' (default).
-    """
-    print(f"\n[{'='*60}]")
-    print(f" 🚀  LAYER 1 WRANGLER DEBUGGER (v2: Consolidated)")
-    print(f"[{'='*60}]\n")
-
-    # 1. Load Data Analysis Recipe
-    if not os.path.exists(data_analysis_recipe_path):
-        print(f"  └── ❌ Data analysis recipe Error: File not found: {data_analysis_recipe_path}")
-        sys.exit(1)
-
-    try:
-        raw = _load_data_analysis_recipe_raw(data_analysis_recipe_path)
-        # Use ConfigManager only for full pipeline data analysis recipes (have analysis_groups).
-        # Standalone wrangling-only data analysis recipes skip ConfigManager to avoid the
-        # analysis_groups validation gate that fires for partial test data analysis recipes.
-        if raw.get("analysis_groups"):
-            config_manager = ConfigManager(data_analysis_recipe_path)
-            data_analysis_recipe = config_manager.raw_config
+def dataset_blocks(recipe: dict, fallback_id: str) -> dict:
+    """The data schemas of a recipe by dataset id: the recipe itself when it is standalone."""
+    if "input_fields" in recipe or "wrangling" in recipe:
+        return {recipe.get("id") or fallback_id: recipe}
+    blocks = {}
+    for key in SCHEMA_GROUPS:
+        group = recipe.get(key) or {}
+        if key == "metadata_schema" and "input_fields" in group:
+            blocks["metadata_schema"] = group
         else:
-            data_analysis_recipe = raw
-    except Exception as e:
-        print(f"  └── ❌ Load Error: Failed to parse data analysis recipe yaml. {e}")
-        sys.exit(1)
+            blocks.update(group)
+    return blocks
 
-    # 2. Extract Dataset Blocks
-    dataset_blocks = {}
-    if "input_fields" in data_analysis_recipe or "wrangling" in data_analysis_recipe:
-        # Standalone Data Analysis Recipe
-        dataset_id = data_analysis_recipe.get("id") or data_analysis_recipe.get(
-            "name") or Path(data_analysis_recipe_path).stem
-        dataset_blocks[dataset_id] = data_analysis_recipe
-    else:
-        # Combined Pipeline Data Analysis Recipe (Searching for data_schemas, metadata_schema, etc.)
-        for key in ["data_schemas", "metadata_schema", "additional_datasets_schemas"]:
-            group = data_analysis_recipe.get(key, {})
-            if isinstance(group, dict) and group:
-                if key == "metadata_schema" and "input_fields" in group:
-                    dataset_blocks["metadata_schema"] = group
-                else:
-                    dataset_blocks.update(group)
 
-    if not dataset_blocks:
-        print(
-            f"  └── ❌ Data analysis recipe Error: No valid dataset blocks found in {data_analysis_recipe_path}")
-        sys.exit(1)
+def wrangle(dataset_id: str, schema: dict, tier: str, data_dir: str, data_override: str | None = None):
+    """Ingest one data schema and run its wrangling tier; return the collected DataFrame."""
+    if data_override:
+        schema = {**schema, "source": {"type": "local_tsv", "path": data_override}}
+    lf, _ = DataIngestor(data_dir).ingest(dataset_id, schema)
+    steps = DataWrangler._resolve_tier(schema.get("wrangling"), tier)
+    return (DataWrangler().run(lf, steps) if steps else lf).collect()
 
-    print(
-        f"  └── Found {len(dataset_blocks)} dataset(s) in data analysis recipe definitions.")
 
-    # 3. Initialize Ingestor (for source resolution)
-    ingestor = DataIngestor(data_dir=str(project_root / "assets"))
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--data-analysis-recipe", required=True, help="Path to the YAML data analysis recipe.")
+    parser.add_argument("--data", help="Read this TSV instead of the one the recipe names.")
+    parser.add_argument("--output", required=True, help="TSV file to write (one dataset), or a folder (one file per dataset).")
+    parser.add_argument("--data-dir", default=".", help="Folder searched when a schema names no source (default: the current folder).")
+    parser.add_argument("--tier", choices=["tier1", "tier2", "all"], default="all", help="Wrangling tier to run (default: all).")
+    args = parser.parse_args(argv)
 
-    # 4. Processing Loop
-    for dataset_id, schema in dataset_blocks.items():
-        if not isinstance(schema, dict) or ("input_fields" not in schema and "wrangling" not in schema):
-            continue
-
-        print(f"\n[TARGET: {dataset_id}]")
-
-        # a) Ingestion Resolution (Override vs. Data analysis recipe Source)
-        try:
-            if data_path_override:
-                print(
-                    f"  └── 📥 Load: CLI Override used -> {data_path_override}")
-                # Enforce TSV/CSV fallback detection logic
-                separator = '\t' if data_path_override.endswith(
-                    '.tsv') else ','
-                lf = pl.scan_csv(data_path_override, separator=separator, null_values=[
-                                 "null", "NA", ""])
-                source_path = data_path_override
-            else:
-                # Use source block resolution from DataIngestor (ADR-015)
-                # This works if the data analysis recipe has a 'source' block.
-                lf, source_path = ingestor.ingest(dataset_id, schema)
-                print(
-                    f"  └── 📥 Load: Resolved from data analysis recipe source -> {source_path}")
-        except Exception as e:
-            print(f"  └── ❌ Ingest Error: {e}")
-            continue
-
-        # b) Field Schema & Actions Cleanup (handling nested includes)
-        input_fields = schema.get("input_fields", {})
-        if isinstance(input_fields, dict) and "input_fields" in input_fields:
-            input_fields = input_fields["input_fields"]
-
-        wrangling_rules = schema.get("wrangling", [])
-        if isinstance(wrangling_rules, dict) and "wrangling" in wrangling_rules:
-            wrangling_rules = wrangling_rules["wrangling"]
-
-        output_fields = schema.get("output_fields", {})
-        if isinstance(output_fields, dict) and "output_fields" in output_fields:
-            output_fields = output_fields["output_fields"]
-
-        # c) Atomic Wrangling (DataWrangler) — resolve tier
-        wrangler = DataWrangler(input_fields)
-        resolved_rules = DataWrangler._resolve_tier(wrangling_rules, tier)
-
-        if not resolved_rules:
-            if not wrangling_rules:
-                print(f"  └── ⚡ Identity Mode: Applying zero actions (ADR-014).")
-            else:
-                print(f"  └── ⚡ Tier '{tier}' has no actions — skipping.")
-            transformed_lf = lf
-        else:
-            print(
-                f"  └── 🛠️  Wrangling [{tier}]: Applying {len(resolved_rules)} actions...")
-            try:
-                transformed_lf = wrangler.run(lf, resolved_rules)
-            except Exception as e:
-                print(f"      └── ❌ Wrangling Failure: {e}")
-                continue
-
-        # d) Contract Guard (ADR-013: output_fields .select() + Casting)
-        if not output_fields:
-            if "output_fields" in schema:
-                print(
-                    f"  └── 🛡️  Contract Guard: Output list empty, retaining all columns.")
-            else:
-                print(f"  └── ℹ️  No output contract defined. Retaining all columns.")
-        else:
-            target_columns = list(output_fields.keys()) if isinstance(
-                output_fields, dict) else output_fields
-            print(
-                f"  └── 🛡️  Contract Guard: Selecting {len(target_columns)} columns...")
-            try:
-                # 1. Selection
-                transformed_lf = transformed_lf.select(target_columns)
-
-                # 2. Final Casting (Clean-then-Cast)
-                # Map YAML types to Polars types
-                type_map = {
-                    "categorical": pl.Categorical,
-                    "utf8": pl.String,
-                    "string": pl.String,
-                    "numeric": pl.Float64,
-                    "float": pl.Float64,
-                    "int": pl.Int64,
-                    "i64": pl.Int64,
-                    "date": pl.Date
-                }
-
-                cast_exprs = []
-                for col_name, col_props in output_fields.items():
-                    if not isinstance(col_props, dict):
-                        continue
-                    target_type_str = col_props.get("type", "").lower()
-                    if target_type_str in type_map:
-                        print(
-                            f"      └── 🏷️  Cast: {col_name} -> {target_type_str}")
-                        cast_exprs.append(pl.col(col_name).cast(
-                            type_map[target_type_str]))
-
-                if cast_exprs:
-                    transformed_lf = transformed_lf.with_columns(cast_exprs)
-
-            except Exception as e:
-                print(f"      └── ❌ Contract Mismatch/Cast Error: {e}")
-                continue
-
-        # e) Materialization (ADR-010)
-        # Priority: cli override > default tmpAI dated location
-        # If output_path is a directory, save per-dataset file inside it.
-        if output_path and (os.path.isdir(output_path) or output_path.endswith(os.sep) or output_path.endswith("/")):
-            mat_path = os.path.join(output_path.rstrip(
-                "/"), f"{dataset_id}_debug.tsv")
-        elif output_path:
-            mat_path = output_path
-        else:
-            lineage_id = Path(data_analysis_recipe_path).stem
-            date_str = datetime.now().strftime("%Y-%m-%d")
-            dated_dir = project_root / f"tmpAI/{date_str}/{lineage_id}"
-            dated_dir.mkdir(parents=True, exist_ok=True)
-            mat_path = str(dated_dir / f"{dataset_id}_debug.tsv")
-
-        out_dir = os.path.dirname(mat_path)
-        if out_dir:
-            os.makedirs(out_dir, exist_ok=True)
-
-        try:
-            df = transformed_lf.collect()
-            # Enforce TSV output for consistency per ADR-002
-            df.write_csv(mat_path, separator='\t')
-            print(f"  └── 💾 Materialized resulting LazyFrame to: {mat_path}")
-
-            # f) Inspection
-            print(f"\n  [TRANSFORMED DATA GLIMPSE: {dataset_id}]")
-            print(df.glimpse())
-            print(f"  └── ✅ Final: {len(df.columns)} columns, {len(df)} rows.")
-
-        except Exception as e:
-            print(f"  └── ❌ Materialization Error: {e}")
-            continue
-
-    print(f"\n[{'='*60}]")
-    print(f" ✅ ALL PROCESSING STEPS COMPLETE.")
-    print(f"[{'='*60}]\n")
+    path = Path(args.data_analysis_recipe)
+    recipe = yaml.safe_load(path.read_text()) or {}
+    blocks = dataset_blocks(recipe, path.stem)
+    if not blocks:
+        print(f"No data schema found in {path}", file=sys.stderr)
+        return 1
+    out = Path(args.output)
+    for dataset_id, schema in blocks.items():
+        df = wrangle(dataset_id, schema, args.tier, args.data_dir, args.data)
+        target = out / f"{dataset_id}_debug.tsv" if (out.is_dir() or str(args.output).endswith("/")) else out
+        target.parent.mkdir(parents=True, exist_ok=True)
+        df.write_csv(target, separator="\t")
+        print(f"[{dataset_id}] {len(df.columns)} columns, {len(df)} rows -> {target}")
+        print(df.glimpse())
+    return 0
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Consolidated Layer 1 Debugger/Runner (ADR 005/013/014/015)")
-    parser.add_argument("--data-analysis-recipe", required=True,
-                        help="Path to YAML data analysis recipe.")
-    parser.add_argument("--data", help="Optional CLI override for data path.")
-    parser.add_argument(
-        "--output", help="Optional CLI override for output path.")
-    parser.add_argument(
-        "--tier", choices=["tier1", "tier2", "all"], default="all",
-        help="Which wrangling tier to execute: tier1, tier2, or all (default: all).")
-
-    args = parser.parse_args()
-    run_wrangler_debug(args.data_analysis_recipe, args.data, args.output, args.tier)
+    sys.exit(main())

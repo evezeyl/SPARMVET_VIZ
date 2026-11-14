@@ -39,7 +39,7 @@
 | `libs/viz_gallery/assets/refresh_gallery.py` | [ADR-037] Gallery Indexing & Integrity Refresher | CLI Tool → JSON | `refresh_gallery.py`, Pivot-Index |
 | `app/modules/gallery_viewer.py` | [ADR-033/057] Split-Pane Gallery (full-width) + sidebar filter builder | Main content + sidebar UI | `GalleryViewer.render_explorer_ui()` (main), `GalleryViewer.build_sidebar_ui()` (nav_sidebar accordion — called by home_theater.py sidebar_tools_ui) |
 | `protocol_tiered_data.md` | Logic Protocol for Tiers (ADR-024) | Source of Truth | Short-Circuit, Predicate Pushdown |
-| `transformer_integrity_suite.py` | Automated Integrity Suite (25+ Actions) | Registry → Report | `libs/transformer/tests/` |
+| `test_action_recipe_pairs.py` | The 1:1:1 pair of every registered action runs and equals Polars | Registry → pytest | `libs/transformer/tests/` |
 | `libs/ingestion/src/ingestion/excel_handler.py` | [ADR-032] Excel Workbook Normalization | XLSX → Multi-TSV | `ExcelHandler`, authoritative extraction |
 | `pipeline/*.yaml` | Master configurations and nested data contracts | (Defs) → Pipeline state | `input_fields`, `output_fields` |
 | `libs/*/src/*/registry.py` | Authority for valid Wrangling and Viz actions | Registry → Validation | `@register_action`, `@register_geom` |

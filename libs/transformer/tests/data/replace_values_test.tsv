@@ -1,7 +1,0 @@
-sample_id	isolate_id	serotype	st_type	resistance_genes
-SAM201	ISO_B1	O157:H7	11	5
-SAM202	ISO_B2	ND	ND	3
-SAM203	ISO_B3	Unknown	Unknown	1
-SAM204	ISO_B4	Typhimurium	21	4
-SAM205	ISO_B5	Not Typed	ND	2
-SAM206	ISO_B6	O104:H4	-	0

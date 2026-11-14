@@ -1,6 +1,0 @@
-sample_id	species	resistance_genes
-SAM601	Escherichia coli	tet(A), sul1, dfrA1
-SAM602	Salmonella enterica	strA, strB
-SAM603	Listeria monocytogenes	null
-SAM604	Escherichia coli	blaTEM-1
-SAM605	Unknown	aph(3')-Ia, catA1

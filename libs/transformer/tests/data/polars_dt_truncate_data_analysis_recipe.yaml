@@ -1,0 +1,25 @@
+# Format 1 recipe of the 1:1:1 pair for polars_dt_truncate; data: polars_dt_truncate_test.tsv.
+# A TSV cannot hold a list or a struct: when the action needs one, a setup step builds it first.
+id: polars_dt_truncate
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
+info:
+  label: Test pair of polars_dt_truncate
+  description: One recipe and one data file for the action polars_dt_truncate (1:1:1
+    law, rules_data_engine.md section 2). Every key is written; nothing is a default.
+source:
+  type: local_tsv
+  path: libs/transformer/tests/data/polars_dt_truncate_test.tsv
+null_values: ['']
+strip: false
+input_fields:
+  d:
+    type: Date
+    label: d
+wrangling:
+  tier1:
+  - action: polars_dt_truncate
+    columns: [d]
+    every: 1mo
+  tier2: []

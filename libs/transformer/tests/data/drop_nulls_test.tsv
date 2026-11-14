@@ -1,7 +1,0 @@
-sample_id	isolate_id	species	st_type	resistance_genes	biocide_genes
-SAM101	ISO_A1	Escherichia coli	11	5	0.2
-SAM102	ISO_A2	Salmonella enterica	null	3	0.1
-SAM103	ISO_A3	Listeria monocytogenes	45	null	0.0
-SAM104	ISO_A4	Escherichia coli	21	4	null
-SAM105	ISO_A5	null	99	2	0.5
-SAM106	ISO_A6	Campylobacter jejuni	ND	1	0.0

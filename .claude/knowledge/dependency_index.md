@@ -323,13 +323,6 @@
 - **consumed_by:** `manual @verify`, `CI`
 - **doc:** `.claude/rules/ui_implementation_contract.md#9`, `.claude/rules/ui_implementation_contract.md#10`
 
-## `app/tests/debug_home_theater.py`
-- **Role:** `info`
-- **provides:** `debug:home_theater_headless`
-- **consumes:** `app/src/bootloader.py`, `app/modules/session_manager.py`, `utils/config_loader.py`
-- **consumed_by:** `CI`, `manual @verify`
-- **doc:** `.claude/tasks/tasks.md#21-H`
-
 ## `app/tests/debug_pipeline_connector.py`
 - **Role:** `info`
 - **provides:** `debug:pipeline_connector_headless`
@@ -504,7 +497,7 @@
 - **provides:** `function:value_to_text`, `function:text_to_value`
 - **consumes:** `libs/utils/src/utils/ui_schema.py`, `libs/utils/src/utils/strict_yaml.py`
 - **consumed_by:** `app/modules/wrangle_studio.py`, `app/handlers/blueprint_handlers.py`
-- **doc:** `.claude/design/recipe_format_spec.md (section 8`, `R1)`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8`, `RG1)`
 
 ## `libs/connector/src/connector/__init__.py`
 - **Role:** `info`
@@ -572,18 +565,19 @@
 - **consumes:** `libs/utils/src/utils/id_patterns.py`
 - **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
 
+## `libs/ingestion/src/ingestion/declared.py`
+- **Role:** `wrangle`
+- **provides:** `function:apply_declared`
+- **consumes:** `libs/utils/src/utils/polars_types.py`, `libs/utils/src/utils/recipe_check.py`
+- **consumed_by:** `libs/ingestion/src/ingestion/ingestor.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.3`, `7.4; DEC27`, `DEC28)`
+
 ## `libs/ingestion/src/ingestion/ingestor.py`
 - **Role:** `wrangle`
 - **provides:** `class:DataIngestor`, `method:ingest`, `method:find_file`
-- **consumes:** `libs/ingestion/src/ingestion/sanitizer.py`
+- **consumes:** `libs/ingestion/src/ingestion/declared.py`
 - **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`, `.claude/knowledge/architecture_decisions.md#ADR-094`
-
-## `libs/ingestion/src/ingestion/sanitizer.py`
-- **Role:** `wrangle`
-- **provides:** `class:DataSanitizer`, `method:apply`
-- **consumed_by:** `libs/ingestion/src/ingestion/ingestor.py`
-- **doc:** `.claude/tasks/tasks.md#INGEST-SANITIZE-1`
 
 ## `libs/test_lab/src/test_lab/anonymiser.py`
 - **Role:** `info`
@@ -627,56 +621,32 @@
 - **consumed_by:** `libs/transformer/src/transformer/actions/cleaning/core.py`, `libs/transformer/src/transformer/actions/cleaning/analytical.py`, `libs/transformer/src/transformer/actions/cleaning/advanced.py`, `libs/transformer/src/transformer/actions/cleaning/expressions.py`, `libs/transformer/src/transformer/actions/relational/joins.py`, `libs/transformer/src/transformer/actions/reshaping/core.py`, `libs/transformer/src/transformer/actions/performance/aggregation.py`, `libs/transformer/src/transformer/actions/persistence/anchor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
 - **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
-## `libs/transformer/src/transformer/actions/cleaning/advanced.py`
+## `libs/transformer/src/transformer/actions/composite.py`
 - **Role:** `wrangle`
-- **provides:** `action:split_and_explode`, `action:derive_categories`, `action:split_column_to_parts`, `action:divide_columns`
-- **consumes:** `libs/utils/src/utils/errors.py (TransformationError)`
-- **consumed_by:** `any YAML data analysis recipe using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`
-- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-078)`
+- **provides:** `action:step_top_n_other`
+- **consumes:** `libs/transformer/src/transformer/actions/polars_calls.py (_checked)`
+- **consumed_by:** `libs/transformer/tests/test_step_actions.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1 (DEC36`, `R7)`, `.claude/design/home_evidence/actions_and_polars_2026-11-13.md section 25`
 
-## `libs/transformer/src/transformer/actions/cleaning/analytical.py`
+## `libs/transformer/src/transformer/actions/modified.py`
 - **Role:** `wrangle`
-- **provides:** `action:top_n_other`, `action:window_agg`, `action:shift`, `action:fill_nulls_direction`, `action:sort`, `action:sample`, `action:cum_sum`, `action:cum_count`, `action:date_extract`, `action:date_truncate`, `action:list_slice`, `action:list_join`, `action:is_in`, `action:not_in`, `action:z_score`, `action:percentile`, `action:value_counts`, `action:describe_stats`, `action:select_by_pattern`, `action:horizontal_stats`, `action:any_horizontal`, `action:all_horizontal`, `action:interpolate`
-- **consumes:** `libs/utils/src/utils/errors.py (TransformationError)`
-- **consumed_by:** `any YAML data analysis recipe using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
-- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075`, `ADR-078)`
+- **provides:** `action:modif_filter`
+- **consumes:** `libs/transformer/src/transformer/actions/polars_calls.py (_checked)`, `libs/utils/src/utils/ui_schema.py`
+- **consumed_by:** `app/tests/test_modif_filter_verify.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1 (DEC39)`, `.claude/design/home_evidence/actions_and_polars_2026-11-13.md`
 
-## `libs/transformer/src/transformer/actions/cleaning/core.py`
+## `libs/transformer/src/transformer/actions/polars_calls.py`
 - **Role:** `wrangle`
-- **provides:** `action:fill_nulls`, `action:drop_nulls`, `action:replace_values`, `action:rename`, `action:drop_duplicates`, `action:unique_rows`, `action:recode_values`, `action:sanitize_column_names`, `action:keep_columns`, `action:drop_columns`, `action:strip_whitespace`, `action:round_numeric`, `action:filter_range`, `action:add_constant`, `action:filter_eq`, `action:filter_ne`, `action:filter_gt`, `action:filter_lt`, `action:rename_columns`, `action:unique`
-- **consumed_by:** `any YAML data analysis recipe using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
-- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+- **provides:** `action:polars_select`, `action:polars_drop`, `action:polars_with_columns`, `action:polars_rename`, `action:polars_unique`, `action:polars_sort`, `action:polars_drop_nulls`, `action:polars_drop_nans`, `action:polars_explode`, `action:polars_unnest`, `action:polars_unpivot`, `action:polars_pivot`, `action:polars_join`, `action:polars_sample`, `action:polars_describe`, `action:polars_cast`, `action:polars_fill_null`, `action:polars_fill_nan`, `action:polars_shift`, `action:polars_cum_sum`, `action:polars_cum_count`, `action:polars_interpolate`, `action:polars_round`, `action:polars_str_replace_all`, `action:polars_str_extract`, `action:polars_str_split`, `action:polars_str_strip_chars`, `action:polars_list_join`, `action:polars_list_slice`, `action:polars_dt_truncate`, `action:polars_coalesce`, `action:polars_sum_horizontal`, `action:polars_mean_horizontal`, `action:polars_min_horizontal`, `action:polars_max_horizontal`, `action:polars_all_horizontal`, `action:polars_any_horizontal`
+- **consumes:** `libs/utils/src/utils/ui_schema.py (step_problems)`
+- **consumed_by:** `libs/transformer/tests/test_polars_actions_equal_polars.py`, `libs/transformer/tests/test_registry_polars_rules.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1`
 
-## `libs/transformer/src/transformer/actions/cleaning/expressions.py`
+## `libs/transformer/src/transformer/anchor.py`
 - **Role:** `wrangle`
-- **provides:** `action:regex_extract`, `action:cast`, `action:coalesce`, `action:label_if`, `action:mutate`, `action:regex_replace`, `action:null_if`
-- **consumes:** `libs/utils/src/utils/errors.py (TransformationError)`
-- **consumed_by:** `any YAML data analysis recipe using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
-- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075`, `ADR-078)`
-
-## `libs/transformer/src/transformer/actions/performance/aggregation.py`
-- **Role:** `wrangle`
-- **provides:** `action:summarize`, `action:sort`, `action:count_by_group`
-- **consumed_by:** `any YAML data analysis recipe using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`
-- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`
-
-## `libs/transformer/src/transformer/actions/persistence/anchor.py`
-- **Role:** `wrangle`
-- **provides:** `action:sink_parquet`, `action:scan_parquet`
-- **consumed_by:** `app/modules/orchestrator.py (injected into step list)`, `libs/transformer/tests/debug_assembler.py (injected into step list)`
-- **doc:** `.claude/rules/rules_data_engine.md`
-
-## `libs/transformer/src/transformer/actions/relational/joins.py`
-- **Role:** `wrangle`
-- **provides:** `action:join`, `action:join_filter`
-- **consumed_by:** `any YAML data analysis recipe using join steps`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
-- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
-
-## `libs/transformer/src/transformer/actions/reshaping/core.py`
-- **Role:** `wrangle`
-- **provides:** `action:unpivot`, `action:explode`, `action:unnest`, `action:split_to_list`, `action:to_struct`, `action:pivot`, `action:split_column`
-- **consumed_by:** `any YAML data analysis recipe using these action names`, `.claude/rules/rules_agent_role_bioscientist.md#8`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via ACTION_SCHEMAS)`
-- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#8`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+- **provides:** `function:write_anchor`, `function:read_anchor`
+- **consumed_by:** `app/modules/orchestrator.py`
+- **doc:** `.claude/design/recipe_format_spec.md (DEC42)`, `.claude/knowledge/architecture_decisions.md (ADR-024`, `ADR-031`, `ADR-089)`
 
 ## `libs/transformer/src/transformer/data_assembler.py`
 - **Role:** `wrangle`
@@ -694,7 +664,7 @@
 
 ## `libs/transformer/src/transformer/metadata_validator.py`
 - **Role:** `wrangle`
-- **provides:** `class:MetadataValidator`, `method:validate`, `method:validate_types`
+- **provides:** `class:MetadataValidator`, `method:validate`
 - **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`, `.claude/knowledge/architecture_decisions.md#ADR-034`
 
@@ -720,27 +690,6 @@
 - **consumed_by:** `libs/viz_factory/tests/debug_gallery.py`, `libs/transformer/tests/transformer_integrity_suite.py`
 - **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
 
-## `libs/transformer/tests/debug_decorator_suite.py`
-- **Role:** `wrangle`
-- **provides:** `script:debug_decorator_suite`
-- **consumes:** `libs/transformer/src/transformer/actions/`, `libs/transformer/tests/data/`
-- **consumed_by:** `manual action-decorator testing`
-- **doc:** `.claude/rules/rules_data_engine.md#3`
-
-## `libs/transformer/tests/debug_expressions.py`
-- **Role:** `wrangle`
-- **provides:** `script:debug_expressions`
-- **consumes:** `libs/transformer/src/transformer/actions/cleaning/expressions.py`, `libs/transformer/tests/data/expressions_test.yaml`
-- **consumed_by:** `manual expression-action testing`
-- **doc:** `.claude/rules/rules_data_engine.md#3`
-
-## `libs/transformer/tests/debug_phase3_refinements.py`
-- **Role:** `wrangle`
-- **provides:** `script:debug_phase3_refinements`
-- **consumes:** `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/metadata_validator.py`, `libs/transformer/src/transformer/actions/persistence/anchor.py`
-- **consumed_by:** `manual Phase 3 persistence testing`
-- **doc:** `.claude/rules/rules_data_engine.md#3`
-
 ## `libs/transformer/tests/debug_pipeline.py`
 - **Role:** `wrangle`
 - **provides:** `script:debug_pipeline`
@@ -758,9 +707,9 @@
 ## `libs/transformer/tests/debug_wrangler.py`
 - **Role:** `wrangle`
 - **provides:** `script:debug_wrangler`
-- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`
 - **mirrors:** `app/modules/orchestrator.py (Tier 1 wrangling path)`
-- **consumed_by:** `libs/transformer/tests/transformer_integrity_suite.py`
+- **consumed_by:** `libs/transformer/tests/test_debug_wrangler.py`
 - **doc:** `.claude/rules/rules_data_engine.md#3`
 
 ## `libs/transformer/tests/debug_wrangler_errors.py`
@@ -770,12 +719,11 @@
 - **consumed_by:** `manual error-mode testing`
 - **doc:** `.claude/rules/rules_data_engine.md#3`
 
-## `libs/transformer/tests/transformer_integrity_suite.py`
-- **Role:** `wrangle`
-- **provides:** `script:transformer_integrity_suite`
-- **consumes:** `libs/transformer/tests/debug_wrangler.py`, `libs/transformer/tests/debug_assembler.py`, `libs/transformer/tests/data/`, `libs/transformer/src/transformer/actions/`
-- **consumed_by:** `CI / manual audit`
-- **doc:** `.claude/rules/rules_data_engine.md`
+## `libs/utils/src/utils/action_names.py`
+- **Role:** `ref`
+- **provides:** `constant:JOIN`, `constant:SELECT`, `constant:DROP`, `constant:WITH_COLUMNS`, `constant:FILTER`, `constant:CAST`, `constant:TIER1_ONLY`
+- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/transformer/tests/test_action_names.py`
+- **doc:** `.claude/design/recipe_format_spec.md (R4)`
 
 ## `libs/utils/src/utils/config_loader.py`
 - **Role:** `ref`
@@ -798,6 +746,12 @@
 - **consumed_by:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/ingestion/src/ingestion/ingestor.py`, `app/handlers/home_theater.py (reads .pipeline_error)`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-079`, `.claude/knowledge/architecture_decisions.md#ADR-094`
 
+## `libs/utils/src/utils/formula_check.py`
+- **Role:** `ref`
+- **provides:** `function:formula_problems`, `function:evaluate_formula`, `function:function_string_problems`, `function:denied_methods`, `constant:MODULE_FUNCTIONS`, `constant:MATH_FUNCTIONS`, `class:FormulaError`
+- **consumed_by:** `libs/utils/tests/test_formula_check.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 15; check ST06)`
+
 ## `libs/utils/src/utils/hashing.py`
 - **Role:** `ref`
 - **provides:** `function:generate_config_hash`
@@ -816,6 +770,45 @@
 - **consumed_by:** `app/src/render/pipeline_error_renderers.py`, `app/src/server.py`, `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `app/handlers/audit_stack.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py (capture_entry)`, `app/handlers/ingestion_handlers.py (capture_entry)`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-079`
 
+## `libs/utils/src/utils/polars_types.py`
+- **Role:** `ref`
+- **provides:** `function:text_dtype_names`, `function:dtype_with_parameters`, `constant:PARAMETER_KEYS`
+- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/utils/tests/test_polars_types.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.4; check FD02; R9)`
+
+## `libs/utils/src/utils/recipe_check.py`
+- **Role:** `ref`
+- **provides:** `function:check_recipe`, `function:spec`, `class:Problem`, `class:Result`
+- **consumes:** `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/ui_schema.py`, `libs/utils/src/utils/formula_check.py`, `libs/utils/src/utils/recipe_paths.py`, `libs/utils/src/utils/polars_types.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_check.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 3 to 11`, `14)`
+
+## `libs/utils/src/utils/recipe_loader.py`
+- **Role:** `ref`
+- **provides:** `function:load_recipe`, `function:check_recipe_file`
+- **consumes:** `libs/utils/src/utils/strict_yaml.py`, `libs/utils/src/utils/config_loader.py (project_root_of)`, `libs/utils/src/utils/recipe_check.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_loader.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 5.2`, `6.1; checks T01`, `T02`, `T07`, `T10`, `T11`, `F01)`
+
+## `libs/utils/src/utils/recipe_migration.py`
+- **Role:** `ref`
+- **provides:** `function:migrate_text`, `function:migrate_steps_text`, `function:migrate_recipe_file`, `constant:SANITISER_TEXTS`, `class:MigrationReport`
+- **consumes:** `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/step_migration.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_migration.py`, `assets/scripts/migrate_recipe_format.py`
+- **doc:** `.claude/design/recipe_format_spec.md (4.1`, `7.3`, `7.4`, `12)`
+
+## `libs/utils/src/utils/recipe_paths.py`
+- **Role:** `ref`
+- **provides:** `function:shape_problems`, `function:containment_problems`
+- **consumed_by:** `libs/utils/tests/test_recipe_paths.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 15; checks PA01`, `PA02; decision DEC30)`
+
+## `libs/utils/src/utils/step_migration.py`
+- **Role:** `ref`
+- **provides:** `function:convert_step`, `class:NotConvertible`, `constant:REMOVED_ACTIONS`
+- **consumed_by:** `libs/utils/src/utils/recipe_migration.py`, `libs/transformer/tests/test_step_conversion.py`
+- **doc:** `.claude/design/home_evidence/actions_and_polars_2026-11-13.md sections 15`, `25`, `26`
+
 ## `libs/utils/src/utils/strict_yaml.py`
 - **Role:** `ref`
 - **provides:** `function:load_strict`, `class:DuplicateKeyError`
@@ -824,16 +817,16 @@
 
 ## `libs/utils/src/utils/ui_schema.py`
 - **Role:** `ref`
-- **provides:** `constant:WIDGETS`, `function:expected_shape`, `function:shape_problem`
-- **consumed_by:** `libs/transformer/tests/test_ui_schemas.py`, `libs/transformer/tests/test_action_schema_examples.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py`, `libs/blueprint_arch/tests/test_schema_registry.py`
-- **doc:** `.claude/design/recipe_format_spec.md (section 8)`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+- **provides:** `constant:WIDGETS`, `function:expected_shape`, `function:shape_problem`, `function:step_problems`, `function:schema_declaration_problems`, `class:StepProblem`
+- **consumed_by:** `libs/utils/tests/test_step_problems.py`, `libs/transformer/tests/test_ui_schemas.py`, `libs/transformer/tests/test_action_schema_examples.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py`, `libs/blueprint_arch/tests/test_schema_registry.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8; checks ST03`, `ST04`, `ST07`, `ST09`, `ST10`, `ST11; R3)`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
 ## `libs/viz_factory/src/viz_factory/arguments.py`
 - **Role:** `plot`
 - **provides:** `function:allowed_arguments`, `function:unknown_arguments`, `function:argument_catalog`
 - **consumes:** `libs/viz_factory/src/viz_factory/registry.py (COMPONENT_SCHEMAS)`, `plotnine`
 - **consumed_by:** `app/modules/data_analysis_recipe_validator.py (the recipe checker's catalogs)`, `libs/viz_factory/tests/test_component_arguments.py`
-- **doc:** `.claude/design/recipe_format_spec.md (section 8`, `R5; check PS04)`, `libs/viz_factory/README.md (allow_extra_params)`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8`, `RG5; check PS04)`, `libs/viz_factory/README.md (allow_extra_params)`
 
 ## `libs/viz_factory/src/viz_factory/coords/core.py`
 - **Role:** `plot`

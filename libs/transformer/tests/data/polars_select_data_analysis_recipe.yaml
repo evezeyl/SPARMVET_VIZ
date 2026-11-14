@@ -1,0 +1,36 @@
+# Format 1 recipe of the 1:1:1 pair for polars_select; data: polars_select_test.tsv.
+# A TSV cannot hold a list or a struct: when the action needs one, a setup step builds it first.
+id: polars_select
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
+info:
+  label: Test pair of polars_select
+  description: One recipe and one data file for the action polars_select (1:1:1 law,
+    rules_data_engine.md section 2). Every key is written; nothing is a default.
+source:
+  type: local_tsv
+  path: libs/transformer/tests/data/polars_select_test.tsv
+null_values: ['']
+strip: false
+input_fields:
+  id:
+    type: String
+    label: id
+  g:
+    type: String
+    label: g
+  n:
+    type: Int64
+    label: n
+  f:
+    type: Float64
+    label: f
+  s:
+    type: String
+    label: s
+wrangling:
+  tier1:
+  - action: polars_select
+    exprs: [id, n]
+  tier2: []

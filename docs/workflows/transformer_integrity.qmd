@@ -1,55 +1,32 @@
 # Transformer & Viz Factory Integrity
 
-The `libs/transformer` and `libs/viz_factory` libraries each have an **Integrity Suite** — an automated CLI runner that verifies every registered action and component against a 1:1:1 test triplet. Run these suites after any wrangling refactor or before opening a PR.
+The `libs/transformer` library is checked by pytest, and `libs/viz_factory` has an **Integrity Suite** — an automated CLI runner that verifies every registered component against a 1:1:1 test triplet. Run these suites after any wrangling refactor or before opening a PR.
 
 ---
 
-## Transformer Integrity Suite
+## Transformer tests
 
-**Script:** `libs/transformer/tests/transformer_integrity_suite.py`
-
-The suite discovers all actions registered in `AVAILABLE_WRANGLING_ACTIONS` and runs them through `debug_wrangler.py` against their corresponding test triplets in `libs/transformer/tests/data/`.
-
-### Running the Suite
+The transformer library is checked by pytest (the old integrity suite and its runners could not start after recipe format 1 and were removed, ACTION-RECIPES-1). Run them after any wrangling change or before opening a PR:
 
 ```bash
-# Full suite — all phases, report saved to tmp/transformer/
-./.venv/bin/python libs/transformer/tests/transformer_integrity_suite.py
-
-# Custom output directory
-./.venv/bin/python libs/transformer/tests/transformer_integrity_suite.py \
-    --output_dir tmp/my_run/
+PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests -q
 ```
 
-**Output:** `tmp/transformer/{date}_transformer_integrity_report.txt`
+| Test file | What it proves |
+|---|---|
+| `test_action_recipe_pairs.py` | Every registered action has its 1:1:1 pair (recipe and data file in `libs/transformer/tests/data/`); the pair runs through the real ingestion and wrangler, the action acts, and the result equals the direct Polars call |
+| `test_polars_actions_equal_polars.py` | Every `polars_` action equals the direct Polars call, and what the actions refuse |
+| `test_actions_must_act.py`, `test_deterministic_order.py` | No step is a silent no-op; the same input gives the same rows in the same order (ADR-090) |
+| `test_action_schema_examples.py`, `test_ui_schemas.py` | The `yaml_example` and the form schema of every action are correct |
 
-### Three Phases
+To look at one result by hand (`@verify`), run a single recipe:
 
-| Phase | What it tests | Script called |
-|---|---|---|
-| **Phase 1 — Atomic Wrangler** | Every registered action via 1:1:1 test triplet | `debug_wrangler.py` |
-| **Phase 2 — Relational Audit** | Join / JoinFilter via `relational_audit.yaml` | `debug_assembler.py` |
-| **Phase 3 — Assembly Pipelines** | Full pipeline data analysis recipes in `config/data_analysis_recipes/pipelines/` | `debug_assembler.py` |
+```bash
+./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
+    --data-analysis-recipe libs/transformer/tests/data/polars_cast_data_analysis_recipe.yaml --output tmp/transformer/cast.tsv
+```
 
-### Current Status (2026-04-24)
-
-| Category | Actions | Status |
-|:---|:---|:---|
-| Reshaping | `unpivot`, `explode`, `unnest`, `split_column`, `split_to_list`, `to_struct`, `pivot`, `split_column_to_parts` | 🟢 PASSED |
-| Cleaning (Core) | `fill_nulls`, `drop_nulls`, `replace_values`, `rename`, `rename_columns`, `drop_duplicates`, `unique_rows`, `unique`, `sanitize_column_names`, `keep_columns`, `drop_columns`, `strip_whitespace`, `round_numeric`, `filter_range`, `filter_eq`, `add_constant`, `cast`, `coalesce` | 🟢 PASSED |
-| Cleaning (Expr) | `regex_extract`, `regex_replace`, `label_if`, `null_if`, `recode_values` | 🟢 PASSED |
-| Cleaning (Adv) | `split_and_explode`, `derive_categories`, `divide_columns`, `is_in`, `select_by_pattern`, `coalesce` | 🟢 PASSED |
-| Statistical | `count_by_group`, `cum_sum`, `cum_count`, `describe_stats`, `z_score`, `percentile`, `value_counts`, `window_agg`, `horizontal_stats`, `all_horizontal`, `any_horizontal`, `interpolate` | 🟢 PASSED |
-| Temporal | `date_extract`, `date_truncate` | 🟢 PASSED |
-| List / Struct | `list_join`, `list_slice`, `split_to_list`, `to_struct`, `explode`, `unnest` | 🟢 PASSED |
-| Mutation | `mutate`, `add_constant`, `shift`, `sample`, `sort` | 🟢 PASSED |
-| Persistence | `sink_parquet`, `scan_parquet` | 🟢 PASSED |
-| Relational | `join`, `join_filter` | 🟢 PASSED |
-| Performance | `summarize` | 🟢 PASSED |
-
-Total: all registered actions pass with 0 failures — see `libs/transformer/src/transformer/actions/`
-for the current count (`grep -c '^@register_action(' libs/transformer/src/transformer/actions/**/*.py`),
-since it grows as the registry expands (ADR-035).
+The 1:1:1 pairs are described in `docs/reference/decorator_testing.qmd`.
 
 ---
 
@@ -176,20 +153,6 @@ No file I/O — runs fully in-memory, prints PASS/FAIL to stdout.
 
 ---
 
-### `debug_phase3_refinements.py` — Test persistence hashing
-
-Verifies the `sink_parquet` short-circuit logic: first run materialises, second run short-circuits, third run with a changed step list invalidates the cache.
-
-```bash
-./.venv/bin/python libs/transformer/tests/debug_phase3_refinements.py
-
-# Custom parquet path
-./.venv/bin/python libs/transformer/tests/debug_phase3_refinements.py \
-    --output tmp/my_hash_test.parquet
-```
-
----
-
 ### `debug_viz_factory_tier3.py` — Test Tier 3 predicate pushdown
 
 Verifies that VizFactory correctly applies filter predicates before rendering.
@@ -204,17 +167,6 @@ Verifies that VizFactory correctly applies filter predicates before rendering.
 
 ---
 
-### `debug_expressions.py` — Test expression-based actions
-
-Tests the expression-cleaning action module directly.
-
-```bash
-./.venv/bin/python libs/transformer/tests/debug_expressions.py \
-    --data-analysis-recipe libs/transformer/tests/data/label_if_data_analysis_recipe.yaml
-```
-
----
-
 ### `debug_relational_audit.py` — Relational join audit
 
 Standalone relational join audit — verifies join integrity between two datasets.
@@ -223,16 +175,6 @@ Standalone relational join audit — verifies join integrity between two dataset
 ./.venv/bin/python libs/transformer/tests/debug_relational_audit.py \
     --data-analysis-recipe libs/transformer/tests/data/relational_audit.yaml \
     --output tmp/relational_audit/
-```
-
----
-
-### `debug_decorator_suite.py` — Bulk decorator CI
-
-Scans `libs/transformer/tests/data/` for `*_data_analysis_recipe.yaml` triplets and runs each through `debug_wrangler.py`. Produces a PASS/FAIL table.
-
-```bash
-./.venv/bin/python libs/transformer/tests/debug_decorator_suite.py
 ```
 
 ---

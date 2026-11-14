@@ -1,7 +1,0 @@
-wrangling:
-  tier1:
-  - action: horizontal_stats
-    columns:
-    - A
-    - B
-    operation: sum

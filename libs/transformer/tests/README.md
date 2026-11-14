@@ -28,7 +28,7 @@ data_schemas:
 
 - **debug_wrangler.py**: Dedicated runner for Layer 1 actions.
   - usage: `python debug_wrangler.py --data-analysis-recipe path/to/data_analysis_recipe.yaml --tier [tier1|tier2|all]`
-- **transformer_integrity_suite.py**: Executes all atomic action tests and generates a pass/fail report.
+- **test_action_recipe_pairs.py**: pytest check of the 1:1:1 pairs of every registered action (replaces the old integrity suite).
 
 ## Materialization Gate (@verify)
 

@@ -110,20 +110,17 @@ You can think about this system as :
 
 - **Output:** Strictly enforced as **TSV** (`separator="\t"`) with headers, as per bioinformatics metadata standards.
 
-## The Integrity Suite (transformer_integrity_suite.py)
+## Tests of the actions
 
-To maintain **Zero-Failure Integrity**, the Transformer uses an automated audit suite that synchronizes with the `AVAILABLE_WRANGLING_ACTIONS` registry.
+To maintain **Zero-Failure Integrity**, every registered action in `AVAILABLE_WRANGLING_ACTIONS` is checked by pytest:
 
-### Automated Verification Protocol
-- **Action Discovery**: Directly queries the `registry.py` for all decorated functions.
-- **Atomic Validation**: For every action, identifies the `{action}_data_analysis_recipe.yaml` and `{action}_test.tsv` triplet and executes via `debug_wrangler.py`.
-- **Relational Validation**: Executes full assembly steps (Layer 2) via `debug_assembler.py` and verifies successful joins.
-- **Materialized Evidence**: Every test generates a debug TSV in `tmp/transformer/` for human verification.
-- **Standardized Reporting**: Produces a `YYYY-MM-DD_transformer_integrity_report.txt` audit log.
+- **Pairs**: each action has `{action}_data_analysis_recipe.yaml` and `{action}_test.tsv` in `libs/transformer/tests/data/` (the 1:1:1 law). `test_action_recipe_pairs.py` runs every pair through the real ingestion and wrangler, checks that the action acts and that the result equals the direct Polars call.
+- **Equality with Polars**: `test_polars_actions_equal_polars.py` checks every `polars_` action against the Polars method it wraps, and what the actions refuse.
+- **Evidence by hand**: `debug_wrangler.py` runs one recipe and writes the result as a TSV for `@verify`.
 
 **Command:**
 ```bash
-./.venv/bin/python libs/transformer/tests/transformer_integrity_suite.py --output_dir tmp/transformer/
+PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests -q
 ```
 
 ## Verified Decorator Registry

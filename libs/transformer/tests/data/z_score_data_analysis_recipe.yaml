@@ -1,5 +1,0 @@
-wrangling:
-  tier1:
-  - action: z_score
-    columns:
-    - score

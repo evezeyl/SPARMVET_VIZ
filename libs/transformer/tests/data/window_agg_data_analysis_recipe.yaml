@@ -1,8 +1,0 @@
-wrangling:
-  tier1:
-  - action: window_agg
-    column: score
-    function: mean
-    partition_by:
-    - group
-    target_column: group_avg

@@ -1,5 +1,0 @@
-sample_id	val_to_round	val_to_filter	raw_string
-S1	1.23456	10	v1.2.3
-S2	2.71828	50	v4.5.6
-S3	3.14159	100	invalid
-S4	0.00001	-5	v0.0.1

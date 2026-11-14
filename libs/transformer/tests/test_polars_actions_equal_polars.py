@@ -41,7 +41,7 @@ STRUCTS = pl.DataFrame({"id": [1, 2], "st": [{"u": 1, "v": "a"}, {"u": 2, "v": "
 DATES = pl.DataFrame({"d": [datetime.date(2022, 3, 15), datetime.date(2022, 4, 2)]})
 BOOLS = pl.DataFrame({"a": [True, False, True], "b": [True, True, False]})
 RIGHT = pl.DataFrame({"id": ["a", "b", "z"], "v": [10, 20, 30]})
-NUMS = pl.DataFrame({"x": [1.0, 4.0, 2.0], "y": [3.0, None, 5.0]})
+NUMS = pl.DataFrame({"x": [1.26, 4.0, 2.55], "y": [3.0, None, 5.0]})
 
 
 @dataclass

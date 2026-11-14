@@ -1,4 +1,0 @@
-sample_id	species	resistance	date	extra_info
-101	E. coli	Resistant	2024-01-01	discard_me
-102	K. pneumoniae	Sensitive	2024-01-02	discard_me
-103	Enterobacter	Resistant	2024-01-03	discard_me

@@ -1,7 +1,0 @@
-sample_id	isolate_id	species	serotype	st_type	resistance_genes	biocide_genes	antimicrobial_score
-SAM001	ISO_01	Escherichia coli	O157:H7	11	5		0.85
-SAM002	ISO_02	Salmonella enterica	Typhimurium		3	2	0.45
-SAM003	ISO_03	Listeria monocytogenes			1	0.20
-SAM004	ISO_04	Escherichia coli		21	4	0	
-SAM005	ISO_05	Campylobacter jejuni			2		0.10
-SAM006	ISO_06			99	0	0	0.00

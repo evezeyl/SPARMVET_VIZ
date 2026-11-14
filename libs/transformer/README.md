@@ -16,13 +16,10 @@ The central engine for data wrangling and Phase 4 relational assembly. It enforc
 - `PipelineExecutor (pipeline.py)`: Top-level runner that coordinates the full end-to-end flow (Ingest -> Wrangle -> Assemble).
 - `ActionRegistry (registry.py)`: Central dictionary mapping YAML action keys to Python function logic.
 - `MetadataValidator (metadata_validator.py)`: Ensures user-provided data aligns with data analysis recipe contracts. Performs **Malformed Data Gatekeeping** (ADR-034) by trapping missing columns with typo-correction suggestions (`validate`), rejecting values that cannot be cast to the declared type before a file is written (`validate_types`), and enforcing schema types (`enforce_schema`).
-- `IntegritySuite (transformer_integrity_suite.py)` - [Orchestrator]: Programmatically verifies the correctness of every registered action.
-- `Phase3Debugger (debug_phase3_refinements.py)` - [Test Utility]: CLI runner for verifying decision hashing and gatekeeping logic.
-- `debug_wrangler.py` - [Dev Tool]: CLI runner for isolated atomic wrangling verification. Entry: `run_wrangler_debug()`.
+- `test_action_recipe_pairs.py` - [Test]: every registered action has its 1:1:1 pair (recipe and data file in `tests/data/`); the pair runs through ingestion and the wrangler and equals the direct Polars call.
+- `debug_wrangler.py` - [Dev Tool]: CLI runner that wrangles one format 1 recipe and writes the result as a TSV (`@verify` evidence). Entry: `main()`.
 - `debug_assembler.py` - [Dev Tool]: CLI runner for multi-source assembly and `final_contract` output. Entry: `run_assembler_debug()`.
 - `debug_pipeline.py` - [Test Utility]: CLI runner for full pipeline execution with materialized output for audit.
-- `debug_expressions.py` - [Dev Tool]: CLI runner for atomic Polars expressions (Cast, Coalesce).
-- `debug_decorator_suite.py` - [Helper]: CLI runner for Layer 1 action verification.
 - **Action Sub-Packages (ADR-024)**:
   - `Reshapinger (reshaping/core.py)`: Structural transformations (Pivot, Unpivot, Explode, Split).
   - `Cleaner (cleaning/core.py)`: Atomic cleaning (Rename, Replace, Nulls, Selection, Sanitization).
@@ -95,7 +92,7 @@ For Phase 1 & Phase 4 verification, use the local debugging runners to execute d
 **Full Suite Verification (The Automated Gate):**
 
 ```bash
-./.venv/bin/python libs/transformer/tests/transformer_integrity_suite.py --output_dir tmp/transformer/
+PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests -q
 ```
 
 **Atomic Wrangling (Isolated Action):**

@@ -1,7 +1,0 @@
-wrangling:
-  tier1:
-  - action: all_horizontal
-    columns:
-    - A
-    - B
-    target_column: all_true

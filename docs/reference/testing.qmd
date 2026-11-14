@@ -17,7 +17,7 @@ A high-level runner that programmatically discovers actions and dispatches them 
 Before pushing any components or architectural changes, you MUST run the Integrity Suites. These suites programmatically discover every loaded decorator and run a **1:1:1 Evidence Loop** (matching TSV + YAML against an artifact):
 ```bash
 # Validating Layer 1 and 2 DataFrame construction:
-.venv/bin/python libs/transformer/tests/transformer_integrity_suite.py
+PYTHONPATH=. .venv/bin/python -m pytest libs/transformer/tests -q
 
 # Validating all registered Graph Factory components:
 .venv/bin/python libs/viz_factory/tests/viz_factory_integrity_suite.py
@@ -29,7 +29,6 @@ Any failures here are summarized in `.txt` reports sent to `tmp/` and immediatel
 | Component Name (File) | Library | Primary Function | Target DataAnalysisRecipe/Data |
 | :--- | :--- | :--- | :--- |
 | **Pipeline (debug_pipeline.py)** | `libs/transformer` | End-to-end pipeline execution (Ingest -> Wrangle -> Assemble) | YAML Pipeline Data Analysis Recipes |
-| **Expressions (debug_expressions.py)** | `libs/transformer` | Atomic cleaning logic verification (Cast, Coalesce, LabelIf) | Mock LazyFrames |
 | **Ingestor (debug_ingestor.py)** | `libs/ingestion` | Manual verification of schema enforcement and file I/O | Raw TSV/VCF Assets |
 | **Audit (debug_audit.py)** | `libs/viz_factory` | Integrity check between Tasks, Registry, and Evidence | `tasks.md` + Registry |
 | **Distiller (debug_distiller.py)** | `libs/viz_factory` | Plotnine Color Distiller scaling verification | Isolated scale data analysis recipes |
