@@ -596,3 +596,26 @@ Eve: Exploration has ONE plot (Result, immutable, always shown); Audit mode has 
 - ID reconciliation: three defects recorded as strict xfail tests; keep the bridge (recommended).
 
 **Next:** JOIN-KEY-TYPES-1 (decided: a join keeps declared types), then IMPORT-PATH-1 (decided: option A), then SMOKE-RACE-2, the tier-3 reader, the Blueprint package, and the documentation sweep with the full name "data analysis recipe" in user-facing text.
+
+## Handoff 2026-11-14 (evening): JOIN-KEY-TYPES-1 merged, follow-ups, index generator
+
+**Merged:** JOIN-KEY-TYPES-1 (`bddaf76a`): a join keeps the declared types of its keys and fails when they differ. 14 baseline records change only by the type of `sample_id`; no joined table and no plot changed.
+**Follow-ups (branch `feat/recipe-format-1`):** `77538c54` the key check also fails for a missing key column (one or both sides) and for `left_on`/`right_on` of unequal length, with a plain message; the fix text says a step before the join changes only the left table; semi/anti tests. `b0f0b198` the dependency index generator skips `.claude/worktrees/` (index 4820 to 989 lines); `check_doc_links` problems 566 to 61.
+**Controls (reviewer, on 6e318386):** headless 3642 passed, 14 xfailed; browser (qa) 70 passed, 3 skipped; golden baseline result-identical; audits deps_verify, cross_lib, task_drift pass; docs_sync fails with the 2 known violations; dependency index 989 lines, no worktree path.
+**Open for Eve:** a first assembly step that joins the base table with itself is skipped silently (keep, or fail); template `complex_template` has the key `sample_id` as Float64; DOC-JOIN-CAST-1 needs her for the rule file and a superseding ADR for ADR-050.
+**Next:** IMPORT-PATH-1 stopped at step 0 (nothing built) and waits for Eve's decision (panel recommends a data folder per import; see tasks.md); then JOIN-PREVIEW-STRICT-1 with the Blueprint package, CHECKER-JOIN-KEYS-1, SMOKE-RACE-2, the tier-3 reader, the documentation sweep, DEP-INDEX-STALE-1.
+
+## Handoff 2026-11-14 (night): for the next coordinator session
+
+**Start:** a Fable session types `-coordinate` first (CLAUDE.md 2.1, `.claude/workflows/agent_dispatch_howto.md`). Workers: `builder`, `reviewer`, `scribe`, `scout`, the `panel-*` viewpoints.
+**Branch:** `feat/recipe-format-1`. Nothing after `29a563c7` is pushed; local `dev` is behind. Push only when Eve says.
+**Done today:** three packages merged (gallery examples as recipes, recipe writers, small fixes); strict checker in the HOME load gate; JOIN-KEY-TYPES-1 merged (`bddaf76a`) with follow-ups (`77538c54`); dependency index generator skips worktrees (`b0f0b198`); record repairs (`88bb3f9a`, `3395fcad`); agent setup (`6e318386`).
+**Control command note:** the baseline check is `PYTHONPATH=. ./.venv/bin/python assets/scripts/golden_baseline.py --check app/tests/golden/baseline.json`.
+**Waiting for Eve (recommendation in brackets):**
+1. IMPORT-PATH-1, stopped at step 0, nothing built: which option [a data folder per import, `<user_data>/_imports/<recipe id>/data/` plus a record read by the orchestrator]; the name of the imported recipe [keep `<original>_imported_<timestamp>`]; whether the by-dataset-id rule also accepts `.parquet` [yes, and fail when both exist]. Panel of three viewpoints agreed on the option. Findings: `.claude/worktrees/agent-abd52719502485bdb/tmpAI/progress.md`; hash survey: `tmpAI/survey_hash/table.md`.
+2. The eight changed gallery previews, old and new side by side in `tmp/gallery_preview_review/`.
+3. A first assembly step that joins the base table with itself is skipped silently: keep, or fail (tasks.md, under JOIN-KEY-TYPES-1).
+4. TEMPLATE-KEY-TYPE-1 (key declared Float64 in `complex_template`); DOC-JOIN-CAST-1 (a rule file and ADR-050 still describe the removed cast; ADR text is `opus/high`).
+5. Older open points in tasks.md: `beeswarm_sina`, the empty Blueprint draft, three old scripts, three ID-reconciliation defects, RECIPE-WORD-1 scope, String or Categorical in recipes.
+**Next for the coordinator, in order:** (a) after Eve's answer to 1: IMPORT-PATH-1 together with SOURCE-LOOKUP-ONE-1, one `builder` at `sonnet/high`, continued in the worktree `agent-abd52719502485bdb` (merge `feat/recipe-format-1` into it first), then `reviewer`, merge, controls; (b) CHECKER-JOIN-KEYS-1 `sonnet/medium`; (c) the Blueprint package with JOIN-PREVIEW-STRICT-1; (d) tier-3 reader, GALLERY-CHECK-START-1, FILTER-UNIFY-1, SMOKE-RACE-2, AUDIT-REPAIR-1, DEP-INDEX-STALE-1; (e) the documentation sweep at the end (61 broken documentation paths, 2 docs_sync violations, seven of them in rule files that need Eve).
+**Worktrees:** `agent-a57725701187f3e6e` (join keys) is merged and removed. `agent-abd52719502485bdb` is kept: no code, only the findings note.
