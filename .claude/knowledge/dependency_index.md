@@ -89,6 +89,3819 @@
 - **documents:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/registry.py`
 - **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
 
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/design/outdated/blueprint_full_feature_set_research.md`
+- **Role:** `info`
+- **documents:** `.claude/design/spaces/BLUEPRINT.md`, `.claude/knowledge/blueprint_architect_ux_spec.md`
+- **consumed_by:** `.claude/knowledge/architecture_decisions.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/rules/rules_agent_channel.md`
+- **Role:** `info`
+- **provides:** `rule:agent_channel`
+- **documents:** `tmpAI/agent_channel.md`
+- **consumed_by:** `CLAUDE.md`, `.claude/rules/workspace_standard.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/rules/rules_agent_role_bioscientist.md`
+- **Role:** `info`
+- **provides:** `rule:data_analysis_recipe_construction_protocol`, `rule:debug_workflow`, `rule:registered_actions_table`, `rule:handoff_protocol`, `rule:output_routing`
+- **consumes:** `rule:canonical_steps_syntax`, `rule:analysis_groups_structure`
+- **documents:** `libs/transformer/src/transformer/actions/`, `libs/viz_factory/src/viz_factory/`, `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/rules/rules_app_features_flags.md`
+- **Role:** `info`
+- **provides:** `rule:app_features_flags`, `rule:feature_dependencies`
+- **documents:** `config/app_features/`, `app/src/bootloader.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/rules/rules_app_structure.md`
+- **Role:** `info`
+- **provides:** `rule:app_structure_law`, `rule:two_category_law`, `rule:handler_module_boundary`
+- **documents:** `app/handlers/`, `app/modules/`, `app/src/server.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/rules/rules_css_style_spec.md`
+- **Role:** `info`
+- **provides:** `rule:css_design_tokens`, `rule:typography_scale`, `rule:color_palette`, `rule:button_catalog`
+- **documents:** `config/ui/theme.css`
+- **consumed_by:** `.claude/rules/rules_ui_dashboard.md`, `.claude/rules/ui_implementation_contract.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/rules/rules_data_analysis_recipe_structure.md`
+- **Role:** `info`
+- **provides:** `rule:canonical_steps_syntax`, `rule:directory_taxonomy`, `rule:analysis_groups_structure`, `rule:final_contract`
+- **documents:** `libs/transformer/src/transformer/data_assembler.py`, `app/handlers/home_theater.py`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `docs/appendix/data_analysis_recipe_structure.yaml`, `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/rules/rules_data_engine.md`
+- **Role:** `info`
+- **provides:** `rule:3tier_lifecycle`, `rule:wrangling_block_structure`, `rule:decorator_standards`, `rule:polars_parity`
+- **documents:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/actions/`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/rules/rules_documentation_aesthetics.md`
+- **Role:** `info`
+- **provides:** `rule:violet_law`, `rule:quarto_mermaid_standards`, `rule:css_theme_standards`, `rule:doc_sync`
+- **documents:** `docs/`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/rules/rules_legacy_management.md`
+- **Role:** `info`
+- **provides:** `rule:legacy_management`, `rule:deprecation_markers`, `rule:historical_preservation`
+- **consumed_by:** `.claude/rules/workspace_standard.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/rules/rules_runtime_environment.md`
+- **Role:** `info`
+- **provides:** `rule:venv_path_mandate`, `rule:no_discovery`, `rule:pinned_versions`, `rule:library_autonomy`
+- **documents:** `.venv/`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/rules/rules_ui_dashboard.md`
+- **Role:** `info`
+- **provides:** `rule:ui_orchestration`, `rule:theatre_layout`, `rule:sidebar_law`
+- **documents:** `app/handlers/home_theater.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/rules/rules_verification_testing.md`
+- **Role:** `info`
+- **provides:** `rule:verify_protocol`, `rule:tmpAI_tmp_segregation`, `rule:debug_script_mandate`
+- **documents:** `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`, `tmpAI/`, `tmp/`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/.claude/rules/rules_viz_factory.md`
+- **Role:** `info`
+- **provides:** `rule:artist_pillar`, `rule:plotnine_parity`, `rule:core_geoms_standard`
+- **documents:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/registry.py`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/handlers/__init__.py`
+- **Role:** `info`
+- **provides:** `Shiny handler package (ADR-045 Two-Category Law); exposes define_server() entry points for all handler modules`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `ADR-045`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/handlers/audit_stack.py`
+- **Role:** `info`
+- **provides:** `function:define_server (audit_stack)`, `output:audit_nodes_header_ui`, `output:audit_nodes_tier2`, `output:audit_nodes_tier3`, `output:processing_issues_ui`, `output:aesthetic_style_panel_ui (22-J-10)`
+- **consumes:** `app/modules/wrangle_studio.py`, `app/modules/session_manager.py`, `libs/transformer/src/transformer/data_wrangler.py`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12a-12c`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen`, `processing_issues_ui shows fix/who)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/handlers/blueprint_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `output:bp_branch_ui`, `output:bp_branch_preview_ui`, `output:bp_groups_inventory_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`, `effect:_load_component_from_selection`, `effect:_handle_branch_preview`, `effect:_handle_branch_write (BP-BRANCH-NODE-1 — node-level lineage bifurcation`, `replaces Visual Fork)`, `effects:_handle_grp_action/_handle_create_group_btn/_handle_grp_submit/_handle_plt_submit/_handle_move_plt_submit (BP-GROUPS-1)`, `helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts data analysis recipe rebuild logic so CRUD Effects can call it after mutations)`, `output:bp_meta_form_ui`, `effect:_handle_meta_save (BP-META-1 — data analysis recipe info: block read/edit form)`, `effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)`, `output:bp_validate_ui`, `effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path`, `issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))`, `helpers:_draft_key/_write_bp_draft/_read_bp_draft`, `effect:_autosave_blueprint_draft`, `output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)`, `outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui`, `effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)`, `function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit)`, `helper:_bundle_filename (full-data analysis recipe zip)`, `output:bp_import_error_ui (ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface for component/recipe import failures)`
+- **consumes:** `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data — issue #53)`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `libs/blueprint_arch/src/blueprint_arch/new_recipe.py (new_recipe_draft — BP-NEW-1`, `recipe format 1)`, `libs/utils/src/utils/recipe_factory.py (write_recipe)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError`, `make_render_payload — DIAG-RUNTIME-BLUEPRINT-1`, `wired to screen 2026-11-08 ADR-094)`, `app/src/render/pipeline_error_renderers.py (render_blueprint_inline)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui")`, `ui.output_ui("bp_branch_ui")`, `ui.output_ui("bp_groups_inventory_ui")`, `ui.output_ui("bp_meta_form_ui"))`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-076`, `.claude/knowledge/architecture_decisions.md#ADR-082`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/handlers/data_import_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_data_import_server`, `function:import_error_block`, `output:data_import_ui`, `output:data_import_assignment_ui`
+- **consumes:** `app/modules/orchestrator.py`, `app/src/bootloader.py`, `transformer.metadata_validator`, `shiny`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-052`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/handlers/export_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `output:import_bundle_report`, `function:_build_methods_section`
+- **consumes:** `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1)`, `app/modules/cache_keys.py (canonical_hash`, `engine_fingerprint — REPRO-PROV-1)`, `app/modules/bundle_importer.py (import_bundle`, `BundleImportError — REPRO-IMPORT-1)`, `polars`, `shiny`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text)`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/export_specification.md`, `.claude/design/reproducible_export_design.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/handlers/filter_and_audit_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_filter_audit_server`, `output:sidebar_filters`, `output:filter_rows_ui`, `output:filter_form_ui`, `output:filter_controls_ui`, `input:filter_apply`, `input:filter_send_to_audit`
+- **consumes:** `app/modules/session_manager.py (make_audit_step)`, `app/modules/t3_audit_engine.py (describe_filter`, `op_choice_label)`, `app/src/bootloader.py (is_enabled)`, `shiny`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-049`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/rules/ui_implementation_contract.md#8`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/handlers/gallery_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (gallery_handlers)`
+- **consumes:** `app/src/bootloader.py`, `libs/viz_gallery/src/viz_gallery/taxonomy.py (display_axes`, `filter_panels)`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-037`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/rules/rules_ui_dashboard.md#5`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/handlers/home_theater.py`
+- **Role:** `info`
+- **provides:** `function:define_server (home_theater)`, `output:dynamic_tabs`, `output:home_data_preview`, `output:home_col_selector_ui`, `output:col_drop_audit_btn_ui`, `output:sidebar_nav_ui`, `output:sidebar_tools_ui`, `output:right_sidebar_content_ui`, `output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui`
+- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `utils/config_loader.py`, `app/modules/t3_audit_engine.py`, `app/modules/sidebar_registry.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-043`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-047`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-073`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/knowledge/architecture_decisions.md#ADR-094`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/rules/ui_implementation_contract.md#4`, `.claude/rules/ui_implementation_contract.md#5`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/handlers/ingestion_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (ingestion_handlers)`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/handlers/session_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_session_server`, `output:session_management_ui`, `output:session_export_active`
+- **consumes:** `shiny`, `pathlib`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-097`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/handlers/test_lab_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (test_lab_handlers)`
+- **consumes:** `app/modules/test_lab_studio.py (scaffold_from_uploads)`, `shiny`, `libs/test_lab/reformatter.py`, `libs/test_lab/aqua_synthesizer.py`, `libs/test_lab/anonymiser.py`, `libs/id_reconciliation/`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/bundle_importer.py`
+- **Role:** `info`
+- **provides:** `function:import_bundle`, `function:read_effective_run`, `class:ImportResult`, `class:LegResult`, `class:BundleImportError`
+- **consumes:** `app/modules/cache_keys.py (engine_fingerprint)`, `app/modules/data_analysis_recipe_validator.py (engine_load_problems — safe ConfigManager probe`, `ADR-077)`, `app/modules/session_manager.py (SessionManager)`
+- **consumed_by:** `app/handlers/export_handlers.py (define_export_server — Import control in the Export panel)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/reproducible_export_design.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/cache_keys.py`
+- **Role:** `info`
+- **provides:** `function:load_data_analysis_recipe`, `function:tier1_key`, `function:tier2_key`, `function:data_analysis_recipe_fileset_hash`, `function:data_analysis_recipe_keys`, `class:LoadedDataAnalysisRecipe`, `class:DataAnalysisRecipeKeys`
+- **consumes:** `libs/utils/src/utils/config_loader.py`
+- **consumed_by:** `app/modules/orchestrator.py`, `app/modules/session_manager.py`, `app/src/server.py`, `app/tests/test_cache_keys.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-089`, `docs/foundations/reproducibility_hash_schema.qmd`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/data_analysis_recipe_validator.py`
+- **Role:** `info`
+- **provides:** `function:validate_data_analysis_recipe`, `function:checker_problems`, `function:engine_load_problems`, `function:checker_catalogs`, `function:validate_data_analysis_recipe_data`, `function:find_data_analysis_recipes`, `function:read_data_analysis_recipe_header`, `function:resolve_contact`, `class:DataAnalysisRecipeProblem`
+- **consumes:** `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/recipe_loader.py (check_recipe_file)`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS)`, `libs/viz_factory/src/viz_factory/arguments.py (argument_catalog)`, `app/modules/orchestrator.py`
+- **consumed_by:** `app/tests/test_data_analysis_recipe_validator.py`, `app/tests/test_data_analysis_recipe_data_check.py`, `app/tests/test_retest_data_analysis_recipes.py`, `app/handlers/blueprint_handlers.py (_handle_validate`, `BP-VALIDATE-1/VALIDATE-UI-1)`, `app/src/bootloader.py (HOME load gate`, `ADR-094)`
+- **doc:** `.claude/tasks/tasks.md (BP-VALIDATE-1`, `VALIDATE-UI-1)`, `.claude/rules/rules_data_engine.md#3`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/deployment_error.py`
+- **Role:** `info`
+- **provides:** `(re-exports from utils.deployment_error — see that file for the canonical source)`
+- **consumes:** `utils.deployment_error`
+- **consumed_by:** `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/gallery_examples.py`
+- **Role:** `info`
+- **provides:** `function:recipe_catalogs`, `function:check_gallery`, `function:rebuild_gallery_index`, `function:render_example`, `function:example_table`, `constant:PREVIEW_SIZE`
+- **consumes:** `libs/viz_gallery/src/viz_gallery/gallery_manager.py`, `app/modules/orchestrator.py`, `app/modules/cache_keys.py`, `libs/utils/src/utils/config_loader.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/arguments.py`, `libs/transformer/src/transformer/actions/base.py`
+- **consumed_by:** `assets/scripts/refresh_gallery.py`, `assets/scripts/gallery_previews.py`, `app/tests/test_gallery_app_path.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 9: G2`, `G3`, `D4`, `D5; section 14)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/gallery_viewer.py`
+- **Role:** `info`
+- **provides:** `class:GalleryViewer`, `function:build_sidebar_ui`, `function:render_explorer_ui`
+- **consumes:** `app/src/bootloader.py (bootloader singleton)`, `libs/viz_gallery/src/viz_gallery/taxonomy.py (filter_panels)`
+- **consumed_by:** `app/handlers/gallery_handlers.py`, `app/src/server.py`, `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-033`, `.claude/knowledge/architecture_decisions.md#ADR-057`, `.claude/design/recipe_format_spec.md (section 9`, `G1)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/help_registry.py`
+- **Role:** `info`
+- **provides:** `module:help_registry_ui`, `module:help_registry_server`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `get_component_catalog)`, `libs/viz_factory/src/viz_factory/registry.py (PLOT_COMPONENT_REGISTRY)`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/notification_utils.py`
+- **Role:** `info`
+- **provides:** `make_notifier() factory — returns a _notify(msg`, `type`, `duration) callable that calls ui.notification_show and appends to a reactive log`
+- **consumes:** `shiny.ui`, `datetime`
+- **consumed_by:** `app/handlers/session_handlers.py`, `app/handlers/audit_stack.py`, `app/handlers/home_theater.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/data_import_handlers.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/orchestrator.py`
+- **Role:** `info`
+- **provides:** `pipeline:materialize_tier1`, `pipeline:materialize_tier2`, `method:prepare_ingredient`, `function:compute_data_analysis_recipe_keys`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/metadata_validator.py`, `libs/transformer/src/transformer/actions/persistence/anchor.py`, `app/modules/cache_keys.py`
+- **mirrors:** `libs/transformer/tests/debug_assembler.py`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/orchestrator_helpers.py`
+- **Role:** `info`
+- **provides:** `safe_input`, `DEFAULT_HOME_STATE`
+- **consumes:** `—`
+- **consumed_by:** `app.src.server`
+- **doc:** `ADR-045 (Two-Category Law §5 — shared utility functions)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/session_manager.py`
+- **Role:** `info`
+- **provides:** `class:SessionManager`, `typedef:AuditStep`
+- **consumes:** `stdlib (hashlib`, `json`, `shutil`, `zipfile`, `pathlib`, `datetime`, `uuid)`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/session_handlers.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/knowledge/architecture_decisions.md#ADR-097`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/sidebar_registry.py`
+- **Role:** `info`
+- **provides:** `PANEL_REGISTRY (dict)`, `is_panel_active (function)`
+- **consumes:** `app/src/bootloader.py (via callers)`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md §11`, `.claude/rules/rules_ui_dashboard.md §2`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/sidebar_validator.py`
+- **Role:** `info`
+- **provides:** `class:SidebarValidator`
+- **consumes:** `app/modules/sidebar_registry.py`, `app/modules/deployment_error.py`, `config/app_features/*.yaml`, `config/ui/sidebars/*.yaml`
+- **consumed_by:** `app/src/server.py`, `scripts/validate_app_features_config.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md §11`, `.claude/rules/rules_ui_dashboard.md §2`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/t3_audit_engine.py`
+- **Role:** `info`
+- **provides:** `function:_apply_filter_rows`
+- **consumes:** `polars`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-051`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/test_lab_studio.py`
+- **Role:** `info`
+- **provides:** `class:TestLabStudio (render_ui only)`, `function:scaffold_from_uploads`
+- **consumes:** `shiny.ui`, `libs/test_lab/src/test_lab/scaffolder.py`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/src/server.py`, `app/handlers/test_lab_handlers.py`
+- **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/view_badge.py`
+- **Role:** `info`
+- **provides:** `function:view_badge`, `function:has_tier2_steps`, `class:ViewBadge`
+- **consumes:** `app/modules/cache_keys.py`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/tests/test_view_badge.py`
+- **doc:** `https://github.com/evezeyl/SPARMVET_VIZ/issues/17`, `.claude/knowledge/architecture_decisions.md#adr-086`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/modules/wrangle_studio.py`
+- **Role:** `info`
+- **provides:** `class:WrangleStudio`, `method:build_sidebar_ui (issue #42 — Blueprint's left sidebar`, `moved here from home_theater.py's sidebar_tools_ui()`, `mirrors GalleryViewer.build_sidebar_ui(); registered as the "blueprint_main" freestanding panel type)`, `method:_render_action_form`, `method:_extract_upstream_cols`, `output:bp_yaml_escape_ui`, `output:bp_help_panel_ui`, `function:_resolve_action_doc`, `reactive.Value:inline_errors (ADR-079/ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface)`, `function:_enum_preview_legend (BP-ENUM-PREVIEW-1)`, `constants:_LINETYPE_DASHARRAY/_POSITION_DESC`, `reactive.Value:active_component_path (BP-PLOT-COMMIT-1 — loaded fragment file path`, `Save target); node marker _tier on action stubs (source-tier routing on commit`, `set from bp_action_context)`, `reactive.Value:joint_request`, `reactive.Value:joint_edit_idx (BP-JOINT-1 — shared with blueprint_handlers Joint Designer wiring); nav_panel "joint_designer" in architect_internal_tabs`
+- **consumes:** `app/src/render/pipeline_error_renderers.py (render_blueprint_inline — ADR-094)`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `search_actions`, `get_actions_for_context; get_component_catalog`, `search_components`, `get_components_for_context — BP-COMPONENT-FORMS-1)`, `node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1/BP-MAPPING-FORM-1); action key ({"action":...}) for wrangling nodes`, `__mapping__ node: dedicated aes form with bp_map_{key} inputs (BP-MAPPING-FORM-1); method:_extract_upstream_cols drives column picker choices`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `loaded via ui.py head)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (JOIN_HOW_OPTIONS — BP-JOINT-1 Joint Designer pane)`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/audit_stack.py`, `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-004`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-082`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/src/bootloader.py`
+- **Role:** `info`
+- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_agent_adapter`, `method:get_palettes`, `method:get_contact`, `attr:available_data_analysis_recipes`, `attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)`, `method:get_default_data_analysis_recipe_or_none`, `attr:has_usable_data_analysis_recipe (issue #38 empty-state gate)`
+- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`, `app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data`, `read_data_analysis_recipe_header`, `resolve_contact — ADR-094)`
+- **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`
+- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `ADR-087`, `ADR-094 (issue #38 closure note)`, `project_conventions.md §"Deployment Resolution`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/src/main.py`
+- **Role:** `info`
+- **provides:** `app (Shiny App instance`, `entry point)`, `docs_available (bool flag for conditional docs link)`
+- **consumes:** `shiny`, `app.src.ui`, `app.src.server`
+- **consumed_by:** `Shiny runner (uvicorn/shiny run)`, `__main__`, `help modal handlers`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/src/render/pipeline_error_renderers.py`
+- **Role:** `info`
+- **provides:** `function:render_notification`, `function:render_plot_overlay`
+- **consumes:** `shiny.ui`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-079`, `.claude/knowledge/architecture_decisions.md#adr-094`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/src/server.py`
+- **Role:** `info`
+- **provides:** `server (Shiny server function)`, `reactive.Value:_selected_lineage_rel (shared between wrangle_studio and blueprint_handlers — BP-LINEAGE-NAV-1)`
+- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.orchestrator_helpers`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio (gated: blueprint_enabled or t3_sandbox_enabled)`, `app.modules.test_lab_studio (gated: test_lab_enabled)`, `app.modules.gallery_viewer`, `app.modules.app_features_validator`, `app.modules.sidebar_validator`, `app.modules.deployment_error`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
+- **consumed_by:** `app.src.main`
+- **doc:** `ADR-045`, `ADR-003`, `ADR-094 §6 closure (issue #38 — active_cfg() empty-state stand-in)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/src/ui.py`
+- **Role:** `info`
+- **provides:** `app_ui (Shiny UI definition`, `page_fillable layout)`
+- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `included via ui.tags.script)`
+- **consumed_by:** `app.src.main`
+- **doc:** `ADR-027`, `ADR-029a`, `ADR-030`, `ADR-039`, `ADR-052`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/tests/debug_data_import.py`
+- **Role:** `info`
+- **provides:** `debug:data_import_headless`
+- **consumes:** `transformer/metadata_validator.py`, `app/handlers/data_import_handlers.py`
+- **consumed_by:** `manual @verify`, `CI`
+- **doc:** `.claude/rules/ui_implementation_contract.md#9`, `.claude/rules/ui_implementation_contract.md#10`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/tests/debug_pipeline_connector.py`
+- **Role:** `info`
+- **provides:** `debug:pipeline_connector_headless`
+- **consumes:** `app/src/bootloader.py`, `app/modules/orchestrator.py`
+- **consumed_by:** `manual @verify`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/tests/debug_session_flow.py`
+- **Role:** `info`
+- **provides:** `debug:session_flow`
+- **consumes:** `app/modules/session_manager.py`
+- **consumed_by:** `CI`, `manual @verify`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/tasks/tasks.md#22-G`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/app/tests/test_session_manager.py`
+- **Role:** `info`
+- **provides:** `test:session_manager`
+- **consumes:** `app/modules/session_manager.py`
+- **consumed_by:** `CI`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/assets/scripts/SF_create_data_analysis_recipe.py`
+- **Role:** `info`
+- **provides:** `script:SF_create_data_analysis_recipe`
+- **consumes:** `assets/test_data/ (TSV/CSV source files)`, `assets/template_data_analysis_recipes/ (writes scaffolded YAML)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/assets/scripts/build_dep_graph.py`
+- **Role:** `info`
+- **provides:** `script:build_dep_graph`
+- **consumes:** `all files with @deps blocks across the project`
+- **consumed_by:** `assets/dep_graph.html`, `.claude/knowledge/dependency_index.md`
+- **doc:** `.claude/rules/workspace_standard.md#5`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/assets/scripts/create_data_analysis_recipe.py`
+- **Role:** `info`
+- **provides:** `script:create_data_analysis_recipe`
+- **consumes:** `libs/utils/src/utils/recipe_factory.py (minimal_recipe`, `minimal_schema`, `minimal_plot`, `Include`, `write_recipe`, `write_fragment)`, `libs/utils/src/utils/recipe_check.py (check_recipe)`, `libs/utils/src/utils/polars_types.py (text_dtype_names)`
+- **consumed_by:** `app/tests/test_writers_emit_format_one.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 4`, `7)`, `.claude/rules/rules_asset_scripts.md`, `docs/appendix/running_helper_scripts.qmd`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/assets/scripts/create_test_deployment.py`
+- **Role:** `info`
+- **provides:** `script:create_test_deployment`
+- **consumes:** `config/deployment/local/ (writes deployment file)`
+- **doc:** `docs/workflows/connector.qmd`, `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/assets/scripts/debug_apply_data_analysis_recipe_standards.py`
+- **Role:** `info`
+- **provides:** `script:debug_apply_data_analysis_recipe_standards`
+- **consumes:** `libs/viz_factory/tests/test_data/ (YAML test data analysis recipes)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/assets/scripts/debug_bootstrap_viz_yamls.py`
+- **Role:** `info`
+- **provides:** `script:debug_bootstrap_viz_yamls`
+- **consumes:** `libs/viz_factory/tests/test_data/ (writes bootstrapped YAML test data analysis recipes)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/assets/scripts/figshare_plot_integration.py`
+- **Role:** `info`
+- **provides:** `script:figshare_plot_integration`
+- **consumes:** `tmp/integration/figshare_join_check.tsv (written by figshare_triple_integration.py)`, `tmp/integration/ (writes plots)`
+- **doc:** `assets/test_data/figshare.21737288/README.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/assets/scripts/figshare_triple_integration.py`
+- **Role:** `info`
+- **provides:** `script:figshare_triple_integration`
+- **consumes:** `assets/test_data/figshare.21737288/csv/`, `libs/transformer/tests/data/ (writes TSVs)`, `tmp/integration/ (writes join output)`
+- **doc:** `assets/test_data/figshare.21737288/README.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/assets/scripts/generate_demo_data.py`
+- **Role:** `info`
+- **provides:** `script:generate_demo_data`
+- **consumes:** `assets/test_data/1_test_data_ST22_dummy/ (ground truth TSVs)`, `libs/test_lab (AquaSynthesizer)`
+- **consumed_by:** `assets/test_data/demo_high_integrity/ (writes synthetic TSVs)`
+- **doc:** `libs/test_lab/README.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/assets/scripts/normalize_data_analysis_recipe_fields.py`
+- **Role:** `info`
+- **provides:** `script:normalize_data_analysis_recipe_fields`
+- **consumes:** `config/data_analysis_recipes/ (YAML files)`
+- **doc:** `.claude/rules/rules_data_engine.md#4`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **Role:** `info`
+- **provides:** `data analysis recipe:2_test_data_ST22_dummy`
+- **consumes:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml (via !include)`, `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml (via !include)`
+- **consumed_by:** `app/src/server.py (via bootloader)`, `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml`
+- **Role:** `info`
+- **provides:** `assembly:AMR_Profile_Joint`
+- **consumes:** `action:mutate`, `action:join`, `action:cast`, `action:sort`, `dataset:amr_data`, `dataset:metadata_schema`
+- **include_parent:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml`
+- **Role:** `info`
+- **provides:** `assembly:Plasmid_Profile_Joint`
+- **consumes:** `action:join`, `action:cast`, `action:sort`, `dataset:plasmid_data`, `dataset:metadata_schema`
+- **include_parent:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`
+- **Role:** `info`
+- **provides:** `class:AgentAdapter`, `class:ClaudeCliAdapter`, `class:DisabledAdapter`, `class:AgentResponse`, `class:Tool`, `function:make_adapter`
+- **consumed_by:** `app/src/bootloader.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/blueprint_arch/src/blueprint_arch/agent_context.py`
+- **Role:** `info`
+- **provides:** `function:build_system_prompt`, `function:build_turn_context`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/src/bootloader.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`
+- **Role:** `info`
+- **provides:** `function:extract_tool_calls`, `function:register_tool_schema`, `class:ParseResult`, `class:ParsedToolCall`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/blueprint_arch/src/blueprint_arch/agent_tools.py`
+- **Role:** `info`
+- **provides:** `function:call_tool`, `function:get_tool_definitions`, `dict:TOOL_REGISTRY`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
+- **Role:** `info`
+- **provides:** `class:BlueprintMapper`, `constant:_CY_COLOURS`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/rules/rules_ui_dashboard.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`
+- **Role:** `info`
+- **provides:** `function:build_sibling_map`, `function:build_lineage_chain`, `function:build_schema_registry`, `function:load_fields_file`, `function:resolve_fields_for_schema`, `function:build_plot_lineage`, `function:get_plot_ids_in_group`, `function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml)`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-074`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py`
+- **Role:** `info`
+- **provides:** `func:list_groups_plots`, `func:create_group`, `func:delete_group`
+- **consumes:** `yaml`, `pathlib`, `re`
+- **consumed_by:** `app/handlers/blueprint_handlers.py (bp_groups_inventory_ui + CRUD Effects — BP-GROUPS-1)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-082`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/blueprint_arch/src/blueprint_arch/join_designer.py`
+- **Role:** `info`
+- **provides:** `join_designer:compute_key_match`, `join_designer:build_join_step`, `join_designer:parse_join_step`
+- **consumes:** `—`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `libs/blueprint_arch/tests/test_join_designer.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-082 (Q5)`, `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/blueprint_arch/src/blueprint_arch/new_recipe.py`
+- **Role:** `info`
+- **provides:** `function:new_recipe_draft`
+- **consumes:** `libs/utils/src/utils/recipe_factory.py (minimal_recipe)`
+- **consumed_by:** `app/handlers/blueprint_handlers.py (_handle_new_data_analysis_recipe_submit)`, `libs/blueprint_arch/tests/test_new_recipe.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 3`, `4`, `7.1)`, `.claude/design/recipe_format_work_order.md (W8)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **Role:** `info`
+- **provides:** `function:get_action_catalog`, `function:get_component_catalog`, `function:get_combined_catalog`, `function:get_actions_for_context`, `function:get_actions_by_category`, `function:get_components_for_context`, `function:search_actions`, `function:search_components`, `function:register`
+- **consumes:** `nothing — catalogs injected at startup by app/src/server.py via register()`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/modules/wrangle_studio.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md (ADR-075)`, `.claude/rules/rules_app_structure.md §2`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/blueprint_arch/src/blueprint_arch/t3_translator.py`
+- **Role:** `info`
+- **provides:** `function:translate_t3_node`, `function:translate_plot_steps`, `function:build_mode2_recipe`, `class:UntranslatableNode`
+- **consumes:** `stdlib (copy`, `hashlib`, `json)`, `PyYAML (developer_raw_yaml fragment parsing only)`
+- **consumed_by:** `app/handlers/export_handlers.py (REPRO-TRANSLATOR-1 wiring`, `#45/#48)`, `libs/blueprint_arch/tests/test_t3_translator.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/reproducible_export_design.md#4D`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/blueprint_arch/src/blueprint_arch/widget_text.py`
+- **Role:** `info`
+- **provides:** `function:value_to_text`, `function:text_to_value`
+- **consumes:** `libs/utils/src/utils/ui_schema.py`, `libs/utils/src/utils/strict_yaml.py`
+- **consumed_by:** `app/modules/wrangle_studio.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8`, `RG1)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/connector/src/connector/__init__.py`
+- **Role:** `info`
+- **provides:** `BaseConnector`, `FilesystemConnector`, `GalaxyConnector`, `IridaConnector`, `get_connector()`
+- **consumes:** `connector.base`, `connector.filesystem`, `connector.galaxy`, `connector.irida`
+- **consumed_by:** `app/src/bootloader.py`, `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/connector/src/connector/base.py`
+- **Role:** `info`
+- **provides:** `class:BaseConnector`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/connector/src/connector/filesystem.py`
+- **Role:** `info`
+- **provides:** `class:FilesystemConnector`
+- **consumes:** `class:BaseConnector`, `utils.deployment_error`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`, `ADR-078`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/connector/src/connector/galaxy.py`
+- **Role:** `info`
+- **provides:** `class:GalaxyConnector`
+- **consumes:** `class:FilesystemConnector`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/connector/src/connector/irida.py`
+- **Role:** `info`
+- **provides:** `class:IridaConnector`
+- **consumes:** `class:FilesystemConnector`, `utils.deployment_error`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`, `ADR-078`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/id_reconciliation/src/id_reconciliation/__init__.py`
+- **Role:** `info`
+- **provides:** `IDReconciliationEngine`, `IDPair`, `MatchResult`, `PatternSuggestion`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `app/handlers/test_lab_handlers.py`, `app/modules/test_lab_studio.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/id_reconciliation/src/id_reconciliation/core.py`
+- **Role:** `info`
+- **provides:** `IDReconciliationEngine`, `detect_many_to_many`, `format_match_table`, `apply_recode_step`
+- **consumes:** `libs/utils/src/utils/id_patterns.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/__init__.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **Role:** `info`
+- **provides:** `IDPair`, `MatchResult`, `IdTransformation`
+- **consumes:** `libs/utils/src/utils/id_patterns.py (PatternSuggestion re-exported for backward compat)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/id_reconciliation/src/id_reconciliation/id_transformation.py`
+- **Role:** `info`
+- **provides:** `save_transformation`, `load_transformation`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/id_reconciliation/src/id_reconciliation/matcher.py`
+- **Role:** `info`
+- **provides:** `exact_match`, `fuzzy_match_batch`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/id_reconciliation/src/id_reconciliation/pattern_detector.py`
+- **Role:** `info`
+- **provides:** `detect_patterns`, `apply_pattern`, `suggest_regex (re-exported from utils.id_patterns)`
+- **consumes:** `libs/utils/src/utils/id_patterns.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/id_reconciliation/src/id_reconciliation/recipe_steps.py`
+- **Role:** `info`
+- **provides:** `recipe_steps`
+- **consumes:** `libs/utils/src/utils/action_names.py`
+- **mirrors:** `libs/id_reconciliation/src/id_reconciliation/core.py (apply_recode_step: same actions`, `same result)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/__init__.py`, `app/modules/test_lab_studio.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.5`, `7.5.1)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/ingestion/src/ingestion/declared.py`
+- **Role:** `info`
+- **provides:** `function:apply_declared`
+- **consumes:** `libs/utils/src/utils/polars_types.py`, `libs/utils/src/utils/recipe_check.py`
+- **consumed_by:** `libs/ingestion/src/ingestion/ingestor.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.3`, `7.4; DEC27`, `DEC28)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/ingestion/src/ingestion/ingestor.py`
+- **Role:** `info`
+- **provides:** `class:DataIngestor`, `method:ingest`, `method:find_file`
+- **consumes:** `libs/ingestion/src/ingestion/declared.py`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/test_lab/src/test_lab/anonymiser.py`
+- **Role:** `info`
+- **provides:** `Anonymiser class (anonymise`, `anonymise_batch`, `build_deanon_steps)`
+- **consumes:** `polars`, `hashlib`, `yaml`, `datetime`, `pathlib (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_anonymiser.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/test_lab/src/test_lab/aqua_synthesizer.py`
+- **Role:** `info`
+- **provides:** `AquaSynthesizer class (propose_config`, `generate`, `save_config`, `load_config`, `list_scenarios)`
+- **consumes:** `polars`, `numpy`, `random`, `re`, `pathlib`, `datetime`, `argparse`, `yaml`, `typing (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_synthesizer.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/test_lab/src/test_lab/bootstrapper.py`
+- **Role:** `info`
+- **provides:** `DataAnalysisRecipeBootstrapper class (bootstrap`, `id_cleaning_steps) — infers TSV schemas`
+- **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_bootstrapper.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/test_lab/src/test_lab/extractor.py`
+- **Role:** `info`
+- **provides:** `XlsxExtractor class (extract) — reads multi-sheet XLSX and writes normalized TSVs`
+- **consumes:** `polars`, `pathlib`, `typing`, `yaml (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_extractor.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/test_lab/src/test_lab/reformatter.py`
+- **Role:** `info`
+- **provides:** `DataReformatter class (convert_xlsx`, `convert_csv`, `convert_folder)`
+- **consumes:** `polars`, `pathlib (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_reformatter.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/test_lab/src/test_lab/scaffolder.py`
+- **Role:** `info`
+- **provides:** `DataAnalysisRecipeScaffolder class (scaffold`, `dataset_id`, `column_slug`, `field_slugs) — generates a data`
+- **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re`, `io`, `zipfile (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_scaffolder.py`, `app/modules/test_lab_studio.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/transformer/src/transformer/actions/base.py`
+- **Role:** `info`
+- **provides:** `decorator:register_action`, `registry:AVAILABLE_WRANGLING_ACTIONS`, `registry:ACTION_SCHEMAS`
+- **consumed_by:** `libs/transformer/src/transformer/actions/cleaning/core.py`, `libs/transformer/src/transformer/actions/cleaning/analytical.py`, `libs/transformer/src/transformer/actions/cleaning/advanced.py`, `libs/transformer/src/transformer/actions/cleaning/expressions.py`, `libs/transformer/src/transformer/actions/relational/joins.py`, `libs/transformer/src/transformer/actions/reshaping/core.py`, `libs/transformer/src/transformer/actions/performance/aggregation.py`, `libs/transformer/src/transformer/actions/persistence/anchor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/transformer/src/transformer/actions/composite.py`
+- **Role:** `info`
+- **provides:** `action:step_top_n_other`
+- **consumes:** `libs/transformer/src/transformer/actions/polars_calls.py (_checked)`
+- **consumed_by:** `libs/transformer/tests/test_step_actions.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1 (DEC36`, `R7)`, `.claude/design/home_evidence/actions_and_polars_2026-11-13.md section 25`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/transformer/src/transformer/actions/modified.py`
+- **Role:** `info`
+- **provides:** `action:modif_filter`
+- **consumes:** `libs/transformer/src/transformer/actions/polars_calls.py (_checked)`, `libs/utils/src/utils/ui_schema.py`
+- **consumed_by:** `app/tests/test_modif_filter_verify.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1 (DEC39)`, `.claude/design/home_evidence/actions_and_polars_2026-11-13.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/transformer/src/transformer/actions/polars_calls.py`
+- **Role:** `info`
+- **provides:** `action:polars_select`, `action:polars_drop`, `action:polars_with_columns`, `action:polars_rename`, `action:polars_unique`, `action:polars_sort`, `action:polars_drop_nulls`, `action:polars_drop_nans`, `action:polars_explode`, `action:polars_unnest`, `action:polars_unpivot`, `action:polars_pivot`, `action:polars_join`, `action:polars_sample`, `action:polars_describe`, `action:polars_cast`, `action:polars_fill_null`, `action:polars_fill_nan`, `action:polars_shift`, `action:polars_cum_sum`, `action:polars_cum_count`, `action:polars_interpolate`, `action:polars_round`, `action:polars_str_replace_all`, `action:polars_str_extract`, `action:polars_str_split`, `action:polars_str_strip_chars`, `action:polars_list_join`, `action:polars_list_slice`, `action:polars_dt_truncate`, `action:polars_coalesce`, `action:polars_sum_horizontal`, `action:polars_mean_horizontal`, `action:polars_min_horizontal`, `action:polars_max_horizontal`, `action:polars_all_horizontal`, `action:polars_any_horizontal`
+- **consumes:** `libs/utils/src/utils/ui_schema.py (step_problems)`
+- **consumed_by:** `libs/transformer/tests/test_polars_actions_equal_polars.py`, `libs/transformer/tests/test_registry_polars_rules.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/transformer/src/transformer/anchor.py`
+- **Role:** `info`
+- **provides:** `function:write_anchor`, `function:read_anchor`
+- **consumed_by:** `app/modules/orchestrator.py`
+- **doc:** `.claude/design/recipe_format_spec.md (DEC42)`, `.claude/knowledge/architecture_decisions.md (ADR-024`, `ADR-031`, `ADR-089)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/transformer/src/transformer/data_assembler.py`
+- **Role:** `info`
+- **provides:** `class:DataAssembler`, `method:assemble`
+- **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/transformer/src/transformer/data_wrangler.py`
+- **Role:** `info`
+- **provides:** `class:DataWrangler`, `method:_resolve_tier`, `method:run`
+- **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`, `libs/transformer/tests/debug_wrangler.py`
+- **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/transformer/src/transformer/metadata_validator.py`
+- **Role:** `info`
+- **provides:** `class:MetadataValidator`, `method:validate`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`, `.claude/knowledge/architecture_decisions.md#ADR-034`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/transformer/src/transformer/registry.py`
+- **Role:** `info`
+- **provides:** `function:get_action_function`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`
+- **consumed_by:** `libs/transformer/src/transformer/data_wrangler.py`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/transformer/tests/debug_assembler.py`
+- **Role:** `info`
+- **provides:** `script:debug_assembler`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)`
+- **mirrors:** `app/modules/orchestrator.py`
+- **consumed_by:** `libs/viz_factory/tests/debug_gallery.py`, `libs/transformer/tests/test_debug_assembler.py`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/transformer/tests/debug_wrangler.py`
+- **Role:** `info`
+- **provides:** `script:debug_wrangler`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`
+- **mirrors:** `app/modules/orchestrator.py (Tier 1 wrangling path)`
+- **consumed_by:** `libs/transformer/tests/test_debug_wrangler.py`
+- **doc:** `.claude/rules/rules_data_engine.md#3`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/action_names.py`
+- **Role:** `info`
+- **provides:** `constant:JOIN`, `constant:SELECT`, `constant:DROP`, `constant:WITH_COLUMNS`, `constant:FILTER`, `constant:CAST`
+- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/transformer/tests/test_action_names.py`
+- **doc:** `.claude/design/recipe_format_spec.md (R4)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/config_loader.py`
+- **Role:** `info`
+- **provides:** `class:ConfigManager`, `func:_normalise_yaml_boolean_keys`
+- **consumes:** `utils.deployment_error`
+- **consumed_by:** `app/modules/orchestrator.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `ADR-078`, `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/contract_migration.py`
+- **Role:** `info`
+- **provides:** `function:migrate_contracts`
+- **consumes:** `libs/utils/src/utils/recipe_migration.py (MigrationReport)`
+- **consumed_by:** `assets/scripts/migrate_recipe_format.py`, `libs/utils/tests/test_contract_migration.py`
+- **doc:** `.claude/design/recipe_format_spec.md#DEC23`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/deployment_error.py`
+- **Role:** `info`
+- **provides:** `class:DeploymentError`, `function:format_errors_block`, `function:exit_if_errors`, `function:raise_if_errors`, `class:DeploymentFailure`
+- **consumes:** `-`
+- **consumed_by:** `app/modules/deployment_error.py (re-export shim)`, `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`, `libs/connector/src/connector/irida.py`, `libs/connector/src/connector/filesystem.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/errors.py`
+- **Role:** `info`
+- **provides:** `class:SPARMVET_Error`, `class:IngestionError`, `class:TransformationError`, `class:VisualizationError`, `class:DataAnalysisRecipeError`
+- **consumes:** `libs/utils/src/utils/pipeline_error.py (PipelineError — type hint + optional carried instance`, `ADR-079/ADR-094)`
+- **consumed_by:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/ingestion/src/ingestion/ingestor.py`, `app/handlers/home_theater.py (reads .pipeline_error)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-079`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/formula_check.py`
+- **Role:** `info`
+- **provides:** `function:formula_problems`, `function:evaluate_formula`, `function:function_string_problems`, `function:denied_methods`, `constant:MODULE_FUNCTIONS`, `constant:MATH_FUNCTIONS`, `class:FormulaError`
+- **consumed_by:** `libs/utils/tests/test_formula_check.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 15; check ST06)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/hashing.py`
+- **Role:** `info`
+- **provides:** `function:generate_config_hash`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/id_patterns.py`
+- **Role:** `info`
+- **provides:** `PatternSuggestion`, `detect_patterns`, `apply_pattern`, `suggest_regex`
+- **consumes:** `—  (stdlib only)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/pattern_detector.py`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/pipeline_error.py`
+- **Role:** `info`
+- **provides:** `class:PipelineError`, `function:make_render_payload`, `function:capture_entry (ADR-094)`
+- **consumes:** `-`
+- **consumed_by:** `app/src/render/pipeline_error_renderers.py`, `app/src/server.py`, `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `app/handlers/audit_stack.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py (capture_entry)`, `app/handlers/ingestion_handlers.py (capture_entry)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-079`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/polars_types.py`
+- **Role:** `info`
+- **provides:** `function:text_dtype_names`, `function:dtype_with_parameters`, `constant:PARAMETER_KEYS`
+- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/utils/tests/test_polars_types.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.4; check FD02; R9)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/recipe_check.py`
+- **Role:** `info`
+- **provides:** `function:check_recipe`, `function:spec`, `class:Problem`, `class:Result`
+- **consumes:** `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/ui_schema.py`, `libs/utils/src/utils/formula_check.py`, `libs/utils/src/utils/recipe_paths.py`, `libs/utils/src/utils/polars_types.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_check.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 3 to 11`, `14)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/recipe_factory.py`
+- **Role:** `info`
+- **provides:** `function:minimal_recipe`, `function:minimal_schema`, `function:minimal_join`, `function:minimal_plot`, `function:recipe_text`, `function:write_recipe`, `function:write_fragment`, `class:Include`
+- **consumes:** `libs/utils/src/utils/recipe_check.py (spec)`, `libs/utils/src/utils/recipe_spec.yaml`
+- **consumed_by:** `libs/utils/tests/test_recipe_factory.py`, `app/tests/test_writers_emit_format_one.py`, `assets/scripts/create_data_analysis_recipe.py`, `assets/scripts/SF_create_data_analysis_recipe.py`, `app/handlers/blueprint_handlers.py (new recipe form)`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 1`, `3`, `4`, `5`, `7)`, `.claude/design/recipe_format_work_order.md (W8)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/recipe_loader.py`
+- **Role:** `info`
+- **provides:** `function:load_recipe`, `function:check_recipe_file`
+- **consumes:** `libs/utils/src/utils/strict_yaml.py`, `libs/utils/src/utils/config_loader.py (project_root_of)`, `libs/utils/src/utils/recipe_check.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_loader.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 5.2`, `6.1; checks T01`, `T02`, `T07`, `T10`, `T11`, `F01)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/recipe_migration.py`
+- **Role:** `info`
+- **provides:** `function:migrate_text`, `function:migrate_steps_text`, `function:migrate_recipe_file`, `constant:SANITISER_TEXTS`, `class:MigrationReport`
+- **consumes:** `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/step_migration.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_migration.py`, `assets/scripts/migrate_recipe_format.py`
+- **doc:** `.claude/design/recipe_format_spec.md (4.1`, `7.3`, `7.4`, `12)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/recipe_paths.py`
+- **Role:** `info`
+- **provides:** `function:shape_problems`, `function:containment_problems`
+- **consumed_by:** `libs/utils/tests/test_recipe_paths.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 15; checks PA01`, `PA02; decision DEC30)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/step_migration.py`
+- **Role:** `info`
+- **provides:** `function:convert_step`, `class:NotConvertible`, `constant:REMOVED_ACTIONS`
+- **consumed_by:** `libs/utils/src/utils/recipe_migration.py`, `libs/transformer/tests/test_step_conversion.py`
+- **doc:** `.claude/design/home_evidence/actions_and_polars_2026-11-13.md sections 15`, `25`, `26`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/strict_form_migration.py`
+- **Role:** `info`
+- **provides:** `function:migrate_strict_form`
+- **consumes:** `libs/utils/src/utils/recipe_migration.py (MigrationReport`, `_content_end)`, `libs/utils/src/utils/recipe_check.py (spec)`
+- **consumed_by:** `assets/scripts/migrate_recipe_format.py`, `libs/utils/tests/test_strict_form_migration.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 5`, `7`, `12)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/strict_yaml.py`
+- **Role:** `info`
+- **provides:** `function:load_strict`, `class:DuplicateKeyError`
+- **consumed_by:** `libs/blueprint_arch/src/blueprint_arch/widget_text.py`
+- **doc:** `.claude/design/recipe_format_spec.md (check T10)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/utils/src/utils/ui_schema.py`
+- **Role:** `info`
+- **provides:** `constant:WIDGETS`, `function:expected_shape`, `function:shape_problem`, `function:step_problems`, `function:schema_declaration_problems`, `class:StepProblem`
+- **consumed_by:** `libs/utils/tests/test_step_problems.py`, `libs/transformer/tests/test_ui_schemas.py`, `libs/transformer/tests/test_action_schema_examples.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py`, `libs/blueprint_arch/tests/test_schema_registry.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8; checks ST03`, `ST04`, `ST07`, `ST09`, `ST10`, `ST11; R3)`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/src/viz_factory/arguments.py`
+- **Role:** `info`
+- **provides:** `function:allowed_arguments`, `function:unknown_arguments`, `function:argument_catalog`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py (COMPONENT_SCHEMAS)`, `plotnine`
+- **consumed_by:** `app/modules/data_analysis_recipe_validator.py (the recipe checker's catalogs)`, `libs/viz_factory/tests/test_component_arguments.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8`, `RG5; check PS04)`, `libs/viz_factory/README.md (allow_extra_params)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/src/viz_factory/coords/core.py`
+- **Role:** `info`
+- **provides:** `component:coord_cartesian`, `component:coord_flip`, `component:coord_fixed`, `component:coord_equal`, `component:coord_trans`, `component:coord_lims`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/src/viz_factory/facets/core.py`
+- **Role:** `info`
+- **provides:** `component:facet_wrap`, `component:facet_grid`, `component:facet_rows`, `component:facet_cols`, `component:facet_null`, `component:facet_scales`, `component:facet_space`, `component:facet_labeller`, `component:facet_margins`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/src/viz_factory/geoms/core.py`
+- **Role:** `info`
+- **provides:** `component:geom_boxplot`, `component:geom_violin`, `component:geom_point`, `component:geom_line`, `component:geom_bar`, `component:geom_col`, `component:geom_histogram`, `component:geom_smooth`, `component:geom_density`, `component:geom_errorbar`, `component:geom_pointrange`, `component:geom_tile`, `component:geom_raster`, `component:geom_text`, `component:geom_label`, `component:geom_jitter`, `component:geom_step`, `component:geom_segment`, `component:geom_abline`, `component:geom_area`, `component:geom_bin_2d`, `component:geom_blank`, `component:geom_count`, `component:geom_crossbar`, `component:geom_density_2d`, `component:geom_dotplot`, `component:geom_errorbarh`, `component:geom_freqpoly`, `component:geom_hline`, `component:geom_linerange`, `component:geom_path`, `component:geom_vline`, `component:stat_count`, `component:stat_bin`, `component:stat_summary`, `component:stat_boxplot`, `component:stat_smooth`, `component:stat_density`, `component:labs (geom)`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via COMPONENT_SCHEMAS)`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/src/viz_factory/guides/core.py`
+- **Role:** `info`
+- **provides:** `component:guides`, `component:guide_legend`, `component:guide_colorbar`, `component:guide_colourbar`, `component:guide_none`, `component:guide_nrow`, `component:guide_ncol`, `component:guide_title`, `component:guide_label`, `component:guide_direction`, `component:guide_reverse`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/src/viz_factory/plot_config_resolver.py`
+- **Role:** `info`
+- **provides:** `function:resolve_plot_config`, `function:compute_optimisation_layer`
+- **consumes:** `libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)`
+- **consumed_by:** `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **doc:** `.claude/design/plot_config_cascade.md`, `.claude/design/plot_authoring_model.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/src/viz_factory/positions/core.py`
+- **Role:** `info`
+- **provides:** `component:position_identity`, `component:position_stack`, `component:position_fill`, `component:position_dodge`, `component:position_dodge2`, `component:position_jitter`, `component:position_jitterdodge`, `component:position_nudge`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/src/viz_factory/registry.py`
+- **Role:** `info`
+- **provides:** `decorator:register_plot_component`, `registry:PLOT_COMPONENTS`, `registry:COMPONENT_SCHEMAS`, `function:get_component`
+- **consumed_by:** `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/scales/core.py`, `libs/viz_factory/src/viz_factory/positions/core.py`, `libs/viz_factory/src/viz_factory/guides/core.py`, `libs/viz_factory/src/viz_factory/facets/core.py`, `libs/viz_factory/src/viz_factory/coords/core.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/src/viz_factory/scales/core.py`
+- **Role:** `info`
+- **provides:** `component:scale_color_gradient`, `component:scale_fill_gradient`, `component:scale_color_gradient2`, `component:scale_fill_gradient2`, `component:scale_color_gradientn`, `component:scale_fill_gradientn`, `component:scale_color_distiller`, `component:scale_fill_distiller`, `component:scale_color_cmap`, `component:scale_fill_cmap`, `component:scale_color_viridis_d`, `component:scale_fill_viridis_d`, `component:scale_color_viridis_c`, `component:scale_fill_viridis_c`, `component:scale_color_cmap_d`, `component:scale_fill_cmap_d`, `component:scale_color_discrete`, `component:scale_fill_discrete`, `component:scale_color_brewer`, `component:scale_fill_brewer`, `component:scale_color_manual`, `component:scale_fill_manual`, `component:scale_x_continuous`, `component:scale_y_continuous`, `component:scale_x_discrete`, `component:scale_y_discrete`, `component:scale_x_log10`, `component:scale_y_log10`, `component:scale_x_reverse`, `component:scale_y_reverse`, `component:scale_x_datetime`, `component:scale_y_datetime`, `component:scale_x_date`, `component:scale_y_date`, `component:scale_x_sqrt`, `component:scale_y_sqrt`, `component:scale_x_symlog`, `component:scale_y_symlog`, `component:scale_x_timedelta`, `component:scale_y_timedelta`, `component:scale_size_continuous`, `component:scale_size_discrete`, `component:scale_shape_discrete`, `component:scale_alpha_continuous`, `component:scale_alpha_discrete`, `component:scale_linetype_discrete`, `component:scale_stroke_continuous`, `component:scale_color_identity`, `component:scale_fill_identity`, `component:scale_size_identity`, `component:scale_shape_identity`, `component:scale_alpha_identity`, `component:scale_linetype_identity`, `component:scale_stroke_identity`, `component:scale_alpha`, `component:scale_alpha_manual`, `component:scale_size`, `component:scale_size_manual`, `component:scale_size_area`, `component:scale_shape`, `component:scale_shape_manual`, `component:scale_linetype`, `component:scale_linetype_manual`, `component:scale_color_hue`, `component:scale_fill_hue`, `component:scale_color_continuous`, `component:scale_fill_continuous`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `issue #36 (_integer_breaks narrow-range fallback)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/src/viz_factory/themes/core.py`
+- **Role:** `info`
+- **provides:** `component:theme_gray`, `component:theme_bw`, `component:theme_linedraw`, `component:theme_light`, `component:theme_minimal`, `component:theme_classic`, `component:theme_void`, `component:theme_dark`, `component:theme_538`, `component:theme_matplotlib`, `component:theme_seaborn`, `component:theme_tufte`, `component:theme_xkcd`, `component:theme_dashboard`, `component:theme_publication`, `component:theme_legend_position`, `component:theme_custom`, `component:element_text`, `component:element_line`, `component:element_rect`, `component:element_blank`, `component:xlab`, `component:ylab`, `component:ggtitle`, `component:annotate`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/src/viz_factory/viz_factory.py`
+- **Role:** `info`
+- **provides:** `class:VizFactory`, `function:VizFactory.render`, `constant:DEFAULT_RANDOM_STATE`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/pipeline_error.py`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/tests/test_render_every_plot.py`, `libs/viz_factory/tests/`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-081`, `ADR-090`, `ADR-094)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/tests/debug_audit.py`
+- **Role:** `info`
+- **provides:** `script:debug_audit (viz_factory)`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `libs/viz_factory/tests/test_data/`
+- **consumed_by:** `manual component audit`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/tests/debug_bulk_sync.py`
+- **Role:** `info`
+- **provides:** `script:debug_bulk_sync`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `assets/gallery_data/`
+- **consumed_by:** `manual gallery bulk-sync testing`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/tests/debug_distiller.py`
+- **Role:** `info`
+- **provides:** `script:debug_distiller`
+- **consumes:** `libs/viz_factory/src/viz_factory/distiller.py`, `libs/viz_factory/tests/test_data/`
+- **consumed_by:** `manual distiller testing`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/tests/debug_gallery.py`
+- **Role:** `info`
+- **provides:** `script:debug_gallery`
+- **consumes:** `libs/transformer/tests/debug_assembler.py (output: tmp/EVE_contracted_*.parquet)`, `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/*/README.md`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/tests/debug_runner.py`
+- **Role:** `info`
+- **provides:** `script:debug_runner (viz_factory)`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `libs/viz_factory/tests/test_data/`
+- **consumed_by:** `libs/viz_factory/tests/viz_factory_integrity_suite.py`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/tests/debug_viz_factory_audit.py`
+- **Role:** `info`
+- **provides:** `script:debug_viz_factory_audit`
+- **consumes:** `.claude/tasks/tasks.md`, `libs/viz_factory/src/`, `libs/viz_factory/tests/test_data/`, `tmp/`
+- **doc:** `.claude/rules/workspace_standard.md#5`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/tests/debug_viz_factory_tier3.py`
+- **Role:** `info`
+- **provides:** `script:debug_viz_factory_tier3`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `libs/transformer/src/transformer/data_wrangler.py`
+- **consumed_by:** `manual Tier 3 wrangling+viz testing`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_factory/tests/viz_factory_integrity_suite.py`
+- **Role:** `info`
+- **provides:** `script:viz_factory_integrity_suite`
+- **consumes:** `libs/viz_factory/tests/debug_runner.py`, `libs/viz_factory/tests/test_data/`, `libs/viz_factory/src/viz_factory/`
+- **consumed_by:** `CI / manual audit`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_gallery/src/viz_gallery/example_recipe.py`
+- **Role:** `info`
+- **provides:** `function:example_recipe`, `function:dump_example`, `function:data_contract`, `function:data_summary`, `function:plot_summary`, `constant:SCHEMA_ID`, `constant:GROUP_ID`, `constant:DATA_FILE`
+- **consumes:** `libs/utils/src/utils/recipe_check.py (spec)`, `libs/utils/src/utils/recipe_migration.py (SANITISER_TEXTS)`, `libs/utils/src/utils/polars_types.py`
+- **consumed_by:** `libs/viz_gallery/src/viz_gallery/gallery_manager.py`, `assets/scripts/convert_gallery_examples.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 9; D1`, `D2`, `D7)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_gallery/src/viz_gallery/gallery_manager.py`
+- **Role:** `info`
+- **provides:** `class:GalleryManager (check_examples`, `rebuild_index`, `submit_example`, `list_submissions)`, `class:Examples`, `constant:RECIPE_FILE`
+- **consumes:** `libs/utils/src/utils/recipe_loader.py (check_recipe_file`, `load_recipe)`, `libs/utils/src/utils/legacy_keys.py`, `libs/viz_gallery/src/viz_gallery/taxonomy.py`, `libs/viz_gallery/src/viz_gallery/example_recipe.py`
+- **consumed_by:** `app/modules/gallery_examples.py`, `assets/scripts/refresh_gallery.py`, `assets/scripts/convert_gallery_examples.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 9)`
+
+## `.claude/worktrees/agent-a57725701187f3e6e/libs/viz_gallery/src/viz_gallery/taxonomy.py`
+- **Role:** `info`
+- **provides:** `function:display_axes`, `function:first_geom`, `function:the_plot`, `function:example_taxonomy`, `function:tag_strip`, `function:with_tag_strip`, `function:filter_panels`
+- **consumes:** `libs/utils/src/utils/recipe_check.py (spec)`, `libs/utils/src/utils/recipe_spec.yaml (gallery)`
+- **consumed_by:** `libs/viz_gallery/src/viz_gallery/gallery_manager.py`, `app/modules/gallery_viewer.py`, `app/handlers/gallery_handlers.py`, `assets/scripts/convert_gallery_examples.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 9; findings G1`, `G4`, `G7; design D2`, `D3)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/design/outdated/blueprint_full_feature_set_research.md`
+- **Role:** `info`
+- **documents:** `.claude/design/spaces/BLUEPRINT.md`, `.claude/knowledge/blueprint_architect_ux_spec.md`
+- **consumed_by:** `.claude/knowledge/architecture_decisions.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/rules/rules_agent_channel.md`
+- **Role:** `info`
+- **provides:** `rule:agent_channel`
+- **documents:** `tmpAI/agent_channel.md`
+- **consumed_by:** `CLAUDE.md`, `.claude/rules/workspace_standard.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/rules/rules_agent_role_bioscientist.md`
+- **Role:** `info`
+- **provides:** `rule:data_analysis_recipe_construction_protocol`, `rule:debug_workflow`, `rule:registered_actions_table`, `rule:handoff_protocol`, `rule:output_routing`
+- **consumes:** `rule:canonical_steps_syntax`, `rule:analysis_groups_structure`
+- **documents:** `libs/transformer/src/transformer/actions/`, `libs/viz_factory/src/viz_factory/`, `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/rules/rules_app_features_flags.md`
+- **Role:** `info`
+- **provides:** `rule:app_features_flags`, `rule:feature_dependencies`
+- **documents:** `config/app_features/`, `app/src/bootloader.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/rules/rules_app_structure.md`
+- **Role:** `info`
+- **provides:** `rule:app_structure_law`, `rule:two_category_law`, `rule:handler_module_boundary`
+- **documents:** `app/handlers/`, `app/modules/`, `app/src/server.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/rules/rules_css_style_spec.md`
+- **Role:** `info`
+- **provides:** `rule:css_design_tokens`, `rule:typography_scale`, `rule:color_palette`, `rule:button_catalog`
+- **documents:** `config/ui/theme.css`
+- **consumed_by:** `.claude/rules/rules_ui_dashboard.md`, `.claude/rules/ui_implementation_contract.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/rules/rules_data_analysis_recipe_structure.md`
+- **Role:** `info`
+- **provides:** `rule:canonical_steps_syntax`, `rule:directory_taxonomy`, `rule:analysis_groups_structure`, `rule:final_contract`
+- **documents:** `libs/transformer/src/transformer/data_assembler.py`, `app/handlers/home_theater.py`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `docs/appendix/data_analysis_recipe_structure.yaml`, `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/rules/rules_data_engine.md`
+- **Role:** `info`
+- **provides:** `rule:3tier_lifecycle`, `rule:wrangling_block_structure`, `rule:decorator_standards`, `rule:polars_parity`
+- **documents:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/actions/`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/rules/rules_documentation_aesthetics.md`
+- **Role:** `info`
+- **provides:** `rule:violet_law`, `rule:quarto_mermaid_standards`, `rule:css_theme_standards`, `rule:doc_sync`
+- **documents:** `docs/`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/rules/rules_legacy_management.md`
+- **Role:** `info`
+- **provides:** `rule:legacy_management`, `rule:deprecation_markers`, `rule:historical_preservation`
+- **consumed_by:** `.claude/rules/workspace_standard.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/rules/rules_runtime_environment.md`
+- **Role:** `info`
+- **provides:** `rule:venv_path_mandate`, `rule:no_discovery`, `rule:pinned_versions`, `rule:library_autonomy`
+- **documents:** `.venv/`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/rules/rules_ui_dashboard.md`
+- **Role:** `info`
+- **provides:** `rule:ui_orchestration`, `rule:theatre_layout`, `rule:sidebar_law`
+- **documents:** `app/handlers/home_theater.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/rules/rules_verification_testing.md`
+- **Role:** `info`
+- **provides:** `rule:verify_protocol`, `rule:tmpAI_tmp_segregation`, `rule:debug_script_mandate`
+- **documents:** `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`, `tmpAI/`, `tmp/`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/.claude/rules/rules_viz_factory.md`
+- **Role:** `info`
+- **provides:** `rule:artist_pillar`, `rule:plotnine_parity`, `rule:core_geoms_standard`
+- **documents:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/registry.py`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/handlers/__init__.py`
+- **Role:** `info`
+- **provides:** `Shiny handler package (ADR-045 Two-Category Law); exposes define_server() entry points for all handler modules`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `ADR-045`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/handlers/audit_stack.py`
+- **Role:** `info`
+- **provides:** `function:define_server (audit_stack)`, `output:audit_nodes_header_ui`, `output:audit_nodes_tier2`, `output:audit_nodes_tier3`, `output:processing_issues_ui`, `output:aesthetic_style_panel_ui (22-J-10)`
+- **consumes:** `app/modules/wrangle_studio.py`, `app/modules/session_manager.py`, `libs/transformer/src/transformer/data_wrangler.py`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12a-12c`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen`, `processing_issues_ui shows fix/who)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/handlers/blueprint_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `output:bp_branch_ui`, `output:bp_branch_preview_ui`, `output:bp_groups_inventory_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`, `effect:_load_component_from_selection`, `effect:_handle_branch_preview`, `effect:_handle_branch_write (BP-BRANCH-NODE-1 — node-level lineage bifurcation`, `replaces Visual Fork)`, `effects:_handle_grp_action/_handle_create_group_btn/_handle_grp_submit/_handle_plt_submit/_handle_move_plt_submit (BP-GROUPS-1)`, `helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts data analysis recipe rebuild logic so CRUD Effects can call it after mutations)`, `output:bp_meta_form_ui`, `effect:_handle_meta_save (BP-META-1 — data analysis recipe info: block read/edit form)`, `effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)`, `output:bp_validate_ui`, `effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path`, `issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))`, `helpers:_draft_key/_write_bp_draft/_read_bp_draft`, `effect:_autosave_blueprint_draft`, `output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)`, `outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui`, `effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)`, `function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit)`, `helper:_bundle_filename (full-data analysis recipe zip)`, `output:bp_import_error_ui (ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface for component/recipe import failures)`
+- **consumes:** `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data — issue #53)`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `libs/blueprint_arch/src/blueprint_arch/new_recipe.py (new_recipe_draft — BP-NEW-1`, `recipe format 1)`, `libs/utils/src/utils/recipe_factory.py (write_recipe)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError`, `make_render_payload — DIAG-RUNTIME-BLUEPRINT-1`, `wired to screen 2026-11-08 ADR-094)`, `app/src/render/pipeline_error_renderers.py (render_blueprint_inline)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui")`, `ui.output_ui("bp_branch_ui")`, `ui.output_ui("bp_groups_inventory_ui")`, `ui.output_ui("bp_meta_form_ui"))`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-076`, `.claude/knowledge/architecture_decisions.md#ADR-082`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/handlers/data_import_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_data_import_server`, `function:import_error_block`, `output:data_import_ui`, `output:data_import_assignment_ui`
+- **consumes:** `app/modules/orchestrator.py`, `app/src/bootloader.py`, `transformer.metadata_validator`, `shiny`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-052`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/handlers/export_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `output:import_bundle_report`, `function:_build_methods_section`
+- **consumes:** `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1)`, `app/modules/cache_keys.py (canonical_hash`, `engine_fingerprint — REPRO-PROV-1)`, `app/modules/bundle_importer.py (import_bundle`, `BundleImportError — REPRO-IMPORT-1)`, `polars`, `shiny`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text)`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/export_specification.md`, `.claude/design/reproducible_export_design.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/handlers/filter_and_audit_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_filter_audit_server`, `output:sidebar_filters`, `output:filter_rows_ui`, `output:filter_form_ui`, `output:filter_controls_ui`, `input:filter_apply`, `input:filter_send_to_audit`
+- **consumes:** `app/modules/session_manager.py (make_audit_step)`, `app/modules/t3_audit_engine.py (describe_filter`, `op_choice_label)`, `app/src/bootloader.py (is_enabled)`, `shiny`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-049`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/rules/ui_implementation_contract.md#8`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/handlers/gallery_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (gallery_handlers)`
+- **consumes:** `app/src/bootloader.py`, `libs/viz_gallery/src/viz_gallery/taxonomy.py (display_axes`, `filter_panels)`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-037`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/rules/rules_ui_dashboard.md#5`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/handlers/home_theater.py`
+- **Role:** `info`
+- **provides:** `function:define_server (home_theater)`, `output:dynamic_tabs`, `output:home_data_preview`, `output:home_col_selector_ui`, `output:col_drop_audit_btn_ui`, `output:sidebar_nav_ui`, `output:sidebar_tools_ui`, `output:right_sidebar_content_ui`, `output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui`
+- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `utils/config_loader.py`, `app/modules/t3_audit_engine.py`, `app/modules/sidebar_registry.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-043`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-047`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-073`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/knowledge/architecture_decisions.md#ADR-094`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/rules/ui_implementation_contract.md#4`, `.claude/rules/ui_implementation_contract.md#5`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/handlers/ingestion_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (ingestion_handlers)`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/handlers/session_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_session_server`, `output:session_management_ui`, `output:session_export_active`
+- **consumes:** `shiny`, `pathlib`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-097`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/handlers/test_lab_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (test_lab_handlers)`
+- **consumes:** `app/modules/test_lab_studio.py (scaffold_from_uploads)`, `shiny`, `libs/test_lab/reformatter.py`, `libs/test_lab/aqua_synthesizer.py`, `libs/test_lab/anonymiser.py`, `libs/id_reconciliation/`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/bundle_importer.py`
+- **Role:** `info`
+- **provides:** `function:import_bundle`, `function:read_effective_run`, `class:ImportResult`, `class:LegResult`, `class:BundleImportError`
+- **consumes:** `app/modules/cache_keys.py (engine_fingerprint)`, `app/modules/data_analysis_recipe_validator.py (engine_load_problems — safe ConfigManager probe`, `ADR-077)`, `app/modules/session_manager.py (SessionManager)`
+- **consumed_by:** `app/handlers/export_handlers.py (define_export_server — Import control in the Export panel)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/reproducible_export_design.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/cache_keys.py`
+- **Role:** `info`
+- **provides:** `function:load_data_analysis_recipe`, `function:tier1_key`, `function:tier2_key`, `function:data_analysis_recipe_fileset_hash`, `function:data_analysis_recipe_keys`, `class:LoadedDataAnalysisRecipe`, `class:DataAnalysisRecipeKeys`
+- **consumes:** `libs/utils/src/utils/config_loader.py`
+- **consumed_by:** `app/modules/orchestrator.py`, `app/modules/session_manager.py`, `app/src/server.py`, `app/tests/test_cache_keys.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-089`, `docs/foundations/reproducibility_hash_schema.qmd`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/data_analysis_recipe_validator.py`
+- **Role:** `info`
+- **provides:** `function:validate_data_analysis_recipe`, `function:checker_problems`, `function:engine_load_problems`, `function:checker_catalogs`, `function:validate_data_analysis_recipe_data`, `function:find_data_analysis_recipes`, `function:read_data_analysis_recipe_header`, `function:resolve_contact`, `class:DataAnalysisRecipeProblem`
+- **consumes:** `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/recipe_loader.py (check_recipe_file)`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS)`, `libs/viz_factory/src/viz_factory/arguments.py (argument_catalog)`, `app/modules/orchestrator.py`
+- **consumed_by:** `app/tests/test_data_analysis_recipe_validator.py`, `app/tests/test_data_analysis_recipe_data_check.py`, `app/tests/test_retest_data_analysis_recipes.py`, `app/handlers/blueprint_handlers.py (_handle_validate`, `BP-VALIDATE-1/VALIDATE-UI-1)`, `app/src/bootloader.py (HOME load gate`, `ADR-094)`
+- **doc:** `.claude/tasks/tasks.md (BP-VALIDATE-1`, `VALIDATE-UI-1)`, `.claude/rules/rules_data_engine.md#3`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/deployment_error.py`
+- **Role:** `info`
+- **provides:** `(re-exports from utils.deployment_error — see that file for the canonical source)`
+- **consumes:** `utils.deployment_error`
+- **consumed_by:** `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/gallery_examples.py`
+- **Role:** `info`
+- **provides:** `function:recipe_catalogs`, `function:check_gallery`, `function:rebuild_gallery_index`, `function:render_example`, `function:example_table`, `constant:PREVIEW_SIZE`
+- **consumes:** `libs/viz_gallery/src/viz_gallery/gallery_manager.py`, `app/modules/orchestrator.py`, `app/modules/cache_keys.py`, `libs/utils/src/utils/config_loader.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/arguments.py`, `libs/transformer/src/transformer/actions/base.py`
+- **consumed_by:** `assets/scripts/refresh_gallery.py`, `assets/scripts/gallery_previews.py`, `app/tests/test_gallery_app_path.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 9: G2`, `G3`, `D4`, `D5; section 14)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/gallery_viewer.py`
+- **Role:** `info`
+- **provides:** `class:GalleryViewer`, `function:build_sidebar_ui`, `function:render_explorer_ui`
+- **consumes:** `app/src/bootloader.py (bootloader singleton)`, `libs/viz_gallery/src/viz_gallery/taxonomy.py (filter_panels)`
+- **consumed_by:** `app/handlers/gallery_handlers.py`, `app/src/server.py`, `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-033`, `.claude/knowledge/architecture_decisions.md#ADR-057`, `.claude/design/recipe_format_spec.md (section 9`, `G1)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/help_registry.py`
+- **Role:** `info`
+- **provides:** `module:help_registry_ui`, `module:help_registry_server`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `get_component_catalog)`, `libs/viz_factory/src/viz_factory/registry.py (PLOT_COMPONENT_REGISTRY)`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/notification_utils.py`
+- **Role:** `info`
+- **provides:** `make_notifier() factory — returns a _notify(msg`, `type`, `duration) callable that calls ui.notification_show and appends to a reactive log`
+- **consumes:** `shiny.ui`, `datetime`
+- **consumed_by:** `app/handlers/session_handlers.py`, `app/handlers/audit_stack.py`, `app/handlers/home_theater.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/data_import_handlers.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/orchestrator.py`
+- **Role:** `info`
+- **provides:** `pipeline:materialize_tier1`, `pipeline:materialize_tier2`, `method:prepare_ingredient`, `function:compute_data_analysis_recipe_keys`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/metadata_validator.py`, `libs/transformer/src/transformer/actions/persistence/anchor.py`, `app/modules/cache_keys.py`
+- **mirrors:** `libs/transformer/tests/debug_assembler.py`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/orchestrator_helpers.py`
+- **Role:** `info`
+- **provides:** `safe_input`, `DEFAULT_HOME_STATE`
+- **consumes:** `—`
+- **consumed_by:** `app.src.server`
+- **doc:** `ADR-045 (Two-Category Law §5 — shared utility functions)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/session_manager.py`
+- **Role:** `info`
+- **provides:** `class:SessionManager`, `typedef:AuditStep`
+- **consumes:** `stdlib (hashlib`, `json`, `shutil`, `zipfile`, `pathlib`, `datetime`, `uuid)`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/session_handlers.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/knowledge/architecture_decisions.md#ADR-097`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/sidebar_registry.py`
+- **Role:** `info`
+- **provides:** `PANEL_REGISTRY (dict)`, `is_panel_active (function)`
+- **consumes:** `app/src/bootloader.py (via callers)`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md §11`, `.claude/rules/rules_ui_dashboard.md §2`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/sidebar_validator.py`
+- **Role:** `info`
+- **provides:** `class:SidebarValidator`
+- **consumes:** `app/modules/sidebar_registry.py`, `app/modules/deployment_error.py`, `config/app_features/*.yaml`, `config/ui/sidebars/*.yaml`
+- **consumed_by:** `app/src/server.py`, `scripts/validate_app_features_config.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md §11`, `.claude/rules/rules_ui_dashboard.md §2`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/t3_audit_engine.py`
+- **Role:** `info`
+- **provides:** `function:_apply_filter_rows`
+- **consumes:** `polars`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-051`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/test_lab_studio.py`
+- **Role:** `info`
+- **provides:** `class:TestLabStudio (render_ui only)`, `function:scaffold_from_uploads`
+- **consumes:** `shiny.ui`, `libs/test_lab/src/test_lab/scaffolder.py`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/src/server.py`, `app/handlers/test_lab_handlers.py`
+- **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/view_badge.py`
+- **Role:** `info`
+- **provides:** `function:view_badge`, `function:has_tier2_steps`, `class:ViewBadge`
+- **consumes:** `app/modules/cache_keys.py`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/tests/test_view_badge.py`
+- **doc:** `https://github.com/evezeyl/SPARMVET_VIZ/issues/17`, `.claude/knowledge/architecture_decisions.md#adr-086`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/modules/wrangle_studio.py`
+- **Role:** `info`
+- **provides:** `class:WrangleStudio`, `method:build_sidebar_ui (issue #42 — Blueprint's left sidebar`, `moved here from home_theater.py's sidebar_tools_ui()`, `mirrors GalleryViewer.build_sidebar_ui(); registered as the "blueprint_main" freestanding panel type)`, `method:_render_action_form`, `method:_extract_upstream_cols`, `output:bp_yaml_escape_ui`, `output:bp_help_panel_ui`, `function:_resolve_action_doc`, `reactive.Value:inline_errors (ADR-079/ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface)`, `function:_enum_preview_legend (BP-ENUM-PREVIEW-1)`, `constants:_LINETYPE_DASHARRAY/_POSITION_DESC`, `reactive.Value:active_component_path (BP-PLOT-COMMIT-1 — loaded fragment file path`, `Save target); node marker _tier on action stubs (source-tier routing on commit`, `set from bp_action_context)`, `reactive.Value:joint_request`, `reactive.Value:joint_edit_idx (BP-JOINT-1 — shared with blueprint_handlers Joint Designer wiring); nav_panel "joint_designer" in architect_internal_tabs`
+- **consumes:** `app/src/render/pipeline_error_renderers.py (render_blueprint_inline — ADR-094)`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `search_actions`, `get_actions_for_context; get_component_catalog`, `search_components`, `get_components_for_context — BP-COMPONENT-FORMS-1)`, `node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1/BP-MAPPING-FORM-1); action key ({"action":...}) for wrangling nodes`, `__mapping__ node: dedicated aes form with bp_map_{key} inputs (BP-MAPPING-FORM-1); method:_extract_upstream_cols drives column picker choices`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `loaded via ui.py head)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (JOIN_HOW_OPTIONS — BP-JOINT-1 Joint Designer pane)`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/audit_stack.py`, `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-004`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-082`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/src/bootloader.py`
+- **Role:** `info`
+- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_agent_adapter`, `method:get_palettes`, `method:get_contact`, `attr:available_data_analysis_recipes`, `attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)`, `method:get_default_data_analysis_recipe_or_none`, `attr:has_usable_data_analysis_recipe (issue #38 empty-state gate)`
+- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`, `app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data`, `read_data_analysis_recipe_header`, `resolve_contact — ADR-094)`
+- **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`
+- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `ADR-087`, `ADR-094 (issue #38 closure note)`, `project_conventions.md §"Deployment Resolution`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/src/main.py`
+- **Role:** `info`
+- **provides:** `app (Shiny App instance`, `entry point)`, `docs_available (bool flag for conditional docs link)`
+- **consumes:** `shiny`, `app.src.ui`, `app.src.server`
+- **consumed_by:** `Shiny runner (uvicorn/shiny run)`, `__main__`, `help modal handlers`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/src/render/pipeline_error_renderers.py`
+- **Role:** `info`
+- **provides:** `function:render_notification`, `function:render_plot_overlay`
+- **consumes:** `shiny.ui`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-079`, `.claude/knowledge/architecture_decisions.md#adr-094`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/src/server.py`
+- **Role:** `info`
+- **provides:** `server (Shiny server function)`, `reactive.Value:_selected_lineage_rel (shared between wrangle_studio and blueprint_handlers — BP-LINEAGE-NAV-1)`
+- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.orchestrator_helpers`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio (gated: blueprint_enabled or t3_sandbox_enabled)`, `app.modules.test_lab_studio (gated: test_lab_enabled)`, `app.modules.gallery_viewer`, `app.modules.app_features_validator`, `app.modules.sidebar_validator`, `app.modules.deployment_error`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
+- **consumed_by:** `app.src.main`
+- **doc:** `ADR-045`, `ADR-003`, `ADR-094 §6 closure (issue #38 — active_cfg() empty-state stand-in)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/src/ui.py`
+- **Role:** `info`
+- **provides:** `app_ui (Shiny UI definition`, `page_fillable layout)`
+- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `included via ui.tags.script)`
+- **consumed_by:** `app.src.main`
+- **doc:** `ADR-027`, `ADR-029a`, `ADR-030`, `ADR-039`, `ADR-052`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/tests/debug_data_import.py`
+- **Role:** `info`
+- **provides:** `debug:data_import_headless`
+- **consumes:** `transformer/metadata_validator.py`, `app/handlers/data_import_handlers.py`
+- **consumed_by:** `manual @verify`, `CI`
+- **doc:** `.claude/rules/ui_implementation_contract.md#9`, `.claude/rules/ui_implementation_contract.md#10`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/tests/debug_pipeline_connector.py`
+- **Role:** `info`
+- **provides:** `debug:pipeline_connector_headless`
+- **consumes:** `app/src/bootloader.py`, `app/modules/orchestrator.py`
+- **consumed_by:** `manual @verify`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/tests/debug_session_flow.py`
+- **Role:** `info`
+- **provides:** `debug:session_flow`
+- **consumes:** `app/modules/session_manager.py`
+- **consumed_by:** `CI`, `manual @verify`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/tasks/tasks.md#22-G`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/app/tests/test_session_manager.py`
+- **Role:** `info`
+- **provides:** `test:session_manager`
+- **consumes:** `app/modules/session_manager.py`
+- **consumed_by:** `CI`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/assets/scripts/SF_create_data_analysis_recipe.py`
+- **Role:** `info`
+- **provides:** `script:SF_create_data_analysis_recipe`
+- **consumes:** `assets/test_data/ (TSV/CSV source files)`, `assets/template_data_analysis_recipes/ (writes scaffolded YAML)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/assets/scripts/build_dep_graph.py`
+- **Role:** `info`
+- **provides:** `script:build_dep_graph`
+- **consumes:** `all files with @deps blocks across the project`
+- **consumed_by:** `assets/dep_graph.html`, `.claude/knowledge/dependency_index.md`
+- **doc:** `.claude/rules/workspace_standard.md#5`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/assets/scripts/create_data_analysis_recipe.py`
+- **Role:** `info`
+- **provides:** `script:create_data_analysis_recipe`
+- **consumes:** `libs/utils/src/utils/recipe_factory.py (minimal_recipe`, `minimal_schema`, `minimal_plot`, `Include`, `write_recipe`, `write_fragment)`, `libs/utils/src/utils/recipe_check.py (check_recipe)`, `libs/utils/src/utils/polars_types.py (text_dtype_names)`
+- **consumed_by:** `app/tests/test_writers_emit_format_one.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 4`, `7)`, `.claude/rules/rules_asset_scripts.md`, `docs/appendix/running_helper_scripts.qmd`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/assets/scripts/create_test_deployment.py`
+- **Role:** `info`
+- **provides:** `script:create_test_deployment`
+- **consumes:** `config/deployment/local/ (writes deployment file)`
+- **doc:** `docs/workflows/connector.qmd`, `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/assets/scripts/debug_apply_data_analysis_recipe_standards.py`
+- **Role:** `info`
+- **provides:** `script:debug_apply_data_analysis_recipe_standards`
+- **consumes:** `libs/viz_factory/tests/test_data/ (YAML test data analysis recipes)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/assets/scripts/debug_bootstrap_viz_yamls.py`
+- **Role:** `info`
+- **provides:** `script:debug_bootstrap_viz_yamls`
+- **consumes:** `libs/viz_factory/tests/test_data/ (writes bootstrapped YAML test data analysis recipes)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/assets/scripts/figshare_plot_integration.py`
+- **Role:** `info`
+- **provides:** `script:figshare_plot_integration`
+- **consumes:** `tmp/integration/figshare_join_check.tsv (written by figshare_triple_integration.py)`, `tmp/integration/ (writes plots)`
+- **doc:** `assets/test_data/figshare.21737288/README.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/assets/scripts/figshare_triple_integration.py`
+- **Role:** `info`
+- **provides:** `script:figshare_triple_integration`
+- **consumes:** `assets/test_data/figshare.21737288/csv/`, `libs/transformer/tests/data/ (writes TSVs)`, `tmp/integration/ (writes join output)`
+- **doc:** `assets/test_data/figshare.21737288/README.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/assets/scripts/generate_demo_data.py`
+- **Role:** `info`
+- **provides:** `script:generate_demo_data`
+- **consumes:** `assets/test_data/1_test_data_ST22_dummy/ (ground truth TSVs)`, `libs/test_lab (AquaSynthesizer)`
+- **consumed_by:** `assets/test_data/demo_high_integrity/ (writes synthetic TSVs)`
+- **doc:** `libs/test_lab/README.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/assets/scripts/normalize_data_analysis_recipe_fields.py`
+- **Role:** `info`
+- **provides:** `script:normalize_data_analysis_recipe_fields`
+- **consumes:** `config/data_analysis_recipes/ (YAML files)`
+- **doc:** `.claude/rules/rules_data_engine.md#4`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **Role:** `info`
+- **provides:** `data analysis recipe:2_test_data_ST22_dummy`
+- **consumes:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml (via !include)`, `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml (via !include)`
+- **consumed_by:** `app/src/server.py (via bootloader)`, `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml`
+- **Role:** `info`
+- **provides:** `assembly:AMR_Profile_Joint`
+- **consumes:** `action:mutate`, `action:join`, `action:cast`, `action:sort`, `dataset:amr_data`, `dataset:metadata_schema`
+- **include_parent:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml`
+- **Role:** `info`
+- **provides:** `assembly:Plasmid_Profile_Joint`
+- **consumes:** `action:join`, `action:cast`, `action:sort`, `dataset:plasmid_data`, `dataset:metadata_schema`
+- **include_parent:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`
+- **Role:** `info`
+- **provides:** `class:AgentAdapter`, `class:ClaudeCliAdapter`, `class:DisabledAdapter`, `class:AgentResponse`, `class:Tool`, `function:make_adapter`
+- **consumed_by:** `app/src/bootloader.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/blueprint_arch/src/blueprint_arch/agent_context.py`
+- **Role:** `info`
+- **provides:** `function:build_system_prompt`, `function:build_turn_context`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/src/bootloader.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`
+- **Role:** `info`
+- **provides:** `function:extract_tool_calls`, `function:register_tool_schema`, `class:ParseResult`, `class:ParsedToolCall`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/blueprint_arch/src/blueprint_arch/agent_tools.py`
+- **Role:** `info`
+- **provides:** `function:call_tool`, `function:get_tool_definitions`, `dict:TOOL_REGISTRY`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
+- **Role:** `info`
+- **provides:** `class:BlueprintMapper`, `constant:_CY_COLOURS`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/rules/rules_ui_dashboard.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`
+- **Role:** `info`
+- **provides:** `function:build_sibling_map`, `function:build_lineage_chain`, `function:build_schema_registry`, `function:load_fields_file`, `function:resolve_fields_for_schema`, `function:build_plot_lineage`, `function:get_plot_ids_in_group`, `function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml)`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-074`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py`
+- **Role:** `info`
+- **provides:** `func:list_groups_plots`, `func:create_group`, `func:delete_group`
+- **consumes:** `yaml`, `pathlib`, `re`
+- **consumed_by:** `app/handlers/blueprint_handlers.py (bp_groups_inventory_ui + CRUD Effects — BP-GROUPS-1)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-082`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/blueprint_arch/src/blueprint_arch/join_designer.py`
+- **Role:** `info`
+- **provides:** `join_designer:compute_key_match`, `join_designer:build_join_step`, `join_designer:parse_join_step`
+- **consumes:** `—`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `libs/blueprint_arch/tests/test_join_designer.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-082 (Q5)`, `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/blueprint_arch/src/blueprint_arch/new_recipe.py`
+- **Role:** `info`
+- **provides:** `function:new_recipe_draft`
+- **consumes:** `libs/utils/src/utils/recipe_factory.py (minimal_recipe)`
+- **consumed_by:** `app/handlers/blueprint_handlers.py (_handle_new_data_analysis_recipe_submit)`, `libs/blueprint_arch/tests/test_new_recipe.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 3`, `4`, `7.1)`, `.claude/design/recipe_format_work_order.md (W8)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **Role:** `info`
+- **provides:** `function:get_action_catalog`, `function:get_component_catalog`, `function:get_combined_catalog`, `function:get_actions_for_context`, `function:get_actions_by_category`, `function:get_components_for_context`, `function:search_actions`, `function:search_components`, `function:register`
+- **consumes:** `nothing — catalogs injected at startup by app/src/server.py via register()`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/modules/wrangle_studio.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md (ADR-075)`, `.claude/rules/rules_app_structure.md §2`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/blueprint_arch/src/blueprint_arch/t3_translator.py`
+- **Role:** `info`
+- **provides:** `function:translate_t3_node`, `function:translate_plot_steps`, `function:build_mode2_recipe`, `class:UntranslatableNode`
+- **consumes:** `stdlib (copy`, `hashlib`, `json)`, `PyYAML (developer_raw_yaml fragment parsing only)`
+- **consumed_by:** `app/handlers/export_handlers.py (REPRO-TRANSLATOR-1 wiring`, `#45/#48)`, `libs/blueprint_arch/tests/test_t3_translator.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/reproducible_export_design.md#4D`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/blueprint_arch/src/blueprint_arch/widget_text.py`
+- **Role:** `info`
+- **provides:** `function:value_to_text`, `function:text_to_value`
+- **consumes:** `libs/utils/src/utils/ui_schema.py`, `libs/utils/src/utils/strict_yaml.py`
+- **consumed_by:** `app/modules/wrangle_studio.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8`, `RG1)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/connector/src/connector/__init__.py`
+- **Role:** `info`
+- **provides:** `BaseConnector`, `FilesystemConnector`, `GalaxyConnector`, `IridaConnector`, `get_connector()`
+- **consumes:** `connector.base`, `connector.filesystem`, `connector.galaxy`, `connector.irida`
+- **consumed_by:** `app/src/bootloader.py`, `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/connector/src/connector/base.py`
+- **Role:** `info`
+- **provides:** `class:BaseConnector`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/connector/src/connector/filesystem.py`
+- **Role:** `info`
+- **provides:** `class:FilesystemConnector`
+- **consumes:** `class:BaseConnector`, `utils.deployment_error`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`, `ADR-078`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/connector/src/connector/galaxy.py`
+- **Role:** `info`
+- **provides:** `class:GalaxyConnector`
+- **consumes:** `class:FilesystemConnector`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/connector/src/connector/irida.py`
+- **Role:** `info`
+- **provides:** `class:IridaConnector`
+- **consumes:** `class:FilesystemConnector`, `utils.deployment_error`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`, `ADR-078`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/id_reconciliation/src/id_reconciliation/__init__.py`
+- **Role:** `info`
+- **provides:** `IDReconciliationEngine`, `IDPair`, `MatchResult`, `PatternSuggestion`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `app/handlers/test_lab_handlers.py`, `app/modules/test_lab_studio.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/id_reconciliation/src/id_reconciliation/core.py`
+- **Role:** `info`
+- **provides:** `IDReconciliationEngine`, `detect_many_to_many`, `format_match_table`, `apply_recode_step`
+- **consumes:** `libs/utils/src/utils/id_patterns.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/__init__.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **Role:** `info`
+- **provides:** `IDPair`, `MatchResult`, `IdTransformation`
+- **consumes:** `libs/utils/src/utils/id_patterns.py (PatternSuggestion re-exported for backward compat)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/id_reconciliation/src/id_reconciliation/id_transformation.py`
+- **Role:** `info`
+- **provides:** `save_transformation`, `load_transformation`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/id_reconciliation/src/id_reconciliation/matcher.py`
+- **Role:** `info`
+- **provides:** `exact_match`, `fuzzy_match_batch`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/id_reconciliation/src/id_reconciliation/pattern_detector.py`
+- **Role:** `info`
+- **provides:** `detect_patterns`, `apply_pattern`, `suggest_regex (re-exported from utils.id_patterns)`
+- **consumes:** `libs/utils/src/utils/id_patterns.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/id_reconciliation/src/id_reconciliation/recipe_steps.py`
+- **Role:** `info`
+- **provides:** `recipe_steps`
+- **consumes:** `libs/utils/src/utils/action_names.py`
+- **mirrors:** `libs/id_reconciliation/src/id_reconciliation/core.py (apply_recode_step: same actions`, `same result)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/__init__.py`, `app/modules/test_lab_studio.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.5`, `7.5.1)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/ingestion/src/ingestion/declared.py`
+- **Role:** `info`
+- **provides:** `function:apply_declared`
+- **consumes:** `libs/utils/src/utils/polars_types.py`, `libs/utils/src/utils/recipe_check.py`
+- **consumed_by:** `libs/ingestion/src/ingestion/ingestor.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.3`, `7.4; DEC27`, `DEC28)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/ingestion/src/ingestion/ingestor.py`
+- **Role:** `info`
+- **provides:** `class:DataIngestor`, `method:ingest`, `method:find_file`
+- **consumes:** `libs/ingestion/src/ingestion/declared.py`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/test_lab/src/test_lab/anonymiser.py`
+- **Role:** `info`
+- **provides:** `Anonymiser class (anonymise`, `anonymise_batch`, `build_deanon_steps)`
+- **consumes:** `polars`, `hashlib`, `yaml`, `datetime`, `pathlib (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_anonymiser.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/test_lab/src/test_lab/aqua_synthesizer.py`
+- **Role:** `info`
+- **provides:** `AquaSynthesizer class (propose_config`, `generate`, `save_config`, `load_config`, `list_scenarios)`
+- **consumes:** `polars`, `numpy`, `random`, `re`, `pathlib`, `datetime`, `argparse`, `yaml`, `typing (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_synthesizer.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/test_lab/src/test_lab/bootstrapper.py`
+- **Role:** `info`
+- **provides:** `DataAnalysisRecipeBootstrapper class (bootstrap`, `id_cleaning_steps) — infers TSV schemas`
+- **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_bootstrapper.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/test_lab/src/test_lab/extractor.py`
+- **Role:** `info`
+- **provides:** `XlsxExtractor class (extract) — reads multi-sheet XLSX and writes normalized TSVs`
+- **consumes:** `polars`, `pathlib`, `typing`, `yaml (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_extractor.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/test_lab/src/test_lab/reformatter.py`
+- **Role:** `info`
+- **provides:** `DataReformatter class (convert_xlsx`, `convert_csv`, `convert_folder)`
+- **consumes:** `polars`, `pathlib (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_reformatter.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/test_lab/src/test_lab/scaffolder.py`
+- **Role:** `info`
+- **provides:** `DataAnalysisRecipeScaffolder class (scaffold`, `dataset_id`, `column_slug`, `field_slugs) — generates a data`
+- **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re`, `io`, `zipfile (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_scaffolder.py`, `app/modules/test_lab_studio.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/transformer/src/transformer/actions/base.py`
+- **Role:** `info`
+- **provides:** `decorator:register_action`, `registry:AVAILABLE_WRANGLING_ACTIONS`, `registry:ACTION_SCHEMAS`
+- **consumed_by:** `libs/transformer/src/transformer/actions/cleaning/core.py`, `libs/transformer/src/transformer/actions/cleaning/analytical.py`, `libs/transformer/src/transformer/actions/cleaning/advanced.py`, `libs/transformer/src/transformer/actions/cleaning/expressions.py`, `libs/transformer/src/transformer/actions/relational/joins.py`, `libs/transformer/src/transformer/actions/reshaping/core.py`, `libs/transformer/src/transformer/actions/performance/aggregation.py`, `libs/transformer/src/transformer/actions/persistence/anchor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/transformer/src/transformer/actions/composite.py`
+- **Role:** `info`
+- **provides:** `action:step_top_n_other`
+- **consumes:** `libs/transformer/src/transformer/actions/polars_calls.py (_checked)`
+- **consumed_by:** `libs/transformer/tests/test_step_actions.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1 (DEC36`, `R7)`, `.claude/design/home_evidence/actions_and_polars_2026-11-13.md section 25`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/transformer/src/transformer/actions/modified.py`
+- **Role:** `info`
+- **provides:** `action:modif_filter`
+- **consumes:** `libs/transformer/src/transformer/actions/polars_calls.py (_checked)`, `libs/utils/src/utils/ui_schema.py`
+- **consumed_by:** `app/tests/test_modif_filter_verify.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1 (DEC39)`, `.claude/design/home_evidence/actions_and_polars_2026-11-13.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/transformer/src/transformer/actions/polars_calls.py`
+- **Role:** `info`
+- **provides:** `action:polars_select`, `action:polars_drop`, `action:polars_with_columns`, `action:polars_rename`, `action:polars_unique`, `action:polars_sort`, `action:polars_drop_nulls`, `action:polars_drop_nans`, `action:polars_explode`, `action:polars_unnest`, `action:polars_unpivot`, `action:polars_pivot`, `action:polars_join`, `action:polars_sample`, `action:polars_describe`, `action:polars_cast`, `action:polars_fill_null`, `action:polars_fill_nan`, `action:polars_shift`, `action:polars_cum_sum`, `action:polars_cum_count`, `action:polars_interpolate`, `action:polars_round`, `action:polars_str_replace_all`, `action:polars_str_extract`, `action:polars_str_split`, `action:polars_str_strip_chars`, `action:polars_list_join`, `action:polars_list_slice`, `action:polars_dt_truncate`, `action:polars_coalesce`, `action:polars_sum_horizontal`, `action:polars_mean_horizontal`, `action:polars_min_horizontal`, `action:polars_max_horizontal`, `action:polars_all_horizontal`, `action:polars_any_horizontal`
+- **consumes:** `libs/utils/src/utils/ui_schema.py (step_problems)`
+- **consumed_by:** `libs/transformer/tests/test_polars_actions_equal_polars.py`, `libs/transformer/tests/test_registry_polars_rules.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/transformer/src/transformer/anchor.py`
+- **Role:** `info`
+- **provides:** `function:write_anchor`, `function:read_anchor`
+- **consumed_by:** `app/modules/orchestrator.py`
+- **doc:** `.claude/design/recipe_format_spec.md (DEC42)`, `.claude/knowledge/architecture_decisions.md (ADR-024`, `ADR-031`, `ADR-089)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/transformer/src/transformer/data_assembler.py`
+- **Role:** `info`
+- **provides:** `class:DataAssembler`, `method:assemble`
+- **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/transformer/src/transformer/data_wrangler.py`
+- **Role:** `info`
+- **provides:** `class:DataWrangler`, `method:_resolve_tier`, `method:run`
+- **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`, `libs/transformer/tests/debug_wrangler.py`
+- **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/transformer/src/transformer/metadata_validator.py`
+- **Role:** `info`
+- **provides:** `class:MetadataValidator`, `method:validate`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`, `.claude/knowledge/architecture_decisions.md#ADR-034`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/transformer/src/transformer/registry.py`
+- **Role:** `info`
+- **provides:** `function:get_action_function`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`
+- **consumed_by:** `libs/transformer/src/transformer/data_wrangler.py`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/transformer/tests/debug_assembler.py`
+- **Role:** `info`
+- **provides:** `script:debug_assembler`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)`
+- **mirrors:** `app/modules/orchestrator.py`
+- **consumed_by:** `libs/viz_factory/tests/debug_gallery.py`, `libs/transformer/tests/test_debug_assembler.py`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/transformer/tests/debug_wrangler.py`
+- **Role:** `info`
+- **provides:** `script:debug_wrangler`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`
+- **mirrors:** `app/modules/orchestrator.py (Tier 1 wrangling path)`
+- **consumed_by:** `libs/transformer/tests/test_debug_wrangler.py`
+- **doc:** `.claude/rules/rules_data_engine.md#3`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/action_names.py`
+- **Role:** `info`
+- **provides:** `constant:JOIN`, `constant:SELECT`, `constant:DROP`, `constant:WITH_COLUMNS`, `constant:FILTER`, `constant:CAST`
+- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/transformer/tests/test_action_names.py`
+- **doc:** `.claude/design/recipe_format_spec.md (R4)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/config_loader.py`
+- **Role:** `info`
+- **provides:** `class:ConfigManager`, `func:_normalise_yaml_boolean_keys`
+- **consumes:** `utils.deployment_error`
+- **consumed_by:** `app/modules/orchestrator.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `ADR-078`, `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/contract_migration.py`
+- **Role:** `info`
+- **provides:** `function:migrate_contracts`
+- **consumes:** `libs/utils/src/utils/recipe_migration.py (MigrationReport)`
+- **consumed_by:** `assets/scripts/migrate_recipe_format.py`, `libs/utils/tests/test_contract_migration.py`
+- **doc:** `.claude/design/recipe_format_spec.md#DEC23`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/deployment_error.py`
+- **Role:** `info`
+- **provides:** `class:DeploymentError`, `function:format_errors_block`, `function:exit_if_errors`, `function:raise_if_errors`, `class:DeploymentFailure`
+- **consumes:** `-`
+- **consumed_by:** `app/modules/deployment_error.py (re-export shim)`, `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`, `libs/connector/src/connector/irida.py`, `libs/connector/src/connector/filesystem.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/errors.py`
+- **Role:** `info`
+- **provides:** `class:SPARMVET_Error`, `class:IngestionError`, `class:TransformationError`, `class:VisualizationError`, `class:DataAnalysisRecipeError`
+- **consumes:** `libs/utils/src/utils/pipeline_error.py (PipelineError — type hint + optional carried instance`, `ADR-079/ADR-094)`
+- **consumed_by:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/ingestion/src/ingestion/ingestor.py`, `app/handlers/home_theater.py (reads .pipeline_error)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-079`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/formula_check.py`
+- **Role:** `info`
+- **provides:** `function:formula_problems`, `function:evaluate_formula`, `function:function_string_problems`, `function:denied_methods`, `constant:MODULE_FUNCTIONS`, `constant:MATH_FUNCTIONS`, `class:FormulaError`
+- **consumed_by:** `libs/utils/tests/test_formula_check.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 15; check ST06)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/hashing.py`
+- **Role:** `info`
+- **provides:** `function:generate_config_hash`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/id_patterns.py`
+- **Role:** `info`
+- **provides:** `PatternSuggestion`, `detect_patterns`, `apply_pattern`, `suggest_regex`
+- **consumes:** `—  (stdlib only)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/pattern_detector.py`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/pipeline_error.py`
+- **Role:** `info`
+- **provides:** `class:PipelineError`, `function:make_render_payload`, `function:capture_entry (ADR-094)`
+- **consumes:** `-`
+- **consumed_by:** `app/src/render/pipeline_error_renderers.py`, `app/src/server.py`, `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `app/handlers/audit_stack.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py (capture_entry)`, `app/handlers/ingestion_handlers.py (capture_entry)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-079`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/polars_types.py`
+- **Role:** `info`
+- **provides:** `function:text_dtype_names`, `function:dtype_with_parameters`, `constant:PARAMETER_KEYS`
+- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/utils/tests/test_polars_types.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.4; check FD02; R9)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/recipe_check.py`
+- **Role:** `info`
+- **provides:** `function:check_recipe`, `function:spec`, `class:Problem`, `class:Result`
+- **consumes:** `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/ui_schema.py`, `libs/utils/src/utils/formula_check.py`, `libs/utils/src/utils/recipe_paths.py`, `libs/utils/src/utils/polars_types.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_check.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 3 to 11`, `14)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/recipe_factory.py`
+- **Role:** `info`
+- **provides:** `function:minimal_recipe`, `function:minimal_schema`, `function:minimal_join`, `function:minimal_plot`, `function:recipe_text`, `function:write_recipe`, `function:write_fragment`, `class:Include`
+- **consumes:** `libs/utils/src/utils/recipe_check.py (spec)`, `libs/utils/src/utils/recipe_spec.yaml`
+- **consumed_by:** `libs/utils/tests/test_recipe_factory.py`, `app/tests/test_writers_emit_format_one.py`, `assets/scripts/create_data_analysis_recipe.py`, `assets/scripts/SF_create_data_analysis_recipe.py`, `app/handlers/blueprint_handlers.py (new recipe form)`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 1`, `3`, `4`, `5`, `7)`, `.claude/design/recipe_format_work_order.md (W8)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/recipe_loader.py`
+- **Role:** `info`
+- **provides:** `function:load_recipe`, `function:check_recipe_file`
+- **consumes:** `libs/utils/src/utils/strict_yaml.py`, `libs/utils/src/utils/config_loader.py (project_root_of)`, `libs/utils/src/utils/recipe_check.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_loader.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 5.2`, `6.1; checks T01`, `T02`, `T07`, `T10`, `T11`, `F01)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/recipe_migration.py`
+- **Role:** `info`
+- **provides:** `function:migrate_text`, `function:migrate_steps_text`, `function:migrate_recipe_file`, `constant:SANITISER_TEXTS`, `class:MigrationReport`
+- **consumes:** `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/step_migration.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_migration.py`, `assets/scripts/migrate_recipe_format.py`
+- **doc:** `.claude/design/recipe_format_spec.md (4.1`, `7.3`, `7.4`, `12)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/recipe_paths.py`
+- **Role:** `info`
+- **provides:** `function:shape_problems`, `function:containment_problems`
+- **consumed_by:** `libs/utils/tests/test_recipe_paths.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 15; checks PA01`, `PA02; decision DEC30)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/step_migration.py`
+- **Role:** `info`
+- **provides:** `function:convert_step`, `class:NotConvertible`, `constant:REMOVED_ACTIONS`
+- **consumed_by:** `libs/utils/src/utils/recipe_migration.py`, `libs/transformer/tests/test_step_conversion.py`
+- **doc:** `.claude/design/home_evidence/actions_and_polars_2026-11-13.md sections 15`, `25`, `26`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/strict_form_migration.py`
+- **Role:** `info`
+- **provides:** `function:migrate_strict_form`
+- **consumes:** `libs/utils/src/utils/recipe_migration.py (MigrationReport`, `_content_end)`, `libs/utils/src/utils/recipe_check.py (spec)`
+- **consumed_by:** `assets/scripts/migrate_recipe_format.py`, `libs/utils/tests/test_strict_form_migration.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 5`, `7`, `12)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/strict_yaml.py`
+- **Role:** `info`
+- **provides:** `function:load_strict`, `class:DuplicateKeyError`
+- **consumed_by:** `libs/blueprint_arch/src/blueprint_arch/widget_text.py`
+- **doc:** `.claude/design/recipe_format_spec.md (check T10)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/utils/src/utils/ui_schema.py`
+- **Role:** `info`
+- **provides:** `constant:WIDGETS`, `function:expected_shape`, `function:shape_problem`, `function:step_problems`, `function:schema_declaration_problems`, `class:StepProblem`
+- **consumed_by:** `libs/utils/tests/test_step_problems.py`, `libs/transformer/tests/test_ui_schemas.py`, `libs/transformer/tests/test_action_schema_examples.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py`, `libs/blueprint_arch/tests/test_schema_registry.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8; checks ST03`, `ST04`, `ST07`, `ST09`, `ST10`, `ST11; R3)`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/src/viz_factory/arguments.py`
+- **Role:** `info`
+- **provides:** `function:allowed_arguments`, `function:unknown_arguments`, `function:argument_catalog`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py (COMPONENT_SCHEMAS)`, `plotnine`
+- **consumed_by:** `app/modules/data_analysis_recipe_validator.py (the recipe checker's catalogs)`, `libs/viz_factory/tests/test_component_arguments.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8`, `RG5; check PS04)`, `libs/viz_factory/README.md (allow_extra_params)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/src/viz_factory/coords/core.py`
+- **Role:** `info`
+- **provides:** `component:coord_cartesian`, `component:coord_flip`, `component:coord_fixed`, `component:coord_equal`, `component:coord_trans`, `component:coord_lims`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/src/viz_factory/facets/core.py`
+- **Role:** `info`
+- **provides:** `component:facet_wrap`, `component:facet_grid`, `component:facet_rows`, `component:facet_cols`, `component:facet_null`, `component:facet_scales`, `component:facet_space`, `component:facet_labeller`, `component:facet_margins`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/src/viz_factory/geoms/core.py`
+- **Role:** `info`
+- **provides:** `component:geom_boxplot`, `component:geom_violin`, `component:geom_point`, `component:geom_line`, `component:geom_bar`, `component:geom_col`, `component:geom_histogram`, `component:geom_smooth`, `component:geom_density`, `component:geom_errorbar`, `component:geom_pointrange`, `component:geom_tile`, `component:geom_raster`, `component:geom_text`, `component:geom_label`, `component:geom_jitter`, `component:geom_step`, `component:geom_segment`, `component:geom_abline`, `component:geom_area`, `component:geom_bin_2d`, `component:geom_blank`, `component:geom_count`, `component:geom_crossbar`, `component:geom_density_2d`, `component:geom_dotplot`, `component:geom_errorbarh`, `component:geom_freqpoly`, `component:geom_hline`, `component:geom_linerange`, `component:geom_path`, `component:geom_vline`, `component:stat_count`, `component:stat_bin`, `component:stat_summary`, `component:stat_boxplot`, `component:stat_smooth`, `component:stat_density`, `component:labs (geom)`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via COMPONENT_SCHEMAS)`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/src/viz_factory/guides/core.py`
+- **Role:** `info`
+- **provides:** `component:guides`, `component:guide_legend`, `component:guide_colorbar`, `component:guide_colourbar`, `component:guide_none`, `component:guide_nrow`, `component:guide_ncol`, `component:guide_title`, `component:guide_label`, `component:guide_direction`, `component:guide_reverse`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/src/viz_factory/plot_config_resolver.py`
+- **Role:** `info`
+- **provides:** `function:resolve_plot_config`, `function:compute_optimisation_layer`
+- **consumes:** `libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)`
+- **consumed_by:** `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **doc:** `.claude/design/plot_config_cascade.md`, `.claude/design/plot_authoring_model.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/src/viz_factory/positions/core.py`
+- **Role:** `info`
+- **provides:** `component:position_identity`, `component:position_stack`, `component:position_fill`, `component:position_dodge`, `component:position_dodge2`, `component:position_jitter`, `component:position_jitterdodge`, `component:position_nudge`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/src/viz_factory/registry.py`
+- **Role:** `info`
+- **provides:** `decorator:register_plot_component`, `registry:PLOT_COMPONENTS`, `registry:COMPONENT_SCHEMAS`, `function:get_component`
+- **consumed_by:** `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/scales/core.py`, `libs/viz_factory/src/viz_factory/positions/core.py`, `libs/viz_factory/src/viz_factory/guides/core.py`, `libs/viz_factory/src/viz_factory/facets/core.py`, `libs/viz_factory/src/viz_factory/coords/core.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/src/viz_factory/scales/core.py`
+- **Role:** `info`
+- **provides:** `component:scale_color_gradient`, `component:scale_fill_gradient`, `component:scale_color_gradient2`, `component:scale_fill_gradient2`, `component:scale_color_gradientn`, `component:scale_fill_gradientn`, `component:scale_color_distiller`, `component:scale_fill_distiller`, `component:scale_color_cmap`, `component:scale_fill_cmap`, `component:scale_color_viridis_d`, `component:scale_fill_viridis_d`, `component:scale_color_viridis_c`, `component:scale_fill_viridis_c`, `component:scale_color_cmap_d`, `component:scale_fill_cmap_d`, `component:scale_color_discrete`, `component:scale_fill_discrete`, `component:scale_color_brewer`, `component:scale_fill_brewer`, `component:scale_color_manual`, `component:scale_fill_manual`, `component:scale_x_continuous`, `component:scale_y_continuous`, `component:scale_x_discrete`, `component:scale_y_discrete`, `component:scale_x_log10`, `component:scale_y_log10`, `component:scale_x_reverse`, `component:scale_y_reverse`, `component:scale_x_datetime`, `component:scale_y_datetime`, `component:scale_x_date`, `component:scale_y_date`, `component:scale_x_sqrt`, `component:scale_y_sqrt`, `component:scale_x_symlog`, `component:scale_y_symlog`, `component:scale_x_timedelta`, `component:scale_y_timedelta`, `component:scale_size_continuous`, `component:scale_size_discrete`, `component:scale_shape_discrete`, `component:scale_alpha_continuous`, `component:scale_alpha_discrete`, `component:scale_linetype_discrete`, `component:scale_stroke_continuous`, `component:scale_color_identity`, `component:scale_fill_identity`, `component:scale_size_identity`, `component:scale_shape_identity`, `component:scale_alpha_identity`, `component:scale_linetype_identity`, `component:scale_stroke_identity`, `component:scale_alpha`, `component:scale_alpha_manual`, `component:scale_size`, `component:scale_size_manual`, `component:scale_size_area`, `component:scale_shape`, `component:scale_shape_manual`, `component:scale_linetype`, `component:scale_linetype_manual`, `component:scale_color_hue`, `component:scale_fill_hue`, `component:scale_color_continuous`, `component:scale_fill_continuous`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `issue #36 (_integer_breaks narrow-range fallback)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/src/viz_factory/themes/core.py`
+- **Role:** `info`
+- **provides:** `component:theme_gray`, `component:theme_bw`, `component:theme_linedraw`, `component:theme_light`, `component:theme_minimal`, `component:theme_classic`, `component:theme_void`, `component:theme_dark`, `component:theme_538`, `component:theme_matplotlib`, `component:theme_seaborn`, `component:theme_tufte`, `component:theme_xkcd`, `component:theme_dashboard`, `component:theme_publication`, `component:theme_legend_position`, `component:theme_custom`, `component:element_text`, `component:element_line`, `component:element_rect`, `component:element_blank`, `component:xlab`, `component:ylab`, `component:ggtitle`, `component:annotate`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/src/viz_factory/viz_factory.py`
+- **Role:** `info`
+- **provides:** `class:VizFactory`, `function:VizFactory.render`, `constant:DEFAULT_RANDOM_STATE`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/pipeline_error.py`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/tests/test_render_every_plot.py`, `libs/viz_factory/tests/`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-081`, `ADR-090`, `ADR-094)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/tests/debug_audit.py`
+- **Role:** `info`
+- **provides:** `script:debug_audit (viz_factory)`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `libs/viz_factory/tests/test_data/`
+- **consumed_by:** `manual component audit`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/tests/debug_bulk_sync.py`
+- **Role:** `info`
+- **provides:** `script:debug_bulk_sync`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `assets/gallery_data/`
+- **consumed_by:** `manual gallery bulk-sync testing`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/tests/debug_distiller.py`
+- **Role:** `info`
+- **provides:** `script:debug_distiller`
+- **consumes:** `libs/viz_factory/src/viz_factory/distiller.py`, `libs/viz_factory/tests/test_data/`
+- **consumed_by:** `manual distiller testing`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/tests/debug_gallery.py`
+- **Role:** `info`
+- **provides:** `script:debug_gallery`
+- **consumes:** `libs/transformer/tests/debug_assembler.py (output: tmp/EVE_contracted_*.parquet)`, `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/*/README.md`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/tests/debug_runner.py`
+- **Role:** `info`
+- **provides:** `script:debug_runner (viz_factory)`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `libs/viz_factory/tests/test_data/`
+- **consumed_by:** `libs/viz_factory/tests/viz_factory_integrity_suite.py`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/tests/debug_viz_factory_audit.py`
+- **Role:** `info`
+- **provides:** `script:debug_viz_factory_audit`
+- **consumes:** `.claude/tasks/tasks.md`, `libs/viz_factory/src/`, `libs/viz_factory/tests/test_data/`, `tmp/`
+- **doc:** `.claude/rules/workspace_standard.md#5`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/tests/debug_viz_factory_tier3.py`
+- **Role:** `info`
+- **provides:** `script:debug_viz_factory_tier3`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `libs/transformer/src/transformer/data_wrangler.py`
+- **consumed_by:** `manual Tier 3 wrangling+viz testing`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_factory/tests/viz_factory_integrity_suite.py`
+- **Role:** `info`
+- **provides:** `script:viz_factory_integrity_suite`
+- **consumes:** `libs/viz_factory/tests/debug_runner.py`, `libs/viz_factory/tests/test_data/`, `libs/viz_factory/src/viz_factory/`
+- **consumed_by:** `CI / manual audit`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_gallery/src/viz_gallery/example_recipe.py`
+- **Role:** `info`
+- **provides:** `function:example_recipe`, `function:dump_example`, `function:data_contract`, `function:data_summary`, `function:plot_summary`, `constant:SCHEMA_ID`, `constant:GROUP_ID`, `constant:DATA_FILE`
+- **consumes:** `libs/utils/src/utils/recipe_check.py (spec)`, `libs/utils/src/utils/recipe_migration.py (SANITISER_TEXTS)`, `libs/utils/src/utils/polars_types.py`
+- **consumed_by:** `libs/viz_gallery/src/viz_gallery/gallery_manager.py`, `assets/scripts/convert_gallery_examples.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 9; D1`, `D2`, `D7)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_gallery/src/viz_gallery/gallery_manager.py`
+- **Role:** `info`
+- **provides:** `class:GalleryManager (check_examples`, `rebuild_index`, `submit_example`, `list_submissions)`, `class:Examples`, `constant:RECIPE_FILE`
+- **consumes:** `libs/utils/src/utils/recipe_loader.py (check_recipe_file`, `load_recipe)`, `libs/utils/src/utils/legacy_keys.py`, `libs/viz_gallery/src/viz_gallery/taxonomy.py`, `libs/viz_gallery/src/viz_gallery/example_recipe.py`
+- **consumed_by:** `app/modules/gallery_examples.py`, `assets/scripts/refresh_gallery.py`, `assets/scripts/convert_gallery_examples.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 9)`
+
+## `.claude/worktrees/agent-a5f3467f03369012d/libs/viz_gallery/src/viz_gallery/taxonomy.py`
+- **Role:** `info`
+- **provides:** `function:display_axes`, `function:first_geom`, `function:the_plot`, `function:example_taxonomy`, `function:tag_strip`, `function:with_tag_strip`, `function:filter_panels`
+- **consumes:** `libs/utils/src/utils/recipe_check.py (spec)`, `libs/utils/src/utils/recipe_spec.yaml (gallery)`
+- **consumed_by:** `libs/viz_gallery/src/viz_gallery/gallery_manager.py`, `app/modules/gallery_viewer.py`, `app/handlers/gallery_handlers.py`, `assets/scripts/convert_gallery_examples.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 9; findings G1`, `G4`, `G7; design D2`, `D3)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/design/outdated/blueprint_full_feature_set_research.md`
+- **Role:** `info`
+- **documents:** `.claude/design/spaces/BLUEPRINT.md`, `.claude/knowledge/blueprint_architect_ux_spec.md`
+- **consumed_by:** `.claude/knowledge/architecture_decisions.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/rules/rules_agent_channel.md`
+- **Role:** `info`
+- **provides:** `rule:agent_channel`
+- **documents:** `tmpAI/agent_channel.md`
+- **consumed_by:** `CLAUDE.md`, `.claude/rules/workspace_standard.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/rules/rules_agent_role_bioscientist.md`
+- **Role:** `info`
+- **provides:** `rule:data_analysis_recipe_construction_protocol`, `rule:debug_workflow`, `rule:registered_actions_table`, `rule:handoff_protocol`, `rule:output_routing`
+- **consumes:** `rule:canonical_steps_syntax`, `rule:analysis_groups_structure`
+- **documents:** `libs/transformer/src/transformer/actions/`, `libs/viz_factory/src/viz_factory/`, `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/rules/rules_app_features_flags.md`
+- **Role:** `info`
+- **provides:** `rule:app_features_flags`, `rule:feature_dependencies`
+- **documents:** `config/app_features/`, `app/src/bootloader.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/rules/rules_app_structure.md`
+- **Role:** `info`
+- **provides:** `rule:app_structure_law`, `rule:two_category_law`, `rule:handler_module_boundary`
+- **documents:** `app/handlers/`, `app/modules/`, `app/src/server.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/rules/rules_css_style_spec.md`
+- **Role:** `info`
+- **provides:** `rule:css_design_tokens`, `rule:typography_scale`, `rule:color_palette`, `rule:button_catalog`
+- **documents:** `config/ui/theme.css`
+- **consumed_by:** `.claude/rules/rules_ui_dashboard.md`, `.claude/rules/ui_implementation_contract.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/rules/rules_data_analysis_recipe_structure.md`
+- **Role:** `info`
+- **provides:** `rule:canonical_steps_syntax`, `rule:directory_taxonomy`, `rule:analysis_groups_structure`, `rule:final_contract`
+- **documents:** `libs/transformer/src/transformer/data_assembler.py`, `app/handlers/home_theater.py`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `docs/appendix/data_analysis_recipe_structure.yaml`, `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/rules/rules_data_engine.md`
+- **Role:** `info`
+- **provides:** `rule:3tier_lifecycle`, `rule:wrangling_block_structure`, `rule:decorator_standards`, `rule:polars_parity`
+- **documents:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/actions/`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/rules/rules_documentation_aesthetics.md`
+- **Role:** `info`
+- **provides:** `rule:violet_law`, `rule:quarto_mermaid_standards`, `rule:css_theme_standards`, `rule:doc_sync`
+- **documents:** `docs/`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/rules/rules_legacy_management.md`
+- **Role:** `info`
+- **provides:** `rule:legacy_management`, `rule:deprecation_markers`, `rule:historical_preservation`
+- **consumed_by:** `.claude/rules/workspace_standard.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/rules/rules_runtime_environment.md`
+- **Role:** `info`
+- **provides:** `rule:venv_path_mandate`, `rule:no_discovery`, `rule:pinned_versions`, `rule:library_autonomy`
+- **documents:** `.venv/`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/rules/rules_ui_dashboard.md`
+- **Role:** `info`
+- **provides:** `rule:ui_orchestration`, `rule:theatre_layout`, `rule:sidebar_law`
+- **documents:** `app/handlers/home_theater.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/rules/rules_verification_testing.md`
+- **Role:** `info`
+- **provides:** `rule:verify_protocol`, `rule:tmpAI_tmp_segregation`, `rule:debug_script_mandate`
+- **documents:** `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`, `tmpAI/`, `tmp/`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/.claude/rules/rules_viz_factory.md`
+- **Role:** `info`
+- **provides:** `rule:artist_pillar`, `rule:plotnine_parity`, `rule:core_geoms_standard`
+- **documents:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/registry.py`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/handlers/__init__.py`
+- **Role:** `info`
+- **provides:** `Shiny handler package (ADR-045 Two-Category Law); exposes define_server() entry points for all handler modules`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `ADR-045`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/handlers/audit_stack.py`
+- **Role:** `info`
+- **provides:** `function:define_server (audit_stack)`, `output:audit_nodes_header_ui`, `output:audit_nodes_tier2`, `output:audit_nodes_tier3`, `output:processing_issues_ui`, `output:aesthetic_style_panel_ui (22-J-10)`
+- **consumes:** `app/modules/wrangle_studio.py`, `app/modules/session_manager.py`, `libs/transformer/src/transformer/data_wrangler.py`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12a-12c`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen`, `processing_issues_ui shows fix/who)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/handlers/blueprint_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `output:bp_branch_ui`, `output:bp_branch_preview_ui`, `output:bp_groups_inventory_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`, `effect:_load_component_from_selection`, `effect:_handle_branch_preview`, `effect:_handle_branch_write (BP-BRANCH-NODE-1 — node-level lineage bifurcation`, `replaces Visual Fork)`, `effects:_handle_grp_action/_handle_create_group_btn/_handle_grp_submit/_handle_plt_submit/_handle_move_plt_submit (BP-GROUPS-1)`, `helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts data analysis recipe rebuild logic so CRUD Effects can call it after mutations)`, `output:bp_meta_form_ui`, `effect:_handle_meta_save (BP-META-1 — data analysis recipe info: block read/edit form)`, `effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)`, `output:bp_validate_ui`, `effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path`, `issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))`, `helpers:_draft_key/_write_bp_draft/_read_bp_draft`, `effect:_autosave_blueprint_draft`, `output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)`, `outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui`, `effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)`, `function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit)`, `helper:_bundle_filename (full-data analysis recipe zip)`, `output:bp_import_error_ui (ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface for component/recipe import failures)`
+- **consumes:** `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data — issue #53)`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `libs/blueprint_arch/src/blueprint_arch/new_recipe.py (new_recipe_draft — BP-NEW-1`, `recipe format 1)`, `libs/utils/src/utils/recipe_factory.py (write_recipe)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError`, `make_render_payload — DIAG-RUNTIME-BLUEPRINT-1`, `wired to screen 2026-11-08 ADR-094)`, `app/src/render/pipeline_error_renderers.py (render_blueprint_inline)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui")`, `ui.output_ui("bp_branch_ui")`, `ui.output_ui("bp_groups_inventory_ui")`, `ui.output_ui("bp_meta_form_ui"))`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-076`, `.claude/knowledge/architecture_decisions.md#ADR-082`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/handlers/data_import_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_data_import_server`, `function:import_error_block`, `output:data_import_ui`, `output:data_import_assignment_ui`
+- **consumes:** `app/modules/orchestrator.py`, `app/src/bootloader.py`, `transformer.metadata_validator`, `shiny`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-052`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/handlers/export_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `output:import_bundle_report`, `function:_build_methods_section`
+- **consumes:** `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1)`, `app/modules/cache_keys.py (canonical_hash`, `engine_fingerprint — REPRO-PROV-1)`, `app/modules/bundle_importer.py (import_bundle`, `BundleImportError — REPRO-IMPORT-1)`, `polars`, `shiny`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text)`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/export_specification.md`, `.claude/design/reproducible_export_design.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/handlers/filter_and_audit_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_filter_audit_server`, `output:sidebar_filters`, `output:filter_rows_ui`, `output:filter_form_ui`, `output:filter_controls_ui`, `input:filter_apply`, `input:filter_send_to_audit`
+- **consumes:** `app/modules/session_manager.py (make_audit_step)`, `app/modules/t3_audit_engine.py (describe_filter`, `op_choice_label)`, `app/src/bootloader.py (is_enabled)`, `shiny`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-049`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/rules/ui_implementation_contract.md#8`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/handlers/gallery_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (gallery_handlers)`
+- **consumes:** `app/src/bootloader.py`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-037`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/rules/rules_ui_dashboard.md#5`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/handlers/home_theater.py`
+- **Role:** `info`
+- **provides:** `function:define_server (home_theater)`, `output:dynamic_tabs`, `output:home_data_preview`, `output:home_col_selector_ui`, `output:col_drop_audit_btn_ui`, `output:sidebar_nav_ui`, `output:sidebar_tools_ui`, `output:right_sidebar_content_ui`, `output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui`
+- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `utils/config_loader.py`, `app/modules/t3_audit_engine.py`, `app/modules/sidebar_registry.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-043`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-047`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-073`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/knowledge/architecture_decisions.md#ADR-094`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/rules/ui_implementation_contract.md#4`, `.claude/rules/ui_implementation_contract.md#5`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/handlers/ingestion_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (ingestion_handlers)`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/handlers/session_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_session_server`, `output:session_management_ui`, `output:session_export_active`
+- **consumes:** `shiny`, `pathlib`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-097`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/handlers/test_lab_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (test_lab_handlers)`
+- **consumes:** `app/modules/test_lab_studio.py`, `shiny`, `libs/test_lab/reformatter.py`, `libs/test_lab/aqua_synthesizer.py`, `libs/test_lab/anonymiser.py`, `libs/test_lab/scaffolder.py`, `libs/id_reconciliation/`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/bundle_importer.py`
+- **Role:** `info`
+- **provides:** `function:import_bundle`, `function:read_effective_run`, `class:ImportResult`, `class:LegResult`, `class:BundleImportError`
+- **consumes:** `app/modules/cache_keys.py (engine_fingerprint)`, `app/modules/data_analysis_recipe_validator.py (engine_load_problems — safe ConfigManager probe`, `ADR-077)`, `app/modules/session_manager.py (SessionManager)`
+- **consumed_by:** `app/handlers/export_handlers.py (define_export_server — Import control in the Export panel)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/reproducible_export_design.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/cache_keys.py`
+- **Role:** `info`
+- **provides:** `function:load_data_analysis_recipe`, `function:tier1_key`, `function:tier2_key`, `function:data_analysis_recipe_fileset_hash`, `function:data_analysis_recipe_keys`, `class:LoadedDataAnalysisRecipe`, `class:DataAnalysisRecipeKeys`
+- **consumes:** `libs/utils/src/utils/config_loader.py`
+- **consumed_by:** `app/modules/orchestrator.py`, `app/modules/session_manager.py`, `app/src/server.py`, `app/tests/test_cache_keys.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-089`, `docs/foundations/reproducibility_hash_schema.qmd`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/data_analysis_recipe_validator.py`
+- **Role:** `info`
+- **provides:** `function:validate_data_analysis_recipe`, `function:checker_problems`, `function:engine_load_problems`, `function:checker_catalogs`, `function:validate_data_analysis_recipe_data`, `function:find_data_analysis_recipes`, `function:read_data_analysis_recipe_header`, `function:resolve_contact`, `class:DataAnalysisRecipeProblem`
+- **consumes:** `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/recipe_loader.py (check_recipe_file)`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS)`, `libs/viz_factory/src/viz_factory/arguments.py (argument_catalog)`, `app/modules/orchestrator.py`
+- **consumed_by:** `app/tests/test_data_analysis_recipe_validator.py`, `app/tests/test_data_analysis_recipe_data_check.py`, `app/tests/test_retest_data_analysis_recipes.py`, `app/handlers/blueprint_handlers.py (_handle_validate`, `BP-VALIDATE-1/VALIDATE-UI-1)`, `app/src/bootloader.py (HOME load gate`, `ADR-094)`
+- **doc:** `.claude/tasks/tasks.md (BP-VALIDATE-1`, `VALIDATE-UI-1)`, `.claude/rules/rules_data_engine.md#3`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/deployment_error.py`
+- **Role:** `info`
+- **provides:** `(re-exports from utils.deployment_error — see that file for the canonical source)`
+- **consumes:** `utils.deployment_error`
+- **consumed_by:** `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/gallery_viewer.py`
+- **Role:** `info`
+- **provides:** `class:GalleryViewer`, `function:build_sidebar_ui`, `function:render_explorer_ui`
+- **consumes:** `app/src/bootloader.py (bootloader singleton)`
+- **consumed_by:** `app/handlers/gallery_handlers.py`, `app/src/server.py`, `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-033`, `.claude/knowledge/architecture_decisions.md#ADR-057`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/help_registry.py`
+- **Role:** `info`
+- **provides:** `module:help_registry_ui`, `module:help_registry_server`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `get_component_catalog)`, `libs/viz_factory/src/viz_factory/registry.py (PLOT_COMPONENT_REGISTRY)`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/notification_utils.py`
+- **Role:** `info`
+- **provides:** `make_notifier() factory — returns a _notify(msg`, `type`, `duration) callable that calls ui.notification_show and appends to a reactive log`
+- **consumes:** `shiny.ui`, `datetime`
+- **consumed_by:** `app/handlers/session_handlers.py`, `app/handlers/audit_stack.py`, `app/handlers/home_theater.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/data_import_handlers.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/orchestrator.py`
+- **Role:** `info`
+- **provides:** `pipeline:materialize_tier1`, `pipeline:materialize_tier2`, `method:prepare_ingredient`, `function:compute_data_analysis_recipe_keys`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/metadata_validator.py`, `libs/transformer/src/transformer/actions/persistence/anchor.py`, `app/modules/cache_keys.py`
+- **mirrors:** `libs/transformer/tests/debug_assembler.py`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/orchestrator_helpers.py`
+- **Role:** `info`
+- **provides:** `safe_input`, `DEFAULT_HOME_STATE`
+- **consumes:** `—`
+- **consumed_by:** `app.src.server`
+- **doc:** `ADR-045 (Two-Category Law §5 — shared utility functions)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/session_manager.py`
+- **Role:** `info`
+- **provides:** `class:SessionManager`, `typedef:AuditStep`
+- **consumes:** `stdlib (hashlib`, `json`, `shutil`, `zipfile`, `pathlib`, `datetime`, `uuid)`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/session_handlers.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/knowledge/architecture_decisions.md#ADR-097`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/sidebar_registry.py`
+- **Role:** `info`
+- **provides:** `PANEL_REGISTRY (dict)`, `is_panel_active (function)`
+- **consumes:** `app/src/bootloader.py (via callers)`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md §11`, `.claude/rules/rules_ui_dashboard.md §2`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/sidebar_validator.py`
+- **Role:** `info`
+- **provides:** `class:SidebarValidator`
+- **consumes:** `app/modules/sidebar_registry.py`, `app/modules/deployment_error.py`, `config/app_features/*.yaml`, `config/ui/sidebars/*.yaml`
+- **consumed_by:** `app/src/server.py`, `scripts/validate_app_features_config.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md §11`, `.claude/rules/rules_ui_dashboard.md §2`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/t3_audit_engine.py`
+- **Role:** `info`
+- **provides:** `function:_apply_filter_rows`
+- **consumes:** `polars`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-051`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/test_lab_studio.py`
+- **Role:** `info`
+- **provides:** `class:TestLabStudio (render_ui only)`
+- **consumes:** `shiny.ui`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/src/server.py`, `app/handlers/test_lab_handlers.py`
+- **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/view_badge.py`
+- **Role:** `info`
+- **provides:** `function:view_badge`, `function:has_tier2_steps`, `class:ViewBadge`
+- **consumes:** `app/modules/cache_keys.py`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/tests/test_view_badge.py`
+- **doc:** `https://github.com/evezeyl/SPARMVET_VIZ/issues/17`, `.claude/knowledge/architecture_decisions.md#adr-086`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/wrangle_studio.py`
+- **Role:** `info`
+- **provides:** `class:WrangleStudio`, `method:build_sidebar_ui (issue #42 — Blueprint's left sidebar`, `moved here from home_theater.py's sidebar_tools_ui()`, `mirrors GalleryViewer.build_sidebar_ui(); registered as the "blueprint_main" freestanding panel type)`, `method:_render_action_form`, `method:_extract_upstream_cols`, `output:bp_yaml_escape_ui`, `output:bp_help_panel_ui`, `function:_resolve_action_doc`, `reactive.Value:inline_errors (ADR-079/ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface)`, `function:_enum_preview_legend (BP-ENUM-PREVIEW-1)`, `constants:_LINETYPE_DASHARRAY/_POSITION_DESC`, `reactive.Value:active_component_path (BP-PLOT-COMMIT-1 — loaded fragment file path`, `Save target); node marker _tier on action stubs (source-tier routing on commit`, `set from bp_action_context)`, `reactive.Value:joint_request`, `reactive.Value:joint_edit_idx (BP-JOINT-1 — shared with blueprint_handlers Joint Designer wiring); nav_panel "joint_designer" in architect_internal_tabs`
+- **consumes:** `app/src/render/pipeline_error_renderers.py (render_blueprint_inline — ADR-094)`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `search_actions`, `get_actions_for_context; get_component_catalog`, `search_components`, `get_components_for_context — BP-COMPONENT-FORMS-1)`, `node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1/BP-MAPPING-FORM-1); action key ({"action":...}) for wrangling nodes`, `__mapping__ node: dedicated aes form with bp_map_{key} inputs (BP-MAPPING-FORM-1); method:_extract_upstream_cols drives column picker choices`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `loaded via ui.py head)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (JOIN_HOW_OPTIONS — BP-JOINT-1 Joint Designer pane)`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/audit_stack.py`, `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-004`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-082`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/src/bootloader.py`
+- **Role:** `info`
+- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_agent_adapter`, `method:get_palettes`, `method:get_contact`, `attr:available_data_analysis_recipes`, `attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)`, `method:get_default_data_analysis_recipe_or_none`, `attr:has_usable_data_analysis_recipe (issue #38 empty-state gate)`
+- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`, `app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data`, `read_data_analysis_recipe_header`, `resolve_contact — ADR-094)`
+- **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`
+- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `ADR-087`, `ADR-094 (issue #38 closure note)`, `project_conventions.md §"Deployment Resolution`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/src/main.py`
+- **Role:** `info`
+- **provides:** `app (Shiny App instance`, `entry point)`, `docs_available (bool flag for conditional docs link)`
+- **consumes:** `shiny`, `app.src.ui`, `app.src.server`
+- **consumed_by:** `Shiny runner (uvicorn/shiny run)`, `__main__`, `help modal handlers`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/src/render/pipeline_error_renderers.py`
+- **Role:** `info`
+- **provides:** `function:render_notification`, `function:render_plot_overlay`
+- **consumes:** `shiny.ui`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-079`, `.claude/knowledge/architecture_decisions.md#adr-094`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/src/server.py`
+- **Role:** `info`
+- **provides:** `server (Shiny server function)`, `reactive.Value:_selected_lineage_rel (shared between wrangle_studio and blueprint_handlers — BP-LINEAGE-NAV-1)`
+- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.orchestrator_helpers`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio (gated: blueprint_enabled or t3_sandbox_enabled)`, `app.modules.test_lab_studio (gated: test_lab_enabled)`, `app.modules.gallery_viewer`, `app.modules.app_features_validator`, `app.modules.sidebar_validator`, `app.modules.deployment_error`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
+- **consumed_by:** `app.src.main`
+- **doc:** `ADR-045`, `ADR-003`, `ADR-094 §6 closure (issue #38 — active_cfg() empty-state stand-in)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/src/ui.py`
+- **Role:** `info`
+- **provides:** `app_ui (Shiny UI definition`, `page_fillable layout)`
+- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `included via ui.tags.script)`
+- **consumed_by:** `app.src.main`
+- **doc:** `ADR-027`, `ADR-029a`, `ADR-030`, `ADR-039`, `ADR-052`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/tests/debug_data_import.py`
+- **Role:** `info`
+- **provides:** `debug:data_import_headless`
+- **consumes:** `transformer/metadata_validator.py`, `app/handlers/data_import_handlers.py`
+- **consumed_by:** `manual @verify`, `CI`
+- **doc:** `.claude/rules/ui_implementation_contract.md#9`, `.claude/rules/ui_implementation_contract.md#10`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/tests/debug_pipeline_connector.py`
+- **Role:** `info`
+- **provides:** `debug:pipeline_connector_headless`
+- **consumes:** `app/src/bootloader.py`, `app/modules/orchestrator.py`
+- **consumed_by:** `manual @verify`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/tests/debug_session_flow.py`
+- **Role:** `info`
+- **provides:** `debug:session_flow`
+- **consumes:** `app/modules/session_manager.py`
+- **consumed_by:** `CI`, `manual @verify`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/tasks/tasks.md#22-G`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/app/tests/test_session_manager.py`
+- **Role:** `info`
+- **provides:** `test:session_manager`
+- **consumes:** `app/modules/session_manager.py`
+- **consumed_by:** `CI`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/assets/scripts/SF_create_data_analysis_recipe.py`
+- **Role:** `info`
+- **provides:** `script:SF_create_data_analysis_recipe`
+- **consumes:** `assets/test_data/ (TSV/CSV source files)`, `assets/template_data_analysis_recipes/ (writes scaffolded YAML)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/assets/scripts/build_dep_graph.py`
+- **Role:** `info`
+- **provides:** `script:build_dep_graph`
+- **consumes:** `all files with @deps blocks across the project`
+- **consumed_by:** `assets/dep_graph.html`, `.claude/knowledge/dependency_index.md`
+- **doc:** `.claude/rules/workspace_standard.md#5`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/assets/scripts/create_data_analysis_recipe.py`
+- **Role:** `info`
+- **provides:** `script:create_data_analysis_recipe`
+- **consumes:** `libs/utils/src/utils/recipe_factory.py (minimal_recipe`, `minimal_schema`, `minimal_plot`, `Include`, `write_recipe`, `write_fragment)`, `libs/utils/src/utils/recipe_check.py (check_recipe)`, `libs/utils/src/utils/polars_types.py (text_dtype_names)`
+- **consumed_by:** `app/tests/test_writers_emit_format_one.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 4`, `7)`, `.claude/rules/rules_asset_scripts.md`, `docs/appendix/running_helper_scripts.qmd`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/assets/scripts/create_test_deployment.py`
+- **Role:** `info`
+- **provides:** `script:create_test_deployment`
+- **consumes:** `config/deployment/local/ (writes deployment file)`
+- **doc:** `docs/workflows/connector.qmd`, `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/assets/scripts/debug_apply_data_analysis_recipe_standards.py`
+- **Role:** `info`
+- **provides:** `script:debug_apply_data_analysis_recipe_standards`
+- **consumes:** `libs/viz_factory/tests/test_data/ (YAML test data analysis recipes)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/assets/scripts/debug_bootstrap_viz_yamls.py`
+- **Role:** `info`
+- **provides:** `script:debug_bootstrap_viz_yamls`
+- **consumes:** `libs/viz_factory/tests/test_data/ (writes bootstrapped YAML test data analysis recipes)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/assets/scripts/figshare_plot_integration.py`
+- **Role:** `info`
+- **provides:** `script:figshare_plot_integration`
+- **consumes:** `tmp/integration/figshare_join_check.tsv (written by figshare_triple_integration.py)`, `tmp/integration/ (writes plots)`
+- **doc:** `assets/test_data/figshare.21737288/README.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/assets/scripts/figshare_triple_integration.py`
+- **Role:** `info`
+- **provides:** `script:figshare_triple_integration`
+- **consumes:** `assets/test_data/figshare.21737288/csv/`, `libs/transformer/tests/data/ (writes TSVs)`, `tmp/integration/ (writes join output)`
+- **doc:** `assets/test_data/figshare.21737288/README.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/assets/scripts/generate_demo_data.py`
+- **Role:** `info`
+- **provides:** `script:generate_demo_data`
+- **consumes:** `assets/test_data/1_test_data_ST22_dummy/ (ground truth TSVs)`, `libs/test_lab (AquaSynthesizer)`
+- **consumed_by:** `assets/test_data/demo_high_integrity/ (writes synthetic TSVs)`
+- **doc:** `libs/test_lab/README.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/assets/scripts/normalize_data_analysis_recipe_fields.py`
+- **Role:** `info`
+- **provides:** `script:normalize_data_analysis_recipe_fields`
+- **consumes:** `config/data_analysis_recipes/ (YAML files)`
+- **doc:** `.claude/rules/rules_data_engine.md#4`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **Role:** `info`
+- **provides:** `data analysis recipe:2_test_data_ST22_dummy`
+- **consumes:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml (via !include)`, `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml (via !include)`
+- **consumed_by:** `app/src/server.py (via bootloader)`, `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml`
+- **Role:** `info`
+- **provides:** `assembly:AMR_Profile_Joint`
+- **consumes:** `action:mutate`, `action:join`, `action:cast`, `action:sort`, `dataset:amr_data`, `dataset:metadata_schema`
+- **include_parent:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml`
+- **Role:** `info`
+- **provides:** `assembly:Plasmid_Profile_Joint`
+- **consumes:** `action:join`, `action:cast`, `action:sort`, `dataset:plasmid_data`, `dataset:metadata_schema`
+- **include_parent:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`
+- **Role:** `info`
+- **provides:** `class:AgentAdapter`, `class:ClaudeCliAdapter`, `class:DisabledAdapter`, `class:AgentResponse`, `class:Tool`, `function:make_adapter`
+- **consumed_by:** `app/src/bootloader.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/blueprint_arch/src/blueprint_arch/agent_context.py`
+- **Role:** `info`
+- **provides:** `function:build_system_prompt`, `function:build_turn_context`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/src/bootloader.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`
+- **Role:** `info`
+- **provides:** `function:extract_tool_calls`, `function:register_tool_schema`, `class:ParseResult`, `class:ParsedToolCall`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/blueprint_arch/src/blueprint_arch/agent_tools.py`
+- **Role:** `info`
+- **provides:** `function:call_tool`, `function:get_tool_definitions`, `dict:TOOL_REGISTRY`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
+- **Role:** `info`
+- **provides:** `class:BlueprintMapper`, `constant:_CY_COLOURS`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/rules/rules_ui_dashboard.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`
+- **Role:** `info`
+- **provides:** `function:build_sibling_map`, `function:build_lineage_chain`, `function:build_schema_registry`, `function:load_fields_file`, `function:resolve_fields_for_schema`, `function:build_plot_lineage`, `function:get_plot_ids_in_group`, `function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml)`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-074`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py`
+- **Role:** `info`
+- **provides:** `func:list_groups_plots`, `func:create_group`, `func:delete_group`
+- **consumes:** `yaml`, `pathlib`, `re`
+- **consumed_by:** `app/handlers/blueprint_handlers.py (bp_groups_inventory_ui + CRUD Effects — BP-GROUPS-1)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-082`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/blueprint_arch/src/blueprint_arch/join_designer.py`
+- **Role:** `info`
+- **provides:** `join_designer:compute_key_match`, `join_designer:build_join_step`, `join_designer:parse_join_step`
+- **consumes:** `—`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `libs/blueprint_arch/tests/test_join_designer.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-082 (Q5)`, `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/blueprint_arch/src/blueprint_arch/new_recipe.py`
+- **Role:** `info`
+- **provides:** `function:new_recipe_draft`
+- **consumes:** `libs/utils/src/utils/recipe_factory.py (minimal_recipe)`
+- **consumed_by:** `app/handlers/blueprint_handlers.py (_handle_new_data_analysis_recipe_submit)`, `libs/blueprint_arch/tests/test_new_recipe.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 3`, `4`, `7.1)`, `.claude/design/recipe_format_work_order.md (W8)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **Role:** `info`
+- **provides:** `function:get_action_catalog`, `function:get_component_catalog`, `function:get_combined_catalog`, `function:get_actions_for_context`, `function:get_actions_by_category`, `function:get_components_for_context`, `function:search_actions`, `function:search_components`, `function:register`
+- **consumes:** `nothing — catalogs injected at startup by app/src/server.py via register()`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/modules/wrangle_studio.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md (ADR-075)`, `.claude/rules/rules_app_structure.md §2`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/blueprint_arch/src/blueprint_arch/t3_translator.py`
+- **Role:** `info`
+- **provides:** `function:translate_t3_node`, `function:translate_plot_steps`, `function:build_mode2_recipe`, `class:UntranslatableNode`
+- **consumes:** `stdlib (copy`, `hashlib`, `json)`, `PyYAML (developer_raw_yaml fragment parsing only)`
+- **consumed_by:** `app/handlers/export_handlers.py (REPRO-TRANSLATOR-1 wiring`, `#45/#48)`, `libs/blueprint_arch/tests/test_t3_translator.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/reproducible_export_design.md#4D`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/blueprint_arch/src/blueprint_arch/widget_text.py`
+- **Role:** `info`
+- **provides:** `function:value_to_text`, `function:text_to_value`
+- **consumes:** `libs/utils/src/utils/ui_schema.py`, `libs/utils/src/utils/strict_yaml.py`
+- **consumed_by:** `app/modules/wrangle_studio.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8`, `RG1)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/connector/src/connector/__init__.py`
+- **Role:** `info`
+- **provides:** `BaseConnector`, `FilesystemConnector`, `GalaxyConnector`, `IridaConnector`, `get_connector()`
+- **consumes:** `connector.base`, `connector.filesystem`, `connector.galaxy`, `connector.irida`
+- **consumed_by:** `app/src/bootloader.py`, `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/connector/src/connector/base.py`
+- **Role:** `info`
+- **provides:** `class:BaseConnector`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/connector/src/connector/filesystem.py`
+- **Role:** `info`
+- **provides:** `class:FilesystemConnector`
+- **consumes:** `class:BaseConnector`, `utils.deployment_error`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`, `ADR-078`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/connector/src/connector/galaxy.py`
+- **Role:** `info`
+- **provides:** `class:GalaxyConnector`
+- **consumes:** `class:FilesystemConnector`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/connector/src/connector/irida.py`
+- **Role:** `info`
+- **provides:** `class:IridaConnector`
+- **consumes:** `class:FilesystemConnector`, `utils.deployment_error`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`, `ADR-078`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/id_reconciliation/src/id_reconciliation/__init__.py`
+- **Role:** `info`
+- **provides:** `IDReconciliationEngine`, `IDPair`, `MatchResult`, `PatternSuggestion`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `app/handlers/test_lab_handlers.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/id_reconciliation/src/id_reconciliation/core.py`
+- **Role:** `info`
+- **provides:** `IDReconciliationEngine`, `detect_many_to_many`, `format_match_table`, `apply_recode_step`
+- **consumes:** `libs/utils/src/utils/id_patterns.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/__init__.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **Role:** `info`
+- **provides:** `IDPair`, `MatchResult`, `IdTransformation`
+- **consumes:** `libs/utils/src/utils/id_patterns.py (PatternSuggestion re-exported for backward compat)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/id_reconciliation/src/id_reconciliation/id_transformation.py`
+- **Role:** `info`
+- **provides:** `save_transformation`, `load_transformation`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/id_reconciliation/src/id_reconciliation/matcher.py`
+- **Role:** `info`
+- **provides:** `exact_match`, `fuzzy_match_batch`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/id_reconciliation/src/id_reconciliation/pattern_detector.py`
+- **Role:** `info`
+- **provides:** `detect_patterns`, `apply_pattern`, `suggest_regex (re-exported from utils.id_patterns)`
+- **consumes:** `libs/utils/src/utils/id_patterns.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/ingestion/src/ingestion/declared.py`
+- **Role:** `info`
+- **provides:** `function:apply_declared`
+- **consumes:** `libs/utils/src/utils/polars_types.py`, `libs/utils/src/utils/recipe_check.py`
+- **consumed_by:** `libs/ingestion/src/ingestion/ingestor.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.3`, `7.4; DEC27`, `DEC28)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/ingestion/src/ingestion/ingestor.py`
+- **Role:** `info`
+- **provides:** `class:DataIngestor`, `method:ingest`, `method:find_file`
+- **consumes:** `libs/ingestion/src/ingestion/declared.py`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/test_lab/src/test_lab/anonymiser.py`
+- **Role:** `info`
+- **provides:** `Anonymiser class (anonymise`, `anonymise_batch`, `build_deanon_steps)`
+- **consumes:** `polars`, `hashlib`, `yaml`, `datetime`, `pathlib (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_anonymiser.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/test_lab/src/test_lab/aqua_synthesizer.py`
+- **Role:** `info`
+- **provides:** `AquaSynthesizer class (propose_config`, `generate`, `save_config`, `load_config`, `list_scenarios)`
+- **consumes:** `polars`, `numpy`, `random`, `re`, `pathlib`, `datetime`, `argparse`, `yaml`, `typing (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_synthesizer.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/test_lab/src/test_lab/bootstrapper.py`
+- **Role:** `info`
+- **provides:** `DataAnalysisRecipeBootstrapper class (bootstrap`, `id_cleaning_steps) — infers TSV schemas`
+- **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_bootstrapper.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/test_lab/src/test_lab/extractor.py`
+- **Role:** `info`
+- **provides:** `XlsxExtractor class (extract) — reads multi-sheet XLSX and writes normalized TSVs`
+- **consumes:** `polars`, `pathlib`, `typing`, `yaml (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_extractor.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/test_lab/src/test_lab/reformatter.py`
+- **Role:** `info`
+- **provides:** `DataReformatter class (convert_xlsx`, `convert_csv`, `convert_folder)`
+- **consumes:** `polars`, `pathlib (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_reformatter.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/test_lab/src/test_lab/scaffolder.py`
+- **Role:** `info`
+- **provides:** `DataAnalysisRecipeScaffolder class (scaffold) — generates a data analysis recipe ZIP with data analysis recipe`
+- **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re`, `io`, `zipfile (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_scaffolder.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/transformer/src/transformer/actions/base.py`
+- **Role:** `info`
+- **provides:** `decorator:register_action`, `registry:AVAILABLE_WRANGLING_ACTIONS`, `registry:ACTION_SCHEMAS`
+- **consumed_by:** `libs/transformer/src/transformer/actions/cleaning/core.py`, `libs/transformer/src/transformer/actions/cleaning/analytical.py`, `libs/transformer/src/transformer/actions/cleaning/advanced.py`, `libs/transformer/src/transformer/actions/cleaning/expressions.py`, `libs/transformer/src/transformer/actions/relational/joins.py`, `libs/transformer/src/transformer/actions/reshaping/core.py`, `libs/transformer/src/transformer/actions/performance/aggregation.py`, `libs/transformer/src/transformer/actions/persistence/anchor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/transformer/src/transformer/actions/composite.py`
+- **Role:** `info`
+- **provides:** `action:step_top_n_other`
+- **consumes:** `libs/transformer/src/transformer/actions/polars_calls.py (_checked)`
+- **consumed_by:** `libs/transformer/tests/test_step_actions.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1 (DEC36`, `R7)`, `.claude/design/home_evidence/actions_and_polars_2026-11-13.md section 25`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/transformer/src/transformer/actions/modified.py`
+- **Role:** `info`
+- **provides:** `action:modif_filter`
+- **consumes:** `libs/transformer/src/transformer/actions/polars_calls.py (_checked)`, `libs/utils/src/utils/ui_schema.py`
+- **consumed_by:** `app/tests/test_modif_filter_verify.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1 (DEC39)`, `.claude/design/home_evidence/actions_and_polars_2026-11-13.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/transformer/src/transformer/actions/polars_calls.py`
+- **Role:** `info`
+- **provides:** `action:polars_select`, `action:polars_drop`, `action:polars_with_columns`, `action:polars_rename`, `action:polars_unique`, `action:polars_sort`, `action:polars_drop_nulls`, `action:polars_drop_nans`, `action:polars_explode`, `action:polars_unnest`, `action:polars_unpivot`, `action:polars_pivot`, `action:polars_join`, `action:polars_sample`, `action:polars_describe`, `action:polars_cast`, `action:polars_fill_null`, `action:polars_fill_nan`, `action:polars_shift`, `action:polars_cum_sum`, `action:polars_cum_count`, `action:polars_interpolate`, `action:polars_round`, `action:polars_str_replace_all`, `action:polars_str_extract`, `action:polars_str_split`, `action:polars_str_strip_chars`, `action:polars_list_join`, `action:polars_list_slice`, `action:polars_dt_truncate`, `action:polars_coalesce`, `action:polars_sum_horizontal`, `action:polars_mean_horizontal`, `action:polars_min_horizontal`, `action:polars_max_horizontal`, `action:polars_all_horizontal`, `action:polars_any_horizontal`
+- **consumes:** `libs/utils/src/utils/ui_schema.py (step_problems)`
+- **consumed_by:** `libs/transformer/tests/test_polars_actions_equal_polars.py`, `libs/transformer/tests/test_registry_polars_rules.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/transformer/src/transformer/anchor.py`
+- **Role:** `info`
+- **provides:** `function:write_anchor`, `function:read_anchor`
+- **consumed_by:** `app/modules/orchestrator.py`
+- **doc:** `.claude/design/recipe_format_spec.md (DEC42)`, `.claude/knowledge/architecture_decisions.md (ADR-024`, `ADR-031`, `ADR-089)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/transformer/src/transformer/data_assembler.py`
+- **Role:** `info`
+- **provides:** `class:DataAssembler`, `method:assemble`
+- **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/transformer/src/transformer/data_wrangler.py`
+- **Role:** `info`
+- **provides:** `class:DataWrangler`, `method:_resolve_tier`, `method:run`
+- **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`, `libs/transformer/tests/debug_wrangler.py`
+- **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/transformer/src/transformer/metadata_validator.py`
+- **Role:** `info`
+- **provides:** `class:MetadataValidator`, `method:validate`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`, `.claude/knowledge/architecture_decisions.md#ADR-034`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/transformer/src/transformer/registry.py`
+- **Role:** `info`
+- **provides:** `function:get_action_function`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`
+- **consumed_by:** `libs/transformer/src/transformer/data_wrangler.py`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/transformer/tests/debug_assembler.py`
+- **Role:** `info`
+- **provides:** `script:debug_assembler`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)`
+- **mirrors:** `app/modules/orchestrator.py`
+- **consumed_by:** `libs/viz_factory/tests/debug_gallery.py`, `libs/transformer/tests/test_debug_assembler.py`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/transformer/tests/debug_wrangler.py`
+- **Role:** `info`
+- **provides:** `script:debug_wrangler`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`
+- **mirrors:** `app/modules/orchestrator.py (Tier 1 wrangling path)`
+- **consumed_by:** `libs/transformer/tests/test_debug_wrangler.py`
+- **doc:** `.claude/rules/rules_data_engine.md#3`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/action_names.py`
+- **Role:** `info`
+- **provides:** `constant:JOIN`, `constant:SELECT`, `constant:DROP`, `constant:WITH_COLUMNS`, `constant:FILTER`, `constant:CAST`, `constant:TIER1_ONLY`
+- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/transformer/tests/test_action_names.py`
+- **doc:** `.claude/design/recipe_format_spec.md (R4)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/config_loader.py`
+- **Role:** `info`
+- **provides:** `class:ConfigManager`, `func:_normalise_yaml_boolean_keys`
+- **consumes:** `utils.deployment_error`
+- **consumed_by:** `app/modules/orchestrator.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `ADR-078`, `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/contract_migration.py`
+- **Role:** `info`
+- **provides:** `function:migrate_contracts`
+- **consumes:** `libs/utils/src/utils/recipe_migration.py (MigrationReport)`
+- **consumed_by:** `assets/scripts/migrate_recipe_format.py`, `libs/utils/tests/test_contract_migration.py`
+- **doc:** `.claude/design/recipe_format_spec.md#DEC23`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/deployment_error.py`
+- **Role:** `info`
+- **provides:** `class:DeploymentError`, `function:format_errors_block`, `function:exit_if_errors`, `function:raise_if_errors`, `class:DeploymentFailure`
+- **consumes:** `-`
+- **consumed_by:** `app/modules/deployment_error.py (re-export shim)`, `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`, `libs/connector/src/connector/irida.py`, `libs/connector/src/connector/filesystem.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/errors.py`
+- **Role:** `info`
+- **provides:** `class:SPARMVET_Error`, `class:IngestionError`, `class:TransformationError`, `class:VisualizationError`, `class:DataAnalysisRecipeError`
+- **consumes:** `libs/utils/src/utils/pipeline_error.py (PipelineError — type hint + optional carried instance`, `ADR-079/ADR-094)`
+- **consumed_by:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/ingestion/src/ingestion/ingestor.py`, `app/handlers/home_theater.py (reads .pipeline_error)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-079`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/formula_check.py`
+- **Role:** `info`
+- **provides:** `function:formula_problems`, `function:evaluate_formula`, `function:function_string_problems`, `function:denied_methods`, `constant:MODULE_FUNCTIONS`, `constant:MATH_FUNCTIONS`, `class:FormulaError`
+- **consumed_by:** `libs/utils/tests/test_formula_check.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 15; check ST06)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/hashing.py`
+- **Role:** `info`
+- **provides:** `function:generate_config_hash`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/id_patterns.py`
+- **Role:** `info`
+- **provides:** `PatternSuggestion`, `detect_patterns`, `apply_pattern`, `suggest_regex`
+- **consumes:** `—  (stdlib only)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/pattern_detector.py`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/pipeline_error.py`
+- **Role:** `info`
+- **provides:** `class:PipelineError`, `function:make_render_payload`, `function:capture_entry (ADR-094)`
+- **consumes:** `-`
+- **consumed_by:** `app/src/render/pipeline_error_renderers.py`, `app/src/server.py`, `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `app/handlers/audit_stack.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py (capture_entry)`, `app/handlers/ingestion_handlers.py (capture_entry)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-079`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/polars_types.py`
+- **Role:** `info`
+- **provides:** `function:text_dtype_names`, `function:dtype_with_parameters`, `constant:PARAMETER_KEYS`
+- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/utils/tests/test_polars_types.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.4; check FD02; R9)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/recipe_check.py`
+- **Role:** `info`
+- **provides:** `function:check_recipe`, `function:spec`, `class:Problem`, `class:Result`
+- **consumes:** `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/ui_schema.py`, `libs/utils/src/utils/formula_check.py`, `libs/utils/src/utils/recipe_paths.py`, `libs/utils/src/utils/polars_types.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_check.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 3 to 11`, `14)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/recipe_factory.py`
+- **Role:** `info`
+- **provides:** `function:minimal_recipe`, `function:minimal_schema`, `function:minimal_join`, `function:minimal_plot`, `function:recipe_text`, `function:write_recipe`, `function:write_fragment`, `class:Include`
+- **consumes:** `libs/utils/src/utils/recipe_check.py (spec)`, `libs/utils/src/utils/recipe_spec.yaml`
+- **consumed_by:** `libs/utils/tests/test_recipe_factory.py`, `app/tests/test_writers_emit_format_one.py`, `assets/scripts/create_data_analysis_recipe.py`, `assets/scripts/SF_create_data_analysis_recipe.py`, `app/handlers/blueprint_handlers.py (new recipe form)`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 1`, `3`, `4`, `5`, `7)`, `.claude/design/recipe_format_work_order.md (W8)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/recipe_loader.py`
+- **Role:** `info`
+- **provides:** `function:load_recipe`, `function:check_recipe_file`
+- **consumes:** `libs/utils/src/utils/strict_yaml.py`, `libs/utils/src/utils/config_loader.py (project_root_of)`, `libs/utils/src/utils/recipe_check.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_loader.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 5.2`, `6.1; checks T01`, `T02`, `T07`, `T10`, `T11`, `F01)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/recipe_migration.py`
+- **Role:** `info`
+- **provides:** `function:migrate_text`, `function:migrate_steps_text`, `function:migrate_recipe_file`, `constant:SANITISER_TEXTS`, `class:MigrationReport`
+- **consumes:** `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/step_migration.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_migration.py`, `assets/scripts/migrate_recipe_format.py`
+- **doc:** `.claude/design/recipe_format_spec.md (4.1`, `7.3`, `7.4`, `12)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/recipe_paths.py`
+- **Role:** `info`
+- **provides:** `function:shape_problems`, `function:containment_problems`
+- **consumed_by:** `libs/utils/tests/test_recipe_paths.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 15; checks PA01`, `PA02; decision DEC30)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/step_migration.py`
+- **Role:** `info`
+- **provides:** `function:convert_step`, `class:NotConvertible`, `constant:REMOVED_ACTIONS`
+- **consumed_by:** `libs/utils/src/utils/recipe_migration.py`, `libs/transformer/tests/test_step_conversion.py`
+- **doc:** `.claude/design/home_evidence/actions_and_polars_2026-11-13.md sections 15`, `25`, `26`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/strict_form_migration.py`
+- **Role:** `info`
+- **provides:** `function:migrate_strict_form`
+- **consumes:** `libs/utils/src/utils/recipe_migration.py (MigrationReport`, `_content_end)`, `libs/utils/src/utils/recipe_check.py (spec)`
+- **consumed_by:** `assets/scripts/migrate_recipe_format.py`, `libs/utils/tests/test_strict_form_migration.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 5`, `7`, `12)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/strict_yaml.py`
+- **Role:** `info`
+- **provides:** `function:load_strict`, `class:DuplicateKeyError`
+- **consumed_by:** `libs/blueprint_arch/src/blueprint_arch/widget_text.py`
+- **doc:** `.claude/design/recipe_format_spec.md (check T10)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/utils/src/utils/ui_schema.py`
+- **Role:** `info`
+- **provides:** `constant:WIDGETS`, `function:expected_shape`, `function:shape_problem`, `function:step_problems`, `function:schema_declaration_problems`, `class:StepProblem`
+- **consumed_by:** `libs/utils/tests/test_step_problems.py`, `libs/transformer/tests/test_ui_schemas.py`, `libs/transformer/tests/test_action_schema_examples.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py`, `libs/blueprint_arch/tests/test_schema_registry.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8; checks ST03`, `ST04`, `ST07`, `ST09`, `ST10`, `ST11; R3)`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/src/viz_factory/arguments.py`
+- **Role:** `info`
+- **provides:** `function:allowed_arguments`, `function:unknown_arguments`, `function:argument_catalog`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py (COMPONENT_SCHEMAS)`, `plotnine`
+- **consumed_by:** `app/modules/data_analysis_recipe_validator.py (the recipe checker's catalogs)`, `libs/viz_factory/tests/test_component_arguments.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8`, `RG5; check PS04)`, `libs/viz_factory/README.md (allow_extra_params)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/src/viz_factory/coords/core.py`
+- **Role:** `info`
+- **provides:** `component:coord_cartesian`, `component:coord_flip`, `component:coord_fixed`, `component:coord_equal`, `component:coord_trans`, `component:coord_lims`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/src/viz_factory/facets/core.py`
+- **Role:** `info`
+- **provides:** `component:facet_wrap`, `component:facet_grid`, `component:facet_rows`, `component:facet_cols`, `component:facet_null`, `component:facet_scales`, `component:facet_space`, `component:facet_labeller`, `component:facet_margins`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/src/viz_factory/geoms/core.py`
+- **Role:** `info`
+- **provides:** `component:geom_boxplot`, `component:geom_violin`, `component:geom_point`, `component:geom_line`, `component:geom_bar`, `component:geom_col`, `component:geom_histogram`, `component:geom_smooth`, `component:geom_density`, `component:geom_errorbar`, `component:geom_pointrange`, `component:geom_tile`, `component:geom_raster`, `component:geom_text`, `component:geom_label`, `component:geom_jitter`, `component:geom_step`, `component:geom_segment`, `component:geom_abline`, `component:geom_area`, `component:geom_bin_2d`, `component:geom_blank`, `component:geom_count`, `component:geom_crossbar`, `component:geom_density_2d`, `component:geom_dotplot`, `component:geom_errorbarh`, `component:geom_freqpoly`, `component:geom_hline`, `component:geom_linerange`, `component:geom_path`, `component:geom_vline`, `component:stat_count`, `component:stat_bin`, `component:stat_summary`, `component:stat_boxplot`, `component:stat_smooth`, `component:stat_density`, `component:labs (geom)`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via COMPONENT_SCHEMAS)`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/src/viz_factory/guides/core.py`
+- **Role:** `info`
+- **provides:** `component:guides`, `component:guide_legend`, `component:guide_colorbar`, `component:guide_colourbar`, `component:guide_none`, `component:guide_nrow`, `component:guide_ncol`, `component:guide_title`, `component:guide_label`, `component:guide_direction`, `component:guide_reverse`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/src/viz_factory/plot_config_resolver.py`
+- **Role:** `info`
+- **provides:** `function:resolve_plot_config`, `function:compute_optimisation_layer`
+- **consumes:** `libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)`
+- **consumed_by:** `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **doc:** `.claude/design/plot_config_cascade.md`, `.claude/design/plot_authoring_model.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/src/viz_factory/positions/core.py`
+- **Role:** `info`
+- **provides:** `component:position_identity`, `component:position_stack`, `component:position_fill`, `component:position_dodge`, `component:position_dodge2`, `component:position_jitter`, `component:position_jitterdodge`, `component:position_nudge`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/src/viz_factory/registry.py`
+- **Role:** `info`
+- **provides:** `decorator:register_plot_component`, `registry:PLOT_COMPONENTS`, `registry:COMPONENT_SCHEMAS`, `function:get_component`
+- **consumed_by:** `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/scales/core.py`, `libs/viz_factory/src/viz_factory/positions/core.py`, `libs/viz_factory/src/viz_factory/guides/core.py`, `libs/viz_factory/src/viz_factory/facets/core.py`, `libs/viz_factory/src/viz_factory/coords/core.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/src/viz_factory/scales/core.py`
+- **Role:** `info`
+- **provides:** `component:scale_color_gradient`, `component:scale_fill_gradient`, `component:scale_color_gradient2`, `component:scale_fill_gradient2`, `component:scale_color_gradientn`, `component:scale_fill_gradientn`, `component:scale_color_distiller`, `component:scale_fill_distiller`, `component:scale_color_cmap`, `component:scale_fill_cmap`, `component:scale_color_viridis_d`, `component:scale_fill_viridis_d`, `component:scale_color_viridis_c`, `component:scale_fill_viridis_c`, `component:scale_color_cmap_d`, `component:scale_fill_cmap_d`, `component:scale_color_discrete`, `component:scale_fill_discrete`, `component:scale_color_brewer`, `component:scale_fill_brewer`, `component:scale_color_manual`, `component:scale_fill_manual`, `component:scale_x_continuous`, `component:scale_y_continuous`, `component:scale_x_discrete`, `component:scale_y_discrete`, `component:scale_x_log10`, `component:scale_y_log10`, `component:scale_x_reverse`, `component:scale_y_reverse`, `component:scale_x_datetime`, `component:scale_y_datetime`, `component:scale_x_date`, `component:scale_y_date`, `component:scale_x_sqrt`, `component:scale_y_sqrt`, `component:scale_x_symlog`, `component:scale_y_symlog`, `component:scale_x_timedelta`, `component:scale_y_timedelta`, `component:scale_size_continuous`, `component:scale_size_discrete`, `component:scale_shape_discrete`, `component:scale_alpha_continuous`, `component:scale_alpha_discrete`, `component:scale_linetype_discrete`, `component:scale_stroke_continuous`, `component:scale_color_identity`, `component:scale_fill_identity`, `component:scale_size_identity`, `component:scale_shape_identity`, `component:scale_alpha_identity`, `component:scale_linetype_identity`, `component:scale_stroke_identity`, `component:scale_alpha`, `component:scale_alpha_manual`, `component:scale_size`, `component:scale_size_manual`, `component:scale_size_area`, `component:scale_shape`, `component:scale_shape_manual`, `component:scale_linetype`, `component:scale_linetype_manual`, `component:scale_color_hue`, `component:scale_fill_hue`, `component:scale_color_continuous`, `component:scale_fill_continuous`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `issue #36 (_integer_breaks narrow-range fallback)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/src/viz_factory/themes/core.py`
+- **Role:** `info`
+- **provides:** `component:theme_gray`, `component:theme_bw`, `component:theme_linedraw`, `component:theme_light`, `component:theme_minimal`, `component:theme_classic`, `component:theme_void`, `component:theme_dark`, `component:theme_538`, `component:theme_matplotlib`, `component:theme_seaborn`, `component:theme_tufte`, `component:theme_xkcd`, `component:theme_dashboard`, `component:theme_publication`, `component:theme_legend_position`, `component:theme_custom`, `component:element_text`, `component:element_line`, `component:element_rect`, `component:element_blank`, `component:xlab`, `component:ylab`, `component:ggtitle`, `component:annotate`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/src/viz_factory/viz_factory.py`
+- **Role:** `info`
+- **provides:** `class:VizFactory`, `function:VizFactory.render`, `constant:DEFAULT_RANDOM_STATE`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/pipeline_error.py`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/tests/test_render_every_plot.py`, `libs/viz_factory/tests/`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-081`, `ADR-090`, `ADR-094)`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/tests/debug_audit.py`
+- **Role:** `info`
+- **provides:** `script:debug_audit (viz_factory)`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `libs/viz_factory/tests/test_data/`
+- **consumed_by:** `manual component audit`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/tests/debug_bulk_sync.py`
+- **Role:** `info`
+- **provides:** `script:debug_bulk_sync`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `assets/gallery_data/`
+- **consumed_by:** `manual gallery bulk-sync testing`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/tests/debug_distiller.py`
+- **Role:** `info`
+- **provides:** `script:debug_distiller`
+- **consumes:** `libs/viz_factory/src/viz_factory/distiller.py`, `libs/viz_factory/tests/test_data/`
+- **consumed_by:** `manual distiller testing`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/tests/debug_gallery.py`
+- **Role:** `info`
+- **provides:** `script:debug_gallery`
+- **consumes:** `libs/transformer/tests/debug_assembler.py (output: tmp/EVE_contracted_*.parquet)`, `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/*/README.md`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/tests/debug_runner.py`
+- **Role:** `info`
+- **provides:** `script:debug_runner (viz_factory)`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `libs/viz_factory/tests/test_data/`
+- **consumed_by:** `libs/viz_factory/tests/viz_factory_integrity_suite.py`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/tests/debug_viz_factory_audit.py`
+- **Role:** `info`
+- **provides:** `script:debug_viz_factory_audit`
+- **consumes:** `.claude/tasks/tasks.md`, `libs/viz_factory/src/`, `libs/viz_factory/tests/test_data/`, `tmp/`
+- **doc:** `.claude/rules/workspace_standard.md#5`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/tests/debug_viz_factory_tier3.py`
+- **Role:** `info`
+- **provides:** `script:debug_viz_factory_tier3`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `libs/transformer/src/transformer/data_wrangler.py`
+- **consumed_by:** `manual Tier 3 wrangling+viz testing`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_factory/tests/viz_factory_integrity_suite.py`
+- **Role:** `info`
+- **provides:** `script:viz_factory_integrity_suite`
+- **consumes:** `libs/viz_factory/tests/debug_runner.py`, `libs/viz_factory/tests/test_data/`, `libs/viz_factory/src/viz_factory/`
+- **consumed_by:** `CI / manual audit`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a6a9e0287309e57e7/libs/viz_gallery/src/viz_gallery/gallery_manager.py`
+- **Role:** `info`
+- **provides:** `GalleryManager class — submit_example()`, `list_submissions()`, `rebuild_index(); manages gallery bundle persistence and Pivot-Index generation to assets/gallery_data/`
+- **consumes:** `yaml`, `shutil`, `pathlib.Path`, `datetime`, `polars`, `json`, `hashlib`
+- **consumed_by:** `app/handlers/gallery_handlers.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/design/outdated/blueprint_full_feature_set_research.md`
+- **Role:** `info`
+- **documents:** `.claude/design/spaces/BLUEPRINT.md`, `.claude/knowledge/blueprint_architect_ux_spec.md`
+- **consumed_by:** `.claude/knowledge/architecture_decisions.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/rules/rules_agent_channel.md`
+- **Role:** `info`
+- **provides:** `rule:agent_channel`
+- **documents:** `tmpAI/agent_channel.md`
+- **consumed_by:** `CLAUDE.md`, `.claude/rules/workspace_standard.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/rules/rules_agent_role_bioscientist.md`
+- **Role:** `info`
+- **provides:** `rule:data_analysis_recipe_construction_protocol`, `rule:debug_workflow`, `rule:registered_actions_table`, `rule:handoff_protocol`, `rule:output_routing`
+- **consumes:** `rule:canonical_steps_syntax`, `rule:analysis_groups_structure`
+- **documents:** `libs/transformer/src/transformer/actions/`, `libs/viz_factory/src/viz_factory/`, `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/rules/rules_app_features_flags.md`
+- **Role:** `info`
+- **provides:** `rule:app_features_flags`, `rule:feature_dependencies`
+- **documents:** `config/app_features/`, `app/src/bootloader.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/rules/rules_app_structure.md`
+- **Role:** `info`
+- **provides:** `rule:app_structure_law`, `rule:two_category_law`, `rule:handler_module_boundary`
+- **documents:** `app/handlers/`, `app/modules/`, `app/src/server.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/rules/rules_css_style_spec.md`
+- **Role:** `info`
+- **provides:** `rule:css_design_tokens`, `rule:typography_scale`, `rule:color_palette`, `rule:button_catalog`
+- **documents:** `config/ui/theme.css`
+- **consumed_by:** `.claude/rules/rules_ui_dashboard.md`, `.claude/rules/ui_implementation_contract.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/rules/rules_data_analysis_recipe_structure.md`
+- **Role:** `info`
+- **provides:** `rule:canonical_steps_syntax`, `rule:directory_taxonomy`, `rule:analysis_groups_structure`, `rule:final_contract`
+- **documents:** `libs/transformer/src/transformer/data_assembler.py`, `app/handlers/home_theater.py`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `docs/appendix/data_analysis_recipe_structure.yaml`, `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/rules/rules_data_engine.md`
+- **Role:** `info`
+- **provides:** `rule:3tier_lifecycle`, `rule:wrangling_block_structure`, `rule:decorator_standards`, `rule:polars_parity`
+- **documents:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/actions/`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/rules/rules_documentation_aesthetics.md`
+- **Role:** `info`
+- **provides:** `rule:violet_law`, `rule:quarto_mermaid_standards`, `rule:css_theme_standards`, `rule:doc_sync`
+- **documents:** `docs/`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/rules/rules_legacy_management.md`
+- **Role:** `info`
+- **provides:** `rule:legacy_management`, `rule:deprecation_markers`, `rule:historical_preservation`
+- **consumed_by:** `.claude/rules/workspace_standard.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/rules/rules_runtime_environment.md`
+- **Role:** `info`
+- **provides:** `rule:venv_path_mandate`, `rule:no_discovery`, `rule:pinned_versions`, `rule:library_autonomy`
+- **documents:** `.venv/`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/rules/rules_ui_dashboard.md`
+- **Role:** `info`
+- **provides:** `rule:ui_orchestration`, `rule:theatre_layout`, `rule:sidebar_law`
+- **documents:** `app/handlers/home_theater.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/rules/rules_verification_testing.md`
+- **Role:** `info`
+- **provides:** `rule:verify_protocol`, `rule:tmpAI_tmp_segregation`, `rule:debug_script_mandate`
+- **documents:** `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`, `tmpAI/`, `tmp/`
+- **consumed_by:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/.claude/rules/rules_viz_factory.md`
+- **Role:** `info`
+- **provides:** `rule:artist_pillar`, `rule:plotnine_parity`, `rule:core_geoms_standard`
+- **documents:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/registry.py`
+- **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/handlers/__init__.py`
+- **Role:** `info`
+- **provides:** `Shiny handler package (ADR-045 Two-Category Law); exposes define_server() entry points for all handler modules`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `ADR-045`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/handlers/audit_stack.py`
+- **Role:** `info`
+- **provides:** `function:define_server (audit_stack)`, `output:audit_nodes_header_ui`, `output:audit_nodes_tier2`, `output:audit_nodes_tier3`, `output:processing_issues_ui`, `output:aesthetic_style_panel_ui (22-J-10)`
+- **consumes:** `app/modules/wrangle_studio.py`, `app/modules/session_manager.py`, `libs/transformer/src/transformer/data_wrangler.py`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12a-12c`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen`, `processing_issues_ui shows fix/who)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/handlers/blueprint_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `output:bp_branch_ui`, `output:bp_branch_preview_ui`, `output:bp_groups_inventory_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`, `effect:_load_component_from_selection`, `effect:_handle_branch_preview`, `effect:_handle_branch_write (BP-BRANCH-NODE-1 — node-level lineage bifurcation`, `replaces Visual Fork)`, `effects:_handle_grp_action/_handle_create_group_btn/_handle_grp_submit/_handle_plt_submit/_handle_move_plt_submit (BP-GROUPS-1)`, `helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts data analysis recipe rebuild logic so CRUD Effects can call it after mutations)`, `output:bp_meta_form_ui`, `effect:_handle_meta_save (BP-META-1 — data analysis recipe info: block read/edit form)`, `effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)`, `output:bp_validate_ui`, `effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path`, `issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))`, `helpers:_draft_key/_write_bp_draft/_read_bp_draft`, `effect:_autosave_blueprint_draft`, `output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)`, `outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui`, `effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)`, `function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit)`, `helper:_bundle_filename (full-data analysis recipe zip)`, `output:bp_import_error_ui (ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface for component/recipe import failures)`
+- **consumes:** `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data — issue #53)`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError`, `make_render_payload — DIAG-RUNTIME-BLUEPRINT-1`, `wired to screen 2026-11-08 ADR-094)`, `app/src/render/pipeline_error_renderers.py (render_blueprint_inline)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui")`, `ui.output_ui("bp_branch_ui")`, `ui.output_ui("bp_groups_inventory_ui")`, `ui.output_ui("bp_meta_form_ui"))`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-076`, `.claude/knowledge/architecture_decisions.md#ADR-082`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/handlers/data_import_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_data_import_server`, `function:import_error_block`, `output:data_import_ui`, `output:data_import_assignment_ui`
+- **consumes:** `app/modules/orchestrator.py`, `app/src/bootloader.py`, `transformer.metadata_validator`, `shiny`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-052`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/handlers/export_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `output:import_bundle_report`, `function:_build_methods_section`
+- **consumes:** `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1)`, `app/modules/cache_keys.py (canonical_hash`, `engine_fingerprint — REPRO-PROV-1)`, `app/modules/bundle_importer.py (import_bundle`, `BundleImportError — REPRO-IMPORT-1)`, `polars`, `shiny`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text)`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/export_specification.md`, `.claude/design/reproducible_export_design.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/handlers/filter_and_audit_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_filter_audit_server`, `output:sidebar_filters`, `output:filter_rows_ui`, `output:filter_form_ui`, `output:filter_controls_ui`, `input:filter_apply`, `input:filter_send_to_audit`
+- **consumes:** `app/modules/session_manager.py (make_audit_step)`, `app/modules/t3_audit_engine.py (describe_filter`, `op_choice_label)`, `app/src/bootloader.py (is_enabled)`, `shiny`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-049`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/rules/ui_implementation_contract.md#8`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/handlers/gallery_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (gallery_handlers)`
+- **consumes:** `app/src/bootloader.py`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-037`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/rules/rules_ui_dashboard.md#5`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/handlers/home_theater.py`
+- **Role:** `info`
+- **provides:** `function:define_server (home_theater)`, `output:dynamic_tabs`, `output:home_data_preview`, `output:home_col_selector_ui`, `output:col_drop_audit_btn_ui`, `output:sidebar_nav_ui`, `output:sidebar_tools_ui`, `output:right_sidebar_content_ui`, `output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui`
+- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `utils/config_loader.py`, `app/modules/t3_audit_engine.py`, `app/modules/sidebar_registry.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-043`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-047`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-073`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/knowledge/architecture_decisions.md#ADR-094`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/rules/ui_implementation_contract.md#4`, `.claude/rules/ui_implementation_contract.md#5`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/handlers/ingestion_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (ingestion_handlers)`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/handlers/session_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_session_server`, `output:session_management_ui`, `output:session_export_active`
+- **consumes:** `shiny`, `pathlib`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-097`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/handlers/test_lab_handlers.py`
+- **Role:** `info`
+- **provides:** `function:define_server (test_lab_handlers)`
+- **consumes:** `app/modules/test_lab_studio.py (scaffold_from_uploads)`, `shiny`, `libs/test_lab/reformatter.py`, `libs/test_lab/aqua_synthesizer.py`, `libs/test_lab/anonymiser.py`, `libs/id_reconciliation/`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/bundle_importer.py`
+- **Role:** `info`
+- **provides:** `function:import_bundle`, `function:read_effective_run`, `class:ImportResult`, `class:LegResult`, `class:BundleImportError`
+- **consumes:** `app/modules/cache_keys.py (engine_fingerprint)`, `app/modules/data_analysis_recipe_validator.py (engine_load_problems — safe ConfigManager probe`, `ADR-077)`, `app/modules/session_manager.py (SessionManager)`
+- **consumed_by:** `app/handlers/export_handlers.py (define_export_server — Import control in the Export panel)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/reproducible_export_design.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/cache_keys.py`
+- **Role:** `info`
+- **provides:** `function:load_data_analysis_recipe`, `function:tier1_key`, `function:tier2_key`, `function:data_analysis_recipe_fileset_hash`, `function:data_analysis_recipe_keys`, `class:LoadedDataAnalysisRecipe`, `class:DataAnalysisRecipeKeys`
+- **consumes:** `libs/utils/src/utils/config_loader.py`
+- **consumed_by:** `app/modules/orchestrator.py`, `app/modules/session_manager.py`, `app/src/server.py`, `app/tests/test_cache_keys.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-089`, `docs/foundations/reproducibility_hash_schema.qmd`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/data_analysis_recipe_validator.py`
+- **Role:** `info`
+- **provides:** `function:validate_data_analysis_recipe`, `function:checker_problems`, `function:engine_load_problems`, `function:checker_catalogs`, `function:validate_data_analysis_recipe_data`, `function:find_data_analysis_recipes`, `function:read_data_analysis_recipe_header`, `function:resolve_contact`, `class:DataAnalysisRecipeProblem`
+- **consumes:** `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/recipe_loader.py (check_recipe_file)`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS)`, `libs/viz_factory/src/viz_factory/arguments.py (argument_catalog)`, `app/modules/orchestrator.py`
+- **consumed_by:** `app/tests/test_data_analysis_recipe_validator.py`, `app/tests/test_data_analysis_recipe_data_check.py`, `app/tests/test_retest_data_analysis_recipes.py`, `app/handlers/blueprint_handlers.py (_handle_validate`, `BP-VALIDATE-1/VALIDATE-UI-1)`, `app/src/bootloader.py (HOME load gate`, `ADR-094)`
+- **doc:** `.claude/tasks/tasks.md (BP-VALIDATE-1`, `VALIDATE-UI-1)`, `.claude/rules/rules_data_engine.md#3`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/deployment_error.py`
+- **Role:** `info`
+- **provides:** `(re-exports from utils.deployment_error — see that file for the canonical source)`
+- **consumes:** `utils.deployment_error`
+- **consumed_by:** `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/gallery_viewer.py`
+- **Role:** `info`
+- **provides:** `class:GalleryViewer`, `function:build_sidebar_ui`, `function:render_explorer_ui`
+- **consumes:** `app/src/bootloader.py (bootloader singleton)`
+- **consumed_by:** `app/handlers/gallery_handlers.py`, `app/src/server.py`, `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-033`, `.claude/knowledge/architecture_decisions.md#ADR-057`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/help_registry.py`
+- **Role:** `info`
+- **provides:** `module:help_registry_ui`, `module:help_registry_server`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `get_component_catalog)`, `libs/viz_factory/src/viz_factory/registry.py (PLOT_COMPONENT_REGISTRY)`
+- **consumed_by:** `app/src/server.py`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/notification_utils.py`
+- **Role:** `info`
+- **provides:** `make_notifier() factory — returns a _notify(msg`, `type`, `duration) callable that calls ui.notification_show and appends to a reactive log`
+- **consumes:** `shiny.ui`, `datetime`
+- **consumed_by:** `app/handlers/session_handlers.py`, `app/handlers/audit_stack.py`, `app/handlers/home_theater.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/data_import_handlers.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/orchestrator.py`
+- **Role:** `info`
+- **provides:** `pipeline:materialize_tier1`, `pipeline:materialize_tier2`, `method:prepare_ingredient`, `function:compute_data_analysis_recipe_keys`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/metadata_validator.py`, `libs/transformer/src/transformer/actions/persistence/anchor.py`, `app/modules/cache_keys.py`
+- **mirrors:** `libs/transformer/tests/debug_assembler.py`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/dependency_index.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/orchestrator_helpers.py`
+- **Role:** `info`
+- **provides:** `safe_input`, `DEFAULT_HOME_STATE`
+- **consumes:** `—`
+- **consumed_by:** `app.src.server`
+- **doc:** `ADR-045 (Two-Category Law §5 — shared utility functions)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/session_manager.py`
+- **Role:** `info`
+- **provides:** `class:SessionManager`, `typedef:AuditStep`
+- **consumes:** `stdlib (hashlib`, `json`, `shutil`, `zipfile`, `pathlib`, `datetime`, `uuid)`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/session_handlers.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/knowledge/architecture_decisions.md#ADR-097`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/sidebar_registry.py`
+- **Role:** `info`
+- **provides:** `PANEL_REGISTRY (dict)`, `is_panel_active (function)`
+- **consumes:** `app/src/bootloader.py (via callers)`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md §11`, `.claude/rules/rules_ui_dashboard.md §2`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/sidebar_validator.py`
+- **Role:** `info`
+- **provides:** `class:SidebarValidator`
+- **consumes:** `app/modules/sidebar_registry.py`, `app/modules/deployment_error.py`, `config/app_features/*.yaml`, `config/ui/sidebars/*.yaml`
+- **consumed_by:** `app/src/server.py`, `scripts/validate_app_features_config.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md §11`, `.claude/rules/rules_ui_dashboard.md §2`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/t3_audit_engine.py`
+- **Role:** `info`
+- **provides:** `function:_apply_filter_rows`
+- **consumes:** `polars`
+- **consumed_by:** `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-051`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/test_lab_studio.py`
+- **Role:** `info`
+- **provides:** `class:TestLabStudio (render_ui only)`, `function:scaffold_from_uploads`
+- **consumes:** `shiny.ui`, `libs/test_lab/src/test_lab/scaffolder.py`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/src/server.py`, `app/handlers/test_lab_handlers.py`
+- **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/view_badge.py`
+- **Role:** `info`
+- **provides:** `function:view_badge`, `function:has_tier2_steps`, `class:ViewBadge`
+- **consumes:** `app/modules/cache_keys.py`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/tests/test_view_badge.py`
+- **doc:** `https://github.com/evezeyl/SPARMVET_VIZ/issues/17`, `.claude/knowledge/architecture_decisions.md#adr-086`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/wrangle_studio.py`
+- **Role:** `info`
+- **provides:** `class:WrangleStudio`, `method:build_sidebar_ui (issue #42 — Blueprint's left sidebar`, `moved here from home_theater.py's sidebar_tools_ui()`, `mirrors GalleryViewer.build_sidebar_ui(); registered as the "blueprint_main" freestanding panel type)`, `method:_render_action_form`, `method:_extract_upstream_cols`, `output:bp_yaml_escape_ui`, `output:bp_help_panel_ui`, `function:_resolve_action_doc`, `reactive.Value:inline_errors (ADR-079/ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface)`, `function:_enum_preview_legend (BP-ENUM-PREVIEW-1)`, `constants:_LINETYPE_DASHARRAY/_POSITION_DESC`, `reactive.Value:active_component_path (BP-PLOT-COMMIT-1 — loaded fragment file path`, `Save target); node marker _tier on action stubs (source-tier routing on commit`, `set from bp_action_context)`, `reactive.Value:joint_request`, `reactive.Value:joint_edit_idx (BP-JOINT-1 — shared with blueprint_handlers Joint Designer wiring); nav_panel "joint_designer" in architect_internal_tabs`
+- **consumes:** `app/src/render/pipeline_error_renderers.py (render_blueprint_inline — ADR-094)`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `search_actions`, `get_actions_for_context; get_component_catalog`, `search_components`, `get_components_for_context — BP-COMPONENT-FORMS-1)`, `node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1/BP-MAPPING-FORM-1); action key ({"action":...}) for wrangling nodes`, `__mapping__ node: dedicated aes form with bp_map_{key} inputs (BP-MAPPING-FORM-1); method:_extract_upstream_cols drives column picker choices`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `loaded via ui.py head)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (JOIN_HOW_OPTIONS — BP-JOINT-1 Joint Designer pane)`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/audit_stack.py`, `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-004`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-082`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/src/bootloader.py`
+- **Role:** `info`
+- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_agent_adapter`, `method:get_palettes`, `method:get_contact`, `attr:available_data_analysis_recipes`, `attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)`, `method:get_default_data_analysis_recipe_or_none`, `attr:has_usable_data_analysis_recipe (issue #38 empty-state gate)`
+- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`, `app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data`, `read_data_analysis_recipe_header`, `resolve_contact — ADR-094)`
+- **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`
+- **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `ADR-087`, `ADR-094 (issue #38 closure note)`, `project_conventions.md §"Deployment Resolution`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/src/main.py`
+- **Role:** `info`
+- **provides:** `app (Shiny App instance`, `entry point)`, `docs_available (bool flag for conditional docs link)`
+- **consumes:** `shiny`, `app.src.ui`, `app.src.server`
+- **consumed_by:** `Shiny runner (uvicorn/shiny run)`, `__main__`, `help modal handlers`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/src/render/pipeline_error_renderers.py`
+- **Role:** `info`
+- **provides:** `function:render_notification`, `function:render_plot_overlay`
+- **consumes:** `shiny.ui`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-079`, `.claude/knowledge/architecture_decisions.md#adr-094`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/src/server.py`
+- **Role:** `info`
+- **provides:** `server (Shiny server function)`, `reactive.Value:_selected_lineage_rel (shared between wrangle_studio and blueprint_handlers — BP-LINEAGE-NAV-1)`
+- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.orchestrator_helpers`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio (gated: blueprint_enabled or t3_sandbox_enabled)`, `app.modules.test_lab_studio (gated: test_lab_enabled)`, `app.modules.gallery_viewer`, `app.modules.app_features_validator`, `app.modules.sidebar_validator`, `app.modules.deployment_error`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
+- **consumed_by:** `app.src.main`
+- **doc:** `ADR-045`, `ADR-003`, `ADR-094 §6 closure (issue #38 — active_cfg() empty-state stand-in)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/src/ui.py`
+- **Role:** `info`
+- **provides:** `app_ui (Shiny UI definition`, `page_fillable layout)`
+- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `included via ui.tags.script)`
+- **consumed_by:** `app.src.main`
+- **doc:** `ADR-027`, `ADR-029a`, `ADR-030`, `ADR-039`, `ADR-052`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/tests/debug_data_import.py`
+- **Role:** `info`
+- **provides:** `debug:data_import_headless`
+- **consumes:** `transformer/metadata_validator.py`, `app/handlers/data_import_handlers.py`
+- **consumed_by:** `manual @verify`, `CI`
+- **doc:** `.claude/rules/ui_implementation_contract.md#9`, `.claude/rules/ui_implementation_contract.md#10`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/tests/debug_pipeline_connector.py`
+- **Role:** `info`
+- **provides:** `debug:pipeline_connector_headless`
+- **consumes:** `app/src/bootloader.py`, `app/modules/orchestrator.py`
+- **consumed_by:** `manual @verify`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/tests/debug_session_flow.py`
+- **Role:** `info`
+- **provides:** `debug:session_flow`
+- **consumes:** `app/modules/session_manager.py`
+- **consumed_by:** `CI`, `manual @verify`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/tasks/tasks.md#22-G`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/tests/test_session_manager.py`
+- **Role:** `info`
+- **provides:** `test:session_manager`
+- **consumes:** `app/modules/session_manager.py`
+- **consumed_by:** `CI`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/assets/scripts/SF_create_data_analysis_recipe.py`
+- **Role:** `info`
+- **provides:** `script:SF_create_data_analysis_recipe`
+- **consumes:** `assets/test_data/ (TSV/CSV source files)`, `assets/template_data_analysis_recipes/ (writes scaffolded YAML)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/assets/scripts/build_dep_graph.py`
+- **Role:** `info`
+- **provides:** `script:build_dep_graph`
+- **consumes:** `all files with @deps blocks across the project`
+- **consumed_by:** `assets/dep_graph.html`, `.claude/knowledge/dependency_index.md`
+- **doc:** `.claude/rules/workspace_standard.md#5`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/assets/scripts/create_data_analysis_recipe.py`
+- **Role:** `info`
+- **provides:** `script:create_data_analysis_recipe`
+- **consumes:** `assets/test_data/ (TSV/CSV source files)`, `assets/template_data_analysis_recipes/ (writes scaffolded YAML)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `docs/reference/wrangling_guide.qmd`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/assets/scripts/create_test_deployment.py`
+- **Role:** `info`
+- **provides:** `script:create_test_deployment`
+- **consumes:** `config/deployment/local/ (writes deployment file)`
+- **doc:** `docs/workflows/connector.qmd`, `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/assets/scripts/debug_apply_data_analysis_recipe_standards.py`
+- **Role:** `info`
+- **provides:** `script:debug_apply_data_analysis_recipe_standards`
+- **consumes:** `libs/viz_factory/tests/test_data/ (YAML test data analysis recipes)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/assets/scripts/debug_bootstrap_viz_yamls.py`
+- **Role:** `info`
+- **provides:** `script:debug_bootstrap_viz_yamls`
+- **consumes:** `libs/viz_factory/tests/test_data/ (writes bootstrapped YAML test data analysis recipes)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/assets/scripts/figshare_plot_integration.py`
+- **Role:** `info`
+- **provides:** `script:figshare_plot_integration`
+- **consumes:** `tmp/integration/figshare_join_check.tsv (written by figshare_triple_integration.py)`, `tmp/integration/ (writes plots)`
+- **doc:** `assets/test_data/figshare.21737288/README.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/assets/scripts/figshare_triple_integration.py`
+- **Role:** `info`
+- **provides:** `script:figshare_triple_integration`
+- **consumes:** `assets/test_data/figshare.21737288/csv/`, `libs/transformer/tests/data/ (writes TSVs)`, `tmp/integration/ (writes join output)`
+- **doc:** `assets/test_data/figshare.21737288/README.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/assets/scripts/generate_demo_data.py`
+- **Role:** `info`
+- **provides:** `script:generate_demo_data`
+- **consumes:** `assets/test_data/1_test_data_ST22_dummy/ (ground truth TSVs)`, `libs/test_lab (AquaSynthesizer)`
+- **consumed_by:** `assets/test_data/demo_high_integrity/ (writes synthetic TSVs)`
+- **doc:** `libs/test_lab/README.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/assets/scripts/normalize_data_analysis_recipe_fields.py`
+- **Role:** `info`
+- **provides:** `script:normalize_data_analysis_recipe_fields`
+- **consumes:** `config/data_analysis_recipes/ (YAML files)`
+- **doc:** `.claude/rules/rules_data_engine.md#4`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **Role:** `info`
+- **provides:** `data analysis recipe:2_test_data_ST22_dummy`
+- **consumes:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml (via !include)`, `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml (via !include)`
+- **consumed_by:** `app/src/server.py (via bootloader)`, `libs/transformer/tests/debug_assembler.py`, `libs/viz_factory/tests/debug_gallery.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml`
+- **Role:** `info`
+- **provides:** `assembly:AMR_Profile_Joint`
+- **consumes:** `action:mutate`, `action:join`, `action:cast`, `action:sort`, `dataset:amr_data`, `dataset:metadata_schema`
+- **include_parent:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml`
+- **Role:** `info`
+- **provides:** `assembly:Plasmid_Profile_Joint`
+- **consumes:** `action:join`, `action:cast`, `action:sort`, `dataset:plasmid_data`, `dataset:metadata_schema`
+- **include_parent:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`
+- **Role:** `info`
+- **provides:** `class:AgentAdapter`, `class:ClaudeCliAdapter`, `class:DisabledAdapter`, `class:AgentResponse`, `class:Tool`, `function:make_adapter`
+- **consumed_by:** `app/src/bootloader.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/blueprint_arch/src/blueprint_arch/agent_context.py`
+- **Role:** `info`
+- **provides:** `function:build_system_prompt`, `function:build_turn_context`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/src/bootloader.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`
+- **Role:** `info`
+- **provides:** `function:extract_tool_calls`, `function:register_tool_schema`, `class:ParseResult`, `class:ParsedToolCall`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/blueprint_arch/src/blueprint_arch/agent_tools.py`
+- **Role:** `info`
+- **provides:** `function:call_tool`, `function:get_tool_definitions`, `dict:TOOL_REGISTRY`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-076`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`
+- **Role:** `info`
+- **provides:** `class:BlueprintMapper`, `constant:_CY_COLOURS`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/rules/rules_ui_dashboard.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`
+- **Role:** `info`
+- **provides:** `function:build_sibling_map`, `function:build_lineage_chain`, `function:build_schema_registry`, `function:load_fields_file`, `function:resolve_fields_for_schema`, `function:build_plot_lineage`, `function:get_plot_ids_in_group`, `function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml)`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-074`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py`
+- **Role:** `info`
+- **provides:** `func:list_groups_plots`, `func:create_group`, `func:delete_group`
+- **consumes:** `yaml`, `pathlib`, `re`
+- **consumed_by:** `app/handlers/blueprint_handlers.py (bp_groups_inventory_ui + CRUD Effects — BP-GROUPS-1)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-082`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/blueprint_arch/src/blueprint_arch/join_designer.py`
+- **Role:** `info`
+- **provides:** `join_designer:compute_key_match`, `join_designer:build_join_step`, `join_designer:parse_join_step`
+- **consumes:** `—`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `libs/blueprint_arch/tests/test_join_designer.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-082 (Q5)`, `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **Role:** `info`
+- **provides:** `function:get_action_catalog`, `function:get_component_catalog`, `function:get_combined_catalog`, `function:get_actions_for_context`, `function:get_actions_by_category`, `function:get_components_for_context`, `function:search_actions`, `function:search_components`, `function:register`
+- **consumes:** `nothing — catalogs injected at startup by app/src/server.py via register()`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/modules/wrangle_studio.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md (ADR-075)`, `.claude/rules/rules_app_structure.md §2`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/blueprint_arch/src/blueprint_arch/t3_translator.py`
+- **Role:** `info`
+- **provides:** `function:translate_t3_node`, `function:translate_plot_steps`, `function:build_mode2_recipe`, `class:UntranslatableNode`
+- **consumes:** `stdlib (copy`, `hashlib`, `json)`, `PyYAML (developer_raw_yaml fragment parsing only)`
+- **consumed_by:** `app/handlers/export_handlers.py (REPRO-TRANSLATOR-1 wiring`, `#45/#48)`, `libs/blueprint_arch/tests/test_t3_translator.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/reproducible_export_design.md#4D`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/blueprint_arch/src/blueprint_arch/widget_text.py`
+- **Role:** `info`
+- **provides:** `function:value_to_text`, `function:text_to_value`
+- **consumes:** `libs/utils/src/utils/ui_schema.py`, `libs/utils/src/utils/strict_yaml.py`
+- **consumed_by:** `app/modules/wrangle_studio.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8`, `RG1)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/connector/src/connector/__init__.py`
+- **Role:** `info`
+- **provides:** `BaseConnector`, `FilesystemConnector`, `GalaxyConnector`, `IridaConnector`, `get_connector()`
+- **consumes:** `connector.base`, `connector.filesystem`, `connector.galaxy`, `connector.irida`
+- **consumed_by:** `app/src/bootloader.py`, `app/src/server.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/connector/src/connector/base.py`
+- **Role:** `info`
+- **provides:** `class:BaseConnector`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/connector/src/connector/filesystem.py`
+- **Role:** `info`
+- **provides:** `class:FilesystemConnector`
+- **consumes:** `class:BaseConnector`, `utils.deployment_error`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`, `ADR-078`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/connector/src/connector/galaxy.py`
+- **Role:** `info`
+- **provides:** `class:GalaxyConnector`
+- **consumes:** `class:FilesystemConnector`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/connector/src/connector/irida.py`
+- **Role:** `info`
+- **provides:** `class:IridaConnector`
+- **consumes:** `class:FilesystemConnector`, `utils.deployment_error`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-048`, `ADR-078`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/id_reconciliation/src/id_reconciliation/__init__.py`
+- **Role:** `info`
+- **provides:** `IDReconciliationEngine`, `IDPair`, `MatchResult`, `PatternSuggestion`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `app/handlers/test_lab_handlers.py`, `app/modules/test_lab_studio.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/id_reconciliation/src/id_reconciliation/core.py`
+- **Role:** `info`
+- **provides:** `IDReconciliationEngine`, `detect_many_to_many`, `format_match_table`, `apply_recode_step`
+- **consumes:** `libs/utils/src/utils/id_patterns.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/__init__.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **Role:** `info`
+- **provides:** `IDPair`, `MatchResult`, `IdTransformation`
+- **consumes:** `libs/utils/src/utils/id_patterns.py (PatternSuggestion re-exported for backward compat)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/id_reconciliation/src/id_reconciliation/id_transformation.py`
+- **Role:** `info`
+- **provides:** `save_transformation`, `load_transformation`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/id_reconciliation/src/id_reconciliation/matcher.py`
+- **Role:** `info`
+- **provides:** `exact_match`, `fuzzy_match_batch`
+- **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/id_reconciliation/src/id_reconciliation/pattern_detector.py`
+- **Role:** `info`
+- **provides:** `detect_patterns`, `apply_pattern`, `suggest_regex (re-exported from utils.id_patterns)`
+- **consumes:** `libs/utils/src/utils/id_patterns.py`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/id_reconciliation/src/id_reconciliation/recipe_steps.py`
+- **Role:** `info`
+- **provides:** `recipe_steps`
+- **consumes:** `libs/utils/src/utils/action_names.py`
+- **mirrors:** `libs/id_reconciliation/src/id_reconciliation/core.py (apply_recode_step: same actions`, `same result)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/__init__.py`, `app/modules/test_lab_studio.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.5`, `7.5.1)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/ingestion/src/ingestion/declared.py`
+- **Role:** `info`
+- **provides:** `function:apply_declared`
+- **consumes:** `libs/utils/src/utils/polars_types.py`, `libs/utils/src/utils/recipe_check.py`
+- **consumed_by:** `libs/ingestion/src/ingestion/ingestor.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.3`, `7.4; DEC27`, `DEC28)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/ingestion/src/ingestion/ingestor.py`
+- **Role:** `info`
+- **provides:** `class:DataIngestor`, `method:ingest`, `method:find_file`
+- **consumes:** `libs/ingestion/src/ingestion/declared.py`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/test_lab/src/test_lab/anonymiser.py`
+- **Role:** `info`
+- **provides:** `Anonymiser class (anonymise`, `anonymise_batch`, `build_deanon_steps)`
+- **consumes:** `polars`, `hashlib`, `yaml`, `datetime`, `pathlib (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_anonymiser.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/test_lab/src/test_lab/aqua_synthesizer.py`
+- **Role:** `info`
+- **provides:** `AquaSynthesizer class (propose_config`, `generate`, `save_config`, `load_config`, `list_scenarios)`
+- **consumes:** `polars`, `numpy`, `random`, `re`, `pathlib`, `datetime`, `argparse`, `yaml`, `typing (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_synthesizer.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/test_lab/src/test_lab/bootstrapper.py`
+- **Role:** `info`
+- **provides:** `DataAnalysisRecipeBootstrapper class (bootstrap`, `id_cleaning_steps) — infers TSV schemas`
+- **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_bootstrapper.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/test_lab/src/test_lab/extractor.py`
+- **Role:** `info`
+- **provides:** `XlsxExtractor class (extract) — reads multi-sheet XLSX and writes normalized TSVs`
+- **consumes:** `polars`, `pathlib`, `typing`, `yaml (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_extractor.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/test_lab/src/test_lab/reformatter.py`
+- **Role:** `info`
+- **provides:** `DataReformatter class (convert_xlsx`, `convert_csv`, `convert_folder)`
+- **consumes:** `polars`, `pathlib (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_reformatter.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/test_lab/src/test_lab/scaffolder.py`
+- **Role:** `info`
+- **provides:** `DataAnalysisRecipeScaffolder class (scaffold`, `dataset_id`, `column_slug`, `field_slugs) — generates a data`
+- **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re`, `io`, `zipfile (stdlib/third-party)`
+- **consumed_by:** `libs/test_lab/tests/test_scaffolder.py`, `app/modules/test_lab_studio.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/transformer/src/transformer/actions/base.py`
+- **Role:** `info`
+- **provides:** `decorator:register_action`, `registry:AVAILABLE_WRANGLING_ACTIONS`, `registry:ACTION_SCHEMAS`
+- **consumed_by:** `libs/transformer/src/transformer/actions/cleaning/core.py`, `libs/transformer/src/transformer/actions/cleaning/analytical.py`, `libs/transformer/src/transformer/actions/cleaning/advanced.py`, `libs/transformer/src/transformer/actions/cleaning/expressions.py`, `libs/transformer/src/transformer/actions/relational/joins.py`, `libs/transformer/src/transformer/actions/reshaping/core.py`, `libs/transformer/src/transformer/actions/performance/aggregation.py`, `libs/transformer/src/transformer/actions/persistence/anchor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/transformer/src/transformer/actions/composite.py`
+- **Role:** `info`
+- **provides:** `action:step_top_n_other`
+- **consumes:** `libs/transformer/src/transformer/actions/polars_calls.py (_checked)`
+- **consumed_by:** `libs/transformer/tests/test_step_actions.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1 (DEC36`, `R7)`, `.claude/design/home_evidence/actions_and_polars_2026-11-13.md section 25`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/transformer/src/transformer/actions/modified.py`
+- **Role:** `info`
+- **provides:** `action:modif_filter`
+- **consumes:** `libs/transformer/src/transformer/actions/polars_calls.py (_checked)`, `libs/utils/src/utils/ui_schema.py`
+- **consumed_by:** `app/tests/test_modif_filter_verify.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1 (DEC39)`, `.claude/design/home_evidence/actions_and_polars_2026-11-13.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/transformer/src/transformer/actions/polars_calls.py`
+- **Role:** `info`
+- **provides:** `action:polars_select`, `action:polars_drop`, `action:polars_with_columns`, `action:polars_rename`, `action:polars_unique`, `action:polars_sort`, `action:polars_drop_nulls`, `action:polars_drop_nans`, `action:polars_explode`, `action:polars_unnest`, `action:polars_unpivot`, `action:polars_pivot`, `action:polars_join`, `action:polars_sample`, `action:polars_describe`, `action:polars_cast`, `action:polars_fill_null`, `action:polars_fill_nan`, `action:polars_shift`, `action:polars_cum_sum`, `action:polars_cum_count`, `action:polars_interpolate`, `action:polars_round`, `action:polars_str_replace_all`, `action:polars_str_extract`, `action:polars_str_split`, `action:polars_str_strip_chars`, `action:polars_list_join`, `action:polars_list_slice`, `action:polars_dt_truncate`, `action:polars_coalesce`, `action:polars_sum_horizontal`, `action:polars_mean_horizontal`, `action:polars_min_horizontal`, `action:polars_max_horizontal`, `action:polars_all_horizontal`, `action:polars_any_horizontal`
+- **consumes:** `libs/utils/src/utils/ui_schema.py (step_problems)`
+- **consumed_by:** `libs/transformer/tests/test_polars_actions_equal_polars.py`, `libs/transformer/tests/test_registry_polars_rules.py`
+- **doc:** `.claude/design/recipe_format_spec.md#7.5.1`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/transformer/src/transformer/anchor.py`
+- **Role:** `info`
+- **provides:** `function:write_anchor`, `function:read_anchor`
+- **consumed_by:** `app/modules/orchestrator.py`
+- **doc:** `.claude/design/recipe_format_spec.md (DEC42)`, `.claude/knowledge/architecture_decisions.md (ADR-024`, `ADR-031`, `ADR-089)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/transformer/src/transformer/data_assembler.py`
+- **Role:** `info`
+- **provides:** `class:DataAssembler`, `method:assemble`
+- **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/transformer/src/transformer/data_wrangler.py`
+- **Role:** `info`
+- **provides:** `class:DataWrangler`, `method:_resolve_tier`, `method:run`
+- **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`, `libs/transformer/tests/debug_wrangler.py`
+- **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/transformer/src/transformer/metadata_validator.py`
+- **Role:** `info`
+- **provides:** `class:MetadataValidator`, `method:validate`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`, `.claude/knowledge/architecture_decisions.md#ADR-034`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/transformer/src/transformer/registry.py`
+- **Role:** `info`
+- **provides:** `function:get_action_function`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`
+- **consumed_by:** `libs/transformer/src/transformer/data_wrangler.py`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/transformer/tests/debug_assembler.py`
+- **Role:** `info`
+- **provides:** `script:debug_assembler`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)`
+- **mirrors:** `app/modules/orchestrator.py`
+- **consumed_by:** `libs/viz_factory/tests/debug_gallery.py`, `libs/transformer/tests/test_debug_assembler.py`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/transformer/tests/debug_wrangler.py`
+- **Role:** `info`
+- **provides:** `script:debug_wrangler`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`
+- **mirrors:** `app/modules/orchestrator.py (Tier 1 wrangling path)`
+- **consumed_by:** `libs/transformer/tests/test_debug_wrangler.py`
+- **doc:** `.claude/rules/rules_data_engine.md#3`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/action_names.py`
+- **Role:** `info`
+- **provides:** `constant:JOIN`, `constant:SELECT`, `constant:DROP`, `constant:WITH_COLUMNS`, `constant:FILTER`, `constant:CAST`
+- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/transformer/tests/test_action_names.py`
+- **doc:** `.claude/design/recipe_format_spec.md (R4)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/config_loader.py`
+- **Role:** `info`
+- **provides:** `class:ConfigManager`, `func:_normalise_yaml_boolean_keys`
+- **consumes:** `utils.deployment_error`
+- **consumed_by:** `app/modules/orchestrator.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `ADR-078`, `.claude/rules/rules_data_analysis_recipe_structure.md#7`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/contract_migration.py`
+- **Role:** `info`
+- **provides:** `function:migrate_contracts`
+- **consumes:** `libs/utils/src/utils/recipe_migration.py (MigrationReport)`
+- **consumed_by:** `assets/scripts/migrate_recipe_format.py`, `libs/utils/tests/test_contract_migration.py`
+- **doc:** `.claude/design/recipe_format_spec.md#DEC23`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/deployment_error.py`
+- **Role:** `info`
+- **provides:** `class:DeploymentError`, `function:format_errors_block`, `function:exit_if_errors`, `function:raise_if_errors`, `class:DeploymentFailure`
+- **consumes:** `-`
+- **consumed_by:** `app/modules/deployment_error.py (re-export shim)`, `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`, `libs/connector/src/connector/irida.py`, `libs/connector/src/connector/filesystem.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/errors.py`
+- **Role:** `info`
+- **provides:** `class:SPARMVET_Error`, `class:IngestionError`, `class:TransformationError`, `class:VisualizationError`, `class:DataAnalysisRecipeError`
+- **consumes:** `libs/utils/src/utils/pipeline_error.py (PipelineError — type hint + optional carried instance`, `ADR-079/ADR-094)`
+- **consumed_by:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/ingestion/src/ingestion/ingestor.py`, `app/handlers/home_theater.py (reads .pipeline_error)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-079`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/formula_check.py`
+- **Role:** `info`
+- **provides:** `function:formula_problems`, `function:evaluate_formula`, `function:function_string_problems`, `function:denied_methods`, `constant:MODULE_FUNCTIONS`, `constant:MATH_FUNCTIONS`, `class:FormulaError`
+- **consumed_by:** `libs/utils/tests/test_formula_check.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 15; check ST06)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/hashing.py`
+- **Role:** `info`
+- **provides:** `function:generate_config_hash`
+- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/id_patterns.py`
+- **Role:** `info`
+- **provides:** `PatternSuggestion`, `detect_patterns`, `apply_pattern`, `suggest_regex`
+- **consumes:** `—  (stdlib only)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/pattern_detector.py`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/pipeline_error.py`
+- **Role:** `info`
+- **provides:** `class:PipelineError`, `function:make_render_payload`, `function:capture_entry (ADR-094)`
+- **consumes:** `-`
+- **consumed_by:** `app/src/render/pipeline_error_renderers.py`, `app/src/server.py`, `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `app/handlers/audit_stack.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py (capture_entry)`, `app/handlers/ingestion_handlers.py (capture_entry)`
+- **doc:** `.claude/knowledge/architecture_decisions.md#adr-079`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/polars_types.py`
+- **Role:** `info`
+- **provides:** `function:text_dtype_names`, `function:dtype_with_parameters`, `constant:PARAMETER_KEYS`
+- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/utils/tests/test_polars_types.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.4; check FD02; R9)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/recipe_check.py`
+- **Role:** `info`
+- **provides:** `function:check_recipe`, `function:spec`, `class:Problem`, `class:Result`
+- **consumes:** `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/ui_schema.py`, `libs/utils/src/utils/formula_check.py`, `libs/utils/src/utils/recipe_paths.py`, `libs/utils/src/utils/polars_types.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_check.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 3 to 11`, `14)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/recipe_loader.py`
+- **Role:** `info`
+- **provides:** `function:load_recipe`, `function:check_recipe_file`
+- **consumes:** `libs/utils/src/utils/strict_yaml.py`, `libs/utils/src/utils/config_loader.py (project_root_of)`, `libs/utils/src/utils/recipe_check.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_loader.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 5.2`, `6.1; checks T01`, `T02`, `T07`, `T10`, `T11`, `F01)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/recipe_migration.py`
+- **Role:** `info`
+- **provides:** `function:migrate_text`, `function:migrate_steps_text`, `function:migrate_recipe_file`, `constant:SANITISER_TEXTS`, `class:MigrationReport`
+- **consumes:** `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/step_migration.py`
+- **consumed_by:** `libs/utils/tests/test_recipe_migration.py`, `assets/scripts/migrate_recipe_format.py`
+- **doc:** `.claude/design/recipe_format_spec.md (4.1`, `7.3`, `7.4`, `12)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/recipe_paths.py`
+- **Role:** `info`
+- **provides:** `function:shape_problems`, `function:containment_problems`
+- **consumed_by:** `libs/utils/tests/test_recipe_paths.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 15; checks PA01`, `PA02; decision DEC30)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/step_migration.py`
+- **Role:** `info`
+- **provides:** `function:convert_step`, `class:NotConvertible`, `constant:REMOVED_ACTIONS`
+- **consumed_by:** `libs/utils/src/utils/recipe_migration.py`, `libs/transformer/tests/test_step_conversion.py`
+- **doc:** `.claude/design/home_evidence/actions_and_polars_2026-11-13.md sections 15`, `25`, `26`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/strict_form_migration.py`
+- **Role:** `info`
+- **provides:** `function:migrate_strict_form`
+- **consumes:** `libs/utils/src/utils/recipe_migration.py (MigrationReport`, `_content_end)`, `libs/utils/src/utils/recipe_check.py (spec)`
+- **consumed_by:** `assets/scripts/migrate_recipe_format.py`, `libs/utils/tests/test_strict_form_migration.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 5`, `7`, `12)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/strict_yaml.py`
+- **Role:** `info`
+- **provides:** `function:load_strict`, `class:DuplicateKeyError`
+- **consumed_by:** `libs/blueprint_arch/src/blueprint_arch/widget_text.py`
+- **doc:** `.claude/design/recipe_format_spec.md (check T10)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/utils/src/utils/ui_schema.py`
+- **Role:** `info`
+- **provides:** `constant:WIDGETS`, `function:expected_shape`, `function:shape_problem`, `function:step_problems`, `function:schema_declaration_problems`, `class:StepProblem`
+- **consumed_by:** `libs/utils/tests/test_step_problems.py`, `libs/transformer/tests/test_ui_schemas.py`, `libs/transformer/tests/test_action_schema_examples.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py`, `libs/blueprint_arch/tests/test_schema_registry.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8; checks ST03`, `ST04`, `ST07`, `ST09`, `ST10`, `ST11; R3)`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/src/viz_factory/arguments.py`
+- **Role:** `info`
+- **provides:** `function:allowed_arguments`, `function:unknown_arguments`, `function:argument_catalog`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py (COMPONENT_SCHEMAS)`, `plotnine`
+- **consumed_by:** `app/modules/data_analysis_recipe_validator.py (the recipe checker's catalogs)`, `libs/viz_factory/tests/test_component_arguments.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 8`, `RG5; check PS04)`, `libs/viz_factory/README.md (allow_extra_params)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/src/viz_factory/coords/core.py`
+- **Role:** `info`
+- **provides:** `component:coord_cartesian`, `component:coord_flip`, `component:coord_fixed`, `component:coord_equal`, `component:coord_trans`, `component:coord_lims`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/src/viz_factory/facets/core.py`
+- **Role:** `info`
+- **provides:** `component:facet_wrap`, `component:facet_grid`, `component:facet_rows`, `component:facet_cols`, `component:facet_null`, `component:facet_scales`, `component:facet_space`, `component:facet_labeller`, `component:facet_margins`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/src/viz_factory/geoms/core.py`
+- **Role:** `info`
+- **provides:** `component:geom_boxplot`, `component:geom_violin`, `component:geom_point`, `component:geom_line`, `component:geom_bar`, `component:geom_col`, `component:geom_histogram`, `component:geom_smooth`, `component:geom_density`, `component:geom_errorbar`, `component:geom_pointrange`, `component:geom_tile`, `component:geom_raster`, `component:geom_text`, `component:geom_label`, `component:geom_jitter`, `component:geom_step`, `component:geom_segment`, `component:geom_abline`, `component:geom_area`, `component:geom_bin_2d`, `component:geom_blank`, `component:geom_count`, `component:geom_crossbar`, `component:geom_density_2d`, `component:geom_dotplot`, `component:geom_errorbarh`, `component:geom_freqpoly`, `component:geom_hline`, `component:geom_linerange`, `component:geom_path`, `component:geom_vline`, `component:stat_count`, `component:stat_bin`, `component:stat_summary`, `component:stat_boxplot`, `component:stat_smooth`, `component:stat_density`, `component:labs (geom)`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via COMPONENT_SCHEMAS)`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/src/viz_factory/guides/core.py`
+- **Role:** `info`
+- **provides:** `component:guides`, `component:guide_legend`, `component:guide_colorbar`, `component:guide_colourbar`, `component:guide_none`, `component:guide_nrow`, `component:guide_ncol`, `component:guide_title`, `component:guide_label`, `component:guide_direction`, `component:guide_reverse`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/src/viz_factory/plot_config_resolver.py`
+- **Role:** `info`
+- **provides:** `function:resolve_plot_config`, `function:compute_optimisation_layer`
+- **consumes:** `libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)`
+- **consumed_by:** `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **doc:** `.claude/design/plot_config_cascade.md`, `.claude/design/plot_authoring_model.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/src/viz_factory/positions/core.py`
+- **Role:** `info`
+- **provides:** `component:position_identity`, `component:position_stack`, `component:position_fill`, `component:position_dodge`, `component:position_dodge2`, `component:position_jitter`, `component:position_jitterdodge`, `component:position_nudge`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/src/viz_factory/registry.py`
+- **Role:** `info`
+- **provides:** `decorator:register_plot_component`, `registry:PLOT_COMPONENTS`, `registry:COMPONENT_SCHEMAS`, `function:get_component`
+- **consumed_by:** `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/scales/core.py`, `libs/viz_factory/src/viz_factory/positions/core.py`, `libs/viz_factory/src/viz_factory/guides/core.py`, `libs/viz_factory/src/viz_factory/facets/core.py`, `libs/viz_factory/src/viz_factory/coords/core.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/src/viz_factory/scales/core.py`
+- **Role:** `info`
+- **provides:** `component:scale_color_gradient`, `component:scale_fill_gradient`, `component:scale_color_gradient2`, `component:scale_fill_gradient2`, `component:scale_color_gradientn`, `component:scale_fill_gradientn`, `component:scale_color_distiller`, `component:scale_fill_distiller`, `component:scale_color_cmap`, `component:scale_fill_cmap`, `component:scale_color_viridis_d`, `component:scale_fill_viridis_d`, `component:scale_color_viridis_c`, `component:scale_fill_viridis_c`, `component:scale_color_cmap_d`, `component:scale_fill_cmap_d`, `component:scale_color_discrete`, `component:scale_fill_discrete`, `component:scale_color_brewer`, `component:scale_fill_brewer`, `component:scale_color_manual`, `component:scale_fill_manual`, `component:scale_x_continuous`, `component:scale_y_continuous`, `component:scale_x_discrete`, `component:scale_y_discrete`, `component:scale_x_log10`, `component:scale_y_log10`, `component:scale_x_reverse`, `component:scale_y_reverse`, `component:scale_x_datetime`, `component:scale_y_datetime`, `component:scale_x_date`, `component:scale_y_date`, `component:scale_x_sqrt`, `component:scale_y_sqrt`, `component:scale_x_symlog`, `component:scale_y_symlog`, `component:scale_x_timedelta`, `component:scale_y_timedelta`, `component:scale_size_continuous`, `component:scale_size_discrete`, `component:scale_shape_discrete`, `component:scale_alpha_continuous`, `component:scale_alpha_discrete`, `component:scale_linetype_discrete`, `component:scale_stroke_continuous`, `component:scale_color_identity`, `component:scale_fill_identity`, `component:scale_size_identity`, `component:scale_shape_identity`, `component:scale_alpha_identity`, `component:scale_linetype_identity`, `component:scale_stroke_identity`, `component:scale_alpha`, `component:scale_alpha_manual`, `component:scale_size`, `component:scale_size_manual`, `component:scale_size_area`, `component:scale_shape`, `component:scale_shape_manual`, `component:scale_linetype`, `component:scale_linetype_manual`, `component:scale_color_hue`, `component:scale_fill_hue`, `component:scale_color_continuous`, `component:scale_fill_continuous`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `issue #36 (_integer_breaks narrow-range fallback)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/src/viz_factory/themes/core.py`
+- **Role:** `info`
+- **provides:** `component:theme_gray`, `component:theme_bw`, `component:theme_linedraw`, `component:theme_light`, `component:theme_minimal`, `component:theme_classic`, `component:theme_void`, `component:theme_dark`, `component:theme_538`, `component:theme_matplotlib`, `component:theme_seaborn`, `component:theme_tufte`, `component:theme_xkcd`, `component:theme_dashboard`, `component:theme_publication`, `component:theme_legend_position`, `component:theme_custom`, `component:element_text`, `component:element_line`, `component:element_rect`, `component:element_blank`, `component:xlab`, `component:ylab`, `component:ggtitle`, `component:annotate`
+- **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/src/viz_factory/viz_factory.py`
+- **Role:** `info`
+- **provides:** `class:VizFactory`, `function:VizFactory.render`, `constant:DEFAULT_RANDOM_STATE`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/pipeline_error.py`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/tests/test_render_every_plot.py`, `libs/viz_factory/tests/`
+- **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-081`, `ADR-090`, `ADR-094)`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/tests/debug_audit.py`
+- **Role:** `info`
+- **provides:** `script:debug_audit (viz_factory)`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `libs/viz_factory/tests/test_data/`
+- **consumed_by:** `manual component audit`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/tests/debug_bulk_sync.py`
+- **Role:** `info`
+- **provides:** `script:debug_bulk_sync`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `assets/gallery_data/`
+- **consumed_by:** `manual gallery bulk-sync testing`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/tests/debug_distiller.py`
+- **Role:** `info`
+- **provides:** `script:debug_distiller`
+- **consumes:** `libs/viz_factory/src/viz_factory/distiller.py`, `libs/viz_factory/tests/test_data/`
+- **consumed_by:** `manual distiller testing`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/tests/debug_gallery.py`
+- **Role:** `info`
+- **provides:** `script:debug_gallery`
+- **consumes:** `libs/transformer/tests/debug_assembler.py (output: tmp/EVE_contracted_*.parquet)`, `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **consumed_by:** `config/data_analysis_recipes/pipelines/*/README.md`
+- **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/tests/debug_runner.py`
+- **Role:** `info`
+- **provides:** `script:debug_runner (viz_factory)`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `libs/viz_factory/tests/test_data/`
+- **consumed_by:** `libs/viz_factory/tests/viz_factory_integrity_suite.py`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/tests/debug_viz_factory_audit.py`
+- **Role:** `info`
+- **provides:** `script:debug_viz_factory_audit`
+- **consumes:** `.claude/tasks/tasks.md`, `libs/viz_factory/src/`, `libs/viz_factory/tests/test_data/`, `tmp/`
+- **doc:** `.claude/rules/workspace_standard.md#5`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/tests/debug_viz_factory_tier3.py`
+- **Role:** `info`
+- **provides:** `script:debug_viz_factory_tier3`
+- **consumes:** `libs/viz_factory/src/viz_factory/`, `libs/transformer/src/transformer/data_wrangler.py`
+- **consumed_by:** `manual Tier 3 wrangling+viz testing`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_factory/tests/viz_factory_integrity_suite.py`
+- **Role:** `info`
+- **provides:** `script:viz_factory_integrity_suite`
+- **consumes:** `libs/viz_factory/tests/debug_runner.py`, `libs/viz_factory/tests/test_data/`, `libs/viz_factory/src/viz_factory/`
+- **consumed_by:** `CI / manual audit`
+- **doc:** `.claude/rules/rules_data_engine.md`
+
+## `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/viz_gallery/src/viz_gallery/gallery_manager.py`
+- **Role:** `info`
+- **provides:** `GalleryManager class — submit_example()`, `list_submissions()`, `rebuild_index(); manages gallery bundle persistence and Pivot-Index generation to assets/gallery_data/`
+- **consumes:** `yaml`, `shutil`, `pathlib.Path`, `datetime`, `polars`, `json`, `hashlib`
+- **consumed_by:** `app/handlers/gallery_handlers.py`
+
 ## `app/handlers/__init__.py`
 - **Role:** `ref`
 - **provides:** `Shiny handler package (ADR-045 Two-Category Law); exposes define_server() entry points for all handler modules`
@@ -105,7 +3918,7 @@
 ## `app/handlers/blueprint_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `output:bp_branch_ui`, `output:bp_branch_preview_ui`, `output:bp_groups_inventory_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`, `effect:_load_component_from_selection`, `effect:_handle_branch_preview`, `effect:_handle_branch_write (BP-BRANCH-NODE-1 — node-level lineage bifurcation`, `replaces Visual Fork)`, `effects:_handle_grp_action/_handle_create_group_btn/_handle_grp_submit/_handle_plt_submit/_handle_move_plt_submit (BP-GROUPS-1)`, `helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts data analysis recipe rebuild logic so CRUD Effects can call it after mutations)`, `output:bp_meta_form_ui`, `effect:_handle_meta_save (BP-META-1 — data analysis recipe info: block read/edit form)`, `effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)`, `output:bp_validate_ui`, `effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path`, `issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))`, `helpers:_draft_key/_write_bp_draft/_read_bp_draft`, `effect:_autosave_blueprint_draft`, `output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)`, `outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui`, `effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)`, `function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit)`, `helper:_bundle_filename (full-data analysis recipe zip)`, `output:bp_import_error_ui (ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface for component/recipe import failures)`
-- **consumes:** `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data — issue #53)`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError`, `make_render_payload — DIAG-RUNTIME-BLUEPRINT-1`, `wired to screen 2026-11-08 ADR-094)`, `app/src/render/pipeline_error_renderers.py (render_blueprint_inline)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
+- **consumes:** `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data — issue #53)`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `libs/blueprint_arch/src/blueprint_arch/new_recipe.py (new_recipe_draft — BP-NEW-1`, `recipe format 1)`, `libs/utils/src/utils/recipe_factory.py (write_recipe)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError`, `make_render_payload — DIAG-RUNTIME-BLUEPRINT-1`, `wired to screen 2026-11-08 ADR-094)`, `app/src/render/pipeline_error_renderers.py (render_blueprint_inline)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui")`, `ui.output_ui("bp_branch_ui")`, `ui.output_ui("bp_groups_inventory_ui")`, `ui.output_ui("bp_meta_form_ui"))`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-076`, `.claude/knowledge/architecture_decisions.md#ADR-082`
 
@@ -133,7 +3946,7 @@
 ## `app/handlers/gallery_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (gallery_handlers)`
-- **consumes:** `app/src/bootloader.py`
+- **consumes:** `app/src/bootloader.py`, `libs/viz_gallery/src/viz_gallery/taxonomy.py (display_axes`, `filter_panels)`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-037`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/rules/rules_ui_dashboard.md#5`
 
@@ -160,14 +3973,14 @@
 ## `app/handlers/test_lab_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (test_lab_handlers)`
-- **consumes:** `app/modules/test_lab_studio.py`, `shiny`, `libs/test_lab/reformatter.py`, `libs/test_lab/aqua_synthesizer.py`, `libs/test_lab/anonymiser.py`, `libs/test_lab/scaffolder.py`, `libs/id_reconciliation/`
+- **consumes:** `app/modules/test_lab_studio.py (scaffold_from_uploads)`, `shiny`, `libs/test_lab/reformatter.py`, `libs/test_lab/aqua_synthesizer.py`, `libs/test_lab/anonymiser.py`, `libs/id_reconciliation/`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
 
 ## `app/modules/bundle_importer.py`
 - **Role:** `ref`
 - **provides:** `function:import_bundle`, `function:read_effective_run`, `class:ImportResult`, `class:LegResult`, `class:BundleImportError`
-- **consumes:** `app/modules/cache_keys.py (engine_fingerprint)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe — safe ConfigManager probe`, `ADR-077)`, `app/modules/session_manager.py (SessionManager)`
+- **consumes:** `app/modules/cache_keys.py (engine_fingerprint)`, `app/modules/data_analysis_recipe_validator.py (engine_load_problems — safe ConfigManager probe`, `ADR-077)`, `app/modules/session_manager.py (SessionManager)`
 - **consumed_by:** `app/handlers/export_handlers.py (define_export_server — Import control in the Export panel)`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/reproducible_export_design.md`
 
@@ -180,8 +3993,8 @@
 
 ## `app/modules/data_analysis_recipe_validator.py`
 - **Role:** `ref`
-- **provides:** `function:validate_data_analysis_recipe`, `function:validate_data_analysis_recipe_data`, `function:find_data_analysis_recipes`, `function:read_data_analysis_recipe_header`, `function:resolve_contact`, `class:DataAnalysisRecipeProblem`
-- **consumes:** `libs/utils/src/utils/config_loader.py`, `libs/transformer/src/transformer/data_wrangler.py`, `app/modules/orchestrator.py`
+- **provides:** `function:validate_data_analysis_recipe`, `function:checker_problems`, `function:engine_load_problems`, `function:checker_catalogs`, `function:validate_data_analysis_recipe_data`, `function:find_data_analysis_recipes`, `function:read_data_analysis_recipe_header`, `function:resolve_contact`, `class:DataAnalysisRecipeProblem`
+- **consumes:** `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/recipe_loader.py (check_recipe_file)`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS)`, `libs/viz_factory/src/viz_factory/arguments.py (argument_catalog)`, `app/modules/orchestrator.py`
 - **consumed_by:** `app/tests/test_data_analysis_recipe_validator.py`, `app/tests/test_data_analysis_recipe_data_check.py`, `app/tests/test_retest_data_analysis_recipes.py`, `app/handlers/blueprint_handlers.py (_handle_validate`, `BP-VALIDATE-1/VALIDATE-UI-1)`, `app/src/bootloader.py (HOME load gate`, `ADR-094)`
 - **doc:** `.claude/tasks/tasks.md (BP-VALIDATE-1`, `VALIDATE-UI-1)`, `.claude/rules/rules_data_engine.md#3`, `.claude/knowledge/architecture_decisions.md#ADR-094`
 
@@ -192,12 +4005,19 @@
 - **consumed_by:** `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
 
+## `app/modules/gallery_examples.py`
+- **Role:** `ref`
+- **provides:** `function:recipe_catalogs`, `function:check_gallery`, `function:rebuild_gallery_index`, `function:render_example`, `function:example_table`, `constant:PREVIEW_SIZE`
+- **consumes:** `libs/viz_gallery/src/viz_gallery/gallery_manager.py`, `app/modules/orchestrator.py`, `app/modules/cache_keys.py`, `libs/utils/src/utils/config_loader.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/arguments.py`, `libs/transformer/src/transformer/actions/base.py`
+- **consumed_by:** `assets/scripts/refresh_gallery.py`, `assets/scripts/gallery_previews.py`, `app/tests/test_gallery_app_path.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 9: G2`, `G3`, `D4`, `D5; section 14)`
+
 ## `app/modules/gallery_viewer.py`
 - **Role:** `ref`
 - **provides:** `class:GalleryViewer`, `function:build_sidebar_ui`, `function:render_explorer_ui`
-- **consumes:** `app/src/bootloader.py (bootloader singleton)`
+- **consumes:** `app/src/bootloader.py (bootloader singleton)`, `libs/viz_gallery/src/viz_gallery/taxonomy.py (filter_panels)`
 - **consumed_by:** `app/handlers/gallery_handlers.py`, `app/src/server.py`, `app/handlers/home_theater.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-033`, `.claude/knowledge/architecture_decisions.md#ADR-057`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-033`, `.claude/knowledge/architecture_decisions.md#ADR-057`, `.claude/design/recipe_format_spec.md (section 9`, `G1)`
 
 ## `app/modules/help_registry.py`
 - **Role:** `ref`
@@ -257,8 +4077,8 @@
 
 ## `app/modules/test_lab_studio.py`
 - **Role:** `ref`
-- **provides:** `class:TestLabStudio (render_ui only)`
-- **consumes:** `shiny.ui`
+- **provides:** `class:TestLabStudio (render_ui only)`, `function:scaffold_from_uploads`
+- **consumes:** `shiny.ui`, `libs/test_lab/src/test_lab/scaffolder.py`
 - **consumed_by:** `app/handlers/home_theater.py`, `app/src/server.py`, `app/handlers/test_lab_handlers.py`
 - **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
 
@@ -353,8 +4173,9 @@
 ## `assets/scripts/create_data_analysis_recipe.py`
 - **Role:** `info`
 - **provides:** `script:create_data_analysis_recipe`
-- **consumes:** `assets/test_data/ (TSV/CSV source files)`, `assets/template_data_analysis_recipes/ (writes scaffolded YAML)`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `docs/reference/wrangling_guide.qmd`
+- **consumes:** `libs/utils/src/utils/recipe_factory.py (minimal_recipe`, `minimal_schema`, `minimal_plot`, `Include`, `write_recipe`, `write_fragment)`, `libs/utils/src/utils/recipe_check.py (check_recipe)`, `libs/utils/src/utils/polars_types.py (text_dtype_names)`
+- **consumed_by:** `app/tests/test_writers_emit_format_one.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 4`, `7)`, `.claude/rules/rules_asset_scripts.md`, `docs/appendix/running_helper_scripts.qmd`
 
 ## `assets/scripts/create_test_deployment.py`
 - **Role:** `info`
@@ -472,6 +4293,13 @@
 - **consumed_by:** `app/handlers/blueprint_handlers.py`, `libs/blueprint_arch/tests/test_join_designer.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-082 (Q5)`, `.claude/rules/rules_data_analysis_recipe_structure.md#7`
 
+## `libs/blueprint_arch/src/blueprint_arch/new_recipe.py`
+- **Role:** `info`
+- **provides:** `function:new_recipe_draft`
+- **consumes:** `libs/utils/src/utils/recipe_factory.py (minimal_recipe)`
+- **consumed_by:** `app/handlers/blueprint_handlers.py (_handle_new_data_analysis_recipe_submit)`, `libs/blueprint_arch/tests/test_new_recipe.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 3`, `4`, `7.1)`, `.claude/design/recipe_format_work_order.md (W8)`
+
 ## `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
 - **Role:** `info`
 - **provides:** `function:get_action_catalog`, `function:get_component_catalog`, `function:get_combined_catalog`, `function:get_actions_for_context`, `function:get_actions_by_category`, `function:get_components_for_context`, `function:search_actions`, `function:search_components`, `function:register`
@@ -527,7 +4355,7 @@
 - **Role:** `info`
 - **provides:** `IDReconciliationEngine`, `IDPair`, `MatchResult`, `PatternSuggestion`
 - **consumes:** `libs/id_reconciliation/src/id_reconciliation/data_structures.py`
-- **consumed_by:** `app/handlers/test_lab_handlers.py`
+- **consumed_by:** `app/handlers/test_lab_handlers.py`, `app/modules/test_lab_studio.py`
 
 ## `libs/id_reconciliation/src/id_reconciliation/core.py`
 - **Role:** `info`
@@ -558,6 +4386,14 @@
 - **provides:** `detect_patterns`, `apply_pattern`, `suggest_regex (re-exported from utils.id_patterns)`
 - **consumes:** `libs/utils/src/utils/id_patterns.py`
 - **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/core.py`
+
+## `libs/id_reconciliation/src/id_reconciliation/recipe_steps.py`
+- **Role:** `info`
+- **provides:** `recipe_steps`
+- **consumes:** `libs/utils/src/utils/action_names.py`
+- **mirrors:** `libs/id_reconciliation/src/id_reconciliation/core.py (apply_recode_step: same actions`, `same result)`
+- **consumed_by:** `libs/id_reconciliation/src/id_reconciliation/__init__.py`, `app/modules/test_lab_studio.py`
+- **doc:** `.claude/design/recipe_format_spec.md (7.5`, `7.5.1)`
 
 ## `libs/ingestion/src/ingestion/declared.py`
 - **Role:** `wrangle`
@@ -605,9 +4441,9 @@
 
 ## `libs/test_lab/src/test_lab/scaffolder.py`
 - **Role:** `info`
-- **provides:** `DataAnalysisRecipeScaffolder class (scaffold) — generates a data analysis recipe ZIP with data analysis recipe`
+- **provides:** `DataAnalysisRecipeScaffolder class (scaffold`, `dataset_id`, `column_slug`, `field_slugs) — generates a data`
 - **consumes:** `polars`, `pathlib`, `typing`, `yaml`, `re`, `io`, `zipfile (stdlib/third-party)`
-- **consumed_by:** `libs/test_lab/tests/test_scaffolder.py`
+- **consumed_by:** `libs/test_lab/tests/test_scaffolder.py`, `app/modules/test_lab_studio.py`
 
 ## `libs/transformer/src/transformer/actions/base.py`
 - **Role:** `wrangle`
@@ -687,7 +4523,7 @@
 
 ## `libs/utils/src/utils/action_names.py`
 - **Role:** `ref`
-- **provides:** `constant:JOIN`, `constant:SELECT`, `constant:DROP`, `constant:WITH_COLUMNS`, `constant:FILTER`, `constant:CAST`, `constant:TIER1_ONLY`
+- **provides:** `constant:JOIN`, `constant:SELECT`, `constant:DROP`, `constant:WITH_COLUMNS`, `constant:FILTER`, `constant:CAST`
 - **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/transformer/tests/test_action_names.py`
 - **doc:** `.claude/design/recipe_format_spec.md (R4)`
 
@@ -756,6 +4592,13 @@
 - **consumed_by:** `libs/utils/tests/test_recipe_check.py`
 - **doc:** `.claude/design/recipe_format_spec.md (sections 3 to 11`, `14)`
 
+## `libs/utils/src/utils/recipe_factory.py`
+- **Role:** `ref`
+- **provides:** `function:minimal_recipe`, `function:minimal_schema`, `function:minimal_join`, `function:minimal_plot`, `function:recipe_text`, `function:write_recipe`, `function:write_fragment`, `class:Include`
+- **consumes:** `libs/utils/src/utils/recipe_check.py (spec)`, `libs/utils/src/utils/recipe_spec.yaml`
+- **consumed_by:** `libs/utils/tests/test_recipe_factory.py`, `app/tests/test_writers_emit_format_one.py`, `assets/scripts/create_data_analysis_recipe.py`, `assets/scripts/SF_create_data_analysis_recipe.py`, `app/handlers/blueprint_handlers.py (new recipe form)`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 1`, `3`, `4`, `5`, `7)`, `.claude/design/recipe_format_work_order.md (W8)`
+
 ## `libs/utils/src/utils/recipe_loader.py`
 - **Role:** `ref`
 - **provides:** `function:load_recipe`, `function:check_recipe_file`
@@ -781,6 +4624,13 @@
 - **provides:** `function:convert_step`, `class:NotConvertible`, `constant:REMOVED_ACTIONS`
 - **consumed_by:** `libs/utils/src/utils/recipe_migration.py`, `libs/transformer/tests/test_step_conversion.py`
 - **doc:** `.claude/design/home_evidence/actions_and_polars_2026-11-13.md sections 15`, `25`, `26`
+
+## `libs/utils/src/utils/strict_form_migration.py`
+- **Role:** `ref`
+- **provides:** `function:migrate_strict_form`
+- **consumes:** `libs/utils/src/utils/recipe_migration.py (MigrationReport`, `_content_end)`, `libs/utils/src/utils/recipe_check.py (spec)`
+- **consumed_by:** `assets/scripts/migrate_recipe_format.py`, `libs/utils/tests/test_strict_form_migration.py`
+- **doc:** `.claude/design/recipe_format_spec.md (sections 5`, `7`, `12)`
 
 ## `libs/utils/src/utils/strict_yaml.py`
 - **Role:** `ref`
@@ -918,11 +4768,26 @@
 - **consumed_by:** `CI / manual audit`
 - **doc:** `.claude/rules/rules_data_engine.md`
 
+## `libs/viz_gallery/src/viz_gallery/example_recipe.py`
+- **Role:** `info`
+- **provides:** `function:example_recipe`, `function:dump_example`, `function:data_contract`, `function:data_summary`, `function:plot_summary`, `constant:SCHEMA_ID`, `constant:GROUP_ID`, `constant:DATA_FILE`
+- **consumes:** `libs/utils/src/utils/recipe_check.py (spec)`, `libs/utils/src/utils/recipe_migration.py (SANITISER_TEXTS)`, `libs/utils/src/utils/polars_types.py`
+- **consumed_by:** `libs/viz_gallery/src/viz_gallery/gallery_manager.py`, `assets/scripts/convert_gallery_examples.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 9; D1`, `D2`, `D7)`
+
 ## `libs/viz_gallery/src/viz_gallery/gallery_manager.py`
 - **Role:** `info`
-- **provides:** `GalleryManager class — submit_example()`, `list_submissions()`, `rebuild_index(); manages gallery bundle persistence and Pivot-Index generation to assets/gallery_data/`
-- **consumes:** `yaml`, `shutil`, `pathlib.Path`, `datetime`, `polars`, `json`, `hashlib`
-- **consumed_by:** `app/handlers/gallery_handlers.py`
+- **provides:** `class:GalleryManager (check_examples`, `rebuild_index`, `submit_example`, `list_submissions)`, `class:Examples`, `constant:RECIPE_FILE`
+- **consumes:** `libs/utils/src/utils/recipe_loader.py (check_recipe_file`, `load_recipe)`, `libs/utils/src/utils/legacy_keys.py`, `libs/viz_gallery/src/viz_gallery/taxonomy.py`, `libs/viz_gallery/src/viz_gallery/example_recipe.py`
+- **consumed_by:** `app/modules/gallery_examples.py`, `assets/scripts/refresh_gallery.py`, `assets/scripts/convert_gallery_examples.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 9)`
+
+## `libs/viz_gallery/src/viz_gallery/taxonomy.py`
+- **Role:** `info`
+- **provides:** `function:display_axes`, `function:first_geom`, `function:the_plot`, `function:example_taxonomy`, `function:tag_strip`, `function:with_tag_strip`, `function:filter_panels`
+- **consumes:** `libs/utils/src/utils/recipe_check.py (spec)`, `libs/utils/src/utils/recipe_spec.yaml (gallery)`
+- **consumed_by:** `libs/viz_gallery/src/viz_gallery/gallery_manager.py`, `app/modules/gallery_viewer.py`, `app/handlers/gallery_handlers.py`, `assets/scripts/convert_gallery_examples.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 9; findings G1`, `G4`, `G7; design D2`, `D3)`
 
 ---
 
@@ -930,6 +4795,26 @@
 
 Pairs with `mirrors:` coupling — must always be edited together:
 
+- `.claude/worktrees/agent-a57725701187f3e6e/app/modules/orchestrator.py` ↔ `libs/transformer/tests/debug_assembler.py`
+- `.claude/worktrees/agent-a57725701187f3e6e/libs/id_reconciliation/src/id_reconciliation/recipe_steps.py` ↔ `libs/id_reconciliation/src/id_reconciliation/core.py (apply_recode_step: same actions`
+- `.claude/worktrees/agent-a57725701187f3e6e/libs/id_reconciliation/src/id_reconciliation/recipe_steps.py` ↔ `same result)`
+- `.claude/worktrees/agent-a57725701187f3e6e/libs/transformer/tests/debug_assembler.py` ↔ `app/modules/orchestrator.py`
+- `.claude/worktrees/agent-a57725701187f3e6e/libs/transformer/tests/debug_wrangler.py` ↔ `app/modules/orchestrator.py (Tier 1 wrangling path)`
+- `.claude/worktrees/agent-a5f3467f03369012d/app/modules/orchestrator.py` ↔ `libs/transformer/tests/debug_assembler.py`
+- `.claude/worktrees/agent-a5f3467f03369012d/libs/id_reconciliation/src/id_reconciliation/recipe_steps.py` ↔ `libs/id_reconciliation/src/id_reconciliation/core.py (apply_recode_step: same actions`
+- `.claude/worktrees/agent-a5f3467f03369012d/libs/id_reconciliation/src/id_reconciliation/recipe_steps.py` ↔ `same result)`
+- `.claude/worktrees/agent-a5f3467f03369012d/libs/transformer/tests/debug_assembler.py` ↔ `app/modules/orchestrator.py`
+- `.claude/worktrees/agent-a5f3467f03369012d/libs/transformer/tests/debug_wrangler.py` ↔ `app/modules/orchestrator.py (Tier 1 wrangling path)`
+- `.claude/worktrees/agent-a6a9e0287309e57e7/app/modules/orchestrator.py` ↔ `libs/transformer/tests/debug_assembler.py`
+- `.claude/worktrees/agent-a6a9e0287309e57e7/libs/transformer/tests/debug_assembler.py` ↔ `app/modules/orchestrator.py`
+- `.claude/worktrees/agent-a6a9e0287309e57e7/libs/transformer/tests/debug_wrangler.py` ↔ `app/modules/orchestrator.py (Tier 1 wrangling path)`
+- `.claude/worktrees/agent-a963d7ad6e7c1cb3e/app/modules/orchestrator.py` ↔ `libs/transformer/tests/debug_assembler.py`
+- `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/id_reconciliation/src/id_reconciliation/recipe_steps.py` ↔ `libs/id_reconciliation/src/id_reconciliation/core.py (apply_recode_step: same actions`
+- `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/id_reconciliation/src/id_reconciliation/recipe_steps.py` ↔ `same result)`
+- `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/transformer/tests/debug_assembler.py` ↔ `app/modules/orchestrator.py`
+- `.claude/worktrees/agent-a963d7ad6e7c1cb3e/libs/transformer/tests/debug_wrangler.py` ↔ `app/modules/orchestrator.py (Tier 1 wrangling path)`
 - `app/modules/orchestrator.py` ↔ `libs/transformer/tests/debug_assembler.py`
+- `libs/id_reconciliation/src/id_reconciliation/recipe_steps.py` ↔ `libs/id_reconciliation/src/id_reconciliation/core.py (apply_recode_step: same actions`
+- `libs/id_reconciliation/src/id_reconciliation/recipe_steps.py` ↔ `same result)`
 - `libs/transformer/tests/debug_assembler.py` ↔ `app/modules/orchestrator.py`
 - `libs/transformer/tests/debug_wrangler.py` ↔ `app/modules/orchestrator.py (Tier 1 wrangling path)`

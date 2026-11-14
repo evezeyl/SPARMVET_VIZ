@@ -581,3 +581,18 @@ Eve: Exploration has ONE plot (Result, immutable, always shown); Audit mode has 
  then W8 writers, W9 engine side, W10 tier-3 reader, W11 gallery (GALLERY-RIGOR-1), W13 documentation (DOC-MISSING-VALUES-1), W14 Blueprint, W16 ID-RECON-STEPS-1, REMOVE-CATEGORY-SELECT-1, the stale `manifest_paths` line.
 **Open for Eve (asked, not answered):** Q3 dead gallery submission code (remove or keep); the data owner's question on `NA` in `metadata_isolation_method`.
 **Files:** `.claude/design/recipe_format_spec.md` (decisions), `recipe_format_work_order.md` (W0 to W16), `home_evidence/actions_and_polars_2026-11-13.md` (sections 9 to 26, the evidence), `tmpAI/agent_channel.md` (not in git).
+
+## Handoff 2026-11-14: recipe format 1, state after the three parallel packages
+
+**Branch:** `feat/recipe-format-1`. Local `dev` is behind it, and nothing of today after commit 29a563c7 is pushed.
+
+**Merged:** the three packages (W11 gallery, W8 writers, W16 ID-RECON-STEPS-1 with RETEST-REPLACE-1, REMOVE-CATEGORY-SELECT-1, RENAMED-KEYS-1), the strict checker in the load gate, migration runs C and D, the orchestrator fails on unknown ids, `CLAUDE.md` section 2.1 (agent rules).
+
+**Controls (2026-11-14):** headless suite 3604 passed, 14 xfailed (exit 0). Browser tests 70 passed, 3 skipped (exit 0). Golden baseline: result-identical. Audits: recipe coherence, deps verify, cross-lib PASS. `validate_app_features_config --strict` PASS. FAIL: `audit_docs_sync` (3 doc backtick path violations), `audit_task_drift` (1 drift: `app/modules/exporter.py` named by AUDIT-RAWYAML-REMOVE-1), `check_doc_links` (65 problems, for example `docs/appendix/viz_factory_rationale.qmd:157-158` still point to `libs/viz_gallery/assets/generate_previews.py` and `refresh_gallery.py`). Not fixed here.
+
+**Open decisions for Eve:**
+- Gallery: accept or reject the 8 changed previews (`tmp/gallery_preview_review/`); `beeswarm_sina` (tier-3 reader, move the filter to tier 1, or drop it); rewrite `rules_gallery_standards.md` (needs her double confirmation).
+- Writers: a fresh Blueprint draft has no plot and cannot be opened (loader accepts an empty draft, or the form creates a first plot); delete the dead `SF_create_data_analysis_recipe.py`?; the two `debug_*` scripts in the old test-file shape (keep as test-only or migrate).
+- ID reconciliation: three defects recorded as strict xfail tests; keep the bridge (recommended).
+
+**Next:** JOIN-KEY-TYPES-1 (decided: a join keeps declared types), then IMPORT-PATH-1 (decided: option A), then SMOKE-RACE-2, the tier-3 reader, the Blueprint package, and the documentation sweep with the full name "data analysis recipe" in user-facing text.
