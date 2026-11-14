@@ -179,6 +179,7 @@ def _tool_get_available_components(args: dict) -> dict:
             "label": entry.get("label", name),
             "category": entry.get("category", ""),
             "tags": entry.get("tags", []),
+            "plotnine": entry.get("plotnine", ""),
             "params": {
                 k: {
                     "required": v.get("required", False),
