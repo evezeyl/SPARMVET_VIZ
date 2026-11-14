@@ -43,8 +43,11 @@ MODIF_FILTER_SCHEMA = {
     ],
     "description": ("Keep the rows where `column` <op> `value` (eq, ne, gt, ge, lt, le, in, not_in, between). Unlike Polars filter, "
                     "which takes a formula, it takes the words of the filter panel. `na` says what happens to a missing value (null) "
-                    "of the column: `remove` drops those rows (what a comparison does in Polars), `keep` keeps them. A NaN is a number, "
-                    "not a missing value, and `na` does not touch it."),
+                    "of the column. `remove` drops those rows for every operator, `!=` and not_in included: this is what Polars does. "
+                    "`keep` keeps them, which adds rows that Polars would drop; the Polars equivalents are `ne_missing` and "
+                    "`is_in(..., nulls_equal=True)` for the equality filters, and Polars has none for gt, ge, lt, le and between. "
+                    "A NaN (a failed calculation) is a number, larger than every number, not a missing value: `na` does not touch it. "
+                    "The text `NA` is a value, not missing, unless the data schema lists it in `null_values`."),
     "yaml_example": "- action: modif_filter\n  column: identity\n  op: between\n  value: [90, 100]\n  na: remove",
 }
 
