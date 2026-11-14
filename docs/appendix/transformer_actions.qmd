@@ -686,3 +686,19 @@ Kind: wrapper. Context: assembly.
     - "pl.col('year') <= pl.col('end_year')"
 ```
 
+#### `polars_group_by_dynamic`
+
+Cut a sorted index column (dates, times or whole numbers) into windows of the length `every` and aggregate each window with named formulas (Polars LazyFrame.group_by_dynamic(...).agg(...)). `closed`, which edges belong to a window, is written in the step because group_by_dynamic and rolling do not share a default. The index column must be sorted ascending, within each group when `group_by` is given, and must hold no null: the step fails otherwise. The result has one row per non-empty window, in the order of the groups (ascending, nulls last), then of the windows. In a window a null is skipped by sum, mean and count, a NaN makes a sum NaN, and the sum of a window that holds only nulls is 0.
+
+Kind: wrapper. Context: t2, assembly.
+
+```yaml
+- action: polars_group_by_dynamic
+  index_column: collection_date
+  every: 1mo
+  closed: left
+  group_by: [country]
+  named_aggs:
+    isolates: "pl.len()"
+```
+

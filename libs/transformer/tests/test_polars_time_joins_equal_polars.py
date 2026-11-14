@@ -28,7 +28,7 @@ from test_action_recipe_pairs import ROOT, _run
 from test_polars_actions_equal_polars import Case, eager
 
 NAN = float("nan")
-GROUP = {"polars_rank", "polars_join_asof", "polars_join_where"}
+GROUP = {"polars_rank", "polars_join_asof", "polars_join_where", "polars_group_by_dynamic"}
 # Polars gives the pairs of a join on conditions in another order on every run: the action orders them (first table, then second)
 # and the rows are compared with the direct call after sorting both; the order itself is tested in the preconditions file
 UNORDERED = {"polars_join_where"}
@@ -60,6 +60,16 @@ WHERE_RIGHT = pl.DataFrame({"rid": ["x", "y", "z", "w"], "v": [2, 5, 10, 4]})
 WHERE_RIGHT_CLASH = WHERE_RIGHT.with_columns(lo=pl.lit(0))
 WHERE_FLOAT_LEFT = pl.DataFrame({"id": ["a", "b"], "lo": [1.0, 5.0], "hi": [4.0, 9.0]})
 WHERE_FLOAT_RIGHT = pl.DataFrame({"rid": ["x", "y", "n"], "v": [2.0, 5.0, NAN]})
+
+# windows: sorted by d (and by d within each country), a null and a NaN in f
+D = datetime.date
+WINDOWED = pl.DataFrame({
+    "d": [D(2022, 1, 3), D(2022, 1, 10), D(2022, 1, 20), D(2022, 2, 2), D(2022, 2, 15), D(2022, 3, 1), D(2022, 3, 5)],
+    "country": ["NO", "SE", "NO", "SE", "NO", "SE", "NO"],
+    "f": [1.0, 2.0, None, NAN, 5.0, 6.0, 7.0],
+})
+WINDOWED_INT = pl.DataFrame({"i": [1, 2, 3, 4, 7, 8, 12], "g": ["a", "b", "a", "b", "a", "b", "a"], "f": [1.0, 2.0, None, NAN, 5.0, 6.0, 7.0]})
+WINDOWED_MOMENTS = pl.DataFrame({"t": [datetime.datetime(2022, 1, 1, h) for h in (0, 1, 5, 6, 7, 13)], "f": [1.0, 2.0, 3.0, None, 5.0, 6.0]})
 
 CASES = [
     # -- polars_rank: every method; the first case is the one the pair holds -------------------------
@@ -103,6 +113,25 @@ CASES = [
          lambda lf: lf.join_where(WHERE_FLOAT_RIGHT.lazy(), pl.col("v") >= pl.col("lo"), pl.col("v") <= pl.col("hi"))),
     Case("polars_join_where", WHERE_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('v') > 100"], "__right_df__": WHERE_RIGHT.lazy()},
          lambda lf: lf.join_where(WHERE_RIGHT.lazy(), pl.col("v") > 100)),
+    # -- polars_group_by_dynamic: months per country (the pair holds this one), every option, a whole-number index, moments -----
+    Case("polars_group_by_dynamic", WINDOWED,
+         {"index_column": "d", "every": "1mo", "closed": "left", "group_by": ["country"], "named_aggs": {"isolates": "pl.len()", "total": "pl.col('f').sum()"}},
+         lambda lf: lf.group_by_dynamic("d", every="1mo", closed="left", group_by=["country"]).agg(isolates=pl.len(), total=pl.col("f").sum())),
+    Case("polars_group_by_dynamic", WINDOWED,
+         {"index_column": "d", "every": "2w", "period": "10d", "offset": "1d", "include_boundaries": True, "closed": "right", "label": "right",
+          "start_by": "monday", "named_aggs": {"isolates": "pl.len()", "mean_f": "pl.col('f').mean()", "seen": "pl.col('f').count()"}},
+         lambda lf: lf.group_by_dynamic("d", every="2w", period="10d", offset="1d", include_boundaries=True, closed="right", label="right",
+                                        start_by="monday").agg(isolates=pl.len(), mean_f=pl.col("f").mean(), seen=pl.col("f").count())),
+    Case("polars_group_by_dynamic", WINDOWED_INT, {"index_column": "i", "every": "4i", "closed": "both", "named_aggs": {"n": "pl.len()"}},
+         lambda lf: lf.group_by_dynamic("i", every="4i", closed="both").agg(n=pl.len())),
+    Case("polars_group_by_dynamic", WINDOWED_INT, {"index_column": "i", "every": "4i", "closed": "none", "group_by": ["g"], "label": "datapoint",
+                                                   "named_aggs": {"first_f": "pl.col('f').first()", "last_f": "pl.col('f').last()"}},
+         lambda lf: lf.group_by_dynamic("i", every="4i", closed="none", group_by=["g"], label="datapoint").agg(
+             first_f=pl.col("f").first(), last_f=pl.col("f").last())),
+    Case("polars_group_by_dynamic", WINDOWED_MOMENTS, {"index_column": "t", "every": "6h", "closed": "left", "named_aggs": {"total": "pl.col('f').sum()"}},
+         lambda lf: lf.group_by_dynamic("t", every="6h", closed="left").agg(total=pl.col("f").sum())),
+    Case("polars_group_by_dynamic", WINDOWED, {"index_column": "d", "every": "1mo", "closed": "left", "named_aggs": {}},
+         lambda lf: lf.group_by_dynamic("d", every="1mo", closed="left").agg()),
 ]
 
 

@@ -30,7 +30,7 @@ from utils.action_names import JOIN_ASOF, JOIN_WHERE
 from utils.errors import TransformationError
 
 # @deps
-# provides: action:polars_rank, action:polars_join_asof, action:polars_join_where
+# provides: action:polars_rank, action:polars_join_asof, action:polars_join_where, action:polars_group_by_dynamic
 # consumes: libs/transformer/src/transformer/actions/polars_calls.py (the generator of the polars_ actions)
 # consumed_by: libs/transformer/tests/test_polars_time_joins_equal_polars.py
 # doc: .claude/design/recipe_format_spec.md#7.5.1, .claude/design/home_evidence/actions_and_polars_2026-11-13.md#19
@@ -39,9 +39,11 @@ from utils.errors import TransformationError
 RANK_METHODS = ["average", "min", "max", "dense", "ordinal", "random"]
 
 calls.PICKER.update({"rank": ("analytical", calls.T12), "join_asof": ("relational", calls.ASSEMBLY),
-                    "join_where": ("relational", calls.ASSEMBLY)})
+                    "join_where": ("relational", calls.ASSEMBLY),
+                    "group_by_dynamic": ("aggregation", calls.T2ASM)})
 # the tie rule changes the result, so it is written in the step (DEC34)
-calls.REQUIRED.update({"polars_rank": {"method"}, "polars_join_asof": {"strategy"}, "polars_join_where": {"predicates"}})
+calls.REQUIRED.update({"polars_rank": {"method"}, "polars_join_asof": {"strategy"}, "polars_join_where": {"predicates"},
+                       "polars_group_by_dynamic": {"closed"}})
 calls.OVERRIDE.update({
     ("polars_rank", "method"): {"widget": "enum", "options": RANK_METHODS, "label": "How tied values are ranked"},
     ("polars_rank", "seed"): {"widget": "number", "label": "Seed of the random tie order (only with method random)"},
@@ -249,3 +251,102 @@ def _join_where_schema() -> dict:
 
 
 register_action(JOIN_WHERE, ui_schema=_join_where_schema())(_join_where)
+
+
+# =========================================================================================================
+# windows over a sorted index: polars_group_by_dynamic (and polars_rolling)
+# =========================================================================================================
+
+CLOSED = ["left", "right", "both", "none"]
+LABELS = ["left", "right", "datapoint"]
+START_BY = ["window", "datapoint", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+INDEX_INTEGERS = (pl.Int32, pl.Int64, pl.UInt32, pl.UInt64)
+
+
+def _window_overrides(action: str) -> None:
+    calls.OVERRIDE.update({
+        (action, "index_column"): {**one_column, "label": "Index column: a date, a time or a whole number, sorted ascending"},
+        (action, "group_by"): {**calls.LIST_OF_COLUMNS, "label": "Group columns: the windows are made within each group"},
+        (action, "closed"): {"widget": "enum", "options": CLOSED, "label": "Which edges belong to the window"},
+        (action, "label"): {"widget": "enum", "options": LABELS, "label": "Which value labels the window"},
+        (action, "start_by"): {"widget": "enum", "options": START_BY, "label": "Where the first window starts"},
+    })
+
+
+def _duration_units(text: str) -> set:
+    return set(re.findall(r"\d+([a-z]+)", text))
+
+
+def _require_window_index(lf: pl.LazyFrame, clean: Dict[str, Any], action: str) -> None:
+    """The index of a window is sorted ascending (within each group), has no null, and its type fits the written durations."""
+    index, groups = clean["index_column"], clean.get("group_by")
+    schema = lf.collect_schema()
+    missing = [c for c in [index, *(groups or [])] if c not in schema]
+    if missing:
+        raise TransformationError(f"step {action}: the column {missing[0]!r} is not in the table at this step (its columns: {list(schema)})",
+                                  tip="Write the column names as they are in the table at this step")
+    dtype = schema[index]
+    integer = dtype in INDEX_INTEGERS
+    if not (integer or dtype.is_temporal()):
+        raise TransformationError(f"step {action}: the index column {index!r} is {dtype}; windows need a date, a time or a whole number (Int32, Int64, UInt32, UInt64)",
+                                  tip="Cast the column first with a polars_cast step")
+    for key in ("every", "period", "offset"):
+        text = clean.get(key)
+        if text is None:
+            continue
+        if not isinstance(text, str):
+            raise TransformationError(f"step {action}: {key} {text!r} is not a duration text", tip="Write a duration such as '1w', '30d' or '2i' (whole numbers use i)")
+        units = _duration_units(text)
+        if integer and units != {"i"}:
+            raise TransformationError(f"step {action}: {key} {text!r} is a time duration but the index column {index!r} is {dtype}",
+                                      tip="For a whole-number index write the duration with i, for example '2i'")
+        if not integer and "i" in units:
+            raise TransformationError(f"step {action}: {key} {text!r} counts whole numbers but the index column {index!r} is {dtype}",
+                                      tip="For a date or a time write a duration such as '1w', '30d' or '12h'")
+    if lf.select(pl.col(index).is_null().any()).collect().item():
+        raise TransformationError(f"step {action}: the index column {index!r} holds null values, which Polars does not allow in windows",
+                                  tip=f"Remove the rows without a value first with a polars_drop_nulls step (subset: [{index}])")
+    if _not_ascending(lf, index, groups):
+        within = f" within each group of {groups}" if groups else ""
+        raise TransformationError(f"step {action}: the index column {index!r} is not sorted ascending{within}",
+                                  tip=f"Sort first with a polars_sort step (by: [{index}], maintain_order: true)")
+
+
+def _window_action(action: str, method: str):
+    target = getattr(pl.LazyFrame, method)
+
+    def run(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
+        clean = calls._checked(action, spec)
+        aggregations = {name: calls._formula(text) for name, text in clean["named_aggs"].items()}
+        _require_window_index(lf, clean, action)
+        try:
+            result = getattr(lf, method)(**calls._kwargs(clean, target, action)).agg(**aggregations)
+            result.collect_schema()  # the formulas are resolved now: a column that does not exist is said at this step
+        except (pl.exceptions.PolarsError, ValueError) as exc:
+            raise TransformationError(f"step {action}: {str(exc).splitlines()[0]}", tip="Check the durations, the column names and the formulas of the step") from exc
+        return result
+
+    run.__name__ = f"action_{action}"
+    return run
+
+
+def _window_schema(action: str, method: str, description: str, example: str) -> dict:
+    schema = calls._schema(action, calls.FRAME, getattr(pl.LazyFrame, method), ("LazyFrame", method), description, example)
+    schema["polars"] = "wrapper"
+    schema["params"]["named_aggs"] = {"widget": "mapping", "label": "Result column: aggregation formula (a Polars expression as text)",
+                                      "required": True, "value_widget": "expression"}
+    return schema
+
+
+# -- polars_group_by_dynamic -----------------------------------------------------------------------------
+
+_window_overrides("polars_group_by_dynamic")
+register_action("polars_group_by_dynamic", ui_schema=_window_schema(
+    "polars_group_by_dynamic", "group_by_dynamic",
+    "Cut a sorted index column (dates, times or whole numbers) into windows of the length `every` and aggregate each window with named formulas "
+    "(Polars LazyFrame.group_by_dynamic(...).agg(...)). `closed`, which edges belong to a window, is written in the step because group_by_dynamic and rolling "
+    "do not share a default. The index column must be sorted ascending, within each group when `group_by` is given, and must hold no null: the step fails otherwise. "
+    "The result has one row per non-empty window, in the order of the groups (ascending, nulls last), then of the windows. In a window a null is skipped by "
+    "sum, mean and count, a NaN makes a sum NaN, and the sum of a window that holds only nulls is 0.",
+    "- action: polars_group_by_dynamic\n  index_column: collection_date\n  every: 1mo\n  closed: left\n  group_by: [country]\n  named_aggs:\n    isolates: \"pl.len()\""))(
+    _window_action("polars_group_by_dynamic", "group_by_dynamic"))

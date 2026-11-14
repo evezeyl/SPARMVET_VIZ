@@ -428,3 +428,147 @@ def test_where_an_empty_first_table_gives_an_empty_table_with_the_columns_of_pol
 def test_where_the_second_table_is_required():
     with pytest.raises(TransformationError, match="__right_df__"):
         run("polars_join_where", W_LEFT, {"right_ingredient": "R", "predicates": BETWEEN})
+
+
+# =========================================================================================================
+# windows over a sorted index: polars_group_by_dynamic (the helpers are shared with polars_rolling)
+# =========================================================================================================
+
+D = datetime.date
+TIMED = pl.DataFrame({
+    "i": [1, 2, 3, 4, 5, 6], "g": [None, "b", "a", None, "b", "a"], "x": [1.0, None, NAN, 4.0, 5.0, 6.0], "d": [D(2022, 1, d) for d in (1, 2, 8, 9, 15, 16)],
+})
+
+
+def dynamic(frame=TIMED, **more):
+    spec = {"index_column": "i", "every": "3i", "closed": "left", "named_aggs": {"n": "pl.len()"}, **more}
+    return run("polars_group_by_dynamic", frame, spec)
+
+
+def polars_dynamic(frame=TIMED, every="3i", **more):
+    return frame.lazy().group_by_dynamic("i", every=every, closed="left", **more).agg(n=pl.len()).collect()
+
+
+def test_dynamic_the_index_not_sorted_fails_with_a_plain_message_and_polars_fails_too():
+    unsorted = pl.DataFrame({"i": [3, 1, 2], "x": [1, 2, 3]})
+    with pytest.raises(pl.exceptions.InvalidOperationError, match="not sorted"):
+        unsorted.lazy().group_by_dynamic("i", every="3i").agg(n=pl.len()).collect()
+    with pytest.raises(TransformationError) as caught:
+        dynamic(unsorted)
+    assert "'i' is not sorted ascending" in str(caught.value) and "polars_sort" in caught.value.tip and "maintain_order" in caught.value.tip
+
+
+def test_dynamic_the_index_not_sorted_within_a_group_fails_even_in_a_later_group():
+    unsorted_in_b = pl.DataFrame({"i": [1, 2, 5, 4], "g": ["a", "a", "b", "b"]})
+    with pytest.raises(pl.exceptions.ComputeError, match="not sorted"):
+        unsorted_in_b.lazy().group_by_dynamic("i", every="3i", group_by="g").agg(n=pl.len()).collect()
+    with pytest.raises(TransformationError, match=r"not sorted ascending within each group of \['g'\]"):
+        dynamic(unsorted_in_b, group_by=["g"])
+
+
+def test_dynamic_sorted_within_each_group_but_not_over_the_whole_table_works_with_group_by_and_fails_without():
+    frame = pl.DataFrame({"i": [9, 1, 10, 2], "g": ["z", "a", "z", "a"]})
+    assert_frame_equal(dynamic(frame, group_by=["g"]), polars_dynamic(frame, group_by=["g"]))
+    with pytest.raises(TransformationError, match="not sorted ascending"):
+        dynamic(frame)
+
+
+def test_dynamic_a_null_in_the_index_is_refused_and_polars_refuses_it_too():
+    with_null = pl.DataFrame({"i": [None, 1, 2]})
+    with pytest.raises(pl.exceptions.ComputeError, match="null values"):
+        with_null.lazy().group_by_dynamic("i", every="3i").agg(n=pl.len()).collect()
+    with pytest.raises(TransformationError, match="holds null values") as caught:
+        dynamic(with_null)
+    assert "polars_drop_nulls" in caught.value.tip
+
+
+def test_dynamic_the_types_and_the_durations_must_fit_and_say_so_plainly():
+    with pytest.raises(TransformationError, match="windows need a date, a time or a whole number"):
+        dynamic(pl.DataFrame({"i": [1.0, 2.0]}))
+    with pytest.raises(TransformationError, match="windows need a date, a time or a whole number"):
+        dynamic(pl.DataFrame({"i": ["a", "b"]}))
+    with pytest.raises(TransformationError, match="windows need"):
+        dynamic(pl.DataFrame({"i": pl.Series([1, 2], dtype=pl.Int16)}))
+    with pytest.raises(TransformationError, match="'1w' is a time duration but the index column 'i' is Int64"):
+        dynamic(every="1w")
+    with pytest.raises(TransformationError, match="'3i' counts whole numbers but the index column 'd' is Date"):
+        dynamic(index_column="d", every="3i")
+    with pytest.raises(TransformationError, match="offset '1w'"):
+        dynamic(offset="1w")
+    with pytest.raises(TransformationError, match="every 3 is not a duration text"):
+        dynamic(every=3)
+
+
+def test_dynamic_a_duration_that_is_not_a_duration_is_a_plain_message():
+    with pytest.raises(TransformationError, match="duration"):
+        dynamic(index_column="d", every="week")
+
+
+def test_dynamic_a_missing_column_is_named_in_the_index_the_groups_and_the_formulas():
+    with pytest.raises(TransformationError, match="'nope' is not in the table"):
+        dynamic(index_column="nope")
+    with pytest.raises(TransformationError, match="'nope' is not in the table"):
+        dynamic(group_by=["nope"])
+    with pytest.raises(TransformationError, match="nope"):
+        dynamic(named_aggs={"s": "pl.col('nope').sum()"})
+
+
+def test_dynamic_a_formula_goes_through_the_formula_check():
+    with pytest.raises(TransformationError, match="refused"):
+        dynamic(named_aggs={"s": "__import__('os').system('echo hacked')"})
+    with pytest.raises(TransformationError, match="refused"):
+        dynamic(named_aggs={"s": "pl.col('x').map_elements(lambda v: v)"})
+
+
+def test_dynamic_closed_is_required_and_must_be_one_of_the_four():
+    with pytest.raises(TransformationError, match="closed is required"):
+        run("polars_group_by_dynamic", TIMED, {"index_column": "i", "every": "3i", "named_aggs": {"n": "pl.len()"}})
+    with pytest.raises(TransformationError, match="left, right, both, none"):
+        dynamic(closed="middle")
+
+
+def test_dynamic_closed_changes_the_windows_so_it_cannot_be_left_to_a_default():
+    frame = pl.DataFrame({"i": [1, 2, 3]})
+    left = dynamic(frame, closed="left")["n"].to_list()
+    right = dynamic(frame, closed="right")["n"].to_list()
+    assert left == [2, 1] and right != left
+
+
+def test_dynamic_the_groups_come_in_ascending_order_nulls_last_and_the_same_on_every_run():
+    out = dynamic(group_by=["g"])
+    assert out["g"].to_list() == ["a", "a", "b", "b", None, None]
+    assert all(dynamic(group_by=["g"]).equals(out) for _ in range(8))
+    two = dynamic(TIMED.with_columns(h=pl.Series([2, 1, 1, 2, 1, 1])), group_by=["h", "g"])
+    assert two["h"].to_list() == sorted(two["h"].to_list())
+
+
+def test_dynamic_the_order_holds_on_a_larger_table_with_many_groups():
+    rng = random.Random(3)
+    size = 20000
+    rows = sorted((rng.randint(0, 100000), rng.choice("zyxwvutsrq")) for _ in range(size))
+    frame = pl.DataFrame({"i": [r[0] for r in rows], "g": [r[1] for r in rows]})
+    first = dynamic(frame, every="500i", group_by=["g"])
+    assert first["g"].to_list() == sorted(first["g"].to_list())
+    assert all(dynamic(frame, every="500i", group_by=["g"]).equals(first) for _ in range(5))
+
+
+def test_dynamic_what_a_null_and_a_nan_do_in_a_window_follows_the_formula():
+    out = dynamic(group_by=["g"], named_aggs={"s": "pl.col('x').sum()", "m": "pl.col('x').mean()", "c": "pl.col('x').count()", "n": "pl.len()"})
+    by = {(r["g"], r["i"]): r for r in out.to_dicts()}
+    assert by[("b", 0)]["s"] == 0.0 and by[("b", 0)]["m"] is None and by[("b", 0)]["c"] == 0 and by[("b", 0)]["n"] == 1   # only a null: the sum is 0
+    assert by[("a", 3)]["s"] != by[("a", 3)]["s"] and by[("a", 3)]["c"] == 1                                              # a NaN: the sum is NaN, count counts it
+    assert_frame_equal(out, TIMED.lazy().group_by_dynamic("i", every="3i", closed="left", group_by=["g"]).agg(
+        s=pl.col("x").sum(), m=pl.col("x").mean(), c=pl.col("x").count(), n=pl.len()).collect())
+
+
+def test_dynamic_an_empty_table_gives_an_empty_table():
+    empty = pl.DataFrame({"i": [], "x": []}, schema={"i": pl.Int64, "x": pl.Float64})
+    out = dynamic(empty, named_aggs={"s": "pl.col('x').sum()"})
+    assert out.height == 0 and out.columns == ["i", "s"]
+
+
+def test_dynamic_a_step_cannot_write_the_aggregations_as_a_list_or_a_key_that_is_not_a_parameter():
+    with pytest.raises(TransformationError):
+        dynamic(named_aggs=["pl.len()"])
+    with pytest.raises(TransformationError, match="maintain_order"):
+        dynamic(maintain_order=True)
