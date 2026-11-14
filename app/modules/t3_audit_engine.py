@@ -12,7 +12,7 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:_apply_filter_rows, function:filter_rows_from_nodes, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
+# provides: function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
 # consumes: polars, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
@@ -22,7 +22,7 @@ import polars as pl
 
 from utils.filter_values import coerce_filter_value
 from utils.missing_values import keep_missing
-from utils.na_choice import na_of
+from utils.na_choice import default_na, na_of
 
 
 def _op_label(op: str) -> str:
@@ -52,11 +52,13 @@ def op_choice_label(op: str) -> str:
     return f"{sym} {words}"
 
 
-def describe_filter(column: str, op: str, value, na: str | None = None) -> str:
+def describe_filter(column: str, op: str, value, na: str | None = None, closed: str | None = None) -> str:
     """One-line text of a filter row. A one-value set reads as equality ('sequence_type = 101'),
     several values read 'any of' / 'none of' (issue #57). With `na` ("keep" or "remove") the line ends with what
-    happens to the rows with no value in the column (NA-RULE-63)."""
+    happens to the rows with no value in the column (NA-RULE-63). `closed` "none" of a `between` is said, never silent."""
     text = _describe_condition(column, op, value)
+    if op == "between" and closed == "none":
+        text += ", ends not included"
     if na is None:
         return text
     return f"{text} ({na_phrase(na)})"
@@ -101,14 +103,44 @@ def filter_rows_from_nodes(nodes: list) -> list[dict]:
         p = n.get("params", {})
         if "column" not in p:
             continue
-        rows.append({
+        row = {
             "column": p.get("column"),
             "op": p.get("op", "eq"),
             "value": p.get("value"),
             "dtype": p.get("dtype", "Utf8"),
             "na": na_of(p),
-        })
+        }
+        if row["op"] == "between":
+            row["closed"] = p.get("closed", "both")
+        rows.append(row)
     return rows
+
+
+def staged_filter_row(column: str, op: str, value, dtype: str, na_tick: bool | None, closed: str = "both") -> dict:
+    """The filter row the "+ Add" button stages: the tick of the dialog is recorded, never dropped.
+
+    `na_tick` True keeps the rows with no value, False removes them; None (the tick is not mounted) is the default of
+    the operator. `closed` is written for `between` only.
+    """
+    keep = default_na(op) == "keep" if na_tick is None else bool(na_tick)
+    row = {"column": column, "op": op, "value": value, "dtype": dtype, "na": "keep" if keep else "remove"}
+    if op == "between":
+        row["closed"] = closed
+    return row
+
+
+def audit_params_from_row(frow: dict) -> dict:
+    """The params of the audit step built from a staged row on "Send to Audit": everything the user chose.
+
+    `na` (keep or remove the rows with no value) and, for `between`, `closed` are carried exactly as chosen. A row of an
+    older state without `na` is "remove".
+    """
+    params = {"column": frow.get("column", ""), "op": frow.get("op", "eq"), "value": frow.get("value", ""), "na": na_of(frow)}
+    if frow.get("dtype"):
+        params["dtype"] = frow["dtype"]
+    if params["op"] == "between":
+        params["closed"] = frow.get("closed", "both")
+    return params
 
 
 def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":

@@ -48,6 +48,7 @@ from utils.pipeline_error import capture_entry
 from viz_factory.plot_config_resolver import layers_have_jitter, recipe_pins_random_state
 
 from app.modules.t3_audit_engine import _apply_filter_rows, filter_rows_from_nodes
+from utils.na_choice import na_of, no_value_text
 from app.modules.sidebar_registry import is_panel_active
 from app.handlers.session_handlers import define_session_server
 from app.handlers.export_handlers import define_export_server
@@ -2054,7 +2055,7 @@ def define_server(input, output, session, *,
             return ui.div()
 
         _OP = {"eq": "=", "ne": "≠", "gt": ">", "ge": "≥",
-               "lt": "<", "le": "≤", "in": "∈", "not_in": "∉"}
+               "lt": "<", "le": "≤", "in": "∈", "not_in": "∉", "between": "↔"}
 
         def _fmt_val(v) -> str:
             if isinstance(v, (list, tuple)):
@@ -2092,11 +2093,11 @@ def define_server(input, output, session, *,
             val = _fmt_val(f.get("value", ""))
             rows.append(ui.tooltip(
                 ui.div(
-                    ui.span(f"🔍 {col} {op} {val}", style=_MONO),
+                    ui.span(f"🔍 {col} {op} {val} · {no_value_text(na_of(f))}", style=_MONO),
                     ui.span("sidebar", style=_BADGE_SB),
                     style=_ROW,
                 ),
-                f"Source: sidebar | {col} {f.get('op')} {f.get('value')}",
+                f"Source: sidebar | {col} {f.get('op')} {f.get('value')} | {no_value_text(na_of(f))}",
                 placement="left",
             ))
         for n in t3_nodes:
@@ -2110,11 +2111,11 @@ def define_server(input, output, session, *,
             reason = (n.get("reason") or "").strip() or "no reason yet"
             rows.append(ui.tooltip(
                 ui.div(
-                    ui.span(f"{pk_pfx}{icon} {col} {op} {val}", style=_MONO),
+                    ui.span(f"{pk_pfx}{icon} {col} {op} {val} · {no_value_text(na_of(p))}", style=_MONO),
                     ui.span("T3", style=_BADGE_T3),
                     style=_ROW,
                 ),
-                f"T3 audit | Reason: {reason}",
+                f"T3 audit | {no_value_text(na_of(p))} | Reason: {reason}",
                 placement="left",
             ))
 

@@ -42,14 +42,11 @@ def expected(rows_kept, na):
     return sorted(rows_kept + ["d"]) if na == "keep" else rows_kept
 
 
-# `between` has no translation in the export (t3_translator), so the export column is checked for the other operators.
 @pytest.mark.parametrize("na", ["keep", "remove"])
 @pytest.mark.parametrize("op, value, kept", RULE)
 def test_home_plot_and_export_give_the_same_rows_for_keep_and_remove(op, value, kept, na):
     row = {"column": "x", "op": op, "value": value, "na": na}
-    got = {"home": by_home(_num(), row), "plot": by_plot(_num(), row)}
-    if op != "between":
-        got["export"] = by_export(_num(), row)
+    got = {"home": by_home(_num(), row), "plot": by_plot(_num(), row), "export": by_export(_num(), row)}
     assert set(map(tuple, got.values())) == {tuple(expected(kept, na))}, got
 
 
@@ -182,7 +179,7 @@ def test_normalising_twice_changes_nothing_and_leaves_a_keep_alone():
 def test_the_dialog_gives_the_counts_of_missing_values_and_nan_separately():
     counts = count_missing(_num(), "x")
     lines = dialog_missing_lines("x", "eq", "remove", counts)
-    assert lines == ["1 row has no value in x: it is removed", "1 row has a failed calculation (NaN): not changed by this choice"]
+    assert lines == ["1 row has no value in x: it is removed", "1 row has a failed calculation: this choice does not change it."]
     assert dialog_missing_lines("x", "eq", "keep", counts)[0] == "1 row has no value in x: it is kept"
 
 
@@ -195,8 +192,10 @@ def test_the_dialog_warns_for_not_equal_and_none_of_on_a_column_with_missing_val
     counts = count_missing(_num(), "x")
     for op in ("ne", "not_in"):
         lines = dialog_missing_lines("x", op, "remove", counts)
-        assert any("Polars" in line for line in lines)
-    assert not any("Polars" in line for line in dialog_missing_lines("x", "gt", "remove", counts))
+        assert any("Tick the box above to keep them" in line for line in lines)
+        keep = dialog_missing_lines("x", op, "keep", counts)
+        assert any("kept because the box is ticked" in line for line in keep)
+    assert not any("box" in line for line in dialog_missing_lines("x", "gt", "remove", counts))
 
 
 # ── what the user reads: the staged row, the audit card and the report ──────────────────────
@@ -266,3 +265,138 @@ def test_the_table_in_home_and_the_rerun_of_the_exported_recipe_give_the_rows_wr
     keys = world.orch.compute_data_analysis_recipe_keys("tiny")
     rerun = world.orch.materialize_tier2("tiny", "C", world.anchor, keys=keys).collect()
     assert sorted(rerun["sample_id"].to_list()) == want
+
+
+# ── review fixes (part 2b): audited_frame, the staged row, the audit params, the session, `between` ─────────
+
+from app.handlers.export_handlers import audited_frame  # noqa: E402
+from app.modules.t3_audit_engine import audit_params_from_row, staged_filter_row  # noqa: E402
+
+
+@pytest.mark.parametrize("na, kept", [("keep", ["a", "c", "d", "e"]), ("remove", ["a", "c", "e"])])
+def test_the_results_bundle_frame_applies_na_keep_and_remove(na, kept):
+    rows = [{"column": "x", "op": "ne", "value": 2.0, "na": na}]
+    assert audited_frame(_num(), rows, []).collect()["s"].to_list() == kept
+
+
+def test_the_results_bundle_frame_removes_the_dropped_column_after_a_keep_filter():
+    rows = [{"column": "x", "op": "ne", "value": 2.0, "na": "keep"}]
+    out = audited_frame(_num(), rows, ["x"]).collect()
+    assert out.columns == ["s"] and out["s"].to_list() == ["a", "c", "d", "e"]
+
+
+# The staged row: what the dialog writes when "+ Add" is pressed
+@pytest.mark.parametrize("op, tick, na", [
+    ("eq", True, "keep"), ("eq", False, "remove"), ("ne", True, "keep"), ("ne", False, "remove"),
+    ("not_in", False, "remove"), ("gt", True, "keep"),
+])
+def test_the_staged_row_records_the_tick_whatever_the_default_of_the_operator(op, tick, na):
+    assert staged_filter_row("x", op, 2.0, "Float64", tick)["na"] == na
+
+
+def test_the_staged_row_without_a_tick_uses_the_default_of_the_operator():
+    assert staged_filter_row("x", "ne", 2.0, "Float64", None)["na"] == "keep"
+    assert staged_filter_row("x", "eq", 2.0, "Float64", None)["na"] == "remove"
+
+
+def test_the_staged_row_of_between_carries_closed_and_the_others_do_not():
+    assert staged_filter_row("x", "between", [1.0, 3.0], "Float64", False, closed="none")["closed"] == "none"
+    assert staged_filter_row("x", "between", [1.0, 3.0], "Float64", False)["closed"] == "both"
+    assert "closed" not in staged_filter_row("x", "eq", 2.0, "Float64", False, closed="none")
+
+
+# "Send to Audit": the params of the audit step built from a staged row
+@pytest.mark.parametrize("na", ["keep", "remove"])
+def test_the_audit_params_carry_the_tick_of_the_staged_row(na):
+    row = staged_filter_row("x", "ne", 2.0, "Float64", na == "keep")
+    assert audit_params_from_row(row)["na"] == na
+    node = make_audit_step("filter_row", audit_params_from_row(row), plot_scope="p")
+    assert node["params"]["na"] == na
+
+
+def test_the_audit_params_carry_closed_exactly_as_chosen_for_between():
+    for closed in ("both", "none"):
+        row = staged_filter_row("x", "between", [1.0, 3.0], "Float64", False, closed=closed)
+        assert audit_params_from_row(row)["closed"] == closed
+    assert "closed" not in audit_params_from_row(staged_filter_row("x", "eq", 2.0, "Float64", False))
+
+
+def test_a_staged_row_of_an_old_state_without_na_gives_remove_in_the_audit_params():
+    assert audit_params_from_row({"column": "x", "op": "eq", "value": 1})["na"] == "remove"
+
+
+# Session: a KEEP step survives the save, the list and the restore
+def test_a_keep_step_survives_save_list_and_restore(tmp_path):
+    sm = SessionManager(tmp_path)
+    keep = make_audit_step("filter_row", {"column": "x", "op": "ne", "value": 2.0, "na": "keep"}, plot_scope="subtab_p")
+    path = sm.write_t3_ghost("k:k", "r", "a", "b", "T3", t3_audit_steps_by_plot={"subtab_p": [keep]})
+    saved = json.loads(path.read_text())
+    assert saved["t3_audit_steps_by_plot"]["subtab_p"][0]["params"]["na"] == "keep"
+    assert saved["t3_audit_steps"][0]["params"]["na"] == "keep"
+    (ghost,) = sm.list_t3_ghosts("k:k")
+    restored = normalise_audit_steps(ghost["t3_audit_steps_by_plot"])
+    assert restored["subtab_p"][0]["params"]["na"] == "keep"
+    (row,) = filter_rows_from_nodes(restored["subtab_p"])
+    assert by_home(_num(), row) == ["a", "c", "d", "e"]
+
+
+def test_a_between_step_keeps_closed_through_save_and_restore(tmp_path):
+    sm = SessionManager(tmp_path)
+    node = make_audit_step("filter_row", {"column": "x", "op": "between", "value": [1.0, 3.0], "closed": "none", "na": "keep"},
+                           plot_scope="subtab_p")
+    sm.write_t3_ghost("k:k", "r", "a", "b", "T3", t3_audit_steps_by_plot={"subtab_p": [node]})
+    (ghost,) = sm.list_t3_ghosts("k:k")
+    (row,) = filter_rows_from_nodes(normalise_audit_steps(ghost["t3_audit_steps_by_plot"])["subtab_p"])
+    assert row["closed"] == "none" and row["na"] == "keep"
+
+
+# `between`: translated to a modif_filter step with its bounds, closed and na (Eve, 2026-11-14)
+def test_between_is_translated_with_its_bounds_closed_and_na():
+    node = {"node_type": "filter_row", "params": {"column": "x", "op": "between", "value": [1.0, 3.0], "closed": "none", "na": "keep"}}
+    assert translate_t3_node(node) == [
+        {"action": "modif_filter", "column": "x", "op": "between", "value": [1.0, 3.0], "closed": "none", "na": "keep"}]
+
+
+def test_between_without_closed_is_closed_on_both_ends_and_an_old_step_removes():
+    (step,) = translate_t3_node({"node_type": "filter_row", "params": {"column": "x", "op": "between", "value": [1.0, 3.0]}})
+    assert step["closed"] == "both" and step["na"] == "remove"
+
+
+@pytest.mark.parametrize("value", [[1.0], [1.0, 2.0, 3.0], 5.0, None])
+def test_between_without_a_pair_is_refused_not_guessed(value):
+    with pytest.raises(UntranslatableNode, match="between"):
+        translate_t3_node({"node_type": "filter_row", "params": {"column": "x", "op": "between", "value": value}})
+
+
+def test_a_step_that_is_not_between_carries_no_closed():
+    (step,) = translate_t3_node({"node_type": "filter_row", "params": {"column": "x", "op": "eq", "value": 1, "closed": "none"}})
+    assert "closed" not in step
+
+
+# Four-way on `between`: the table, the plot, the results bundle and the re-run of the export, from the audit step
+BETWEEN = {"both": ["a", "b", "c", "f"], "none": ["b", "f"]}   # x = [1, 2, 3, null, NaN, 2], bounds [1, 3]
+
+
+@pytest.mark.parametrize("na", ["keep", "remove"])
+@pytest.mark.parametrize("closed", ["both", "none"])
+def test_between_gives_the_same_rows_in_the_table_the_plot_the_bundle_and_the_export(closed, na):
+    staged = staged_filter_row("x", "between", [1.0, 3.0], "Float64", na == "keep", closed=closed)
+    node = make_audit_step("filter_row", audit_params_from_row(staged), plot_scope="subtab_p")
+    (row,) = filter_rows_from_nodes([node])
+    want = expected(BETWEEN[closed], na)
+    got = {"home": by_home(_num(), row), "plot": by_plot(_num(), row),
+           "bundle": audited_frame(_num(), [row], []).collect()["s"].to_list(), "export": by_export(_num(), node["params"])}
+    assert {k: sorted(v) for k, v in got.items()} == {k: sorted(want) for k in got}, got
+
+
+def test_the_staged_line_of_between_says_when_the_ends_are_not_included():
+    from app.modules.t3_audit_engine import describe_filter
+    assert describe_filter("x", "between", [1, 3], "remove", "none") == "x between 1 and 3, ends not included (rows with no value removed)"
+    assert describe_filter("x", "between", [1, 3], "remove", "both") == "x between 1 and 3 (rows with no value removed)"
+
+
+def test_a_filter_listed_in_the_inventory_says_what_happens_to_the_rows_with_no_value():
+    from utils.na_choice import no_value_text
+    assert no_value_text("keep") == "no value: kept" and no_value_text("remove") == "no value: removed"
+    with pytest.raises(ValueError):
+        no_value_text("maybe")

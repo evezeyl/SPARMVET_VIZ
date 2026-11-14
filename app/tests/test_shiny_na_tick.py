@@ -52,7 +52,7 @@ def test_the_tick_is_preselected_by_operator_and_flipping_it_changes_the_rows(pa
     _wait_shiny(page)
     expect(page.locator("#fb_na")).to_be_checked(timeout=5_000)
     expect(page.locator("#filter_na_text_ui")).to_contain_text("6 rows have no value in year: they are kept")
-    expect(page.locator("#filter_na_text_ui")).to_contain_text("Polars")          # the warning for != on a column with missing values
+    expect(page.locator("#filter_na_text_ui")).to_contain_text("kept because the box is ticked")   # the warning for != on a column with missing values
     page.locator("#fb_op").select_option("eq")
     _wait_shiny(page)
     expect(page.locator("#fb_na")).not_to_be_checked(timeout=5_000)

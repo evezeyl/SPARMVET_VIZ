@@ -22,12 +22,18 @@ from __future__ import annotations
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
 
+import logging
+
 from shiny import reactive, render, ui
 
 from app.src.bootloader import bootloader
-from app.modules.t3_audit_engine import describe_filter, op_choice_label, OP_WORDS
-from utils.missing_values import count_missing, dialog_missing_lines, na_choice_texts
+from app.modules.t3_audit_engine import (
+    describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
+)
+from utils.missing_values import dialog_lines, na_choice_texts
 from utils.na_choice import default_na, na_of
+
+_log = logging.getLogger(__name__)
 
 
 def define_filter_audit_server(input, output, session, *,
@@ -133,7 +139,7 @@ def define_filter_audit_server(input, output, session, *,
             rows.append(ui.div(
                 ui.div(
                     ui.tags.small(
-                        describe_filter(col, op, val, na_of(f)),
+                        describe_filter(col, op, val, na_of(f), f.get("closed")),
                         class_="text-dark spv-filter-text",
                     ),
                     ui.tags.small(f" [{dtype_str}]", class_="text-muted spv-text-micro"),
@@ -293,6 +299,7 @@ def define_filter_audit_server(input, output, session, *,
         try:
             return _resolve_active_lf(_resolve_active_spec(p_id))
         except Exception:
+            _log.exception("filter dialog: the table the filter acts on could not be built")
             return None
 
     @output
@@ -319,16 +326,12 @@ def define_filter_audit_server(input, output, session, *,
         col = safe_input(input, "fb_col", None)
         op = safe_input(input, "fb_op", "eq")
         na = "keep" if safe_input(input, "fb_na", default_na(op) == "keep") else "remove"
-        lf = _active_frame()
-        if not col or lf is None:
+        if not col:
             return ui.div()
-        try:
-            lines = dialog_missing_lines(col, op, na, count_missing(lf, col))
-        except Exception:
-            return ui.div()
+        text = dialog_lines(_active_frame(), col, op, na)
         return ui.div(
-            *[ui.tags.small(line, class_="d-block spv-text-meta " + ("text-warning" if "Polars" in line else "text-muted"))
-              for line in lines],
+            *[ui.tags.small(line, class_="d-block spv-text-meta " + ("text-warning" if line == text.warning else "text-muted"))
+              for line in text.lines],
             class_="px-1 mb-1",
         )
 
@@ -465,11 +468,9 @@ def define_filter_audit_server(input, output, session, *,
         else:
             return  # empty/None — don't add
 
-        # NA-RULE-63: the tick of the dialog, never absent from a row (the default of the operator when it is not mounted)
-        na = "keep" if safe_input(input, "fb_na", default_na(op) == "keep") else "remove"
-        new_row = {"column": col, "op": op, "value": value, "dtype": dtype_str, "na": na}
-        if op == "between":
-            new_row["closed"] = bt_closed  # 'both' (default) or 'none'
+        # NA-RULE-63: the tick of the dialog, never absent from a row (None: not mounted, the default of the operator)
+        na_tick = safe_input(input, "fb_na", None)
+        new_row = staged_filter_row(col, op, value, dtype_str, na_tick, closed=bt_closed)
         current = list(_pending_filters.get())
         current.append(new_row)
         _pending_filters.set(current)
@@ -528,11 +529,7 @@ def define_filter_audit_server(input, output, session, *,
         scratch_nodes: list[dict] = []
         for frow in rows:
             col = frow.get("column", "")
-            op = frow.get("op", "eq")
-            val = frow.get("value", "")
-            params = {"column": col, "op": op, "value": val, "na": na_of(frow)}
-            if frow.get("dtype"):
-                params["dtype"] = frow.get("dtype")
+            params = audit_params_from_row(frow)
 
             is_pk = col in primary_keys
             # AUDIT-1 (ADR-049 amendment, 2026-04-30): filtering on a PK
