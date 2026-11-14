@@ -56,19 +56,16 @@ def with_missing():
     return pl.LazyFrame({"g": ["A", None, "B"], "s": ["a", "b", "c"]})
 
 
-# ── #62: integer column, non-integer threshold ────────────────────────────────
+# ── #62: integer column, non-integer threshold (fixed, HOME-EXPLORE-1; shared code in utils.filter_values) ──
 
-@pytest.mark.xfail(strict=True, reason="#62 the engine truncates 90.5 to 90: >= keeps 90 as well")
 def test_ge_a_non_integer_threshold_keeps_only_the_larger_integers(ints):
     assert ids(ints, [{"column": "x", "op": "ge", "value": "90.5"}]) == ["c"]
 
 
-@pytest.mark.xfail(strict=True, reason="#62 the engine truncates 90.5 to 90: < keeps 89 only")
 def test_lt_a_non_integer_threshold_keeps_the_smaller_integers(ints):
     assert ids(ints, [{"column": "x", "op": "lt", "value": "90.5"}]) == ["a", "b"]
 
 
-@pytest.mark.xfail(strict=True, reason="#62 the engine truncates 90.5 to 90: == keeps 90")
 def test_eq_a_non_integer_threshold_matches_nothing(ints):
     assert ids(ints, [{"column": "x", "op": "eq", "value": "90.5"}]) == []
 
@@ -82,7 +79,6 @@ def test_the_registered_actions_already_compare_integers_to_a_non_integer_thresh
     assert rows(action_filter_eq, {"columns": ["x"], "value": 90.5}) == []
 
 
-@pytest.mark.xfail(strict=True, reason="#62 the figure (engine) and the reproducibility bundle (actions) disagree")
 @pytest.mark.parametrize("op, action, spec", [
     ("ge", action_filter_range, {"min": 90.5}),
     ("lt", action_filter_lt, {"value": 90.5}),
@@ -101,7 +97,6 @@ def test_gt_agrees_by_coincidence_for_a_positive_threshold(ints):
     assert by_engine == by_action == ["c"]
 
 
-@pytest.mark.xfail(strict=True, reason="#62 truncation toward zero: > -0.5 reads > 0 and loses the 0")
 def test_gt_a_negative_non_integer_threshold_keeps_zero():
     lf = pl.LazyFrame({"x": [-1, 0, 1], "s": ["a", "b", "c"]})
     assert ids(lf, [{"column": "x", "op": "gt", "value": "-0.5"}]) == ["b", "c"]
