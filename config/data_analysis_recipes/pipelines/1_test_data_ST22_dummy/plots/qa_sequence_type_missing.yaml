@@ -1,9 +1,5 @@
 target_dataset: QA_ST_with_NA
 title: "QA: samples per sequence type"
-family: Ranking
-pattern: 1 Categorical
-difficulty: Simple
-description: Canary for missing values. The 2 samples without a sequence type must be visible as missing, not dropped and not filled.
 mapping:
   x: ST
 layers:

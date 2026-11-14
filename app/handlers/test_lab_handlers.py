@@ -1,6 +1,6 @@
 # @deps
 # provides: function:define_server (test_lab_handlers)
-# consumes: app/modules/test_lab_studio.py, shiny, libs/test_lab/reformatter.py, libs/test_lab/aqua_synthesizer.py, libs/test_lab/anonymiser.py, libs/test_lab/scaffolder.py, libs/id_reconciliation/
+# consumes: app/modules/test_lab_studio.py (scaffold_from_uploads), shiny, libs/test_lab/reformatter.py, libs/test_lab/aqua_synthesizer.py, libs/test_lab/anonymiser.py, libs/id_reconciliation/
 # consumed_by: app/src/server.py
 # doc: .claude/rules/rules_test_lab.md §6, .claude/design/spaces/TEST_LAB.md
 # @end_deps
@@ -389,18 +389,18 @@ def define_server(
         infos = _scaffold_file_infos()
         if not infos:
             return ui.p("Upload files above to select target dataset.", class_="text-muted small")
-        stems = [Path(fi["name"]).stem for fi in infos]
+        names = [fi["name"] for fi in infos]
         return ui.input_select(
             "tl_scaffold_recon_dataset",
-            "Apply id transformation steps to dataset",
-            choices={s: s for s in stems},
-            selected=stems[0],
+            "Write the ID cleaning steps into the recipe of this file (the reference file of the reconciliation)",
+            choices={n: n for n in names},
+            selected=names[0],
         )
 
     @reactive.Calc
     @reactive.event(input.tl_scaffold_run)
     def _scaffold_result():
-        from test_lab.scaffolder import DataAnalysisRecipeScaffolder
+        from app.modules.test_lab_studio import scaffold_from_uploads
 
         try:
             data_analysis_recipe_id = (input.tl_scaffold_data_analysis_recipe_id() or "").strip()
@@ -413,19 +413,16 @@ def define_server(
         if not infos:
             return {"error": "Upload at least one data file before scaffolding."}
 
-        tsv_paths = [Path(fi["datapath"]) for fi in infos]
-
         meta_info = _scaffold_meta_info()
-        meta_path = Path(meta_info["datapath"]) if meta_info else None
 
         try:
             join_key = (input.tl_scaffold_join_key() or "sample_id").strip()
         except Exception:
             join_key = "sample_id"
 
-        # Build id transformations dict from reconciliation result if requested
-        id_transformations = None
-        with_recon_dataset = None
+        # The ID transformation of the reconciliation above, and the uploaded file that takes its steps, if requested
+        id_transformation = None
+        id_file_name = None
         try:
             use_recon = bool(input.tl_scaffold_use_recon())
         except Exception:
@@ -445,29 +442,33 @@ def define_server(
                 except Exception:
                     ref_col = join_key
                     target_col = join_key
-                try:
-                    dataset_key = input.tl_scaffold_recon_dataset()
-                except Exception:
-                    dataset_key = Path(infos[0]["name"]).stem
                 filtered = [r for r in results if r.certainty >= threshold]
                 if filtered:
+                    try:
+                        id_file_name = input.tl_scaffold_recon_dataset()
+                    except Exception:
+                        id_file_name = infos[0]["name"]
                     engine = IDReconciliationEngine()
                     id_transformation = engine.generate_transformation(filtered, ref_col, target_col)
-                    id_transformations = {dataset_key: id_transformation.steps}
-                    with_recon_dataset = dataset_key
 
-        scaffolder = DataAnalysisRecipeScaffolder(join_key=join_key)
-        zip_bytes = scaffolder.scaffold(
-            tsv_paths, data_analysis_recipe_id,
-            id_transformations=id_transformations,
-            metadata_path=meta_path,
-        )
+        # The steps reach the recipe as format 1 steps (scaffold_from_uploads); a file that cannot take them is an
+        # error shown to the user, never a recipe without the steps.
+        try:
+            zip_bytes = scaffold_from_uploads(
+                infos, data_analysis_recipe_id, join_key,
+                meta_info=meta_info,
+                id_transformation=id_transformation,
+                id_file_name=id_file_name,
+            )
+        except ValueError as error:
+            return {"error": str(error)}
         return {
             "zip_bytes": zip_bytes,
             "data_analysis_recipe_id": data_analysis_recipe_id,
-            "n_files": len(tsv_paths),
-            "with_meta": meta_path is not None,
-            "with_recon_dataset": with_recon_dataset,
+            "n_files": len(infos),
+            "with_meta": meta_info is not None,
+            "id_steps_file": id_file_name,
+            "n_id_steps": len(id_transformation.steps) if id_transformation is not None else 0,
         }
 
     @output
@@ -486,10 +487,12 @@ def define_server(
         n = result["n_files"]
         pid = result["data_analysis_recipe_id"]
         meta_note = " + metadata schema stub" if result["with_meta"] else ""
-        recon_note = (
-            f" ID Reconciliation steps baked into '{result['with_recon_dataset']}'."
-            if result["with_recon_dataset"] else ""
-        )
+        if result["id_steps_file"] is None:
+            recon_note = ""
+        elif result["n_id_steps"]:
+            recon_note = f" {result['n_id_steps']} ID cleaning step(s) written into the recipe of '{result['id_steps_file']}'."
+        else:
+            recon_note = " The ID reconciliation gave no cleaning step, so none was written."
         return ui.p(
             f"Scaffolded '{pid}' — {n} data schema(s){meta_note}.{recon_note} "
             "Download the ZIP and open in BLUEPRINT to continue.",

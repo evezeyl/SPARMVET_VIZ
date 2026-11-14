@@ -34,6 +34,16 @@ For every task discussed or created, recommend the appropriate model and thinkin
 
 Apply this to existing tasks in `.claude/tasks/tasks.md` when reviewing them. New tasks must always carry a tag.
 
+### 2.1 Dispatching agents (Eve, 2026-11-14)
+
+When one session coordinates other agents (subagents started with the Agent tool):
+
+- **Only the coordinator may be a Fable model, and only one Fable agent runs at a time.** A dispatched agent is never Fable. Reason: three Fable workers used the whole session quota in one batch, the work stopped until the quota came back, and the coordinator was blocked too.
+- **A dispatched agent runs on the model and effort of its task tag** (the table above; `haiku` or `sonnet` for almost everything). An `opus` worker only when the tag says `opus`, and then one at a time.
+- **At most 3 agents at once** (5 only for read-only work), each in its own git worktree and branch, on files no other agent edits. The coordinator reviews every diff, merges one branch at a time and runs the full test suite after each merge.
+- **An agent only implements what is decided.** A choice that is open goes back to Eve with the options; the agents never decide.
+- A stopped agent is continued by a new agent of the right model **in the same worktree**, so that no work is lost.
+
 ---
 
 ## 3. Path Initiation

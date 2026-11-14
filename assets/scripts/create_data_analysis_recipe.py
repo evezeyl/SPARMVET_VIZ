@@ -1,297 +1,247 @@
 #!/usr/bin/env python3
+"""Scaffold a data analysis recipe in recipe format 1 from tab-separated data files.
+
+For every data file the script reads the header and the values, and writes:
+  - one recipe file `<out_file>` (its id is the file name without `.yaml`);
+  - next to it, in a folder with the same name, two included files per table:
+    `<table>_fields.yaml` (one entry per column: its Polars type, a label, the name in the file when it differs)
+    and `<table>_wrangling.yaml` (the empty step lists, to fill).
+The recipe has one plot (a bar chart of the first column of the first table), so it can be opened at once; the
+author then writes the steps, the joins and the plots.
+
+What the script decides, so that it can be checked:
+  - the type of a column is the type Polars reads from the whole file (Int64, Float64, Boolean, String, ...);
+    review it: a column of codes such as 007 is read as a number;
+  - no text is declared as "missing" (`null_values: []`) and no whitespace is stripped (`strip: false`):
+    the author states what means missing in each file;
+  - a column named by --primary_key_data is marked `is_entity_key: true`; a table without such a column is written
+    without a key, and the script says so.
+
+What it refuses, with a message, before anything is written: a file that is not tab-separated (.tsv), a file outside
+the project (the folder the script is run from: a recipe names its data by a path relative to the project root), two
+files that give the same table id, and a recipe file or an included file that already exists.
+
+The recipe is judged by the recipe checker (`utils.recipe_check`) before it is written.
+
+Examples (from the project root):
+  ./.venv/bin/python assets/scripts/create_data_analysis_recipe.py \\
+      --data_dir assets/test_data/my_data --primary_key_data sample_id \\
+      --out_file config/data_analysis_recipes/pipelines/my_recipe.yaml
+  ./.venv/bin/python assets/scripts/create_data_analysis_recipe.py \\
+      --data_files assets/test_data/a.tsv assets/test_data/b.tsv --metadata_file assets/test_data/meta.tsv \\
+      --primary_key_data sample_id --primary_key_metadata sample_id --out_file tmpAI/scaffold/my_recipe.yaml
+
 # @deps
 # provides: script:create_data_analysis_recipe
-# consumes: assets/test_data/ (TSV/CSV source files), assets/template_data_analysis_recipes/ (writes scaffolded YAML)
-# doc: .claude/knowledge/architecture_decisions.md#ADR-041, docs/reference/wrangling_guide.qmd
+# consumes: libs/utils/src/utils/recipe_factory.py (minimal_recipe, minimal_schema, minimal_plot, Include, write_recipe, write_fragment), libs/utils/src/utils/recipe_check.py (check_recipe), libs/utils/src/utils/polars_types.py (text_dtype_names)
+# consumed_by: app/tests/test_writers_emit_format_one.py
+# doc: .claude/design/recipe_format_spec.md (sections 4, 7), .claude/rules/rules_asset_scripts.md, docs/appendix/running_helper_scripts.qmd
 # @end_deps
+"""
 import argparse
-import polars as pl
-import yaml
 import re
-from pathlib import Path
-from datetime import datetime
 import sys
-from typing import Any
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional, Sequence, Tuple
+
+import polars as pl
+
+from utils.polars_types import text_dtype_names
+from utils.recipe_check import check_recipe
+from utils.recipe_factory import Include, minimal_plot, minimal_recipe, minimal_schema, write_fragment, write_recipe
+
+METADATA_ID = "metadata_schema"
+WRANGLING_COMMENT = ("The steps of this table, in order (recipe format 1).\n"
+                     "tier1: applied when the table is read. tier2 is optional.")
 
 
-def represent_include(dumper, data):
-    """Custom YAML representer to output !include tags cleanly without quotes."""
-    return dumper.represent_scalar('!include', data.path, style='')
-
-
-class IncludeRef:
-    """Wrapper class to hold the !include path."""
-
-    def __init__(self, path):
-        self.path = path
-
-
-yaml.add_representer(IncludeRef, represent_include)
-
-
-def map_dtype_to_schema(dtype):
-    """Maps a Polars dtype to the dashboard schema definitions."""
-    if dtype in [pl.Int8, pl.Int16, pl.Int32, pl.Int64,
-                 pl.Float32, pl.Float64, pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64]:
-        return "numeric"
-    elif dtype in [pl.Date, pl.Datetime, pl.Time]:
-        return "date"
-    elif dtype in [pl.Boolean]:
-        return "boolean"
-    else:
-        # For String/Utf8, Categorical, Object, etc.
-        return "categorical"
+class Refused(Exception):
+    """The script cannot write a valid recipe from what it was given; the message says why and what to do."""
 
 
 def clean_column_name(col_name: str) -> str:
-    """Sanitizes a messy TSV column header into a safe, snake_case YAML dictionary key."""
+    """A column header as a plain lowercase name with underscores (the key of the field in the recipe)."""
     s = str(col_name).lower()
-    # Replace slashes, dots, colons, spaces, hyphens with underscores
     s = re.sub(r'[/.:\s\-]+', '_', s)
-    # Remove all other special characters
     s = re.sub(r'[^\w_]', '', s)
-    # Deduplicate underscores and strip
     s = re.sub(r'_+', '_', s)
     return s.strip('_')
 
 
-def scaffold_schema(df, primary_key=None, is_metadata=False):
-    """Generates the schema dictionary from a dataframe."""
-    schema = {}
-
-    # If it's the metadata section, the top level might be required_id_column or similar,
-    # but the instructions say they are listed under metadata_schema.
-    # However, based on the implementation plan, metadata_schema looks like:
-    # metadata_schema:
-    #   isolate_id: { type: "character", label: "Isolate ID", is_primary_key: true }
-    #   ...
-
-    for col in df.columns:
-        col_type = map_dtype_to_schema(df[col].dtype)
-        safe_key = clean_column_name(col)
-
-        # Build field dict
-        field_dict: dict[str, Any] = {
-            # Keep a record of the raw TSV column name
-            "original_name": str(col),
-            "type": col_type,
-            "label": str(col).replace('_', ' ').title()
-        }
-
-        if col == primary_key:
-            field_dict["is_primary_key"] = True
-
-        if col_type == "date":
-            field_dict["format"] = "%Y-%m-%d"  # Default guess
-
-        if is_metadata and col != primary_key:
-            field_dict["mandatory"] = False
-
-        schema[safe_key] = field_dict
-
-    return schema
+def table_id_of(path: Path) -> str:
+    """The id of a table from its file name: without a leading `test_data_` and a trailing `_YYYYMMDD_HHMMSS`."""
+    name = re.sub(r'^test_data_', '', path.stem)
+    return re.sub(r'_\d{8}_\d{6}$', '', name)
 
 
-def main():
+def project_path(path: Path) -> str:
+    """The path of a data file relative to the project root (the folder the script is run from)."""
+    try:
+        return path.resolve().relative_to(Path.cwd().resolve()).as_posix()
+    except ValueError:
+        raise Refused(f"{path} is not inside the project ({Path.cwd()}). A recipe names its data by a path relative to "
+                      "the project root: copy the file inside the project and run the script from the project root.")
+
+
+def read_table(path: Path) -> pl.DataFrame:
+    """The whole file, read as Polars reads a tab-separated file; the types fit every row."""
+    if path.suffix.lower() != ".tsv":
+        raise Refused(f"{path} is not a tab-separated file (.tsv). The recipe format reads tab-separated files and "
+                      "parquet files: save the table as tab-separated text first.")
+    if not path.is_file():
+        raise Refused(f"{path} was not found. Check --data_dir, --data_files and --metadata_file.")
+    try:
+        return pl.read_csv(path, separator="\t", infer_schema_length=None)
+    except Exception as error:
+        raise Refused(f"{path} cannot be read as a tab-separated table ({' '.join(str(error).split())[:200]}).")
+
+
+def fields_of(table: pl.DataFrame, key_columns: Sequence[str], path: Path) -> Tuple[Dict[str, dict], Optional[str]]:
+    """One field per column, and the column that is the key (the first of `key_columns` found), or None."""
+    key = next((name for name in key_columns if name in table.columns), None)
+    allowed = text_dtype_names()
+    fields: Dict[str, dict] = {}
+    for column in table.columns:
+        slug = clean_column_name(column)
+        type_name = table.schema[column].base_type().__name__
+        if not slug:
+            raise Refused(f"{path}: the column header {column!r} has no letter or digit, so it cannot be a field name.")
+        if slug in fields:
+            raise Refused(f"{path}: the column headers {fields[slug].get('original_name', slug)!r} and {column!r} "
+                          f"both give the field name {slug!r}. Rename one of them in the file.")
+        if type_name not in allowed:
+            raise Refused(f"{path}: the column {column!r} was read as {type_name}, which is not a type a recipe can declare.")
+        field: Dict[str, object] = {"type": type_name}
+        if slug != column:
+            field["original_name"] = str(column)
+        field["label"] = str(column).replace('_', ' ').title()
+        if column == key:
+            field["is_entity_key"] = True
+        fields[slug] = field
+    return fields, key
+
+
+def data_files_of(data_dir: Optional[str], data_files: Optional[Sequence[str]]) -> List[Path]:
+    """The data files asked for, in a fixed order; says which files of --data_dir are not read."""
+    if data_dir:
+        folder = Path(data_dir)
+        if not folder.is_dir():
+            raise Refused(f"--data_dir {data_dir} was not found or is not a folder.")
+        if data_files:
+            return [folder / name for name in data_files]
+        skipped = sorted(p.name for p in folder.iterdir() if p.is_file() and p.suffix.lower() != ".tsv")
+        if skipped:
+            print("Not read (the recipe format reads tab-separated .tsv files): " + ", ".join(skipped))
+        return sorted(folder.glob("*.tsv"))
+    return [Path(name) for name in data_files or []]
+
+
+def build(recipe_id: str, data_files: Sequence[Path], key_columns: Sequence[str],
+          metadata_file: Optional[Path], metadata_key: Optional[str]) -> dict:
+    """The whole recipe as one dictionary (nothing included yet), in recipe format 1."""
+    if not data_files:
+        raise Refused("No data file: give --data_files, or a --data_dir that holds .tsv files.")
+    schemas: Dict[str, dict] = {}
+    origin: Dict[str, Path] = {}
+    for path in data_files:
+        table_id = table_id_of(path)
+        if table_id in schemas:
+            raise Refused(f"{origin[table_id]} and {path} give the same table id {table_id!r}. Rename one of the files.")
+        fields, key = fields_of(read_table(path), key_columns, path)
+        if key is None:
+            print(f"Note: none of the key columns {list(key_columns)} is in {path}; the table {table_id!r} is written without a key.")
+        schemas[table_id] = minimal_schema(project_path(path), fields, label=table_id.replace('_', ' ').capitalize())
+        origin[table_id] = path
+
+    first_table = next(iter(schemas))
+    first_column = next(iter(schemas[first_table]["input_fields"]))
+    plot_id = re.sub(r'^(?=[^a-z])', 'plot_', clean_column_name(recipe_id)) + "_first_plot"
+    plots = {plot_id: minimal_plot(first_table, {"x": first_column}, label=f"Rows per {first_column}")}
+    recipe = minimal_recipe(recipe_id, label=recipe_id.replace('_', ' ').capitalize(), schemas=schemas, plots=plots)
+    recipe["info"]["description"] = (f"Scaffold written by create_data_analysis_recipe.py from {len(schemas)} data file(s). "
+                                     "Review the types, then write the steps, the joins and the plots.")
+    recipe["analysis_groups"]["main"]["label"] = "First look"
+
+    if metadata_file is not None:
+        fields, key = fields_of(read_table(metadata_file), [metadata_key] if metadata_key else [], metadata_file)
+        if metadata_key and key is None:
+            print(f"Note: the key column {metadata_key!r} is not in {metadata_file}; the metadata table is written without a key.")
+        metadata = minimal_schema(project_path(metadata_file), fields, label="Metadata")
+        # the place of metadata_schema is after the data schemas (the order of the specification)
+        recipe = {key_: value for key_, value in recipe.items() if key_ != "analysis_groups"} | {
+            METADATA_ID: metadata, "analysis_groups": recipe["analysis_groups"]}
+    return recipe
+
+
+def split_into_files(recipe: dict, out_file: Path) -> Dict[Path, object]:
+    """Move the fields and the steps of every table to included files; returns {file: its content} and changes `recipe`."""
+    folder = out_file.parent / out_file.stem
+    fragments: Dict[Path, object] = {}
+    tables = list(recipe["data_schemas"].items())
+    if METADATA_ID in recipe:
+        tables.append((METADATA_ID, recipe[METADATA_ID]))
+    for table_id, schema in tables:
+        for key, suffix in (("input_fields", "fields"), ("wrangling", "wrangling")):
+            name = f"{table_id}_{suffix}.yaml"
+            fragments[folder / name] = schema[key]
+            schema[key] = Include(f"{out_file.stem}/{name}")
+    return fragments
+
+
+def create(out_file: Path, data_files: Sequence[Path], key_columns: Sequence[str],
+           metadata_file: Optional[Path] = None, metadata_key: Optional[str] = None) -> Path:
+    """Build, judge and write the recipe; raises `Refused` (and writes nothing) when it cannot be valid."""
+    recipe = build(out_file.stem, data_files, key_columns, metadata_file, metadata_key)
+    result = check_recipe(recipe, "run", file_stem=out_file.stem)
+    if result.errors:
+        raise Refused("The recipe would not be valid in recipe format 1:\n" + "\n".join(
+            "  " + problem.text(out_file.name) for problem in result.errors))
+    fragments = split_into_files(recipe, out_file)
+    existing = [path for path in (out_file, *fragments) if path.exists()]
+    if existing:
+        raise Refused("These files already exist and are not replaced: " + ", ".join(str(p) for p in existing)
+                      + ". Choose another --out_file, or remove them first.")
+    for path, content in fragments.items():
+        write_fragment(path, content, comment=WRANGLING_COMMENT if path.name.endswith("_wrangling.yaml") else None)
+    return write_recipe(out_file, recipe)
+
+
+def main(argv: Optional[Sequence[str]] = None) -> None:
     parser = argparse.ArgumentParser(
-        description="Scaffold a deployment data analysis recipe from a dataset.")
+        description=__doc__.split("# @deps")[0], formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--data_dir", required=False,
-                        help="Path to a directory containing main data files (*.tsv or *.csv).")
+                        help="Folder of the data files. Without --data_files every .tsv file of the folder is read.")
     parser.add_argument("--data_files", nargs='+', required=False,
-                        help="Path to main data file(s).")
+                        help="Tab-separated data file(s). With --data_dir the names are relative to that folder.")
     parser.add_argument("--metadata_file", required=False,
-                        help="Path to metadata file.")
+                        help="Tab-separated metadata file; written as metadata_schema. Optional.")
     parser.add_argument("--primary_key_data", nargs='+', required=True,
-                        help="Primary key column(s) for main data (checks each file sequentially).")
+                        help="Name(s) of the column that identifies the entity (for example sample_id); in each data "
+                             "file the first name found is marked is_entity_key.")
     parser.add_argument("--primary_key_metadata", required=False,
-                        help="Primary key column for metadata.")
+                        help="Name of the key column of the metadata file. Optional.")
     parser.add_argument("--out_file", "--outfile", required=False,
-                        help="Path to save the generated data analysis recipe YAML. Defaults to assets/template_data_analysis_recipes/template_<timestamp>.yaml.")
-    args = parser.parse_args()
+                        help="The recipe file to write; its name without .yaml is the id of the recipe. Default: "
+                             "assets/template_data_analysis_recipes/template_<date>_<time>.yaml")
+    args = parser.parse_args(argv)
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # Define output file
-    if args.out_file:
-        out_file = Path(args.out_file)
-        out_file.parent.mkdir(parents=True, exist_ok=True)
-    else:
-        out_dir = Path("assets/template_data_analysis_recipes")
-        out_dir.mkdir(parents=True, exist_ok=True)
-        out_file = out_dir / f"template_{timestamp}.yaml"
-
-    # Create the subfolder for modular schema pieces
-    schema_dir = out_file.parent / out_file.stem
-    schema_dir.mkdir(parents=True, exist_ok=True)
-
-    # Resolve data files
-    all_data_files = []
-
-    if args.data_dir:
-        dpath = Path(args.data_dir)
-        if not dpath.is_dir():
-            print(
-                f"Error: --data_dir '{args.data_dir}' is not a valid directory.")
-            sys.exit(1)
-
-        if args.data_files:
-            for f_name in args.data_files:
-                all_data_files.append(str(dpath / f_name))
-        else:
-            found_files = list(dpath.glob("*.tsv")) + list(dpath.glob("*.csv"))
-            all_data_files.extend([str(p) for p in found_files])
-    else:
-        if args.data_files:
-            all_data_files.extend(args.data_files)
-
-    if not all_data_files:
-        print("Error: You must provide either --data_files or --data_dir.")
+    out_file = Path(args.out_file) if args.out_file else (
+        Path("assets/template_data_analysis_recipes") / f"template_{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml")
+    try:
+        if not args.data_dir and not args.data_files:
+            raise Refused("No data file: give --data_files or --data_dir.")
+        written = create(out_file, data_files_of(args.data_dir, args.data_files), args.primary_key_data,
+                         Path(args.metadata_file) if args.metadata_file else None, args.primary_key_metadata)
+    except Refused as refused:
+        print(f"Error: {refused}")
+        print("Nothing was written.")
         sys.exit(1)
 
-    # Strict File Existence Check
-    missing_files = []
-    valid_data_files = []
-
-    for f in all_data_files:
-        if not Path(f).exists():
-            missing_files.append(f)
-        else:
-            valid_data_files.append(f)
-
-    if missing_files:
-        print("\n" + "="*40)
-        print("CRITICAL ERROR: FILES NOT FOUND")
-        print("="*40)
-        print("The following requested data files do not exist at the resolved paths:")
-        for mf in missing_files:
-            print(f"  - {mf}")
-        print("\nPlease check your --data_dir and --data_files arguments.")
-        print("="*40 + "\n")
-        sys.exit(1)
-
-    # 1. Base Headers
-    source_name = f"directory '{Path(args.data_dir).name}'" if args.data_dir else f"{len(valid_data_files)} files"
-    data_analysis_recipe: dict[str, Any] = {
-        "id": "example_data_analysis_recipe",
-        "info": {
-            "display_name": "Example data analysis recipe",
-            "category": "Auto-generated",
-            "tags": ["template", "draft"],
-            "description": f"Template data analysis recipe generated from {source_name}.",
-            "version": "1.0"
-        }
-    }
-
-    # 2. Main Data Schemas (Nested under data_schemas)
-    data_analysis_recipe["data_schemas"] = {}
-
-    for d_file in valid_data_files:
-        try:
-            df_data = pl.read_csv(
-                d_file, separator='\t' if d_file.endswith('.tsv') else ',')
-
-            actual_key = next(
-                (k for k in args.primary_key_data if k in df_data.columns), None)
-            if not actual_key:
-                print(
-                    f"Warning: None of the primary keys {args.primary_key_data} found in {d_file}!")
-
-            raw_name = Path(d_file).stem
-
-            # Use Regex to clean the dataset name for the data analysis recipe
-            # 1. Remove optional "test_data_" prefix
-            clean_name = re.sub(r'^test_data_', '', raw_name)
-            # 2. Remove standard timestamp suffix "_YYYYMMDD_HHMMSS"
-            clean_name = re.sub(r'_\d{8}_\d{6}$', '', clean_name)
-
-            dataset_name = clean_name
-            # Generate the schema dictionary for fields
-            schema_dict = scaffold_schema(
-                df_data, primary_key=actual_key, is_metadata=False)
-
-            # 1. Write the _fields fragment
-            fields_frag_file = schema_dir / f"{dataset_name}_fields.yaml"
-            with open(fields_frag_file, 'w') as f:
-                yaml.dump(schema_dict, f, sort_keys=False,
-                          default_flow_style=False)
-
-            # 2. Write an empty _wrangling fragment placeholder
-            wrangling_frag_file = schema_dir / f"{dataset_name}_wrangling.yaml"
-            with open(wrangling_frag_file, 'w') as f:
-                f.write("# Define your Polars wrangling steps here\n[]\n")
-
-            # Add the !include references explicitly isolating fields and wrangling
-            fields_rel_path = f"{out_file.stem}/{dataset_name}_fields.yaml"
-            wrangling_rel_path = f"{out_file.stem}/{dataset_name}_wrangling.yaml"
-
-            data_analysis_recipe["data_schemas"][dataset_name] = {
-                "input_fields": IncludeRef(fields_rel_path),
-                "wrangling": IncludeRef(wrangling_rel_path),
-                "output_fields": IncludeRef(fields_rel_path)
-            }
-
-        except Exception as e:
-            print(f"Error reading main data {d_file}: {e}")
-            sys.exit(1)
-
-    # 3. Metadata Schema (optional)
-    if args.metadata_file and args.primary_key_metadata:
-        try:
-            df_meta = pl.read_csv(
-                args.metadata_file, separator='\t' if args.metadata_file.endswith('.tsv') else ',')
-            if args.primary_key_metadata not in df_meta.columns:
-                print(
-                    f"Warning: Primary key '{args.primary_key_metadata}' not found in metadata columns!")
-
-            meta_schema_dict = scaffold_schema(
-                df_meta, primary_key=args.primary_key_metadata, is_metadata=True)
-
-            # Write the individual metadata fragment to the subfolder
-            meta_frag_file = schema_dir / "metadata_schema.yaml"
-            with open(meta_frag_file, 'w') as f:
-                yaml.dump(meta_schema_dict, f, sort_keys=False,
-                          default_flow_style=False)
-
-            # Add the !include reference to the master data analysis recipe (ADR-013)
-            rel_path = f"{out_file.stem}/metadata_schema.yaml"
-            data_analysis_recipe["metadata_schema"] = {
-                "input_fields": IncludeRef(rel_path),
-                "wrangling": None,  # Metadata wrangling is optional
-                "output_fields": IncludeRef(rel_path)
-            }
-
-        except Exception as e:
-            print(f"Error reading metadata: {e}")
-
-    # 4. Standard Plot Archetypes Placeholder
-    first_dataset_key = list(data_analysis_recipe["data_schemas"].keys())[
-        0] if data_analysis_recipe["data_schemas"] else "unknown_dataset"
-    data_analysis_recipe["plot_defaults"] = {
-        "height": 450,
-        "theme": "theme_minimal",
-        "show_legend": True
-    }
-
-    data_analysis_recipe["analysis_groups"] = {
-        "Example_Group": {
-            "description": "Auto-scaffolded plotting group",
-            "plots": {
-                "demo_bar": {
-                    "target_dataset": first_dataset_key,
-                    "mapping": {"x": "Replace_Me"},
-                    "layers": [{"name": "geom_bar", "params": {}}],
-                    "title": "Replace Me Title"
-                }
-            }
-        }
-    }
-
-    # Write to file
-    with open(out_file, 'w') as f:
-        yaml.dump(data_analysis_recipe, f, sort_keys=False, default_flow_style=False)
-
-    print(f"Successfully generated scaffold data analysis recipe: {out_file}")
-    print("Please review and manually align plotting logic keys before moving to config/data_analysis_recipes/")
+    print(f"Recipe written (format 1, checked): {written}")
+    print(f"Included files: {written.parent / written.stem}/")
+    print("Next: review the types of the columns, say which texts mean a missing value (null_values), "
+          "then write the steps, the joins and the plots.")
 
 
 if __name__ == "__main__":

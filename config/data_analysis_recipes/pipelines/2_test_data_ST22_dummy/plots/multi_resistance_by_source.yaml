@@ -1,19 +1,18 @@
-spec:
-  target_dataset: AMR_Profile_Joint
-  theme: theme_light
-  layers:
-  - name: geom_bar
-    params: {}
-  - name: position_dodge
-    params: {}
-  - name: scale_x_discrete
-    params: {}
-  - name: labs
-    params:
-      title: Multi-Resistance by Source
-      fill: Multiresistant
-      x: Year
-  mapping:
-    x: Year
+target_dataset: AMR_Profile_Joint
+theme: theme_light
+layers:
+- name: geom_bar
+  params: {}
+- name: position_dodge
+  params: {}
+- name: scale_x_discrete
+  params: {}
+- name: labs
+  params:
+    title: Multi-Resistance by Source
     fill: Multiresistant
-    facet_by: Source
+    x: Year
+mapping:
+  x: Year
+  fill: Multiresistant
+  facet_by: Source

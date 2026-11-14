@@ -165,15 +165,13 @@ class DataOrchestrator:
             print(f"[Orchestrator] ✅ materialize_tier1 DONE — '{collection_id}' (bare schema) in {time.perf_counter()-_t_start:.2f}s → {output_path}")
             return pl.scan_parquet(output_path)
 
-        # Path B: assembly not found — old fallback (agnostic discovery)
+        # Path B: the id is neither a join nor a schema of this recipe. It fails: building another collection in its
+        # place (the first join, as the code did before) gives a table that looks right and is something else.
         if collection_spec is None:
-            collections = data_analysis_recipe.get("joins", {})
-            if collections:
-                collection_id = list(collections.keys())[0]
-                collection_spec = collections[collection_id]
-            else:
-                raise ValueError(
-                    f"No assembly or data_schema '{collection_id}' found in data analysis recipe '{data_analysis_recipe_id}'.")
+            known = sorted(list(data_analysis_recipe.get("joins", {}) or {}) + list(all_schemas))
+            raise ValueError(
+                f"No join or data schema '{collection_id}' in data analysis recipe '{data_analysis_recipe_id}'. "
+                f"Known: {', '.join(known) or 'none'}.")
 
         # Path C: assembly — ordered ingredient dict so DataAssembler starts
         # from the correct base (first declared ingredient, not first dict key)
@@ -185,13 +183,13 @@ class DataOrchestrator:
             for item in collection_spec.get("ingredients", [])
             if (item.get("dataset_id") if isinstance(item, dict) else item)
         ]
-        assembly_ingredients = {
-            ds_id: ingredients[ds_id]
-            for ds_id in ingredient_ids
-            if ds_id in ingredients
-        }
-        if not assembly_ingredients:
-            assembly_ingredients = ingredients
+        unknown = [ds_id for ds_id in ingredient_ids if ds_id not in ingredients]
+        if unknown or not ingredient_ids:
+            what = f"names {', '.join(repr(u) for u in unknown)}, which is not a data schema of this recipe" if unknown else "has no ingredients"
+            raise ValueError(
+                f"The join '{collection_id}' of data analysis recipe '{data_analysis_recipe_id}' {what}. "
+                f"Data schemas: {', '.join(sorted(all_schemas)) or 'none'}.")
+        assembly_ingredients = {ds_id: ingredients[ds_id] for ds_id in ingredient_ids}
 
         # Normalise join key dtypes across all ingredients before assembling.
         # Polars requires join keys to have matching dtypes; String is the safe
@@ -244,18 +242,9 @@ class DataOrchestrator:
             normalised[ds_id] = lf.with_columns(cast_exprs) if cast_exprs else lf
         assembly_ingredients = normalised
 
-        # Filter steps referring to missing ingredients
-        filtered_steps = []
-        for step in steps:
-            right_id = step.get("right_ingredient")
-            if right_id and right_id not in assembly_ingredients:
-                print(
-                    f"⚠️ Skipping step '{step.get('action')}' due to missing ingredient '{right_id}'")
-                continue
-            filtered_steps.append(step)
-
+        # A step that names an ingredient the join does not hold fails in the assembler; no step is skipped.
         assembler = DataAssembler(assembly_ingredients)
-        lf = assembler.assemble(filtered_steps)
+        lf = assembler.assemble(steps)
 
         # ADR-089: the chained Tier 1 key (the resolved recipe with every included file, the data content and the engine
         # version) is written into the anchor, so any upstream change rebuilds it.

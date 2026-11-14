@@ -808,11 +808,16 @@ def _render_block_key(key: str, value, indent: int) -> str:
     return "\n".join((pad + line) if line else line for line in dumped.split("\n"))
 
 
+def _key_line(line: str) -> str:
+    """The line without a comment after its key (`joins:  # why` gives `joins:`): a note of the author must not hide the key."""
+    return re.sub(r":\s+#.*$", ":", line.rstrip())
+
+
 def _insert_after_top_level_anchor(raw: str, anchor: str, block_text: str) -> str | None:
     """Insert block_text immediately after a top-level key line `anchor` (col 0)."""
     lines = raw.split("\n")
     for i, line in enumerate(lines):
-        if line.rstrip() == anchor and not line.startswith((" ", "\t")):
+        if _key_line(line) == anchor and not line.startswith((" ", "\t")):
             return "\n".join(lines[:i + 1] + block_text.split("\n") + lines[i + 1:])
     return None
 
@@ -822,7 +827,7 @@ def _insert_into_group_plots(raw: str, group_id: str, block_text: str) -> str | 
     lines = raw.split("\n")
     in_group = False
     for i, line in enumerate(lines):
-        stripped = line.strip()
+        stripped = _key_line(line).strip()
         # group header at indent 2
         if line.startswith("  ") and not line.startswith("   ") and stripped == f"{group_id}:":
             in_group = True
@@ -835,6 +840,15 @@ def _insert_into_group_plots(raw: str, group_id: str, block_text: str) -> str | 
             if stripped == "plots:":
                 return "\n".join(lines[:i + 1] + block_text.split("\n") + lines[i + 1:])
     return None
+
+
+# The new, empty step file of a branch: tiered (a flat list is refused by the format and by the engine).
+_EMPTY_TIERS = "tier1: []\ntier2: []\n"
+
+
+def _branch_label(source: dict, new_id: str) -> str:
+    """The label of a branch: the label of what it branches from, else the new id in words, marked "(branch)"."""
+    return f"{source.get('label') or new_id.replace('_', ' ').title()} (branch)"
 
 
 def _branch_error(msg: str) -> dict:
@@ -856,7 +870,11 @@ def generate_branch_plan(
     as NEW empty fragment files wired into the master via fresh !include keys.
     This is the Bifurcation Point Rule (rules_data_engine.md) made interactive —
     the canonical example is Summary / Summary_quality (shared input_fields,
-    divergent wrangling + output_fields).
+    divergent wrangling).
+
+    What is written is recipe format 1: no `output_fields` key (the published
+    columns are the last step of a join's tier 1), a `label` on the new schema,
+    join or plot, and tiered step lists (`tier1`, `tier2`), never a flat list.
 
     Returns:
       {
@@ -870,13 +888,15 @@ def generate_branch_plan(
       }
 
     Role handling (the selected node's role decides what is shared vs divergent):
-      wrangling / input_fields / output_fields  → branch a data_schema:
-          SHARED  : source (copied inline), input_fields (!include reused)
-          DIVERGE : new wrangling fragment (tier1: []/tier2: []) + new empty
-                    output_fields fragment ({})
+      wrangling / input_fields / output_fields  → branch a data_schema
+      (`output_fields` is still a node role of the lineage; the key is not written):
+          SHARED  : source, null_values, strip (copied inline: the same file, read
+                    in the same way; a key the source schema lacks is not invented),
+                    input_fields (!include reused)
+          DIVERGE : new wrangling fragment (tier1: []/tier2: [])
       join                                       → branch an assembly:
           SHARED  : ingredients (copied inline)
-          DIVERGE : new step list fragment ([]) + new output_fields fragment ({})
+          DIVERGE : new steps fragment (tier1: []/tier2: [])
       plot_spec                                  → branch a plot (leaf node):
           SHARED  : target_dataset (carried inside the copied spec)
           SEED    : a COPY of the original spec under new_id — a plot is a leaf,
@@ -920,12 +940,15 @@ def generate_branch_plan(
             return _branch_error(f"ID '{new_id}' already exists in {section}.")
 
         wrn_rel = f"{basename}/wrangling/{new_id}_wrangling.yaml"
-        out_rel = f"{basename}/output_fields/{new_id}_output_fields.yaml"
 
-        lines = [f"  {new_id}:"]
+        lines = [f"  {new_id}:", _render_block_key("label", _branch_label(block, new_id), indent=4)]
         source = block.get("source")
         if source not in (None, {}, []):
             lines.append(_render_block_key("source", source, indent=4))
+        # how the file is read is part of what is shared; a key the source schema lacks is not chosen here
+        for key in ("null_values", "strip"):
+            if key in block:
+                lines.append(_render_block_key(key, block[key], indent=4))
 
         inp_raw = block.get("input_fields")
         inp_inc = _inc_path(inp_raw)
@@ -937,7 +960,6 @@ def generate_branch_plan(
             lines.append("    input_fields: {}")
 
         lines.append(f"    wrangling: !include '{wrn_rel}'")
-        lines.append(f"    output_fields: !include '{out_rel}'")
         block_text = "\n".join(lines)
 
         new_master = _insert_after_top_level_anchor(raw, f"{section}:", block_text)
@@ -947,13 +969,11 @@ def generate_branch_plan(
         return {
             "ok": True, "error": "",
             "summary": (f"Branched {schema_id} -> {new_id}: shares source + "
-                        "input_fields; new empty wrangling + output_fields."),
+                        "input_fields; new empty wrangling."),
             "new_master_text": new_master,
             "fragments": [
                 {"abs_path": str(master_dir / wrn_rel), "rel_include": wrn_rel,
-                 "content": "tier1: []\ntier2: []\n"},
-                {"abs_path": str(master_dir / out_rel), "rel_include": out_rel,
-                 "content": "{}\n"},
+                 "content": _EMPTY_TIERS},
             ],
         }
 
@@ -966,14 +986,12 @@ def generate_branch_plan(
             return _branch_error(f"ID '{new_id}' already exists in joins.")
 
         rec_rel = f"{basename}/assembly/{new_id}_assembly.yaml"
-        out_rel = f"{basename}/assembly/{new_id}_assembly_output_fields.yaml"
 
-        lines = [f"  {new_id}:"]
+        lines = [f"  {new_id}:", _render_block_key("label", _branch_label(join_def, new_id), indent=4)]
         ingredients = join_def.get("ingredients")
         if ingredients not in (None, {}, []):
             lines.append(_render_block_key("ingredients", ingredients, indent=4))
         lines.append(f"    steps: !include '{rec_rel}'")
-        lines.append(f"    output_fields: !include '{out_rel}'")
         block_text = "\n".join(lines)
 
         new_master = _insert_after_top_level_anchor(raw, "joins:", block_text)
@@ -983,13 +1001,11 @@ def generate_branch_plan(
         return {
             "ok": True, "error": "",
             "summary": (f"Branched assembly {schema_id} -> {new_id}: shares "
-                        "ingredients; new empty step list + output_fields."),
+                        "ingredients; new empty steps."),
             "new_master_text": new_master,
             "fragments": [
                 {"abs_path": str(master_dir / rec_rel), "rel_include": rec_rel,
-                 "content": "[]\n"},
-                {"abs_path": str(master_dir / out_rel), "rel_include": out_rel,
-                 "content": "{}\n"},
+                 "content": _EMPTY_TIERS},
             ],
         }
 
@@ -1020,16 +1036,16 @@ def generate_branch_plan(
             except Exception as exc:
                 return _branch_error(f"Cannot read source plot spec '{spec_inc}': {exc}")
         elif isinstance(spec_raw, dict) and spec_raw:
+            # the new file holds the spec itself: an included file has no wrapper key (spec 6.1, check F01)
             src_spec_text = yaml.dump(
-                {"spec": spec_raw}, default_flow_style=False, sort_keys=False,
+                spec_raw, default_flow_style=False, sort_keys=False,
                 allow_unicode=True)
         else:
             return _branch_error(f"Plot '{schema_id}' has no usable spec to branch.")
 
-        label = (plot_def.get("label") or new_id.replace("_", " ").title())
         block_text = "\n".join([
             f"      {new_id}:",
-            f"        label: \"{label} (branch)\"",
+            _render_block_key("label", _branch_label(plot_def, new_id), indent=8),
             f"        spec: !include '{spec_rel}'",
         ])
 

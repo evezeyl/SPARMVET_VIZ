@@ -1,10 +1,10 @@
 # @deps
-# provides: DataAnalysisRecipeScaffolder class (scaffold) — generates a data analysis recipe ZIP with data analysis recipe
-#           fragments (input_fields, wrangling, assembly) and a master YAML.
+# provides: DataAnalysisRecipeScaffolder class (scaffold, dataset_id, column_slug, field_slugs) — generates a data
+#           analysis recipe ZIP with data analysis recipe fragments (input_fields, wrangling, assembly) and a master YAML.
 #           joins pre-filled with ingredients: format; 'on': quoted; tiered wrangling.
 # consumes: polars, pathlib, typing, yaml, re, io, zipfile (stdlib/third-party)
 #           test_lab.bootstrapper (DataAnalysisRecipeBootstrapper, IncludeRef, represent_include)
-# consumed_by: libs/test_lab/tests/test_scaffolder.py
+# consumed_by: libs/test_lab/tests/test_scaffolder.py, app/modules/test_lab_studio.py
 # @end_deps
 import io
 import re
@@ -50,22 +50,47 @@ class DataAnalysisRecipeScaffolder:
         Args:
             tsv_paths: Data source TSVs to infer schemas from.
             data_analysis_recipe_id: Data analysis recipe ID and top-level folder name in the ZIP.
-            steps: Optional mapping of sanitized dataset_id → list of wrangling step
-                     dicts (e.g. from an ID Reconciliation transformation's step list).
-                     Steps are injected into that dataset's tier1: wrangling block.
+            steps: Optional mapping of dataset id (``dataset_id(path)``) → list of recipe
+                     steps (format 1: registered actions with their parameters, for example
+                     from ``id_reconciliation.recipe_steps``). The steps are written as they
+                     are into that dataset's ``tier1:`` list. They are not checked here:
+                     this library does not know the action registry.
             metadata_path: Optional dedicated metadata TSV. When provided, a
                            metadata_schema entry is added and included as an ingredient.
 
         Returns:
             ZIP bytes. Extract to a directory; the master YAML is at
             ``<data_analysis_recipe_id>/<data_analysis_recipe_id>.yaml``.
+
+        Raises:
+            ValueError: steps are given for a dataset id that no data file has. Nothing is
+                        written then: steps are never dropped without a word.
         """
         steps = steps or {}
+        known = [self.dataset_id(p) for p in tsv_paths]
+        unknown = sorted(set(steps) - set(known))
+        if unknown:
+            raise ValueError(
+                f"Steps were given for {', '.join(unknown)}, which is not a data file of this scaffold. "
+                f"The data files that can take steps are: {', '.join(known)}."
+            )
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
             self._write_zip(zf, tsv_paths, data_analysis_recipe_id, steps, metadata_path)
         buf.seek(0)
         return buf.read()
+
+    def dataset_id(self, tsv_path) -> str:
+        """The id this scaffold gives the dataset of a data file: the key of its steps and of its schema."""
+        return self._bs._sanitize_name(Path(tsv_path).stem)
+
+    def column_slug(self, column: str) -> str:
+        """The name this scaffold gives a column of a file: the key of its input field, the name a step uses."""
+        return self._bs._sanitize_name(column)
+
+    def field_slugs(self, tsv_path) -> List[str]:
+        """The columns of a data file under the names the scaffolded recipe gives them, in the order of the file."""
+        return [self.column_slug(col) for col in pl.read_csv(tsv_path, separator='\t', n_rows=0).columns]
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -76,7 +101,7 @@ class DataAnalysisRecipeScaffolder:
         dataset_ids = []
 
         for tsv_p in tsv_paths:
-            dataset_id = self._bs._sanitize_name(Path(tsv_p).stem)
+            dataset_id = self.dataset_id(tsv_p)
             dataset_ids.append(dataset_id)
 
             df = pl.read_csv(tsv_p, separator='\t', n_rows=100)
@@ -121,7 +146,7 @@ class DataAnalysisRecipeScaffolder:
         fields = {}
         pk_candidates = []
         for col in df.columns:
-            safe_col = self._bs._sanitize_name(col)
+            safe_col = self.column_slug(col)
             fields[safe_col] = {
                 "type": self._bs._map_dtype(df[col]),
                 "label": col.replace('_', ' ').title(),

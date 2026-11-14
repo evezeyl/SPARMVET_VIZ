@@ -1,9 +1,5 @@
 target_dataset: figshare_triple_join
 title: Resistance Class by Host Animal
-family: Distribution
-pattern: 2 Categorical
-description: Count of resistance_class faceted by host_animal_common.
-difficulty: Beginner
 mapping:
   x: resistance_class
   fill: host_animal_common

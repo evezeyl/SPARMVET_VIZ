@@ -29,6 +29,7 @@ from __future__ import annotations
 # consumes: function:normalise_plot_spec, function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match, build_join_step, parse_join_step — BP-JOINT-1 Joint Designer pane)
 # consumes: libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots, create_group, delete_group, create_plot, delete_plot, assign_plot — BP-GROUPS-1)
+# consumes: libs/blueprint_arch/src/blueprint_arch/new_recipe.py (new_recipe_draft — BP-NEW-1, recipe format 1), libs/utils/src/utils/recipe_factory.py (write_recipe)
 # provides: outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui, effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)
 # provides: function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit), helper:_bundle_filename (full-data analysis recipe zip)
 # consumes: reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)
@@ -82,7 +83,9 @@ from viz_factory.plot_config_resolver import normalise_plot_spec, serialise_plot
 from blueprint_arch.agent_context import build_system_prompt
 from blueprint_arch.agent_tools import call_tool, get_tool_definitions
 from blueprint_arch.agent_tool_parser import extract_tool_calls
+from blueprint_arch.new_recipe import new_recipe_draft
 from utils.config_loader import ConfigManager
+from utils.recipe_factory import write_recipe
 from utils.pipeline_error import PipelineError, make_render_payload
 from app.src.render.pipeline_error_renderers import render_blueprint_inline
 
@@ -859,7 +862,7 @@ def define_server(input, output, session, *,
             cy_json = mapper.generate_cy_elements()
             wrangle_studio.active_tubemap_mermaid.set(cy_json)
             wrangle_studio.active_raw_yaml.set(
-                yaml.dump(cfg.raw_config, default_flow_style=False, allow_unicode=True)
+                yaml.dump(cfg.raw_config, default_flow_style=False, sort_keys=False, allow_unicode=True)
             )
         except Exception as e:
             print(f"[sync_blueprint_mapper] Failed: {e}")
@@ -2641,24 +2644,10 @@ def define_server(input, output, session, *,
         author  = (safe_input(input, "bp_new_author", "") or "").strip()
         today   = datetime.now().strftime("%Y-%m-%d")
 
-        stub: dict = {
-            "info": {
-                "name": display_name,
-                "description": desc or "",
-                "author": author or "",
-                "version": "1.0.0",
-                "created": today,
-                "tags": [],
-            },
-            "data_schemas": {},
-            "joins": {},
-            "analysis_groups": {},
-        }
-
+        # a draft in recipe format 1 (id, spec_version, engines, info.label); the pure part is new_recipe_draft
         try:
-            with open(dest, "w", encoding="utf-8") as f:
-                yaml.dump(stub, f, default_flow_style=False,
-                          sort_keys=False, allow_unicode=True)
+            write_recipe(dest, new_recipe_draft(
+                slug, display_name, description=desc, author=author, created=today))
         except Exception as e:
             ui.notification_show(f"Create error: {e}", type="error")
             return

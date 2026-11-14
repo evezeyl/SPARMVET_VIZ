@@ -9,6 +9,7 @@ info:
     and Comparison Theater.
 data_schemas:
   Stress_Source:
+    label: "Stress Source"
     source:
       type: local_tsv
       path: assets/test_data/STRESS/STRESS_data.tsv
@@ -18,6 +19,7 @@ data_schemas:
     wrangling: !include 'stress_test_master/wrangling/Stress_Source_wrangling.yaml'
 joins:
   Master_Collection:
+    label: "Master Collection"
     ingredients:
     - dataset_id: Stress_Source
     steps: !include 'stress_test_master/wrangling/Master_Collection_steps.yaml'

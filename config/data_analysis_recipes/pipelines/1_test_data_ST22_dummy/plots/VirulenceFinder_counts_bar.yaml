@@ -22,9 +22,6 @@ layers:
 - name: theme_legend_position
   params:
     position: bottom
-family: Ranking
-pattern: 1 Numeric, 1 Categorical
-difficulty: Intermediate
 mapping:
   x: sample_id
   fill: Selected_Virulence_Genes

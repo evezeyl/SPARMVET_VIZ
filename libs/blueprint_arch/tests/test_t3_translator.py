@@ -12,9 +12,11 @@ Verifies:
   whole plot (no partial result).
 - build_mode2_recipe: forking mechanics (T2-then-T3 ordering, empty-tier2 case),
   per-plot correctness under propagation (shared fork only when sequences are
-  byte-identical, different forks when they diverge), the _t3_origin marker, the
+  byte-identical, different forks when they diverge), the origin of a fork written
+  in its `comment` (recipe format 1 has no `_t3_origin` key), the
   skipped dict for untranslatable/bare-schema/missing-spec plots, and that the
   original raw_config is never mutated.
+- The forked recipe of a format 1 recipe is a format 1 recipe: it passes `check_recipe`.
 
 Run from project root:
     PYTHONPATH=. .venv/bin/python -m pytest libs/blueprint_arch/tests/test_t3_translator.py -v
@@ -22,6 +24,11 @@ Run from project root:
 import copy
 
 import pytest
+import yaml
+
+from utils import action_names
+from utils.recipe_check import check_recipe, spec
+from utils.recipe_factory import minimal_join, minimal_plot, minimal_recipe, minimal_schema, recipe_text
 
 from blueprint_arch.t3_translator import (
     UntranslatableNode,
@@ -233,12 +240,41 @@ class TestBuildMode2RecipeForking:
         # tier1 (the shared trunk) is untouched, byte-identical to the original
         assert new_cfg["joins"]["J1__t3_p1"]["steps"]["tier1"] == raw["joins"]["J1"]["steps"]["tier1"]
 
-    def test_t3_origin_marker_present(self):
+    def test_the_fork_says_where_it_comes_from_in_its_comment(self):
+        raw = _recipe_with_one_join()
+        raw["joins"]["J1"]["comment"] = "the note of the author"
+        t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1"),
+                     node("drop_column", {"column": "notes"}, node_id="n2")]}
+        new_cfg, _ = build_mode2_recipe(raw, t3)
+        comment = new_cfg["joins"]["J1__t3_p1"]["comment"]
+        assert isinstance(comment, str)
+        for part in ("J1", "p1", "n1", "n2", "tier2"):
+            assert part in comment
+        # the note of the author stays on the join it was written for
+        assert new_cfg["joins"]["J1"]["comment"] == "the note of the author"
+        assert "the note of the author" not in comment
+
+    def test_a_fork_shared_by_two_plots_names_both(self):
+        raw = _recipe_with_one_join()
+        shared = node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="shared")
+        new_cfg, _ = build_mode2_recipe(raw, {"p1": [dict(shared)], "p2": [dict(shared)]})
+        comment = new_cfg["joins"]["J1__t3_p1"]["comment"]
+        assert "p1" in comment and "p2" in comment
+        assert comment.count("shared") == 1
+
+    def test_a_node_without_an_id_is_not_invented_in_the_comment(self):
+        raw = _recipe_with_one_join()
+        new_cfg, _ = build_mode2_recipe(raw, {"p1": [node("drop_column", {"column": "notes"})]})
+        comment = new_cfg["joins"]["J1__t3_p1"]["comment"]
+        assert "J1" in comment and "p1" in comment and "None" not in comment
+
+    def test_the_fork_has_no_key_outside_the_recipe_format(self):
+        """`_t3_origin` was an unknown key of a join: recipe format 1 refuses it (check J01)."""
         raw = _recipe_with_one_join()
         t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
         new_cfg, _ = build_mode2_recipe(raw, t3)
-        origin = new_cfg["joins"]["J1__t3_p1"]["_t3_origin"]
-        assert origin == {"forked_from": "J1", "source_plot": "p1", "node_ids": ["n1"]}
+        join_keys = spec()["elements"]["join"]
+        assert set(new_cfg["joins"]["J1__t3_p1"]) <= set(join_keys["required"]) | set(join_keys["optional"])
 
     def test_original_raw_config_never_mutated(self):
         raw = _recipe_with_one_join()
@@ -357,3 +393,71 @@ class TestBuildMode2RecipeStripsConfigManagerInternals:
         raw["plots"] = {}
         new_cfg, _ = build_mode2_recipe(raw, {})
         assert "plots" not in new_cfg
+
+
+# ── the forked recipe is a recipe in format 1 ────────────────────────────────
+
+# The parameters the translator writes, as the registry declares them (the real registry is checked in
+# app/tests/test_writers_emit_format_one.py; this library may not import `transformer`).
+_ACTIONS = {
+    action_names.FILTER: {
+        "params": {
+            "column": {"widget": "string", "required": True},
+            "op": {"widget": "enum", "options": ["eq", "ne", "gt", "ge", "lt", "le", "in", "not_in", "between"], "required": True},
+            "value": {"widget": "any", "required": True},
+            "na": {"widget": "enum", "options": ["keep", "remove"], "required": True},
+        },
+        "rules": [{"when": {"op": ["in", "not_in"]}, "shape": {"value": "list"}},
+                  {"when": {"op": ["eq", "ne", "gt", "ge", "lt", "le"]}, "shape": {"value": "scalar"}}],
+    },
+    action_names.DROP: {"params": {"columns": {"widget": "column_selector", "multi": True, "required": True}}},
+}
+
+
+def _format_one_recipe():
+    schemas = {"samples": minimal_schema("data/samples.tsv", {"sample_id": "String", "year": "Int64", "notes": "String"},
+                                         entity_key="sample_id")}
+    plots = {"per_year": minimal_plot("C", {"x": "year"}), "per_sample": minimal_plot("C", {"x": "sample_id"})}
+    return minimal_recipe("tiny", schemas=schemas, joins={"C": minimal_join(["samples"], [])}, plots=plots)
+
+
+class TestTheForkedRecipeIsFormatOne:
+    T3 = {"per_year": [node("filter_row", {"column": "year", "op": "ge", "value": 2023}, node_id="n1", reason="recent years"),
+                       node("exclusion_row", {"column": "sample_id", "op": "not_in", "value": ["s2"]}, node_id="n2"),
+                       node("drop_column", {"column": "notes"}, node_id="n3")]}
+
+    def test_the_starting_recipe_is_valid(self):
+        assert check_recipe(_format_one_recipe(), "run", file_stem="tiny", catalogs={"actions": _ACTIONS}).errors == []
+
+    def test_the_forked_recipe_passes_the_checker(self):
+        new_cfg, skipped = build_mode2_recipe(_format_one_recipe(), self.T3)
+        assert skipped == {}
+        result = check_recipe(new_cfg, "run", file_stem="tiny", catalogs={"actions": _ACTIONS})
+        assert result.errors == [] and "actions" in result.coverage
+
+    def test_the_forked_recipe_passes_the_checker_after_it_was_written_and_read(self):
+        """The export writes the dictionary as YAML text; the text read back is the same recipe."""
+        new_cfg, _ = build_mode2_recipe(_format_one_recipe(), self.T3)
+        read_back = yaml.safe_load(recipe_text(new_cfg))
+        assert read_back == new_cfg
+        assert check_recipe(read_back, "run", file_stem="tiny", catalogs={"actions": _ACTIONS}).errors == []
+
+    def test_the_format_keys_of_the_original_are_kept_in_their_order(self):
+        original = _format_one_recipe()
+        new_cfg, _ = build_mode2_recipe(original, self.T3)
+        assert list(new_cfg) == list(original)
+        assert new_cfg["spec_version"] == 1 and new_cfg["id"] == "tiny"
+        assert list(new_cfg["analysis_groups"]["main"]["plots"]) == ["per_year", "per_sample"]
+
+    def test_no_removed_key_is_written(self):
+        new_cfg, _ = build_mode2_recipe(_format_one_recipe(), self.T3)
+        text = recipe_text(new_cfg)
+        for old in ("_t3_origin", "final_contract", "output_fields"):
+            assert old not in text
+
+    def test_the_mirror_of_the_loader_does_not_reach_the_forked_recipe(self):
+        """ConfigManager adds a root-level `plots` to what it loaded; the format refuses that key (T08)."""
+        loaded = _format_one_recipe()
+        loaded["plots"] = {"per_year": dict(loaded["analysis_groups"]["main"]["plots"]["per_year"]["spec"])}
+        new_cfg, _ = build_mode2_recipe(loaded, self.T3)
+        assert check_recipe(new_cfg, "run", file_stem="tiny", catalogs={"actions": _ACTIONS}).errors == []

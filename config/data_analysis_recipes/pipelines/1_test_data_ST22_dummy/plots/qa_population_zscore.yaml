@@ -1,9 +1,5 @@
 target_dataset: QA_population_zscore
 title: "QA: N50 z-score per sample (depends on all samples)"
-family: Distribution
-pattern: 1 Numeric, 1 Categorical
-difficulty: Simple
-description: Canary for the audit placement rule. The z-score of each sample is computed across all 42 samples, so removing a sample before this step changes every other value.
 mapping:
   x: country
   y: n50_zscore

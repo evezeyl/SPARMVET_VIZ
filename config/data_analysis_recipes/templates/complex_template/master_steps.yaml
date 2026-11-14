@@ -1,9 +1,8 @@
-steps:
-  tier1:
-    - action: polars_join
-      right_ingredient: metadata
-      'on': [sample_id]
-      how: left
-      maintain_order: left_right
-    - action: polars_select
-      exprs: ["sample_id", "gene_presence", "country"]
+tier1:
+  - action: polars_join
+    right_ingredient: metadata_schema
+    'on': [sample_id]
+    how: left
+    maintain_order: left_right
+  - action: polars_select
+    exprs: ["sample_id", "gene_presence", "country"]

@@ -23,8 +23,10 @@ normal `tmp/UI_TEST/`):
 PYTHONPATH=. SPARMVET_DEPLOYMENT=config/deployment/local/retest.yaml SPARMVET_APP_FEATURES=config/app_features/qa.yaml ./.venv/bin/shiny run app/src/main.py --port 8000
 ```
 
-The qa app features has every feature on (filters, My view, T3, export). In the left panel "Data analysis recipe Choice" you
-see four data analysis recipes: `retest_tier2`, `retest_top_n_other`, `retest_broken_header`, `retest_bad_output_field`.
+The qa app features has every feature on (filters, My view, T3, export). The retest set has four data analysis recipes.
+In the left panel "Data analysis recipe Choice" the selector offers two: `retest_tier2` and `retest_top_n_other`. The other
+two are broken on purpose and are listed beneath the selector as unavailable: `retest_broken_header` and
+`retest_bad_select_column` (section 4).
 
 **After you edit a config or data file you do NOT restart the server: save the file and reload the page (F5).**
 (The app compares the files with what it loaded, ADR-089.) Restart only if you changed Python code.
@@ -39,7 +41,7 @@ Start clean when you want: `rm -rf tmp/RETEST` (deletes only the retest cache).
 | `assets/test_data/retest/samples.tsv` | RT-06, RT-07 |
 | `config/data_analysis_recipes/retest/retest_top_n_other.yaml` | RT-21 |
 | `config/data_analysis_recipes/retest/retest_broken_header.yaml` | RT-30 |
-| `config/data_analysis_recipes/retest/retest_bad_output_field.yaml` | RT-31 |
+| `config/data_analysis_recipes/retest/retest_bad_select_column.yaml` | RT-31 |
 
 Undo any edit with `git checkout -- <file>`.
 
@@ -61,20 +63,23 @@ tier2 step: keep `value >= 10`. The join **All_samples** has no tier2 step.
 - [ ] **RT-01 Load.** Select `retest_tier2`. Tab "Value by group": box plot, badge "Viewing: Result".
   "Data to show: Raw" shows **12** rows, "Result" shows **8** (`s02 s03 s05 s06 s08 s09 s11 s12`).
   Tab "Samples per year": Result shows 12 rows and the badge has the note **T2=T1**.
-  The right panel "Pipeline Audit" lists `[Tier 2] filter_range`.
+  The right panel "Pipeline Audit" lists `[Tier 2] modif_filter`.
 - [ ] **RT-02 Files.** `ls tmp/RETEST/user/anchors/` shows `Result.parquet`, `Result__T2.parquet`, `All_samples.parquet`
   and **no** `All_samples__T2.parquet` (no tier2 step, nothing stored).
 - [ ] **RT-03 Reuse.** Note the time of `Result__T2.parquet`. Switch "Data to show" Raw, Result, My view, Result, and press F5.
   The time of `Result__T2.parquet` and `Result.parquet` does **not** change.
-- [ ] **RT-04 Change a Tier 2 step only.** In `retest_tier2.yaml` change `min: 10` to `min: 20`, save, F5.
+- [ ] **RT-04 Change a Tier 2 step only.** In `retest_tier2.yaml`, in the tier2 step of the join Result (`EDIT HERE (RT-04)`),
+  change `value: 10` to `value: 20`, save, F5.
   Result now shows **3** rows (`s05 s06 s09`). `Result__T2.parquet` has a new time; `Result.parquet` (Tier 1) has the **old** time.
-- [ ] **RT-05 Move a step from Tier 2 to Tier 1.** Restore `min: 10`. Then cut the step and put it in tier1:
+- [ ] **RT-05 Move a step from Tier 2 to Tier 1.** Restore `value: 10`. Then cut the step and put it in tier1 (`EDIT HERE (RT-05)`):
   ```yaml
   steps:
     tier1:
-      - action: filter_range
-        columns: [value]
-        min: 10
+      - action: modif_filter
+        column: value
+        op: ge
+        value: 10
+        na: remove
     tier2: []
   ```
   Save, F5. Raw now shows **8** rows (the step is in Tier 1), the badge says **T2=T1**, and `Result__T2.parquet`
@@ -84,7 +89,7 @@ tier2 step: keep `value >= 10`. The join **All_samples** has no tier2 step.
   Raw shows **13** rows, Result **9**. Both parquet files have new times.
   Then `git checkout -- assets/test_data/retest/samples.tsv`.
 - [ ] **RT-07 Export refused when files changed after the view was opened**.
-  Open `retest_tier2` and **do not reload**. Edit `samples.tsv` as in RT-06 (or change `min:` in the data analysis recipe) and save.
+  Open `retest_tier2` and **do not reload**. Edit `samples.tsv` as in RT-06 (or change `value: 10` in the tier2 step of the data analysis recipe) and save.
   Left panel Export, click "Export Bundle". Expected: a red notification "Export blocked: the data files (or the data analysis recipe)
   changed since this view was opened. Reload the page (F5)..." and the downloaded zip contains **only**
   `EXPORT_NOT_CREATED.txt`. Read it: it says what changed, what it means, what to do, and lists the keys.
@@ -111,7 +116,7 @@ Left panel Export: bundle label `retest`, scope "Global", PNG, click "Export Bun
       m = pq.read_metadata(f'tmp/RETEST/user/anchors/{f}.parquet').metadata
       print(f, {k.decode(): v.decode()[:16] for k, v in m.items() if k.startswith(b'sparmvet')})"
   ```
-- [ ] **RT-14 Change one thing, export again.** (a) change `min:` (Tier 2 step): only the `tier2_key` of `Result` changes
+- [ ] **RT-14 Change one thing, export again.** (a) change `value: 10` in the tier2 step: only the `tier2_key` of `Result` changes
   and the plot changes; (b) add a row to `samples.tsv`: Data batch hash, `tier1_key` and `tier2_key` change; (c) change an
   included file or a Tier 1 part: Data analysis recipe SHA256 and the keys change. Nothing exported may show the state from before the change.
 - [ ] **RT-15 Exploration is never exported.** Left panel Filters: column `value`, operator `<`, value `20`, "Add row", "Apply"
@@ -131,7 +136,7 @@ Left panel Export: bundle label `retest`, scope "Global", PNG, click "Export Bun
 - [ ] **RT-18 Pure Result app features.** Launch with `pipeline-static.yaml` instead (deployment B) and `SPARMVET_DATA_ANALYSIS_RECIPE=retest_tier2` (a static page must name its data analysis recipe): export still works
   and holds the Result.
 
-## 3. `top_n_other` — data analysis recipe `retest_top_n_other`
+## 3. `step_top_n_other` — data analysis recipe `retest_top_n_other`
 
 Data: 21 rows, 18 samples, 8 variants `V1..V8` and 1 missing value. Sample `s07` has 4 rows of `V2`. The data analysis recipe keeps the
 top **3** variants, counting the number of different samples (`count_distinct: sample_id`).
@@ -141,7 +146,7 @@ top **3** variants, counting the number of different samples (`count_distinct: s
 - [ ] **RT-21 Without `count_distinct`.** In `retest_top_n_other.yaml` delete the line `count_distinct: sample_id`, save, F5.
   Now the kept variants count **rows**: bars **V1 6, V2 4, V3 3, Other 7, nan 1**. (V2 is kept because it has 4 rows, although
   only one sample.) Restore the file.
-- [ ] **RT-22 Action help.** In BLUEPRINT open the action picker and find `top_n_other`: description and YAML example are shown.
+- [ ] **RT-22 Action help.** In BLUEPRINT open the action picker and find `step_top_n_other`: description and YAML example are shown.
 
 ## 4. The load gate: a recipe that fails its checks is refused and listed
 
@@ -149,9 +154,9 @@ The gate runs once per process, at startup (ADR-094): a recipe that fails the st
 
 - [ ] **RT-30 Renamed header.** Launch deployment B (section 0) and open any retest recipe. Beneath the selector "Data analysis recipe" the panel says it lists unavailable recipes and shows `retest_broken_header` in red with
   *"data_schemas.Genes: dataset cannot be loaded: Column(s) ['predicted_phenotype'] declared in input_fields for 'Genes' not found in the source file (expected file headers: ['predicted_phenotype'])"*. It cannot be selected. In `retest_broken_header.yaml` change the path to `genes.tsv` (`EDIT HERE`), restart: the recipe is selectable and its plot "Genes" appears.
-- [ ] **RT-31 Declared field with no column.** The same list shows `retest_bad_output_field` with
-  *"data_schemas.Genes.output_fields.phenotype: declared column 'phenotype' matches no column of the dataset  Tip: Did you mean 'predicted_phenotype'?"*.
-  Change `phenotype:` to `predicted_phenotype:` in the file, restart: it is selectable. The same check runs on demand in BLUEPRINT with "Validate data analysis recipe" (advisory there: nothing is hidden).
+- [ ] **RT-31 Select step with a misspelled column.** The same list shows `retest_bad_select_column` with
+  *"data_schemas.Genes: dataset cannot be loaded: unable to find column "phenotype"; valid columns: ["sample_id", "gene", "predicted_phenotype"]"* (the message of the engine). It cannot be selected.
+  In the `polars_select` step of the file (`EDIT HERE`) change `phenotype` to `predicted_phenotype`, restart: it is selectable. The same check runs on demand in BLUEPRINT with "Validate data analysis recipe" (advisory there: nothing is hidden).
 
 ## 5. Other checks with the normal recipe (deployment A)
 

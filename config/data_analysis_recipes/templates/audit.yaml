@@ -10,6 +10,7 @@ info:
   version: '1.0'
 data_schemas:
   submission_logs:
+    label: "submission logs"
     source:
       type: local_tsv
       path: ./assets/audit_data/submission_logs.tsv
@@ -39,21 +40,19 @@ data_schemas:
       tier1:
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
 plot_defaults:
-  height: 500
   theme: theme_minimal
-  show_legend: true
 analysis_groups:
   Performance:
+    label: "⏱️ Lab Speed and Efficiency"
     description: ⏱️ Lab Speed and Efficiency
     plots:
       tat_distribution:
-        info: Distribution of turnaround times per laboratory.
+        label: "Tat Distribution"
+        taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
+        description: "Distribution of turnaround times per laboratory."
         spec:
           target_dataset: submission_logs
           title: Turnaround Time by Laboratory
-          family: Distribution
-          pattern: 1 Numeric, 1 Categorical
-          difficulty: Simple
           mapping:
             x: lab_id
             y: turnaround_time
@@ -62,16 +61,16 @@ analysis_groups:
           - name: geom_boxplot
             params: {}
   Volumes:
+    label: "📦 Throughput and Backlogs"
     description: 📦 Throughput and Backlogs
     plots:
       submission_status:
-        info: Submissions by current processing status.
+        label: "Submission Status"
+        taxonomy: {"family": "Ranking", "pattern": "2 Categorical", "difficulty": "Beginner"}
+        description: "Submissions by current processing status."
         spec:
           target_dataset: submission_logs
           title: Submissions by Current Status
-          family: Ranking
-          pattern: 2 Categorical
-          difficulty: Beginner
           mapping:
             x: status
             fill: lab_id

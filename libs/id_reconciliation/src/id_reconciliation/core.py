@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import polars as pl
 from utils.formula_check import evaluate_formula
 from utils.id_patterns import PatternSuggestion, apply_pattern, suggest_regex
@@ -150,6 +152,10 @@ class IDReconciliationEngine:
 
         Infers cleaning steps from the transform_applied fields on matched results
         and includes an explicit recode map for remaining fuzzy matches.
+
+        The steps are in this library's own step language (`apply_recode_step`); `recipe_steps` writes them as
+        steps of a data analysis recipe. Raises ValueError for a transform_applied that no step can be made for:
+        a match by a pattern must not give a transformation that lacks its step.
         """
         steps: list[dict] = []
         seen_transforms: set[str] = set()
@@ -157,26 +163,24 @@ class IDReconciliationEngine:
         for r in results:
             if r.transform_applied and r.transform_applied not in seen_transforms:
                 seen_transforms.add(r.transform_applied)
+                # The descriptions are the ones utils.id_patterns.detect_patterns writes
                 desc = r.transform_applied.lower()
-                if "lowercase" in desc or "case" in desc:
+                if "lowercas" in desc:
                     steps.append({"action": "lowercase"})
                 elif "whitespace" in desc or "strip" in desc:
                     steps.append({"action": "strip_whitespace"})
                 elif "delimiter" in desc or "swap" in desc:
                     steps.append({"action": "regex_replace", "pattern": "_", "replacement": "-"})
                 elif "prefix" in desc or "removing first" in desc:
-                    # Extract prefix length from description "Removing first N character(s)"
-                    import re
-                    m = re.search(r"(\d+) character", desc)
-                    n = int(m.group(1)) if m else 0
-                    if n:
-                        steps.append({"action": "regex_replace", "pattern": f"^.{{{n}}}", "replacement": ""})
+                    n = _character_count(r.transform_applied)
+                    steps.append({"action": "regex_replace", "pattern": f"^.{{{n}}}", "replacement": ""})
                 elif "suffix" in desc or "removing last" in desc:
-                    import re
-                    m = re.search(r"(\d+) character", desc)
-                    n = int(m.group(1)) if m else 0
-                    if n:
-                        steps.append({"action": "regex_replace", "pattern": f".{{{n}}}$", "replacement": ""})
+                    n = _character_count(r.transform_applied)
+                    steps.append({"action": "regex_replace", "pattern": f".{{{n}}}$", "replacement": ""})
+                else:
+                    raise ValueError(
+                        f"No ID cleaning step is known for the pattern {r.transform_applied!r}: "
+                        "the transformation would lack the step that made these IDs match.")
 
         fuzzy_pairs = [(r.ref_id, r.target_id) for r in results if r.match_type == "fuzzy" and r.target_id]
         metadata: dict = {}
@@ -189,6 +193,17 @@ class IDReconciliationEngine:
             steps=steps,
             metadata=metadata,
         )
+
+
+def _character_count(description: str) -> int:
+    """The number of characters a prefix or suffix removal takes off, read from its description ("... 7 character(s)")."""
+    found = re.search(r"(\d+) character", description)
+    count = int(found.group(1)) if found else 0
+    if count < 1:
+        raise ValueError(
+            f"The pattern {description!r} does not say how many characters it removes: no ID cleaning step can be "
+            "made for it.")
+    return count
 
 
 def detect_many_to_many(results: list[MatchResult]) -> dict[str, list[str]]:
