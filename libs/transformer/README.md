@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The central engine for data wrangling and Phase 4 relational assembly. It enforces the ADR-013 data contracts by cleaning raw data and joining disparate sources into a single, tidy Polars DataFrame ready for visualization.
+The central engine for data wrangling and Phase 4 relational assembly. It enforces the data contracts (recipe format 1) by cleaning raw data and joining disparate sources into a single, tidy Polars DataFrame ready for visualization.
 
 ## Documentation
 >
@@ -17,16 +17,9 @@ The central engine for data wrangling and Phase 4 relational assembly. It enforc
 - `MetadataValidator (metadata_validator.py)`: Ensures user-provided data aligns with data analysis recipe contracts. Performs **Malformed Data Gatekeeping** (ADR-034) by trapping missing columns with typo-correction suggestions (`validate`), rejecting values that cannot be cast to the declared type before a file is written (`validate_types`), and enforcing schema types (`enforce_schema`).
 - `test_action_recipe_pairs.py` - [Test]: every registered action has its 1:1:1 pair (recipe and data file in `tests/data/`); the pair runs through ingestion and the wrangler and equals the direct Polars call.
 - `debug_wrangler.py` - [Dev Tool]: CLI runner that wrangles one format 1 recipe and writes the result as a TSV (`@verify` evidence). Entry: `main()`.
-- `debug_assembler.py` - [Dev Tool]: CLI runner for multi-source assembly and `final_contract` output. Entry: `run_assembler_debug()`.
-- **Action Sub-Packages (ADR-024)**:
-  - `Reshapinger (reshaping/core.py)`: Structural transformations (Pivot, Unpivot, Explode, Split).
-  - `Cleaner (cleaning/core.py)`: Atomic cleaning (Rename, Replace, Nulls, Selection, Sanitization).
-  - `Expressionist (cleaning/expressions.py)`: Pattern-based extraction (Regex) and atomic logic (Cast, Coalesce, Label_If).
-  - `Categorizer (cleaning/advanced.py)`: Complex lookup mapping.
-  - `Analyst (cleaning/analytical.py)`: Sequential, window, temporal, and exhaustive Polars parity actions.
-  - `Joiner (relational/joins.py)`: Relational assembly logic.
-  - `Summarizer (performance/aggregation.py)`: Pre-visualization data collapsing for Tier 2.
-- `Anchor (persistence/anchor.py)`: Tier 1 disk materialization tools (`sink_parquet`).
+- `debug_assembler.py` - [Dev Tool]: CLI runner for multi-source assembly (the join's last tier-1 step publishes the columns). Entry: `run_assembler_debug()`.
+- **Actions (`actions/`)**: `polars_calls.py` holds the `polars_<name>` actions (exactly the Polars call), `modified.py` the `modif_<name>` actions (today `modif_filter`), `composite.py` the `step_<name>` actions (today `step_top_n_other`), `base.py` the `register_action` decorator and the form schemas (`ACTION_SCHEMAS`).
+- `Anchor (anchor.py)`: Tier 1 and Tier 2 disk anchors, written and read by the engine and never named in a recipe.
 - **Reactive State (Tier 3)**: Transient views generated via Predicate Pushdown. Supports **Gated Reactivity** via the `btn_apply` trigger, allowing for side-by-side inspection in **Comparison Mode** (T2 reference vs T3 active).
 - **Path Authority**: Persistence locations (Tiers 1-3) are determined by `config/connectors`, decoupling hardware from the UI.
 
@@ -37,33 +30,41 @@ Following **ADR-024**, every `wrangling` entry in a data analysis recipe MUST us
 ```yaml
 wrangling:
   tier1: # THE TRUNK: Tidy, Clean, Wide Data (Shared foundation)
-    - action: "clean_column_names"
-    - action: "join"
-      right_ingredient: "metadata"
-      "on": ["sample_id"] # ADR-012b: Quotes around "on" prevent YAML boolean 'True' interpretation
-    - action: "join_filter" # Prevents Cartesian product explosions when merging 'Long' datasets
-      right_ingredient: "APEC_STEC_reference"
-      left_on: "gene_slug"
-      right_on: "Ref_Gene"
+    - action: polars_rename
+      mapping: { Sample_ID: sample_id }
+    - action: polars_str_strip_chars
+      columns: [gene_slug]
 
-  tier2: # THE BRANCH: Plot-Ready, Aggregated, Long Data (Optional)
-    - action: "unpivot"
-      index: ["sample_id", "country"]
-      on: ["n50", "total_length"]
-      variable_name: "metric"
-    - action: "recode_values"
-      column: "metric"
-      rules:
-        - matches: "-"
-          value: "Non Determined"
-        - default: "keep"
+  tier2: # THE BRANCH: Plot-Ready, Long Data (Optional; only on a schema plotted directly)
+    - action: polars_unpivot
+      index: [sample_id, country]
+      'on': [n50, total_length]
+      variable_name: metric
+```
+
+Joins are written in the `joins` block, where `steps` has its own `tier1` list:
+
+```yaml
+joins:
+  Combined:
+    label: Combined table
+    ingredients: [{dataset_id: Anchor}, {dataset_id: metadata}]
+    steps:
+      tier1:
+        - action: polars_join
+          right_ingredient: metadata
+          'on': [sample_id]
+          how: left
+          maintain_order: left_right
+        - action: polars_select      # publishes the columns, in this order
+          exprs: [sample_id, gene_slug, country]
 ```
 
 ### Data analysis recipe Safeguards (ADR-012b)
 
-- **The Boolean Shield**: To prevent the YAML parser from misinterpreting `on:` as `True`, always use quotes (`"on":`) or ensure the logic engine (DataAssembler) is hardened to resolve both keys.
-- **Relational Strategy**: When joining multiple 'Long' format datasets (e.g., AMR + Virulence), prioritize `join_filter` over `join` to maintain a manageable row count and prevent computational bloat.
-- **Flat-list rejection (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** A `wrangling:` value that is a flat list (e.g. `wrangling: [{action: ...}]`) is rejected by `_resolve_tier()` with a `DataAnalysisRecipeError`. Migrate to the tiered structure above.
+- **The Boolean Shield**: To prevent the YAML parser from misinterpreting `on:` as `True`, always write `'on':` with quotes; the recipe checker refuses an unquoted `on`.
+- **Relational Strategy**: When joining multiple 'Long' format datasets (e.g., AMR + Virulence), prefer a semi or anti `polars_join` (`how: semi` / `how: anti`) or a tier-2 aggregation to keep the row count manageable. A non-key column carried by both tables of a join is refused (Polars would silently rename one).
+- **Flat-list rejection (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** A `wrangling:` value that is a flat list (e.g. `wrangling: [{action: ...}]`) is refused by the recipe checker (and by `_resolve_tier()` with a `DataAnalysisRecipeError`). Migrate to the tiered structure above.
 
 ### Identity Logic (ADR-014)
 
@@ -76,12 +77,11 @@ To maximize performance when iterating on complex pipelines, the `DataAssembler 
 
 - **The Logic**: The orchestrator (`app/modules/orchestrator.py`) compares the chained key stored in the Parquet file's metadata (`sparmvet_tier1_key`, `sparmvet_tier2_key`, ADR-089) with the current key, before any ingestion.
 - **Automated Freshness Check**: The key covers the resolved data analysis recipe (every included file), the data content and the engine version. If it matches, joins and wrangling are skipped. If it differs, the stage is recomputed. A Tier 2 change recomputes only Tier 2. The file is written with Polars, the key inside the file metadata.
-- **Manual Override**: To force a full re-computation regardless of hash status, set `force_recompute: true` in the YAML data analysis recipe.
 
 ## I/O Summary
 
 - **Input**: Raw `pl.LazyFrame`s from the Ingestion layer, and YAML Data Analysis Recipe `spec` dictionaries.
-- **Output**: Cleaned, joined, and contract-enforced `pl.LazyFrame`s matching the `output_fields` specification.
+- **Output**: Cleaned and joined `pl.LazyFrame`s whose columns are the ones published by the last tier-1 step of each join.
 
 ## Local CLI Runners
 
@@ -109,10 +109,29 @@ PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests -q
 
 ## Registered Action Registry
 
-All actions available for use in data analysis recipe `wrangling` and `steps` blocks. Verified against `libs/transformer/src/transformer/actions/`.
+All 41 actions available for use in data analysis recipe `wrangling` and `steps` blocks, read from `ACTION_SCHEMAS` on 2026-11-14 (the prefix says what an action is: `polars_` exactly Polars, `modif_` a documented change, `step_` several calls). A description and a YAML example of each are in the [Action Gallery](../../docs/appendix/transformer_actions.qmd).
 
 | Category | Actions |
 |---|---|
+| **Aggregation** | `polars_group_by`, `step_top_n_other` |
+| **Analytical** | `polars_all_horizontal`, `polars_any_horizontal`, `polars_cum_count`, `polars_cum_sum`, `polars_describe`, `polars_max_horizontal`, `polars_mean_horizontal`, `polars_min_horizontal`, `polars_shift`, `polars_sum_horizontal` |
+| **Cleaning** | `polars_coalesce`, `polars_drop_nans`, `polars_drop_nulls`, `polars_fill_nan`, `polars_fill_null`, `polars_interpolate`, `polars_unique` |
+| **Derivation** | `polars_with_columns` |
+| **Filtering** | `modif_filter`, `polars_sample` |
+| **List** | `polars_list_join`, `polars_list_slice` |
+| **Numeric** | `polars_round` |
+| **Ordering** | `polars_sort` |
+| **Relational** | `polars_join` |
+| **Renaming** | `polars_rename` |
+| **Reshaping** | `polars_explode`, `polars_pivot`, `polars_str_split`, `polars_str_splitn`, `polars_unnest`, `polars_unpivot` |
+| **Selection** | `polars_drop`, `polars_select` |
+| **String** | `polars_str_extract`, `polars_str_replace_all`, `polars_str_strip_chars` |
+| **Temporal** | `polars_dt_truncate` |
+| **Typing** | `polars_cast` |
+
+`sink_parquet` and `scan_parquet` are engine functions, not recipe actions.
+
+---|---|
 | **Cleaning** | `fill_nulls`, `drop_nulls`, `replace_values`, `rename`, `drop_duplicates`, `unique_rows`, `recode_values`, `sanitize_column_names`, `keep_columns`, `drop_columns`, `strip_whitespace`, `round_numeric`, `filter_range`, `add_constant`, `filter_eq`, `filter_ne`, `filter_gt`, `filter_lt`, `rename_columns`, `unique` |
 | **Expressions** | `regex_extract`, `cast`, `coalesce`, `label_if`, `mutate`, `regex_replace`, `null_if` |
 | **Analytical** | `top_n_other`, `window_agg`, `shift`, `fill_nulls_direction`, `sort`, `sample`, `cum_sum`, `cum_count`, `date_extract`, `date_truncate`, `list_slice`, `list_join`, `is_in`, `not_in`, `z_score`, `percentile`, `value_counts`, `describe_stats`, `select_by_pattern`, `horizontal_stats`, `any_horizontal`, `all_horizontal`, `interpolate` |

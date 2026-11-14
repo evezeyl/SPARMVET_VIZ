@@ -57,19 +57,20 @@ history. All current development is Claude Code.
 Wrangling logic is separated into logical tiers to promote reuse and clarity:
 
 ```yaml
-id: "example_data_analysis_recipe"
 wrangling:
   tier1: # Relational Foundations
-    - action: "rename"
-      mapping: { "old": "new" }
-    - action: "join"
-      right_ingredient: "metadata"
+    - action: polars_rename
+      mapping: { old: new }
 
   tier2: # Plot-Ready Reshaping (Optional)
-    - action: "summarize"
-      group_by: ["sample_id"]
-      metrics: { "counts": "sum" }
+    - action: polars_group_by
+      by: [sample_id]
+      maintain_order: true
+      named_aggs:
+        counts: "pl.col('gene').count()"
 ```
+
+A join is written in the `joins` block (`steps: {tier1: [polars_join, ..., polars_select]}`). Every action name starts with `polars_`, `modif_` or `step_`, and a parameter that changes the result is written in the recipe: there is no hidden default. See `docs/foundations/data_contracts_adr.qmd`.
 
 > [!NOTE]
 > If `tier2` is omitted, the system invokes **Identity Logic (ADR-014)**, passing the refined Tier 1 data directly to the visualization engine.
