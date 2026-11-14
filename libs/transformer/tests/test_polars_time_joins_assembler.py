@@ -98,3 +98,31 @@ def test_the_second_asof_step_is_checked_against_the_result_of_the_first():
     # v is unsorted after the first join (null, 10, 20 is sorted with null first): the second join works
     out = DataAssembler({"L": _left(), "R": _right(), "T": third}, recipe_id=RECIPE, join_id=JOIN_ID).assemble(steps).collect()
     assert out["w"].to_list() == [None, 1, 2]
+
+
+# -- polars_join_where --------------------------------------------------------------------------------
+
+from utils.action_names import JOIN_WHERE  # noqa: E402
+
+
+def _where_step(**more):
+    return {"action": JOIN_WHERE, "right_ingredient": "R", "predicates": ["pl.col('v') >= pl.col('t')"], **more}
+
+
+def test_a_join_on_conditions_runs_through_the_assembler_without_any_key():
+    out = _assemble(_left(), _right(), [_where_step()]).collect()
+    assert out.columns == ["t", "g", "x", "t_right", "g_right", "v"] and out.height == 6   # every t is below the 10 and 20 of v
+    assert out["x"].to_list() == [1, 1, 2, 2, 3, 3]                                          # the order: first table, then second
+
+
+def test_a_join_on_conditions_with_numbers_of_different_types_fails_through_the_assembler_with_a_plain_message():
+    right = _right().with_columns(pl.col("v").cast(pl.Float64))
+    with pytest.raises(TransformationError) as caught:
+        _assemble(_left(), right, [_where_step(predicates=["pl.col('v') >= pl.col('x')"])]).collect()
+    assert "cannot compare" in str(caught.value) and "polars_join_where" in str(caught.value) and "input_fields" in caught.value.tip
+
+
+def test_a_refused_step_keeps_its_own_plain_message_through_the_assembler():
+    with pytest.raises(TransformationError) as caught:
+        _assemble(_left(), _right(), [_where_step(predicates=[])]).collect()
+    assert "one or more formulas" in str(caught.value) and RECIPE in str(caught.value.pipeline_error.location) and "Write for example" in caught.value.tip

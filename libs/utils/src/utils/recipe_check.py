@@ -514,7 +514,8 @@ class _Check:
                     self.join_advices(steps["tier1"], index - 1, where, ingredient_ids)
                 if step["right_ingredient"] not in ingredient_ids:
                     self.add("J05", where, f"right_ingredient {step['right_ingredient']!r} is not an ingredient of this join", "list it in ingredients")
-                if ("on" in step or True in step) == ("left_on" in step or "right_on" in step):
+                # a join on conditions has no key columns: its predicates say which rows match
+                if step.get("action") != action_names.JOIN_WHERE and ("on" in step or True in step) == ("left_on" in step or "right_on" in step):
                     self.add("J05", where, "write either on, or left_on with right_on", "choose one form")
                 if True in step:
                     self.add("T07", where, "an unquoted on became the key true", "quote it: 'on'")

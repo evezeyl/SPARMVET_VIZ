@@ -311,3 +311,120 @@ def test_asof_a_tolerance_that_is_not_a_duration_text_or_a_positive_number_is_re
 
 def test_asof_a_number_tolerance_for_a_number_key_equals_polars():
     assert_frame_equal(asof(tolerance=1), polars_asof(strategy="backward", tolerance=1))
+
+
+# =========================================================================================================
+# polars_join_where
+# =========================================================================================================
+
+import random  # noqa: E402
+
+W_LEFT = pl.DataFrame({"id": ["a", "b", "c", "d"], "lo": [1, 5, None, 3], "hi": [4, 9, 3, 8]})
+W_RIGHT = pl.DataFrame({"rid": ["x", "y", "z", "w"], "v": [2, 5, 10, 4]})
+BETWEEN = ["pl.col('v') >= pl.col('lo')", "pl.col('v') <= pl.col('hi')"]
+
+
+def where(left=W_LEFT, right=W_RIGHT, predicates=BETWEEN, **more):
+    return run("polars_join_where", left, {"right_ingredient": "R", "predicates": predicates, "__right_df__": right.lazy(), **more})
+
+
+def pairs_in_the_order_of_the_tables(left, right, keep):
+    """The matching pairs in the order of the first table, then of the second: a cross join and a filter, no join_where."""
+    crossed = left.lazy().with_row_index("_l").join(right.lazy().with_row_index("_r"), how="cross").filter(keep)
+    return crossed.sort(["_l", "_r"]).drop(["_l", "_r"]).collect()
+
+
+def test_where_the_pairs_come_in_the_order_of_the_first_table_then_of_the_second():
+    out = where()
+    expected = pairs_in_the_order_of_the_tables(W_LEFT, W_RIGHT, (pl.col("v") >= pl.col("lo")) & (pl.col("v") <= pl.col("hi")))
+    assert_frame_equal(out, expected)
+    assert out["id"].to_list() == ["a", "a", "b", "d", "d"] and out["rid"].to_list() == ["x", "w", "y", "y", "w"]
+    # the order follows the rows as they are, not their values: the same rows reversed come in the reversed order of the first table
+    reversed_out = where(W_LEFT.reverse())
+    assert reversed_out["id"].to_list() == ["d", "d", "b", "a", "a"]
+
+
+def test_where_the_order_is_the_same_on_every_run_on_tables_where_polars_is_not():
+    rng = random.Random(0)
+    size = 2500
+    left = pl.DataFrame({"i": list(range(size)), "a": [rng.randint(0, 100) for _ in range(size)]})
+    right = pl.DataFrame({"j": list(range(size)), "b": [rng.randint(0, 100) for _ in range(size)]})
+    predicates = ["pl.col('a') < pl.col('b')", "pl.col('a') > pl.col('b') - 5"]
+    expected = pairs_in_the_order_of_the_tables(left, right, (pl.col("a") < pl.col("b")) & (pl.col("a") > pl.col("b") - 5))
+    for _ in range(5):
+        assert where(left, right, predicates).equals(expected)
+    polars_runs = [left.lazy().join_where(right.lazy(), pl.col("a") < pl.col("b"), pl.col("a") > pl.col("b") - 5).collect() for _ in range(12)]
+    if all(run_.equals(polars_runs[0]) for run_ in polars_runs):
+        pytest.skip("Polars gave the same order in 12 runs on this machine; the reason for the fixed order could not be shown here")
+    assert any(not run_.equals(polars_runs[0]) for run_ in polars_runs), "Polars changes the order of the pairs from run to run"
+
+
+def test_where_a_null_in_a_compared_column_does_not_match_and_a_nan_is_larger_than_every_number():
+    assert where()["id"].to_list().count("c") == 0       # lo is null for c: its predicates are null, not true
+    left = pl.DataFrame({"lo": [1.0], "hi": [9.0]})
+    right = pl.DataFrame({"v": [2.0, NAN]})
+    assert where(left, right, ["pl.col('v') >= pl.col('lo')"])["v"].to_list()[1] != 2.0  # NaN >= 1 is true
+    assert where(left, right, ["pl.col('v') >= pl.col('lo')"]).height == 2
+    assert where(left, right, ["pl.col('v') <= pl.col('hi')"]).height == 1   # NaN <= 9 is false
+
+
+def test_where_numbers_of_different_types_cannot_be_compared_and_the_step_fails_with_a_plain_message():
+    mixed = W_RIGHT.with_columns(pl.col("v").cast(pl.Float64))
+    with pytest.raises(pl.exceptions.SchemaError, match="cannot compare"):  # what Polars does
+        W_LEFT.lazy().join_where(mixed.lazy(), pl.col("v") >= pl.col("lo")).collect()
+    with pytest.raises(TransformationError, match="cannot compare Float64 with Int64") as caught:
+        where(W_LEFT, mixed)
+    assert "polars_cast" in caught.value.tip and "input_fields" in caught.value.tip
+
+
+def test_where_a_column_in_both_tables_is_written_with_the_suffix_and_the_suffix_can_be_changed():
+    right = W_RIGHT.with_columns(lo=pl.lit(0))
+    default = where(W_LEFT, right, ["pl.col('v') >= pl.col('lo_right')"])
+    assert "lo_right" in default.columns
+    named = where(W_LEFT, right, ["pl.col('v') >= pl.col('lo_x')"], suffix="_x")
+    assert "lo_x" in named.columns and "lo_right" not in named.columns
+
+
+def test_where_the_predicates_are_required_and_a_list_of_formula_texts():
+    with pytest.raises(TransformationError, match="predicates is required"):
+        run("polars_join_where", W_LEFT, {"right_ingredient": "R", "__right_df__": W_RIGHT.lazy()})
+    with pytest.raises(TransformationError, match="one or more formulas"):
+        where(predicates=[])
+    with pytest.raises(TransformationError, match="one or more formulas"):
+        where(predicates=[5])
+    with pytest.raises(TransformationError, match="takes a list|wrong form"):
+        where(predicates="pl.col('v') > 1")
+
+
+def test_where_a_predicate_goes_through_the_formula_check():
+    for formula in ("__import__('os').system('echo hacked')", "pl.read_csv('/etc/passwd')", "pl.col('v').map_elements(lambda x: x)"):
+        with pytest.raises(TransformationError, match="refused"):
+            where(predicates=[formula])
+
+
+def test_where_a_join_on_conditions_has_no_key_columns():
+    with pytest.raises(TransformationError, match="'on' is not a parameter|on is not a parameter"):
+        where(**{"on": "id"})
+
+
+def test_where_the_helper_columns_never_collide_with_a_column_of_the_tables():
+    left = W_LEFT.with_columns(__row_of_first_table__=pl.lit("mine"))
+    out = where(left)
+    assert out.columns == left.columns + ["rid", "v"] and out["__row_of_first_table__"].to_list() == ["mine"] * out.height
+
+
+def test_where_a_predicate_about_one_table_only_equals_polars():
+    out = where(predicates=["pl.col('lo') > 1"])
+    expected = W_LEFT.lazy().join_where(W_RIGHT.lazy(), pl.col("lo") > 1).collect()
+    assert_frame_equal(out.sort(out.columns), expected.sort(expected.columns))
+
+
+def test_where_an_empty_first_table_gives_an_empty_table_with_the_columns_of_polars():
+    out = where(W_LEFT.head(0))
+    polars_out = W_LEFT.head(0).lazy().join_where(W_RIGHT.lazy(), *[pl.col("v") >= pl.col("lo"), pl.col("v") <= pl.col("hi")]).collect()
+    assert out.height == 0 and out.schema == polars_out.schema
+
+
+def test_where_the_second_table_is_required():
+    with pytest.raises(TransformationError, match="__right_df__"):
+        run("polars_join_where", W_LEFT, {"right_ingredient": "R", "predicates": BETWEEN})

@@ -672,3 +672,17 @@ Kind: wrapper. Context: assembly.
   tolerance: 2d
 ```
 
+#### `polars_join_where`
+
+Join each row of the table of the step with every row of the second table `right_ingredient` for which all `predicates` are true: a join on conditions, not on equal keys (Polars LazyFrame.join_where). A predicate is a formula such as "pl.col('v') >= pl.col('lo')"; a column that has the same name in both tables is written with the suffix for the second table (`lo_right`). It is an inner join: a row can match several rows or none, and a row without a match is dropped. Polars returns the pairs in another order on every run; the action puts them in the order of the first table, then of the second, so the same input gives the same table. A predicate that is null for a pair (a null in a compared column) does not match; a NaN is larger than every number; columns of different number types (Int64 against Float64) cannot be compared and the step fails.
+
+Kind: wrapper. Context: assembly.
+
+```yaml
+- action: polars_join_where
+  right_ingredient: reference_ranges
+  predicates:
+    - "pl.col('year') >= pl.col('start_year')"
+    - "pl.col('year') <= pl.col('end_year')"
+```
+

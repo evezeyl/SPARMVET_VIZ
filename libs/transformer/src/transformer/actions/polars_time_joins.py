@@ -26,11 +26,11 @@ import polars as pl
 
 from transformer.actions import polars_calls as calls
 from transformer.actions.base import register_action
-from utils.action_names import JOIN_ASOF
+from utils.action_names import JOIN_ASOF, JOIN_WHERE
 from utils.errors import TransformationError
 
 # @deps
-# provides: action:polars_rank, action:polars_join_asof
+# provides: action:polars_rank, action:polars_join_asof, action:polars_join_where
 # consumes: libs/transformer/src/transformer/actions/polars_calls.py (the generator of the polars_ actions)
 # consumed_by: libs/transformer/tests/test_polars_time_joins_equal_polars.py
 # doc: .claude/design/recipe_format_spec.md#7.5.1, .claude/design/home_evidence/actions_and_polars_2026-11-13.md#19
@@ -38,9 +38,10 @@ from utils.errors import TransformationError
 
 RANK_METHODS = ["average", "min", "max", "dense", "ordinal", "random"]
 
-calls.PICKER.update({"rank": ("analytical", calls.T12), "join_asof": ("relational", calls.ASSEMBLY)})
+calls.PICKER.update({"rank": ("analytical", calls.T12), "join_asof": ("relational", calls.ASSEMBLY),
+                    "join_where": ("relational", calls.ASSEMBLY)})
 # the tie rule changes the result, so it is written in the step (DEC34)
-calls.REQUIRED.update({"polars_rank": {"method"}, "polars_join_asof": {"strategy"}})
+calls.REQUIRED.update({"polars_rank": {"method"}, "polars_join_asof": {"strategy"}, "polars_join_where": {"predicates"}})
 calls.OVERRIDE.update({
     ("polars_rank", "method"): {"widget": "enum", "options": RANK_METHODS, "label": "How tied values are ranked"},
     ("polars_rank", "seed"): {"widget": "number", "label": "Seed of the random tie order (only with method random)"},
@@ -189,3 +190,62 @@ def _join_asof_schema() -> dict:
 
 
 register_action(JOIN_ASOF, ui_schema=_join_asof_schema())(_join_asof)
+
+
+# =========================================================================================================
+# polars_join_where
+# =========================================================================================================
+
+calls.OVERRIDE.update({
+    ("polars_join_where", "predicates"): {"widget": "list", "value_widget": "expression",
+                                          "label": "Predicates: Polars expressions as text, all of them must be true for a pair of rows"},
+})
+
+
+def _free_name(wanted: str, *frames: pl.LazyFrame) -> str:
+    taken = {name for frame in frames for name in frame.collect_schema().names()}
+    while wanted in taken:
+        wanted = f"_{wanted}"
+    return wanted
+
+
+def _join_where(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
+    clean = calls._checked("polars_join_where", spec)
+    right = spec.get("__right_df__")
+    if right is None:
+        raise TransformationError("polars_join_where needs the resolved right table (__right_df__)", tip="The assembler resolves `right_ingredient`")
+    predicates = clean["predicates"]
+    if not predicates or not all(isinstance(text, str) for text in predicates):
+        raise TransformationError("step polars_join_where: `predicates` is a list of one or more formulas written as text",
+                                  tip="Write for example predicates: [\"pl.col('year') >= pl.col('start_year')\"]")
+    expressions = [calls._formula(text) for text in predicates]
+    # Polars returns the matching pairs in a different order on every run (a row index would be the only stable thing in
+    # them): the pairs are put in the order of the first table, then of the second (ADR-090).
+    left_row = _free_name("__row_of_first_table__", lf, right)
+    right_row = _free_name("__row_of_second_table__", lf, right)
+    options = {"suffix": clean["suffix"]} if clean.get("suffix") is not None else {}
+    joined = lf.with_row_index(left_row).join_where(right.with_row_index(right_row), *expressions, **options)
+    try:
+        joined.collect_schema()  # Polars compares the types of the predicates when the plan is resolved: say it now, not at the collect
+    except pl.exceptions.SchemaError as exc:
+        raise TransformationError(f"step polars_join_where: {str(exc).splitlines()[0]}",
+                                  tip="Compare columns of the same type: declare the same type in input_fields of both tables, or write a polars_cast step "
+                                      "before the join for the first table (the second table is changed in its own input_fields or wrangling)") from exc
+    return joined.sort([left_row, right_row]).drop([left_row, right_row])
+
+
+def _join_where_schema() -> dict:
+    schema = calls._schema(
+        "polars_join_where", calls.FRAME, pl.LazyFrame.join_where, ("LazyFrame", "join_where"),
+        "Join each row of the table of the step with every row of the second table `right_ingredient` for which all `predicates` are true: a join on conditions, "
+        "not on equal keys (Polars LazyFrame.join_where). A predicate is a formula such as \"pl.col('v') >= pl.col('lo')\"; a column that has the same name in both tables "
+        "is written with the suffix for the second table (`lo_right`). It is an inner join: a row can match several rows or none, and a row without a match is dropped. "
+        "Polars returns the pairs in another order on every run; the action puts them in the order of the first table, then of the second, so the same input "
+        "gives the same table. A predicate that is null for a pair (a null in a compared column) does not match; a NaN is larger than every number; "
+        "columns of different number types (Int64 against Float64) cannot be compared and the step fails.",
+        "- action: polars_join_where\n  right_ingredient: reference_ranges\n  predicates:\n    - \"pl.col('year') >= pl.col('start_year')\"\n    - \"pl.col('year') <= pl.col('end_year')\"")
+    schema["polars"] = "wrapper"
+    return schema
+
+
+register_action(JOIN_WHERE, ui_schema=_join_where_schema())(_join_where)

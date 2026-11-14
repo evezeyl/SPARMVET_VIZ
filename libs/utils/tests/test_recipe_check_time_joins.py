@@ -18,7 +18,12 @@ ASOF = {
                   for name in ("right_ingredient", "strategy", "on", "left_on", "right_on")},
                **{name: {"widget": "column_selector", "multi": True, "required": False} for name in ("by", "by_left", "by_right")}},
 }
-CATALOG = {**CATALOGS, "actions": {**CATALOGS["actions"], "polars_join_asof": ASOF}}
+WHERE = {
+    "context": ["assembly"],
+    "params": {"right_ingredient": {"widget": "string", "required": True},
+               "predicates": {"widget": "list", "required": True}, "suffix": {"widget": "string", "required": False}},
+}
+CATALOG = {**CATALOGS, "actions": {**CATALOGS["actions"], "polars_join_asof": ASOF, "polars_join_where": WHERE}}
 
 
 def asof_recipe():
@@ -69,3 +74,32 @@ def test_an_asof_step_in_tier_2_of_the_join_is_refused():
     step = raw["joins"]["AB"]["steps"]["tier1"][0]
     raw["joins"]["AB"]["steps"]["tier2"] = [dict(step)]
     assert "ST05" in codes(raw)
+
+
+def where_recipe():
+    raw = asof_recipe()
+    raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "polars_join_where", "right_ingredient": "B", "predicates": ["pl.col('w') > pl.col('t')"]}]
+    return raw
+
+
+def test_a_join_on_conditions_needs_no_key_and_is_not_reported_as_missing_one():
+    """J05 asks for `on`, or `left_on` with `right_on`, of every step with a right_ingredient; a join on conditions has neither."""
+    assert "J05" not in codes(where_recipe())
+
+
+def test_a_join_on_conditions_still_needs_an_ingredient_of_the_join():
+    raw = where_recipe()
+    raw["joins"]["AB"]["steps"]["tier1"][0]["right_ingredient"] = "Ghost"
+    assert "J05" in codes(raw)
+
+
+def test_a_join_on_conditions_in_tier_2_of_the_join_is_refused():
+    raw = where_recipe()
+    raw["joins"]["AB"]["steps"]["tier2"] = [dict(raw["joins"]["AB"]["steps"]["tier1"][0])]
+    assert "ST05" in codes(raw)
+
+
+def test_the_key_check_still_asks_a_plain_join_for_its_key():
+    raw = asof_recipe()
+    raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "polars_join", "right_ingredient": "B", "how": "left"}]
+    assert "J05" in codes(raw)

@@ -28,7 +28,10 @@ from test_action_recipe_pairs import ROOT, _run
 from test_polars_actions_equal_polars import Case, eager
 
 NAN = float("nan")
-GROUP = {"polars_rank", "polars_join_asof"}
+GROUP = {"polars_rank", "polars_join_asof", "polars_join_where"}
+# Polars gives the pairs of a join on conditions in another order on every run: the action orders them (first table, then second)
+# and the rows are compared with the direct call after sorting both; the order itself is tested in the preconditions file
+UNORDERED = {"polars_join_where"}
 
 # one column with ties, a null and two NaN; a second one with ties and a null
 RANKED = pl.DataFrame({
@@ -50,6 +53,13 @@ ASOF_LEFT_RENAMED = ASOF_LEFT.rename({"t": "t_l", "site": "site_l", "x": "v_l"})
 ASOF_RIGHT_RENAMED = ASOF_RIGHT.rename({"t": "t_r", "site": "site_r", "v": "v_l"})
 DATE_LEFT = pl.DataFrame({"d": [datetime.date(2022, 1, 1), datetime.date(2022, 1, 5), datetime.date(2022, 1, 20)], "x": [1, 2, 3]})
 DATE_RIGHT = pl.DataFrame({"d": [datetime.date(2022, 1, 2), datetime.date(2022, 1, 4)], "v": [10, 20]})
+
+# join on conditions: whole numbers only (Polars does not compare Int64 with Float64)
+WHERE_LEFT = pl.DataFrame({"id": ["a", "b", "c", "d"], "lo": [1, 5, None, 3], "hi": [4, 9, 3, 8]})
+WHERE_RIGHT = pl.DataFrame({"rid": ["x", "y", "z", "w"], "v": [2, 5, 10, 4]})
+WHERE_RIGHT_CLASH = WHERE_RIGHT.with_columns(lo=pl.lit(0))
+WHERE_FLOAT_LEFT = pl.DataFrame({"id": ["a", "b"], "lo": [1.0, 5.0], "hi": [4.0, 9.0]})
+WHERE_FLOAT_RIGHT = pl.DataFrame({"rid": ["x", "y", "n"], "v": [2.0, 5.0, NAN]})
 
 CASES = [
     # -- polars_rank: every method; the first case is the one the pair holds -------------------------
@@ -79,12 +89,31 @@ CASES = [
                                  strategy="backward", suffix="_other", coalesce=False, allow_exact_matches=False)),
     Case("polars_join_asof", DATE_LEFT, {"right_ingredient": "R", "on": "d", "strategy": "forward", "tolerance": "2d", "__right_df__": DATE_RIGHT.lazy()},
          lambda lf: lf.join_asof(DATE_RIGHT.lazy(), on="d", strategy="forward", tolerance="2d")),
+    # -- polars_join_where: two predicates (the pair holds this case), one, a clashing column with a suffix, NaN, no match -----
+    Case("polars_join_where", WHERE_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('v') >= pl.col('lo')", "pl.col('v') <= pl.col('hi')"],
+                                           "__right_df__": WHERE_RIGHT.lazy()},
+         lambda lf: lf.join_where(WHERE_RIGHT.lazy(), pl.col("v") >= pl.col("lo"), pl.col("v") <= pl.col("hi"))),
+    Case("polars_join_where", WHERE_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('lo') < pl.col('v')"], "__right_df__": WHERE_RIGHT.lazy()},
+         lambda lf: lf.join_where(WHERE_RIGHT.lazy(), pl.col("lo") < pl.col("v"))),
+    Case("polars_join_where", WHERE_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('v') >= pl.col('lo_r')"], "suffix": "_r",
+                                           "__right_df__": WHERE_RIGHT_CLASH.lazy()},
+         lambda lf: lf.join_where(WHERE_RIGHT_CLASH.lazy(), pl.col("v") >= pl.col("lo_r"), suffix="_r")),
+    Case("polars_join_where", WHERE_FLOAT_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('v') >= pl.col('lo')", "pl.col('v') <= pl.col('hi')"],
+                                                 "__right_df__": WHERE_FLOAT_RIGHT.lazy()},
+         lambda lf: lf.join_where(WHERE_FLOAT_RIGHT.lazy(), pl.col("v") >= pl.col("lo"), pl.col("v") <= pl.col("hi"))),
+    Case("polars_join_where", WHERE_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('v') > 100"], "__right_df__": WHERE_RIGHT.lazy()},
+         lambda lf: lf.join_where(WHERE_RIGHT.lazy(), pl.col("v") > 100)),
 ]
 
 
 def _id(case: Case) -> str:
     extra = case.spec.get("method") or case.spec.get("strategy") or case.spec.get("how") or ""
     return f"{case.action}-{extra}"
+
+
+def _canonical(case: Case, frame: pl.DataFrame) -> pl.DataFrame:
+    """The frame as compared: rows sorted by every column when Polars gives no order for this action."""
+    return frame.sort(frame.columns, nulls_last=True) if case.action in UNORDERED else frame
 
 
 @pytest.mark.parametrize("case", CASES, ids=[_id(c) for c in CASES])
@@ -106,7 +135,7 @@ def test_the_action_equals_the_direct_polars_call(case):
         warnings.simplefilter("ignore")
         got = eager(action(case.frame.lazy(), dict(case.spec)))
         expected = eager(case.polars(case.frame.lazy()))
-    assert_frame_equal(got, expected)
+    assert_frame_equal(_canonical(case, got), _canonical(case, expected))
 
 
 def test_a_case_that_differs_from_polars_is_found():
@@ -133,4 +162,4 @@ def test_the_ingested_file_is_the_frame_of_the_case_and_the_result_equals_polars
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         expected = eager(case.polars(case.frame.lazy()))
-    assert_frame_equal(got, expected)
+    assert_frame_equal(_canonical(case, got), _canonical(case, expected))
