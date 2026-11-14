@@ -3,8 +3,8 @@ Joint Designer pure logic — key-match computation and canonical join-step (de)
 
 Serves the BLUEPRINT Joint Designer pane (ADR-082 Q5, BP-JOINT-1). Pure and stdlib-only:
 the caller (app/handlers/blueprint_handlers.py) materialises each ingredient via the
-orchestrator, extracts the join-key columns with polars (String-cast, mirroring how the
-assembler joins), and passes plain Python rows here. Importable headless — no Shiny, no polars.
+orchestrator, reads the schemas and the join-key columns with polars (as they are, no cast: the
+assembler does not cast either), and passes plain Python values here. Importable headless — no Shiny, no polars.
 
 Consumed by: app/handlers/blueprint_handlers.py (Joint Designer wiring).
 Produces: canonical `join` steps consumed by the transformer `join` action.
@@ -15,7 +15,7 @@ from __future__ import annotations
 from utils import action_names
 
 # @deps
-# provides: join_designer:compute_key_match, join_designer:build_join_step, join_designer:parse_join_step
+# provides: join_designer:check_join_keys, join_designer:compute_key_match, join_designer:build_join_step, join_designer:parse_join_step
 # consumes: —
 # consumed_by: app/handlers/blueprint_handlers.py, libs/blueprint_arch/tests/test_join_designer.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-082 (Q5), .claude/rules/rules_data_analysis_recipe_structure.md#7
@@ -26,75 +26,75 @@ from utils import action_names
 JOIN_HOW_OPTIONS = ["inner", "left", "outer", "semi", "anti", "cross"]
 
 
-def _normalise_dtype_family(dtype: str) -> str:
-    """Map a polars dtype name to a coarse family for an advisory compatibility check.
+def check_join_keys(left_schema, right_schema, left_keys, right_keys, right_id="the right table"):
+    """Say whether a join on these keys can be built, with the same rule as the assembler.
 
-    The assembler joins on the types the tables have and fails when the two sides of a key
-    differ (JOIN-KEY-TYPES-1). This family check is only an *advisory* about whether raw
-    values are likely to align (e.g. Float64 vs Int64 produces '2022.0' vs '2022'). It puts
-    String and Categorical in one family, so it does not report the difference the assembler
-    refuses.
+    The build (DataAssembler, JOIN-KEY-TYPES-1, 2026-11-14) keeps the declared type of every key and fails when
+    the two lists of keys differ in length, when a key column is missing, or when the types of a pair differ.
+    This function gives the same verdict for the same pair, so the preview never says "compatible" for a join
+    that the build refuses. The rule is written twice on purpose: a domain library may not import another one
+    (rules_runtime_environment.md section 4); the parity test in app/tests compares the two.
+
+    left_schema / right_schema: {column name: dtype name} of the two tables (dtype names as strings).
+    left_keys / right_keys: key column names, paired by position.
+
+    Returns {"ok": bool, "kind": None | "length" | "missing" | "type", "problem": str, "fix": str,
+    "type_pairs": [{"left_column", "right_column", "left_type", "right_type", "same"}]}.
     """
-    d = (dtype or "").lower()
-    if any(t in d for t in ("utf8", "str", "cat")):
-        return "text"
-    if "bool" in d:
-        return "bool"
-    if "date" in d or "time" in d:
-        return "temporal"
-    if "float" in d or "decimal" in d:
-        return "float"
-    if "int" in d:
-        return "int"
-    return d or "unknown"
+    left_keys = list(left_keys)
+    right_keys = list(right_keys)
+    fail = {"ok": False, "type_pairs": []}
+
+    if len(left_keys) != len(right_keys) or not left_keys:
+        return {**fail, "kind": "length",
+                "problem": (f"The key lists differ in length: left has {len(left_keys)} column(s) {left_keys} "
+                            f"and right has {len(right_keys)} column(s) {right_keys}."),
+                "fix": ("Pick the same number of key columns on each side, paired by position "
+                        "(the first of the left with the first of the right).")}
+
+    missing_left = [c for c in left_keys if c not in left_schema]
+    missing_right = [c for c in right_keys if c not in right_schema]
+    if missing_left or missing_right:
+        lacks = []
+        if missing_left:
+            lacks.append(f"key column(s) {missing_left} missing in the left table (its columns: {list(left_schema)})")
+        if missing_right:
+            lacks.append(f"key column(s) {missing_right} missing in '{right_id}' (its columns: {list(right_schema)})")
+        return {**fail, "kind": "missing",
+                "problem": "A join key column does not exist: " + "; ".join(lacks) + ".",
+                "fix": ("Pick key columns that exist in each table. The left table is the table at this step: a column of "
+                        "a table joined later is not in it yet, and a step before the join may have renamed or dropped it.")}
+
+    pairs = []
+    for left_col, right_col in zip(left_keys, right_keys):
+        left_type, right_type = str(left_schema[left_col]), str(right_schema[right_col])
+        pairs.append({"left_column": left_col, "right_column": right_col,
+                      "left_type": left_type, "right_type": right_type, "same": left_type == right_type})
+    differing = [p for p in pairs if not p["same"]]
+    if differing:
+        described = "; ".join(
+            (f"column '{p['left_column']}'" if p["left_column"] == p["right_column"]
+             else f"column '{p['left_column']}' (left) and '{p['right_column']}' (right)")
+            + f" is {p['left_type']} in the left table and {p['right_type']} in '{right_id}'"
+            for p in differing)
+        return {"ok": False, "kind": "type", "type_pairs": pairs,
+                "problem": f"The join key types differ: {described}.",
+                "fix": (f"Declare the same type for this field in input_fields of both tables. A cast step before the join "
+                        f"changes only the left table (the table at this step); the type of '{right_id}' is changed in its "
+                        "own input_fields or in its own wrangling. The engine does not change the type of a join key for you.")}
+    return {"ok": True, "kind": None, "problem": "", "fix": "", "type_pairs": pairs}
 
 
-def compute_key_match(left_rows, right_rows, left_dtypes, right_dtypes, sample_n=8):
+def compute_key_match(left_rows, right_rows, sample_n=8):
     """Compute real key-overlap statistics between two ingredients' join-key columns.
 
-    left_rows / right_rows: list of key tuples — one tuple per distinct key value (for a
-        single key, 1-tuples). The caller extracts these via
-        `lf.select([pl.col(k).cast(pl.String) for k in keys]).unique().collect().rows()`.
-        The preview casts the keys to String, so it can show an overlap for a pair of key types
-        that the build refuses: since JOIN-KEY-TYPES-1 (2026-11-14) the assembler does not cast
-        a key, and a join whose key types differ fails (task JOIN-PREVIEW-STRICT-1).
-    left_dtypes / right_dtypes: original polars dtype-name strings, key-aligned (for the
-        advisory dtype panel — independent of the String-cast overlap above).
+    Call it only when check_join_keys says the join can be built. The overlap is computed on the keys as they
+    are, with no cast (the build does not cast either).
+
+    left_rows / right_rows: list of key tuples, one tuple per distinct key value (1-tuples for a single key),
+        as the tables hold them: `lf.select(keys).unique().collect().rows()`.
     sample_n: number of unmatched key tuples to surface in each *_only_sample list.
-
-    Returns a stats dict (see keys below). Never raises on data shape — an arity mismatch
-    is reported via arity_ok=False rather than an exception.
     """
-    left_keys_n = len(left_dtypes)
-    right_keys_n = len(right_dtypes)
-    arity_ok = left_keys_n == right_keys_n and left_keys_n > 0
-
-    dtype_pairs = []
-    for i in range(min(left_keys_n, right_keys_n)):
-        lf_fam = _normalise_dtype_family(left_dtypes[i])
-        rf_fam = _normalise_dtype_family(right_dtypes[i])
-        dtype_pairs.append({
-            "left_key_dtype": left_dtypes[i],
-            "right_key_dtype": right_dtypes[i],
-            "family_match": lf_fam == rf_fam,
-        })
-    dtype_compatible = bool(dtype_pairs) and all(p["family_match"] for p in dtype_pairs)
-
-    if not arity_ok:
-        return {
-            "arity_ok": False,
-            "left_total": len(set(left_rows)),
-            "right_total": len(set(right_rows)),
-            "matched": 0,
-            "left_only": 0,
-            "right_only": 0,
-            "match_rate": 0.0,
-            "dtype_pairs": dtype_pairs,
-            "dtype_compatible": dtype_compatible,
-            "left_only_sample": [],
-            "right_only_sample": [],
-        }
-
     left_set = {tuple(r) for r in left_rows}
     right_set = {tuple(r) for r in right_rows}
     matched_set = left_set & right_set
@@ -103,20 +103,15 @@ def compute_key_match(left_rows, right_rows, left_dtypes, right_dtypes, sample_n
 
     left_total = len(left_set)
     matched = len(matched_set)
-    match_rate = (matched / left_total) if left_total else 0.0
-
     return {
-        "arity_ok": True,
         "left_total": left_total,
         "right_total": len(right_set),
         "matched": matched,
         "left_only": len(left_only_set),
         "right_only": len(right_only_set),
-        "match_rate": match_rate,
-        "dtype_pairs": dtype_pairs,
-        "dtype_compatible": dtype_compatible,
-        "left_only_sample": sorted(left_only_set)[:sample_n],
-        "right_only_sample": sorted(right_only_set)[:sample_n],
+        "match_rate": (matched / left_total) if left_total else 0.0,
+        "left_only_sample": sorted(left_only_set, key=str)[:sample_n],
+        "right_only_sample": sorted(right_only_set, key=str)[:sample_n],
     }
 
 

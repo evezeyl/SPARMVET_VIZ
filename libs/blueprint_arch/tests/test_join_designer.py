@@ -2,7 +2,7 @@
 Automated tests for join_designer.py (BP-JOINT-1, ADR-082 Q5).
 
 Verifies:
-- compute_key_match: full / partial / no overlap, composite keys, dtype-family advisory,
+- compute_key_match: full / partial / no overlap, composite keys, type verdict as the build,
   arity mismatch, empty inputs.
 - build_join_step: symmetric single, asymmetric single, composite symmetric/asymmetric,
   comment + how passthrough, the YAML "on" key contract, validation errors.
@@ -16,6 +16,7 @@ import pytest
 
 from blueprint_arch.join_designer import (
     JOIN_HOW_OPTIONS,
+    check_join_keys,
     compute_key_match,
     build_join_step,
     parse_join_step,
@@ -28,85 +29,127 @@ class TestComputeKeyMatch:
     def test_full_overlap_single_key(self):
         left = [("S1",), ("S2",), ("S3",)]
         right = [("S1",), ("S2",), ("S3",)]
-        r = compute_key_match(left, right, ["Categorical"], ["Categorical"])
-        assert r["arity_ok"] is True
+        r = compute_key_match(left, right)
         assert r["left_total"] == 3
         assert r["right_total"] == 3
         assert r["matched"] == 3
         assert r["left_only"] == 0
         assert r["right_only"] == 0
         assert r["match_rate"] == 1.0
-        assert r["dtype_compatible"] is True
         assert r["left_only_sample"] == []
 
     def test_partial_overlap(self):
         left = [("S1",), ("S2",), ("S3",), ("S4",), ("S5",)]
         right = [("S1",), ("S2",), ("S3",), ("X9",)]
-        r = compute_key_match(left, right, ["String"], ["String"])
+        r = compute_key_match(left, right)
         assert r["matched"] == 3
         assert r["left_only"] == 2          # S4, S5
         assert r["right_only"] == 1         # X9
         assert r["match_rate"] == pytest.approx(3 / 5)
         assert ("S4",) in r["left_only_sample"]
-        assert ("S5",) in r["left_only_sample"]
         assert ("X9",) in r["right_only_sample"]
 
     def test_no_overlap(self):
-        left = [("A",), ("B",)]
-        right = [("C",), ("D",)]
-        r = compute_key_match(left, right, ["String"], ["String"])
+        r = compute_key_match([("A",), ("B",)], [("C",), ("D",)])
         assert r["matched"] == 0
         assert r["match_rate"] == 0.0
         assert r["left_only"] == 2
         assert r["right_only"] == 2
 
     def test_composite_keys(self):
-        # (sample_id, gene_id) long-format join
         left = [("S1", "blaTEM"), ("S1", "mecA"), ("S2", "blaTEM")]
         right = [("S1", "blaTEM"), ("S2", "blaTEM"), ("S9", "vanA")]
-        r = compute_key_match(left, right, ["String", "String"], ["String", "String"])
-        assert r["arity_ok"] is True
-        assert r["matched"] == 2            # (S1,blaTEM) and (S2,blaTEM)
-        assert r["left_only"] == 1          # (S1,mecA)
-        assert r["right_only"] == 1         # (S9,vanA)
-
-    def test_dtype_family_advisory_mismatch(self):
-        # Float64 vs Int64 — the classic '2022.0' vs '2022' trap; flagged incompatible.
-        left = [("2022",), ("2023",)]
-        right = [("2022",), ("2023",)]
-        r = compute_key_match(left, right, ["Float64"], ["Int64"])
-        assert r["dtype_compatible"] is False
-        assert r["dtype_pairs"][0]["family_match"] is False
-        # overlap still computed on the String-cast rows the caller supplied
+        r = compute_key_match(left, right)
         assert r["matched"] == 2
+        assert r["left_only"] == 1
+        assert r["right_only"] == 1
 
-    def test_text_family_cross_compat(self):
-        # Categorical vs String/Utf8 are the same advisory family ('text').
-        left = [("S1",)]
-        right = [("S1",)]
-        r = compute_key_match(left, right, ["Categorical"], ["Utf8"])
-        assert r["dtype_compatible"] is True
-
-    def test_arity_mismatch(self):
-        left = [("S1", "g1")]
-        right = [("S1",)]
-        r = compute_key_match(left, right, ["String", "String"], ["String"])
-        assert r["arity_ok"] is False
+    def test_the_keys_are_compared_as_they_are_no_cast(self):
+        # the number 2022 and the text "2022" are different keys: nothing is cast to text (JOIN-PREVIEW-STRICT-1)
+        r = compute_key_match([(2022,), (2023,)], [("2022",), ("2023",)])
         assert r["matched"] == 0
 
+    def test_mixed_types_in_the_samples_do_not_crash(self):
+        r = compute_key_match([(1,), ("a",)], [(2,)])
+        assert r["left_only"] == 2
+
     def test_empty_left(self):
-        r = compute_key_match([], [("S1",)], ["String"], ["String"])
+        r = compute_key_match([], [("S1",)])
         assert r["left_total"] == 0
         assert r["match_rate"] == 0.0
         assert r["matched"] == 0
 
     def test_dedup_rows(self):
-        # duplicate raw rows collapse to distinct keys
-        left = [("S1",), ("S1",), ("S2",)]
-        right = [("S1",)]
-        r = compute_key_match(left, right, ["String"], ["String"])
+        r = compute_key_match([("S1",), ("S1",), ("S2",)], [("S1",)])
         assert r["left_total"] == 2
         assert r["matched"] == 1
+
+
+# ── check_join_keys: the same verdicts as the build (libs/transformer/tests/test_join_key_types.py) ─────
+
+L = lambda **cols: dict(cols)  # noqa: E731
+
+
+class TestCheckJoinKeys:
+    @pytest.mark.parametrize("dtype", ["Categorical", "String", "Int64"])
+    def test_equal_types_are_joinable(self, dtype):
+        r = check_join_keys(L(sample_id=dtype), L(sample_id=dtype), ["sample_id"], ["sample_id"])
+        assert r["ok"] is True and r["kind"] is None
+
+    @pytest.mark.parametrize("left,right", [("String", "Categorical"), ("Categorical", "String")])
+    def test_string_against_categorical_is_not_joinable_both_ways(self, left, right):
+        r = check_join_keys(L(sample_id=left), L(sample_id=right), ["sample_id"], ["sample_id"], right_id="R")
+        assert r["ok"] is False and r["kind"] == "type"
+        assert f"{left} in the left table and {right} in 'R'" in r["problem"]
+
+    def test_the_fix_says_a_step_before_the_join_changes_only_the_left_table(self):
+        r = check_join_keys(L(sample_id="String"), L(sample_id="Categorical"), ["sample_id"], ["sample_id"], right_id="R")
+        for part in ("only the left table", "'R'", "its own input_fields", "its own wrangling", "input_fields of both tables"):
+            assert part in r["fix"]
+
+    def test_number_against_text_is_not_joinable(self):
+        r = check_join_keys(L(sample_id="Int64"), L(sample_id="String"), ["sample_id"], ["sample_id"], right_id="R")
+        assert r["kind"] == "type" and "Int64 in the left table and String" in r["problem"]
+
+    def test_left_on_right_on_of_different_types_name_both_columns(self):
+        r = check_join_keys(L(VF_gene="String"), L(Gene_name="Categorical"), ["VF_gene"], ["Gene_name"])
+        assert r["kind"] == "type" and "'VF_gene' (left) and 'Gene_name' (right)" in r["problem"]
+
+    def test_with_two_keys_only_the_column_that_differs_is_named(self):
+        r = check_join_keys(L(sample_id="String", gene="Categorical"), L(sample_id="String", gene="String"),
+                            ["sample_id", "gene"], ["sample_id", "gene"])
+        assert r["kind"] == "type" and "'gene'" in r["problem"] and "'sample_id'" not in r["problem"]
+        assert [p["same"] for p in r["type_pairs"]] == [True, False]
+
+    def test_several_equal_keys_are_joinable(self):
+        r = check_join_keys(L(a="String", b="Int64"), L(a="String", b="Int64"), ["a", "b"], ["a", "b"])
+        assert r["ok"] is True
+
+    def test_missing_on_the_left_only_says_which_side(self):
+        r = check_join_keys(L(sample_id="String"), L(other="String", year="Int64"), ["no_such"], ["other"], right_id="R")
+        assert r["kind"] == "missing" and "missing in the left table" in r["problem"] and "missing in 'R'" not in r["problem"]
+        assert "sample_id" in r["problem"]
+
+    def test_missing_on_the_right_only_says_which_side(self):
+        r = check_join_keys(L(sample_id="String"), L(sample_id="String", year="Int64"), ["sample_id"], ["no_such"], right_id="R")
+        assert r["kind"] == "missing" and "missing in 'R'" in r["problem"] and "missing in the left table" not in r["problem"]
+        assert "year" in r["problem"]
+
+    def test_missing_on_both_sides_names_both(self):
+        r = check_join_keys(L(a="String"), L(a="String"), ["x"], ["x"], right_id="R")
+        assert "missing in the left table" in r["problem"] and "missing in 'R'" in r["problem"]
+
+    def test_unequal_key_lists_are_not_joinable(self):
+        r = check_join_keys(L(a="String", b="String"), L(a="String"), ["a", "b"], ["a"])
+        assert r["kind"] == "length" and "2" in r["problem"] and "1" in r["problem"]
+
+    def test_no_key_at_all_is_not_joinable(self):
+        assert check_join_keys(L(a="String"), L(a="String"), [], [])["ok"] is False
+
+    def test_length_is_checked_before_missing_columns(self):
+        # same order as the build: lengths, then missing columns, then types
+        assert check_join_keys(L(a="String"), L(a="String"), ["x", "a"], ["a"])["kind"] == "length"
+        assert check_join_keys(L(a="String"), L(a="Int64"), ["x"], ["a"])["kind"] == "missing"
 
 
 # ── build_join_step ──────────────────────────────────────────────────────────

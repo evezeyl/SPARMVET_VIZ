@@ -27,7 +27,7 @@ from __future__ import annotations
 # consumes: function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
 # consumes: function:normalise_plot_spec, function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)
-# consumes: libs/blueprint_arch/src/blueprint_arch/join_designer.py (compute_key_match, build_join_step, parse_join_step — BP-JOINT-1 Joint Designer pane)
+# consumes: libs/blueprint_arch/src/blueprint_arch/join_designer.py (check_join_keys, compute_key_match, build_join_step, parse_join_step — BP-JOINT-1 Joint Designer pane)
 # consumes: libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots, create_group, delete_group, create_plot, delete_plot, assign_plot — BP-GROUPS-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/new_recipe.py (new_recipe_draft — BP-NEW-1, recipe format 1), libs/utils/src/utils/recipe_factory.py (write_recipe)
 # provides: outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui, effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)
@@ -2038,28 +2038,19 @@ def define_server(input, output, session, *,
         joint_preview.set(None)
         ui.update_navs("architect_internal_tabs", selected="joint_designer")
 
-    def _jd_extract_keys(data_analysis_recipe_id, ingredient_id, keys):
-        """Materialise an ingredient and return (rows, dtypes) for its key columns.
-
-        rows: list of String-cast key tuples (mirrors how the assembler joins).
-        dtypes: original polars dtype names, key-aligned.
-        Raises on materialisation / missing-column errors (caller surfaces them).
-        """
+    def _jd_materialise(data_analysis_recipe_id, ingredient_id):
+        """Materialise an ingredient (Tier 1) and return (LazyFrame, {column: dtype name}), types as they are."""
         anchor_dir = bootloader.get_location("user_data") / "anchors"
         anchor_dir.mkdir(parents=True, exist_ok=True)
         out_p = anchor_dir / f"_jd_{ingredient_id}.parquet"
         orchestrator.materialize_tier1(
             data_analysis_recipe_id=data_analysis_recipe_id, collection_id=ingredient_id, output_path=out_p)
         lf = pl.scan_parquet(out_p)
-        schema = lf.collect_schema()
-        missing = [k for k in keys if k not in schema.names()]
-        if missing:
-            raise ValueError(
-                f"Ingredient '{ingredient_id}' has no column(s): {', '.join(missing)}")
-        dtypes = [str(schema[k]) for k in keys]
-        rows = (lf.select([pl.col(k).cast(pl.String) for k in keys])
-                  .unique().collect().rows())
-        return rows, dtypes
+        return lf, {name: str(dtype) for name, dtype in lf.collect_schema().items()}
+
+    def _jd_key_rows(lf, keys):
+        """Distinct key tuples as the table holds them (no cast: the build does not cast either)."""
+        return lf.select([pl.col(k) for k in keys]).unique().collect().rows()
 
     @reactive.Effect
     @reactive.event(input.btn_joint_preview)
@@ -2090,13 +2081,15 @@ def define_server(input, output, session, *,
         try:
             with ui.Progress(min=0, max=2) as p:
                 p.set(0, message=f"Materialising {left_ing}…")
-                left_rows, left_dtypes = _jd_extract_keys(
-                    data_analysis_recipe_id, left_ing, left_keys)
+                left_lf, left_schema = _jd_materialise(data_analysis_recipe_id, left_ing)
                 p.set(1, message=f"Materialising {right_ing}…")
-                right_rows, right_dtypes = _jd_extract_keys(
-                    data_analysis_recipe_id, right_ing, right_keys)
-            stats = compute_key_match(
-                left_rows, right_rows, left_dtypes, right_dtypes)
+                right_lf, right_schema = _jd_materialise(data_analysis_recipe_id, right_ing)
+            verdict = check_join_keys(left_schema, right_schema, left_keys, right_keys, right_id=right_ing)
+            if verdict["ok"]:
+                stats = compute_key_match(_jd_key_rows(left_lf, left_keys), _jd_key_rows(right_lf, right_keys))
+            else:
+                stats = {}
+            stats["verdict"] = verdict
             stats["error"] = None
             stats["_meta"] = {"left_ing": left_ing, "right_ing": right_ing,
                               "left_keys": left_keys, "right_keys": right_keys}
@@ -2116,9 +2109,13 @@ def define_server(input, output, session, *,
             return ui.div(r["error"], class_="ultra-small",
                           style=("background:#ffe0e0;color:#d62828;padding:8px 10px;"
                                  "border-radius:4px;"))
-        if not r.get("arity_ok"):
+        verdict = r["verdict"]
+        if not verdict["ok"]:
+            # Same verdict as the build: the join would fail, so no overlap is shown.
             return ui.div(
-                "Key arity mismatch — select an equal number of keys on each side.",
+                ui.tags.strong("This join cannot be built."),
+                ui.div(verdict["problem"], style="font-size:0.72rem;margin-top:4px;"),
+                ui.div(ui.tags.strong("Fix: "), verdict["fix"], style="font-size:0.72rem;margin-top:4px;"),
                 class_="ultra-small",
                 style=("background:#ffe0e0;color:#d62828;padding:8px 10px;"
                        "border-radius:4px;"))
@@ -2133,12 +2130,9 @@ def define_server(input, output, session, *,
             bg, fg = "#ffe0e0", "#d62828"
 
         dtype_rows = [
-            ui.tags.li(
-                f"{p['left_key_dtype']} ↔ {p['right_key_dtype']}: "
-                + ("compatible" if p["family_match"] else "DIFFERENT family — "
-                   "values may not align (e.g. Float64 '2022.0' vs Int64 '2022')"),
-                style="font-size:0.7rem;")
-            for p in r.get("dtype_pairs", [])
+            ui.tags.li(f"{p['left_type']} = {p['right_type']}: same type",
+                       style="font-size:0.7rem;")
+            for p in verdict["type_pairs"]
         ]
         samp_left = r.get("left_only_sample", [])
         samp_right = r.get("right_only_sample", [])
@@ -2159,8 +2153,8 @@ def define_server(input, output, session, *,
                 ui.tags.li(f"Left-only (dropped by inner join): {r['left_only']}  ·  "
                            f"Right-only: {r['right_only']}",
                            style="font-size:0.72rem;"),
-                ui.tags.li([ui.tags.span("dtype compatibility:"), ui.tags.ul(*dtype_rows)]
-                           if dtype_rows else "dtype compatibility: —",
+                ui.tags.li([ui.tags.span("key types:"), ui.tags.ul(*dtype_rows)]
+                           if dtype_rows else "key types: —",
                            style="font-size:0.72rem;"),
                 ui.tags.li(f"Sample left-only: {_fmt_sample(samp_left)}",
                            style="font-size:0.7rem;color:#6c757d;"),
