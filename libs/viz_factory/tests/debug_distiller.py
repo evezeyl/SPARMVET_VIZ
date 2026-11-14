@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # @deps
 # provides: script:debug_distiller
-# consumes: libs/viz_factory/src/viz_factory/distiller.py, libs/viz_factory/tests/test_data/
+# consumes: libs/viz_factory/tests/test_data/
 # consumed_by: manual distiller testing
 # doc: .claude/rules/rules_data_engine.md
 # @end_deps

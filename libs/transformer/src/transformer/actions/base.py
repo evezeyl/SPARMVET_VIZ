@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 # @deps
 # provides: decorator:register_action, registry:AVAILABLE_WRANGLING_ACTIONS, registry:ACTION_SCHEMAS
-# consumed_by: libs/transformer/src/transformer/actions/cleaning/core.py, libs/transformer/src/transformer/actions/cleaning/analytical.py, libs/transformer/src/transformer/actions/cleaning/advanced.py, libs/transformer/src/transformer/actions/cleaning/expressions.py, libs/transformer/src/transformer/actions/relational/joins.py, libs/transformer/src/transformer/actions/reshaping/core.py, libs/transformer/src/transformer/actions/performance/aggregation.py, libs/transformer/src/transformer/actions/persistence/anchor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/blueprint_arch/src/blueprint_arch/schema_registry.py
+# consumed_by: libs/transformer/src/transformer/actions/composite.py, libs/transformer/src/transformer/actions/modified.py, libs/transformer/src/transformer/actions/polars_calls.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/blueprint_arch/src/blueprint_arch/schema_registry.py
 # doc: .claude/rules/rules_data_engine.md, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
 

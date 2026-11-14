@@ -12,9 +12,9 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:_apply_filter_rows
+# provides: function:_apply_filter_rows, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
 # consumes: polars, libs/utils/src/utils/filter_values.py
-# consumed_by: app/handlers/home_theater.py
+# consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
 

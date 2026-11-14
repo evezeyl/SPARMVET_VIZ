@@ -1,7 +1,7 @@
 # @deps
 # provides: pipeline:materialize_tier1, pipeline:materialize_tier2, method:prepare_ingredient, function:compute_data_analysis_recipe_keys
 # mirrors: libs/transformer/tests/debug_assembler.py
-# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/metadata_validator.py, libs/transformer/src/transformer/actions/persistence/anchor.py, app/modules/cache_keys.py
+# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/metadata_validator.py, app/modules/cache_keys.py
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/blueprint_handlers.py
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps

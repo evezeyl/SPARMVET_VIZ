@@ -1,6 +1,6 @@
 # @deps
 # provides: function:define_server (test_lab_handlers)
-# consumes: app/modules/test_lab_studio.py (scaffold_from_uploads), shiny, libs/test_lab/reformatter.py, libs/test_lab/aqua_synthesizer.py, libs/test_lab/anonymiser.py, libs/id_reconciliation/
+# consumes: app/modules/test_lab_studio.py (scaffold_from_uploads), shiny, libs/test_lab/src/test_lab/reformatter.py, libs/test_lab/src/test_lab/aqua_synthesizer.py, libs/test_lab/src/test_lab/anonymiser.py, libs/id_reconciliation/
 # consumed_by: app/src/server.py
 # doc: .claude/rules/rules_test_lab.md §6, .claude/design/spaces/TEST_LAB.md
 # @end_deps
