@@ -1,13 +1,14 @@
 # @deps
 # provides: class:GalleryViewer, function:build_sidebar_ui, function:render_explorer_ui
-# consumes: app/src/bootloader.py (bootloader singleton)
+# consumes: app/src/bootloader.py (bootloader singleton), libs/viz_gallery/src/viz_gallery/taxonomy.py (filter_panels)
 # consumed_by: app/handlers/gallery_handlers.py, app/src/server.py, app/handlers/home_theater.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-033, .claude/knowledge/architecture_decisions.md#ADR-057
+# doc: .claude/knowledge/architecture_decisions.md#ADR-033, .claude/knowledge/architecture_decisions.md#ADR-057, .claude/design/recipe_format_spec.md (section 9, G1)
 # @end_deps
 from shiny import ui, reactive, render
 import yaml
 from pathlib import Path
 from app.src.bootloader import bootloader
+from viz_gallery.taxonomy import filter_panels
 
 
 class GalleryViewer:
@@ -142,40 +143,11 @@ class GalleryViewer:
         """
         Gallery filter + example selector UI for the left nav_sidebar.
         ADR-057: moved from internal layout_sidebar to persistent nav_sidebar accordion.
-        Choices are read dynamically from gallery_index.json pivot so new example
-        families/patterns appear automatically without code changes.
+        The six filter panels (label, icon, order of the axes and of their terms) come from the
+        specification data through viz_gallery.taxonomy.filter_panels; a panel offers the terms that
+        at least one indexed example uses. No list of terms is kept in this file (spec section 9, G1).
         """
-        pivot = self._load_pivot()
-
-        _diff_order    = {"Simple": 0, "Intermediate": 1, "Advanced": 2}
-        _ss_order      = {"any": 0, "individual points": 1, "medium+": 2, "large": 3}
-        _def_families  = ["Comparison", "Correlation", "Distribution",
-                          "Evolution", "Part-to-Whole", "Ranking"]
-        _def_patterns  = ["1 Numeric", "1 Numeric, 1 Categorical",
-                          "1 Numeric, 2 Categorical", "1 Numeric, 2 Categorical (Faceted)",
-                          "2 Numeric", "2 Numeric, 1 Categorical (Faceted)", "Numeric-Numeric"]
-        _def_diff      = ["Simple", "Intermediate", "Advanced"]
-        _def_geoms     = ["geom_area", "geom_bar", "geom_bin_2d", "geom_boxplot",
-                          "geom_col", "geom_density", "geom_freqpoly", "geom_histogram",
-                          "geom_jitter", "geom_line", "geom_path", "geom_point",
-                          "geom_pointrange", "geom_qq", "geom_segment", "geom_sina",
-                          "geom_step", "geom_tile", "geom_violin", "stat_ecdf"]
-        _def_show      = ["change", "distribution", "frequency", "normality",
-                          "proportion", "ranking", "relationship", "trend", "uncertainty"]
-        _def_ss        = ["any", "individual points", "medium+", "large"]
-
-        family_choices = sorted(pivot.get("by_family", {}).keys()) or _def_families
-        pattern_choices = sorted(pivot.get("by_pattern", {}).keys()) or _def_patterns
-        difficulty_choices = sorted(
-            pivot.get("by_difficulty", {}).keys() or _def_diff,
-            key=lambda x: _diff_order.get(x, 99),
-        )
-        geom_choices = sorted(pivot.get("by_geom", {}).keys()) or _def_geoms
-        show_choices = sorted(pivot.get("by_show", {}).keys()) or _def_show
-        ss_choices = sorted(
-            pivot.get("by_sample_size", {}).keys() or _def_ss,
-            key=lambda x: _ss_order.get(x, 99),
-        )
+        panels = filter_panels(self._load_pivot())
 
         return ui.accordion(
             ui.accordion_panel(
@@ -190,36 +162,14 @@ class GalleryViewer:
             ui.accordion_panel(
                 "🔍 Gallery Taxonomy",
                 ui.accordion(
-                    self._filter_panel(
-                        "📊 Family (Purpose)",
-                        "gallery_filter_family", "gallery_all_family",
-                        family_choices, "tax_family",
-                    ),
-                    self._filter_panel(
-                        "🔢 Data Pattern",
-                        "gallery_filter_pattern", "gallery_all_pattern",
-                        pattern_choices, "tax_pattern",
-                    ),
-                    self._filter_panel(
-                        "📈 Difficulty",
-                        "gallery_filter_difficulty", "gallery_all_difficulty",
-                        difficulty_choices, "tax_difficulty",
-                    ),
-                    self._filter_panel(
-                        "⚙️ Primary Geom",
-                        "gallery_filter_geom", "gallery_all_geom",
-                        geom_choices, "tax_geom",
-                    ),
-                    self._filter_panel(
-                        "🎯 What it Shows",
-                        "gallery_filter_show", "gallery_all_show",
-                        show_choices, "tax_show",
-                    ),
-                    self._filter_panel(
-                        "📏 Sample Size",
-                        "gallery_filter_sample_size", "gallery_all_sample_size",
-                        ss_choices, "tax_sample_size",
-                    ),
+                    *[
+                        self._filter_panel(
+                            panel["label"],
+                            f"gallery_filter_{panel['axis']}", f"gallery_all_{panel['axis']}",
+                            panel["choices"], f"tax_{panel['axis']}",
+                        )
+                        for panel in panels
+                    ],
                     id="gallery_taxonomy_sub_accordion",
                     multiple=True,
                     open=False,

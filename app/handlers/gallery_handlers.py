@@ -21,7 +21,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (gallery_handlers)
-# consumes: app/src/bootloader.py
+# consumes: app/src/bootloader.py, libs/viz_gallery/src/viz_gallery/taxonomy.py (display_axes, filter_panels)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-037, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/rules/rules_ui_dashboard.md#5
 # @end_deps
@@ -32,6 +32,8 @@ from pathlib import Path
 
 import polars as pl
 from shiny import reactive, render, ui
+
+from viz_gallery.taxonomy import display_axes, filter_panels
 
 
 def define_server(input, output, session, *,
@@ -48,90 +50,26 @@ def define_server(input, output, session, *,
 
     # --- Gallery Taxonomy 'Select All' Logic ---
 
-    def _pivot_choices(key: str, fallback: list[str]) -> list[str]:
-        """Read sorted choices for a pivot axis from gallery_index.json."""
+    def _axis_choices(axis: str) -> list[str]:
+        """The choices of one filter panel: the same list the sidebar shows (viz_gallery.taxonomy, spec section 9, G1)."""
         index_path = bootloader.get_location("gallery") / "gallery_index.json"
+        pivot = {}
         if index_path.exists():
-            try:
-                with open(index_path) as f:
-                    pivot = json.load(f).get("pivot", {})
-                choices = sorted(pivot.get(key, {}).keys())
-                if choices:
-                    return choices
-            except Exception:
-                pass
-        return fallback
+            with open(index_path) as f:
+                pivot = json.load(f).get("pivot", {})
+        return next(panel["choices"] for panel in filter_panels(pivot) if panel["axis"] == axis)
 
-    _diff_order = {"Simple": 0, "Intermediate": 1, "Advanced": 2}
-    _ss_order   = {"any": 0, "individual points": 1, "medium+": 2, "large": 3}
-    _fb_family  = ["Comparison", "Correlation", "Distribution",
-                   "Evolution", "Part-to-Whole", "Ranking"]
-    _fb_pattern = ["1 Numeric", "1 Numeric, 1 Categorical",
-                   "1 Numeric, 2 Categorical", "1 Numeric, 2 Categorical (Faceted)",
-                   "2 Numeric", "2 Numeric, 1 Categorical (Faceted)", "Numeric-Numeric"]
-    _fb_diff    = ["Simple", "Intermediate", "Advanced"]
-    _fb_geom    = ["geom_area", "geom_bar", "geom_bin_2d", "geom_boxplot",
-                   "geom_col", "geom_density", "geom_freqpoly", "geom_histogram",
-                   "geom_jitter", "geom_line", "geom_path", "geom_point",
-                   "geom_pointrange", "geom_qq", "geom_segment", "geom_sina",
-                   "geom_step", "geom_tile", "geom_violin", "stat_ecdf"]
-    _fb_show    = ["change", "distribution", "frequency", "normality",
-                   "proportion", "ranking", "relationship", "trend", "uncertainty"]
-    _fb_ss      = ["any", "individual points", "medium+", "large"]
+    def _make_select_all(axis: str):
+        """One 'Select all' effect per taxonomy axis; the axes come from the specification data."""
+        @reactive.Effect
+        def _sync_all():
+            v = input[f"gallery_all_{axis}"]()
+            if v is None:
+                return
+            ui.update_checkbox_group(f"gallery_filter_{axis}", selected=_axis_choices(axis) if v else [])
+        return _sync_all
 
-    @reactive.Effect
-    def _sync_family_all():
-        v = input.gallery_all_family()
-        if v is None:
-            return
-        choices = _pivot_choices("by_family", _fb_family)
-        ui.update_checkbox_group("gallery_filter_family", selected=choices if v else [])
-
-    @reactive.Effect
-    def _sync_pattern_all():
-        v = input.gallery_all_pattern()
-        if v is None:
-            return
-        choices = _pivot_choices("by_pattern", _fb_pattern)
-        ui.update_checkbox_group("gallery_filter_pattern", selected=choices if v else [])
-
-    @reactive.Effect
-    def _sync_difficulty_all():
-        v = input.gallery_all_difficulty()
-        if v is None:
-            return
-        choices = sorted(
-            _pivot_choices("by_difficulty", _fb_diff),
-            key=lambda x: _diff_order.get(x, 99),
-        )
-        ui.update_checkbox_group("gallery_filter_difficulty", selected=choices if v else [])
-
-    @reactive.Effect
-    def _sync_geom_all():
-        v = input.gallery_all_geom()
-        if v is None:
-            return
-        choices = _pivot_choices("by_geom", _fb_geom)
-        ui.update_checkbox_group("gallery_filter_geom", selected=choices if v else [])
-
-    @reactive.Effect
-    def _sync_show_all():
-        v = input.gallery_all_show()
-        if v is None:
-            return
-        choices = _pivot_choices("by_show", _fb_show)
-        ui.update_checkbox_group("gallery_filter_show", selected=choices if v else [])
-
-    @reactive.Effect
-    def _sync_sample_size_all():
-        v = input.gallery_all_sample_size()
-        if v is None:
-            return
-        choices = sorted(
-            _pivot_choices("by_sample_size", _fb_ss),
-            key=lambda x: _ss_order.get(x, 99),
-        )
-        ui.update_checkbox_group("gallery_filter_sample_size", selected=choices if v else [])
+    _select_all_effects = [_make_select_all(item["axis"]) for item in display_axes()]
 
     # --- Gallery Initialization (ADR-037) ---
     @reactive.Effect
