@@ -12,7 +12,7 @@ Consumed by: app/modules/gallery_examples.py (which passes the catalogs), assets
 No Shiny import. If deleted: `gallery_index.json` cannot be rebuilt and the gallery has no list of examples.
 
 # @deps
-# provides: class:GalleryManager (check_examples, rebuild_index, submit_example, list_submissions), class:Examples, constant:RECIPE_FILE
+# provides: class:GalleryManager (check_examples, rebuild_index, sync_index, submit_example, list_submissions), class:Examples, constant:RECIPE_FILE
 # consumes: libs/utils/src/utils/recipe_loader.py (check_recipe_file, load_recipe), libs/utils/src/utils/legacy_keys.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, libs/viz_gallery/src/viz_gallery/example_recipe.py
 # consumed_by: app/modules/gallery_examples.py, assets/scripts/refresh_gallery.py, assets/scripts/convert_gallery_examples.py
 # doc: .claude/design/recipe_format_spec.md (section 9)
@@ -24,7 +24,7 @@ import shutil
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, FrozenSet, List, Optional
+from typing import Dict, FrozenSet, List, Optional, Tuple
 
 import polars as pl
 
@@ -128,6 +128,28 @@ class GalleryManager:
                 print(f"[gallery] {name} is left out of the index: {reason}")
         print(f"[gallery] index rebuilt: {len(registry)} example(s), {len(examples.rejected)} left out.")
         return index
+
+    def sync_index(self, catalogs: Optional[dict] = None) -> Tuple[Examples, str]:
+        """The check at app start (spec section 9, DEC48): the same check as the rebuild, the index rewritten only if it differs.
+
+        Returns the check result and what happened to the index: `unchanged` (it already lists exactly the accepted
+        examples and records the same rejections; the file is not touched), `rewritten` (by `rebuild_index`, the one
+        function) or `not_writable` (the folder cannot be written, the old index stays and the caller must not trust it).
+        """
+        examples = self.check_examples(catalogs)
+        index_path = self.gallery_dir / INDEX_FILE
+        try:
+            current = json.loads(index_path.read_text(encoding="utf-8"))
+            if set(current["registry"]) == set(examples.accepted) and current["metadata"]["rejected"] == examples.rejected:
+                return examples, "unchanged"
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
+        try:
+            self.rebuild_index(catalogs)
+        except OSError as error:
+            print(f"[gallery] the index cannot be written ({error}); the gallery keeps the old list.")
+            return examples, "not_writable"
+        return examples, "rewritten"
 
     def submit_example(self, name: str, data: pl.DataFrame, meta_markdown: str, taxonomy: Dict[str, str],
                        plot_spec: dict, preview_path: str, description: str = "") -> str:
