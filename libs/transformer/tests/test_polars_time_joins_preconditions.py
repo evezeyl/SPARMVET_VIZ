@@ -378,7 +378,7 @@ def test_where_numbers_of_different_types_cannot_be_compared_and_the_step_fails_
 
 
 def test_where_a_column_in_both_tables_is_written_with_the_suffix_and_the_suffix_can_be_changed():
-    right = W_RIGHT.with_columns(lo=pl.lit(0))
+    right = W_RIGHT.with_columns(lo=pl.lit(0, dtype=pl.Int64))
     default = where(W_LEFT, right, ["pl.col('v') >= pl.col('lo_right')"])
     assert "lo_right" in default.columns
     named = where(W_LEFT, right, ["pl.col('v') >= pl.col('lo_x')"], suffix="_x")

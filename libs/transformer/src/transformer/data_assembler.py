@@ -8,6 +8,7 @@
 import os
 from typing import Dict, List, Any
 import polars as pl
+from polars.exceptions import PanicException
 from transformer.registry import get_action_function
 from utils.action_names import CAST, JOIN, JOIN_ASOF
 from utils.errors import TransformationError
@@ -307,6 +308,23 @@ class DataAssembler:
                     category="assembly",
                     surface="plot_overlay",
                     severity="error",
+                )
+                print(pe.format())
+                raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
+            except PanicException as exc:
+                # a Rust panic of Polars is a BaseException: without this clause it passes every `except Exception` of the engine and the app
+                # (ADR-104). Only this class is caught here; KeyboardInterrupt and SystemExit pass.
+                pe = PipelineError(
+                    component="DataAssembler",
+                    problem=f"Polars stopped at assembly step {i} ('{action_name}') on this input ({str(exc).strip()[:120]})",
+                    location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {i}: action='{action_name}'",
+                    fix="Check the values written in this step (a zero or very fine duration, an empty list) and the data it works on; "
+                        "the action could not refuse this input before Polars ran.",
+                    who="data_analysis_recipe_author",
+                    category="assembly",
+                    surface="plot_overlay",
+                    severity="error",
+                    evidence={"error_type": "PanicException", "error_detail": str(exc)[:200]},
                 )
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc

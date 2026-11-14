@@ -19,6 +19,7 @@ What each action does when its precondition is not met (every case has a test):
 Consumed by: the action registry (`AVAILABLE_WRANGLING_ACTIONS`), the checker, Blueprint's form catalogue.
 If deleted: no recipe can use these five actions.
 """
+import ast
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -58,6 +59,9 @@ def _rank(lf: pl.LazyFrame, spec: dict, target) -> pl.LazyFrame:
         raise TransformationError(f"step polars_rank: seed {seed!r} is not a whole number from 0 up",
                                   tip="Write the seed as a whole number such as 1")
     columns = spec["columns"]
+    if not columns:
+        raise TransformationError("step polars_rank: `columns` is an empty list, so there is nothing to rank",
+                                  tip="Write the column or columns to rank")
     target_column = spec.get("target_column")
     if target_column and len(columns) != 1:
         raise TransformationError("step polars_rank: target_column needs exactly one column in `columns`",
@@ -111,6 +115,21 @@ def _require_sorted(lf: pl.LazyFrame, index: str, groups: Optional[List[str]], a
 
 ASOF_STRATEGIES = ["backward", "forward", "nearest"]
 _DAYS_AND_WEEKS = re.compile(r"^(\d+[dw])+$")
+_DURATION = re.compile(r"^(-)?((?:\d+(?:ns|us|ms|mo|s|m|h|d|w|q|y|i))+)$")
+_DURATION_PART = re.compile(r"(\d+)(ns|us|ms|mo|s|m|h|d|w|q|y|i)")
+DATE_UNITS = {"d", "w", "mo", "q", "y"}
+
+
+def _parse_duration(text: str) -> Optional[Tuple[bool, List[Tuple[int, str]]]]:
+    """(negative, [(count, unit), ...]) of a Polars duration text such as '1w', '-2d' or '3i'; None when it is not written like one."""
+    found = _DURATION.match(text)
+    if not found:
+        return None
+    return bool(found.group(1)), [(int(n), unit) for n, unit in _DURATION_PART.findall(found.group(2))]
+
+
+def _not_positive(parsed: Tuple[bool, List[Tuple[int, str]]]) -> bool:
+    return parsed[0] or all(n == 0 for n, _ in parsed[1])
 
 calls.NOT_EXPOSED.update({"polars_join_asof": {
     "check_sortedness": "the action always checks that the keys are sorted, within each `by` group too; Polars checks only without `by` and "
@@ -144,6 +163,10 @@ def _check_tolerance(tolerance: Any, key_dtype: pl.DataType, key: str) -> None:
         raise TransformationError(f"step polars_join_asof: tolerance {tolerance!r} is not a duration text or a number",
                                   tip="Write a duration text such as '2d' or '12h' for a Date or Datetime key, a number for a numeric key")
     if isinstance(tolerance, str):
+        parsed = _parse_duration(tolerance)
+        if parsed is not None and parsed[0]:
+            raise TransformationError(f"step polars_join_asof: the tolerance {tolerance!r} is negative",
+                                      tip="Write the largest distance as a positive duration, for example '2d'")
         if not key_dtype.is_temporal():
             raise TransformationError(f"step polars_join_asof: the tolerance {tolerance!r} is a duration but the key {key!r} is {key_dtype}, not a date or a time",
                                       tip="Write the tolerance as a number in the unit of the key")
@@ -166,6 +189,10 @@ def _join_asof(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         raise TransformationError("polars_join_asof needs the resolved right table (__right_df__)", tip="The assembler resolves `right_ingredient`")
     left_key, right_key = _key_pair(clean, "on", "left_on", "right_on", "the sorted key", "polars_join_asof")
     by_left, by_right = _key_pair(clean, "by", "by_left", "by_right", "the group columns", "polars_join_asof")
+    for name, value in (("by" if clean.get("by") is not None else "by_left", by_left), ("by" if clean.get("by") is not None else "by_right", by_right)):
+        if isinstance(value, (list, tuple)) and len(value) == 0:  # Polars panics on an empty list (a Rust panic, not an error)
+            raise TransformationError(f"step polars_join_asof: `{name}` is an empty list, which Polars cannot take",
+                                      tip="Leave `by` out to match on the key alone, or write the columns that must be equal")
     fix = "Sort the table before the join with a polars_sort step (by: [{key}], maintain_order: true); the second table is sorted in its own wrangling"
     _require_sorted(lf, left_key, by_left, "polars_join_asof", "the table at this step", fix.format(key=left_key))
     _require_sorted(right, right_key, by_right, "polars_join_asof", f"'{clean['right_ingredient']}'", fix.format(key=right_key))
@@ -185,10 +212,9 @@ def _join_asof_schema() -> dict:
         "or closest (nearest) on a sorted key (Polars LazyFrame.join_asof); `strategy` is written in the step. Both tables must be sorted ascending on the key, "
         "within each `by` group too, or the step fails (Polars checks only without `by`, and with `by` it returns a wrong result without a word). "
         "The result keeps the rows and the order of the first table; a row without a match gets nulls. A null key never matches and a null in `by` never matches; "
-        "a NaN key sorts last and matches a NaN. Without `tolerance` a match can be as far away as the data goes.",
+        "a NaN key sorts last and matches a NaN. Without `tolerance` a match can be as far away as the data goes; a negative `tolerance` and an empty `by` are refused.",
         "- action: polars_join_asof\n  right_ingredient: weather\n  'on': sample_date\n  by: [site]\n  strategy: backward\n  tolerance: 2d",
         rules=[{"one_of": ["on", "left_on"]}, {"exclusive": ["on", "right_on"]}, {"exclusive": ["by", "by_left"]}, {"exclusive": ["by", "by_right"]}])
-    schema["polars"] = "wrapper"
     return schema
 
 
@@ -212,6 +238,39 @@ def _free_name(wanted: str, *frames: pl.LazyFrame) -> str:
     return wanted
 
 
+def _compared_operands(text: str) -> List[str]:
+    """The pairs `left`/`right` of every comparison in a predicate, as formula texts; an operand with no column in it (a literal) is left out."""
+    try:
+        tree = ast.parse(text, mode="eval")
+    except SyntaxError:
+        return []
+    pairs: List[Tuple[str, str]] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Compare):
+            operands = [node.left, *node.comparators]
+            pairs.extend((ast.unparse(a), ast.unparse(b)) for a, b in zip(operands, operands[1:]))
+    return [pair for pair in pairs if "pl.col(" in pair[0] and "pl.col(" in pair[1]]
+
+
+def _require_same_types(lf: pl.LazyFrame, right: pl.LazyFrame, predicates: List[str], suffix: str) -> None:
+    """Columns compared in a predicate have the same type (ADR-102: declared types are kept, differing types fail).
+
+    Polars refuses Int64 against Float64 and accepts Date against Datetime or Int32 against Int64 by converting one side
+    silently; one rule is better than the two, so every comparison between two column formulas is checked here.
+    """
+    both = lf.join(right, how="cross", suffix=suffix)
+    for text in predicates:
+        for first, second in _compared_operands(text):
+            try:
+                kinds = both.select(a=calls._formula(first), b=calls._formula(second)).collect_schema()
+            except Exception:  # noqa: BLE001 - a column that does not exist is said by Polars, with its own words, when the join runs
+                continue
+            if kinds["a"] != kinds["b"]:
+                raise TransformationError(f"step polars_join_where: cannot compare {kinds['a']} with {kinds['b']} in `{text}`",
+                                          tip="Compare columns of the same type: declare the same type in input_fields of both tables, or write a polars_cast step "
+                                              "before the join for the first table (the second table is changed in its own input_fields or wrangling)")
+
+
 def _join_where(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     clean = calls._checked("polars_join_where", spec)
     right = spec.get("__right_df__")
@@ -227,6 +286,7 @@ def _join_where(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     left_row = _free_name("__row_of_first_table__", lf, right)
     right_row = _free_name("__row_of_second_table__", lf, right)
     options = {"suffix": clean["suffix"]} if clean.get("suffix") is not None else {}
+    _require_same_types(lf, right, predicates, clean.get("suffix") or "_right")
     joined = lf.with_row_index(left_row).join_where(right.with_row_index(right_row), *expressions, **options)
     try:
         joined.collect_schema()  # Polars compares the types of the predicates when the plan is resolved: say it now, not at the collect
@@ -245,9 +305,8 @@ def _join_where_schema() -> dict:
         "is written with the suffix for the second table (`lo_right`). It is an inner join: a row can match several rows or none, and a row without a match is dropped. "
         "Polars returns the pairs in another order on every run; the action puts them in the order of the first table, then of the second, so the same input "
         "gives the same table. A predicate that is null for a pair (a null in a compared column) does not match; a NaN is larger than every number; "
-        "columns of different number types (Int64 against Float64) cannot be compared and the step fails.",
+        "columns of different types (Int64 against Float64, Date against Datetime) cannot be compared and the step fails.",
         "- action: polars_join_where\n  right_ingredient: reference_ranges\n  predicates:\n    - \"pl.col('year') >= pl.col('start_year')\"\n    - \"pl.col('year') <= pl.col('end_year')\"")
-    schema["polars"] = "wrapper"
     return schema
 
 
@@ -274,10 +333,6 @@ def _window_overrides(action: str) -> None:
     })
 
 
-def _duration_units(text: str) -> set:
-    return set(re.findall(r"\d+([a-z]+)", text))
-
-
 def _require_window_index(lf: pl.LazyFrame, clean: Dict[str, Any], action: str) -> None:
     """The index of a window is sorted ascending (within each group), has no null, and its type fits the written durations."""
     index, groups = clean["index_column"], clean.get("group_by")
@@ -297,13 +352,24 @@ def _require_window_index(lf: pl.LazyFrame, clean: Dict[str, Any], action: str) 
             continue
         if not isinstance(text, str):
             raise TransformationError(f"step {action}: {key} {text!r} is not a duration text", tip="Write a duration such as '1w', '30d' or '2i' (whole numbers use i)")
-        units = _duration_units(text)
+        parsed = _parse_duration(text)
+        if parsed is None:
+            raise TransformationError(f"step {action}: {key} {text!r} is not a duration written as Polars reads it",
+                                      tip="Write a positive duration such as '1w', '30d', '12h' or '2i' (whole numbers use i)")
+        units = {unit for _, unit in parsed[1]}
         if integer and units != {"i"}:
             raise TransformationError(f"step {action}: {key} {text!r} is a time duration but the index column {index!r} is {dtype}",
                                       tip="For a whole-number index write the duration with i, for example '2i'")
         if not integer and "i" in units:
             raise TransformationError(f"step {action}: {key} {text!r} counts whole numbers but the index column {index!r} is {dtype}",
                                       tip="For a date or a time write a duration such as '1w', '30d' or '12h'")
+        if dtype == pl.Date and not units <= DATE_UNITS:
+            raise TransformationError(f"step {action}: {key} {text!r} is finer than a day but the index column {index!r} is a Date: "
+                                      "the windows would start inside a day and be labelled with the day before",
+                                      tip="Write the duration in days, weeks, months, quarters or years, or cast the column to a Datetime first with a polars_cast step")
+        if key in ("every", "period") and _not_positive(parsed):
+            raise TransformationError(f"step {action}: {key} {text!r} is zero or negative, and a window needs a length above zero",
+                                      tip=f"Write {key} as a positive duration such as '1w' or '2i' (only `offset` may be zero or negative)")
     if lf.select(pl.col(index).is_null().any()).collect().item():
         raise TransformationError(f"step {action}: the index column {index!r} holds null values, which Polars does not allow in windows",
                                   tip=f"Remove the rows without a value first with a polars_drop_nulls step (subset: [{index}])")
@@ -318,6 +384,9 @@ def _window_action(action: str, method: str):
 
     def run(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         clean = calls._checked(action, spec)
+        if not clean["named_aggs"]:
+            raise TransformationError(f"step {action}: `named_aggs` is empty, so the step would compute nothing",
+                                      tip="Write at least one result column with its formula, for example n: \"pl.len()\"")
         aggregations = {name: calls._formula(text) for name, text in clean["named_aggs"].items()}
         _require_window_index(lf, clean, action)
         try:
@@ -347,6 +416,7 @@ register_action("polars_group_by_dynamic", ui_schema=_window_schema(
     "Cut a sorted index column (dates, times or whole numbers) into windows of the length `every` and aggregate each window with named formulas "
     "(Polars LazyFrame.group_by_dynamic(...).agg(...)). `closed`, which edges belong to a window, is written in the step because group_by_dynamic and rolling "
     "do not share a default. The index column must be sorted ascending, within each group when `group_by` is given, and must hold no null: the step fails otherwise. "
+    "`every` and `period` are above zero (`offset` may be zero or negative), and on a Date index no duration is finer than a day. "
     "The result has one row per non-empty window, in the order of the groups (ascending, nulls last), then of the windows. In a window a null is skipped by "
     "sum, mean and count, a NaN makes a sum NaN, and the sum of a window that holds only nulls is 0.",
     "- action: polars_group_by_dynamic\n  index_column: collection_date\n  every: 1mo\n  closed: left\n  group_by: [country]\n  named_aggs:\n    isolates: \"pl.len()\""))(
@@ -361,6 +431,7 @@ register_action("polars_rolling", ui_schema=_window_schema(
     "For each row, aggregate the rows of the window that ends at the index of that row and reaches back `period` (Polars LazyFrame.rolling(...).agg(...)): "
     "a moving sum, count or mean over days or over rows. `closed`, which edges belong to the window, is written in the step because rolling and group_by_dynamic "
     "do not share a default. The index column must be sorted ascending, within each group when `group_by` is given, and must hold no null: the step fails otherwise. "
+    "`period` is above zero (`offset` may be zero or negative), and on a Date index no duration is finer than a day. "
     "The result has one row per row of the table, with only the index, the group columns and the aggregations; without `group_by` the rows keep their order, "
     "with it they come in the order of the groups (ascending, nulls last), then of the index. In a window a null is skipped by sum, mean and count, "
     "a NaN makes a sum NaN, and the sum of a window that holds only nulls is 0.",

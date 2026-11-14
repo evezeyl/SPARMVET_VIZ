@@ -57,7 +57,7 @@ DATE_RIGHT = pl.DataFrame({"d": [datetime.date(2022, 1, 2), datetime.date(2022, 
 # join on conditions: whole numbers only (Polars does not compare Int64 with Float64)
 WHERE_LEFT = pl.DataFrame({"id": ["a", "b", "c", "d"], "lo": [1, 5, None, 3], "hi": [4, 9, 3, 8]})
 WHERE_RIGHT = pl.DataFrame({"rid": ["x", "y", "z", "w"], "v": [2, 5, 10, 4]})
-WHERE_RIGHT_CLASH = WHERE_RIGHT.with_columns(lo=pl.lit(0))
+WHERE_RIGHT_CLASH = WHERE_RIGHT.with_columns(lo=pl.lit(0, dtype=pl.Int64))
 WHERE_FLOAT_LEFT = pl.DataFrame({"id": ["a", "b"], "lo": [1.0, 5.0], "hi": [4.0, 9.0]})
 WHERE_FLOAT_RIGHT = pl.DataFrame({"rid": ["x", "y", "n"], "v": [2.0, 5.0, NAN]})
 
@@ -130,8 +130,6 @@ CASES = [
              first_f=pl.col("f").first(), last_f=pl.col("f").last())),
     Case("polars_group_by_dynamic", WINDOWED_MOMENTS, {"index_column": "t", "every": "6h", "closed": "left", "named_aggs": {"total": "pl.col('f').sum()"}},
          lambda lf: lf.group_by_dynamic("t", every="6h", closed="left").agg(total=pl.col("f").sum())),
-    Case("polars_group_by_dynamic", WINDOWED, {"index_column": "d", "every": "1mo", "closed": "left", "named_aggs": {}},
-         lambda lf: lf.group_by_dynamic("d", every="1mo", closed="left").agg()),
     # -- polars_rolling: 30 days per country (the pair holds this one), every option, a whole-number index, moments ----------------
     Case("polars_rolling", WINDOWED,
          {"index_column": "d", "period": "30d", "closed": "right", "group_by": ["country"], "named_aggs": {"isolates": "pl.len()", "total": "pl.col('f').sum()"}},
@@ -146,8 +144,6 @@ CASES = [
          lambda lf: lf.rolling("i", period="3i", closed="none", group_by=["g"]).agg(first_f=pl.col("f").first(), last_f=pl.col("f").last())),
     Case("polars_rolling", WINDOWED_MOMENTS, {"index_column": "t", "period": "3h", "closed": "right", "named_aggs": {"total": "pl.col('f').sum()"}},
          lambda lf: lf.rolling("t", period="3h", closed="right").agg(total=pl.col("f").sum())),
-    Case("polars_rolling", WINDOWED, {"index_column": "d", "period": "30d", "closed": "right", "named_aggs": {}},
-         lambda lf: lf.rolling("d", period="30d", closed="right").agg()),
 ]
 
 
