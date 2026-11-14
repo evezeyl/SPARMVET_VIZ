@@ -47,6 +47,7 @@ from app.modules.data_analysis_recipe_validator import home_advice_entries
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
 from viz_factory.plot_config_resolver import layers_have_jitter, recipe_pins_random_state
+from app.modules.plot_seeds import SessionSeedDraws, home_plot_seed, render_seed_args
 
 from app.modules.t3_audit_engine import _apply_filter_rows
 from app.modules.sidebar_registry import is_panel_active
@@ -401,45 +402,44 @@ def define_server(input, output, session, *,
         disc_y = {y_col} if y_col and "scale_y_discrete" in layer_names else set()
         return disc_x, disc_y
 
+    # SEED-HOLDS-1: the seed HOME draws for a plot whose recipe writes none, one per plot, stable
+    # for this session (plain dict inside, not reactive state, so a Calc may read it, R1).
+    _seed_draws = SessionSeedDraws()
+
     def _make_group_plot_handler(p_id: str):
         """Factory: returns a @render.plot fn that renders plot_group_{p_id}."""
         this_subtab = f"subtab_{p_id}"
 
         @reactive.Calc
         def _effective_random_state():
-            """REPRO-SEED-2 (ADR-097 decision 2): resolve the seed this plot's jitter
-            should use. A T3-pinned override (aesthetic_override.random_state) always
-            wins and is returned as-is — it's already recorded via T3 state itself, so
-            nothing new needs bookkeeping. Otherwise, draw one fresh seed and return it;
-            the companion @reactive.Effect below is what remembers it (never here —
-            a @reactive.Calc must not write reactive state, R1, ui_implementation_contract.md
-            §14). Depends on home_state, so a recipe/T3 switch naturally redraws; an
-            unrelated re-render that doesn't touch home_state keeps the same draw,
-            avoiding visible jitter "flicker" with no user action behind it.
+            """SEED-HOLDS-1 (ADR-104 point 3, ADR-097 decision 2): the seed this plot's jitter uses.
+            An audit pin (aesthetic_override.random_state) > the number the recipe writes > the
+            seed drawn for this session and plot (SessionSeedDraws: stable, so a tab switch never
+            changes the picture). The draw never replaces a recipe's number. The companion Effect
+            below remembers a drawn seed for the export (never here: a Calc must not write reactive
+            state, R1, ui_implementation_contract.md section 14).
 
-            Returns (value, was_freshly_drawn).
+            Returns a PlotSeed (seed, source); source "none" when the plot has no jitter.
             """
             spec = _resolve_active_spec(p_id)
-            if not layers_have_jitter((spec or {}).get("layers", [])):
-                return None, False
             overrides = (
                 (home_state.get() if home_state is not None else {})
                 .get("t3_plot_overrides", {})
                 .get(this_subtab)
             ) or {}
-            pinned = overrides.get("random_state")
-            if pinned is not None:
-                return pinned, False
-            return secrets.randbits(31), True
+            return home_plot_seed(
+                (spec or {}).get("layers", []), overrides.get("random_state"),
+                _seed_draws, p_id, default=viz_factory.default_random_state,
+            )
 
         @reactive.Effect
         def _persist_drawn_seed():
-            value, was_drawn = _effective_random_state()
-            if not was_drawn or last_drawn_seeds is None:
+            plot_seed = _effective_random_state()
+            if plot_seed.source != "drawn" or last_drawn_seeds is None:
                 return
             current = last_drawn_seeds.get()
-            if current.get(p_id) != value:
-                last_drawn_seeds.set({**current, p_id: value})
+            if current.get(p_id) != plot_seed.seed:
+                last_drawn_seeds.set({**current, p_id: plot_seed.seed})
 
         @output(id=f"plot_group_{p_id}")
         @render.plot(alt=f"Plot: {p_id}")
@@ -540,20 +540,14 @@ def define_server(input, output, session, *,
                 .get(this_subtab)
             )
 
-            # REPRO-SEED-2 (ADR-097 decision 2): merge in the resolved seed (pinned
-            # override, or this session's drawn number) — reads the same Calc the
-            # bookkeeping Effect reads, so what's shown and what gets recorded always
-            # agree. None when the plot has no jitter at all (layers_have_jitter) —
-            # leaves _t3_overrides untouched rather than adding a meaningless key.
-            _resolved_seed, _ = _effective_random_state()
-            _render_overrides = (
-                {**(_t3_overrides or {}), "random_state": _resolved_seed}
-                if _resolved_seed is not None else _t3_overrides
-            )
+            # SEED-HOLDS-1: the seed this plot uses (audit pin, recipe number, or this session's
+            # draw) is handed to the render in the one shape the export uses too (plot_seeds.py);
+            # the Effect above records a drawn seed from the same Calc, so what is shown and what
+            # is recorded always agree.
+            _seed_args = render_seed_args(_effective_random_state(), _t3_overrides)
 
             try:
-                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
-                                          aesthetic_override=_render_overrides)
+                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id, **_seed_args)
             except Exception as e:
                 # Capture error for session_processing_issues without violating R1
                 # (cannot call reactive.Value.set inside @render.*). ADR-094/
@@ -631,8 +625,15 @@ def define_server(input, output, session, *,
                 ax.axis("off")
                 return fig
 
+            # SEED-HOLDS-1: the reference pane keeps the same arrangement as My view (recipe number or
+            # this session's draw), so the two panes differ only by what the user changed; an audit
+            # pin is one of those changes and is not applied here.
+            _base_seed = home_plot_seed(
+                spec.get("layers", []), None, _seed_draws, p_id, default=viz_factory.default_random_state,
+            )
             try:
-                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id)
+                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
+                                          **render_seed_args(_base_seed, None))
             except Exception as e:
                 # ADR-094/PIPELINE-ERROR-WIRE-2: now uses capture_entry() for VizFactory's
                 # real fix/who, same as _group_plot_handler's render catch.

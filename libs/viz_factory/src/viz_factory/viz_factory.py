@@ -104,6 +104,11 @@ class VizFactory:
         # Deployment palettes override built-ins when names collide (intentional branding).
         self._palette_registry: dict = {**self._BUILTIN_PALETTES, **(palette_registry or {})}
 
+    @property
+    def default_random_state(self):
+        """The seed used by every random component whose recipe writes none (see DEFAULT_RANDOM_STATE)."""
+        return self._random_state
+
     def render(self, df: Any, data_analysis_recipe: Dict[str, Any], plot_id: str,
                aesthetic_override: dict | None = None, fallback_random_state=None):
         """
