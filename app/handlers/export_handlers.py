@@ -379,6 +379,10 @@ def _build_methods_section(
                     else f'"{val}"'
                 )
                 detail = f"where **{col}** is {op} {val_str}"
+                # NA-RULE-63: the choice made for the rows with no value in the column (an old step removed them)
+                detail += (", keeping the rows with no value in **" + col + "**"
+                           if params.get("na") == "keep"
+                           else ", removing the rows with no value in **" + col + "**")
                 scope = f" (plot: *{plot_label}*)" if p_id != "__all__" else ""
                 sentence = f"{verb} {detail}{scope}."
             elif nt == "drop_column":

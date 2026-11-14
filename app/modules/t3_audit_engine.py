@@ -52,9 +52,22 @@ def op_choice_label(op: str) -> str:
     return f"{sym} {words}"
 
 
-def describe_filter(column: str, op: str, value) -> str:
+def describe_filter(column: str, op: str, value, na: str | None = None) -> str:
     """One-line text of a filter row. A one-value set reads as equality ('sequence_type = 101'),
-    several values read 'any of' / 'none of' (issue #57)."""
+    several values read 'any of' / 'none of' (issue #57). With `na` ("keep" or "remove") the line ends with what
+    happens to the rows with no value in the column (NA-RULE-63)."""
+    text = _describe_condition(column, op, value)
+    if na is None:
+        return text
+    return f"{text} ({na_phrase(na)})"
+
+
+def na_phrase(na: str) -> str:
+    """'rows with no value kept' / 'rows with no value removed': the choice `na` in a few words."""
+    return "rows with no value kept" if na == "keep" else "rows with no value removed"
+
+
+def _describe_condition(column: str, op: str, value) -> str:
     vals = value if isinstance(value, (list, tuple)) else None
     if vals is not None and len(vals) == 1:
         op, vals = {"in": "eq", "not_in": "ne"}.get(op, op), None

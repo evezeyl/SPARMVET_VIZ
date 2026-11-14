@@ -197,3 +197,72 @@ def test_the_dialog_warns_for_not_equal_and_none_of_on_a_column_with_missing_val
         lines = dialog_missing_lines("x", op, "remove", counts)
         assert any("Polars" in line for line in lines)
     assert not any("Polars" in line for line in dialog_missing_lines("x", "gt", "remove", counts))
+
+
+# ── what the user reads: the staged row, the audit card and the report ──────────────────────
+
+def test_the_staged_row_says_what_happens_to_the_rows_with_no_value():
+    from app.modules.t3_audit_engine import describe_filter
+    assert describe_filter("x", "ne", 2, "keep") == "x ≠ 2 (rows with no value kept)"
+    assert describe_filter("x", "ne", 2, "remove") == "x ≠ 2 (rows with no value removed)"
+    assert describe_filter("x", "ne", 2) == "x ≠ 2"          # callers that do not pass na keep their line
+
+
+def test_the_audit_card_shows_the_choice_and_an_old_step_as_remove():
+    from app.handlers.audit_stack import _params_summary
+    keep = make_audit_step("filter_row", {"column": "x", "op": "ne", "value": 2, "na": "keep"})
+    assert _params_summary(keep).endswith("no value: kept")
+    assert _params_summary(OLD_NODE).endswith("no value: removed")
+    assert "no value" not in _params_summary(make_audit_step("drop_column", {"column": "x"}))
+
+
+def test_the_report_states_the_choice_for_every_filter_step():
+    from app.handlers.export_handlers import _build_methods_section
+    plots = [("p", {"title": "P"})]
+
+    def report(node):
+        return "\n".join(_build_methods_section(plots, {"p": [node]}, {"d": ["p"]}, ["T1"]))
+
+    assert "keeping the rows with no value in **x**" in report(
+        make_audit_step("filter_row", {"column": "x", "op": "ne", "value": "a", "na": "keep"}, reason="r"))
+    assert "removing the rows with no value in **x**" in report(
+        make_audit_step("filter_row", {"column": "x", "op": "ne", "value": "a", "na": "remove"}, reason="r"))
+    assert "removing the rows with no value in **x**" in report(OLD_NODE | {"params": {"column": "x", "op": "ne", "value": "a"}})
+
+
+# ── the real orchestrator: the table HOME shows and the recipe the export re-runs ───────────
+
+@pytest.fixture
+def world(tmp_path):
+    from app.modules.cache_keys import clear_data_analysis_recipe_cache
+    from app.tests.test_cache_chain import World
+    clear_data_analysis_recipe_cache()
+    w = World(tmp_path)
+    # raw file: s3 has no value in the column "group" (an empty cell)
+    w.write_data("sample_id\tgroup\ns1\tA\ns2\tB\ns3\t\ns4\tA\n")
+    yield w
+    clear_data_analysis_recipe_cache()
+
+
+def _t1_ids(w):
+    return [r["sample_id"] for r in w.build()]
+
+
+@pytest.mark.parametrize("na", ["keep", "remove"])
+@pytest.mark.parametrize("op, value, kept", [
+    ("eq", "A", ["s1", "s4"]), ("ne", "A", ["s2"]), ("in", ["A", "B"], ["s1", "s2", "s4"]), ("not_in", ["A"], ["s2"]),
+])
+def test_the_table_in_home_and_the_rerun_of_the_exported_recipe_give_the_rows_written_by_hand(world, op, value, kept, na):
+    assert _t1_ids(world) == ["s1", "s2", "s3", "s4"]                    # the raw file, read once
+    row = {"column": "group", "op": op, "value": value, "na": na}
+    want = sorted(kept + (["s3"] if na == "keep" else []))
+    # HOME: the filter on the table of the orchestrator
+    keys = world.orch.compute_data_analysis_recipe_keys("tiny")
+    home = _apply_filter_rows(world.orch.materialize_tier1("tiny", "C", world.anchor, keys=keys), [row]).collect()
+    assert sorted(home["sample_id"].to_list()) == want
+    # the export: the audit step translated, written as tier2 of the recipe, run by the orchestrator
+    (step,) = translate_t3_node({"node_type": "filter_row", "params": row})
+    world.write_data_analysis_recipe(steps_tier2=[step])
+    keys = world.orch.compute_data_analysis_recipe_keys("tiny")
+    rerun = world.orch.materialize_tier2("tiny", "C", world.anchor, keys=keys).collect()
+    assert sorted(rerun["sample_id"].to_list()) == want

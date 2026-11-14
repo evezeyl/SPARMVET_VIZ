@@ -16,8 +16,8 @@ Why filter UI and T3 audit live in one file:
 from __future__ import annotations
 
 # @deps
-# provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_controls_ui, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label), app/src/bootloader.py (is_enabled), shiny
+# provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label), libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -25,7 +25,9 @@ from __future__ import annotations
 from shiny import reactive, render, ui
 
 from app.src.bootloader import bootloader
-from app.modules.t3_audit_engine import describe_filter, op_choice_label
+from app.modules.t3_audit_engine import describe_filter, op_choice_label, OP_WORDS
+from utils.missing_values import count_missing, dialog_missing_lines, na_choice_texts
+from utils.na_choice import default_na, na_of
 
 
 def define_filter_audit_server(input, output, session, *,
@@ -104,6 +106,8 @@ def define_filter_audit_server(input, output, session, *,
             disclaimer or ui.div(),
             ui.output_ui("filter_rows_ui"),
             ui.output_ui("filter_form_ui"),
+            ui.output_ui("filter_na_ui"),
+            ui.output_ui("filter_na_text_ui"),
             ui.div(
                 ui.output_ui("filter_controls_ui"),
                 class_="mt-2 px-1"
@@ -129,7 +133,7 @@ def define_filter_audit_server(input, output, session, *,
             rows.append(ui.div(
                 ui.div(
                     ui.tags.small(
-                        describe_filter(col, op, val),
+                        describe_filter(col, op, val, na_of(f)),
                         class_="text-dark spv-filter-text",
                     ),
                     ui.tags.small(f" [{dtype_str}]", class_="text-muted spv-text-micro"),
@@ -282,6 +286,52 @@ def define_filter_audit_server(input, output, session, *,
             class_="mt-2 pt-2 border-top spv-text-sm",
         )
 
+    def _active_frame():
+        """The table the filter in the form acts on: the active plot's table (None when it cannot be built)."""
+        subtab = active_home_subtab.get()
+        p_id = subtab.removeprefix("subtab_") if subtab else None
+        try:
+            return _resolve_active_lf(_resolve_active_spec(p_id))
+        except Exception:
+            return None
+
+    @output
+    @render.ui
+    def filter_na_ui():
+        """The tick "keep the rows with no value", preselected by operator (NA-RULE-63).
+
+        Reads the column and the operator, never its own value (ui_implementation_contract.md section 14, R4): a new
+        column or operator re-mounts the tick on the default of that operator, a click on it re-renders nothing here.
+        The counts under it are in filter_na_text_ui.
+        """
+        op = safe_input(input, "fb_op", "eq")
+        label, help_ = na_choice_texts(OP_WORDS.get(op, (op, op))[1])
+        return ui.div(
+            ui.input_checkbox("fb_na", label, value=default_na(op) == "keep"),
+            ui.tags.small(help_, class_="text-muted d-block spv-text-meta"),
+            class_="mt-1 px-1",
+        )
+
+    @output
+    @render.ui
+    def filter_na_text_ui():
+        """How many rows have no value in the chosen column, and what the tick does to them (counts from the table it acts on)."""
+        col = safe_input(input, "fb_col", None)
+        op = safe_input(input, "fb_op", "eq")
+        na = "keep" if safe_input(input, "fb_na", default_na(op) == "keep") else "remove"
+        lf = _active_frame()
+        if not col or lf is None:
+            return ui.div()
+        try:
+            lines = dialog_missing_lines(col, op, na, count_missing(lf, col))
+        except Exception:
+            return ui.div()
+        return ui.div(
+            *[ui.tags.small(line, class_="d-block spv-text-meta " + ("text-warning" if "Polars" in line else "text-muted"))
+              for line in lines],
+            class_="px-1 mb-1",
+        )
+
     @output
     @render.ui
     def filter_controls_ui():
@@ -415,7 +465,9 @@ def define_filter_audit_server(input, output, session, *,
         else:
             return  # empty/None — don't add
 
-        new_row = {"column": col, "op": op, "value": value, "dtype": dtype_str}
+        # NA-RULE-63: the tick of the dialog, never absent from a row (the default of the operator when it is not mounted)
+        na = "keep" if safe_input(input, "fb_na", default_na(op) == "keep") else "remove"
+        new_row = {"column": col, "op": op, "value": value, "dtype": dtype_str, "na": na}
         if op == "between":
             new_row["closed"] = bt_closed  # 'both' (default) or 'none'
         current = list(_pending_filters.get())
@@ -478,7 +530,7 @@ def define_filter_audit_server(input, output, session, *,
             col = frow.get("column", "")
             op = frow.get("op", "eq")
             val = frow.get("value", "")
-            params = {"column": col, "op": op, "value": val}
+            params = {"column": col, "op": op, "value": val, "na": na_of(frow)}
             if frow.get("dtype"):
                 params["dtype"] = frow.get("dtype")
 
