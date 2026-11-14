@@ -256,6 +256,11 @@ def test_the_export_uses_and_records_the_seed_home_showed(loaded):
     _navigate_to_phenotype_plot(loaded)
     _open_export_panel(loaded)
 
+    def same_picture(a: bytes, b: bytes) -> bool:
+        """The PNG bytes carry the export time in their metadata; the pixels are the picture."""
+        return ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"),
+                                     Image.open(io.BytesIO(b)).convert("RGB")).getbbox() is None
+
     def run_and_png(z):
         run = _yaml.safe_load(z.read(next(n for n in z.namelist() if n.endswith("effective_run.yaml"))).decode())
         png = next(z.read(n) for n in z.namelist() if n.endswith(f"/plots/{pid}.png"))
@@ -269,7 +274,7 @@ def test_the_export_uses_and_records_the_seed_home_showed(loaded):
 
         run_a2, png_a2 = run_and_png(_download(loaded))
         assert run_a2["seeds_per_plot"][pid] == seed_a, "the drawn seed must be stable for the session"
-        assert png_a2 == png_a
+        assert same_picture(png_a2, png_a)
 
         btn = loaded.locator(f"#plot_reshuffle_btn_{pid}")
         expect(btn).to_be_visible(timeout=10_000)
@@ -280,7 +285,7 @@ def test_the_export_uses_and_records_the_seed_home_showed(loaded):
         seed_b = run_b["seeds_per_plot"][pid]
         assert run_b["seed_source_per_plot"][pid] == "audit"
         assert seed_b != seed_a
-        assert png_b != png_a, "the export plot did not follow the pinned seed"
+        assert not same_picture(png_b, png_a), "the export plot did not follow the pinned seed"
 
         loaded.locator("#export_include_reproducibility").check(force=True)
         _wait_shiny(loaded)
