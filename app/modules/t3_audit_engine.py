@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import polars as pl
 
-from utils.filter_values import coerce_filter_value
+from utils.filter_values import filter_condition
 from utils.missing_values import keep_missing
 from utils.na_choice import default_na, na_of
 
@@ -145,97 +145,30 @@ def audit_params_from_row(frow: dict) -> dict:
 
 def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
     """
-    Apply a list of {column, op, value, dtype, na} dicts to a LazyFrame.
+    Apply a list of {column, op, value, dtype, na, closed} dicts to a LazyFrame.
 
-    Type strategy (DEMO-3):
-    - The filter row's stored 'dtype' field can be stale or absent. We
-      re-read the actual column dtype from the LazyFrame schema each call
-      and cast accordingly — this is the source of truth.
-    - Numeric scalar ops (gt/ge/lt/le/eq/ne): coerce string value to
-      column dtype before comparison.
-    - Set ops (in/not_in) with list of values: always cast both sides to
-      Utf8 for the comparison (selectize returns strings regardless of
-      column dtype, so the safest path is string-equality).
-    - Auto-promotes eq/ne to in/not_in when value is a list.
+    Type strategy (ADR-104 point 7): a value has the type of its column. The dtype of the column is read from the
+    schema of the table each call (the stored 'dtype' of a row can be stale or absent). A value an older row holds as
+    text is read as that type; a value that cannot be read stops with a plain `FilterValueError`, it is never guessed.
+    The condition itself is `utils.filter_values.filter_condition`, shared with the plot and the recipe action
+    (eq or ne with a list mean in or not_in; in and not_in compare typed values).
     """
-    # Source-of-truth dtype map from the actual LazyFrame schema
     try:
         schema = lf.collect_schema()
         actual_dtypes = {name: schema[name] for name in schema.names()}
     except Exception:
         actual_dtypes = {}
 
-    def _is_numeric(dt) -> bool:
-        return dt is not None and any(
-            t in str(dt) for t in ("Int", "UInt", "Float", "Decimal")
-        )
-
     for f in filter_rows:
         col = f.get("column")
-        op = f.get("op", "eq")
-        val = f.get("value")
-        na = na_of(f)  # NA-RULE-63: "keep" adds the rows with no value; a row without `na` removes them
         if col is None:
             continue
         # Issue #56: T1 is wide and T2 may be long, so a filter built on one view can name a
         # column the active view does not have. Skip it (see inapplicable_filter_rows) rather than crash.
         if actual_dtypes and col not in actual_dtypes:
             continue
-
-        actual_dt = actual_dtypes.get(col)
-        is_numeric = _is_numeric(actual_dt)
-        is_list_val = isinstance(val, list)
-
-        # Auto-promote eq/ne to in/not_in when value is a list
-        if is_list_val:
-            if op in ("eq", "in"):
-                op = "in"
-            elif op in ("ne", "not_in"):
-                op = "not_in"
-
-        if op == "between" and isinstance(val, (list, tuple)) and len(val) == 2:
-            lo, hi = val
-            if is_numeric:
-                lo = coerce_filter_value(lo, actual_dt)
-                hi = coerce_filter_value(hi, actual_dt)
-            bt_closed = f.get("closed", "both")
-            lf = lf.filter(keep_missing(pl.col(col).is_between(lo, hi, closed=bt_closed), col, na))
-            continue
-
-        if op in ("in", "not_in"):
-            vals = val if is_list_val else [val]
-            if is_numeric:
-                # Coerce values to the column's native dtype — avoids the
-                # Float64→Utf8 mismatch ("2022.0" != "2022") that occurs when
-                # the column is cast to string instead of the values.
-                coerced_vals = [coerce_filter_value(v, actual_dt) for v in vals]
-                expr = pl.col(col).is_in(coerced_vals)
-            else:
-                str_vals = [str(v) for v in vals]
-                expr = pl.col(col).cast(pl.Utf8).is_in(str_vals)
-            lf = lf.filter(keep_missing(expr if op == "in" else ~expr, col, na))
-        else:
-            # Scalar ops: coerce value to column dtype before compare.
-            # If the widget already emitted a native numeric, the coercion
-            # is a no-op. We log a warning when a string sneaks in on a
-            # numeric column so we can spot bypasses (UX-FILTER-1 / DEMO-3).
-            if is_numeric and isinstance(val, str):
-                print(
-                    f"[filter] ⚠️ string operand on numeric column "
-                    f"{col!r} ({actual_dt}); coercing {val!r}"
-                )
-            if is_numeric:
-                val = coerce_filter_value(val, actual_dt)
-            if op == "eq":
-                lf = lf.filter(keep_missing(pl.col(col) == val, col, na))
-            elif op == "ne":
-                lf = lf.filter(keep_missing(pl.col(col) != val, col, na))
-            elif op == "gt":
-                lf = lf.filter(keep_missing(pl.col(col) > val, col, na))
-            elif op == "ge":
-                lf = lf.filter(keep_missing(pl.col(col) >= val, col, na))
-            elif op == "lt":
-                lf = lf.filter(keep_missing(pl.col(col) < val, col, na))
-            elif op == "le":
-                lf = lf.filter(keep_missing(pl.col(col) <= val, col, na))
+        dtype = actual_dtypes.get(col) or f.get("dtype")
+        condition = filter_condition(col, f.get("op", "eq"), f.get("value"), dtype, f.get("closed", "both"))
+        # NA-RULE-63: "keep" adds the rows with no value; a row without `na` removes them
+        lf = lf.filter(keep_missing(condition, col, na_of(f)))
     return lf
