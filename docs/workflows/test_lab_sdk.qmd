@@ -23,7 +23,7 @@ To ensure a seamless developer experience, the SDK follows a linear automation p
 
 ### Stage B: Data Analysis Recipe Bootstrapping (`DataAnalysisRecipeBootstrapper`)
 - **Input**: Standardized `.tsv` files.
-- **Process**: Infers the data schema (column names and types) to generate the `input_fields` and `output_fields` blocks of the data analysis recipe.
+- **Process**: Infers the data schema (column names and types) to generate the `input_fields` block (with `type` as a Polars type name) of the data analysis recipe.
 - **Law of Basename Anchor**: To maintain [ADR-013](../foundations/data_contracts_adr.qmd), the **Pipeline Folder Name** must match the **Master Data analysis recipe Name**. This allows the Ingestor to resolve dependencies reliably.
 
 ### Stage C: Aqua Synthetic Suite (`AquaSynthesizer`)

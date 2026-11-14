@@ -54,7 +54,7 @@ For full CLI reference and current integrity suite results, see [Transformer & V
   ```
 
 - **`debug_assembler.py`**
-  Tests Layer 2 assembly — ingests all datasets, applies Tier 1 wrangling, executes the join steps, and applies `final_contract`. Accepts `--output` (file or directory).
+  Tests Layer 2 assembly — ingests all datasets, applies Tier 1 wrangling, executes the join steps (the last one publishes the columns). Accepts `--output` (file or directory).
   ```bash
   ./.venv/bin/python libs/transformer/tests/debug_assembler.py \
       --data-analysis-recipe config/data_analysis_recipes/pipelines/my_pipeline.yaml \
