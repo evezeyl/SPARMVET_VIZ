@@ -22,7 +22,11 @@ git_commit:                  a3f9c81b...
 release_version:             ...
 seeds_per_plot:
   multi_resistance_by_country: 20261109143012
+seed_source_per_plot:
+  multi_resistance_by_country: drawn   # audit | recipe | drawn | default
 ```
+
+`seeds_per_plot` holds, for every exported plot that uses random scatter (jitter), the seed that was really used to draw it. `seed_source_per_plot` says where it comes from; see [Reproducible plots](reproducible_plots.qmd). A plot marked `drawn` or `default` is not fixed in your recipe: write the number there for a final figure.
 
 These are **fingerprints** — mathematical summaries of a file, a set of files, or a decision. This page explains what each one means and why your export includes them.
 
