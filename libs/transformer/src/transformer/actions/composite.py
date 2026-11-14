@@ -22,7 +22,7 @@ from utils.errors import TransformationError
 # @deps
 # provides: action:step_top_n_other
 # consumes: libs/transformer/src/transformer/actions/polars_calls.py (_checked)
-# consumed_by: libs/transformer/tests/test_step_actions.py
+# consumed_by: libs/transformer/tests/test_top_n_other.py
 # doc: .claude/design/recipe_format_spec.md#7.5.1 (DEC36, R7), .claude/design/home_evidence/actions_and_polars_2026-11-13.md section 25
 # @end_deps
 

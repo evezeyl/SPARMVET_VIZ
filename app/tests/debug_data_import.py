@@ -14,7 +14,7 @@ Run:
 
 # @deps
 # provides: debug:data_import_headless
-# consumes: transformer/metadata_validator.py, app/handlers/data_import_handlers.py
+# consumes: libs/transformer/src/transformer/metadata_validator.py, app/handlers/data_import_handlers.py
 # consumed_by: manual @verify, CI
 # doc: .claude/rules/ui_implementation_contract.md#9, .claude/rules/ui_implementation_contract.md#10
 # @end_deps

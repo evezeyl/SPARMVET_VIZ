@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # @deps
 # provides: script:figshare_plot_integration
-# consumes: tmp/integration/figshare_join_check.tsv (written by figshare_triple_integration.py), tmp/integration/ (writes plots)
+# consumes: tmp/integration/figshare_join_check.tsv (written by assets/scripts/figshare_triple_integration.py), tmp/integration/ (writes plots)
 # doc: assets/test_data/figshare.21737288/README.md
 # @end_deps
 """
