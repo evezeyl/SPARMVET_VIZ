@@ -1852,7 +1852,7 @@ class WrangleStudio:
                 # File is a plain list or scalar — show as raw YAML
                 return ui.tags.pre(
                     yaml.dump(yaml_obj, default_flow_style=False,
-                              allow_unicode=True),
+                              sort_keys=False, allow_unicode=True),
                     style="background:#1e1e2e;color:#cdd6f4;padding:15px;"
                           "border-radius:6px;overflow:auto;max-height:600px;"
                           "font-size:0.82rem;white-space:pre-wrap;"
@@ -1868,7 +1868,7 @@ class WrangleStudio:
                 icon = "📂" if is_collection else "🔑"
                 val_yaml = (
                     yaml.dump(val, default_flow_style=False,
-                              allow_unicode=True)
+                              sort_keys=False, allow_unicode=True)
                     if is_collection else str(val)
                 )
                 panels.append(
