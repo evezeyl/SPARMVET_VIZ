@@ -236,18 +236,25 @@ def test_a_first_step_that_joins_the_base_table_with_itself_on_other_keys_adds_n
     assert done.width > result.width, "the join, run, would have added columns"
 
 
-def test_a_float_join_key_merges_identifiers_that_differ_in_the_files_decision_pending():
-    # CHARACTERISATION, decision pending (D10, J-d): a key declared Float64 turns the identifiers "001", "1" and
-    # "1.0" of the files into the same number, so three samples become one key and the join returns more rows than
-    # samples (3 x 3 = 9 for 3 samples). No message is given. Options for Eve: change the template to a text type,
-    # and/or an advice in the checker against a float join key. If she decides, this test changes with it.
-    import io
+def test_a_float_join_key_merges_identifiers_that_differ_in_the_files_decision_pending(tmp_path):
+    # CHARACTERISATION, decision pending (D10, J-d): a key DECLARED Float64 in `input_fields` turns the identifiers
+    # "001", "1" and "1.0" of the files into the same number, so three samples become one key and the join returns
+    # more rows than samples (3 x 3 = 9 for 3 samples). No message is given. Options for Eve: change the template to
+    # a text type, and/or an advice in the checker against a float join key. If she decides, this test changes with it.
+    # The frames come from the real ingestion (`DataIngestor.ingest`) with the type declared in the schema, not from
+    # a reader override: real ingestion accepts the three texts as Float64 without a message (checked by running).
+    from ingestion.ingestor import DataIngestor
 
-    def table(value):
-        text = f"sample_id\t{value}\n001\t1\n1\t2\n1.0\t3\n"
-        return pl.read_csv(io.StringIO(text), separator="\t", schema_overrides={"sample_id": pl.Float64}).lazy()
+    def table(name, value):
+        path = tmp_path / f"{name}.tsv"
+        path.write_text(f"sample_id\t{value}\n001\t1\n1\t2\n1.0\t3\n")
+        schema = {"source": {"type": "local_tsv", "path": str(path)},
+                  "input_fields": {"sample_id": {"type": "Float64"}, value: {"type": "Int64"}},
+                  "null_values": [], "strip": False}
+        return DataIngestor(str(tmp_path)).ingest(name, schema)[0]
 
-    left, right = table("n"), table("year")
+    left, right = table("L", "n"), table("R", "year")
+    assert left.collect()["sample_id"].dtype == pl.Float64
     assert left.collect()["sample_id"].n_unique() == 1, "the three identifiers are one key"
     result = _assemble(left, right, [_join(on=["sample_id"])]).collect()
     assert result.height == 9 and result.height > left.collect().height, "more rows than samples"
