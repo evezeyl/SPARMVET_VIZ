@@ -5,13 +5,20 @@ Decided by Eve on 2026-11-14: the engine follows Polars, so every comparison rem
 touches it, so it has its own count and its own sentence. Pure functions, no Shiny, no app import: the filter dialog,
 the Blueprint form and the data check call the same two functions.
 
-Consumed by: nothing yet (the wiring into the dialog, Blueprint and the data check is a later step of NA-RULE-63).
-If deleted: nothing breaks today.
+Also holds the choice itself, shared by the three places that filter (the HOME table, the plot, the results bundle)
+and the audit translator: `na_of` (a row or step without `na` is "remove", what it always did), `default_na` (the
+preselection of the HOME tick by operator), `keep_missing` (adds the null rows to a filter condition) and `with_na`
+(a copy of the parameters with `na` written).
+
+Consumed by: app/modules/t3_audit_engine.py, libs/viz_factory/src/viz_factory/viz_factory.py,
+libs/blueprint_arch/src/blueprint_arch/t3_translator.py, app/handlers/filter_and_audit_handlers.py,
+app/modules/session_manager.py.
+If deleted: HOME and the plot cannot read the choice `na`, and the translator cannot write it.
 """
 # @deps
-# provides: function:count_missing, function:missing_sentences
-# consumes: —
-# consumed_by: libs/utils/tests/test_missing_values.py
+# provides: function:count_missing, function:missing_sentences, function:na_of, function:default_na, function:keep_missing, function:with_na
+# consumes: polars
+# consumed_by: libs/utils/tests/test_missing_values.py, app/modules/t3_audit_engine.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py, app/handlers/filter_and_audit_handlers.py, app/modules/session_manager.py
 # doc: .claude/tasks/tasks.md#NA-RULE-63
 # @end_deps
 from dataclasses import dataclass
@@ -21,6 +28,40 @@ import polars as pl
 
 NA_CHOICES = ("keep", "remove")
 _WARNING_OPERATORS = ("ne", "not_in")
+
+
+def na_of(row: Optional[dict]) -> str:
+    """Return the `na` choice of a filter row or an audit step's params: "keep" or "remove".
+
+    Data written before the choice existed has no `na`; it always removed the rows with no value, so it is "remove".
+    A value that is neither is refused, never guessed.
+    """
+    na = (row or {}).get("na")
+    if na is None:
+        return "remove"
+    if na not in NA_CHOICES:
+        raise ValueError(f"na must be one of {NA_CHOICES}, not {na!r}")
+    return na
+
+
+def default_na(op: str) -> str:
+    """The choice the HOME tick starts on: `!=` and not-in keep the rows with no value, every other operator removes them."""
+    return "keep" if op in _WARNING_OPERATORS else "remove"
+
+
+def with_na(params: dict) -> dict:
+    """A copy of `params` with `na` written (an old step without it becomes "remove")."""
+    return {**params, "na": na_of(params)}
+
+
+def keep_missing(condition: pl.Expr, column: str, na: str) -> pl.Expr:
+    """Return `condition` as is for "remove"; for "keep" also true on the rows where `column` is null.
+
+    NaN is a number and is never touched by `na`.
+    """
+    if na not in NA_CHOICES:
+        raise ValueError(f"na must be one of {NA_CHOICES}, not {na!r}")
+    return condition | pl.col(column).is_null() if na == "keep" else condition
 
 
 @dataclass(frozen=True)
