@@ -772,3 +772,51 @@ Earlier lines above are not edited; where they disagree with the following, the 
 3. Line 706 (IMPORT-PATH-1): Eve's principle is decided (option A, as production); the mechanism waits (`tasks.md:178`).
 4. Lines 673 and 725 (N15): decided, `submit_example` stays (`tasks.md:200`).
 5. Lines 620 and 739 (N8): Eve 2026-11-14, order HOME, then Gallery, Blueprint and Test Lab last (line 751 of this file). The "Next (c) the Blueprint package" of the night handoff is superseded. The pointer "`tasks.md` (line 82)" is now line 87.
+
+## Handoff 2026-11-14 23:50 (coordinator, after the usage-limit stop): what runs, in which worktree, what is next
+
+**(a) How to restart**
+- A Fable session types `-coordinate` (CLAUDE.md section 4.3), then reads this section, `tmpAI/coordinator/progress_2026-11-14_session3.md` (the "STATE OF THE DAY" block at its top) and `tmpAI/agent_channel.md`.
+- A stopped worker is continued by a new agent of the right model in the SAME worktree. Each worktree keeps `tmpAI/progress.md` (done, next, findings). Never resume a Fable agent.
+
+**(b) Git**
+- Branch `feat/recipe-format-1`, HEAD `55e578f5` (CLAUDE.md section 2.1, standing rules of the coordinator, and the guard hook).
+- `origin/dev` = `edd96ee7`; controls passed there.
+- Merged into `feat/recipe-format-1`, NOT pushed, NOT yet through a control run: `51ce0e9e` (decision documents in `.claude/design/decisions_2026-11-14/`), `70b01370` (HOME plot check, V5), `af5560a9` (join flags J12, J13), `55e578f5` (CLAUDE.md and hook).
+
+**(c) Running** (the hash in brackets in the state block is the agent id, not the last commit; the last commit is not recorded there)
+- `.claude/worktrees/na-rule-b`, branch `task/na-rule-b` [agent 22a0dc14]: NA rule part 2 BUILT; reviewer resumed (four-way equality, mutation checks, the rule-file edit must leave the branch).
+- `.claude/worktrees/agent-abd52719502485bdb`, branch `worktree-agent-abd52719502485bdb` [agent aa26ce6b]: import "as production" BUILT and reviewed; FIX FIRST: Blueprint Validate must pass `imports_dir`; fix builder resumed.
+- `.claude/worktrees/gallery-flags`, branch `task/gallery-flags` [agent 26c40302]: gallery flags BUILT and reviewed; FIX FIRST: browser test staging a broken example, a line for status `failed`; fix builder resumed.
+- `.claude/worktrees/adr-sync`, branch `task/adr-sync` [agent aa16979a]: ADR update BUILT and reviewed; FIX FIRST: ten corrections in `tmpAI/panel/adr/review_corrections.md`; builder-opus correcting.
+- `.claude/worktrees/polars-rows`, branch `task/polars-rows`: deferred Polars actions, group rows; builder sonnet/high, building.
+
+**(d) Next, in order**
+1. Merge each of the four after its fix and review; the reviewer runs headless, golden baseline and the browser gate on the merged tree; push `dev`; scribe updates handoff and tasks.md.
+2. After `na-rule-b` is merged (same files): one builder for Q9 Option 1 and the operators; one builder for the seed (the recipe's seed holds, one seed everywhere, export uses and records the seed shown, a test per place); then PLOT-TABLE-ORDER-1 (recording guard, plot follows table, check at export).
+3. Polars batch: `polars-aggs` (sum, min, max, mean, median, std, var, quantile, count, null_count, first, last) and `polars-time` (rank, join_asof, join_where, group_by_dynamic, rolling), each in its own worktree, one new module per group.
+4. Viz plan step 2 (registry field, plot_engine read, shared parameter module to utils) AFTER the Polars batch (same file `polars_calls.py`).
+5. Scribe: memory addition (`tmpAI/coordinator/memory_addition.md`) into the memory file; spec catalogue rows J12 and J13; changelog note "old imports must be imported again".
+
+**(e) Decided by Eve on 2026-11-14 (evening)**
+- No silent error. The recipe is the scientific document: a seed fixed in it holds; an audit-pinned seed is the same everywhere and is tested.
+- V1 to V10 of the visualisation plan accepted as recommended.
+- Every engine operator is offered in HOME; `between` is kept with its four `closed` values.
+- The filter value is typed at the source: the panel stores the real value from a map of shown text to value; the engine stays strict; the checker checks the value type; old audit nodes are typed at export; the UI shows the column type.
+- Audit removal goes back and forward in the lineage and the user chooses; exploration acts on the data viewed.
+- The frozen files `t3_translator.py` and `export_handlers.py` may be edited through a builder for the NA rule, the seed and the operators.
+- The deferred Polars actions start now.
+- The ADRs follow the latest decisions.
+- The coordinator never edits a file.
+
+**(f) Open for Eve** (one at a time, through the review session)
+1. Self-join: refuse, or run as written (built: runs with the advice).
+2. `categorical`.
+3. Seed when the recipe writes none.
+4. Blueprint authoring tier 3.
+5. Show all advices, or only J12 and J13.
+6. The rule-file diff of NA part 2.
+
+**(g) Where the documents are**
+- `.claude/design/decisions_2026-11-14/` (proposals, visualisation plan, evidence).
+- Working copies in `tmpAI/panel/`; progress in `tmpAI/coordinator/progress_2026-11-14_session3.md`.

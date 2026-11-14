@@ -11,14 +11,13 @@ from pathlib import Path
 import pytest
 
 import transformer.actions  # noqa: F401  (loads the registry)
-from transformer.actions.base import ACTION_SCHEMAS
+from app.modules.data_analysis_recipe_validator import checker_catalogs
 from utils.recipe_loader import check_recipe_file
-from viz_factory.arguments import argument_catalog
 
 ROOT = Path(__file__).resolve().parents[2]
 RECIPES = sorted(p for folder in ("pipelines", "retest", "templates")
                  for p in (ROOT / "config/data_analysis_recipes" / folder).glob("*.yaml"))
-CATALOGS = {"actions": dict(ACTION_SCHEMAS), "components": argument_catalog()}
+CATALOGS = checker_catalogs()
 
 
 def test_there_are_recipes_to_check():

@@ -23,7 +23,7 @@ from __future__ import annotations
 # provides: function:_warn_on_upload, output:bp_validate_ui, effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path, issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))
 # provides: helpers:_draft_key/_write_bp_draft/_read_bp_draft, effect:_autosave_blueprint_draft, output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)
 # consumes: libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/utils/src/utils/action_names.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
-# consumes: app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe, validate_data_analysis_recipe_data — issue #53; uploaded_recipe_report, load_uploaded_recipe, load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)
+# consumes: app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe, validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result, never blocking; uploaded_recipe_report, load_uploaded_recipe, load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)
 # consumes: function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
 # consumes: function:normalise_plot_spec, function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)
@@ -70,6 +70,8 @@ from blueprint_arch.blueprint_mapper import BlueprintMapper
 from utils.action_names import JOIN
 from app.modules.data_analysis_recipe_validator import (
     validate_data_analysis_recipe,
+    checker_advices,
+    validate_advice_entries,
     uploaded_recipe_report,
     load_uploaded_recipe,
     load_config_or_problems,
@@ -2773,6 +2775,17 @@ def define_server(input, output, session, *,
             for p in data_problems
         ]
 
+        # Advice (J12, J13) never changes PASS or FAIL: it says what a choice of the recipe does to the result.
+        advice_rows = [
+            ui.tags.div(
+                ui.tags.div(heading, style="font-size:0.72rem;font-weight:600;"),
+                ui.tags.div(text, style="font-size:0.72rem;"),
+                ui.tags.div(tip, style="font-size:0.72rem;color:#6c757d;") if tip else None,
+                style="margin:2px 0 6px 0;padding:4px 6px;background:#fff3cd;border-radius:3px;",
+            )
+            for heading, text, tip in validate_advice_entries(result.get("advice_problems", []))
+        ]
+
         return ui.div(
             ui.div(
                 ui.tags.strong(status_label),
@@ -2781,6 +2794,7 @@ def define_server(input, output, session, *,
             ),
             *check_rows,
             *detail_rows,
+            *advice_rows,
             ui.tags.small(
                 result.get("data_analysis_recipe_name", ""),
                 class_="text-muted d-block mt-1 mb-2",
@@ -2882,6 +2896,10 @@ def define_server(input, output, session, *,
             checks.append(("data vs contract", len(data_problems) == 0, len(data_problems)))
 
         passed = structure_passed and not data_problems and not recipe_rule_problems and not recipe_rule_check_failed
+        try:
+            advice_problems = [{"location": a.location, "problem": a.problem, "tip": a.tip} for a in checker_advices(path)]
+        except Exception as e:
+            advice_problems = [{"location": "check", "problem": f"the advices could not be read: {e}", "tip": None}]
 
         _validate_result.set({
             "pass": passed,
@@ -2892,6 +2910,7 @@ def define_server(input, output, session, *,
                 {"location": p.location, "problem": p.problem, "tip": p.tip}
                 for p in (recipe_rule_problems + data_problems)
             ],
+            "advice_problems": advice_problems,
         })
         status = "PASS" if passed else "FAIL"
         ui.notification_show(f"Validation {status}: {Path(path).name}", type="message")
