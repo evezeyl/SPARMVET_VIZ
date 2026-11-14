@@ -16,6 +16,7 @@ from viz_factory.registry import register_plot_component
     "context": ["plot"],
     "tags": ["facet", "wrap", "panel", "small-multiples", "grid"],
     "wraps": [{"lib": "plotnine", "attr_path": ["facet_wrap"]}],
+    "plotnine": "exact",
     "allow_extra_params": False,
     "params": {
         "facets": {"widget": "string", "label": "Column to facet by (column name)", "required": True},
@@ -33,9 +34,7 @@ from viz_factory.registry import register_plot_component
 })
 def handle_facet_wrap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standard individual panel wrapping."""
-    # Ensure facets is a list or string
-    facets = spec.pop("facets", None)
-    return p + facet_wrap(facets=facets, **spec)
+    return p + facet_wrap(**spec)
 
 
 @register_plot_component("facet_grid", ui_schema={
@@ -44,6 +43,7 @@ def handle_facet_wrap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["facet", "grid", "panel", "2D", "rows", "cols"],
     "wraps": [{"lib": "plotnine", "attr_path": ["facet_grid"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": {
         "rows": {"widget": "string", "label": "Row facet column (or leave empty for none)", "required": False},
@@ -54,7 +54,7 @@ def handle_facet_wrap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
                   "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
         "margins": {"widget": "bool", "label": "Show margin (total) panels", "required": False, "default": False},
     },
-    "description": "Arrange panels in a 2D grid defined by row and column variables; use when cross-tabulating two categorical variables.",
+    "description": "Arrange panels in a 2D grid defined by row and column variables; use when cross-tabulating two categorical variables. Differs from plotnine: `facets` may be written as a formula `rows ~ cols` (a dot means none); it is split into `rows` and `cols`.",
     "yaml_example": "layers:\n  - name: facet_grid\n    params:\n      rows: Year\n      cols: Country",
 })
 def handle_facet_grid(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -80,13 +80,14 @@ def handle_facet_grid(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["facet", "rows", "vertical", "stack", "panel"],
     "wraps": [{"lib": "plotnine", "attr_path": ["facet_grid"]}],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "facets": {"widget": "string", "label": "Column to use as row facets", "required": True},
         "scales": {"widget": "enum", "label": "Scale freedom", "required": False,
                    "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
     },
-    "description": "Facet into a single column of rows by one variable; shorthand alternative to facet_grid with only a rows variable.",
+    "description": "Facet into a single column of rows by one variable; shorthand alternative to facet_grid with only a rows variable. Not in plotnine: facet_grid with only rows; the column to split by is `facets`.",
     "yaml_example": "layers:\n  - name: facet_rows\n    params:\n      rows: Country",
 })
 def handle_facet_rows(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -101,13 +102,14 @@ def handle_facet_rows(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["facet", "cols", "horizontal", "panel"],
     "wraps": [{"lib": "plotnine", "attr_path": ["facet_grid"]}],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "facets": {"widget": "string", "label": "Column to use as column facets", "required": True},
         "scales": {"widget": "enum", "label": "Scale freedom", "required": False,
                    "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
     },
-    "description": "Facet into a single row of columns by one variable; shorthand alternative to facet_grid with only a cols variable.",
+    "description": "Facet into a single row of columns by one variable; shorthand alternative to facet_grid with only a cols variable. Not in plotnine: facet_grid with only columns; the column to split by is `facets`.",
     "yaml_example": "layers:\n  - name: facet_cols\n    params:\n      cols: Year",
 })
 def handle_facet_cols(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -122,6 +124,7 @@ def handle_facet_cols(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["facet", "null", "single", "disable"],
     "wraps": [{"lib": "plotnine", "attr_path": ["facet_null"]}],
+    "plotnine": "exact",
     "allow_extra_params": False,
     "params": {},
     "description": "Explicitly remove faceting; use to clear a default facet in a downstream T3 override without rebuilding the full plot spec.",
@@ -142,12 +145,13 @@ def handle_facet_null(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["facet", "scales", "free", "fixed"],
     "wraps": [],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "scales": {"widget": "enum", "label": "Scale freedom", "required": True,
                    "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
     },
-    "description": "Control whether axis scales are fixed or free across facet panels; use 'free_x' or 'free_y' when panels have very different ranges.",
+    "description": "Control whether axis scales are fixed or free across facet panels; use 'free_x' or 'free_y' when panels have very different ranges. Not in plotnine: changes the `scales` setting of the facet already on the plot (plotnine sets it inside facet_wrap or facet_grid); with no facet before it nothing is changed and no message is shown.",
     "yaml_example": "layers:\n  - name: facet_scales\n    params:\n      scales: free_y",
 })
 def handle_facet_scales(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -164,12 +168,13 @@ def handle_facet_scales(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["facet", "space", "panel", "spacing"],
     "wraps": [],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "space": {"widget": "enum", "label": "Panel space", "required": True,
                   "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
     },
-    "description": "Allocate panel space proportionally to data range when scales are free; combine with facet_scales to size panels by their content.",
+    "description": "Allocate panel space proportionally to data range when scales are free; combine with facet_scales to size panels by their content. Not in plotnine: changes the `space` setting of the facet already on the plot (plotnine sets it inside facet_grid); with no facet before it nothing is changed and no message is shown.",
     "yaml_example": "layers:\n  - name: facet_space\n    params:\n      space: free_y",
 })
 def handle_facet_space(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -185,11 +190,12 @@ def handle_facet_space(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["facet", "label", "strip", "text"],
     "wraps": [],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "labeller": {"widget": "string", "label": "Labeller function name (e.g. 'label_both')", "required": True},
     },
-    "description": "Set the labeller function for facet strip labels; use label_both to show 'variable: value' format in strips.",
+    "description": "Set the labeller function for facet strip labels; use label_both to show 'variable: value' format in strips. Not in plotnine: sets the labeller of the facet already on the plot (plotnine sets it inside facet_wrap or facet_grid); with no facet before it nothing is changed and no message is shown.",
     "yaml_example": "layers:\n  - name: facet_labeller\n    params:\n      labeller: label_both",
 })
 def handle_facet_labeller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -212,11 +218,12 @@ def handle_facet_labeller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["facet", "margins", "total", "summary"],
     "wraps": [],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "margins": {"widget": "bool", "label": "Show margin (total) panels", "required": False, "default": True},
     },
-    "description": "Add marginal panels that aggregate across a facet dimension; rarely needed \u2014 use for totals/grand-total rows in grid facets.",
+    "description": "Add marginal panels that aggregate across a facet dimension; rarely needed \u2014 use for totals/grand-total rows in grid facets. Not in plotnine: sets `margins` of the facet already on the plot (plotnine sets it inside facet_grid); with no facet before it nothing is changed and no message is shown.",
     "yaml_example": "layers:\n  - name: facet_margins\n    params:\n      margins: true",
 })
 def handle_facet_margins(p: ggplot, spec: Dict[str, Any]) -> ggplot:
