@@ -107,3 +107,21 @@ def test_the_real_constructor_calls_the_check_only_when_the_gallery_flag_is_on(m
     boot = Bootloader(app_features=app_features)
     assert boot.is_enabled("gallery_enabled") == bool(expected_calls)
     assert len(calls) == expected_calls
+
+
+def test_the_index_write_is_atomic(tmp_path, monkeypatch):
+    """A write that fails in the middle leaves the old index whole and no temporary file."""
+    import viz_gallery.gallery_manager as manager
+    work = _gallery(tmp_path, "bar_simple")
+    before = (work / "gallery_index.json").read_bytes()
+    _add_broken(work)
+
+    def broken_dump(obj, handle, **kwargs):
+        handle.write('{"registry": ')
+        raise OSError("disk full")
+    monkeypatch.setattr(manager.json, "dump", broken_dump)
+    with pytest.raises(OSError):
+        rebuild_gallery_index(work)
+    assert (work / "gallery_index.json").read_bytes() == before
+    assert [p.name for p in work.iterdir() if p.name.endswith(".tmp")] == []
+    assert check_gallery_at_start(work)[1] == "not_writable"

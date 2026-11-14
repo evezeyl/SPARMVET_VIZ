@@ -19,6 +19,7 @@ No Shiny import. If deleted: `gallery_index.json` cannot be rebuilt and the gall
 # @end_deps
 """
 import json
+import os
 import re
 import shutil
 from dataclasses import dataclass
@@ -121,8 +122,16 @@ class GalleryManager:
             "registry": registry,
             "pivot": pivot,
         }
-        with open(self.gallery_dir / INDEX_FILE, "w", encoding="utf-8") as handle:
-            json.dump(index, handle, indent=2, ensure_ascii=False)
+        # Atomic write: a reader (or a second process starting) sees the old index or the new one, never half of it.
+        target = self.gallery_dir / INDEX_FILE
+        temporary = self.gallery_dir / f".{INDEX_FILE}.{os.getpid()}.tmp"
+        try:
+            with open(temporary, "w", encoding="utf-8") as handle:
+                json.dump(index, handle, indent=2, ensure_ascii=False)
+            os.replace(temporary, target)
+        finally:
+            if temporary.exists():
+                temporary.unlink()
         for name, reasons in examples.rejected.items():
             for reason in reasons:
                 print(f"[gallery] {name} is left out of the index: {reason}")
