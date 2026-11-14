@@ -1,8 +1,8 @@
 """
 @deps
-provides: function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
+provides: function:load_uploaded_recipe, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
 consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/orchestrator.py
-consumed_by: app/tests/test_upload_recipe_check.py, app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
+consumed_by: app/tests/test_upload_load_never_exits.py, app/tests/test_upload_recipe_check.py, app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
 @end_deps
 
@@ -139,6 +139,45 @@ def _fragment_report(raw) -> list[str]:
         for p in step_problems(name, flat, actions[name]):
             lines.append(f"[{p.code}] {where} ({name}): {p.message}" + (f" Fix: {p.fix}" if p.fix else ""))
     return lines
+
+
+class _TolerantLoader(yaml.SafeLoader):
+    """Reads the shape of a file without resolving `!include` (the tag becomes None)."""
+
+
+_TolerantLoader.add_multi_constructor("!", lambda loader, suffix, node: None)
+
+
+def load_uploaded_recipe(path: Union[str, Path]) -> tuple[Optional[dict], list[str]]:
+    """Load an uploaded file; return (content, []) or (None, problems). Never raises, `SystemExit` included.
+
+    Blueprint reports and never blocks (rules_data_analysis_recipe_structure.md 11a/11b): ConfigManager ends the
+    program on a contradictory file, and a SystemExit inside a Shiny effect freezes the session without a message.
+    A whole recipe (it has `data_schemas`) or a file with `!include` goes through the same capture as
+    `engine_load_problems`. A plain wrangling fragment cannot pass ConfigManager (it has no `analysis_groups`), so
+    it is read as YAML. Problems are lines in the form of `uploaded_recipe_report`."""
+    path = Path(path)
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        return None, [f"[LOAD] the file cannot be read: {exc}"]
+    try:
+        shape = yaml.load(text, Loader=_TolerantLoader)
+    except yaml.YAMLError as exc:
+        return None, [f"[LOAD] the file is not valid YAML: {exc}"]
+    if not isinstance(shape, dict) or not shape:
+        return None, ["[LOAD] the file is empty or its root is not a mapping: nothing to import"]
+    if "data_schemas" not in shape and "!include" not in text:
+        return yaml.safe_load(text), []
+    captured = io.StringIO()
+    try:
+        with redirect_stderr(captured):
+            raw = ConfigManager(str(path)).raw_config
+    except (Exception, SystemExit) as exc:
+        return None, [f"[LOAD] {_load_error_text(captured.getvalue(), exc)}"]
+    if not isinstance(raw, dict):
+        return None, ["[LOAD] the file root is not a mapping: nothing to import"]
+    return raw, []
 
 
 def uploaded_recipe_report(raw, profile: str = "build") -> list[str]:
