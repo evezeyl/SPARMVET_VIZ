@@ -445,6 +445,8 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
 
 ## ADR-035: Gallery Taxonomy & Visual Discovery System
 
+> **Note (2026-11-14, ADR-SYNC-1):** `rules_data_engine.md` section 5 and several docs cite "ADR-035" for the Polars parity mandate. That citation is wrong: this ADR is the gallery taxonomy. See ADR-106. **Partly stale:** the taxonomy now lives in `taxonomy` on the plot entry, five axes, `geom` derived, the tag strip generated (ADR-100 point 9; DEC21, DEC47, DEC48, 2026-11-13), not in `recipe_meta.md`.
+
 **Status:** IMPLEMENTED (April 18, 2026)
 **Context:**  As the Gallery grows, users require a structured way to discover recipes beyond simple folder browsing. ADR-033 established the split-pane view, but not the classification of plots.
 **Decision:**  Implement a formal taxonomy based on "Families" and "Difficulty":
@@ -456,6 +458,8 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
 **Aesthetic Constraint**: Taxonomy sidebar headers must be bold, underlined, and scaled (1.2rem) for hierarchical clarity.
 
 ## ADR-036: Persistent UI Integrity (ID Sanitation Pivot)
+
+> **Note (2026-11-14, ADR-SYNC-1):** `rules_viz_factory.md` section 1, ADR-083 and several docs cite "ADR-036" for the plotnine "Artist Parity Mandate". That citation is wrong: this ADR is the ID sanitation pivot and is CURRENT. The parity rule is replaced by ADR-106 (V9).
 
 **Status:** IMPLEMENTED (April 18, 2026)
 **Context:** Switching between heavy-state modules (e.g., Wrangle Studio vs. Theater) can lead to 'ghost' elements (stale headers or metrics) if the DOM is not forcefully cleared by the reactive engine.
@@ -483,6 +487,8 @@ not scale, and the Gallery is required to be a static reference browser with no 
   integrated in `GalleryManager`), which also runs the Scientific Triplet integrity audit.
 - Taxonomy fields (Family, Pattern, Difficulty, and the rest of the 6-axis taxonomy of ADR-063)
   live in each bundle's `info:` block and are what the index is built from.
+
+> **Note (2026-11-14, ADR-SYNC-1):** the last point is stale: the taxonomy is the `taxonomy` key on the plot entry, five axes, `geom` derived (ADR-100 point 9, DEC21, DEC47, 2026-11-13). The Pivot-Index rule stays.
 
 ## ADR-038: Contextual Sidebar Masking (Focus Mode)
 
@@ -1903,6 +1909,8 @@ Bslib positions the toggle correctly via its own `position: absolute` + CSS vari
 ---
 
 ## ADR-063: Gallery 6-Axis Taxonomy (2026-05-03)
+
+> **SUPERSEDED (ADR-100 point 9; DEC21, DEC47, DEC48, decided by Eve 2026-11-13):** gallery examples are standard recipes in profile `gallery`; the classification is the `taxonomy` key on the plot entry, not the bundle's `info:` block; it has five axes and `geom` is derived from the first layer, not typed; the tag strip of `example_meta.md` is generated from `taxonomy`, not written by hand; the checker runs at index rebuild, at app start and in the tests. The text below is history.
 
 **Status:** Accepted
 
@@ -3885,6 +3893,7 @@ Verification found the form layer is **half-built**: the rich 8-widget renderer 
 
 **Status:** ACCEPTED. Authority: @dasharch. Full design: `.claude/design/plot_authoring_model.md`.
 **Refines:** ADR-082 §5 (form unification), ADR-081 / `plot_config_cascade.md` (render cascade), ADR-036 (Artist parity).
+> **Note (2026-11-14, ADR-SYNC-1), partly stale:** "ADR-036 (Artist parity)" is a wrong citation; the parity rule was only in `rules_viz_factory.md` and is replaced by ADR-106 (V9). The `_meta` passthrough of point 1 is retired: spec keys are declared (`comment`, `taxonomy`), unknown keys fail (ADR-100, DEC02; `recipe_format_spec.md` section 16, PS01). Point 5 ("HOME authors only `aesthetic_override`") is superseded for data: the audit writes filter and drop steps (ADR-105); it never writes a plot spec. Axis and legend titles default to the field `label` (ADR-100 point 9, DEC22, decided, not built).
 
 **Context.** BP-COMPONENT-FORMS-1 ("configure plot/geom nodes via the shared form") surfaced a deeper
 question: a plot spec mixes abstraction levels — the primary geom is hidden behind `factory_id`, the
@@ -4284,6 +4293,8 @@ manifest  ───┤                       -> stored as the Tier 1 parquet
 ---
 
 ## ADR-090: Reproducibility, the same data and manifest give the same rows and the same picture (2026-11-05)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** decision points 1 and 3 are amended by ADR-100 (DEC34, 2026-11-13): the order rule is a required parameter written in each step, with the Polars name, and the action adds no default (`polars_group_by`, `polars_sort`, `polars_join`, `polars_unique`, `polars_sample`; `summarize`, `drop_duplicates`, `join_filter`, `value_counts` no longer exist). The full new wording is in `.claude/design/adr_100_recipe_format_1_draft.md`, section "ADR-090, proposed new wording". Point 5: the cache version is now "4". Point 2: a seed written in the recipe holds in every view (ADR-104, 2026-11-14; HOME does not follow it yet, SEED-HOLDS-1). **The default when the recipe writes no seed is OPEN, awaiting Eve:** this point says 0; ADR-097 point 2 and HOME's code draw one per session (see ADR-104).
 
 **Status:** ACCEPTED (2026-11-05, confirmed by @evezeyl: "it should be reproducible"; a fixed seed for tests is required). Authority: @dasharch.
 **Implementation status:** IMPLEMENTED 2026-11-05 on `dev`.
@@ -4844,6 +4855,7 @@ actually reproducible for the T3-adjusted result.
    `ui_implementation_contract.md §14`), in an ordinary per-session `reactive.Value`, never the
    bootloader's process-wide asset cache. Multiple jittered layers in one plot continue to
    share one seed (unchanged behaviour).
+   > **Note (2026-11-14, ADR-SYNC-1):** this point is written for the unpinned case. A seed written in the recipe holds (ADR-104); HOME draws over it today (verified by running, `tmpAI/results.md` section 1, task SEED-HOLDS-1). For the unpinned case, the drawn seed (this point) against the default 0 (ADR-090 point 2) is OPEN, awaiting Eve; the run showed that the recorded seed does not reproduce the exported plot.
 
 3. **A consolidated provenance record carries four hash legs, not three.** Recipe (file-set
    hash, already computed), data (content hash per dataset, already computed), engine
@@ -5237,3 +5249,28 @@ with levels 0-2.
 6. **The audit steps live in a copy of the recipe**, which is the source of truth, with an append-only event log; the copy minus its marked audit steps must equal the original, otherwise it blocks (5a point 22, 2026-11-13).
 7. A plot is affected when the content of its T3 differs; the order of steps is their position in the dataflow; checks run after Apply (5a points 10 to 12).
 8. **Flags:** audit mode requires comparison, sessions and export; comparison requires the audit flag (P1, section 3).
+
+
+## ADR-106: The visualisation library follows the recipe standard (2026-11-14)
+
+**Status:** DECIDED by @evezeyl on 2026-11-14, in the evening: "V1 to V10 are OK as recommended" (channel M72 point 2; `tmpAI/coordinator/progress_2026-11-14_session3.md` "EVE DIRECT" point 2, both labelled 2026-11-15 by a clock error). The plan and its evidence: `.claude/design/decisions_2026-11-14/viz_plan_for_eve.md` section 5. Recorded here 2026-11-14 (ADR-SYNC-1). BUILT: V5 only (VIZ-STANDARD-1, merge `70b01370`). The rest is NOT BUILT (task VIZ-STANDARD-1).
+**Replaces:** the "Artist Parity Mandate" of `.claude/rules/rules_viz_factory.md` section 1 ("1:1 Functional Parity ... MUST"), written only in the rule file (commit `342f7980`, 2026-04-17) and never in this log. Eve approved the rule-file change with V9.
+**Corrects a citation:** the rule files cite ADR-035 for Polars parity (`rules_data_engine.md` section 5) and ADR-036 for plotnine parity (`rules_viz_factory.md` section 1), and ADR-083 "Refines ... ADR-036 (Artist parity)". **ADR-035 is the gallery taxonomy and ADR-036 the ID sanitation pivot; neither holds a parity decision.**
+**Consistent with:** ADR-100 (one checker, no hidden choice, `plot_engine` declared), ADR-104 (no silent error).
+
+**Context.** Verified 2026-11-14 (plan section 3): 191 components (125 pass-through, 66 with own logic); layer parameters never judged; seven silent paths (a mistyped spec key or an unknown filter operator changes the picture without a message); HOME accepted a parameter the gallery refused; a drawing error reached the user as raw text; `plot_engine` read by nothing; 0 of 194 test recipes in format 1 and the integrity suite could not run.
+
+**Decision** (the recommendation of each question, accepted):
+1. **V1** A registry field `exact` / `modified` / `own`, shown in the help and the checker; no component is renamed.
+2. **V2** An `exact` component equals the direct plotnine call, proved by a test for each; a `modified` one states its change.
+3. **V3** Parameter lists are read from plotnine, in two steps: a compare test first, then reading from plotnine with a hand overlay for descriptions and choices.
+4. **V4** One strict rule set for layer parameters (unknown, required, shape, allowed values), shared with the data steps, used by the checker and the engine; after V3.
+5. **V5** The same full check at HOME as in the gallery (BUILT).
+6. **V6** The silent paths become errors; the two filter paths wait for D1 (ADR-104).
+7. **V7** One error form: "what, which plot and layer, how to fix".
+8. **V8** The factory refuses a plot engine it does not implement; the export records the plotnine version.
+9. **V9** No parity "MUST": what is registered is exact, what is missing is listed, a test reports new plotnine objects at an upgrade; both spellings `color` and `colour` are accepted.
+10. **V10** The 194 old test recipes and the dead integrity suite are dropped; each component's YAML example becomes its test, through a small generated recipe. This replaces RECIPE-MIGRATE-1 for those files.
+
+**Not decided here:** V11 (the seed) and V12 (order of work). The seed: ADR-104 (a recipe seed holds; the default is OPEN).
+**Polars side:** the "Polars Parity Mandate" of `rules_data_engine.md` section 5 is qualified by ADR-100 (DEC32: a `polars_` action is exactly Polars; DEC41: Polars methods without an action are deferred). Whether the mandate is withdrawn like V9 is not recorded: Eve to confirm in the rule file.
