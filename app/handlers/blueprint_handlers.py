@@ -23,7 +23,7 @@ from __future__ import annotations
 # provides: function:_warn_on_upload, output:bp_validate_ui, effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path, issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))
 # provides: helpers:_draft_key/_write_bp_draft/_read_bp_draft, effect:_autosave_blueprint_draft, output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)
 # consumes: libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/utils/src/utils/action_names.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
-# consumes: app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe, validate_data_analysis_recipe_data — issue #53; uploaded_recipe_report)
+# consumes: app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe, validate_data_analysis_recipe_data — issue #53; uploaded_recipe_report, load_uploaded_recipe, load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)
 # consumes: function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
 # consumes: function:normalise_plot_spec, function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)
@@ -71,6 +71,8 @@ from utils.action_names import JOIN
 from app.modules.data_analysis_recipe_validator import (
     validate_data_analysis_recipe,
     uploaded_recipe_report,
+    load_uploaded_recipe,
+    load_config_or_problems,
     validate_data_analysis_recipe_data,
 )
 from blueprint_arch.join_designer import (
@@ -86,7 +88,6 @@ from blueprint_arch.agent_context import build_system_prompt
 from blueprint_arch.agent_tools import call_tool, get_tool_definitions
 from blueprint_arch.agent_tool_parser import extract_tool_calls
 from blueprint_arch.new_recipe import new_recipe_draft
-from utils.config_loader import ConfigManager
 from utils.recipe_factory import write_recipe
 from utils.pipeline_error import PipelineError, make_render_payload
 from app.src.render.pipeline_error_renderers import render_blueprint_inline
@@ -166,6 +167,29 @@ def _warn_on_upload(raw, name):
         ui.notification_show(f"Uploaded {name} has {len(lines)} problem(s): {shown}", type="warning", duration=15)
     except Exception:
         _LOG.exception("upload warning could not be shown for %s", name)
+
+
+def _show_load_problems(name, problems):
+    """Tell the user a recipe could not be opened (never raises)."""
+    shown = "; ".join(problems[:3])
+    try:
+        ui.notification_show(f"{name} could not be opened: {shown}", type="warning", duration=15)
+    except Exception:
+        _LOG.exception("load problems could not be shown for %s", name)
+
+
+def _load_upload_or_report(file_info):
+    """Load the uploaded file; on problems show them in a notification and return None (no node is added)."""
+    name = file_info[0].get("name", "file")
+    raw, problems = load_uploaded_recipe(file_info[0]["datapath"])
+    if raw is not None:
+        return raw, name
+    shown = "; ".join(problems[:3]) + (f"; and {len(problems) - 3} more" if len(problems) > 3 else "")
+    try:
+        ui.notification_show(f"Uploaded {name} was not imported: {shown}", type="warning", duration=15)
+    except Exception:
+        _LOG.exception("upload problems could not be shown for %s", name)
+    return None, name
 
 
 def define_server(input, output, session, *,
@@ -293,7 +317,10 @@ def define_server(input, output, session, *,
             if groups:
                 ui.update_select("dataset_pipeline_selector", choices=groups)
             else:
-                cfg_inline = ConfigManager(path)
+                cfg_inline, _lp = load_config_or_problems(path)
+                if cfg_inline is None:
+                    _show_load_problems(Path(path).name, _lp)
+                    return {}, {}
                 raw = cfg_inline.raw_config
                 inline_groups: dict = {}
                 for sid in raw.get("data_schemas", {}):
@@ -690,7 +717,9 @@ def define_server(input, output, session, *,
                 wrangle_studio.active_data_analysis_recipe_path.set(master_path)
 
                 try:
-                    cfg_for_map = ConfigManager(master_path)
+                    cfg_for_map, _lp = load_config_or_problems(master_path)
+                    if cfg_for_map is None:
+                        raise RuntimeError("; ".join(_lp))
                     mapper = BlueprintMapper(cfg_for_map.raw_config, active_node=schema_id)
                     wrangle_studio.active_tubemap_mermaid.set(mapper.generate_cy_elements())
                 except Exception as _e:
@@ -721,7 +750,10 @@ def define_server(input, output, session, *,
         if not Path(master_path).exists():
             return
         try:
-            cfg = ConfigManager(master_path)
+            cfg, _lp = load_config_or_problems(master_path)
+            if cfg is None:
+                _show_load_problems(Path(master_path).name, _lp)
+                return
             raw = cfg.raw_config
 
             schema_id = selected
@@ -878,7 +910,10 @@ def define_server(input, output, session, *,
         if not Path(path_str).exists():
             return
         try:
-            cfg = ConfigManager(str(path_str))
+            cfg, _lp = load_config_or_problems(str(path_str))
+            if cfg is None:
+                print(f"[sync_blueprint_mapper] {'; '.join(_lp)}")
+                return
             info = wrangle_studio.active_component_info.get()
             active_node = info.get("schema_id") if info else None
             mapper = BlueprintMapper(cfg.raw_config, active_node=active_node)
@@ -1045,9 +1080,11 @@ def define_server(input, output, session, *,
         if not file_info:
             return
         try:
-            cfg = ConfigManager(file_info[0]["datapath"])
-            _warn_on_upload(cfg.raw_config, file_info[0].get("name", "file"))
-            wrangling = cfg.raw_config.get("wrangling", {})
+            raw, name = _load_upload_or_report(file_info)
+            if raw is None:
+                return
+            _warn_on_upload(raw, name)
+            wrangling = raw.get("wrangling", {})
             nodes = _parse_logic_to_nodes(wrangling, "Uploaded (Replace)")
             wrangle_studio.logic_stack.set(nodes)
             ui.notification_show("✅ Stack Replaced.", type="success")
@@ -1061,9 +1098,11 @@ def define_server(input, output, session, *,
         if not file_info:
             return
         try:
-            cfg = ConfigManager(file_info[0]["datapath"])
-            _warn_on_upload(cfg.raw_config, file_info[0].get("name", "file"))
-            wrangling = cfg.raw_config.get("wrangling", {})
+            raw, name = _load_upload_or_report(file_info)
+            if raw is None:
+                return
+            _warn_on_upload(raw, name)
+            wrangling = raw.get("wrangling", {})
             new_nodes = _parse_logic_to_nodes(wrangling, "Uploaded (Append)")
             current_stack = wrangle_studio.logic_stack.get()
             wrangle_studio.logic_stack.set(current_stack + new_nodes)
