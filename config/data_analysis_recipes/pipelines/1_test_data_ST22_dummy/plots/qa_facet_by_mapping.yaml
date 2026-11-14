@@ -1,9 +1,5 @@
 target_dataset: QA_year_types
 title: "QA: facet_by written in mapping"
-family: Ranking
-pattern: 1 Categorical, 1 Categorical
-difficulty: Simple
-description: Canary for the documented spelling of facets. The panels must exist; if the plot has a single panel, facet_by in mapping is being ignored (issue #65).
 mapping:
   x: year_label
   fill: year_label

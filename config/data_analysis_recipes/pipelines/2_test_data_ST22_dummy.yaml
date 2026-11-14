@@ -14,21 +14,24 @@ id: 2_test_data_ST22_dummy
 spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
-description: "Improved ST22 Analysis Lineage - Sequential Build"
-
 info:
+  label: "ST22 analysis lineage (sequential build)"
+  description: "Improved ST22 Analysis Lineage - Sequential Build"
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
 
 metadata_schema:
+  label: "metadata"
   source:
     type: "local_tsv"
     path: "assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv"
   null_values: []
   strip: true
   input_fields: !include 2_test_data_ST22_dummy/input_fields/metadata_schema.yaml
+  wrangling: {tier1: []}
 
 data_schemas:
   amr_data:
+    label: "amr data"
     source:
       type: "local_tsv"
       path: "assets/test_data/1_test_data_ST22_dummy/test_data_ResFinder_20260307_105756.tsv"
@@ -37,6 +40,7 @@ data_schemas:
     input_fields: !include 2_test_data_ST22_dummy/input_fields/amr_data.yaml
     wrangling: !include 2_test_data_ST22_dummy/wrangling/amr_data.yaml
   plasmid_data:
+    label: "plasmid data"
     source:
       type: "local_tsv"
       path: "assets/test_data/1_test_data_ST22_dummy/test_data_PlasmidFinder_20260307_105756.tsv"
@@ -47,11 +51,13 @@ data_schemas:
 
 joins:
   AMR_Profile_Joint:
+    label: "AMR Profile Joint"
     ingredients:
       - dataset_id: amr_data
       - dataset_id: metadata_schema
     steps: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
   Plasmid_Profile_Joint:
+    label: "Plasmid Profile Joint"
     ingredients:
       - dataset_id: plasmid_data
       - dataset_id: metadata_schema

@@ -1,10 +1,5 @@
 target_dataset: Quast_with_metadata
 title: Assembly Quality Metrics (Quast)
-family: Distribution
-pattern: 1 Numeric, 1 Categorical
-description: Facetted boxplot to identify assembly outliers across metrics (N50, Length,
-  etc.).
-difficulty: Intermediate
 mapping:
   x: metric
   y: value

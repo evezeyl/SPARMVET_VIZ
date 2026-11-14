@@ -1,9 +1,5 @@
 target_dataset: QA_year_types
 title: "QA: samples per year (text label)"
-family: Ranking
-pattern: 1 Categorical
-difficulty: Simple
-description: Canary for types. The text label of the year has no ".0"; the numeric year column stays numeric for range filters.
 mapping:
   x: year_label
   fill: country

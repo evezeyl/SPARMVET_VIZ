@@ -1,9 +1,5 @@
 target_dataset: QA_L50_integer
 title: "QA: samples per L50 (integer column)"
-family: Distribution
-pattern: 1 Numeric
-difficulty: Simple
-description: Canary for thresholds on an integer column. A filter "L50 >= 8.5" must remove the bar at 8 and keep 9; "L50 < 8.5" must keep 8.
 mapping:
   x: L50
 layers:

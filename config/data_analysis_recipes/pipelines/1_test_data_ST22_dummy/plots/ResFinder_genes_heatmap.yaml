@@ -18,9 +18,6 @@ layers:
     size: 4
 - name: theme_minimal
   params: {}
-family: Correlation
-pattern: 1 Numeric, 2 Categorical
-difficulty: Intermediate
 mapping:
   x: gene
   y: sample_id

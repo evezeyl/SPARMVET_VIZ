@@ -2,7 +2,7 @@
 
 # @deps
 # provides: function:import_bundle, function:read_effective_run, class:ImportResult, class:LegResult, class:BundleImportError
-# consumes: app/modules/cache_keys.py (engine_fingerprint), app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe — safe ConfigManager probe, ADR-077), app/modules/session_manager.py (SessionManager)
+# consumes: app/modules/cache_keys.py (engine_fingerprint), app/modules/data_analysis_recipe_validator.py (engine_load_problems — safe ConfigManager probe, ADR-077), app/modules/session_manager.py (SessionManager)
 # consumed_by: app/handlers/export_handlers.py (define_export_server — Import control in the Export panel)
 # doc: .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/reproducible_export_design.md
 # @end_deps
@@ -47,7 +47,7 @@ from typing import Any
 import yaml
 
 from app.modules.cache_keys import engine_fingerprint
-from app.modules.data_analysis_recipe_validator import validate_data_analysis_recipe
+from app.modules.data_analysis_recipe_validator import engine_load_problems
 from app.modules.session_manager import SessionManager
 
 
@@ -245,10 +245,13 @@ def import_bundle(zip_bytes: bytes, *, bootloader) -> ImportResult:
 
     # Validate before trusting ConfigManager with it: ConfigManager.load() calls
     # sys.exit(1) on a contradictory recipe (ADR-077) — fine at app startup, fatal if it
-    # reached a running Shiny process from Import's own call. validate_data_analysis_recipe()
+    # reached a running Shiny process from Import's own call. engine_load_problems()
     # is this project's own established safe wrapper (ADR-094's HOME load gate uses the
     # same pattern) — it intercepts SystemExit and returns problems instead of exiting.
-    problems = validate_data_analysis_recipe(dest_recipe_path)
+    # IMPORT-PATH-1 (open, a decision of Eve): only the engine's load is checked here, not the strict checker of
+    # recipe format 1. `_repoint_sources` writes the ABSOLUTE path of the extracted data into the recipe, and format 1
+    # refuses an absolute data path (PA01, DEC30). How the data of an imported bundle is found must be decided first.
+    problems = engine_load_problems(dest_recipe_path)
     if problems:
         raise BundleImportError(
             "The reproducibility recipe inside this bundle could not be loaded: "

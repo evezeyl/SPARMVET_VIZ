@@ -9,6 +9,7 @@ info:
   version: '1.0'
 data_schemas:
   amr_results:
+    label: "amr results"
     source:
       type: local_tsv
       path: ./assets/pipeline_output/ecoli_amr_results.tsv
@@ -42,6 +43,7 @@ data_schemas:
       tier1:
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
 metadata_schema:
+  label: "metadata"
   source:
     type: local_tsv
     path: ./assets/pipeline_output/ecoli_metadata.tsv
@@ -78,6 +80,7 @@ metadata_schema:
     tier1: []
 joins:
   amr_with_metadata:
+    label: "amr with metadata"
     description: Join AMR results with metadata.
     ingredients:
     - dataset_id: amr_results
@@ -90,21 +93,19 @@ joins:
         how: left
         maintain_order: left_right
 plot_defaults:
-  height: 450
   theme: theme_minimal
-  show_legend: true
 analysis_groups:
   AMR:
+    label: "💊 Antimicrobial Resistance"
     description: 💊 Antimicrobial Resistance
     plots:
       serotype_dist:
-        info: Distribution of serotypes across samples.
+        label: "Serotype Dist"
+        taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
+        description: "Distribution of serotypes across samples."
         spec:
           target_dataset: amr_with_metadata
           title: Serotype Distribution by Country
-          family: Distribution
-          pattern: 2 Categorical
-          difficulty: Beginner
           mapping:
             x: serotype
             fill: country_of_origin
@@ -112,13 +113,12 @@ analysis_groups:
           - name: geom_bar
             params: {}
       growth_rate_by_st:
-        info: Growth rate distribution by sequence type.
+        label: "Growth Rate By St"
+        taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
+        description: "Growth rate distribution by sequence type."
         spec:
           target_dataset: amr_with_metadata
           title: Growth Rate by Sequence Type
-          family: Distribution
-          pattern: 1 Numeric, 1 Categorical
-          difficulty: Simple
           mapping:
             x: sequence_type
             y: growth_rate

@@ -1,6 +1,5 @@
 sample_id:
   type: Categorical
-  role: foreign_key
   original_name: sample_id
   label: Sample ID
 gene:

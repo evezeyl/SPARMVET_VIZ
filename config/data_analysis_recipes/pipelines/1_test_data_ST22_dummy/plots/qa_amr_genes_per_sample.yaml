@@ -1,9 +1,5 @@
 target_dataset: QA_AMR_per_sample
 title: "QA: AMR genes per sample"
-family: Distribution
-pattern: 1 Numeric
-difficulty: Simple
-description: Canary for samples that vanish from a long table. A sample without any AMR gene must appear at 0, not disappear. T1 is long (74 rows), T2 has one row per sample (42).
 mapping:
   x: n_amr_genes
   fill: country

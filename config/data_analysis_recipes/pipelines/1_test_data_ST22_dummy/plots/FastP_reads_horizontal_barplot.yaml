@@ -1,10 +1,5 @@
 target_dataset: QC_Reads_Anchor
 title: Reads Quality & Taxonomy Proportion
-family: Distribution
-pattern: 1 Numeric, 2 Categorical
-description: Shows total reads (FastP) colored by the proportion of the top-ranking
-  taxon (Bracken).
-difficulty: Intermediate
 mapping:
   x: sample_id
   y: total_reads
