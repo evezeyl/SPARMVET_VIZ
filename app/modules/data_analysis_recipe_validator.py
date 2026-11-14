@@ -1,7 +1,7 @@
 """
 @deps
-provides: function:load_uploaded_recipe, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
-consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/orchestrator.py
+provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
+consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (load_recipe), libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/orchestrator.py
 consumed_by: app/tests/test_upload_load_never_exits.py, app/tests/test_upload_recipe_check.py, app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
 @end_deps
@@ -153,7 +153,7 @@ def load_uploaded_recipe(path: Union[str, Path]) -> tuple[Optional[dict], list[s
 
     Blueprint reports and never blocks (rules_data_analysis_recipe_structure.md 11a/11b): ConfigManager ends the
     program on a contradictory file, and a SystemExit inside a Shiny effect freezes the session without a message.
-    A whole recipe (it has `data_schemas`) or a file with `!include` goes through the same capture as
+    A whole recipe (it has `data_schemas`) goes through the same capture as
     `engine_load_problems`. A plain wrangling fragment cannot pass ConfigManager (it has no `analysis_groups`), so
     it is read as YAML. Problems are lines in the form of `uploaded_recipe_report`."""
     path = Path(path)
@@ -167,17 +167,47 @@ def load_uploaded_recipe(path: Union[str, Path]) -> tuple[Optional[dict], list[s
         return None, [f"[LOAD] the file is not valid YAML: {exc}"]
     if not isinstance(shape, dict) or not shape:
         return None, ["[LOAD] the file is empty or its root is not a mapping: nothing to import"]
-    if "data_schemas" not in shape and "!include" not in text:
-        return yaml.safe_load(text), []
-    captured = io.StringIO()
-    try:
-        with redirect_stderr(captured):
-            raw = ConfigManager(str(path)).raw_config
-    except (Exception, SystemExit) as exc:
-        return None, [f"[LOAD] {_load_error_text(captured.getvalue(), exc)}"]
+    if "data_schemas" not in shape:
+        return _load_fragment(path)
+    cfg, problems = load_config_or_problems(path)
+    if cfg is None:
+        return None, problems
+    raw = cfg.raw_config
     if not isinstance(raw, dict):
         return None, ["[LOAD] the file root is not a mapping: nothing to import"]
     return raw, []
+
+
+def _load_fragment(path: Path) -> tuple[Optional[dict], list[str]]:
+    """Read a wrangling fragment with the strict recipe reader (`load_recipe`, not `load_strict`).
+
+    `load_strict` only refuses a repeated key and has no `!include`. `load_recipe` is the reader the recipe checker
+    uses: it also refuses a repeated key (T10), says "quote it" for an unquoted `on:` (T07, which a bare YAML load
+    turns into the key True), and reads `!include` inside the project. A problem it reports means the file is not
+    imported, so the user never gets a silent choice between two values."""
+    from utils.recipe_loader import load_recipe
+    try:
+        raw, found = load_recipe(path, include_root=path.parent)
+    except Exception as exc:
+        return None, [f"[LOAD] the file cannot be read: {exc}"]
+    if found:
+        return None, [f"[LOAD] [{p.code}] {p.path + ': ' if p.path else ''}{p.message}" + (f" Fix: {p.fix}" if p.fix else "")
+                      for p in found]
+    return raw, []
+
+
+def load_config_or_problems(path: Union[str, Path]):
+    """`ConfigManager(path)` that never ends the program: returns (the ConfigManager, []) or (None, problems).
+
+    ConfigManager calls `sys.exit` on a contradictory file; SystemExit is not an `Exception`, so an `except Exception`
+    in a Shiny effect does not stop it and the session freezes without a message. Every place of the app that opens
+    a recipe a user can edit or upload goes through this helper (BP-UPLOAD-EXIT-1)."""
+    captured = io.StringIO()
+    try:
+        with redirect_stderr(captured):
+            return ConfigManager(str(path)), []
+    except (Exception, SystemExit) as exc:
+        return None, [f"[LOAD] {_load_error_text(captured.getvalue(), exc)}"]
 
 
 def uploaded_recipe_report(raw, profile: str = "build") -> list[str]:
