@@ -41,6 +41,7 @@ To ensure a seamless developer experience, the SDK follows a linear automation p
     - **unmatched**: No match found (certainty 0.0).
 - **Boundary Protection**: `suggest_regex` in `libs/utils/src/utils/id_patterns.py` uses non-alphanumeric boundary guards `(?:^|[^a-zA-Z0-9])` to prevent partial ID collisions (e.g., `x100w2` does not match `x100w20`).
 - **Overlap Summary**: `engine.precheck_compatibility(ref_ids, target_ids)` returns overlap count, percentage, and top-3 pattern suggestions before running a full reconciliation.
+- **Cleaning steps for a recipe**: `engine.generate_transformation(...)` gives the cleaning steps in the library's own step language (`lowercase`, `regex_replace`, ...; they name no column and are not recipe actions). `recipe_steps(id_transformation, column)` writes them as steps of a data analysis recipe (`polars_str_replace_all`, `polars_with_columns`, ...) on the column you name. The scaffolding form uses it when "Bake in ID Reconciliation steps" is ticked: the steps go into `tier1` of the file you choose. The tables of both step languages are in `libs/id_reconciliation/README.md`.
 
 ## GUI Integration (shipped)
 
@@ -50,12 +51,13 @@ in `app/handlers/test_lab_handlers.py` (990 lines), which already imports and wi
 classes directly into the Test Lab Shiny panel, gated by `test_lab_enabled`:
 
 - **Headless Engine**: No UI dependencies are permitted in the library core.
-- **Shipped wiring**: `DataAnalysisRecipeScaffolder` (data analysis recipe scaffolding form),
-  `AquaSynthesizer` (synthetic data generation form), `Anonymiser`, and `DataReformatter` are
-  each imported and instantiated directly inside `test_lab_handlers.py` reactive handlers —
-  there is no intermediate adapter layer. Each tool runs to completion and returns a
-  downloadable artifact (ADR-084 §1, stateless-tool principle) rather than persisting session
-  state.
+- **Shipped wiring**: `AquaSynthesizer` (synthetic data generation form), `Anonymiser`, and
+  `DataReformatter` are each imported and instantiated directly inside `test_lab_handlers.py`
+  reactive handlers. The scaffolding form calls `scaffold_from_uploads`
+  (`app/modules/test_lab_studio.py`), the one place where two tools meet: it gives the ID
+  cleaning steps of a reconciliation to `DataAnalysisRecipeScaffolder` as recipe steps. Each tool
+  runs to completion and returns a downloadable artifact (ADR-084 §1, stateless-tool principle)
+  rather than persisting session state.
 
 ## Operational Standards
 
