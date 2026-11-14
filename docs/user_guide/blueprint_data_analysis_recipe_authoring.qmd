@@ -332,7 +332,7 @@ Common validation failures and how to fix them:
 |---|---|---|
 | "Unknown action" | Typo in an `action:` key | Check the action list in the BLUEPRINT picker |
 | "Column not found" | `final_contract` references a column that was never created | Check that the column is produced earlier in the step list |
-| "Join key mismatch" | Join key dtype differs between datasets | Add a `cast` step before the join |
+| "Join key mismatch" | Join key dtype differs between datasets | Declare the same type in `input_fields` of both tables. A `polars_cast` step before the join changes only the left table. Nothing is cast automatically |
 | "`on` is not a valid key" | Unquoted `on:` parsed as boolean | Change to `'on':` (quoted single tick) |
 
 ---

@@ -134,7 +134,7 @@ Runs every pipeline data analysis recipe in `config/data_analysis_recipes/pipeli
 | Error | Cause | Fix |
 |---|---|---|
 | `ColumnNotFoundError` | Step references a column before it is created | Check step ordering relative to the join that creates the column |
-| `SchemaError` on join | Join key dtype mismatch | Add `cast` step before join on the mismatched side |
+| "The join key types differ" (build stops) | Join keys have different declared types; nothing is cast automatically | Declare the same type in `input_fields` of both tables. A `polars_cast` step before the join changes only the left table |
 | `FileNotFoundError` | Source file path wrong | Check `source: path:` in `data_schemas` |
 | Column missing from TSV output | Column not in `final_contract` | Add it to `final_contract` |
 
