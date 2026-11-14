@@ -15,11 +15,11 @@ record or commit. NOT BUILT = no code yet (task named). The code itself was not 
 
 | ADR | Title | What it records (source, date) | Supersedes or amends |
 |---|---|---|---|
-| ADR-100 | Recipe format version 1 | DEC01-DEC49 (`recipe_format_spec.md` 2.1, 2026-11-12/13/14) from the draft `adr_100_recipe_format_1_draft.md`; adds "where Polars can do it, the Polars action and nothing else" (channel M56, commit `d07fe567`, 2026-11-13) and "`column` for one input column" (DEC39 over DEC15). Mostly BUILT; DEC16 engine, DEC17 reader, DEC22, DEC10 NOT BUILT | Supersedes ADR-013, ADR-014, ADR-042 last point. Amends ADR-001, 004, 041 pt 1, 046, 037, 063, 090 pts 1 and 3, 094, 099 pt 16(g) |
+| ADR-100 | Recipe format version 1 | DEC01-DEC49 (`recipe_format_spec.md` 2.1, 2026-11-12/13/14) from the draft `adr_100_recipe_format_1_draft.md`; adds "where Polars can do it, the Polars action and nothing else" (channel M56, commit `d07fe567`, 2026-11-13) and ~~"`column` for one input column" (DEC39 over DEC15)~~ **[review: OPEN, see section 3]**. Mostly BUILT; DEC16 engine, DEC17 reader, DEC22, DEC10 NOT BUILT | Supersedes ADR-013, ADR-014, ADR-042 last point. Amends ADR-001, 004, 041 pt 1, 046, 037, 063, 090 pts 1 and 3, 094, 099 pt 16(g) |
 | ADR-101 | Node keys are a series of labelled parts | `home_hash_model_2026-11-12.md` section 5 (Eve, 2026-11-12; commit `4e1407bb`). NOT BUILT (KEYS-NODE-1) | Supersedes ADR-089 pts 1-2, ADR-099 pt 5 formula, `hash(previous key, steps)` wording; retires `decision_hash` |
 | ADR-102 | A join keeps the declared key types; no join step is skipped silently | `tasks.md` JOIN-KEY-TYPES-1 (Eve, 2026-11-14), built `bddaf76a`, `77538c54`; J09-J11; Eve 2026-11-14 "no silent error" flags (self-join, float key) | Supersedes ADR-050 "Join key normalisation" |
-| ADR-103 | Missing values in filters follow Polars; every filter states `na` | M65 and M69 (Eve, 2026-11-14), recorded in `tasks.md` NA-RULE-63 and `home_audit_steps.md` section 19 (`412e7d4a`). Part 1 BUILT (`4b41b719`); part 2 on branch `task/na-rule-b`, not merged | Supersedes the 2026-11-12 NA rule (ADR-099 pt 12, "The software's role", `home_audit_steps.md` 5a pt 14 and section 19) |
-| ADR-104 | No silent error; the recipe is the scientific document | M72 pts 1, 3, 5, 6 and "EVE DIRECT" pts 1, 4, 5, 6, 8 (Eve, 2026-11-14 evening). Seed-holds and operators NOT BUILT (SEED-HOLDS-1, OPERATORS-SCREENS-1) | Contradicts ADR-098 pt 4 (later wins; replacement open, D1) |
+| ADR-103 | Missing values in filters follow Polars; every filter states `na` | M65 and M69 (Eve, 2026-11-14), recorded in `tasks.md` NA-RULE-63 and `home_audit_steps.md` section 19 (`412e7d4a`). Part 1 BUILT (`4b41b719`); part 2 on branch `task/na-rule-b`, not merged (see `tasks.md`). **Review: Q-NA3 to Q-NA6 added as decided points 7 to 10** | Supersedes the 2026-11-12 NA rule (ADR-099 pt 12, "The software's role", `home_audit_steps.md` 5a pt 14 and section 19) |
+| ADR-104 | No silent error; the recipe is the scientific document | M72 pts 1, 3, 5, 6 and "EVE DIRECT" pts 1, 4, 5, 6, 8 (Eve, 2026-11-14 evening). Seed-holds and operators NOT BUILT (SEED-HOLDS-1, OPERATORS-SCREENS-1). **Review: added the audit-pinned seed (M74 pt 1), all operators with `between` (M74 pt 2, M76, M77 pt 3), D1 decided as point 7 (M76, M77 pt 2)** | Contradicts ADR-098 pt 4 (later wins; ~~replacement open, D1~~ **review: a plain error**) |
 | ADR-105 | Audit acts along the lineage, chosen by the user; exploration acts only on the data viewed | `home_audit_steps.md` sections 3, 4, 5a (Eve, 2026-11-12, P1, P2, P3, P5, P7; 2026-11-13 pt 22); R1 confirmed in M73 (Eve, 2026-11-14). NOT BUILT | Supersedes ADR-099 pt 4, pt 6 as mechanism, pt 7 drop sentence; ADR-098 pts 7-8; ADR-049 |
 | ADR-106 | The visualisation library follows the recipe standard | V1-V10 accepted as recommended (M72 pt 2, Eve, 2026-11-14; `viz_plan_for_eve.md` section 5). V5 BUILT (`70b01370`), rest NOT BUILT (VIZ-STANDARD-1) | Replaces the plotnine parity "MUST" of `rules_viz_factory.md` section 1 (never in the log); corrects the ADR-035/036 parity citations; replaces RECIPE-MIGRATE-1 for the 194 viz test recipes |
 
@@ -59,12 +59,42 @@ record or commit. NOT BUILT = no code yet (task named). The code itself was not 
 | ADR-090 | Note: pts 1, 3 amended (wording in the ADR-100 draft), cache "4", seed | DEC34 (2026-11-13), ADR-104 |
 | ADR-094 | Note: one checker | DEC03 (2026-11-13) |
 | ADR-097 | Note under point 2 (seed) | ADR-104; run in `tmpAI/results.md` |
-| ADR-098 | Second banner: pts 1, 7, 8 superseded; pt 4 contradicts "no silent error" | ADR-099, ADR-105, ADR-104 |
+| ADR-098 | Second banner: pts 1, 7, 8 superseded; pt 4 contradicts "no silent error"; **review: pt 4 replaced by a plain error, inline marker at pt 4** | ADR-099, ADR-105, ADR-104 |
 | ADR-099 | Reading guide at the top; points 11-16 put in order 1-16; 10 inline HISTORICAL markers (pt 4, pt 5 twice, pt 6, pt 7, pt 12 three times, pt 16(g), "The software's role"); one "settled" marker | the seven inconsistencies of the ledger, each resolved by the later record |
 
 Counts: 7 new ADRs (ADR-100 to ADR-106); 9 SUPERSEDED or CONTRADICTS banners (013, 014, 021, 042, 050, 063, 085, 086, 098) and 2 corrections of earlier banners (049, 089); 33 dated notes (27 one-line notes under headings, notes in ADR-035, 036, 037, 083, 090, 097); ADR-099 rewritten for reading only (no sentence removed).
 
-## 3. Open points, as written in the log (awaiting Eve)
+## 3. Open points in the log (awaiting Eve), after the review corrections of 2026-11-14
+
+The list, as given by the coordinator (unchanged):
+
+`categorical` refused (DEC27) or kept as `Categorical` (commit e9ac815f); the seed when the recipe writes none; whether Blueprint may author the plot entry's tier 3; the self-join (refuse, or run as written with an advice); `column` against `columns` (DEC15 and DEC39, same date); whether FORMULA-SAFETY-1 and ADR-099 point 14 are one decision; `derive_categories`; the points of the proposals file Eve has not answered (D7, D8, the Polars parity mandate, a time or size limit for formulas).
+
+Checked against the text of the log at the end of this task (2026-11-14). Each item is written as OPEN here:
+
+| Item | Where in the log |
+|---|---|
+| `categorical` | ADR-100, OPEN list |
+| Seed when the recipe writes none | ADR-104, OPEN list; notes in ADR-090 and ADR-097; ADR-106 last lines |
+| Blueprint authors a plot entry's tier 3 | ADR-100, OPEN list; ADR-099 reading guide; ADR-082 note |
+| Self-join: refuse, or run as written with an advice | ADR-102, OPEN list (the merged code runs it with advice J12, `af5560a9`) |
+| `column` against `columns` | ADR-100 point 8 and OPEN list; notes in ADR-001 and ADR-004 |
+| FORMULA-SAFETY-1 and ADR-099 point 14 one decision | ADR-100 point 10 and OPEN list |
+| `derive_categories` | ADR-100 point 7 and OPEN list; note in ADR-002 |
+| D7, D8 | ADR-102, OPEN list |
+| Polars parity mandate | ADR-106, last line |
+| Time or size limit for formulas | ADR-100 point 10 and OPEN list |
+
+**Also written as open in the log, outside the list above** (for the coordinator to judge; each has its record):
+- Date and Boolean comparisons in the filter panel: Eve asked for the options first, nothing built (channel M76, 2026-11-14). ADR-104 point 7 and OPEN list.
+- The recommendations R1 to R11 of the spec: the spec lists them as "Recommended, awaiting Eve" (`recipe_format_spec.md` section 2.3). ADR-100 OPEN list (written before the review; kept).
+- V12, the order of work of the visualisation plan: not among "V1 to V10 are OK". ADR-106, "Not decided here" (written before the review; kept).
+- ADR-099's own items of 2026-11-11 (`[confirm]` marks and its "Open" paragraph): their state is kept in `home_audit_steps.md` section 16, as the ADR-099 reading guide says.
+
+### 3b. The table as written before the review (HISTORICAL, 2026-11-14)
+
+Kept for the record. Rows that no longer hold: D1 (decided by Eve 2026-11-14, ADR-104 point 7); "NA follow-ups Q-NA3 to Q-NA6" (decided 2026-11-14, ADR-103 points 7 to 10); "Self-join" record 2 (merged as `af5560a9`). The sentence under the table ("Treated as settled ...") no longer holds for its first two items: `column` and the formula decision are OPEN.
+
 
 | Point | Record 1 | Record 2 | Where in the log |
 |---|---|---|---|
@@ -78,7 +108,7 @@ Counts: 7 new ADRs (ADR-100 to ADR-106); 9 SUPERSEDED or CONTRADICTS banners (01
 | NA follow-ups Q-NA3 to Q-NA6 | `tasks.md` NA-RULE-63: waiting | `d3938877` (branch) carries an old step as `remove` | ADR-103 |
 | FORMULA-SAFETY-1 time or size limit | `tasks.md`: open | allow-list decided (ADR-099 pt 14) and built (`fe856c26`) | ADR-100 pt 10 |
 
-Treated as settled by "the latest holds": `column` in `modif_`/`step_` (DEC39 over DEC15); formulas are one decision (ADR-099 pt 14 = FORMULA-SAFETY-1); DEC22 decided, not built.
+~~Treated as settled by "the latest holds": `column` in `modif_`/`step_` (DEC39 over DEC15); formulas are one decision (ADR-099 pt 14 = FORMULA-SAFETY-1); DEC22 decided, not built.~~ **[Corrected 2026-11-14 after review: `column` against `columns` and the formula decision are OPEN; only "DEC22 decided, not built" holds.]**
 
 ## 4. Where the ledger (`tmpAI/ledger.md`) was not followed
 
@@ -114,3 +144,21 @@ Knowledge and documentation:
 - Parity citations of ADR-035/036: `docs/appendix/viz_factory_components.qmd:72`, `docs/workflows/audit_scripts.qmd:343`, `docs/workflows/transformer_integrity.qmd:51`, `docs/workflows/wrangling.qmd:131`, `docs/workflows/visualisation_factory.qmd:66`, `docs/UML/risks_and_technical_debt.md:12`.
 - `docs/appendix/data_lifecycle_theater.qmd:24`, `docs/reference/ui_style_guide.qmd:107`, `docs/index.qmd:55` (ADR-085/086 "My view", Compare).
 - `.claude/design/adr_100_recipe_format_1_draft.md`: its ADR text is now in the log; the "Discrepancies" section stays for D1-D6.
+
+## 6. Corrections after the review (2026-11-14, second commit series)
+
+The reviewer's list: `tmpAI/panel/adr/review_corrections.md` (main tree). Every change keeps the old words (struck through, or under a dated marker).
+
+1. ADR-103: Q-NA3 to Q-NA6 written as DECIDED (points 7 to 10; Eve 2026-11-14, relayed in M70, recommendations of `proposals_for_eve.md` lines 161-164, M77 pt 2).
+2. D1 decided (Eve 2026-11-14, "Q9 Option 1", M76, M77 pt 2): ADR-104 point 7; stale "open" text marked in ADR-104 (header, OPEN list), ADR-098 (banner, inline marker at pt 4), ADR-106 V6.
+3. ADR-104: the audit-pinned seed (M74 pt 1) added to point 3; all operators, `between` with four `closed` values, frozen files through a builder, `closed: none` (M74 pt 2, M76, M77 pt 3) added to point 4.
+4. ADR-100 point 8: `column` against `columns` marked OPEN (DEC15 and DEC39 both 2026-11-13); notes in ADR-001 and ADR-004 corrected.
+5. ADR-100 point 10: "believed the same decision; Eve to confirm".
+6. ADR-100 point 7: `derive_categories` removal marked as not confirmed by Eve (M56 pt 2 is the relaying session's remark; spec Q2); note in ADR-002 corrected.
+7. ADR-100 point 6: note that DEC41's "deferred" no longer holds (Eve 2026-11-14, M77 pt 4); point 2: "`label` on every element" corrected to DEC06; ADR-106 last line marked.
+8. Minor: ADR-099 title, point 10 ("lowest reach") and "Open" paragraph marked HISTORICAL in place.
+9. Minor: ADR-102: join-flags merged as `af5560a9`; the Path C item marked as waiting for a build, not a choice.
+10. Minor: build states point to `tasks.md` for the current state (ADR-102, ADR-103, ADR-104, ADR-106 V6).
+Also, for clarity after a re-read: ADR-102 status (what is open in point 4) and point 2 (when the checker gives no J09); ADR-104 points 1 and 3 ("must be fixed", "must use").
+
+New stale statement found, not edited (not my file): `.claude/tasks/tasks.md` line 40, NA-RULE-63 part 2, "Waits for Eve's answers Q-NA3 to Q-NA6" (they are decided, ADR-103 points 7 to 10).
