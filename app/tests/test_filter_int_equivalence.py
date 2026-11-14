@@ -120,3 +120,27 @@ def test_a_negative_non_integer_threshold_keeps_zero():
     frame = pl.LazyFrame({"x": [-1, 0, 1], "s": ["a", "b", "c"]})
     rows = [row("x", "gt", "-0.5")]
     assert _apply_filter_rows(frame, rows).collect()["s"].to_list() == ["b", "c"]
+
+
+# ── the real export path: the panel's stored row (text value + dtype) -> translator -> action ──
+
+def _stored_row(column, op, value, dtype):
+    """A filter row as the panel stores it: the value is text, `dtype` is the column dtype name."""
+    return {"column": column, "op": op, "value": value, "dtype": dtype}
+
+
+@pytest.mark.xfail(strict=True, raises=pl.exceptions.ComputeError,
+                   reason="the translator writes the panel's text value into the step "
+                          "(task EXPORT-FILTER-VALUE-1, t3_translator is frozen until Eve's yes)")
+@pytest.mark.parametrize("column, dtype", [("i", "Int64"), ("f", "Float64")])
+@pytest.mark.parametrize("op", ["ge", "lt", "eq"])
+@pytest.mark.parametrize("value", ["90", "90.5"])
+def test_stored_text_value_translated_and_rerun_gives_the_engine_rows(column, dtype, op, value):
+    rows = [_stored_row(column, op, value, dtype)]
+    assert by_translated_action(rows) == by_engine(rows)
+
+
+@pytest.mark.parametrize("op, value", [("eq", "90"), ("ne", "90"), ("ge", "90")])
+def test_stored_text_value_on_a_text_column_translates_and_gives_the_engine_rows(op, value):
+    rows = [_stored_row("t", op, value, "String")]
+    assert by_translated_action(rows) == by_engine(rows)
