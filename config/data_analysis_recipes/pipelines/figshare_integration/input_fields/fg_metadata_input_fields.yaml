@@ -1,6 +1,6 @@
 sample_id:
   original_name: sample_id
-  type: Categorical
+  type: String
   label: Sample Id
 host_animal_species:
   original_name: host_animal_species

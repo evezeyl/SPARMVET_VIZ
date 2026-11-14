@@ -20,7 +20,7 @@ data_schemas:
     null_values: []
     strip: true
     input_fields:
-      sample_id: {original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}
+      sample_id: {original_name: sample_id, type: String, label: Sample, is_entity_key: true}
       group: {original_name: group, type: Categorical, label: Group}
       value: {original_name: value, type: Float64, label: Value}
       year: {original_name: year, type: Categorical, label: Year}

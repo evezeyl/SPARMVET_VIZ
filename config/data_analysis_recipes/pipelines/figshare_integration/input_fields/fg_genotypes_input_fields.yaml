@@ -4,7 +4,7 @@ host_animal_common:
   label: Host Animal Common
 sample_id:
   original_name: sample_id
-  type: Categorical
+  type: String
   label: Sample Id
 gene:
   original_name: gene

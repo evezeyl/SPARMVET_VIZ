@@ -3,9 +3,6 @@
 # unchanged. This is the case that the placement rule of the audit design (earliest correct point, home_audit_steps.md
 # section 5a) must handle, and the fixture for its tests. No shipped recipe had such a step.
 tier1:
-  - action: polars_cast
-    columns: [sample_id]
-    dtype: String
   - action: polars_join
     right_ingredient: Quast
     'on': [sample_id]

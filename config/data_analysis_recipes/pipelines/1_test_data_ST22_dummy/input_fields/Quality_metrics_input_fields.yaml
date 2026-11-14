@@ -1,6 +1,6 @@
 sample_id:
   original_name: sample_id
-  type: Categorical
+  type: String
   label: Sample Id
   is_entity_key: true
 quality_module:

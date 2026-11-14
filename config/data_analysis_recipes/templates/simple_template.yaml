@@ -20,7 +20,7 @@ data_schemas:
     input_fields:
       sample_id:
         original_name: ID
-        type: Categorical
+        type: String
         is_entity_key: true
       value:
         original_name: Measurement
@@ -45,7 +45,7 @@ metadata_schema:
   input_fields:
     sample_id:
       original_name: ID
-      type: Categorical
+      type: String
       is_entity_key: true
     category:
       original_name: Category
