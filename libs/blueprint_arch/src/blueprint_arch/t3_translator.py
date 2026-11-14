@@ -26,14 +26,18 @@ steps use a node type with no translation at all (anything other than filter_row
 exclusion_row/drop_column/developer_raw_yaml) is still skipped (named in the returned
 `skipped` dict) rather than exported as falsely "fully reproducible".
 
-Marker convention for translated-vs-native steps (left undecided in the original design
-discussion): a structured `_t3_origin` key on the forked join dict, not a YAML comment —
-round-trips through plain `yaml.safe_dump`/`safe_load` with no special library, and is
-directly machine-readable on read-back (Eve: "we do not read T3" — a comment would still
-leave that true; a dict key does not). Confirmed tolerated by the real engine: both
-`app/modules/orchestrator.py` and `libs/transformer/tests/debug_assembler.py` read a join
-spec with plain `.get("steps")`/`.get("ingredients")` — an extra sibling key is ignored,
-not rejected.
+Where a fork says what it is (recipe format 1, work order W8): in its `comment` key, the
+one place of a join for a note that people read and that is never executed (spec 6.2).
+The text names the join it was copied from, the plot or plots it serves and the ids of
+the audit steps. The former `_t3_origin` key is gone: format 1 refuses a key it does not
+know (check J01), and nothing read it. What is native and what was added stays exact
+without a marker: the original join is still in the recipe, and the fork's `tier2` is the
+original `tier2` followed by the translated steps. The step marker of the audit copy
+(`id: audit_<8 hex>_<k>`, spec 7.5, profile `audit`) is not written here: it belongs to
+the audit copy of the HOME design, which is to replace this fork.
+
+The forked recipe is format 1 when the recipe it starts from is: nothing is added outside
+the format, so it passes `utils.recipe_check.check_recipe` in profile `run`.
 
 See .claude/design/reproducible_export_design.md §4D/§6a and ADR-097 decision 4 for the
 full design history (fork rationale, multi-plot propagation correctness).
@@ -163,16 +167,24 @@ def translate_plot_steps(nodes: list[dict]) -> list[dict]:
 
 
 def _find_plot_spec(raw_config: dict, plot_id: str) -> dict | None:
-    """Same lookup order as home_theater.py's plot-spec resolution: analysis_groups
-    first, then top-level `plots:` (the Path-A fallback). Returns the actual nested
-    dict reference inside `raw_config`, so a caller mutating it (e.g. repointing
-    target_dataset) mutates `raw_config` itself, not a copy.
+    """The `spec` of a plot, looked up in `analysis_groups` (the only place of a plot in
+    recipe format 1). Returns the actual nested dict reference inside `raw_config`, so a
+    caller mutating it (e.g. repointing target_dataset) mutates `raw_config` itself, not
+    a copy.
     """
     for group in (raw_config.get("analysis_groups") or {}).values():
         plot_entry = (group.get("plots") or {}).get(plot_id)
         if plot_entry is not None:
             return plot_entry.get("spec")
-    return (raw_config.get("plots") or {}).get(plot_id)
+    return None
+
+
+def _fork_comment(forked_from: str, plot_ids: list[str], node_ids: list[str]) -> str:
+    """The note of a fork: where it comes from, in plain words (the `comment` key of a join)."""
+    plots = f"the plot {plot_ids[0]}" if len(plot_ids) == 1 else "the plots " + ", ".join(plot_ids)
+    steps = f" (audit step ids: {', '.join(node_ids)})" if node_ids else ""
+    return (f"Written by the export. Copy of the join {forked_from} for {plots}: "
+            f"the audit steps{steps} are added at the end of tier2.")
 
 
 def build_mode2_recipe(
@@ -194,9 +206,9 @@ def build_mode2_recipe(
     (new_raw_config, skipped)
         new_raw_config : the deep copy, with forked joins added under
             "<target_dataset>__t3_<plot_id>" and translatable plots' `target_dataset`
-            repointed at their fork. Each fork carries a `_t3_origin` marker dict
-            (forked_from, source_plot, node_ids) — not a YAML comment, see module
-            docstring.
+            repointed at their fork. Each fork says in its `comment` which join it
+            copies, for which plot or plots, and the ids of the audit steps (see the
+            module docstring). No key outside recipe format 1 is added.
         skipped : {plot_id: human-readable reason} for every plot whose T3 content
             could not be translated. Those plots keep their ORIGINAL target_dataset,
             completely unchanged (never partially forked) — the caller (#45/#48) must
@@ -221,6 +233,8 @@ def build_mode2_recipe(
     joins = new_config.setdefault("joins", {})
     skipped: dict[str, str] = {}
     fork_cache: dict[tuple, str] = {}
+    # fork id -> (the join it copies, the plots it serves, the ids of their audit steps): the text of its comment
+    fork_origin: dict[str, tuple[str, list[str], list[str]]] = {}
 
     for plot_id, nodes in t3_by_plot.items():
         if not nodes:
@@ -256,13 +270,15 @@ def build_mode2_recipe(
             tier2 = list(steps.get("tier2") or [])
             tier2.extend(translated)
             steps["tier2"] = tier2
-            forked_join["_t3_origin"] = {
-                "forked_from": target_dataset,
-                "source_plot": plot_id,
-                "node_ids": [n.get("id") for n in nodes if n.get("id")],
-            }
             joins[fork_id] = forked_join
             fork_cache[fork_key] = fork_id
+            fork_origin[fork_id] = (target_dataset, [], [])
+        _, plot_ids, node_ids = fork_origin[fork_id]
+        plot_ids.append(plot_id)
+        node_ids.extend(str(n["id"]) for n in nodes if n.get("id") and str(n["id"]) not in node_ids)
         spec["target_dataset"] = fork_id
+
+    for fork_id, (forked_from, plot_ids, node_ids) in fork_origin.items():
+        joins[fork_id]["comment"] = _fork_comment(forked_from, plot_ids, node_ids)
 
     return new_config, skipped
