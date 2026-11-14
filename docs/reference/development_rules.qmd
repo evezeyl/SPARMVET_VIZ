@@ -125,7 +125,7 @@ Before committing new data analysis recipe rules, you **must** use the Layer 2 d
 
 As the project scales to multi-source analysis (e.g., combining MLST, Virulence, and Metadata), we move from atomic wrangling (Layer 1) to **Data Assembly (Layer 2)**. 
 
-The `DataAssembler (data_assembler.py)` class (`libs/transformer/src/transformer/data_assembler.py`) orchestrates the vertical integration of these disparate sources. It uses a **shared decorator registry** with the `DataWrangler (data_wrangler.py)`, meaning any cleaning action (like `strip_whitespace` or `split_column`) is also available as an assembly step.
+The `DataAssembler (data_assembler.py)` class (`libs/transformer/src/transformer/data_assembler.py`) orchestrates the vertical integration of these disparate sources. It uses a **shared decorator registry** with the `DataWrangler (data_wrangler.py)`, meaning any cleaning action (like `polars_str_strip_chars` or `polars_str_split`) is also available as an assembly step.
 
 ::: {.callout-important}
 ### ADR-018: Unified Transformer Model
@@ -148,7 +148,7 @@ Assemblies are defined in the `joins` block of the pipeline YAML.
     1. `join` metadata to MLST (left).
     2. `join` Virulence hits (left).
     3. `join_filter` against Ref Table (inner) to whitelist genes.
-- **Final Contract**: The `final_contract` block acts as the ultimate column guard, ensuring only the required dimensions (e.g., `sample_id`, `Sequence Type`, `Selected_Virulence_Genes`) are exposed to the Plotting Layer.
+- **Published columns**: The last step of a join's tier 1 (`polars_select` or `polars_drop`) is the column guard, ensuring only the required dimensions (e.g., `sample_id`, `Sequence Type`, `Selected_Virulence_Genes`) are exposed to the Plotting Layer.
 
 ::: {.callout-tip}
 ### Standardized Assembly Validation
@@ -224,15 +224,15 @@ This registry tracks the purpose, inputs/outputs, and core logic of the various 
 1. **Implicit Polars Execution Scope**: 
    - `libs/` maintains pure `LazyFrame` processing until `viz_factory` rendering. Avoid using `.collect()` inside standard action decorators in order to preserve optimization and cross-decorator deferment.
 2. **Key-as-ID Join Resolution**:
-   - Multi-dataset Assembly heavily relies on evaluating the `is_primary_key: true` property flag located dynamically in `yaml` sources, formatting them consistently (e.g., `sample_id`) before joining operations.
+   - Multi-dataset Assembly declares its join keys in the join step (`on`, or `left_on` and `right_on`, always as lists). `is_entity_key: true` on an input field documents which column identifies the entity of a table; it does not drive the join.
 3. **Dynamic Decorator Loading (`@register_action`)**: 
    - Rule scripts (like `libs/transformer/src/transformer/actions/modified.py`) are passively initialized through the local module directory `__init__.py`. This executes their `@register_action(name)` block to populate the global `AVAILABLE_WRANGLING_ACTIONS` dictionary upon app boot.
-4. **Final Contract as a Safe `.select()` Query Guard**:
-   - The end-state `output_fields` contract strictly mimics the SQL/Polars `SELECT` command, pruning column noise from intermediate joins and acting as the primary defense against unexpected metadata drift.
+4. **The Last Tier-1 Step as a Safe `.select()` Guard**:
+   - The published columns of a join are its last tier-1 step, a plain `polars_select` (or `polars_drop`). It mimics the SQL/Polars `SELECT` command, pruning column noise from intermediate joins and acting as the primary defense against unexpected metadata drift. `final_contract` and `output_fields` no longer exist (recipe format 1).
 5. **The `spec` Dict Unpacking Technique**:
    - Every registered decorator exclusively accepts `(lf: pl.LazyFrame, spec: Dict[str, Any])`. Direct parameters extraction (like `spec.get("separator", ",")`) must occur inside the wrapper body to guarantee homogeneity in the Registry call signatures.
 6. **`ui_schema` kwarg in `@register_action` and `@register_plot_component` (ADR-075)**:
-   - Each decorator may carry an optional `ui_schema` keyword argument — a dict describing the BLUEPRINT IDE form for that action or component. The schema drives widget generation in the BLUEPRINT Architect without requiring separate schema files. Example: `@register_action("cast", ui_schema={"columns": {"widget": "column_selector", "multi": true}, "dtype": {"widget": "dtype_picker"}})`.
+   - Each decorator may carry an optional `ui_schema` keyword argument — a dict describing the BLUEPRINT IDE form for that action or component. The schema drives widget generation in the BLUEPRINT Architect without requiring separate schema files. Example: `@register_action("polars_cast", ui_schema={"columns": {"widget": "column_selector", "multi": true}, "dtype": {"widget": "dtype_picker"}})`.
    - `libs/blueprint_arch/src/blueprint_arch/schema_registry.py` reads all `ui_schema` dicts at startup and builds the action/component picker catalog used by the BLUEPRINT form builder.
    - If `ui_schema` is absent from a decorator, the action is available in data analysis recipes but has no BLUEPRINT form (manual YAML only via the escape hatch).
    - Action `__doc__` strings serve as the help text displayed in the BLUEPRINT IDE; they are resolved at runtime via `importlib` (air-gap safe).
