@@ -187,7 +187,7 @@ Each line: the decision, why in a few words, who and when. *Ref* is the label of
 | # | Question | Recommendation | Ref |
 |---|---|---|---|
 | Q2 | **`derive_categories`** reads an external file and maps rows with a Python function; it is not Polars. What it does may be a `join` with a lookup table | read it, then decide (R7) | N4 |
-| Q3 | **Gallery G6:** the dead submission code (`submission_modal_ui`, `autofill_meta_from_audit`, `btn_confirm_submission`): remove or keep on purpose | Eve's call | O1 |
+| Q3 | **Gallery G6:** the dead submission code (`submission_modal_ui`, `autofill_meta_from_audit`, `btn_confirm_submission`): remove or keep on purpose | decided 2026-11-14: the dead code removed, `submit_example` kept (`tasks.md:200`) | O1 |
 | Q4 | **Whether `NA` is a missing value or a value in the shipped test data.** Measured (evidence section 23, an upper bound): 2856 of 176162 cells in 33 test files match one of the 14 texts (`NA` 2630, `-` 156, empty 43, `None` 21, `N/A` 6), almost all `NA` in one column, `metadata_isolation_method` of the VirulenceFinder files. Only the data owner knows | ask the data owner; the baseline shows the effect once `null_values` is explicit | 24 |
 | Q5 | **Blueprint** is not touched now; what it must change afterwards is a register (evidence section 5) that becomes tasks when each recipe change lands | last in the order of work | |
 

@@ -763,3 +763,12 @@ Live progress file: `tmpAI/coordinator/progress_2026-11-14_session3.md` (not in 
 **Not started on purpose** (quota and Eve's priority): the ADR-100 draft (W12, `opus/high`); BP-VALIDATE-1 (Blueprint); RECIPE-DOCS-1 (#79, large); AUDIT-REPAIR-1. Blueprint and Test Lab wait (Eve, 2026-11-14).
 
 **Worktrees:** all task worktrees and branches of this session are removed. `agent-abd52719502485bdb` is kept (no code; the findings note of IMPORT-PATH-1).
+
+## Corrections 2026-11-14 (records check)
+
+Earlier lines above are not edited; where they disagree with the following, the following (dated later) holds.
+1. Lines 665 and 745: NA-RULE-63 is DECIDED 2026-11-14 (channel M65, `tasks.md:38`), not waiting. The hash model (KEYS-NODE-1) was decided 2026-11-12 (`home_hash_model_2026-11-12.md` section 5). "Option C+" is superseded by DEC23 (`tasks.md:48`). HOME-DESIGN-REVIEW-1 (also line 746) has one open point: SC4, which samples the selector finds (`tasks.md:74`).
+2. Lines 668 and 728 (N10): the reproducibility export writes the filter value as the panel stored it and drops `dtype`. A number box stores a number and that export works; the failing values come from the multi-select box (a number column shown as discrete, a Date, a Boolean) and from hand-written values (`tasks.md:43`).
+3. Line 706 (IMPORT-PATH-1): Eve's principle is decided (option A, as production); the mechanism waits (`tasks.md:178`).
+4. Lines 673 and 725 (N15): decided, `submit_example` stays (`tasks.md:200`).
+5. Lines 620 and 739 (N8): Eve 2026-11-14, order HOME, then Gallery, Blueprint and Test Lab last (line 751 of this file). The "Next (c) the Blueprint package" of the night handoff is superseded. The pointer "`tasks.md` (line 82)" is now line 87.
