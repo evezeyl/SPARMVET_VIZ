@@ -78,22 +78,21 @@ class TestIdCleaningSteps:
 
     def test_cleaning_steps_injected_into_tier1(self, minimal_tsv, tmp_path):
         from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
-        steps = {
-            "samples": [
-                {"action": "strip_whitespace", "columns": ["sample_id"]},
-            ]
-        }
+        from utils import action_names
+        steps = {"samples": [{"action": action_names.STR_STRIP_CHARS, "columns": ["sample_id"]}]}
         bs = DataAnalysisRecipeBootstrapper()
         bs.bootstrap([minimal_tsv], "test_proj", tmp_path, id_cleaning_steps=steps)
         frag = tmp_path / "test_proj" / "test_proj" / "samples_wrangling.yaml"
-        data = yaml.safe_load(frag.read_text().lstrip("# Candidate PK:").split("\n", 1)[-1])
-        # The wrangling fragment may have PK comment line; parse YAML after it
-        content = frag.read_text()
-        # Strip comment lines before parsing
-        yaml_lines = [l for l in content.splitlines() if not l.startswith("#")]
-        data = yaml.safe_load("\n".join(yaml_lines))
-        assert len(data["tier1"]) == 1
-        assert data["tier1"][0]["action"] == "strip_whitespace"
+        assert yaml.safe_load(frag.read_text())["tier1"] == steps["samples"]
+
+    def test_cleaning_steps_for_a_dataset_that_is_not_bootstrapped_are_refused(self, minimal_tsv, tmp_path):
+        """Steps keyed by a name that matches no file were dropped without a word: the recipe lacked them."""
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        bs = DataAnalysisRecipeBootstrapper()
+        with pytest.raises(ValueError, match="Samples") as error:
+            bs.bootstrap([minimal_tsv], "test_proj", tmp_path, id_cleaning_steps={"Samples": [{"action": "x"}]})
+        assert "samples" in str(error.value), "the message names the datasets that exist"
+        assert not (tmp_path / "test_proj").exists(), "nothing is written for a call that is refused"
 
     def test_no_cleaning_steps_produces_empty_tier1(self, minimal_tsv, tmp_path):
         from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
