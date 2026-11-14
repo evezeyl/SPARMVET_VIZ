@@ -131,46 +131,48 @@ input_fields:
 
 The `tier1` list is a sequence of cleaning actions. Common ones:
 
-**Filter rows by numeric threshold:**
+**Filter rows by numeric threshold.** `na` is required: `remove` drops the rows where the value is missing, `keep` keeps them. Nothing is decided for you.
 
 ```yaml
 tier1:
-  - action: filter_range
-    columns: [identity]
-    min: 90
+  - action: modif_filter
+    column: identity
+    op: ge
+    value: 90
+    na: remove
 ```
 
 **Cast a column to a different type** (required for joining and plotting years as categories):
 
 ```yaml
-  - action: cast
+  - action: polars_cast
     columns: [Year]
     dtype: Int64
-  - action: cast
+  - action: polars_cast
     columns: [Year]
     dtype: String
 ```
 
 ::: {.callout-important}
-**Two-step cast for year columns.** If Year is stored as a number in the TSV, casting directly to String gives `"2022.0"` instead of `"2022"`. Always cast numeric → Int64 → String in two separate steps.
+**Two-step cast for year columns.** If Year is read as `Float64`, casting directly to String gives `"2022.0"` instead of `"2022"`. Cast Float64 → Int64 → String in two separate steps. (Declare `type: Int64` in `input_fields` and you need neither cast.) A cast from a decimal to an integer stops and names the value when it would lose decimals: round first with `polars_round`.
 :::
 
 **Strip whitespace from text columns:**
 
 ```yaml
-  - action: strip_whitespace
+  - action: polars_str_strip_chars
     columns: [predicted_phenotype]
 ```
 
 **Rename a column:**
 
 ```yaml
-  - action: rename_columns
+  - action: polars_rename
     mapping:
       old_name: new_name
 ```
 
-The full list of available actions is in `rules_agent_role_bioscientist.md §8` or visible in the BLUEPRINT action picker.
+The full list of available actions, with one example each, is in the [Action Gallery](../appendix/transformer_actions.qmd) and in the BLUEPRINT action picker. Every action name starts with `polars_`, `modif_` or `step_`.
 
 ---
 
@@ -187,15 +189,20 @@ joins:
       - dataset_id: Summary
       - dataset_id: Metadata
     steps:
-      - action: join
-        right_ingredient: Metadata
-        'on': sample_id
-        how: inner
-    output_fields: {}
+      tier1:
+        - action: polars_join
+          right_ingredient: Metadata
+          'on': [sample_id]
+          how: inner
+          maintain_order: left_right
+        - action: polars_select
+          exprs: [sample_id, Year, Country]
 ```
 
+The `steps` of a join are written in `tier1`. The last step is a `polars_select` (or `polars_drop`) that publishes the columns of the joined table, in the order of its list. `how` and `maintain_order` are required: the order of the rows is part of your recipe.
+
 ::: {.callout-warning}
-**`'on'` must be quoted.** In YAML, `on` without quotes is read as `True` (a boolean). Always write it as `'on': sample_id` with single quotes.
+**`'on'` must be quoted.** In YAML, `on` without quotes is read as `True` (a boolean). Always write it as `'on': [sample_id]` with single quotes; `on` takes a list.
 :::
 
 ### Join types
@@ -204,7 +211,7 @@ joins:
 |---|---|
 | `inner` | sample_id exists in **both** datasets (most common) |
 | `left` | all rows from the left dataset; fills missing right-side values with null |
-| `outer` | all rows from either dataset |
+| `full` | all rows from either dataset |
 | `semi` | left rows that have a match in the right (no right columns added) |
 | `anti` | left rows that have **no** match in the right |
 
@@ -213,29 +220,33 @@ joins:
 If the join key has a different name in each dataset:
 
 ```yaml
-      - action: join
-        right_ingredient: Metadata
-        left_on: isolate_id
-        right_on: sample_id
-        how: left
+        - action: polars_join
+          right_ingredient: Metadata
+          left_on: [isolate_id]
+          right_on: [sample_id]
+          how: left
+          maintain_order: left_right
 ```
+
+A column that both tables carry, other than the key, stops the recipe (Polars would silently rename one of them `name_right`): rename or drop it before the join.
 
 ### Derived columns after joining
 
 Add computed columns after the join (columns from the right ingredient are available after the join step):
 
 ```yaml
-      - action: join
-        right_ingredient: Metadata
-        'on': sample_id
-        how: inner
-      - action: mutate
-        column: Multiresistant
-        expression: "pl.when(pl.col('resistance_count') > 2).then(pl.lit('Yes')).otherwise(pl.lit('No'))"
+        - action: polars_join
+          right_ingredient: Metadata
+          'on': [sample_id]
+          how: inner
+          maintain_order: left_right
+        - action: polars_with_columns
+          named_exprs:
+            Multiresistant: "pl.when(pl.col('resistance_count') > 2).then(pl.lit('Yes')).otherwise(pl.lit('No'))"
 ```
 
 ::: {.callout-important}
-**One column per `mutate` step.** Each `mutate` action defines exactly one new column. Use a separate step for each column you want to create.
+**All formulas of one `polars_with_columns` step see the table as it was before the step**, as in Polars. A column that needs another new column goes in a later step. Add a `labels:` entry on the join (`labels: {Multiresistant: Multi-resistant}`) to give a computed column its display name.
 :::
 
 ### Using the Joint Designer
@@ -369,7 +380,7 @@ Common validation failures and how to fix them:
 | Error | Likely cause | Fix |
 |---|---|---|
 | "Unknown action" | Typo in an `action:` key | Check the action list in the BLUEPRINT picker |
-| "Column not found" | `final_contract` references a column that was never created | Check that the column is produced earlier in the step list |
+| "Column not found" | A `polars_select` (or another step) names a column that was never created | Check that the column is produced earlier in the step list |
 | "Join key mismatch" | Join key dtype differs between datasets | Declare the same type in `input_fields` of both tables. A `polars_cast` step before the join changes only the left table. Nothing is cast automatically |
 | "`on` is not a valid key" | Unquoted `on:` parsed as boolean | Change to `'on':` (quoted single tick) |
 
@@ -432,9 +443,9 @@ goes through the YAML escape hatch panel:
 | `data_schema` | One source file — describes its columns and cleaning |
 | `input_fields` | The columns you declare for ingestion (must match TSV headers) |
 | `wrangling` | Cleaning and transformation steps (`tier1` shared; `tier2` plot-specific) |
-| `output_fields` | The columns you keep in the output (whitelist — omit to keep all) |
+| `labels` | On a join: the display name of columns, shown in the audit dialog and as plot titles |
 | `joins` | A named joined table assembled from multiple data schemas |
-| `steps` | The sequence of join and derivation steps for a joined table |
+| `steps` | The `tier1` (and `tier2`) lists of join and derivation steps for a joined table; the last step publishes the columns |
 | `analysis_groups` | Named groups of plots shown as tabs in HOME |
 | `target_dataset` | The joined table a plot reads from |
 | `mapping` | Column-to-aesthetic assignments (`x`, `y`, `fill`, `facet_by`) |
