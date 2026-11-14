@@ -1,6 +1,6 @@
 """
 @deps
-provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
+provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:checker_advices, const:SHOWN_ADVICES, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
 consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (load_recipe), libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/orchestrator.py
 consumed_by: app/tests/test_upload_load_never_exits.py, app/tests/test_upload_recipe_check.py, app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
@@ -47,6 +47,9 @@ from utils.recipe_loader import check_recipe_file
 # What the recipe checker must have looked at before a recipe is accepted (its `coverage`): the form of the file, every
 # step against the action registry, every plot layer against the component registry.
 REQUIRED_COVERAGE = frozenset({"structure", "actions", "components"})
+# Advices that tell the author what a choice does to the result (a float join key, a join of a table with itself).
+# The other advices (missing descriptions and the like) are for the author's own review and stay out of HOME's panel.
+SHOWN_ADVICES = frozenset({"J12", "J13"})
 
 # Sections whose entries (dataset id -> spec) may carry a 'wrangling' block.
 _SCHEMA_SECTIONS = ("data_schemas", "additional_datasets_schemas")
@@ -243,6 +246,19 @@ def checker_problems(path: Path, profile: str = "run") -> list[DataAnalysisRecip
             path.name, "check", "the recipe check did not cover: " + ", ".join(sorted(missing)),
             "This is a fault of the app, not of the data analysis recipe: report it."))
     return problems
+
+
+def checker_advices(path: Path, profile: str = "run") -> list[DataAnalysisRecipeProblem]:
+    """The advices of the strict recipe checker for the file, as problems of this module; they never stop a recipe.
+
+    An advice says what a choice of the recipe means (a float join key, a join of a table with itself on the same key).
+    HOME's recipe choice panel and Blueprint's Validate list them next to the problems; neither refuses the recipe for one."""
+    path = Path(path)
+    if not path.is_file():
+        return []
+    result = check_recipe_file(path, profile, catalogs=checker_catalogs())
+    return [DataAnalysisRecipeProblem(path.name, p.path or "recipe", f"[{p.code}] {p.message}", p.fix or None)
+            for p in result.advices if p.code in SHOWN_ADVICES]
 
 
 def validate_data_analysis_recipe(path: Union[str, Path], profile: str = "run") -> list[DataAnalysisRecipeProblem]:

@@ -1666,6 +1666,24 @@ def define_server(input, output, session, *,
                         for name, r in sorted(rejected.items())
                     ],
                 )
+            advice_block = None
+            advices = getattr(bootloader, "data_analysis_recipe_advices", {})
+            if advices:
+                advice_block = ui.div(
+                    ui.tags.small(
+                        "Advice (these recipes load and run):",
+                        class_="text-muted d-block mt-2 mb-1",
+                        style="font-size: 0.68rem;",
+                    ),
+                    *[
+                        ui.div(
+                            ui.tags.div(name, style="font-size: 0.72rem; font-weight: 600;"),
+                            *[ui.tags.div(text, style="font-size: 0.68rem;") for text in texts],
+                            style="margin: 2px 0 6px 0; padding: 4px 6px; background: #fff3cd; border-radius: 3px;",
+                        )
+                        for name, texts in sorted(advices.items())
+                    ],
+                )
             return ui.accordion_panel(
                 "Data analysis recipe Choice",
                 ui.div(
@@ -1673,6 +1691,7 @@ def define_server(input, output, session, *,
                                     choices=data_analysis_recipe_choices,
                                     selected=_current_data_analysis_recipe),
                     rejected_block,
+                    advice_block,
                     class_="d-flex flex-column gap-1"
                 ),
                 icon=ui.tags.i(class_="bi bi-folder-fill")
