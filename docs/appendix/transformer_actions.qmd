@@ -1,6 +1,6 @@
 # Transformer Action Gallery (With Examples)
 
-This appendix provides concrete YAML usage examples for the 25+ verified decorators executed by `DataWrangler` and `DataAssembler`. Use these "step lists" in your data analysis recipes to configure pipeline transformations without writing any logic.
+This appendix provides a YAML usage example for each of the 41 registered actions executed by `DataWrangler` and `DataAssembler`. Use these "step lists" in your data analysis recipes to configure pipeline transformations without writing any logic.
 
 > **Blueprint Architect IDE**: Every action listed here is also discoverable via the programmatic catalog (see §0). The catalog drives the form generator in the Blueprint Architect IDE — no hand-coded forms needed.
 
@@ -26,7 +26,7 @@ from blueprint_arch.schema_registry import (
 t1_actions = get_actions_for_context("t1")
 
 # Find null-handling actions by keyword
-null_actions = search_actions("null")  # returns fill_nulls, drop_nulls
+null_actions = search_actions("null")  # returns polars_fill_null, polars_drop_nulls, ...
 ```
 
 ### Context tags
@@ -55,29 +55,17 @@ null_actions = search_actions("null")  # returns fill_nulls, drop_nulls
 
 ### Annotated actions (BP-SCHEMA-1)
 
-Of the 67 registered actions (`grep -c '^@register_action(' libs/transformer/src/transformer/actions/**/*.py`),
-all but the two engine-internal persistence actions (`sink_parquet`, `scan_parquet` —
-`rules_data_engine.md §1` notes these are never written by hand in a data analysis recipe) carry a
-`ui_schema` dict and appear in the Blueprint IDE picker — 65 of 67. A sample across categories:
+All 41 registered actions carry a `ui_schema` and appear in the Blueprint IDE picker (count read from `ACTION_SCHEMAS` on 2026-11-14; it grows with the registry, ADR-035). The two persistence functions `sink_parquet` and `scan_parquet` are engine functions, not recipe actions (`rules_data_engine.md §1`).
 
-**Cleaning:** `fill_nulls` · `drop_nulls` · `keep_columns` · `drop_columns` · `strip_whitespace` · `rename_columns`
+**The prefix says what an action is** (recipe format 1):
 
-**Filtering:** `filter_range` · `filter_eq` · `filter_ne` · `filter_gt` · `filter_lt` · `is_in` · `not_in`
+| Prefix | Meaning |
+|---|---|
+| `polars_<name>` | Exactly the Polars call: Polars names, parameters and defaults; a test compares it with the direct call |
+| `modif_<name>` | A Polars idea with a documented change (today `modif_filter`) |
+| `step_<name>` | Several Polars calls in one action (today `step_top_n_other`) |
 
-**Derivation:** `add_constant` · `mutate` · `label_if` · `coalesce`
-
-**String / Typing:** `regex_extract` · `cast`
-
-**Ordering:** `sort`
-
-**Reshaping:** `unpivot` · `pivot` · `explode`
-
-**Relational:** `join`
-
-This count will drift as the registry grows (ADR-035 Polars Parity Mandate) — treat it as "almost
-everything except the two internal persistence actions," not a fixed number; re-run the `grep` above
-for the current figure. All registered actions, annotated or not, still execute from YAML data
-analysis recipes — the `ui_schema` only controls IDE visibility.
+A parameter that changes the result is **required** in the recipe (for example `how` and `maintain_order` of `polars_join`, `keep` and `maintain_order` of `polars_unique`, `na` of `modif_filter`): there is no hidden default. An action never returns the table unchanged when a parameter or column is missing; it stops and names the step.
 
 ### Adding a `ui_schema` to a new action (developer guide)
 
@@ -109,379 +97,544 @@ def action_my_action(lf, spec):
 
 **Rules:**
 - Every param must have `widget`, `label`, and `required`.
-- If the function uses `spec.get("key_a", spec.get("key_b"))` as a fallback, both `key_a` and `key_b` must appear as separate params (with a `hint` field explaining the alias).
+- One name per role: input columns are `columns`, outputs are `new_column` or `new_columns`; no aliases (recipe format 1, DEC14/DEC15). A `polars_` action keeps the Polars parameter names.
 - Verify registration with `libs/transformer/tests/test_ui_schemas.py`.
 
 ---
 
-## 1. Reshaping Actions
+## 1. Actions by category
 
-### 1.1 `unpivot` (Wide-to-Long)
-Converts 'wide' format columns (like multiple antibiotics) into 'long' rows. The real params are
-`index` (columns kept as-is) and `'on'` (columns to melt) — quote `'on'` or YAML parses it as the
-boolean `True` (the YAML boolean trap, `rules_data_analysis_recipe_structure.md §7`).
+The text below is read from the registry (`description` and `yaml_example` of each `ui_schema`), so it matches the code. The tiers an action may be used in are given as `context` (`t1`, `t2`, `assembly`). The order rule of every action that can change the order of rows is written in the step.
+
+### 1.1 Cleaning
+
+#### `polars_coalesce`
+
+The first non-null value across the listed columns, written to `target_column` (Polars coalesce). Write the first column as the target to overwrite it.
+
+Kind: wrapper. Context: t1, t2, assembly.
+
 ```yaml
-- action: unpivot
-  index: ["sample_id", "species"]
-  'on': ["AMP_phenotype", "CTX_phenotype"]
-  variable_name: "antibiotic"
-  value_name: "resistance_phenotype"
+- action: polars_coalesce
+  exprs: [preferred_id, backup_id]
+  target_column: preferred_id
 ```
 
-### 1.2 `explode`
-Expands a column containing a list of strings into multiple independent rows.
+#### `polars_drop_nans`
+
+Drop the rows that have a NaN in `subset` (a NaN is a number, not a null) (Polars LazyFrame.drop_nans).
+
+Kind: exact. Context: t1, t2.
+
 ```yaml
-- action: "explode"
-  columns: ["list_of_genes"]
+- action: polars_drop_nans
+  subset: [identity]
 ```
 
-### 1.3 `unnest`
-Flattens a JSON/Struct object column into multiple top-level physical columns.
+#### `polars_drop_nulls`
+
+Drop the rows that have a null in `subset` (all columns when absent) (Polars LazyFrame.drop_nulls).
+
+Kind: exact. Context: t1, t2.
+
 ```yaml
-- action: "unnest"
-  columns: ["metadata_struct"]
+- action: polars_drop_nulls
+  subset: [sample_id]
 ```
 
-### 1.4 `split_column`
-Breaks delimited strings into multiple new columns (`A_B` -> `A`, `B`).
+#### `polars_fill_nan`
+
+Replace NaN values (not nulls) by a value (Polars Expr.fill_nan).
+
+Kind: wrapper. Context: t1, t2.
+
 ```yaml
-- action: "split_column"
-  source: "vf_protein_raw"
-  new_columns: ["vf_gene", "vf_protein"]
-  delimiter: ": "
-  drop_source: true
+- action: polars_fill_nan
+  columns: [identity]
+  value: 0.0
 ```
 
-### 1.5 `pivot` (Long-to-Wide)
-Converts 'long' metrics tables into 'wide' column structures. `'on'` is the single column whose
-*values* become new column headers — not a list, and not `columns:`. For example, pivoting a long
-AMR table (one row per sample/antibiotic) so each antibiotic becomes its own column:
+#### `polars_fill_null`
+
+Replace nulls by a value or by a strategy (Polars Expr.fill_null); give `value` or `strategy`, not both.
+
+Kind: wrapper. Context: t1, t2.
+
 ```yaml
-- action: pivot
-  index: ["sample_id"]
-  'on': antibiotic
-  values: "resistance_phenotype"
-  aggregate_function: "first"
+- action: polars_fill_null
+  columns: [country]
+  value: Unknown
 ```
 
-## 2. Cleaning Actions (Core)
+#### `polars_interpolate`
 
-### 2.1 `fill_nulls`
-Populates `null` values with a user-specified constant.
+Fill nulls between values by interpolation (Polars Expr.interpolate).
+
+Kind: wrapper. Context: t1, t2.
+
 ```yaml
-- action: "fill_nulls"
-  columns: ["phenotype", "genotype"]
-  value: "Unknown"
+- action: polars_interpolate
+  columns: [reading]
+  method: linear
 ```
 
-### 2.2 `drop_nulls`
-Eliminates rows missing data inside specified critical columns.
-```yaml
-- action: "drop_nulls"
-  columns: ["sample_id"]
-```
+#### `polars_unique`
 
-### 2.3 `replace_values`
-Dictionary-based literal string matching and replacement.
-```yaml
-- action: "replace_values"
-  columns: ["serotype"]
-  to_replace: ["ND", "-"]
-  new_value: "Not Typed"
-```
+Keep one row of each group of equal rows in `subset` (Polars LazyFrame.unique); the order rule is written in the step.
 
-### 2.4 `rename`
-Direct string translation of header keys.
-```yaml
-- action: "rename"
-  columns: ["OldName"]
-  new_name: "NewName"
-```
+Kind: exact. Context: t1, t2, assembly.
 
-### 2.5 `drop_duplicates`
-Removes identical row sequences across specific columns to enforce uniqueness.
 ```yaml
-- action: "drop_duplicates"
-  columns: ["sample_id", "gene_name"]
+- action: polars_unique
+  subset: [sample_id]
+  keep: first
   maintain_order: true
 ```
 
-### 2.6 `unique_rows`
-Aggregates duplicate identifiers via exact matches across ALL columns.
+### 1.2 Filtering
+
+#### `modif_filter`
+
+Keep the rows where `column` <op> `value` (eq, ne, gt, ge, lt, le, in, not_in, between). Unlike Polars filter, which takes a formula, it takes the words of the filter panel. `na` says what happens to a missing value (null) of the column: `remove` drops those rows (what a comparison does in Polars), `keep` keeps them. A NaN is a number, not a missing value, and `na` does not touch it.
+
+Kind: modified. Context: t1, t2.
+
 ```yaml
-- action: "unique_rows"
+- action: modif_filter
+  column: identity
+  op: between
+  value: [90, 100]
+  na: remove
 ```
 
-### 2.7 `sanitize_column_names`
-Forces all header strings into safe `snake_case`.
+#### `polars_sample`
+
+A random sample of rows (Polars DataFrame.sample); `seed` is written in the step so that the same recipe gives the same table.
+
+Kind: exact. Context: t1, t2.
+
 ```yaml
-- action: "sanitize_column_names"
+- action: polars_sample
+  fraction: 0.1
+  seed: 1
 ```
 
-### 2.8 `keep_columns`
-White-listing slice: drops all unlisted schema arrays. Automatically preserves primary keys.
+### 1.3 Selection
+
+#### `polars_drop`
+
+Remove the listed columns; a missing column fails (Polars LazyFrame.drop).
+
+Kind: exact. Context: t1, t2, assembly.
+
 ```yaml
-- action: "keep_columns"
-  columns: ["species", "isolation_date"]
+- action: polars_drop
+  columns: [temp_flag]
+  strict: true
 ```
 
-### 2.9 `drop_columns`
-Black-listing slice: removes specific noisy columns.
+#### `polars_select`
+
+Keep the listed columns, in the order written (Polars LazyFrame.select; names only).
+
+Kind: exact. Context: t1, t2, assembly.
+
 ```yaml
-- action: "drop_columns"
-  columns: ["internal_id", "unnecessary_metric"]
+- action: polars_select
+  exprs: [sample_id, country]
 ```
 
-### 2.10 `strip_whitespace`
-Trims invisible leading/trailing characters formatting strings. If `columns` is omitted, targets all strings.
+### 1.4 Renaming
+
+#### `polars_rename`
+
+Rename columns by a mapping old name to new name (Polars LazyFrame.rename).
+
+Kind: exact. Context: t1, t2, assembly.
+
 ```yaml
-- action: "strip_whitespace"
-  # columns: ["col_A"]
+- action: polars_rename
+  mapping: {Sample_ID: sample_id}
 ```
 
-### 2.11 `round_numeric`
-Reduces floating-point resolution to a set integer count of decimals.
+### 1.5 Typing
+
+#### `polars_cast`
+
+Change the dtype of the listed columns (Polars Expr.cast). Unlike Polars, a float cast to an integer FAILS when a value has decimals: a truncation is never silent, write a rounding step first (Eve, Q1).
+
+Kind: wrapper. Context: t1, t2, assembly.
+
 ```yaml
-- action: "round_numeric"
-  columns: ["identity_score"]
-  decimals: 2
+- action: polars_cast
+  columns: [year]
+  dtype: Int64
+  strict: true
 ```
 
-### 2.12 `filter_range`
-Slices numeric sets falling outside specified logic thresholds.
+### 1.6 String
+
+#### `polars_str_extract`
+
+Extract a group of a regular expression (Polars str.extract).
+
+Kind: wrapper. Context: t1, t2, assembly.
+
 ```yaml
-- action: "filter_range"
-  columns: ["identity_score"]
-  min: 95.0
-  max: 100.0
+- action: polars_str_extract
+  columns: [name]
+  pattern: '(\d+)'
+  group_index: 1
 ```
 
-### 2.13 `cast`
-Explicitly changes data types to ensure contract compliance.
+#### `polars_str_replace_all`
+
+Replace every match of a pattern in a text column (Polars str.replace_all).
+
+Kind: wrapper. Context: t1, t2, assembly.
+
 ```yaml
-- action: "cast"
-  columns: ["isolation_date"]
-  dtype: "Date"
+- action: polars_str_replace_all
+  columns: [name]
+  pattern: '_'
+  value: '-'
+  literal: true
 ```
 
-### 2.14 `coalesce`
-Fills null values in a primary column using fallback columns.
+#### `polars_str_strip_chars`
+
+Strip characters from both ends of a text column; without `characters` Polars strips whitespace (Polars str.strip_chars).
+
+Kind: wrapper. Context: t1, t2, assembly.
+
 ```yaml
-- action: "coalesce"
-  columns: ["primary_id", "external_id"]
+- action: polars_str_strip_chars
+  columns: [name]
 ```
 
-### 2.15 `filter_ne`
-Keeps rows where a column does not equal an exact value — the exclusion counterpart to `filter_eq`.
+### 1.7 Derivation
+
+#### `polars_with_columns`
+
+Add or replace columns; every column is named in `named_exprs` with its formula (Polars LazyFrame.with_columns). All formulas see the table as it was before the step.
+
+Kind: exact. Context: t1, t2, assembly.
+
 ```yaml
-- action: "filter_ne"
-  column: "country"
-  value: "Norway"
+- action: polars_with_columns
+  named_exprs:
+    n2: "pl.col('n') * 2"
 ```
 
-### 2.16 `filter_gt`
-Keeps rows where a numeric column is strictly greater than a value (exclusive bound; use `filter_range` for an inclusive one).
+### 1.8 Numeric
+
+#### `polars_round`
+
+Round numbers to `decimals` places (Polars Expr.round); `decimals` is written in the step.
+
+Kind: wrapper. Context: t1, t2, assembly.
+
 ```yaml
-- action: "filter_gt"
-  columns: ["identity_score"]
-  value: 90
+- action: polars_round
+  columns: [identity]
+  decimals: 1
 ```
 
-### 2.17 `filter_lt`
-Keeps rows where a numeric column is strictly less than a value (exclusive bound; use `filter_range` for an inclusive one).
+### 1.9 Temporal
+
+#### `polars_dt_truncate`
+
+Truncate dates to a period (Polars dt.truncate).
+
+Kind: wrapper. Context: t1, t2.
+
 ```yaml
-- action: "filter_lt"
-  columns: ["identity_score"]
-  value: 100
+- action: polars_dt_truncate
+  columns: [collection_date]
+  every: 1mo
 ```
 
-## 3. Cleaning Actions (Advanced)
+### 1.10 List
 
-### 3.1 `regex_extract`
-Complex pattern harvesting mapping matched strings to new keys.
+#### `polars_list_join`
+
+Join the elements of a list column into text (Polars list.join).
+
+Kind: wrapper. Context: t1, t2.
+
 ```yaml
-- action: "regex_extract"
-  source: "full_genome_name"
-  pattern: "str_([A-Za-z0-9]+)"
-  target_column: "strain_id"
-  group: 1
+- action: polars_list_join
+  columns: [genes]
+  separator: ';'
 ```
 
-### 3.2 `label_if`
-Conditional labeling based on numeric or equality predicates.
+#### `polars_list_slice`
+
+A slice of each list (Polars list.slice).
+
+Kind: wrapper. Context: t1, t2.
+
 ```yaml
-- action: "label_if"
-  column: "identity"
-  new_column: "quality"
-  predicate: ">="
-  value: 90
-  then: "High"
-  otherwise: "Low"
-```
-
-### 3.3 `mutate`
-Evaluates a Polars-compatible expression and assigns it to a new column.
-```yaml
-- action: "mutate"
-  column: "resistance_score"
-  expression: "pl.col('identity') * pl.col('coverage') / 100"
-```
-
-### 3.4 `regex_replace`
-Regex-based string substitution across multiple columns.
-```yaml
-- action: "regex_replace"
-  columns: ["gene_name"]
-  pattern: "_[0-9]+$"
-  value: ""
-```
-
-### 3.5 `null_if`
-Converts specific noisy values (e.g., placeholder strings) into actual `null` values.
-```yaml
-- action: "null_if"
-  columns: ["phenotype"]
-  value: "Not Determined"
-```
-
-### 3.6 `split_and_explode`
-Synthesizes string separation into lists, immediately exploding horizontally into multiple rows.
-```yaml
-- action: "split_and_explode"
-  columns: ["resistance_genes"]
-  separator: ", "
-```
-
-### 3.7 `derive_categories`
-Assigns abstract groups based on threshold dictionaries using an external taxonomy table.
-```yaml
-- action: "derive_categories"
-  columns: ["resistance_genes"]
-  target_column: "resistance_classes"
-  reference_file: "config/references/amr_phenotypes/amr_categories_phenotype.tsv"
-  lookup_right: "gene_id"
-  extract_column: "phenotype_class"
-```
-
-## 4. Analytical & Sequential Actions
-
-### 4.1 `window_agg` (Grouped Rolling Aggs)
-Performs aggregations over a group without collapsing the rows.
-```yaml
-- action: "window_agg"
-  column: "identity"
-  partition_by: ["species"]
-  function: "mean"
-  target_column: "species_avg_identity"
-```
-
-### 4.2 `shift` (Lag/Lead)
-Shifts values by fixed steps (useful for time-series deltas).
-```yaml
-- action: "shift"
-  column: "isolation_count"
-  n: 1
-  target_column: "prev_year_count"
-```
-
-### 4.3 `fill_nulls_direction`
-Sequential null filling (Forward-fill or Backward-fill).
-```yaml
-- action: "fill_nulls_direction"
-  columns: ["species_name"]
-  direction: "forward"
-```
-
-### 4.4 `sort`
-Multi-key deterministic sorting.
-```yaml
-- action: "sort"
-  by: ["isolation_date", "species"]
-  descending: [true, false]
-```
-
-### 4.5 `z_score` & `percentile`
-Statistical normalization and ranking.
-```yaml
-- action: "z_score"
-  columns: ["identity"]
-```
-
-## 5. Temporal Intelligence
-
-### 5.1 `date_extract`
-Splits date objects into Year, Month, Day, or Week components.
-```yaml
-- action: "date_extract"
-  column: "isolation_date"
-  parts: ["year", "month"]
-```
-
-### 5.2 `date_truncate`
-Snaps dates to the start of a specific interval (e.g., "1mo").
-```yaml
-- action: "date_truncate"
-  column: "isolation_date"
-  every: "1y"
-```
-
-## 6. List & Struct Engineering
-
-### 6.1 `list_slice`
-Extracts a sub-slice from a list column.
-```yaml
-- action: "list_slice"
-  column: "gene_list"
+- action: polars_list_slice
+  columns: [genes]
   offset: 0
-  length: 1
+  length: 3
 ```
 
-### 6.2 `is_in`
-Filters the dataset based on existence within a provided list.
+### 1.11 Reshaping
+
+#### `polars_explode`
+
+One row per element of a list column (Polars LazyFrame.explode).
+
+Kind: exact. Context: t2, assembly.
+
 ```yaml
-- action: "is_in"
-  column: "species"
-  values: ["E. coli", "Salmonella"]
+- action: polars_explode
+  columns: [genes]
 ```
 
-### 6.3 `not_in`
-Keeps rows where a column value is NOT in a provided list — the exclusion counterpart to `is_in`.
+#### `polars_pivot`
+
+Long table to wide table (Polars DataFrame.pivot; the table is collected first).
+
+Kind: exact. Context: t2, assembly.
+
 ```yaml
-- action: "not_in"
-  column: "species"
-  values: ["E. coli", "Salmonella"]
+- action: polars_pivot
+  'on': [kind]
+  index: [sample_id]
+  values: [value]
+  aggregate_function: first
 ```
 
-## 7. Relational Actions (Assembly Layer)
+#### `polars_str_split`
 
-### 4.1 `join`
-Merging of discrete `pl.LazyFrames` into a single, wider matrix.
+Split a text column into a list at `by` (Polars str.split).
+
+Kind: wrapper. Context: t1, t2.
+
 ```yaml
-- action: "join"
-  right_ingredient: "metadata_schema"
-  left_on: "sample_id"
-  right_on: "isolate_id"
-  how: "left"
+- action: polars_str_split
+  columns: [genes]
+  by: ','
 ```
 
-### 4.2 `join_filter`
-Filters the primary dataframe based on keys exclusively existing in a secondary reference subset.
+#### `polars_str_splitn`
+
+Split a text column at `by` into at most `n` parts; the last part keeps the remainder (Polars str.splitn). The result is a struct column: write `target_column` to keep the source, then polars_unnest it and polars_rename the fields (field_0, field_1, ...).
+
+Kind: wrapper. Context: t1, t2.
+
 ```yaml
-- action: "join_filter"
-  right_ingredient: "amr_genes_whitelist"
-  left_on: "gene_name"
-  right_on: "gene"
-  how: "inner"
+- action: polars_str_splitn
+  columns: [species_type]
+  by: '/'
+  n: 2
+  target_column: parts
 ```
 
-## 5. Performance Actions
+#### `polars_unnest`
 
-### 5.1 `summarize`
-Extreme aggregation step. Computes raw metrics collapsing rows down to their analytical grain.
+Turn the fields of a struct column into columns (Polars LazyFrame.unnest).
+
+Kind: exact. Context: t1, t2, assembly.
+
 ```yaml
-- action: "summarize"
-  columns: ["resistance_genes"]
-  group_by: ["species"]
-  agg: "count"
-  new_name: "total_resistance"
+- action: polars_unnest
+  columns: [parts]
+```
+
+#### `polars_unpivot`
+
+Wide table to long table (Polars LazyFrame.unpivot).
+
+Kind: exact. Context: t2, assembly.
+
+```yaml
+- action: polars_unpivot
+  'on': [AMR, QC]
+  index: [sample_id]
+  variable_name: kind
+  value_name: value
+```
+
+### 1.12 Ordering
+
+#### `polars_sort`
+
+Sort the table by columns (Polars LazyFrame.sort); `maintain_order` is written in the step so that ties never change.
+
+Kind: exact. Context: t1, t2, assembly.
+
+```yaml
+- action: polars_sort
+  by: [year, country]
+  maintain_order: true
+```
+
+### 1.13 Analytical
+
+#### `polars_all_horizontal`
+
+True where every listed boolean column is true (Polars all_horizontal).
+
+Kind: wrapper. Context: t1, t2.
+
+```yaml
+- action: polars_all_horizontal
+  exprs: [passed_qc, has_metadata]
+  target_column: complete
+```
+
+#### `polars_any_horizontal`
+
+True where any listed boolean column is true (Polars any_horizontal).
+
+Kind: wrapper. Context: t1, t2.
+
+```yaml
+- action: polars_any_horizontal
+  exprs: [resistant_a, resistant_b]
+  target_column: any_resistant
+```
+
+#### `polars_cum_count`
+
+Running count of non-null values (Polars Expr.cum_count).
+
+Kind: wrapper. Context: t1, t2.
+
+```yaml
+- action: polars_cum_count
+  columns: [count]
+  reverse: false
+```
+
+#### `polars_cum_sum`
+
+Running sum (Polars Expr.cum_sum).
+
+Kind: wrapper. Context: t1, t2.
+
+```yaml
+- action: polars_cum_sum
+  columns: [count]
+  reverse: false
+```
+
+#### `polars_describe`
+
+Summary statistics of every column as a table (Polars DataFrame.describe; the table is collected first).
+
+Kind: exact. Context: t2.
+
+```yaml
+- action: polars_describe
+```
+
+#### `polars_max_horizontal`
+
+Row-wise maximum (Polars max_horizontal).
+
+Kind: wrapper. Context: t1, t2.
+
+```yaml
+- action: polars_max_horizontal
+  exprs: [a, b]
+  target_column: high
+```
+
+#### `polars_mean_horizontal`
+
+Row-wise mean of the listed columns (Polars mean_horizontal).
+
+Kind: wrapper. Context: t1, t2.
+
+```yaml
+- action: polars_mean_horizontal
+  exprs: [a, b]
+  target_column: mean
+```
+
+#### `polars_min_horizontal`
+
+Row-wise minimum (Polars min_horizontal).
+
+Kind: wrapper. Context: t1, t2.
+
+```yaml
+- action: polars_min_horizontal
+  exprs: [a, b]
+  target_column: low
+```
+
+#### `polars_shift`
+
+Shift the values down by `n` rows (Polars Expr.shift).
+
+Kind: wrapper. Context: t1, t2.
+
+```yaml
+- action: polars_shift
+  columns: [count]
+  n: 1
+```
+
+#### `polars_sum_horizontal`
+
+Row-wise sum of the listed columns (Polars sum_horizontal).
+
+Kind: wrapper. Context: t1, t2.
+
+```yaml
+- action: polars_sum_horizontal
+  exprs: [a, b]
+  target_column: total
+```
+
+### 1.14 Aggregation
+
+#### `polars_group_by`
+
+Group the table and aggregate with named formulas (Polars LazyFrame.group_by(...).agg(...)); `maintain_order` is written in the step so that the groups come out in a fixed order.
+
+Kind: wrapper. Context: t2, assembly.
+
+```yaml
+- action: polars_group_by
+  by: [sample_id]
+  maintain_order: true
+  named_aggs:
+    gene_count: "pl.col('gene').count()"
+```
+
+#### `step_top_n_other`
+
+Keep the n most frequent values of a column and label every other value `other_label` (a null stays null). Ties are ranked by the value itself, alphabetically (ADR-090), rows keep their order. Mirrors top_n_other() of the R code of the APEC study.
+
+Kind: composite. Context: t1, t2, assembly.
+
+```yaml
+- action: step_top_n_other
+  column: variant
+  n: 10
+  other_label: Other
+  new_column: variant_top10
+```
+
+### 1.15 Relational
+
+#### `polars_join`
+
+Join the table of the step with a second table named by `right_ingredient` (Polars LazyFrame.join); `how` and `maintain_order` are written in the step.
+
+Kind: exact. Context: assembly.
+
+```yaml
+- action: polars_join
+  right_ingredient: metadata_schema
+  'on': [sample_id]
+  how: left
+  maintain_order: left_right
 ```
