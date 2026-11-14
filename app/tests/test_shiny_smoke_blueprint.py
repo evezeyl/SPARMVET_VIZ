@@ -44,9 +44,8 @@ def _wait_shiny(page: Page, timeout: int = 10_000) -> None:
 
 
 def _no_render_error(page: Page) -> None:
-    body = page.locator("body").inner_text(timeout=5_000)
-    assert "Render error" not in body, f"Render error on page:\n{body[:500]}"
-    assert "Traceback" not in body, f"Python traceback on page:\n{body[:500]}"
+    expect(page.locator("body")).not_to_contain_text("Render error", timeout=5_000)
+    expect(page.locator("body")).not_to_contain_text("Traceback", timeout=5_000)
 
 
 def _navigate_to_blueprint(page: Page, base_url: str) -> None:
@@ -364,10 +363,7 @@ class TestBlueprintEscapeAndValidate:
         _expand_accordion(page, "Validate")
         page.locator("#btn_bp_validate").click()
         _wait_shiny(page, timeout=35_000)
-        result_text = page.locator("#bp_validate_ui").inner_text(timeout=30_000)
-        assert "data vs contract" in result_text, (
-            f"Data-contract check row not found in validation result. Got: {result_text[:300]!r}"
-        )
+        expect(page.locator("#bp_validate_ui")).to_contain_text("data vs contract", timeout=30_000)
         _no_render_error(page)
 
     @pytest.mark.skipif(
@@ -389,10 +385,7 @@ class TestBlueprintEscapeAndValidate:
         _expand_accordion(page, "Validate")
         page.locator("#btn_bp_validate").click()
         _wait_shiny(page, timeout=35_000)
-        result_text = page.locator("#bp_validate_ui").inner_text(timeout=30_000)
-        assert "recipe rules" in result_text, (
-            f"'recipe rules' check row not found in validation result. Got: {result_text[:300]!r}"
-        )
+        expect(page.locator("#bp_validate_ui")).to_contain_text("recipe rules", timeout=30_000)
         _no_render_error(page)
 
 
