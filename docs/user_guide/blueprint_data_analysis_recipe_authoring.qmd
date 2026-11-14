@@ -142,6 +142,19 @@ tier1:
     na: remove
 ```
 
+**What `na` does, and what empty, NaN and "NA" mean.** A filter follows Polars: every operator removes a row whose value is missing, `!=` and "not in" included. So `na: remove` is what Polars does, and `na: keep` is our named choice that adds the missing rows back (Polars `ne_missing` and `is_in(..., nulls_equal=True)` do the same for equality filters; Polars has no switch for `>`, `>=`, `<`, `<=` and between). `na` keeps or removes only rows with **no value**: an empty cell, read as null. A **NaN** is a number (a failed calculation), larger than every number, so `> 1` keeps it and `< 1` removes it; `na` never touches it, and it is counted apart ("N rows have a failed calculation"). The text **`NA`** is a plain value, not missing, unless the data schema lists it in `null_values`. Read the count ("N rows have no value in the column: they are kept / removed") before you choose.
+
+```yaml
+tier1:
+  - action: modif_filter
+    column: country
+    op: ne
+    value: SE
+    na: keep
+```
+
+With `na: keep` the rows with no country stay; with `na: remove` (Polars) they go, although they are not Sweden.
+
 **Cast a column to a different type** (required for joining and plotting years as categories):
 
 ```yaml
