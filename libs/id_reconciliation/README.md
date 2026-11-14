@@ -73,7 +73,7 @@ The test `app/tests/test_id_cleaning_steps_reach_a_recipe.py` proves, with the r
 step passes its action's check and gives the same IDs as `apply_recode_step`.
 
 Known limits of the suggested steps (they wait for a decision; each has a strict `xfail` test in
-`tests/test_suggested_steps.py`): the delimiter step is always `_` to `-`; a prefix or suffix step empties an ID that
+`libs/id_reconciliation/tests/test_suggested_steps.py`): the delimiter step is always `_` to `-`; a prefix or suffix step empties an ID that
 is not longer than the prefix; a step changes the whole column, also the IDs that matched as they were. The fuzzy
 matches are kept in `metadata["fuzzy_recode_map"]` and are not steps.
 
