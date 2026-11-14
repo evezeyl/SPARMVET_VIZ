@@ -26,36 +26,45 @@ Think of your data as a tree:
 ## Data analysis recipe Template (Copy-Paste)
 
 ### Template A: Both Tiers (Advanced Plot)
-Use this when you need to reshape data (e.g., splitting multiple gene hits) before plotting.
+Use this when you need to reshape data (e.g., splitting multiple gene hits) before plotting. `tier2` is applied to a schema that is plotted directly (the plot's `target_dataset` names the schema).
 
 ```yaml
 wrangling:
   tier1: # Relational Anchor (The Trunk)
-    - action: "join"
-      right_ingredient: "metadata_schema"
-      on: ["sample_id"]
-    - action: "rename"
-      mapping: { "raw_id": "Sample_ID" }
+    - action: polars_rename
+      mapping: { raw_id: Sample_ID }
 
   tier2: # Plot Preparation (The Branch)
-    - action: "split_and_explode"
-      columns: ["virulence_raw"]
-      separator: ","
-    - action: "summarize"
-      group_by: ["Sample_ID", "species"]
-      metrics: { "gene": "count" }
+    - action: polars_str_split
+      columns: [virulence_raw]
+      by: ","
+    - action: polars_explode
+      columns: [virulence_raw]
+    - action: polars_group_by
+      by: [Sample_ID, species]
+      maintain_order: true
+      named_aggs:
+        gene_count: "pl.col('gene').count()"
 ```
 
-### Template B: Tier 1 Only (Simple Table/Plot)
-Use this when the data is already in the correct format after the initial join.
+### Template B: Tier 1 Only, a join (Simple Table/Plot)
+Use this when the data is already in the correct format after the join. The join steps belong to the `joins` entry (`steps:`), and the last step publishes the columns.
 
 ```yaml
-wrangling:
-  tier1: # Relational Anchor (The Trunk)
-    - action: "join"
-      right_ingredient: "metadata_schema"
-      on: ["sample_id"]
-  # tier2: omitted (Identity Logic)
+joins:
+  Combined:
+    label: Combined table
+    ingredients: [{dataset_id: amr_data}, {dataset_id: sample_metadata}]
+    steps:
+      tier1:
+        - action: polars_join
+          right_ingredient: sample_metadata
+          'on': [sample_id]
+          how: left
+          maintain_order: left_right
+        - action: polars_select
+          exprs: [sample_id, gene, Country]
+      # tier2: omitted (Identity Logic)
 ```
 
 ## Why this matters
