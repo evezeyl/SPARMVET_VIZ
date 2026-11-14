@@ -702,3 +702,19 @@ Kind: wrapper. Context: t2, assembly.
     isolates: "pl.len()"
 ```
 
+#### `polars_rolling`
+
+For each row, aggregate the rows of the window that ends at the index of that row and reaches back `period` (Polars LazyFrame.rolling(...).agg(...)): a moving sum, count or mean over days or over rows. `closed`, which edges belong to the window, is written in the step because rolling and group_by_dynamic do not share a default. The index column must be sorted ascending, within each group when `group_by` is given, and must hold no null: the step fails otherwise. The result has one row per row of the table, with only the index, the group columns and the aggregations; without `group_by` the rows keep their order, with it they come in the order of the groups (ascending, nulls last), then of the index. In a window a null is skipped by sum, mean and count, a NaN makes a sum NaN, and the sum of a window that holds only nulls is 0.
+
+Kind: wrapper. Context: t2, assembly.
+
+```yaml
+- action: polars_rolling
+  index_column: collection_date
+  period: 30d
+  closed: right
+  group_by: [country]
+  named_aggs:
+    isolates_30d: "pl.len()"
+```
+

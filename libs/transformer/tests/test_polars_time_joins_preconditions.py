@@ -572,3 +572,123 @@ def test_dynamic_a_step_cannot_write_the_aggregations_as_a_list_or_a_key_that_is
         dynamic(named_aggs=["pl.len()"])
     with pytest.raises(TransformationError, match="maintain_order"):
         dynamic(maintain_order=True)
+
+
+# =========================================================================================================
+# polars_rolling
+# =========================================================================================================
+
+def rolling(frame=TIMED, **more):
+    spec = {"index_column": "i", "period": "3i", "closed": "right", "named_aggs": {"n": "pl.len()"}, **more}
+    return run("polars_rolling", frame, spec)
+
+
+def polars_rolling(frame=TIMED, period="3i", **more):
+    return frame.lazy().rolling("i", period=period, closed="right", **more).agg(n=pl.len()).collect()
+
+
+def test_rolling_gives_one_row_per_row_and_keeps_the_order_without_group_by():
+    out = rolling()
+    assert out.height == TIMED.height and out["i"].to_list() == TIMED["i"].to_list()
+    assert out.columns == ["i", "n"]
+    assert_frame_equal(out, polars_rolling())
+
+
+def test_rolling_the_window_reaches_back_by_the_period_and_closed_decides_the_edges():
+    frame = pl.DataFrame({"i": [1, 2, 3, 4, 5]})
+    assert rolling(frame, closed="right")["n"].to_list() == [1, 2, 3, 3, 3]    # (i - 3, i]
+    assert rolling(frame, closed="left")["n"].to_list() == [0, 1, 2, 3, 3]     # [i - 3, i): the row itself is not in it
+    assert rolling(frame, closed="both")["n"].to_list() == [1, 2, 3, 4, 4]
+    assert rolling(frame, closed="none")["n"].to_list() == [0, 1, 2, 2, 2]
+
+
+def test_rolling_with_group_by_the_rows_come_grouped_in_ascending_order_nulls_last_and_the_same_on_every_run():
+    out = rolling(group_by=["g"])
+    assert out["g"].to_list() == ["a", "a", "b", "b", None, None] and out.height == TIMED.height
+    assert out.filter(pl.col("g") == "a")["i"].to_list() == [3, 6]
+    assert all(rolling(group_by=["g"]).equals(out) for _ in range(8))
+    assert_frame_equal(out, polars_rolling(group_by=["g"]))
+
+
+def test_rolling_the_order_holds_on_a_larger_table_with_many_groups():
+    rng = random.Random(5)
+    size = 20000
+    rows = sorted((rng.randint(0, 100000), rng.choice("zyxwvutsrq")) for _ in range(size))
+    frame = pl.DataFrame({"i": [r[0] for r in rows], "g": [r[1] for r in rows]})
+    first = rolling(frame, period="500i", group_by=["g"])
+    assert first.height == size and first["g"].to_list() == sorted(first["g"].to_list())
+    assert all(rolling(frame, period="500i", group_by=["g"]).equals(first) for _ in range(5))
+
+
+def test_rolling_the_index_not_sorted_fails_with_a_plain_message_and_polars_fails_too():
+    unsorted = pl.DataFrame({"i": [3, 1, 2], "x": [1, 2, 3]})
+    with pytest.raises(pl.exceptions.InvalidOperationError, match="not sorted"):
+        unsorted.lazy().rolling("i", period="3i").agg(n=pl.len()).collect()
+    with pytest.raises(TransformationError) as caught:
+        rolling(unsorted)
+    assert "'i' is not sorted ascending" in str(caught.value) and "polars_sort" in caught.value.tip
+    in_b = pl.DataFrame({"i": [1, 2, 5, 4], "g": ["a", "a", "b", "b"]})
+    with pytest.raises(TransformationError, match=r"within each group of \['g'\]"):
+        rolling(in_b, group_by=["g"])
+
+
+def test_rolling_sorted_within_each_group_but_not_over_the_whole_table_works_with_group_by_and_fails_without():
+    frame = pl.DataFrame({"i": [9, 1, 10, 2], "g": ["z", "a", "z", "a"]})
+    assert_frame_equal(rolling(frame, group_by=["g"]), polars_rolling(frame, group_by=["g"]))
+    with pytest.raises(TransformationError, match="not sorted ascending"):
+        rolling(frame)
+
+
+def test_rolling_a_null_in_the_index_is_refused_and_polars_refuses_it_too():
+    with_null = pl.DataFrame({"i": [None, 1, 2]})
+    with pytest.raises(pl.exceptions.ComputeError, match="null values"):
+        with_null.lazy().rolling("i", period="3i").agg(n=pl.len()).collect()
+    with pytest.raises(TransformationError, match="holds null values"):
+        rolling(with_null)
+
+
+def test_rolling_the_types_and_the_durations_must_fit_and_say_so_plainly():
+    with pytest.raises(TransformationError, match="windows need a date, a time or a whole number"):
+        rolling(pl.DataFrame({"i": [1.0, 2.0]}))
+    with pytest.raises(TransformationError, match="'3d' is a time duration but the index column 'i' is Int64"):
+        rolling(period="3d")
+    with pytest.raises(TransformationError, match="'3i' counts whole numbers but the index column 'd' is Date"):
+        rolling(index_column="d")
+    with pytest.raises(TransformationError, match="period 3 is not a duration text"):
+        rolling(period=3)
+
+
+def test_rolling_closed_and_period_are_required_and_closed_is_one_of_the_four():
+    with pytest.raises(TransformationError, match="closed is required"):
+        run("polars_rolling", TIMED, {"index_column": "i", "period": "3i", "named_aggs": {"n": "pl.len()"}})
+    with pytest.raises(TransformationError, match="period is required"):
+        run("polars_rolling", TIMED, {"index_column": "i", "closed": "right", "named_aggs": {"n": "pl.len()"}})
+    with pytest.raises(TransformationError, match="left, right, both, none"):
+        rolling(closed="middle")
+
+
+def test_rolling_a_missing_column_and_an_unsafe_formula_are_refused_with_a_plain_message():
+    with pytest.raises(TransformationError, match="'nope' is not in the table"):
+        rolling(index_column="nope")
+    with pytest.raises(TransformationError, match="nope"):
+        rolling(named_aggs={"s": "pl.col('nope').sum()"})
+    with pytest.raises(TransformationError, match="refused"):
+        rolling(named_aggs={"s": "pl.read_csv('/etc/passwd')"})
+
+
+def test_rolling_what_a_null_and_a_nan_do_in_a_window_follows_the_formula():
+    out = rolling(named_aggs={"s": "pl.col('x').sum()", "m": "pl.col('x').mean()", "c": "pl.col('x').count()", "n": "pl.len()"}, period="2i")
+    by = {row["i"]: row for row in out.to_dicts()}
+    assert by[1]["s"] == 1.0 and by[2]["s"] == 1.0 and by[2]["c"] == 1 and by[2]["n"] == 2          # the null is skipped by sum and count, not by len
+    assert by[3]["s"] != by[3]["s"] and by[3]["c"] == 1                                              # the NaN makes the sum NaN
+    only_null = rolling(pl.DataFrame({"i": [1, 2], "x": [None, None]}, schema={"i": pl.Int64, "x": pl.Float64}), period="2i",
+                        named_aggs={"s": "pl.col('x').sum()"})
+    assert only_null["s"].to_list() == [0.0, 0.0]                                                    # a window with only nulls sums to 0
+    assert_frame_equal(out, TIMED.lazy().rolling("i", period="2i", closed="right").agg(
+        s=pl.col("x").sum(), m=pl.col("x").mean(), c=pl.col("x").count(), n=pl.len()).collect())
+
+
+def test_rolling_an_empty_table_gives_an_empty_table():
+    empty = pl.DataFrame({"i": [], "x": []}, schema={"i": pl.Int64, "x": pl.Float64})
+    out = rolling(empty, named_aggs={"s": "pl.col('x').sum()"})
+    assert out.height == 0 and out.columns == ["i", "s"]

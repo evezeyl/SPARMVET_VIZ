@@ -50,7 +50,7 @@ OWN_EXPECTED = {"modif_filter": lambda lf: lf.filter(pl.col("n") > 1)}
 # the actions that are not plain Polars calls: the test file that checks their behaviour
 OWN_TESTS = {"modif_filter": "test_modif_filter.py", "step_top_n_other": "test_top_n_other.py"}
 # the group "rank, time and special joins": the cases live in a file of their own (their list is not the 37 planned actions)
-OWN_TESTS.update({name: "test_polars_time_joins_equal_polars.py" for name in ("polars_rank", "polars_join_asof", "polars_join_where", "polars_group_by_dynamic")})
+OWN_TESTS.update({name: "test_polars_time_joins_equal_polars.py" for name in ("polars_rank", "polars_join_asof", "polars_join_where", "polars_group_by_dynamic", "polars_rolling")})
 
 FIRST = {}  # the first case of an action is the one its pair holds
 for _c in eq.CASES:

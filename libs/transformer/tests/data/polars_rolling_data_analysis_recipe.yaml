@@ -1,0 +1,35 @@
+# Format 1 recipe of the 1:1:1 pair for polars_rolling; data: polars_rolling_test.tsv (sorted by d).
+id: polars_rolling
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
+info:
+  label: Test pair of polars_rolling
+  description: One recipe and one data file for the action polars_rolling (1:1:1 law,
+    rules_data_engine.md section 2). Every key is written; nothing is a default.
+source:
+  type: local_tsv
+  path: libs/transformer/tests/data/polars_rolling_test.tsv
+null_values: ['']
+strip: false
+input_fields:
+  d:
+    type: Date
+    label: d
+  country:
+    type: String
+    label: country
+  f:
+    type: Float64
+    label: f
+wrangling:
+  tier1:
+  - action: polars_rolling
+    index_column: d
+    period: 30d
+    closed: right
+    group_by: [country]
+    named_aggs:
+      isolates: pl.len()
+      total: pl.col('f').sum()
+  tier2: []

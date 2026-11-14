@@ -30,7 +30,7 @@ from utils.action_names import JOIN_ASOF, JOIN_WHERE
 from utils.errors import TransformationError
 
 # @deps
-# provides: action:polars_rank, action:polars_join_asof, action:polars_join_where, action:polars_group_by_dynamic
+# provides: action:polars_rank, action:polars_join_asof, action:polars_join_where, action:polars_group_by_dynamic, action:polars_rolling
 # consumes: libs/transformer/src/transformer/actions/polars_calls.py (the generator of the polars_ actions)
 # consumed_by: libs/transformer/tests/test_polars_time_joins_equal_polars.py
 # doc: .claude/design/recipe_format_spec.md#7.5.1, .claude/design/home_evidence/actions_and_polars_2026-11-13.md#19
@@ -40,10 +40,11 @@ RANK_METHODS = ["average", "min", "max", "dense", "ordinal", "random"]
 
 calls.PICKER.update({"rank": ("analytical", calls.T12), "join_asof": ("relational", calls.ASSEMBLY),
                     "join_where": ("relational", calls.ASSEMBLY),
-                    "group_by_dynamic": ("aggregation", calls.T2ASM)})
+                    "group_by_dynamic": ("aggregation", calls.T2ASM),
+                    "rolling": ("aggregation", calls.T2ASM)})
 # the tie rule changes the result, so it is written in the step (DEC34)
 calls.REQUIRED.update({"polars_rank": {"method"}, "polars_join_asof": {"strategy"}, "polars_join_where": {"predicates"},
-                       "polars_group_by_dynamic": {"closed"}})
+                       "polars_group_by_dynamic": {"closed"}, "polars_rolling": {"closed"}})
 calls.OVERRIDE.update({
     ("polars_rank", "method"): {"widget": "enum", "options": RANK_METHODS, "label": "How tied values are ranked"},
     ("polars_rank", "seed"): {"widget": "number", "label": "Seed of the random tie order (only with method random)"},
@@ -350,3 +351,18 @@ register_action("polars_group_by_dynamic", ui_schema=_window_schema(
     "sum, mean and count, a NaN makes a sum NaN, and the sum of a window that holds only nulls is 0.",
     "- action: polars_group_by_dynamic\n  index_column: collection_date\n  every: 1mo\n  closed: left\n  group_by: [country]\n  named_aggs:\n    isolates: \"pl.len()\""))(
     _window_action("polars_group_by_dynamic", "group_by_dynamic"))
+
+
+# -- polars_rolling ------------------------------------------------------------------------------------------
+
+_window_overrides("polars_rolling")
+register_action("polars_rolling", ui_schema=_window_schema(
+    "polars_rolling", "rolling",
+    "For each row, aggregate the rows of the window that ends at the index of that row and reaches back `period` (Polars LazyFrame.rolling(...).agg(...)): "
+    "a moving sum, count or mean over days or over rows. `closed`, which edges belong to the window, is written in the step because rolling and group_by_dynamic "
+    "do not share a default. The index column must be sorted ascending, within each group when `group_by` is given, and must hold no null: the step fails otherwise. "
+    "The result has one row per row of the table, with only the index, the group columns and the aggregations; without `group_by` the rows keep their order, "
+    "with it they come in the order of the groups (ascending, nulls last), then of the index. In a window a null is skipped by sum, mean and count, "
+    "a NaN makes a sum NaN, and the sum of a window that holds only nulls is 0.",
+    "- action: polars_rolling\n  index_column: collection_date\n  period: 30d\n  closed: right\n  group_by: [country]\n  named_aggs:\n    isolates_30d: \"pl.len()\""))(
+    _window_action("polars_rolling", "rolling"))

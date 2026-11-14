@@ -28,7 +28,7 @@ from test_action_recipe_pairs import ROOT, _run
 from test_polars_actions_equal_polars import Case, eager
 
 NAN = float("nan")
-GROUP = {"polars_rank", "polars_join_asof", "polars_join_where", "polars_group_by_dynamic"}
+GROUP = {"polars_rank", "polars_join_asof", "polars_join_where", "polars_group_by_dynamic", "polars_rolling"}
 # Polars gives the pairs of a join on conditions in another order on every run: the action orders them (first table, then second)
 # and the rows are compared with the direct call after sorting both; the order itself is tested in the preconditions file
 UNORDERED = {"polars_join_where"}
@@ -132,6 +132,22 @@ CASES = [
          lambda lf: lf.group_by_dynamic("t", every="6h", closed="left").agg(total=pl.col("f").sum())),
     Case("polars_group_by_dynamic", WINDOWED, {"index_column": "d", "every": "1mo", "closed": "left", "named_aggs": {}},
          lambda lf: lf.group_by_dynamic("d", every="1mo", closed="left").agg()),
+    # -- polars_rolling: 30 days per country (the pair holds this one), every option, a whole-number index, moments ----------------
+    Case("polars_rolling", WINDOWED,
+         {"index_column": "d", "period": "30d", "closed": "right", "group_by": ["country"], "named_aggs": {"isolates": "pl.len()", "total": "pl.col('f').sum()"}},
+         lambda lf: lf.rolling("d", period="30d", closed="right", group_by=["country"]).agg(isolates=pl.len(), total=pl.col("f").sum())),
+    Case("polars_rolling", WINDOWED, {"index_column": "d", "period": "2w", "offset": "-1w", "closed": "both",
+                                      "named_aggs": {"isolates": "pl.len()", "mean_f": "pl.col('f').mean()", "seen": "pl.col('f').count()"}},
+         lambda lf: lf.rolling("d", period="2w", offset="-1w", closed="both").agg(isolates=pl.len(), mean_f=pl.col("f").mean(), seen=pl.col("f").count())),
+    Case("polars_rolling", WINDOWED_INT, {"index_column": "i", "period": "3i", "closed": "left", "named_aggs": {"n": "pl.len()"}},
+         lambda lf: lf.rolling("i", period="3i", closed="left").agg(n=pl.len())),
+    Case("polars_rolling", WINDOWED_INT, {"index_column": "i", "period": "3i", "closed": "none", "group_by": ["g"],
+                                          "named_aggs": {"first_f": "pl.col('f').first()", "last_f": "pl.col('f').last()"}},
+         lambda lf: lf.rolling("i", period="3i", closed="none", group_by=["g"]).agg(first_f=pl.col("f").first(), last_f=pl.col("f").last())),
+    Case("polars_rolling", WINDOWED_MOMENTS, {"index_column": "t", "period": "3h", "closed": "right", "named_aggs": {"total": "pl.col('f').sum()"}},
+         lambda lf: lf.rolling("t", period="3h", closed="right").agg(total=pl.col("f").sum())),
+    Case("polars_rolling", WINDOWED, {"index_column": "d", "period": "30d", "closed": "right", "named_aggs": {}},
+         lambda lf: lf.rolling("d", period="30d", closed="right").agg()),
 ]
 
 
