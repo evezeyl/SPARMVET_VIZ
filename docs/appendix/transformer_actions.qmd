@@ -55,7 +55,7 @@ null_actions = search_actions("null")  # returns polars_fill_null, polars_drop_n
 
 ### Annotated actions (BP-SCHEMA-1)
 
-All 41 registered actions carry a `ui_schema` and appear in the Blueprint IDE picker (count read from `ACTION_SCHEMAS` on 2026-11-14; it grows with the registry, ADR-035). The two persistence functions `sink_parquet` and `scan_parquet` are engine functions, not data analysis recipe actions (`rules_data_engine.md §1`).
+All 41 registered actions carry a `ui_schema` and appear in the Blueprint IDE picker (count taken from `ACTION_SCHEMAS` on 2026-11-14; it grows with the registry, ADR-035). The two persistence functions `sink_parquet` and `scan_parquet` are engine functions, not data analysis recipe actions (`rules_data_engine.md §1`).
 
 **The prefix says what an action is** (data analysis recipe format 1):
 
@@ -104,7 +104,7 @@ def action_my_action(lf, spec):
 
 ## 1. Actions by category
 
-The text below is read from the registry (`description` and `yaml_example` of each `ui_schema`), so it matches the code. The tiers an action may be used in are given as `context` (`t1`, `t2`, `assembly`). The order rule of every action that can change the order of rows is written in the step.
+The text below was written from the registry on 2026-11-14 (`description` and `yaml_example` of each `ui_schema`); the test `libs/transformer/tests/test_docs_action_page.py` fails when the page and the registry differ. The tiers an action may be used in are given as `context` (`t1`, `t2`, `assembly`). The order rule of every action that can change the order of rows is written in the step.
 
 ### 1.1 Cleaning
 
