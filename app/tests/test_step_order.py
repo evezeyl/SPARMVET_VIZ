@@ -400,18 +400,13 @@ def l50_original(run, raw_config):
     return run(variant(raw_config, L50), L50)
 
 
-@pytest.mark.parametrize("value", [
-    8,
-    pytest.param(8.5, marks=pytest.mark.xfail(strict=True, reason=(
-        "issue #62: HOME's engine truncates 8.5 to 8 on an integer column (keeps L50 = 8), the exported recipe's "
-        "modif_filter compares as numbers (drops it): the figure and the reproducibility bundle disagree. "
-        "Fixed by P1 (HOME-EXPLORE-1); remove this mark in that commit."))),
-])
+# 8.5 was an xfail until issue #62 was fixed by HOME-EXPLORE-1 (numeric comparison in HOME).
+@pytest.mark.parametrize("value", [8, 8.5])
 def test_rerun_equals_audit_data_for_a_threshold_on_an_integer_column(run, raw_config, l50_original, value):
     """(4) on the integer canary: `L50 >= value` gives the same rows in HOME and in the re-run of the export.
     The oracle is the raw Quast file compared as numbers (rule of #62).
 
-    Seen failing (the xfail): today HOME keeps the samples with L50 = 8 for `>= 8.5` and the re-run does not.
+    Seen failing (before #62 was fixed): HOME kept the samples with L50 = 8 for `>= 8.5` and the re-run did not.
     Seen failing (the integer case): an oracle with `>`.
     """
     _, tier2, _ = l50_original
