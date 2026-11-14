@@ -104,12 +104,24 @@ def _load_error_text(stderr_text: str, exc: BaseException) -> str:
 
 
 def checker_catalogs() -> dict:
-    """The registries as plain data for `check_recipe`: the actions with their form schema, the plot components with
-    the arguments each accepts. Built here because only the app layer may read two libraries."""
-    import transformer.actions  # noqa: F401  (loads the registry)
+    """The registries as plain data for `check_recipe`: the actions with their form schema, the plot components, the
+    arguments each accepts and the themes. The one place that builds them, used by HOME's gate, Blueprint's validate
+    action and the gallery check (DEC03: one checker, one set of catalogues). Built here because only the app layer
+    may read two libraries."""
+    import transformer.actions  # noqa: F401  (importing it registers the actions)
+    import viz_factory  # noqa: F401  (importing it registers the plot components)
     from transformer.actions.base import ACTION_SCHEMAS
     from viz_factory.arguments import argument_catalog
-    return {"actions": dict(ACTION_SCHEMAS), "components": argument_catalog()}
+    from viz_factory.registry import PLOT_COMPONENTS
+
+    arguments = argument_catalog()
+    components = set(PLOT_COMPONENTS)
+    return {
+        "actions": dict(ACTION_SCHEMAS),
+        "components": components,
+        "component_arguments": {name: (None if arguments.get(name) is None else set(arguments[name])) for name in components},
+        "themes": {name for name in components if name.startswith("theme_")},
+    }
 
 
 def _fragment_report(raw) -> list[str]:

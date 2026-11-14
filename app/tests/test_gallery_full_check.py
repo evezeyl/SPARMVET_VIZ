@@ -12,7 +12,8 @@ import shutil
 import sys
 from pathlib import Path
 
-from app.modules.gallery_examples import check_gallery, rebuild_gallery_index, recipe_catalogs
+from app.modules.data_analysis_recipe_validator import checker_catalogs
+from app.modules.gallery_examples import check_gallery, rebuild_gallery_index
 
 ROOT = Path(__file__).resolve().parents[2]
 SHIPPED = ROOT / "assets" / "gallery_data"
@@ -41,7 +42,7 @@ def _with_a_wrong_layer(work: Path) -> None:
 
 
 def test_the_catalogs_hold_the_registries():
-    catalogs = recipe_catalogs()
+    catalogs = checker_catalogs()
     assert {"polars_join", "modif_filter"} <= set(catalogs["actions"])
     assert {"geom_bar", "stat_ecdf", "labs", "theme_minimal"} <= catalogs["components"]
     assert "theme_minimal" in catalogs["themes"] and "geom_bar" not in catalogs["themes"]

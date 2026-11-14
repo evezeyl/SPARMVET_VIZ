@@ -13,7 +13,7 @@ No Shiny import. App features gate: none here; the Gallery panel itself is gated
 If deleted: the examples are checked for structure only and the previews cannot be regenerated.
 
 # @deps
-# provides: function:recipe_catalogs, function:check_gallery, function:check_gallery_at_start, function:rebuild_gallery_index, function:render_example, function:example_table, constant:PREVIEW_SIZE
+# provides: function:check_gallery, function:check_gallery_at_start, function:rebuild_gallery_index, function:render_example, function:example_table, constant:PREVIEW_SIZE
 # consumes: libs/viz_gallery/src/viz_gallery/gallery_manager.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, app/modules/orchestrator.py, app/modules/cache_keys.py, libs/utils/src/utils/config_loader.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/arguments.py, libs/viz_factory/src/viz_factory/registry.py, libs/transformer/src/transformer/actions/base.py
 # consumed_by: app/src/bootloader.py, assets/scripts/refresh_gallery.py, assets/scripts/gallery_previews.py, app/tests/test_gallery_app_path.py
 # doc: .claude/design/recipe_format_spec.md (section 9: G2, G3, D4, D5; section 14)
@@ -27,6 +27,7 @@ from typing import Optional, Tuple, Union
 
 import polars as pl
 
+from app.modules.data_analysis_recipe_validator import checker_catalogs
 from viz_gallery.gallery_manager import RECIPE_FILE, Examples, GalleryManager
 from viz_gallery.taxonomy import the_plot
 
@@ -34,27 +35,9 @@ from viz_gallery.taxonomy import the_plot
 PREVIEW_SIZE = {"width": 8, "height": 5, "dpi": 120}
 
 
-def recipe_catalogs() -> dict:
-    """The registries as plain data for `check_recipe`: the actions, the plot components and their arguments, the themes."""
-    import transformer.actions  # noqa: F401  (importing it registers the actions)
-    import viz_factory  # noqa: F401  (importing it registers the plot components)
-    from transformer.actions.base import ACTION_SCHEMAS
-    from viz_factory.arguments import argument_catalog
-    from viz_factory.registry import PLOT_COMPONENTS
-
-    arguments = argument_catalog()
-    components = set(PLOT_COMPONENTS)
-    return {
-        "actions": dict(ACTION_SCHEMAS),
-        "components": components,
-        "component_arguments": {name: (None if arguments.get(name) is None else set(arguments[name])) for name in components},
-        "themes": {name for name in components if name.startswith("theme_")},
-    }
-
-
 def check_gallery(gallery_dir: Union[str, Path]) -> Examples:
     """Check every example of a gallery folder with the registries; returns the accepted and the rejected with reasons."""
-    return GalleryManager(str(gallery_dir)).check_examples(recipe_catalogs())
+    return GalleryManager(str(gallery_dir)).check_examples(checker_catalogs())
 
 
 def check_gallery_at_start(gallery_dir: Union[str, Path]) -> Tuple[Examples, str]:
@@ -63,12 +46,12 @@ def check_gallery_at_start(gallery_dir: Union[str, Path]) -> Tuple[Examples, str
     The same function as the rebuild (`GalleryManager.sync_index` calls `rebuild_index`). It never raises for an
     example: one that fails is left out of the index and its reasons are in `metadata.rejected`.
     """
-    return GalleryManager(str(gallery_dir)).sync_index(recipe_catalogs())
+    return GalleryManager(str(gallery_dir)).sync_index(checker_catalogs())
 
 
 def rebuild_gallery_index(gallery_dir: Union[str, Path]) -> dict:
     """Rebuild `gallery_index.json` from the examples that pass the full check; returns the index."""
-    return GalleryManager(str(gallery_dir)).rebuild_index(recipe_catalogs())
+    return GalleryManager(str(gallery_dir)).rebuild_index(checker_catalogs())
 
 
 def _build(example_dir: Path, work_dir: Path, project_root: Path) -> Tuple[dict, str, pl.LazyFrame]:
