@@ -650,3 +650,25 @@ Live progress file: `tmpAI/coordinator/progress_2026-11-14_session3.md` (not in 
 **Decisions for Eve, older:** see "Handoff 2026-11-14 (night)", points 1 to 5 above.
 
 **Worktrees:** `checker-join-keys`, `join-preview-strict`, `gallery-check-start` are merged and can be removed. `smoke-race-2` in use. `docs-sweep` prepared. `agent-abd52719502485bdb` kept (findings note, no code). Tests in a worktree need the worktree sources first in `PYTHONPATH` (the shared `.venv` imports the libraries from the main tree).
+
+## Handoff 2026-11-14 (third coordinator session, update 2): six merges, dev pushed at 46425c89, decisions N1 to N15
+
+Live progress file: `tmpAI/coordinator/progress_2026-11-14_session3.md` (not in git).
+
+**Branch and push:** `origin/dev` is at `46425c89` (pushed). The merges `57724105` (documentation) and `334b8dfc` (browser tests) are on `feat/recipe-format-1` only: NOT in `dev`, NOT pushed. TEST-ORDER-1 is not merged.
+**Merged since the interim note:** HOME-EXPLORE-1 (merge `46425c89`, commits `9427dc36`, `73cecd2b`); the documentation (merge `57724105`, commits `a607174f`, `b5fe3e78`, `5e9864b9`: DOC-JOIN-CAST-1 docs part, DOC-MISSING-VALUES-1, one broken path); SMOKE-RACE-2 (merge `334b8dfc`, commits `382848c2`, `9dffbb8d`). Six merges in this session with the three from the interim note. The documentation diff was not reviewed on its own; the final reviewer reads it.
+**Found done already:** GALLERY-SUBMIT-SCHEMA-1 (read by W11, not run: `submit_example` writes format 1 and runs `check_recipe`; tested in `test_gallery_bundle.py`); NAN-ACTIONS-1 (`polars_fill_nan` and `polars_drop_nans` exist in `libs/transformer/src/transformer/actions/polars_calls.py`).
+**Controls:** on `46425c89` (reviewer): headless 3818 passed, 23 xfailed; golden baseline result-identical; tree clean. The browser gate was run on `334b8dfc` by SMOKE-RACE-2 only (61 passed, 3 skipped, twice). Not run: the audits; the full controls on the final state.
+**Running:** TEST-ORDER-1 fixes (builder sonnet, worktree `home-test-order`, branch `task/home-test-order`; commit `99447ec1` removes the #62 mark; the independent raw-file oracle and the docstrings are being added; then review). TEST-FLAKY-1 (#72) (builder sonnet/medium, worktree `test-flaky-1`, branch `task/test-flaky-1`; it runs the full browser gate once).
+**Still to do in this series:** merge TEST-ORDER-1 and TEST-FLAKY-1, with headless controls after each merge; DEP-INDEX-STALE-1 with `build_dep_graph.py` (last builder); final controls by a reviewer (headless, golden baseline, audits, the documentation diff `a607174f..5e9864b9`); final scribe (handoff, tasks.md, spec section 11 catalogue J09 to J11, channel row); fast-forward and push `dev`.
+**Not started on purpose** (quota and Eve's priority): ADR-100 draft (W12, opus/high); BP-VALIDATE-1 (Blueprint); RECIPE-DOCS-1 (#79, large); AUDIT-REPAIR-1.
+**HOME: what blocks the rebuild:** NA-RULE-63 (#63): the NaN rule and the count message, Eve to confirm; STAGE2-SPEC-1: Eve reads and confirms the v0.1 mechanism spec (`home_stage2_mechanism_spec.md`); KEYS-NODE-1: Eve confirms the hash model (`home_evidence/home_hash_model_2026-11-12.md` section 4); RECIPE-GRAPH-UTILS-1: option C+; HOME-DESIGN-REVIEW-1 (SC1, SC2, SC4, AR4, SC5, AR2, AR1); FILTER-UNIFY-1; FORMULA-SAFETY-1. Tasks that wait for these: FILTER-DTYPES-1, HOME-EXPLORE-2 (#61), HOME-EXPLORE-4/5/6 (#56), AUDIT-VIEW-1, AUDIT-RAWYAML-REMOVE-1, TEST-SHAPES-1.
+**Decisions for Eve N9 to N15** (also in tasks.md as `DECISION FOR EVE`):
+- N9: VizFactory `in` / `not_in` compares as text, so a numeric `in` filter gives no rows in the plot. Evidence: 4 strict xfail cases, `app/tests/test_filter_int_equivalence.py`. Options: approve the small fix now (it changes plots with numeric `in` filters), or wait for FILTER-DTYPES-1.
+- N10: the reproducibility export writes the filter value as text, so re-running it on a number column fails. Evidence: `t3_translator.py` about line 127; 12 strict xfail cases. Options: approve EXPORT-FILTER-VALUE-1 (the translator is frozen, brief S4), or leave it.
+- N11: `between` is not translated (UntranslatableNode). Evidence: `t3_translator.py`. Options: add the translation later, or keep refusing it.
+- N12: what blocks the HOME rebuild: see the list above.
+- N13: a drop and a filter on the same column at one node. The view runs filters first; the exported recipe keeps the recorded order and stops with "column not in the table". Evidence: TEST-ORDER-1, checked by running; not tested. Options: refuse such a step, or define the order.
+- N14: TEST-ORDER-1 tests that wait for the unconfirmed stage-2 spec v0.1 and for the `hypothesis` dependency (D9). Options: confirm the spec and allow the dependency, or leave those tests out.
+- N15: `submit_example` has no caller outside the tests (`gallery_manager.py` 163-203). Options: keep, or delete.
+**User-visible change:** a threshold that is not an integer on an integer column is now compared as a number, so the plot agrees with the reproducibility export (issue #62).
