@@ -83,6 +83,14 @@ def _extract_registered_names(source_dir: Path, decorator_name: str) -> set[str]
 
 # ── TSV header reading ─────────────────────────────────────────────────────────
 
+def registered_action_names(source_dir: Path) -> set[str]:
+    """The names a recipe may use: the live registry. Most actions are generated from the Polars signatures
+    (`polars_calls.py`), so no `@register_action("name")` text exists for them and a source scan misses them."""
+    import transformer.actions  # noqa: F401  (loads the registry)
+    from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
+    return set(AVAILABLE_WRANGLING_ACTIONS) | _extract_registered_names(source_dir, "register_action")
+
+
 def _read_tsv_columns(tsv_path: Path) -> list[str] | None:
     """Return column names from TSV header row, or None if file missing."""
     if not tsv_path.exists():
@@ -551,8 +559,8 @@ def main() -> int:
         if mname and key:
             accepted_join_keys.setdefault(mname, set()).add(key)
 
-    print("Scanning registered action names ...", file=sys.stderr)
-    registered_actions = _extract_registered_names(transformer_actions_dir, "register_action")
+    print("Reading the registered action names ...", file=sys.stderr)
+    registered_actions = registered_action_names(transformer_actions_dir)
 
     print("Scanning registered component names ...", file=sys.stderr)
     registered_components = _extract_registered_names(viz_factory_dir, "register_plot_component")

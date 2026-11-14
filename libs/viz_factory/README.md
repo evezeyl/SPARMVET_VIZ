@@ -274,7 +274,7 @@ what the component accepts: for a geom or stat exactly what plotnine accepts (ae
 stat, plus the layer arguments), for any other plotnine class or function its signature together with the schema, and
 `None` when the names are free-form (`annotate`, `element_*`, `theme_custom`). `unknown_arguments(name, names)` lists
 the names a layer uses that the component does not accept; `argument_catalog()` returns all of it as plain data for
-the recipe checker. `tests/test_component_arguments.py` asks plotnine itself about every enumerated name.
+the recipe checker. `libs/viz_factory/tests/test_component_arguments.py` asks plotnine itself about every enumerated name.
 
 ### Accessing the component catalog
 

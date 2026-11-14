@@ -206,10 +206,9 @@ The Assembler is responsible for:
 - Applying a final "Global Wrangler" pass and the `final_contract` guard to the unified dataset.
 
 ### Relational Decorators
-Assembly-specific actions are defined in `libs/transformer/src/transformer/actions/relational/joins.py`.
+The join is the Polars join, registered as `polars_join` (`libs/transformer/src/transformer/actions/polars_calls.py`).
 
-- **`join`**: Standard relational join.
-- **`join_filter`**: A specialized internal whitelisting tool. It performs an `inner` join against a reference table (e.g., filtering Virulence hits against a confirmed gene catalog).
+- **`polars_join`**: the Polars `LazyFrame.join`; `how`, `maintain_order` and the keys are written in every step.
 
 ### Assembly steps & Contracts
 Assemblies are defined in the `joins` block (Key-as-ID pattern). An assembly "Step list" is a sequential list of actions (Joins + Wrangling) that builds the final data grain. The `final_contract` acts as the ultimate guard, protecting the UI from "Column Drift" by selecting exactly the required plotting dimensions.

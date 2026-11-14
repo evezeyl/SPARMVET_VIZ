@@ -141,18 +141,6 @@ Tests one VizFactory component from a step list data analysis recipe. Prints a d
 
 ---
 
-### `debug_wrangler_errors.py` — Test error detection
-
-Verifies that DataWrangler raises correct, user-friendly errors when data analysis recipes reference non-existent columns (typo detection with fuzzy suggestions).
-
-```bash
-./.venv/bin/python libs/transformer/tests/debug_wrangler_errors.py
-```
-
-No file I/O — runs fully in-memory, prints PASS/FAIL to stdout.
-
----
-
 ### `debug_viz_factory_tier3.py` — Test Tier 3 predicate pushdown
 
 Verifies that VizFactory correctly applies filter predicates before rendering.
@@ -163,30 +151,6 @@ Verifies that VizFactory correctly applies filter predicates before rendering.
 # Save the rendered plot
 ./.venv/bin/python libs/viz_factory/tests/debug_viz_factory_tier3.py \
     --output tmp/tier3_test.png
-```
-
----
-
-### `debug_relational_audit.py` — Relational join audit
-
-Standalone relational join audit — verifies join integrity between two datasets.
-
-```bash
-./.venv/bin/python libs/transformer/tests/debug_relational_audit.py \
-    --data-analysis-recipe libs/transformer/tests/data/relational_audit.yaml \
-    --output tmp/relational_audit/
-```
-
----
-
-### `debug_pipeline.py` — Test the PipelineExecutor
-
-Tests the `PipelineExecutor` abstraction directly.
-
-```bash
-./.venv/bin/python libs/transformer/tests/debug_pipeline.py \
-    --data-analysis-recipe my_data_analysis_recipe.yaml \
-    --data-dir assets/test_data/my_data_analysis_recipe/
 ```
 
 ---

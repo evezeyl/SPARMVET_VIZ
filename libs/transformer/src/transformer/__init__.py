@@ -1,7 +1,5 @@
 from .data_wrangler import DataWrangler
 from .data_assembler import DataAssembler
-from .pipeline import PipelineExecutor
 from .metadata_validator import MetadataValidator
 
-__all__ = ["DataWrangler", "DataAssembler",
-           "PipelineExecutor", "MetadataValidator"]
+__all__ = ["DataWrangler", "DataAssembler", "MetadataValidator"]

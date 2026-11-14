@@ -52,9 +52,9 @@ This FAQ captures the strategic "Whys" and "How-To" patterns discovered during t
 - **The Fix**: Use `drop_columns` as the first step in your `tier1` wrangling to keep the data stream lightweight before the explosion.
 
 ### How do I audit for "Row Explosion" (Cartesian Products) in complex joins?
-**Answer**: Use the `debug_relational_audit.py` utility in `libs/transformer/tests/`.
+**Answer**: Write what you expect in the join step: `validate: m:1` (or `1:1`) on `polars_join` makes Polars stop when the right table has repeated keys, so a Cartesian product cannot happen silently.
 - **Reasoning**: In complex genomic assemblies (like the ST22 data analysis recipe), joining metadata (1:1) with Gene finds (1:Many) causes a controlled explosion. However, joining two 1:Many sets without grouping can cause a Cartesian Product (thousands of unwanted rows).
-- **The Audit**: The audit script calculates the **Expansion Ratio** (Result Rows / Unique Sample IDs). If the ratio exceeds the known genomic density (usually <50 rows per sample), a relational integrity issue is flagged.
+- **The Audit**: Run `libs/transformer/tests/debug_assembler.py` and compare the row count of the result with the number of unique sample IDs; a ratio far above the known genomic density (usually <50 rows per sample) flags a relational integrity issue.
 
 ## 🔍 2b. Filtering & Exploration
 

@@ -47,3 +47,12 @@ def test_an_explicit_drop_step_removes_the_column_and_nothing_else():
     lf, _ = DataIngestor(str(FILE.parent)).ingest("VirulenceFinder", _schema(["NA"]))
     out = DataWrangler().run(lf, [{"action": "polars_drop", "columns": [COLUMN], "strict": True}]).collect()
     assert out.columns == ["sample_id"] and out.height == 1315
+
+
+def test_the_recipe_can_say_that_na_is_missing_for_this_field_only():
+    """The per-field override: the schema keeps `NA` as text, the field says it is a real missing value (not recorded)."""
+    schema = _schema([""])
+    schema["input_fields"][COLUMN] = {"type": "String", "null_values": ["NA"]}
+    lf, _ = DataIngestor(str(FILE.parent)).ingest("VirulenceFinder", schema)
+    df = lf.collect()
+    assert df[COLUMN].null_count() == 1315

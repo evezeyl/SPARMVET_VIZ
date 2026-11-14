@@ -11,7 +11,7 @@ According to **`rules_data_engine.md §2`**, every registered action MUST follow
 - **Data analysis recipe**: `libs/transformer/tests/data/polars_cast_data_analysis_recipe.yaml`
 - **Data**: `libs/transformer/tests/data/polars_cast_test.tsv`
 
-The one exception is `polars_join`: a join needs a second ingredient and runs in the assembler, so it has no pair (it is tested in `test_polars_actions_equal_polars.py` and the assembler tests).
+`polars_join` has two ingredients: its pair is a recipe with two data schemas (`polars_join_test.tsv` is the left table, `polars_join_test_right.tsv` the right one) and the join runs in the assembler, as the app runs it.
 
 ## 2. What the test checks
 
@@ -19,10 +19,11 @@ The one exception is `polars_join`: a join needs a second ingredient and runs in
 
 1.  **The pair exists**, and no pair is left for an action that is gone.
 2.  **The recipe is format 1** (`spec_version: 1`) and its `id` is the action name.
-3.  **The pair runs** through the real ingestion (declared types, `null_values`, `strip`) and then the wrangler.
+3.  **The pair runs** through the real ingestion (declared types, `null_values`, `strip`) and then the wrangler (the assembler for the join).
 4.  **The recipe uses the action** it is named after.
 5.  **The action acts**: the result is different from what ingestion gave. A pair that passes data through unchanged proves nothing.
-6.  **The file loses nothing**: the ingested file equals the frame of the equality test, and the result equals the direct Polars call (`test_polars_actions_equal_polars.py`). A pair with a setup step (a list or struct column cannot be written in a TSV, so a first step builds it) skips this last comparison.
+6.  **Every action has a behaviour test**: a case in `test_polars_actions_equal_polars.py`, or a test file of its own that names the action (`OWN_TESTS` in the pair test). A new action without a test fails the suite.
+7.  **The file loses nothing**: the ingested file equals the frame of the equality test, and the result equals the direct Polars call (`test_polars_actions_equal_polars.py`). A pair with a setup step (a list or struct column cannot be written in a TSV, so a first step builds it) skips this last comparison.
 
 ```bash
 PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/test_action_recipe_pairs.py -q

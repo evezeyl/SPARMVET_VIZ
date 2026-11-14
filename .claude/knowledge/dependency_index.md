@@ -668,13 +668,6 @@
 - **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-013`, `.claude/knowledge/architecture_decisions.md#ADR-034`
 
-## `libs/transformer/src/transformer/pipeline.py`
-- **Role:** `wrangle`
-- **provides:** `class:PipelineExecutor`
-- **consumes:** `utils.config_loader (ConfigManager)`, `transformer.data_wrangler`, `transformer.data_assembler`
-- **consumed_by:** `libs/transformer/tests/debug_pipeline.py`
-- **doc:** `.claude/rules/rules_data_engine.md`, `.claude/rules/rules_runtime_environment.md#4`
-
 ## `libs/transformer/src/transformer/registry.py`
 - **Role:** `wrangle`
 - **provides:** `function:get_action_function`
@@ -685,24 +678,10 @@
 ## `libs/transformer/tests/debug_assembler.py`
 - **Role:** `wrangle`
 - **provides:** `script:debug_assembler`
-- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/metadata_validator.py`, `libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)`
 - **mirrors:** `app/modules/orchestrator.py`
-- **consumed_by:** `libs/viz_factory/tests/debug_gallery.py`, `libs/transformer/tests/transformer_integrity_suite.py`
+- **consumed_by:** `libs/viz_factory/tests/debug_gallery.py`, `libs/transformer/tests/test_debug_assembler.py`
 - **doc:** `.claude/rules/rules_agent_role_bioscientist.md#7`
-
-## `libs/transformer/tests/debug_pipeline.py`
-- **Role:** `wrangle`
-- **provides:** `script:debug_pipeline`
-- **consumes:** `libs/transformer/src/transformer/pipeline.py`, `libs/ingestion/src/ingestion/ingestor.py`
-- **consumed_by:** `manual pipeline executor testing`
-- **doc:** `.claude/rules/rules_data_engine.md#3`
-
-## `libs/transformer/tests/debug_relational_audit.py`
-- **Role:** `wrangle`
-- **provides:** `script:debug_relational_audit`
-- **consumes:** `libs/transformer/tests/data/relational_audit.yaml`, `libs/transformer/src/transformer/data_assembler.py`
-- **consumed_by:** `manual relational join testing`
-- **doc:** `.claude/rules/rules_data_engine.md#3`
 
 ## `libs/transformer/tests/debug_wrangler.py`
 - **Role:** `wrangle`
@@ -710,13 +689,6 @@
 - **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`
 - **mirrors:** `app/modules/orchestrator.py (Tier 1 wrangling path)`
 - **consumed_by:** `libs/transformer/tests/test_debug_wrangler.py`
-- **doc:** `.claude/rules/rules_data_engine.md#3`
-
-## `libs/transformer/tests/debug_wrangler_errors.py`
-- **Role:** `wrangle`
-- **provides:** `script:debug_wrangler_errors`
-- **consumes:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/utils/src/utils/errors.py`
-- **consumed_by:** `manual error-mode testing`
 - **doc:** `.claude/rules/rules_data_engine.md#3`
 
 ## `libs/utils/src/utils/action_names.py`

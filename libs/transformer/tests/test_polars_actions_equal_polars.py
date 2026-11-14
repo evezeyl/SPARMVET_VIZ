@@ -268,3 +268,14 @@ def test_a_cast_that_loses_nothing_is_unchanged_for_other_types():
     frame = pl.DataFrame({"n": [1, 2], "s": ["1", "2"]})
     assert _run("polars_cast", {"columns": ["n"], "dtype": "Float64", "strict": True}, frame)["n"].dtype == pl.Float64
     assert _run("polars_cast", {"columns": ["s"], "dtype": "Int64", "strict": True}, frame)["s"].to_list() == [1, 2]
+
+
+def test_a_join_that_would_multiply_rows_fails_when_the_recipe_says_many_to_one():
+    """The row explosion guard is Polars' own `validate`: written in the step, it stops a many-to-many join."""
+    dup_right = pl.DataFrame({"id": ["a", "a", "b"], "v": [1, 2, 3]})
+    spec = {"right_ingredient": "R", "on": ["id"], "how": "left", "maintain_order": "left_right", "validate": "m:1",
+            "__right_df__": dup_right.lazy()}
+    with pytest.raises(Exception, match="(?i)join keys|validat|m:1|not unique|unique"):
+        _run("polars_join", spec)
+    spec["validate"] = "m:m"
+    assert _run("polars_join", spec).height == 5  # a twice, then b, c, d: the extra row is what m:1 forbids

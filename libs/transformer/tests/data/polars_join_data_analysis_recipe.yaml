@@ -1,0 +1,65 @@
+# Format 1 recipe of the 1:1:1 pair for polars_join (two ingredients, run by the assembler).
+id: polars_join
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
+info:
+  label: Test pair of polars_join
+  description: 'A join needs two ingredients: the left data is polars_join_test.tsv
+    and the right data polars_join_test_right.tsv. Run by the assembler, not by the
+    wrangler (1:1:1 law, rules_data_engine.md section 2).'
+data_schemas:
+  polars_join:
+    source:
+      type: local_tsv
+      path: libs/transformer/tests/data/polars_join_test.tsv
+    null_values: ['']
+    strip: false
+    input_fields:
+      id:
+        type: String
+        label: id
+      g:
+        type: String
+        label: g
+      n:
+        type: Int64
+        label: n
+      f:
+        type: Float64
+        label: f
+      s:
+        type: String
+        label: s
+    wrangling:
+      tier1: []
+      tier2: []
+  polars_join_right:
+    source:
+      type: local_tsv
+      path: libs/transformer/tests/data/polars_join_test_right.tsv
+    null_values: ['']
+    strip: false
+    input_fields:
+      id:
+        type: String
+        label: id
+      v:
+        type: Int64
+        label: v
+    wrangling:
+      tier1: []
+      tier2: []
+joins:
+  polars_join:
+    ingredients:
+    - dataset_id: polars_join
+    - dataset_id: polars_join_right
+    steps:
+      tier1:
+      - action: polars_join
+        right_ingredient: polars_join_right
+        'on': [id]
+        how: left
+        maintain_order: left_right
+      tier2: []

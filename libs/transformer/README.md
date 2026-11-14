@@ -13,13 +13,11 @@ The central engine for data wrangling and Phase 4 relational assembly. It enforc
 
 - `DataWrangler (data_wrangler.py)`: Core engine that executes atomic cleaning actions against single datasets using declarative YAML pipelines.
 - `DataAssembler (data_assembler.py)`: Relational join orchestrator. Implements **Strict Assembly Enforcement**: requires all ingredients explicitly defined in a step list, otherwise triggers a controlled crash to protect data integrity.
-- `PipelineExecutor (pipeline.py)`: Top-level runner that coordinates the full end-to-end flow (Ingest -> Wrangle -> Assemble).
 - `ActionRegistry (registry.py)`: Central dictionary mapping YAML action keys to Python function logic.
 - `MetadataValidator (metadata_validator.py)`: Ensures user-provided data aligns with data analysis recipe contracts. Performs **Malformed Data Gatekeeping** (ADR-034) by trapping missing columns with typo-correction suggestions (`validate`), rejecting values that cannot be cast to the declared type before a file is written (`validate_types`), and enforcing schema types (`enforce_schema`).
 - `test_action_recipe_pairs.py` - [Test]: every registered action has its 1:1:1 pair (recipe and data file in `tests/data/`); the pair runs through ingestion and the wrangler and equals the direct Polars call.
 - `debug_wrangler.py` - [Dev Tool]: CLI runner that wrangles one format 1 recipe and writes the result as a TSV (`@verify` evidence). Entry: `main()`.
 - `debug_assembler.py` - [Dev Tool]: CLI runner for multi-source assembly and `final_contract` output. Entry: `run_assembler_debug()`.
-- `debug_pipeline.py` - [Test Utility]: CLI runner for full pipeline execution with materialized output for audit.
 - **Action Sub-Packages (ADR-024)**:
   - `Reshapinger (reshaping/core.py)`: Structural transformations (Pivot, Unpivot, Explode, Split).
   - `Cleaner (cleaning/core.py)`: Atomic cleaning (Rename, Replace, Nulls, Selection, Sanitization).

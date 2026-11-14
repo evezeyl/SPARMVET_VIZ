@@ -16,9 +16,10 @@ To ensure automated test suites are logically homogenous, all libraries MUST str
 
 - **Component Debuggers (The Engines):** `libs/{lib}/tests/debug_{component}.py`
   - *Purpose:* Specialized runners for isolated logic (e.g., `debug_wrangler.py` for Layer 1 decorators).
-- **Global Library Wrapper (The Orchestrator):** `libs/{lib}/tests/{lib}_integrity_suite.py`
-  - *Purpose:* A high-level runner that programmatically discovers actions and dispatches them to the appropriate 'Engine' for verification.
-  - *Command:* The Orchestrator MUST use the Engines to perform the actual execution; it does not contain the testing logic itself.
+- **Automatic tests (the gate):** `libs/{lib}/tests/test_*.py`, run by pytest. Everything that can be checked automatically is, and every component has a test that names it: a new action, plot component or public function without a test fails the suite (for the transformer: `test_action_recipe_pairs.py` checks that every registered action has its 1:1:1 pair, a behaviour test, and a run through the real path).
+  - *What tests what (transformer, 2026-11-14):* `test_polars_actions_equal_polars.py` = every `polars_` action equals the direct Polars call and what it refuses; `test_modif_filter.py` = the filter; `test_top_n_other.py` = the composite action; `test_action_recipe_pairs.py` = the file pairs (recipe, data) of every action; `test_actions_must_act.py`, `test_deterministic_order.py` = no silent no-op, same rows in the same order; `test_action_schema_examples.py`, `test_ui_schemas.py` = the form and the `yaml_example` of every action.
+  - *A test must be able to fail:* break the code once and see a test fail (section 9).
+- **Library integrity suite (optional CLI report):** `libs/{lib}/tests/{lib}_integrity_suite.py` is a command-line runner that discovers the components of a library and writes a text report for a person to read (today: `viz_factory`, `ingestion`, `id_reconciliation`). It is not a pytest wrapper and it is not the gate. The transformer no longer has one: its integrity suite and four of its debug runners stopped working with recipe format 1 and were replaced by the pytest files above (ACTION-RECIPES-1, Eve 2026-11-14).
 
 ## 2. CLI Mandate (argparse Authority)
 
