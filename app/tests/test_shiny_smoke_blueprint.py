@@ -309,13 +309,11 @@ class TestBlueprintEscapeAndValidate:
         textarea.fill("id: broken\n  bad indent: [unclosed")
         page.locator("#btn_bp_save_yaml").click()
         _wait_shiny(page, timeout=15_000)
-        content_text = page.locator("#bp_yaml_escape_ui").inner_text(timeout=8_000)
-        assert "YAML escape hatch parse error" in content_text, (
-            f"Inline error card not found. Got: {content_text[:300]!r}"
-        )
-        assert "Fix" in content_text, (
-            f"Fix guidance not shown inline. Got: {content_text[:300]!r}"
-        )
+        # Wait for the card itself: `_wait_shiny` can return before the server has started on the click (the same race
+        # as in test_validate_runs_and_shows_result, found 2026-11-14).
+        card = page.locator("#bp_yaml_escape_ui")
+        expect(card).to_contain_text("YAML escape hatch parse error", timeout=20_000)
+        expect(card).to_contain_text("Fix", timeout=8_000)
         _no_render_error(page)
 
     @pytest.mark.skipif(

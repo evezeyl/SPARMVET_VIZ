@@ -43,6 +43,8 @@ When one session coordinates other agents (subagents started with the Agent tool
 - **At most 3 agents at once** (5 only for read-only work), each in its own git worktree and branch, on files no other agent edits. The coordinator reviews every diff, merges one branch at a time and runs the full test suite after each merge.
 - **An agent only implements what is decided.** A choice that is open goes back to Eve with the options; the agents never decide.
 - A stopped agent is continued by a new agent of the right model **in the same worktree**, so that no work is lost.
+- **The coordinator only coordinates** (Eve, 2026-11-14): it writes the briefs, reads the reports, decides the order, merges, and reports to Eve. Everything another agent can do is handed to a lighter agent that reports back: writing code and tests, running the test suites and the audits (the controls), surveys, reviews of a diff, the records (`tasks.md`, the handoff, the dependency index), preparing files for Eve. The coordinator does a thing itself only when briefing it would cost more than doing it (a one-line fix, a merge). Reason: the coordinator is the most expensive model; its tokens are for judgement, not for work.
+- Every worker keeps a short progress note in its worktree (`tmpAI/progress.md`: done, next, findings), so that a stop loses nothing.
 
 ---
 
