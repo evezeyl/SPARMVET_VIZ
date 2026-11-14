@@ -449,3 +449,79 @@ def test_rerun_equals_audit_data_for_a_threshold_on_an_integer_column(run, raw_c
     assert sorted(rerun["sample_id"].cast(pl.String).to_list()) == expected, "the re-run does not compare as numbers"
     assert sorted(home["sample_id"].cast(pl.String).to_list()) == expected, "HOME's audit data does not compare as numbers"
     assert rerun.equals(home)
+
+
+# ── N13: a filter and a drop on the SAME column (pinned 2026-11-14; fix waits for Eve, D3 and D5) ────────────
+
+def _home_plot_data(t2: pl.DataFrame, raw_config: dict, nodes: list) -> pl.DataFrame:
+    """The rows the PLOT path hands to the picture: drops first, then VizFactory applies the filters.
+
+    THIS FUNCTION IS A COPY IN THE TEST, not the real code: the order (drops first, filters later in VizFactory) is
+    copied from the closure in `app/handlers/home_theater.py` (about lines 483-533) and from the results bundle
+    (`app/handlers/export_handlers.py` about lines 1001-1035), which cannot be imported (same limit as
+    `home_rows_and_drops`). Whoever builds the fix must replace this copy with the real, importable function and
+    remove the xfail mark of the test that uses it. Extracting it is application code and waits for Eve's D4.
+    """
+    from viz_factory import VizFactory
+
+    rows, drops = home_rows_and_drops(nodes)
+    spec = copy.deepcopy(raw_config["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]["spec"])
+    if rows:
+        spec["filters"] = [{k: v for k, v in f.items() if k != "dtype"} for f in rows]
+    lf = t2.lazy()
+    present = [c for c in drops if c in lf.collect_schema().names()]
+    if present:
+        lf = lf.drop(present)
+    figure = VizFactory().render(lf, {"plots": {ZPLOT: spec}, "plot_defaults": {}}, ZPLOT)
+    return pl.from_pandas(figure.data)
+
+
+@pytest.mark.xfail(strict=True, reason="N13 (D3): the plot path drops the column first and skips the filter on it silently "
+                                       "(plot 42 rows, table 21); decision pending. REAL: audited_frame, VizFactory().render, "
+                                       "DataOrchestrator. COPY: the drop-first order in _home_plot_data (from home_theater.py "
+                                       "~483-533); a fix in home_theater.py alone does not flip this test: replace the copy "
+                                       "with the real function and remove the mark")
+def test_the_plot_path_gets_the_rows_of_the_table_path_for_a_filter_then_a_drop_on_one_column(original, raw_config, raw_samples, threshold):
+    """Correct behaviour (not in dispute): one audit, "filter n50 >= threshold, then drop n50", gives the same rows to
+    the plot as to the table. Oracle: the raw files. Today the table has 21 rows and the plot 42.
+
+    Seen failing: this is the xfail itself (42 against 21); with the filter removed from the nodes both sides agree.
+
+    Real code: `audited_frame`, `VizFactory().render` (the silent skip), the orchestrator. Copy: the drop-first order
+    (`_home_plot_data`, see its docstring). The part that depends on real code only is
+    `test_vizfactory_does_not_skip_a_filter_on_a_missing_column`.
+    """
+    _, tier2, _ = original
+    nodes = [filter_row("f", "n50", "ge", threshold), drop_column("d", "n50")]
+    rows, drops = home_rows_and_drops(nodes)
+    table = audited_frame(tier2.lazy(), rows, drops).collect()
+    expected = raw_samples.filter(pl.col("n50") >= threshold)
+    assert table.height == expected.height < raw_samples.height, "the table path must apply the filter (oracle: raw files)"
+    plot = _home_plot_data(tier2, raw_config, nodes)
+    assert plot.height == table.height, f"plot path {plot.height} rows, table path {table.height} rows"
+
+
+@pytest.mark.xfail(strict=True, reason="N13: VizFactory skips a filter whose column is missing")
+def test_vizfactory_does_not_skip_a_filter_on_a_missing_column():
+    """Real code only: a filter on a column that the frame does not have must raise or report, never return all rows."""
+    from viz_factory import VizFactory
+
+    frame = pl.LazyFrame({"x": [1, 2, 3, 4], "y": [1.0, 2.0, 3.0, 4.0]})
+    spec = {"mapping": {"x": "x", "y": "y"}, "layers": [{"name": "geom_point", "params": {}}],
+            "filters": [{"column": "n50", "op": "ge", "value": 3}]}
+    figure = VizFactory().render(frame, {"plots": {"p": spec}, "plot_defaults": {}}, "p")
+    assert figure.data.shape[0] != 4, "the filter on the missing column was skipped silently: all 4 rows are plotted"
+
+
+def test_a_drop_then_a_filter_on_one_column_stops_the_exported_recipe_decision_pending(raw_config, run, threshold):
+    """CHARACTERISATION, decision pending (D3 and D5): "drop n50, then filter n50" is translated in the recorded
+    order and the re-run stops with "column ... is not in the table". HOME shows 21 rows for the same audit (it
+    regroups: filters, then drops). What the user should see, and whether the export is checked before it is
+    written, is Eve's choice; if she decides, this test changes with it.
+    """
+    nodes = [drop_column("d", "n50"), filter_row("f", "n50", "ge", threshold)]
+    exported, skipped = build_mode2_recipe(raw_config, {ZPLOT: nodes})
+    assert not skipped, skipped
+    target = exported["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]["spec"]["target_dataset"]
+    with pytest.raises(BaseException, match=r"n50.*not in the table"):
+        run(exported, target)

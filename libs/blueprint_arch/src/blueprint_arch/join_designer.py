@@ -32,8 +32,9 @@ def check_join_keys(left_schema, right_schema, left_keys, right_keys, right_id="
     The build (DataAssembler, JOIN-KEY-TYPES-1, 2026-11-14) keeps the declared type of every key and fails when
     the two lists of keys differ in length, when a key column is missing, or when the types of a pair differ.
     This function gives the same verdict for the same pair, so the preview never says "compatible" for a join
-    that the build refuses. The rule is written twice on purpose: a domain library may not import another one
-    (rules_runtime_environment.md section 4); the parity test in app/tests compares the two.
+    that the build refuses. The rule is written three times on purpose: the build (data_assembler.py:52), this preview and the
+    checker (libs/utils/src/utils/recipe_check.py:539); a domain library may not import another one
+    (rules_runtime_environment.md section 4); the parity test in app/tests compares them.
 
     left_schema / right_schema: {column name: dtype name} of the two tables (dtype names as strings).
     left_keys / right_keys: key column names, paired by position.
