@@ -36,6 +36,9 @@ SCAN_EXTENSIONS = {".py", ".yaml", ".yml", ".md"}
 SKIP_DIRS = {".venv", ".git", "node_modules", "__pycache__", ".pytest_cache",
              ".mypy_cache", "dist", "build", "tmp", "tmpAI"}
 
+# Agent worktrees hold a full copy of the repository; indexing them would list every file twice or more.
+SKIP_PATH_PREFIXES = {(".claude", "worktrees")}
+
 # Coupling types → Cytoscape edge style class
 EDGE_STYLES = {
     "consumes":       "consumes",       # structural dependency
@@ -172,8 +175,12 @@ def scan_project(root: Path) -> list[dict]:
     for path in sorted(root.rglob("*")):
         if path.is_dir():
             continue
-        # Skip ignored directories
-        if any(skip in path.parts for skip in SKIP_DIRS):
+        # Skip ignored directories; decided on the path inside the project, so that the place where the
+        # project lives (for example a parent folder named `tmp` or `build`) cannot hide it.
+        inside = path.relative_to(root).parts
+        if any(skip in inside for skip in SKIP_DIRS):
+            continue
+        if any(inside[:len(prefix)] == prefix for prefix in SKIP_PATH_PREFIXES):
             continue
         if path.suffix not in SCAN_EXTENSIONS:
             continue
