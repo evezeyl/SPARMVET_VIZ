@@ -115,16 +115,13 @@ def test_a_negative_non_integer_threshold_keeps_zero():
     assert _apply_filter_rows(frame, rows).collect()["s"].to_list() == ["b", "c"]
 
 
-# ── the real export path: the panel's stored row (text value + dtype) -> translator -> action ──
+# -- the real export path: a row stored with the value as text + dtype -> translator (types it from the dtype) -> action --
 
 def _stored_row(column, op, value, dtype):
     """A filter row as the panel stores it: the value is text, `dtype` is the column dtype name."""
     return {"column": column, "op": op, "value": value, "dtype": dtype}
 
 
-@pytest.mark.xfail(strict=True, raises=pl.exceptions.ComputeError,
-                   reason="the translator writes the panel's text value into the step "
-                          "(task EXPORT-FILTER-VALUE-1, t3_translator is frozen until Eve's yes)")
 @pytest.mark.parametrize("column, dtype", [("i", "Int64"), ("f", "Float64")])
 @pytest.mark.parametrize("op", ["ge", "lt", "eq"])
 @pytest.mark.parametrize("value", ["90", "90.5"])

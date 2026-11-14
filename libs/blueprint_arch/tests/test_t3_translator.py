@@ -113,6 +113,49 @@ class TestTranslateNodeFilterOps:
             translate_t3_node(node("filter_row", {"op": "eq", "value": "x"}))
 
 
+class TestTranslateNodeTypesTheValueFromTheDtype:
+    """ADR-104 point 7: a step an older panel stored with the value as text is typed at export from the dtype it carries.
+    A value that cannot be read is reported, never guessed; a step with no dtype is left as written."""
+
+    @staticmethod
+    def step(params):
+        return translate_t3_node(node("filter_row", params))[0]
+
+    @pytest.mark.parametrize("dtype, op, value, expected", [
+        ("Int64", "ge", "90", 90), ("Int64", "gt", "90.5", 90.5), ("Float64", "lt", "90", 90.0), ("Int64", "eq", 90, 90),
+        ("Int64", "in", ["89", "91"], [89, 91]), ("Float64", "not_in", ["89.5"], [89.5]), ("Int64", "between", ["89", "91"], [89, 91]),
+        ("Boolean", "in", ["True"], [True]), ("Boolean", "eq", "False", False), ("Boolean", "in", [True], [True]),
+        ("String", "eq", "90", "90"), ("String", "in", ["a", "b"], ["a", "b"]),
+    ])
+    def test_value_is_typed(self, dtype, op, value, expected):
+        got = self.step({"column": "c", "op": op, "value": value, "dtype": dtype})["value"]
+        assert got == expected and type(got) is type(expected)
+        if isinstance(expected, list):
+            assert [type(v) for v in got] == [type(v) for v in expected]
+
+    def test_a_date_is_typed_as_a_date(self):
+        import datetime
+        got = self.step({"column": "d", "op": "in", "value": ["2020-01-02"], "dtype": "Date"})["value"]
+        assert got == [datetime.date(2020, 1, 2)]
+
+    def test_the_typed_step_dumps_to_yaml_and_loads_back_the_same(self):
+        got = self.step({"column": "d", "op": "in", "value": ["2020-01-02"], "dtype": "Date"})
+        assert yaml.safe_load(yaml.safe_dump(got)) == got
+
+    def test_a_step_without_dtype_is_left_as_written(self):
+        assert self.step({"column": "c", "op": "ge", "value": "90"})["value"] == "90"
+
+    @pytest.mark.parametrize("dtype, value", [("Int64", "abc"), ("Float64", ""), ("Boolean", "maybe"), ("Date", "31/01/2020")])
+    def test_an_unreadable_value_is_reported_in_plain_words(self, dtype, value):
+        with pytest.raises(UntranslatableNode) as exc:
+            self.step({"column": "year", "op": "eq", "value": value, "dtype": dtype})
+        text = str(exc.value)
+        assert "year" in text and repr(value) in text and "ComputeError" not in text
+
+    def test_the_dtype_is_not_written_into_the_step(self):
+        assert "dtype" not in self.step({"column": "c", "op": "eq", "value": 1, "dtype": "Int64"})
+
+
 class TestTranslateNodeDropColumn:
     def test_drop_column(self):
         actions = translate_t3_node(node("drop_column", {"column": "notes"}))
