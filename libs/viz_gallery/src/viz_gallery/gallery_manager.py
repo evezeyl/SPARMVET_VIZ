@@ -12,7 +12,7 @@ Consumed by: app/modules/gallery_examples.py (which passes the catalogs), assets
 No Shiny import. If deleted: `gallery_index.json` cannot be rebuilt and the gallery has no list of examples.
 
 # @deps
-# provides: class:GalleryManager (check_examples, rebuild_index, sync_index, submit_example (called only by libs/viz_gallery/tests/test_gallery_bundle.py), list_submissions), class:Examples, constant:RECIPE_FILE
+# provides: class:GalleryManager (check_examples, rebuild_index, sync_index, submit_example (no screen or script calls it; only libs/viz_gallery/tests/test_gallery_bundle.py does, and example_recipe.py shares its form with convert_gallery_examples.py), list_submissions), class:Examples, constant:RECIPE_FILE
 # consumes: libs/utils/src/utils/recipe_loader.py (check_recipe_file, load_recipe), libs/utils/src/utils/recipe_check.py (check_recipe), libs/utils/src/utils/legacy_keys.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, libs/viz_gallery/src/viz_gallery/example_recipe.py
 # consumed_by: app/modules/gallery_examples.py, assets/scripts/gallery_previews.py, assets/scripts/convert_gallery_examples.py, libs/viz_gallery/tests/test_gallery_bundle.py
 # doc: .claude/design/recipe_format_spec.md (section 9)
