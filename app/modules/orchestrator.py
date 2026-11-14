@@ -191,59 +191,8 @@ class DataOrchestrator:
                 f"Data schemas: {', '.join(sorted(all_schemas)) or 'none'}.")
         assembly_ingredients = {ds_id: ingredients[ds_id] for ds_id in ingredient_ids}
 
-        # Normalise join key dtypes across all ingredients before assembling.
-        # Polars requires join keys to have matching dtypes; String is the safe
-        # common denominator (Categorical ↔ String mismatches are the most common
-        # SchemaError in cross-ingredient joins).
-        #
-        # Strategy: for each join step, collect (ingredient_id → set of columns to cast).
-        # - symmetric keys ("on"): cast on base AND right ingredient
-        # - asymmetric keys ("left_on"/"right_on"): cast left_on on base, right_on on right
-        # We track per-ingredient so we only cast columns that actually exist in each.
-
-        # ingredient_id → set of column names to cast to String
-        per_ingredient_cast: dict[str, set] = {ds_id: set() for ds_id in assembly_ingredients}
-        base_cast: set = set()  # columns to cast on the base frame
-
-        for step in steps:
-            right_id = step.get("right_ingredient")
-            sym = step.get("on")
-            left_on = step.get("left_on")
-            right_on = step.get("right_on")
-
-            # Symmetric join keys — cast on base and right ingredient
-            if sym:
-                cols = [sym] if isinstance(sym, str) else sym
-                base_cast.update(cols)
-                if right_id and right_id in per_ingredient_cast:
-                    per_ingredient_cast[right_id].update(cols)
-
-            # Asymmetric join keys
-            if left_on:
-                cols = [left_on] if isinstance(left_on, str) else left_on
-                base_cast.update(cols)
-            if right_on and right_id and right_id in per_ingredient_cast:
-                cols = [right_on] if isinstance(right_on, str) else right_on
-                per_ingredient_cast[right_id].update(cols)
-
-        # Apply casts
-        normalised: dict = {}
-        for ds_id, lf in assembly_ingredients.items():
-            schema_names = set(lf.collect_schema().names())
-            cols_to_cast = per_ingredient_cast.get(ds_id, set())
-            # First ingredient (base) also gets base_cast cols
-            if ds_id == next(iter(assembly_ingredients)):
-                cols_to_cast = cols_to_cast | base_cast
-            cast_exprs = [
-                pl.col(col).cast(pl.String)
-                for col in cols_to_cast
-                if col in schema_names
-            ]
-            normalised[ds_id] = lf.with_columns(cast_exprs) if cast_exprs else lf
-        assembly_ingredients = normalised
-
         # A step that names an ingredient the join does not hold fails in the assembler; no step is skipped.
-        assembler = DataAssembler(assembly_ingredients)
+        assembler = DataAssembler(assembly_ingredients, recipe_id=data_analysis_recipe_id, join_id=collection_id)
         lf = assembler.assemble(steps)
 
         # ADR-089: the chained Tier 1 key (the resolved recipe with every included file, the data content and the engine

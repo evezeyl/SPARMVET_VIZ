@@ -114,44 +114,6 @@ def run_assembler_debug(data_analysis_recipe_path: str, data_dir_override: str =
         if not steps and steps_raw:
             print(f"  └── ⚠️  Warning: No tier1 steps resolved from step list.")
 
-        # Normalise join key dtypes across all ingredients before assembling.
-        # Mirrors orchestrator.py join dtype normalisation logic exactly.
-        per_ingredient_cast: dict = {ds_id: set() for ds_id in assembly_ingredients}
-        base_cast: set = set()
-
-        for step in steps:
-            right_id = step.get("right_ingredient")
-            sym = step.get("on")
-            left_on = step.get("left_on")
-            right_on = step.get("right_on")
-
-            if sym:
-                cols = [sym] if isinstance(sym, str) else sym
-                base_cast.update(cols)
-                if right_id and right_id in per_ingredient_cast:
-                    per_ingredient_cast[right_id].update(cols)
-
-            if left_on:
-                cols = [left_on] if isinstance(left_on, str) else left_on
-                base_cast.update(cols)
-            if right_on and right_id and right_id in per_ingredient_cast:
-                cols = [right_on] if isinstance(right_on, str) else right_on
-                per_ingredient_cast[right_id].update(cols)
-
-        normalised: dict = {}
-        for ds_id, lf in assembly_ingredients.items():
-            schema_names = set(lf.collect_schema().names())
-            cols_to_cast = per_ingredient_cast.get(ds_id, set())
-            if ds_id == next(iter(assembly_ingredients)):
-                cols_to_cast = cols_to_cast | base_cast
-            cast_exprs = [
-                pl.col(col).cast(pl.String)
-                for col in cols_to_cast
-                if col in schema_names
-            ]
-            normalised[ds_id] = lf.with_columns(cast_exprs) if cast_exprs else lf
-        assembly_ingredients = normalised
-
         # A step that names an ingredient the join does not hold fails in the assembler (no step is skipped).
         filtered_steps = steps
 
@@ -166,7 +128,7 @@ def run_assembler_debug(data_analysis_recipe_path: str, data_dir_override: str =
 
         print(f"  └── 🏗️  Assembling using step list: {len(filtered_steps)} steps.")
 
-        assembler = DataAssembler(assembly_ingredients)
+        assembler = DataAssembler(assembly_ingredients, recipe_id=Path(data_analysis_recipe_path).stem, join_id=assembly_id)
         consolidated_lf = assembler.assemble(filtered_steps)
         # the Tier 1 result, before the tier-2 steps and the contract
         consolidated_lf.collect().write_parquet(intermediate_parquet)

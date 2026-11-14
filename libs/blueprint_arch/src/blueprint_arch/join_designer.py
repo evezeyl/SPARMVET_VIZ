@@ -29,10 +29,11 @@ JOIN_HOW_OPTIONS = ["inner", "left", "outer", "semi", "anti", "cross"]
 def _normalise_dtype_family(dtype: str) -> str:
     """Map a polars dtype name to a coarse family for an advisory compatibility check.
 
-    The assembler casts join keys to String before joining (the safe common denominator),
-    so cross-family joins technically run; this family check is an honest *advisory* about
-    whether raw values are likely to align (e.g. Float64 vs Int64 produces '2022.0' vs
-    '2022' and silently fails to match), not a hard gate.
+    The assembler joins on the types the tables have and fails when the two sides of a key
+    differ (JOIN-KEY-TYPES-1). This family check is only an *advisory* about whether raw
+    values are likely to align (e.g. Float64 vs Int64 produces '2022.0' vs '2022'). It puts
+    String and Categorical in one family, so it does not report the difference the assembler
+    refuses.
     """
     d = (dtype or "").lower()
     if any(t in d for t in ("utf8", "str", "cat")):

@@ -9,7 +9,7 @@ import os
 from typing import Dict, List, Any
 import polars as pl
 from transformer.registry import get_action_function
-from utils.action_names import JOIN
+from utils.action_names import CAST, JOIN
 from utils.errors import TransformationError
 from utils.pipeline_error import PipelineError
 
@@ -20,12 +20,58 @@ class DataAssembler:
     into a final consolidated LazyFrame based on a relational step list.
     """
 
-    def __init__(self, ingredients: Dict[str, pl.LazyFrame]):
+    def __init__(self, ingredients: Dict[str, pl.LazyFrame], *, recipe_id: str, join_id: str):
         """
         Args:
              ingredients: Dictionary mapping dataset_ids to their wrangled LazyFrames.
+             recipe_id: The data analysis recipe being built (named in error messages).
+             join_id: The join being built (named in error messages).
         """
         self.ingredients = ingredients
+        self.recipe_id = recipe_id
+        self.join_id = join_id
+
+    @staticmethod
+    def _key_columns(value: Any) -> List[str]:
+        if value is None:
+            return []
+        return [value] if isinstance(value, str) else list(value)
+
+    def _check_join_key_types(self, step: Dict[str, Any], index: int, left: pl.LazyFrame, right: pl.LazyFrame) -> None:
+        """Fail when a join key has one type on the left and another on the right.
+
+        Eve 2026-11-14: a join keeps the types the tables have; a change of type is a decision written in the
+        recipe (input_fields or a polars_cast step), never done here. A key column that does not exist is left to
+        the join itself, which names the missing column.
+        """
+        left_keys = self._key_columns(step.get("on") or step.get("left_on"))
+        right_keys = self._key_columns(step.get("on") or step.get("right_on"))
+        left_schema, right_schema = left.collect_schema(), right.collect_schema()
+        right_id = step["right_ingredient"]
+        for left_col, right_col in zip(left_keys, right_keys):
+            if left_col not in left_schema or right_col not in right_schema:
+                continue
+            left_type, right_type = left_schema[left_col], right_schema[right_col]
+            if left_type == right_type:
+                continue
+            names = f"column '{left_col}'" if left_col == right_col else f"column '{left_col}' (left) and '{right_col}' (right)"
+            problem = (
+                f"The join key types differ in data analysis recipe '{self.recipe_id}', join '{self.join_id}', step {index} "
+                f"({step['action']} with '{right_id}'): {names} is {left_type} in the left table and {right_type} in '{right_id}'."
+            )
+            fix = (
+                f"Declare the same type for this field in input_fields of both tables, or add a {CAST} step before the join. "
+                "The engine does not change the type of a join key for you."
+            )
+            pe = PipelineError(
+                component="DataAssembler", problem=problem,
+                location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {index}: action='{step['action']}', right_ingredient='{right_id}'",
+                fix=fix, who="data_analysis_recipe_author", category="assembly", surface="plot_overlay", severity="error",
+                evidence={"left_column": left_col, "right_column": right_col, "left_type": str(left_type), "right_type": str(right_type)},
+                reference="recipe_format_spec.md 7.5",
+            )
+            print(pe.format())
+            raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
     @staticmethod
     def _canonical_steps(steps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -146,6 +192,9 @@ class DataAssembler:
                 # If first step is a join involving original backbone, skip redundant init
                 if action_name == JOIN and right_id == first_key:
                     continue
+
+            if action_name == JOIN and right_id:
+                self._check_join_key_types(step, i, consolidated_lf, self.ingredients[right_id])
 
             # Execute the action via the shared registry (ADR-018).
             # Wrap Polars and registry errors in PipelineError for structured diagnostics

@@ -64,7 +64,7 @@ def _run(action):
         ingredients = {name: ingestor.ingest(name, schema)[0] for name, schema in recipe["data_schemas"].items()}
         steps = next(iter(recipe["joins"].values()))["steps"]["tier1"]
         left = ingredients[action].collect()
-        return left, DataAssembler(ingredients).assemble(steps).collect(), [s["action"] for s in steps]
+        return left, DataAssembler(ingredients, recipe_id=action, join_id=next(iter(recipe['joins']))).assemble(steps).collect(), [s["action"] for s in steps]
     steps = recipe["wrangling"]["tier1"]
     before = ingestor.ingest(action, recipe)[0].collect()
     return before, DataWrangler().run(before.lazy(), steps).collect(), [s["action"] for s in steps]
