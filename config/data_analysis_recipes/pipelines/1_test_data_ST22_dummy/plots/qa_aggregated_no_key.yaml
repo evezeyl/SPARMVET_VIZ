@@ -1,9 +1,5 @@
 target_dataset: QA_aggregated_no_key
 title: "QA: samples per country and year (aggregated, no sample_id)"
-family: Comparison
-pattern: 1 Numeric, 2 Categorical
-difficulty: Simple
-description: Canary for the audit reach. The data of this plot is an aggregate with no sample_id column, so removing a sample by its ID cannot change it.
 mapping:
   x: country
   y: n_samples

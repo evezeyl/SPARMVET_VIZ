@@ -4,7 +4,9 @@ What run A does: adds spec_version and the engine lines; renames display_name, i
 turns every field type into its Polars name; writes the old sanitiser's settings (null_values, strip) into every schema;
 unwraps input_fields fragments. It edits the text, so every comment stays. Run B turns keep_columns and
 drop_columns into polars_select and polars_drop; run C removes final_contract and the schema output_fields (the
-columns become a polars_select, the display texts become labels).
+columns become a polars_select, the display texts become labels). Run D gives the recipes the strict form that the
+checker asks for: a label on every schema, join, group and plot (the text the app showed), description instead of the
+old info blocks, taxonomy on the plot entry, no wrapper line in a fragment.
 
 Without --apply nothing is written: the script lists what it would change. Safe to run twice.
 
@@ -18,6 +20,7 @@ from pathlib import Path
 
 from utils.contract_migration import migrate_contracts
 from utils.recipe_migration import migrate_recipe_file
+from utils.strict_form_migration import migrate_strict_form
 
 
 def string_columns_at(types, keys, prior_steps):
@@ -56,8 +59,8 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("paths", nargs="+", help="recipe files, or folders searched for *.yaml recipes (files with an id: line)")
     parser.add_argument("--apply", action="store_true", help="write the changes (default: only list them)")
-    parser.add_argument("--run", choices=["A", "B", "C"], default="A",
-                        help="A: format, types, missing values, action names (default). B: keep_columns and drop_columns to polars_select and polars_drop. C: final_contract and the schema output_fields removed (a polars_select as the last step of tier1, labels)")
+    parser.add_argument("--run", choices=["A", "B", "C", "D"], default="A",
+                        help="A: format, types, missing values, action names (default). B: keep_columns and drop_columns to polars_select and polars_drop. C: final_contract and the schema output_fields removed (a polars_select as the last step of tier1, labels). D: the strict form of the checker (a label everywhere, the old info blocks, the taxonomy keys of a plot spec, wrapper lines in fragments)")
     args = parser.parse_args(argv)
     files = []
     for item in map(Path, args.paths):
@@ -68,6 +71,8 @@ def main(argv=None) -> int:
             continue
         if args.run == "C":
             report = migrate_contracts(path, apply=args.apply)
+        elif args.run == "D":
+            report = migrate_strict_form(path, apply=args.apply)
         else:
             report = migrate_recipe_file(path, apply=args.apply, run=args.run, string_columns_at=string_columns_at)
         for line in report.lines:

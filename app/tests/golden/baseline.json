@@ -858,7 +858,7 @@
   },
   "figshare_integration": {
    "plots": {
-    "plot_A_phenotype_bar": {
+    "plot_a_phenotype_bar": {
      "columns": [
       "sample_id:String",
       "host_animal_species:Categorical",
@@ -878,7 +878,7 @@
      "rows": 203146,
      "sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
     },
-    "plot_B_genotype_bar": {
+    "plot_b_genotype_bar": {
      "columns": [
       "sample_id:String",
       "host_animal_species:Categorical",
@@ -898,7 +898,7 @@
      "rows": 203146,
      "sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
     },
-    "plot_C_resistance_class": {
+    "plot_c_resistance_class": {
      "columns": [
       "sample_id:String",
       "host_animal_species:Categorical",

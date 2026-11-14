@@ -5,45 +5,44 @@
 # consumed_by: config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml, libs/transformer/tests/debug_assembler.py
 # doc: .claude/rules/rules_data_analysis_recipe_structure.md#7
 # @end_deps
-steps:
-  tier1:
-    # Step 1: Clean predicted_phenotype into normalized slug for multi-resistance detection
-    # (Must run before join — column is in amr_data, the base ingredient)
-    - action: polars_with_columns
-      named_exprs:
-        predicted_phenotype_clean: pl.col('predicted_phenotype').cast(pl.String).str.strip_chars().str.to_lowercase()
+tier1:
+  # Step 1: Clean predicted_phenotype into normalized slug for multi-resistance detection
+  # (Must run before join — column is in amr_data, the base ingredient)
+  - action: polars_with_columns
+    named_exprs:
+      predicted_phenotype_clean: pl.col('predicted_phenotype').cast(pl.String).str.strip_chars().str.to_lowercase()
 
-    # Step 2: Join metadata (Source, Year, Country) on sample_id
-    # Note: 'on' is quoted — bare 'on' is a YAML boolean True (rules_data_analysis_recipe_structure.md §7)
-    - action: polars_join
-      right_ingredient: metadata_schema
-      'on': [sample_id]
-      how: inner
-      maintain_order: left_right
+  # Step 2: Join metadata (Source, Year, Country) on sample_id
+  # Note: 'on' is quoted — bare 'on' is a YAML boolean True (rules_data_analysis_recipe_structure.md §7)
+  - action: polars_join
+    right_ingredient: metadata_schema
+    'on': [sample_id]
+    how: inner
+    maintain_order: left_right
 
-    # Step 3: Cast Year: float → Int64 → String for clean discrete axis ("2022" not "2022.0")
-    # Two-step cast required because TSV infers Year as float; String cast of float gives "2022.0"
-    - action: polars_cast
-      columns: [Year]
-      dtype: Int64
+  # Step 3: Cast Year: float → Int64 → String for clean discrete axis ("2022" not "2022.0")
+  # Two-step cast required because TSV infers Year as float; String cast of float gives "2022.0"
+  - action: polars_cast
+    columns: [Year]
+    dtype: Int64
 
-    - action: polars_cast
-      columns: [Year]
-      dtype: String
+  - action: polars_cast
+    columns: [Year]
+    dtype: String
 
-    # Step 4: Compute multi-resistance boolean flag (sample carries >1 distinct resistance class)
-    - action: polars_with_columns
-      named_exprs:
-        is_multi_resistant_bool: pl.col('predicted_phenotype_clean').n_unique().over('sample_id') > 1
+  # Step 4: Compute multi-resistance boolean flag (sample carries >1 distinct resistance class)
+  - action: polars_with_columns
+    named_exprs:
+      is_multi_resistant_bool: pl.col('predicted_phenotype_clean').n_unique().over('sample_id') > 1
 
-    # Step 5: Convert boolean flag to Yes/No string for display
-    - action: polars_with_columns
-      named_exprs:
-        Multiresistant: pl.when(pl.col('is_multi_resistant_bool')).then(pl.lit('Yes')).otherwise(pl.lit('No'))
+  # Step 5: Convert boolean flag to Yes/No string for display
+  - action: polars_with_columns
+    named_exprs:
+      Multiresistant: pl.when(pl.col('is_multi_resistant_bool')).then(pl.lit('Yes')).otherwise(pl.lit('No'))
 
-    # Step 6: Sort for reproducible output ordering
-    - action: polars_sort
-      by: [Year, Source, Country]
-      maintain_order: true
-    - action: polars_select
-      exprs: ["Year", "Source", "Country", "gene", "predicted_phenotype_clean", "sample_id", "accession", "Multiresistant"]
+  # Step 6: Sort for reproducible output ordering
+  - action: polars_sort
+    by: [Year, Source, Country]
+    maintain_order: true
+  - action: polars_select
+    exprs: ["Year", "Source", "Country", "gene", "predicted_phenotype_clean", "sample_id", "accession", "Multiresistant"]

@@ -20,6 +20,7 @@ info:
 # Fragment files: figshare_integration/{input_fields,wrangling,output_fields}/
 data_schemas:
   fg_metadata:
+    label: "fg metadata"
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_metadata.tsv
@@ -29,6 +30,7 @@ data_schemas:
     wrangling: !include 'figshare_integration/wrangling/fg_metadata_wrangling.yaml'
 
   fg_phenotypes:
+    label: "fg phenotypes"
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_phenotypes.tsv
@@ -38,6 +40,7 @@ data_schemas:
     wrangling: !include 'figshare_integration/wrangling/fg_phenotypes_wrangling.yaml'
 
   fg_genotypes:
+    label: "fg genotypes"
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_genotypes.tsv
@@ -49,6 +52,7 @@ data_schemas:
 # ── Assembly Data Analysis Recipes ────────────────────────────────────────────────────────
 joins:
   figshare_triple_join:
+    label: "figshare triple join"
     description: '3-way left join: metadata (anchor) -> phenotypes -> genotypes.
       Phenotypes expand rows per antibiotic (MIC). Genotypes expand rows per detected
       gene. The join is intentionally "long" to enable faceted visualisation.'
@@ -62,14 +66,21 @@ joins:
 # Plot specs: see figshare_integration/plots/
 analysis_groups:
   AMR Integration:
+    label: "🧬 AMR Phenotype × Genotype × Host Integration"
     description: 🧬 AMR Phenotype × Genotype × Host Integration
     plots:
-      plot_A_phenotype_bar:
-        info: Phenotypic resistance distribution per antibiotic.
-        spec: !include 'figshare_integration/plots/plot_A_phenotype_bar.yaml'
-      plot_B_genotype_bar:
-        info: Resistance gene families distribution by host animal.
-        spec: !include 'figshare_integration/plots/plot_B_genotype_bar.yaml'
-      plot_C_resistance_class:
-        info: Resistance class distribution by host animal.
-        spec: !include 'figshare_integration/plots/plot_C_resistance_class.yaml'
+      plot_a_phenotype_bar:
+        label: "Plot A Phenotype Bar"
+        taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
+        description: "Phenotypic resistance distribution per antibiotic. Count of phenotype (R/S/I) per antibiotic (mic_id)."
+        spec: !include 'figshare_integration/plots/plot_a_phenotype_bar.yaml'
+      plot_b_genotype_bar:
+        label: "Plot B Genotype Bar"
+        taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
+        description: "Resistance gene families distribution by host animal. Count of gene_name_family per host species."
+        spec: !include 'figshare_integration/plots/plot_b_genotype_bar.yaml'
+      plot_c_resistance_class:
+        label: "Plot C Resistance Class"
+        taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
+        description: "Resistance class distribution by host animal. Count of resistance_class faceted by host_animal_common."
+        spec: !include 'figshare_integration/plots/plot_c_resistance_class.yaml'

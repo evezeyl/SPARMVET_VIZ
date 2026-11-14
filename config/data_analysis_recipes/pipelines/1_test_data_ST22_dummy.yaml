@@ -15,9 +15,8 @@ info:
 # Fragment files: 1_test_data_ST22_dummy/{input_fields,wrangling,output_fields}/
 data_schemas:
   Summary:
-    info:
-      category: Globally pipeline Summary
-      sub_category: Pipeline Summary
+    label: "Summary"
+    description: "Pipeline Summary (Globally pipeline Summary)"
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Summary_20260307_105756.tsv
@@ -27,6 +26,7 @@ data_schemas:
     wrangling: !include '1_test_data_ST22_dummy/wrangling/Summary_wrangling.yaml'
 
   Summary_quality:
+    label: "Summary quality"
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Summary_20260307_105756.tsv
@@ -38,23 +38,20 @@ data_schemas:
       tier2: []
 
   Quality_metrics:
-    info:
-      category: Quality Control
-      sub_category: Summary Quality metrics Reads and Assembly
+    label: "Quality metrics"
+    description: "Summary Quality metrics Reads and Assembly (Quality Control)"
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Quality_metrics_20260307_105756.tsv
     null_values: []
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Quality_metrics_input_fields.yaml'
-    wrangling: []
+    wrangling: {tier1: []}
 
   Detailed_summary:
-    info:
-      category: Gene detection
-      sub_category: AMR gene / predicted phenotype detection  - summary
-      comments: Filtered by % identity > 90 and % overlap > 85 Reason and legnth ratio
-        > 0.8 assume true values
+    label: "Detailed summary"
+    description: "AMR gene / predicted phenotype detection  - summary (Gene detection)"
+    comment: "Filtered by % identity > 90 and % overlap > 85 Reason and legnth ratio > 0.8 assume true values"
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Detailed_Summary_20260307_105756.tsv
@@ -64,9 +61,8 @@ data_schemas:
     wrangling: !include '1_test_data_ST22_dummy/wrangling/Detailed_summary_wrangling.yaml'
 
   FastP:
-    info:
-      category: Quality Control
-      sub_category: Reads Quality
+    label: "FastP"
+    description: "Reads Quality (Quality Control)"
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_FastP_20260307_105756.tsv
@@ -76,9 +72,8 @@ data_schemas:
     wrangling: !include '1_test_data_ST22_dummy/wrangling/FastP_wrangling.yaml'
 
   Quast:
-    info:
-      category: Quality Control
-      sub_category: Assembly Quality
+    label: "Quast"
+    description: "Assembly Quality (Quality Control)"
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Quast_20260307_105756.tsv
@@ -88,9 +83,8 @@ data_schemas:
     wrangling: !include '1_test_data_ST22_dummy/wrangling/Quast_wrangling.yaml'
 
   Bracken:
-    info:
-      category: Quality Control
-      sub_category: Reads Taxonomic classification
+    label: "Bracken"
+    description: "Reads Taxonomic classification (Quality Control)"
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Bracken_20260307_105756.tsv
@@ -100,9 +94,8 @@ data_schemas:
     wrangling: !include '1_test_data_ST22_dummy/wrangling/Bracken_wrangling.yaml'
 
   ResFinder:
-    info:
-      category: Gene detection
-      sub_category: AMR gene detection
+    label: "ResFinder"
+    description: "AMR gene detection (Gene detection)"
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_ResFinder_20260307_105756.tsv
@@ -112,9 +105,8 @@ data_schemas:
     wrangling: !include '1_test_data_ST22_dummy/wrangling/ResFinder_wrangling.yaml'
 
   MLST:
-    info:
-      category: Strain Classification
-      sub_category: Multilocus Typing
+    label: "MLST"
+    description: "Multilocus Typing (Strain Classification)"
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_MLST_results_20260307_105756.tsv
@@ -126,9 +118,8 @@ data_schemas:
 # ── Additional Datasets ───────────────────────────────────────────────────────
 additional_datasets_schemas:
   VirulenceFinder:
-    info:
-      category: Gene detection
-      sub_category: VirulenceFinder
+    label: "VirulenceFinder"
+    description: "VirulenceFinder (Gene detection)"
     source:
       type: local_tsv
       path: ./assets/test_data/2_VIGAS-P_ST22_dummy/test_data_VIGAS_VirulenceFinder_20260307_105756.tsv
@@ -138,10 +129,9 @@ additional_datasets_schemas:
     wrangling: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
 
   APEC_STEC_virulence_genes:
-    info:
-      category: Gene detection
-      sub_category: VirulenceFinder Reference dataset
-      comments: Virulence types of interest for STEC
+    label: "APEC STEC virulence genes"
+    description: "VirulenceFinder Reference dataset (Gene detection)"
+    comment: "Virulence types of interest for STEC"
     source:
       type: local_tsv
       path: ./assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC.tsv
@@ -154,9 +144,8 @@ additional_datasets_schemas:
 
 # ── Metadata Schema ───────────────────────────────────────────────────────────
 metadata_schema:
-  info:
-    category: Metadata
-    sub_category: Metadata
+  label: "metadata"
+  description: "Metadata (Metadata)"
   source:
     type: local_tsv
     path: ./assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv
@@ -170,36 +159,42 @@ metadata_schema:
 # Complex assemblies (ST22_Anchor, AR1) also have final_contract in output_fields/.
 joins:
   FastP_with_metadata:
+    label: "FastP with metadata"
     ingredients:
     - dataset_id: FastP
     - dataset_id: metadata_schema
     steps: !include '1_test_data_ST22_dummy/wrangling/FastP_Metadata_wrangling.yaml'
 
   Quast_with_metadata:
+    label: "Quast with metadata"
     ingredients:
     - dataset_id: Quast
     - dataset_id: metadata_schema
     steps: !include '1_test_data_ST22_dummy/wrangling/Quast_Metadata_wrangling.yaml'
 
   Bracken_with_metadata:
+    label: "Bracken with metadata"
     ingredients:
     - dataset_id: Bracken
     - dataset_id: metadata_schema
     steps: !include '1_test_data_ST22_dummy/wrangling/Bracken_Metadata_wrangling.yaml'
 
   ResFinder_with_metadata:
+    label: "ResFinder with metadata"
     ingredients:
     - dataset_id: ResFinder
     - dataset_id: metadata_schema
     steps: !include '1_test_data_ST22_dummy/wrangling/ResFinder_Metadata_wrangling.yaml'
 
   MLST_with_metadata:
+    label: "MLST with metadata"
     ingredients:
     - dataset_id: MLST
     - dataset_id: metadata_schema
     steps: !include '1_test_data_ST22_dummy/wrangling/MLST_Metadata_wrangling.yaml'
 
   QC_Reads_Anchor:
+    label: "QC Reads Anchor"
     ingredients:
     - dataset_id: FastP
     - dataset_id: Quast
@@ -208,16 +203,15 @@ joins:
     steps: !include '1_test_data_ST22_dummy/wrangling/QC_Reads_Anchor_wrangling.yaml'
 
   Summary_phenotype_length_fragmentation:
-    info: 'Demo: Assembly to prepare plot attempting to link some predicted phenotype
-      categories to some quality metrics. in relation to genome length, and fragmentation
-      (higher number of contigs and lower N50 value)'
+    label: "Summary phenotype length fragmentation"
+    description: "Demo: Assembly to prepare plot attempting to link some predicted phenotype categories to some quality metrics. in relation to genome length, and fragmentation (higher number of contigs and lower N50 value)"
     ingredients:
     - dataset_id: Summary
     - dataset_id: Summary_quality
     steps: !include '1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly.yaml'
-    output_fields: !include '1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly_output_fields.yaml'
 
   ST22_Anchor:
+    label: "ST22 Anchor"
     description: Primary joined dataset for ST22 Dummy analysis.
     ingredients:
     - dataset_id: metadata_schema
@@ -230,6 +224,7 @@ joins:
     labels: {"sample_id": "Sample ID", "source": "Biological Source", "year": "Collection Year", "country": "Origin Country", "sequence_type": "MLST Sequence Type", "serotype": "Serotype", "Selected_Virulence_Genes": "Gene (VirulenceFinder)", "VF_protein": "Protein (VirulenceFinder)", "gene": "AMR Gene", "status": "Phenotype Status", "phenotype": "AMR Class / Phenotype"}
 
   AR1_MLST_Serotype_Virulence:
+    label: "AR1 MLST Serotype Virulence"
     description: Production-grade Sample-to-Gene Mapping (Abromics Pilot).
     ingredients:
     - dataset_id: MLST
@@ -241,6 +236,7 @@ joins:
 
   # QA canaries: one collection per failure mode, expected numbers are in `wrangling/QA_*.yaml` and `plots/qa_*.yaml`
   QA_AMR_per_sample:
+    label: "QA AMR per sample"
     description: QA canary - samples without an AMR gene must stay (long T1, one row per sample in T2).
     ingredients:
     - dataset_id: metadata_schema
@@ -248,24 +244,28 @@ joins:
     steps: !include '1_test_data_ST22_dummy/wrangling/QA_AMR_per_sample.yaml'
 
   QA_ST_with_NA:
+    label: "QA ST with NA"
     description: QA canary - a missing sequence type must stay visible as missing.
     ingredients:
     - dataset_id: Summary_quality
     steps: !include '1_test_data_ST22_dummy/wrangling/QA_ST_with_NA.yaml'
 
   QA_year_types:
+    label: "QA year types"
     description: QA canary - year as a number and as a label without ".0".
     ingredients:
     - dataset_id: metadata_schema
     steps: !include '1_test_data_ST22_dummy/wrangling/QA_year_types.yaml'
 
   QA_L50_integer:
+    label: "QA L50 integer"
     description: QA canary - an integer column for threshold filters.
     ingredients:
     - dataset_id: Quast
     steps: !include '1_test_data_ST22_dummy/wrangling/QA_L50_integer.yaml'
 
   QA_fanout_exhibit:
+    label: "QA fanout exhibit"
     description: QA canary, EXHIBIT of a known defect - two long tables joined on one key (issue #68).
     ingredients:
     - dataset_id: metadata_schema
@@ -274,12 +274,14 @@ joins:
     steps: !include '1_test_data_ST22_dummy/wrangling/QA_fanout_exhibit.yaml'
 
   QA_aggregated_no_key:
+    label: "QA aggregated no key"
     description: QA canary - T2 is an aggregate without sample_id, so a sample cannot be removed from it by its ID (issue #60).
     ingredients:
     - dataset_id: metadata_schema
     steps: !include '1_test_data_ST22_dummy/wrangling/QA_aggregated_no_key.yaml'
 
   QA_population_zscore:
+    label: "QA population zscore"
     description: QA canary - a z-score across samples, so a sample removed before the step changes every other sample (audit placement rule).
     ingredients:
     - dataset_id: metadata_schema
@@ -290,39 +292,57 @@ joins:
 # Plot specs: see plots/ for each spec file.
 analysis_groups:
   Quality Control:
+    label: "📊 Quality Control"
     description: 📊 Quality Control
     plots:
       qc_reads_horizontal_barplot:
-        info: Provides a distribution of total reads per sample by taxonomy proportion.
+        label: "Qc Reads Horizontal Barplot"
+        taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Intermediate"}
+        description: "Provides a distribution of total reads per sample by taxonomy proportion. Shows total reads (FastP) colored by the proportion of the top-ranking taxon (Bracken)."
         spec: !include '1_test_data_ST22_dummy/plots/FastP_reads_horizontal_barplot.yaml'
       assembly_quality_dotplot:
-        info: Provides a distribution of assembly quality metrics per sample.
+        label: "Assembly Quality Dotplot"
+        taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Intermediate"}
+        description: "Provides a distribution of assembly quality metrics per sample. Facetted boxplot to identify assembly outliers across metrics (N50, Length, etc.)."
         spec: !include '1_test_data_ST22_dummy/plots/Quast_assembly_quality_barplot.yaml'
 
   Curiosity:
+    label: "❓ Curiosity plots"
     description: ❓ Curiosity plots
     plots:
       phenotype_genome_length_fragmentation:
-        info: Provides a distribution of genome length per sample by phenotype.
+        label: "Phenotype Genome Length Fragmentation"
+        description: "Provides a distribution of genome length per sample by phenotype."
         spec: !include '1_test_data_ST22_dummy/plots/phenotype_genome_length_dotplot.yaml'
 
   Results:
+    label: "💊 AMR and ☠️ Virulence"
     description: 💊 AMR and ☠️ Virulence
     plots:
       amr_heatmap:
-        info: Heatmap showing AMR gene presence across samples.
+        label: "Amr Heatmap"
+        taxonomy: {"family": "Correlation", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Intermediate"}
+        description: "Heatmap showing AMR gene presence across samples."
         spec: !include '1_test_data_ST22_dummy/plots/ResFinder_genes_heatmap.yaml'
       virulence_bar:
-        info: Bar chart counting selected virulence genes.
+        label: "Virulence Bar"
+        taxonomy: {"family": "Ranking", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Intermediate"}
+        description: "Bar chart counting selected virulence genes."
         spec: !include '1_test_data_ST22_dummy/plots/VirulenceFinder_counts_bar.yaml'
       mlst_bar:
-        info: Bar chart showing frequency of sequence types by territory.
+        label: "Mlst Bar"
+        taxonomy: {"family": "Ranking", "pattern": "2 Categorical", "difficulty": "Simple"}
+        description: "Bar chart showing frequency of sequence types by territory. Bar chart showing the frequency of MLST sequence types, filled by the origin country."
         spec: !include '1_test_data_ST22_dummy/plots/MLST_counts_bar.yaml'
       year_distribution:
-        info: "T1/T2 tier-toggle test: T1 shows all years, T2 filters to 2023-2025 only. Missing bars prove the toggle works."
+        label: "Year Distribution"
+        taxonomy: {"family": "Ranking", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
+        description: "T1/T2 tier-toggle test: T1 shows all years, T2 filters to 2023-2025 only. Missing bars prove the toggle works. Use this plot to verify T1↔T2 toggle. T2 drops rows outside 2023-2025 — earlier years disappear."
         spec: !include '1_test_data_ST22_dummy/plots/year_distribution.yaml'
       virulence_variants:
-        info: Integration plot showing AMR + Virulence + MLST.
+        label: "Virulence Variants"
+        taxonomy: {"family": "Correlation", "pattern": "2 Categorical", "difficulty": "Advanced"}
+        description: "Integration plot showing AMR + Virulence + MLST. Heatmap showing the distribution of whitelisted virulence genes, facetted by the MLST sequence type."
         spec: !include '1_test_data_ST22_dummy/plots/integration_plot.yaml'
 
   Cat 🐱:
@@ -331,36 +351,53 @@ analysis_groups:
     plots:
       miaou:
         label: "Miaou 🐈"
-        info: Miaou! Distribution of assembly metrics across sources — the boss's
-          favourite shape.
+        taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Intermediate"}
+        description: "Miaou! Distribution of assembly metrics across sources — the boss's favourite shape. Violin plot showing the distribution of n50, total_length, and largest_contig per source, facetted by metric. Wide bellies = wide spread, narrow tails = consistent values."
         spec: !include '1_test_data_ST22_dummy/plots/miaou.yaml'
 
   QA Canaries:
+    label: "QA canaries (not for publication): each plot isolates one failure mode; the expected numbers are in its title"
     description: "QA canaries (not for publication): each plot isolates one failure mode; the expected numbers are in its title"
     plots:
       qa_amr_genes_per_sample:
-        info: Samples without an AMR gene must stay (long T1, one row per sample in T2).
+        label: "Qa Amr Genes Per Sample"
+        taxonomy: {"family": "Distribution", "pattern": "1 Numeric", "difficulty": "Simple"}
+        description: "Samples without an AMR gene must stay (long T1, one row per sample in T2). Canary for samples that vanish from a long table. A sample without any AMR gene must appear at 0, not disappear. T1 is long (74 rows), T2 has one row per sample (42)."
         spec: !include '1_test_data_ST22_dummy/plots/qa_amr_genes_per_sample.yaml'
       qa_sequence_type_missing:
-        info: A missing sequence type must stay visible as missing.
+        label: "Qa Sequence Type Missing"
+        taxonomy: {"family": "Ranking", "pattern": "1 Categorical", "difficulty": "Simple"}
+        description: "A missing sequence type must stay visible as missing. Canary for missing values. The 2 samples without a sequence type must be visible as missing, not dropped and not filled."
         spec: !include '1_test_data_ST22_dummy/plots/qa_sequence_type_missing.yaml'
       qa_year_label:
-        info: The year label has no ".0"; the numeric year stays numeric.
+        label: "Qa Year Label"
+        taxonomy: {"family": "Ranking", "pattern": "1 Categorical", "difficulty": "Simple"}
+        description: "The year label has no \".0\"; the numeric year stays numeric. Canary for types. The text label of the year has no \".0\"; the numeric year column stays numeric for range filters."
         spec: !include '1_test_data_ST22_dummy/plots/qa_year_label.yaml'
       qa_l50_integer:
-        info: Integer column for threshold filters (L50 >= 8.5 must keep 9, not 8).
+        label: "Qa L50 Integer"
+        taxonomy: {"family": "Distribution", "pattern": "1 Numeric", "difficulty": "Simple"}
+        description: "Integer column for threshold filters (L50 >= 8.5 must keep 9, not 8). Canary for thresholds on an integer column. A filter \"L50 >= 8.5\" must remove the bar at 8 and keep 9; \"L50 < 8.5\" must keep 8."
         spec: !include '1_test_data_ST22_dummy/plots/qa_l50_integer.yaml'
       qa_facet_by_mapping:
-        info: facet_by written in mapping must give 3 panels.
+        label: "Qa Facet By Mapping"
+        taxonomy: {"family": "Ranking", "pattern": "1 Categorical, 1 Categorical", "difficulty": "Simple"}
+        description: "facet_by written in mapping must give 3 panels. Canary for the documented spelling of facets. The panels must exist; if the plot has a single panel, facet_by in mapping is being ignored (issue"
         spec: !include '1_test_data_ST22_dummy/plots/qa_facet_by_mapping.yaml'
       qa_fanout_rows_per_sample:
-        info: EXHIBIT of a known defect (issue 68) - rows are inflated on purpose.
+        label: "Qa Fanout Rows Per Sample"
+        taxonomy: {"family": "Ranking", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
+        description: "EXHIBIT of a known defect (issue 68) - rows are inflated on purpose. Exhibit of a known defect. Each sample has as many rows as AMR genes times virulence genes. The many-to-many join check (issue"
         spec: !include '1_test_data_ST22_dummy/plots/qa_fanout_rows_per_sample.yaml'
       qa_aggregated_no_key:
-        info: Data of this plot is an aggregate with no sample_id column (issue 60).
+        label: "Qa Aggregated No Key"
+        taxonomy: {"family": "Comparison", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Simple"}
+        description: "Data of this plot is an aggregate with no sample_id column (issue 60). Canary for the audit reach. The data of this plot is an aggregate with no sample_id column, so removing a sample by its ID cannot change it."
         spec: !include '1_test_data_ST22_dummy/plots/qa_aggregated_no_key.yaml'
       qa_population_zscore:
-        info: A z-score across all samples, the case where the place of a removal changes the numbers of the other samples.
+        label: "Qa Population Zscore"
+        taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
+        description: "A z-score across all samples, the case where the place of a removal changes the numbers of the other samples. Canary for the audit placement rule. The z-score of each sample is computed across all 42 samples, so removing a sample before this step changes every other value."
         spec: !include '1_test_data_ST22_dummy/plots/qa_population_zscore.yaml'
 
 plot_defaults:

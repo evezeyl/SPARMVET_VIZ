@@ -13,6 +13,7 @@ info:
 
 data_schemas:
   Genes:
+    label: "Genes"
     source:
       type: local_tsv
       path: ./assets/test_data/retest/genes_renamed_header.tsv   # EDIT HERE (test 2): use genes.tsv, reload, it works
@@ -28,6 +29,7 @@ data_schemas:
 
 joins:
   Genes_joined:
+    label: "Genes joined"
     ingredients:
       - dataset_id: Genes
     steps:
