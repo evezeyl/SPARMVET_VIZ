@@ -135,6 +135,8 @@
 
 ## ADR-013: Dual-Validation Manifests
 
+> **SUPERSEDED (ADR-100, decided 2026-11-13, DEC23 and DEC24, `recipe_format_spec.md` section 2.1):** `input_fields` is now the typed list of the columns that are read (strict import); `output_fields` and `final_contract` are removed and refused; the published columns are the last tier-1 step (`polars_select` or `polars_drop`). The text below is history.
+
 **Status:** ENFORCED
 **Context:** To maintain robust data lineage between raw ingestion and final presentation, we must track schema state at two distinct points.
 **Decision:** Manifests MUST explicitly define two schema states:
@@ -145,6 +147,8 @@
 - **`input_fields`** -> **`wrangling`** -> **`output_fields`**.
 
 ## ADR-014: Identity Logic for Wrangling
+
+> **SUPERSEDED (ADR-100, decided 2026-11-13, DEC23 and DEC45; `recipe_format_spec.md` 7.3 and 7.5):** a missing `wrangling`, `wrangling: []` and a flat list are refused (check S06); an empty tier list (`tier1: []`) means "equal to the previous node"; `input_fields: {}` means every column of the file is read; `output_fields` is gone, so its identity rule is gone. The text below is history.
 
 **Status:** ENFORCED
 **Context:** Some reference datasets (e.g., APEC Virulence) should be imported "as-is" without transformations or column filtering.
@@ -704,6 +708,8 @@ The current Mermaid.js + svg-pan-zoom stack works but has limitations:
 - **Resilience:** The `DataAssembler` now uses `isinstance(k, str)` before calling `startswith("__")`.
 - **Selector Handling:** Both `DataAssembler` and `DataWrangler` now explicitly check for `rule.get(True)` when resolving column selectors like `on`, `source`, or `columns`.
 - **Hygiene:** Manifests SHOULD quote `"on"`, but the codebase MUST handle unquoted variants to ensure stability across diverse YAML loaders and human error.
+
+> **SUPERSEDED for the point above (ADR-100, decided 2026-11-13, DEC02 "unknown keys fail, no compatibility default"; check T07, `recipe_format_spec.md`:590):** an unquoted `on` is refused by the checker with the fix; the code no longer has to accept it. Not fully built: `ConfigManager` still repairs it (`config_loader.py`, ADR-100 point 3). The defensive `isinstance` checks above stay.
 
 ---
 
@@ -1282,6 +1288,8 @@ The "All except" choice captures the justification-plot case directly without re
 ---
 
 ## ADR-050: Orchestrator Three-Path Materialization & Join-Key Normalisation (2026-04-30)
+
+> **SUPERSEDED in part (ADR-102, decided by Eve 2026-11-14, `tasks.md` JOIN-KEY-TYPES-1, built `bddaf76a`):** the section "Join key normalisation" and the rationale "`String` cast before join is the safe common denominator" no longer hold: a join keeps the types the recipe declares, and differing types fail with a message. Path C ("legacy fallback") and "all schemas as ingredients" are listed as silent paths to remove (`recipe_format_spec.md` section 16, J04, issue #76; not built). Path A, Path B and the ordering law stay.
 
 **Status:** IMPLEMENTED — `app/modules/orchestrator.py`, discovered and fixed in session 7.
 
@@ -4219,6 +4227,7 @@ separate "Compare T2 vs T3" switch (visible only in My view) split the plots in 
 
 > **To be amended by ADR-099 (not yet built):** the original cache keeps these rules; a separate audit cache with chained keys is added next to it (key = hash of the upstream key and the operations that will run, stored in the file).
 > **Amended by ADR-099 point 16 (Eve, 2026-11-12, not yet built):** a key is a **series of labelled parts** joined in execution order, not a hash of hashes: `E . rC . dC . [a1] . [s2] . [a2] . [s3] . [a3]`, 128 bits per part, an empty part is left out (T3 = T2 = T1); the T1 key is per collection with precise parts from the recipe graph (point 2 of the decision below stays fail-safe for a collection whose inputs cannot be listed); T3 and audit nodes have keys; `data_batch_hash` stays the full content hashed once per session (point 8, no stat cache; later maybe a pre-hash when new data arrives); the plot input key of the table below is dropped (never built); the older `decision_hash` is retired. Model: `.claude/design/home_evidence/home_hash_model_2026-11-12.md`, diagrams `DM-KEYS*`.
+> **Correction (2026-11-15, ADR-SYNC-1):** the banner above cites ADR-099 point 16, which does not hold this text. The series-of-parts model is recorded in **ADR-101** (decided 2026-11-12). It supersedes decision points 1 and 2 below and the "key = hash of the upstream key and the operations" wording of the first banner; points 3 to 7 stay.
 
 **Status:** ACCEPTED (2026-11-05, confirmed by @evezeyl). Authority: @dasharch, decided with @evezeyl after a verified bug (fork issues evezeyl/SPARMVET_VIZ#9 and #10).
 **Extends:** ADR-024 (tiers), the reproducibility hash schema (`docs/foundations/reproducibility_hash_schema.qmd`), ADR-031 (decision hash in Parquet metadata), ADR-088 point 6.
@@ -5080,3 +5089,77 @@ practice (declare only the ingredients a collection uses) goes into the docs, an
 **Open.** Wording of the reach options and kinds (to test with a user); manual key mapping and secondary keys
 (later); where the project overview opens; what stays of the existing right panel; the importer's verification legs
 with levels 0-2.
+
+
+## ADR-100: Recipe format version 1 (decided 2026-11-12 to 2026-11-14)
+
+**Status:** DECIDED by @evezeyl, decision by decision (DEC01 to DEC49, each dated in `.claude/design/recipe_format_spec.md` section 2.1). Recorded here on 2026-11-15 (ADR-SYNC-1) from the draft `.claude/design/adr_100_recipe_format_1_draft.md`, which keeps the per-item build table (checked against the code at `27f7a2e3`; not re-checked here). Eve reads this wording. Mostly BUILT on `feat/recipe-format-1`; items NOT BUILT are named below.
+**Supersedes:** ADR-013 and ADR-014 (DEC23, DEC24, DEC45); the last point of ADR-042 (an unquoted `on` is refused, DEC02 and check T07).
+**Amends:** ADR-090 points 1 and 3 (DEC34: order rules are required parameters; the new wording is in the draft, section "ADR-090, proposed new wording"); ADR-001 and ADR-004 (the `columns` rule, DEC14, DEC15, DEC32); ADR-041 point 1 (`output_fields` is gone; the rest is confirmed by DEC08); ADR-046 (`final_contract`); ADR-037 and ADR-063 (gallery taxonomy, DEC21, DEC47, DEC48); ADR-094 (one checker, DEC03); ADR-099 point 16(g) (unknown keys fail, DEC02).
+**Consistent with:** ADR-041 (containers), ADR-099 point 16 (development rules: correct a wrong recipe, no shim).
+
+**Context.** A recipe could be wrong without anyone knowing: the loader tolerated old keys and forms, unknown keys were ignored, actions had hidden defaults (missing values dropped, keys put first, the text `NA` read as missing), four type lists disagreed, and `final_contract` was a second hidden column selection. Eve's rule (spec, 2026-11-13): the recipe describes the science; what it specifies must be done; nothing may be hidden.
+
+**Decision.**
+1. **Scope and version.** Every recipe is in format 1, in the app and in the tests (DEC01). `spec_version: 1` is required; another version is refused and the message names the migration tool (DEC04). `data_engine: python-polars` and `plot_engine: python-plotnine` are required; an unknown engine fails (DEC05; `home_audit_steps.md` 5a point 21, 2026-11-12).
+2. **Strict file shape.** Unknown keys fail; old names are refused at once and the message names the new one; no compatibility default (DEC02). Containers follow ADR-041, a wrong form is refused with the corrected text (DEC08). `label` on every element, a missing `description` is advice only (DEC06). A `comment` key, `#` comments kept by every tool (DEC07). Schema-level `info`, `category`, `sub_category` dropped (DEC20). `is_primary_key` becomes `is_entity_key` (DEC13).
+3. **One checker** `check_recipe` in `libs/utils` for HOME, Blueprint, importer, gallery, scripts and tests, with profiles `run`, `build`, `gallery`, `audit` (DEC03, DEC18). HOME refuses a failing recipe; Blueprint reports and never blocks building (`home_audit_steps.md` 5a point 19, 2026-11-12). PARTLY BUILT: `ConfigManager` still repairs an unquoted `on` and unwraps fragments (draft row 40).
+4. **Fields and reading.** Strict import: only declared `input_fields` are read, a declared column missing from the file fails (DEC24, built `9bfdaf4c`). `type` is required and is a Polars dtype (DEC27). `null_values` and `strip` are always stated, no default (DEC28). Paths: no engine change, the deployment's `data_lookup` decides (DEC30). A float-to-integer cast that would drop decimals fails (DEC49).
+5. **Published columns.** `final_contract` and the schema `output_fields` are removed; the published columns are the last tier-1 step, `polars_select` or `polars_drop`; display names go in `labels` on the collection (DEC23). BUILT (cache version "4").
+6. **Actions.** Prefixes `polars_`, `modif_`, `step_` and a registry field `polars` (DEC31). A `polars_` action is exactly Polars, proved by a test against the direct call (DEC32). No hidden choice: a parameter that changes the result is required or has the Polars default (DEC33). Determinism is a required parameter (DEC34). One name per action (DEC35). No action returns the table unchanged on a missing parameter or column (DEC36). `polars_select`/`polars_drop` (DEC37), `polars_with_columns` (DEC38), `modif_filter` with `column`, `op`, `value`, `na` (DEC39, DEC29), `percentile` removed (DEC40), `polars_fill_nan`/`polars_drop_nans` added (DEC41), `scan_parquet`/`sink_parquet` engine-only (DEC42).
+7. **Where Polars can do it, the Polars action and nothing else** (Eve, 2026-11-13, relayed in `tmpAI/agent_channel.md` M56; commit `d07fe567`; later than DEC36). `polars_group_by` and `polars_str_splitn` replace `summarize`, `split_column`, `split_column_to_parts`; `derive_categories` is removed; `step_` is only `step_top_n_other`. BUILT: 41 actions (39 `polars_`, 1 `modif_`, 1 `step_`). The spec 7.5.1 count ("about 12 `step_`") is out of date.
+8. **Parameter names in `modif_` and `step_` actions.** One name per role (DEC15). For the input column the later DEC39 (same day) holds: `column` (`modif_filter`; the code follows it, also `step_top_n_other`). DEC15's sentence "input columns are `columns` (a list)" is superseded on this point.
+9. **Plot entry.** A schema plotted directly applies its own tier 2 (DEC16; NOT BUILT in the engine, RECIPE-DATASET-TIER2-1). The plot entry holds `steps: {tier3: [...]}`; until the engine reads it a non-empty list is refused, P05 (DEC17; reader NOT BUILT, STAGE2-SPEC-1). `taxonomy` is on the plot entry (DEC21); gallery examples are standard recipes in profile `gallery`, five taxonomy axes, `geom` derived, the tag strip generated (DEC47, DEC48). Axis and legend titles default to the field `label` (DEC22): DECIDED, NOT BUILT (no code found; draft D3).
+10. **Security.** A bad recipe must not run code or read or write where it should not (DEC44). Formulas may use only an allowed list of Polars functions, by name (ADR-099 point 14, 2026-11-12; FORMULA-SAFETY-1 of 2026-11-13 is the same decision). The allow-list is BUILT (`fe856c26`, `libs/utils/src/utils/formula_check.py`); a time or size limit is still listed as open in `tasks.md` (FORMULA-SAFETY-1).
+11. **Process.** Migration by one tool with a golden baseline and one cache bump (DEC43; built as four runs A to D, draft D5). Data-science errors of a recipe are fixed, not documented (DEC10; NOT BUILT, RECIPE-ST22-FIX-1). The two legacy recipes are removed (DEC12).
+
+**OPEN, awaiting Eve.**
+- **`categorical`.** Record 1: DEC27 (Eve, 2026-11-13, `recipe_format_spec.md`:124): `categorical` is refused with the message "this was String". Record 2: commit `e9ac815f` (2026-11-13 22:15, an agent): the migration writes `Categorical` ("String would change the level order of plots"); 75 shipped fields hold `type: Categorical`. No later record by Eve settles it.
+- **Whether Blueprint may author a plot entry's tier 3.** Record 1: ADR-082 point 4 and ADR-099 header (2026-11-11): "BLUEPRINT never authors T3". Record 2: `home_audit_steps.md` 5a point 15 (2026-11-12) and DEC17 (2026-11-13): a recipe maker may write any registered action in the tier-3 list. The Blueprint form is not decided.
+- The recommendations R1 to R11 of the spec (section 2.3) are not decisions.
+
+**Consequences.** Every recipe says what it does; an error names the place and the fix. Rule files and documents that still describe format 0: `.claude/design/decisions_2026-11-14/adr_sync_changes.md`.
+
+
+## ADR-101: Node keys are a series of labelled parts (decided 2026-11-12)
+
+**Status:** DECIDED by @evezeyl on 2026-11-12 (`.claude/design/home_evidence/home_hash_model_2026-11-12.md` section 5, points 1 to 5; commit `4e1407bb`, 17:19). Recorded here 2026-11-15 (ADR-SYNC-1). NOT BUILT (task KEYS-NODE-1; the precise parts need the recipe graph, RECIPE-GRAPH-UTILS-1).
+**Supersedes:** ADR-089 decision points 1 and 2 (a key as a hash of the upstream key and inputs; the "plot input" key); the key formula of ADR-099 point 5 ("SHA-256(upstream key + the canonical list of operations)"); the wording `hash(previous key, steps)` of ADR-099 point 12 and `home_audit_steps.md` 5a point 15 (same day, earlier). Retires `decision_hash` (ADR-031, ADR-069, ADR-089 consequence 2).
+**Keeps:** ADR-089 points 3 to 7 (fail-safe default, file-set hash, in-memory check, stored Tier 2, every read key-checked).
+
+**Context.** Verified 2026-11-12: today one T1 key serves the whole recipe (three collections, three tables, one stored key), there is no key for T3 or for audit steps, no content hash, and two mechanisms (`decision_hash` and the keys).
+
+**Decision.**
+1. **Two families.** Identity hashes say "is this the same project state": `R` (recipe file set, checkable with `sha256sum`), `D` (content of all data files), `E` (declared `data_engine` and `plot_engine` with versions and the cache version); `session_key = R[:12]:D[:12]`. They never decide what to rebuild. Node keys decide what to rebuild, in every deployment mode.
+2. **A node key is a series of labelled parts joined in execution order, not hashed again:** `T1 = E . rC . dC . [a1]`, `T2 = key(T1) . [s2] . [a2]`, `T3 = key(T2) . [s3] . [a3]` (`rC`, `dC`: definition and data of collection C; `s`: recipe steps; `a`: audit operations, without reasons, dates or initials). An empty part is left out, so an empty T3 has the key of T2 and an empty T2 the key of T1. Each part is 128 bits (32 hex characters). The key is stored in the file and compared on read; a mismatch recomputes and removes the stale file.
+3. **Precise parts** come from the recipe graph in `libs/utils`, built first; a collection whose inputs cannot be listed safely keeps a coarse part (fail-safe). A property test is the gate: changing any input of a collection changes its key.
+4. **Data hash:** the full content, once per session; no stat cache now; later maybe a pre-hash when new data arrives.
+5. **On demand or at export:** a content hash `c` of a frame (is a plot really affected); `A` (ordered audit operations); `Rec` (steps with reasons, initials, dates and the event log: tamper evidence); `AR` (the audit recipe file).
+6. **Identity rule:** equal keys imply identical data; different keys do not imply different data. A plot is affected when the content of its T3 differs between the original and the audit run (`home_audit_steps.md` 5a point 10).
+7. `decision_hash` is retired after checking that nothing else calls it; the plot input key (documented, never built) is dropped.
+
+**Consequences.** Property tests first (same inputs same key; any upstream change changes a part; an empty list adds no part; order matters; equal keys give equal content). `docs/foundations/reproducibility_hash_schema.qmd` and the ADR-089 text describe the older model. UML: `DM-KEYS`, `DM-KEYS-CHAIN`, `DM-KEYS-USE`, `DM-KEYS-EXPORT`.
+
+
+## ADR-102: A join keeps the declared key types; no join step is skipped silently (2026-11-14)
+
+**Status:** DECIDED by @evezeyl on 2026-11-14 (`.claude/tasks/tasks.md` JOIN-KEY-TYPES-1). Recorded here 2026-11-15 (ADR-SYNC-1). BUILT: the cast removed (`bddaf76a`), build checks extended (`77538c54`), checker J09 to J11 (CHECKER-JOIN-KEYS-1), Blueprint preview gives the build's verdict (JOIN-PREVIEW-STRICT-1). Point 4 is decided as a rule; its form is open.
+**Supersedes:** ADR-050 section "Join key normalisation" and the rationale sentence "`String` cast before join is the safe common denominator". The rest of ADR-050 (Path A, Path B, the ordering law) stays.
+
+**Context.** The orchestrator cast every join key to String before the join. Run 2026-11-14: a key declared Float64 merges "001", "1" and "1.0" into one sample (4 rows from 2); the shipped `complex_template` declared `sample_id` as Float64. The assembler skipped every first join step whose right table is the base table ("redundant init"), including a real self-join, without a message.
+
+**Decision.**
+1. **A join keeps the types the recipe declares.** The hidden cast is removed. A change of type is a step written in the recipe (`polars_cast`; before a join it changes only the left table).
+2. **Differing key types fail.** The build refuses differing types, a key column missing on one side, and `left_on`/`right_on` of unequal length (`77538c54`). The checker refuses them at load: J09 (types differ), J10 (key not declared on a side), J11 (unequal lengths); it is silent when a type cannot be known from the declarations.
+3. A non-key column present in both tables of a join is an error (J08, DEC19, ADR-100). PARTLY BUILT: the check needs the recipe graph.
+4. **No join step is skipped silently** (Eve, 2026-11-15: "No silent error: that is the rule"; "self-join skipped silently" is in her list of flags to fix, `tmpAI/coordinator/progress_2026-11-14_session3.md` "EVE DIRECT 00:30").
+5. **A float join key is not silent either** (same list, "float join key").
+
+**Built on another branch, not merged into `feat/recipe-format-1` at `70b01370`:** branch `task/join-flags`: a first join step whose right table is the base table runs as written, with the checker advice J12 for a self-join on the same key (`b27f89e4`); the advice J13 for a float join key and both advices shown in HOME's recipe choice and Blueprint's Validate (`7be8bf76`); the complex template's key declared String (`8a534a4c`).
+
+**OPEN, awaiting Eve.**
+- **Form of point 4.** Record 1: proposal D9 (`.claude/design/decisions_2026-11-14/proposals_for_eve.md`:115-126, 2026-11-14): fail with a plain message, recommended by all three viewpoints; whether a real self-join on different keys is allowed is left to Eve. Record 2: the build on `task/join-flags` (`b27f89e4`): the step runs as written, with advice J12. No record of Eve choosing between them was found.
+- D7 (one join-key rule in `libs/utils`, or three copies with parity tests) and D8 (confirm the refusal J10) are listed as open in channel M72.
+- Path C of ADR-050 and "all schemas as ingredients" are listed as silent paths to remove (`recipe_format_spec.md` section 16, J04, issue #76); not built.
+
+**Consequences.** The 14 baseline records changed only by the type of `sample_id`; no joined table or plot changed (`tasks.md` JOIN-KEY-TYPES-1). Statements of the removed cast remain in rule and knowledge files (DOC-JOIN-CAST-1).
