@@ -25,7 +25,6 @@ data_schemas:
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Summary_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/Summary_wrangling.yaml'
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/Summary_output_fields.yaml'
 
   Summary_quality:
     source:
@@ -37,7 +36,6 @@ data_schemas:
     wrangling:
       tier1: []
       tier2: []
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/Summary_quality_output_fields.yaml'
 
   Quality_metrics:
     info:
@@ -50,7 +48,6 @@ data_schemas:
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Quality_metrics_input_fields.yaml'
     wrangling: []
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/Quality_metrics_output_fields.yaml'
 
   Detailed_summary:
     info:
@@ -65,7 +62,6 @@ data_schemas:
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Detailed_summary_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/Detailed_summary_wrangling.yaml'
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/Detailed_summary_output_fields.yaml'
 
   FastP:
     info:
@@ -78,7 +74,6 @@ data_schemas:
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/FastP_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/FastP_wrangling.yaml'
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/FastP_output_fields.yaml'
 
   Quast:
     info:
@@ -91,7 +86,6 @@ data_schemas:
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Quast_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/Quast_wrangling.yaml'
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/Quast_output_fields.yaml'
 
   Bracken:
     info:
@@ -104,7 +98,6 @@ data_schemas:
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/Bracken_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/Bracken_wrangling.yaml'
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/Bracken_output_fields.yaml'
 
   ResFinder:
     info:
@@ -117,7 +110,6 @@ data_schemas:
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/ResFinder_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/ResFinder_wrangling.yaml'
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/ResFinder_output_fields.yaml'
 
   MLST:
     info:
@@ -130,7 +122,6 @@ data_schemas:
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml'
 
 # ── Additional Datasets ───────────────────────────────────────────────────────
 additional_datasets_schemas:
@@ -145,7 +136,6 @@ additional_datasets_schemas:
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/VirulenceFinder_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/VirulenceFinder_output_fields.yaml'
 
   APEC_STEC_virulence_genes:
     info:
@@ -161,7 +151,6 @@ additional_datasets_schemas:
     wrangling:
       tier1:
         # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
-    output_fields: {}
 
 # ── Metadata Schema ───────────────────────────────────────────────────────────
 metadata_schema:
@@ -175,7 +164,6 @@ metadata_schema:
   strip: true
   input_fields: !include '1_test_data_ST22_dummy/input_fields/metadata_schema_input_fields.yaml'
   wrangling: !include '1_test_data_ST22_dummy/wrangling/metadata_schema_wrangling.yaml'
-  output_fields: !include '1_test_data_ST22_dummy/output_fields/metadata_schema_output_fields.yaml'
 
 # ── Assembly Data Analysis Recipes ────────────────────────────────────────────────────────
 # Simple joins: see wrangling/ for each step list.
@@ -239,7 +227,7 @@ joins:
     - dataset_id: VirulenceFinder
     - dataset_id: APEC_STEC_virulence_genes
     steps: !include '1_test_data_ST22_dummy/wrangling/ST22_Anchor_wrangling.yaml'
-    final_contract: !include '1_test_data_ST22_dummy/output_fields/ST22_Anchor_final_output_fields.yaml'
+    labels: {"sample_id": "Sample ID", "source": "Biological Source", "year": "Collection Year", "country": "Origin Country", "sequence_type": "MLST Sequence Type", "serotype": "Serotype", "Selected_Virulence_Genes": "Gene (VirulenceFinder)", "VF_protein": "Protein (VirulenceFinder)", "gene": "AMR Gene", "status": "Phenotype Status"}
 
   AR1_MLST_Serotype_Virulence:
     description: Production-grade Sample-to-Gene Mapping (Abromics Pilot).
@@ -249,7 +237,7 @@ joins:
     - dataset_id: VirulenceFinder
     - dataset_id: APEC_STEC_virulence_genes
     steps: !include '1_test_data_ST22_dummy/wrangling/AR1_MLST_Serotype_Virulence.yaml'
-    final_contract: !include '1_test_data_ST22_dummy/output_fields/AR1_MLST_Serotype_Virulence_final_contract.yaml'
+    labels: {"sample_id": "Sample ID", "source": "Biological Source", "year": "Collection Year", "country": "Origin Country", "sequence_type": "MLST Sequence Type", "serotype": "Serotype", "selected_virulence_genes": "Gene (VirulenceFinder)", "vf_protein": "Protein (VirulenceFinder)"}
 
   # QA canaries: one collection per failure mode, expected numbers are in `wrangling/QA_*.yaml` and `plots/qa_*.yaml`
   QA_AMR_per_sample:

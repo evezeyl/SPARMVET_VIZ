@@ -1,8 +1,0 @@
-# Mirror file to allow joining with other dataframes
-# output_fields:
-# Standard selection (uses type from input_fields)
-sample_id: {}
-quality_module: {}
-genome_length: {}
-N50: {}
-contigs_sup300bp: {}

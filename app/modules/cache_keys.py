@@ -39,7 +39,7 @@ from typing import Any, Iterable, Union
 from utils.config_loader import ConfigManager
 
 # Bump when an action's behaviour or these key rules change: it invalidates every stored stage.
-ENGINE_CACHE_VERSION = "3"   # 3: the key order of final_contract is part of the key (issue #86); 2: deterministic row order (ADR-090)
+ENGINE_CACHE_VERSION = "4"   # 4: recipe format 1 (the published columns are a polars_select step, no final_contract; new actions and ingestion); 3: the key order of final_contract (issue #86); 2: deterministic row order (ADR-090)
 
 # Top-level data analysis recipe sections that only matter after Tier 2 (the plots). Everything else,
 # including sections this code has never heard of, belongs to Tier 1 (fail-safe rule).
@@ -82,11 +82,6 @@ def tier1_material(raw: dict) -> dict:
             steps = spec.get("steps") if isinstance(spec, dict) else None
             if isinstance(steps, dict) and "tier2" in steps:
                 spec = {**spec, "steps": {k: v for k, v in steps.items() if k != "tier2"}}
-            contract = spec.get("final_contract") if isinstance(spec, dict) else None
-            if isinstance(contract, dict):
-                # The keys of final_contract are the column order of the table, and canonical_hash sorts
-                # dictionary keys: the order enters the material as a list (spec section 5, safeguard 3).
-                spec = {**spec, "final_contract_order": list(contract)}
             stripped[join_id] = spec
         material["joins"] = stripped
     return material

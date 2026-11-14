@@ -16,7 +16,6 @@ data_schemas:
     strip: true
     input_fields: !include 'stress_test_master/input_fields/Stress_Source_input_fields.yaml'
     wrangling: !include 'stress_test_master/wrangling/Stress_Source_wrangling.yaml'
-    output_fields: !include 'stress_test_master/output_fields/Stress_Source_output_fields.yaml'
 joins:
   Master_Collection:
     ingredients:

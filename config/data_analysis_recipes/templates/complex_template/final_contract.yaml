@@ -1,4 +1,0 @@
-output_fields:
-  sample_id: { type: "numeric" }
-  gene_presence: { type: "categorical" }
-  country: { type: "categorical" }

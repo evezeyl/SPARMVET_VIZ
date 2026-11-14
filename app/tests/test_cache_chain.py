@@ -46,12 +46,13 @@ class World:
         bump(self.data_file)
 
     def write_data_analysis_recipe(self, *, wrangling_tier1=(), steps_tier1=(), steps_tier2=(), plot_label="P",
-                       group_type="Categorical", final_contract=None, source_path=None) -> None:
+                       group_type="Categorical", select=None, source_path=None) -> None:
+        # the published columns are the last step of tier 1 (recipe format 1, DEC23)
+        steps_tier1 = list(steps_tier1) + ([{"action": "polars_select", "exprs": list(select)}] if select else [])
         frag = self.data_analysis_recipes_dir / "tiny" / "wrangling"
         frag.mkdir(parents=True, exist_ok=True)
         (frag / "T_wrangling.yaml").write_text(json.dumps({"tier1": list(wrangling_tier1), "tier2": []}))
         (frag / "C_steps.yaml").write_text(json.dumps({"tier1": list(steps_tier1), "tier2": list(steps_tier2)}))
-        contract = f"    final_contract: {json.dumps(final_contract)}\n" if final_contract else ""
         entry = self.data_analysis_recipes_dir / "tiny.yaml"
         entry.write_text(f"""id: tiny
 info: {{label: Tiny}}
@@ -69,7 +70,7 @@ joins:
     ingredients:
       - dataset_id: T
     steps: !include 'tiny/wrangling/C_steps.yaml'
-{contract}analysis_groups:
+analysis_groups:
   g:
     label: G
     plots:
@@ -192,9 +193,9 @@ def test_an_anchor_without_a_key_is_rebuilt(world):
     assert world.stored_key() == world.orch.compute_data_analysis_recipe_keys("tiny").tier1_key
 
 
-def test_final_contract_is_applied_the_same_on_a_fresh_and_a_reused_anchor(tmp_path):
+def test_the_select_step_gives_the_same_table_on_a_fresh_and_a_reused_anchor(tmp_path):
     w = World(tmp_path)
-    w.write_data_analysis_recipe(final_contract={"sample_id": "categorical"})
+    w.write_data_analysis_recipe(select=["sample_id"])
     fresh = w.build()
     w.pin_mtime()
     reused = w.build()

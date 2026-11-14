@@ -23,9 +23,6 @@ data_schemas:
       sample_id: {type: "Categorical", is_entity_key: true}
       value_col: {type: "Float64"}
     wrangling: []
-    output_fields:
-      sample_id: {type: "categorical", is_primary_key: true}
-      value_col: {type: "numeric"}
 
 # SECTION 2: OPTIONAL METADATA (ADR-014)
 # metadata_schema:
@@ -44,7 +41,6 @@ joins:
     ingredients:
       - dataset_id: "Primary_Dataset"
     steps: [] # Identity fallback (Identity Mode)
-    final_contract: ["sample_id", "value_col"]
 
 # SECTION 5: ANALYSIS GROUPS
 analysis_groups:

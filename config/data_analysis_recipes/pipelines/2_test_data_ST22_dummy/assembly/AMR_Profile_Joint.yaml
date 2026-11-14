@@ -45,3 +45,5 @@ steps:
     - action: polars_sort
       by: [Year, Source, Country]
       maintain_order: true
+    - action: polars_select
+      exprs: ["Year", "Source", "Country", "gene", "predicted_phenotype_clean", "sample_id", "accession", "Multiresistant"]

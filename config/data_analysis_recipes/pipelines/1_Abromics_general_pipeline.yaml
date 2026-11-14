@@ -24,7 +24,6 @@ data_schemas:
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml'
 metadata_schema:
   source:
     type: local_tsv
@@ -35,7 +34,6 @@ metadata_schema:
   wrangling:
     tier1: []
     tier2: []
-  output_fields: []
 additional_datasets_schemas:
   VirulenceFinder:
     source:
@@ -45,7 +43,6 @@ additional_datasets_schemas:
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/VirulenceFinder_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/VirulenceFinder_output_fields.yaml'
   APEC_STEC_virulence_genes:
     source:
       type: local_tsv
@@ -56,7 +53,6 @@ additional_datasets_schemas:
     wrangling:
       tier1:
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
-    output_fields: {}
 joins:
   AR1_MLST_Serotype_Virulence:
     description: Joins MLST results with metadata for the main distribution plot.
@@ -66,7 +62,7 @@ joins:
     - dataset_id: VirulenceFinder
     - dataset_id: APEC_STEC_virulence_genes
     steps: !include '1_test_data_ST22_dummy/wrangling/AR1_MLST_Serotype_Virulence.yaml'
-    final_contract: !include '1_test_data_ST22_dummy/output_fields/AR1_MLST_Serotype_Virulence_final_contract.yaml'
+    labels: {"sample_id": "Sample ID", "source": "Biological Source", "year": "Collection Year", "country": "Origin Country", "sequence_type": "MLST Sequence Type", "serotype": "Serotype", "selected_virulence_genes": "Gene (VirulenceFinder)", "vf_protein": "Protein (VirulenceFinder)"}
 analysis_groups:
   MLST_Overview:
     label: MLST Overview

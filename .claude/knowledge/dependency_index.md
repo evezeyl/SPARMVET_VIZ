@@ -704,6 +704,13 @@
 - **consumed_by:** `app/modules/orchestrator.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `ADR-078`, `.claude/rules/rules_data_analysis_recipe_structure.md#7`
 
+## `libs/utils/src/utils/contract_migration.py`
+- **Role:** `ref`
+- **provides:** `function:migrate_contracts`
+- **consumes:** `libs/utils/src/utils/recipe_migration.py (MigrationReport)`
+- **consumed_by:** `assets/scripts/migrate_recipe_format.py`, `libs/utils/tests/test_contract_migration.py`
+- **doc:** `.claude/design/recipe_format_spec.md#DEC23`
+
 ## `libs/utils/src/utils/deployment_error.py`
 - **Role:** `ref`
 - **provides:** `class:DeploymentError`, `function:format_errors_block`, `function:exit_if_errors`, `function:raise_if_errors`, `class:DeploymentFailure`

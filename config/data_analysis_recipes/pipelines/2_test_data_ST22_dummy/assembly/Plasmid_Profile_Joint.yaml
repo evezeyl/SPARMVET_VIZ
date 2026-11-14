@@ -27,3 +27,5 @@ steps:
     - action: polars_sort
       by: [Year, Source, Country]
       maintain_order: true
+    - action: polars_select
+      exprs: ["Year", "Source", "Country", "plasmid_name", "sample_id", "accession"]

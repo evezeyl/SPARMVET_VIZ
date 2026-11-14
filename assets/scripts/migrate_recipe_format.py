@@ -2,8 +2,9 @@
 
 What run A does: adds spec_version and the engine lines; renames display_name, is_primary_key and source_name;
 turns every field type into its Polars name; writes the old sanitiser's settings (null_values, strip) into every schema;
-unwraps input_fields fragments. It edits the text, so every comment stays. The action names and run B
-(final_contract, keep_columns, drop_columns) come in later parts of the migration.
+unwraps input_fields fragments. It edits the text, so every comment stays. Run B turns keep_columns and
+drop_columns into polars_select and polars_drop; run C removes final_contract and the schema output_fields (the
+columns become a polars_select, the display texts become labels).
 
 Without --apply nothing is written: the script lists what it would change. Safe to run twice.
 
@@ -15,6 +16,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from utils.contract_migration import migrate_contracts
 from utils.recipe_migration import migrate_recipe_file
 
 
@@ -54,8 +56,8 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("paths", nargs="+", help="recipe files, or folders searched for *.yaml recipes (files with an id: line)")
     parser.add_argument("--apply", action="store_true", help="write the changes (default: only list them)")
-    parser.add_argument("--run", choices=["A", "B"], default="A",
-                        help="A: format, types, missing values, action names (default). B: keep_columns and drop_columns to polars_select and polars_drop")
+    parser.add_argument("--run", choices=["A", "B", "C"], default="A",
+                        help="A: format, types, missing values, action names (default). B: keep_columns and drop_columns to polars_select and polars_drop. C: final_contract and the schema output_fields removed (a polars_select as the last step of tier1, labels)")
     args = parser.parse_args(argv)
     files = []
     for item in map(Path, args.paths):
@@ -64,7 +66,10 @@ def main(argv=None) -> int:
     for path in files:
         if not path.read_text(encoding="utf-8").lstrip().startswith(("id:", "#")) and "\nid:" not in path.read_text(encoding="utf-8"):
             continue
-        report = migrate_recipe_file(path, apply=args.apply, run=args.run, string_columns_at=string_columns_at)
+        if args.run == "C":
+            report = migrate_contracts(path, apply=args.apply)
+        else:
+            report = migrate_recipe_file(path, apply=args.apply, run=args.run, string_columns_at=string_columns_at)
         for line in report.lines:
             print(line)
         changed += len(report.changed_files)

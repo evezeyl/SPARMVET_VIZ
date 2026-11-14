@@ -35,3 +35,7 @@ tier1:
     mapping:
       VF_gene: selected_virulence_genes
       VF_protein: vf_protein
+  - action: polars_select
+    exprs: ["sample_id", "source", "year", "country", "sequence_type", "serotype", "selected_virulence_genes", "vf_protein"]
+  - action: polars_select
+    exprs: ["sample_id", "source", "year", "country", "sequence_type", "serotype", "selected_virulence_genes", "vf_protein"]

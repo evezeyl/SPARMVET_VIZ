@@ -1738,7 +1738,7 @@ class WrangleStudio:
                             out_slot = sib.get("output_fields")
                             if not out_slot:
                                 continue
-                            # Check inline final_contract
+                            # Check inline output_fields
                             if isinstance(out_slot, dict) and "inline" in out_slot:
                                 contract_fields = {
                                     k.lower() for k in out_slot["inline"]

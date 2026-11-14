@@ -38,23 +38,6 @@ data_schemas:
     wrangling:
       tier1:
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
-    output_fields:
-      lab_id:
-        original_name: lab_id
-        type: categorical
-        label: Source Laboratory
-      submission_date:
-        original_name: submission_date
-        type: categorical
-        label: Date of Submission
-      status:
-        original_name: status
-        type: categorical
-        label: Processing Status
-      turnaround_time:
-        original_name: turnaround_time
-        type: numeric
-        label: TAT (Days)
 plot_defaults:
   height: 500
   theme: theme_minimal

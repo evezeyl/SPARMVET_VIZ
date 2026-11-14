@@ -49,26 +49,6 @@ class DataOrchestrator:
         self.discover_by_dataset_id = data_lookup == "by_dataset_id"
         self.ingestor = DataIngestor(data_dir=str(raw_data_dir))
 
-    @staticmethod
-    def _apply_final_contract(lf: pl.LazyFrame, collection_spec: dict | None) -> pl.LazyFrame:
-        """ADR-013: final_contract is an exclusive whitelist projection of the anchor's columns.
-
-        Applied the same way whether the anchor was just built or reused from disk, so the
-        result never depends on whether the cache was warm.
-        """
-        final_contract = (collection_spec or {}).get("final_contract", {})
-        if final_contract and isinstance(final_contract, dict):
-            keep = list(final_contract.keys())
-            schema_names = set(lf.collect_schema().names())
-            missing = [c for c in keep if c not in schema_names]
-            if missing:
-                print(f"⚠️  final_contract references columns not in assembly output: {missing}")
-                keep = [c for c in keep if c in schema_names]
-            if keep:
-                print(f"  └── 🛡️  final_contract: projecting to {len(keep)} contracted columns.")
-                lf = lf.select(keep)
-        return lf
-
     def compute_data_analysis_recipe_keys(self, data_analysis_recipe_id: str) -> DataAnalysisRecipeKeys:
         """The keys every stored stage of this project depends on (ADR-089).
 
@@ -134,8 +114,7 @@ class DataOrchestrator:
         if Path(output_path).exists() and \
                 get_parquet_metadata_hash(str(output_path), TIER1_KEY_META) == keys.tier1_key:
             print(f"[Orchestrator] ✅ Tier 1 anchor '{collection_id}' is valid (key match) → {output_path}")
-            return self._apply_final_contract(
-                pl.scan_parquet(output_path), data_analysis_recipe.get("joins", {}).get(collection_id))
+            return pl.scan_parquet(output_path)
 
         # Tier 1 is rebuilt, so the Tier 2 stored on top of the old one is invalid by definition.
         t2_file.unlink(missing_ok=True)
@@ -281,8 +260,6 @@ class DataOrchestrator:
         # ADR-089: the chained Tier 1 key (the resolved recipe with every included file, the data content and the engine
         # version) is written into the anchor, so any upstream change rebuilds it.
         lf = write_anchor(lf, str(output_path), decision_hash=keys.tier1_key, metadata={TIER1_KEY_META: keys.tier1_key})
-
-        lf = self._apply_final_contract(lf, collection_spec)
 
         print(f"[Orchestrator] ✅ materialize_tier1 DONE — assembly '{collection_id}' in {time.perf_counter()-_t_start:.2f}s → {output_path}")
         return lf

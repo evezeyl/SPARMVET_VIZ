@@ -41,6 +41,8 @@ tier1:
   - action: polars_rename
     mapping:
       VF_gene: Selected_Virulence_Genes
+  - action: polars_select
+    exprs: ["sample_id", "source", "year", "country", "sequence_type", "serotype", "Selected_Virulence_Genes", "VF_protein", "gene", "status"]
 
 # tier2: aggregation / sorting for cross-dataset visualizations
 tier2:

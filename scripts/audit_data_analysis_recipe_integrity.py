@@ -105,7 +105,7 @@ def render_report(
                 "**Fix guidance:**",
                 "- Check `input_fields` `original_name` values match actual TSV column headers (slugs are internal identifiers, not TSV headers).",
                 "- Verify all `action:` names exist in the transformer registry.",
-                "- Ensure `final_contract` columns are produced by the step list.",
+                "- Ensure the columns of the last `polars_select` step are produced by the step list.",
                 "- See `rules_agent_role_bioscientist.md §7` error diagnosis table.",
                 "",
             ]

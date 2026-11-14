@@ -16,7 +16,6 @@ data_schemas:
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml'
 metadata_schema:
   source:
     type: local_tsv
@@ -27,7 +26,6 @@ metadata_schema:
   wrangling:
     tier1: []
     tier2: []
-  output_fields: []
 joins:
   demo_join:
     description: Joins MLST and Metadata for demo summary.
@@ -41,17 +39,6 @@ joins:
         'on': [sample_id]
         how: inner
         maintain_order: left_right
-    final_contract:
-    - sample_id:
-        type: categorical
-    - Sequence Type:
-        type: categorical
-    - Source:
-        type: categorical
-    - Year:
-        type: integer
-    - Country:
-        type: categorical
 analysis_groups:
   MLST_Overview:
     label: MLST Overview

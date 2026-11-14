@@ -21,7 +21,6 @@ data_schemas:
     strip: true
     input_fields: !include 'complex_template/genomics_input.yaml'
     wrangling: !include 'complex_template/genomics_wrangling.yaml'
-    output_fields: ["sample_id", "gene_presence"]
 
 metadata:
   source:
@@ -36,7 +35,6 @@ joins:
       - dataset_id: "genomics"
       - dataset_id: "metadata"
     steps: !include 'complex_template/master_steps.yaml'
-    final_contract: !include 'complex_template/final_contract.yaml'
 
 analysis_groups:
   Overview:

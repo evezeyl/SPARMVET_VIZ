@@ -131,9 +131,8 @@ def build_sibling_map(data_analysis_recipe_path_str: str) -> dict:
         out = _slot(block, "output_fields")
         wrn = _slot(block, "wrangling")
         rec = _slot(block, "steps")
-        con = _slot(block, "final_contract")
 
-        effective_out = out or con
+        effective_out = out
         effective_wrn = wrn or rec
         sib = {"input_fields": inp, "output_fields": effective_out,
                "wrangling": effective_wrn}
@@ -150,7 +149,6 @@ def build_sibling_map(data_analysis_recipe_path_str: str) -> dict:
 
         _reg_if_file(inp, "input_fields")
         _reg_if_file(out, "output_fields")
-        _reg_if_file(con, "output_fields")
         _reg_if_file(wrn, wrn_role)
         _reg_if_file(rec, wrn_role)
 
@@ -453,7 +451,7 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
             "schema_type":   schema_type,
             "input_fields":  _slot(block.get("input_fields")),
             "wrangling":     _slot(block.get("wrangling")),
-            "output_fields": _slot(block.get("output_fields") or block.get("final_contract")),
+            "output_fields": _slot(block.get("output_fields")),
             "steps":        _slot(block.get("steps")),
             "ingredients":   _extract_ingredients(block),
             "target_dataset": None,

@@ -27,7 +27,6 @@ data_schemas:
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
     wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
-    output_fields: !include '1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml'
 
 analysis_groups:
   no_join_group:

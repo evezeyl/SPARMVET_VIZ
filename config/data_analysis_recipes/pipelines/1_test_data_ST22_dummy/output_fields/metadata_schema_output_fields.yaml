@@ -1,8 +1,0 @@
-sample_id:
-  type: numeric
-source:
-  type: categorical
-year:
-  type: numeric
-country:
-  type: categorical

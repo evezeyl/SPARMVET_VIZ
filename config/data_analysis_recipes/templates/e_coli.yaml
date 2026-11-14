@@ -41,27 +41,6 @@ data_schemas:
     wrangling:
       tier1:
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
-    output_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample ID
-      serotype:
-        original_name: serotype
-        type: categorical
-        label: Serotype
-      sequence_type:
-        original_name: sequence_type
-        type: categorical
-        label: Sequence Type
-      ctx_m_gene:
-        original_name: ctx_m_gene
-        type: categorical
-        label: CTX-M Gene
-      growth_rate:
-        original_name: growth_rate
-        type: numeric
-        label: Growth Rate (OD600)
 metadata_schema:
   source:
     type: local_tsv
@@ -97,19 +76,6 @@ metadata_schema:
       label: Outcome
   wrangling:
     tier1: []
-  output_fields:
-    sample_id:
-      original_name: sample_id
-      type: categorical
-      label: Sample ID
-    country_of_origin:
-      original_name: country_of_origin
-      type: categorical
-      label: Country of Origin
-    patient_outcome:
-      original_name: patient_outcome
-      type: categorical
-      label: Outcome
 joins:
   amr_with_metadata:
     description: Join AMR results with metadata.

@@ -32,19 +32,6 @@ data_schemas:
     wrangling:
       tier1:
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
-    output_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: Sample ID
-      value:
-        original_name: value
-        type: numeric
-        label: Measurement Value
-      group:
-        original_name: group
-        type: categorical
-        label: Group
 metadata_schema:
   source:
     type: local_tsv
@@ -64,15 +51,6 @@ metadata_schema:
       label: Biological Category
   wrangling:
     tier1: []
-  output_fields:
-    sample_id:
-      original_name: sample_id
-      type: categorical
-      label: Sample ID
-    category:
-      original_name: category
-      type: categorical
-      label: Biological Category
 joins:
   main_collection:
     description: Joins primary data with metadata.

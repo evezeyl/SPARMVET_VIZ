@@ -180,26 +180,10 @@ def run_assembler_debug(data_analysis_recipe_path: str, data_dir_override: str =
             print(f"  └── 🌿 Tier 2: {len(tier2)} steps.")
             consolidated_lf = DataWrangler().run(consolidated_lf, tier2)
 
-        # c) Final Assembly Contract Guard (ADR-013)
-        # Uses dict-based final_contract — same format as orchestrator.py.
-        # Contract is applied AFTER the assembler returns (post-assembly select),
-        # matching orchestrator.py behaviour exactly.
-        final_contract = assembly_info.get("final_contract", {})
-        if final_contract and isinstance(final_contract, dict):
-            keep = list(final_contract.keys())
-            schema_names = set(consolidated_lf.collect_schema().names())
-            missing = [c for c in keep if c not in schema_names]
-            if missing:
-                print(f"  └── ⚠️  final_contract references missing columns: {missing}")
-                keep = [c for c in keep if c in schema_names]
-            if keep:
-                print(f"  └── 🛡️  final_contract: projecting to {len(keep)} contracted columns.")
-                consolidated_lf = consolidated_lf.select(keep)
-
         # d) Collect and persist the contracted result for downstream use.
         # - Parquet: consumed by debug_gallery.py (viz rendering audit)
         # - TSV:     human-readable audit export (open in spreadsheet)
-        # Both use the contracted schema (final_contract applied above).
+        # Both hold the published columns: the last step of tier 1 is the polars_select of the join.
         contracted_parquet = str(tmp_root / f"EVE_contracted_{assembly_id}.parquet")
         contracted_tsv = str(tmp_root / f"EVE_contracted_{assembly_id}.tsv")
 

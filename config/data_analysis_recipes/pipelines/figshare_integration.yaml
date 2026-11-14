@@ -27,7 +27,6 @@ data_schemas:
     strip: true
     input_fields: !include 'figshare_integration/input_fields/fg_metadata_input_fields.yaml'
     wrangling: !include 'figshare_integration/wrangling/fg_metadata_wrangling.yaml'
-    output_fields: !include 'figshare_integration/output_fields/fg_metadata_output_fields.yaml'
 
   fg_phenotypes:
     source:
@@ -37,7 +36,6 @@ data_schemas:
     strip: true
     input_fields: !include 'figshare_integration/input_fields/fg_phenotypes_input_fields.yaml'
     wrangling: !include 'figshare_integration/wrangling/fg_phenotypes_wrangling.yaml'
-    output_fields: !include 'figshare_integration/output_fields/fg_phenotypes_output_fields.yaml'
 
   fg_genotypes:
     source:
@@ -47,7 +45,6 @@ data_schemas:
     strip: true
     input_fields: !include 'figshare_integration/input_fields/fg_genotypes_input_fields.yaml'
     wrangling: !include 'figshare_integration/wrangling/fg_genotypes_wrangling.yaml'
-    output_fields: !include 'figshare_integration/output_fields/fg_genotypes_output_fields.yaml'
 
 # ── Assembly Data Analysis Recipes ────────────────────────────────────────────────────────
 joins:
