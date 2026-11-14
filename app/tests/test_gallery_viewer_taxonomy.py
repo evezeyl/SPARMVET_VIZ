@@ -33,3 +33,8 @@ def test_the_gallery_app_files_hold_no_copy_of_the_taxonomy_terms():
         text = path.read_text()
         copies = sorted(word for word in terms if f'"{word}"' in text or f"'{word}'" in text) + sorted(label for label in panel_labels if label in text)
         assert copies == [], f"{path.name} holds taxonomy terms or labels that belong to the specification data: {copies}"
+
+
+def test_the_sidebar_mounts_the_slot_for_the_left_out_examples():
+    from app.modules.gallery_viewer import GalleryViewer
+    assert 'id="gallery_left_out_notice"' in str(GalleryViewer().build_sidebar_ui())

@@ -1135,3 +1135,9 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
                     background-color: #ffe0e0; color: #d62828; }
 .spv-import-error-message { font-weight: 600; word-break: break-word; }
 .spv-import-error-hint { margin-top: 4px; font-weight: 400; word-break: break-word; }
+
+/* Gallery left sidebar: examples left out because they failed the check (same look as HOME's rejected recipes block) */
+.gallery-left-out { margin: 8px 0; padding: 4px 6px; background: #ffe0e0; border-radius: 3px; }
+.gallery-left-out-title { font-size: 0.75rem; font-weight: 600; color: #d62828; }
+.gallery-left-out-line { font-size: 0.75rem; font-weight: 400; color: #1a1a1a; }
+.gallery-left-out-note { color: #6c757d; }

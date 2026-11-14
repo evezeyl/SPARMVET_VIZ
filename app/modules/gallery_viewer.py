@@ -1,6 +1,6 @@
 # @deps
 # provides: class:GalleryViewer, function:build_sidebar_ui, function:render_explorer_ui
-# consumes: app/src/bootloader.py (bootloader singleton), libs/viz_gallery/src/viz_gallery/taxonomy.py (filter_panels)
+# consumes: app/src/bootloader.py (bootloader singleton), app/modules/gallery_listing.py, libs/viz_gallery/src/viz_gallery/taxonomy.py (filter_panels)
 # consumed_by: app/handlers/gallery_handlers.py, app/src/server.py, app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-033, .claude/knowledge/architecture_decisions.md#ADR-057, .claude/design/recipe_format_spec.md (section 9, G1)
 # @end_deps
@@ -8,6 +8,7 @@ from shiny import ui, reactive, render
 import yaml
 from pathlib import Path
 from app.src.bootloader import bootloader
+from app.modules.gallery_listing import read_listing
 from viz_gallery.taxonomy import filter_panels
 
 
@@ -105,16 +106,9 @@ class GalleryViewer:
         )
 
     def _load_pivot(self) -> dict:
-        """Read taxonomy pivot from gallery_index.json. Returns {} on any failure."""
-        import json
-        index_path = bootloader.get_location("gallery") / "gallery_index.json"
-        if not index_path.exists():
-            return {}
-        try:
-            with open(index_path) as f:
-                return json.load(f).get("pivot", {})
-        except Exception:
-            return {}
+        """The taxonomy pivot of the examples that pass the check (gallery_listing); {} when there is no index."""
+        return read_listing(bootloader.get_location("gallery"), bootloader.rejected_gallery_examples,
+                            bootloader.gallery_index_status).pivot
 
     @staticmethod
     def _filter_panel(label, input_id, all_id, choices, value):
@@ -149,7 +143,7 @@ class GalleryViewer:
         """
         panels = filter_panels(self._load_pivot())
 
-        return ui.accordion(
+        accordion = ui.accordion(
             ui.accordion_panel(
                 "👨‍🍳 Example",
                 ui.input_select(
@@ -185,6 +179,9 @@ class GalleryViewer:
             multiple=True,
             open=["gallery_example_panel", "gallery_taxonomy_panel"],
         )
+        # Under the filters: why examples are left out (absent when none failed the check). It stays inside this one
+        # freestanding block, so the sidebar registry needs no new panel type.
+        return ui.TagList(accordion, ui.output_ui("gallery_left_out_notice"))
 
     def render_explorer_ui(self):
         """
