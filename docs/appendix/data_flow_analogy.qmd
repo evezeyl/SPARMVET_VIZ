@@ -51,11 +51,11 @@ Individual data contracts (`.yaml`) are structured to reflect these stages:
 ```yaml
 wrangling:
   tier1: 
-    - action: "rename"      # Foundational
-    - action: "join"        # Foundational
+    - action: polars_rename   # Foundational
+    # joins have their own tier1 list (polars_join, ...)
   tier2:
-    - action: "summarize"   # Specific to this visual
-    - action: "pivot"       # Specific to this visual
+    - action: polars_group_by # Specific to this visual
+    - action: polars_pivot    # Specific to this visual
 ```
 
 > [!TIP]

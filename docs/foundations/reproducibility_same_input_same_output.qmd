@@ -44,7 +44,7 @@ Jitter moves points by a small random amount so they do not overlap. Without a s
 
 ### When you write a data analysis recipe
 
-- If you need a specific row order, **sort explicitly** (`action: sort`, all the columns that define the order). Do not rely on the order a join or a group happens to give.
+- If you need a specific row order, **sort explicitly** (`action: polars_sort`, `by` lists all the columns that define the order, and `maintain_order: true`). Do not rely on the order a join or a group happens to give.
 - To change the arrangement of a jitter, set the seed on the layer:
 
 ```yaml

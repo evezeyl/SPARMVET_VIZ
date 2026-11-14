@@ -8,85 +8,86 @@ Instead of writing custom Python code for every new pipeline or species, you def
 
 ## Step 1: The Anatomy of a Master Data Analysis Recipe
 
-Every master data analysis recipe file must start with a mandatory header block and declare a unique `id`.
+Every master data analysis recipe file starts with a mandatory header block: `id` (equal to the file name without `.yaml`), `spec_version` (the format version, `1`), the two engines and an `info` block. Any key the format does not know is refused with a message that names the fix.
 
 ```yaml
 id: my_pipeline_v1
-description: "AMR profiling for E. coli ST22 — test dataset"
-
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: "E. coli ST22 AMR Analysis"
-  category: "AMR analysis"
-  tags: [Abromics, STEC]
-  version: "1.0"
+  label: "E. coli ST22 AMR Analysis"
+  description: "AMR profiling for E. coli ST22, test dataset"
+  contact: "who to ask when the data analysis recipe fails"
 ```
+
+`info.label` is the only required key of `info`; `info` is free-form otherwise (study, version, any key you want shown in HOME).
 
 ---
 
 ## Step 2: The Staged Pipeline Architecture
 
 ::: {.callout-important}
-### ADR-013: The Three-Block Structure
-Every dataset schema must follow a three-block structure that separates ingestion from transformation from output:
+### ADR-013 (superseded in part by data analysis recipe format 1): the data schema
+Every data schema separates ingestion from transformation:
 
-1. **`input_fields`**: The raw data as it arrives from the source file (Rich Dictionary).
-2. **`wrangling`**: Ordered, tiered list of atomic actions (The Process).
-3. **`output_fields`**: The strict Polars `.select()` contract — what columns survive to the assembly step (Rich Dictionary).
+1. **`input_fields`**: the columns the app reads from the source file (Rich Dictionary). Only the columns written here are read; a column declared but missing from the file stops the load.
+2. **`wrangling`**: ordered, tiered lists of atomic actions (`tier1`, and `tier2` when the schema is plotted directly).
+
+There is no `output_fields` and no `final_contract` any more. The published columns of a table are the last step of its tier 1, a plain `polars_select` (or `polars_drop`), so every column change is a visible step.
 :::
 
 ### The Rich Dictionary Format (ADR-041)
 
-`input_fields` and `output_fields` use a **Rich Dictionary**: a dict of `{slug: {properties}}`. The `slug` is the internal snake_case name. `original_name` is the exact column header in the source file — the engine uses this to rename columns at load time.
+`input_fields` is a **Rich Dictionary**: a dict of `{slug: {properties}}`. The `slug` is the internal name. `type` is required and is a Polars type name that a text file can hold (`String`, `Int64`, `Float64`, `Boolean`, `Date`, `Categorical`, ...). `original_name` is the exact column header in the source file; it is optional and only needed when the header differs from the slug.
+
+Every data schema also states `null_values` (the texts that mean "missing", `[]` for none) and `strip` (`true` or `false`). There is no default: see [the authoring guide](../user_guide/blueprint_data_analysis_recipe_authoring.qmd).
 
 ```yaml
 data_schemas:
   resfinder_results:
+    label: "ResFinder results"
+    description: "One row per gene hit."
     source:
       type: local_tsv
       path: assets/test_data/resfinder_results.tsv
+    null_values: []
+    strip: true
 
-    # Block 1: The Input — Rich Dictionary
+    # Block 1: the input
     input_fields:
       sample_id:
         original_name: "SampleName"   # exact header in TSV
-        type: categorical
+        type: String
         label: "Sample ID"
-        is_primary_key: true
+        is_entity_key: true
       gene:
         original_name: "Gene_Name"
-        type: categorical
+        type: String
         label: "AMR Gene"
       identity:
         original_name: "%Identity"
-        type: numeric
+        type: Float64
         label: "Sequence Identity (%)"
 
-    # Block 2: The Process — tiered action list
+    # Block 2: the process, a tiered action list
     wrangling:
       tier1:
-        - action: filter_range
-          columns: [identity]
-          min: 90
-        - action: strip_whitespace
+        - action: modif_filter
+          column: identity
+          op: ge
+          value: 90
+          na: remove
+        - action: polars_str_strip_chars
           columns: [gene]
-
-    # Block 3: The Output Contract — Rich Dictionary
-    output_fields:
-      sample_id:
-        original_name: sample_id
-        type: categorical
-        label: "Sample ID"
-      gene:
-        original_name: gene
-        type: categorical
-        label: "AMR Gene"
 ```
 
-**Identity Mode (ADR-014):** If the source data needs no transformation, omit tier1 actions and leave `output_fields` empty — the engine passes all columns through unchanged:
+Actions carry a prefix that says what they are: `polars_<name>` is exactly the Polars call, `modif_<name>` is a Polars idea with a documented change (for example `modif_filter`, which states how missing values are treated with `na`), `step_<name>` is several calls. A parameter that changes the result is written in the data analysis recipe; there is no hidden default.
+
+**No transformation:** if the source data needs none, leave the lists empty. The engine passes all declared columns through unchanged:
 ```yaml
 wrangling:
   tier1: []
-output_fields: {}
 ```
 
 ---
@@ -103,37 +104,39 @@ The platform is designed to be resilient to partial data:
 
 ## Step 3: Data Types
 
-Choosing the correct type ensures data is cleaned correctly and plots look professional.
+Every field states its `type`, and the type is a Polars type name that a text file can hold (the checker reads the list from the installed Polars): `String`, `Categorical`, `Boolean`, `Date`, `Datetime`, `Time`, `Decimal`, `Enum` and the integer and float types (`Int8` to `Int128`, `UInt8` to `UInt128`, `Float32`, `Float64`). The words `categorical`, `numeric`, `string` and `character` are refused, and the message names the Polars type to write.
 
 | Type | What it is | When to use it |
 | :--- | :--- | :--- |
-| `categorical` | Text labels, gene names, species, countries | Default for any string column — use in `output_fields` for labels |
-| `numeric` | Percentages, identity scores, counts, measurements | Any continuous or integer-valued column |
-| `date` | Calendar dates or timestamps | Sampling dates, submission dates |
-| `boolean` | True/False, presence/absence | Resistance flags, pass/fail status |
+| `String` | Text | Identifiers, free text, labels you do not need as a factor |
+| `Categorical` | Text with repeated values | Genes, species, countries used as plot categories |
+| `Int64`, `Float64` | Whole and decimal numbers | Counts, percentages, measurements |
+| `Date`, `Datetime` | Calendar dates and timestamps (`format` is a field key for non-standard text) | Sampling and submission dates |
+| `Boolean` | True/False | Resistance flags, pass/fail status |
+| `Enum` | Fixed list of values (written in `categories`) | Ordered levels |
 
 ::: {.callout-tip}
-### The "Clean-then-Cast" Philosophy
-String operations (e.g., `strip_whitespace`, `split_column`) must be performed in the `wrangling` block while the column is still typed as `categorical` or `string`. Always ensure your `output_fields` specifies the final correct type. The engine casts columns to declared types at ingestion time.
+### Read, then clean
+The declared type is handed to the reader, which reads the text, applies `null_values` and `strip`, and casts. A text the type cannot read stops the load and names the value. The cleaning steps in `wrangling` then work on typed columns. A step that needs a different type says so as a `polars_cast` step, which stops instead of silently dropping decimals.
 :::
 
 ---
 
-## Step 4: Primary Keys & Column Renaming
+## Step 4: Entity Keys & Column Renaming
 
 The ingestor uses `original_name` in `input_fields` to rename raw column headers to their internal slug. You do not need separate rename wrangling steps for this:
 
 ```yaml
 input_fields:
   sample_id:
-    original_name: "SampleName"   # raw header → renamed to 'sample_id' automatically
-    type: categorical
-    is_primary_key: true
+    original_name: "SampleName"   # raw header, renamed to 'sample_id' automatically
+    type: String
+    is_entity_key: true
 ```
 
 When different datasets use different names for the same concept (`SampleName`, `ID`, `sample_id`), each dataset declares its own `original_name` and the slugs become the common internal language for joins.
 
-`is_primary_key: true` is informational — it documents intent but does not drive automatic renaming across datasets. Join keys must be explicitly declared in the `joins` step list using `on` or `left_on`/`right_on`.
+`is_entity_key: true` is informational: it documents which column identifies the entity of the table (when the optional `entity` block names a schema as its `population`, that schema must have one) but does not drive automatic renaming across datasets. Join keys are always written in the `joins` step list with `on` or `left_on`/`right_on`. The old name `is_primary_key` is refused.
 
 ---
 
@@ -144,26 +147,30 @@ Once datasets are individually wrangled (Tier 1), they are joined in the `joins`
 ```yaml
 joins:
   AMR_Profile_Joint:
+    label: "AMR profile"
+    description: "ResFinder hits with the metadata of the sample."
     ingredients:
       - dataset_id: resfinder_results
-      - dataset_id: metadata_schema
+      - dataset_id: sample_metadata
     steps:
-      - action: join
-        right_ingredient: metadata_schema
-        'on': sample_id
-        how: left
-    final_contract:
-      sample_id: string
-      gene: string
-      predicted_phenotype: string
-      Country: string
-      Year: string
+      tier1:
+        - action: polars_join
+          right_ingredient: sample_metadata
+          'on': [sample_id]
+          how: left
+          maintain_order: left_right
+        - action: polars_select
+          exprs: [sample_id, gene, Country, Year]
+    labels:
+      Year: "Year of sampling"
 ```
 
 Key points:
 - `ingredients` is a **list of dicts** with `dataset_id` keys.
-- `final_contract` is a **dict `{column_name: type_string}`** that selects which columns survive to the plot layer. Only columns listed here are retained.
-- `steps` follows the same action-list structure as `wrangling.tier1`.
+- `steps` is a dict with the tier lists `tier1` (and `tier2`), the same action-list form as `wrangling`. `on` is always a list, and `maintain_order` is written: the order of rows is part of the data analysis recipe.
+- The published columns are the last step of `tier1`: a plain `polars_select` (or `polars_drop`). Columns that are not selected are dropped; the order of the list is the order of the columns. There is no `final_contract`.
+- `labels` maps a column name to the display name shown in the audit dialog and as plot titles. It is display only.
+- A non-key column present in both tables of a join is an error (Polars would silently rename one to `name_right`): rename or drop one first.
 - The step list may be `!include`-ed from a separate file for large pipelines.
 
 ---
@@ -174,16 +181,14 @@ For large pipelines, fragment the data analysis recipe into separate files:
 
 ```text
 config/data_analysis_recipes/pipelines/
-├── my_pipeline.yaml              ← master data analysis recipe (headers + !includes)
-└── my_pipeline/                  ← mirror directory for fragments
+├── my_pipeline.yaml              <- master data analysis recipe (headers + !includes)
+└── my_pipeline/                  <- mirror directory for fragments
     ├── input_fields/
     │   └── resfinder_input_fields.yaml
     ├── wrangling/
     │   └── resfinder_wrangling.yaml
-    ├── output_fields/
-    │   └── resfinder_output_fields.yaml
-    └── assembly/
-        └── AMR_Profile_Joint.yaml
+    └── plots/
+        └── resfinder_genes_heatmap.yaml
 ```
 
 ```yaml
@@ -195,32 +200,31 @@ data_schemas:
       path: assets/test_data/resfinder_results.tsv
     input_fields:  !include my_pipeline/input_fields/resfinder_input_fields.yaml
     wrangling:     !include my_pipeline/wrangling/resfinder_wrangling.yaml
-    output_fields: !include my_pipeline/output_fields/resfinder_output_fields.yaml
 ```
 
-Fragment files may optionally include their wrapper key at the top level — the engine strips it automatically:
+Fragment files may optionally include their wrapper key at the top level; the engine strips it automatically:
 ```yaml
-# resfinder_input_fields.yaml — both formats work:
+# resfinder_input_fields.yaml: both formats work:
 # Option A (flat, no wrapper key):
 sample_id:
   original_name: SampleName
-  type: categorical
+  type: String
   label: Sample ID
 
-# Option B (with wrapper key — engine auto-unwraps):
+# Option B (with wrapper key, the engine auto-unwraps):
 input_fields:
   sample_id:
     original_name: SampleName
-    type: categorical
+    type: String
     label: Sample ID
 ```
 
-`!include` paths are always **relative to the master data analysis recipe file's directory**.
+`!include` paths are always **relative to the master data analysis recipe file's directory**, and an include may not reach outside the project.
 
 ---
 
 ## Step 7: Type Resilience & YAML Quirks (ADR-042)
 
-- **YAML Reserved Words**: The word `on` is a reserved boolean in YAML. Always quote join key values when using `on:` as a mapping key, or use `left_on`/`right_on` instead.
-- **Numeric string columns**: Columns containing numeric-looking strings (e.g. `"90.5"`) are cast to `numeric` at ingestion if declared `type: numeric` in `input_fields`.
-- **`final_contract` vs `output_fields`**: `output_fields` in a `data_schemas` entry is a Rich Dictionary `{slug: {props}}` used for validation and column selection within that dataset. `final_contract` in `joins` is a simpler `{column_name: type_string}` dict used as a final projection whitelist after joining — it does not need `original_name`.
+- **YAML Reserved Words**: The word `on` is a reserved boolean in YAML. Always quote it as a key: `'on': [sample_id]`, or use `left_on`/`right_on`.
+- **Numeric text columns**: Columns containing numeric-looking text (e.g. `"90.5"`) are read as numbers when the field declares `type: Float64` (or another numeric Polars type). A text the type cannot read stops the load and names the value.
+- **No `final_contract` or `output_fields`**: the columns a table publishes are the last step of its tier 1 (`polars_select` or `polars_drop`); display names of computed columns go in the `labels` mapping of the join.

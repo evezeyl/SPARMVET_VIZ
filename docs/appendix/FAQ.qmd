@@ -49,7 +49,7 @@ This FAQ captures the strategic "Whys" and "How-To" patterns discovered during t
 ### When should I use "Pruning Before Expansion"?
 **Strategy**: Always drop unnecessary columns *before* performing an `explode` or `unpivot`. 
 - **The Math**: If you have 50 extra columns and you explode a row into 10 parts, you just created 500 cells of redundant data.
-- **The Fix**: Use `drop_columns` as the first step in your `tier1` wrangling to keep the data stream lightweight before the explosion.
+- **The Fix**: Use `polars_drop` (or a `polars_select` of the columns you need) as the first step in your `tier1` wrangling to keep the data stream lightweight before the explosion.
 
 ### How do I audit for "Row Explosion" (Cartesian Products) in complex joins?
 **Answer**: Write what you expect in the join step: `validate: m:1` (or `1:1`) on `polars_join` makes Polars stop when the right table has repeated keys, so a Cartesian product cannot happen silently.
@@ -89,14 +89,14 @@ If the data analysis recipe or a data file changed after you opened the view, th
 ## 🎨 3. Visualization & Artist Pillar
 
 ### How do I handle placeholders like `-` or `NA`?
-**Strategy**: Ingestion already turns the common placeholders (`-`, `NA`, `N/A`, `None`, `null`, `NaN` and empty cells) into real nulls before your wrangling runs. Use the `fill_nulls` action to give them a human-readable label. Placeholders that are *not* in that list (for example `unknown`) are replaced with `replace_values`; other values stay as they are.
+**Strategy**: Ingestion turns into real nulls exactly the texts you list in `null_values` of the data schema (or of one field); there is no hidden list. Then use the `polars_fill_null` action to give the nulls a human-readable label. Texts that are *not* in `null_values` (for example `unknown`) are replaced with `polars_str_replace_all` or `polars_with_columns`. Think before you list `NA`: it is also the code of Namibia.
 ```yaml
 {{< include ../../config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml >}}
 ```
 This ensures that untyped isolates appear correctly in your legends and bar charts rather than being hidden as nulls.
 
 ::: {.callout-warning}
-Do not use `recode_values` with `default: "keep"` to mean "leave the other values alone". In `recode_values` the default is a **literal value**: every value that matches no rule becomes the text "keep". If you only want to change a few values, use `replace_values`.
+Write every replacement rule you need and nothing more: a replace action changes only the values it names, and a value that matches no rule stays as it is.
 :::
 
 ### How do I perform a "Gallery Audit" without the UI?
@@ -121,17 +121,17 @@ layers:
 
 ## 📜 4. Data analysis recipe Logic (The Chain of Command)
 
-### Do I need to redefine types in `output_fields`?
-**Strategy**: No. Through the **Persistence Rule**, if you set `type: categorical` in the `input_fields`, it remains categorical throughout the entire pipeline. 
-- You only need to redefine it if a wrangling step changed the type (e.g., a calculation turning a category into a float) or if you want the `output_fields` to be a standalone "Source of Truth" for the contract.
+### Do I need to redefine types after a step?
+**Strategy**: No. The `type` of each field in `input_fields` is a Polars type name and is handed to the reader, so the column has that type when the first step runs.
+- You only need a `polars_cast` step if a wrangling step changed the type (e.g., a calculation turning a category into a float). A cast that would lose decimals stops and names the value.
 
 ### What happens if I omit a column from `input_fields`?
-**Strategy**: Omitting a column from `input_fields` only prevents **standardization** (renaming/casting). The column is still ingested with its raw name. 
-- To actually **remove** it from the data stream, you must omit it from the `output_fields` contract. The final step of every layer is a `.select()` based on the output contract.
+**Strategy**: Only the columns written in `input_fields` are read. A column of the file that is not declared is not imported (the import reports how many were left out), and a declared column that is missing from the file stops the load.
+- To remove a column later in the pipeline, use `polars_drop`, or end the join's tier 1 with a `polars_select` of the columns to publish.
 
 ### Why do I need quotes around `"on":` in my joins?
 **Hazard (ADR-012b)**: YAML parsers interpret unquoted `on:` as the boolean `True`. 
-- **The Hack**: Always use `"on": ["sample_id"]` (with quotes) to ensure the engine receives a string key rather than a boolean.
+- **The Hack**: Always write `'on': [sample_id]` (with quotes) to ensure the engine receives a string key rather than a boolean.
 
 ---
 

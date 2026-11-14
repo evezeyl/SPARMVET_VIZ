@@ -9,8 +9,8 @@ An independent module that takes raw data and transforms it into a standardized 
 `Polars` is massively parallel and memory efficient. When you run a `LazyFrame`, it builds an execution plan that is only executed when you trigger a `.collect()`. Polars breaks the data into "chunks" to process them across all your CPU cores simultaneously (concurrency). This makes it extremely fast for large datasets, but this also means that the order eg. your rows in the output might differ from the order in the input and the order can differ between runs (non-deterministic ordering).
 
 This layer allows: 
-    - **Staged Pipeline Architecture (ADR-013):** Data analysis recipes are structured in distinct parts: `input_fields` -> `wrangling` -> `output_fields`.
-    - **Identity Transformation (ADR-014):** Supports datasets requiring no cleaning.
+    - **Staged Pipeline Architecture (ADR-013):** Data analysis recipes are structured in distinct parts: `input_fields` -> `wrangling` (tier 1, tier 2); the published columns of a join are its last tier-1 step.
+    - **Identity Transformation (ADR-014):** Supports datasets requiring no cleaning (`tier1: []`).
     - **Wide-to-Long Guard (Phase 12-B):** Automated defensive check in the `WrangleStudio` collection logic. If a transformation results in an empty dataset, the system triggers a "Null State" UI notification instead of a silent failure.
 
 ### The 5-Phase Data Pipeline: The "Prepped Chef" Analogy
@@ -31,44 +31,47 @@ It maintains this **in-memory LazyFrame execution plan** passed up to the Contro
 To ensure the system is both efficient for the engine and predictable for the user, we distinguish between the **Registry** and the **Pipeline**.
 
 ### 1. The Action Registry (Internal Lookup)
-The **Registry** is a Python dictionary (located in `libs/transformer/src/transformer/registry.py`) used by the `DataWrangler (data_wrangler.py)` to map string action names (e.g., `"fill_nulls"`) to their corresponding implementation functions. This dictionary-based lookup ensures that calling an action is a $O(1)$ operation.
+The **Registry** is a Python dictionary (located in `libs/transformer/src/transformer/registry.py`) used by the `DataWrangler (data_wrangler.py)` to map string action names (e.g., `"polars_fill_null"`) to their corresponding implementation functions. This dictionary-based lookup ensures that calling an action is a $O(1)$ operation.
 
 Actions are registered using a standard decorator:
 
 ```python
 from transformer.actions.base import register_action
 
-@register_action("fill_nulls")
-def action_fill_nulls(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
+# Illustrative shape of a registered action. A new action takes a prefix that says what it is
+# (polars_ / modif_ / step_), a ui_schema with description and yaml_example, and a test.
+@register_action("modif_example", ui_schema=SCHEMA)
+def action_example(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     # All logic parameters are extracted from the 'spec' dictionary
-    fill_value = spec.get("value")
-    target_cols = spec.get("columns", [])
+    fill_value = spec["value"]
+    target_cols = spec["columns"]
     return lf.with_columns(pl.col(target_cols).fill_null(fill_value))
 ```
 
 ### 2. The Wrangling Pipeline (Sequential Execution)
 The **Wrangling Pipeline** defined in the YAML data analysis recipe is a **Sequential List of Dictionaries**. Using a list (identified by the dash `-` prefix) is mandatory for two reasons:
-1.  **Deterministic Order:** Polars execution is dependent on the sequence of operations (e.g., you must `split_and_explode` before you can `summarize` the exploded values).
+1.  **Deterministic Order:** Polars execution is dependent on the sequence of operations (e.g., you must `polars_str_split` and `polars_explode` before you can count the exploded values).
 2.  **Duplicate Actions:** A list allows the same action to be called multiple times with different parameters (e.g., filling nulls in `@AMR` with "Negative" and filling nulls in `species` with "Unknown").
 
 **Key Principles:**
 1. **Sequentiality:** Steps are executed in the exact order they appear in the list. #TODO HERE difference sequential and polar lazy execution (sequential logic vs polar recipie that can optimize exectution by changing order of operations - CLARIFY and IMPORTANT - HOW this will work HERE #REVIEW - )
 2. **Atomic Logic:** Each action is independent and operates on a Polars LazyFrame.
-3. **Smart Selection:** Some actions (like `strip_whitespace`) can auto-detect target columns if the `columns` key is omitted.
-4. **Primary Key Preservation:** Column selection actions (`keep_columns`) automatically preserve primary keys to prevent pipeline breakage.
+3. **No hidden choices:** every column an action acts on is written in the step (`columns`), and a parameter that changes the result is required. No action quietly picks target columns or protects key columns.
+4. **Plain column selection:** `polars_select` and `polars_drop` take column names only and fail when a name is missing; a computed column is a `polars_with_columns` step first.
 
 **Standard YAML Format:**
 
 The engine requires the tiered nesting structure (ADR-024) — a flat `wrangling:` list is
-rejected with a `DataAnalysisRecipeError` (`LEGACY-FLAT-WRANGLING-1`). `tier1:` is mandatory
+refused by the data analysis recipe checker (`LEGACY-FLAT-WRANGLING-1`). `tier1:` is mandatory
 (even if empty); `tier2:` is optional.
 
 ```yaml
 wrangling:
   tier1:
-    - action: "strip_whitespace" # Action 1 runs first
-    - action: "fill_nulls"      # Action 2 runs second
-      columns: ["@AMR"]
+    - action: polars_str_strip_chars   # Action 1 runs first
+      columns: [gene]
+    - action: polars_fill_null         # Action 2 runs second
+      columns: [amr]
       value: "None"
   tier2: []   # Optional; omit if empty
 ```
@@ -79,21 +82,21 @@ During the complex relational refactoring of the ST22 pipeline, several critical
 
 ### 1. The Boolean Shield (ADR-012b)
 **Hazard**: YAML parsers interpret unquoted `on:` as boolean `True`.
-**Hack**: Use `"on": ["sample_id"]` (with quotes) or allow the `DataAssembler (data_assembler.py)` internal resolution to handle the boolean `True` key.
+**Hack**: Write `'on': [sample_id]` (with quotes). The data analysis recipe checker refuses an unquoted `on`.
 
 ### 2. Cartesian Join Prevention
 **Hazard**: Joining two "Long" datasets (AMR + Virulence) creates row explosion.
-**Hack**: Use `join_filter` or pre-aggregate into **Tier 2 Summary** blocks.
+**Hack**: Use a semi or anti `polars_join` (`how: semi` / `how: anti`) or pre-aggregate in a tier-2 step. The checker also refuses a non-key column that both tables carry.
 
 ### 3. Categorical Placeholder Recoding
 **Hazard**: Mixed numeric/char columns (like ST) with `-` placeholders.
-**Hack**: Recode `-` to `"Non Determined"` via `recode_values`.
+**Hack**: Declare `-` in `null_values` of the field, then `polars_fill_null` with `"Non Determined"`.
 
 ### 4. Identity Transformations (Import-As-Is)
 
 For reference datasets or pre-cleaned data, the system supports a "Straight-Through" or **Identity Transformation**. 
-- If the `wrangling` block is `[]` or omitted: No decorators are executed.
-- If the `output_fields` block is `[]` or omitted: The system automatically retains all columns from the `input_fields`.
+- If `tier1` is `[]`: No decorators are executed, and all declared `input_fields` columns are kept.
+- Only the columns written in `input_fields` are read; there is no `output_fields`.
 
 This ensures that the pipeline remains robust for reference files without requiring redundant boilerplate.
 ```
@@ -125,56 +128,108 @@ PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests -q
 
 ## Verified Decorator Registry
 
-The full list of atomic decorators (see `libs/transformer/src/transformer/actions/` for the
-current count — it grows as the registry expands, ADR-035) has been aggressively verified via
-the Integrity Suite. Below is a rapid overview:
+The full list of atomic decorators (41 on 2026-11-14, read from the registry; it grows as the registry expands, ADR-035) is verified by the pytest files listed above. Below is a rapid overview, grouped by category:
+
+### Aggregation
+| Action Name | Description |
+|---|---|
+| `polars_group_by` | Group the table and aggregate with named formulas (Polars LazyFrame.group_by(...).agg(...)); `maintain_order` is written in the step so that the groups come out in a fixed order. |
+| `step_top_n_other` | Keep the n most frequent values of a column and label every other value `other_label` (a null stays null). Ties are ranked by the value itself, alphabetically (ADR-090), rows keep their order. Mirrors top_n_other() of the R code of the APEC study. |
+
+### Analytical
+| Action Name | Description |
+|---|---|
+| `polars_all_horizontal` | True where every listed boolean column is true (Polars all_horizontal). |
+| `polars_any_horizontal` | True where any listed boolean column is true (Polars any_horizontal). |
+| `polars_cum_count` | Running count of non-null values (Polars Expr.cum_count). |
+| `polars_cum_sum` | Running sum (Polars Expr.cum_sum). |
+| `polars_describe` | Summary statistics of every column as a table (Polars DataFrame.describe; the table is collected first). |
+| `polars_max_horizontal` | Row-wise maximum (Polars max_horizontal). |
+| `polars_mean_horizontal` | Row-wise mean of the listed columns (Polars mean_horizontal). |
+| `polars_min_horizontal` | Row-wise minimum (Polars min_horizontal). |
+| `polars_shift` | Shift the values down by `n` rows (Polars Expr.shift). |
+| `polars_sum_horizontal` | Row-wise sum of the listed columns (Polars sum_horizontal). |
+
+### Cleaning
+| Action Name | Description |
+|---|---|
+| `polars_coalesce` | The first non-null value across the listed columns, written to `target_column` (Polars coalesce). Write the first column as the target to overwrite it. |
+| `polars_drop_nans` | Drop the rows that have a NaN in `subset` (a NaN is a number, not a null) (Polars LazyFrame.drop_nans). |
+| `polars_drop_nulls` | Drop the rows that have a null in `subset` (all columns when absent) (Polars LazyFrame.drop_nulls). |
+| `polars_fill_nan` | Replace NaN values (not nulls) by a value (Polars Expr.fill_nan). |
+| `polars_fill_null` | Replace nulls by a value or by a strategy (Polars Expr.fill_null); give `value` or `strategy`, not both. |
+| `polars_interpolate` | Fill nulls between values by interpolation (Polars Expr.interpolate). |
+| `polars_unique` | Keep one row of each group of equal rows in `subset` (Polars LazyFrame.unique); the order rule is written in the step. |
+
+### Derivation
+| Action Name | Description |
+|---|---|
+| `polars_with_columns` | Add or replace columns; every column is named in `named_exprs` with its formula (Polars LazyFrame.with_columns). All formulas see the table as it was before the step. |
+
+### Filtering
+| Action Name | Description |
+|---|---|
+| `modif_filter` | Keep the rows where `column` <op> `value` (eq, ne, gt, ge, lt, le, in, not_in, between). Unlike Polars filter, which takes a formula, it takes the words of the filter panel. `na` says what happens to a missing value (null) of the column: `remove` drops those rows (what a comparison does in Polars), `keep` keeps them. A NaN is a number, not a missing value, and `na` does not touch it. |
+| `polars_sample` | A random sample of rows (Polars DataFrame.sample); `seed` is written in the step so that the same data analysis recipe gives the same table. |
+
+### List
+| Action Name | Description |
+|---|---|
+| `polars_list_join` | Join the elements of a list column into text (Polars list.join). |
+| `polars_list_slice` | A slice of each list (Polars list.slice). |
+
+### Numeric
+| Action Name | Description |
+|---|---|
+| `polars_round` | Round numbers to `decimals` places (Polars Expr.round); `decimals` is written in the step. |
+
+### Ordering
+| Action Name | Description |
+|---|---|
+| `polars_sort` | Sort the table by columns (Polars LazyFrame.sort); `maintain_order` is written in the step so that ties never change. |
+
+### Relational
+| Action Name | Description |
+|---|---|
+| `polars_join` | Join the table of the step with a second table named by `right_ingredient` (Polars LazyFrame.join); `how` and `maintain_order` are written in the step. |
+
+### Renaming
+| Action Name | Description |
+|---|---|
+| `polars_rename` | Rename columns by a mapping old name to new name (Polars LazyFrame.rename). |
 
 ### Reshaping
 | Action Name | Description |
 |---|---|
-| `unpivot` | Converts 'wide' format columns to 'long' rows based on identifiers. |
-| `explode` | Expands listed cell items into multiple independent rows. |
-| `unnest` | Flattens a structural sub-dictionary into physical top-level columns. |
-| `split_column` | Breaks delimited strings into multiple new columns (`A_B` -> `A`, `B`). |
-| `pivot` | Converts 'long' metrics tables into 'wide' column structures. |
+| `polars_explode` | One row per element of a list column (Polars LazyFrame.explode). |
+| `polars_pivot` | Long table to wide table (Polars DataFrame.pivot; the table is collected first). |
+| `polars_str_split` | Split a text column into a list at `by` (Polars str.split). |
+| `polars_str_splitn` | Split a text column at `by` into at most `n` parts; the last part keeps the remainder (Polars str.splitn). The result is a struct column: write `target_column` to keep the source, then polars_unnest it and polars_rename the fields (field_0, field_1, ...). |
+| `polars_unnest` | Turn the fields of a struct column into columns (Polars LazyFrame.unnest). |
+| `polars_unpivot` | Wide table to long table (Polars LazyFrame.unpivot). |
 
-### Cleaning (Core)
+### Selection
 | Action Name | Description |
 |---|---|
-| `fill_nulls` | Populates `null` values with a user-specified constant. |
-| `drop_nulls` | Eliminates rows missing data inside specified critical columns. |
-| `replace_values` | Dictionary-based literal string matching and replacement. |
-| `rename` | Direct string translation of header keys. |
-| `drop_duplicates` | Removes identical row sequences to enforce the unique constraint. |
-| `unique_rows` | Aggregates duplicate identifiers via a specified collision protocol. |
-| `sanitize_column_names` | Forces all header strings into safe snake_case. |
-| `keep_columns` | White-listing slice: drops unlisted schema arrays. |
-| `drop_columns` | Black-listing slice. |
-| `strip_whitespace` | Trims invisible characters framing strings. |
-| `round_numeric` | Reduces floating-point resolution to a set integer count. |
-| `filter_range` | Slices numeric sets falling outside specified thresholds. |
-| `cast` | Explicit data-type conversion (e.g., String to Int64). |
-| `coalesce` | Multi-column null-fallback logic. |
+| `polars_drop` | Remove the listed columns; a missing column fails (Polars LazyFrame.drop). |
+| `polars_select` | Keep the listed columns, in the order written (Polars LazyFrame.select; names only). |
 
-### Cleaning (Advanced)
+### String
 | Action Name | Description |
 |---|---|
-| `regex_extract` | Complex pattern harvesting mapping matched strings to new keys. |
-| `label_if` | Conditional data labeling based on magnitude/equality predicates. |
-| `split_and_explode` | Synthesizes standard explode via specified string separation. |
-| `derive_categories` | Assigns abstract groups based on threshold dictionaries. |
-| `mutate` | Evaluates arbitrary Polars-compatible expressions to derive new columns. |
+| `polars_str_extract` | Extract a group of a regular expression (Polars str.extract). |
+| `polars_str_replace_all` | Replace every match of a pattern in a text column (Polars str.replace_all). |
+| `polars_str_strip_chars` | Strip characters from both ends of a text column; without `characters` Polars strips whitespace (Polars str.strip_chars). |
 
-### Relational (Assembly/Layer 2)
+### Temporal
 | Action Name | Description |
 |---|---|
-| `join` | Left/Right/Inner merging of discrete `pl.LazyFrames`. |
-| `join_filter` | Filters a primary dataframe based on keys existing in a secondary. |
+| `polars_dt_truncate` | Truncate dates to a period (Polars dt.truncate). |
 
-### Performance
+### Typing
 | Action Name | Description |
 |---|---|
-| `summarize` | Extreme aggregation step. Computes raw metrics (count, sum) collapsing rows. |
+| `polars_cast` | Change the dtype of the listed columns (Polars Expr.cast). Unlike Polars, a float cast to an integer FAILS when a value has decimals: a truncation is never silent, write a rounding step first (Eve, Q1). |
 
 👉 **[View the complete Action Gallery with Concrete Examples](../appendix/transformer_actions.qmd)**.
 
@@ -182,9 +237,9 @@ the Integrity Suite. Below is a rapid overview:
 
 | Component | Role | Input | Output | Location |
 | --- | --- | --- | --- | --- |
-| `DataWrangler (data_wrangler.py)` | Main function that takes raw data and metadata, applies the data contract, reads the YAML `data_wrangling` dictionary, and returns a tidy Polars DataFrame by executing those rules (e.g., `split_and_explode`). | Raw data (e.g., TSV files) and metadata (e.g., YAML config) | Tidy Polars DataFrame following the data contract | `transformer/data_wrangler.py` |
+| `DataWrangler (data_wrangler.py)` | Main function that takes raw data and metadata, applies the data contract, reads the YAML `data_wrangling` dictionary, and returns a tidy Polars DataFrame by executing those rules (e.g., `polars_str_split` followed by `polars_explode`). | Raw data (e.g., TSV files) and metadata (e.g., YAML config) | Tidy Polars DataFrame following the data contract | `transformer/data_wrangler.py` |
 | `MetadataValidator (metadata_validator.py)` | Validates the user-uploaded metadata against the data contract and applies any `metadata_wrangling` rules defined in the schema. | Metadata that doesn't meet the contract is rejected with an error message. | User-uploaded metadata (e.g., TSV) that is validated, wrangled, and ready for joining. | `transformer/metadata_validator.py` |
-| `DataAssembler (data_assembler.py)` | Orchestrates Phase 4 Relational Joins. Connects wrangled datasets (ingredients) using assembly steps. | Multiple wrangled LazyFrames | A unified, filtered, and contract-enforced Polars DataFrame. | `transformer/data_assembler.py` |
+| `DataAssembler (data_assembler.py)` | Orchestrates Phase 4 Relational Joins. Connects wrangled datasets (ingredients) using assembly steps. | Multiple wrangled LazyFrames | A unified Polars DataFrame with the columns published by the last step of the join's tier 1. | `transformer/data_assembler.py` |
 
 
 ## Wrangling in a Large Sense: The Assembly Layer
@@ -196,14 +251,14 @@ The `DataAssembler (data_assembler.py)` orchestrates the vertical integration of
 
 ::: {.callout-note}
 ### ADR-018: The Unified Transformer Model
-To ensure homogeneity, both `DataWrangler (data_wrangler.py)` and `DataAssembler (data_assembler.py)` pull from the same `ActionRegistry (registry.py)`. This means any atomic cleaning step (like `strip_whitespace` or `split_column`) is automatically available within an Assembly steps.
+To ensure homogeneity, both `DataWrangler (data_wrangler.py)` and `DataAssembler (data_assembler.py)` pull from the same `ActionRegistry (registry.py)`. This means any atomic cleaning step (like `polars_str_strip_chars` or `polars_str_split`) is automatically available within an Assembly steps.
 :::
 
 The Assembler is responsible for:
 - Mapping and fetching multiple wrangled datasets from the Ingestor.
-- Performing explicit Polars-based joins (Inner, Left, Outer) using the `join` or `join_filter` decorators.
-- Enforcing `is_primary_key` constraints during joins to prevent row multiplication (or enabling it for Long-format targets).
-- Applying a final "Global Wrangler" pass and the `final_contract` guard to the unified dataset.
+- Performing explicit Polars-based joins (Inner, Left, Outer) using the `polars_join` action (a semi or anti join, `how: semi` or `how: anti`, replaces the old `join_filter`).
+- Writing the order and the keys of every join in the step (`how`, `maintain_order`, `on`): nothing is a hidden default. The data analysis recipe checker refuses a non-key column that both tables of a join carry, because Polars would silently rename one of them.
+- Publishing the columns of the unified dataset with the last step of its tier 1 (a plain `polars_select` or `polars_drop`).
 
 ### Relational Decorators
 The join is the Polars join, registered as `polars_join` (`libs/transformer/src/transformer/actions/polars_calls.py`).
@@ -211,7 +266,7 @@ The join is the Polars join, registered as `polars_join` (`libs/transformer/src/
 - **`polars_join`**: the Polars `LazyFrame.join`; `how`, `maintain_order` and the keys are written in every step.
 
 ### Assembly steps & Contracts
-Assemblies are defined in the `joins` block (Key-as-ID pattern). An assembly "Step list" is a sequential list of actions (Joins + Wrangling) that builds the final data grain. The `final_contract` acts as the ultimate guard, protecting the UI from "Column Drift" by selecting exactly the required plotting dimensions.
+Assemblies are defined in the `joins` block (Key-as-ID pattern). An assembly "Step list" is a sequential list of actions (Joins + Wrangling) that builds the final data grain. The last step of tier 1 (`polars_select`) is the guard against "Column Drift": it selects exactly the required plotting dimensions, in the order of its list. There is no separate `final_contract` any more.
 
 ---
 

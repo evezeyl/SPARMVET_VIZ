@@ -60,7 +60,7 @@ Runs the Tier 1 wrangling path from a data analysis recipe against a dataset. Mi
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
-    --data-analysis-recipe libs/transformer/tests/data/strip_whitespace_data_analysis_recipe.yaml
+    --data-analysis-recipe libs/transformer/tests/data/polars_str_strip_chars_data_analysis_recipe.yaml
 
 # Override data source
 ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
@@ -69,7 +69,7 @@ Runs the Tier 1 wrangling path from a data analysis recipe against a dataset. Mi
 
 # Write output TSV
 ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
-    --data-analysis-recipe libs/transformer/tests/data/derive_categories_data_analysis_recipe.yaml \
+    --data-analysis-recipe libs/transformer/tests/data/polars_unique_data_analysis_recipe.yaml \
     --output tmp/my_test_output.tsv
 
 # Run only tier1 or tier2
@@ -90,7 +90,7 @@ Runs the Tier 1 wrangling path from a data analysis recipe against a dataset. Mi
 
 ### `debug_assembler.py` — Test a pipeline assembly (Layer 2)
 
-Runs the full Layer 2 assembly: ingests all datasets, applies Tier 1 wrangling, executes the assembly steps (joins), and applies the `final_contract`. Mirrors orchestrator behaviour exactly.
+Runs the full Layer 2 assembly: ingests all datasets, applies Tier 1 wrangling, executes the assembly steps (joins, ending in the `polars_select` that publishes the columns). Mirrors orchestrator behaviour exactly.
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_assembler.py \
@@ -123,8 +123,8 @@ Runs the full Layer 2 assembly: ingests all datasets, applies Tier 1 wrangling, 
 
 **Outputs written per assembly:**
 
-- `EVE_assembly_{id}.parquet` — pre-contract intermediate
-- `EVE_contracted_{id}.parquet` — post-`final_contract` result
+- `EVE_assembly_{id}.parquet` — intermediate
+- `EVE_contracted_{id}.parquet` — result of the join (the columns published by its last tier-1 step)
 - `EVE_contracted_{id}.tsv` — human-readable audit export
 
 ---

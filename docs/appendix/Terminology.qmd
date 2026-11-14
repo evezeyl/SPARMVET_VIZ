@@ -6,7 +6,7 @@ This document defines the authoritative nomenclature for the **SPARMVET_VIZ** pl
 ## Core Operational Units
 
 - **Data analysis recipe**: The top-level unit of analysis. One YAML file (`config/data_analysis_recipes/<id>.yaml`, plus the fragments it includes) that defines the inputs, the tier steps, the joins and the plots. Its identifier is the **data analysis recipe id** (the file name without `.yaml`). Its `info:` block describes it for people (title, description, version, study, contact, anything the author writes) and is shown in the Info panel.
-- **Schema**: The structural definition of a dataset's fields and types. Schemas are defined in the `input_fields` and `output_fields` blocks of the data analysis recipe.
+- **Schema**: The structural definition of a dataset's fields and types. Schemas are defined in the `input_fields` block of each data schema of the data analysis recipe; the published columns of a join are its last tier-1 step.
 - **Collection**: A logical grouping of datasets (e.g., Genotypes + Phenotypes) assembled by one join of the data analysis recipe.
 - **Record**: A single row of data (formerly *Sample*). A record is the atomic unit of analysis and visualization.
 - **Record ID**: The key used to join records across datasets in a collection — not necessarily `sample_id`, and not necessarily unique within one dataset. Some join keys repeat by design: in AMR data, one `sample_id` has many rows, one per gene, so `sample_id` alone is not a record ID for that join — the record ID is whichever column (or combination) the join actually matches on (`rules_data_analysis_recipe_structure.md §7`'s `right_ingredient:`/`'on':`). "Record ID" is the general term for that key; `sample_id`, `gene`, `Accession` etc. are specific examples of it.

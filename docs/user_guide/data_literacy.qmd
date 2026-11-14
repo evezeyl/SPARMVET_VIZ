@@ -33,15 +33,15 @@ Because SPARMVET processes hundreds of thousands of rows simultaneously, it reli
 
 Wrangling your data — cleaning it, joining sources, deriving columns — happens in **BLUEPRINT
 Architect**, authoring the Tier 1 (shared, relational) and Tier 2 (plot-group-specific) steps
-of your data analysis recipe. This is the only place action steps (`join`, `mutate`,
-`drop_columns`, etc.) are authored. **HOME's Tier 3 ("My view") is not a wrangling sandbox** —
+of your data analysis recipe. This is the only place action steps (`polars_join`, `polars_with_columns`,
+`polars_drop`, etc.) are authored. **HOME's Tier 3 ("My view") is not a wrangling sandbox** —
 it has no action-picker; it only lets you filter rows, exclude rows, drop columns, or override
 plot aesthetics, each committed as a reason-gated audit decision (see
 [The Audit Pipeline](audit_pipeline.qmd)). To avoid massive delays or crashes while wrangling
 in BLUEPRINT, follow these rules:
 
 ### 1. Drop Columns Early
-As soon as you begin your Tier 1 wrangling steps, use the `drop_columns` or `keep_columns` action to shed everything you don't need for your final plot. Less data means faster rendering.
+As soon as you begin your Tier 1 wrangling steps, use the `polars_drop` or `polars_select` action to shed everything you don't need for your final plot. Less data means faster rendering.
 
 ### 2. Avoid "Cartesian Explosions" (Duplicate Rows)
 When you use a `join` action to merge two datasets (e.g., adding MetaData to RawData), ensure you are joining on a strictly unique ID in the MetaData (like a `Sample_ID`). 

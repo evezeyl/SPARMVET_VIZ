@@ -99,7 +99,7 @@ The deployment file names the default data analysis recipe and app features, plu
 When the user selects (or the pipeline pre-selects) a type of data, e.g., species: "E. coli" and "AMR" in the Shiny UI, the server performs the following logic:
 
 1.  **Lookup:** `ConfigManager` loads the data analysis recipe YAML by its `id`, which equals the file name (ADR-092).
-2.  **Retrieve:** The data analysis recipe's `input_fields`/`output_fields` Rich Dictionaries declare the required columns (e.g., `["bla_CTX-M", "ndm-1", "tetA"]`) for the data contract.
+2.  **Retrieve:** The data analysis recipe's `input_fields` Rich Dictionary declares the columns that are read (e.g., `["bla_CTX-M", "ndm-1", "tetA"]`) for the data contract.
 3.  **Wrangle:** `DataOrchestrator.materialize_tier1()`/`materialize_tier2()` (`app/modules/orchestrator.py`) run the tiered Polars wrangling/assembly steps declared in the data analysis recipe, producing a tidy (often long-format) Parquet dataset — short-circuited by the chained cache keys when nothing relevant has changed (see `reproducibility_hash_schema.qmd`).
 4.  **Plot:** `VizFactory.render()` takes the plot spec (`mapping:`/`layers:` under `analysis_groups`) together with the data analysis recipe's `plot_defaults` and the deployment's palette registry, resolves them through the plot configuration cascade (ADR-081), and renders the Plotnine object.
 

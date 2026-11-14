@@ -7,11 +7,10 @@ basename_mirroring_mandate:
   level: "Same level as the main data analysis recipe file."
 
 directory_taxonomy:
-  info: "The top-level metadata block. Mandatory for Gallery assets (family, pattern, difficulty)."
-  input_fields: "Defines raw incoming schemas (keys: type, original_name, role)."
+  info: "The top-level metadata block (free-form; label is required). A gallery example classifies itself with the taxonomy key of the plot entry, not here."
+  input_fields: "Defines the columns that are read (keys: type, original_name, label, is_entity_key, null_values, strip). type is a Polars type name and is required."
   wrangling: "Defines Tier 1/Tier 2 transformations for individual data sources."
-  output_fields: "Defines the terminal contract schemas (dict of slug: {type, ...})."
-  join: "Contains the join steps file(s) for joining multiple ingredients into a collection anchor. Top-level data analysis recipe key: joins:."
+  join: "Contains the steps file(s) (tier1, tier2) for joining multiple ingredients into a collection. The published columns are the last step of tier1 (polars_select or polars_drop). Top-level data analysis recipe key: joins:."
   plots: "Contains visualization spec files for analysis_groups. Each file has a single 'spec:' root key."
 
 constructor_standard:
@@ -22,26 +21,29 @@ constructor_standard:
 yaml_resilience:
   reserved_words: "The keys 'on', 'yes', 'no', 'true', 'false' are YAML reserved words (boolean). Always quote them."
   quoting_policy: "ALWAYS quote join keys: write 'on': not on:. 'on' unquoted is parsed as boolean True and silently corrupts join steps."
-  shorthand_prohibition: "NEVER use action-name-as-key shorthand (e.g., '- join: {...}', '- mutate: [...]'). ALL steps must use the 'action:' key. Shorthand is silently skipped — no error is raised."
+  shorthand_prohibition: "NEVER use action-name-as-key shorthand (e.g., '- polars_join: {...}'). ALL steps must use the 'action:' key. The checker refuses a step without it."
 
 canonical_steps_syntax:
-  mandatory_key: "Every step MUST have an 'action:' key."
+  mandatory_key: "Every step MUST have an 'action:' key naming a registered action (polars_<name>, modif_<name> or step_<name>). Nothing a step needs is a hidden default: a parameter that changes the result is written."
   join_step:
-    correct: "- action: join\n  right_ingredient: <dataset_id>\n  'on': <column>\n  how: inner"
+    correct: "- action: polars_join\n  right_ingredient: <dataset_id>\n  'on': [<column>]\n  how: inner\n  maintain_order: left_right"
     wrong_alias: "dataset_id: (FORBIDDEN — use right_ingredient:)"
-    wrong_key: "on: (FORBIDDEN unquoted — YAML parses as True)"
-  mutate_step:
-    correct: "- action: mutate\n  column: new_col_name\n  expression: \"pl.col('src').str.strip_chars()\""
-    rule: "One column per mutate step. Do NOT batch multiple columns into one step."
+    wrong_key: "on: (FORBIDDEN unquoted — YAML parses as True); 'on' takes a list"
+  with_columns_step:
+    correct: "- action: polars_with_columns\n  named_exprs:\n    new_col_name: \"pl.col('src').str.strip_chars()\""
+    rule: "One mapping column: formula; all formulas of one step see the table as it was before the step (as in Polars). mutate and add_constant are removed."
   cast_step:
-    correct: "- action: cast\n  columns: [Year]\n  dtype: String"
-    note: "Prefer 'cast' action over inline pl.col().cast() inside mutate expressions."
+    correct: "- action: polars_cast\n  columns: [Year]\n  dtype: String"
+    note: "A float to integer cast that would drop decimals stops and names the value; round in a separate polars_round step first."
   sort_step:
-    correct: "- action: sort\n  columns: [Year, Source, Country]"
+    correct: "- action: polars_sort\n  by: [Year, Source, Country]\n  maintain_order: true"
+  select_step:
+    correct: "- action: polars_select\n  exprs: [sample_id, gene, Country]"
+    note: "The published columns of a table are its last tier1 step (polars_select or polars_drop). final_contract and output_fields do not exist any more."
 
 analysis_groups_structure:
   description: "Top-level key in master data analysis recipe. Defines groups and plots rendered in the Home Theater."
-  note: "This is the ONLY authoring format for plots. DEPRECATED (removal task: LEGACY-FLAT-PLOTS-1): flat 'plots:' key at data analysis recipe root is removed as an authoring pattern."
+  note: "This is the ONLY authoring format for plots. A flat 'plots:' key at the data analysis recipe root is refused."
   format: |
     analysis_groups:
       <group_id>:                         # snake_case, no spaces, no emoji
@@ -53,7 +55,7 @@ analysis_groups_structure:
   plot_defaults_block: |
     # Optional data analysis recipe-level defaults applied to every plot (L2 in five-tier cascade).
     # Individual plot specs may override any key (L4 wins over L2).
-    # Unknown keys → PipelineError(severity: warning, who: data_analysis_recipe_author, surface: notification).
+    # Unknown keys are refused by the data analysis recipe checker (PD01).
     # Authoritative schema: rules_data_analysis_recipe_structure.md §10 / plot_config_cascade.md §7a.
     #
     # palette: (BP-COLOR-3) — named palette applied as fill/colour scale to every plot.
@@ -76,9 +78,7 @@ analysis_groups_structure:
         legend_ncol: false
 
   plot_spec_file_format: |
-    # DEPRECATED (ADR-083, 2026-05-20): factory_id is removed — raises PipelineError.
-    # Migration: assets/scripts/migrate_plot_specs.py --apply | Removal task: BP-PLOT-LEGACY-REMOVE-1
-    # Current grammar-of-graphics format:
+    # Grammar-of-graphics format (ADR-083); factory_id is removed:
     spec:
       target_dataset: <assembly_id>      # Must match a joins key
       mapping:
@@ -133,13 +133,11 @@ example_structure: |
   └── my_data_analysis_recipe/
       ├── input_fields/
       │   ├── source_a_input_fields.yaml
-      │   └── metadata_schema.yaml
+      │   └── metadata_schema_input_fields.yaml
       ├── wrangling/
       │   └── source_a_wrangling.yaml
-      ├── output_fields/
-      │   └── source_a_output_fields.yaml
-      ├── assembly/
-      │   └── Main_Collection.yaml
+      ├── wrangling/
+      │   └── Main_Collection_wrangling.yaml   # the join steps (tier1)
       └── plots/
           ├── plot_one.yaml
           └── plot_two.yaml
