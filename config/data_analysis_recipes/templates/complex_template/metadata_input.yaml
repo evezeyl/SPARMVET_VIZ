@@ -1,6 +1,6 @@
 sample_id:
   original_name: "ID"
-  type: "Float64"
+  type: "String"
   is_entity_key: true
 country:
   original_name: "Location"
