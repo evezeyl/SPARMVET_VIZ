@@ -15,7 +15,7 @@ from pathlib import Path
 from PIL import Image, ImageChops
 
 import pytest
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
 from app.tests.conftest import shiny_app  # noqa: F401
@@ -206,6 +206,8 @@ def test_import_a_bundle_reports_the_four_legs(loaded, tmp_path):
         timeout=30_000,
     )
     _wait_shiny(loaded)
+    for leg in ("data", "engine", "recipe", "t3 steps"):
+        expect(loaded.locator("#import_bundle_report")).to_contain_text(leg, ignore_case=True, timeout=15_000)
     report_text = loaded.locator("#import_bundle_report").inner_text()
     recipe_id_match = re.search(r"Imported as '([^']+)'", report_text)
     try:

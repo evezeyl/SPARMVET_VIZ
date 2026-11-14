@@ -139,9 +139,8 @@ def _navigate_to_mlst_plot(page: Page) -> None:
 
 def _no_render_error(page: Page) -> None:
     """Assert no visible 'Render error' or Python traceback on the page."""
-    body = page.locator("body").inner_text(timeout=5_000)
-    assert "Render error" not in body, f"Render error found on page:\n{body[:500]}"
-    assert "Traceback" not in body, f"Python traceback found on page:\n{body[:500]}"
+    expect(page.locator("body")).not_to_contain_text("Render error", timeout=5_000)
+    expect(page.locator("body")).not_to_contain_text("Traceback", timeout=5_000)
 
 
 def _open_filters_panel(page: Page) -> None:
@@ -919,6 +918,14 @@ class TestPreviewFiltersOnReferenceViews:
         page.wait_for_selector(self.GRID_ROWS, timeout=15_000)
         return page.locator("#home_data_preview").inner_text()
 
+    def _wait_grid(self, page: Page, before: str, *, same: bool) -> None:
+        """Wait until the grid text equals (same=True) or differs from (same=False) `before`; fails on timeout."""
+        page.wait_for_function(
+            "([sel, before, same]) => (document.querySelector(sel).innerText === before) === same",
+            arg=["#home_data_preview", before, same],
+            timeout=15_000,
+        )
+
     def test_filter_shrinks_the_result_preview_and_reset_restores_it(
             self, page: Page, shiny_app: ShinyAppProc):
         _load_data_analysis_recipe(page, shiny_app.url)
@@ -937,7 +944,7 @@ class TestPreviewFiltersOnReferenceViews:
         expect(page.locator("#home_data_preview_badge .spv-view-note", has_text="preview filter")).to_contain_text(
             "preview filter(s) on, not saved", timeout=15_000)
         try:
-            assert self._grid_rows(page) != before
+            self._wait_grid(page, before, same=False)
         finally:
             # trash, not Reset: Reset also clears the value widget, which the next test needs
             page.locator("#filter_remove_0").click()
@@ -964,7 +971,7 @@ class TestPreviewFiltersOnReferenceViews:
         page.locator("#filter_remove_0").click()
         _wait_shiny(page)
         expect(note).to_have_count(0, timeout=15_000)
-        assert self._grid_rows(page) == before
+        self._wait_grid(page, before, same=True)
 
     def test_plot_changes_only_on_my_view(self, page: Page, shiny_app: ShinyAppProc):
         """GUARDED (Eve, 2026-11-11): Apply changes the table everywhere, the PLOT only on My view.
