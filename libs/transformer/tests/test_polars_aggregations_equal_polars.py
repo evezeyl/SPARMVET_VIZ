@@ -17,6 +17,7 @@ What the tests prove:
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/test_polars_aggregations_equal_polars.py -q
 """
+import datetime as dt
 import inspect
 import math
 from dataclasses import dataclass
@@ -160,7 +161,7 @@ def test_sum_skips_nulls_nan_makes_it_nan_text_gives_null_all_null_gives_zero():
     assert _one("polars_sum", {}, flag=[True, False, None, True])["flag"] == 2    # a Boolean column counts its true values
 
 
-def test_min_and_max_skip_nulls_ignore_nan_and_order_text_alphabetically():
+def test_min_and_max_skip_nulls_ignore_nan_and_order_text_by_byte_order():
     for action, expected in (("polars_min", (1.0, 1.0, "b", None)), ("polars_max", (3.0, 3.0, "c", None))):
         row = _one(action, {}, a=[1.0, None, 3.0], b=[1.0, NAN, 3.0], t=["c", "b", None], z=pl.Series([None, None, None], dtype=pl.Float64))
         assert (row["a"], row["b"], row["t"], row["z"]) == expected      # NaN ignored; only nulls give null
@@ -308,3 +309,113 @@ def test_the_pair_gives_the_polars_result_on_the_ingested_table(action, monkeypa
 def test_the_pair_recipe_writes_every_option_of_the_step(action):
     step = pairs._recipe(action)["wrangling"]["tier1"][0]
     assert step == {"action": action, **FIRST_CASE[action].spec}
+
+
+# -- the types a recipe maker must know (ADR-104: no silent surprise), each sentence of a description proved ---------
+
+D1, D2 = dt.date(2020, 1, 1), dt.date(2020, 1, 2)
+TYPES = {
+    "int": pl.Series([], dtype=pl.Int64), "float": pl.Series([], dtype=pl.Float64), "text": pl.Series([], dtype=pl.String),
+    "bool": pl.Series([], dtype=pl.Boolean), "date": pl.Series([], dtype=pl.Date), "datetime": pl.Series([], dtype=pl.Datetime),
+    "duration": pl.Series([], dtype=pl.Duration), "categorical": pl.Series([], dtype=pl.Categorical),
+}
+CALLS = [(c.action, c.spec) for c in CASES]
+
+
+@pytest.mark.parametrize("action,spec", CALLS, ids=[_id(c) for c in CASES])
+@pytest.mark.parametrize("kind", list(TYPES))
+def test_no_aggregation_panics_on_an_empty_table_of_any_type(action, spec, kind):
+    """A Polars panic is a BaseException: it must never reach the caller (only the Date quantile panics; it is a plain error)."""
+    frame = pl.DataFrame({"x": TYPES[kind]})
+    try:
+        _run(action, dict(spec), frame)
+    except TransformationError:
+        assert action == "polars_quantile" and kind == "date"       # the one refusal, and only that one
+    except Exception as exc:  # noqa: BLE001 - nothing else may be raised
+        pytest.fail(f"{action} on an empty {kind} column raised {type(exc).__name__}: {exc}")
+
+
+@pytest.mark.parametrize("interpolation", ["nearest", "linear"])
+def test_quantile_of_a_date_column_of_an_empty_table_is_a_plain_error(interpolation):
+    frame = pl.DataFrame({"d": pl.Series([], dtype=pl.Date), "n": pl.Series([], dtype=pl.Int64)})
+    with pytest.raises(TransformationError) as info:
+        _run("polars_quantile", {"quantile": 0.5, "interpolation": interpolation}, frame)
+    assert isinstance(info.value, Exception)                          # not a BaseException that passes `except Exception`
+    assert "polars_quantile" in str(info.value) and "Date" in str(info.value) and "no rows" in str(info.value)
+    assert info.value.tip                                              # and how to fix it
+
+
+def test_quantile_of_a_date_column_with_rows_and_of_an_empty_table_without_a_date_still_work():
+    assert _run("polars_quantile", {"quantile": 0.5, "interpolation": "linear"}, pl.DataFrame({"d": [D1, D2]}))["d"][0] == dt.datetime(2020, 1, 1, 12)
+    assert _run("polars_quantile", {"quantile": 0.5}, pl.DataFrame({"n": pl.Series([], dtype=pl.Int64)}))["n"].to_list() == [None]
+
+
+@pytest.mark.parametrize("action", ["polars_std", "polars_var"])
+@pytest.mark.parametrize("ddof", [-1, -3, -0.5])
+def test_a_negative_ddof_is_refused_with_a_plain_message(action, ddof):
+    with pytest.raises(TransformationError, match=f"{action}.*ddof.*negative") as info:
+        _run(action, {"ddof": ddof}, BASE)
+    assert info.value.tip
+
+
+@pytest.mark.parametrize("action", ["polars_std", "polars_var"])
+def test_a_ddof_of_zero_and_a_large_ddof_are_not_refused(action):
+    assert _run(action, {"ddof": 0}, pl.DataFrame({"x": [1.0, 2.0]})).height == 1
+    assert _run(action, {"ddof": 5}, pl.DataFrame({"x": [1.0, 2.0]}))["x"].to_list() == [None]
+
+
+def test_mean_median_quantile_of_a_date_column_give_a_datetime():
+    frame = pl.DataFrame({"d": [D1, D2]})
+    for action, spec in (("polars_mean", {}), ("polars_median", {}), ("polars_quantile", {"quantile": 0.5, "interpolation": "linear"})):
+        out = _run(action, spec, frame)
+        assert out.schema["d"] == pl.Datetime("us") and out["d"][0] == dt.datetime(2020, 1, 1, 12), action
+
+
+def test_std_and_var_of_a_date_datetime_or_duration_column_give_null():
+    frame = pl.DataFrame({"d": [D1, D2], "dtm": [dt.datetime(2020, 1, 1), dt.datetime(2020, 1, 2)], "dur": [dt.timedelta(1), dt.timedelta(2)]})
+    for action in ("polars_std", "polars_var"):
+        assert _run(action, {"ddof": 1}, frame).row(0) == (None, None, None), action
+
+
+def test_sum_of_a_date_or_datetime_column_gives_null_and_of_a_duration_column_gives_the_total():
+    frame = pl.DataFrame({"d": [D1, D2], "dtm": [dt.datetime(2020, 1, 1), dt.datetime(2020, 1, 2)], "dur": [dt.timedelta(1), dt.timedelta(2)]})
+    assert _run("polars_sum", {}, frame).row(0) == (None, None, dt.timedelta(3))
+
+
+def test_min_and_max_of_text_compare_by_byte_order_capital_letters_first():
+    frame = pl.DataFrame({"t": ["a", "B", "c"]})
+    assert _run("polars_min", {}, frame)["t"][0] == "B"               # alphabetical order would give "a"
+    assert _run("polars_max", {}, frame)["t"][0] == "c"
+
+
+def test_categorical_and_list_columns_give_null_for_sum_and_mean_and_a_list_gives_null_for_min():
+    frame = pl.DataFrame({"c": pl.Series(["a", "b"], dtype=pl.Categorical), "l": [[1], [2]]})
+    for action in ("polars_sum", "polars_mean", "polars_median"):
+        assert _run(action, {}, frame).row(0) == (None, None), action
+    assert _run("polars_min", {}, frame).row(0)[1] is None and _run("polars_max", {}, frame).row(0)[1] is None
+
+
+def test_the_result_types_change_as_the_descriptions_say():
+    ints = pl.DataFrame({"i": [1, 2]})
+    assert _run("polars_mean", {}, ints).schema["i"] == pl.Float64 and _run("polars_mean", {}, ints)["i"][0] == 1.5
+    flags = pl.DataFrame({"b": [True, False, True]})
+    assert _run("polars_sum", {}, flags).schema["b"] == pl.UInt32 and _run("polars_sum", {}, flags)["b"][0] == 2
+    assert _run("polars_count", {}, flags).schema["b"] == pl.UInt32
+    assert _run("polars_mean", {}, flags)["b"][0] == pytest.approx(2 / 3)
+    assert _run("polars_median", {}, pl.DataFrame({"b": [True, False]}))["b"][0] == 0.5
+
+
+def test_sum_of_a_64_bit_integer_column_beyond_the_range_wraps_around_without_error():
+    """Pinned: the action stays exactly Polars. The description tells the recipe maker to convert to a float first."""
+    out = _run("polars_sum", {}, pl.DataFrame({"i": [2**63 - 1, 1]}))
+    assert out["i"][0] == -(2**63)
+    assert _run("polars_sum", {}, pl.DataFrame({"i": pl.Series([2**63 - 1, 1], dtype=pl.Float64)}))["i"][0] == pytest.approx(2.0**63)
+    assert "64-bit" in ACTION_SCHEMAS["polars_sum"]["description"] and "float" in ACTION_SCHEMAS["polars_sum"]["description"]
+
+
+def test_the_descriptions_carry_the_sentences_proved_above():
+    d = {n: ACTION_SCHEMAS[f"polars_{n}"]["description"] for n in AGGREGATIONS}
+    assert "byte order" in d["min"] and "byte order" in d["max"] and "alphabetical" not in d["min"].replace("not alphabetical", "")
+    assert "Datetime" in d["mean"] and "Datetime" in d["median"] and "Datetime" in d["quantile"]
+    assert "Duration" in d["std"] and "Duration" in d["var"] and "negative" in d["std"] and "negative" in d["var"]
+    assert "Date" in d["sum"] and "unsigned integer" in d["sum"] and "fraction" in d["mean"]
