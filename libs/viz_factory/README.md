@@ -153,10 +153,10 @@ To prevent silent failures, the factory performs a "Pre-Flight" check before ren
 
 ## Library Integrity Status
 
-- **Status**: 🟢 **VERIFIED** (100% Registry Alignment)
-- **Component Audit**: 194 Components Registered
-- **Pass Rate**: 98% (190/194 Passed, 2 Timedelta failures pending dtypes, 1 Spatial data constraint, 1 cascade integration pending)
-- **Last Audit**: 2026-05-11 (Full Audit Report)
+- **Components registered**: 191 (counted 2026-11-14 from the plot component registry).
+- **Library tests**: the pytest files of the library pass (535 passed, 2026-11-14).
+- **Integrity suite**: `libs/viz_factory/tests/viz_factory_integrity_suite.py` cannot pass today. All 194 test recipes under `libs/viz_factory/tests/test_data/` are written in the old recipe form, which the loader refuses. The suite and the test recipes wait for a decision: migrate the recipes to the current form, or replace them.
+- **Last full audit with the suite**: 2026-05-11 (before recipe format 1); its numbers no longer apply.
 
 ## Key Components (Violet Standard)
 

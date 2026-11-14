@@ -6,7 +6,7 @@ An independent module that takes raw data and transforms it into a standardized 
 `Polar` is the library of choice.  This module offers different cleaning logics, depending on the data source. **It returns a tidy dataframe as output**.
 
 
-`Polars` is massively parallel and memory efficient. When you run a `LazyFrame`, it builds an execution plan that is only executed when you trigger a `.collect()`. Polars breaks the data into "chunks" to process them across all your CPU cores simultaneously (concurrency). This makes it extremely fast for large datasets, but this also means that the order eg. your rows in the output might differ from the order in the input and the order can differ between runs (non-deterministic ordering).
+`Polars` is massively parallel and memory efficient. When you run a `LazyFrame`, it builds an execution plan that is only executed when you trigger a `.collect()`. Polars breaks the data into "chunks" to process them across all your CPU cores simultaneously (concurrency). This makes it extremely fast for large datasets, but Polars promises no row order unless it is asked for. The actions that can reorder rows (group by, sort, join, unique) therefore state their order rule in the step (`maintain_order`, `keep`), so the same input gives the same rows in the same order on every run (ADR-090). `libs/transformer/tests/test_deterministic_order.py` checks this.
 
 This layer allows: 
     - **Staged Pipeline Architecture (ADR-013):** Data analysis recipes are structured in distinct parts: `input_fields` -> `wrangling` (tier 1, tier 2); the published columns of a join are its last tier-1 step.
