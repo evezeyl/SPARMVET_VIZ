@@ -71,6 +71,7 @@ from utils.action_names import JOIN
 from app.modules.data_analysis_recipe_validator import (
     validate_data_analysis_recipe,
     checker_advices,
+    validate_advice_entries,
     uploaded_recipe_report,
     load_uploaded_recipe,
     load_config_or_problems,
@@ -2777,12 +2778,12 @@ def define_server(input, output, session, *,
         # Advice (J12, J13) never changes PASS or FAIL: it says what a choice of the recipe does to the result.
         advice_rows = [
             ui.tags.div(
-                ui.tags.div("Advice: " + p["location"], style="font-size:0.72rem;font-weight:600;"),
-                ui.tags.div(p["problem"], style="font-size:0.72rem;"),
-                ui.tags.div(p["tip"], style="font-size:0.72rem;color:#6c757d;") if p.get("tip") else None,
+                ui.tags.div(heading, style="font-size:0.72rem;font-weight:600;"),
+                ui.tags.div(text, style="font-size:0.72rem;"),
+                ui.tags.div(tip, style="font-size:0.72rem;color:#6c757d;") if tip else None,
                 style="margin:2px 0 6px 0;padding:4px 6px;background:#fff3cd;border-radius:3px;",
             )
-            for p in result.get("advice_problems", [])
+            for heading, text, tip in validate_advice_entries(result.get("advice_problems", []))
         ]
 
         return ui.div(

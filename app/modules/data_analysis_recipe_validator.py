@@ -1,6 +1,6 @@
 """
 @deps
-provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:checker_advices, const:SHOWN_ADVICES, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
+provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:checker_advices, const:SHOWN_ADVICES, function:home_advice_entries, function:validate_advice_entries, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
 consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (load_recipe), libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/orchestrator.py
 consumed_by: app/tests/test_upload_load_never_exits.py, app/tests/test_upload_recipe_check.py, app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
@@ -259,6 +259,16 @@ def checker_advices(path: Path, profile: str = "run") -> list[DataAnalysisRecipe
     result = check_recipe_file(path, profile, catalogs=checker_catalogs())
     return [DataAnalysisRecipeProblem(path.name, p.path or "recipe", f"[{p.code}] {p.message}", p.fix or None)
             for p in result.advices if p.code in SHOWN_ADVICES]
+
+
+def home_advice_entries(advices: dict) -> list[tuple[str, list[str]]]:
+    """What HOME's recipe choice panel lists as advice: (recipe name, advice texts), sorted by name, recipes without text left out."""
+    return [(name, list(texts)) for name, texts in sorted(advices.items()) if texts]
+
+
+def validate_advice_entries(advice_problems: list[dict]) -> list[tuple[str, str, str | None]]:
+    """What Blueprint's Validate lists as advice: (heading, text, tip) per advice. Advice never changes PASS or FAIL."""
+    return [("Advice: " + p["location"], p["problem"], p.get("tip") or None) for p in advice_problems]
 
 
 def validate_data_analysis_recipe(path: Union[str, Path], profile: str = "run") -> list[DataAnalysisRecipeProblem]:

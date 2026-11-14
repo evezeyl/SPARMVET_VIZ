@@ -1,4 +1,4 @@
-"""An advice of the recipe checker is shown and never blocks (JOIN-FLOAT-1, JOIN-SELF-1; Eve 2026-11-15: no silent error).
+"""An advice of the recipe checker is shown and never blocks (JOIN-FLOAT-1, JOIN-SELF-1; Eve 2026-11-14: no silent error).
 
 A recipe that gets an advice (J12 self-join on the same key, J13 float join key) still loads: it is not refused by
 `validate_data_analysis_recipe` (HOME's gate and Blueprint's rules check), it stays in `available_data_analysis_recipes`,
@@ -67,3 +67,30 @@ def test_no_shipped_recipe_gets_a_join_advice():
     assert files, "no shipped recipe found"
     found = {f.name: [a.problem[:6] for a in checker_advices(f)] for f in files}
     assert {name: codes for name, codes in found.items() if codes} == {}
+
+
+# -- the display: the pure functions, and the screens that call them ------------------------------
+
+def test_home_advice_entries_are_sorted_and_skip_empty():
+    from app.modules.data_analysis_recipe_validator import home_advice_entries
+    assert home_advice_entries({"b": ["x"], "a": ["y", "z"], "c": []}) == [("a", ["y", "z"]), ("b", ["x"])]
+    assert home_advice_entries({}) == []
+
+
+def test_validate_advice_entries_keep_heading_text_and_tip():
+    from app.modules.data_analysis_recipe_validator import validate_advice_entries
+    rows = validate_advice_entries([{"location": "joins.AA", "problem": "p", "tip": "t"},
+                                    {"location": "q", "problem": "p2", "tip": None}])
+    assert rows == [("Advice: joins.AA", "p", "t"), ("Advice: q", "p2", None)]
+    assert validate_advice_entries([]) == []
+
+
+def test_home_recipe_choice_renders_the_advice_entries():
+    source = (REPO / "app" / "handlers" / "home_theater.py").read_text()
+    assert "home_advice_entries(getattr(bootloader" in source and "for name, texts in advices" in source
+    assert "Advice (these recipes load and run)" in source
+
+
+def test_blueprint_validate_renders_the_advice_entries():
+    source = (REPO / "app" / "handlers" / "blueprint_handlers.py").read_text()
+    assert "validate_advice_entries(result.get(\"advice_problems\"" in source and "*advice_rows," in source

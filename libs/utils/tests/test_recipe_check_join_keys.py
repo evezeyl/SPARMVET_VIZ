@@ -198,6 +198,31 @@ def test_a_self_join_on_the_same_key_is_advised_j12_and_does_not_block():
     assert [p.code for p in check(raw).errors if p.code == "J12"] == []
 
 
+def _j12_text(**extra):
+    raw = valid()
+    join_step(raw).update(right_ingredient="A", **extra)
+    problem = advices(raw, "J12")[0]
+    return problem.message + " | " + problem.fix
+
+
+def test_j12_text_for_a_plain_step_covers_a_unique_and_a_repeated_key():
+    text = _j12_text()
+    assert "unique" in text and "no row" in text and "_right" in text and "multiplied" in text
+    assert "if this is not intended" in text and "remove the step" in text
+
+
+def test_j12_text_for_semi_and_anti_says_no_column_is_copied():
+    for how in ("semi", "anti"):
+        text = _j12_text(how=how)
+        assert "no column is copied" in text and how in text
+        assert "_right" not in text and "multiplied" not in text
+
+
+def test_j12_text_names_the_suffix_of_the_step():
+    text = _j12_text(suffix="_again")
+    assert "_again" in text and "_right" not in text
+
+
 def test_the_same_key_pair_with_left_on_and_right_on_is_advised_too():
     raw = valid()
     step = join_step(raw)

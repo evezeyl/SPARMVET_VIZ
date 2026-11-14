@@ -545,11 +545,19 @@ class _Check:
             elif before.get("action") not in JOIN_KEEPS_COLUMNS:
                 return
         if right_id in left_tables and left_keys == right_keys:
+            how = step.get("how", "left")
+            if how in ("semi", "anti"):
+                effect = (f"no column is copied; '{how}' keeps only the rows whose key is found in {right_id!r} itself"
+                          if how == "semi" else
+                          "no column is copied; 'anti' removes every row that has a key, because each such row matches itself")
+            else:
+                suffix = step.get("suffix") or "_right"
+                effect = (f"if the key is unique in {right_id!r} it adds no row and copies the columns of {right_id!r} again "
+                          f"(named with the suffix {suffix}); if the key repeats, the rows are multiplied (n x n for each repeated key value)")
             self.add("J12", where,
-                     f"the join of {right_id!r} with itself uses the same key {left_keys} on both sides: it adds no row of information "
-                     f"and copies the columns of {right_id!r} again (named with the suffix _right)",
-                     f"remove the step, since {right_id!r} is already in the table at this step; "
-                     "write a self-join only on different columns (left_on and right_on), for example a column that points to another row",
+                     f"the join of {right_id!r} with itself uses the same key {left_keys} on both sides ('how': {how}): {effect}",
+                     "if this is not intended, remove the step; a self-join is usually written on two different columns "
+                     "(left_on and right_on), for example a column that points to another row",
                      "A")
         fields_by_table = {table: self.declared_fields(table) for table in set(left_tables) | {right_id}}
         for table, columns in ((None, left_keys), (right_id, right_keys)):

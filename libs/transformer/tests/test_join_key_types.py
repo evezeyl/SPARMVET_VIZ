@@ -212,7 +212,7 @@ def test_a_semi_or_anti_join_with_equal_key_types_runs(how):
 # -- the first step: the base table as right table ----------------------------------------------
 
 def test_a_first_step_that_joins_the_base_table_with_itself_runs_and_the_key_types_are_checked():
-    # The "redundant init" skip is removed (JOIN-SELF-1, Eve 2026-11-15, "no silent error"): a join runs as the recipe
+    # The "redundant init" skip is removed (JOIN-SELF-1, Eve 2026-11-14, "no silent error"): a join runs as the recipe
     # writes it, so the type check of left_on / right_on applies to the first step too.
     table = pl.LazyFrame({"a": ["x", "y"], "n": [1, 2]})
     step = {"action": JOIN, "right_ingredient": "R", "how": "left", "maintain_order": "left_right", "left_on": ["a"], "right_on": ["n"]}
@@ -236,6 +236,14 @@ def test_a_self_join_on_the_same_key_runs_and_duplicates_the_columns():
     result = DataAssembler({"R": table}, recipe_id=RECIPE, join_id=JOIN_ID).assemble([step]).collect()
     done = table.collect().join(table.collect(), on=["id"], how="left", maintain_order="left_right")
     assert result.equals(done) and result.columns == ["id", "n", "n_right"]
+
+
+def test_a_self_join_on_the_same_key_multiplies_the_rows_when_the_key_repeats():
+    # Proves the sentence of advice J12: with a repeated key the self-join is not a no-op (2 x 2 + 1 = 5 rows).
+    table = pl.LazyFrame({"id": ["x", "x", "y"], "n": [1, 2, 3]})
+    step = {"action": JOIN, "right_ingredient": "R", "how": "left", "maintain_order": "left_right", "on": ["id"]}
+    result = DataAssembler({"R": table}, recipe_id=RECIPE, join_id=JOIN_ID).assemble([step]).collect()
+    assert result.height == 5 and result.height > table.collect().height
 
 
 def test_a_declared_float_join_key_merges_identifiers_that_differ_in_the_files(tmp_path):
