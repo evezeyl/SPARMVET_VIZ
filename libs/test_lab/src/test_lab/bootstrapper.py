@@ -75,18 +75,31 @@ class DataAnalysisRecipeBootstrapper:
             out_dir: Root directory for output.
             metadata_path: Optional dedicated metadata TSV. When provided, a
                 ``metadata_schema`` block is added to the master data analysis recipe.
-            id_cleaning_steps: Optional per-dataset wrangling steps to inject
-                into ``tier1:``. Keyed by dataset_id (sanitized stem). Valid
-                actions: ``polars_str_strip_chars``, ``polars_cast`` (String only),
-                ``polars_str_replace_all``.
+            id_cleaning_steps: Optional per-dataset recipe steps (format 1: registered
+                actions with their parameters, for example from
+                ``id_reconciliation.recipe_steps``) to write into ``tier1:``. Keyed by
+                dataset_id (sanitized stem). The steps are written as they are. They are
+                not checked here: this library does not know the action registry.
+
+        Raises:
+            ValueError: steps are given for a dataset id that no data file has. Nothing
+                is written then: steps are never dropped without a word.
         """
+        id_cleaning_steps = id_cleaning_steps or {}
+        known = [self._sanitize_name(Path(p).stem) for p in tsv_paths]
+        unknown = sorted(set(id_cleaning_steps) - set(known))
+        if unknown:
+            raise ValueError(
+                f"Steps were given for {', '.join(unknown)}, which is not a data file of this bootstrap. "
+                f"The data files that can take steps are: {', '.join(known)}."
+            )
+
         data_analysis_recipe_dir = out_dir / data_analysis_recipe_id
         data_analysis_recipe_dir.mkdir(parents=True, exist_ok=True)
 
         fragments_dir = data_analysis_recipe_dir / data_analysis_recipe_id  # Subfolder for fragments
         fragments_dir.mkdir(parents=True, exist_ok=True)
 
-        id_cleaning_steps = id_cleaning_steps or {}
         datasets_config = {}
 
         for tsv_p in tsv_paths:

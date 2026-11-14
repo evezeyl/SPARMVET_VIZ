@@ -27,6 +27,8 @@ MODULE_MAP = {
     "pattern_detector": TESTS_DIR / "test_pattern_detector.py",
     "steps": TESTS_DIR / "test_transformation.py",
     "core": TESTS_DIR / "test_core.py",
+    "suggested_steps": TESTS_DIR / "test_suggested_steps.py",
+    "recipe_steps": TESTS_DIR / "test_recipe_steps.py",
 }
 
 

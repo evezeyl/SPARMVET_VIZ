@@ -1,0 +1,52 @@
+# RETEST: a polars_select step that names a column the dataset does not have. The data has
+# predicted_phenotype; the step asks for "phenotype". Expected: the load gate refuses the recipe at
+# startup (the data check) and the recipe choice panel lists it as unavailable, with the message of the engine
+# (retest procedure, RT-31).
+id: retest_bad_select_column
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
+info:
+  label: RETEST bad select column
+  description: A polars_select step names a column that does not exist; the app must say so.
+  version: '1.0'
+
+data_schemas:
+  Genes:
+    label: "Genes"
+    source:
+      type: local_tsv
+      path: ./assets/test_data/retest/genes.tsv
+    null_values: []
+    strip: true
+    input_fields:
+      sample_id: {original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}
+      gene: {original_name: gene, type: Categorical, label: Gene}
+      predicted_phenotype: {original_name: predicted_phenotype, type: Categorical, label: Phenotype}
+    wrangling:
+      tier1:
+        - action: polars_select
+          exprs: [sample_id, gene, phenotype]      # EDIT HERE (RT-31): change phenotype to predicted_phenotype
+      tier2: []
+
+joins:
+  Genes_joined:
+    label: "Genes joined"
+    ingredients:
+      - dataset_id: Genes
+    steps:
+      tier1: []
+      tier2: []
+
+analysis_groups:
+  retest:
+    label: "Retest"
+    plots:
+      genes_bar:
+        label: "Genes"
+        spec:
+          target_dataset: Genes_joined
+          mapping: {x: gene}
+          layers:
+            - name: geom_bar
+              params: {}

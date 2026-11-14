@@ -17,7 +17,7 @@ RENAMED_ENV_VARS = {
 RENAMED_DEPLOYMENT_KEYS = {
     "default_persona": "default_app_features",
     "default_manifest": "default_data_analysis_recipe",
-    "prefer_discovery": "data_lookup (by_dataset_id or manifest_paths)",
+    "prefer_discovery": "data_lookup (by_dataset_id or data_analysis_recipe_paths)",
     "data_ingestion_enabled": "app_features_override: {data_ingestion_enabled: ...}",
 }
 

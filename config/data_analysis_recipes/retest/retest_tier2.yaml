@@ -1,7 +1,7 @@
 # RETEST: Tier 2 stored as a parquet, chained keys, export (issues #10, EXPORT-CHECK-1).
 # 12 samples. Join "Result" has one tier2 step: keep rows with value >= 10 (8 rows remain).
 # Join "All_samples" has no tier2 step, so its T2 equals its T1 (12 rows).
-# Edit the two files marked "EDIT HERE" as described in .claude/workflows/retest_procedure.md.
+# Edit the places marked "EDIT HERE" as described in .claude/workflows/retest_procedure.md.
 id: retest_tier2
 spec_version: 1
 data_engine: python-polars
@@ -34,8 +34,8 @@ joins:
     ingredients:
       - dataset_id: Samples
     steps:
-      tier1: []            # EDIT HERE (test 3): move the tier2 step below up to this list
-      tier2:               # EDIT HERE (tests 2 and 4): change min: 10 to another number
+      tier1: []            # EDIT HERE (RT-05): move the tier2 step below up to this list
+      tier2:               # EDIT HERE (RT-04): change value: 10 to value: 20
         - action: modif_filter
           column: value
           op: ge
