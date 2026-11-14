@@ -6,10 +6,11 @@ You can send your figures to a colleague, a reviewer or a journal. They (or you,
 
 ## The short version
 
-- **By default, SPARMVET gives the same picture every time.** The random scatter uses a fixed starting number (a "seed"), and the rows are kept in a fixed order. This is on purpose: if you reopen the app tomorrow with the same data, you expect to see the same plot, not a surprise.
-- **If you need exactly the same picture later, write the number in your data analysis recipe.** Do not rely on the default.
-- **If you choose "random", the picture changes every time you re-render it** — but the number actually drawn for the plot you looked at is recorded automatically and written into every export's `effective_run.yaml`, so that specific picture is never lost, even though it won't repeat on its own next time you open the app.
-- Your standard export always contains `effective_run.yaml` with these seeds. It does **not** contain a copy of your data analysis recipe — see [Understanding Your Export](understanding_your_export.qmd) for what the standard export holds versus the opt-in reproducibility/reimport bundle (which does include the recipe, with the pinned seeds baked in).
+- **A number you write in your data analysis recipe always holds.** In the app, in the export bundle, and when someone re-runs the exported recipe, the plot uses exactly that number. The app never replaces it.
+- **A number fixed by an audit step is the same everywhere too.** If you fix an arrangement with "Reshuffle", the plot, the export bundle, the record and the re-run all use that number.
+- **If your recipe writes no number, the app draws one for you, per plot, once per session.** Open the same recipe tomorrow and the scatter may look different. The export uses the number the app showed you, records it in `effective_run.yaml`, and writes it into the recipe of the reproducibility bundle, so the exported picture can be repeated. The export also warns you for these plots.
+- **To get the same picture every time, write the number in your data analysis recipe.** Do not rely on the app's choice.
+- Your standard export always contains `effective_run.yaml` with the seed of every plot that uses jitter. It does **not** contain a copy of your data analysis recipe; see [Understanding Your Export](understanding_your_export.qmd) for what the standard export holds versus the opt-in reproducibility/reimport bundle (which does include the recipe, with the seeds written in).
 
 ## Random scatter ("jitter")
 
@@ -20,10 +21,10 @@ When many points have the same value, they sit on top of each other and you cann
 
 ### Why the seed is not forced
 
-A fixed seed is the right default for reports, but one arrangement is only one possibility. Sometimes a different arrangement shows a pattern that another one hides, or looks clearer. So you can:
+One arrangement is only one possibility. Sometimes a different arrangement shows a pattern that another one hides, or looks clearer. So you can:
 
-- **try other numbers** until you find an arrangement you like;
-- or ask for **"random"**, to see a new arrangement each time you open the plot.
+- **try other numbers** (the Reshuffle button, below) until you find an arrangement you like;
+- or write **`random_state: random`** (or `null`) in the recipe, to say that a different arrangement is fine. The app then shows one arrangement per session and records the number it used.
 
 When you are happy, **write the number you liked** in the data analysis recipe.
 
@@ -48,17 +49,19 @@ Ask for a new arrangement every time (for exploring only):
 
 ## What your export contains
 
-Every export writes `effective_run.yaml` with a `seeds_per_plot` entry for every plot that uses jitter — the number actually used to draw that picture, whether it came from your data analysis recipe or was drawn fresh because you asked for "random":
+Every export writes `effective_run.yaml` with a `seeds_per_plot` entry for every exported plot that uses jitter: the number that was really used to draw the exported picture. Next to it, `seed_source_per_plot` says where each number comes from (`audit`, `recipe`, `drawn` or `default`).
 
-| What the data analysis recipe says | What's recorded in `seeds_per_plot` | Will a future render repeat it on its own? |
+| What decides the seed | What is recorded in `seeds_per_plot` | Will opening your own recipe again repeat it? |
 |---|---|---|
-| `random_state: 123` (a number) | `123` | **Yes**, always — the recipe pins it. |
-| nothing about the seed | the program default (`0`) | Yes, with the same SPARMVET version. A later version could change the default, so **write the number** for a final figure. |
-| `random_state: random` | the number actually drawn this render, e.g. `1847302991` | **No** — the next render draws a new one. The picture you looked at is still fully documented (that number reproduces it exactly), it just won't come back by itself. |
+| An audit step fixed it (Reshuffle) | that number (`audit`) | **Yes** in the same session; write it in the recipe to keep it. |
+| `random_state: 123` in the recipe | `123` (`recipe`) | **Yes**, always: the recipe fixes it. |
+| `random_state: random` or `null` in the recipe, plot shown in the app | the number the app drew for this session, e.g. `1847302991` (`drawn`) | **No**: a new session draws a new number. The exported picture is fully documented and repeats from the reproducibility recipe. |
+| nothing about the seed, plot shown in the app | the number the app drew for this session (`drawn`) | **No**, same as above. |
+| nothing about the seed, plot never shown in the app | the program default `0` (`default`) | Yes with the same SPARMVET version, but **write the number** for a final figure. |
 
-If you're exporting with an unpinned (`random`) seed, the app tells you so with a non-blocking reminder at export time — it's not an error, just a nudge that *this* number was recorded but won't repeat unless you pin it.
+The export warns you, in plain words, about every plot whose number is neither written in the recipe nor fixed by an audit step, and tells you what to write in the recipe (`random_state: 123` on the jitter layer). It is a reminder, not an error.
 
-The opt-in reproducibility/reimport bundle (see [Understanding Your Export](understanding_your_export.qmd)) goes one step further: when you tick "Also include a reproducibility/reimport bundle", the recipe copy it writes still reflects whatever `random_state` you wrote yourself — pin the number there if you want the add-on recipe to be exactly repeatable by someone else re-running it.
+The opt-in reproducibility/reimport bundle (see [Understanding Your Export](understanding_your_export.qmd)) carries the number each plot was exported with, written on its jitter layers in the recipe copy. A number you wrote yourself stays; a plot that said `random` or nothing now has the number that was recorded, so whoever re-runs the bundle draws the same arrangement.
 
 ## The order of rows
 
@@ -70,14 +73,14 @@ But that order is *a* fixed order, not necessarily the one **you want**. If you 
 
 ## Checklist before you export a figure
 
-1. Does the plot use jitter? Write a **number** as `random_state`, not `random`.
+1. Does the plot use jitter? Write a **number** as `random_state` in the recipe, not `random`, and not nothing.
 2. Do you need a particular order of bars, samples or rows? Add an explicit **sort**.
-3. Open the plot twice. Is it identical? Then it is reproducible.
+3. Export, then look at `seeds_per_plot` and `seed_source_per_plot` in `effective_run.yaml`: every plot should say `recipe` or `audit`.
 
 ## Reshuffling in the app
 
-Plots that use jitter and have no fixed `random_state` yet show a small **🔀 Reshuffle arrangement** button next to the plot. Clicking it draws a new arrangement and pins it — the plot keeps that exact arrangement from then on, the same way as if you had written the number into the data analysis recipe yourself. The button disappears once a seed is pinned, whether by this button, a `random_state: <number>` in the recipe, or any other means — there is nothing left to reshuffle from until that pin is removed.
+Plots that use jitter and have no number written in the recipe show a small **Reshuffle arrangement** button next to the plot. Clicking it draws a new arrangement and fixes it: the plot keeps that exact arrangement from then on, and the export uses it too (also when the audit trail is switched off in your app features), as if you had written the number into the data analysis recipe yourself. The button disappears once a number is fixed, whether by this button or by `random_state: <number>` in the recipe.
 
-There is no button yet to remove a pin and go back to "random" from inside the app — edit the data analysis recipe (`random_state: random`, see above) to do that.
+There is no button yet to remove a fixed number and go back to "random" from inside the app; edit the data analysis recipe (`random_state: random`, see above) to do that.
 
 For the technical background (why the order can change, how the engine keeps it fixed, how to test it), see [Same input, same output](../foundations/reproducibility_same_input_same_output.qmd).

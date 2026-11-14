@@ -72,9 +72,14 @@ The resolver is the single merge point for all configuration tiers. It implement
 from viz_factory.plot_config_resolver import (
     normalise_plot_spec,    # (raw_spec: dict) -> dict  — idempotent L4 normalisation; raises VisualizationError on factory_id
     serialise_plot_spec,    # (canonical: dict) -> dict — serialise-safe form for Blueprint YAML save; never emits factory_id
-    resolve_plot_config,    # (l4_spec, l2_defaults, df, l5_override) -> dict — full cascade merge
+    resolve_plot_config,    # (l4_spec, l2_defaults, df, l5_override, fallback_random_state) -> dict — full cascade merge
+    resolve_plot_seed,      # (layers, audit_pin, drawn, default=) -> PlotSeed — the one order of precedence for the jitter seed
 )
 ```
+
+### The jitter seed (SEED-HOLDS-1, ADR-104)
+
+Order of precedence, in `resolve_plot_seed`: a seed pinned by an audit step (`aesthetic_override["random_state"]`, L5) > the number written in the recipe (`random_state` on a jitter layer; `null` and `random` are not numbers) > the seed a caller offers (`render(..., fallback_random_state=n)`, which fills only the jitter layers that carry no number; HOME draws one per session) > the factory default (`DEFAULT_RANDOM_STATE`, 0). A number written in the recipe is never replaced by the offered seed.
 
 ---
 

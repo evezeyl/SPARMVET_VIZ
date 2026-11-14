@@ -38,6 +38,7 @@ Jitter moves points by a small random amount so they do not overlap. Without a s
 
 - Every action that could reorder rows follows the rule in the table above, and has a test that states the rule on data large enough to show a random order.
 - Every random component uses a **fixed default seed** (`DEFAULT_RANDOM_STATE = 0`).
+- In the app, a jitter plot whose recipe writes no number gets one seed drawn per session and plot (HOME); the export reuses and records it. A number the recipe writes always holds, and a seed fixed by an audit step wins over it (`resolve_plot_seed`, ADR-104; which seed to use when the recipe writes none is still open).
 - `ENGINE_CACHE_VERSION` was raised, so anchors built before the rules existed are rebuilt (ADR-089).
 
 ## How to control it
