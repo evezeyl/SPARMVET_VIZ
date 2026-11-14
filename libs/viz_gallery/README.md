@@ -29,7 +29,7 @@ After adding or changing an example's data analysis recipe or data, regenerate i
 
 Every gallery bundle folder MUST contain all four files:
 
-1. `data_analysis_recipe.yaml` — 6-axis taxonomy: family, pattern, difficulty, geom, show, sample_size
+1. `data_analysis_recipe.yaml` — a standard recipe in format 1 (checked in the `gallery` profile). The `taxonomy` key of each plot entry types five axes (family, pattern, difficulty, show, sample_size); the sixth, `geom`, is derived from the first `geom_*` or `stat_*` layer of the plot
 2. `example_data.tsv` — representative dataset
 3. `example_meta.md` — scientific guidance + author metadata
 4. `preview_plot.png` — pre-rendered evidence PNG
