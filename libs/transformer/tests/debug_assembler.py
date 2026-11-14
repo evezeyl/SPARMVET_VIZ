@@ -103,13 +103,8 @@ def run_assembler_debug(data_analysis_recipe_path: str, data_dir_override: str =
             for item in ingredients_list
             if (item.get("dataset_id") if isinstance(item, dict) else item)
         ]
-        assembly_ingredients = {
-            ds_id: ingredients[ds_id]
-            for ds_id in ingredient_ids
-            if ds_id in ingredients
-        }
-        if not assembly_ingredients:
-            assembly_ingredients = ingredients
+        # a join that names a schema the recipe does not have fails here (KeyError names it), as in the orchestrator
+        assembly_ingredients = {ds_id: ingredients[ds_id] for ds_id in ingredient_ids}
 
         # b) Execute Assembly (Layer 2: Relational step list)
         # Use _resolve_tier to handle tiered steps format (same as orchestrator)
