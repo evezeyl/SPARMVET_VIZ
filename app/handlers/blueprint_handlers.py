@@ -72,7 +72,7 @@ from app.modules.data_analysis_recipe_validator import (
     validate_data_analysis_recipe_data,
 )
 from blueprint_arch.join_designer import (
-    compute_key_match, build_join_step, parse_join_step, JOIN_HOW_OPTIONS,
+    check_join_keys, compute_key_match, build_join_step, parse_join_step, JOIN_HOW_OPTIONS,
 )
 from blueprint_arch.group_plot_manager import (
     list_groups_plots, create_group, delete_group,

@@ -42,6 +42,7 @@ CASES = [
     ("missing_left", {"sample_id": S}, {"other": S}, ["no_such"], ["other"], "missing"),
     ("missing_right", {"sample_id": S}, {"sample_id": S}, ["sample_id"], ["no_such"], "missing"),
     ("missing_both", {"sample_id": S}, {"sample_id": S}, ["no_such"], ["no_such"], "missing"),
+    ("two_missing_keys", {"a": S}, {"a": S}, ["x", "y"], ["x", "y"], "missing"),
     ("unequal_lists", {"a": S, "b": S}, {"a": S}, ["a", "b"], ["a"], "length"),
 ]
 
@@ -51,6 +52,8 @@ def _schema(columns):
 
 
 def _build_step(left_keys, right_keys):
+    if right_keys is None:
+        return {"action": JOIN, "right_ingredient": "R", "how": "left", "maintain_order": "left_right", "left_on": left_keys}
     if left_keys == right_keys:
         return {"action": JOIN, "right_ingredient": "R", "how": "left", "maintain_order": "left_right", "on": left_keys}
     return {"action": JOIN, "right_ingredient": "R", "how": "left", "maintain_order": "left_right", "left_on": left_keys, "right_on": right_keys}
@@ -71,3 +74,18 @@ def test_the_preview_verdict_equals_the_build_verdict(case):
     preview = check_join_keys(_schema(left_cols), _schema(right_cols), left_keys, right_keys, right_id="R")
     assert preview["kind"] == kind
     assert preview["ok"] is (not _build_fails(left_cols, right_cols, left_keys, right_keys))
+
+
+def test_left_on_without_right_on_is_refused_by_both():
+    left, right = {"a": S}, {"a": S}
+    assert check_join_keys(_schema(left), _schema(right), ["a"], [])["ok"] is False
+    assert _build_fails(left, right, ["a"], None)
+
+
+def test_a_key_given_as_a_plain_string_is_checked_like_a_list():
+    left, right = {"a": S}, {"a": C}
+    assert check_join_keys(_schema(left), _schema(right), ["a"], ["a"])["kind"] == "type"
+    assembler = DataAssembler({"L": _table(**left), "R": _table(**right)}, recipe_id="demo", join_id="J")
+    step = {"action": JOIN, "right_ingredient": "R", "how": "left", "maintain_order": "left_right", "on": "a"}
+    with pytest.raises(TransformationError):
+        assembler.assemble([step]).collect()
