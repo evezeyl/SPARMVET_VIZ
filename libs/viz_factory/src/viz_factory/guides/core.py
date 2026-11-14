@@ -19,6 +19,7 @@ from viz_factory.registry import register_plot_component
     "context": ["plot"],
     "tags": ["guide", "legend", "colorbar", "hide", "none"],
     "wraps": [{"lib": "plotnine", "attr_path": ["guides"]}],
+    "plotnine": "modified",
     "allow_extra_params": True,
     "params": {
         "color": {"widget": "enum", "label": "Color guide", "required": False,
@@ -34,7 +35,7 @@ from viz_factory.registry import register_plot_component
         "alpha": {"widget": "enum", "label": "Alpha guide", "required": False,
                   "options": ["legend", "none"]},
     },
-    "description": "Control the guide (legend) for multiple aesthetics at once; use instead of individual scale guide= params when you need to configure several guides together.",
+    "description": "Control the guide (legend) for multiple aesthetics at once; use instead of individual scale guide= params when you need to configure several guides together. Differs from plotnine: the values `legend` and `colorbar` build that guide, `none` or `false` hides the guide, and any other value is passed on to plotnine as it is.",
     "yaml_example": "layers:\n  - name: guides\n    params:\n      color: legend\n      fill: colorbar",
 })
 def handle_guides_group(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -65,6 +66,7 @@ def handle_guides_group(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["guide", "legend", "key", "rows", "cols"],
     "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": {
         "mapping": {"widget": "string", "label": "Aesthetic to apply guide to (e.g. color, fill)", "required": True},
@@ -75,7 +77,7 @@ def handle_guides_group(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "label_position": {"widget": "enum", "label": "Key label position", "required": False,
                            "default": "right", "options": ["top", "bottom", "left", "right"]},
     },
-    "description": "Render a discrete guide as a key-legend; the default for categorical fill/colour \u2014 configure nrow, ncol, or key size here.",
+    "description": "Render a discrete guide as a key-legend; the default for categorical fill/colour \u2014 configure nrow, ncol, or key size here. Differs from plotnine: `mapping` names the aesthetic (color, fill, ...) the guide is set for, and without it nothing is added (a warning is printed).",
     "yaml_example": "layers:\n  - name: guides\n    params:\n      fill: legend",
 })
 def handle_guide_legend(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -96,6 +98,7 @@ def handle_guide_legend(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["guide", "colorbar", "continuous", "gradient"],
     "wraps": [{"lib": "plotnine", "attr_path": ["guide_colorbar"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": {
         "mapping": {"widget": "string", "label": "Aesthetic to apply guide to (e.g. color, fill)", "required": True},
@@ -105,7 +108,7 @@ def handle_guide_legend(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "nbin": {"widget": "number", "label": "Number of color bins", "required": False, "default": 300},
         "reverse": {"widget": "bool", "label": "Reverse colorbar direction", "required": False, "default": False},
     },
-    "description": "Render a continuous guide as a gradient colour bar; use with continuous fill/colour scales to show the value range.",
+    "description": "Render a continuous guide as a gradient colour bar; use with continuous fill/colour scales to show the value range. Differs from plotnine: `mapping` names the aesthetic (color, fill, ...) the guide is set for, and without it nothing is added (a warning is printed).",
     "yaml_example": "layers:\n  - name: guides\n    params:\n      fill: colorbar",
 })
 def handle_guide_colorbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -126,6 +129,7 @@ def handle_guide_colorbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["guide", "colorbar", "colourbar", "continuous", "gradient"],
     "wraps": [{"lib": "plotnine", "attr_path": ["guide_colorbar"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": {
         "mapping": {"widget": "string", "label": "Aesthetic to apply guide to", "required": True},
@@ -133,7 +137,7 @@ def handle_guide_colorbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "barwidth": {"widget": "number", "label": "Bar width (grid units)", "required": False},
         "barheight": {"widget": "number", "label": "Bar height (grid units)", "required": False},
     },
-    "description": "British spelling alias for guide_colorbar; identical behaviour \u2014 use whichever spelling is consistent with the rest of your data analysis recipe.",
+    "description": "British spelling alias for guide_colorbar; identical behaviour \u2014 use whichever spelling is consistent with the rest of your data analysis recipe. Differs from plotnine: the same call as guide_colorbar of this registry, written with the other spelling.",
     "yaml_example": "layers:\n  - name: guides\n    params:\n      fill: colourbar",
 })
 def handle_guide_colourbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -147,11 +151,12 @@ def handle_guide_colourbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["guide", "none", "hide", "remove", "legend"],
     "wraps": [{"lib": "plotnine", "attr_path": ["guides"]}],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "mapping": {"widget": "string", "label": "Aesthetic to hide guide for (e.g. color, fill)", "required": True},
     },
-    "description": "Suppress a guide entirely; use when the legend adds no information (e.g. fill is redundant with a text label or facet strip).",
+    "description": "Suppress a guide entirely; use when the legend adds no information (e.g. fill is redundant with a text label or facet strip). Not in plotnine: hides the guide of the aesthetic named by `mapping`, the same as `guides` with false; without `mapping` nothing is done (a warning is printed).",
     "yaml_example": "layers:\n  - name: guides\n    params:\n      fill: none",
 })
 def handle_guide_none(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -172,12 +177,13 @@ def handle_guide_none(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["guide", "legend", "rows", "layout"],
     "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "nrow": {"widget": "number", "label": "Number of rows in legend", "required": True},
     },
-    "description": "Set the number of rows in a legend; use to control legend layout when many categories would produce an overly tall legend.",
+    "description": "Set the number of rows in a legend; use to control legend layout when many categories would produce an overly tall legend. Not in plotnine: guide_legend with only the number of rows set, written as `nrow` (or `value`) for the aesthetic named by `mapping`; without `mapping` nothing is added (a warning is printed).",
     "yaml_example": "layers:\n  - name: guide_nrow\n    params:\n      nrow: 2",
 })
 def handle_guide_nrow(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -199,12 +205,13 @@ def handle_guide_nrow(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["guide", "legend", "cols", "columns", "layout"],
     "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "ncol": {"widget": "number", "label": "Number of columns in legend", "required": True},
     },
-    "description": "Set the number of columns in a legend; use to arrange legend keys horizontally when legend width is constrained.",
+    "description": "Set the number of columns in a legend; use to arrange legend keys horizontally when legend width is constrained. Not in plotnine: guide_legend with only the number of columns set, written as `ncol` (or `value`) for the aesthetic named by `mapping`; without `mapping` nothing is added (a warning is printed).",
     "yaml_example": "layers:\n  - name: guide_ncol\n    params:\n      ncol: 3",
 })
 def handle_guide_ncol(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -226,12 +233,13 @@ def handle_guide_ncol(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["guide", "legend", "title"],
     "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "title": {"widget": "string", "label": "Legend title text", "required": True},
     },
-    "description": "Override the title of a specific guide; use when the default column name would be unclear to report readers.",
+    "description": "Override the title of a specific guide; use when the default column name would be unclear to report readers. Not in plotnine: guide_legend with only the title set, written as `title` (or `value`) for the aesthetic named by `mapping`; without `mapping` nothing is added (a warning is printed).",
     "yaml_example": "layers:\n  - name: guide_title\n    params:\n      title: Resistance class",
 })
 def handle_guide_title(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -251,12 +259,13 @@ def handle_guide_title(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["guide", "legend", "labels", "show", "hide"],
     "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "labels": {"widget": "bool", "label": "Show labels", "required": False, "default": True},
     },
-    "description": "Override the labels shown in a guide; use to recode technical column values to human-readable names without modifying source data.",
+    "description": "Override the labels shown in a guide; use to recode technical column values to human-readable names without modifying source data. Not in plotnine: guide_legend with only whether the labels are shown or their format set, written as `labels` (or `value`) for the aesthetic named by `mapping`; without `mapping` nothing is added (a warning is printed).",
     "yaml_example": "layers:\n  - name: guide_label\n    params:\n      labels: [Susceptible, Resistant]",
 })
 def handle_guide_label(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -275,13 +284,14 @@ def handle_guide_label(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["guide", "legend", "direction", "horizontal", "vertical"],
     "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "direction": {"widget": "enum", "label": "Legend direction", "required": True,
                       "default": "horizontal", "options": ["horizontal", "vertical"]},
     },
-    "description": "Set the guide layout direction to horizontal or vertical; use horizontal for a legend placed below or above the plot.",
+    "description": "Set the guide layout direction to horizontal or vertical; use horizontal for a legend placed below or above the plot. Not in plotnine: guide_legend with only the direction (horizontal when absent) set, written as `direction` (or `value`) for the aesthetic named by `mapping`; without `mapping` nothing is added (a warning is printed).",
     "yaml_example": "layers:\n  - name: guide_direction\n    params:\n      direction: horizontal",
 })
 def handle_guide_direction(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -300,12 +310,13 @@ def handle_guide_direction(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["guide", "legend", "reverse", "order"],
     "wraps": [{"lib": "plotnine", "attr_path": ["guide_legend"]}],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "reverse": {"widget": "bool", "label": "Reverse legend key order", "required": False, "default": True},
     },
-    "description": "Reverse the order of legend keys; use when the natural ordering of a factor places the most important category at the bottom of the legend.",
+    "description": "Reverse the order of legend keys; use when the natural ordering of a factor places the most important category at the bottom of the legend. Not in plotnine: guide_legend with only whether the order is reversed (true when absent) set, written as `reverse` (or `value`) for the aesthetic named by `mapping`; without `mapping` nothing is added (a warning is printed).",
     "yaml_example": "layers:\n  - name: guide_reverse\n    params:\n      reverse: true",
 })
 def handle_guide_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
