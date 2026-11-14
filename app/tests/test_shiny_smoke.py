@@ -41,6 +41,30 @@ def _wait_shiny(page: Page, timeout: int = 10_000) -> None:
     )
 
 
+def _open_app(page: Page, base_url: str) -> None:
+    """Load the app and wait until the default data analysis recipe has finished its first render.
+
+    Selecting another recipe while that first render is still running let the late first render put the default back
+    (found 2026-11-14: the selector showed the default after select_option; the test then waited for a plot that
+    never came). The first render must be over before the test chooses.
+    """
+    page.goto(base_url)
+    page.wait_for_selector("#data_analysis_recipe_id", timeout=20_000)
+    _wait_shiny(page, 60_000)
+
+
+def _choose_recipe(page: Page, recipe_id: str) -> None:
+    """Select a data analysis recipe and wait until it is the open one: the selector keeps the value after the reactive
+    work has settled and a second wait finds it still there."""
+    selector = page.locator("#data_analysis_recipe_id")
+    selector.select_option(recipe_id)
+    expect(selector).to_have_value(recipe_id)
+    _wait_shiny(page, 30_000)
+    page.wait_for_timeout(500)
+    expect(selector).to_have_value(recipe_id)
+    _wait_shiny(page, 30_000)
+
+
 def _wait_for_fb_col_option(page: Page, value: str, timeout: int = 20_000) -> None:
     """Wait until a specific option appears in #fb_col before selecting it.
 
@@ -68,9 +92,8 @@ def _load_data_analysis_recipe(page: Page, base_url: str, data_analysis_recipe_i
     if qc.count() > 0 and qc.is_visible():
         _wait_shiny(page)
         return
-    page.goto(base_url)
-    page.wait_for_selector("#data_analysis_recipe_id", timeout=20_000)
-    page.locator("#data_analysis_recipe_id").select_option(data_analysis_recipe_id)
+    _open_app(page, base_url)
+    _choose_recipe(page, data_analysis_recipe_id)
     # Wait for dynamic_tabs group nav pills — the first group in 1_test_data_ST22_dummy
     # is "Quality Control". This is the slowest step
     # (tier1 materialization + dynamic_tabs render). 60s covers cold-start scenarios.
@@ -360,13 +383,12 @@ class TestNoJoinsRecipe:
         # Load a different recipe first and deliberately wait it out — a leftover plot
         # image from this recipe must not let a loose "any .shiny-plot-output img exists"
         # assertion pass vacuously once we switch to the no-joins recipe below.
-        page.goto(shiny_app.url)
-        page.wait_for_selector("#data_analysis_recipe_id", timeout=20_000)
-        page.locator("#data_analysis_recipe_id").select_option("1_test_data_ST22_dummy")
+        _open_app(page, shiny_app.url)
+        _choose_recipe(page, "1_test_data_ST22_dummy")
         _wait_shiny(page)
         page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=20_000)
 
-        page.locator("#data_analysis_recipe_id").select_option("3_test_no_joins")
+        _choose_recipe(page, "3_test_no_joins")
         _wait_shiny(page)
         page.wait_for_timeout(1_000)  # let a failed assembly's error banner actually land
 
@@ -377,7 +399,7 @@ class TestNoJoinsRecipe:
         expect(page.get_by_text("Sequence Type Counts", exact=False).first).to_be_visible(timeout=8_000)
         expect(page.locator(".shiny-plot-output img").first).to_be_visible(timeout=8_000)
 
-        page.locator("#data_analysis_recipe_id").select_option("1_test_data_ST22_dummy")
+        _choose_recipe(page, "1_test_data_ST22_dummy")
         _wait_shiny(page)
 
 
@@ -395,15 +417,14 @@ class TestRecipeSwitchPlotRender:
         # test needs a known-clean starting state (no stale active_plot_subtab from
         # whatever an earlier test in this module-scoped page left behind), so it does
         # its own fresh page.goto() regardless of where it runs in the file.
-        page.goto(shiny_app.url)
-        page.wait_for_selector("#data_analysis_recipe_id", timeout=20_000)
-        page.locator("#data_analysis_recipe_id").select_option("1_test_data_ST22_dummy")
+        _open_app(page, shiny_app.url)
+        _choose_recipe(page, "1_test_data_ST22_dummy")
         page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=20_000)
         _wait_shiny(page)
         page.get_by_text("Qc Reads Horizontal Barplot", exact=False).first.click()
         _wait_shiny(page)
 
-        page.locator("#data_analysis_recipe_id").select_option("1_Abromics_general_pipeline")
+        _choose_recipe(page, "1_Abromics_general_pipeline")
         _wait_shiny(page)
         # No tab click here — the bug was that the plot stayed blank indefinitely without one.
         expect(page.locator(".shiny-plot-output img").first).to_be_visible(timeout=8_000)
@@ -416,7 +437,7 @@ class TestRecipeSwitchPlotRender:
         # later test that relies on that shortcut can run against the wrong recipe if
         # this restore is still in flight. Wait for the selector's own value, not just a
         # tab label both recipes share.
-        page.locator("#data_analysis_recipe_id").select_option("1_test_data_ST22_dummy")
+        _choose_recipe(page, "1_test_data_ST22_dummy")
         expect(page.locator("#data_analysis_recipe_id")).to_have_value("1_test_data_ST22_dummy")
         # Wait for a plot sub-tab name unique to ST22 dummy (not just "Quality Control",
         # which both recipes have) — proof the DOM actually switched, not just the <select>.
@@ -739,7 +760,14 @@ class TestSessionListRefresh:
             label_input.press("Tab")  # update_on="blur" — only commits once focus leaves
             _wait_shiny(page)
 
-            assert sm.get_session_label(key) == "ST22 outbreak analysis, dataset batch Jan2025"
+            # The label is written by the server after the blur reaches it: poll the file (a flake found 2026-11-14,
+            # `_wait_shiny` can return before the server has started on the event).
+            expected = "ST22 outbreak analysis, dataset batch Jan2025"
+            for _ in range(50):
+                if sm.get_session_label(key) == expected:
+                    break
+                page.wait_for_timeout(100)
+            assert sm.get_session_label(key) == expected
         finally:
             sm.delete_session(key)
 
