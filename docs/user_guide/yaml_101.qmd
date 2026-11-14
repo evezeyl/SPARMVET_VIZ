@@ -53,9 +53,11 @@ Notice how the wrangling steps are indented *under* `tier1`:
 ```yaml
 wrangling:
   tier1:
-    - action: filter_range
-      columns: [identity]
-      min: 90
+    - action: modif_filter
+      column: identity
+      op: ge
+      value: 90
+      na: remove
 ```
 
 ## Summary

@@ -552,12 +552,12 @@ The most common SPARMVET-specific cause is the YAML boolean trap:
 
 ```yaml
 # Wrong — YAML parses bare 'on' as boolean True
-- action: join
-  on: sample_id
+- action: polars_join
+  on: [sample_id]
 
 # Correct — quote it
-- action: join
-  'on': sample_id
+- action: polars_join
+  'on': [sample_id]
 ```
 
 **Source:** `libs/utils/src/utils/config_loader.py → ConfigManager.__init__()` — ADR-041.
