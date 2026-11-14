@@ -3,7 +3,8 @@
 Pure: it reads the recipe (a dictionary) and the data of the specification file `recipe_spec.yaml`, and never the data
 files, the registries or the disk. What it cannot know it is given:
 - `catalogs`: the registries as plain data (`actions`: name -> ui_schema, `components`: name -> allowed argument names or
-  None for free-form, `themes`: a set of names). Without them the checks of actions and components are not run, and
+  None for free-form, `themes`: a set of names, `component_kinds`: component name -> exact, modified or own, what it is to
+  plotnine, named in the messages about its arguments). Without them the checks of actions and components are not run, and
   `coverage` says so;
 - `graph`: an object with `columns_of(dataset_id)` (the columns of a table after its tier 1), for the checks of columns
   per node (J08, X7); without it they are not run;
@@ -64,6 +65,18 @@ def _declared_dtype(field: Any) -> Optional[Any]:
 def spec() -> dict:
     """The recipe format as data (the packaged file `recipe_spec.yaml`)."""
     return yaml.safe_load(resources.files("utils").joinpath("recipe_spec.yaml").read_text(encoding="utf-8"))
+
+
+def _plotnine_note(name: str, kinds: dict) -> str:
+    """What a plot component is to plotnine (ADR-106 V1), added to a message about its arguments so the maker knows where to look."""
+    kind = kinds.get(name)
+    if kind == "exact":
+        return f" (exactly plotnine's {name}: its arguments are plotnine's)"
+    if kind == "modified":
+        return f" (changes plotnine's {name}: read its description for what is different)"
+    if kind == "own":
+        return " (is not in plotnine: read its description for its arguments)"
+    return ""
 
 
 @dataclass(frozen=True)
@@ -759,6 +772,7 @@ class _Check:
     def layers(self, layers: list, path: str) -> None:
         components = (self.catalogs or {}).get("components")
         arguments = (self.catalogs or {}).get("component_arguments", {})
+        kinds = (self.catalogs or {}).get("component_kinds", {})
         has_geom = False
         for index, layer in enumerate(layers, start=1):
             where = f"{path}[{index}]"
@@ -782,7 +796,8 @@ class _Check:
                 for key in params:
                     if key not in allowed:
                         close = difflib.get_close_matches(str(key), sorted(allowed), n=1, cutoff=0.6)
-                        self.add("PS04", f"{where}.params.{key}", f"{key} is not an argument of {name}", f"write {close[0]}" if close else "remove it")
+                        self.add("PS04", f"{where}.params.{key}", f"{key} is not an argument of {name}{_plotnine_note(name, kinds)}",
+                                 f"write {close[0]}" if close else "remove it")
         if not has_geom:
             self.add("PS03", path, "no geom or stat layer", "add a layer such as {name: geom_point}")
 
