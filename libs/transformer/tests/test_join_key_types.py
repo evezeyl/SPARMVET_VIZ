@@ -13,9 +13,12 @@ What each test proves:
   - String against Categorical fails (the case the old hidden cast used to hide), in both directions;
   - `left_on` / `right_on` of different types fail, and the message names the right-hand column;
   - with a list of keys only the columns that differ are named;
-  - the left side is the table at that step: a cast step before the join (the fix) makes it work, and the
+  - the left side is the table at that step: a cast step before the join (the fix for the left table) makes it
+    work, the message says that the right table is changed in its own input_fields or wrangling, and the
     second join of a recipe is checked against the result of the first;
-  - a key column that does not exist is not reported as a type problem (Polars names the missing column);
+  - a key column that is missing on one side or on both, and `left_on` / `right_on` lists of unequal length, fail
+    in the check itself with the same kind of message (recipe, join, step, columns, which side lacks what, fix);
+  - `how: semi` and `how: anti` are checked like the other kinds of join;
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/test_join_key_types.py -q
 """
@@ -71,6 +74,14 @@ def test_string_against_categorical_fails_and_names_everything():
     text = f"{caught.value} {caught.value.tip}"
     for part in (RECIPE, JOIN_ID, "step 0", "sample_id", "String", "Categorical", "'R'", "input_fields", JOIN, CAST):
         assert part in text, f"{part!r} is not in: {text}"
+
+
+def test_the_fix_says_that_a_step_before_the_join_changes_only_the_left_table():
+    with pytest.raises(TransformationError) as caught:
+        _assemble(_left(pl.String), _right(pl.Categorical), [_join(on=["sample_id"])]).collect()
+    tip = caught.value.tip
+    assert "only the left table" in tip
+    assert "'R'" in tip and "its own input_fields" in tip and "its own wrangling" in tip
 
 
 def test_categorical_against_string_fails_the_other_way_round_too():
@@ -134,9 +145,81 @@ def test_the_second_join_is_checked_against_the_result_of_the_first():
 
 # -- what is not a type problem -----------------------------------------------------------------
 
-def test_a_missing_key_column_is_left_to_polars_and_is_not_reported_as_a_type_problem():
-    with pytest.raises(pl.exceptions.ColumnNotFoundError, match="no_such_column"):
-        _assemble(_left(pl.String), _right(pl.String), [_join(on=["no_such_column"])]).collect()
+def _fails_with(left, right, step, *parts):
+    with pytest.raises(TransformationError) as caught:
+        _assemble(left, right, [step]).collect()
+    text = f"{caught.value} {caught.value.tip}"
+    for part in (RECIPE, JOIN_ID, "step 0", "'R'", *parts):
+        assert part in text, f"{part!r} is not in: {text}"
+    return caught.value
+
+
+def test_a_key_column_missing_on_the_left_only_fails_and_says_which_side():
+    error = _fails_with(_left(pl.String), _right(pl.String, key="other"), _join(left_on=["no_such"], right_on=["other"]),
+                        "'no_such'", "missing in the left table", "sample_id")
+    assert "missing in 'R'" not in str(error)
+    assert error.pipeline_error.category == "assembly" and error.pipeline_error.who == "data_analysis_recipe_author"
+
+
+def test_a_key_column_missing_on_the_right_only_fails_and_says_which_side():
+    error = _fails_with(_left(pl.String), _right(pl.String), _join(left_on=["sample_id"], right_on=["no_such"]),
+                        "'no_such'", "missing in 'R'", "year")
+    assert "missing in the left table" not in str(error)
+
+
+def test_a_key_column_missing_on_both_sides_names_both_sides():
+    _fails_with(_left(pl.String), _right(pl.String), _join(on=["no_such_column"]),
+                "'no_such_column'", "missing in the left table", "missing in 'R'")
+
+
+def test_with_two_keys_every_missing_column_is_named():
+    _fails_with(_left(pl.String), _right(pl.String), _join(on=["sample_id", "gene", "lab"]),
+                "'gene'", "'lab'", "missing in the left table", "missing in 'R'")
+
+
+def test_left_on_and_right_on_of_unequal_length_fail_and_name_the_lists():
+    _fails_with(_left(pl.String), _right(pl.String), _join(left_on=["sample_id", "country"], right_on=["sample_id"]),
+                "left_on", "right_on", "2", "1", "same number")
+
+
+def test_left_on_without_right_on_fails_in_the_check_and_says_so():
+    # What the engine does today without the check: Polars raises ValueError ("'left_on' requires corresponding
+    # 'right_on'"), which the assembler wraps as "raised an unexpected error: ValueError" (verified by running).
+    _fails_with(_left(pl.String), _right(pl.String), _join(left_on=["sample_id"]), "left_on", "right_on", "same number")
+
+
+def test_the_missing_column_error_carries_the_structured_record():
+    error = _fails_with(_left(pl.String), _right(pl.String), _join(on=["no_such_column"]), "no_such_column")
+    evidence = error.pipeline_error.evidence
+    assert "no_such_column" in evidence["missing_in_left"] and "no_such_column" in evidence["missing_in_right"]
+
+
+# -- semi and anti joins are joins on keys too --------------------------------------------------
+
+@pytest.mark.parametrize("how", ["semi", "anti"])
+def test_a_semi_or_anti_join_with_different_key_types_fails(how):
+    _fails_with(_left(pl.String), _right(pl.Categorical), _join(on=["sample_id"], how=how),
+                "String in the left table and Categorical in 'R'")
+
+
+@pytest.mark.parametrize("how", ["semi", "anti"])
+def test_a_semi_or_anti_join_with_equal_key_types_runs(how):
+    right = _right(pl.String).filter(pl.col("sample_id") == "s1")
+    result = _assemble(_left(pl.String), right, [_join(on=["sample_id"], how=how)]).collect()
+    assert result["sample_id"].to_list() == (["s1"] if how == "semi" else ["s2", "s3"])
+
+
+# -- the first step: the base table as right table ----------------------------------------------
+
+def test_a_first_step_that_joins_the_base_table_with_itself_is_skipped_by_the_assembler_today():
+    # CHARACTERISATION, not an endorsement: the base is the first ingredient; a first step whose right_ingredient
+    # is that same ingredient is skipped ("redundant init", data_assembler.py), so it is neither executed nor
+    # checked, and a left_on/right_on of different types on that table passes. Reported to the owner as an open
+    # design question (silent skip). If the owner decides that this must fail, this test changes with it.
+    table = pl.LazyFrame({"a": ["x", "y"], "n": [1, 2]})
+    step = {"action": JOIN, "right_ingredient": "R", "how": "left", "maintain_order": "left_right", "left_on": ["a"], "right_on": ["n"]}
+    result = DataAssembler({"R": table}, recipe_id=RECIPE, join_id=JOIN_ID).assemble([step]).collect()
+    assert result.equals(table.collect())
 
 
 def test_the_error_carries_the_structured_record_for_the_ui():

@@ -37,41 +37,70 @@ class DataAssembler:
             return []
         return [value] if isinstance(value, str) else list(value)
 
+    def _fail_join(self, step: Dict[str, Any], index: int, problem: str, fix: str, evidence: Dict[str, Any]) -> None:
+        """Raise the error of a join that cannot run, with the recipe, the join and the step named."""
+        right_id = step["right_ingredient"]
+        pe = PipelineError(
+            component="DataAssembler", problem=problem,
+            location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {index}: action='{step['action']}', right_ingredient='{right_id}'",
+            fix=fix, who="data_analysis_recipe_author", category="assembly", surface="plot_overlay", severity="error",
+            evidence=evidence, reference="recipe_format_spec.md 7.5",
+        )
+        print(pe.format())
+        raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
+
     def _check_join_key_types(self, step: Dict[str, Any], index: int, left: pl.LazyFrame, right: pl.LazyFrame) -> None:
-        """Fail when a join key has one type on the left and another on the right.
+        """Fail when the keys of a join cannot be joined: unequal key lists, a missing key column, or different types.
 
         Eve 2026-11-14: a join keeps the types the tables have; a change of type is a decision written in the
-        recipe (input_fields or a polars_cast step), never done here. A key column that does not exist is left to
-        the join itself, which names the missing column.
+        recipe (input_fields or a polars_cast step), never done here. The same holds for the other two problems:
+        they fail here with a plain message that names the recipe, the join and the step, not later with a raw
+        Polars error.
         """
         left_keys = self._key_columns(step.get("on") or step.get("left_on"))
         right_keys = self._key_columns(step.get("on") or step.get("right_on"))
         left_schema, right_schema = left.collect_schema(), right.collect_schema()
         right_id = step["right_ingredient"]
+        where = f"in data analysis recipe '{self.recipe_id}', join '{self.join_id}', step {index} ({step['action']} with '{right_id}')"
+
+        if len(left_keys) != len(right_keys):
+            self._fail_join(
+                step, index,
+                f"The key lists of the join differ in length {where}: left_on has {len(left_keys)} column(s) {left_keys} and right_on has {len(right_keys)} column(s) {right_keys}.",
+                "Write left_on and right_on with the same number of columns, paired by position (the first of left_on with the first of right_on), "
+                "or write 'on' when the columns have the same name in both tables.",
+                {"left_keys": str(left_keys), "right_keys": str(right_keys)},
+            )
+
+        missing_left = [c for c in left_keys if c not in left_schema]
+        missing_right = [c for c in right_keys if c not in right_schema]
+        if missing_left or missing_right:
+            lacks = []
+            if missing_left:
+                lacks.append(f"key column(s) {missing_left} missing in the left table (its columns: {list(left_schema)})")
+            if missing_right:
+                lacks.append(f"key column(s) {missing_right} missing in '{right_id}' (its columns: {list(right_schema)})")
+            self._fail_join(
+                step, index,
+                f"A join key column does not exist {where}: " + "; ".join(lacks) + ".",
+                "Write the key column names as they are in each table: 'on' for a name that is the same in both, left_on and right_on for names that differ. "
+                "The left table is the table at this step: a column of a table joined later is not in it yet, and a step before the join may have renamed or dropped the column.",
+                {"missing_in_left": str(missing_left), "missing_in_right": str(missing_right)},
+            )
+
         for left_col, right_col in zip(left_keys, right_keys):
-            if left_col not in left_schema or right_col not in right_schema:
-                continue
             left_type, right_type = left_schema[left_col], right_schema[right_col]
             if left_type == right_type:
                 continue
             names = f"column '{left_col}'" if left_col == right_col else f"column '{left_col}' (left) and '{right_col}' (right)"
-            problem = (
-                f"The join key types differ in data analysis recipe '{self.recipe_id}', join '{self.join_id}', step {index} "
-                f"({step['action']} with '{right_id}'): {names} is {left_type} in the left table and {right_type} in '{right_id}'."
+            self._fail_join(
+                step, index,
+                f"The join key types differ {where}: {names} is {left_type} in the left table and {right_type} in '{right_id}'.",
+                f"Declare the same type for this field in input_fields of both tables. A {CAST} step before the join changes only the left table "
+                f"(the table at this step); the type of '{right_id}' is changed in its own input_fields or in its own wrangling. "
+                "The engine does not change the type of a join key for you.",
+                {"left_column": left_col, "right_column": right_col, "left_type": str(left_type), "right_type": str(right_type)},
             )
-            fix = (
-                f"Declare the same type for this field in input_fields of both tables, or add a {CAST} step before the join. "
-                "The engine does not change the type of a join key for you."
-            )
-            pe = PipelineError(
-                component="DataAssembler", problem=problem,
-                location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {index}: action='{step['action']}', right_ingredient='{right_id}'",
-                fix=fix, who="data_analysis_recipe_author", category="assembly", surface="plot_overlay", severity="error",
-                evidence={"left_column": left_col, "right_column": right_col, "left_type": str(left_type), "right_type": str(right_type)},
-                reference="recipe_format_spec.md 7.5",
-            )
-            print(pe.format())
-            raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
     @staticmethod
     def _canonical_steps(steps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

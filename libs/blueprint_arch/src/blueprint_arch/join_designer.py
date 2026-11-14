@@ -54,8 +54,10 @@ def compute_key_match(left_rows, right_rows, left_dtypes, right_dtypes, sample_n
 
     left_rows / right_rows: list of key tuples — one tuple per distinct key value (for a
         single key, 1-tuples). The caller extracts these via
-        `lf.select([pl.col(k).cast(pl.String) for k in keys]).unique().collect().rows()`
-        so the overlap reflects exactly what the assembler will join on.
+        `lf.select([pl.col(k).cast(pl.String) for k in keys]).unique().collect().rows()`.
+        The preview casts the keys to String, so it can show an overlap for a pair of key types
+        that the build refuses: since JOIN-KEY-TYPES-1 (2026-11-14) the assembler does not cast
+        a key, and a join whose key types differ fails (task JOIN-PREVIEW-STRICT-1).
     left_dtypes / right_dtypes: original polars dtype-name strings, key-aligned (for the
         advisory dtype panel — independent of the String-cast overlap above).
     sample_n: number of unmatched key tuples to surface in each *_only_sample list.
