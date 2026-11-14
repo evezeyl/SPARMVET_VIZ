@@ -98,7 +98,7 @@ The platform is designed to be resilient to partial data:
 
 - **Optional Metadata**: If `metadata_schema` is missing from the data analysis recipe or its file is not found, the `DataOrchestrator (orchestrator.py)` bypasses the metadata join and proceeds with the primary data sources.
 - **Strict Assembly**: Any ingredient explicitly referenced in an assembly `steps` step is a **strict requirement**. If the ingredient is missing, the `DataAssembler (data_assembler.py)` raises a descriptive error to prevent analyzing incomplete relational states.
-- **Identity Fallback**: If no assembly steps is provided, the system returns the primary data source as-is.
+- **Identity Fallback**: If no assembly steps are given and the recipe has exactly one data source, the assembler returns that source as it is. With no steps and several sources, or with no source at all, it stops with an error.
 
 ---
 
