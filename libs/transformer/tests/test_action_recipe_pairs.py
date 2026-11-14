@@ -31,6 +31,7 @@ from polars.testing import assert_frame_equal
 import transformer.actions  # noqa: F401  (loads the registry)
 from ingestion.ingestor import DataIngestor
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
+from transformer.actions.polars_aggregations import AGGREGATIONS
 from transformer.data_assembler import DataAssembler
 from transformer.data_wrangler import DataWrangler
 
@@ -46,6 +47,9 @@ PAIRED = sorted(AVAILABLE_WRANGLING_ACTIONS)
 OWN_EXPECTED = {"modif_filter": lambda lf: lf.filter(pl.col("n") > 1)}
 # the actions that are not plain Polars calls: the test file that checks their behaviour
 OWN_TESTS = {"modif_filter": "test_modif_filter.py", "step_top_n_other": "test_top_n_other.py"}
+
+# the table aggregations have a test file of their own, with the pairs checked there (polars_aggregations.py)
+OWN_TESTS.update({f"polars_{name}": "test_polars_aggregations_equal_polars.py" for name in AGGREGATIONS})
 
 FIRST = {}  # the first case of an action is the one its pair holds
 for _c in eq.CASES:
