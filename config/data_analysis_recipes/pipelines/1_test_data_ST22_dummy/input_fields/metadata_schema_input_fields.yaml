@@ -1,6 +1,6 @@
 sample_id:
   original_name: "sample_id"
-  type: Categorical
+  type: String
   null_values: ["", "-"]
   label: "Sample ID"
   is_entity_key: true

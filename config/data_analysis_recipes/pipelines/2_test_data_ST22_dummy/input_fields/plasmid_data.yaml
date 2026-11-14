@@ -1,5 +1,5 @@
 sample_id:
-  type: Categorical
+  type: String
   original_name: sample_id
   label: Sample ID
 plasmid_name:

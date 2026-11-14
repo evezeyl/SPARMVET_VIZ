@@ -1,6 +1,6 @@
 Gene_name:
   original_name: Gene_name
-  type: Categorical
+  type: String
   label: Gene Name
 Location:
   original_name: Location

@@ -1,6 +1,6 @@
 sample_id:
   original_name: "sample_id"
-  type: Categorical
+  type: String
   label: "Sample ID"
   is_entity_key: true
 total_reads:

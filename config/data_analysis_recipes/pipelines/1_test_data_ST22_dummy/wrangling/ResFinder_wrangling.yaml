@@ -1,7 +1,4 @@
 tier1:
-  - action: polars_cast
-    columns: [sample_id]
-    dtype: String
   - action: polars_with_columns
     named_exprs:
       status: pl.lit('Detected')

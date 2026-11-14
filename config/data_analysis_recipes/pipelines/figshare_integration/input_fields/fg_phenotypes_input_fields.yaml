@@ -1,6 +1,6 @@
 sample_id:
   original_name: sample_id
-  type: Categorical
+  type: String
   label: Sample Id
 mic_id:
   original_name: mic_id

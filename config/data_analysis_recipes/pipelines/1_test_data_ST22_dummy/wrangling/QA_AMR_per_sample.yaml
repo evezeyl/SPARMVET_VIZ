@@ -2,9 +2,6 @@
 # T1 is long (one row per sample and gene, a sample without a gene keeps one row with an empty gene);
 # T2 is one row per sample with its gene count (0 for the samples without a gene).
 tier1:
-  - action: polars_cast
-    columns: [sample_id]
-    dtype: String
   - action: polars_join
     right_ingredient: ResFinder
     'on': [sample_id]

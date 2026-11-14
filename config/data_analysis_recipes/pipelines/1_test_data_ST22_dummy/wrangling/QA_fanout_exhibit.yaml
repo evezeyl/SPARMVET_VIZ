@@ -1,9 +1,6 @@
 # QA canary, an EXHIBIT of a known defect (issue #68): two long tables joined on the same key multiply
 # the rows (each AMR gene row meets each virulence gene row of the sample). Do not copy this pattern.
 tier1:
-  - action: polars_cast
-    columns: [sample_id]
-    dtype: String
   - action: polars_join
     right_ingredient: ResFinder
     'on': [sample_id]
