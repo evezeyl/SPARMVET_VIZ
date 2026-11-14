@@ -1,32 +1,42 @@
+id: line_simple
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Line Chart (Simple)
+  label: Line Chart (Simple)
+  description: >-
+    Use when you have a single numeric variable measured over time and want to reveal a trend or trajectory. Ideal
+    for longitudinal AMR resistance rates, annual incidence, or cumulative counts at one aggregation level.
   submission_date: '2026-05-03'
-  family: Evolution
-  pattern: 1 Year, 1 Numeric
-  difficulty: Simple
-  geom: geom_line
-  show: trend
-  sample_size: medium+
-data_path: example_data.tsv
-plots:
-  line_simple:
-    layers:
-    - name: geom_line
-      params:
-        size: 1.2
-    - name: geom_point
-      params:
-        size: 3
-    - name: labs
-      params:
-        x: Year
-        y: Mean Resistance (%)
-        title: AMR Trend Over Time
-    - name: theme_minimal
-      params: {}
-    mapping:
-      x: year
-      y: mean_resistance
-wrangling:
-  tier1: []
-  tier2: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 7 rows and 3 columns (year, mean_resistance, n_isolates).
+    source: {type: local_tsv, path: ./assets/gallery_data/line_simple/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      year: {type: Int64}
+      mean_resistance: {type: Float64}
+      n_isolates: {type: Int64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      line_simple:
+        label: Line Chart (Simple)
+        description: >-
+          Drawn with geom_line; x is year, y is mean_resistance.
+        taxonomy: {family: Evolution, pattern: '1 Year, 1 Numeric', difficulty: Simple, show: trend, sample_size: medium+}
+        spec:
+          target_dataset: example
+          mapping: {x: year, y: mean_resistance}
+          layers:
+            - {name: geom_line, params: {size: 1.2}}
+            - {name: geom_point, params: {size: 3}}
+            - name: labs
+              params: {x: Year, y: Mean Resistance (%), title: AMR Trend Over Time}
+            - {name: theme_minimal, params: {}}

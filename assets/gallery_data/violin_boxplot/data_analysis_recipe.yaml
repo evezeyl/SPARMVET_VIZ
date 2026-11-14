@@ -1,34 +1,41 @@
+id: violin_boxplot
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Violin + Boxplot Overlay
+  label: Violin + Boxplot Overlay
+  description: >-
+    Combines the density shape of a violin with the quartile summary of a boxplot. Best of both worlds: see the
+    full distribution shape AND the median/IQR in one chart.
   submission_date: '2026-05-03'
-  family: Distribution
-  pattern: 1 Numeric, 1 Categorical
-  difficulty: Intermediate
-  geom: geom_violin
-  show: distribution
-  sample_size: medium+
-data_path: example_data.tsv
-plots:
-  violin_boxplot:
-    layers:
-    - params:
-        alpha: 0.4
-        trim: false
-      name: geom_violin
-    - params:
-        width: 0.1
-        outlier_alpha: 0.5
-      name: geom_boxplot
-    - name: labs
-      params:
-        title: MIC Distribution — Violin + Boxplot
-        x: Species
-        y: MIC Value
-    mapping:
-      x: species
-      y: mic_value
-      fill: species
-wrangling:
-  tier1: []
-  tier2: []
-  tier3: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 40 rows and 2 columns (species, mic_value).
+    source: {type: local_tsv, path: ./assets/gallery_data/violin_boxplot/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      species: {type: String}
+      mic_value: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      violin_boxplot:
+        label: Violin + Boxplot Overlay
+        description: >-
+          Drawn with geom_violin; x is species, y is mic_value, fill is species.
+        taxonomy: {family: Distribution, pattern: '1 Numeric, 1 Categorical', difficulty: Intermediate, show: distribution,
+          sample_size: medium+}
+        spec:
+          target_dataset: example
+          mapping: {x: species, y: mic_value, fill: species}
+          layers:
+            - {name: geom_violin, params: {alpha: 0.4, trim: false}}
+            - {name: geom_boxplot, params: {width: 0.1, outlier_alpha: 0.5}}
+            - name: labs
+              params: {title: MIC Distribution — Violin + Boxplot, x: Species, y: MIC Value}

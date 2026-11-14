@@ -1,31 +1,45 @@
+id: qq_plot
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Q-Q Plot (Quantile-Quantile)
+  label: Q-Q Plot (Quantile-Quantile)
+  description: >-
+    Tests normality of a distribution. Points falling near the diagonal reference line indicate the data is approximately
+    normally distributed. Essential for validating statistical assumptions before parametric tests.
   submission_date: '2026-05-03'
-  family: Distribution
-  pattern: 1 Numeric, 1 Categorical
-  difficulty: Advanced
-  geom: geom_qq
-  show: normality
-  sample_size: medium+
-data_path: example_data.tsv
-plots:
-  qq_plot:
-    layers:
-    - params:
-        alpha: 0.7
-      name: geom_qq
-    - params:
-        size: 0.8
-      name: geom_qq_line
-    - name: labs
-      params:
-        title: Q-Q Plot of log(MIC) by Species
-        x: Theoretical Quantiles
-        y: Sample Quantiles
-    mapping:
-      sample: log_mic
-      color: species
-wrangling:
-  tier1: []
-  tier2: []
-  tier3: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 30 rows and 3 columns (species, mic_value, log_mic).
+    source: {type: local_tsv, path: ./assets/gallery_data/qq_plot/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      species: {type: String}
+      mic_value: {type: Float64}
+      log_mic: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      qq_plot:
+        label: Q-Q Plot (Quantile-Quantile)
+        description: >-
+          Drawn with geom_qq; sample is log_mic, color is species.
+        taxonomy: {family: Distribution, pattern: '1 Numeric, 1 Categorical', difficulty: Advanced, show: normality,
+          sample_size: medium+}
+        spec:
+          target_dataset: example
+          mapping: {sample: log_mic, color: species}
+          layers:
+            - {name: geom_qq, params: {alpha: 0.7}}
+            - {name: geom_qq_line, params: {size: 0.8}}
+            - name: labs
+              params:
+                title: Q-Q Plot of log(MIC) by Species
+                x: Theoretical Quantiles
+                y: Sample Quantiles

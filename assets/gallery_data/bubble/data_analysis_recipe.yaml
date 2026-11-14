@@ -1,38 +1,49 @@
+id: bubble
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Bubble Chart
+  label: Bubble Chart
+  description: >-
+    Encode three numeric variables simultaneously: position (x, y) and magnitude (bubble size). Use when you want
+    to show the relationship between two continuous axes while also conveying a third quantity (e.g. sample size,
+    % resistant, confidence).
   submission_date: '2026-05-03'
-  family: Correlation
-  pattern: 2 Numeric, 1 Categorical
-  difficulty: Intermediate
-  geom: geom_point
-  show: relationship
-  sample_size: any
-data_path: example_data.tsv
-plots:
-  bubble:
-    layers:
-    - name: geom_point
-      params:
-        alpha: 0.7
-    - name: scale_size
-      params:
-        range:
-        - 4
-        - 20
-        name: '% Resistant'
-    - name: labs
-      params:
-        x: Sample Size
-        y: Mean Resistance (%)
-        color: Species
-        size: '% Resistant'
-    - name: theme_minimal
-      params: {}
-    mapping:
-      x: sample_size
-      y: mean_resistance
-      size: pct_resistant
-      color: species
-wrangling:
-  tier1: []
-  tier2: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 5 rows and 4 columns (species, sample_size, mean_resistance, pct_resistant).
+    source: {type: local_tsv, path: ./assets/gallery_data/bubble/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      species: {type: String}
+      sample_size: {type: Int64}
+      mean_resistance: {type: Float64}
+      pct_resistant: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      bubble:
+        label: Bubble Chart
+        description: >-
+          Drawn with geom_point; x is sample_size, y is mean_resistance, size is pct_resistant, color is species.
+        taxonomy: {family: Correlation, pattern: '2 Numeric, 1 Categorical', difficulty: Intermediate, show: relationship,
+          sample_size: any}
+        spec:
+          target_dataset: example
+          mapping: {x: sample_size, y: mean_resistance, size: pct_resistant, color: species}
+          layers:
+            - {name: geom_point, params: {alpha: 0.7}}
+            - {name: scale_size, params: {range: [4, 20], name: '% Resistant'}}
+            - name: labs
+              params:
+                x: Sample Size
+                y: Mean Resistance (%)
+                color: Species
+                size: '% Resistant'
+            - {name: theme_minimal, params: {}}

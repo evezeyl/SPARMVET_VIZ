@@ -1,22 +1,37 @@
+id: histogram_simple
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Histogram Simple
+  label: Histogram Simple
+  description: >-
+    The 'Inventory' view. Groups continuous data into bins to count frequencies.
   submission_date: '2026-04-10'
-  family: Distribution
-  pattern: 1 Numeric
-  difficulty: Simple
-  geom: geom_histogram
-  show: frequency
-  sample_size: medium+
-data_path: example_data.tsv
-plots:
-  histogram_simple:
-    layers:
-    - name: geom_histogram
-      params:
-        bins: 30
-    mapping:
-      fill: amr_class
-      x: mic_value
-wrangling:
-  tier1: []
-  tier2: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 100 rows and 3 columns (id, mic_value, amr_class).
+    source: {type: local_tsv, path: ./assets/gallery_data/histogram_simple/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      id: {type: String}
+      mic_value: {type: Float64}
+      amr_class: {type: String}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      histogram_simple:
+        label: Histogram Simple
+        description: >-
+          Drawn with geom_histogram; fill is amr_class, x is mic_value.
+        taxonomy: {family: Distribution, pattern: 1 Numeric, difficulty: Simple, show: frequency, sample_size: medium+}
+        spec:
+          target_dataset: example
+          mapping: {fill: amr_class, x: mic_value}
+          layers:
+            - {name: geom_histogram, params: {bins: 30}}

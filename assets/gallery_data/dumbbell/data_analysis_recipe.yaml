@@ -1,34 +1,45 @@
+id: dumbbell
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Dumbbell Chart
+  label: Dumbbell Chart
+  description: >-
+    Shows change between two states (e.g. two time points) for multiple categories. The dumbbell shape (line + two
+    dots) emphasises the direction and magnitude of change per group. More compact than two grouped bars.
   submission_date: '2026-05-03'
-  family: Comparison
-  pattern: 1 Numeric, 2 Categorical
-  difficulty: Intermediate
-  geom: geom_segment
-  show: change
-  sample_size: any
-data_path: example_data.tsv
-plots:
-  dumbbell:
-    layers:
-    - params:
-        color: '#b3b3b3'
-        size: 1.5
-      name: geom_line
-    - params:
-        size: 4
-      name: geom_point
-    - name: labs
-      params:
-        title: Resistance Rate Change (2015 vs 2023)
-        x: Resistance Rate (%)
-        y: Species
-    mapping:
-      x: resistance_rate
-      y: species
-      group: species
-      color: year_label
-wrangling:
-  tier1: []
-  tier2: []
-  tier3: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 12 rows and 3 columns (species, year_label, resistance_rate).
+    source: {type: local_tsv, path: ./assets/gallery_data/dumbbell/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      species: {type: String}
+      year_label: {type: Int64}
+      resistance_rate: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      dumbbell:
+        label: Dumbbell Chart
+        description: >-
+          Drawn with geom_line; x is resistance_rate, y is species, group is species, color is year_label.
+        taxonomy: {family: Comparison, pattern: '1 Numeric, 2 Categorical', difficulty: Intermediate, show: change,
+          sample_size: any}
+        spec:
+          target_dataset: example
+          mapping: {x: resistance_rate, y: species, group: species, color: year_label}
+          layers:
+            - {name: geom_line, params: {color: '#b3b3b3', size: 1.5}}
+            - {name: geom_point, params: {size: 4}}
+            - name: labs
+              params:
+                title: Resistance Rate Change (2015 vs 2023)
+                x: Resistance Rate (%)
+                y: Species

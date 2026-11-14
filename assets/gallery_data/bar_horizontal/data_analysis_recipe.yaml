@@ -1,31 +1,44 @@
+id: bar_horizontal
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Horizontal Bar Chart
+  label: Horizontal Bar Chart
+  description: >-
+    Rank categories by a numeric value when category labels are long or numerous. The horizontal layout prevents
+    x-axis label overlap and makes left-to-right reading natural. Preferred over vertical bars for named rankings.
   submission_date: '2026-05-03'
-  family: Ranking
-  pattern: 1 Numeric, 1 Categorical
-  difficulty: Simple
-  geom: geom_col
-  show: ranking
-  sample_size: any
-data_path: example_data.tsv
-plots:
-  bar_horizontal:
-    layers:
-    - name: geom_col
-      params:
-        fill: '#ef5350'
-    - name: coord_flip
-      params: {}
-    - name: labs
-      params:
-        x: AMR Class
-        y: Mean Resistance (%)
-        title: Resistance by Antimicrobial Class
-    - name: theme_minimal
-      params: {}
-    mapping:
-      x: amr_class
-      y: mean_resistance
-wrangling:
-  tier1: []
-  tier2: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 5 rows and 2 columns (amr_class, mean_resistance).
+    source: {type: local_tsv, path: ./assets/gallery_data/bar_horizontal/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      amr_class: {type: String}
+      mean_resistance: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      bar_horizontal:
+        label: Horizontal Bar Chart
+        description: >-
+          Drawn with geom_col; x is amr_class, y is mean_resistance.
+        taxonomy: {family: Ranking, pattern: '1 Numeric, 1 Categorical', difficulty: Simple, show: ranking, sample_size: any}
+        spec:
+          target_dataset: example
+          mapping: {x: amr_class, y: mean_resistance}
+          layers:
+            - {name: geom_col, params: {fill: '#ef5350'}}
+            - {name: coord_flip, params: {}}
+            - name: labs
+              params:
+                x: AMR Class
+                y: Mean Resistance (%)
+                title: Resistance by Antimicrobial Class
+            - {name: theme_minimal, params: {}}

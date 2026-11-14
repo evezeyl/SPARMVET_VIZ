@@ -1,28 +1,43 @@
+id: ecdf
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: ECDF Plot
+  label: ECDF Plot
+  description: >-
+    The Empirical Cumulative Distribution Function shows what fraction of values fall below any given threshold.
+    Essential for comparing MIC distributions across species — allows reading off %S, %I, %R directly from breakpoints.
   submission_date: '2026-05-03'
-  family: Distribution
-  pattern: 1 Numeric, 1 Categorical
-  difficulty: Intermediate
-  geom: stat_ecdf
-  show: distribution
-  sample_size: medium+
-data_path: example_data.tsv
-plots:
-  ecdf:
-    layers:
-    - params:
-        size: 1.2
-      name: stat_ecdf
-    - name: labs
-      params:
-        title: Empirical Cumulative Distribution of MIC by Species
-        x: MIC Value
-        y: Cumulative Proportion
-    mapping:
-      x: mic_value
-      color: species
-wrangling:
-  tier1: []
-  tier2: []
-  tier3: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 30 rows and 2 columns (species, mic_value).
+    source: {type: local_tsv, path: ./assets/gallery_data/ecdf/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      species: {type: String}
+      mic_value: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      ecdf:
+        label: ECDF Plot
+        description: >-
+          Drawn with stat_ecdf; x is mic_value, color is species.
+        taxonomy: {family: Distribution, pattern: '1 Numeric, 1 Categorical', difficulty: Intermediate, show: distribution,
+          sample_size: medium+}
+        spec:
+          target_dataset: example
+          mapping: {x: mic_value, color: species}
+          layers:
+            - {name: stat_ecdf, params: {size: 1.2}}
+            - name: labs
+              params:
+                title: Empirical Cumulative Distribution of MIC by Species
+                x: MIC Value
+                y: Cumulative Proportion

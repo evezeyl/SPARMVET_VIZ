@@ -1,35 +1,45 @@
+id: scatter_smooth
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Scatter Plot with Smoother
+  label: Scatter Plot with Smoother
+  description: >-
+    Adds a linear model (or LOESS) trend line with confidence interval to a scatter plot. Reveals the direction,
+    strength, and uncertainty of the relationship between two numeric variables across groups.
   submission_date: '2026-05-03'
-  family: Correlation
-  pattern: 2 Numeric, 1 Categorical
-  difficulty: Simple
-  geom: geom_point
-  show: relationship
-  sample_size: individual points
-data_path: example_data.tsv
-plots:
-  scatter_smooth:
-    layers:
-    - params:
-        alpha: 0.7
-        size: 2
-      name: geom_point
-    - params:
-        method: lm
-        se: true
-        alpha: 0.15
-      name: geom_smooth
-    - name: labs
-      params:
-        title: Resistance Rate Trend with Linear Fit
-        x: Year
-        y: Resistance Rate (%)
-    mapping:
-      x: year
-      y: resistance_rate
-      color: species
-wrangling:
-  tier1: []
-  tier2: []
-  tier3: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 27 rows and 3 columns (species, year, resistance_rate).
+    source: {type: local_tsv, path: ./assets/gallery_data/scatter_smooth/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      species: {type: String}
+      year: {type: Int64}
+      resistance_rate: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      scatter_smooth:
+        label: Scatter Plot with Smoother
+        description: >-
+          Drawn with geom_point; x is year, y is resistance_rate, color is species.
+        taxonomy: {family: Correlation, pattern: '2 Numeric, 1 Categorical', difficulty: Simple, show: relationship,
+          sample_size: individual points}
+        spec:
+          target_dataset: example
+          mapping: {x: year, y: resistance_rate, color: species}
+          layers:
+            - {name: geom_point, params: {alpha: 0.7, size: 2}}
+            - {name: geom_smooth, params: {method: lm, se: true, alpha: 0.15}}
+            - name: labs
+              params:
+                title: Resistance Rate Trend with Linear Fit
+                x: Year
+                y: Resistance Rate (%)

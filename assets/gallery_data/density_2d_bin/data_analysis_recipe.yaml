@@ -1,28 +1,43 @@
+id: density_2d_bin
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: 2D Bin Density
+  label: 2D Bin Density
+  description: >-
+    Visualises the joint distribution of two numeric variables using rectangular bins coloured by count. Handles
+    overplotting better than raw scatter for large datasets. Reveals clustering, diagonal correlation patterns,
+    and outlier concentrations.
   submission_date: '2026-05-03'
-  family: Correlation
-  pattern: 2 Numeric
-  difficulty: Intermediate
-  geom: geom_bin_2d
-  show: relationship
-  sample_size: large
-data_path: example_data.tsv
-plots:
-  density_2d_bin:
-    layers:
-    - params:
-        bins: 15
-      name: geom_bin_2d
-    - name: labs
-      params:
-        title: 2D Density of Cross-Resistance (Drug A vs Drug B)
-        x: log2 MIC Drug A
-        y: log2 MIC Drug B
-    mapping:
-      x: log_mic_drug_a
-      y: log_mic_drug_b
-wrangling:
-  tier1: []
-  tier2: []
-  tier3: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 60 rows and 2 columns (log_mic_drug_a, log_mic_drug_b).
+    source: {type: local_tsv, path: ./assets/gallery_data/density_2d_bin/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      log_mic_drug_a: {type: Float64}
+      log_mic_drug_b: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      density_2d_bin:
+        label: 2D Bin Density
+        description: >-
+          Drawn with geom_bin_2d; x is log_mic_drug_a, y is log_mic_drug_b.
+        taxonomy: {family: Correlation, pattern: 2 Numeric, difficulty: Intermediate, show: relationship, sample_size: large}
+        spec:
+          target_dataset: example
+          mapping: {x: log_mic_drug_a, y: log_mic_drug_b}
+          layers:
+            - {name: geom_bin_2d, params: {bins: 15}}
+            - name: labs
+              params:
+                title: 2D Density of Cross-Resistance (Drug A vs Drug B)
+                x: log2 MIC Drug A
+                y: log2 MIC Drug B

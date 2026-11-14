@@ -1,6 +1,6 @@
 ## Dumbbell Chart
 
-> 📊 Comparison · 🔢 1 Numeric, 2 Categorical · 📈 Intermediate · ⚙️ geom_segment · 🎯 change · 📏 any
+> 📊 Comparison · 🔢 1 Numeric, 2 Categorical · 📈 Intermediate · ⚙️ geom_line · 🎯 change · 📏 any
 
 ### Suitability
 Shows change between two states (e.g. two time points) for multiple categories. The dumbbell shape (line + two dots) emphasises the direction and magnitude of change per group. More compact than two grouped bars.

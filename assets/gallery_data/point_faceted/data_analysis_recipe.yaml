@@ -1,26 +1,41 @@
+id: point_faceted
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Point Faceted
+  label: Point Faceted
+  description: >-
+    High-dimensional comparison using a grid. The 'Multi-Course' view.
   submission_date: '2026-04-10'
-  family: Comparison
-  pattern: 2 Numeric, 1 Categorical (Faceted)
-  difficulty: Intermediate
-  geom: geom_point
-  show: relationship
-  sample_size: individual points
-data_path: example_data.tsv
-plots:
-  point_faceted:
-    layers:
-    - name: geom_point
-      params: {}
-    - name: facet_grid
-      params:
-        cols: amr_class
-        rows: species
-    mapping:
-      color: species
-      x: date
-      y: growth_index
-wrangling:
-  tier1: []
-  tier2: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 100 rows and 5 columns (id, date, growth_index, species, amr_class).
+    source: {type: local_tsv, path: ./assets/gallery_data/point_faceted/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      id: {type: String}
+      date: {type: String}
+      growth_index: {type: Float64}
+      species: {type: String}
+      amr_class: {type: String}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      point_faceted:
+        label: Point Faceted
+        description: >-
+          Drawn with geom_point; color is species, x is date, y is growth_index.
+        taxonomy: {family: Comparison, pattern: '2 Numeric, 1 Categorical (Faceted)', difficulty: Intermediate,
+          show: relationship, sample_size: individual points}
+        spec:
+          target_dataset: example
+          mapping: {color: species, x: date, y: growth_index}
+          layers:
+            - {name: geom_point, params: {}}
+            - {name: facet_grid, params: {cols: amr_class, rows: species}}

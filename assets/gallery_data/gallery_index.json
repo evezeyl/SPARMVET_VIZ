@@ -1,219 +1,19 @@
 {
   "metadata": {
-    "generated_at": "2026-05-10 18:13:48",
-    "count": 34
+    "generated_at": "2026-11-14 12:27:08",
+    "count": 33,
+    "coverage": [
+      "actions",
+      "components",
+      "structure"
+    ],
+    "rejected": {
+      "beeswarm_sina": [
+        "the example is in the old gallery form (no spec_version). Fix: python assets/scripts/convert_gallery_examples.py --only beeswarm_sina --apply"
+      ]
+    }
   },
   "registry": {
-    "bar_simple": {
-      "name": "Bar Simple",
-      "path": "assets/gallery_data/bar_simple/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Ranking",
-        "pattern": "1 Numeric, 1 Categorical",
-        "difficulty": "Simple",
-        "geom": "geom_bar",
-        "show": "ranking",
-        "sample_size": "any"
-      }
-    },
-    "boxplot_simple": {
-      "name": "Boxplot Simple",
-      "path": "assets/gallery_data/boxplot_simple/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Distribution",
-        "pattern": "1 Numeric, 1 Categorical",
-        "difficulty": "Simple",
-        "geom": "geom_boxplot",
-        "show": "distribution",
-        "sample_size": "medium+"
-      }
-    },
-    "point_simple": {
-      "name": "Point Simple",
-      "path": "assets/gallery_data/point_simple/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Correlation",
-        "pattern": "2 Numeric",
-        "difficulty": "Simple",
-        "geom": "geom_point",
-        "show": "relationship",
-        "sample_size": "individual points"
-      }
-    },
-    "density_simple": {
-      "name": "Density Simple",
-      "path": "assets/gallery_data/density_simple/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Distribution",
-        "pattern": "1 Numeric",
-        "difficulty": "Simple",
-        "geom": "geom_density",
-        "show": "distribution",
-        "sample_size": "medium+"
-      }
-    },
-    "violin_simple": {
-      "name": "Violin Simple",
-      "path": "assets/gallery_data/violin_simple/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Distribution",
-        "pattern": "1 Numeric, 1 Categorical",
-        "difficulty": "Simple",
-        "geom": "geom_violin",
-        "show": "distribution",
-        "sample_size": "medium+"
-      }
-    },
-    "histogram_simple": {
-      "name": "Histogram Simple",
-      "path": "assets/gallery_data/histogram_simple/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Distribution",
-        "pattern": "1 Numeric",
-        "difficulty": "Simple",
-        "geom": "geom_histogram",
-        "show": "frequency",
-        "sample_size": "medium+"
-      }
-    },
-    "tile_simple": {
-      "name": "Tile Simple",
-      "path": "assets/gallery_data/tile_simple/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Correlation",
-        "pattern": "1 Numeric, 2 Categorical",
-        "difficulty": "Simple",
-        "geom": "geom_tile",
-        "show": "relationship",
-        "sample_size": "any"
-      }
-    },
-    "boxplot_faceted": {
-      "name": "Boxplot Faceted",
-      "path": "assets/gallery_data/boxplot_faceted/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Comparison",
-        "pattern": "1 Numeric, 2 Categorical (Faceted)",
-        "difficulty": "Intermediate",
-        "geom": "geom_boxplot",
-        "show": "distribution",
-        "sample_size": "medium+"
-      }
-    },
-    "point_faceted": {
-      "name": "Point Faceted",
-      "path": "assets/gallery_data/point_faceted/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Comparison",
-        "pattern": "2 Numeric, 1 Categorical (Faceted)",
-        "difficulty": "Intermediate",
-        "geom": "geom_point",
-        "show": "relationship",
-        "sample_size": "individual points"
-      }
-    },
-    "violin_faceted": {
-      "name": "Violin Faceted",
-      "path": "assets/gallery_data/violin_faceted/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Comparison",
-        "pattern": "1 Numeric, 2 Categorical (Faceted)",
-        "difficulty": "Intermediate",
-        "geom": "geom_violin",
-        "show": "distribution",
-        "sample_size": "medium+"
-      }
-    },
-    "ridgeline_advanced": {
-      "name": "Ridgeline Advanced",
-      "path": "assets/gallery_data/ridgeline_advanced/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Distribution",
-        "pattern": "1 Numeric, 1 Categorical",
-        "difficulty": "Advanced",
-        "geom": "geom_density",
-        "show": "distribution",
-        "sample_size": "medium+"
-      }
-    },
-    "lollipop_advanced": {
-      "name": "Lollipop Advanced",
-      "path": "assets/gallery_data/lollipop_advanced/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Ranking",
-        "pattern": "1 Numeric, 1 Categorical",
-        "difficulty": "Intermediate",
-        "geom": "geom_segment",
-        "show": "ranking",
-        "sample_size": "any"
-      }
-    },
-    "heatmap_correlation": {
-      "name": "Heatmap Correlation",
-      "path": "assets/gallery_data/heatmap_correlation/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Correlation",
-        "pattern": "3 Numeric (Matrix)",
-        "difficulty": "Advanced",
-        "geom": "geom_tile",
-        "show": "relationship",
-        "sample_size": "any"
-      }
-    },
-    "line_simple": {
-      "name": "Line Chart (Simple)",
-      "path": "assets/gallery_data/line_simple/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Evolution",
-        "pattern": "1 Year, 1 Numeric",
-        "difficulty": "Simple",
-        "geom": "geom_line",
-        "show": "trend",
-        "sample_size": "medium+"
-      }
-    },
-    "line_grouped": {
-      "name": "Line Chart (Grouped)",
-      "path": "assets/gallery_data/line_grouped/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Evolution",
-        "pattern": "1 Year, 1 Numeric, 1 Categorical",
-        "difficulty": "Intermediate",
-        "geom": "geom_line",
-        "show": "trend",
-        "sample_size": "medium+"
-      }
-    },
     "area_simple": {
       "name": "Area Chart",
       "path": "assets/gallery_data/area_simple/data_analysis_recipe.yaml",
@@ -228,31 +28,17 @@
         "sample_size": "medium+"
       }
     },
-    "stacked_bar": {
-      "name": "Stacked Bar Chart",
-      "path": "assets/gallery_data/stacked_bar/data_analysis_recipe.yaml",
+    "bar_grouped": {
+      "name": "Grouped Bar Chart",
+      "path": "assets/gallery_data/bar_grouped/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
-        "family": "Part-to-Whole",
+        "family": "Ranking",
         "pattern": "1 Numeric, 2 Categorical",
         "difficulty": "Intermediate",
         "geom": "geom_col",
-        "show": "proportion",
-        "sample_size": "any"
-      }
-    },
-    "proportion_bar": {
-      "name": "Proportion Bar Chart",
-      "path": "assets/gallery_data/proportion_bar/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Part-to-Whole",
-        "pattern": "1 Numeric, 2 Categorical",
-        "difficulty": "Intermediate",
-        "geom": "geom_col",
-        "show": "proportion",
+        "show": "ranking",
         "sample_size": "any"
       }
     },
@@ -270,18 +56,46 @@
         "sample_size": "any"
       }
     },
-    "jitter_strip": {
-      "name": "Jitter Strip Plot",
-      "path": "assets/gallery_data/jitter_strip/data_analysis_recipe.yaml",
+    "bar_simple": {
+      "name": "Bar Simple",
+      "path": "assets/gallery_data/bar_simple/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Ranking",
+        "pattern": "1 Numeric, 1 Categorical",
+        "difficulty": "Simple",
+        "geom": "geom_bar",
+        "show": "ranking",
+        "sample_size": "any"
+      }
+    },
+    "boxplot_faceted": {
+      "name": "Boxplot Faceted",
+      "path": "assets/gallery_data/boxplot_faceted/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
         "family": "Comparison",
+        "pattern": "1 Numeric, 2 Categorical (Faceted)",
+        "difficulty": "Intermediate",
+        "geom": "geom_boxplot",
+        "show": "distribution",
+        "sample_size": "medium+"
+      }
+    },
+    "boxplot_simple": {
+      "name": "Boxplot Simple",
+      "path": "assets/gallery_data/boxplot_simple/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Distribution",
         "pattern": "1 Numeric, 1 Categorical",
         "difficulty": "Simple",
-        "geom": "geom_jitter",
+        "geom": "geom_boxplot",
         "show": "distribution",
-        "sample_size": "individual points"
+        "sample_size": "medium+"
       }
     },
     "bubble": {
@@ -298,18 +112,60 @@
         "sample_size": "any"
       }
     },
-    "beeswarm_sina": {
-      "name": "Beeswarm / Sina Plot",
-      "path": "assets/gallery_data/beeswarm_sina/data_analysis_recipe.yaml",
+    "connected_scatter": {
+      "name": "Connected Scatter Plot",
+      "path": "assets/gallery_data/connected_scatter/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Correlation",
+        "pattern": "2 Numeric",
+        "difficulty": "Intermediate",
+        "geom": "geom_path",
+        "show": "trend",
+        "sample_size": "any"
+      }
+    },
+    "density_2d_bin": {
+      "name": "2D Bin Density",
+      "path": "assets/gallery_data/density_2d_bin/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Correlation",
+        "pattern": "2 Numeric",
+        "difficulty": "Intermediate",
+        "geom": "geom_bin_2d",
+        "show": "relationship",
+        "sample_size": "large"
+      }
+    },
+    "density_simple": {
+      "name": "Density Simple",
+      "path": "assets/gallery_data/density_simple/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
         "family": "Distribution",
-        "pattern": "1 Numeric, 1 Categorical",
-        "difficulty": "Intermediate",
-        "geom": "geom_sina",
+        "pattern": "1 Numeric",
+        "difficulty": "Simple",
+        "geom": "geom_density",
         "show": "distribution",
-        "sample_size": "individual points"
+        "sample_size": "medium+"
+      }
+    },
+    "dumbbell": {
+      "name": "Dumbbell Chart",
+      "path": "assets/gallery_data/dumbbell/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Comparison",
+        "pattern": "1 Numeric, 2 Categorical",
+        "difficulty": "Intermediate",
+        "geom": "geom_line",
+        "show": "change",
+        "sample_size": "any"
       }
     },
     "ecdf": {
@@ -326,18 +182,158 @@
         "sample_size": "medium+"
       }
     },
-    "violin_boxplot": {
-      "name": "Violin + Boxplot Overlay",
-      "path": "assets/gallery_data/violin_boxplot/data_analysis_recipe.yaml",
+    "error_bar": {
+      "name": "Error Bar / Point Range",
+      "path": "assets/gallery_data/error_bar/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Comparison",
+        "pattern": "1 Numeric, 1 Categorical",
+        "difficulty": "Intermediate",
+        "geom": "geom_pointrange",
+        "show": "uncertainty",
+        "sample_size": "any"
+      }
+    },
+    "freqpoly": {
+      "name": "Frequency Polygon",
+      "path": "assets/gallery_data/freqpoly/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
         "family": "Distribution",
         "pattern": "1 Numeric, 1 Categorical",
-        "difficulty": "Intermediate",
-        "geom": "geom_violin",
-        "show": "distribution",
+        "difficulty": "Simple",
+        "geom": "geom_freqpoly",
+        "show": "frequency",
         "sample_size": "medium+"
+      }
+    },
+    "heatmap_correlation": {
+      "name": "Heatmap Correlation",
+      "path": "assets/gallery_data/heatmap_correlation/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Correlation",
+        "pattern": "3 Numeric (Matrix)",
+        "difficulty": "Advanced",
+        "geom": "geom_tile",
+        "show": "relationship",
+        "sample_size": "any"
+      }
+    },
+    "histogram_simple": {
+      "name": "Histogram Simple",
+      "path": "assets/gallery_data/histogram_simple/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Distribution",
+        "pattern": "1 Numeric",
+        "difficulty": "Simple",
+        "geom": "geom_histogram",
+        "show": "frequency",
+        "sample_size": "medium+"
+      }
+    },
+    "jitter_strip": {
+      "name": "Jitter Strip Plot",
+      "path": "assets/gallery_data/jitter_strip/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Comparison",
+        "pattern": "1 Numeric, 1 Categorical",
+        "difficulty": "Simple",
+        "geom": "geom_jitter",
+        "show": "distribution",
+        "sample_size": "individual points"
+      }
+    },
+    "line_grouped": {
+      "name": "Line Chart (Grouped)",
+      "path": "assets/gallery_data/line_grouped/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Evolution",
+        "pattern": "1 Year, 1 Numeric, 1 Categorical",
+        "difficulty": "Intermediate",
+        "geom": "geom_line",
+        "show": "trend",
+        "sample_size": "medium+"
+      }
+    },
+    "line_simple": {
+      "name": "Line Chart (Simple)",
+      "path": "assets/gallery_data/line_simple/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Evolution",
+        "pattern": "1 Year, 1 Numeric",
+        "difficulty": "Simple",
+        "geom": "geom_line",
+        "show": "trend",
+        "sample_size": "medium+"
+      }
+    },
+    "lollipop_advanced": {
+      "name": "Lollipop Advanced",
+      "path": "assets/gallery_data/lollipop_advanced/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Ranking",
+        "pattern": "1 Numeric, 1 Categorical",
+        "difficulty": "Intermediate",
+        "geom": "geom_segment",
+        "show": "ranking",
+        "sample_size": "any"
+      }
+    },
+    "point_faceted": {
+      "name": "Point Faceted",
+      "path": "assets/gallery_data/point_faceted/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Comparison",
+        "pattern": "2 Numeric, 1 Categorical (Faceted)",
+        "difficulty": "Intermediate",
+        "geom": "geom_point",
+        "show": "relationship",
+        "sample_size": "individual points"
+      }
+    },
+    "point_simple": {
+      "name": "Point Simple",
+      "path": "assets/gallery_data/point_simple/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Correlation",
+        "pattern": "2 Numeric",
+        "difficulty": "Simple",
+        "geom": "geom_point",
+        "show": "relationship",
+        "sample_size": "individual points"
+      }
+    },
+    "proportion_bar": {
+      "name": "Proportion Bar Chart",
+      "path": "assets/gallery_data/proportion_bar/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Part-to-Whole",
+        "pattern": "1 Numeric, 2 Categorical",
+        "difficulty": "Intermediate",
+        "geom": "geom_col",
+        "show": "proportion",
+        "sample_size": "any"
       }
     },
     "qq_plot": {
@@ -354,17 +350,17 @@
         "sample_size": "medium+"
       }
     },
-    "freqpoly": {
-      "name": "Frequency Polygon",
-      "path": "assets/gallery_data/freqpoly/data_analysis_recipe.yaml",
+    "ridgeline_advanced": {
+      "name": "Ridgeline Advanced",
+      "path": "assets/gallery_data/ridgeline_advanced/data_analysis_recipe.yaml",
       "has_preview": true,
       "has_thumb": true,
       "taxonomy": {
         "family": "Distribution",
         "pattern": "1 Numeric, 1 Categorical",
-        "difficulty": "Simple",
-        "geom": "geom_freqpoly",
-        "show": "frequency",
+        "difficulty": "Advanced",
+        "geom": "geom_density",
+        "show": "distribution",
         "sample_size": "medium+"
       }
     },
@@ -382,76 +378,6 @@
         "sample_size": "individual points"
       }
     },
-    "density_2d_bin": {
-      "name": "2D Bin Density",
-      "path": "assets/gallery_data/density_2d_bin/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Correlation",
-        "pattern": "2 Numeric",
-        "difficulty": "Intermediate",
-        "geom": "geom_bin_2d",
-        "show": "relationship",
-        "sample_size": "large"
-      }
-    },
-    "connected_scatter": {
-      "name": "Connected Scatter Plot",
-      "path": "assets/gallery_data/connected_scatter/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Correlation",
-        "pattern": "2 Numeric",
-        "difficulty": "Intermediate",
-        "geom": "geom_path",
-        "show": "trend",
-        "sample_size": "any"
-      }
-    },
-    "bar_grouped": {
-      "name": "Grouped Bar Chart",
-      "path": "assets/gallery_data/bar_grouped/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Ranking",
-        "pattern": "1 Numeric, 2 Categorical",
-        "difficulty": "Intermediate",
-        "geom": "geom_col",
-        "show": "ranking",
-        "sample_size": "any"
-      }
-    },
-    "error_bar": {
-      "name": "Error Bar / Point Range",
-      "path": "assets/gallery_data/error_bar/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Comparison",
-        "pattern": "1 Numeric, 1 Categorical",
-        "difficulty": "Intermediate",
-        "geom": "geom_pointrange",
-        "show": "uncertainty",
-        "sample_size": "any"
-      }
-    },
-    "dumbbell": {
-      "name": "Dumbbell Chart",
-      "path": "assets/gallery_data/dumbbell/data_analysis_recipe.yaml",
-      "has_preview": true,
-      "has_thumb": true,
-      "taxonomy": {
-        "family": "Comparison",
-        "pattern": "1 Numeric, 2 Categorical",
-        "difficulty": "Intermediate",
-        "geom": "geom_segment",
-        "show": "change",
-        "sample_size": "any"
-      }
-    },
     "stacked_area": {
       "name": "Stacked Area Chart",
       "path": "assets/gallery_data/stacked_area/data_analysis_recipe.yaml",
@@ -464,6 +390,20 @@
         "geom": "geom_area",
         "show": "proportion",
         "sample_size": "medium+"
+      }
+    },
+    "stacked_bar": {
+      "name": "Stacked Bar Chart",
+      "path": "assets/gallery_data/stacked_bar/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Part-to-Whole",
+        "pattern": "1 Numeric, 2 Categorical",
+        "difficulty": "Intermediate",
+        "geom": "geom_col",
+        "show": "proportion",
+        "sample_size": "any"
       }
     },
     "step_chart": {
@@ -479,327 +419,375 @@
         "show": "trend",
         "sample_size": "any"
       }
+    },
+    "tile_simple": {
+      "name": "Tile Simple",
+      "path": "assets/gallery_data/tile_simple/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Correlation",
+        "pattern": "1 Numeric, 2 Categorical",
+        "difficulty": "Simple",
+        "geom": "geom_tile",
+        "show": "relationship",
+        "sample_size": "any"
+      }
+    },
+    "violin_boxplot": {
+      "name": "Violin + Boxplot Overlay",
+      "path": "assets/gallery_data/violin_boxplot/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Distribution",
+        "pattern": "1 Numeric, 1 Categorical",
+        "difficulty": "Intermediate",
+        "geom": "geom_violin",
+        "show": "distribution",
+        "sample_size": "medium+"
+      }
+    },
+    "violin_faceted": {
+      "name": "Violin Faceted",
+      "path": "assets/gallery_data/violin_faceted/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Comparison",
+        "pattern": "1 Numeric, 2 Categorical (Faceted)",
+        "difficulty": "Intermediate",
+        "geom": "geom_violin",
+        "show": "distribution",
+        "sample_size": "medium+"
+      }
+    },
+    "violin_simple": {
+      "name": "Violin Simple",
+      "path": "assets/gallery_data/violin_simple/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Distribution",
+        "pattern": "1 Numeric, 1 Categorical",
+        "difficulty": "Simple",
+        "geom": "geom_violin",
+        "show": "distribution",
+        "sample_size": "medium+"
+      }
     }
   },
   "pivot": {
     "by_family": {
+      "Evolution": [
+        "area_simple",
+        "line_grouped",
+        "line_simple",
+        "stacked_area",
+        "step_chart"
+      ],
       "Ranking": [
-        "bar_simple",
-        "lollipop_advanced",
+        "bar_grouped",
         "bar_horizontal",
-        "bar_grouped"
+        "bar_simple",
+        "lollipop_advanced"
+      ],
+      "Comparison": [
+        "boxplot_faceted",
+        "dumbbell",
+        "error_bar",
+        "jitter_strip",
+        "point_faceted",
+        "violin_faceted"
       ],
       "Distribution": [
         "boxplot_simple",
         "density_simple",
-        "violin_simple",
-        "histogram_simple",
-        "ridgeline_advanced",
-        "beeswarm_sina",
         "ecdf",
-        "violin_boxplot",
+        "freqpoly",
+        "histogram_simple",
         "qq_plot",
-        "freqpoly"
+        "ridgeline_advanced",
+        "violin_boxplot",
+        "violin_simple"
       ],
       "Correlation": [
-        "point_simple",
-        "tile_simple",
-        "heatmap_correlation",
         "bubble",
-        "scatter_smooth",
+        "connected_scatter",
         "density_2d_bin",
-        "connected_scatter"
-      ],
-      "Comparison": [
-        "boxplot_faceted",
-        "point_faceted",
-        "violin_faceted",
-        "jitter_strip",
-        "error_bar",
-        "dumbbell"
-      ],
-      "Evolution": [
-        "line_simple",
-        "line_grouped",
-        "area_simple",
-        "stacked_area",
-        "step_chart"
+        "heatmap_correlation",
+        "point_simple",
+        "scatter_smooth",
+        "tile_simple"
       ],
       "Part-to-Whole": [
-        "stacked_bar",
-        "proportion_bar"
+        "proportion_bar",
+        "stacked_bar"
       ]
     },
     "by_pattern": {
-      "1 Numeric, 1 Categorical": [
-        "bar_simple",
-        "boxplot_simple",
-        "violin_simple",
-        "ridgeline_advanced",
-        "lollipop_advanced",
-        "bar_horizontal",
-        "jitter_strip",
-        "beeswarm_sina",
-        "ecdf",
-        "violin_boxplot",
-        "qq_plot",
-        "freqpoly",
-        "error_bar",
-        "step_chart"
-      ],
-      "2 Numeric": [
-        "point_simple",
-        "density_2d_bin",
-        "connected_scatter"
-      ],
-      "1 Numeric": [
-        "density_simple",
-        "histogram_simple"
+      "1 Year, 1 Numeric": [
+        "area_simple",
+        "line_simple"
       ],
       "1 Numeric, 2 Categorical": [
-        "tile_simple",
-        "stacked_bar",
-        "proportion_bar",
         "bar_grouped",
         "dumbbell",
-        "stacked_area"
+        "proportion_bar",
+        "stacked_area",
+        "stacked_bar",
+        "tile_simple"
+      ],
+      "1 Numeric, 1 Categorical": [
+        "bar_horizontal",
+        "bar_simple",
+        "boxplot_simple",
+        "ecdf",
+        "error_bar",
+        "freqpoly",
+        "jitter_strip",
+        "lollipop_advanced",
+        "qq_plot",
+        "ridgeline_advanced",
+        "step_chart",
+        "violin_boxplot",
+        "violin_simple"
       ],
       "1 Numeric, 2 Categorical (Faceted)": [
         "boxplot_faceted",
         "violin_faceted"
       ],
-      "2 Numeric, 1 Categorical (Faceted)": [
-        "point_faceted"
+      "2 Numeric, 1 Categorical": [
+        "bubble",
+        "scatter_smooth"
+      ],
+      "2 Numeric": [
+        "connected_scatter",
+        "density_2d_bin",
+        "point_simple"
+      ],
+      "1 Numeric": [
+        "density_simple",
+        "histogram_simple"
       ],
       "3 Numeric (Matrix)": [
         "heatmap_correlation"
       ],
-      "1 Year, 1 Numeric": [
-        "line_simple",
-        "area_simple"
-      ],
       "1 Year, 1 Numeric, 1 Categorical": [
         "line_grouped"
       ],
-      "2 Numeric, 1 Categorical": [
-        "bubble",
-        "scatter_smooth"
+      "2 Numeric, 1 Categorical (Faceted)": [
+        "point_faceted"
       ]
     },
     "by_difficulty": {
       "Simple": [
-        "bar_simple",
-        "boxplot_simple",
-        "point_simple",
-        "density_simple",
-        "violin_simple",
-        "histogram_simple",
-        "tile_simple",
-        "line_simple",
         "area_simple",
         "bar_horizontal",
-        "jitter_strip",
+        "bar_simple",
+        "boxplot_simple",
+        "density_simple",
         "freqpoly",
+        "histogram_simple",
+        "jitter_strip",
+        "line_simple",
+        "point_simple",
         "scatter_smooth",
-        "step_chart"
+        "step_chart",
+        "tile_simple",
+        "violin_simple"
       ],
       "Intermediate": [
-        "boxplot_faceted",
-        "point_faceted",
-        "violin_faceted",
-        "lollipop_advanced",
-        "line_grouped",
-        "stacked_bar",
-        "proportion_bar",
-        "bubble",
-        "beeswarm_sina",
-        "ecdf",
-        "violin_boxplot",
-        "density_2d_bin",
-        "connected_scatter",
         "bar_grouped",
-        "error_bar",
+        "boxplot_faceted",
+        "bubble",
+        "connected_scatter",
+        "density_2d_bin",
         "dumbbell",
-        "stacked_area"
+        "ecdf",
+        "error_bar",
+        "line_grouped",
+        "lollipop_advanced",
+        "point_faceted",
+        "proportion_bar",
+        "stacked_area",
+        "stacked_bar",
+        "violin_boxplot",
+        "violin_faceted"
       ],
       "Advanced": [
-        "ridgeline_advanced",
         "heatmap_correlation",
-        "qq_plot"
+        "qq_plot",
+        "ridgeline_advanced"
       ]
     },
     "by_geom": {
-      "geom_bar": [
-        "bar_simple"
-      ],
-      "geom_boxplot": [
-        "boxplot_simple",
-        "boxplot_faceted"
-      ],
-      "geom_point": [
-        "point_simple",
-        "point_faceted",
-        "bubble",
-        "scatter_smooth"
-      ],
-      "geom_density": [
-        "density_simple",
-        "ridgeline_advanced"
-      ],
-      "geom_violin": [
-        "violin_simple",
-        "violin_faceted",
-        "violin_boxplot"
-      ],
-      "geom_histogram": [
-        "histogram_simple"
-      ],
-      "geom_tile": [
-        "tile_simple",
-        "heatmap_correlation"
-      ],
-      "geom_segment": [
-        "lollipop_advanced",
-        "dumbbell"
-      ],
-      "geom_line": [
-        "line_simple",
-        "line_grouped"
-      ],
       "geom_area": [
         "area_simple",
         "stacked_area"
       ],
       "geom_col": [
-        "stacked_bar",
-        "proportion_bar",
+        "bar_grouped",
         "bar_horizontal",
-        "bar_grouped"
+        "proportion_bar",
+        "stacked_bar"
       ],
-      "geom_jitter": [
-        "jitter_strip"
+      "geom_bar": [
+        "bar_simple"
       ],
-      "geom_sina": [
-        "beeswarm_sina"
+      "geom_boxplot": [
+        "boxplot_faceted",
+        "boxplot_simple"
       ],
-      "stat_ecdf": [
-        "ecdf"
-      ],
-      "geom_qq": [
-        "qq_plot"
-      ],
-      "geom_freqpoly": [
-        "freqpoly"
-      ],
-      "geom_bin_2d": [
-        "density_2d_bin"
+      "geom_point": [
+        "bubble",
+        "point_faceted",
+        "point_simple",
+        "scatter_smooth"
       ],
       "geom_path": [
         "connected_scatter"
       ],
+      "geom_bin_2d": [
+        "density_2d_bin"
+      ],
+      "geom_density": [
+        "density_simple",
+        "ridgeline_advanced"
+      ],
+      "geom_line": [
+        "dumbbell",
+        "line_grouped",
+        "line_simple"
+      ],
+      "stat_ecdf": [
+        "ecdf"
+      ],
       "geom_pointrange": [
         "error_bar"
       ],
+      "geom_freqpoly": [
+        "freqpoly"
+      ],
+      "geom_tile": [
+        "heatmap_correlation",
+        "tile_simple"
+      ],
+      "geom_histogram": [
+        "histogram_simple"
+      ],
+      "geom_jitter": [
+        "jitter_strip"
+      ],
+      "geom_segment": [
+        "lollipop_advanced"
+      ],
+      "geom_qq": [
+        "qq_plot"
+      ],
       "geom_step": [
         "step_chart"
+      ],
+      "geom_violin": [
+        "violin_boxplot",
+        "violin_faceted",
+        "violin_simple"
       ]
     },
     "by_show": {
-      "ranking": [
-        "bar_simple",
-        "lollipop_advanced",
-        "bar_horizontal",
-        "bar_grouped"
-      ],
-      "distribution": [
-        "boxplot_simple",
-        "density_simple",
-        "violin_simple",
-        "boxplot_faceted",
-        "violin_faceted",
-        "ridgeline_advanced",
-        "jitter_strip",
-        "beeswarm_sina",
-        "ecdf",
-        "violin_boxplot"
-      ],
-      "relationship": [
-        "point_simple",
-        "tile_simple",
-        "point_faceted",
-        "heatmap_correlation",
-        "bubble",
-        "scatter_smooth",
-        "density_2d_bin"
-      ],
-      "frequency": [
-        "histogram_simple",
-        "freqpoly"
-      ],
       "trend": [
-        "line_simple",
-        "line_grouped",
         "area_simple",
         "connected_scatter",
+        "line_grouped",
+        "line_simple",
         "step_chart"
       ],
-      "proportion": [
-        "stacked_bar",
-        "proportion_bar",
-        "stacked_area"
+      "ranking": [
+        "bar_grouped",
+        "bar_horizontal",
+        "bar_simple",
+        "lollipop_advanced"
       ],
-      "normality": [
-        "qq_plot"
+      "distribution": [
+        "boxplot_faceted",
+        "boxplot_simple",
+        "density_simple",
+        "ecdf",
+        "jitter_strip",
+        "ridgeline_advanced",
+        "violin_boxplot",
+        "violin_faceted",
+        "violin_simple"
+      ],
+      "relationship": [
+        "bubble",
+        "density_2d_bin",
+        "heatmap_correlation",
+        "point_faceted",
+        "point_simple",
+        "scatter_smooth",
+        "tile_simple"
+      ],
+      "change": [
+        "dumbbell"
       ],
       "uncertainty": [
         "error_bar"
       ],
-      "change": [
-        "dumbbell"
+      "frequency": [
+        "freqpoly",
+        "histogram_simple"
+      ],
+      "proportion": [
+        "proportion_bar",
+        "stacked_area",
+        "stacked_bar"
+      ],
+      "normality": [
+        "qq_plot"
       ]
     },
     "by_sample_size": {
-      "any": [
-        "bar_simple",
-        "tile_simple",
-        "lollipop_advanced",
-        "heatmap_correlation",
-        "stacked_bar",
-        "proportion_bar",
-        "bar_horizontal",
-        "bubble",
-        "connected_scatter",
-        "bar_grouped",
-        "error_bar",
-        "dumbbell",
-        "step_chart"
-      ],
       "medium+": [
+        "area_simple",
+        "boxplot_faceted",
         "boxplot_simple",
         "density_simple",
-        "violin_simple",
-        "histogram_simple",
-        "boxplot_faceted",
-        "violin_faceted",
-        "ridgeline_advanced",
-        "line_simple",
-        "line_grouped",
-        "area_simple",
         "ecdf",
-        "violin_boxplot",
-        "qq_plot",
         "freqpoly",
-        "stacked_area"
+        "histogram_simple",
+        "line_grouped",
+        "line_simple",
+        "qq_plot",
+        "ridgeline_advanced",
+        "stacked_area",
+        "violin_boxplot",
+        "violin_faceted",
+        "violin_simple"
       ],
-      "individual points": [
-        "point_simple",
-        "point_faceted",
-        "jitter_strip",
-        "beeswarm_sina",
-        "scatter_smooth"
+      "any": [
+        "bar_grouped",
+        "bar_horizontal",
+        "bar_simple",
+        "bubble",
+        "connected_scatter",
+        "dumbbell",
+        "error_bar",
+        "heatmap_correlation",
+        "lollipop_advanced",
+        "proportion_bar",
+        "stacked_bar",
+        "step_chart",
+        "tile_simple"
       ],
       "large": [
         "density_2d_bin"
+      ],
+      "individual points": [
+        "jitter_strip",
+        "point_faceted",
+        "point_simple",
+        "scatter_smooth"
       ]
     }
   }

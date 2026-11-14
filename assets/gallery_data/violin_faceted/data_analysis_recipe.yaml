@@ -1,25 +1,40 @@
+id: violin_faceted
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Violin Faceted
+  label: Violin Faceted
+  description: >-
+    Distribution across species, split by AMR class. Advanced architectural partitioning.
   submission_date: '2026-04-10'
-  family: Comparison
-  pattern: 1 Numeric, 2 Categorical (Faceted)
-  difficulty: Intermediate
-  geom: geom_violin
-  show: distribution
-  sample_size: medium+
-data_path: example_data.tsv
-plots:
-  violin_faceted:
-    layers:
-    - name: geom_violin
-      params: {}
-    - name: facet_wrap
-      params:
-        facets: amr_class
-    mapping:
-      fill: species
-      x: species
-      y: mic_value
-wrangling:
-  tier1: []
-  tier2: []
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 100 rows and 4 columns (id, species, mic_value, amr_class).
+    source: {type: local_tsv, path: ./assets/gallery_data/violin_faceted/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      id: {type: String}
+      species: {type: String}
+      mic_value: {type: Float64}
+      amr_class: {type: String}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      violin_faceted:
+        label: Violin Faceted
+        description: >-
+          Drawn with geom_violin; fill is species, x is species, y is mic_value.
+        taxonomy: {family: Comparison, pattern: '1 Numeric, 2 Categorical (Faceted)', difficulty: Intermediate,
+          show: distribution, sample_size: medium+}
+        spec:
+          target_dataset: example
+          mapping: {fill: species, x: species, y: mic_value}
+          layers:
+            - {name: geom_violin, params: {}}
+            - {name: facet_wrap, params: {facets: amr_class}}
