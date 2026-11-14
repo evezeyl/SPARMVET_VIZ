@@ -207,3 +207,23 @@ def test_materialize_tier1_of_an_imported_recipe_holds_the_import_rows(tmp_path)
     orch = DataOrchestrator(recipes, tmp_path / "raw", data_lookup="data_analysis_recipe_paths", imports_dir=imports)
     lf = orch.materialize_tier1("tiny", "C", tmp_path / "user" / "C.parquet")
     assert lf.collect()["sample_id"].to_list() == ["imported_row"]
+
+
+def test_the_validator_checks_the_import_file_not_the_exporters_original(tmp_path):
+    """The data check of an imported recipe reads the import's own copy: one value differs from the original
+    that is still on the machine, and the problem found proves WHICH file was read."""
+    from app.modules.data_analysis_recipe_validator import validate_data_analysis_recipe_data
+    original = _tsv(tmp_path / "exporter_machine" / "T.tsv", "ok")
+    (tmp_path / "raw").mkdir()
+    imports = tmp_path / "user" / "_imports"
+    own = imports / "tiny" / "data" / "T.tsv"
+    own.parent.mkdir(parents=True)
+    own.write_text("other_column\nx\n")      # the import's copy lacks the declared column sample_id
+    recipes = tmp_path / "recipes"
+    _recipe(recipes, source_path=original)
+    problems = validate_data_analysis_recipe_data(recipes / "tiny.yaml", tmp_path / "raw",
+                                                  data_lookup="data_analysis_recipe_paths", imports_dir=imports)
+    assert any("sample_id" in p.problem for p in problems), problems
+    own.write_text("sample_id\nok\n")
+    assert validate_data_analysis_recipe_data(recipes / "tiny.yaml", tmp_path / "raw",
+                                              data_lookup="data_analysis_recipe_paths", imports_dir=imports) == []

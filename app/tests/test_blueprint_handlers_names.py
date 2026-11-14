@@ -46,3 +46,23 @@ def test_the_join_preview_names_come_from_join_designer():
     tree = ast.parse(SOURCE.read_text())
     imported = {a.name for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) and n.module == "blueprint_arch.join_designer" for a in n.names}
     assert {"check_join_keys", "compute_key_match", "build_join_step", "parse_join_step"} <= imported
+
+
+def test_every_app_caller_of_the_data_check_passes_imports_dir():
+    """An imported recipe keeps its data in its own import folder (IMPORT-PATH-1, 2026-11-14). A caller of
+    validate_data_analysis_recipe_data in app/handlers or app/src that omits imports_dir checks another file
+    (or reports a false "file not found") for an imported recipe, silently."""
+    app_dir = Path(__file__).resolve().parents[1]
+    found = 0
+    for sub in ("handlers", "src"):
+        for source in (app_dir / sub).glob("*.py"):
+            for node in ast.walk(ast.parse(source.read_text())):
+                if not isinstance(node, ast.Call):
+                    continue
+                func = node.func
+                name = func.id if isinstance(func, ast.Name) else getattr(func, "attr", None)
+                if name == "validate_data_analysis_recipe_data":
+                    found += 1
+                    assert any(k.arg == "imports_dir" for k in node.keywords), (
+                        f"{source.name}:{node.lineno} calls validate_data_analysis_recipe_data without imports_dir")
+    assert found >= 2  # Blueprint's Validate and HOME's gate
