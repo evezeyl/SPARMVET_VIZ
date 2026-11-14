@@ -623,8 +623,12 @@ See `rules_data_analysis_recipe_structure.md §8` for the full specification.
 ```yaml
 data_schemas:
   my_amr_data:
+    label: "amr data"
     source:
+      type: local_tsv
       path: assets/test_data/amr_results.tsv
+    null_values: []
+    strip: true
     input_fields: ...
 ```
 
@@ -653,9 +657,11 @@ least a `source:` block containing a `path:` key.
 data_schemas:
   my_schema:
     source:
+      type: local_tsv
       path: assets/test_data/my_data.tsv
-      separator: "\t"
 ```
+
+The file is always read as a tab-separated file; `source` accepts only `type` and `path` (check S05).
 
 **Source:** `libs/utils/src/utils/config_loader.py` — ADR-041.
 
