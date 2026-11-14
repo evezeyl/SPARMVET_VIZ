@@ -305,7 +305,8 @@ def _declared_columns(fields) -> list[str]:
 
 
 def validate_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Union[str, Path],
-                           data_lookup: str = "data_analysis_recipe_paths") -> list[DataAnalysisRecipeProblem]:
+                           data_lookup: str = "data_analysis_recipe_paths",
+                           imports_dir: Union[str, Path, None] = None) -> list[DataAnalysisRecipeProblem]:
     """Read every dataset of the data analysis recipe and check its declared fields against the real columns.
 
     Unlike validate_data_analysis_recipe this reads the data files (issue #18). For each data schema it
@@ -325,7 +326,7 @@ def validate_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Uni
     except (Exception, SystemExit) as exc:
         return [DataAnalysisRecipeProblem(name, "load", _load_error_text(captured.getvalue(), exc))]
 
-    orchestrator = DataOrchestrator(path.parent, Path(raw_data_dir), data_lookup=data_lookup)
+    orchestrator = DataOrchestrator(path.parent, Path(raw_data_dir), data_lookup=data_lookup, imports_dir=imports_dir)
     schemas: list[tuple[str, str, dict]] = []
     for section in _SCHEMA_SECTIONS:
         entries = raw.get(section)
@@ -337,7 +338,7 @@ def validate_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Uni
     problems: list[DataAnalysisRecipeProblem] = []
     for location, ds_id, spec in schemas:
         try:
-            frame = orchestrator.prepare_ingredient(ds_id, spec)
+            frame = orchestrator.prepare_ingredient(ds_id, spec, recipe_id=path.stem)
             columns = frame.collect_schema().names()
         except Exception as exc:
             problems.append(DataAnalysisRecipeProblem(name, location, f"dataset cannot be loaded: {exc}", getattr(exc, "tip", None)))
