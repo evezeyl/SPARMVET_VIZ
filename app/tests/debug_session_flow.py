@@ -30,7 +30,6 @@ from app.modules.session_manager import (
     gatekeeper_blocked,
     audit_steps_sha256,
 )
-from app.modules.exporter import generate_methods_text
 
 
 PASS = "✅ PASS"
@@ -125,14 +124,6 @@ def run(output_dir: Path) -> bool:
         h2 = audit_steps_sha256(steps)
         ok = h1 == h2  # deactivated node ignored
         results.append(("audit_steps_sha256 ignores active:False nodes", PASS if ok else FAIL))
-
-        # ── Step 9: generate_methods_text ────────────────────────────────
-        methods, discarded = generate_methods_text(mixed)
-        ok = (len(methods) == 2 and
-              any("feline" in m for m in methods) and
-              any("instrument error" in m for m in methods) and
-              len(discarded) == 1)
-        results.append(("generate_methods_text active+discarded split", PASS if ok else FAIL))
 
         # ── Step 10: Label update ────────────────────────────────────────
         sm.set_session_label(key, "My final batch-A")

@@ -28,10 +28,11 @@ metadata_schema:
     tier2: []
 joins:
   demo_join:
-    description: Joins MLST and Metadata for demo summary.
+    description: One row per sample with its sequence type (MLST) and the source, year and country from the metadata.
     ingredients:
-    - dataset_id: MLST_results
+    - dataset_id: MLST
     - dataset_id: metadata_schema
+    labels: {sequence_type: Sequence Type, source: Source, year: Year, country: Country}
     steps:
       tier1:
       - action: polars_join
@@ -39,6 +40,16 @@ joins:
         'on': [sample_id]
         how: inner
         maintain_order: left_right
+      # the year is read as a number; as a category on a plot axis it must be 2024, not 2024.0
+      - action: polars_cast
+        columns: [year]
+        dtype: Int64
+      - action: polars_cast
+        columns: [year]
+        dtype: String
+      - action: polars_select
+        exprs: [sample_id, sequence_type, source, year, country]
+      tier2: []
 analysis_groups:
   MLST_Overview:
     label: MLST Overview
@@ -48,8 +59,8 @@ analysis_groups:
         spec:
           target_dataset: demo_join
           mapping:
-            x: Sequence Type
-            fill: Source
+            x: sequence_type
+            fill: source
           layers:
           - name: geom_bar
             params: {}

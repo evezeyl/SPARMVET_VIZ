@@ -31,7 +31,6 @@ app/
 │   ├── gallery_viewer.py       ← Static gallery browser
 │   ├── test_lab_studio.py      ← Test Lab coordinator (renamed from dev_studio.py)
 │   ├── session_manager.py      ← Session ghost files
-│   └── exporter.py             ← Gallery submission
 │
 │   (Pure data analysis recipe introspection — `DataAnalysisRecipeNavigator` — moved to
 │    `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, ADR-067)

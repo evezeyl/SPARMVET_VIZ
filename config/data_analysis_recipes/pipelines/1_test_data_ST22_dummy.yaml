@@ -227,7 +227,7 @@ joins:
     - dataset_id: VirulenceFinder
     - dataset_id: APEC_STEC_virulence_genes
     steps: !include '1_test_data_ST22_dummy/wrangling/ST22_Anchor_wrangling.yaml'
-    labels: {"sample_id": "Sample ID", "source": "Biological Source", "year": "Collection Year", "country": "Origin Country", "sequence_type": "MLST Sequence Type", "serotype": "Serotype", "Selected_Virulence_Genes": "Gene (VirulenceFinder)", "VF_protein": "Protein (VirulenceFinder)", "gene": "AMR Gene", "status": "Phenotype Status"}
+    labels: {"sample_id": "Sample ID", "source": "Biological Source", "year": "Collection Year", "country": "Origin Country", "sequence_type": "MLST Sequence Type", "serotype": "Serotype", "Selected_Virulence_Genes": "Gene (VirulenceFinder)", "VF_protein": "Protein (VirulenceFinder)", "gene": "AMR Gene", "status": "Phenotype Status", "phenotype": "AMR Class / Phenotype"}
 
   AR1_MLST_Serotype_Virulence:
     description: Production-grade Sample-to-Gene Mapping (Abromics Pilot).

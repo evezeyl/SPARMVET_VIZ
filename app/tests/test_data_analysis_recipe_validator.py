@@ -204,6 +204,6 @@ def test_every_template_is_a_valid_data_analysis_recipe():
     """The templates are what people copy: each must load and pass the same checks as a real data analysis recipe."""
     root = Path(__file__).resolve().parents[2] / "config" / "data_analysis_recipes" / "templates"
     templates = sorted(root.glob("*.yaml"))
-    assert len(templates) >= 5
+    assert len(templates) >= 4  # the universal template was removed 2026-11-14 (Eve)
     bad = {t.name: [str(p) for p in validate_data_analysis_recipe(t)] for t in templates}
     assert {k: v for k, v in bad.items() if v} == {}

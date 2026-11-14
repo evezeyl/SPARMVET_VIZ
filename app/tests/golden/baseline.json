@@ -231,10 +231,11 @@
       "VF_protein:String",
       "gene:Categorical",
       "status:String",
+      "phenotype:Categorical",
       "virulence_count:UInt32"
      ],
      "rows": 617,
-     "sha256": "eaeb657b26ccc431b5866e8eb4e93c122938ffa8c5ce0714c527e71f13c6b19b"
+     "sha256": "98b42b80be15cc63a8df596e02960c9da5e75d1c602956be13b34951ddf7a6dc"
     },
     "virulence_variants": {
      "columns": [
@@ -248,10 +249,11 @@
       "VF_protein:String",
       "gene:Categorical",
       "status:String",
+      "phenotype:Categorical",
       "virulence_count:UInt32"
      ],
      "rows": 617,
-     "sha256": "eaeb657b26ccc431b5866e8eb4e93c122938ffa8c5ce0714c527e71f13c6b19b"
+     "sha256": "98b42b80be15cc63a8df596e02960c9da5e75d1c602956be13b34951ddf7a6dc"
     },
     "year_distribution": {
      "columns": [
@@ -456,10 +458,11 @@
       "Selected_Virulence_Genes:String",
       "VF_protein:String",
       "gene:Categorical",
-      "status:String"
+      "status:String",
+      "phenotype:Categorical"
      ],
      "rows": 617,
-     "sha256": "e6b104ac3d296fe1a46cd4fa137fe2846cdc13b98236cadc8dc211508cdfc7c3"
+     "sha256": "4e69d962fc3626f21c6431260885ecb3803f5ddd547d910ff627922b281a3bda"
     },
     "Summary_phenotype_length_fragmentation": {
      "columns": [
@@ -658,10 +661,11 @@
       "VF_protein:String",
       "gene:Categorical",
       "status:String",
+      "phenotype:Categorical",
       "virulence_count:UInt32"
      ],
      "rows": 617,
-     "sha256": "eaeb657b26ccc431b5866e8eb4e93c122938ffa8c5ce0714c527e71f13c6b19b"
+     "sha256": "98b42b80be15cc63a8df596e02960c9da5e75d1c602956be13b34951ddf7a6dc"
     },
     "Summary_phenotype_length_fragmentation": {
      "columns": [
@@ -814,31 +818,41 @@
   "demo_abromics": {
    "plots": {
     "demo_st_by_source": {
-     "error": "VisualizationError: Aesthetic 'x' references unknown column 'Sequence Type'."
+     "columns": [
+      "sample_id:String",
+      "sequence_type:String",
+      "source:Categorical",
+      "year:String",
+      "country:Categorical"
+     ],
+     "rows": 28,
+     "sha256": "f756e1549cd217799c42c87d774cb7cbca57b3101bb9ffcf59723f0fc3d3e1af"
     }
    },
    "t1": {
     "demo_join": {
      "columns": [
       "sample_id:String",
+      "sequence_type:String",
       "source:Categorical",
-      "year:Float64",
+      "year:String",
       "country:Categorical"
      ],
-     "rows": 30,
-     "sha256": "1bd6a79f1237d410fc1337d7e5e7ce1c061a15fc19820e7d7774e455b61f2ff1"
+     "rows": 28,
+     "sha256": "f756e1549cd217799c42c87d774cb7cbca57b3101bb9ffcf59723f0fc3d3e1af"
     }
    },
    "t2": {
     "demo_join": {
      "columns": [
       "sample_id:String",
+      "sequence_type:String",
       "source:Categorical",
-      "year:Float64",
+      "year:String",
       "country:Categorical"
      ],
-     "rows": 30,
-     "sha256": "1bd6a79f1237d410fc1337d7e5e7ce1c061a15fc19820e7d7774e455b61f2ff1"
+     "rows": 28,
+     "sha256": "f756e1549cd217799c42c87d774cb7cbca57b3101bb9ffcf59723f0fc3d3e1af"
     }
    }
   },

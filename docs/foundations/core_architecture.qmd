@@ -51,7 +51,6 @@ Pure Python — importable from headless scripts, test suites, and CLI tools wit
 | `wrangle_studio.py` | `app/modules/` | `WrangleStudio` — Blueprint Architect visual builder class. |
 | `gallery_viewer.py` | `app/modules/` | `GalleryViewer` — static gallery browser. |
 | `test_lab_studio.py` | `app/modules/` | `TestLabStudio` — TEST_LAB tools (synthetic data, scaffolding, reconciliation). |
-| `exporter.py` | `app/modules/` | `SubmissionExporter` — gallery submission. |
 
 **Tier 3 — Shiny Wiring** (`app/handlers/`)
 

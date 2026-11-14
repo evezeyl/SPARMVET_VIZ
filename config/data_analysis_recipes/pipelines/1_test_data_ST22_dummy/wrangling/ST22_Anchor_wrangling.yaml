@@ -41,8 +41,14 @@ tier1:
   - action: polars_rename
     mapping:
       VF_gene: Selected_Virulence_Genes
+  # The AMR phenotype of the ResFinder hit was published as `phenotype` by the old contract, whose hidden alias rule
+  # is gone: the rename is a step now (ResFinder declares it as `predicted_phenotype`, "Predicted Phenotype").
+  - action: polars_rename
+    mapping:
+      predicted_phenotype: phenotype
+    strict: true
   - action: polars_select
-    exprs: ["sample_id", "source", "year", "country", "sequence_type", "serotype", "Selected_Virulence_Genes", "VF_protein", "gene", "status"]
+    exprs: ["sample_id", "source", "year", "country", "sequence_type", "serotype", "Selected_Virulence_Genes", "VF_protein", "gene", "status", "phenotype"]
 
 # tier2: aggregation / sorting for cross-dataset visualizations
 tier2:

@@ -2,7 +2,6 @@
 import unittest
 from app.src.bootloader import Bootloader
 from app.modules.orchestrator import DataOrchestrator
-from app.modules.exporter import SubmissionExporter
 from pathlib import Path
 import polars as pl
 import yaml
@@ -10,11 +9,6 @@ import os
 
 
 class TestUIScenarios(unittest.TestCase):
-    def setUp(self):
-        self.export_dir = Path("tmp/test_exports")
-        self.export_dir.mkdir(parents=True, exist_ok=True)
-        self.exporter = SubmissionExporter(str(self.export_dir))
-
     def run_app_features_check(self, app_features_name, expected_features):
         """Helper to verify feature gating for an app features."""
         print(f"Checking App features: {app_features_name}...")
@@ -63,35 +57,6 @@ class TestUIScenarios(unittest.TestCase):
             self.assertIn("📊 Distribution", content)
             self.assertIn("🔢 1 Numeric, 1 Categorical", content)
         print("  [PASS] Gallery metadata correctly refactored and parsed.")
-
-    def test_export_integrity(self):
-        """Objective 4: Export Integrity Check."""
-        print("Testing Export Integrity...")
-        df_mock = pl.DataFrame({"a": [1], "b": [2]})
-        tiers = {
-            "tier1_anchor": df_mock.to_pandas(),
-            "tier2_reference": df_mock.to_pandas(),
-            "tier3_leaf": df_mock.to_pandas()
-        }
-
-        zip_path = self.exporter.bundle_global_export(
-            data_analysis_recipe_id="INTEGRITY_TEST",
-            plot_path=None,
-            tiers=tiers,
-            data_analysis_recipe={"info": {"name": "Test"}},
-            audit_trail=["Step 1: Ingest"]
-        )
-
-        self.assertTrue(Path(zip_path).exists())
-        # Check ZIP content (Simulated)
-        import zipfile
-        with zipfile.ZipFile(zip_path, 'r') as zf:
-            files = zf.namelist()
-            self.assertIn("example_meta.md", files)
-            self.assertIn("data/tier1_anchor.csv", files)
-            self.assertIn("data/tier3_leaf.csv", files)
-
-        print("  [PASS] Export ZIP contains full 3-tier history and metadata.")
 
 
 if __name__ == "__main__":
