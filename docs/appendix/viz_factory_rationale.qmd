@@ -154,6 +154,6 @@ This serves as the reference implementation for future multi-source gallery entr
 > **HISTORICAL**, continued from the banner above: `viz_factory_integrity_suite.py` never gained a
 > `--gallery` flag (confirmed — its only CLI argument is `--output_dir`). Gallery bundle generation and
 > indexing is done per `rules_gallery_standards.md §5/§6`: author the bundle's four files by hand, run
-> `libs/viz_gallery/assets/generate_previews.py` to render `preview_plot.png`, then
-> `libs/viz_gallery/assets/refresh_gallery.py` to rebuild `gallery_index.json`.
+> `assets/scripts/gallery_previews.py --apply` to render `preview_plot.png`, then
+> `assets/scripts/refresh_gallery.py --apply` to rebuild `gallery_index.json`.
 
