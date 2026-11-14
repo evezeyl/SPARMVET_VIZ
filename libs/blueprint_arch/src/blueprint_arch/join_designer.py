@@ -16,8 +16,8 @@ from utils import action_names
 
 # @deps
 # provides: join_designer:check_join_keys, join_designer:compute_key_match, join_designer:build_join_step, join_designer:parse_join_step
-# consumes: —
-# consumed_by: app/handlers/blueprint_handlers.py, libs/blueprint_arch/tests/test_join_designer.py
+# consumes: libs/utils/src/utils/action_names.py
+# consumed_by: app/handlers/blueprint_handlers.py, app/modules/wrangle_studio.py, libs/blueprint_arch/tests/test_join_designer.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-082 (Q5), .claude/rules/rules_data_analysis_recipe_structure.md#7
 # @end_deps
 

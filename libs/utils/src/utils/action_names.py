@@ -11,8 +11,11 @@ Only names that a consumer needs are listed; add one with its first consumer.
 # @deps
 # provides: constant:JOIN, constant:SELECT, constant:DROP, constant:WITH_COLUMNS, constant:FILTER, constant:CAST,
 #           constant:STR_STRIP_CHARS, constant:STR_REPLACE_ALL, constant:UNIQUE, constant:DROP_NULLS, constant:SORT, constant:SAMPLE, constant:TIER1_ONLY
-# consumed_by: libs/utils/src/utils/recipe_check.py, libs/transformer/tests/test_action_names.py,
-#              libs/id_reconciliation/src/id_reconciliation/recipe_steps.py
+# consumed_by: libs/utils/src/utils/recipe_check.py, libs/utils/src/utils/contract_migration.py, libs/transformer/tests/test_action_names.py,
+#              libs/id_reconciliation/src/id_reconciliation/recipe_steps.py, libs/blueprint_arch/src/blueprint_arch/join_designer.py,
+#              libs/blueprint_arch/src/blueprint_arch/t3_translator.py, libs/transformer/src/transformer/data_assembler.py,
+#              libs/transformer/src/transformer/data_wrangler.py, libs/test_lab/src/test_lab/scaffolder.py,
+#              app/handlers/blueprint_handlers.py, app/modules/wrangle_studio.py
 # doc: .claude/design/recipe_format_spec.md (R4)
 # @end_deps
 """

@@ -14,7 +14,7 @@ If deleted: the examples are checked for structure only and the previews cannot 
 
 # @deps
 # provides: function:recipe_catalogs, function:check_gallery, function:check_gallery_at_start, function:rebuild_gallery_index, function:render_example, function:example_table, constant:PREVIEW_SIZE
-# consumes: libs/viz_gallery/src/viz_gallery/gallery_manager.py, app/modules/orchestrator.py, app/modules/cache_keys.py, libs/utils/src/utils/config_loader.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/arguments.py, libs/transformer/src/transformer/actions/base.py
+# consumes: libs/viz_gallery/src/viz_gallery/gallery_manager.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, app/modules/orchestrator.py, app/modules/cache_keys.py, libs/utils/src/utils/config_loader.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/arguments.py, libs/viz_factory/src/viz_factory/registry.py, libs/transformer/src/transformer/actions/base.py
 # consumed_by: app/src/bootloader.py, assets/scripts/refresh_gallery.py, assets/scripts/gallery_previews.py, app/tests/test_gallery_app_path.py
 # doc: .claude/design/recipe_format_spec.md (section 9: G2, G3, D4, D5; section 14)
 # @end_deps
