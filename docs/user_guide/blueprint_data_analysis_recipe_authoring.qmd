@@ -57,33 +57,36 @@ A `data_schema` describes one input file: where to find it, what columns it has,
 ```yaml
 data_schemas:
   Summary:
+    label: Summary
     source:
       type: local_tsv
       path: ./assets/test_data/my_data_analysis_recipe/Summary.tsv
+    null_values: []
+    strip: true
     input_fields:
       sample_id:
-        type: categorical
+        type: String
         label: "Sample ID"
       year:
-        type: numeric
+        type: Int64
         label: "Year collected"
       predicted_phenotype:
-        type: categorical
+        type: String
         label: "Predicted resistance phenotype"
     wrangling:
       tier1: []
-      tier2: []
-    output_fields: {}
 ```
 
 ### Key fields
 
 | Field | Required | Purpose |
 |---|---|---|
+| `label` | Yes | Short name shown in the app |
 | `source.path` | Yes | Path to the TSV (relative to project root) |
-| `input_fields` | Yes | List of columns to ingest — slug must match exact TSV header |
+| `null_values` | Yes | Texts that mean "missing" (`[]` for none); there is no default, see below |
+| `strip` | Yes | `true` or `false`: strip spaces around the text before the missing texts are applied |
+| `input_fields` | Yes | Columns to ingest: the slug must match the exact TSV header; each has a `type` that is a Polars name (`String`, `Int64`, `Float64`, `Categorical`) |
 | `wrangling.tier1` | Yes | Cleaning steps (can be empty `[]`) |
-| `output_fields` | No | Column whitelist for the output — omit to keep all |
 
 ::: {.callout-warning}
 **Column names must match exactly.** If your TSV has a header `Sample_ID` but your data analysis recipe says `sample_id`, the column will be silently skipped. Use `head -1 yourfile.tsv` to inspect the exact headers before writing `input_fields`.
