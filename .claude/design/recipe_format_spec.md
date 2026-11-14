@@ -636,6 +636,8 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | J09 | E | the declared types of the two join keys differ (CHECKER-JOIN-KEYS-1, 2026-11-14; silent when the type of a key cannot be known from the declarations) | declare the same type for the key in both tables; a `polars_cast` before the join changes only the left table |
 | J10 | E | a join key column is not declared in `input_fields` (CHECKER-JOIN-KEYS-1, 2026-11-14; silent when the type of a key cannot be known from the declarations) | write the key names as they are in each table: `on` for a name that is the same in both, `left_on` and `right_on` for names that differ |
 | J11 | E | `left_on` and `right_on` have unequal length (CHECKER-JOIN-KEYS-1, 2026-11-14; silent when the type of a key cannot be known from the declarations) | write both with the same number of columns, paired by position |
+| J12 | A | a join of a table with itself on the same key on both sides (advice, not a refusal: with a unique key it adds no row and copies the columns again; with a repeated key it multiplies the rows) | if this is not intended, remove the step; a self-join is usually written on two different columns (`left_on` and `right_on`) |
+| J13 | A | a join key declared as a float type (advice, not a refusal: identifiers written differently, for example 001, 1 and 1.0, become the same number, and the join merges different samples without a message) | declare the key as a text type in `input_fields` (for example String or Categorical, as for other identifiers) |
 | G01 | E | group without `label`; unknown key | |
 | G02 | A | group without `description` | |
 | P01 | E | plot entry without `label` or `spec`; unknown key (`info`) | `description` |
