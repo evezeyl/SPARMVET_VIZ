@@ -222,6 +222,37 @@ def test_a_first_step_that_joins_the_base_table_with_itself_is_skipped_by_the_as
     assert result.equals(table.collect())
 
 
+def test_a_first_step_that_joins_the_base_table_with_itself_on_other_keys_adds_nothing_today():
+    # CHARACTERISATION, decision pending (D9, J-c): the self-join of the base table on different left_on / right_on
+    # columns is a real join in Polars (it would add the right-hand copy of every column) but the assembler skips it
+    # without a message. Options for Eve: keep, fail with a plain message, or warn; and whether a real self-join
+    # (different keys) is allowed. If she decides, this test changes with it.
+    table = pl.LazyFrame({"a": ["x", "y"], "b": ["y", "z"], "n": [1, 2]})
+    step = {"action": JOIN, "right_ingredient": "R", "how": "left", "maintain_order": "left_right", "left_on": ["a"], "right_on": ["b"]}
+    result = DataAssembler({"R": table}, recipe_id=RECIPE, join_id=JOIN_ID).assemble([step]).collect()
+    assert result.columns == ["a", "b", "n"], "no right-hand copy of the columns: the step was skipped"
+    assert result.equals(table.collect())
+    done = table.collect().join(table.collect(), left_on="a", right_on="b", how="left", maintain_order="left_right")
+    assert done.width > result.width, "the join, run, would have added columns"
+
+
+def test_a_float_join_key_merges_identifiers_that_differ_in_the_files_decision_pending():
+    # CHARACTERISATION, decision pending (D10, J-d): a key declared Float64 turns the identifiers "001", "1" and
+    # "1.0" of the files into the same number, so three samples become one key and the join returns more rows than
+    # samples (3 x 3 = 9 for 3 samples). No message is given. Options for Eve: change the template to a text type,
+    # and/or an advice in the checker against a float join key. If she decides, this test changes with it.
+    import io
+
+    def table(value):
+        text = f"sample_id\t{value}\n001\t1\n1\t2\n1.0\t3\n"
+        return pl.read_csv(io.StringIO(text), separator="\t", schema_overrides={"sample_id": pl.Float64}).lazy()
+
+    left, right = table("n"), table("year")
+    assert left.collect()["sample_id"].n_unique() == 1, "the three identifiers are one key"
+    result = _assemble(left, right, [_join(on=["sample_id"])]).collect()
+    assert result.height == 9 and result.height > left.collect().height, "more rows than samples"
+
+
 def test_the_error_carries_the_structured_record_for_the_ui():
     with pytest.raises(TransformationError) as caught:
         _assemble(_left(pl.String), _right(pl.Categorical), [_join(on=["sample_id"])]).collect()
