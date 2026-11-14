@@ -500,6 +500,8 @@ def define_server(input, output, session, *,
             synthetic_data_analysis_recipe = {
                 "plots": {p_id: plot_spec},
                 "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
+                # ADR-106 V8: the factory refuses an engine it does not implement (checker code T06 refuses it earlier)
+                **({"plot_engine": cfg.raw_config["plot_engine"]} if "plot_engine" in cfg.raw_config else {}),
             }
 
             try:
@@ -610,6 +612,8 @@ def define_server(input, output, session, *,
             synthetic_data_analysis_recipe = {
                 "plots": {p_id: plot_spec},
                 "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
+                # ADR-106 V8: the factory refuses an engine it does not implement (checker code T06 refuses it earlier)
+                **({"plot_engine": cfg.raw_config["plot_engine"]} if "plot_engine" in cfg.raw_config else {}),
             }
             try:
                 lf = _resolve_active_lf(spec, tier="T2")  # reference = T2 (ADR-086)
