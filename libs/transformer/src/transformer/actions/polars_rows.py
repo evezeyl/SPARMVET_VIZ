@@ -18,7 +18,7 @@ from typing import Any, Dict
 
 import polars as pl
 
-from transformer.actions.base import register_action
+from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS, register_action
 from transformer.actions.polars_calls import (FRAME, NOT_EXPOSED, OVERRIDE, PICKER, REQUIRED, _checked, _formula, _frame,
                                               _schema)
 from utils.errors import TransformationError
@@ -82,10 +82,36 @@ _frame("polars_with_row_index", "with_row_index",
        "- action: polars_with_row_index\n  name: sample_row\n  offset: 0")
 
 
+def _require_columns(action: str, used, names) -> None:
+    """A column that is not in the table at this step gives the plain message of the engine, not a Polars plan dump."""
+    for column in used:
+        if column not in names:
+            raise TransformationError(f"step {action}: column {column!r} is not in the table",
+                                      tip="Write a column that exists at this step; the action never skips a missing column")
+
+
+def _ranking_checks_columns(action: str) -> None:
+    inner = AVAILABLE_WRANGLING_ACTIONS[action]
+
+    def checked(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
+        by = spec.get("by")
+        if isinstance(by, list):
+            _require_columns(action, [c for c in by if isinstance(c, str)], lf.collect_schema().names())
+        return inner(lf, spec)
+
+    checked.__name__, checked.__doc__ = inner.__name__, inner.__doc__
+    AVAILABLE_WRANGLING_ACTIONS[action] = checked
+
+
+for _name in ("polars_top_k", "polars_bottom_k"):
+    _ranking_checks_columns(_name)
+
+
 def _remove_schema():
     schema = _schema("polars_remove", FRAME, pl.LazyFrame.remove, ("LazyFrame", "remove"),
                      "Drop the rows where every predicate is true, keep all others (Polars LazyFrame.remove, the opposite of filter). A row for which the predicate is null is KEPT "
-                     "(a filter would drop it), so `remove` of `pl.col('x') > 1` keeps the rows where x is missing. Several predicates are combined with AND. Rows keep their order.",
+                     "(a filter would drop it), so `remove` of `pl.col('x') > 1` keeps the rows where x is missing. Several predicates are combined with AND. Rows keep their order. "
+                     "A predicate must be a true/false condition (a comparison such as `pl.col('x') > 0`); a number or text formula is refused.",
                      "- action: polars_remove\n  predicates:\n    - \"pl.col('identity') < 90\"")
     schema["polars"] = "wrapper"
     schema["params"]["predicates"] = {"widget": "list", "item_widget": "expression", "required": True,
@@ -98,7 +124,17 @@ def _remove_action(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     if not clean["predicates"]:
         raise TransformationError("step polars_remove: `predicates` is empty, so no row would be tested",
                                   tip="Write at least one Polars boolean expression, for example pl.col('identity') < 90")
-    return lf.remove(*[_formula(text) for text in clean["predicates"]])
+    names = lf.collect_schema().names()
+    predicates = []
+    for text in clean["predicates"]:
+        predicate = _formula(text)
+        _require_columns("polars_remove", predicate.meta.root_names(), names)
+        dtype = lf.select(predicate.alias("_predicate")).collect_schema()["_predicate"]
+        if dtype != pl.Boolean:
+            raise TransformationError(f"step polars_remove: the predicate {text!r} is not a true/false condition (it gives {dtype}), so it would remove rows by accident",
+                                      tip="Write a comparison, for example pl.col('a') > 0")
+        predicates.append(predicate)
+    return lf.remove(*predicates)
 
 
 register_action("polars_remove", ui_schema=_remove_schema())(_remove_action)

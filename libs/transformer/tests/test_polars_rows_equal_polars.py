@@ -136,9 +136,33 @@ def test_an_empty_list_of_predicates_fails_instead_of_removing_nothing():
         _run("polars_remove", {"predicates": []})
 
 
-def test_the_ranking_of_a_missing_column_fails():
-    with pytest.raises(Exception, match="nope"):
-        _run("polars_top_k", {"k": 1, "by": ["nope"]})
+@pytest.mark.parametrize("action", ["polars_top_k", "polars_bottom_k"])
+def test_the_ranking_of_a_missing_column_gives_the_plain_message(action):
+    with pytest.raises(TransformationError, match=rf"step {action}: column 'nope' is not in the table") as err:
+        _run(action, {"k": 1, "by": ["id", "nope"]})
+    assert "plan" not in str(err.value).lower() and "\n" not in str(err.value)
+
+
+@pytest.mark.parametrize("predicate, kind", [("pl.col('n')", "Int64"), ("pl.col('id')", "String"), ("pl.col('n') + 1", "Int64"), ("pl.lit(1)", "Int32")])
+def test_a_predicate_that_is_not_true_or_false_is_refused_and_nothing_is_removed(predicate, kind):
+    with pytest.raises(TransformationError, match=r"step polars_remove: the predicate .* is not a true/false condition") as err:
+        _run("polars_remove", {"predicates": [predicate]})
+    assert "pl.col('a') > 0" in (err.value.tip or "") or "pl.col('a') > 0" in str(err.value)
+
+
+def test_a_second_predicate_that_is_not_boolean_is_also_refused():
+    with pytest.raises(TransformationError, match="not a true/false condition"):
+        _run("polars_remove", {"predicates": ["pl.col('n') > 1", "pl.col('id')"]})
+
+
+def test_a_predicate_on_a_missing_column_gives_the_plain_message():
+    with pytest.raises(TransformationError, match=r"step polars_remove: column 'nope' is not in the table") as err:
+        _run("polars_remove", {"predicates": ["pl.col('nope') > 0"]})
+    assert "\n" not in str(err.value)
+
+
+def test_the_description_says_a_predicate_is_a_true_false_condition():
+    assert "true/false condition" in ACTION_SCHEMAS["polars_remove"]["description"]
 
 
 def test_a_row_index_over_an_existing_column_fails():
