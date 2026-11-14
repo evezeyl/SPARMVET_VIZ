@@ -633,6 +633,9 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | J06 | E | `labels` not a mapping of text to text | |
 | J07 | E | a join's `steps` is a flat list or `[]`, or has no `tier1` | `{tier1: [...]}` |
 | J08 | E | a column name in both ingredients of a join, not a join key: the engine renames the second `name_right` silently (needs the recipe graph) | the message names both tables and the column; rename or drop one before the join (`polars_rename`, `polars_drop`) |
+| J09 | E | the declared types of the two join keys differ (CHECKER-JOIN-KEYS-1, 2026-11-14; silent when the type of a key cannot be known from the declarations) | declare the same type for the key in both tables; a `polars_cast` before the join changes only the left table |
+| J10 | E | a join key column is not declared in `input_fields` (CHECKER-JOIN-KEYS-1, 2026-11-14; silent when the type of a key cannot be known from the declarations) | write the key names as they are in each table: `on` for a name that is the same in both, `left_on` and `right_on` for names that differ |
+| J11 | E | `left_on` and `right_on` have unequal length (CHECKER-JOIN-KEYS-1, 2026-11-14; silent when the type of a key cannot be known from the declarations) | write both with the same number of columns, paired by position |
 | G01 | E | group without `label`; unknown key | |
 | G02 | A | group without `description` | |
 | P01 | E | plot entry without `label` or `spec`; unknown key (`info`) | `description` |

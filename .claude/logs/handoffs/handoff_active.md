@@ -672,3 +672,94 @@ Live progress file: `tmpAI/coordinator/progress_2026-11-14_session3.md` (not in 
 - N14: TEST-ORDER-1 tests that wait for the unconfirmed stage-2 spec v0.1 and for the `hypothesis` dependency (D9). Options: confirm the spec and allow the dependency, or leave those tests out.
 - N15: `submit_example` has no caller outside the tests (`gallery_manager.py` 163-203). Options: keep, or delete.
 **User-visible change:** a threshold that is not an integer on an integer column is now compared as a number, so the plot agrees with the reproducibility export (issue #62).
+
+## Handoff 2026-11-14 (third coordinator session, final): ten merges, dev pushed, the decisions for Eve in one list
+
+**Start:** a Fable session types `-coordinate` first (CLAUDE.md 2.1, `.claude/workflows/agent_dispatch_howto.md`). Workers run on the model and effort of their task tag, never on Fable. Worktrees: create one with `git worktree add .claude/worktrees/<task> -b task/<task>` and link the shared environment (`ln -s <main>/.venv <worktree>/.venv`; remove the link before `git worktree remove`). The shared `.venv` imports every `libs/*` package from the main tree, so tests in a worktree need the worktree's source folders first in `PYTHONPATH` (`PYTHONPATH=$PWD:$PWD/libs/<lib>/src:...`); ask for `print(<module>.__file__)` once to check.
+
+**Branch and push:** the branch is `feat/recipe-format-1`. `dev` is at `13f120f6` and is pushed to `origin/dev` (fourth push of the session). All ten merges below are in `origin/dev`. The records of this session (this section, the tasks.md edits, the J09 to J11 rows of the spec, `.claude/logs/audit_2026-11-14.md`) are NOT committed yet.
+
+**Merged** (merge commit, then the commits):
+1. JOIN-PREVIEW-STRICT-1: the Blueprint join preview gives the build's verdict (merge commit not recorded in the progress file; commits `870207ba`, `13194791`).
+2. CHECKER-JOIN-KEYS-1: the recipe checker refuses J09, J10 and J11 at load (merge `67419ef4`; commits `9da9ce19`, `00b64f53`).
+3. GALLERY-CHECK-START-1: with `gallery_enabled`, the gallery check runs at start (merge commit not recorded in the progress file; commits `f7f5aa20`, `642ec0f0`).
+4. HOME-EXPLORE-1 (#62): one shared filter-value coercion in `libs/utils` (merge `46425c89`; commits `9427dc36`, `73cecd2b`).
+5. Documentation (merge `57724105`; commits `a607174f`, `b5fe3e78`, `5e9864b9`): the docs part of DOC-JOIN-CAST-1, DOC-MISSING-VALUES-1, one broken path.
+6. SMOKE-RACE-2 (merge `334b8dfc`; commits `382848c2`, `9dffbb8d`).
+7. TEST-ORDER-1 (merge `416a5056`; commits `a086bef9`, `99447ec1`, `e823c178`): `app/tests/test_step_order.py`.
+8. DEP-INDEX-STALE-1 (merge `cbad9ff3`; commits `049a5258`, `d766ac1e`, `9bd329b2`).
+9. TEST-FLAKY-1 (#72) (merge `5e8470f7`; commit `87340720`).
+10. Docs minimal example (merge `13f120f6`; commit `14ccda25`): the minimal example and the key-fields table of the authoring guide are format 1.
+
+**Found done already:** NAN-ACTIONS-1 (`polars_fill_nan` and `polars_drop_nans` exist in `libs/transformer/src/transformer/actions/polars_calls.py`); GALLERY-SUBMIT-SCHEMA-1 (`submit_example` writes format 1 and runs `check_recipe` in profile gallery; tested in `libs/viz_gallery` `test_gallery_bundle.py`; read, not run).
+
+**Controls:**
+- Final, on `13f120f6` (reviewer): headless `3843 passed, 23 xfailed in 139.57s` (it was 3642 passed and 14 xfailed at the start of the session); golden baseline `result-identical` (`PYTHONPATH=. ./.venv/bin/python assets/scripts/golden_baseline.py --check app/tests/golden/baseline.json`); `audit_deps_verify` PASS (21 load-bearing files carry a `@deps` block); `audit_docs_sync` exit 1 with 1 violation (`libs/id_reconciliation/README.md`); `audit_uml_model` 6 violations in PKG-TIERS, not new; tree clean.
+- Earlier, on `dc91823d`: `task_drift` 0, `cross_lib` 0, `validate_app_features_config --all --strict` PASS, `audit_old_words` exit 1 (known), `check_doc_links` 60 problems.
+- Browser gate: `70 passed, 3 skipped in 493.00s` (the browser files under `SPARMVET_APP_FEATURES=qa`). It was run before the last small merges (the progress file names the conftest hook and one docs page). It was NOT run on the final state `13f120f6`. It does not prove the flaky tests fixed: they showed only under load, and one green run does not show that they are gone.
+
+**User-visible change:** a threshold that is not an integer on an integer column is now compared as a number, so the plot agrees with the reproducibility export (issue #62).
+
+**Decisions for Eve** (one list; a reader goes through it with her; the evidence is in each line):
+
+**Older points (night handoff, points 1 to 5)**
+1. IMPORT-PATH-1 (`tasks.md`): which option (recommended: a data folder per import, `<user_data>/_imports/<recipe id>/data/` plus a record the orchestrator reads); the name of the imported recipe (recommended: keep `<original>_imported_<timestamp>`); whether the by-dataset-id rule also accepts `.parquet` (recommended: yes, and fail when both exist). Findings: `.claude/worktrees/agent-abd52719502485bdb/tmpAI/progress.md`; hash survey `tmpAI/survey_hash/table.md`. Note: `tasks.md` also says "Eve DECIDED 2026-11-14: option A, as production", while the night handoff says it waits. Ask Eve which is current.
+2. The eight changed gallery previews (boxplot_faceted, boxplot_simple, jitter_strip, point_faceted, point_simple, tile_simple, violin_faceted, violin_simple): accept or reject each. Old and new side by side in `tmp/gallery_preview_review/`.
+3. A first assembly step that joins the base table with itself is skipped silently ("redundant init", `data_assembler.py`): keep it, or fail with a plain message (recommended: fail). Evidence: JOIN-KEY-TYPES-1 in `tasks.md`; `libs/transformer/tests/test_join_key_types.py` records today's behaviour.
+4. TEMPLATE-KEY-TYPE-1: `templates/complex_template` declares `sample_id` as Float64 on both sides. DOC-JOIN-CAST-1: the rule file (`.claude/rules/rules_agent_role_bioscientist.md` line 144), ADR-050 (needs a superseding ADR; ADR text is `opus/high`) and `data_contract_rules` section 13 still describe the removed automatic cast.
+5. Older open points in `tasks.md`: `beeswarm_sina`, the empty Blueprint draft, three old scripts, three ID-reconciliation defects, the scope of RECIPE-WORD-1, String or Categorical in recipes.
+
+**HOME**
+6. N9: VizFactory `in` / `not_in` compares as text, so on a numeric column `in [90.0]` gives no rows in the plot while the table keeps them. Options: approve the small fix now (coerce, then `is_in`, as the engine does; it changes plots with numeric `in` filters), or wait for FILTER-DTYPES-1. Evidence: 4 strict xfail cases in `app/tests/test_filter_int_equivalence.py`.
+7. N12: what blocks the HOME rebuild: see the section "HOME: what blocks the rebuild" below.
+8. N13: a drop and a filter on the same column at one node. The HOME view (`audited_frame`) runs all filters before all drops; the exported recipe keeps the recorded order and stops with "column not in the table". Options: refuse such a step, or define the order. Evidence: TEST-ORDER-1, checked by running; not tested yet.
+
+**Recipes and joins**
+9. N1: the join key rule is in three places: the build (`DataAssembler._check_join_key_types`), the Blueprint preview (`check_join_keys` in `join_designer.py`) and the checker (`join_key_problems` in `libs/utils/src/utils/recipe_check.py`). They are kept in step by a parity test only. Options: keep the copies with their parity tests, or one pure rule in `libs/utils` called by all three.
+10. N5: confirm that the checker refuses at load (J10) a join key not declared in `input_fields`. It mirrors the build, because the ingestor imports only the declared columns when `input_fields` is not empty. Same question as N1.
+11. N7: the tier-3 reader (W10) needs HOME's P5 mechanism spec and the order of change R1 (`.claude/design/recipe_format_spec.md` line 173); `beeswarm_sina` waits for it. Options: not recorded in the progress file.
+
+**Gallery**
+12. N3: a read-only gallery folder. The start check cannot rewrite the index (status `not_writable`), so a failing example that is listed in the old index is still shown; the only trace is a console warning. Options: keep; or leave failing examples out in memory (`bootloader.rejected_gallery_examples`). Evidence: `app/modules/gallery_examples.py` (`check_gallery_at_start`).
+13. N4: what the user sees for an example left out at start is not specified (spec section 9). Today: left out of the index, the reason is in `metadata.rejected`, a console warning, no screen element. Options: not recorded in the progress file.
+14. N15: `submit_example` (`libs/viz_gallery/src/viz_gallery/gallery_manager.py` 163-203) has no caller outside the tests. Q3-GALLERY-SUBMISSION-1 left it in place (it writes a gallery bundle); N15 asks again: keep, or delete. Its `@deps` block is inaccurate.
+
+**Export**
+15. N10: the reproducibility export writes the filter value as text, so re-running it on a number column fails with `ComputeError cannot compare string with numeric type`. Options: approve EXPORT-FILTER-VALUE-1 (it edits the frozen `libs/blueprint_arch/src/blueprint_arch/t3_translator.py`, about line 127; build brief S4), or leave it. Fix proposed by the reviewer: the translator writes the value through `utils.filter_values.coerce_filter_value` with the stored dtype. Evidence: 12 strict xfail cases in `app/tests/test_filter_int_equivalence.py`.
+16. N11: `between` has no translation in `t3_translator` (UntranslatableNode). Options: add the translation later, or keep refusing it.
+
+**Tests and audits**
+17. N6: AUDIT-REPAIR-1: for the four old words (`persona`, `manifest`, `profile`, `project`) and one UML tag, fix the text or adapt the exclusions. `recipe` waits for RECIPE-WORD-1. Evidence: `assets/scripts/audit_old_words.py --check`, `assets/scripts/audit_uml_model.py`.
+18. N14: TEST-ORDER-1 tests not written yet: where the audit writes a step (P5), the key of T3 and the per-collection key (P4), and property tests with `hypothesis` (a new dependency, D9). They depend on the unconfirmed stage-2 spec v0.1. Options: confirm the spec and allow the dependency, or leave those tests out.
+19. N16: `audit_uml_model.py` reports 6 violations in PKG-TIERS of `docs/UML/app.mdj`: five missing arrows (from `assets/scripts` to transformer, utils, viz_factory and viz_gallery; from `libs/test_lab/pyproject.toml` to utils) and one stale arrow (transformer to ingestion). Not new (no importing file gained an import in this session). A UML edit needs Eve's yes. Options: not recorded in the progress file.
+20. N17: `.claude/rules/rules_verification_testing.md` section 8: add `--durations=10` after `-q` in the browser command, and correct "about 4 minutes" (the gate took 8 min 13 s). It is a rule file: Eve's double confirmation.
+
+**Blueprint**
+21. N2: `except Exception` in `_jd_run_preview` (`app/handlers/blueprint_handlers.py`, about line 2060) shows any programming error as "Preview failed: ...". Options: leave; or catch only the expected errors and let programming errors through.
+22. N8: the Blueprint package (W14): `tasks.md` (line 82) says Blueprint is not touched now; the night handoff listed it as next. Eve (2026-11-14): Blueprint and Test Lab can wait. Decide when W14 starts. Options: not recorded in the progress file.
+
+**HOME: what blocks the rebuild (N12 in full)**
+- NA-RULE-63 (#63): the NaN rule and the count message. The rule is in `.claude/design/home_audit_steps.md` section 19; Eve confirms it (`tasks.md`, NA-RULE-63).
+- STAGE2-SPEC-1: Eve reads and confirms the v0.1 mechanism spec, `.claude/design/home_stage2_mechanism_spec.md`.
+- KEYS-NODE-1: Eve confirms the hash model (`.claude/design/home_evidence/home_hash_model_2026-11-12.md`, section 4).
+- RECIPE-GRAPH-UTILS-1: option C+. `utils.recipe_graph` and `utils.node_keys` do not exist yet (checked by the scout).
+- HOME-DESIGN-REVIEW-1: items SC1, SC2, SC4, AR4, SC5, AR2, AR1.
+- FILTER-UNIFY-1: three filter implementations (`modif_filter`, `t3_audit_engine._apply_filter_rows`, the filter loop in `VizFactory.render`); a design decision for Eve.
+- FORMULA-SAFETY-1.
+- Tasks that wait for these: FILTER-DTYPES-1 (after NA-RULE-63), HOME-EXPLORE-2 (#61, after RECIPE-GRAPH-UTILS-1), HOME-EXPLORE-4, -5 and -6 (#56), AUDIT-VIEW-1, AUDIT-RAWYAML-REMOVE-1, TEST-SHAPES-1 (waits for RECIPE-TESTS-1).
+
+**Next for the coordinator, in order** (after Eve's answers; her priority: HOME first, then Gallery; Blueprint and Test Lab last):
+1. HOME: EXPORT-FILTER-VALUE-1 (needs Eve's yes to edit the frozen `t3_translator.py`); N9; NA-RULE-63 (#63) after her answer on the NaN rule and the count message; then FILTER-DTYPES-1; the rest of P0 (TEST-SHAPES-1 waits for RECIPE-TESTS-1); P3 and P4 after her reading of the stage-2 spec, the hash model and option C+.
+2. IMPORT-PATH-1 with SOURCE-LOOKUP-ONE-1, after her answer to point 1: one `builder` at `sonnet/high`, continued in worktree `agent-abd52719502485bdb` (merge `feat/recipe-format-1` into it first), then `reviewer`, merge, controls.
+3. Gallery: her choices N3, N4 and N15, the eight previews, `beeswarm_sina` (tier-3 reader W10, N7).
+4. Later: RECIPE-DOCS-1 (#79), the ADR-100 draft (W12, `opus/high`), AUDIT-REPAIR-1 (N6, N16), BP-VALIDATE-1 and the Blueprint package (W14), the DOC-JOIN-CAST-1 rule and ADR parts.
+
+**Small tasks found, not done:**
+- The import test leaves an empty `assets/test_data/_imported/` folder (IMPORT-TEST-CLEANUP-1 in `tasks.md`).
+- The one `audit_docs_sync` violation (DOCS-SYNC-IDRECON-1 in `tasks.md`).
+- Two sentences of `.claude/design/recipe_format_spec.md` (near lines 380 and 683) still describe the removed REMOVE-CATEGORY-SELECT-1 feature as present.
+- The checker flags a missing schema `description` (S04, severity A, `libs/utils/src/utils/recipe_check.py` about line 281). The authoring page does not mention it. Not checked whether "A" is a warning.
+
+**Not started on purpose** (quota and Eve's priority): the ADR-100 draft (W12, `opus/high`); BP-VALIDATE-1 (Blueprint); RECIPE-DOCS-1 (#79, large); AUDIT-REPAIR-1. Blueprint and Test Lab wait (Eve, 2026-11-14).
+
+**Worktrees:** all task worktrees and branches of this session are removed. `agent-abd52719502485bdb` is kept (no code; the findings note of IMPORT-PATH-1).
