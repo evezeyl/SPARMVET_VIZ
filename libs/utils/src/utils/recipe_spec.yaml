@@ -135,4 +135,13 @@ gallery:
     difficulty: [Simple, Intermediate, Advanced]
     show: [change, distribution, frequency, normality, proportion, ranking, relationship, trend, uncertainty]
     sample_size: [any, individual points, medium+, large]
+  # how the filter panels and the tag strip of example_meta.md show the axes, in this order (label and icon in one
+  # place, finding G1); `geom` is not typed in a recipe: it is the first geom_ or stat_ layer of the plot
+  display:
+    - {axis: family, label: Family (Purpose), icon: "📊"}
+    - {axis: pattern, label: Data Pattern, icon: "🔢"}
+    - {axis: difficulty, label: Difficulty, icon: "📈"}
+    - {axis: geom, label: Primary Geom, icon: "⚙️"}
+    - {axis: show, label: What it Shows, icon: "🎯"}
+    - {axis: sample_size, label: Sample Size, icon: "📏"}
   companion_files: [example_data.tsv, example_meta.md, preview_plot.png]
