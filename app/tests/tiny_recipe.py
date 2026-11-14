@@ -9,26 +9,20 @@ from pathlib import Path
 
 import yaml
 
+from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
+
 
 def tiny_recipe(recipe_id: str = "m", data_path: str = "./assets/test_data/tiny/A.tsv") -> dict:
-    return {
-        "id": recipe_id,
-        "spec_version": 1,
-        "data_engine": "python-polars",
-        "plot_engine": "python-plotnine",
-        "info": {"label": "Tiny", "description": "A smallest recipe, for a test."},
-        "data_schemas": {"A": {
-            "label": "A", "description": "One row per a.",
-            "source": {"type": "local_tsv", "path": data_path},
-            "null_values": [], "strip": False,
-            "input_fields": {"a": {"type": "String", "label": "A"}},
-            "wrangling": {"tier1": []},
-        }},
-        "analysis_groups": {"g": {"label": "G", "description": "The one group.", "plots": {"p": {
-            "label": "P", "description": "Count of rows per a.",
-            "spec": {"target_dataset": "A", "mapping": {"x": "a"}, "layers": [{"name": "geom_bar", "params": {}}]},
-        }}}},
-    }
+    schema = minimal_schema(data_path, {"a": {"type": "String", "label": "A"}}, label="A")
+    schema["description"] = "One row per a."
+    plot = minimal_plot("A", {"x": "a"}, [{"name": "geom_bar", "params": {}}], label="P")
+    plot["description"] = "Count of rows per a."
+    recipe = minimal_recipe(recipe_id, label="Tiny", schemas={"A": schema}, plots={"p": plot})
+    recipe["info"]["description"] = "A smallest recipe, for a test."
+    group = recipe["analysis_groups"].pop("main")
+    group.update({"label": "G", "description": "The one group."})
+    recipe["analysis_groups"] = {"g": group}
+    return recipe
 
 
 def write_tiny(folder: Path, recipe: dict | None = None, name: str | None = None) -> Path:
