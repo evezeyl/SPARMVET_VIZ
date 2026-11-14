@@ -1,19 +1,19 @@
 # YAML Configuration Standards & Cookbook
 
-This guide serves as a central reference (or "Cookbook") for authoring Data Contracts and Configuration YAMLs in the SPARMVET project.
+This guide serves as a central reference (or "Cookbook") for authoring Data Contracts and Configuration YAMLs in the SPARMVET project (recipe format version 1).
 
-If you need a transformation or feature that is **not** on this list, it currently does not exist. However, you can request it through the **"Request Implementation"** button in the app!
+If you need a transformation or feature that is **not** on this list, it currently does not exist. However, you can request it through the **"Request Implementation"** button in the app! The complete list of actions, with one example each, is in `docs/appendix/transformer_actions.qmd`.
 
 ---
 
 ## 1. Schema Block Rules (Rich Dictionary Format)
 
-Every column defined in `input_fields`, `output_fields`, or `metadata_schema` follows the **ADR-041 Rich Dictionary** format:
+Every column defined in `input_fields` or `metadata_schema` follows the **ADR-041 Rich Dictionary** format:
 
 ```yaml
-column_slug:          # snake_case internal name — used for O(1) lookup and joins
-  original_name: "RawColumnName"   # exact column header in the source TSV/Excel file
-  type: categorical                # see type table below
+column_slug:          # snake_case internal name, used for lookup and joins
+  original_name: "RawColumnName"   # exact column header in the source TSV file
+  type: String                     # a Polars type name, see the type table below
   label: "Human Label"             # displayed in UI filters and axis labels
 ```
 
@@ -23,244 +23,220 @@ The `column_slug` is the key the engine uses internally after renaming. `origina
 input_fields:
   sample_id:
     original_name: "SampleName"   # source file has "SampleName"
-    type: categorical
+    type: String
     label: "Sample ID"
   identity_score:
     original_name: "%Identity"    # source file has "%Identity"
-    type: numeric
+    type: Float64
     label: "Sequence Identity (%)"
 ```
 
+Only the columns written in `input_fields` are read. A declared column that is missing from the file stops the load, and the import reports how many file columns were not declared.
+
 ### Required Properties
 
-| Property | Description | Example | Default |
-| --- | --- | --- | --- |
-| `original_name` | Exact column header in the source file. Drives the rename step in the ingestor. | `original_name: "SampleName"` | (Required) |
-| `type` | Data type — see table below. | `type: categorical` | (Required) |
-| `label` | Human-readable label for UI filters and plot axes. | `label: "Sample ID"` | slug with underscores replaced by spaces |
+| Property | Description | Example |
+| --- | --- | --- |
+| `type` | Polars type name that a text file can hold: see the table below. | `type: String` |
 
 ### Optional Properties
 
 | Property | Description | Example |
 | --- | --- | --- |
-| `is_primary_key` | Marks the column as the unique identifier for this dataset. Used for join alignment. | `is_primary_key: true` |
-| `role` | Semantic role: `"foreign_key"`, `"primary_key"`. Informational, not enforced by engine. | `role: "foreign_key"` |
-| `format` | Date/time format string for `date` type columns. | `format: "%Y-%m-%d"` |
+| `original_name` | Exact column header in the source file when it differs from the slug. Drives the rename step in the ingestor. | `original_name: "SampleName"` |
+| `label` | Human-readable label for UI filters and plot axes (also the default axis title of a plot). | `label: "Sample ID"` |
+| `is_entity_key` | Marks the column that identifies the entity of the table (was `is_primary_key`). Informational: join keys are written in the join step. | `is_entity_key: true` |
+| `null_values`, `strip` | Override the schema's setting for this field. | `null_values: ["", "NA"]` |
+| `categories` | The levels of an `Enum` field. | `categories: [low, high]` |
+| `format` | Format text for `Date`, `Datetime` and `Time` fields. | `format: "%Y-%m-%d"` |
+| `precision`, `scale` | Digits of a `Decimal` field. | `precision: 10` |
+| `time_unit`, `time_zone` | Parameters of a `Datetime` field. | `time_unit: us` |
+
+Every data schema also states `null_values` and `strip` (see the authoring guide): there is no default.
 
 ### Valid Types
 
 | Type | What it is | When to use it |
 | :--- | :--- | :--- |
-| `categorical` | Text labels, gene names, species, countries | Default for string columns in `output_fields` |
-| `numeric` | Percentages, scores, measurements, counts | Any continuous or integer-valued column |
-| `date` | Calendar dates or timestamps | Sampling dates, submission dates |
-| `boolean` | True/False, presence/absence | Resistance flags, pass/fail status |
+| `String` | Text | Identifiers, free text |
+| `Categorical` | Text with repeated values | Gene names, species, countries used as plot categories |
+| `Int64`, `Float64` (and the other integer and float types) | Whole and decimal numbers | Percentages, scores, measurements, counts |
+| `Date`, `Datetime`, `Time` | Calendar dates and times | Sampling dates, submission dates |
+| `Boolean` | True/False | Resistance flags, pass/fail status |
+| `Enum`, `Decimal` | Fixed list of levels; exact decimals | Ordered levels; money-like values |
 
-> **REMOVED (LEGACY-TYPE-ALIASES-1, Phase 34, 2026-05-22):** `character` and `string` are no longer
-> accepted anywhere a `type:` is declared (`input_fields`, `output_fields`, `final_contract`). The
-> engine raises `TransformationError` the moment one is encountered — this was never a soft warning
-> and it has been enforced for several months now, not a future change.
-> Use `categorical` (identifiers, repeating values — gene names, species, countries, Year-as-category)
-> or `utf8` (high-cardinality free text) instead. See `rules_data_analysis_recipe_structure.md §9`.
+> **REMOVED (recipe format 1):** the old type words `categorical`, `numeric`, `utf8`, `string`, `character`,
+> `integer`, `float`, `date`, `bool` and `boolean` are refused; the message names the Polars type to write
+> (`Categorical`, `Float64`, `String`, `Int64`, `Date`, `Boolean`). See `rules_data_analysis_recipe_structure.md §9`.
 
 ---
 
 ## 2. Wrangling Block Rules (Tiered Structure)
 
-All wrangling logic must use the **tiered structure** (ADR-041).
-
-> **REMOVED (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** Flat `wrangling: []` lists are rejected by the engine with a `DataAnalysisRecipeError`.
-> Migrate to the tiered structure shown below. Tombstone expires Phase 36.
+All wrangling logic must use the **tiered structure** (ADR-041). Every step is a registered action with the parameters its schema declares.
 
 ```yaml
 wrangling:
-  tier1:    # Relational Foundations — runs once, shared across all plots
-    - action: "strip_whitespace"
-    - action: "rename"
+  tier1:    # Relational foundations: runs once, shared across all plots
+    - action: polars_str_strip_chars
+      columns: [gene]
+    - action: polars_rename
       mapping:
         old_column: new_column
-  tier2:    # Plot-Specific Reshaping — optional, runs per plot group
-    - action: "unpivot"
+  tier2:    # Reshaping: only on a schema that is plotted directly
+    - action: polars_unpivot
       index: [sample_id]
       variable_name: category
       value_name: value
 ```
 
-- `tier1` is mandatory if any wrangling is defined.
-- `tier2` is optional — omit it entirely if the Tier 1 output is already plot-ready (Identity Logic).
+- `tier1` is required (it may be `[]`).
+- `tier2` is optional. On a schema that is only an ingredient of a join, `tier2` is an error (the join has its own tiers).
 - Both tiers contain **ordered lists** of action dicts. Order is deterministic.
 
 **Identity Mode** (no wrangling needed):
 ```yaml
 wrangling:
   tier1: []
-output_fields: {}
 ```
 
 ---
 
 ## 3. Declarative Wrangling Actions
 
-The engine uses a strict **Action Registry**. Only the actions below are valid. See `docs/appendix/transformer_actions.qmd` for the complete list.
+The engine uses a strict **Action Registry**. Only registered actions are valid, and each name carries a prefix: `polars_` (exactly the Polars call), `modif_` (a Polars idea with a documented change), `step_` (several calls). A parameter that changes the result is written in the recipe; there is no hidden default. See `docs/appendix/transformer_actions.qmd` for the complete list. The examples below were checked with the recipe checker.
 
-### `strip_whitespace`
-Trims leading/trailing whitespace from string columns.
+### `polars_str_strip_chars`
+Trims leading/trailing characters (whitespace by default) from string columns. The columns are written.
 ```yaml
-- action: strip_whitespace
-  # No columns specified → applies to all string columns
-```
-```yaml
-- action: strip_whitespace
-  columns: [gene, predicted_phenotype]   # target specific columns
+- action: polars_str_strip_chars
+  columns: [gene, predicted_phenotype]
 ```
 
-### `rename`
-Renames one or more columns using a mapping dict.
+### `polars_rename`
+Renames columns using a mapping dict.
 ```yaml
-- action: rename
+- action: polars_rename
   mapping:
     old_name: new_name
     another_old: another_new
 ```
 
-### `filter_range`
-Keeps only rows where a numeric column falls within a range.
+### `modif_filter`
+Keeps rows by a comparison on one column. The rule for missing values (`na`) is required: `keep` or `remove`. `op` is one of `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in`, `not_in`, `between`.
 ```yaml
-- action: filter_range
-  columns: [identity]
-  min: 90          # optional
-  max: 100         # optional
+- action: modif_filter
+  column: identity
+  op: between
+  value: [90, 100]
+  na: remove
 ```
 
-### `drop_columns`
-Removes columns from the dataframe.
+### `polars_drop`
+Removes columns from the dataframe (a column that is not there stops the step).
 ```yaml
-- action: drop_columns
+- action: polars_drop
   columns: [host_animal_common, internal_flag]
 ```
 
-### `keep_columns`
-Keeps only specified columns (drops all others).
+### `polars_select`
+Keeps only the listed columns, in this order (drops all others). As the last step of a join's tier 1 it publishes the columns of the table.
 ```yaml
-- action: keep_columns
-  columns: [sample_id, gene, predicted_phenotype]
+- action: polars_select
+  exprs: [sample_id, gene, predicted_phenotype]
 ```
 
-### `fill_nulls`
-Replaces missing values with a default.
+### `polars_fill_null`
+Replaces missing values with a value (or a Polars strategy).
 ```yaml
-- action: fill_nulls
-  column: predicted_phenotype
+- action: polars_fill_null
+  columns: [predicted_phenotype]
   value: "Unknown"
 ```
 
-### `replace_values`
-Replaces specific values in a column.
+### `polars_str_replace_all`
+Replaces a pattern in text columns.
 ```yaml
-- action: replace_values
-  column: source
-  mapping:
-    "-": null
-    "N/A": null
-    "unknown": "Unknown"
+- action: polars_str_replace_all
+  columns: [source]
+  pattern: "unknown"
+  value: "Unknown"
+  literal: true
 ```
 
-### `split_and_explode`
-Splits a delimited string column and explodes into one row per value. **Warning: inflates row count.**
+### `polars_str_split` then `polars_explode`
+Splits a delimited string column into a list, then explodes it into one row per value. **Warning: inflates row count.**
 ```yaml
-- action: split_and_explode
+- action: polars_str_split
   columns: [virulence_raw]
-  separator: ","
+  by: ","
+- action: polars_explode
+  columns: [virulence_raw]
 ```
 
-### `unpivot`
+### `polars_unpivot`
 Reshapes wide-format data to long format (formerly `melt`).
 ```yaml
-- action: unpivot
+- action: polars_unpivot
   index: [sample_id, ST]
   variable_name: category
   value_name: value
 ```
 
-### `drop_duplicates`
-Removes duplicate rows, optionally scoped to specific columns.
+### `polars_unique`
+Removes duplicate rows over `subset`. `keep` and `maintain_order` are required: the order rule is part of the recipe.
 ```yaml
-- action: drop_duplicates
-  columns: [sample_id, gene]   # omit to deduplicate entire row
+- action: polars_unique
+  subset: [sample_id, gene]
+  keep: first
+  maintain_order: true
 ```
 
-### `unique_rows`
-Alias for `drop_duplicates` with no column scoping.
+### `polars_join` (join steps only)
+Joins a right ingredient into the base frame. Quote `'on'`: unquoted, YAML parses it as the boolean `True` (the YAML boolean trap, see `rules_data_analysis_recipe_structure.md §7`). `on` is a list; `how` and `maintain_order` are required.
 ```yaml
-- action: unique_rows
-```
-
-### `split_column`
-Splits a string column into two new columns on a delimiter.
-```yaml
-- action: split_column
-  source: virulence_raw
-  new_columns: [VF_gene, VF_protein]
-  delimiter: ": "
-  drop_source: true
-```
-
-### `join` (Assembly steps only)
-Joins a right ingredient into the base frame. Quote `'on'` — unquoted, YAML parses it as the boolean
-`True` rather than the string key (the YAML boolean trap, see §1 above and
-`rules_data_analysis_recipe_structure.md §7`).
-```yaml
-- action: join
-  right_ingredient: metadata_schema
-  'on': sample_id        # symmetric join key
-  how: left              # left | inner | outer
+- action: polars_join
+  right_ingredient: sample_metadata
+  'on': [sample_id]
+  how: left              # left | inner | full | semi | anti ...
+  maintain_order: left_right
 ```
 Asymmetric keys:
 ```yaml
-- action: join
-  right_ingredient: metadata_schema
-  left_on: isolate_id
-  right_on: sample_id
+- action: polars_join
+  right_ingredient: sample_metadata
+  left_on: [isolate_id]
+  right_on: [sample_id]
   how: left
+  maintain_order: left_right
 ```
 
-### `derive_categories`
-Maps values in a column against an external reference file to derive a new category column.
-```yaml
-- action: derive_categories
-  columns: predicted_phenotype
-  target_column: amr_class
-  separator: ", "
-  reference_file: "config/references/amr_phenotypes/amr_categories.tsv"
-  lookup_left: predicted_phenotype
-  lookup_right: "Predicted Phenotype"
-  extract_column: "AMR Category (Class)"
-```
+> **REMOVED (recipe format 1):** `derive_categories`, `split_and_explode`, `split_column`, `drop_duplicates`,
+> `unique_rows`, `strip_whitespace`, `keep_columns`, `drop_columns`, `fill_nulls`, `replace_values` and `filter_range`
+> are no longer actions. A lookup against a reference table is a `polars_join` with the table as an ingredient.
 
 ---
 
-## 4. Assembly Block Rules
+## 4. Join Block Rules
 
 The `joins` block defines how wrangled datasets are joined into a single analysis frame.
 
 ```yaml
 joins:
   AMR_Profile_Joint:
+    label: "AMR profile"
     ingredients:
       - dataset_id: amr_data
-      - dataset_id: metadata_schema
-    steps: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
-    final_contract:
-      sample_id: categorical
-      gene: categorical
-      predicted_phenotype_clean: categorical
-      Country: categorical
-      Year: categorical
+      - dataset_id: sample_metadata
+    steps: !include 2_test_data_ST22_dummy/wrangling/AMR_Profile_Joint.yaml
+    labels:
+      Year: "Year of sampling"
 ```
 
 - `ingredients` is a **list of dicts** with `dataset_id` keys (not a flat list of strings).
-- `final_contract` is a **dict `{column: type}`** — a whitelist that selects and validates final columns. Only columns listed here survive to the plot layer.
-- `steps` may be inline or `!include`-ed.
+- `steps` holds the tier lists (`tier1`, optional `tier2`) and may be inline or `!include`-ed.
+- The published columns are the last step of `tier1` (a plain `polars_select` or `polars_drop`). There is no `final_contract`.
+- `labels` is a `{column: text}` mapping of display names (display only).
 
 ---
 
@@ -277,26 +253,25 @@ data_schemas:
       path: assets/test_data/amr_results.tsv
     input_fields: !include fragments/amr_input_fields.yaml
     wrangling: !include fragments/amr_wrangling.yaml
-    output_fields: !include fragments/amr_output_fields.yaml
 ```
 
-Fragment files **may optionally include their wrapper key** at the top level — the engine automatically unwraps it:
+Fragment files **may optionally include their wrapper key** at the top level; the engine automatically unwraps it:
 
 ```yaml
-# amr_input_fields.yaml — both formats are valid:
+# amr_input_fields.yaml: both formats are valid:
 
-# Option A (flat — no wrapper):
+# Option A (flat, no wrapper):
 sample_id:
   original_name: sample_id
-  type: categorical
+  type: String
   label: Sample ID
 
-# Option B (wrapped — engine strips the key automatically):
+# Option B (wrapped, engine strips the key automatically):
 input_fields:
   sample_id:
     original_name: sample_id
-    type: categorical
+    type: String
     label: Sample ID
 ```
 
-The `!include` path is always **relative to the master data analysis recipe file's directory**.
+The `!include` path is always **relative to the master data analysis recipe file's directory**, and may not reach outside the project.
