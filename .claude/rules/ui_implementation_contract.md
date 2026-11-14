@@ -276,7 +276,7 @@ Row filters live in the left sidebar (Home mode only). They affect the "My view"
   all-plots / all-except scope choice). Without `t3_sandbox_enabled`, "My view" has no equivalent action —
   it is a pure scratchpad (see §5).
 
-**Each row:** `{column: str, op: "eq"|"ne"|"gt"|"ge"|"lt"|"le"|"in"|"not_in", value: str|list[str], dtype: str, na: "keep"|"remove"}`. `na` is the tick of the dialog (keep the rows with no value in the column; preselected `keep` for `!=` and none-of, `remove` otherwise, NA-RULE-63); a row or audit step without it is read as `remove`, and an audit step is never written without it.
+**Each row:** `{column: str, op: "eq"|"ne"|"gt"|"ge"|"lt"|"le"|"in"|"not_in"|"between", value: str|list[str] (for between: [low, high]), dtype: str, na: "keep"|"remove", closed: "both"|"none" (between only)}`. `na` is the tick of the dialog (keep the rows with no value in the column; preselected `keep` for `!=` and none-of, `remove` otherwise, NA-RULE-63); a row or audit step without it is read as `remove`, and an audit step is never written without it. `closed` says whether the two ends of a `between` are included (`both`, the default) or not (`none`); "Send to Audit" carries `na` and `closed` exactly as chosen, and the export writes them into the `modif_filter` step.
 
 **Ops for discrete columns (or `scale_x_discrete` declared):** `in`, `not_in`, `eq`, `ne`.
 **Ops for numeric columns:** `eq`, `ne`, `gt`, `ge`, `lt`, `le`.
