@@ -21,18 +21,18 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (gallery_handlers)
-# consumes: app/src/bootloader.py, libs/viz_gallery/src/viz_gallery/taxonomy.py (display_axes, filter_panels)
+# consumes: app/src/bootloader.py (rejected_gallery_examples, gallery_index_status), app/modules/gallery_listing.py, libs/viz_gallery/src/viz_gallery/taxonomy.py (display_axes, filter_panels)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-037, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/rules/rules_ui_dashboard.md#5
 # @end_deps
 
-import json
 import base64
 from pathlib import Path
 
 import polars as pl
 from shiny import reactive, render, ui
 
+from app.modules.gallery_listing import READ_ONLY_LINE, GalleryListing, read_listing
 from viz_gallery.taxonomy import display_axes, filter_panels
 
 
@@ -48,15 +48,16 @@ def define_server(input, output, session, *,
         Shared utility: safe_input(input_obj, key, default) → value.
     """
 
+    def _listing() -> GalleryListing:
+        """What the gallery lists: the stored index minus the examples that failed the check (flags G-a, G-b)."""
+        return read_listing(bootloader.get_location("gallery"),
+                            bootloader.rejected_gallery_examples, bootloader.gallery_index_status)
+
     # --- Gallery Taxonomy 'Select All' Logic ---
 
     def _axis_choices(axis: str) -> list[str]:
         """The choices of one filter panel: the same list the sidebar shows (viz_gallery.taxonomy, spec section 9, G1)."""
-        index_path = bootloader.get_location("gallery") / "gallery_index.json"
-        pivot = {}
-        if index_path.exists():
-            with open(index_path) as f:
-                pivot = json.load(f).get("pivot", {})
+        pivot = _listing().pivot
         return next(panel["choices"] for panel in filter_panels(pivot) if panel["axis"] == axis)
 
     def _make_select_all(axis: str):
@@ -75,14 +76,10 @@ def define_server(input, output, session, *,
     @reactive.Effect
     def _init_gallery_selector():
         """Ensure all plots are selected by default on startup."""
-        index_path = bootloader.get_location("gallery") / "gallery_index.json"
-        if index_path.exists():
-            with open(index_path, "r") as f:
-                idx = json.load(f)
-            registry = idx.get("registry", {})
-            choices = {rid: entry["name"] for rid, entry in registry.items()}
-            choices = dict(sorted(choices.items(), key=lambda item: item[1]))
-            ui.update_select("gallery_example_select", choices=choices)
+        registry = _listing().registry
+        choices = {rid: entry["name"] for rid, entry in registry.items()}
+        choices = dict(sorted(choices.items(), key=lambda item: item[1]))
+        ui.update_select("gallery_example_select", choices=choices)
 
     # --- Gallery Content Resolution (ADR-037) ---
     @reactive.Calc
@@ -90,12 +87,7 @@ def define_server(input, output, session, *,
         rid = safe_input(input, "gallery_example_select", None)
         if not rid:
             return None
-        index_path = bootloader.get_location("gallery") / "gallery_index.json"
-        if not index_path.exists():
-            return None
-        with open(index_path, "r") as f:
-            idx = json.load(f)
-        return idx["registry"].get(rid)
+        return _listing().registry.get(rid)
 
     @output
     @render.ui
@@ -185,13 +177,10 @@ def define_server(input, output, session, *,
         # 1. Check if we are actually in the Gallery (don't recalc if switching away)
         if input.sidebar_nav() != "Gallery":
             return
-        index_path = bootloader.get_location("gallery") / "gallery_index.json"
-        if not index_path.exists():
-            ui.notification_show("Indexer not found.", type="error")
+        listing = _listing()
+        if not listing.registry:
+            ui.notification_show("Indexer not found or no example passed the check.", type="error")
             return
-
-        with open(index_path, "r") as f:
-            idx = json.load(f)
 
         # 2. Collect Filter Inputs
         sel_families    = input.gallery_filter_family()
@@ -205,8 +194,8 @@ def define_server(input, output, session, *,
                              duration=1, type="message")
 
         # 3. Pivot-Set Intersection across all 6 axes
-        registry = idx["registry"]
-        pivot = idx["pivot"]
+        registry = listing.registry
+        pivot = listing.pivot
 
         def _pivot_set(axis: str, selections) -> set:
             """Union of example IDs matching any selected value on an axis.
@@ -243,6 +232,24 @@ def define_server(input, output, session, *,
         if not choices:
             ui.notification_show(
                 "⚠️ No matches found for these filters.", type="warning")
+
+    @output
+    @render.ui
+    def gallery_left_out_notice():
+        """Why examples are not shown: the same kind of block as the rejected recipes of HOME. Absent when none failed.
+
+        Reads only bootloader data fixed at start; it does not read the inputs it sits next to (ui_implementation_contract.md section 14).
+        """
+        notice = _listing().notice
+        if not notice:
+            return None
+        header, *rest = notice
+        return ui.div(
+            ui.div(header, class_="gallery-left-out-title"),
+            *[ui.div(line, class_="gallery-left-out-line" + (" gallery-left-out-note" if line == READ_ONLY_LINE else ""))
+              for line in rest],
+            class_="gallery-left-out",
+        )
 
     @output
     @render.ui
