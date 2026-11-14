@@ -1,7 +1,7 @@
 """
 @deps
-provides: function:validate_data_analysis_recipe, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
-consumes: libs/utils/src/utils/config_loader.py, libs/transformer/src/transformer/data_wrangler.py, app/modules/orchestrator.py
+provides: function:validate_data_analysis_recipe, function:checker_problems, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
+consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/orchestrator.py
 consumed_by: app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
 @end_deps
@@ -42,6 +42,11 @@ import polars as pl
 import yaml
 from transformer.data_wrangler import DataWrangler
 from utils.config_loader import ConfigManager
+from utils.recipe_loader import check_recipe_file
+
+# What the recipe checker must have looked at before a recipe is accepted (its `coverage`): the form of the file, every
+# step against the action registry, every plot layer against the component registry.
+REQUIRED_COVERAGE = frozenset({"structure", "actions", "components"})
 
 # Sections whose entries (dataset id -> spec) may carry a 'wrangling' block.
 _SCHEMA_SECTIONS = ("data_schemas", "additional_datasets_schemas")
@@ -98,13 +103,50 @@ def _load_error_text(stderr_text: str, exc: BaseException) -> str:
     return f"cannot load data analysis recipe (YAML or include error): {exc}"
 
 
-def validate_data_analysis_recipe(path: Union[str, Path]) -> list[DataAnalysisRecipeProblem]:
-    """Return all step list problems of the data analysis recipe at path (empty list when it is valid)."""
+def checker_catalogs() -> dict:
+    """The registries as plain data for `check_recipe`: the actions with their form schema, the plot components with
+    the arguments each accepts. Built here because only the app layer may read two libraries."""
+    import transformer.actions  # noqa: F401  (loads the registry)
+    from transformer.actions.base import ACTION_SCHEMAS
+    from viz_factory.arguments import argument_catalog
+    return {"actions": dict(ACTION_SCHEMAS), "components": argument_catalog()}
+
+
+def checker_problems(path: Path, profile: str = "run") -> list[DataAnalysisRecipeProblem]:
+    """The errors of the strict recipe checker (format 1) for the file, as problems of this module.
+
+    An advice of the checker is not a problem here: it does not stop a recipe. When the checker could not look at the
+    actions or the plot components, that is a problem of its own: a recipe is never accepted on a partial check."""
+    result = check_recipe_file(path, profile, catalogs=checker_catalogs())
+    problems = [DataAnalysisRecipeProblem(path.name, p.path or "recipe", f"[{p.code}] {p.message}", p.fix or None)
+                for p in result.errors]
+    missing = REQUIRED_COVERAGE - result.coverage
+    if missing and not problems:
+        problems.append(DataAnalysisRecipeProblem(
+            path.name, "check", "the recipe check did not cover: " + ", ".join(sorted(missing)),
+            "This is a fault of the app, not of the data analysis recipe: report it."))
+    return problems
+
+
+def validate_data_analysis_recipe(path: Union[str, Path], profile: str = "run") -> list[DataAnalysisRecipeProblem]:
+    """Return all problems of the data analysis recipe at path (empty list when it is valid).
+
+    First the strict checker of recipe format 1 (`check_recipe`: form, keys, steps against the action registry, plot
+    layers against the component registry); a recipe it refuses is not handed to the engine. Then the engine's own
+    load (`engine_load_problems`), which finds what only loading shows."""
+    path = Path(path)
+    if not path.is_file():
+        return [DataAnalysisRecipeProblem(path.name, "file", f"data analysis recipe file not found: {path}")]
+    return checker_problems(path, profile) or engine_load_problems(path)
+
+
+def engine_load_problems(path: Union[str, Path]) -> list[DataAnalysisRecipeProblem]:
+    """What only the engine's own load shows: a missing include, a step list the engine cannot resolve, an id that
+    differs from the file name. The second half of `validate_data_analysis_recipe`; it never ends the program."""
     path = Path(path)
     name = path.name
     if not path.is_file():
         return [DataAnalysisRecipeProblem(name, "file", f"data analysis recipe file not found: {path}")]
-
     # ConfigManager ends the program (SystemExit) and prints a FATAL block to stderr on a
     # contradictory data analysis recipe (ADR-077). A validator used from the app must not do that:
     # catch it and keep the FATAL line as the problem text.

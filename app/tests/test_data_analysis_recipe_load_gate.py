@@ -9,10 +9,10 @@ import pytest
 import yaml
 
 from app.src.bootloader import Bootloader
+from app.tests.tiny_recipe import tiny_recipe, write_tiny
 
 REPO = Path(__file__).resolve().parents[2]
 
-_VALID_RECIPE = "id: {name}\nanalysis_groups:\n  g1:\n    plots:\n      p1:\n        spec: {{}}\n"
 _BROKEN_RECIPE = "id: {name}\n"  # no analysis_groups: at all — fails structure
 
 
@@ -44,7 +44,7 @@ def _deployment(tmp_path, name="dep.yaml", contact=None, **extra):
 
 def test_a_recipe_that_fails_structure_is_excluded_and_recorded(tmp_path, monkeypatch):
     dep, root = _deployment(tmp_path)
-    (root / "data_analysis_recipes" / "good.yaml").write_text(_VALID_RECIPE.format(name="good"))
+    write_tiny(root / "data_analysis_recipes", tiny_recipe("good"))
     (root / "data_analysis_recipes" / "broken.yaml").write_text(_BROKEN_RECIPE.format(name="broken"))
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
 
@@ -56,16 +56,10 @@ def test_a_recipe_that_fails_structure_is_excluded_and_recorded(tmp_path, monkey
 
 
 def test_a_recipe_that_fails_data_contract_is_excluded_and_recorded(tmp_path, monkeypatch):
+    """The recipe is a valid format 1 recipe (the checker accepts it); only its data is wrong: the file is not there."""
     dep, root = _deployment(tmp_path)
-    recipe = (
-        "id: mismatched\n"
-        "analysis_groups:\n  g1:\n    plots:\n      p1:\n        spec: {}\n"
-        "data_schemas:\n"
-        "  s1:\n"
-        "    source: {path: 'does_not_exist.tsv'}\n"
-        "    output_fields: {no_such_column: {type: categorical}}\n"
-    )
-    (root / "data_analysis_recipes" / "mismatched.yaml").write_text(recipe)
+    recipe = tiny_recipe("mismatched", data_path="./assets/test_data/tiny/does_not_exist.tsv")
+    write_tiny(root / "data_analysis_recipes", recipe)
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
 
     b = Bootloader()
@@ -74,6 +68,23 @@ def test_a_recipe_that_fails_data_contract_is_excluded_and_recorded(tmp_path, mo
     assert "mismatched" in b.rejected_data_analysis_recipes
     problems = b.rejected_data_analysis_recipes["mismatched"]["problems"]
     assert any("cannot be loaded" in p or "dataset" in p for p in problems)
+    assert not any("[" in p[:6] for p in problems)  # no checker code: the form was accepted, the data check refused
+
+
+def test_a_recipe_in_an_old_form_is_excluded_with_the_code_and_the_fix_of_the_checker(tmp_path, monkeypatch):
+    """Recipe format 1 is enforced at the gate: a removed key is refused, and the reason names the replacement."""
+    dep, root = _deployment(tmp_path)
+    recipe = tiny_recipe("old_form")
+    recipe["data_schemas"]["A"]["output_fields"] = {"a": {"type": "categorical"}}
+    write_tiny(root / "data_analysis_recipes", recipe)
+    write_tiny(root / "data_analysis_recipes", tiny_recipe("good"))
+    monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
+
+    b = Bootloader()
+
+    assert sorted(b.available_data_analysis_recipes) == ["good"]
+    problems = b.rejected_data_analysis_recipes["old_form"]["problems"]
+    assert any("[S01]" in p and "output_fields" in p and "polars_select" in p for p in problems)
 
 
 def test_contact_resolution_prefers_the_recipe_own_contact(tmp_path, monkeypatch):
@@ -115,7 +126,7 @@ def test_rejected_default_falls_through_to_a_valid_recipe_when_selector_visible(
     (the default here), so HOME must not crash and must not silently open the broken one."""
     dep, root = _deployment(tmp_path, default_data_analysis_recipe="broken")
     (root / "data_analysis_recipes" / "broken.yaml").write_text(_BROKEN_RECIPE.format(name="broken"))
-    (root / "data_analysis_recipes" / "good.yaml").write_text(_VALID_RECIPE.format(name="good"))
+    write_tiny(root / "data_analysis_recipes", tiny_recipe("good"))
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
 
     b = Bootloader()  # must not raise
@@ -195,7 +206,7 @@ def test_all_recipes_rejected_is_also_a_non_raising_empty_state(tmp_path, monkey
 
 def test_has_usable_data_analysis_recipe_is_true_once_one_passes(tmp_path, monkeypatch):
     dep, root = _deployment(tmp_path)
-    (root / "data_analysis_recipes" / "good.yaml").write_text(_VALID_RECIPE.format(name="good"))
+    write_tiny(root / "data_analysis_recipes", tiny_recipe("good"))
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
 
     b = Bootloader()
