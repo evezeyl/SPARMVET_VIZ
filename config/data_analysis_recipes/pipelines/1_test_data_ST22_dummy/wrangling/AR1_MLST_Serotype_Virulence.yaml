@@ -1,12 +1,6 @@
 # AR1 Assembly steps: Sample-to-Gene Mapping (Shared)
 tier1:
-  # Step 1: Build the Sample Backbone
-  - action: polars_join
-    right_ingredient: MLST
-    'on': [sample_id]
-    how: left
-    maintain_order: left_right
-
+  # Step 1: Build the Sample Backbone. The base table is the first ingredient (MLST), so it is not joined with itself.
   - action: polars_join
     right_ingredient: metadata_schema
     'on': [sample_id]
