@@ -211,36 +211,46 @@ def test_a_semi_or_anti_join_with_equal_key_types_runs(how):
 
 # -- the first step: the base table as right table ----------------------------------------------
 
-def test_a_first_step_that_joins_the_base_table_with_itself_is_skipped_by_the_assembler_today():
-    # CHARACTERISATION, not an endorsement: the base is the first ingredient; a first step whose right_ingredient
-    # is that same ingredient is skipped ("redundant init", data_assembler.py), so it is neither executed nor
-    # checked, and a left_on/right_on of different types on that table passes. Reported to the owner as an open
-    # design question (silent skip). If the owner decides that this must fail, this test changes with it.
+def test_a_first_step_that_joins_the_base_table_with_itself_runs_and_the_key_types_are_checked():
+    # The "redundant init" skip is removed (JOIN-SELF-1, Eve 2026-11-14, "no silent error"): a join runs as the recipe
+    # writes it, so the type check of left_on / right_on applies to the first step too.
     table = pl.LazyFrame({"a": ["x", "y"], "n": [1, 2]})
     step = {"action": JOIN, "right_ingredient": "R", "how": "left", "maintain_order": "left_right", "left_on": ["a"], "right_on": ["n"]}
-    result = DataAssembler({"R": table}, recipe_id=RECIPE, join_id=JOIN_ID).assemble([step]).collect()
-    assert result.equals(table.collect())
+    with pytest.raises(TransformationError) as caught:
+        DataAssembler({"R": table}, recipe_id=RECIPE, join_id=JOIN_ID).assemble([step]).collect()
+    assert "String" in f"{caught.value} {caught.value.tip}" and "Int64" in f"{caught.value} {caught.value.tip}"
 
 
-def test_a_first_step_that_joins_the_base_table_with_itself_on_other_keys_adds_nothing_today():
-    # CHARACTERISATION, decision pending (D9, J-c): the self-join of the base table on different left_on / right_on
-    # columns is a real join in Polars (it would add the right-hand copy of every column) but the assembler skips it
-    # without a message. Options for Eve: keep, fail with a plain message, or warn; and whether a real self-join
-    # (different keys) is allowed. If she decides, this test changes with it.
+def test_a_self_join_on_other_keys_returns_what_a_plain_polars_join_returns():
     table = pl.LazyFrame({"a": ["x", "y"], "b": ["y", "z"], "n": [1, 2]})
     step = {"action": JOIN, "right_ingredient": "R", "how": "left", "maintain_order": "left_right", "left_on": ["a"], "right_on": ["b"]}
     result = DataAssembler({"R": table}, recipe_id=RECIPE, join_id=JOIN_ID).assemble([step]).collect()
-    assert result.columns == ["a", "b", "n"], "no right-hand copy of the columns: the step was skipped"
-    assert result.equals(table.collect())
     done = table.collect().join(table.collect(), left_on="a", right_on="b", how="left", maintain_order="left_right")
-    assert done.width > result.width, "the join, run, would have added columns"
+    assert result.equals(done)
+    assert result.width > table.collect().width, "the right-hand copy of the columns is there"
 
 
-def test_a_float_join_key_merges_identifiers_that_differ_in_the_files_decision_pending(tmp_path):
-    # CHARACTERISATION, decision pending (D10, J-d): a key DECLARED Float64 in `input_fields` turns the identifiers
-    # "001", "1" and "1.0" of the files into the same number, so three samples become one key and the join returns
-    # more rows than samples (3 x 3 = 9 for 3 samples). No message is given. Options for Eve: change the template to
-    # a text type, and/or an advice in the checker against a float join key. If she decides, this test changes with it.
+def test_a_self_join_on_the_same_key_runs_and_duplicates_the_columns():
+    table = pl.LazyFrame({"id": ["x", "y"], "n": [1, 2]})
+    step = {"action": JOIN, "right_ingredient": "R", "how": "left", "maintain_order": "left_right", "on": ["id"]}
+    result = DataAssembler({"R": table}, recipe_id=RECIPE, join_id=JOIN_ID).assemble([step]).collect()
+    done = table.collect().join(table.collect(), on=["id"], how="left", maintain_order="left_right")
+    assert result.equals(done) and result.columns == ["id", "n", "n_right"]
+
+
+def test_a_self_join_on_the_same_key_multiplies_the_rows_when_the_key_repeats():
+    # Proves the sentence of advice J12: with a repeated key the self-join is not a no-op (2 x 2 + 1 = 5 rows).
+    table = pl.LazyFrame({"id": ["x", "x", "y"], "n": [1, 2, 3]})
+    step = {"action": JOIN, "right_ingredient": "R", "how": "left", "maintain_order": "left_right", "on": ["id"]}
+    result = DataAssembler({"R": table}, recipe_id=RECIPE, join_id=JOIN_ID).assemble([step]).collect()
+    assert result.height == 5 and result.height > table.collect().height
+
+
+def test_a_declared_float_join_key_merges_identifiers_that_differ_in_the_files(tmp_path):
+    # The engine keeps what the recipe declares (JOIN-FLOAT-1): a key DECLARED Float64 in `input_fields` turns the
+    # identifiers "001", "1" and "1.0" of the files into the same number, so three samples become one key and the join
+    # returns more rows than samples (3 x 3 = 9 for 3 samples). The engine does not change the declared type; the
+    # checker advises against a float key (J13, test_recipe_check_join_keys.py) and the shipped templates declare text.
     # The frames come from the real ingestion (`DataIngestor.ingest`) with the type declared in the schema, not from
     # a reader override: real ingestion accepts the three texts as Float64 without a message (checked by running).
     from ingestion.ingestor import DataIngestor

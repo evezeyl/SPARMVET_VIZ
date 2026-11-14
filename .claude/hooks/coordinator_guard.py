@@ -16,6 +16,14 @@ subagent carries an agent_id and passes). Three rules:
    freely: allowed are the named workers (model fixed in .claude/agents/, or haiku/sonnet
    passed in the call) and any other agent whose call names model haiku or sonnet.
 
+4. Bash that WRITES files is refused (Eve, 2026-11-14: the coordinator must delegate every
+   edit): sed -i, tee, redirections to a file outside tmpAI/, rm/mv/cp/ln/patch outside
+   tmpAI/, git apply/restore/checkout --, and python used inline. git commit, merge, log,
+   diff, status, worktree stay allowed.
+
+There is no exception inside the hook: when a refusal is a real minor case (a one-line
+fix), the coordinator STOPS its coordination work and tells Eve, who answers or runs -solo.
+
 Fails open: any error, a missing marker or a call from a worker lets the tool run.
 Marker: created by the trigger -coordinate, removed by -solo (CLAUDE.md section 2.1).
 """
@@ -38,6 +46,42 @@ WORK_COMMAND = re.compile(
     r"|shiny\s+run|build_dep_graph|generate_previews|refresh_gallery|ruff|pip\s+install"
     r"|uv\s+(pip|sync|run)|\.venv/bin/python|python3?\s+-m\s|python3?\s+\S+\.py)"
 )
+
+
+def _strip_quotes_and_heredocs(command: str) -> str:
+    """Remove heredoc bodies and quoted text so a message such as 'a -> b' is not read as a redirect."""
+    command = re.sub(r"<<-?\s*(['\"]?)(\w+)\1[^\n]*\n.*?\n\s*\2\b", " ", command, flags=re.S)
+    command = re.sub(r"'[^']*'", "''", command)
+    command = re.sub(r'"[^"]*"', '""', command)
+    return command
+
+
+def _inside_tmpai(path: str) -> bool:
+    path = path.strip().strip("'\"")
+    return (path in ("/dev/null", "/dev/stderr", "/dev/stdout") or path.startswith(("tmpAI/", "./tmpAI/", "/tmp/"))
+            or "/tmpAI/" in path)
+
+
+def bash_writes_files(command: str) -> str:
+    """Return a short reason when the command writes a file outside tmpAI/, else an empty string."""
+    text = _strip_quotes_and_heredocs(command)
+    if re.search(r"\bsed\s+(-[A-Za-z]*i|--in-place)", text) or re.search(r"\bperl\s+-[A-Za-z]*i", text):
+        return "an in-place edit (sed -i, perl -i)"
+    if re.search(r"\b(git\s+(apply|restore)|git\s+checkout\s+--)", text):
+        return "a git command that rewrites files"
+    if re.search(r"\bpython3?\b\s*(-c\b|-\s|-$|<<)", text) or re.search(r"\bpython3?\b\s*$", text):
+        return "inline Python (it can write any file)"
+    for match in re.finditer(r"(?<![0-9&<>])>>?(?!&)\s*([^\s&|;<>]+)", text):
+        if not _inside_tmpai(match.group(1)):
+            return "a redirection to " + match.group(1)
+    for match in re.finditer(r"\btee\b((?:\s+-[A-Za-z]+)*)\s+([^\s&|;]+)", text):
+        if not _inside_tmpai(match.group(2)):
+            return "tee to " + match.group(2)
+    for match in re.finditer(r"(?:^|[;&|]\s*|\n\s*)(rm|mv|cp|ln|patch|truncate|install)\b([^;&|\n]*)", text):
+        paths = [t for t in match.group(2).split() if not t.startswith("-")]
+        if any(not _inside_tmpai(t) for t in paths):
+            return match.group(1) + " on a path outside tmpAI/"
+    return ""
 
 
 def refuse(message: str) -> int:
@@ -71,6 +115,7 @@ def main() -> int:
         return refuse(
             "Coordinator mode: this session only coordinates. Hand this edit to a worker "
             "(builder for code and tests, scribe for records) with the Agent tool. "
+            "If it is a real minor case, stop your coordination and tell Eve. "
             "Eve leaves coordinator mode with -solo."
         )
 
@@ -81,6 +126,13 @@ def main() -> int:
                 "Coordinator mode: tests, audits, scripts and renders are run by a worker "
                 "(reviewer for suites and audits, builder for scripts). Bash here is for git. "
                 "Eve leaves coordinator mode with -solo."
+            )
+        reason = bash_writes_files(command)
+        if reason:
+            return refuse(
+                "Coordinator mode: " + reason + " writes files, and the coordinator does not edit. "
+                "Hand it to a worker (builder, scribe) with the Agent tool. If it is a real minor "
+                "case, stop and tell Eve. Eve leaves coordinator mode with -solo."
             )
         return 0
 

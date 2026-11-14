@@ -13,7 +13,7 @@
 | Limit "UML not reviewed" | **Done**: `home_uml_review_2026-11-12.md` (3 diagrams contradicted, 8 partly outdated; nothing edited) |
 | SC1 check on the plotted variable | **Withdrawn by Eve, 2026-11-12**: an ordinary audit step; the user decides and justifies; transparency lets the reader judge |
 | AR2 oracle test for the action registry, AR1 special datasets | **Closed** by the T1/T2/T3 model |
-| SC2 caption count for key-less plots, AR4 entity noun | **Open, one at a time** (`home_audit_steps.md` section 16 item 7) |
+| SC2 caption count for key-less plots, AR4 entity noun | **Decided by Eve, 2026-11-12**: SC2 by attrition per step (`home_attrition_report_2026-11-12.md`, 15:12), AR4 by the `entity:` declaration (`home_audit_steps.md` 5a point 17, 15:46) |
 
 ## 0. The answers to your questions
 

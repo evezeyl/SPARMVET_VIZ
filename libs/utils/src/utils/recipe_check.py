@@ -28,6 +28,7 @@ from functools import lru_cache
 from importlib import resources
 from typing import Any, Dict, Iterable, List, Optional, Set
 
+import polars as pl
 import yaml
 
 from utils import action_names
@@ -510,12 +511,69 @@ class _Check:
                 where = f"{path}.steps.{tier}[{index}]"
                 if tier == "tier1":
                     self.join_key_problems(steps["tier1"], index - 1, where, ingredient_ids)
+                    self.join_advices(steps["tier1"], index - 1, where, ingredient_ids)
                 if step["right_ingredient"] not in ingredient_ids:
                     self.add("J05", where, f"right_ingredient {step['right_ingredient']!r} is not an ingredient of this join", "list it in ingredients")
                 if ("on" in step or True in step) == ("left_on" in step or "right_on" in step):
                     self.add("J05", where, "write either on, or left_on with right_on", "choose one form")
                 if True in step:
                     self.add("T07", where, "an unquoted on became the key true", "quote it: 'on'")
+
+    def join_advices(self, tier1: list, position: int, where: str, ingredient_ids: List[str]) -> None:
+        """J12, J13 (advice, never blocks): a join of a table with itself on the same key; a join key declared as a float.
+
+        J12: the right table is the base table or a table already joined, and the key columns are the same on both sides:
+        it adds no row of information and copies the columns. J13: a key declared Float32 or Float64 turns identifiers
+        written differently ("001", "1", "1.0") into one number, and a join then merges different samples without a
+        message (JOIN-FLOAT-1). The engine keeps what the recipe declares; the advice says what it means.
+        """
+        step = tier1[position]
+        on = step.get("on", step.get(True))
+        left_keys = _as_list(on if on is not None else step.get("left_on"))
+        right_keys = _as_list(on if on is not None else step.get("right_on"))
+        right_id = step["right_ingredient"]
+        if (on is None and ("left_on" not in step or "right_on" not in step)) or len(left_keys) != len(right_keys) or not ingredient_ids:
+            return
+        if not all(isinstance(k, str) for k in left_keys + right_keys):
+            return
+        left_tables = [ingredient_ids[0]]
+        for before in tier1[:position]:
+            if not isinstance(before, dict):
+                return
+            if "right_ingredient" in before:
+                left_tables.append(before["right_ingredient"])
+            elif before.get("action") not in JOIN_KEEPS_COLUMNS:
+                return
+        if right_id in left_tables and left_keys == right_keys:
+            how = step.get("how", "left")
+            if how in ("semi", "anti"):
+                effect = (f"no column is copied; '{how}' keeps only the rows whose key is found in {right_id!r} itself"
+                          if how == "semi" else
+                          "no column is copied; 'anti' removes every row that has a key, because each such row matches itself")
+            else:
+                suffix = step.get("suffix") or "_right"
+                effect = (f"if the key is unique in {right_id!r} it adds no row and copies the columns of {right_id!r} again "
+                          f"(named with the suffix {suffix}); if the key repeats, the rows are multiplied (n x n for each repeated key value)")
+            self.add("J12", where,
+                     f"the join of {right_id!r} with itself uses the same key {left_keys} on both sides ('how': {how}): {effect}",
+                     "if this is not intended, remove the step; a self-join is usually written on two different columns "
+                     "(left_on and right_on), for example a column that points to another row",
+                     "A")
+        fields_by_table = {table: self.declared_fields(table) for table in set(left_tables) | {right_id}}
+        for table, columns in ((None, left_keys), (right_id, right_keys)):
+            tables = [t for t in dict.fromkeys(left_tables)] if table is None else [table]
+            for column in columns:
+                for name in tables:
+                    fields = fields_by_table.get(name)
+                    field = fields.get(column) if isinstance(fields, dict) else None
+                    declared = _declared_dtype(field) if field is not None else None
+                    if declared is not None and declared in (pl.Float32, pl.Float64):
+                        self.add("J13", where,
+                                 f"the join key {column!r} is declared {declared} in {name!r}: identifiers written differently "
+                                 "(for example 001, 1 and 1.0) become the same number, leading zeros are lost, and the join merges different samples without a message",
+                                 f"declare the key as a text type in input_fields of {name!r} (for example String or Categorical, as for other identifiers)",
+                                 "A")
+                        break
 
     def declared_fields(self, dataset_id: str) -> Optional[Dict[str, Any]]:
         """The columns a table has after its ingestion and tier 1, from its declaration; None when a tier-1 step could change them.

@@ -176,3 +176,36 @@ def test_every_template_is_a_valid_data_analysis_recipe():
     assert len(templates) >= 4  # the universal template was removed 2026-11-14 (Eve)
     bad = {t.name: [str(p) for p in validate_data_analysis_recipe(t)] for t in templates}
     assert {k: v for k, v in bad.items() if v} == {}
+
+
+# --- the same catalogues everywhere (DEC03, DEC09): the arguments and the themes are checked at HOME too -------------
+
+def _plot_spec(recipe):
+    return recipe["analysis_groups"]["g"]["plots"]["p"]["spec"]
+
+
+def test_a_wrong_layer_parameter_is_refused_with_ps04(tmp_path):
+    def change(recipe):
+        _plot_spec(recipe)["layers"] = [{"name": "geom_point", "params": {"colr": "red"}}]
+    problems = _problems(tmp_path, change)
+    assert len(problems) == 1 and "PS04" in str(problems[0]) and "colr" in problems[0].problem
+
+
+def test_an_unknown_theme_is_refused_with_ps05(tmp_path):
+    def change(recipe):
+        _plot_spec(recipe)["theme"] = "theme_nope"
+    problems = _problems(tmp_path, change)
+    assert len(problems) == 1 and "PS05" in str(problems[0]) and "theme_nope" in problems[0].problem
+
+
+def test_the_gate_and_the_gallery_use_the_same_catalogues():
+    from app.modules import gallery_examples
+    from app.modules.data_analysis_recipe_validator import checker_catalogs
+    assert gallery_examples.checker_catalogs is checker_catalogs
+    assert set(checker_catalogs()) >= {"actions", "components", "component_arguments", "themes"}
+
+
+def test_home_gate_accepts_every_shipped_recipe_as_before():
+    """The full catalogues add no error to any shipped recipe (reviewed 2026-11-14: 16 recipes)."""
+    bad = {p.name: [str(x) for x in validate_data_analysis_recipe(p)] for p in DATA_ANALYSIS_RECIPES}
+    assert {k: v for k, v in bad.items() if v} == {}

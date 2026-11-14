@@ -20,18 +20,15 @@ import yaml
 
 import transformer.actions  # noqa: F401  (registers the actions)
 import viz_factory.viz_factory  # noqa: F401  (registers the plot components)
-from app.modules.data_analysis_recipe_validator import validate_data_analysis_recipe, validate_data_analysis_recipe_data
+from app.modules.data_analysis_recipe_validator import checker_catalogs, validate_data_analysis_recipe, validate_data_analysis_recipe_data
 from app.modules.orchestrator import DataOrchestrator
 from blueprint_arch.data_analysis_recipe_navigator import generate_branch_plan
 from blueprint_arch.new_recipe import new_recipe_draft
 from blueprint_arch.t3_translator import build_mode2_recipe
-from transformer.actions.base import ACTION_SCHEMAS
 from utils import action_names
 from utils.config_loader import ConfigManager
 from utils.recipe_factory import minimal_join, minimal_plot, minimal_recipe, minimal_schema, write_recipe
 from utils.recipe_loader import check_recipe_file, load_recipe
-from viz_factory.arguments import argument_catalog
-from viz_factory.registry import COMPONENT_SCHEMAS
 
 ROOT = Path(__file__).resolve().parents[2]
 OLD_WORDS = ("output_fields", "final_contract", "display_name", "is_primary_key", "source_name", "_t3_origin",
@@ -51,12 +48,7 @@ create_script = _load_script("create_data_analysis_recipe")
 @pytest.fixture(scope="module")
 def catalogs():
     """The registries as plain data, the way the recipe checker receives them (spec section 14)."""
-    return {
-        "actions": dict(ACTION_SCHEMAS),
-        "components": set(COMPONENT_SCHEMAS),
-        "component_arguments": argument_catalog(),
-        "themes": {name for name in COMPONENT_SCHEMAS if name.startswith("theme_")},
-    }
+    return checker_catalogs()
 
 
 @pytest.fixture
