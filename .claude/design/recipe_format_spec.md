@@ -625,6 +625,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | ST09 | E | a reserved engine key (`__right_df__`, `__metadata__`, any `__name__`) in a step | remove it; the engine sets it |
 | ST10 | E | the value of a parameter has the wrong shape for its declared widget (a list where a scalar is declared and the reverse; a repeated key in a `mapping`) | the declared form and the corrected text |
 | ST11 | E | a conditional rule of the schema is broken (`when`, `require`, `one_of`, `exclusive`; R3) | the rule in words |
+| ST12 | E | a `modif_filter` value does not have the declared type of its column (a number for a number column, text for a text column, true or false for a true/false column; ADR-104 point 7, 2026-11-14). Silent when the declarations cannot tell the type of the column (a step before may create, rename or cast it); dates are not judged | what the value is, what the column holds, and how to write it |
 | J01 | E | unknown key in a join (`info`, `output_fields`, `final_contract`, ...) | replacement |
 | J02 | E | join without `label` | |
 | J03 | A | join without `description` | |
