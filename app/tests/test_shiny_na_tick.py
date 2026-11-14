@@ -66,6 +66,7 @@ def test_the_tick_is_preselected_by_operator_and_flipping_it_changes_the_rows(pa
     page.locator("#filter_apply").click()
     _wait_shiny(page)
     _wait_rows(page, 22)
+    expect(page.locator("#filter_inventory_ui")).to_contain_text("no value: removed")
     page.locator("#filter_remove_0").click()
     _wait_shiny(page)
     _wait_rows(page, 28)
@@ -80,5 +81,6 @@ def test_the_tick_is_preselected_by_operator_and_flipping_it_changes_the_rows(pa
     # 22 rows equal 2024, 6 have no value: keep adds those 6, so the filter leaves all 28 and the badge says a filter is on
     expect(page.locator("#home_data_preview_badge .spv-view-note", has_text="preview filter")).to_be_visible(timeout=15_000)
     assert _rows_in_grid(page) == 28
+    expect(page.locator("#filter_inventory_ui")).to_contain_text("no value: kept")
     page.locator("#filter_remove_0").click()
     _wait_shiny(page)
