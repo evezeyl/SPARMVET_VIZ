@@ -241,7 +241,7 @@ def test_import_a_bundle_reports_the_four_legs(loaded, tmp_path):
                     shutil.rmtree(p.parent, ignore_errors=True)
 
 
-def test_the_export_uses_and_records_the_seed_home_showed(loaded):
+def test_the_export_uses_and_records_the_seed_home_showed(loaded, shiny_app: ShinyAppProc):
     """SEED-HOLDS-1 (ADR-104): the plot of the dummy recipe has a jitter layer and writes no seed.
 
     HOME draws one seed per session and plot; the export must draw its plot with THAT seed and record it
@@ -275,6 +275,18 @@ def test_the_export_uses_and_records_the_seed_home_showed(loaded):
         run_a2, png_a2 = run_and_png(_download(loaded))
         assert run_a2["seeds_per_plot"][pid] == seed_a, "the drawn seed must be stable for the session"
         assert same_picture(png_a2, png_a)
+
+        # A second session draws its own seed: its export must show a different arrangement, and the one
+        # recorded. (If the export ignored the seed it records, both sessions would export the same picture.)
+        other = loaded.context.new_page()
+        try:
+            _load_data_analysis_recipe(other, shiny_app.url)
+            _open_export_panel(other)
+            run_c, png_c = run_and_png(_download(other))
+        finally:
+            other.close()
+        assert run_c["seeds_per_plot"][pid] != seed_a, "two sessions drew the same seed"
+        assert not same_picture(png_c, png_a), "two sessions with different seeds exported the same picture"
 
         shown = loaded.locator(f"#plot_group_{pid}")
         expect(shown).to_be_visible(timeout=10_000)
