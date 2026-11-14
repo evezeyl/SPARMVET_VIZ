@@ -13,7 +13,7 @@ app/handlers/filter_and_audit_handlers.py.
 If deleted: HOME and the plot cannot apply the choice `na`, and the dialog shows no counts.
 """
 # @deps
-# provides: function:count_missing, function:missing_sentences, function:keep_missing, function:dialog_missing_lines, function:na_choice_texts
+# provides: function:count_missing, function:missing_sentences, function:keep_missing, function:dialog_missing_lines, function:dialog_lines, constant:COUNTS_FAILED, function:na_choice_texts
 # consumes: polars, libs/utils/src/utils/na_choice.py
 # consumed_by: libs/utils/tests/test_missing_values.py, app/modules/t3_audit_engine.py, libs/viz_factory/src/viz_factory/viz_factory.py, app/handlers/filter_and_audit_handlers.py
 # doc: .claude/tasks/tasks.md#NA-RULE-63
@@ -21,11 +21,18 @@ If deleted: HOME and the plot cannot apply the choice `na`, and the dialog shows
 from dataclasses import dataclass
 from typing import Optional, Union
 
+import logging
+
 import polars as pl
 
 from utils.na_choice import NA_CHOICES
 
-_WARNING_OPERATORS = ("ne", "not_in")
+_log = logging.getLogger(__name__)
+
+# The two operators where a reader expects the rows with no value to stay, and how a user calls them.
+_WARNING_WORDS = {"ne": "not equal", "not_in": "none of"}
+
+COUNTS_FAILED = "The counts could not be computed."
 
 
 def keep_missing(condition: pl.Expr, column: str, na: str) -> pl.Expr:
@@ -80,7 +87,7 @@ def missing_sentences(column: str, op: str, na: str, counts: MissingCounts) -> M
     `missing`: "N rows have no value in <column>: they are kept / removed" (None when N is 0).
     `nan`: "N rows have a failed calculation" (None when N is 0); the same for keep and remove, na does not touch NaN.
     `warning`: only when the column has missing values and `op` is `ne` or `not_in`, where a reader expects the
-    missing rows to stay; says what happens to them.
+    missing rows to stay; says what happens to them and names the tick, true in both states of it.
     """
     if na not in NA_CHOICES:
         raise ValueError(f"na must be one of {NA_CHOICES}, not {na!r}")
@@ -91,10 +98,10 @@ def missing_sentences(column: str, op: str, na: str, counts: MissingCounts) -> M
     if n:
         head = _rows(n, "has", "have")
         missing = f"{head} no value in {column}: they are {fate}" if n > 1 else f"{head} no value in {column}: it is {fate}"
-        if op in _WARNING_OPERATORS:
-            label = "!=" if op == "ne" else "not in"
-            warning = (f"{label} does not keep the rows with no value in {column} (Polars removes them too): "
-                       f"here they are {fate}" + ("" if na == "keep" else "; choose na: keep to keep them"))
+        if op in _WARNING_WORDS:
+            words = _WARNING_WORDS[op]
+            warning = (f"The rows with no value in {column} are kept because the box is ticked." if na == "keep"
+                       else f"'{words}' also removes the rows with no value in {column}. Tick the box above to keep them.")
     nan = f"{_rows(k, 'has', 'have')} a failed calculation" if k else None
     return MissingSentences(missing=missing, nan=nan, warning=warning)
 
@@ -107,10 +114,32 @@ def dialog_missing_lines(column: str, op: str, na: str, counts: MissingCounts) -
     s = missing_sentences(column, op, na, counts)
     lines = [s.missing or f"No row has a missing value in {column}."]
     if s.nan:
-        lines.append(f"{s.nan} (NaN): not changed by this choice")
+        lines.append(f"{s.nan}: this choice does not change " + ("it." if counts.nan_rows == 1 else "them."))
     if s.warning:
         lines.append(s.warning)
     return lines
+
+
+@dataclass(frozen=True)
+class DialogText:
+    """The lines of the dialog; `warning` is the one of them that is a warning (None when there is none)."""
+    lines: list[str]
+    warning: Optional[str]
+
+
+def dialog_lines(frame: Union[pl.DataFrame, pl.LazyFrame, None], column: str, op: str, na: str) -> DialogText:
+    """The lines of the dialog for the table `frame`; when the counts cannot be computed, say so and log the error.
+
+    Nothing is swallowed: a missing table or column gives the line `COUNTS_FAILED` and an error in the log.
+    """
+    try:
+        if frame is None:
+            raise ValueError("there is no table to count in")
+        counts = count_missing(frame, column)
+    except Exception:
+        _log.exception("filter dialog: the counts of column %r could not be computed", column)
+        return DialogText([COUNTS_FAILED], None)
+    return DialogText(dialog_missing_lines(column, op, na, counts), missing_sentences(column, op, na, counts).warning)
 
 
 def na_choice_texts(op_words: str) -> tuple[str, str]:
