@@ -33,3 +33,23 @@ def page(browser):
     page = browser.new_page()
     yield page
     page.close()
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Put the tail of the app process output (stdout and stderr) into the report of a failed browser test.
+
+    `create_app_fixture` only logs the app output once, at fixture teardown, so a failure report never shows what the
+    server did at that moment (error or nothing). A flaky failure must show which of the two it was.
+    """
+    outcome = yield
+    report = outcome.get_result()
+    if report.when != "call" or not report.failed:
+        return
+    app = item.funcargs.get("shiny_app")
+    if app is None:
+        return
+    for name in ("stdout", "stderr"):
+        stream = getattr(app, name, None)
+        lines = list(getattr(stream, "_lines", []))
+        report.sections.append((f"app {name} (last 40 lines)", "".join(lines[-40:]) or "(no output)"))

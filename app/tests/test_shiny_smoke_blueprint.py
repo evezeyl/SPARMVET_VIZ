@@ -63,6 +63,7 @@ def _navigate_to_blueprint(page: Page, base_url: str) -> None:
 
     page.goto(base_url)
     page.wait_for_selector("#sidebar_nav", timeout=20_000)
+    _wait_shiny(page, timeout=60_000)  # first render over before clicking, as in test_shiny_smoke._open_app
 
     # Click the "Blueprint Architect" nav pill (value="Wrangle Studio")
     page.locator("#sidebar_nav").get_by_text("Blueprint Architect").first.click()
