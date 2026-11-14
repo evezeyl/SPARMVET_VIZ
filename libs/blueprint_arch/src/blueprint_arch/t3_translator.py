@@ -71,9 +71,9 @@ class UntranslatableNode(Exception):
 
 
 # Ops that `modif_filter` represents EXACTLY (libs/transformer/src/transformer/actions/modified.py): the audit dialog and the
-# recipe filter share one vocabulary now (`between` has no audit operator).
+# recipe filter share one vocabulary (`between` included: bounds as [low, high], the ends in `closed`).
 FILTER, DROP = action_names.FILTER, action_names.DROP
-_TRANSLATABLE_OPS = {"eq", "ne", "gt", "ge", "lt", "le", "in", "not_in"}
+_TRANSLATABLE_OPS = {"eq", "ne", "gt", "ge", "lt", "le", "in", "not_in", "between"}
 
 
 def _canonical_hash(obj: Any) -> str:
@@ -124,13 +124,19 @@ def translate_t3_node(node: dict) -> list[dict]:
             )
         if op in ("in", "not_in"):
             value = value if isinstance(value, list) else [value]
+        if op == "between" and not (isinstance(value, (list, tuple)) and len(value) == 2):
+            raise UntranslatableNode(f"op 'between' needs the two bounds [low, high] - node: {node!r}")
         # `na` is the choice the user made in the HOME dialog (keep or remove the rows with no value). A step
         # written before the choice existed has none and always removed them, so it is exported as "remove".
         try:
             na = na_of(params)
         except ValueError as exc:
             raise UntranslatableNode(f"{exc} (na of the node) - node: {node!r}") from exc
-        return [{"action": FILTER, "column": column, "op": op, "value": value, "na": na}]
+        step = {"action": FILTER, "column": column, "op": op, "value": list(value) if op == "between" else value, "na": na}
+        if op == "between":
+            # the ends the user chose (both or none in the dialog); never lost on the way to the recipe
+            step = {**step, "closed": params.get("closed", "both")}
+        return [step]
 
     if node_type == "drop_column":
         column = params.get("column")

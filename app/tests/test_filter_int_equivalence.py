@@ -36,12 +36,10 @@ def by_plot(rows):
 
 
 def by_translated_action(rows):
-    """The action list the reproducibility export re-runs; `between` has no translation, so it is run as modif_filter directly."""
+    """The action list the reproducibility export re-runs (`between` included)."""
     lf = FRAME.lazy()
     for row in rows:
-        steps = ([{"action": "modif_filter", **row, "na": "remove"}] if row["op"] == "between"
-                 else translate_t3_node({"node_type": "filter_row", "params": row}))
-        for step in steps:
+        for step in translate_t3_node({"node_type": "filter_row", "params": row}):
             lf = AVAILABLE_WRANGLING_ACTIONS[step["action"]](lf, {k: v for k, v in step.items() if k != "action"})
     return lf.collect()["s"].to_list()
 
