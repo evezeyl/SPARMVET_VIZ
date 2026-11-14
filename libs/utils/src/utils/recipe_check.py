@@ -32,17 +32,30 @@ import yaml
 
 from utils.action_names import TIER1_ONLY
 from utils.formula_check import formula_problems
-from utils.polars_types import PARAMETER_KEYS, text_dtype_names
+from utils.polars_types import PARAMETER_KEYS, dtype_with_parameters, text_dtype_names
 from utils.recipe_paths import containment_problems, shape_problems
 from utils.ui_schema import STEP_KEYS, step_problems
 
 # P05: the engine does not read `steps.tier3` yet; switched to True in the commit that adds the reader (spec 7.7).
 TIER3_READ_BY_ENGINE = False
 
+# Tier-1 steps that only remove or reorder rows: they cannot change the columns or their types (a step whose name starts with one of these).
+JOIN_KEEPS_COLUMNS = ("polars_filter", "modif_filter", "polars_sort", "polars_unique", "polars_drop_nulls", "polars_head", "polars_tail", "polars_sample", "polars_limit")
+
 PROFILES = ("run", "build", "gallery", "audit")
 _AUDIT_ID = re.compile(r"^audit_[0-9a-f]{8}_\d+$")
 _SNAKE = re.compile(r"^[a-z][a-z0-9_]*$")
 _TIER1_ONLY_DEFAULT = TIER1_ONLY
+
+
+def _declared_dtype(field: Any) -> Optional[Any]:
+    """The Polars dtype a field declares (type and its parameters), None when it cannot be read (the field checks report it)."""
+    if not isinstance(field, dict) or not isinstance(field.get("type"), str):
+        return None
+    try:
+        return dtype_with_parameters(field["type"], field)
+    except Exception:  # unknown dtype name or missing parameters: FD02 and FD05 report them
+        return None
 
 
 @lru_cache(maxsize=1)
@@ -101,6 +114,7 @@ class _Check:
         self.spec = spec()
         self.schema_ids: Set[str] = set()
         self.join_ids: Set[str] = set()
+        self.schema_bodies: Dict[str, Any] = {}
 
     # -- helpers
     def add(self, code: str, path: str, message: str, fix: str = "", severity: str = "E") -> None:
@@ -248,9 +262,11 @@ class _Check:
                     self.add("S02", path, f"the id {sid!r} is also used in {seen[sid]}", "ids are shared by all schema sections: rename one")
                 seen[sid] = section
                 self.schema_ids.add(sid)
+                self.schema_bodies[sid] = schema
                 self.schema(schema, path, sid in targets)
         if "metadata_schema" in raw:
             self.schema_ids.add("metadata_schema")
+            self.schema_bodies["metadata_schema"] = raw["metadata_schema"]
             self.schema(raw["metadata_schema"], "metadata_schema", "metadata_schema" in targets)
 
     def schema(self, schema: Any, path: str, is_target: bool) -> None:
@@ -491,12 +507,90 @@ class _Check:
                 if not isinstance(step, dict) or "right_ingredient" not in step:
                     continue
                 where = f"{path}.steps.{tier}[{index}]"
+                if tier == "tier1":
+                    self.join_key_problems(steps["tier1"], index - 1, where, ingredient_ids)
                 if step["right_ingredient"] not in ingredient_ids:
                     self.add("J05", where, f"right_ingredient {step['right_ingredient']!r} is not an ingredient of this join", "list it in ingredients")
                 if ("on" in step or True in step) == ("left_on" in step or "right_on" in step):
                     self.add("J05", where, "write either on, or left_on with right_on", "choose one form")
                 if True in step:
                     self.add("T07", where, "an unquoted on became the key true", "quote it: 'on'")
+
+    def declared_fields(self, dataset_id: str) -> Optional[Dict[str, Any]]:
+        """The columns a table has after its ingestion and tier 1, from its declaration; None when a tier-1 step could change them.
+
+        The ingestion keeps the declared columns only and gives each its declared type, so input_fields is the table
+        when tier 1 has no step, or only steps that remove rows (JOIN_KEEPS_COLUMNS). Any other step may create, rename,
+        drop or cast a column: then nothing is known here and the build check stays the judge.
+        """
+        schema = self.schema_bodies.get(dataset_id)
+        if not isinstance(schema, dict) or not isinstance(schema.get("input_fields"), dict):
+            return None
+        wrangling = schema.get("wrangling")
+        if wrangling not in (None, [], {}):
+            if not isinstance(wrangling, dict) or not isinstance(wrangling.get("tier1") or [], list):
+                return None
+            for step in wrangling.get("tier1") or []:
+                if not isinstance(step, dict) or not str(step.get("action", "")).startswith(JOIN_KEEPS_COLUMNS):
+                    return None
+        return schema["input_fields"]
+
+    def join_key_problems(self, tier1: list, position: int, where: str, ingredient_ids: List[str]) -> None:
+        """J11, J10, J09: the build refuses a join with unequal key lists, a missing key or keys of different types (JOIN-KEY-TYPES-1).
+
+        Mirrors DataAssembler._check_join_key_types, and says nothing when the declarations cannot tell: a step before
+        the join that is not a join or a row filter may change the left table, and a tier-1 step of a schema may change it.
+        """
+        step = tier1[position]
+        on = step.get("on", step.get(True))
+        left_keys = _as_list(on if on is not None else step.get("left_on"))
+        right_keys = _as_list(on if on is not None else step.get("right_on"))
+        right_id = step["right_ingredient"]
+        if on is None and ("left_on" not in step or "right_on" not in step):
+            return  # J05 reports it
+        if len(left_keys) != len(right_keys):
+            self.add("J11", where, f"the key lists of the join differ in length: left_on has {len(left_keys)} column(s) {left_keys} "
+                     f"and right_on has {len(right_keys)} column(s) {right_keys}",
+                     "write left_on and right_on with the same number of columns, paired by position, or write 'on' when the columns have the same name in both tables")
+            return
+        if not all(isinstance(k, str) for k in left_keys + right_keys) or not ingredient_ids:
+            return
+        # The left table at this step: the first ingredient, plus the columns of the tables joined before.
+        left_tables = [ingredient_ids[0]]
+        for before in tier1[:position]:
+            if not isinstance(before, dict):
+                return
+            if "right_ingredient" in before:
+                left_tables.append(before["right_ingredient"])
+            elif not str(before.get("action", "")).startswith(JOIN_KEEPS_COLUMNS):
+                return
+        left_fields = [(table, self.declared_fields(table)) for table in left_tables]
+        right_fields = self.declared_fields(right_id)
+        if right_fields is None or any(fields is None for _, fields in left_fields) or right_id not in self.schema_bodies:
+            return
+        missing = []
+        for key in left_keys:
+            if not any(key in fields for _, fields in left_fields):
+                missing.append(f"{key!r} is not declared in the left table ({', '.join(table for table, _ in left_fields)})")
+        for key in right_keys:
+            if key not in right_fields:
+                missing.append(f"{key!r} is not declared in {right_id}")
+        if missing:
+            self.add("J10", where, "a join key column is not declared in input_fields: " + "; ".join(missing),
+                     "write the key column names as they are in each table: 'on' for a name that is the same in both, left_on and right_on for names that differ; "
+                     "the left table is the table at this step, so a column of a table joined later is not in it yet")
+            return
+        for left_col, right_col in zip(left_keys, right_keys):
+            left_field = next(fields[left_col] for _, fields in left_fields if left_col in fields)
+            right_field = right_fields[right_col]
+            left_type, right_type = _declared_dtype(left_field), _declared_dtype(right_field)
+            if left_type is None or right_type is None or left_type == right_type:
+                continue
+            names = f"column {left_col!r}" if left_col == right_col else f"column {left_col!r} (left) and {right_col!r} (right)"
+            self.add("J09", where, f"the join key types differ: {names} is {left_type} in the left table and {right_type} in {right_id}",
+                     f"declare the same type for this field in input_fields of both tables. A polars_cast step before the join changes only the left table "
+                     f"(the table at this step); the type of {right_id} is changed in its own input_fields or in its own wrangling. "
+                     "The engine does not change the type of a join key for you")
 
     def join_columns(self, join: dict, path: str, ingredient_ids: List[str]) -> None:
         """J08 needs the recipe graph: a column in both ingredients that is not a join key is renamed silently by Polars."""
