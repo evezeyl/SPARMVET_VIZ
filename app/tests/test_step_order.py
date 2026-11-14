@@ -27,7 +27,9 @@ How each test was seen to fail (mutation check, 2026-11-14), see the comment abo
 Not tested here (they depend on the unconfirmed stage-2 mechanism or on an open choice; listed in the report of
 TEST-ORDER-1): the audit compiler writing a step at T1 or T2 of a table (P5, API not confirmed), the series key of
 T3 (P4), a filter on a column that a step of the same node drops (order of a drop and a filter on the same column is
-not decided).
+not decided). The mechanism pinned by the audit-step tests (HOME's `audited_frame` on the stored T2; the per-plot
+export copy `{collection}__t3_{plot}`) is today's: package P5 of `.claude/design/home_stage2_mechanism_spec.md` (v0.1,
+not yet confirmed by Eve) replaces it with the audit copy of the recipe, and those tests then move to that copy.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_step_order.py -q
 """
@@ -321,7 +323,7 @@ def drop_column(node_id: str, column: str) -> dict:
 def home_rows_and_drops(nodes: list) -> tuple[list, list]:
     """The filter rows and drops HOME hands to `audited_frame`, from a plot's active nodes (same rule as
     `_t3_filter_rows` and `_t3_drop_columns`, `app/handlers/home_theater.py` lines 309-381, which are closures and
-    cannot be imported)."""
+    cannot be imported). It is a copy of those closures and must follow them."""
     rows = [{"column": n["params"]["column"], "op": n["params"].get("op", "eq"), "value": n["params"].get("value"),
              "dtype": n["params"].get("dtype", "Utf8")}
             for n in nodes if n["node_type"] in ("filter_row", "exclusion_row")]
@@ -334,6 +336,8 @@ def test_home_audit_step_runs_after_the_recipe_tier2(original, removed, oracle_a
     applied to the stored T2, so the other samples keep their z-score over every sample.
 
     Seen failing: comparing with oracle_before (the removal placed before the statistic).
+    This is today's mechanism; package P5 of `.claude/design/home_stage2_mechanism_spec.md` (v0.1, not yet confirmed by
+    Eve) replaces it with the audit copy of the recipe, and the test then moves to that copy.
     """
     _, tier2, _ = original
     rows, drops = home_rows_and_drops([exclusion("n1", [removed])])
@@ -346,6 +350,8 @@ def test_the_export_writes_the_audit_steps_after_the_recipe_tier2_in_recorded_or
     they were recorded.
 
     Seen failing: reversing the node list given to the translator.
+    This is today's mechanism; package P5 of `.claude/design/home_stage2_mechanism_spec.md` (v0.1, not yet confirmed by
+    Eve) replaces it with the audit copy of the recipe, and the test then moves to that copy.
     """
     nodes = [exclusion("n1", [removed]), filter_row("n2", "n50", "ge", threshold)]
     exported, skipped = build_mode2_recipe(raw_config, {ZPLOT: nodes})
@@ -371,12 +377,17 @@ CONCORDANCE_CASES = {
 
 
 @pytest.mark.parametrize("case", sorted(CONCORDANCE_CASES))
-def test_the_exported_recipe_rerun_equals_the_audit_data(run, raw_config, original, removed, threshold, case):
+def test_the_exported_recipe_rerun_equals_the_audit_data(run, raw_config, original, raw_samples, removed, threshold, case):
     """(4): the exported recipe (the translator's fork), written to a file and re-run from the raw data by the real
     engine, gives exactly the data HOME shows for the plot (`audited_frame` on the stored T2).
 
     Seen failing: removing the last translated step from the fork of the exported recipe (every case with steps
-    fails; "no-step" has no fork).
+    fails; "no-step" has no fork); and changing the oracle of one case (the threshold, the removed sample).
+    Oracle: the raw files with plain Polars (z-score over all samples, then the steps in order; the z-score is
+    computed by `_zscore` over the raw N50 values), compared with BOTH the audit data and the re-run: same samples,
+    z-scores and columns. All seven cases have this full oracle.
+    This is today's mechanism; package P5 of `.claude/design/home_stage2_mechanism_spec.md` (v0.1, not yet confirmed by
+    Eve) replaces it with the audit copy of the recipe, and the test then moves to that copy.
     """
     nodes = CONCORDANCE_CASES[case](removed, threshold)
     _, tier2, _ = original
@@ -389,6 +400,21 @@ def test_the_exported_recipe_rerun_equals_the_audit_data(run, raw_config, origin
     assert (target == ZSCORE) == (not nodes), "a plot with audit steps reads its fork, one without reads the join"
     _, rerun, _ = run(exported, target)
     rerun = plain(rerun)
+    expected = _zscore(raw_samples)
+    for node in nodes:
+        params = node["params"]
+        if node["node_type"] == "exclusion_row":
+            expected = expected.filter(~pl.col("sample_id").is_in(params["value"]))
+        elif node["node_type"] == "filter_row" and params["op"] == "ge":
+            expected = expected.filter(pl.col(params["column"]) >= params["value"])
+        elif node["node_type"] == "filter_row" and params["op"] == "in":
+            expected = expected.filter(pl.col(params["column"]).is_in(params["value"]))
+        elif node["node_type"] == "drop_column":
+            expected = expected.drop(params["column"])
+    assert_z_equals(home, expected, f"{case}: audit data vs raw-file oracle")
+    assert_z_equals(rerun, expected, f"{case}: re-run vs raw-file oracle")
+    assert sorted(home.columns) == sorted(expected.columns), f"{case}: audit columns differ from the oracle"
+    assert sorted(rerun.columns) == sorted(expected.columns), f"{case}: re-run columns differ from the oracle"
     assert rerun.columns == home.columns, f"{case}: columns differ: {rerun.columns} vs {home.columns}"
     assert rerun.equals(home), f"{case}: the re-run of the exported recipe differs from the audit data"
     if nodes:
