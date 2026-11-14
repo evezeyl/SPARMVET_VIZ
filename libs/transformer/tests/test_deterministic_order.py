@@ -9,6 +9,7 @@ rule on data large enough that a random order would show:
   polars_join      left/inner keep the order of the left table, right keeps the right table's (`maintain_order` is written)
   polars_unique    keeps the FIRST row of each duplicate group, in the input order (`keep` and `maintain_order` are written)
   polars_sample    the same seed gives the same sample; the seed is written in the step (no default seed any more)
+  polars_first, polars_last  take the first or last row as the previous steps left it (a stable sort before them fixes the row)
   step_top_n_other equal counts are ranked by the value, so the same top N every run
 
 The order rules used to be defaults of the actions (ADR-090); they are parameters that the recipe states now, so each test
@@ -184,3 +185,31 @@ def test_top_n_other_keeps_the_same_values_on_every_run_with_many_ties(data):
         out = action_top_n_other(data.lazy(), {"column": "group", "n": 25}).collect()
         kept.append(sorted(set(out["group_top25"].to_list()) - {"Other"}))
     assert all(k == kept[0] for k in kept) and len(kept[0]) == 25
+
+
+# -- polars_first and polars_last: the row they take is the row the previous steps left first or last (ADR-090) ----------
+
+def test_first_and_last_take_the_first_and_last_row_in_input_order_on_every_run(data):
+    for _ in range(RUNS):
+        assert ACTIONS["polars_first"](data.lazy(), {}).collect().row(0, named=True) == data.row(0, named=True)
+        assert ACTIONS["polars_last"](data.lazy(), {}).collect().row(0, named=True) == data.row(N - 1, named=True)
+
+
+def test_first_and_last_after_a_stable_sort_take_the_first_and_last_row_of_the_ties(data):
+    """The order rule of the pair: the sort states `maintain_order`, so among equal keys the input order decides the row."""
+    ties = data["tie"].to_list()
+    order = sorted(range(N), key=lambda i: ties[i])             # Python's sort is stable
+    for _ in range(RUNS):
+        sorted_lf = action_sort(data.lazy(), {"by": ["tie"]})
+        assert ACTIONS["polars_first"](sorted_lf, {}).collect()["row_id"].to_list() == [order[0]]
+        assert ACTIONS["polars_last"](sorted_lf, {}).collect()["row_id"].to_list() == [order[-1]]
+
+
+def test_first_depends_on_the_row_order_so_the_description_must_say_so():
+    """A reversed table gives another row: the action does not hide the order dependence, its description states the rule."""
+    frame = pl.DataFrame({"row_id": [1, 2, 3]})
+    assert ACTIONS["polars_first"](frame.lazy(), {}).collect()["row_id"][0] == 1
+    assert ACTIONS["polars_first"](frame.reverse().lazy(), {}).collect()["row_id"][0] == 3
+    for name in ("polars_first", "polars_last"):
+        from transformer.actions.base import ACTION_SCHEMAS
+        assert "order of the rows" in ACTION_SCHEMAS[name]["description"] and "maintain_order" in ACTION_SCHEMAS[name]["description"]

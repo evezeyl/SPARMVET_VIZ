@@ -759,3 +759,149 @@ Kind: wrapper. Context: t1, t2.
   predicates:
     - "pl.col('identity') < 90"
 ```
+
+### 1.17 Table aggregations
+
+Each action of this section summarises the whole table into **one row**: every column becomes one value (Polars `LazyFrame.sum`, `min`, and so on). They are the exact Polars calls, with the Polars parameters and defaults. To summarise per group, use `polars_group_by` (section 1.14).
+
+**Missing values and NaN: the engine follows Polars, and the recipe maker must know it.** A missing value (`null`) and `NaN` (a floating point number that is "not a number") are two different things in Polars, and each aggregation treats them in its own way. The text `NA` in a file is neither: it is a text, until the recipe turns it into a null with `null_values`.
+
+| Action | A null | A NaN | A text column | A date column (Date, Datetime, Duration) |
+|---|---|---|---|---|
+| `polars_sum` | skipped (only nulls: 0) | the sum is NaN | null (a Boolean column gives the number of true values) | null for Date and Datetime; the total for Duration |
+| `polars_min`, `polars_max` | skipped (only nulls: null) | ignored (only NaN: NaN) | the smallest (largest) by byte order: capital letters come first, "B" is smaller than "a" | the earliest (latest) |
+| `polars_mean` | skipped | the mean is NaN | null | a Datetime (the mean of 2020-01-01 and 2020-01-02 is 2020-01-01 12:00); a Duration for Duration |
+| `polars_median` | skipped | counts as a value larger than every number | null | a Datetime (a Duration for Duration) |
+| `polars_std`, `polars_var` | skipped (fewer than `ddof` + 1 values: null); a negative `ddof` is refused | the result is NaN | null | null |
+| `polars_quantile` | skipped | counts as a value larger than every number | null (also a Boolean column) | a Datetime (a Duration for Duration); a Date column of a table without rows is refused with a plain message (Polars itself stops) |
+| `polars_count` | not counted | counted (it is a value) | counted | counted |
+| `polars_null_count` | counted | not counted (it is not a null) | counted | counted |
+| `polars_first`, `polars_last` | not skipped: a null in that row stays null | taken as it is | taken as it is | taken as it is |
+
+Other types and result types, all as Polars gives them: a categorical or list column gives null for `polars_sum`, `polars_mean`, `polars_median`, `polars_std`, `polars_var` and `polars_quantile`; a list column also gives null for `polars_min` and `polars_max`. The mean of integers is a float; the sum and the count of a Boolean column are unsigned integers; the mean of a Boolean column is the fraction of true values. **A `polars_sum` of a 64-bit integer column larger than the 64-bit range wraps around and gives a wrong value without any error** (for example `2**63 - 1` plus `1` gives `-9223372036854775808`): convert the column to a float type first.
+
+A text column never makes an aggregation fail: its result is null (or the byte-order limit for `polars_min` and `polars_max`) and the column stays in the result with its name. If a number was read as text, this null is the sign: check the declared type of the field. Two more things to know. `polars_quantile` uses the Polars default `interpolation: nearest`, which is not the linear interpolation of R and numpy: write `interpolation` in the step. `polars_first` and `polars_last` give the row that the previous steps left first or last: the order of the rows decides the result, so write a `polars_sort` with `maintain_order` before them when the row matters (ADR-090); on an empty table they give no row, where the other aggregations give 0 or null.
+
+#### `polars_count`
+
+Number of values that are not null in each column, one row (Polars LazyFrame.count). A null is not counted, a NaN is counted (it is a value), every type of column can be counted.
+
+Kind: exact. Context: t2, assembly.
+
+```yaml
+- action: polars_count
+```
+
+#### `polars_first`
+
+The first row of the table, one row (Polars LazyFrame.first). It takes the row the previous steps left first: the order of the rows decides the result (ADR-090), so write a polars_sort with `maintain_order` before it when the row matters. A null in that row stays null (it is not skipped); an empty table gives no row.
+
+Kind: exact. Context: t2, assembly.
+
+```yaml
+- action: polars_first
+```
+
+#### `polars_last`
+
+The last row of the table, one row (Polars LazyFrame.last). It takes the row the previous steps left last: the order of the rows decides the result (ADR-090), so write a polars_sort with `maintain_order` before it when the row matters. A null in that row stays null (it is not skipped); an empty table gives no row.
+
+Kind: exact. Context: t2, assembly.
+
+```yaml
+- action: polars_last
+```
+
+#### `polars_max`
+
+Largest value of each column, one row (Polars LazyFrame.max). A null is skipped (only nulls gives null), a NaN is ignored (only NaN gives NaN), a text column gives its largest value by byte order, not alphabetical order (capital letters come first: "B" is smaller than "a"), a list column gives null.
+
+Kind: exact. Context: t2, assembly.
+
+```yaml
+- action: polars_max
+```
+
+#### `polars_mean`
+
+Mean of each column, one row (Polars LazyFrame.mean). A null is skipped, a NaN makes the mean NaN, a text, categorical or list column gives null. The mean of integers is a float, the mean of a Boolean column is the fraction of true values, the mean of a Date column is a Datetime (the mean of 2020-01-01 and 2020-01-02 is 2020-01-01 12:00).
+
+Kind: exact. Context: t2, assembly.
+
+```yaml
+- action: polars_mean
+```
+
+#### `polars_median`
+
+Median of each column, one row (Polars LazyFrame.median). A null is skipped; a NaN is not skipped, it counts as a value larger than every number (it does not make the median NaN unless it is the middle value); a text, categorical or list column gives null. The median of a Boolean column is 0, 0.5 or 1, and the median of a Date column is a Datetime.
+
+Kind: exact. Context: t2, assembly.
+
+```yaml
+- action: polars_median
+```
+
+#### `polars_min`
+
+Smallest value of each column, one row (Polars LazyFrame.min). A null is skipped (only nulls gives null), a NaN is ignored (only NaN gives NaN), a text column gives its smallest value by byte order, not alphabetical order (capital letters come first: "B" is smaller than "a"), a list column gives null.
+
+Kind: exact. Context: t2, assembly.
+
+```yaml
+- action: polars_min
+```
+
+#### `polars_null_count`
+
+Number of nulls in each column, one row (Polars LazyFrame.null_count). Only a null is counted, a NaN is not a null, every type of column can be counted.
+
+Kind: exact. Context: t2, assembly.
+
+```yaml
+- action: polars_null_count
+```
+
+#### `polars_quantile`
+
+The quantile (0 to 1) of each column, one row (Polars LazyFrame.quantile); `interpolation` is `nearest` in Polars, not linear: write it in the step. A null is skipped; a NaN is not skipped, it counts as a value larger than every number; a text, Boolean, categorical or list column gives null. The quantile of a Date column is a Datetime; Polars stops on a Date column of a table without rows, and the step says so.
+
+Kind: exact. Context: t2, assembly.
+
+```yaml
+- action: polars_quantile
+  quantile: 0.5
+  interpolation: linear
+```
+
+#### `polars_std`
+
+Standard deviation of each column, one row (Polars LazyFrame.std); `ddof` is the delta degrees of freedom, 1 in Polars (the sample standard deviation). A null is skipped, a NaN makes the result NaN, fewer than `ddof` + 1 values give null, a text, categorical or list column gives null, and a Date, Datetime or Duration column gives null; a negative `ddof` is refused.
+
+Kind: exact. Context: t2, assembly.
+
+```yaml
+- action: polars_std
+  ddof: 1
+```
+
+#### `polars_sum`
+
+Sum of each column, one row (Polars LazyFrame.sum). A null is skipped (a column with only nulls gives 0), a NaN makes the sum NaN, a text, Date, Datetime, categorical or list column gives null, a Boolean column gives the number of its true values (an unsigned integer). A sum of an integer column larger than the 64-bit range gives a wrong value without an error: convert the column to a float type first.
+
+Kind: exact. Context: t2, assembly.
+
+```yaml
+- action: polars_sum
+```
+
+#### `polars_var`
+
+Variance of each column, one row (Polars LazyFrame.var); `ddof` is the delta degrees of freedom, 1 in Polars (the sample variance). A null is skipped, a NaN makes the result NaN, fewer than `ddof` + 1 values give null, a text, categorical or list column gives null, and a Date, Datetime or Duration column gives null; a negative `ddof` is refused.
+
+Kind: exact. Context: t2, assembly.
+
+```yaml
+- action: polars_var
+  ddof: 1
+```
