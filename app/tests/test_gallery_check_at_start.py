@@ -32,6 +32,20 @@ def _add_broken(work: Path) -> None:
     (work / "bar_wrong" / RECIPE).write_text(text)
 
 
+def test_the_start_check_refuses_a_wrong_argument_and_a_wrong_theme(tmp_path):
+    work = _gallery(tmp_path, "bar_simple")
+    for name, old, new in (("bar_colr", "{name: geom_bar, params: {}}", "{name: geom_bar, params: {colr: red}}"),
+                           ("bar_theme", "          layers:", "          theme: theme_nope\n          layers:")):
+        shutil.copytree(work / "bar_simple", work / name)
+        text = (work / name / RECIPE).read_text().replace("bar_simple", name)
+        assert old in text
+        (work / name / RECIPE).write_text(text.replace(old, new, 1))
+    examples, status = check_gallery_at_start(work)
+    assert list(examples.accepted) == ["bar_simple"] and status == "rewritten"
+    assert any("[PS04]" in r and "colr" in r for r in examples.rejected["bar_colr"])
+    assert any("[PS05]" in r and "theme_nope" in r for r in examples.rejected["bar_theme"])
+
+
 def _stub_bootloader(monkeypatch, gallery: Path, enabled: bool) -> Bootloader:
     """A Bootloader without the deployment: only what the gallery step reads."""
     boot = object.__new__(Bootloader)

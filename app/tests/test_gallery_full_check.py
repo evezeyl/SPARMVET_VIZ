@@ -12,7 +12,8 @@ import shutil
 import sys
 from pathlib import Path
 
-from app.modules.gallery_examples import check_gallery, rebuild_gallery_index, recipe_catalogs
+from app.modules.data_analysis_recipe_validator import checker_catalogs
+from app.modules.gallery_examples import check_gallery, rebuild_gallery_index
 
 ROOT = Path(__file__).resolve().parents[2]
 SHIPPED = ROOT / "assets" / "gallery_data"
@@ -40,8 +41,18 @@ def _with_a_wrong_layer(work: Path) -> None:
     (work / "bar_wrong" / RECIPE).write_text(text)
 
 
+def _with_a_wrong_argument_and_a_wrong_theme(work: Path) -> None:
+    """Two more examples: `bar_colr` has an argument geom_bar does not have, `bar_theme` a theme that is not registered."""
+    for name, old, new in (("bar_colr", "{name: geom_bar, params: {}}", "{name: geom_bar, params: {colr: red}}"),
+                           ("bar_theme", "          layers:", "          theme: theme_nope\n          layers:")):
+        shutil.copytree(work / "bar_simple", work / name)
+        text = (work / name / RECIPE).read_text().replace("bar_simple", name)
+        assert old in text
+        (work / name / RECIPE).write_text(text.replace(old, new, 1))
+
+
 def test_the_catalogs_hold_the_registries():
-    catalogs = recipe_catalogs()
+    catalogs = checker_catalogs()
     assert {"polars_join", "modif_filter"} <= set(catalogs["actions"])
     assert {"geom_bar", "stat_ecdf", "labs", "theme_minimal"} <= catalogs["components"]
     assert "theme_minimal" in catalogs["themes"] and "geom_bar" not in catalogs["themes"]
@@ -63,6 +74,17 @@ def test_the_full_check_finds_what_the_structure_check_cannot(tmp_path):
     assert any("[PS04]" in reason and "geom_bar" in reason for reason in examples.rejected["bar_wrong"])
     index = rebuild_gallery_index(work)
     assert list(index["registry"]) == ["bar_simple"] and list(index["metadata"]["rejected"]) == ["bar_wrong"]
+
+
+def test_the_full_check_refuses_a_wrong_argument_and_a_wrong_theme(tmp_path):
+    work = _copy_of(tmp_path, "bar_simple")
+    _with_a_wrong_argument_and_a_wrong_theme(work)
+    examples = check_gallery(work)
+    assert list(examples.accepted) == ["bar_simple"]
+    assert any("[PS04]" in r and "colr" in r for r in examples.rejected["bar_colr"])
+    assert any("[PS05]" in r and "theme_nope" in r for r in examples.rejected["bar_theme"])
+    index = rebuild_gallery_index(work)
+    assert list(index["registry"]) == ["bar_simple"] and set(index["metadata"]["rejected"]) == {"bar_colr", "bar_theme"}
 
 
 def test_the_committed_index_is_the_index_rebuilt_from_the_examples(tmp_path):
