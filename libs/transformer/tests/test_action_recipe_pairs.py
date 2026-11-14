@@ -140,3 +140,8 @@ def test_every_registered_action_has_a_behaviour_test(action):
 
 def test_the_own_tests_list_has_no_action_that_is_gone():
     assert set(OWN_TESTS) <= set(AVAILABLE_WRANGLING_ACTIONS)
+
+
+# the row actions (head, tail, slice, ...) keep their cases and pair tests in a file of their own
+OWN_TESTS.update({f"polars_{name}": "test_polars_rows_equal_polars.py" for name in
+                  ["head", "tail", "slice", "limit", "top_k", "bottom_k", "reverse", "gather_every", "with_row_index", "remove"]})

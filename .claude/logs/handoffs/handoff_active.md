@@ -820,3 +820,36 @@ Earlier lines above are not edited; where they disagree with the following, the 
 **(g) Where the documents are**
 - `.claude/design/decisions_2026-11-14/` (proposals, visualisation plan, evidence).
 - Working copies in `tmpAI/panel/`; progress in `tmpAI/coordinator/progress_2026-11-14_session3.md`.
+
+## Handoff 2026-11-15 00:15 (coordinator): merged and pushed, what runs, what is next
+
+**(a) Pushed**
+- `origin/dev` = `62e0cc0c`, after the full controls: headless 4017 passed, 22 xfailed; `test_empty_data_analysis_recipe_startup` passes on the real tree; golden result-identical; browser gate 73 passed, 3 skipped; audit_docs_sync 0; cross-lib pass; check_doc_links 50 problems (3 more than before: to find and fix).
+
+**(b) Merged since the handoff of 23:50** (into `feat/recipe-format-1`)
+- records `a625fc63`
+- gallery flags `ffe10199`
+- ADR log `df1a31fa` (ADR-100 to ADR-106; change list `.claude/design/decisions_2026-11-14/adr_sync_changes.md`)
+- import as production `62e0cc0c`
+- Polars row actions `da74b373` (NOT pushed yet)
+
+**(c) Running** (worktree and branch)
+- Second review of `na-rule-b`, branch `task/na-rule-b`, worktree `.claude/worktrees/na-rule-b`.
+- Review of `polars-aggs`, branch `task/polars-aggs`.
+- Builders: `polars-time`, branch `task/polars-time`; `seed-holds`, branch `task/seed-holds` (SEED-HOLDS-1).
+
+**(d) Next, in order**
+1. After `na-rule-b` is reviewed: a builder merges `feat/recipe-format-1` into the worktree (conflicts expected in `home_theater.py` and `data_analysis_recipe_validator.py`) and runs the suites; then the coordinator merges.
+2. Q9 Option 1 and the remaining operators (one builder); PLOT-TABLE-ORDER-1.
+3. Viz plan step 2, after the Polars batch (same file `polars_calls.py`).
+4. Clean-up: the "41 actions" counts (now 51 and more), the 3 new doc-link problems, changelog note on old imports ("must be imported again").
+
+**(e) Open for Eve**
+1. A same-key self-join: runs with an advice today, or refuse.
+2. `categorical`: DEC27 refuses it; the code and the shipped fields keep `Categorical`.
+3. The seed when the recipe writes none.
+4. Whether Blueprint may author the plot entry's tier 3.
+5. Show all checker advices, or only those that can change a result.
+6. Ties in `polars_top_k` and `polars_bottom_k`, and `polars_head` after a step with no promised order: advice only today, no decided rule.
+7. The one-line rule-file edit of `ui_implementation_contract.md` section 8, in branch `task/na-rule-b`.
+8. Aggregating a table that holds a text column gives a missing value and no message (Polars' behaviour).

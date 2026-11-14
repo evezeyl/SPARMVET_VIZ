@@ -639,7 +639,128 @@ Kind: exact. Context: assembly.
   maintain_order: left_right
 ```
 
-### 1.16 Table aggregations
+### 1.16 Rows
+
+Pick, cut, number and drop rows. Every one works on the order of the table at its step (ADR-090): the rule is written in each description, and a recipe that needs a fixed result writes a `polars_sort` with `maintain_order: true` before the step.
+
+#### `polars_head`
+
+Keep the first `n` rows (Polars LazyFrame.head). It works on the order of the table at this step: after an unsorted or reshaping step, write a polars_sort with maintain_order: true first. `n` is written in the step.
+
+Kind: exact. Context: t1, t2.
+
+```yaml
+- action: polars_head
+  n: 100
+```
+
+#### `polars_tail`
+
+Keep the last `n` rows, in the table order (Polars LazyFrame.tail). It works on the order of the table at this step: after an unsorted or reshaping step, write a polars_sort with maintain_order: true first. `n` is written in the step.
+
+Kind: exact. Context: t1, t2.
+
+```yaml
+- action: polars_tail
+  n: 100
+```
+
+#### `polars_limit`
+
+Keep the first `n` rows (Polars LazyFrame.limit, the same as head). It works on the order of the table at this step: after an unsorted or reshaping step, write a polars_sort with maintain_order: true first. `n` is written in the step.
+
+Kind: exact. Context: t1, t2.
+
+```yaml
+- action: polars_limit
+  n: 100
+```
+
+#### `polars_slice`
+
+Keep `length` rows from row `offset` on, to the end when `length` is absent (Polars LazyFrame.slice; the first row is 0, a negative offset counts from the end). It works on the order of the table at this step: after an unsorted or reshaping step, write a polars_sort with maintain_order: true first.
+
+Kind: exact. Context: t1, t2.
+
+```yaml
+- action: polars_slice
+  offset: 10
+  length: 5
+```
+
+#### `polars_gather_every`
+
+Keep every `n`-th row, starting at row `offset` (Polars LazyFrame.gather_every; the first row is 0). It works on the order of the table at this step: after an unsorted or reshaping step, write a polars_sort with maintain_order: true first.
+
+Kind: exact. Context: t1, t2.
+
+```yaml
+- action: polars_gather_every
+  n: 2
+  offset: 0
+```
+
+#### `polars_top_k`
+
+Keep the `k` rows with the largest values of `by`, largest first (Polars LazyFrame.top_k). The order of the result is the order of the values; Polars does not promise which of several tied rows are kept at the cut, nor their order (measured with Polars 1.40.1: not the input order). A recipe that needs one fixed result ends `by` with a column that is unique per row, for example the column that polars_with_row_index writes.
+
+Kind: exact. Context: t1, t2.
+
+```yaml
+- action: polars_top_k
+  k: 10
+  by: [identity, sample_row]
+  reverse: false
+```
+
+#### `polars_bottom_k`
+
+Keep the `k` rows with the smallest values of `by`, smallest first (Polars LazyFrame.bottom_k). The order of the result is the order of the values; Polars does not promise which of several tied rows are kept at the cut, nor their order (measured with Polars 1.40.1: not the input order). A recipe that needs one fixed result ends `by` with a column that is unique per row, for example the column that polars_with_row_index writes.
+
+Kind: exact. Context: t1, t2.
+
+```yaml
+- action: polars_bottom_k
+  k: 10
+  by: [identity, sample_row]
+  reverse: false
+```
+
+#### `polars_reverse`
+
+Turn the row order around: the last row becomes the first (Polars LazyFrame.reverse). The result is exactly the table of the step read from the end; it does not sort.
+
+Kind: exact. Context: t1, t2.
+
+```yaml
+- action: polars_reverse
+```
+
+#### `polars_with_row_index`
+
+Add a column that numbers the rows 0, 1, 2, ... as the first column (Polars LazyFrame.with_row_index; UInt32). The number is the position in the order of the table at this step. It works on the order of the table at this step: after an unsorted or reshaping step, write a polars_sort with maintain_order: true first. `name` is written in the step; a column of that name must not exist.
+
+Kind: exact. Context: t1, t2, assembly.
+
+```yaml
+- action: polars_with_row_index
+  name: sample_row
+  offset: 0
+```
+
+#### `polars_remove`
+
+Drop the rows where every predicate is true, keep all others (Polars LazyFrame.remove, the opposite of filter). A row for which the predicate is null is KEPT (a filter would drop it), so `remove` of `pl.col('x') > 1` keeps the rows where x is missing. Several predicates are combined with AND. Rows keep their order.
+
+Kind: wrapper. Context: t1, t2.
+
+```yaml
+- action: polars_remove
+  predicates:
+    - "pl.col('identity') < 90"
+```
+
+### 1.17 Table aggregations
 
 Each action of this section summarises the whole table into **one row**: every column becomes one value (Polars `LazyFrame.sum`, `min`, and so on). They are the exact Polars calls, with the Polars parameters and defaults. To summarise per group, use `polars_group_by` (section 1.14).
 

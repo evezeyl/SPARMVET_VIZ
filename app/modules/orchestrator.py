@@ -1,8 +1,8 @@
 # @deps
-# provides: pipeline:materialize_tier1, pipeline:materialize_tier2, method:prepare_ingredient, function:compute_data_analysis_recipe_keys
+# provides: pipeline:materialize_tier1, pipeline:materialize_tier2, method:prepare_ingredient, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
 # mirrors: libs/transformer/tests/debug_assembler.py
 # consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/metadata_validator.py, app/modules/cache_keys.py
-# consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/blueprint_handlers.py
+# consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps
 import copy
@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 from utils.errors import IngestionError
 from utils.hashing import get_parquet_metadata_hash
-from ingestion.ingestor import DataIngestor
+from ingestion.ingestor import DataIngestor, find_dataset_file
 from transformer.data_wrangler import DataWrangler
 from transformer.data_assembler import DataAssembler
 from transformer.anchor import write_anchor
@@ -34,20 +34,53 @@ def tier2_path_for(tier1_path: Path) -> Path:
 #   by_dataset_id:  a file named after the dataset id in the raw_data location (a pipeline delivers it)
 DATA_LOOKUP_CHOICES = ("data_analysis_recipe_paths", "by_dataset_id")
 
+# The sub-folder of one import (<imports_dir>/<recipe id>/) that holds its data files.
+IMPORT_DATA_FOLDER = "data"
+
 class DataOrchestrator:
     """
     Handles the ingestion and assembly logic (Tier 1 Materialization).
     Ensures the UI remains 'Thin' by delegating heavy processing to libraries.
     """
 
-    def __init__(self, data_analysis_recipes_dir: Path, raw_data_dir: Path, data_lookup: str = "data_analysis_recipe_paths"):
+    def __init__(self, data_analysis_recipes_dir: Path, raw_data_dir: Path, data_lookup: str = "data_analysis_recipe_paths",
+                 imports_dir: Path | None = None):
         self.data_analysis_recipes_dir = data_analysis_recipes_dir
         self.raw_data_dir = raw_data_dir
         if data_lookup not in DATA_LOOKUP_CHOICES:
             raise ValueError(f"data_lookup must be one of {DATA_LOOKUP_CHOICES}, got {data_lookup!r}")
         self.data_lookup = data_lookup
         self.discover_by_dataset_id = data_lookup == "by_dataset_id"
+        # The folder that holds one sub-folder per recipe imported from a bundle (bundle_importer.py):
+        # <imports_dir>/<recipe id>/data/<dataset id>.tsv. Its existence for a recipe id is the record of the import.
+        self.imports_dir = Path(imports_dir) if imports_dir else None
         self.ingestor = DataIngestor(data_dir=str(raw_data_dir))
+
+    def import_data_dir(self, data_analysis_recipe_id: str | None) -> Path | None:
+        """The data folder of a recipe that was imported from a bundle, or None for any other recipe."""
+        if not (self.imports_dir and data_analysis_recipe_id):
+            return None
+        folder = self.imports_dir / data_analysis_recipe_id / IMPORT_DATA_FOLDER
+        return folder if folder.is_dir() else None
+
+    def locate_dataset_file(self, data_analysis_recipe_id: str | None, ds_id: str, ds_schema: dict) -> Path | None:
+        """The ONE place that decides which file holds a dataset; reading and hashing both use the answer.
+
+        - a recipe imported from a bundle: `<dataset id>.tsv|.parquet` in the folder of that import; the recipe's own
+          path and `raw_data` are never consulted (the data of an import is only what the bundle carried);
+        - `data_lookup: by_dataset_id` (production): `<dataset id>.tsv|.parquet` in `raw_data`, the recipe's path ignored;
+        - `data_lookup: data_analysis_recipe_paths` (development): the recipe's `source.path` when it names a file; a
+          schema without a path is found by id in `raw_data`.
+        Returns None when there is no such file; raises IngestionError when one id has both a .tsv and a .parquet.
+        """
+        imported = self.import_data_dir(data_analysis_recipe_id)
+        if imported is not None:
+            return find_dataset_file(imported, ds_id)
+        source = ds_schema.get("source") or {}
+        if not self.discover_by_dataset_id and source.get("type") in ("local_tsv", "local_parquet") and source.get("path"):
+            declared = Path(source["path"])
+            return declared if declared.exists() else None
+        return find_dataset_file(self.raw_data_dir, ds_id)
 
     def compute_data_analysis_recipe_keys(self, data_analysis_recipe_id: str) -> DataAnalysisRecipeKeys:
         """The keys every stored stage of this project depends on (ADR-089).
@@ -64,16 +97,28 @@ class DataOrchestrator:
         data_hash = SessionManager.compute_data_batch_hash(source_files) if source_files else ""
         return data_analysis_recipe_keys(loaded, data_hash)
 
-    def prepare_ingredient(self, ds_id: str, ds_schema: dict) -> pl.LazyFrame:
+    def prepare_ingredient(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None) -> pl.LazyFrame:
         """Read one dataset of a data analysis recipe and apply its input contract and tier-1 wrangling.
 
         Raises when the file cannot be read, a declared input column is missing, or a value does
         not fit its declared type. Shared by materialize_tier1 and the data analysis recipe data check, so
-        both see the dataset the same way.
+        both see the dataset the same way. `recipe_id` selects the data folder of an imported recipe.
+
+        The file read is the file `locate_dataset_file` names, the same one `get_source_files` hashes.
         """
-        if self.discover_by_dataset_id:
+        located = self.locate_dataset_file(recipe_id, ds_id, ds_schema)
+        if located is not None:
+            kind = "local_parquet" if located.suffix == ".parquet" else "local_tsv"
+            ds_schema = {**ds_schema, "source": {"type": kind, "path": str(located)}}
+        elif self.import_data_dir(recipe_id) is not None:
+            # WHY: without this the ingestor would look in raw_data and read another dataset of the same id.
+            raise IngestionError(
+                f"Dataset '{ds_id}' has no file in the data folder of the import of '{recipe_id}': "
+                f"{self.import_data_dir(recipe_id)}.",
+                tip=f"Expected {ds_id}.tsv or {ds_id}.parquet there. Import the bundle again; the data of an import is only what its bundle carried.")
+        elif self.discover_by_dataset_id:
             # Production path: ignore data analysis recipe source.path, discover by schema ID name in
-            # raw_data_dir (mirrors Galaxy/IRIDA connector).
+            # raw_data_dir (mirrors Galaxy/IRIDA connector); no file gives the ingestor's own error.
             ds_schema = {k: v for k, v in ds_schema.items() if k != "source"}
         # The declared types, `strip` and `null_values` are applied by the ingestion itself; a value that does not
         # fit its declared type fails there and names the column and the values.
@@ -133,7 +178,7 @@ class DataOrchestrator:
         failures: dict[str, Exception] = {}
         for ds_id, ds_schema in all_schemas.items():
             try:
-                ingredients[ds_id] = self.prepare_ingredient(ds_id, ds_schema)
+                ingredients[ds_id] = self.prepare_ingredient(ds_id, ds_schema, recipe_id=data_analysis_recipe_id)
             except Exception as e:
                 # Kept, not dropped: a dataset the requested collection needs makes the build
                 # fail below (issue #18). One the collection does not use only gets a console line.
@@ -233,42 +278,28 @@ class DataOrchestrator:
         print(f"[Orchestrator] ▶ Tier 2 '{collection_id}' recomputed from Tier 1 → {t2_path}")
         return write_anchor(lf_t2, str(t2_path), decision_hash=key, metadata={TIER2_KEY_META: key})
 
+    def dataset_schemas(self, data_analysis_recipe_id: str) -> dict[str, Any]:
+        """{dataset_id: schema} of every dataset a recipe names (data schemas, metadata, additional datasets)."""
+        path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
+        if not path.exists():
+            return {}
+        recipe = load_data_analysis_recipe(path).raw
+        schemas: dict[str, Any] = {}
+        schemas.update(recipe.get("data_schemas", {}))
+        if "metadata_schema" in recipe:
+            schemas["metadata_schema"] = recipe["metadata_schema"]
+        schemas.update(recipe.get("additional_datasets_schemas", {}))
+        return schemas
+
     def get_source_files(self, data_analysis_recipe_id: str) -> dict[str, Path]:
         """Return {dataset_id: resolved_path} for all source files in a data analysis recipe.
 
-        Used by SessionManager.compute_data_batch_hash to detect input file changes.
-        Only returns paths that exist on disk; missing files are silently skipped.
+        Used by SessionManager.compute_data_batch_hash to detect input file changes. The paths are the files
+        `prepare_ingredient` reads (`locate_dataset_file`), nothing else. A dataset with no file is left out.
         """
-        data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
-        if not data_analysis_recipe_path.exists():
-            return {}
-        data_analysis_recipe = load_data_analysis_recipe(data_analysis_recipe_path).raw
-
-        all_schemas: dict[str, Any] = {}
-        all_schemas.update(data_analysis_recipe.get("data_schemas", {}))
-        if "metadata_schema" in data_analysis_recipe:
-            all_schemas["metadata_schema"] = data_analysis_recipe["metadata_schema"]
-        all_schemas.update(data_analysis_recipe.get("additional_datasets_schemas", {}))
-
         result: dict[str, Path] = {}
-        for ds_id, ds_schema in all_schemas.items():
-            source = ds_schema.get("source", {})
-            source_type = source.get("type")
-            source_path = source.get("path")
-            # data_lookup by_dataset_id (production): the data analysis recipe's source.path is only default data,
-            # the data that counts is what the deployment delivered into raw_data_dir.
-            if not self.discover_by_dataset_id and source_type in ("local_tsv", "local_parquet") and source_path:
-                p = Path(source_path)
-                if p.exists():
-                    result[ds_id] = p
-            else:
-                # Legacy discovery — same logic as ingestor fallback
-                name = ds_id
-                exact = self.raw_data_dir / f"{name}.tsv"
-                if exact.exists():
-                    result[ds_id] = exact
-                else:
-                    found = list(self.raw_data_dir.glob(f"**/*{name}*.tsv"))
-                    if found:
-                        result[ds_id] = found[0]
+        for ds_id, ds_schema in self.dataset_schemas(data_analysis_recipe_id).items():
+            located = self.locate_dataset_file(data_analysis_recipe_id, ds_id, ds_schema)
+            if located is not None:
+                result[ds_id] = located
         return result

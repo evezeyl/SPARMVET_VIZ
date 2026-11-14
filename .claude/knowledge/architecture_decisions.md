@@ -10,6 +10,8 @@
 
 ## ADR-001: Decorator-Based Action Registry
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the rule "all registered actions MUST support a `columns` argument" no longer holds: a `polars_` action takes the Polars parameter names (ADR-100, DEC32), `modif_` and `step_` actions take one name per role, ~~`column` for one input column~~ **[corrected 2026-11-14 after review: `column` or `columns` for one input column is OPEN, see ADR-100 point 8; the code uses `column`]** (ADR-100 point 8, DEC15, DEC39); column-name aliases are removed (DEC14). The decorator registry stays.
+
 **Status:** IMPLEMENTED
 **Context:** The Transformer module required a way to execute declarative YAML-based wrangling rules without a monolithic `registry.py`.
 **Decision:** Implement a **Decorator Pattern** (`@register_action`).
@@ -21,6 +23,8 @@
 - **Polars Implementation:** Actions must use `pl.col(columns)` to enable parallel execution across the target list.
 
 ## ADR-002: Tidy Data Contract (Long Format)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** `derive_categories` is removed **[from the code only; Eve has not confirmed the removal, OPEN, see ADR-100 point 7; corrected 2026-11-14 after review]** and `split_and_explode` is replaced by Polars actions (ADR-100 point 7, 2026-11-13). The tidy-data rule stays.
 
 **Status:** ENFORCED
 **Context:** Multi-species dashboards with variable gene counts (AMR) require a data format that remains stable even if species columns change.
@@ -38,6 +42,8 @@
 - **Agnostic Mandate:** The system MUST NOT assume domain-specific column names (e.g., 'species', 'sample_id'). All UI elements and logic chains must derive their structure from manifest introspection (**ADR-004**) or Polars schema discovery (**ADR-029b**).
 
 ## ADR-004: YAML-Only Configuration & Registry Recognition
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** "prefer the key `columns: []`" is replaced by the parameter rules of ADR-100 (DEC14, DEC15, DEC32, DEC39; `column` or `columns` for one input column is OPEN, ADR-100 point 8). YAML-only configuration and registry recognition stay.
 
 **Status:** ENFORCED
 **Context:** The "Four-Pillar Strategy" originally mentioned JSON Schema, but the current code architecture is strictly **YAML-driven**.
@@ -81,6 +87,8 @@
 
 ## ADR-009: Multi-Source Ingestion
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** never accepted; `join_on` is now `on` or `left_on`/`right_on`, `is_primary_key` is now `is_entity_key` (ADR-100, DEC13), and an undeclared join key is refused (ADR-102, J10).
+
 **Status:** PROPOSED
 **Context:** Multi-species dashboards require combining core analytical data (e.g., ResFinder, MLST) with metadata and other additional datasets.
 **Decision:** Implement a **Multi-Source Ingestion** strategy.
@@ -120,6 +128,8 @@
 
 ## ADR-012: Staged Data Assembly
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** never accepted as written; `join_on` is now `on` or `left_on`/`right_on` (ADR-102).
+
 **Status:** PROPOSED
 **Context:** Multi-source data ingestion and complex joins can lead to monolithic, hard-to-maintain code if handled within a single class.
 **Decision:** Adopt a **Staged Pipeline** approach.
@@ -135,6 +145,8 @@
 
 ## ADR-013: Dual-Validation Manifests
 
+> **SUPERSEDED (ADR-100, decided 2026-11-13, DEC23 and DEC24, `recipe_format_spec.md` section 2.1):** `input_fields` is now the typed list of the columns that are read (strict import); `output_fields` and `final_contract` are removed and refused; the published columns are the last tier-1 step (`polars_select` or `polars_drop`). The text below is history.
+
 **Status:** ENFORCED
 **Context:** To maintain robust data lineage between raw ingestion and final presentation, we must track schema state at two distinct points.
 **Decision:** Manifests MUST explicitly define two schema states:
@@ -145,6 +157,8 @@
 - **`input_fields`** -> **`wrangling`** -> **`output_fields`**.
 
 ## ADR-014: Identity Logic for Wrangling
+
+> **SUPERSEDED (ADR-100, decided 2026-11-13, DEC23 and DEC45; `recipe_format_spec.md` 7.3 and 7.5):** a missing `wrangling`, `wrangling: []` and a flat list are refused (check S06); an empty tier list (`tier1: []`) means "equal to the previous node"; `input_fields: {}` means every column of the file is read; `output_fields` is gone, so its identity rule is gone. The text below is history.
 
 **Status:** ENFORCED
 **Context:** Some reference datasets (e.g., APEC Virulence) should be imported "as-is" without transformations or column filtering.
@@ -179,6 +193,8 @@
 
 ## ADR-018: Unified Transformer Model (Shared Registry)
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the example actions `strip_whitespace` and `split_column` no longer exist (ADR-100 points 6 and 7, DEC35, 2026-11-13). One shared registry stays.
+
 **Status:** IMPLEMENTED
 **Context:** The expansion from atomic cleaning (Layer 1) to multi-source assembly (Layer 2) required consistent transformation logic across both stages without code duplication.
 **Decision:** The `DataWrangler` and `DataAssembler` must share the same central registry for actions.
@@ -209,6 +225,8 @@
 
 ## ADR-021: Reactive State Management (Anchor vs. Filter)
 
+> **SUPERSEDED (ADR-098, 2026-11-11; ADR-099 and ADR-105, decided 2026-11-11 to 2026-11-14):** the "filtered view" is replaced by Exploration (a temporary filter on the table of the stage viewed, never saved) and audit mode (recorded steps in a copy of the recipe). The original tables stay unchanged, as this entry intended. Never accepted; the text below is history.
+
 **Status:** PROPOSED
 **Context:** Users need to explore data by filtering without losing the "Master" view.
 **Decision:** Implement a dual-state hand-off between the Transformer and the Viz Factory.
@@ -237,6 +255,8 @@
 - **Compliance:** This explicitly preserves the ggplot2 (R) "Grammar of Graphics" while eliminating overhead from maintaining disjointed duplicate state.
 
 ## ADR-024: Tiered Wrangling & Data Lifecycle (ADR-024 Refinement)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** Tier 3 is no longer a transient leaf: T1, T2 and T3 are defined alike, an ordered step list with a key, and the plot entry holds an optional `steps: {tier3: [...]}` (`home_audit_steps.md` 5a point 15, 2026-11-12; ADR-100 point 9; keys ADR-101). Not built. The banner below still holds.
 
 > **To be amended by ADR-099 (not yet built):** audit mode adds audit stages (audit T1, audit T2) as derived, cached stages next to the original T1/T2. The original tiers and their rules are unchanged.
 
@@ -285,6 +305,8 @@ All `wrangling` blocks in YAML manifests MUST use nested tier keys to separate l
 **Low-Level Coding Design Note:** This pattern is explicitly designed to support **Low-Level Coding** --- a practice where domain scientists (veterinary epidemiologists, microbiologists) interact with the system at the YAML abstraction layer rather than the Python layer. The YAML manifest *is* the code. A user who can edit a text file can produce a custom AMR visualisation. The Gallery provides the examples needed to make this self-teaching.
 
 ## ADR-026: Reactive State, Persona Logic & Reporting
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** "sidebar filters modify the Leaf view" is replaced by Exploration (the table of the stage viewed only) and audit mode (ADR-098, ADR-099, ADR-105). The persona wording is history (ADR-091).
 
 **Status:** ENFORCED (April 7, 2026)
 **Context:** Decoupling production rigidity from developer flexibility while maintaining sub-5s responsiveness for 200k+ rows.
@@ -387,6 +409,8 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
 
 ## ADR-031: Data Tier, Session Persistence & Path Authority
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** Location 5 no longer receives cloned recipes (the Gallery clone was removed, ADR-093, 2026-11-08). The `decision_hash` that later ADRs attach to this entry is retired (ADR-101, 2026-11-12).
+
 **Status:** IMPLEMENTED (April 9, 2026)
 **Context:** Need a configurable, reliable way to handle session recovery and multi-location data storage.
 **Decision:** Implement a **Path Authority Strategy** strictly managed via `config/connectors/`.
@@ -439,6 +463,8 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
 
 ## ADR-035: Gallery Taxonomy & Visual Discovery System
 
+> **Note (2026-11-14, ADR-SYNC-1):** `rules_data_engine.md` section 5 and several docs cite "ADR-035" for the Polars parity mandate. That citation is wrong: this ADR is the gallery taxonomy. See ADR-106. **Partly stale:** the taxonomy now lives in `taxonomy` on the plot entry, five axes, `geom` derived, the tag strip generated (ADR-100 point 9; DEC21, DEC47, DEC48, 2026-11-13), not in `recipe_meta.md`.
+
 **Status:** IMPLEMENTED (April 18, 2026)
 **Context:**  As the Gallery grows, users require a structured way to discover recipes beyond simple folder browsing. ADR-033 established the split-pane view, but not the classification of plots.
 **Decision:**  Implement a formal taxonomy based on "Families" and "Difficulty":
@@ -450,6 +476,8 @@ Implement a manifest-driven UI that discovers its own structure at runtime.
 **Aesthetic Constraint**: Taxonomy sidebar headers must be bold, underlined, and scaled (1.2rem) for hierarchical clarity.
 
 ## ADR-036: Persistent UI Integrity (ID Sanitation Pivot)
+
+> **Note (2026-11-14, ADR-SYNC-1):** `rules_viz_factory.md` section 1, ADR-083 and several docs cite "ADR-036" for the plotnine "Artist Parity Mandate". That citation is wrong: this ADR is the ID sanitation pivot and is CURRENT. The parity rule is replaced by ADR-106 (V9).
 
 **Status:** IMPLEMENTED (April 18, 2026)
 **Context:** Switching between heavy-state modules (e.g., Wrangle Studio vs. Theater) can lead to 'ghost' elements (stale headers or metrics) if the DOM is not forcefully cleared by the reactive engine.
@@ -478,6 +506,8 @@ not scale, and the Gallery is required to be a static reference browser with no 
 - Taxonomy fields (Family, Pattern, Difficulty, and the rest of the 6-axis taxonomy of ADR-063)
   live in each bundle's `info:` block and are what the index is built from.
 
+> **Note (2026-11-14, ADR-SYNC-1):** the last point is stale: the taxonomy is the `taxonomy` key on the plot entry, five axes, `geom` derived (ADR-100 point 9, DEC21, DEC47, 2026-11-13). The Pivot-Index rule stays.
+
 ## ADR-038: Contextual Sidebar Masking (Focus Mode)
 
 **Status:** PROPOSED (April 19, 2026)
@@ -504,6 +534,8 @@ not scale, and the Gallery is required to be a static reference browser with no 
 
 ## ADR-041: Unified Manifest Standard (Keyed-Schema & Ordered-Logic)
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** point 1 names `output_fields`, which is removed (ADR-100 point 5, DEC23). Points 1 (for `input_fields`) to 3 are confirmed by DEC08 (2026-11-13).
+
 **Status:** ENFORCED (April 20, 2026)
 **Context:** Ambiguity between List-of-Dicts and Dictionary formats for manifest components led to inconsistent structural integrity and potential backend performance penalties.
 **Decision:** Standardize on a hybrid model that respects the functional requirements of each manifest layer:
@@ -526,6 +558,8 @@ not scale, and the Gallery is required to be a static reference browser with no 
 ---
 
 ## ADR-040: Bidirectional Lineage Navigation & Blueprint Interface Fields
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the right column shows `output_fields` and `final_contract`, both removed (ADR-100 point 5, DEC23, 2026-11-13); the published columns are the last tier-1 step. `mutate` and `pre_plot_wrangling` are old names (ADR-100 point 6).
 
 **Status:** PARTIALLY IMPLEMENTED (April 20, 2026 — Phases 18-A through 18-D, 18-B-fixes, 18-C, 18-F complete; 18-E pending)
 **Context:** Phase 18 work on the Blueprint Architect Interface (Fields) tab revealed that a flat "view one component's fields" model cannot represent the real manifest topology: multi-ingredient assemblies (many Tier 1 → one Tier 2), per-plot wrangling steps, and branching outputs. More importantly, the most natural scientific workflow is **reverse lineage** — starting from a desired plot output and tracing backwards to find where a missing field must be added or computed.
@@ -705,9 +739,13 @@ The current Mermaid.js + svg-pan-zoom stack works but has limitations:
 - **Selector Handling:** Both `DataAssembler` and `DataWrangler` now explicitly check for `rule.get(True)` when resolving column selectors like `on`, `source`, or `columns`.
 - **Hygiene:** Manifests SHOULD quote `"on"`, but the codebase MUST handle unquoted variants to ensure stability across diverse YAML loaders and human error.
 
+> **SUPERSEDED for the point above (ADR-100, decided 2026-11-13, DEC02 "unknown keys fail, no compatibility default"; check T07, `recipe_format_spec.md`:590):** an unquoted `on` is refused by the checker with the fix; the code no longer has to accept it. Not fully built: `ConfigManager` still repairs it (`config_loader.py`, ADR-100 point 3). The defensive `isinstance` checks above stay.
+
 ---
 
 ## ADR-043: Unified Home Theater — Elimination of Redundant "Analysis Theater" Nav Mode
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the tier toggle and comparison model below were replaced by ADR-086 (2026-11-05), whose target is in turn replaced by ADR-099 and ADR-105 (Exploration and audit mode). Collapsible plot and data panels stay.
 
 **Status:** IMPLEMENTED (2026-04-30) — Phase 21-A through 21-H complete. All sub-phases verified (21-H headless: 76/76 PASS).
 **Context:** The dashboard had two top-level navigation modes — "Home" and "Analysis Theater (Viz)" — that shared the same `dynamic_tabs()` render function and differed only in their header text. The `analysis_groups` manifest-driven tabs (QC, AMR, etc.) were appended identically to both modes. The "Viz" nav item was a stub falling through to Home logic. This created dead weight in the navigation, user confusion over the distinction, and a maintenance surface with no benefit.
@@ -769,6 +807,8 @@ A unified **radio-button strip** above the theater content area controls which d
 
 ## ADR-044: Persona-Gated Audit Stack & Right Sidebar Visibility
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the content of the audit stack (T2 Violet nodes, Yellow nodes, `btn_revert`, "T3 recipe pre-filled from T2") is replaced by ADR-099 and ADR-105 (step list, lineage, affected list); not built. The visibility gate stays.
+
 > **To be amended by ADR-099 (not yet built):** the content of the right Pipeline Audit panel changes (step list, lineage chain, affected list). Its gate (the sandbox flag) and the visibility rule stay.
 
 **Status:** IMPLEMENTED (2026-04-30) — Phase 21-G verified. Right sidebar suppression live in `home_theater.py:right_sidebar_content_ui`. `btn_revert` superseded by per-node 🗑 delete (Phase 22-I).
@@ -807,6 +847,8 @@ A unified **radio-button strip** above the theater content area controls which d
 ---
 
 ## ADR-045: Server Decomposition — Handlers Directory & Manifest Navigator Module
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the navigator moved to `blueprint_arch` (ADR-067) and is to be rebuilt on the shared `utils.recipe_graph` (ADR-099 point 16(d), 2026-11-12; not built). `tier_reference` and `tier3_leaf` were removed on 2026-11-06 (`rules_app_structure.md` section 3).
 
 **Status:** IMPLEMENTED (2026-04-23) — Phase 22 complete. UI smoke test passed; no regressions.
 **Context:** `app/src/server.py` had grown to ~2,362 lines containing five functionally distinct concerns: manifest introspection helpers, Home Theater UI wiring, Blueprint Architect UI wiring, Gallery UI wiring, and shared reactive state/calcs. This monolith made targeted development difficult, slowed orientation for new work, and violated the principle of modular separation already established by `WrangleStudio`, `GalleryViewer`, and `DataOrchestrator`. As Phase 21 adds further Home Theater logic, the file would grow further without decomposition.
@@ -885,6 +927,8 @@ Per the documentation standard: `ManifestNavigator (manifest_navigator.py)` for 
 
 ## ADR-046: Scientific Audit Protocol & Manifest Precision
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** `final_contract` as a strict projection guard is removed (ADR-100 point 5, DEC23, 2026-11-13): column selection is a visible `polars_select` or `polars_drop` step at the end of tier 1.
+
 **Status:** PROPOSED (2026-04-23)
 **Context:** Development of complexity-heavy AMR lineages (e.g. ST22) requires fine-grained scientific auditability. Initial builds revealed friction from "silently dropped" columns, imprecise naming (phenotype), and continuous-scale plot errors (float years).
 
@@ -909,6 +953,8 @@ Per the documentation standard: `ManifestNavigator (manifest_navigator.py)` for 
 - **Rationale:** Prevents Plotnine/ggplot from treating them as continuous scales, which causes "stretched" x-axes and incorrect legend rendering.
 
 ## ADR-047: Tier-Aware Export Bundle
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the target bundle in audit mode is described in ADR-099 point 8 and `home_audit_steps.md` section 11 (original and audit data, `exclusions.tsv`, attrition, the forked recipe; 2026-11-12); not built. ADR-097 holds the two export modes.
 
 **Status:** IMPLEMENTED (2026-04-23) — **Extended 2026-05-04** (EXPORT-REDESIGN-1/2)
 **Context:** Users require a reproducible, self-contained output package from the Home Theater — plots, data, recipes, and a Quarto report — that can be used for publication and archiving without re-running the full pipeline.
@@ -1208,6 +1254,7 @@ prefer_discovery: true
 ## ADR-049: Per-Plot T3 Audit Scoping & Join-Key Propagation (Phase 22-J, 2026-04-25)
 
 > **To be amended by ADR-099 (not yet built):** the propagation dialog "this plot / all plots / all except" is replaced by a reach selector and a stage that follows from the kind of step; plot-level steps become level 3.
+> **Correction (2026-11-14, ADR-SYNC-1):** the reach selector and levels of the banner above were themselves superseded on 2026-11-12: the target is ADR-105 (a filter on a field, tick lines on every node of the lineage that has it, written at T1, T2 or T3). Per-plot stacks, the propagation dialog and `plot_scope` are history once it is built. ADR-049a (a filter on a key column is allowed, with a warning) stays.
 
 **Status:** IMPLEMENTED at HEAD `94bb917`, live-UI verified 2026-04-30 (§1 per-plot scoping passed). **AMENDED 2026-04-30 (AUDIT-1)**: the §12g.3 "silent conversion" rule for PK-column filters is removed — see [ADR-049a](#adr-049a-2026-04-30-amendment-pk-filter-allowed) below.
 
@@ -1282,6 +1329,8 @@ The "All except" choice captures the justification-plot case directly without re
 ---
 
 ## ADR-050: Orchestrator Three-Path Materialization & Join-Key Normalisation (2026-04-30)
+
+> **SUPERSEDED in part (ADR-102, decided by Eve 2026-11-14, `tasks.md` JOIN-KEY-TYPES-1, built `bddaf76a`):** the section "Join key normalisation" and the rationale "`String` cast before join is the safe common denominator" no longer hold: a join keeps the types the recipe declares, and differing types fail with a message. Path C ("legacy fallback") and "all schemas as ingredients" are listed as silent paths to remove (`recipe_format_spec.md` section 16, J04, issue #76; not built). Path A, Path B and the ordering law stay.
 
 **Status:** IMPLEMENTED — `app/modules/orchestrator.py`, discovered and fixed in session 7.
 
@@ -1423,6 +1472,8 @@ for `tier1_anchor`, `active_cfg`, etc.
 ---
 
 ## ADR-052: Left Sidebar Restructure & Persona Template Extensions — Phase 25
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the flag cascade gains new rules (ADR-099 point 11, P1, 2026-11-12): audit mode requires comparison, sessions and export; comparison requires the audit flag. Validator rules not built.
 
 **Status:** FULLY IMPLEMENTED (steps A–O, 2026-05-01). All substeps complete including cascade enforcement (25-L), doc rewrite (25-M), and persona name anti-pattern elimination (25-O). Remaining tech debt: 25-N (legacy test stubs).
 
@@ -1812,6 +1863,8 @@ Note: `breaks_integer` must be nested under `params:` — VizFactory reads `laye
 
 ## ADR-060: Notification Log Pattern — `make_notifier` + Right Sidebar Alert Accordion (UX-NOTIF-1, 2026-05-02)
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the notification log moved from the right to the left sidebar on 2026-11-08 (issue #33); the amendment is recorded in ADR-073.
+
 **Status:** IMPLEMENTED
 
 **Context:** `ui.notification_show()` toasts disappear after a few seconds. Users were missing failure notifications (e.g. session import errors, export problems, T3 apply blocks). No persistent log existed.
@@ -1892,6 +1945,8 @@ Bslib positions the toggle correctly via its own `position: absolute` + CSS vari
 ---
 
 ## ADR-063: Gallery 6-Axis Taxonomy (2026-05-03)
+
+> **SUPERSEDED (ADR-100 point 9; DEC21, DEC47, DEC48, decided by Eve 2026-11-13):** gallery examples are standard recipes in profile `gallery`; the classification is the `taxonomy` key on the plot entry, not the bundle's `info:` block; it has five axes and `geom` is derived from the first layer, not typed; the tag strip of `example_meta.md` is generated from `taxonomy`, not written by hand; the checker runs at index rebuild, at app start and in the tests. The text below is history.
 
 **Status:** Accepted
 
@@ -2044,6 +2099,8 @@ Additionally, CSS `border-radius: 0 0 7px 7px` was applied to inner navset-cards
 
 ## ADR-067: Extract `libs/blueprint_arch/` — Blueprint Architect Pure-Python Logic (2026-05-05)
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the navigator is to be rebuilt on the shared `utils.recipe_graph` in `libs/utils`, one source of truth for HOME and Blueprint (ADR-099 point 16(d), 2026-11-12); not built.
+
 **Status:** IMPLEMENTED (2026-05-05)
 
 **Context:** `blueprint_mapper.py` lived in `libs/utils/` — a general-purpose headless lib — alongside config loading, hashing, and error utilities. `manifest_navigator.py` lived in `app/modules/`, violating the Two-Category Law (ADR-045) even though it has zero Shiny dependency and was already declared headless-safe. Both files exist solely to serve the Blueprint Architect feature.
@@ -2090,6 +2147,8 @@ Additionally, CSS `border-radius: 0 0 7px 7px` was applied to inner navset-cards
 ---
 
 ## ADR-069: Complete Export Audit Trail Standard (2026-05-05)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** `decision_hash` is retired (ADR-101, 2026-11-12); the provenance record of today is the one of ADR-097 (four legs, `effective_run.yaml`). Not checked here: whether rule 1 (no opt-out) still holds for both export modes of ADR-097.
 
 **Status:** DECIDED — implementation pending
 
@@ -2540,6 +2599,8 @@ All 6 existing persona templates receive `workspaces:` sections whose default sl
 
 ## ADR-074: Lineage Infrastructure as Shared Provision (2026-05-09)
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the placement of the lineage code in `blueprint_arch` is superseded in part: the recipe graph is new shared code in `libs/utils` and the navigator is rebuilt on it (ADR-099 point 16(d), 2026-11-12); not built.
+
 **Status:** DECIDED — implementation pending
 
 **Context:** Two user spaces require manifest lineage tracing from different angles:
@@ -2649,6 +2710,8 @@ SVG/PNG export of the manifest DAG for use in pipeline publications is a **BLUEP
 ---
 
 ## ADR-075: BLUEPRINT IDE Build Mode — Design Specification (2026-05-09)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** action names now carry the prefixes `polars_`, `modif_`, `step_`, and the registry has the field `polars` beside `wraps` (ADR-100 point 6, DEC31, 2026-11-13); old action names in the examples below no longer exist.
 
 **Status:** DECIDED — implementation pending (Phase 31+)
 
@@ -2844,6 +2907,8 @@ The "Add node" picker in BLUEPRINT is a searchable, filtered catalog driven by `
 ---
 
 ## ADR-076: BLUEPRINT AI Agent Helper — Adapter Architecture and Conversational Design (2026-05-09)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the tool `get_field_contract` returns `output_fields`, and the manifest rules name `final_contract`; both are removed (ADR-100 point 5, DEC23).
 
 **Status:** MVP-1 IMPLEMENTED (2026-05-09). All six BP-AGENT-* tasks complete. Chat panel live in `app/handlers/blueprint_handlers.py`; wired into Blueprint right sidebar via `home_theater.py`. Tool-call loop (3 rounds max, `asyncio.to_thread` for non-blocking subprocess). `instructions_file` read exclusively from `bootloader.get_agent_config()` — no hardcoded path fallback (raises `ValueError` if key absent). Smoke tests: 14 passed, 3 skipped.
 
@@ -3164,6 +3229,8 @@ Because Claude Code scopes session history per project directory, running the su
 ---
 
 ## ADR-077: Configuration Validation Discipline — Fail-Fast over Silent Suppression (2026-05-09)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** new cascade rules for audit mode are decided (ADR-099 point 11, 2026-11-12; see ADR-052 note); not built.
 
 **Status:** DECIDED — applied to Group D cascades from this date forward. **Scope note (ADR-087, 2026-11-05):** applies to deployment configuration only; manifest errors raise an exception and never exit the app.
 
@@ -3733,6 +3800,8 @@ Resolution order: **plot-level palette > `plot_defaults.palette` > no palette (m
 
 ## ADR-082: BLUEPRINT Full Feature Set & Build-Mode Contract (2026-05-20)
 
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the 3-column viewer shows `output_fields`, removed by ADR-100 (DEC23). Q2 "BLUEPRINT never authors or previews T3": OPEN, awaiting Eve (see ADR-100: a recipe maker may write any action in the plot entry's tier-3 list, DEC17, 2026-11-13).
+
 **Status:** ACCEPTED — decided with Eve 2026-05-20. Supersedes the research draft `.claude/design/outdated/blueprint_full_feature_set_research.md` (now RESOLVED). Umbrella ADR over ADR-039/040/056/067/071/074/075/076.
 
 **Context:** BLUEPRINT is a visual IDE for building and editing SPARMVET manifests without writing code. Prior ADRs locked individual pieces (TubeMap navigation, lineage rail, shared infrastructure, the IDE build-mode design, the AI agent). No single ADR named the *full* feature set or how the parts compose into one user experience, and the design had drifted ahead of the docs: between 2026-05-09 and 2026-05-11 the form builder, searchable action picker (BP-ACTION-PARITY-1), Field Gap Analysis (BP-FIELD-GAP-1), forward-propagation hints (BP-FWD-HINT-1), and Visual Fork (BP-VISUAL-FORK-1) all shipped without an umbrella contract. A 2026-05-20 verification pass against the running implementation surfaced four mismatches with the redefined design (below). This ADR locks the feature set so a new contributor can read one document end-to-end, and so the remaining build work is scoped against an agreed target.
@@ -3874,6 +3943,7 @@ Verification found the form layer is **half-built**: the rich 8-widget renderer 
 
 **Status:** ACCEPTED. Authority: @dasharch. Full design: `.claude/design/plot_authoring_model.md`.
 **Refines:** ADR-082 §5 (form unification), ADR-081 / `plot_config_cascade.md` (render cascade), ADR-036 (Artist parity).
+> **Note (2026-11-14, ADR-SYNC-1), partly stale:** "ADR-036 (Artist parity)" is a wrong citation; the parity rule was only in `rules_viz_factory.md` and is replaced by ADR-106 (V9). The `_meta` passthrough of point 1 is retired: spec keys are declared (`comment`, `taxonomy`), unknown keys fail (ADR-100, DEC02; `recipe_format_spec.md` section 16, PS01). Point 5 ("HOME authors only `aesthetic_override`") is superseded for data: the audit writes filter and drop steps (ADR-105); it never writes a plot spec. Axis and legend titles default to the field `label` (ADR-100 point 9, DEC22, decided, not built).
 
 **Context.** BP-COMPONENT-FORMS-1 ("configure plot/geom nodes via the shared form") surfaced a deeper
 question: a plot spec mixes abstraction levels — the primary geom is hidden behind `factory_id`, the
@@ -3930,6 +4000,8 @@ already exists — it just isn't named, shared, or invertible.
   un-gated) already fits the cascade's append-then-dedupe.
 
 ## ADR-084: TEST_LAB Toolbox Architecture (2026-05-21)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the bootstrapper output named here (`type:` key, `output_fields`, `final_contract`, old action names) is format 0; recipes must now be format 1 (ADR-100; `type:` removed by ADR-092). Test Lab is to be adapted later (Eve 2026-11-14: Blueprint and Test Lab last).
 
 **Status:** ACCEPTED. Authority: @dasharch. Design authority: `.claude/design/spaces/TEST_LAB.md`.
 **Extends:** ADR-011 (modular monorepo), ADR-016 (Clear Lines), ADR-071 (positive inclusion), ADR-074 (shared provision principle).
@@ -4014,6 +4086,7 @@ following the basename mirroring standard (`rules_manifest_structure.md §1`).
 ## ADR-085: "My View" (T3) Decoupled from Audit Capability + T1/T2 Tier Isolation (2026-08-10)
 
 > **HISTORICAL in part (superseded by ADR-098, 2026-11-11):** decision 1 below, for *exploration* filters (`applied_filters`), no longer holds: they now preview on every view. The rule for audit-committed nodes (My view only) and decisions 2-3 stay active until ADR-099 is built, which replaces My view by audit mode.
+> **SUPERSEDED as the target design (ADR-099 points 1 and 2, 2026-11-11; ADR-105, 2026-11-12, confirmed 2026-11-14):** My view, the scratchpad without the sandbox flag (decision 2) and Send to Audit from My view (decision 3) are replaced by Exploration (table only, data viewed only) and audit mode. This entry describes the app as built until ADR-099 and ADR-105 are built.
 
 **Status:** ACCEPTED. Authority: @dasharch, decided with @evezeyl during live-app testing (`test_plan_2026-06.md` HOM-41/HOM-43).
 **Amends:** `ui_implementation_contract.md §4` (Interaction & Event Mapping), `§5` (Theater Layout Model), `§8` (Filter Recipe Builder), `§12a` (T3 Scope Lock). `rules_persona_feature_flags.md` (Group B). `rules_ui_dashboard.md §1`.
@@ -4097,6 +4170,7 @@ frozen T1/T2 references — and once `_filter_apply` was fixed to route all comm
 ## ADR-086: Separate "Plot to show" from "Data to show"; Comparison Mode is T2 vs My view (2026-11-05)
 
 > **To be amended by ADR-099 (not yet built):** the header choices "Plot to show" and "Data to show" are replaced by Exploration (Data: Raw | Result); My view and Compare move to audit mode (Compare as an on/off toggle).
+> **SUPERSEDED as the target design (2026-11-14, ADR-SYNC-1):** decided by ADR-099 points 1 and 2 (2026-11-11), P2 of 2026-11-12 (Exploration has one plot, the Result, immutable; audit mode shows the Result and the audited plot; handoff 2026-11-12) and ADR-105. Point 4 (tier isolation) was already replaced for exploration filters by ADR-098. Points 2 ("plots never show T1") and 7 (the badge) still hold. The text below describes the app as built.
 
 **Status:** ACCEPTED (2026-11-05, confirmed by @evezeyl). Authority: @dasharch, decided with @evezeyl during live-app testing (`test_plan_2026-06.md` HOM-40, HOM-42, CSS-07).
 **Amends:** `ui_implementation_contract.md §2` (Tier Toggle Strip, Comparison Mode), `§5` (Theater Layout Model). Refines ADR-043/ADR-044 (single tier toggle) and ADR-085 (the open "Viewing:" indicator note).
@@ -4219,6 +4293,7 @@ separate "Compare T2 vs T3" switch (visible only in My view) split the plots in 
 
 > **To be amended by ADR-099 (not yet built):** the original cache keeps these rules; a separate audit cache with chained keys is added next to it (key = hash of the upstream key and the operations that will run, stored in the file).
 > **Amended by ADR-099 point 16 (Eve, 2026-11-12, not yet built):** a key is a **series of labelled parts** joined in execution order, not a hash of hashes: `E . rC . dC . [a1] . [s2] . [a2] . [s3] . [a3]`, 128 bits per part, an empty part is left out (T3 = T2 = T1); the T1 key is per collection with precise parts from the recipe graph (point 2 of the decision below stays fail-safe for a collection whose inputs cannot be listed); T3 and audit nodes have keys; `data_batch_hash` stays the full content hashed once per session (point 8, no stat cache; later maybe a pre-hash when new data arrives); the plot input key of the table below is dropped (never built); the older `decision_hash` is retired. Model: `.claude/design/home_evidence/home_hash_model_2026-11-12.md`, diagrams `DM-KEYS*`.
+> **Correction (2026-11-14, ADR-SYNC-1):** the banner above cites ADR-099 point 16, which does not hold this text. The series-of-parts model is recorded in **ADR-101** (decided 2026-11-12). It supersedes decision points 1 and 2 below and the "key = hash of the upstream key and the operations" wording of the first banner; points 3 to 7 stay.
 
 **Status:** ACCEPTED (2026-11-05, confirmed by @evezeyl). Authority: @dasharch, decided with @evezeyl after a verified bug (fork issues evezeyl/SPARMVET_VIZ#9 and #10).
 **Extends:** ADR-024 (tiers), the reproducibility hash schema (`docs/foundations/reproducibility_hash_schema.qmd`), ADR-031 (decision hash in Parquet metadata), ADR-088 point 6.
@@ -4270,6 +4345,8 @@ manifest  ───┤                       -> stored as the Tier 1 parquet
 ---
 
 ## ADR-090: Reproducibility, the same data and manifest give the same rows and the same picture (2026-11-05)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** decision points 1 and 3 are amended by ADR-100 (DEC34, 2026-11-13): the order rule is a required parameter written in each step, with the Polars name, and the action adds no default (`polars_group_by`, `polars_sort`, `polars_join`, `polars_unique`, `polars_sample`; `summarize`, `drop_duplicates`, `join_filter`, `value_counts` no longer exist). The full new wording is in `.claude/design/adr_100_recipe_format_1_draft.md`, section "ADR-090, proposed new wording". Point 5: the cache version is now "4". Point 2: a seed written in the recipe holds in every view (ADR-104, 2026-11-14; HOME does not follow it yet, SEED-HOLDS-1). **The default when the recipe writes no seed is OPEN, awaiting Eve:** this point says 0; ADR-097 point 2 and HOME's code draw one per session (see ADR-104).
 
 **Status:** ACCEPTED (2026-11-05, confirmed by @evezeyl: "it should be reproducible"; a fixed seed for tests is required). Authority: @dasharch.
 **Implementation status:** IMPLEMENTED 2026-11-05 on `dev`.
@@ -4489,6 +4566,8 @@ machine-assisted "start a new recipe from this gallery example" emerges, it is a
 designed on its own — not a revival of the T3 clone.
 
 ## ADR-094: HOME gates automatically on load (structure + data contract); BLUEPRINT stays manual; runtime failures get a real surface, not a traceback (2026-11-08)
+
+> **Partly stale (2026-11-14, ADR-SYNC-1):** the gate's checks are now the one checker `check_recipe` of `libs/utils` (ADR-100 point 3, DEC03, 2026-11-13); "data vs declared contract" no longer includes `output_fields` (DEC23). The gate itself stays.
 
 **Status:** ACCEPTED and IMPLEMENTED (Eve, 2026-11-08). Authority: @dasharch, decided with @evezeyl.
 **Completes:** ADR-087 ("Data analysis recipe errors raise an exception; the app reports and skips, it never exits") — extends its scope from structural load errors to include the data-vs-contract check, and implements what ADR-087 left as "NOT YET IMPLEMENTED". **Begins wiring:** ADR-079 (Runtime Error Discipline) — the renderer side was already fully built and unit-tested; this ADR starts the catch/dispatch side, for the path HOME needs most.
@@ -4830,6 +4909,7 @@ actually reproducible for the T3-adjusted result.
    `ui_implementation_contract.md §14`), in an ordinary per-session `reactive.Value`, never the
    bootloader's process-wide asset cache. Multiple jittered layers in one plot continue to
    share one seed (unchanged behaviour).
+   > **Note (2026-11-14, ADR-SYNC-1):** this point is written for the unpinned case. A seed written in the recipe holds (ADR-104); HOME draws over it today (verified by running, `tmpAI/results.md` section 1, task SEED-HOLDS-1). For the unpinned case, the drawn seed (this point) against the default 0 (ADR-090 point 2) is OPEN, awaiting Eve; the run showed that the recorded seed does not reproduce the exported plot.
 
 3. **A consolidated provenance record carries four hash legs, not three.** Recipe (file-set
    hash, already computed), data (content hash per dataset, already computed), engine
@@ -4933,6 +5013,7 @@ shape — both had gone stale describing the pre-#45 single-bundle design).
 ## ADR-098: Exploration filters preview on every view; only audited steps are permanent (2026-11-11)
 
 > **Built on dev 2026-11-11. To be amended by ADR-099 (not yet built).** It was first numbered ADR-087 by mistake and renumbered the same day, because ADR-087 is the manifest-errors decision. It describes what the app does today; ADR-099 is the target.
+> **Target superseded in part (2026-11-14, ADR-SYNC-1):** point 1 (exploration filters change plots on My view) by ADR-099 point 1 (the table only; the plot is the recipe's plot) and P2; points 7 and 8 (a step belongs to one plot's T3 and is propagated by "this plot / all / all except") by ADR-105 (the user ticks the nodes of the lineage). **Point 4 (a filter on a column absent from the view is skipped) CONTRADICTS ADR-104 ("no silent error", 2026-11-14).** ~~Its replacement is OPEN, awaiting Eve (D1, see ADR-104).~~ **[Corrected 2026-11-14 after review: point 4 no longer holds. A filter that cannot run is never skipped silently; it gives a plain error (ADR-104 point 1). D1 (a value of another type than its column) was decided the same day: the engine stays strict and gives a plain error (ADR-104 point 7).]** Point 9 is settled by ADR-099 (My view is replaced). Points 2, 3, 5, 6 describe today's app.
 
 **Status:** ACCEPTED (2026-11-11, confirmed by @evezeyl). Authority: @dasharch. Issues: evezeyl/SPARMVET_VIZ#56 (behaviour), evezeyl/SPARMVET_VIZ#57 (operator labels).
 **Supersedes:** ADR-085 decision 1 and ADR-086 point 4 for **exploration filters** (`applied_filters`). Audit-committed nodes keep the ADR-085 rule.
@@ -4943,7 +5024,7 @@ shape — both had gone stale describing the pre-#45 single-bundle design).
 1. Row filters (and the preview column selector) are a temporary preview. **In the data table** they apply on every view: Raw, Result, My view. **In plots** they apply only on My view (and the right pane of Compare): Raw and Result plots are the recipe's plots (Eve, 2026-11-11). They are applied to a lazy copy at render time, never written to Parquet, never exported (only audited steps are exported).
 2. Audit-committed nodes (`filter_row`, `exclusion_row`, `drop_column`) still apply only on My view. "Send to Audit" with a reason is the only way a step becomes permanent: applied to the exported plot and data and recorded in the audit trail. The T1/T2 Parquet files stay cache files keyed by recipe and data hash.
 3. Compare: the left pane (Result) never applies preview filters or audit nodes; the right pane is My view (preview filters + audited steps).
-4. A filter naming a column absent from the active view (T1 wide, T2 maybe long) is skipped, not an error. A filter leaving zero rows gives an empty table.
+4. A filter naming a column absent from the active view (T1 wide, T2 maybe long) is skipped, not an error. **[No longer holds, 2026-11-14: a filter that cannot run gives a plain error, ADR-104 point 1.]** A filter leaving zero rows gives an empty table.
 5. The Raw/Result data badge says "N preview filter(s) on, not saved"; the Result plot badge says the filters change the table only and plots change on My view.
 7. Scope (Eve, 2026-11-11): a preview filter belongs to a **dataset** (the dataset the plot targets; plots sharing it share the filter); today it is one global list (to change). An audited step belongs to **one plot's T3** (T3 = that plot's T2 + its audited steps, derived, not stored); the scope option (this plot / all / all except) propagates it into every concerned plot, concerned = the column is in that plot's T2 (follows the lineage). T1 and T2 never change.
 8. Column drops follow the same logic as filters: preview on Raw/Result/My view is table-only; drop to audit is offered like Send to Audit, with the same scope options, and a warning listing the plots that use the column (issue #59).
@@ -4954,6 +5035,8 @@ shape — both had gone stale describing the pre-#45 single-bundle design).
 
 
 ## ADR-099: Exploration and audit mode — original and audit data, four levels of audit step, no draft (2026-11-11)
+
+> **[HISTORICAL title words, 2026-11-14: "four levels of audit step" no longer holds. A step is written at T1 or T2 of a table or at T3 of a plot, on the nodes the user ticks (point 12, 2026-11-12, and ADR-105).]**
 
 **Status:** ACCEPTED in principle by @evezeyl (2026-11-11). **Not built.** Items marked [confirm] in
 `.claude/design/home_audit_steps.md` section 16 need her OK before the code starts. Authority: @dasharch.
@@ -4966,6 +5049,18 @@ Compare), ADR-049 (propagation dialog), ADR-044 (content of the right panel), AD
 cache), ADR-097 (forked recipe modes, verification legs). **Consistent with:** ADR-082 (T3 is HOME-only; BLUEPRINT
 never authors it), ADR-093 (no recipe content comes from anywhere else; the forked recipe is generated from the
 user's own steps). **Not changed:** BLUEPRINT, GALLERY, VizFactory, the original cache, the original T1/T2.
+
+> **Reading guide (2026-11-14, ADR-SYNC-1; Eve's rule: the latest record holds).** This entry was written on 2026-11-11 and extended on 2026-11-12 (points 11 to 16, printed in reverse order until 2026-11-14, now in order 1 to 16; no text removed). Later points and later records supersede some earlier sentences, which stay below with an inline **[HISTORICAL ...]** marker. What holds now:
+> - **Where a step goes and how far it reaches:** point 12 and ADR-105 (field, lineage, tick lines, written at T1, T2 or T3). Point 4 (reach selector, levels 0 to 3, "early at the sources") and the title words "four levels of audit step" are HISTORICAL. "No tick boxes" in point 12 is HISTORICAL: the tick lines of the same point hold (`home_audit_steps.md` 5a point 7, "safe mode").
+> - **Keys of entities:** declared, never guessed (point 6), but the key is information, not mechanism (point 16(i), ADR-105); the field is `is_entity_key` (ADR-100, DEC13).
+> - **Node keys:** ADR-101 (series of labelled parts). The formula in point 5 and `hash(previous key, steps)` in point 12 are HISTORICAL.
+> - **Source of truth of the audit:** the copy of the recipe with its marked audit steps, plus an event log (ADR-105 point 6, 2026-11-13). "The step list is the source of truth" (point 5) is HISTORICAL.
+> - **Missing values:** ADR-103 (2026-11-14). The sentence on missing values in point 12 and "the NA rule (missing values are a visible, selectable value)" in "The software's role" are HISTORICAL; "never silent" holds.
+> - **Unknown recipe keys fail** (point 16(i) and ADR-100, DEC02); "unknown keys are warnings" in point 16(g) is HISTORICAL.
+> - **Column drops** follow the filter logic at any level (point 16(i); `home_audit_steps.md` 5a point 6); "Drops are not recommended outside plot level" (point 7) is HISTORICAL.
+> - **"BLUEPRINT never authors T3"** (header, from ADR-082): OPEN, see ADR-100 (a recipe maker may write any action in the plot entry's tier-3 list, DEC17).
+> - **Point 15, items left open:** the entity noun (AR4, `home_audit_steps.md` 5a point 17), special datasets (AR1) and the action-registry test (AR2) were closed on 2026-11-12 (`home_audit_steps.md` section 16 item 7); the check on the plotted variable was withdrawn (point 16(e)). The rest: `home_audit_steps.md` section 16.
+> - **Status:** still not built, except what ADR-098 built.
 
 **Context.** Testing HOM-09 and a review of the filter diagrams found a science problem in the audit as built. An
 audited step is a per-plot filter on a column of that plot's T2. A bad sample removed with "all plots" is skipped on
@@ -4989,7 +5084,7 @@ and a filter built on Raw can be wrong on Result (wide vs long, renamed columns,
    before/after and the warnings, needs a **reason**, and takes effect on **Apply** (Cancel changes nothing).
    Removing a step is the undo (recompute without it; later steps are kept and re-checked; statuses applied / not
    concerned / broken; a broken step blocks the export). Controls: Undo last, Revert to step N, Remove all.
-4. **Reach and stage, four internal levels.** The user picks the **reach** (nothing preselected): selected plots (a
+4. **[HISTORICAL: this whole point is superseded by point 12 (2026-11-12, P5) and ADR-105.]** **Reach and stage, four internal levels.** The user picks the **reach** (nothing preselected): selected plots (a
    checklist built from the recipe's plots; one checked = only this plot), all plots that use the same table,
    every plot in the project [confirm: three options with a checklist; where the selector sits is open]. The **stage** follows from the kind of
    step: *remove samples (by ID)* is early, at the sources inside the build of each reached collection (level 0
@@ -4998,10 +5093,10 @@ and a filter built on Raw can be wrong on Result (wide vs long, renamed columns,
    level 2, level 3. A key exclusion on a plot reach is a level 3 row filter on the key column.
 5. **Original and audit data.** Original T1/T2 are never changed. Audit T1/T2 are **recomputed** (nothing is
    copied) and live in a **separate audit cache** with chained keys: key = SHA-256(upstream key + the canonical
-   list of operations that will run); the reason, initials and date are not hashed; the key is stored in the file
+   list of operations that will run) **[HISTORICAL: the key is a series of labelled parts, ADR-101, 2026-11-12]**; the reason, initials and date are not hashed; the key is stored in the file
    and checked on read. N = 5 recent states by default (a setting); a missing entry is recomputed from the step
-   list. The step list is the source of truth.
-6. **Keys are declared, not guessed** [confirm]: a key is a field with `is_primary_key: true` in a data schema's
+   list. The step list is the source of truth. **[HISTORICAL: the copy of the recipe with its marked audit steps is the source of truth, with an event log; ADR-105 point 6, 2026-11-13.]**
+6. **[HISTORICAL in part: the field is now `is_entity_key` (ADR-100, DEC13); the key is information, not a mechanism of removal, and a key-less schema keeps the full audit (point 16(i), ADR-105). "Declared, never guessed" holds.]** **Keys are declared, not guessed** [confirm]: a key is a field with `is_primary_key: true` in a data schema's
    `input_fields` (this works in recipes without any join), and the join steps link differently named columns into
    one key family; never found from column names. A key exclusion applies to every ingredient of a reached collection
    that has the key (left joins); a data schema with no declared key falls back to a row filter on a column the user
@@ -5010,7 +5105,7 @@ and a filter built on Raw can be wrong on Result (wide vs long, renamed columns,
    columns and values come from the data (T3 frame, audit T2, key values of the sources), never from the plots.
 7. **Project consistency is shown, never silent:** a chain drawing with the changed stages in bold and colour, the
    affected list, a project overview (collections x steps) and a coverage check for key exclusions. Drops are not
-   recommended outside plot level; a warning lists the plots and steps that use the column (#59).
+   recommended outside plot level **[HISTORICAL: drops follow the filter logic at any level, `home_audit_steps.md` 5a point 6 and P3, 2026-11-12]**; a warning lists the plots and steps that use the column (#59).
 8. **Export** carries the steps with reasons, original and audit data, an attrition table, the coverage check, the
    audit keys and the forked recipe. Exploration is never exported. The forked recipe is generated from the user's
    steps through `t3_translator` (extended with shared late and early source insertion); the user's recipe files
@@ -5018,13 +5113,13 @@ and a filter built on Raw can be wrong on Result (wide vs long, renamed columns,
 9. **Names kept:** the flag `t3_sandbox_enabled`, `t3_steps.yaml`, `T3_data_<plot>.tsv`, the ghost `t3_*.json` and
    `t3_audit_engine.py` keep their names for now; a rename is a separate task (`renamed_keys` mechanism).
 10. **Intended use:** publication-ready results with a justified "data not shown" (poor-quality samples, or data that makes no sense in a plot, with a reason), not exploration and not a way to clean messy,
-    non-standardised fields (that is a recipe change; wording corrected 2026-11-12, Eve). Help says so and advises "use the lowest reach that fits".
-16. **Development rules (Eve, 2026-11-12):** (a) during development a wrong recipe is corrected, never protected by a compatibility default or a shim, so that errors stay understandable; Claude may write recipes and the user messages for testing; (b) every step is complete, no half fixes; (c) the tests are adapted to the decided architecture **before** they are run, and each must fail for the right reason on the current code first, otherwise it cannot capture the problem; (d) the recipe graph is new shared code in `libs/utils` (`utils.recipe_graph`: pure, headless, tested), by the existing rule that a primitive needed by two domain libraries goes to `libs/utils` (`rules_test_lab.md` 2c); HOME and Blueprint both import it, and Blueprint's navigator is rebuilt on it so there is one source of truth (this supersedes in part the placement of the navigator in `blueprint_arch`, ADR-067 and ADR-074); HOME never calls Blueprint's screens. (f) Attrition per step, derived and never stored, composes the figure caption (Eve, "Ok proposal"); one reason per user action. (j) The recipe declares `data_engine` and `plot_engine` (required, unknown = failure, names carry the language, overrides later by collection and plot entry); the engines and versions are parts of the engine fingerprint. (i) One mechanism for every removal (Eve, 2026-11-12): a filter on a field, with the lineage showing every node where the field exists as tick lines; "remove by key" and "remove by attribute" are no longer separate kinds; the key is information (counts, population, suggestions, the join-break warning); drops use the same logic; the recipe graph knows the columns of every node; fail instead of warn (HOME rejects, BLUEPRINT reports); every table has T1, T2, T3 with or without a join and a dataset's own tier-2 is applied. See `home_audit_steps.md` 5a points 3, 18, 19 and section 9. (h) The audit step type `developer_raw_yaml` is removed (task AUDIT-RAWYAML-REMOVE-1); the node popup and the project overview are a popup in its own window built as a pure content function (position changeable later); the step compiler is defined in `home_audit_steps.md` section 2. (g) Confirmed by Eve 2026-11-12: the loader builds the recipe and stops on errors, the validator reports every problem (one rule set `check_recipe` in `libs/utils`, unknown keys are warnings); the read-only popup per node, kept open; permission to change `libs/transformer` (retire `decision_hash`, the persistence action, per-collection keys) with tests first; the rule texts reworded (Tier 1 dependencies, T3 in the contract); the configuration stage at the end. (e) Selecting by the value of a plotted variable is an ordinary audit step; the check C2 is withdrawn; transparency (reason, attrition table, caption count, original plot beside the audited one) lets the reader judge.
-15. **Small items after the independent review (Eve, 2026-11-12):** remove by an attribute = select with the filter on a table that carries it, resolve to keys, remove by key; a plot is affected when its data differs; step order is the position in the dataflow; exact rule for the early-versus-late data check; limits of the first version (one key family); steps are built from named parameterised actions, never from formula text with user values; `exclusions.tsv` in the bundle; the older word T3 is used again (see point 12). Which samples a selector finds, the check on the plotted variable, the caption count for key-less plots, the entity noun, the action-registry oracle test and special datasets stay open (`home_audit_steps.md` section 16 item 7). Full text: `home_audit_steps.md` sections 4, 5a (points 10-14), 11, 16.
-14. **Import and recipe text (Eve, 2026-11-12, P9):** Import is its own functionality, on only by the configuration file and only for an authorised person; recipes normally come from a system manager's directory; protection is warn and validate, with one new rule in the existing recipe validation (formulas only from an allowed list of Polars operations, by function name), which also covers the load gate and Blueprint's Validate; `home_audit_steps.md` section 11.
-13. **Reason (Eve, 2026-11-12, P7):** free text, required, a good justification; no fixed categories (data-agnostic); the help suggests a hashtag convention (`#technical failure: sequencing run bad`) with examples; `home_audit_steps.md` section 19.
-12. **Where a step goes (Eve, 2026-11-12, P5, revised the same day):** an audit is every change with a recorded reason, expressed as the original recipe plus steps written into its own lists; a step changes data, not a plot. Every plot has a T3 and every table a T2, all defined the same way: an ordered step list, key = hash(previous key, steps), an empty list keeps the previous key (T3 = T2 = T1 when empty); the recipe file has an explicit optional T3 container at the plot entry, with any registered action allowed (the maker is responsible for good practice, we for transparency), while the audit writes only filters, drops and removals by key (this amends ADR-089, ADR-024 and the contract text on wrangling in T3); equal keys imply identical data, different keys do not imply different data, and the T1 key must include the collection (today one key serves the whole recipe: verified); a step is written at T1 or T2 of a table or at T3 of a plot, chosen by the user, who is shown the lineage backwards to the roots and forwards to every descendant, with rows and samples before and after. The only automatic placement is "remove these entities from all tables" (T1 of every plotted table that has the key, whatever the recipe names it). The dialog lists every place a step will be written as a tick line stating exactly the write; nothing is written that is not ticked (safe mode), and tables with the same T1 definition are listed unticked. No tick boxes, no earliest-safe-point rule, no per-action locality registry; checks run on the data after Apply. No pinning, no hiding; labels and descriptions uniform on every recipe element. Missing values are a value: "not x" keeps them, "only x" and comparisons remove them, always reported. Full text: `.claude/design/home_audit_steps.md` sections 5a and 19.
+    non-standardised fields (that is a recipe change; wording corrected 2026-11-12, Eve). Help says so and advises "use the lowest reach that fits". **[HISTORICAL, 2026-11-14: there is no reach selector any more (point 12 and ADR-105); the help advice on reach no longer applies. The intended use in the first sentence holds.]**
 11. **Configuration (Eve, 2026-11-12, P1):** audit mode requires comparison, sessions and export (the user compares the effect, saves unfinished work, exports what is finished so others can verify); comparison requires the audit flag.
+12. **Where a step goes (Eve, 2026-11-12, P5, revised the same day):** an audit is every change with a recorded reason, expressed as the original recipe plus steps written into its own lists; a step changes data, not a plot. Every plot has a T3 and every table a T2, all defined the same way: an ordered step list, key = hash(previous key, steps) **[HISTORICAL: series of labelled parts, ADR-101, same day 17:19]**, an empty list keeps the previous key (T3 = T2 = T1 when empty); the recipe file has an explicit optional T3 container at the plot entry, with any registered action allowed (the maker is responsible for good practice, we for transparency), while the audit writes only filters, drops and removals by key (this amends ADR-089, ADR-024 and the contract text on wrangling in T3); equal keys imply identical data, different keys do not imply different data, and the T1 key must include the collection (today one key serves the whole recipe: verified); a step is written at T1 or T2 of a table or at T3 of a plot, chosen by the user, who is shown the lineage backwards to the roots and forwards to every descendant, with rows and samples before and after. The only automatic placement is "remove these entities from all tables" (T1 of every plotted table that has the key, whatever the recipe names it). The dialog lists every place a step will be written as a tick line stating exactly the write; nothing is written that is not ticked (safe mode), and tables with the same T1 definition are listed unticked. No tick boxes **[HISTORICAL: the tick lines of this same point hold, `home_audit_steps.md` 5a point 7, decided 2026-11-12 "safe mode"]**, no earliest-safe-point rule, no per-action locality registry; checks run on the data after Apply. No pinning, no hiding; labels and descriptions uniform on every recipe element. Missing values are a value: "not x" keeps them, "only x" and comparisons remove them, always reported. **[HISTORICAL: superseded by ADR-103, Eve 2026-11-14: the engine follows Polars, every filter states `na: keep|remove`.]** Full text: `.claude/design/home_audit_steps.md` sections 5a and 19.
+13. **Reason (Eve, 2026-11-12, P7):** free text, required, a good justification; no fixed categories (data-agnostic); the help suggests a hashtag convention (`#technical failure: sequencing run bad`) with examples; `home_audit_steps.md` section 19.
+14. **Import and recipe text (Eve, 2026-11-12, P9):** Import is its own functionality, on only by the configuration file and only for an authorised person; recipes normally come from a system manager's directory; protection is warn and validate, with one new rule in the existing recipe validation (formulas only from an allowed list of Polars operations, by function name), which also covers the load gate and Blueprint's Validate; `home_audit_steps.md` section 11.
+15. **Small items after the independent review (Eve, 2026-11-12):** remove by an attribute = select with the filter on a table that carries it, resolve to keys, remove by key; a plot is affected when its data differs; step order is the position in the dataflow; exact rule for the early-versus-late data check; limits of the first version (one key family); steps are built from named parameterised actions, never from formula text with user values; `exclusions.tsv` in the bundle; the older word T3 is used again (see point 12). Which samples a selector finds, the check on the plotted variable, the caption count for key-less plots, the entity noun, the action-registry oracle test and special datasets stay open (`home_audit_steps.md` section 16 item 7). Full text: `home_audit_steps.md` sections 4, 5a (points 10-14), 11, 16.
+16. **Development rules (Eve, 2026-11-12):** (a) during development a wrong recipe is corrected, never protected by a compatibility default or a shim, so that errors stay understandable; Claude may write recipes and the user messages for testing; (b) every step is complete, no half fixes; (c) the tests are adapted to the decided architecture **before** they are run, and each must fail for the right reason on the current code first, otherwise it cannot capture the problem; (d) the recipe graph is new shared code in `libs/utils` (`utils.recipe_graph`: pure, headless, tested), by the existing rule that a primitive needed by two domain libraries goes to `libs/utils` (`rules_test_lab.md` 2c); HOME and Blueprint both import it, and Blueprint's navigator is rebuilt on it so there is one source of truth (this supersedes in part the placement of the navigator in `blueprint_arch`, ADR-067 and ADR-074); HOME never calls Blueprint's screens. (f) Attrition per step, derived and never stored, composes the figure caption (Eve, "Ok proposal"); one reason per user action. (j) The recipe declares `data_engine` and `plot_engine` (required, unknown = failure, names carry the language, overrides later by collection and plot entry); the engines and versions are parts of the engine fingerprint. (i) One mechanism for every removal (Eve, 2026-11-12): a filter on a field, with the lineage showing every node where the field exists as tick lines; "remove by key" and "remove by attribute" are no longer separate kinds; the key is information (counts, population, suggestions, the join-break warning); drops use the same logic; the recipe graph knows the columns of every node; fail instead of warn (HOME rejects, BLUEPRINT reports); every table has T1, T2, T3 with or without a join and a dataset's own tier-2 is applied. See `home_audit_steps.md` 5a points 3, 18, 19 and section 9. (h) The audit step type `developer_raw_yaml` is removed (task AUDIT-RAWYAML-REMOVE-1); the node popup and the project overview are a popup in its own window built as a pure content function (position changeable later); the step compiler is defined in `home_audit_steps.md` section 2. (g) Confirmed by Eve 2026-11-12: the loader builds the recipe and stops on errors, the validator reports every problem (one rule set `check_recipe` in `libs/utils`, unknown keys are warnings **[HISTORICAL: unknown keys fail, point 16(i) the same day and ADR-100, DEC02, 2026-11-13]**); the read-only popup per node, kept open; permission to change `libs/transformer` (retire `decision_hash`, the persistence action, per-collection keys) with tests first; the rule texts reworded (Tier 1 dependencies, T3 in the contract); the configuration stage at the end. (e) Selecting by the value of a plotted variable is an ordinary audit step; the check C2 is withdrawn; transparency (reason, attrition table, caption count, original plot beside the audited one) lets the reader judge.
 
 **Alternatives not chosen.** Filtering the stored T1 file by key (cheaper, but not exact when a tier-1 step
 aggregates across samples); keeping per-plot propagation only (the failure above); showing levels to the user (too
@@ -5040,12 +5135,12 @@ after every key exclusion; a warning when samples are removed downstream of popu
 percentile, rank, top-N, pivot, summaries); a sample census; reason categories and the event log; "no effect" and
 zero-row statuses; export self-checks; a canonical hash; atomic cache writes. Proposed change, to confirm: stage = the
 table the user looks at (T1, T2 or plot) with a reach that depends on the stage, replacing the levels 0-3 by (stage,
-reach).
+reach). **[Settled 2026-11-12 by point 12 (P5) and P7: see ADR-105.]**
 
 **The software's role (Eve, 2026-11-11), issue #64:** the software informs, warns and lets the user decide; a risky
 choice needs a written reason that is recorded and exported; only technical problems block. Three levels since 2026-11-12 (info,
 warning, block; the level "confirm with a reason" is dropped, one reason per user action); a guard-rail registry (one module, one entry and one test per check) feeds
-the dialog, the help and the export; the NA rule (missing values are a visible, selectable value, never silent); a
+the dialog, the help and the export; the NA rule (missing values are a visible, selectable value, never silent) **[HISTORICAL in part: ADR-103, 2026-11-14; "never silent" holds, the `na` tick replaces the selectable value]**; a
 read-only lineage map in audit mode so the user understands how the recipe is built: it reuses the pure lineage data
 code of `blueprint_arch` but has its own renderer in HOME's own dialog (the cross-panel rule forbids mounting
 Blueprint's panel; Blueprint is not modified).
@@ -5079,4 +5174,174 @@ practice (declare only the ingredients a collection uses) goes into the docs, an
 
 **Open.** Wording of the reach options and kinds (to test with a user); manual key mapping and secondary keys
 (later); where the project overview opens; what stays of the existing right panel; the importer's verification legs
-with levels 0-2.
+with levels 0-2. **[HISTORICAL in part, 2026-11-14: the reach options and the levels 0 to 3 no longer exist (point 12, ADR-105), so "wording of the reach options" and "levels 0-2" no longer apply. The state of the other items is kept in `home_audit_steps.md` section 16, not here.]**
+
+
+## ADR-100: Recipe format version 1 (decided 2026-11-12 to 2026-11-14)
+
+**Status:** DECIDED by @evezeyl, decision by decision (DEC01 to DEC49, each dated in `.claude/design/recipe_format_spec.md` section 2.1). Recorded here on 2026-11-14 (ADR-SYNC-1) from the draft `.claude/design/adr_100_recipe_format_1_draft.md`, which keeps the per-item build table (checked against the code at `27f7a2e3`; not re-checked here). Eve reads this wording. Mostly BUILT on `feat/recipe-format-1`; items NOT BUILT are named below.
+**Supersedes:** ADR-013 and ADR-014 (DEC23, DEC24, DEC45); the last point of ADR-042 (an unquoted `on` is refused, DEC02 and check T07).
+**Amends:** ADR-090 points 1 and 3 (DEC34: order rules are required parameters; the new wording is in the draft, section "ADR-090, proposed new wording"); ADR-001 and ADR-004 (the `columns` rule, DEC14, DEC15, DEC32); ADR-041 point 1 (`output_fields` is gone; the rest is confirmed by DEC08); ADR-046 (`final_contract`); ADR-037 and ADR-063 (gallery taxonomy, DEC21, DEC47, DEC48); ADR-094 (one checker, DEC03); ADR-099 point 16(g) (unknown keys fail, DEC02).
+**Consistent with:** ADR-041 (containers), ADR-099 point 16 (development rules: correct a wrong recipe, no shim).
+
+**Context.** A recipe could be wrong without anyone knowing: the loader tolerated old keys and forms, unknown keys were ignored, actions had hidden defaults (missing values dropped, keys put first, the text `NA` read as missing), four type lists disagreed, and `final_contract` was a second hidden column selection. Eve's rule (spec, 2026-11-13): the recipe describes the science; what it specifies must be done; nothing may be hidden.
+
+**Decision.**
+1. **Scope and version.** Every recipe is in format 1, in the app and in the tests (DEC01). `spec_version: 1` is required; another version is refused and the message names the migration tool (DEC04). `data_engine: python-polars` and `plot_engine: python-plotnine` are required; an unknown engine fails (DEC05; `home_audit_steps.md` 5a point 21, 2026-11-12).
+2. **Strict file shape.** Unknown keys fail; old names are refused at once and the message names the new one; no compatibility default (DEC02). Containers follow ADR-041, a wrong form is refused with the corrected text (DEC08). ~~`label` on every element,~~ a missing `description` is advice only (DEC06). **[Corrected 2026-11-14 after review: DEC06 (`recipe_format_spec.md` line 92) says `description` on every element, a missing one is advice; `label` is the short name. It does not require `label` on every element.]** A `comment` key, `#` comments kept by every tool (DEC07). Schema-level `info`, `category`, `sub_category` dropped (DEC20). `is_primary_key` becomes `is_entity_key` (DEC13).
+3. **One checker** `check_recipe` in `libs/utils` for HOME, Blueprint, importer, gallery, scripts and tests, with profiles `run`, `build`, `gallery`, `audit` (DEC03, DEC18). HOME refuses a failing recipe; Blueprint reports and never blocks building (`home_audit_steps.md` 5a point 19, 2026-11-12). PARTLY BUILT: `ConfigManager` still repairs an unquoted `on` and unwraps fragments (draft row 40).
+4. **Fields and reading.** Strict import: only declared `input_fields` are read, a declared column missing from the file fails (DEC24, built `9bfdaf4c`). `type` is required and is a Polars dtype (DEC27). `null_values` and `strip` are always stated, no default (DEC28). Paths: no engine change, the deployment's `data_lookup` decides (DEC30). A float-to-integer cast that would drop decimals fails (DEC49).
+5. **Published columns.** `final_contract` and the schema `output_fields` are removed; the published columns are the last tier-1 step, `polars_select` or `polars_drop`; display names go in `labels` on the collection (DEC23). BUILT (cache version "4").
+6. **Actions.** Prefixes `polars_`, `modif_`, `step_` and a registry field `polars` (DEC31). A `polars_` action is exactly Polars, proved by a test against the direct call (DEC32). No hidden choice: a parameter that changes the result is required or has the Polars default (DEC33). Determinism is a required parameter (DEC34). One name per action (DEC35). No action returns the table unchanged on a missing parameter or column (DEC36). `polars_select`/`polars_drop` (DEC37), `polars_with_columns` (DEC38), `modif_filter` with `column`, `op`, `value`, `na` (DEC39, DEC29), `percentile` removed (DEC40), `polars_fill_nan`/`polars_drop_nans` added (DEC41), `scan_parquet`/`sink_parquet` engine-only (DEC42).
+   **[Note 2026-11-14: DEC41 (2026-11-13) also says that the other Polars methods without an action are deferred. That part no longer holds. Eve, 2026-11-14 (channel M77 point 4): start them now, without further decisions. `polars_fill_nan` and `polars_drop_nans` exist. Next: `head`, `tail`, `slice`, `limit`, `top_k`, `bottom_k`, `reverse`, `gather_every`, `with_row_index`, `remove`, the table aggregations (`sum`, `min`, `max`, `mean`, `median`, `std`, `var`, `quantile`, `count`, `null_count`, `first`, `last`), `rank`, then `join_asof`, `join_where`, `group_by_dynamic`, `rolling`, each as a `polars_` action under the rules of this point. See `tasks.md` for the state.]**
+7. **Where Polars can do it, the Polars action and nothing else** (Eve, 2026-11-13, relayed in `tmpAI/agent_channel.md` M56; commit `d07fe567`; later than DEC36). `polars_group_by` and `polars_str_splitn` replace `summarize`, `split_column`, `split_column_to_parts`; ~~`derive_categories` is removed;~~ **[Corrected 2026-11-14 after review: "`derive_categories` is removed as dead" in M56 point 2 is the remark of the session that relayed Eve's rule, not a decision of Eve. The spec (section 2.4, Q2, line 189) says "read it, then decide". The action is gone from the code. Its removal is OPEN, see below.]** `step_` is only `step_top_n_other`. BUILT: 41 actions (39 `polars_`, 1 `modif_`, 1 `step_`). The spec 7.5.1 count ("about 12 `step_`") is out of date.
+8. **Parameter names in `modif_` and `step_` actions.** One name per role (DEC15). ~~For the input column the later DEC39 (same day) holds: `column` (`modif_filter`; the code follows it, also `step_top_n_other`). DEC15's sentence "input columns are `columns` (a list)" is superseded on this point.~~ **[Corrected 2026-11-14 after review: the name of the input column is OPEN. DEC15 and DEC39 are both dated 2026-11-13 (`recipe_format_spec.md` lines 107 and 141), so neither is the later one. DEC15 says input columns are `columns` (a list). DEC39 gives `modif_filter` the parameter `column`. The code follows DEC39 (`modif_filter` and `step_top_n_other` take `column`). The draft lists this as discrepancy D2.]**
+9. **Plot entry.** A schema plotted directly applies its own tier 2 (DEC16; NOT BUILT in the engine, RECIPE-DATASET-TIER2-1). The plot entry holds `steps: {tier3: [...]}`; until the engine reads it a non-empty list is refused, P05 (DEC17; reader NOT BUILT, STAGE2-SPEC-1). `taxonomy` is on the plot entry (DEC21); gallery examples are standard recipes in profile `gallery`, five taxonomy axes, `geom` derived, the tag strip generated (DEC47, DEC48). Axis and legend titles default to the field `label` (DEC22): DECIDED, NOT BUILT (no code found; draft D3).
+10. **Security.** A bad recipe must not run code or read or write where it should not (DEC44). Formulas may use only an allowed list of Polars functions, by name (ADR-099 point 14, 2026-11-12; ~~FORMULA-SAFETY-1 of 2026-11-13 is the same decision~~ **[corrected 2026-11-14 after review: FORMULA-SAFETY-1 of 2026-11-13 is believed to be the same decision; Eve to confirm. `tasks.md` FORMULA-SAFETY-1 says her confirmation of option A, the allow-list, is still pending]**). The allow-list is BUILT (`fe856c26`, `libs/utils/src/utils/formula_check.py`); a time or size limit is still listed as open in `tasks.md` (FORMULA-SAFETY-1).
+11. **Process.** Migration by one tool with a golden baseline and one cache bump (DEC43; built as four runs A to D, draft D5). Data-science errors of a recipe are fixed, not documented (DEC10; NOT BUILT, RECIPE-ST22-FIX-1). The two legacy recipes are removed (DEC12).
+
+**OPEN, awaiting Eve.**
+- **`categorical`.** Record 1: DEC27 (Eve, 2026-11-13, `recipe_format_spec.md`:124): `categorical` is refused with the message "this was String". Record 2: commit `e9ac815f` (2026-11-13 22:15, an agent): the migration writes `Categorical` ("String would change the level order of plots"); 75 shipped fields hold `type: Categorical`. No later record by Eve settles it.
+- **Whether Blueprint may author a plot entry's tier 3.** Record 1: ADR-082 point 4 and ADR-099 header (2026-11-11): "BLUEPRINT never authors T3". Record 2: `home_audit_steps.md` 5a point 15 (2026-11-12) and DEC17 (2026-11-13): a recipe maker may write any registered action in the tier-3 list. The Blueprint form is not decided.
+- **`column` or `columns` for the input column of `modif_` and `step_` actions** (point 8). Record 1: DEC15 (2026-11-13): `columns`, a list. Record 2: DEC39 (2026-11-13, same day): `modif_filter` takes `column`; the code follows it. Added 2026-11-14 after review.
+- **Whether FORMULA-SAFETY-1 (2026-11-13) and ADR-099 point 14 (2026-11-12) are one decision** (point 10), and **a time or size limit for formulas** (`tasks.md` FORMULA-SAFETY-1). Added 2026-11-14 after review.
+- **`derive_categories`** (point 7). Spec Q2 (line 189): "read it, then decide". The action is gone from the code; no record of Eve deciding it. Added 2026-11-14 after review.
+- The recommendations R1 to R11 of the spec (section 2.3) are not decisions. (The spec lists them as "Recommended, awaiting Eve".)
+
+**Consequences.** Every recipe says what it does; an error names the place and the fix. Rule files and documents that still describe format 0: `.claude/design/decisions_2026-11-14/adr_sync_changes.md`.
+
+
+## ADR-101: Node keys are a series of labelled parts (decided 2026-11-12)
+
+**Status:** DECIDED by @evezeyl on 2026-11-12 (`.claude/design/home_evidence/home_hash_model_2026-11-12.md` section 5, points 1 to 5; commit `4e1407bb`, 17:19). Recorded here 2026-11-14 (ADR-SYNC-1). NOT BUILT (task KEYS-NODE-1; the precise parts need the recipe graph, RECIPE-GRAPH-UTILS-1).
+**Supersedes:** ADR-089 decision points 1 and 2 (a key as a hash of the upstream key and inputs; the "plot input" key); the key formula of ADR-099 point 5 ("SHA-256(upstream key + the canonical list of operations)"); the wording `hash(previous key, steps)` of ADR-099 point 12 and `home_audit_steps.md` 5a point 15 (same day, earlier). Retires `decision_hash` (ADR-031, ADR-069, ADR-089 consequence 2).
+**Keeps:** ADR-089 points 3 to 7 (fail-safe default, file-set hash, in-memory check, stored Tier 2, every read key-checked).
+
+**Context.** Verified 2026-11-12: today one T1 key serves the whole recipe (three collections, three tables, one stored key), there is no key for T3 or for audit steps, no content hash, and two mechanisms (`decision_hash` and the keys).
+
+**Decision.**
+1. **Two families.** Identity hashes say "is this the same project state": `R` (recipe file set, checkable with `sha256sum`), `D` (content of all data files), `E` (declared `data_engine` and `plot_engine` with versions and the cache version); `session_key = R[:12]:D[:12]`. They never decide what to rebuild. Node keys decide what to rebuild, in every deployment mode.
+2. **A node key is a series of labelled parts joined in execution order, not hashed again:** `T1 = E . rC . dC . [a1]`, `T2 = key(T1) . [s2] . [a2]`, `T3 = key(T2) . [s3] . [a3]` (`rC`, `dC`: definition and data of collection C; `s`: recipe steps; `a`: audit operations, without reasons, dates or initials). An empty part is left out, so an empty T3 has the key of T2 and an empty T2 the key of T1. Each part is 128 bits (32 hex characters). The key is stored in the file and compared on read; a mismatch recomputes and removes the stale file.
+3. **Precise parts** come from the recipe graph in `libs/utils`, built first; a collection whose inputs cannot be listed safely keeps a coarse part (fail-safe). A property test is the gate: changing any input of a collection changes its key.
+4. **Data hash:** the full content, once per session; no stat cache now; later maybe a pre-hash when new data arrives.
+5. **On demand or at export:** a content hash `c` of a frame (is a plot really affected); `A` (ordered audit operations); `Rec` (steps with reasons, initials, dates and the event log: tamper evidence); `AR` (the audit recipe file).
+6. **Identity rule:** equal keys imply identical data; different keys do not imply different data. A plot is affected when the content of its T3 differs between the original and the audit run (`home_audit_steps.md` 5a point 10).
+7. `decision_hash` is retired after checking that nothing else calls it; the plot input key (documented, never built) is dropped.
+
+**Consequences.** Property tests first (same inputs same key; any upstream change changes a part; an empty list adds no part; order matters; equal keys give equal content). `docs/foundations/reproducibility_hash_schema.qmd` and the ADR-089 text describe the older model. UML: `DM-KEYS`, `DM-KEYS-CHAIN`, `DM-KEYS-USE`, `DM-KEYS-EXPORT`.
+
+
+## ADR-102: A join keeps the declared key types; no join step is skipped silently (2026-11-14)
+
+**Status:** DECIDED by @evezeyl on 2026-11-14 (`.claude/tasks/tasks.md` JOIN-KEY-TYPES-1). Recorded here 2026-11-14 (ADR-SYNC-1). BUILT: the cast removed (`bddaf76a`), build checks extended (`77538c54`), checker J09 to J11 (CHECKER-JOIN-KEYS-1), Blueprint preview gives the build's verdict (JOIN-PREVIEW-STRICT-1). Point 4 is decided as a rule (no join step is skipped without a message); whether a same-key self-join is refused or runs as written with an advice is open (see below).
+**Supersedes:** ADR-050 section "Join key normalisation" and the rationale sentence "`String` cast before join is the safe common denominator". The rest of ADR-050 (Path A, Path B, the ordering law) stays.
+
+**Context.** The orchestrator cast every join key to String before the join. Run 2026-11-14: a key declared Float64 merges "001", "1" and "1.0" into one sample (4 rows from 2); the shipped `complex_template` declared `sample_id` as Float64. The assembler skipped every first join step whose right table is the base table ("redundant init"), including a real self-join, without a message.
+
+**Decision.**
+1. **A join keeps the types the recipe declares.** The hidden cast is removed. A change of type is a step written in the recipe (`polars_cast`; before a join it changes only the left table).
+2. **Differing key types fail.** The build refuses differing types, a key column missing on one side, and `left_on`/`right_on` of unequal length (`77538c54`). The checker refuses them at load: J09 (types differ), J10 (key not declared on a side), J11 (unequal lengths). The checker gives no J09 when a type cannot be known from the declarations; the build still refuses differing types when it runs.
+3. A non-key column present in both tables of a join is an error (J08, DEC19, ADR-100). PARTLY BUILT: the check needs the recipe graph.
+4. **No join step is skipped silently** (Eve, 2026-11-14: "No silent error: that is the rule"; "self-join skipped silently" is in her list of flags to fix, `tmpAI/coordinator/progress_2026-11-14_session3.md` "EVE DIRECT 00:30").
+5. **A float join key is not silent either** (same list, "float join key").
+
+~~**Built on another branch, not merged into `feat/recipe-format-1` at `70b01370`:**~~ **[Corrected 2026-11-14 after review: merged into `feat/recipe-format-1` as `af5560a9` (2026-11-14 20:04), with `38fa288e` (advice J12 made true for every self-join). The merge message says that whether a same-key self-join should be refused instead is still open for Eve. See `tasks.md` for the current state.]** Branch `task/join-flags`: a first join step whose right table is the base table runs as written, with the checker advice J12 for a self-join on the same key (`b27f89e4`); the advice J13 for a float join key and both advices shown in HOME's recipe choice and Blueprint's Validate (`7be8bf76`); the complex template's key declared String (`8a534a4c`).
+
+**OPEN, awaiting Eve.**
+- **Form of point 4.** Record 1: proposal D9 (`.claude/design/decisions_2026-11-14/proposals_for_eve.md`:115-126, 2026-11-14): fail with a plain message, recommended by all three viewpoints; whether a real self-join on different keys is allowed is left to Eve. Record 2: the build on `task/join-flags` (`b27f89e4`, merged as `af5560a9`): the step runs as written, with advice J12. No record of Eve choosing between them was found.
+- D7 (one join-key rule in `libs/utils`, or three copies with parity tests) and D8 (confirm the refusal J10) are listed as open in channel M72.
+- Path C of ADR-050 and "all schemas as ingredients" are listed as silent paths to remove (`recipe_format_spec.md` section 16, J04, issue #76); not built. **[2026-11-14 after review: this item waits for no choice of Eve. A silent path is an error by ADR-104 point 1; only the build is missing.]**
+
+**Consequences.** The 14 baseline records changed only by the type of `sample_id`; no joined table or plot changed (`tasks.md` JOIN-KEY-TYPES-1). Statements of the removed cast remain in rule and knowledge files (DOC-JOIN-CAST-1).
+
+
+## ADR-103: Missing values in filters follow Polars; every filter states `na` (2026-11-14)
+
+**Status:** DECIDED by @evezeyl on 2026-11-14 (channel `tmpAI/agent_channel.md` M65; recorded in `.claude/tasks/tasks.md` NA-RULE-63 and `.claude/design/home_audit_steps.md` section 19, commit `412e7d4a`). The tick replacing "NA (missing)" was decided the same day (M69, quoted in `home_audit_steps.md` section 19 and `tasks.md` NA-RULE-63). The follow-up questions Q-NA3 to Q-NA6 were settled the same day (points 7 to 10, added after review). Recorded here 2026-11-14 (ADR-SYNC-1).
+**Supersedes:** the rule of 2026-11-12 ("missing values are a value: 'not x' keeps them, 'only x' and comparisons remove them"; "NA (missing)" as a selectable value; "NaN follows the same rule"), written in ADR-099 point 12, the ADR-099 paragraph "The software's role", `home_audit_steps.md` 5a point 14 and section 19.
+**Consistent with:** ADR-100 (DEC28 reading of missing values, DEC29 `na` required, DEC41 NaN actions).
+
+**Context.** The 2026-11-12 rule said `!=` and "none of" keep rows with a missing value. Checked by running (Polars 1.40.1): Polars removes them for `!=` and "not in" too, and NaN is a number larger than every number (`> 1` keeps NaN rows).
+
+**Decision.**
+1. **The engine follows Polars.** `==`, `!=`, "in", "not in", `>`, `<`, between all remove rows with a missing value unless the step says otherwise.
+2. **Every filter step states `na: keep|remove`**, required, no default (`modif_filter`). "Keep" adds `| is_null()`; for equality filters it equals Polars `ne_missing` or `is_in(nulls_equal=True)`; Polars has no such switch for `>`, `<`, between.
+3. **All filter options are offered; the information is clear.** HOME may preselect by operator (`!=`, "not in": keep; others: remove) as a visible tick the user can flip. The tick replaces "NA (missing)" as a selectable value in value lists. The tick and the export translator ship together (Eve 2026-11-14: the frozen files may be edited for this).
+4. **Counts and warnings.** Blueprint and the checker show the number of missing and NaN rows at the step and warn when the column has missing values and the operator is `!=` or "not in". The sentence names what happens: "N rows have no value in <column>: they are kept / removed".
+5. **NaN is reported on its own** ("N rows have a failed calculation"), never folded into "missing"; it is treated by explicit steps (`polars_fill_nan`, `polars_drop_nans`); `na` does not touch NaN.
+6. **Documentation is part of the work:** help text and user documentation state what an empty cell, NaN and the text "NA" mean, the Polars equivalents, and that `na: keep` adds rows Polars would drop.
+
+**Build status.** `na` required in `modif_filter`: BUILT (ADR-100 point 6). Part 1 (tests of the rule in the engine, HOME table and plot; `libs/utils/src/utils/missing_values.py`; help and docs): BUILT, merge `4b41b719`. Part 2 (the tick with counts in HOME's filter dialog; HOME table and plot read `na`; the translator writes the chosen `na`): built on branch `task/na-rule-b` (`c2cf1851`, `d3938877`, `22a0dc14`), not merged into `feat/recipe-format-1` at `70b01370` (see `tasks.md` NA-RULE-63 for the current state).
+~~**Not settled here:** Q-NA3 to Q-NA6 (old steps without `na`, exploration filters, "keep" for comparisons, which table is counted) are listed in `tasks.md` NA-RULE-63 as waiting; `d3938877` carries an old step as `remove`.~~ **[Corrected 2026-11-14 after review: Q-NA3 to Q-NA6 are decided.]**
+
+**Follow-up questions, DECIDED by @evezeyl on 2026-11-14.** Source: her words relayed in channel message M70 ("four of my six NA questions needed no question"), quoted in `tmpAI/coordinator/progress_2026-11-14_session3.md` line 161: the answers follow from her decision above. They are the recommendations of `.claude/design/decisions_2026-11-14/proposals_for_eve.md` lines 161-164, listed to build in channel M77 point 2.
+7. **Old steps (Q-NA3).** A HOME filter row, a saved session or an old audit step that has no `na` is carried as `na: remove`. That is what it did when it was made, so no result changes. The step says so when it is shown and exported.
+8. **Every filter (Q-NA4).** Every filter in HOME, in exploration and in audit, makes the user choose `na`; every audit step records the choice.
+9. **Every operator (Q-NA5).** The choice is offered for every operator, `>`, `<` and between included; the sentence says what happens.
+10. **The count (Q-NA6).** The count is taken on the rows the filter acts on (the table the filter runs on).
+
+
+## ADR-104: No silent error; the recipe is the scientific document (2026-11-14)
+
+**Status:** DECIDED by @evezeyl on 2026-11-14, in the evening (the channel message and the progress note label it "2026-11-15 00:30" by a clock error, corrected by the coordinator) (channel M72 points 1, 3, 5, 6; `tmpAI/coordinator/progress_2026-11-14_session3.md` "EVE DIRECT 00:30" points 1, 4, 5, 6, 8). Recorded here 2026-11-14 (ADR-SYNC-1). Mostly NOT BUILT (tasks named below).
+**Builds on:** ADR-077 (fail-fast over silent suppression), ADR-099 "The software's role" (2026-11-11: inform, warn, let the user decide; only technical problems block), the RULE of `recipe_format_spec.md` (2026-11-13: what the recipe specifies must be done).
+**Contradicts, later wins:** ADR-098 point 4 (a filter on a column absent from the view is skipped); ~~its replacement waits for D1 below.~~ **[Corrected 2026-11-14 after review: a filter that cannot run gives a plain error (point 1); D1 is decided, point 7.]**
+**Later sources, same day (added after review):** channel M74 points 1 and 2 (Eve's words, relayed by the review session), M76 ("Decided by Eve"), M77 points 2 and 3 (points 3, 4 and 7 below).
+
+**Decision.**
+1. **"No silent error: that is the rule."** The flags found by the proposals and the visualisation plan must be fixed, not only listed: the plot ignores a filter on a dropped column; plot `in`/`not_in` compares as text; the visualisation library's silent paths (unknown filter operator or column among them); HOME accepted what the gallery refused; a raw drawing error; a float join key; a self-join skipped silently; a failing gallery example shown; a stale Blueprint view.
+2. **The recipe is the scientific document.** The app makes what the recipe says happen and adds warnings that help build good recipes; it does not overwrite what the recipe states.
+3. **A seed fixed in the recipe holds** (R4). HOME, the export and the gallery must use the recipe's `random_state`. NOT BUILT: today HOME replaces it by a seed drawn per session (verified by running, `tmpAI/results.md` section 1; task SEED-HOLDS-1; see `tasks.md` for the current state).
+   **A seed pinned by an audit step is the same everywhere** (Eve, 2026-11-14, channel M74 point 1; added after review): in the HOME table and plot, the results bundle, the reproducibility export and its re-run. It is tested: one test per place, and a mutation check (change the seed in one place and a test must fail). Eve's yes covers the frozen `export_handlers.py`, edited through a builder (M76).
+4. **Every operator the engine has must be usable from the screens** (HOME filter dialog, audit, export translation). NOT BUILT: gaps found by running (`between` not translated, `closed: none` lost on Send to Audit, Boolean filters keep wrong rows, Date and Boolean steps refused, comparisons on text and dates not offered; `tmpAI/results.md` section 5; task OPERATORS-SCREENS-1; see `tasks.md` for the current state).
+   **All operators are offered in HOME** (Eve, 2026-11-14, channel M74 point 2, M76 and M77 point 3; added after review). `between` is kept: it is a real Polars operator (`Expr.is_between(lo, hi, closed=...)`), offered with its four `closed` values (`both`, `left`, `right`, `none`). The export translator must carry `between`, its `closed` value and the chosen `na`. Today "Send to Audit" loses `closed: none`; this must be fixed. The frozen `t3_translator.py` and `export_handlers.py` may be edited for this, through a builder.
+5. **Reviewers break the code themselves** to see a test fail, in every review.
+6. **The ADR log follows the latest decisions and is unambiguous;** where records disagree, the source is found and the latest decision holds.
+7. **A filter value has the type of its column (D1, "Q9 Option 1"; Eve, 2026-11-14, channel M76 from the review session and M77 point 2; added after review).** The filter panel keeps a map from the text it shows to the real value, and stores the real value in the column's type. The engine stays strict: a value of another type gives a plain error. The checker checks a value against the declared type. Old audit nodes are given their type at export, from the dtype they carry. The screen shows the column's type. On a numeric column the comparison operators use the number box, also when the plot uses the column as a discrete axis. The type comes from the schema of the table at that node, not from a sample of rows. Native widgets per type ("Option 3") are not chosen, because a user picks several values with `>` and `<` (for example "> 1998 and < 2003"). Eve: keep it as simple as possible. **Not part of this decision:** Date and Boolean comparisons. Eve asked for the options first; nothing is built for them (M76). NOT BUILT: see `tasks.md`.
+
+**OPEN, awaiting Eve.**
+- **Seed when the recipe writes none.** Record 1: ADR-090 point 2 and `rules_viz_factory.md` section 8 (2026-11-05): default seed 0; the gallery and the export use 0. Record 2: ADR-097 point 2 (2026-11-09) and HOME's code: one seed drawn per session and plot, recorded in `effective_run.yaml`. Run 2026-11-14: the recorded seed does not reproduce the exported plot (`tmpAI/results.md` section 2).
+- ~~**D1, a filter value of another type than its column** (`.claude/design/decisions_2026-11-14/proposals_for_eve.md`, FILTER-UNIFY-1): the engine converts it (coordinator's recommendation, with a plain error when it cannot) or refuses it (scientist viewpoint). Record against record: ADR-098 point 4 and VizFactory skip such a filter today; point 1 above forbids a silent skip.~~ **[Corrected 2026-11-14 after review: D1 is DECIDED, point 7 above. It is no longer open.]**
+- **Date and Boolean comparisons in the filter panel** (point 7). Eve asked for the options before any choice; nothing is built (M76, 2026-11-14). Added 2026-11-14 after review.
+
+
+## ADR-105: Audit acts along the lineage, chosen by the user; exploration acts only on the data viewed (2026-11-12, confirmed 2026-11-14)
+
+**Status:** DECIDED by @evezeyl. The design: `.claude/design/home_audit_steps.md` sections 3, 4 and 5a (2026-11-12, P1, P3, P5, P7; 2026-11-13, point 22). Confirmed 2026-11-14 as R1 (channel M73, her words: "We decided the lineage for audit. For exploration it is only the data that is viewed. That is the rule."). Recorded here 2026-11-14 (ADR-SYNC-1). NOT BUILT (stage 2, STAGE2-SPEC-1; the recipe graph, RECIPE-GRAPH-UTILS-1).
+**Supersedes:** ADR-099 point 4 (reach selector, levels 0 to 3, "remove samples by ID is early, at the sources"), point 6 as a mechanism (the key is information, not mechanism), point 7 sentence "Drops are not recommended outside plot level"; ADR-098 points 7 and 8 (a step propagated by "this plot / all / all except"); ADR-049 (propagation dialog, `plot_scope`).
+**Keeps:** ADR-099 points 1, 2, 3, 8 to 16 as read in its reading guide.
+
+**Decision.**
+1. **Exploration** acts only on the data being viewed: a filter or column choice changes the table of the stage shown, nothing else; it is never saved or exported. Exploration has one plot, the Result, immutable (P2, handoff 2026-11-12).
+2. **Audit** is the original recipe plus audit steps; a step changes data, not a plot. The user picks a field, an operator and a value or list; the software lists, as tick lines, every node of the lineage (backwards to the roots, forwards to every descendant) where the field exists; what is ticked is written, nothing else (5a points 3 and 7). The only automatic placement is "remove these entities from all tables". A step is written at T1 or T2 of a table or at T3 of a plot (5a point 4).
+3. **Two kinds of step:** filter rows by a value or a list, and drop a column; drops follow the same logic as filters (section 4; 5a point 6; P3). The entity key is information (counts, suggestions, the join-break warning), not a mechanism; a recipe without a declared key keeps the full audit (5a points 3 and 18).
+4. **One candidate step at a time**, previewed in a modal dialog; Apply with a reason adopts it; Cancel changes nothing (P3, section 3).
+5. **Every stage can be viewed**, original and audit T1, T2 and T3; audit filters apply to the audit table shown; the originals never change; an audit never removes or overrides a recipe step (P7, section 3).
+6. **The audit steps live in a copy of the recipe**, which is the source of truth, with an append-only event log; the copy minus its marked audit steps must equal the original, otherwise it blocks (5a point 22, 2026-11-13).
+7. A plot is affected when the content of its T3 differs; the order of steps is their position in the dataflow; checks run after Apply (5a points 10 to 12).
+8. **Flags:** audit mode requires comparison, sessions and export; comparison requires the audit flag (P1, section 3).
+
+
+## ADR-106: The visualisation library follows the recipe standard (2026-11-14)
+
+**Status:** DECIDED by @evezeyl on 2026-11-14, in the evening: "V1 to V10 are OK as recommended" (channel M72 point 2; `tmpAI/coordinator/progress_2026-11-14_session3.md` "EVE DIRECT" point 2, both labelled 2026-11-15 by a clock error). The plan and its evidence: `.claude/design/decisions_2026-11-14/viz_plan_for_eve.md` section 5. Recorded here 2026-11-14 (ADR-SYNC-1). BUILT: V5 only (VIZ-STANDARD-1, merge `70b01370`). The rest is NOT BUILT (task VIZ-STANDARD-1).
+**Replaces:** the "Artist Parity Mandate" of `.claude/rules/rules_viz_factory.md` section 1 ("1:1 Functional Parity ... MUST"), written only in the rule file (commit `342f7980`, 2026-04-17) and never in this log. Eve approved the rule-file change with V9.
+**Corrects a citation:** the rule files cite ADR-035 for Polars parity (`rules_data_engine.md` section 5) and ADR-036 for plotnine parity (`rules_viz_factory.md` section 1), and ADR-083 "Refines ... ADR-036 (Artist parity)". **ADR-035 is the gallery taxonomy and ADR-036 the ID sanitation pivot; neither holds a parity decision.**
+**Consistent with:** ADR-100 (one checker, no hidden choice, `plot_engine` declared), ADR-104 (no silent error).
+
+**Context.** Verified 2026-11-14 (plan section 3): 191 components (125 pass-through, 66 with own logic); layer parameters never judged; seven silent paths (a mistyped spec key or an unknown filter operator changes the picture without a message); HOME accepted a parameter the gallery refused; a drawing error reached the user as raw text; `plot_engine` read by nothing; 0 of 194 test recipes in format 1 and the integrity suite could not run.
+
+**Decision** (the recommendation of each question, accepted):
+1. **V1** A registry field `exact` / `modified` / `own`, shown in the help and the checker; no component is renamed.
+2. **V2** An `exact` component equals the direct plotnine call, proved by a test for each; a `modified` one states its change.
+3. **V3** Parameter lists are read from plotnine, in two steps: a compare test first, then reading from plotnine with a hand overlay for descriptions and choices.
+4. **V4** One strict rule set for layer parameters (unknown, required, shape, allowed values), shared with the data steps, used by the checker and the engine; after V3.
+5. **V5** The same full check at HOME as in the gallery (BUILT).
+6. **V6** The silent paths become errors; ~~the two filter paths wait for D1 (ADR-104).~~ **[Corrected 2026-11-14 after review: D1 is decided (ADR-104 point 7: values typed at the source, the engine strict with a plain error). The two filter paths (a filter with an unknown operator, a filter with an unknown column: both draw all rows today) no longer wait; they close when the plot uses `modif_filter` (plan section 7, step 6). See `tasks.md` VIZ-STANDARD-1 for the state.]**
+7. **V7** One error form: "what, which plot and layer, how to fix".
+8. **V8** The factory refuses a plot engine it does not implement; the export records the plotnine version.
+9. **V9** No parity "MUST": what is registered is exact, what is missing is listed, a test reports new plotnine objects at an upgrade; both spellings `color` and `colour` are accepted.
+10. **V10** The 194 old test recipes and the dead integrity suite are dropped; each component's YAML example becomes its test, through a small generated recipe. This replaces RECIPE-MIGRATE-1 for those files.
+
+**Not decided here:** V11 (the seed) and V12 (order of work). The seed: ADR-104 (a recipe seed holds; the default is OPEN).
+**Polars side:** the "Polars Parity Mandate" of `rules_data_engine.md` section 5 is qualified by ADR-100 (DEC32: a `polars_` action is exactly Polars; DEC41: Polars methods without an action are deferred **[no longer holds, 2026-11-14: Eve said to start them now, channel M77 point 4, see the note under ADR-100 point 6]**). Whether the mandate is withdrawn like V9 is not recorded: Eve to confirm in the rule file.
