@@ -18,7 +18,7 @@ The central engine for data wrangling and Phase 4 relational assembly. It enforc
 - `test_action_recipe_pairs.py` - [Test]: every registered action has its 1:1:1 pair (recipe and data file in `tests/data/`); the pair runs through ingestion and the wrangler and equals the direct Polars call.
 - `debug_wrangler.py` - [Dev Tool]: CLI runner that wrangles one format 1 recipe and writes the result as a TSV (`@verify` evidence). Entry: `main()`.
 - `debug_assembler.py` - [Dev Tool]: CLI runner for multi-source assembly (the join's last tier-1 step publishes the columns). Entry: `run_assembler_debug()`.
-- **Actions (`actions/`)**: `polars_calls.py` holds the `polars_<name>` actions (exactly the Polars call), `modified.py` the `modif_<name>` actions (today `modif_filter`), `composite.py` the `step_<name>` actions (today `step_top_n_other`), `base.py` the `register_action` decorator and the form schemas (`ACTION_SCHEMAS`).
+- **Actions (`actions/`)**: `polars_calls.py` holds the `polars_<name>` actions (exactly the Polars call), `polars_aggregations.py` the twelve whole-table aggregations (`polars_sum` ... `polars_last`), `modified.py` the `modif_<name>` actions (today `modif_filter`), `composite.py` the `step_<name>` actions (today `step_top_n_other`), `base.py` the `register_action` decorator and the form schemas (`ACTION_SCHEMAS`).
 - `Anchor (anchor.py)`: Tier 1 and Tier 2 disk anchors, written and read by the engine and never named in a data analysis recipe.
 - **Reactive State (Tier 3)**: Transient views generated via Predicate Pushdown. Supports **Gated Reactivity** via the `btn_apply` trigger, allowing for side-by-side inspection in **Comparison Mode** (T2 reference vs T3 active).
 - **Path Authority**: Persistence locations (Tiers 1-3) are determined by `config/connectors`, decoupling hardware from the UI.
@@ -113,7 +113,7 @@ All 41 actions available for use in data analysis recipe `wrangling` and `steps`
 
 | Category | Actions |
 |---|---|
-| **Aggregation** | `polars_group_by`, `step_top_n_other` |
+| **Aggregation** | `polars_count`, `polars_first`, `polars_group_by`, `polars_last`, `polars_max`, `polars_mean`, `polars_median`, `polars_min`, `polars_null_count`, `polars_quantile`, `polars_std`, `polars_sum`, `polars_var`, `step_top_n_other` |
 | **Analytical** | `polars_all_horizontal`, `polars_any_horizontal`, `polars_cum_count`, `polars_cum_sum`, `polars_describe`, `polars_max_horizontal`, `polars_mean_horizontal`, `polars_min_horizontal`, `polars_shift`, `polars_sum_horizontal` |
 | **Cleaning** | `polars_coalesce`, `polars_drop_nans`, `polars_drop_nulls`, `polars_fill_nan`, `polars_fill_null`, `polars_interpolate`, `polars_unique` |
 | **Derivation** | `polars_with_columns` |
