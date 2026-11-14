@@ -70,7 +70,7 @@ wrangling:
         counts: "pl.col('gene').count()"
 ```
 
-A join is written in the `joins` block (`steps: {tier1: [polars_join, ..., polars_select]}`). Every action name starts with `polars_`, `modif_` or `step_`, and a parameter that changes the result is written in the recipe: there is no hidden default. See `docs/foundations/data_contracts_adr.qmd`.
+A join is written in the `joins` block (`steps: {tier1: [polars_join, ..., polars_select]}`). Every action name starts with `polars_`, `modif_` or `step_`, and a parameter that changes the result is written in the data analysis recipe: there is no hidden default. See `docs/foundations/data_contracts_adr.qmd`.
 
 > [!NOTE]
 > If `tier2` is omitted, the system invokes **Identity Logic (ADR-014)**, passing the refined Tier 1 data directly to the visualization engine.

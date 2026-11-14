@@ -60,7 +60,7 @@ Runs the Tier 1 wrangling path from a data analysis recipe against a dataset. Mi
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
-    --data-analysis-recipe libs/transformer/tests/data/polars_str_strip_chars_data_analysis_recipe.yaml
+    --data-analysis-data analysis recipe libs/transformer/tests/data/polars_str_strip_chars_data_analysis_recipe.yaml
 
 # Override data source
 ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
@@ -69,7 +69,7 @@ Runs the Tier 1 wrangling path from a data analysis recipe against a dataset. Mi
 
 # Write output TSV
 ./.venv/bin/python libs/transformer/tests/debug_wrangler.py \
-    --data-analysis-recipe libs/transformer/tests/data/polars_unique_data_analysis_recipe.yaml \
+    --data-analysis-data analysis recipe libs/transformer/tests/data/polars_unique_data_analysis_recipe.yaml \
     --output tmp/my_test_output.tsv
 
 # Run only tier1 or tier2

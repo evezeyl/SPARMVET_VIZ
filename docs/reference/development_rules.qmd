@@ -228,7 +228,7 @@ This registry tracks the purpose, inputs/outputs, and core logic of the various 
 3. **Dynamic Decorator Loading (`@register_action`)**: 
    - Rule scripts (like `libs/transformer/src/transformer/actions/modified.py`) are passively initialized through the local module directory `__init__.py`. This executes their `@register_action(name)` block to populate the global `AVAILABLE_WRANGLING_ACTIONS` dictionary upon app boot.
 4. **The Last Tier-1 Step as a Safe `.select()` Guard**:
-   - The published columns of a join are its last tier-1 step, a plain `polars_select` (or `polars_drop`). It mimics the SQL/Polars `SELECT` command, pruning column noise from intermediate joins and acting as the primary defense against unexpected metadata drift. `final_contract` and `output_fields` no longer exist (recipe format 1).
+   - The published columns of a join are its last tier-1 step, a plain `polars_select` (or `polars_drop`). It mimics the SQL/Polars `SELECT` command, pruning column noise from intermediate joins and acting as the primary defense against unexpected metadata drift. `final_contract` and `output_fields` no longer exist (data analysis recipe format 1).
 5. **The `spec` Dict Unpacking Technique**:
    - Every registered decorator exclusively accepts `(lf: pl.LazyFrame, spec: Dict[str, Any])`. Direct parameters extraction (like `spec.get("separator", ",")`) must occur inside the wrapper body to guarantee homogeneity in the Registry call signatures.
 6. **`ui_schema` kwarg in `@register_action` and `@register_plot_component` (ADR-075)**:

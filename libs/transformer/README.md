@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The central engine for data wrangling and Phase 4 relational assembly. It enforces the data contracts (recipe format 1) by cleaning raw data and joining disparate sources into a single, tidy Polars DataFrame ready for visualization.
+The central engine for data wrangling and Phase 4 relational assembly. It enforces the data contracts (data analysis recipe format 1) by cleaning raw data and joining disparate sources into a single, tidy Polars DataFrame ready for visualization.
 
 ## Documentation
 >
@@ -19,7 +19,7 @@ The central engine for data wrangling and Phase 4 relational assembly. It enforc
 - `debug_wrangler.py` - [Dev Tool]: CLI runner that wrangles one format 1 recipe and writes the result as a TSV (`@verify` evidence). Entry: `main()`.
 - `debug_assembler.py` - [Dev Tool]: CLI runner for multi-source assembly (the join's last tier-1 step publishes the columns). Entry: `run_assembler_debug()`.
 - **Actions (`actions/`)**: `polars_calls.py` holds the `polars_<name>` actions (exactly the Polars call), `modified.py` the `modif_<name>` actions (today `modif_filter`), `composite.py` the `step_<name>` actions (today `step_top_n_other`), `base.py` the `register_action` decorator and the form schemas (`ACTION_SCHEMAS`).
-- `Anchor (anchor.py)`: Tier 1 and Tier 2 disk anchors, written and read by the engine and never named in a recipe.
+- `Anchor (anchor.py)`: Tier 1 and Tier 2 disk anchors, written and read by the engine and never named in a data analysis recipe.
 - **Reactive State (Tier 3)**: Transient views generated via Predicate Pushdown. Supports **Gated Reactivity** via the `btn_apply` trigger, allowing for side-by-side inspection in **Comparison Mode** (T2 reference vs T3 active).
 - **Path Authority**: Persistence locations (Tiers 1-3) are determined by `config/connectors`, decoupling hardware from the UI.
 
@@ -62,9 +62,9 @@ joins:
 
 ### Data analysis recipe Safeguards (ADR-012b)
 
-- **The Boolean Shield**: To prevent the YAML parser from misinterpreting `on:` as `True`, always write `'on':` with quotes; the recipe checker refuses an unquoted `on`.
+- **The Boolean Shield**: To prevent the YAML parser from misinterpreting `on:` as `True`, always write `'on':` with quotes; the data analysis recipe checker refuses an unquoted `on`.
 - **Relational Strategy**: When joining multiple 'Long' format datasets (e.g., AMR + Virulence), prefer a semi or anti `polars_join` (`how: semi` / `how: anti`) or a tier-2 aggregation to keep the row count manageable. A non-key column carried by both tables of a join is refused (Polars would silently rename one).
-- **Flat-list rejection (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** A `wrangling:` value that is a flat list (e.g. `wrangling: [{action: ...}]`) is refused by the recipe checker (and by `_resolve_tier()` with a `DataAnalysisRecipeError`). Migrate to the tiered structure above.
+- **Flat-list rejection (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** A `wrangling:` value that is a flat list (e.g. `wrangling: [{action: ...}]`) is refused by the data analysis recipe checker (and by `_resolve_tier()` with a `DataAnalysisRecipeError`). Migrate to the tiered structure above.
 
 ### Identity Logic (ADR-014)
 
@@ -129,7 +129,7 @@ All 41 actions available for use in data analysis recipe `wrangling` and `steps`
 | **Temporal** | `polars_dt_truncate` |
 | **Typing** | `polars_cast` |
 
-`sink_parquet` and `scan_parquet` are engine functions, not recipe actions.
+`sink_parquet` and `scan_parquet` are engine functions, not data analysis recipe actions.
 
 ---|---|
 | **Cleaning** | `fill_nulls`, `drop_nulls`, `replace_values`, `rename`, `drop_duplicates`, `unique_rows`, `recode_values`, `sanitize_column_names`, `keep_columns`, `drop_columns`, `strip_whitespace`, `round_numeric`, `filter_range`, `add_constant`, `filter_eq`, `filter_ne`, `filter_gt`, `filter_lt`, `rename_columns`, `unique` |

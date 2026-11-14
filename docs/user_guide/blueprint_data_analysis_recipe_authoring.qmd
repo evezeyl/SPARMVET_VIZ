@@ -199,7 +199,7 @@ joins:
           exprs: [sample_id, Year, Country]
 ```
 
-The `steps` of a join are written in `tier1`. The last step is a `polars_select` (or `polars_drop`) that publishes the columns of the joined table, in the order of its list. `how` and `maintain_order` are required: the order of the rows is part of your recipe.
+The `steps` of a join are written in `tier1`. The last step is a `polars_select` (or `polars_drop`) that publishes the columns of the joined table, in the order of its list. `how` and `maintain_order` are required: the order of the rows is part of your data analysis recipe.
 
 ::: {.callout-warning}
 **`'on'` must be quoted.** In YAML, `on` without quotes is read as `True` (a boolean). Always write it as `'on': [sample_id]` with single quotes; `on` takes a list.
@@ -228,7 +228,7 @@ If the join key has a different name in each dataset:
           maintain_order: left_right
 ```
 
-A column that both tables carry, other than the key, stops the recipe (Polars would silently rename one of them `name_right`): rename or drop it before the join.
+A column that both tables carry, other than the key, stops the data analysis recipe (Polars would silently rename one of them `name_right`): rename or drop it before the join.
 
 ### Derived columns after joining
 

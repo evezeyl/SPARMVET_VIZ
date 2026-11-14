@@ -1,6 +1,6 @@
 # YAML Configuration Standards & Cookbook
 
-This guide serves as a central reference (or "Cookbook") for authoring Data Contracts and Configuration YAMLs in the SPARMVET project (recipe format version 1).
+This guide serves as a central reference (or "Cookbook") for authoring Data Contracts and Configuration YAMLs in the SPARMVET project (data analysis recipe format version 1).
 
 If you need a transformation or feature that is **not** on this list, it currently does not exist. However, you can request it through the **"Request Implementation"** button in the app! The complete list of actions, with one example each, is in `docs/appendix/transformer_actions.qmd`.
 
@@ -65,7 +65,7 @@ Every data schema also states `null_values` and `strip` (see the authoring guide
 | `Boolean` | True/False | Resistance flags, pass/fail status |
 | `Enum`, `Decimal` | Fixed list of levels; exact decimals | Ordered levels; money-like values |
 
-> **REMOVED (recipe format 1):** the old type words `categorical`, `numeric`, `utf8`, `string`, `character`,
+> **REMOVED (data analysis recipe format 1):** the old type words `categorical`, `numeric`, `utf8`, `string`, `character`,
 > `integer`, `float`, `date`, `bool` and `boolean` are refused; the message names the Polars type to write
 > (`Categorical`, `Float64`, `String`, `Int64`, `Date`, `Boolean`). See `rules_data_analysis_recipe_structure.md §9`.
 
@@ -104,7 +104,7 @@ wrangling:
 
 ## 3. Declarative Wrangling Actions
 
-The engine uses a strict **Action Registry**. Only registered actions are valid, and each name carries a prefix: `polars_` (exactly the Polars call), `modif_` (a Polars idea with a documented change), `step_` (several calls). A parameter that changes the result is written in the recipe; there is no hidden default. See `docs/appendix/transformer_actions.qmd` for the complete list. The examples below were checked with the recipe checker.
+The engine uses a strict **Action Registry**. Only registered actions are valid, and each name carries a prefix: `polars_` (exactly the Polars call), `modif_` (a Polars idea with a documented change), `step_` (several calls). A parameter that changes the result is written in the data analysis recipe; there is no hidden default. See `docs/appendix/transformer_actions.qmd` for the complete list. The examples below were checked with the data analysis recipe checker.
 
 ### `polars_str_strip_chars`
 Trims leading/trailing characters (whitespace by default) from string columns. The columns are written.
@@ -184,7 +184,7 @@ Reshapes wide-format data to long format (formerly `melt`).
 ```
 
 ### `polars_unique`
-Removes duplicate rows over `subset`. `keep` and `maintain_order` are required: the order rule is part of the recipe.
+Removes duplicate rows over `subset`. `keep` and `maintain_order` are required: the order rule is part of the data analysis recipe.
 ```yaml
 - action: polars_unique
   subset: [sample_id, gene]
@@ -211,7 +211,7 @@ Asymmetric keys:
   maintain_order: left_right
 ```
 
-> **REMOVED (recipe format 1):** `derive_categories`, `split_and_explode`, `split_column`, `drop_duplicates`,
+> **REMOVED (data analysis recipe format 1):** `derive_categories`, `split_and_explode`, `split_column`, `drop_duplicates`,
 > `unique_rows`, `strip_whitespace`, `keep_columns`, `drop_columns`, `fill_nulls`, `replace_values` and `filter_range`
 > are no longer actions. A lookup against a reference table is a `polars_join` with the table as an ingredient.
 

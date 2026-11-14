@@ -62,7 +62,7 @@ The **Wrangling Pipeline** defined in the YAML data analysis recipe is a **Seque
 **Standard YAML Format:**
 
 The engine requires the tiered nesting structure (ADR-024) — a flat `wrangling:` list is
-refused by the recipe checker (`LEGACY-FLAT-WRANGLING-1`). `tier1:` is mandatory
+refused by the data analysis recipe checker (`LEGACY-FLAT-WRANGLING-1`). `tier1:` is mandatory
 (even if empty); `tier2:` is optional.
 
 ```yaml
@@ -82,7 +82,7 @@ During the complex relational refactoring of the ST22 pipeline, several critical
 
 ### 1. The Boolean Shield (ADR-012b)
 **Hazard**: YAML parsers interpret unquoted `on:` as boolean `True`.
-**Hack**: Write `'on': [sample_id]` (with quotes). The recipe checker refuses an unquoted `on`.
+**Hack**: Write `'on': [sample_id]` (with quotes). The data analysis recipe checker refuses an unquoted `on`.
 
 ### 2. Cartesian Join Prevention
 **Hazard**: Joining two "Long" datasets (AMR + Virulence) creates row explosion.
@@ -170,7 +170,7 @@ The full list of atomic decorators (41 on 2026-11-14, read from the registry; it
 | Action Name | Description |
 |---|---|
 | `modif_filter` | Keep the rows where `column` <op> `value` (eq, ne, gt, ge, lt, le, in, not_in, between). Unlike Polars filter, which takes a formula, it takes the words of the filter panel. `na` says what happens to a missing value (null) of the column: `remove` drops those rows (what a comparison does in Polars), `keep` keeps them. A NaN is a number, not a missing value, and `na` does not touch it. |
-| `polars_sample` | A random sample of rows (Polars DataFrame.sample); `seed` is written in the step so that the same recipe gives the same table. |
+| `polars_sample` | A random sample of rows (Polars DataFrame.sample); `seed` is written in the step so that the same data analysis recipe gives the same table. |
 
 ### List
 | Action Name | Description |
@@ -257,7 +257,7 @@ To ensure homogeneity, both `DataWrangler (data_wrangler.py)` and `DataAssembler
 The Assembler is responsible for:
 - Mapping and fetching multiple wrangled datasets from the Ingestor.
 - Performing explicit Polars-based joins (Inner, Left, Outer) using the `polars_join` action (a semi or anti join, `how: semi` or `how: anti`, replaces the old `join_filter`).
-- Writing the order and the keys of every join in the step (`how`, `maintain_order`, `on`): nothing is a hidden default. The recipe checker refuses a non-key column that both tables of a join carry, because Polars would silently rename one of them.
+- Writing the order and the keys of every join in the step (`how`, `maintain_order`, `on`): nothing is a hidden default. The data analysis recipe checker refuses a non-key column that both tables of a join carry, because Polars would silently rename one of them.
 - Publishing the columns of the unified dataset with the last step of its tier 1 (a plain `polars_select` or `polars_drop`).
 
 ### Relational Decorators

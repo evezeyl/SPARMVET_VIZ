@@ -55,9 +55,9 @@ null_actions = search_actions("null")  # returns polars_fill_null, polars_drop_n
 
 ### Annotated actions (BP-SCHEMA-1)
 
-All 41 registered actions carry a `ui_schema` and appear in the Blueprint IDE picker (count read from `ACTION_SCHEMAS` on 2026-11-14; it grows with the registry, ADR-035). The two persistence functions `sink_parquet` and `scan_parquet` are engine functions, not recipe actions (`rules_data_engine.md §1`).
+All 41 registered actions carry a `ui_schema` and appear in the Blueprint IDE picker (count read from `ACTION_SCHEMAS` on 2026-11-14; it grows with the registry, ADR-035). The two persistence functions `sink_parquet` and `scan_parquet` are engine functions, not data analysis recipe actions (`rules_data_engine.md §1`).
 
-**The prefix says what an action is** (recipe format 1):
+**The prefix says what an action is** (data analysis recipe format 1):
 
 | Prefix | Meaning |
 |---|---|
@@ -65,7 +65,7 @@ All 41 registered actions carry a `ui_schema` and appear in the Blueprint IDE pi
 | `modif_<name>` | A Polars idea with a documented change (today `modif_filter`) |
 | `step_<name>` | Several Polars calls in one action (today `step_top_n_other`) |
 
-A parameter that changes the result is **required** in the recipe (for example `how` and `maintain_order` of `polars_join`, `keep` and `maintain_order` of `polars_unique`, `na` of `modif_filter`): there is no hidden default. An action never returns the table unchanged when a parameter or column is missing; it stops and names the step.
+A parameter that changes the result is **required** in the data analysis recipe (for example `how` and `maintain_order` of `polars_join`, `keep` and `maintain_order` of `polars_unique`, `na` of `modif_filter`): there is no hidden default. An action never returns the table unchanged when a parameter or column is missing; it stops and names the step.
 
 ### Adding a `ui_schema` to a new action (developer guide)
 
@@ -97,7 +97,7 @@ def action_my_action(lf, spec):
 
 **Rules:**
 - Every param must have `widget`, `label`, and `required`.
-- One name per role: input columns are `columns`, outputs are `new_column` or `new_columns`; no aliases (recipe format 1, DEC14/DEC15). A `polars_` action keeps the Polars parameter names.
+- One name per role: input columns are `columns`, outputs are `new_column` or `new_columns`; no aliases (data analysis recipe format 1, DEC14/DEC15). A `polars_` action keeps the Polars parameter names.
 - Verify registration with `libs/transformer/tests/test_ui_schemas.py`.
 
 ---
@@ -209,7 +209,7 @@ Kind: modified. Context: t1, t2.
 
 #### `polars_sample`
 
-A random sample of rows (Polars DataFrame.sample); `seed` is written in the step so that the same recipe gives the same table.
+A random sample of rows (Polars DataFrame.sample); `seed` is written in the step so that the same data analysis recipe gives the same table.
 
 Kind: exact. Context: t1, t2.
 
