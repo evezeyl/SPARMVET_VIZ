@@ -22,7 +22,7 @@ A major technical requirement when joining datasets in Polars is that **both sid
 
 If the key is a numeric ID in one source and a string in another (or one side was cast to `Categorical`/`String` differently from the other), the join can fail with a `SchemaError`, or — worse — silently produce no matches: two columns that *look* like the same identifier (e.g., `'2'` vs `2`) are not equal across dtypes, so Polars treats them as different keys.
 
-**Critical Rule**: the engine never changes the type of a join key for you. A join runs on the types the two tables have. If they differ, the build stops with a message that names the recipe, the join, the step, the columns and both types. The fix is a decision in the recipe: declare the same type for the field in `input_fields` of both tables, or add a `polars_cast` step before the join (see `.claude/rules/rules_agent_role_bioscientist.md §3-B`). Identifiers (`sample_id`, gene names) are text: declare them `String`.
+**Critical Rule**: the engine never changes the type of a join key for you. A join runs on the types the two tables have. If they differ, the build stops with a message that names the recipe, the join, the step, the columns and both types. The fix is a decision in the recipe: declare the same type for the field in `input_fields` of both tables, or change the type of the right table in its own wrangling. A `polars_cast` step before the join changes only the left table, never the right one (see `.claude/rules/rules_agent_role_bioscientist.md §3-B`). Identifiers (`sample_id`, gene names) are text: declare them `String`.
 
 ## 3. Visualization Benefits (Plotnine)
 

@@ -122,7 +122,7 @@ This philosophy data analysis recipes in three ways:
 **HISTORICAL:** this section describes a plan that did not ship this way. The Gallery that actually
 shipped is a file-based, pre-rendered bundle system (`assets/gallery_data/`, one
 `data_analysis_recipe.yaml` + `example_data.tsv` + `example_meta.md` + `preview_plot.png` per example,
-indexed by `gallery_index.json` and regenerated via `libs/viz_gallery/assets/refresh_gallery.py`) — not a
+indexed by `gallery_index.json` and regenerated via `assets/scripts/refresh_gallery.py`) — not a
 `--gallery` flag on `viz_factory_integrity_suite.py` auto-generating a `gallery_report.md`. No such
 flag exists on that script today. See `.claude/rules/rules_gallery_standards.md` for the authoritative
 spec of what shipped, and `docs/user_guide/viz_gallery.qmd` for the user-facing Gallery tab. The

@@ -296,14 +296,13 @@ Authoring a join is not a generic action form — joins get a **dedicated Joint 
 The pure logic lives in `JoinDesigner (join_designer.py)` (no Shiny, no polars — the handler
 materialises each ingredient via the orchestrator and passes plain Python rows in):
 
-- **`compute_key_match`** computes real key-overlap statistics — matched / left-only / right-only
-  counts, match rate, and a sample of unmatched keys. Crucially, the overlap is computed on
-  **String-cast** keys, mirroring exactly how `DataAssembler (data_assembler.py)` joins. So the
-  preview reflects what the assembler will actually match, including the classic trap where
-  `Float64` `2022.0` fails to match `Int64` `2022`.
-- A **dtype family check** is shown as an *advisory* (not a hard gate): because the assembler
-  casts keys to String, cross-family joins technically run, but the advisory warns when raw
-  values are unlikely to align.
+- **`check_join_keys`** gives the same verdict as the build (the check of `DataAssembler (data_assembler.py)`):
+  keys keep the types the tables declare, nothing is cast. It refuses unequal key lists, a missing key
+  column and keys of different types, and returns the problem and the fix in plain words.
+- **`compute_key_match`** runs only when the verdict is ok. It computes real key-overlap statistics (matched /
+  left-only / right-only counts, match rate, and a sample of unmatched keys) on the keys as they are.
+  A type difference is therefore a refusal, never an advisory: the fix is to declare the same type in
+  `input_fields` of both tables.
 - **`build_join_step`** emits a canonical `join` step. Symmetric keys (left == right)
   emit `on`; differing keys emit `left_on` / `right_on`. A single key emits a scalar; composite
   keys emit a list. Join strategies offered: `inner`, `left`, `outer`, `semi`, `anti`, `cross`.
