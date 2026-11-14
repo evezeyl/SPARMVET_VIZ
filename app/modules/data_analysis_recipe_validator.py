@@ -1,8 +1,8 @@
 """
 @deps
-provides: function:validate_data_analysis_recipe, function:checker_problems, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
+provides: function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
 consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/orchestrator.py
-consumed_by: app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
+consumed_by: app/tests/test_upload_recipe_check.py, app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
 @end_deps
 
@@ -110,6 +110,19 @@ def checker_catalogs() -> dict:
     from transformer.actions.base import ACTION_SCHEMAS
     from viz_factory.arguments import argument_catalog
     return {"actions": dict(ACTION_SCHEMAS), "components": argument_catalog()}
+
+
+def uploaded_recipe_report(raw, profile: str = "build") -> list[str]:
+    """One line per error of the strict checker for an uploaded recipe (a dictionary), empty when it passes.
+
+    Blueprint reports and never blocks (ADR-094 11a), so this only returns text; the caller decides what to show."""
+    from utils.recipe_check import check_recipe
+    try:
+        result = check_recipe(raw, profile, catalogs=checker_catalogs())
+    except Exception as exc:
+        return [f"[CHECK] the recipe could not be checked: {exc}"]
+    return [f"[{p.code}] {p.path + ': ' if p.path else ''}{p.message}" + (f" Fix: {p.fix}" if p.fix else "")
+            for p in result.errors]
 
 
 def checker_problems(path: Path, profile: str = "run") -> list[DataAnalysisRecipeProblem]:
