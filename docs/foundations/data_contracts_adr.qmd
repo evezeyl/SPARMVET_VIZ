@@ -21,7 +21,7 @@ info:
   contact: "who to ask when the recipe fails"
 ```
 
-`info.label` is the only required key of `info`; `info` is free-form otherwise (project, version, any key you want shown in HOME).
+`info.label` is the only required key of `info`; `info` is free-form otherwise (study, version, any key you want shown in HOME).
 
 ---
 
