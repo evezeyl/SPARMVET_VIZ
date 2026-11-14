@@ -619,3 +619,34 @@ Eve: Exploration has ONE plot (Result, immutable, always shown); Audit mode has 
 5. Older open points in tasks.md: `beeswarm_sina`, the empty Blueprint draft, three old scripts, three ID-reconciliation defects, RECIPE-WORD-1 scope, String or Categorical in recipes.
 **Next for the coordinator, in order:** (a) after Eve's answer to 1: IMPORT-PATH-1 together with SOURCE-LOOKUP-ONE-1, one `builder` at `sonnet/high`, continued in the worktree `agent-abd52719502485bdb` (merge `feat/recipe-format-1` into it first), then `reviewer`, merge, controls; (b) CHECKER-JOIN-KEYS-1 `sonnet/medium`; (c) the Blueprint package with JOIN-PREVIEW-STRICT-1; (d) tier-3 reader, GALLERY-CHECK-START-1, FILTER-UNIFY-1, SMOKE-RACE-2, AUDIT-REPAIR-1, DEP-INDEX-STALE-1; (e) the documentation sweep at the end (61 broken documentation paths, 2 docs_sync violations, seven of them in rule files that need Eve).
 **Worktrees:** `agent-a57725701187f3e6e` (join keys) is merged and removed. `agent-abd52719502485bdb` is kept: no code, only the findings note.
+
+## Handoff 2026-11-14: third coordinator session (interim): three tasks merged, queue, decisions for Eve
+
+Live progress file: `tmpAI/coordinator/progress_2026-11-14_session3.md` (not in git; it is the state if the session stops).
+
+**Branch and push:** `dev` was fast-forwarded to `1dad1f4c` and pushed to `origin/dev` at the start of the session (Eve asked). The three tasks below are merged into `feat/recipe-format-1` only: NOT in `dev`, NOT pushed.
+**Merged:** JOIN-PREVIEW-STRICT-1 (`870207ba`, `13194791`); CHECKER-JOIN-KEYS-1 (`9da9ce19`, `00b64f53`, merge `67419ef4`); GALLERY-CHECK-START-1 (`f7f5aa20`, `642ec0f0`, merged after `67419ef4`).
+**Controls:** on `67419ef4` (reviewer): headless 3695 passed, 14 xfailed; golden baseline result-identical; app import OK. Browser tests and the full controls NOT run after these merges (the gallery merge is after `67419ef4`). At the end of the session: full controls (headless, browser with `SPARMVET_APP_FEATURES=qa`, golden baseline, audits), then `git fetch . feat/recipe-format-1:dev` and `git push origin dev` (Eve asked that all commits are in `dev` and `dev` is pushed).
+**Running:** SMOKE-RACE-2 (builder, worktree `.claude/worktrees/smoke-race-2`, branch `task/smoke-race-2`): seven `inner_text(` reads changed to waiting assertions, in its two browser runs. HOME scout: which HOME tasks (tasks.md group 1, stage-2 plan, #61 to #63, #56) are buildable now.
+**Queue** (Eve's priority of 2026-11-14: HOME first with its library and recipe prerequisites, then Gallery; Blueprint and Test Lab last):
+1. The HOME tasks the scout tags BUILD-NOW.
+2. TEST-FLAKY-1 `[sonnet/medium]` (browser tests; after SMOKE-RACE-2 is merged, same files).
+3. Documentation: DOC-MISSING-VALUES-1, the `docs/` lines of DOC-JOIN-CAST-1, broken paths in `docs/` and README (worktree `.claude/worktrees/docs-sweep` exists, unused).
+4. DEP-INDEX-STALE-1 `[sonnet/low]` and the session-end `build_dep_graph.py`.
+5. ADR-100 draft (W12, `[opus/high]`, one builder-opus), as a draft for Eve.
+6. BP-VALIDATE-1 `[sonnet/low]` (Blueprint, last).
+7. Records by a scribe: tasks.md, spec catalogue J09 to J11, two stale sentences of REMOVE-CATEGORY-SELECT-1 in `.claude/design/recipe_format_spec.md`, handoff, channel row.
+
+**Decisions for Eve, new in this session** (also marked `DECISION FOR EVE` in tasks.md):
+- N1: join key rule in three places (build, Blueprint preview, checker), kept in step by a parity test only. Options: keep the copies with parity tests; or one pure rule in `libs/utils`.
+- N2: `except Exception` in `_jd_run_preview` shows programming errors as "Preview failed". Options: leave; or catch only expected errors.
+- N3: read-only gallery folder: a failing example in the old index is still shown (console warning only). Options: keep; or leave failing examples out in memory (`bootloader.rejected_gallery_examples`).
+- N4: an example left out at start has no screen element (spec section 9 silent). Today: left out, reason in `metadata.rejected` and a console warning.
+- N5: checker J10 (join key not declared in `input_fields` refused at load): confirm. See N1.
+- N6: AUDIT-REPAIR-1: four old words (`persona`, `manifest`, `profile`, `project`) and one UML tag: fix the text or adapt the exclusions. `recipe` waits for RECIPE-WORD-1.
+- N7: tier-3 reader (W10) needs HOME's P5 mechanism spec and the order of change R1 (`recipe_format_spec.md` line 173); `beeswarm_sina` waits for it.
+- N8: W14 Blueprint package: tasks.md line 82 says Blueprint is not touched now; the earlier handoff listed it as next. Eve (2026-11-14): Blueprint and Test Lab can wait.
+
+**Decisions for Eve, older:** see "Handoff 2026-11-14 (night)", points 1 to 5 above.
+
+**Worktrees:** `checker-join-keys`, `join-preview-strict`, `gallery-check-start` are merged and can be removed. `smoke-race-2` in use. `docs-sweep` prepared. `agent-abd52719502485bdb` kept (findings note, no code). Tests in a worktree need the worktree sources first in `PYTHONPATH` (the shared `.venv` imports the libraries from the main tree).
