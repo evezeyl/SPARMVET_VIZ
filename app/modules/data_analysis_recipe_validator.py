@@ -135,9 +135,9 @@ def _fragment_report(raw) -> list[str]:
     from utils.ui_schema import step_problems
     wrangling = raw.get("wrangling") if isinstance(raw, dict) else None
     if isinstance(wrangling, list):
-        located = [("steps", i, s) for i, s in enumerate(wrangling)]
+        located = [("steps", i, s) for i, s in enumerate(wrangling, start=1)]
     elif isinstance(wrangling, dict):
-        located = [(t, i, s) for t in ("tier1", "tier2", "tier3") for i, s in enumerate(wrangling.get(t) or [])]
+        located = [(t, i, s) for t in ("tier1", "tier2", "tier3") for i, s in enumerate(wrangling.get(t) or [], start=1)]
     else:
         located = []
     if not located:
