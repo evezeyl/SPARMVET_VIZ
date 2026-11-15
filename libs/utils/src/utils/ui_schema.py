@@ -109,6 +109,21 @@ def _single_value_problem(param_def: dict, value: Any) -> Optional[str]:
     return None
 
 
+def _min_items_problem(param_def: dict, value: Any) -> Optional[tuple]:
+    """`min_items: n` on a list or mapping parameter: (what is wrong, the fix) for an empty or too short value, or None.
+
+    Only for an action that already refuses the empty value at run time, so the checker says it first (DEC03).
+    An optional `min_items_hint` says what the author can write instead (for example "leave it out").
+    """
+    wanted = param_def.get("min_items")
+    if wanted is None or not isinstance(value, (list, dict)) or len(value) >= wanted:
+        return None
+    what = "a mapping with" if isinstance(value, dict) else "a list of"
+    hint = param_def.get("min_items_hint")
+    fix = f"write {what} at least {wanted} item" + ("s" if wanted != 1 else "") + (f", or {hint}" if hint else "")
+    return ("is empty" if not value else f"has fewer than {wanted} items"), fix
+
+
 def _options_problem(param_def: dict, value: Any) -> Optional[str]:
     options = param_def.get("options")
     if param_def.get("widget") != "enum" or not options:
@@ -210,6 +225,10 @@ def step_problems(action: str, spec: dict, schema: Optional[dict]) -> List[StepP
             or _options_problem(definition, value)
         if wrong:
             problems.append(StepProblem("ST10", name, f"{name} has the wrong form", wrong))
+            continue
+        short = _min_items_problem(definition, value)
+        if short:
+            problems.append(StepProblem("ST10", name, f"{name} {short[0]}", short[1]))
 
     problems.extend(_rule_problems(spec, schema.get("rules", [])))
     return problems
@@ -234,6 +253,17 @@ def schema_declaration_problems(schema: dict) -> List[str]:
     """What is wrong in a schema's own `rules`: an unknown form, or a parameter the schema does not declare."""
     params = set(schema.get("params", {}))
     found: List[str] = []
+    for name, definition in schema.get("params", {}).items():
+        if "min_items" not in definition:
+            continue
+        wanted = definition["min_items"]
+        if isinstance(wanted, bool) or not isinstance(wanted, int) or wanted < 1:
+            found.append(f"{name}: min_items must be a positive whole number, it is {wanted!r}")
+        if expected_shape(definition) not in ("list", "list_of_mapping", "mapping"):
+            found.append(f"{name}: min_items belongs on a list or a mapping parameter")
+    for name, definition in schema.get("params", {}).items():
+        if "min_items_hint" in definition and ("min_items" not in definition or not isinstance(definition["min_items_hint"], str)):
+            found.append(f"{name}: min_items_hint must be a text and needs min_items")
     for index, rule in enumerate(schema.get("rules", [])):
         forms = _RULE_FORMS & set(rule)
         if len(forms) != 1:

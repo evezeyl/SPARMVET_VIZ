@@ -218,3 +218,53 @@ def test_an_any_widget_takes_a_scalar_or_a_list_and_the_rules_decide():
 def test_any_is_a_known_widget_with_its_own_shape():
     from utils.ui_schema import WIDGETS, expected_shape
     assert "any" in WIDGETS and expected_shape({"widget": "any"}) == "any"
+
+
+# ---- min_items: a list or mapping that must hold at least n items --------------------------------------------
+
+MIN = {"params": {
+    "columns": {"widget": "column_selector", "multi": True, "required": True, "min_items": 1},
+    "aggs": {"widget": "mapping", "required": False, "min_items": 1},
+    "rows": {"widget": "list", "items": "mapping", "required": False, "min_items": 1},
+}}
+
+
+def test_min_items_refuses_an_empty_list_with_st10():
+    problems = step_problems("x", {"action": "x", "columns": []}, MIN)
+    assert codes(problems) == ["ST10"]
+    assert problems[0].param == "columns" and "at least 1" in problems[0].fix
+
+
+def test_min_items_refuses_an_empty_mapping_and_an_empty_list_of_mappings():
+    assert codes(step_problems("x", {"action": "x", "columns": ["a"], "aggs": {}}, MIN)) == ["ST10"]
+    assert codes(step_problems("x", {"action": "x", "columns": ["a"], "rows": []}, MIN)) == ["ST10"]
+
+
+def test_min_items_accepts_one_item_and_an_absent_optional_parameter():
+    assert step_problems("x", {"action": "x", "columns": ["a"], "aggs": {"n": "pl.len()"}, "rows": [{"a": 1}]}, MIN) == []
+    assert step_problems("x", {"action": "x", "columns": ["a"]}, MIN) == []
+
+
+def test_min_items_does_not_judge_an_absent_required_parameter():
+    assert codes(step_problems("x", {"action": "x"}, MIN)) == ["ST04"]
+
+
+def test_min_items_is_not_reported_twice_for_a_wrong_form():
+    assert codes(step_problems("x", {"action": "x", "columns": ["a"], "aggs": "n"}, MIN)) == ["ST10"]
+
+
+def test_min_items_message_says_empty_and_carries_the_hint():
+    schema = {"params": {"by": {"widget": "list", "min_items": 1, "min_items_hint": "leave it out"}}}
+    problem = step_problems("x", {"action": "x", "by": []}, schema)[0]
+    assert problem.message == "by is empty" and problem.text().endswith("write a list of at least 1 item, or leave it out")
+    assert any("min_items_hint" in p for p in schema_declaration_problems({"params": {"by": {"widget": "list", "min_items_hint": "x"}}}))
+
+
+def test_min_items_declaration_is_checked():
+    ok = {"params": {"c": {"widget": "list", "min_items": 2}}}
+    assert schema_declaration_problems(ok) == []
+    for bad in (0, -1, 1.5, True, "1"):
+        schema = {"params": {"c": {"widget": "list", "min_items": bad}}}
+        assert any("min_items" in p for p in schema_declaration_problems(schema)), bad
+    scalar = {"params": {"c": {"widget": "string", "min_items": 1}}}
+    assert any("min_items" in p for p in schema_declaration_problems(scalar))
