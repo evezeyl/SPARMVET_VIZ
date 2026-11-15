@@ -25,3 +25,14 @@ def test_an_unknown_schema_names_the_available_ones(tmp_path):
     path = write_recipe(tmp_path / "tiny.yaml", recipe)
     result = _tool_get_field_contract({"schema_id": "nope", "data_analysis_recipe_path": str(path)})
     assert result["status"] == "error" and "samples" in result["message"]
+
+
+def test_the_prompt_and_the_module_describe_what_the_tool_returns():
+    """The text the agent reads must not promise `output_fields`, which recipe format 1 does not have."""
+    from blueprint_arch import agent_tools
+    from blueprint_arch.agent_context import build_system_prompt
+
+    prompt = build_system_prompt()
+    line = next(l for l in prompt.splitlines() if "get_field_contract" in l)
+    assert "output_fields" not in line and "input_fields" in line
+    assert "output_fields" not in agent_tools.__doc__.split("Each tool function")[0].replace("recipe format 1 has no output_fields", "")

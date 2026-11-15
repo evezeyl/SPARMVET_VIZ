@@ -4,7 +4,7 @@ MVP-1 tools for the BLUEPRINT AI Agent (ADR-076 §4).
 Three tools are registered for Phase 1:
     get_available_actions      — list @register_action entries, optionally filtered
     get_available_components   — list @register_plot_component entries, optionally filtered
-    get_field_contract         — resolve input/output fields for a data schema
+    get_field_contract         — resolve the input_fields and the wrangling tiers of a data schema (recipe format 1 has no output_fields)
 
 Each tool function:
     - Accepts a dict of args (matching the schema in register_tool_schema)
