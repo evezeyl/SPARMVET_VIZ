@@ -29,6 +29,8 @@ MUST_NOT_BE_EMPTY = {
     "polars_join_asof": ("by", "by_left", "by_right"),
     "polars_join": ("on", "left_on", "right_on"),
     "polars_unique": ("subset",),
+    # an empty value that Polars accepts but that is a writing error in a recipe (Eve, 2026-11-15, DECIDED 6): refused with the reason
+    "polars_select": ("exprs",), "polars_unpivot": ("on",), "polars_top_k": ("by",), "polars_bottom_k": ("by",),
     # an empty value returned the table unchanged (DEC36: nothing returns the table unchanged; ADR-104: no silent error)
     "polars_cast": ("columns",), "polars_cum_count": ("columns",), "polars_cum_sum": ("columns",),
     "polars_drop": ("columns",), "polars_drop_nans": ("subset",), "polars_drop_nulls": ("subset",),
@@ -42,24 +44,32 @@ MUST_NOT_BE_EMPTY = {
 
 # An empty value that Polars itself gives a result other than "do nothing": not refused, and stated in the description.
 EMPTY_HAS_A_MEANING = {
-    ("polars_select", "exprs"): "an empty table (Polars select with nothing)",
-    ("polars_unpivot", "on"): "no value columns, so no rows",
     ("polars_unpivot", "index"): "no id columns: every column is unpivoted",
     ("polars_group_by", "named_aggs"): "the distinct groups only",
     ("polars_group_by", "by"): "one row for the whole table",
     ("polars_group_by_dynamic", "group_by"): "no grouping: the windows of the whole table",
     ("polars_rolling", "group_by"): "no grouping: the windows of the whole table",
-    ("polars_top_k", "by"): "the first k rows in table order",
-    ("polars_bottom_k", "by"): "the first k rows in table order",
     ("polars_describe", "percentiles"): "the statistics without percentiles",
 }
 
+
+# why an empty value is refused when it is not "the step would do nothing" (it is a writing error in the recipe)
+WHYS = {
+    ("polars_select", "exprs"): "so the step would keep no column and leave a table with no columns; this is a writing error in the recipe",
+    ("polars_unpivot", "on"): "so no column would be turned into rows and the result would have no row; this is a writing error in the recipe",
+    ("polars_top_k", "by"): "so there is nothing to rank by and the rows would stay in table order, not the largest values; this is a writing error in the recipe",
+    ("polars_bottom_k", "by"): "so there is nothing to rank by and the rows would stay in table order, not the smallest values; this is a writing error in the recipe",
+}
 
 # what the author can write instead of an empty value (the plain advice the actions gave before the checker said it)
 HINTS = {
     ("polars_join_asof", "by"): "leave it out to match on the key alone",
     ("polars_join_asof", "by_left"): "leave it out to match on the key alone",
     ("polars_join_asof", "by_right"): "leave it out to match on the key alone",
+    ("polars_select", "exprs"): "to remove columns write a polars_drop step, to keep every column remove the step",
+    ("polars_unpivot", "on"): "leave `on` out to turn every column that is not in `index` into rows",
+    ("polars_top_k", "by"): "to keep the first k rows of the table as it is write a polars_head step",
+    ("polars_bottom_k", "by"): "to keep the first k rows of the table as it is write a polars_head step",
     ("modif_join_where", "predicates"): "write one or more formulas, for example \"pl.col('year') >= pl.col('start_year')\"",
 }
 
@@ -72,6 +82,8 @@ def apply() -> None:
             params[name]["min_items"] = 1
             if (action, name) in HINTS:
                 params[name]["min_items_hint"] = HINTS[(action, name)]
+            if (action, name) in WHYS:
+                params[name]["min_items_why"] = WHYS[(action, name)]
     for (action, name), meaning in EMPTY_HAS_A_MEANING.items():
         schema = ACTION_SCHEMAS[action]
         assert name in schema["params"], f"{action} has no parameter {name}"

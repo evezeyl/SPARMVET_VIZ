@@ -91,7 +91,7 @@ def test_an_empty_list_or_mapping_is_refused_or_has_a_declared_meaning(action, n
         return
     spec = {"action": action, name: _empty(action, name)}
     refused = [p for p in step_problems(action, spec, ACTION_SCHEMAS[action]) if p.param == name and p.code == "ST10"]
-    assert refused and "is empty, so the step would do nothing" in refused[0].message, f"{action}.{name}: an empty value would be accepted by the checker"
+    assert refused and refused[0].message.startswith(f"{name} is empty, "), f"{action}.{name}: an empty value would be accepted by the checker"
 
 
 def test_the_description_of_each_meaning_says_what_an_empty_value_gives():
@@ -102,3 +102,36 @@ def test_the_description_of_each_meaning_says_what_an_empty_value_gives():
 def test_no_action_carries_a_min_items_that_is_not_listed():
     found = {(a, n) for a, s in ACTION_SCHEMAS.items() for n, d in s["params"].items() if "min_items" in d}
     assert found == set(CASES)
+
+
+# ---- DECIDED 6 (Eve, 2026-11-15): an empty value that is a writing error is refused, and the message says why -------
+
+WRITING_ERRORS = {
+    ("polars_select", "exprs"): ("no column", "polars_drop"),
+    ("polars_unpivot", "on"): ("no row", "leave `on` out"),
+    ("polars_top_k", "by"): ("table order", "polars_head"),
+    ("polars_bottom_k", "by"): ("table order", "polars_head"),
+}
+KEPT_EMPTY = [("polars_unpivot", "index"), ("polars_group_by", "by"), ("polars_group_by", "named_aggs"), ("polars_describe", "percentiles")]
+
+
+@pytest.mark.parametrize("action, name", sorted(WRITING_ERRORS))
+def test_a_writing_error_empty_value_is_refused_by_the_checker_with_the_reason_and_the_fix(action, name):
+    reason, fix = WRITING_ERRORS[action, name]
+    assert (action, name) in CASES and (action, name) not in EMPTY_HAS_A_MEANING
+    found = [p for p in step_problems(action, {"action": action, name: []}, ACTION_SCHEMAS[action]) if p.param == name]
+    assert [p.code for p in found] == ["ST10"]
+    assert "writing error" in found[0].message and reason in found[0].message, found[0].message
+    assert fix in found[0].fix, found[0].fix
+
+
+@pytest.mark.parametrize("action, name", KEPT_EMPTY)
+def test_the_empty_values_that_have_a_meaning_in_polars_stay_accepted(action, name):
+    assert (action, name) in EMPTY_HAS_A_MEANING
+    value = {} if expected_shape(ACTION_SCHEMAS[action]["params"][name]) == "mapping" else []
+    assert [p for p in step_problems(action, {"action": action, name: value}, ACTION_SCHEMAS[action]) if p.param == name] == []
+
+
+def test_no_description_still_says_that_a_refused_empty_value_is_a_polars_result():
+    for action, name in WRITING_ERRORS:
+        assert f"An empty `{name}` gives" not in ACTION_SCHEMAS[action]["description"]
