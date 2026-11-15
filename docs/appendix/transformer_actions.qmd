@@ -1,6 +1,6 @@
 # Transformer Action Gallery (With Examples)
 
-This appendix provides a YAML usage example for each of the 41 registered actions executed by `DataWrangler` and `DataAssembler`. Use these "step lists" in your data analysis recipes to configure pipeline transformations without writing any logic.
+This appendix provides a YAML usage example for each of the 68 registered actions executed by `DataWrangler` and `DataAssembler`. Use these "step lists" in your data analysis recipes to configure pipeline transformations without writing any logic.
 
 > **Blueprint Architect IDE**: Every action listed here is also discoverable via the programmatic catalog (see §0). The catalog drives the form generator in the Blueprint Architect IDE — no hand-coded forms needed.
 
@@ -55,7 +55,7 @@ null_actions = search_actions("null")  # returns polars_fill_null, polars_drop_n
 
 ### Annotated actions (BP-SCHEMA-1)
 
-All 41 registered actions carry a `ui_schema` and appear in the Blueprint IDE picker (count taken from `ACTION_SCHEMAS` on 2026-11-14; it grows with the registry, ADR-035). The two persistence functions `sink_parquet` and `scan_parquet` are engine functions, not data analysis recipe actions (`rules_data_engine.md §1`).
+All 68 registered actions carry a `ui_schema` and appear in the Blueprint IDE picker (count taken from `ACTION_SCHEMAS` on 2026-11-15; it grows with the registry, ADR-035). The two persistence functions `sink_parquet` and `scan_parquet` are engine functions, not data analysis recipe actions (`rules_data_engine.md §1`).
 
 **The prefix says what an action is** (data analysis recipe format 1):
 
@@ -905,3 +905,83 @@ Kind: exact. Context: t2, assembly.
 - action: polars_var
   ddof: 1
 ```
+
+### 1.18 Rank, time and special joins
+
+These actions depend on row order or on sorted keys. Each one states its precondition in its description and fails with a plain message when the table does not meet it (`libs/transformer/tests/test_polars_time_joins_preconditions.py`). A null and a NaN are not the same thing: the description of each action says what it does with both.
+
+#### `polars_rank`
+
+Rank the values of the listed columns, 1 for the smallest (Polars Expr.rank). `method` says how tied values rank and is written in the step; `ordinal` numbers ties in row order, so sort first; `random` needs a `seed` and every other method refuses one. A null stays null and is not counted; a NaN ranks above every number and NaNs tie with each other.
+
+Kind: wrapper. Context: t1, t2.
+
+```yaml
+- action: polars_rank
+  columns: [identity]
+  method: min
+  descending: true
+  target_column: identity_rank
+```
+
+#### `polars_join_asof`
+
+Join each row of the table of the step with one row of the second table `right_ingredient`: the nearest one before it (backward), after it (forward) or closest (nearest) on a sorted key (Polars LazyFrame.join_asof); `strategy` is written in the step. Both tables must be sorted ascending on the key, within each `by` group too, or the step fails (Polars checks only without `by`, and with `by` it returns a wrong result without a word). The result keeps the rows and the order of the first table; a row without a match gets nulls. A null key never matches and a null in `by` never matches; a NaN key sorts last and matches a NaN. Without `tolerance` a match can be as far away as the data goes; a negative `tolerance` and an empty `by` are refused.
+
+Kind: wrapper. Context: assembly.
+
+```yaml
+- action: polars_join_asof
+  right_ingredient: weather
+  'on': sample_date
+  by: [site]
+  strategy: backward
+  tolerance: 2d
+```
+
+#### `polars_join_where`
+
+Join each row of the table of the step with every row of the second table `right_ingredient` for which all `predicates` are true: a join on conditions, not on equal keys (Polars LazyFrame.join_where). A predicate is a formula such as "pl.col('v') >= pl.col('lo')"; a column that has the same name in both tables is written with the suffix for the second table (`lo_right`). It is an inner join: a row can match several rows or none, and a row without a match is dropped. Polars returns the pairs in another order on every run; the action puts them in the order of the first table, then of the second, so the same input gives the same table. A predicate that is null for a pair (a null in a compared column) does not match; a NaN is larger than every number; columns of different types (Int64 against Float64, Date against Datetime) cannot be compared and the step fails.
+
+Kind: wrapper. Context: assembly.
+
+```yaml
+- action: polars_join_where
+  right_ingredient: reference_ranges
+  predicates:
+    - "pl.col('year') >= pl.col('start_year')"
+    - "pl.col('year') <= pl.col('end_year')"
+```
+
+#### `polars_group_by_dynamic`
+
+Cut a sorted index column (dates, times or whole numbers) into windows of the length `every` and aggregate each window with named formulas (Polars LazyFrame.group_by_dynamic(...).agg(...)). `closed`, which edges belong to a window, is written in the step because group_by_dynamic and rolling do not share a default. The index column must be sorted ascending, within each group when `group_by` is given, and must hold no null: the step fails otherwise. `every` and `period` are above zero (`offset` may be zero or negative), and on a Date index no duration is finer than a day. The result has one row per non-empty window, in the order of the groups (ascending, nulls last), then of the windows. In a window a null is skipped by sum, mean and count, a NaN makes a sum NaN, and the sum of a window that holds only nulls is 0.
+
+Kind: wrapper. Context: t2, assembly.
+
+```yaml
+- action: polars_group_by_dynamic
+  index_column: collection_date
+  every: 1mo
+  closed: left
+  group_by: [country]
+  named_aggs:
+    isolates: "pl.len()"
+```
+
+#### `polars_rolling`
+
+For each row, aggregate the rows of the window that ends at the index of that row and reaches back `period` (Polars LazyFrame.rolling(...).agg(...)): a moving sum, count or mean over days or over rows. `closed`, which edges belong to the window, is written in the step because rolling and group_by_dynamic do not share a default. The index column must be sorted ascending, within each group when `group_by` is given, and must hold no null: the step fails otherwise. `period` is above zero (`offset` may be zero or negative), and on a Date index no duration is finer than a day. The result has one row per row of the table, with only the index, the group columns and the aggregations; without `group_by` the rows keep their order, with it they come in the order of the groups (ascending, nulls last), then of the index. In a window a null is skipped by sum, mean and count, a NaN makes a sum NaN, and the sum of a window that holds only nulls is 0.
+
+Kind: wrapper. Context: t2, assembly.
+
+```yaml
+- action: polars_rolling
+  index_column: collection_date
+  period: 30d
+  closed: right
+  group_by: [country]
+  named_aggs:
+    isolates_30d: "pl.len()"
+```
+

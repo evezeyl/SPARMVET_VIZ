@@ -15,8 +15,9 @@ What each test proves:
   - every registered action is also tested for its behaviour: a case in `test_polars_actions_equal_polars.py` or a
     test file of its own that names it (a new action without a test fails here).
 
-`polars_join` has two ingredients: its pair is a recipe with two data schemas (`polars_join_test.tsv` is the left,
-`polars_join_test_right.tsv` the right) and the join is run by the assembler, as the app runs it.
+`polars_join` (and `polars_join_asof`, `polars_join_where`) has two ingredients: its pair is a recipe with two data
+schemas (`polars_join_test.tsv` is the left, `polars_join_test_right.tsv` the right) and the join is run by the
+assembler, as the app runs it.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/test_action_recipe_pairs.py -q
 """
@@ -41,12 +42,16 @@ ROOT = Path(__file__).resolve().parents[3]
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
 JOIN = "polars_join"
+# the actions with a second ingredient: their pair has two data schemas and is run by the assembler
+JOINS = (JOIN, "polars_join_asof", "polars_join_where")
 PAIRED = sorted(AVAILABLE_WRANGLING_ACTIONS)
 
 # the direct Polars call of the action that is not plain Polars (a filter on the same column)
 OWN_EXPECTED = {"modif_filter": lambda lf: lf.filter(pl.col("n") > 1)}
 # the actions that are not plain Polars calls: the test file that checks their behaviour
 OWN_TESTS = {"modif_filter": "test_modif_filter.py", "step_top_n_other": "test_top_n_other.py"}
+# the group "rank, time and special joins": the cases live in a file of their own (their list is not the 37 planned actions)
+OWN_TESTS.update({name: "test_polars_time_joins_equal_polars.py" for name in ("polars_rank", "polars_join_asof", "polars_join_where", "polars_group_by_dynamic", "polars_rolling")})
 
 # the table aggregations have a test file of their own, with the pairs checked there (polars_aggregations.py)
 OWN_TESTS.update({f"polars_{name}": "test_polars_aggregations_equal_polars.py" for name in AGGREGATIONS})
@@ -64,7 +69,7 @@ def _run(action):
     """The pair through the real path: (ingested left table, result, the actions the recipe uses)."""
     recipe = _recipe(action)
     ingestor = DataIngestor(str(DATA))
-    if action == JOIN:
+    if action in JOINS:
         ingredients = {name: ingestor.ingest(name, schema)[0] for name, schema in recipe["data_schemas"].items()}
         steps = next(iter(recipe["joins"].values()))["steps"]["tier1"]
         left = ingredients[action].collect()
@@ -82,8 +87,9 @@ def test_every_registered_action_has_its_pair(action):
     assert (DATA / f"{action}_test.tsv").exists(), f"no data file for {action}"
 
 
-def test_the_join_has_the_data_of_its_second_ingredient():
-    assert (DATA / f"{JOIN}_test_right.tsv").exists()
+@pytest.mark.parametrize("action", [a for a in JOINS if a in AVAILABLE_WRANGLING_ACTIONS])
+def test_a_join_has_the_data_of_its_second_ingredient(action):
+    assert (DATA / f"{action}_test_right.tsv").exists()
 
 
 def test_no_pair_is_left_for_an_action_that_does_not_exist():

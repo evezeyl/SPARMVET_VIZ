@@ -5,7 +5,6 @@ deployment at an empty folder, with no default_data_analysis_recipe set, and lau
 Modelled on test_every_app_features_starts.py's subprocess + log-scan pattern.
 Browser test: needs Playwright and takes about 15 s.
 """
-import os
 import socket
 import subprocess
 import time
@@ -15,6 +14,7 @@ from pathlib import Path
 import pytest
 import yaml
 from playwright.sync_api import Page, expect
+from app.tests.subprocess_env import app_env
 
 REPO = Path(__file__).resolve().parents[2]
 SERVER_ERRORS = ("Unhandled error", "Traceback", "ReactiveWarning")
@@ -49,7 +49,7 @@ def test_zero_recipes_renders_empty_state_without_server_error(page: Page, tmp_p
     dep = _empty_deployment(tmp_path)
     log = tmp_path / "server.log"
     port = _free_port()
-    env = {**os.environ, "PYTHONPATH": ".", "SPARMVET_APP_FEATURES": "qa", "SPARMVET_DEPLOYMENT": str(dep)}
+    env = app_env(SPARMVET_APP_FEATURES="qa", SPARMVET_DEPLOYMENT=str(dep))
     with open(log, "w") as out:
         proc = subprocess.Popen(
             [str(REPO / ".venv/bin/shiny"), "run", "app/src/main.py", "--port", str(port)],

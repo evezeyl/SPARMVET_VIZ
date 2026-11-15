@@ -853,3 +853,37 @@ Earlier lines above are not edited; where they disagree with the following, the 
 6. Ties in `polars_top_k` and `polars_bottom_k`, and `polars_head` after a step with no promised order: advice only today, no decided rule.
 7. The one-line rule-file edit of `ui_implementation_contract.md` section 8, in branch `task/na-rule-b`.
 8. Aggregating a table that holds a text column gives a missing value and no message (Polars' behaviour).
+
+## Handoff 2026-11-15 01:06 (coordinator): the Polars actions and the NA rule are merged and pushed; what runs; what is next
+
+**(a) Pushed**
+- `origin/dev` = `f769c8dd`, after the full controls: headless suite 4935 passed, 22 xfailed; golden baseline result-identical; full browser gate 74 passed, 3 skipped; audit_docs_sync 0 violations; cross-library audit PASS; check_doc_links 50 problems (none in the ADR log, this handoff, the action page or the library READMEs).
+
+**(b) Merged since the handoff of 00:15** (into `feat/recipe-format-1`)
+- Polars table aggregations `4644a9ea`
+- NA rule part 2 `4674b604`
+- Polars rank, as-of join, join on conditions and time windows `f769c8dd`
+- The registry holds 68 actions.
+
+**(c) Running** (each in worktree `.claude/worktrees/<name>`, branch `task/<name>`)
+- `seed-holds`: SEED-HOLDS-1.
+- `viz-field-engine`: VIZ-STANDARD-1 step 2 (the field exact / modified / own on every plot component; the factory refuses an engine it does not implement).
+- `typed-values`: EXPORT-FILTER-VALUE-1 and OPERATORS-SCREENS-1 (the filter value typed at the source; every operator in HOME).
+- `cleanup-counts`: CLEANUP-COUNTS-1 (stated action counts, a test that gave false alarms in worktrees, the checker and empty lists, stale paths).
+
+**(d) Next**
+1. PLOT-TABLE-ORDER-1, after `typed-values` is merged (same files).
+2. VIZ-STANDARD-1 steps 3 to 5: parameters read from plotnine; one strict rule set for layer parameters; tests driven by the registry, silent paths, one error form.
+
+**(e) Open for Eve** (one line each)
+1. A same-key self-join runs with an advice (built) or is refused.
+2. `categorical`: DEC27 against the code.
+3. The seed when the recipe writes none.
+4. Whether Blueprint may author the plot entry's tier 3.
+5. Show all checker advices, or only those that can change a result.
+6. Ties in `polars_top_k` / `polars_bottom_k` and `polars_head` after a step with no promised order (advice only today).
+7. `polars_join_where` fixes the order of its result because Polars gives none: `polars_` or `modif_` prefix.
+8. The sum of a 64-bit integer column wraps around without an error (stated in the description, not checked).
+9. A Polars panic while a plan runs is reported but cannot name the step.
+10. Aggregating a table that holds a text column gives a missing value and no message (Polars' behaviour).
+11. Comparisons on Date and Boolean columns in the HOME filter (options are being prepared).

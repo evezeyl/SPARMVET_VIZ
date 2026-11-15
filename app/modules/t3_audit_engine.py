@@ -12,8 +12,8 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:_apply_filter_rows, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
-# consumes: polars, libs/utils/src/utils/filter_values.py
+# provides: function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
+# consumes: polars, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
@@ -21,6 +21,8 @@ from __future__ import annotations
 import polars as pl
 
 from utils.filter_values import coerce_filter_value
+from utils.missing_values import keep_missing
+from utils.na_choice import default_na, na_of
 
 
 def _op_label(op: str) -> str:
@@ -50,9 +52,24 @@ def op_choice_label(op: str) -> str:
     return f"{sym} {words}"
 
 
-def describe_filter(column: str, op: str, value) -> str:
+def describe_filter(column: str, op: str, value, na: str | None = None, closed: str | None = None) -> str:
     """One-line text of a filter row. A one-value set reads as equality ('sequence_type = 101'),
-    several values read 'any of' / 'none of' (issue #57)."""
+    several values read 'any of' / 'none of' (issue #57). With `na` ("keep" or "remove") the line ends with what
+    happens to the rows with no value in the column (NA-RULE-63). `closed` "none" of a `between` is said, never silent."""
+    text = _describe_condition(column, op, value)
+    if op == "between" and closed == "none":
+        text += ", ends not included"
+    if na is None:
+        return text
+    return f"{text} ({na_phrase(na)})"
+
+
+def na_phrase(na: str) -> str:
+    """'rows with no value kept' / 'rows with no value removed': the choice `na` in a few words."""
+    return "rows with no value kept" if na == "keep" else "rows with no value removed"
+
+
+def _describe_condition(column: str, op: str, value) -> str:
     vals = value if isinstance(value, (list, tuple)) else None
     if vals is not None and len(vals) == 1:
         op, vals = {"in": "eq", "not_in": "ne"}.get(op, op), None
@@ -74,9 +91,61 @@ def inapplicable_filter_rows(lf, filter_rows: list) -> list:
     return [f for f in filter_rows if f.get("column") is not None and f.get("column") not in names]
 
 
+def filter_rows_from_nodes(nodes: list) -> list[dict]:
+    """The filter rows of the active `filter_row` and `exclusion_row` audit steps, with their `na` choice.
+
+    A step written before the choice existed has no `na` and is carried as "remove", what it always did.
+    """
+    rows: list[dict] = []
+    for n in nodes:
+        if not n.get("active", True) or n.get("node_type") not in ("filter_row", "exclusion_row"):
+            continue
+        p = n.get("params", {})
+        if "column" not in p:
+            continue
+        row = {
+            "column": p.get("column"),
+            "op": p.get("op", "eq"),
+            "value": p.get("value"),
+            "dtype": p.get("dtype", "Utf8"),
+            "na": na_of(p),
+        }
+        if row["op"] == "between":
+            row["closed"] = p.get("closed", "both")
+        rows.append(row)
+    return rows
+
+
+def staged_filter_row(column: str, op: str, value, dtype: str, na_tick: bool | None, closed: str = "both") -> dict:
+    """The filter row the "+ Add" button stages: the tick of the dialog is recorded, never dropped.
+
+    `na_tick` True keeps the rows with no value, False removes them; None (the tick is not mounted) is the default of
+    the operator. `closed` is written for `between` only.
+    """
+    keep = default_na(op) == "keep" if na_tick is None else bool(na_tick)
+    row = {"column": column, "op": op, "value": value, "dtype": dtype, "na": "keep" if keep else "remove"}
+    if op == "between":
+        row["closed"] = closed
+    return row
+
+
+def audit_params_from_row(frow: dict) -> dict:
+    """The params of the audit step built from a staged row on "Send to Audit": everything the user chose.
+
+    `na` (keep or remove the rows with no value) and, for `between`, `closed` are carried exactly as chosen. A row of an
+    older state without `na` is "remove".
+    """
+    params = {"column": frow.get("column", ""), "op": frow.get("op", "eq"), "value": frow.get("value", ""), "na": na_of(frow)}
+    if frow.get("dtype"):
+        params["dtype"] = frow["dtype"]
+    if params["op"] == "between":
+        params["closed"] = frow.get("closed", "both")
+    return params
+
+
 def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
     """
-    Apply a list of {column, op, value, dtype} dicts to a LazyFrame.
+    Apply a list of {column, op, value, dtype, na} dicts to a LazyFrame.
 
     Type strategy (DEMO-3):
     - The filter row's stored 'dtype' field can be stale or absent. We
@@ -105,6 +174,7 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
         col = f.get("column")
         op = f.get("op", "eq")
         val = f.get("value")
+        na = na_of(f)  # NA-RULE-63: "keep" adds the rows with no value; a row without `na` removes them
         if col is None:
             continue
         # Issue #56: T1 is wide and T2 may be long, so a filter built on one view can name a
@@ -129,7 +199,7 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
                 lo = coerce_filter_value(lo, actual_dt)
                 hi = coerce_filter_value(hi, actual_dt)
             bt_closed = f.get("closed", "both")
-            lf = lf.filter(pl.col(col).is_between(lo, hi, closed=bt_closed))
+            lf = lf.filter(keep_missing(pl.col(col).is_between(lo, hi, closed=bt_closed), col, na))
             continue
 
         if op in ("in", "not_in"):
@@ -143,7 +213,7 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
             else:
                 str_vals = [str(v) for v in vals]
                 expr = pl.col(col).cast(pl.Utf8).is_in(str_vals)
-            lf = lf.filter(expr if op == "in" else ~expr)
+            lf = lf.filter(keep_missing(expr if op == "in" else ~expr, col, na))
         else:
             # Scalar ops: coerce value to column dtype before compare.
             # If the widget already emitted a native numeric, the coercion
@@ -157,15 +227,15 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
             if is_numeric:
                 val = coerce_filter_value(val, actual_dt)
             if op == "eq":
-                lf = lf.filter(pl.col(col) == val)
+                lf = lf.filter(keep_missing(pl.col(col) == val, col, na))
             elif op == "ne":
-                lf = lf.filter(pl.col(col) != val)
+                lf = lf.filter(keep_missing(pl.col(col) != val, col, na))
             elif op == "gt":
-                lf = lf.filter(pl.col(col) > val)
+                lf = lf.filter(keep_missing(pl.col(col) > val, col, na))
             elif op == "ge":
-                lf = lf.filter(pl.col(col) >= val)
+                lf = lf.filter(keep_missing(pl.col(col) >= val, col, na))
             elif op == "lt":
-                lf = lf.filter(pl.col(col) < val)
+                lf = lf.filter(keep_missing(pl.col(col) < val, col, na))
             elif op == "le":
-                lf = lf.filter(pl.col(col) <= val)
+                lf = lf.filter(keep_missing(pl.col(col) <= val, col, na))
     return lf
