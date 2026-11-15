@@ -415,6 +415,21 @@ class _Check:
                 continue
             self.steps(steps, f"{path}.{tier}", tier)
         self.order_advices(container, path, tiers)
+        self.tie_advices(container, path, tiers)
+
+    def tie_advices(self, container: dict, path: str, tiers: List[str]) -> None:
+        """ST14 (advice, never blocks): every top_k or bottom_k step. The checker cannot know whether ties exist in the data."""
+        for tier in tiers:
+            steps = container.get(tier)
+            for index, step in enumerate(steps if isinstance(steps, list) else [], start=1):
+                if isinstance(step, dict) and step.get("action") in (action_names.TOP_K, action_names.BOTTOM_K):
+                    self.add("ST14", f"{path}.{tier}[{index}]",
+                             f"{step['action']} returns exactly k rows; when rows are tied at the limit, which of them are kept is not fixed "
+                             "(it can differ between a small and a large table, and between runs in low-memory mode). "
+                             "A NaN comes first; rows with no value fill the k rows when values run out",
+                             "to always keep the same rows, add a row number (polars_with_row_index) and give it last in `by`; "
+                             "to keep every row tied with the k best, use polars_rank (method min) and a filter",
+                             "A")
 
     def order_advices(self, container: dict, path: str, tiers: List[str]) -> None:
         """ST13 (advice, never blocks): a position action after a step that does not keep the row order.
