@@ -44,11 +44,6 @@ NOT_JUDGED = {
 # components whose own example fails today: the defect, found by this test
 KNOWN_DEFECTS = {
     "guide_label": "calls guide_legend(labels=...), which plotnine refuses",
-    "facet_cols": "builds facet_grid(cols=..., **spec) and the key `cols` arrives twice",
-    "facet_rows": "builds facet_grid(rows=..., **spec) and the key `rows` arrives twice",
-    "facet_margins": "adds nothing to a plot that has no facet_grid: facet_null has no params (an own component that needs a facet before it)",
-    "facet_scales": "same: needs a facet before it and fails on facet_null",
-    "facet_space": "same: needs a facet before it and fails on facet_null",
 }
 
 
