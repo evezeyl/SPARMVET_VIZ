@@ -76,6 +76,13 @@ def test_a_step_saved_in_blueprint_that_fails_the_gate_is_not_used_by_home(page:
         expect(sidebar).to_contain_text(g.STAGE, timeout=30_000)
         expect(sidebar).to_contain_text("no longer passes its checks", timeout=30_000)
         assert g.LABEL not in page.locator("body").inner_text(), "something of the failing recipe is still shown"
+
+        # the user is informed and never silently switched (ADR-104): the notice names both recipes, outlives several polls
+        # (CONTROLS-FIX-1: it used to go at the next poll) and is written once to the Alerts log
+        page.wait_for_timeout(3 * 2_000 + 500)
+        expect(sidebar).to_contain_text(f"'{g.STAGE}' was open and no longer passes its checks", timeout=5_000)
+        expect(sidebar).to_contain_text(f"HOME shows '{g.selector_value(page)}' instead", timeout=5_000)
+        assert (page.locator("#notification_log_panel_ui").text_content() or "").count(f"'{g.STAGE}' was open and no longer passes") == 1
     assert g.server_errors(log) == [], g.server_errors(log)
 
 

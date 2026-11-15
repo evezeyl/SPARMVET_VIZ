@@ -1096,3 +1096,30 @@ Records: `tasks.md` marked RECIPE-DATASET-TIER2-1 done; VIZ-STANDARD-1 V6/V7 mer
 - (c) `assets/scripts/golden_baseline.py` on a broken recipe writes "SystemExit: 1" for it and exits 0. Task GOLDEN-BROKEN-RECIPE-1.
 
 Records: `tasks.md` section 6 (three done lines, three open lines). No commit made here; the coordinator commits.
+
+## Handoff 2026-11-15 21:11 (coordinator)
+
+**State of `origin/dev`:** `060cee41` is PUSHED. It was pushed after the full controls passed on that exact tree:
+- Headless suite: 7079 passed, 7 xfailed.
+- Golden tables: result-identical.
+- Browser gate: 72 passed, 3 skipped, 12 min 46 s.
+- `test_shiny_gate_gap.py`: 5 runs of 5 passed.
+- Docs sync: 0 in the main tree. Audit of imports between libraries: PASS.
+- Doc links: 7 problems, all under `.claude/rules/` (known; the proposal is in `.claude/design/decisions_2026-11-14/rule_file_proposals/doc_links.proposal.md`).
+- Not part of the set, and failing as on `f769c8dd`: `audit_old_words`; `audit_uml_model` (6 lines).
+
+**Merged since the last handoff section:**
+- `6d37e398` DOC-LINKS-FIX-1: doc links went from 50 (on `f769c8dd`) to 48, and now to 7.
+- `060cee41` CONTROLS-FIX-1: the Blueprint agent adapter is built once at app start, in `app/src/main.py`. Cause: its synchronous probe ran inside a render, blocked the event loop, and the gate poll was cancelled. HOME keeps the notice of a replaced recipe until the user picks one or the recipe passes again (`follow_step`, `notice_after_pick` in `app/handlers/recipe_gate_handlers.py`).
+
+**In work:**
+- `task/plot-table-order`: fix round after review (two surviving mutations of the bundle; removal of `developer_raw_yaml` measured 42 rows against 22; the plot named in errors; S2-1 wording; the dialog).
+- `task/seed-holds`: third fix round (`position: position_jitter` written as text was not found by the random-layer rule; the `plot_failure` form; seed 0 tests; a cheaper check).
+- Stopped, to resume: `task/filter-pickers`.
+
+**Measured durations (for the D17 lines of `rules_verification_testing.md`; a proposal, not an edit):** headless about 8 to 9.5 minutes (the rule says about 25 s); browser gate about 12 to 13 minutes.
+
+**Records (records agent, 2026-11-15, for the coordinator to commit by file name):**
+- `.claude/tasks/tasks.md`: new section 7 (Eve's decisions of 2026-11-15, evening, channel M101 to M129), the open tasks AGENT-PROBE-1, GATE-NOTICE-TESTS-1, DEP-INDEX-REGEN-1, RULE-LINKS-R1; GATE-GAP-FLAKY-1 marked done; AUDIT-RAWYAML-REMOVE-1 marked in work.
+- `.claude/knowledge/architecture_decisions.md`: dated notes in ADR-104 (S2-1) and ADR-106 (V1-B).
+- `.claude/design/decisions_2026-11-14/adr_proposals/audit_history_log.proposal.md`: the ADR wording for N7-2 (proposal, not in the ADR log).

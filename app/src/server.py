@@ -183,7 +183,7 @@ def server(input, output, session):
 
     # HOME follows the load gate: poll, recipe selector and its notes (GATE-GAP-1)
     _define_recipe_gate_server(input, output, session, bootloader=bootloader, safe_input=_safe_input,
-                               recipe_gate_version=recipe_gate_version)
+                               recipe_gate_version=recipe_gate_version, notification_log=notification_log)
 
     # Home Theater: dynamic_tabs, sidebar_nav_ui, sidebar_tools_ui, right_sidebar, plots/tables
     from app.handlers.home_theater import define_server as _define_home_theater_server
