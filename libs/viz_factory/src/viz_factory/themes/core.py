@@ -12,6 +12,7 @@ from plotnine import (
     theme_538, theme_matplotlib, theme_seaborn, theme_tufte, theme_xkcd,
     ggplot, element_text, element_line, element_rect, element_blank
 )
+from viz_factory.errors import CannotAct
 from viz_factory.registry import register_plot_component
 
 
@@ -317,7 +318,7 @@ def handle_theme_legend_position(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "allow_extra_params": True,
     "params": {},
     "description": "Arbitrary theme() override; use to adjust any individual theme element when none of the named themes or element_* layers provide enough control. Not in plotnine: calls theme(**params); a value written as {name: element_text, params: {...}} (also element_line, element_rect, element_blank) is turned into that element, any other value is passed on as it is.",
-    "yaml_example": "layers:\n  - name: theme_custom\n    params:\n      axis_text_x: {angle: 45, hjust: 1}",
+    "yaml_example": "layers:\n  - name: theme_custom\n    params:\n      axis_text_x:\n        name: element_text\n        params: {angle: 45, hjust: 1}",
 })
 def handle_theme_custom(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     theme_kwargs = {}
@@ -358,15 +359,15 @@ def handle_theme_custom(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "hjust": {"widget": "number", "label": "Horizontal justification (0–1)", "required": False},
         "vjust": {"widget": "number", "label": "Vertical justification (0–1)", "required": False},
     },
-    "description": "Customise a specific text element (axis labels, title, strip text); use inside theme_custom or directly to rotate axis text or change font size. Differs from plotnine: plotnine's element_text only builds the element; here `target` names the theme setting (for example axis_text_x) the element is applied to, and without `target` nothing is applied (a warning is printed).",
+    "description": "Customise a specific text element (axis labels, title, strip text); use inside theme_custom or directly to rotate axis text or change font size. Differs from plotnine: plotnine's element_text only builds the element; here `target` names the theme setting (for example axis_text_x) the element is applied to, and without `target` the plot fails with a message.",
     "yaml_example": "layers:\n  - name: element_text\n    params:\n      target: axis_text_x\n      angle: 45\n      hjust: 1",
 })
 def handle_element_text(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standalone theme text modifier. Requires 'target'."""
     target = spec.pop("target", None)
     if not target:
-        print("Warning: element_text requires a 'target' (e.g., axis_text_x).")
-        return p
+        raise CannotAct("element_text needs 'target', the theme setting it changes",
+                        "write target, for example target: axis_text_x")
     return p + theme(**{target: element_text(**spec)})
 
 
@@ -385,15 +386,15 @@ def handle_element_text(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "linetype": {"widget": "enum", "label": "Line type", "required": False,
                      "options": ["solid", "dashed", "dotted", "dotdash", "longdash", "twodash"]},
     },
-    "description": "Customise a specific line element (gridlines, axis lines); use to change gridline colour, thickness, or linetype for a particular theme element. Differs from plotnine: plotnine's element_line only builds the element; here `target` names the theme setting (for example axis_text_x) the element is applied to, and without `target` nothing is applied (a warning is printed).",
+    "description": "Customise a specific line element (gridlines, axis lines); use to change gridline colour, thickness, or linetype for a particular theme element. Differs from plotnine: plotnine's element_line only builds the element; here `target` names the theme setting (for example axis_text_x) the element is applied to, and without `target` the plot fails with a message.",
     "yaml_example": "layers:\n  - name: element_line\n    params:\n      target: panel_grid_major\n      colour: '#eeeeee'",
 })
 def handle_element_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standalone theme line modifier. Requires 'target'."""
     target = spec.pop("target", None)
     if not target:
-        print("Warning: element_line requires a 'target'.")
-        return p
+        raise CannotAct("element_line needs 'target', the theme setting it changes",
+                        "write target, for example target: axis_text_x")
     return p + theme(**{target: element_line(**spec)})
 
 
@@ -411,15 +412,15 @@ def handle_element_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "colour": {"widget": "color", "label": "Border colour", "required": False},
         "size": {"widget": "number", "label": "Border line width", "required": False},
     },
-    "description": "Customise a specific rectangle element (panel background, legend background); use to change background fills or border colours. Differs from plotnine: plotnine's element_rect only builds the element; here `target` names the theme setting (for example axis_text_x) the element is applied to, and without `target` nothing is applied (a warning is printed).",
+    "description": "Customise a specific rectangle element (panel background, legend background); use to change background fills or border colours. Differs from plotnine: plotnine's element_rect only builds the element; here `target` names the theme setting (for example axis_text_x) the element is applied to, and without `target` the plot fails with a message.",
     "yaml_example": "layers:\n  - name: element_rect\n    params:\n      target: panel_background\n      fill: white",
 })
 def handle_element_rect(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standalone theme rect modifier. Requires 'target'."""
     target = spec.pop("target", None)
     if not target:
-        print("Warning: element_rect requires a 'target'.")
-        return p
+        raise CannotAct("element_rect needs 'target', the theme setting it changes",
+                        "write target, for example target: axis_text_x")
     return p + theme(**{target: element_rect(**spec)})
 
 
@@ -434,15 +435,15 @@ def handle_element_rect(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "params": {
         "target": {"widget": "string", "label": "Theme target to remove (e.g. axis_text_x, panel_grid)", "required": True},
     },
-    "description": "Remove a theme element entirely (make it invisible); use to hide axis lines, gridlines, or strip backgrounds. Differs from plotnine: plotnine's element_blank only builds the element; here `target` names the theme setting (for example axis_text_x) the element is applied to, and without `target` nothing is applied (a warning is printed).",
+    "description": "Remove a theme element entirely (make it invisible); use to hide axis lines, gridlines, or strip backgrounds. Differs from plotnine: plotnine's element_blank only builds the element; here `target` names the theme setting (for example axis_text_x) the element is applied to, and without `target` the plot fails with a message.",
     "yaml_example": "layers:\n  - name: element_blank\n    params:\n      target: panel_grid_minor",
 })
 def handle_element_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Standalone theme blank modifier. Requires 'target'."""
     target = spec.pop("target", None)
     if not target:
-        print("Warning: element_blank requires a 'target'.")
-        return p
+        raise CannotAct("element_blank needs 'target', the theme setting it changes",
+                        "write target, for example target: axis_text_x")
     return p + theme(**{target: element_blank()})
 
 
@@ -452,6 +453,17 @@ def handle_element_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
 # ── DECO-2: convenience label/annotation wrappers (added 2026-04-30) ──────────
 # Data analysis recipe authors often want one-line label setters rather than the full
 # labs(x=..., y=...) call. These wrap plotnine's single-axis helpers.
+
+def _read_text(name: str, spec: Dict[str, Any], key: str, example: str, allowed: tuple) -> Any:
+    """The text a label component sets. A missing key or another key is an error: it used to give an empty text, silently."""
+    unknown = sorted(k for k in spec if k not in allowed)
+    if unknown:
+        raise CannotAct(f"{name} reads {' and '.join(repr(k) for k in allowed)} and does not know {', '.join(repr(k) for k in unknown)}",
+                        f"write {key}: {example}")
+    if spec.get(key) is None:
+        raise CannotAct(f"{name} needs '{key}', the text it sets", f"write {key}: {example}")
+    return spec[key]
+
 
 @register_plot_component("xlab", ui_schema={
     "label": "X-axis label",
@@ -464,17 +476,16 @@ def handle_element_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "params": {
         "label": {"widget": "string", "label": "X-axis label text", "required": True},
     },
-    "description": "Set the x-axis label; a shorthand alternative to using labs with an x= parameter. Differs from plotnine: the text is read from the key `label` (empty when absent) and any other key is ignored.",
+    "description": "Set the x-axis label; a shorthand alternative to using labs with an x= parameter. Differs from plotnine: the text is read from the key `label`; without it, or with any other key, the plot fails with a message.",
     "yaml_example": "layers:\n  - name: xlab\n    params:\n      label: Year of isolation",
 })
 def handle_xlab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Set the x-axis label.
 
-    Spec accepts either {"label": "..."} or just a plain string (passed via
-    spec["label"] by viz_factory's flat-aesthetic standardisation).
+    Spec is {"label": "..."}; a missing key fails (VIZ-STANDARD-1, V6).
     """
     from plotnine import xlab
-    label = spec.get("label", "")
+    label = _read_text("xlab", spec, "label", "Year of isolation", ("label",))
     return p + xlab(label)
 
 
@@ -489,13 +500,13 @@ def handle_xlab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "params": {
         "label": {"widget": "string", "label": "Y-axis label text", "required": True},
     },
-    "description": "Set the y-axis label; a shorthand alternative to using labs with a y= parameter. Differs from plotnine: the text is read from the key `label` (empty when absent) and any other key is ignored.",
+    "description": "Set the y-axis label; a shorthand alternative to using labs with a y= parameter. Differs from plotnine: the text is read from the key `label`; without it, or with any other key, the plot fails with a message.",
     "yaml_example": "layers:\n  - name: ylab\n    params:\n      label: Number of isolates",
 })
 def handle_ylab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Set the y-axis label."""
     from plotnine import ylab
-    label = spec.get("label", "")
+    label = _read_text("ylab", spec, "label", "Number of isolates", ("label",))
     return p + ylab(label)
 
 
@@ -511,13 +522,13 @@ def handle_ylab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "title": {"widget": "string", "label": "Plot title text", "required": True},
         "subtitle": {"widget": "string", "label": "Subtitle (below title)", "required": False},
     },
-    "description": "Set the plot title and optional subtitle; a shorthand alternative to labs(title=..., subtitle=...). Differs from plotnine: the title is read from the key `title` (empty when absent) and the optional `subtitle`; any other key is ignored.",
-    "yaml_example": "layers:\n  - name: ggtitle\n    params:\n      label: AMR prevalence by year",
+    "description": "Set the plot title and optional subtitle; a shorthand alternative to labs(title=..., subtitle=...). Differs from plotnine: the title is read from the key `title` (plotnine's own argument name) and the optional `subtitle`; without `title`, or with any other key, the plot fails with a message.",
+    "yaml_example": "layers:\n  - name: ggtitle\n    params:\n      title: AMR prevalence by year",
 })
 def handle_ggtitle(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Set the plot title (and optional subtitle)."""
     from plotnine import ggtitle
-    title = spec.get("title", "")
+    title = _read_text("ggtitle", spec, "title", "AMR prevalence by year", ("title", "subtitle"))
     subtitle = spec.get("subtitle")
     if subtitle:
         return p + ggtitle(title, subtitle=subtitle)
@@ -546,7 +557,7 @@ def handle_ggtitle(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "size": {"widget": "number", "label": "Size", "required": False},
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False},
     },
-    "description": "Add a single annotation geometry (text, rect, segment) at specified coordinates without a data source; use for static annotations like significance brackets. Differs from plotnine: the geom is named by the key `geom` and every other key is an argument of that geom; without `geom` nothing is added and no message is shown.",
+    "description": "Add a single annotation geometry (text, rect, segment) at specified coordinates without a data source; use for static annotations like significance brackets. Differs from plotnine: the geom is named by the key `geom` and every other key is an argument of that geom; without `geom` the plot fails with a message.",
     "yaml_example": "layers:\n  - name: annotate\n    params:\n      geom: text\n      x: 2020\n      y: 80\n      label: 'n=42'",
 })
 def handle_annotate(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -564,6 +575,7 @@ def handle_annotate(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     from plotnine import annotate
     geom = spec.get("geom")
     if not geom:
-        return p
+        raise CannotAct("annotate needs 'geom', the kind of annotation (text, label, segment, rect, point, line)",
+                        "write geom: text")
     kwargs = {k: v for k, v in spec.items() if k != "geom"}
     return p + annotate(geom, **kwargs)
