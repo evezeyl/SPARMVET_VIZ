@@ -66,7 +66,7 @@ def test_an_element_text_with_a_target_still_works():
 
 NEEDS_MAPPING_ONLY = ["guide_legend", "guide_colorbar", "guide_colourbar", "guide_none"]
 NEEDS_MAPPING_AND_VALUE = {"guide_nrow": "nrow", "guide_ncol": "ncol", "guide_title": "title"}
-HAS_DEFAULT = ["guide_label", "guide_direction", "guide_reverse"]
+HAS_DEFAULT = ["guide_direction", "guide_reverse"]
 
 
 @pytest.mark.parametrize("name", NEEDS_MAPPING_ONLY + list(NEEDS_MAPPING_AND_VALUE) + HAS_DEFAULT)
@@ -209,3 +209,15 @@ def test_a_label_component_with_its_key_sets_the_text(name, params, shown):
     figure = plot.draw()
     texts = [t.get_text() for t in figure.findobj(matplotlib.text.Text)]
     assert shown in texts
+
+
+# -- guide_label cannot work: it says so, whatever the recipe says -----------------------------------------------
+
+@pytest.mark.parametrize("params", [{}, {"mapping": "fill"}, {"mapping": "fill", "labels": ["A", "B"]}])
+def test_guide_label_says_it_cannot_work_and_names_the_plotnine_way(params):
+    error = refused([POINT, {"name": "guide_label", "params": params}])
+    assert_form(error, 2, "guide_label")
+    text = str(error)
+    assert "cannot work" in text and "no such argument" in text
+    assert "write labels" not in text, "the old message told the author to write the key that fails"
+    assert "legend_text_legend" in text and "scale_fill_manual" in text

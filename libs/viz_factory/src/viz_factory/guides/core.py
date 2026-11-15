@@ -275,17 +275,19 @@ def handle_guide_title(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "labels": {"widget": "bool", "label": "Show labels", "required": False, "default": True},
     },
-    "description": "Override the labels shown in a guide; use to recode technical column values to human-readable names without modifying source data. Not in plotnine: guide_legend with only whether the labels are shown or their format set, written as `labels` (or `value`) for the aesthetic named by `mapping`; without `mapping` the plot fails with a message.",
+    "description": "Not in plotnine: meant to set the legend labels through guide_legend, which has no `labels` argument, so it CANNOT WORK today and fails on every use with a message (the label text is set with `labels` on the scale, the look with element_text on legend_text_legend). Kept until it is decided whether to rebuild or remove it.",
     "yaml_example": "layers:\n  - name: guide_label\n    params:\n      mapping: fill\n      labels: [Susceptible, Resistant]",
 })
 def handle_guide_label(p: ggplot, spec: Dict[str, Any]) -> ggplot:
-    """Helper to toggle/format labels for a guide."""
-    mapping = spec.pop("mapping", None)
-    labels = spec.pop("labels", spec.pop("value", True))
-    if not mapping:
-        raise CannotAct("guide_label needs 'mapping', the aesthetic the guide is for",
-                        "write mapping: fill (or color, shape, size ...)")
-    return p + guides(**{mapping: guide_legend(labels=labels, **spec)})
+    """Cannot work today: plotnine's guide_legend has no `labels` argument. Fails with a message that says so.
+
+    It was meant to toggle, rotate and set the font of the legend labels (tasks_archive_viz_factory.md). Whether to rebuild it on
+    plotnine's own means or to remove it is for Eve to decide (VIZ-STANDARD-1); until then it does not pretend to act.
+    """
+    raise CannotAct(
+        "guide_label cannot work: it passes `labels` to plotnine's guide_legend, which has no such argument",
+        "set the label text with `labels` on the scale (for example scale_fill_manual with labels: [A, B]) and the look of the legend "
+        "labels with element_text and target legend_text_legend (element_blank hides them); guide_label waits for a decision")
 
 
 @register_plot_component("guide_direction", ui_schema={
