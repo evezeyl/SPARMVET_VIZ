@@ -4381,6 +4381,8 @@ manifest  ───┤                       -> stored as the Tier 1 parquet
 
 ---
 
+Note 2026-11-15 (Eve): the seed is fixed at 0 by default; HOME draws no seed per session; every seed that is used is written in the recipe or in the audit recipe; the gallery's jitter is fixed and written in its recipes. OPEN: whether a seed field linked to each jitter step carries the audit pin into the exported recipe (being answered by a panel on branch task/seed-holds). Not built yet.
+
 ## ADR-091: Final configuration names, launch variables, and where each setting lives (2026-11-07)
 
 **Status:** ACCEPTED (2026-11-07, reviewed by @evezeyl; the review decisions are listed at the end of this entry; two design gaps found during the review are open). The names were agreed with @evezeyl in chat; the entry becomes ACCEPTED when Eve has reviewed it together with the issue evezeyl/SPARMVET_VIZ#27 (the IRIDA check is evezeyl/SPARMVET_VIZ#28). Authority: @dasharch.
@@ -4909,7 +4911,7 @@ actually reproducible for the T3-adjusted result.
    `ui_implementation_contract.md §14`), in an ordinary per-session `reactive.Value`, never the
    bootloader's process-wide asset cache. Multiple jittered layers in one plot continue to
    share one seed (unchanged behaviour).
-   > **Note (2026-11-14, ADR-SYNC-1):** this point is written for the unpinned case. A seed written in the recipe holds (ADR-104); HOME draws over it today (verified by running, `tmpAI/results.md` section 1, task SEED-HOLDS-1). For the unpinned case, the drawn seed (this point) against the default 0 (ADR-090 point 2) is OPEN, awaiting Eve; the run showed that the recorded seed does not reproduce the exported plot.
+   > **Note (2026-11-14, ADR-SYNC-1):** this point is written for the unpinned case. A seed written in the recipe holds (ADR-104); HOME draws over it today (verified by running, `tmpAI/results.md` section 1, task SEED-HOLDS-1). For the unpinned case, the drawn seed (this point) against the default 0 (ADR-090 point 2) is OPEN, awaiting Eve; the run showed that the recorded seed does not reproduce the exported plot. DECIDED 2026-11-15 (Eve): fixed at 0 by default, HOME draws no seed per session; see the note at the end of ADR-090. Still open: the seed field per jitter step (panel).
 
 3. **A consolidated provenance record carries four hash legs, not three.** Recipe (file-set
    hash, already computed), data (content hash per dataset, already computed), engine
@@ -5009,6 +5011,8 @@ for the full per-task detail):** `app/handlers/export_handlers.py` (provenance r
 `docs/user_guide/reproducible_plots.qmd` (rewritten for the two-mode/`effective_run.yaml`
 shape — both had gone stale describing the pre-#45 single-bundle design).
 
+
+Note 2026-11-15 (Eve): the seed is fixed at 0 by default; HOME draws no seed per session; every seed that is used is written in the recipe or in the audit recipe; the gallery's jitter is fixed and written in its recipes. OPEN: whether a seed field linked to each jitter step carries the audit pin into the exported recipe (being answered by a panel on branch task/seed-holds). Not built yet.
 
 ## ADR-098: Exploration filters preview on every view; only audited steps are permanent (2026-11-11)
 
@@ -5201,12 +5205,16 @@ with levels 0-2. **[HISTORICAL in part, 2026-11-14: the reach options and the le
 11. **Process.** Migration by one tool with a golden baseline and one cache bump (DEC43; built as four runs A to D, draft D5). Data-science errors of a recipe are fixed, not documented (DEC10; NOT BUILT, RECIPE-ST22-FIX-1). The two legacy recipes are removed (DEC12).
 
 **OPEN, awaiting Eve.**
-- **`categorical`.** Record 1: DEC27 (Eve, 2026-11-13, `recipe_format_spec.md`:124): `categorical` is refused with the message "this was String". Record 2: commit `e9ac815f` (2026-11-13 22:15, an agent): the migration writes `Categorical` ("String would change the level order of plots"); 75 shipped fields hold `type: Categorical`. No later record by Eve settles it.
+- **`categorical`.** Record 1: DEC27 (Eve, 2026-11-13, `recipe_format_spec.md`:124): `categorical` is refused with the message "this was String". Record 2: commit `e9ac815f` (2026-11-13 22:15, an agent): the migration writes `Categorical` ("String would change the level order of plots"); 75 shipped fields hold `type: Categorical`. No later record by Eve settles it. Note 2026-11-15 (Eve): DEC27 was a refactoring choice for the shipped recipes, not a rule of the standard. The recipe standard follows Polars: both `Categorical` and `String` are usable and written as such; the type names are Polars' names. The shipped recipes change to `String` where the field is plain text and stay `Categorical` where the order of the categories or memory matters; the list is being prepared by the scientist viewpoint and nothing is migrated before Eve has seen it. (see the note of 2026-11-15: the standard follows Polars; the capitalised `Categorical` and `String` are both valid types. The old lower-case word `categorical` is still not a type name of the format.)
 - **Whether Blueprint may author a plot entry's tier 3.** Record 1: ADR-082 point 4 and ADR-099 header (2026-11-11): "BLUEPRINT never authors T3". Record 2: `home_audit_steps.md` 5a point 15 (2026-11-12) and DEC17 (2026-11-13): a recipe maker may write any registered action in the tier-3 list. The Blueprint form is not decided.
 - **`column` or `columns` for the input column of `modif_` and `step_` actions** (point 8). Record 1: DEC15 (2026-11-13): `columns`, a list. Record 2: DEC39 (2026-11-13, same day): `modif_filter` takes `column`; the code follows it. Added 2026-11-14 after review.
 - **Whether FORMULA-SAFETY-1 (2026-11-13) and ADR-099 point 14 (2026-11-12) are one decision** (point 10), and **a time or size limit for formulas** (`tasks.md` FORMULA-SAFETY-1). Added 2026-11-14 after review.
 - **`derive_categories`** (point 7). Spec Q2 (line 189): "read it, then decide". The action is gone from the code; no record of Eve deciding it. Added 2026-11-14 after review.
 - The recommendations R1 to R11 of the spec (section 2.3) are not decisions. (The spec lists them as "Recommended, awaiting Eve".)
+
+Note 2026-11-15 (Eve): `polars_join_where` becomes `modif_join_where` (it fixes the order of its result; DEC31, DEC32); being built on branch task/row-order.
+Note 2026-11-15 (Eve): an empty `exprs` of `polars_select`, an empty `on` of `polars_unpivot`, an empty `by` of `polars_top_k` / `polars_bottom_k` are refused with the reason (a writing error in the recipe); being built.
+Note 2026-11-15 (Eve): row order: the user is informed; warnings are clearly distinct from errors in the checker, HOME and Blueprint; the wording for ties in `top_k` waits for a test of what Polars does.
 
 **Consequences.** Every recipe says what it does; an error names the place and the fix. Rule files and documents that still describe format 0: `.claude/design/decisions_2026-11-14/adr_sync_changes.md`.
 
@@ -5300,7 +5308,7 @@ with levels 0-2. **[HISTORICAL in part, 2026-11-14: the reach options and the le
 7. **A filter value has the type of its column (D1, "Q9 Option 1"; Eve, 2026-11-14, channel M76 from the review session and M77 point 2; added after review).** The filter panel keeps a map from the text it shows to the real value, and stores the real value in the column's type. The engine stays strict: a value of another type gives a plain error. The checker checks a value against the declared type. Old audit nodes are given their type at export, from the dtype they carry. The screen shows the column's type. On a numeric column the comparison operators use the number box, also when the plot uses the column as a discrete axis. The type comes from the schema of the table at that node, not from a sample of rows. Native widgets per type ("Option 3") are not chosen, because a user picks several values with `>` and `<` (for example "> 1998 and < 2003"). Eve: keep it as simple as possible. **Not part of this decision:** Date and Boolean comparisons. Eve asked for the options first; nothing is built for them (M76). NOT BUILT: see `tasks.md`.
 
 **OPEN, awaiting Eve.**
-- **Seed when the recipe writes none.** Record 1: ADR-090 point 2 and `rules_viz_factory.md` section 8 (2026-11-05): default seed 0; the gallery and the export use 0. Record 2: ADR-097 point 2 (2026-11-09) and HOME's code: one seed drawn per session and plot, recorded in `effective_run.yaml`. Run 2026-11-14: the recorded seed does not reproduce the exported plot (`tmpAI/results.md` section 2).
+- **Seed when the recipe writes none.** Record 1: ADR-090 point 2 and `rules_viz_factory.md` section 8 (2026-11-05): default seed 0; the gallery and the export use 0. Record 2: ADR-097 point 2 (2026-11-09) and HOME's code: one seed drawn per session and plot, recorded in `effective_run.yaml`. Run 2026-11-14: the recorded seed does not reproduce the exported plot (`tmpAI/results.md` section 2). DECIDED 2026-11-15 (Eve): fixed at 0 by default, HOME draws no seed per session; see the note at the end of ADR-090. Still open: the seed field per jitter step (panel).
 - ~~**D1, a filter value of another type than its column** (`.claude/design/decisions_2026-11-14/proposals_for_eve.md`, FILTER-UNIFY-1): the engine converts it (coordinator's recommendation, with a plain error when it cannot) or refuses it (scientist viewpoint). Record against record: ADR-098 point 4 and VizFactory skip such a filter today; point 1 above forbids a silent skip.~~ **[Corrected 2026-11-14 after review: D1 is DECIDED, point 7 above. It is no longer open.]**
 - **Date and Boolean comparisons in the filter panel** (point 7). Eve asked for the options before any choice; nothing is built (M76, 2026-11-14). Added 2026-11-14 after review.
 

@@ -21,10 +21,10 @@ from viz_factory.registry import register_plot_component
     "wraps": [{"lib": "plotnine", "attr_path": ["coord_cartesian"]}],
     "plotnine": "exact",
     "allow_extra_params": False,
-    "params": {
-        "xlim": {"widget": "string", "label": "X limits as [min, max] (e.g. [0, 100])", "required": False},
-        "ylim": {"widget": "string", "label": "Y limits as [min, max]", "required": False},
-        "expand": {"widget": "bool", "label": "Add padding around data", "required": False, "default": True},
+    "overlay": {
+        "xlim": {"widget": "string", "label": "X limits as [min, max] (e.g. [0, 100])"},
+        "ylim": {"widget": "string", "label": "Y limits as [min, max]"},
+        "expand": {"widget": "bool", "label": "Add padding around data"},
     },
     "description": "Set axis limits without dropping out-of-range data points; prefer over scale limits when zooming in without removing outliers.",
     "yaml_example": "layers:\n  - name: coord_cartesian\n    params:\n      xlim: [0, 100]",
@@ -42,7 +42,7 @@ def handle_coord_cartesian(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["coord_flip"]}],
     "plotnine": "exact",
     "allow_extra_params": False,
-    "params": {},
+    "overlay": {},
     "description": "Swap x and y axes; use for horizontal bar charts or when x-axis labels are long and overlap vertically.",
     "yaml_example": "layers:\n  - name: coord_flip",
 })
@@ -59,10 +59,10 @@ def handle_coord_flip(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["coord_fixed"]}],
     "plotnine": "exact",
     "allow_extra_params": False,
-    "params": {
-        "ratio": {"widget": "number", "label": "Aspect ratio (y/x units)", "required": False, "default": 1.0},
-        "xlim": {"widget": "string", "label": "X limits as [min, max]", "required": False},
-        "ylim": {"widget": "string", "label": "Y limits as [min, max]", "required": False},
+    "overlay": {
+        "ratio": {"widget": "number", "label": "Aspect ratio (y/x units)"},
+        "xlim": {"widget": "string", "label": "X limits as [min, max]"},
+        "ylim": {"widget": "string", "label": "Y limits as [min, max]"},
     },
     "description": "Force a fixed aspect ratio between x and y units; use for scatter plots where equal-unit scaling matters (e.g. geographic or spatial data).",
     "yaml_example": "layers:\n  - name: coord_fixed\n    params:\n      ratio: 1",
@@ -80,9 +80,9 @@ def handle_coord_fixed(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["coord_equal"]}],
     "plotnine": "exact",
     "allow_extra_params": False,
-    "params": {
-        "xlim": {"widget": "string", "label": "X limits as [min, max]", "required": False},
-        "ylim": {"widget": "string", "label": "Y limits as [min, max]", "required": False},
+    "overlay": {
+        "xlim": {"widget": "string", "label": "X limits as [min, max]"},
+        "ylim": {"widget": "string", "label": "Y limits as [min, max]"},
     },
     "description": "Enforce 1:1 aspect ratio (equivalent to coord_fixed with ratio=1); use when x and y share the same unit scale.",
     "yaml_example": "layers:\n  - name: coord_equal",
@@ -100,11 +100,11 @@ def handle_coord_equal(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["coord_trans"]}],
     "plotnine": "exact",
     "allow_extra_params": False,
-    "params": {
-        "x": {"widget": "string", "label": "X transformation (e.g. 'log10', 'sqrt')", "required": False},
-        "y": {"widget": "string", "label": "Y transformation", "required": False},
-        "xlim": {"widget": "string", "label": "X limits as [min, max]", "required": False},
-        "ylim": {"widget": "string", "label": "Y limits as [min, max]", "required": False},
+    "overlay": {
+        "x": {"widget": "string", "label": "X transformation (e.g. 'log10', 'sqrt')"},
+        "y": {"widget": "string", "label": "Y transformation"},
+        "xlim": {"widget": "string", "label": "X limits as [min, max]"},
+        "ylim": {"widget": "string", "label": "Y limits as [min, max]"},
     },
     "description": "Apply a non-linear transformation to x or y after statistics are computed; unlike log scales, this preserves the geometry but changes axis spacing.",
     "yaml_example": "layers:\n  - name: coord_trans\n    params:\n      x: log10",
