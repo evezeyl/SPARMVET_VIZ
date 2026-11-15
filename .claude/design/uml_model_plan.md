@@ -93,14 +93,14 @@ worked out, not picked up since. Not rows here yet because no concrete question 
 for either; add the row only once one is.
 
 **Written (2026-11-07):** three text pages that go with the diagrams, because no diagram shows them
-well, in `docs/UML/`: [`quality_goals.md`](quality_goals.md) (correct science and reproducibility
-first, each goal backed by a `REQ-CORE` requirement), [`cross_cutting_concepts.md`](cross_cutting_concepts.md)
+well, in `docs/UML/`: [`quality_goals.md`](../../docs/UML/quality_goals.md) (correct science and reproducibility
+first, each goal backed by a `REQ-CORE` requirement), [`cross_cutting_concepts.md`](../../docs/UML/cross_cutting_concepts.md)
 (configuration resolution, fail-fast, error handling, provenance, reactive write discipline,
 flag-driven gating, the Two-Category Law, tier isolation, security deferred) and
-[`risks_and_technical_debt.md`](risks_and_technical_debt.md) (the findings register, sorted by cost).
+[`risks_and_technical_debt.md`](../../docs/UML/risks_and_technical_debt.md) (the findings register, sorted by cost).
 
 **Written (2026-11-08):** a fourth text page, written for the scientist running an analysis rather
-than a developer: [`data_contract_and_failures.md`](data_contract_and_failures.md) — the two
+than a developer: [`data_contract_and_failures.md`](../../docs/UML/data_contract_and_failures.md) — the two
 different checks (recipe structure vs. data-vs-contract), where to run them, and plainly, what the
 engine does with a mismatched column when nobody runs the check (silent skip). Prompted by Eve
 asking for the "process of failures" to be explained from the user's perspective; writing it

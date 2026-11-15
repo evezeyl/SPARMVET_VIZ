@@ -95,7 +95,7 @@ Run the baseline unit test suite to catch regressions:
 ### Galaxy / IRIDA
 
 1. Run all steps above.
-2. Ensure `SPARMVET_DEPLOYMENT` env var points to the correct deployment file for your deployment (e.g., `config/deployment/galaxy/galaxy_deployment.yaml`).
+2. Ensure `SPARMVET_DEPLOYMENT` env var points to the correct deployment file for your deployment (e.g., `config/deployment/local/local.yaml`; the template is `config/deployment/templates/deployment_template.yaml`).
 3. Bundle and push via appropriate platform tool.
 
 ### Posit Connect
