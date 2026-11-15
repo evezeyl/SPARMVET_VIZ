@@ -99,6 +99,18 @@ _LEGACY_FLAT_AES: frozenset = frozenset(
 # Layer dedup key
 # ---------------------------------------------------------------------------
 
+def is_partial_theme(name: str) -> bool:
+    """True for a `theme_*` component that only sets some properties of the theme, read from the registry.
+
+    A component that wraps plotnine's `theme` itself (its `wraps` is `plotnine.theme`) sets properties; one that wraps a
+    named theme (`theme_bw`, `theme_minimal`, ...) is a complete theme. An unregistered name counts as complete: the
+    factory refuses it when it looks the component up.
+    """
+    from viz_factory.registry import COMPONENT_SCHEMAS
+    wraps = (COMPONENT_SCHEMAS.get(name) or {}).get("wraps") or []
+    return bool(wraps) and wraps[0].get("lib") == "plotnine" and list(wraps[0].get("attr_path") or []) == ["theme"]
+
+
 def _layer_dedup_key(layer: dict) -> tuple | None:
     """Return a (kind, target) dedup key for a layer, or None for geom/stat.
 
@@ -117,7 +129,9 @@ def _layer_dedup_key(layer: dict) -> tuple | None:
         return ("element_text", target)
     # Named layer families (single instance per plot)
     if name.startswith("theme_"):
-        return ("theme", None)
+        # A complete theme replaces a complete theme (one slot, the later wins). A partial theme setting is added to the theme
+        # (no slot): `theme_legend_position` after `theme_minimal` used to replace it, and the picture lost the minimal theme.
+        return None if is_partial_theme(name) else ("theme", None)
     if name.startswith("coord_"):
         return ("coord", None)
     if name.startswith("facet_"):
@@ -202,11 +216,19 @@ def _dedupe_layers(layers: list[dict]) -> list[dict]:
             key_to_last_idx[key] = i
 
     # Pass 2: keep layers that have no dedup key OR are the last for their key.
-    return [
+    kept = [
         layer for i, layer in enumerate(layers)
         if _layer_dedup_key(layer) is None
         or key_to_last_idx[_layer_dedup_key(layer)] == i
     ]
+    # plotnine drops what was set before when a complete theme is added, so a partial theme setting that came first would be lost:
+    # the complete theme goes before the first partial one.
+    complete = next((i for i, layer in enumerate(kept) if _layer_dedup_key(layer) == ("theme", None)), None)
+    first_partial = next((i for i, layer in enumerate(kept)
+                          if layer.get("name", "").startswith("theme_") and is_partial_theme(layer["name"])), None)
+    if complete is not None and first_partial is not None and complete > first_partial:
+        kept.insert(first_partial, kept.pop(complete))
+    return kept
 
 
 # ---------------------------------------------------------------------------
@@ -612,7 +634,7 @@ def resolve_plot_config(
     # theme: name of the surviving theme_* layer (or L1 fallback)
     resolved_theme = _BUILTIN_DEFAULTS["theme"]
     for layer in reversed(seed["layers"]):
-        if layer.get("name", "").startswith("theme_"):
+        if layer.get("name", "").startswith("theme_") and not is_partial_theme(layer["name"]):
             resolved_theme = layer["name"]
             break
     seed["theme"] = resolved_theme
