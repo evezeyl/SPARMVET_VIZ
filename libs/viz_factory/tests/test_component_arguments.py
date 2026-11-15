@@ -115,3 +115,10 @@ def test_the_schema_parameters_of_geoms_and_stats_are_accepted_by_plotnine():
 
 def test_a_refused_schema_parameter_is_reported_as_unknown_by_the_checker_data():
     assert unknown_arguments("geom_text", ["hjust"]) == ["hjust"]
+
+
+def test_a_geom_accepts_the_colour_spelling_in_any_name_and_a_stat_only_as_the_aesthetic():
+    """plotnine renames `colour` on the way into a geom (`outlier_colour` works), not into a stat."""
+    assert unknown_arguments("geom_boxplot", ["outlier_colour", "outlier_color", "colour"]) == []
+    assert unknown_arguments("stat_boxplot", ["colour", "color", "outlier_color"]) == []
+    assert unknown_arguments("stat_boxplot", ["outlier_colour"]) == ["outlier_colour"]

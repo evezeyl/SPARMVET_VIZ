@@ -732,6 +732,25 @@ Live progress file: `tmpAI/coordinator/progress_2026-11-14_session3.md` (not in 
 17. N6: AUDIT-REPAIR-1: for the four old words (`persona`, `manifest`, `profile`, `project`) and one UML tag, fix the text or adapt the exclusions. `recipe` waits for RECIPE-WORD-1. Evidence: `assets/scripts/audit_old_words.py --check`, `assets/scripts/audit_uml_model.py`.
 18. N14: TEST-ORDER-1 tests not written yet: where the audit writes a step (P5), the key of T3 and the per-collection key (P4), and property tests with `hypothesis` (a new dependency, D9). They depend on the unconfirmed stage-2 spec v0.1. Options: confirm the spec and allow the dependency, or leave those tests out.
 19. N16: `audit_uml_model.py` reports 6 violations in PKG-TIERS of `docs/UML/app.mdj`: five missing arrows (from `assets/scripts` to transformer, utils, viz_factory and viz_gallery; from `libs/test_lab/pyproject.toml` to utils) and one stale arrow (transformer to ingestion). Not new (no importing file gained an import in this session). A UML edit needs Eve's yes. Options: not recorded in the progress file.
+
+## Handoff 2026-11-15 08:45 (coordinator): Eve's decisions of this morning, what is built and in review
+
+**Decisions (Eve, 2026-11-15, channel M80 to M82):**
+- Seed: fixed at 0 by default; HOME draws no seed per session; the export uses the recipe's seed.
+- Categorical: the standard follows Polars; `Categorical` and `String` are both usable (DEC27 is a refactoring choice only). Shipped recipes change only after the scientist list is shown to Eve.
+- `polars_join_where` is renamed `modif_join_where` (DEC31, DEC32).
+- Ties in `top_k` / `bottom_k`: inform the user; warnings clearly distinct from errors; test what Polars does first.
+- The 64-bit sum: scientist's feedback only, low priority.
+- Empty `polars_select` `exprs`, `polars_unpivot` `on`, `polars_top_k` / `polars_bottom_k` `by`: refused with the reason.
+
+**New question for the panel (no build):** a restricted, structured Python file and back to a recipe (PY-RECIPE-1).
+
+**State (2026-11-15 08:45):**
+- HEAD `293d9c39`, not pushed (origin/dev `f769c8dd`).
+- Builders running: `task/seed-holds` (fixes), `task/typed-values` (additions after a review that said merge), `task/row-order`.
+- In review: `task/viz-params` (V3), `task/viz-errors` (V6, V7).
+- Panel round 5 running (brief `tmpAI/panel/brief_round5.md`).
+- Next: merge seed-holds, then typed-values; the full controls; push dev; then PLOT-TABLE-ORDER-1 and V4.
 20. N17: `.claude/rules/rules_verification_testing.md` section 8: add `--durations=10` after `-q` in the browser command, and correct "about 4 minutes" (the gate took 8 min 13 s). It is a rule file: Eve's double confirmation.
 
 **Blueprint**
@@ -925,3 +944,80 @@ Earlier lines above are not edited; where they disagree with the following, the 
 9. Comparisons on Date, Boolean and text columns in the HOME filter.
 10. Small ones: `beeswarm_sina`, the complex template's data files, the orphan fragment, Blueprint's stale view, tier 3 in Blueprint.
 11. The rule-file proposals (double confirmation).
+
+## Handoff 2026-11-15 08:20 (coordinator): two merges, four builds running, panel round 4
+
+**(a) Merged, not pushed.** No control run yet on the merged tree.
+- `05a6fa30`: rule-file proposals. 16 proposals and a README under `.claude/design/decisions_2026-11-14/rule_file_proposals/`. No rule file was edited. A reviewer's verdict: "correct first", seven small corrections, being made now. Then they wait for Eve's double confirmation.
+- `4525fcb1`: VIZ-STANDARD-1, parts V1 and V8. Every plot component carries `plotnine: exact | modified | own`. The factory refuses a `plot_engine` it does not build. Code in `libs/utils/src/utils/engines.py`. Second review: MERGE.
+- `origin/dev` is still `f769c8dd`.
+
+**(b) Running**
+- `task/seed-holds`: SEED-HOLDS-1, fixes after review.
+- `task/typed-values`: EXPORT-FILTER-VALUE-1 and OPERATORS-SCREENS-1, in review by a reviewer who breaks the code.
+- `task/viz-params` (new): VIZ-STANDARD-1 step 3, V3. The shared parameter-reading module moves to `libs/utils`; a compare test; parameter lists read from plotnine with a hand overlay.
+- `task/viz-errors` (new): VIZ-STANDARD-1, V6 and V7. Five silent paths become errors; one error form, `draw_checked`.
+
+**(c) Panel round 4** (brief `tmpAI/panel/brief_round4.md`). The scientist, architect and user viewpoints reported on four open choices: the seed when the recipe writes none; the old type word `categorical`; row order with ties and position, and the prefix of `polars_join_where`; empty values Polars accepts and the 64-bit sum. The proposals go to Eve through session sparmvet-viz-57. Nothing is decided.
+
+**(d) Next, in order**
+1. Merge `seed-holds`, then `typed-values`.
+2. A small builder for the export lines (`plot_engine`, `draw_checked`).
+3. A reviewer runs the full controls (headless, golden, browser gate, audits, doc links); push `dev`.
+4. PLOT-TABLE-ORDER-1, then V4, then V2 + V10 + V9.
+
+## Handoff 2026-11-15 09:10 (coordinator)
+
+**Merged, not pushed.** `d2c97bc6` (V3: the plot parameters of the exact components are read from plotnine). HEAD is not pushed; `origin/dev` is `f769c8dd`.
+
+**Eve's decisions of 2026-11-15, one line each** (channel `tmpAI/agent_channel.md`, M83 and M84):
+- 9: text greater/less not offered in the HOME filter (reversible); Date by date picker, Boolean by two-choice control.
+- 10a: `beeswarm_sina` converted to the new form.
+- 10b: small synthetic data made for `complex_template`.
+- 10c: the three removed actions found out; the orphan fragment `ResFinder_Abromics_wrangling.yaml` converted, not deleted.
+- 10e: Blueprint MAY author the plot entry's tier 3 (the note is in `recipe_format_spec.md` and at ADR-100).
+- 10d (investigation, no build): Blueprint must open a failing recipe and show its fix list (BP-STALE-VIEW-1).
+- 11 (explanation owed): list of every shipped-recipe result change, old vs new engine, in the changelog (RESULT-CHANGES-1).
+
+**Strategy (Eve, M83 point 2):** builds on a recommendation are PROVISIONAL (recorded with the commit, reversible) when no result changes silently and nothing is hidden; open points go to her in ONE ordered list with a default each.
+
+**Queue (build work that needs no decision):**
+1. Seed branch: default 0, `geom_sina` seeded, seeds written, `beeswarm_sina` converted there.
+2. Row order: ST13, then the tie and sum warnings.
+3. viz-errors (after review).
+4. typed-values (third review).
+5. Export lines.
+6. Full controls and push.
+7. PLOT-TABLE-ORDER-1.
+8. The warnings look.
+9. FILTER-PICKERS-1, with the value list on demand.
+10. RECIPES-SMALL-1.
+11. V4.
+
+**Records changed 2026-11-15 (not committed):** `recipe_format_spec.md` (tier 3 note); `architecture_decisions.md` (superseded markers at ADR-082, 093, 099; tier 3 note and RECIPES-SMALL note at ADR-100; filter-control note at ADR-104); `tasks.md` (FILTER-PICKERS-1, RECIPES-SMALL-1, RESULT-CHANGES-1, PY-RECIPE-1, BP-STALE-VIEW-1, SC4 and gallery-reason-list markers, process rule).
+
+## Handoff 2026-11-15 09:20 (coordinator)
+
+Records of this morning, by the review session (channel M85 to M88). Not committed; the records are in the main tree. Eve's decisions, one line each:
+- **D22 (dated 2026-11-15):** yes, the formula allow-list as built (`fe856c26`) is accepted for now; FORMULA-SAFETY-1 and ADR-099 point 14 are closed as one decision.
+- **D23 (dated 2026-11-15):** no time or size limit for formulas now; the known limit is stated in the docs.
+- **Security rule (dated 2026-11-15):** two layers. In the app, nobody may misuse it to run anything but data science. At the deployment, who may deposit recipes and which options the user has is gated by the system; the app's checks do not replace that. Recorded in ADR-071; tasks DOCS-SECURITY-1 and SECURITY-REVIEW-END-1.
+- **Gate gap (found by running, architect):** HOME's load gate runs once at startup; a recipe saved from Blueprint is not checked again. Task GATE-GAP-1 (queued; evidence `tmpAI/panel/round5/blueprint_failed_load/details.md`).
+- **Blueprint with a failing recipe:** three places show the previous recipe with no message, one can freeze the session (the freeze was fixed with BP-UPLOAD-EXIT-1). Eve's choice open, L31: options A, B (recommended), C in BP-STALE-VIEW-1.
+- **Equality check plan:** EQUALITY-CHECK-1, step 1 a dirty copy of the ST22 data and one hand-written recipe (PROVISIONAL, tests only), step 2 every action, step 3 all shipped recipes; evidence `tmpAI/panel/round5/equality_check/`. RESULT-CHANGES-1 dropped (Eve: "we want the results to be correct").
+- **Scientist's two findings on the ST22 recipe (RECIPE-SCIENCE-1, Eve's choice L33 open):** the bars count gene rows (70) where the title speaks of samples (38); the inner join drops 4 of 42 metadata samples from the AMR table and 1 from the plasmid table with no message (JOIN-COUNTS-1 makes it visible).
+
+**What runs:** the seed branch `task/seed-holds` (default 0, no per-session seed in HOME; the per-step seed field is with the panel); row order `task/row-order` with the warnings (`modif_join_where`, the four empty values refused, the position advice); `recipes-small` (RECIPES-SMALL-1). Reviews running: the viz-errors and typed-values branches, third round.
+
+**Queue, in this order:**
+1. GATE-GAP-1
+2. EQUALITY-CHECK-1, step 1
+3. export lines
+4. full controls and push
+5. PLOT-TABLE-ORDER-1
+6. the warnings look (D36, D37; L8, L9)
+7. FILTER-PICKERS-1, with the value list on demand (L10) and Time and Duration controls
+8. V4
+9. DOCS-SECURITY-1
+
+Open for Eve (one number each in the channel list M86): L1 to L33; RECIPE-SCIENCE-1 and L31 (BP-STALE-VIEW-1) need her choice before their build.

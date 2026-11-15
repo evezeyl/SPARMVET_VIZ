@@ -21,7 +21,7 @@ Proposed (same purpose, a constraint that is true today):
 # a key written unquoted as on is read by YAML as the boolean True: take both spellings (check T07 refuses it in recipes)
 on_columns = step.get("on", step.get(True))
 ```
-Why: `output_fields` is removed (ADR-100 point 5; ADR-014 superseded by DEC23/DEC24/DEC45), so the example teaches a removed key and cites a superseded ADR. The replacement example comes from `recipe_check.py:532` (`on = step.get("on", step.get(True))`). Any other true "constraint note" example would do; Eve may pick another.
+Why: `output_fields` is removed (ADR-100 point 5; ADR-014 superseded by DEC23/DEC24/DEC45), so the example teaches a removed key and cites a superseded ADR. The replacement example comes from the join-step reader of `recipe_check.py` (the `on` fallback line; no code name verified, line not cited because the merge moved lines) (`on = step.get("on", step.get(True))`). Any other true "constraint note" example would do; Eve may pick another.
 
 ## 3. Line 106, the Tier C example text (no change)
 `percentiles` appears in a descriptive module docstring example (not an action name). Left as it is; it is an illustration of a module header, not a registry claim. (The action `percentile` was removed, DEC40; the word is plain English there.)
