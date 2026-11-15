@@ -37,6 +37,7 @@ from utils.action_names import TIER1_ONLY
 from utils.engines import ENGINES
 from utils.filter_values import FilterValueError, check_filter
 from utils.formula_check import formula_problems
+from utils import join_keys
 from utils.polars_types import PARAMETER_KEYS, dtype_with_parameters, text_dtype_names
 from utils.recipe_paths import containment_problems, shape_problems
 from utils.ui_schema import STEP_KEYS, step_problems
@@ -748,7 +749,7 @@ class _Check:
     def join_key_problems(self, tier1: list, position: int, where: str, ingredient_ids: List[str]) -> None:
         """J11, J10, J09: the build refuses a join with unequal key lists, a missing key or keys of different types (JOIN-KEY-TYPES-1).
 
-        Mirrors DataAssembler._check_join_key_types, and says nothing when the declarations cannot tell: a step before
+        Asks the same rule as DataAssembler._check_join_key_types (utils.join_keys, JOIN-KEY-ONE-1), and says nothing when the declarations cannot tell: a step before
         the join that is not a join or a row filter may change the left table, and a tier-1 step of a schema may change it.
         """
         step = tier1[position]
@@ -758,7 +759,7 @@ class _Check:
         right_id = step["right_ingredient"]
         if on is None and ("left_on" not in step or "right_on" not in step):
             return  # J05 reports it
-        if len(left_keys) != len(right_keys):
+        if join_keys.key_length_problem(left_keys, right_keys):  # the one rule (utils.join_keys, JOIN-KEY-ONE-1)
             self.add("J11", where, f"the key lists of the join differ in length: left_on has {len(left_keys)} column(s) {left_keys} "
                      f"and right_on has {len(right_keys)} column(s) {right_keys}",
                      "write left_on and right_on with the same number of columns, paired by position, or write 'on' when the columns have the same name in both tables")
@@ -778,27 +779,27 @@ class _Check:
         right_fields = self.declared_fields(right_id)
         if right_fields is None or any(fields is None for _, fields in left_fields) or right_id not in self.schema_bodies:
             return
-        missing = []
+        # The types the declarations give; a column a step before may have created is known by name only (None: no difference).
+        left_types: Dict[str, Any] = {}
+        for _, fields in left_fields:
+            for column, field in fields.items():
+                left_types.setdefault(column, _declared_dtype(field))
         for key in left_keys:
-            suffixed = len(left_tables) > 1 and key.endswith("_right")  # Polars names a clashing column of an earlier join name_right
-            if not suffixed and not any(key in fields for _, fields in left_fields):
-                missing.append(f"{key!r} is not declared in the left table ({', '.join(table for table, _ in left_fields)})")
-        for key in right_keys:
-            if key not in right_fields:
-                missing.append(f"{key!r} is not declared in {right_id}")
-        if missing:
+            if len(left_tables) > 1 and key.endswith("_right"):  # Polars names a clashing column of an earlier join name_right
+                left_types.setdefault(key, None)
+        right_types = {column: _declared_dtype(field) for column, field in right_fields.items()}
+        problem = join_keys.join_key_problem(left_types, right_types, left_keys, right_keys)  # the one rule (utils.join_keys)
+        if problem is None:
+            return
+        if problem["kind"] == "missing":
+            missing = [f"{key!r} is not declared in the left table ({', '.join(table for table, _ in left_fields)})" for key in problem["missing_left"]]
+            missing += [f"{key!r} is not declared in {right_id}" for key in problem["missing_right"]]
             self.add("J10", where, "a join key column is not declared in input_fields: " + "; ".join(missing),
                      "write the key column names as they are in each table: 'on' for a name that is the same in both, left_on and right_on for names that differ; "
                      "the left table is the table at this step, so a column of a table joined later is not in it yet")
             return
-        for left_col, right_col in zip(left_keys, right_keys):
-            left_field = next((fields[left_col] for _, fields in left_fields if left_col in fields), None)
-            if left_field is None:
-                continue  # a suffixed column of an earlier join: its type is not declared
-            right_field = right_fields[right_col]
-            left_type, right_type = _declared_dtype(left_field), _declared_dtype(right_field)
-            if left_type is None or right_type is None or left_type == right_type:
-                continue
+        for pair in problem["differing"]:
+            left_col, right_col, left_type, right_type = pair["left_column"], pair["right_column"], pair["left_type"], pair["right_type"]
             names = f"column {left_col!r}" if left_col == right_col else f"column {left_col!r} (left) and {right_col!r} (right)"
             self.add("J09", where, f"the join key types differ: {names} is {left_type} in the left table and {right_type} in {right_id}",
                      f"declare the same type for this field in input_fields of both tables. A polars_cast step before the join changes only the left table "

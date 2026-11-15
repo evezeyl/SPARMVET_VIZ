@@ -168,3 +168,24 @@ def test_which_cases_the_three_callers_disagree_on_is_recorded():
     expected = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
     disagree = sorted(name for name, entry in expected.items() if len(set(_verdict(entry))) > 1)
     assert disagree == sorted(DISAGREEMENTS)
+
+
+# -- the three callers pass through the one function (a change of it changes all three)
+
+@pytest.mark.parametrize("name", ["empty_lists", "types_String__Int64"])
+def test_a_change_of_the_one_rule_changes_all_three_callers(name, monkeypatch):
+    import utils.join_keys as one_rule
+    case = next(c for c in CASES if c[0] == name)
+    _, left_cols, right_cols, left_keys, right_keys, form = case
+    before = {"build": _assembler_says(left_cols, right_cols, left_keys, right_keys, "lr"),
+              "preview": _preview_says(left_cols, right_cols, left_keys, right_keys),
+              "checker": _checker_says(left_cols, right_cols, left_keys, right_keys, "lr", False)}
+    # the rule is made to find nothing: every caller must now accept the join
+    monkeypatch.setattr(one_rule, "join_key_problem", lambda *a, **k: None)
+    monkeypatch.setattr(one_rule, "key_length_problem", lambda *a, **k: None)
+    after = {"build": _assembler_says(left_cols, right_cols, left_keys, right_keys, "lr"),
+             "preview": _preview_says(left_cols, right_cols, left_keys, right_keys),
+             "checker": _checker_says(left_cols, right_cols, left_keys, right_keys, "lr", False)}
+    assert after["build"] == {"refused": False} and after["preview"]["refused"] is False and after["checker"] == []
+    if name == "types_String__Int64":
+        assert before["build"]["refused"] and before["preview"]["refused"] and before["checker"]
