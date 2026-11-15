@@ -4,7 +4,7 @@ MVP-1 tools for the BLUEPRINT AI Agent (ADR-076 §4).
 Three tools are registered for Phase 1:
     get_available_actions      — list @register_action entries, optionally filtered
     get_available_components   — list @register_plot_component entries, optionally filtered
-    get_field_contract         — resolve input/output fields for a data schema
+    get_field_contract         — resolve the input_fields and the wrangling tiers of a data schema (recipe format 1 has no output_fields)
 
 Each tool function:
     - Accepts a dict of args (matching the schema in register_tool_schema)
@@ -205,7 +205,7 @@ def _tool_get_available_components(args: dict) -> dict:
 _GET_FIELD_CONTRACT_TOOL = Tool(
     name="get_field_contract",
     description=(
-        "Resolve the input_fields and output_fields for a named data schema in the "
+        "Resolve the input_fields (the typed columns the app reads) for a named data schema in the "
         "active data analysis recipe. Returns field slugs, types, and labels. "
         "Use this to check which columns are available at each pipeline stage."
     ),
@@ -233,7 +233,7 @@ _GET_FIELD_CONTRACT_TOOL = Tool(
 
 
 def _tool_get_field_contract(args: dict) -> dict:
-    """Return input and output field contracts for a schema_id."""
+    """Return the input field contract (recipe format 1: no output_fields) for a schema_id."""
     schema_id = args.get("schema_id", "").strip()
     data_analysis_recipe_path_str = args.get("data_analysis_recipe_path", "").strip() or None
 
@@ -301,10 +301,12 @@ def _tool_get_field_contract(args: dict) -> dict:
 
     entry = schema_reg[schema_id]
 
-    # input_fields / output_fields may be path strings when declared via !include
+    # input_fields may be a path string when declared via !include
     def _load_field_entry(val: Any) -> dict:
         if isinstance(val, dict):
-            return val
+            # the registry stores inline content as {"inline": value}
+            inline = val.get("inline")
+            return inline if isinstance(inline, dict) else {}
         if isinstance(val, str) and val:
             # Relative path from data analysis recipe dir — resolve via inc_map or direct
             abs_path = (data_analysis_recipe_path.parent / val).resolve()
@@ -316,7 +318,6 @@ def _tool_get_field_contract(args: dict) -> dict:
         return {}
 
     input_fields = _load_field_entry(entry.get("input_fields", {}))
-    output_fields = _load_field_entry(entry.get("output_fields", {}))
     resolved = fields if isinstance(fields, dict) else {}
 
     return {
@@ -325,10 +326,8 @@ def _tool_get_field_contract(args: dict) -> dict:
             "schema_id": schema_id,
             "schema_type": entry.get("schema_type", ""),
             "input_fields": _format_fields(input_fields),
-            "output_fields": _format_fields(output_fields),
             "resolved_fields": _format_fields(resolved),
-            "wrangling_tiers": list(entry.get("wrangling", {}).keys())
-            if isinstance(entry.get("wrangling"), dict) else [],
+            "wrangling_tiers": list(_load_field_entry(entry.get("wrangling")).keys()),
         },
     }
 

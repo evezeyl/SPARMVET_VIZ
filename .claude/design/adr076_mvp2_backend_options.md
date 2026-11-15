@@ -7,7 +7,7 @@ leaves off (MVP-2).
 
 **Why this document exists:** Eve asked for "a solution where we can use agents via API and
 agents via CLI," a place to put best-practice instructions for the agent, and a guarantee that
-the agent "will not be allowed to modify anything to the app code — only create new manifests."
+the agent "will not be allowed to modify anything to the app code — only create new manifests." <!-- audit:allow-old-word (quotation of Eve) -->
 This is not a greenfield design — ADR-076 already answered most of it. What follows is (1) a
 status check against the real code, so the decision is grounded in what exists, not what the
 ADR assumed would exist, and (2) the few things ADR-076 did not resolve, with options.
@@ -22,7 +22,7 @@ ADR assumed would exist, and (2) the few things ADR-076 did not resolve, with op
 | CLI backend | **Built** | `ClaudeCliAdapter` — subprocess `claude -p` in an isolated `agent_sessions/{uuid}/` dir, POSIX flock single-flight, auth probe at init, falls back to `DisabledAdapter` on failure. |
 | API backend | **Scoped, not built** | `make_adapter()` line 399-403: `claude_api` and `local` both return `DisabledAdapter("not implemented in Phase 1")`. ADR-076 §1 names it `ClaudeApiAdapter` (Phase 2) and even already names the config keys (`model`, `api_key_env`) — they're sitting unused in `developer.yaml` / `qa.yaml` today. |
 | Where instructions live | **Built** | `config/ui/agents/blueprint_default.md`, loaded via `blueprint_agent.instructions_file` in the app features file, assembled by `agent_context.build_system_prompt()` into: (1) your instructions file, (2) a live-generated summary of registered actions/components, (3) the active data analysis recipe's current structure, (4) the tool-call protocol. This already is "a place to put the instructions" — nothing new to build here, only content to add. |
-| "Agent cannot touch app code, only proposes manifest/recipe content" | **Decided in principle, not enforced in code yet** | ADR-076 calls this a "non-negotiable" invariant, routed through one tool: `propose_data_analysis_recipe_diff`. **That tool does not exist.** `agent_tools.py` only has the three read-only tools (`get_available_actions`, `get_available_components`, `get_field_contract`). Today the agent cannot write anything at all — it can only talk and read the registry/contracts. `adr076_mvp.md` confirms this was deliberate: MVP-1 is read-only by design, MVP-2 is where the diff/apply tool was always meant to land. |
+| "Agent cannot touch app code, only proposes data analysis recipe content" | **Decided in principle, not enforced in code yet** | ADR-076 calls this a "non-negotiable" invariant, routed through one tool: `propose_data_analysis_recipe_diff`. **That tool does not exist.** `agent_tools.py` only has the three read-only tools (`get_available_actions`, `get_available_components`, `get_field_contract`). Today the agent cannot write anything at all — it can only talk and read the registry/contracts. `adr076_mvp.md` confirms this was deliberate: MVP-1 is read-only by design, MVP-2 is where the diff/apply tool was always meant to land. |
 
 **Bottom line:** this is Phase/MVP-2 of a plan that already exists. The three things Eve is
 asking for are the three things MVP-2 was always going to need. Nothing here requires picking a
@@ -74,7 +74,7 @@ regex parser the CLI backend needs.
 - **External resources needed:** `anthropic` PyPI package; `ANTHROPIC_API_KEY` env var (Eve's
   credits); a model id — the config currently says `claude-opus-4-7`, which is stale (current
   family: Sonnet 5.5 `claude-sonnet-5-5`, Opus 5.5 `claude-opus-5-5`). Sonnet 5.5 is the right
-  default for this task (manifest design is not the hardest reasoning tier); Opus 5.5 as an
+  default for this task (data analysis recipe design is not the hardest reasoning tier); Opus 5.5 as an
   optional override for a harder session.
 - **Pros:** Smallest amount of new machinery. No hidden tool access — the model can only call
   what you hand it in `tools=`, which is the strongest answer to Decision B below. Works from
@@ -232,7 +232,7 @@ humans).
 
 Two sources already exist in this repo that were written for almost exactly this job:
 
-- **`.claude/rules/rules_agent_role_bioscientist.md`** — the `@bioscientist` persona. Scoped to
+- **`.claude/rules/rules_agent_role_bioscientist.md`** — the `@bioscientist` agent role. Scoped to
   YAML only, forbidden from touching `.py` files, required to interview before generating YAML,
   required to use only registered actions/components, required to file an Enhancement Request
   rather than invent a key. This is the same role, just written for a Claude Code session

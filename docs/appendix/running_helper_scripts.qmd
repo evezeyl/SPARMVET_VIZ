@@ -19,48 +19,7 @@ PYTHON="./.venv/bin/python"
 
 ---
 
-## 1. Normalize Data Analysis Recipe Fields
-
-**Script:** `assets/scripts/normalize_data_analysis_recipe_fields.py`
-
-Sanitizes YAML data analysis recipes to comply with the **ADR-041 Rich Dictionary** standard. Detects and auto-fixes:
-
-- Legacy type names (`utf8` → `categorical`, `string` → `categorical`, `float64` → `numeric`, etc.)
-- Missing Rich Dict keys (`original_name`, `type`, `label`) — fills with safe defaults
-- Empty list fields (`input_fields: []` → `input_fields: {}`)
-- Flat wrangling blocks (`wrangling: [...]` → `wrangling: {tier1: [...]}`)
-- Empty `final_contract` list (`final_contract: []` → `final_contract: {}`)
-
-```bash
-# Dry-run a single data analysis recipe (inspect only — no files written)
-./.venv/bin/python assets/scripts/normalize_data_analysis_recipe_fields.py \
-    --data-analysis-recipe config/data_analysis_recipes/pipelines/my_pipeline.yaml
-
-# Apply fixes to a single data analysis recipe
-./.venv/bin/python assets/scripts/normalize_data_analysis_recipe_fields.py \
-    --data-analysis-recipe config/data_analysis_recipes/pipelines/my_pipeline.yaml --write
-
-# Scan and fix all data analysis recipes in a directory (recursive)
-./.venv/bin/python assets/scripts/normalize_data_analysis_recipe_fields.py \
-    --dir config/data_analysis_recipes/ --write
-
-# Skip backup files (default creates a .bak copy before writing)
-./.venv/bin/python assets/scripts/normalize_data_analysis_recipe_fields.py \
-    --data-analysis-recipe my_data_analysis_recipe.yaml --write --no-backup
-```
-
-**Arguments:**
-
-| Argument | Description |
-|---|---|
-| `--data-analysis-recipe FILE` | Single data analysis recipe to inspect/normalize (mutually exclusive with `--dir`) |
-| `--dir DIR` | Directory to scan recursively for `*.yaml` files |
-| `--write` | Apply fixes (default: dry-run, no files modified) |
-| `--no-backup` | Skip creating `.yaml.bak` backup before writing |
-
----
-
-## 2. Create a Data analysis recipe
+## 1. Create a Data analysis recipe
 
 **Script:** `assets/scripts/create_data_analysis_recipe.py`
 
@@ -80,7 +39,7 @@ names, checked against each file in turn); `--primary_key_metadata` (optional); 
 
 ---
 
-## 3. Create a Figshare / External Dataset Data Analysis Recipe
+## 2. Create a Figshare / External Dataset Data Analysis Recipe
 
 **Script:** `assets/scripts/SF_create_data_analysis_recipe.py`
 
@@ -94,7 +53,7 @@ Variant of `create_data_analysis_recipe.py` tailored for Figshare and other exte
 
 ---
 
-## 4. Create a Test Deployment
+## 3. Create a Test Deployment
 
 **Script:** `assets/scripts/create_test_deployment.py`
 
@@ -119,7 +78,7 @@ The deployment defines `deployment_type`, `locations` (raw data, data analysis r
 
 ---
 
-## 5. Generate Synthetic Demo Data
+## 4. Generate Synthetic Demo Data
 
 **Script:** `assets/scripts/generate_demo_data.py`
 
@@ -133,24 +92,7 @@ Output is written to `assets/test_data/demo_high_integrity/`. Verifies join inte
 
 ---
 
-## 6. Data analysis recipe Debugging Scripts
-
-### `debug_apply_data_analysis_recipe_standards.py`
-
-Applies ADR-041 header structure (missing `id`, `description`, `input_fields`, `wrangling`,
-`output_fields` blocks) to the **VizFactory test fixtures** in `libs/viz_factory/tests/test_data/`
-only — it is a test-data maintenance script, not a general-purpose fixer for arbitrary pipeline data
-analysis recipes. Real flags are `--test-dir` (default `libs/viz_factory/tests/test_data`) and
-`--dry-run` (preview without writing).
-
-```bash
-# Dry-run against the default VizFactory test fixtures directory
-./.venv/bin/python assets/scripts/debug_apply_data_analysis_recipe_standards.py --dry-run
-
-# Apply, or point at a different test-data directory
-./.venv/bin/python assets/scripts/debug_apply_data_analysis_recipe_standards.py \
-    --test-dir libs/viz_factory/tests/test_data
-```
+## 5. Data analysis recipe Debugging Scripts
 
 ### `debug_bootstrap_viz_yamls.py`
 
@@ -170,7 +112,7 @@ Audits VizFactory component coverage — cross-references the registry against t
 
 ---
 
-## 7. Figshare Integration Scripts
+## 6. Figshare Integration Scripts
 
 These scripts are for the multi-stage Figshare AMR dataset integration pipeline. Run them in order:
 

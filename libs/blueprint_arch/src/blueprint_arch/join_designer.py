@@ -13,6 +13,7 @@ If deleted: the Joint Designer pane loses its overlap stats and step (de)seriali
 from __future__ import annotations
 
 from utils import action_names
+from utils import join_keys
 
 # @deps
 # provides: join_designer:check_join_keys, join_designer:compute_key_match, join_designer:build_join_step, join_designer:parse_join_step
@@ -32,9 +33,9 @@ def check_join_keys(left_schema, right_schema, left_keys, right_keys, right_id="
     The build (DataAssembler, JOIN-KEY-TYPES-1, 2026-11-14) keeps the declared type of every key and fails when
     the two lists of keys differ in length, when a key column is missing, or when the types of a pair differ.
     This function gives the same verdict for the same pair, so the preview never says "compatible" for a join
-    that the build refuses. The rule is written three times on purpose: the build (data_assembler.py:52), this preview and the
-    checker (libs/utils/src/utils/recipe_check.py:539); a domain library may not import another one
-    (rules_runtime_environment.md section 4); the parity test in app/tests compares them.
+    that the build refuses. The rule is one function, `utils.join_keys.join_key_problem` (JOIN-KEY-ONE-1), called by the
+    build (data_assembler.py), this preview and the checker (libs/utils/src/utils/recipe_check.py); the parity test in
+    app/tests proves it. The wording below is this caller's own.
 
     left_schema / right_schema: {column name: dtype name} of the two tables (dtype names as strings).
     left_keys / right_keys: key column names, paired by position.
@@ -45,17 +46,23 @@ def check_join_keys(left_schema, right_schema, left_keys, right_keys, right_id="
     left_keys = list(left_keys)
     right_keys = list(right_keys)
     fail = {"ok": False, "type_pairs": []}
+    # the one rule (utils.join_keys, JOIN-KEY-ONE-1); the preview refuses two empty lists, the build does not
+    found = join_keys.join_key_problem(left_schema, right_schema, left_keys, right_keys, empty_is_problem=True)
 
-    if len(left_keys) != len(right_keys) or not left_keys:
+    if found is None:
+        pairs = [{"left_column": a, "right_column": b, "left_type": str(left_schema[a]), "right_type": str(right_schema[b]), "same": True}
+                 for a, b in zip(left_keys, right_keys)]
+        return {"ok": True, "kind": None, "problem": "", "fix": "", "type_pairs": pairs}
+
+    if found["kind"] == "length":
         return {**fail, "kind": "length",
                 "problem": (f"The key lists differ in length: left has {len(left_keys)} column(s) {left_keys} "
                             f"and right has {len(right_keys)} column(s) {right_keys}."),
                 "fix": ("Pick the same number of key columns on each side, paired by position "
                         "(the first of the left with the first of the right).")}
 
-    missing_left = [c for c in left_keys if c not in left_schema]
-    missing_right = [c for c in right_keys if c not in right_schema]
-    if missing_left or missing_right:
+    if found["kind"] == "missing":
+        missing_left, missing_right = found["missing_left"], found["missing_right"]
         lacks = []
         if missing_left:
             lacks.append(f"key column(s) {missing_left} missing in the left table (its columns: {list(left_schema)})")
@@ -66,24 +73,18 @@ def check_join_keys(left_schema, right_schema, left_keys, right_keys, right_id="
                 "fix": ("Pick key columns that exist in each table. The left table is the table at this step: a column of "
                         "a table joined later is not in it yet, and a step before the join may have renamed or dropped it.")}
 
-    pairs = []
-    for left_col, right_col in zip(left_keys, right_keys):
-        left_type, right_type = str(left_schema[left_col]), str(right_schema[right_col])
-        pairs.append({"left_column": left_col, "right_column": right_col,
-                      "left_type": left_type, "right_type": right_type, "same": left_type == right_type})
-    differing = [p for p in pairs if not p["same"]]
-    if differing:
-        described = "; ".join(
-            (f"column '{p['left_column']}'" if p["left_column"] == p["right_column"]
-             else f"column '{p['left_column']}' (left) and '{p['right_column']}' (right)")
-            + f" is {p['left_type']} in the left table and {p['right_type']} in '{right_id}'"
-            for p in differing)
-        return {"ok": False, "kind": "type", "type_pairs": pairs,
-                "problem": f"The join key types differ: {described}.",
-                "fix": (f"Declare the same type for this field in input_fields of both tables. A cast step before the join "
-                        f"changes only the left table (the table at this step); the type of '{right_id}' is changed in its "
-                        "own input_fields or in its own wrangling. The engine does not change the type of a join key for you.")}
-    return {"ok": True, "kind": None, "problem": "", "fix": "", "type_pairs": pairs}
+    pairs = [{"left_column": p["left_column"], "right_column": p["right_column"],
+              "left_type": str(p["left_type"]), "right_type": str(p["right_type"]), "same": p["same"]} for p in found["pairs"]]
+    described = "; ".join(
+        (f"column '{p['left_column']}'" if p["left_column"] == p["right_column"]
+         else f"column '{p['left_column']}' (left) and '{p['right_column']}' (right)")
+        + f" is {p['left_type']} in the left table and {p['right_type']} in '{right_id}'"
+        for p in pairs if not p["same"])
+    return {"ok": False, "kind": "type", "type_pairs": pairs,
+            "problem": f"The join key types differ: {described}.",
+            "fix": (f"Declare the same type for this field in input_fields of both tables. A cast step before the join "
+                    f"changes only the left table (the table at this step); the type of '{right_id}' is changed in its "
+                    "own input_fields or in its own wrangling. The engine does not change the type of a join key for you.")}
 
 
 def compute_key_match(left_rows, right_rows, sample_n=8):

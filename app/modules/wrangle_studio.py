@@ -662,10 +662,14 @@ class WrangleStudio:
                 return None, f"No data loaded for '{viz_id}' — select a plot node to materialise its dataset."
 
             try:
-                from utils.config_loader import ConfigManager as _CM
+                from app.modules.data_analysis_recipe_validator import load_config_or_problems
                 if not Path(data_analysis_recipe_path).exists():
                     return None, f"Data analysis recipe not found: {data_analysis_recipe_path}"
-                full_cfg = _CM(data_analysis_recipe_path).raw_config
+                # GATE-GAP-1: a recipe broken on disk after its data was loaded must not end the session (SystemExit)
+                loaded_cfg, load_problems = load_config_or_problems(data_analysis_recipe_path)
+                if loaded_cfg is None:
+                    return None, f"Data analysis recipe cannot be loaded: {'; '.join(load_problems[:3])}"
+                full_cfg = loaded_cfg.raw_config
 
                 # Resolve the plot spec from flat `plots:` (gallery bundles)
                 # or modern `analysis_groups:` (pipeline data analysis recipes, ADR-043).

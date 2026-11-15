@@ -9,7 +9,6 @@
 # ~250 lines at most (rules_app_structure.md section 3): shared state, shared calcs, shared utils,
 # five define_server() delegations.
 # No business logic. No @render.* or @reactive.* here.
-from types import SimpleNamespace
 
 from shiny import reactive
 import polars as pl
@@ -19,6 +18,7 @@ from app.src.bootloader import bootloader
 from app.modules.orchestrator import DataOrchestrator
 from app.modules.session_manager import SessionManager
 from app.modules.cache_keys import load_data_analysis_recipe
+from app.handlers.recipe_gate_handlers import usable_config, define_server as _define_recipe_gate_server
 from viz_factory.viz_factory import VizFactory
 from app.modules.wrangle_studio import WrangleStudio
 from app.modules.test_lab_studio import TestLabStudio
@@ -80,22 +80,19 @@ def server(input, output, session):
                     return target
         return "Untitled_Collection"  # no joins and no plot has a target_dataset either
 
+    # GATE-GAP-1: the gate version, published by recipe_gate_handlers (it polls the load gate, ADR-094); active_cfg depends on it
+    recipe_gate_version = reactive.Value(0)
+
     # 1. Reactive Data Analysis Recipe Authority (Universal Architecture)
     @reactive.Calc
     def active_cfg():
+        recipe_gate_version()
         # When the selector is hidden the deployment (or SPARMVET_DATA_ANALYSIS_RECIPE) names the data analysis recipe;
         # fall back to the data_analysis_recipe_id widget only when the selector is visible.
         data_analysis_recipe_id = _safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe_or_none())
-        # issue #38: zero usable recipes — every caller of active_cfg() across the handlers
-        # only ever reads `.raw_config` (verified by grep), so an empty stand-in here is
-        # enough to make all of them render their own "nothing to show" state instead of
-        # raising. Fixing it once here, not at each of the ~15 call sites.
-        if not data_analysis_recipe_id:
-            return SimpleNamespace(raw_config={})
-        # ADR-089: the parsed data analysis recipe stays in memory only while none of its files changed on
-        # disk (size and modification time are checked each time a session evaluates this).
-        path = bootloader.get_location("data_analysis_recipes") / f"{data_analysis_recipe_id}.yaml"
-        return load_data_analysis_recipe(path).config
+        # issue #38 and GATE-GAP-1: none, or a recipe that is not usable (it failed the load gate): an empty stand-in; every
+        # caller only reads `.raw_config` and renders its own "nothing to show" state (recipe_gate_handlers.usable_config)
+        return usable_config(bootloader, data_analysis_recipe_id, load_data_analysis_recipe)
 
     orchestrator = DataOrchestrator(
         data_analysis_recipes_dir=bootloader.get_location("data_analysis_recipes"),
@@ -184,6 +181,10 @@ def server(input, output, session):
         _define_testlab_server(input, output, session, dev_studio=dev_studio, bootloader=bootloader)
 
     # ── Handler Delegations (ADR-045 — Two-Category Law) ──────────────────────
+
+    # HOME follows the load gate: poll, recipe selector and its notes (GATE-GAP-1)
+    _define_recipe_gate_server(input, output, session, bootloader=bootloader, safe_input=_safe_input,
+                               recipe_gate_version=recipe_gate_version)
 
     # Home Theater: dynamic_tabs, sidebar_nav_ui, sidebar_tools_ui, right_sidebar, plots/tables
     from app.handlers.home_theater import define_server as _define_home_theater_server
