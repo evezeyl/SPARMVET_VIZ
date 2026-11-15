@@ -37,8 +37,8 @@ No visual component is considered verified without:
 
 **Authoritative op list:** `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in`, `not_in`, `between`.
 
-- `in` / `not_in`: `value` must be a Python list; `pl.col(col).cast(Utf8).is_in(str_vals)` (string-cast both sides).
-- `between`: `value` must be `[lo, hi]`; uses `pl.col(c).is_between(lo, hi, closed=...)`. Honours optional `closed` field (`'both'` default = inclusive, `'none'` = exclusive).
+- `in` / `not_in`: `value` must be a Python list; values are compared typed, in the type of the column (ADR-104 point 7: `utils.filter_values.filter_condition`, shared with the HOME table and the recipe action `modif_filter`). Only a column of another type (Categorical, Datetime) compares text.
+- `between`: `value` must be `[lo, hi]`; uses `pl.col(c).is_between(lo, hi, closed=...)`. Honours optional `closed` field (`'both'` default, `'left'`, `'right'`, `'none'`); needs a number or a date column.
 - Adding new ops requires updating `viz_factory.py:render()` **and** documenting here.
 - The `dtype` key from the filter builder is UI-layer metadata — strip it before injecting into `plot_config["filters"]`.
 

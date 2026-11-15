@@ -90,11 +90,12 @@ def _condition_summary(node: dict) -> str:
         op_raw = p.get("op", "eq")
         op = _OP_SYMBOL.get(op_raw, op_raw)
         val = p.get("value", "")
-        # 'between' renders with explicit inclusivity bracket: [lo, hi] when
-        # closed='both' (inclusive), (lo, hi) when closed='none' (exclusive).
+        # 'between' renders with explicit brackets: [ or ( at the lower end, ] or ) at the upper end;
+        # a square bracket means the end is included (closed both, left or right, ADR-104 point 8).
         if op_raw == "between" and isinstance(val, (list, tuple)) and len(val) == 2:
             closed = p.get("closed", "both")
-            lb, rb = ("[", "]") if closed == "both" else ("(", ")")
+            lb = "[" if closed in ("both", "left") else "("
+            rb = "]" if closed in ("both", "right") else ")"
             return f"{col} ∈ {lb}{val[0]}, {val[1]}{rb}"
         return f"{col} {op} {_format_value(val)}"
     if nt == "exclusion_row":

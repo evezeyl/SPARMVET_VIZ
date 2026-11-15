@@ -198,12 +198,16 @@ The filter builder in the left sidebar adapts its widgets to the column type:
 | `le`     | `≤`    | numeric input         | `col <= value`                         |
 | `between`| `↔`    | two numeric inputs (min, max) + inclusivity radio | `col.is_between(lo, hi, closed=...)` |
 
-The **`between`** operator has an inclusivity toggle:
+The **`between`** operator says which ends of the range are included, with four choices:
 
-- `≤ inclusive` (default) → `closed='both'` → audit shows `col ∈ [lo, hi]`
-- `< exclusive`           → `closed='none'` → audit shows `col ∈ (lo, hi)`
+- both ends included (default) → `closed='both'` → audit shows `col ∈ [lo, hi]`
+- min included, max not → `closed='left'` → `col ∈ [lo, hi)`
+- max included, min not → `closed='right'` → `col ∈ (lo, hi]`
+- neither end included → `closed='none'` → `col ∈ (lo, hi)`
 
-If the user enters `lo > hi`, SPARMVET auto-swaps them rather than producing an empty filter.
+The choice is carried to the audit step, the export and the report ("between 90 and 99, the lower end included, the upper end not"). If the user enters `lo > hi`, SPARMVET auto-swaps them rather than producing an empty filter.
+
+**The value has the type of its column.** The panel shows what the column holds ("year holds whole numbers (Int64)") and keeps the real value: a number for a number column, true or false for a true/false column, text for text. The list of values comes from the whole column, not from its first rows. A number column that the plot uses as a discrete axis offers the list operators (`∈`, `∉`, `=`, `≠`, a list is picked) and also the comparisons (`>`, `≥`, `<`, `≤`, `↔`), which use number boxes, so that "> 1998 and < 2003" can be written. A step saved before the real value was kept holds the value as text; it is read from the type the step carries when it is shown and exported, and a value that cannot be read is reported, never guessed.
 
 ### Categorical / discrete columns
 

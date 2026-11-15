@@ -67,11 +67,8 @@ def test_numeric_value_all_three_agree(column, op, value, expected):
     assert by_engine(rows) == by_plot(rows) == by_translated_action(rows) == expected
 
 
-# VizFactory builds in / not_in by comparing text ("91.0" is not "91"), the engine and the action compare numbers.
-# Not the threshold defect of #62; reported to Eve (open choice), the mark goes when VizFactory is aligned.
-VIZ_SET_DEFECT = {("f", "in", 0), ("f", "not_in", 1), ("i", "in", 2), ("i", "not_in", 3)}
-
-
+# in / not_in compare numbers in the table, the plot and the action (ADR-104 point 1: the plot used to compare text,
+# "91.0" is not "91").
 @pytest.mark.parametrize("column", ["i", "f"])
 @pytest.mark.parametrize("n", range(len(SET_CASES)))
 def test_set_operators_engine_and_translated_action_agree(column, n):
@@ -82,10 +79,8 @@ def test_set_operators_engine_and_translated_action_agree(column, n):
 
 @pytest.mark.parametrize("column", ["i", "f"])
 @pytest.mark.parametrize("n", range(len(SET_CASES)))
-def test_set_operators_plot_filter_agrees(column, n, request):
+def test_set_operators_plot_filter_agrees(column, n):
     op, value, expected = SET_CASES[n]
-    if (column, op, n) in VIZ_SET_DEFECT:
-        request.applymarker(pytest.mark.xfail(strict=True, reason="plot in/not_in compares text: 91.0 is not 91 (reported to Eve)"))
     assert by_plot([row(column, op, value)]) == expected
 
 
@@ -120,16 +115,13 @@ def test_a_negative_non_integer_threshold_keeps_zero():
     assert _apply_filter_rows(frame, rows).collect()["s"].to_list() == ["b", "c"]
 
 
-# ── the real export path: the panel's stored row (text value + dtype) -> translator -> action ──
+# -- the real export path: a row stored with the value as text + dtype -> translator (types it from the dtype) -> action --
 
 def _stored_row(column, op, value, dtype):
     """A filter row as the panel stores it: the value is text, `dtype` is the column dtype name."""
     return {"column": column, "op": op, "value": value, "dtype": dtype}
 
 
-@pytest.mark.xfail(strict=True, raises=pl.exceptions.ComputeError,
-                   reason="the translator writes the panel's text value into the step "
-                          "(task EXPORT-FILTER-VALUE-1, t3_translator is frozen until Eve's yes)")
 @pytest.mark.parametrize("column, dtype", [("i", "Int64"), ("f", "Float64")])
 @pytest.mark.parametrize("op", ["ge", "lt", "eq"])
 @pytest.mark.parametrize("value", ["90", "90.5"])

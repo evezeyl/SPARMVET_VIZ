@@ -12,15 +12,17 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
+# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_number, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
 # consumes: polars, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
 
+import math
+
 import polars as pl
 
-from utils.filter_values import coerce_filter_value
+from utils.filter_values import FilterValueError, filter_condition, kind_of, read_filter_value, type_words
 from utils.missing_values import keep_missing
 from utils.na_choice import default_na, na_of
 
@@ -52,13 +54,17 @@ def op_choice_label(op: str) -> str:
     return f"{sym} {words}"
 
 
+# What a staged line adds for `between` when the ends are not both included (never silent).
+_CLOSED_SUFFIX = {"left": ", lower end included, upper end not", "right": ", upper end included, lower end not", "none": ", ends not included"}
+
+
 def describe_filter(column: str, op: str, value, na: str | None = None, closed: str | None = None) -> str:
     """One-line text of a filter row. A one-value set reads as equality ('sequence_type = 101'),
     several values read 'any of' / 'none of' (issue #57). With `na` ("keep" or "remove") the line ends with what
-    happens to the rows with no value in the column (NA-RULE-63). `closed` "none" of a `between` is said, never silent."""
+    happens to the rows with no value in the column (NA-RULE-63). an end that is not included in a `between` is said, never silent."""
     text = _describe_condition(column, op, value)
-    if op == "between" and closed == "none":
-        text += ", ends not included"
+    if op == "between" and closed in _CLOSED_SUFFIX:
+        text += _CLOSED_SUFFIX[closed]
     if na is None:
         return text
     return f"{text} ({na_phrase(na)})"
@@ -80,6 +86,150 @@ def _describe_condition(column: str, op: str, value) -> str:
     if vals is not None:
         return f"{column} {words} {', '.join(str(v) for v in vals)}"
     return f"{column} {sym} {value}"
+
+
+# -- the pure side of the HOME filter dialog (ADR-104 points 4, 7 and 8) ---------------------------------------------
+
+# The four ends of `between`, as the dialog shows them (the words of the choice, in the order of the radio).
+CLOSED_CHOICES = {
+    "both": "both ends included (min ≤ value ≤ max)",
+    "left": "min included, max not (min ≤ value < max)",
+    "right": "max included, min not (min < value ≤ max)",
+    "none": "neither end included (min < value < max)",
+}
+_CLOSED_PHRASE = {
+    "both": "both ends included", "left": "the lower end included, the upper end not",
+    "right": "the upper end included, the lower end not", "none": "neither end included",
+}
+
+
+def closed_phrase(closed: str) -> str:
+    """The ends of a `between` in words, for a report: 'both ends included', 'neither end included', ..."""
+    return _CLOSED_PHRASE[closed]
+
+
+def between_prose(value, closed: str) -> str:
+    """The report sentence of a `between`: 'between "89" and "91", both ends included'."""
+    return f'between "{value[0]}" and "{value[1]}", {closed_phrase(closed)}'
+
+
+def column_types(lf) -> dict:
+    """Column name -> dtype, from the schema of the table (not from a sample of rows)."""
+    schema = lf.collect_schema()
+    return {name: schema[name] for name in schema.names()}
+
+
+def column_type_line(column: str, dtype) -> str:
+    """What the filter dialog shows next to the column: 'Year holds whole numbers (Int64).'"""
+    return f"{column} holds {type_words(dtype)} ({dtype})."
+
+
+def value_choices(lf, column: str) -> dict:
+    """The values of the whole column as the dialog lists them: {text shown: real value}, sorted, no missing value.
+
+    The real value is a number for a number column, True or False for a true/false column, text for the rest. A date or a date and time is
+    kept as its text (year-month-day, hour:minute:second) (a session file holds no date object; the export types it from the dtype). NaN is not
+    listed: it is counted on its own and treated by its own steps (ADR-103).
+    """
+    kind = kind_of(column_types(lf).get(column))
+    if kind == "datetime":
+        # The text Polars writes for the value: every digit of the column's unit (nanoseconds too) and its offset; the table,
+        # the plot and the export read the same text back in the column's own unit and zone (`filter_condition`).
+        texts = lf.select(pl.col(column).drop_nulls().unique().sort().cast(pl.String)).collect()[column].to_list()
+        return {t: t for t in texts}
+    values = lf.select(pl.col(column).drop_nulls().unique()).collect()[column].to_list()
+    if kind == "float":
+        values = [float(v) for v in values if not (isinstance(v, float) and math.isnan(v))]
+    if kind in ("int", "float", "bool", "date"):
+        values = sorted(values)
+    choices: dict = {}
+    for v in values:
+        label = v.isoformat() if kind == "date" else str(v)
+        choices[label] = label if kind in ("date", "other", "category") else v
+    if kind in ("text", "category", "other"):
+        choices = dict(sorted(choices.items()))
+    return choices
+
+
+def pick_values(choices: dict, labels) -> list:
+    """The real values of the texts the user picked, in the order picked; a text that is not in the column is reported."""
+    missing = [label for label in labels if label not in choices]
+    if missing:
+        raise FilterValueError(f"The value {missing[0]!r} is not in the column any more",
+                               "open the list again and pick the values from it")
+    return [choices[label] for label in labels]
+
+
+def number_range(lf, column: str):
+    """(smallest, largest) of the whole column for the number box, or None when it has no number."""
+    kind = kind_of(column_types(lf).get(column))
+    expr = pl.col(column).drop_nans() if kind == "float" else pl.col(column)
+    row = lf.select(expr.min().alias("lo"), expr.max().alias("hi")).collect().row(0)
+    return None if row[0] is None else (row[0], row[1])
+
+
+def typed_number(raw, dtype):
+    """A number of the number box in the type of the column (an integer column keeps an integer, a decimal column a decimal)."""
+    return read_filter_value(raw, dtype)
+
+
+def ops_for_column(dtype, discrete_axis: bool) -> list:
+    """The operators the dialog offers for a column of `dtype`.
+
+    A number column offers the comparisons and `between`; when the plot uses it as a discrete axis it also offers the list
+    operators first, so that a list can be picked and "> 1998 and < 2003" can still be written (Eve, 2026-11-14). Every
+    other column offers the list operators. Comparisons on text, dates and true/false columns are not decided.
+    """
+    numbers = ["eq", "ne", "gt", "ge", "lt", "le", "between"]
+    if dtype is not None and kind_of(dtype) == "other":
+        return []  # a time, a duration, ...: typed values are not built for them
+    if kind_of(dtype) in ("int", "float"):
+        return ["in", "not_in"] + numbers if discrete_axis else numbers
+    return ["in", "not_in", "eq", "ne"]
+
+
+def not_offered_line(column: str, dtype) -> str:
+    """What the dialog says for a column whose type has no typed filter (a time, a duration, ...)."""
+    return f"A filter on {column} is not offered: the column holds {dtype}."
+
+
+def value_widget_for(dtype, discrete_axis: bool, op: str) -> str:
+    """The widget of the value: "list" (pick values), "number" (one number box) or "range" (two number boxes, `between`)."""
+    if kind_of(dtype) not in ("int", "float"):
+        return "list"
+    if op == "between":
+        return "range"
+    if op in ("in", "not_in") or (op in ("eq", "ne") and discrete_axis):
+        return "list"
+    return "number"
+
+
+def dialog_value(lf, column: str, dtype, discrete_axis: bool, op: str, *, picked=(), number=None, low=None, high=None,
+                 closed: str = "both", text: str = ""):
+    """What "+ Add" writes into the filter row: (operator, real value, ends), or None when nothing is chosen yet.
+
+    The value has the type of the column (ADR-104 point 7): values picked from a list are looked up in the map of the whole
+    column, a number of a number box is typed from the dtype, the two bounds of `between` are typed and put in order. eq or ne
+    on a list means in or not_in. Without a table (`dtype` None) the text is kept as written. Raises FilterValueError when a
+    value cannot be read in the type of the column.
+    """
+    if dtype is not None and not ops_for_column(dtype, discrete_axis):
+        raise FilterValueError(not_offered_line(column, dtype), "filter another column")
+    widget = value_widget_for(dtype, discrete_axis, op) if dtype is not None else "text"
+    if widget == "range":
+        if low is None or high is None:
+            return None
+        low, high = typed_number(low, dtype), typed_number(high, dtype)
+        return op, ([high, low] if low > high else [low, high]), (closed if closed in CLOSED_CHOICES else "both")
+    if widget == "list":
+        labels = list(picked or ())
+        if not labels:
+            return None
+        return {"eq": "in", "ne": "not_in"}.get(op, op), pick_values(value_choices(lf, column), labels), "both"
+    if widget == "number":
+        return (op, typed_number(number, dtype), "both") if number is not None else None
+    text = (text or "").strip()
+    return (op, text, "both") if text else None
 
 
 def inapplicable_filter_rows(lf, filter_rows: list) -> list:
@@ -145,97 +295,30 @@ def audit_params_from_row(frow: dict) -> dict:
 
 def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
     """
-    Apply a list of {column, op, value, dtype, na} dicts to a LazyFrame.
+    Apply a list of {column, op, value, dtype, na, closed} dicts to a LazyFrame.
 
-    Type strategy (DEMO-3):
-    - The filter row's stored 'dtype' field can be stale or absent. We
-      re-read the actual column dtype from the LazyFrame schema each call
-      and cast accordingly — this is the source of truth.
-    - Numeric scalar ops (gt/ge/lt/le/eq/ne): coerce string value to
-      column dtype before comparison.
-    - Set ops (in/not_in) with list of values: always cast both sides to
-      Utf8 for the comparison (selectize returns strings regardless of
-      column dtype, so the safest path is string-equality).
-    - Auto-promotes eq/ne to in/not_in when value is a list.
+    Type strategy (ADR-104 point 7): a value has the type of its column. The dtype of the column is read from the
+    schema of the table each call (the stored 'dtype' of a row can be stale or absent). A value an older row holds as
+    text is read as that type; a value that cannot be read stops with a plain `FilterValueError`, it is never guessed.
+    The condition itself is `utils.filter_values.filter_condition`, shared with the plot and the recipe action
+    (eq or ne with a list mean in or not_in; in and not_in compare typed values).
     """
-    # Source-of-truth dtype map from the actual LazyFrame schema
     try:
         schema = lf.collect_schema()
         actual_dtypes = {name: schema[name] for name in schema.names()}
     except Exception:
         actual_dtypes = {}
 
-    def _is_numeric(dt) -> bool:
-        return dt is not None and any(
-            t in str(dt) for t in ("Int", "UInt", "Float", "Decimal")
-        )
-
     for f in filter_rows:
         col = f.get("column")
-        op = f.get("op", "eq")
-        val = f.get("value")
-        na = na_of(f)  # NA-RULE-63: "keep" adds the rows with no value; a row without `na` removes them
         if col is None:
             continue
         # Issue #56: T1 is wide and T2 may be long, so a filter built on one view can name a
         # column the active view does not have. Skip it (see inapplicable_filter_rows) rather than crash.
         if actual_dtypes and col not in actual_dtypes:
             continue
-
-        actual_dt = actual_dtypes.get(col)
-        is_numeric = _is_numeric(actual_dt)
-        is_list_val = isinstance(val, list)
-
-        # Auto-promote eq/ne to in/not_in when value is a list
-        if is_list_val:
-            if op in ("eq", "in"):
-                op = "in"
-            elif op in ("ne", "not_in"):
-                op = "not_in"
-
-        if op == "between" and isinstance(val, (list, tuple)) and len(val) == 2:
-            lo, hi = val
-            if is_numeric:
-                lo = coerce_filter_value(lo, actual_dt)
-                hi = coerce_filter_value(hi, actual_dt)
-            bt_closed = f.get("closed", "both")
-            lf = lf.filter(keep_missing(pl.col(col).is_between(lo, hi, closed=bt_closed), col, na))
-            continue
-
-        if op in ("in", "not_in"):
-            vals = val if is_list_val else [val]
-            if is_numeric:
-                # Coerce values to the column's native dtype — avoids the
-                # Float64→Utf8 mismatch ("2022.0" != "2022") that occurs when
-                # the column is cast to string instead of the values.
-                coerced_vals = [coerce_filter_value(v, actual_dt) for v in vals]
-                expr = pl.col(col).is_in(coerced_vals)
-            else:
-                str_vals = [str(v) for v in vals]
-                expr = pl.col(col).cast(pl.Utf8).is_in(str_vals)
-            lf = lf.filter(keep_missing(expr if op == "in" else ~expr, col, na))
-        else:
-            # Scalar ops: coerce value to column dtype before compare.
-            # If the widget already emitted a native numeric, the coercion
-            # is a no-op. We log a warning when a string sneaks in on a
-            # numeric column so we can spot bypasses (UX-FILTER-1 / DEMO-3).
-            if is_numeric and isinstance(val, str):
-                print(
-                    f"[filter] ⚠️ string operand on numeric column "
-                    f"{col!r} ({actual_dt}); coercing {val!r}"
-                )
-            if is_numeric:
-                val = coerce_filter_value(val, actual_dt)
-            if op == "eq":
-                lf = lf.filter(keep_missing(pl.col(col) == val, col, na))
-            elif op == "ne":
-                lf = lf.filter(keep_missing(pl.col(col) != val, col, na))
-            elif op == "gt":
-                lf = lf.filter(keep_missing(pl.col(col) > val, col, na))
-            elif op == "ge":
-                lf = lf.filter(keep_missing(pl.col(col) >= val, col, na))
-            elif op == "lt":
-                lf = lf.filter(keep_missing(pl.col(col) < val, col, na))
-            elif op == "le":
-                lf = lf.filter(keep_missing(pl.col(col) <= val, col, na))
+        dtype = actual_dtypes.get(col) or f.get("dtype")
+        condition = filter_condition(col, f.get("op", "eq"), f.get("value"), dtype, f.get("closed", "both"))
+        # NA-RULE-63: "keep" adds the rows with no value; a row without `na` removes them
+        lf = lf.filter(keep_missing(condition, col, na_of(f)))
     return lf

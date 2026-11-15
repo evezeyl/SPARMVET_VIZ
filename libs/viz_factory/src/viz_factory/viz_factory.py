@@ -10,7 +10,7 @@ from viz_factory.checked_plot import (
 from viz_factory.errors import layer_label, plot_failure
 from utils.engines import engine_problem
 from utils.errors import VisualizationError
-from utils.filter_values import coerce_filter_value
+from utils.filter_values import filter_condition
 from utils.missing_values import keep_missing
 from utils.na_choice import na_of
 from utils.pipeline_error import PipelineError
@@ -193,70 +193,18 @@ class VizFactory:
             except Exception:
                 actual_dtypes = {}
 
-            def _is_numeric(dt):
-                return dt is not None and any(
-                    t in str(dt) for t in ("Int", "UInt", "Float", "Decimal")
-                )
-
             for f in ui_filters:
                 col = f.get("column")
-                op = f.get("op", "eq")
-                val = f.get("value")
-                na = na_of(f)  # NA-RULE-63: "keep" adds the rows with no value; a row without `na` removes them
                 if col is None:
                     continue
                 # Issue #56: a filter on a column this plot's data does not have is skipped, not an error.
                 if actual_dtypes and col not in actual_dtypes:
                     continue
-
-                actual_dt = actual_dtypes.get(col)
-                is_numeric = _is_numeric(actual_dt)
-                is_list_val = isinstance(val, list)
-
-                # Auto-promote eq/ne to in/not_in when value is a list
-                if is_list_val:
-                    if op in ("eq", "in"):
-                        op = "in"
-                    elif op in ("ne", "not_in"):
-                        op = "not_in"
-
-                if op == "between" and isinstance(val, (list, tuple)) and len(val) == 2:
-                    lo, hi = val
-                    if is_numeric:
-                        lo = coerce_filter_value(lo, actual_dt)
-                        hi = coerce_filter_value(hi, actual_dt)
-                    bt_closed = f.get("closed", "both")
-                    df = df.filter(keep_missing(pl.col(col).is_between(lo, hi, closed=bt_closed), col, na))
-                    continue
-
-                if op in ("in", "not_in"):
-                    vals = val if is_list_val else [val]
-                    str_vals = [str(v) for v in vals]
-                    expr = pl.col(col).cast(pl.Utf8).is_in(str_vals)
-                    df = df.filter(keep_missing(expr if op == "in" else ~expr, col, na))
-                    continue
-
-                # String operand on a numeric column — coerce before compare.
-                if is_numeric and isinstance(val, str):
-                    print(
-                        f"[viz_factory] WARNING: string operand on numeric column "
-                        f"{col!r} ({actual_dt}); coercing {val!r}"
-                    )
-                if is_numeric:
-                    val = coerce_filter_value(val, actual_dt)
-
-                if op == "eq":
-                    df = df.filter(keep_missing(pl.col(col) == val, col, na))
-                elif op == "ne":
-                    df = df.filter(keep_missing(pl.col(col) != val, col, na))
-                elif op == "gt":
-                    df = df.filter(keep_missing(pl.col(col) > val, col, na))
-                elif op == "ge":
-                    df = df.filter(keep_missing(pl.col(col) >= val, col, na))
-                elif op == "lt":
-                    df = df.filter(keep_missing(pl.col(col) < val, col, na))
-                elif op == "le":
-                    df = df.filter(keep_missing(pl.col(col) <= val, col, na))
+                # ADR-104 point 7: the same condition as the HOME table and the recipe action (typed values; a value that
+                # cannot be read in the type of the column stops with a plain error). NA-RULE-63: `na` adds the rows with no value.
+                dtype = actual_dtypes.get(col) or f.get("dtype")
+                condition = filter_condition(col, f.get("op", "eq"), f.get("value"), dtype, f.get("closed", "both"))
+                df = df.filter(keep_missing(condition, col, na_of(f)))
 
         # 2. Single materialisation point — after all Polars filters (ADR-010).
         df_pandas = df.collect().to_pandas()
