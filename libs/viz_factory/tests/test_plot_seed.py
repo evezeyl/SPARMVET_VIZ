@@ -189,3 +189,26 @@ def test_a_recipe_default_of_null_or_random_is_refused_too(df, written):
 def test_the_cascade_knows_the_key_and_does_not_call_it_unknown():
     resolved = resolve_plot_config({"mapping": {"x": "g", "y": "v"}, "layers": jitter()}, {"random_state": 7}, None)
     assert "random_state" not in resolved["_unknown_plot_defaults_keys"]
+
+
+# ---------------------------------------------------------------------------
+# the seed 0 is a seed: a pin of 0 (`if audit_pin:` once passed every test), a number 0, a recipe default 0
+# ---------------------------------------------------------------------------
+
+def test_a_pin_of_zero_beats_the_recipe_number_and_the_recipe_default():
+    layers = [{"name": "geom_jitter", "params": {"random_state": 11}}, {"name": "geom_jitter", "params": {}}]
+    assert seeds_of(layers, audit_pin=0, recipe_default=7) == [(0, "audit"), (0, "audit")]
+    assert seeds_of(layers, audit_pin="0") == [(0, "audit"), (0, "audit")]
+
+
+def test_a_recipe_default_of_zero_is_not_nothing():
+    assert seeds_of(jitter(), default=9, recipe_default=0) == [(0, "recipe default")]
+
+
+def test_a_pin_of_zero_is_applied_by_the_cascade_and_the_picture(df):
+    pinned = positions(df, jitter(random_state=123), aesthetic_override={"random_state": 0})
+    assert np.array_equal(pinned, positions(df, jitter(random_state=0)))
+    assert not np.array_equal(pinned, positions(df, jitter(random_state=123)))
+    spec = {"mapping": {"x": "g", "y": "v"}, "layers": jitter(random_state=123)}
+    resolved = resolve_plot_config(spec, {}, None, aesthetic_override={"random_state": 0})
+    assert [l["params"]["random_state"] for l in resolved["layers"] if l["name"] == "geom_point"] == [0]

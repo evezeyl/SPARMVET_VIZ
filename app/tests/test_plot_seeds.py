@@ -479,3 +479,67 @@ def test_the_default_seed_is_the_number_zero_in_the_factory_and_in_the_export(df
     assert [(ls.seed, ls.source) for ls in plan["p"]] == [(0, "default")]
     assert np.array_equal(positions(df, jitter_layers()), positions(df, jitter_layers(random_state=0)))
     assert not np.array_equal(positions(df, jitter_layers()), positions(df, jitter_layers(random_state=1)))
+
+
+# ---------------------------------------------------------------------------
+# the seed 0 is a seed on every path: a pin of 0, a number 0 on a layer, plot_defaults.random_state 0
+# (0 is falsy: `if pin:` instead of `if pin is not None:` once passed every test)
+# ---------------------------------------------------------------------------
+
+def test_a_pin_of_zero_beats_a_written_seed_in_every_place(df):
+    layers = jitter_layers(random_state=5)
+    state = {"t3_plot_overrides": {"subtab_p": {"random_state": 0}}}
+    assert audit_pin_of(state, "p") == 0 and seed_pins_from_home_state(state, ["p"]) == {"p": 0}
+    seeds = in_use(layers, pin=0)
+    assert [(ls.seed, ls.source) for ls in seeds] == [(0, "audit")]
+    assert seed_caption(seeds) == "seed 0, pinned in the audit" and reshuffle_offered(seeds) is False
+    plan = export_seed_plan({"p": {"layers": layers}}, state, default=DEFAULT)
+    assert [(ls.seed, ls.source) for ls in plan["p"]] == [(0, "audit")]
+    assert seeds_per_plot_record(plan) == {"p": 0} and seed_sources_per_plot(plan) == {"p": "audit"}
+    (step,) = seed_pin_steps(plan)["p"]
+    assert step["params"]["seed"] == 0
+    assert render_seed_args(plan["p"], None) == {"aesthetic_override": {"random_state": 0}}
+    pinned = positions(df, layers, aesthetic_override={"random_state": 0})                      # HOME
+    assert np.array_equal(pinned, positions(df, render_layers(layers, [0])))
+    assert not np.array_equal(pinned, positions(df, layers))                                    # the recipe's 5 does not win
+    assert np.array_equal(positions(df, layers, **render_seed_args(plan["p"], None)), pinned)   # bundle
+    baked = baked_layers(layers, plan)                                                          # re-run
+    assert [l["params"]["random_state"] for l in baked] == [0]
+    assert np.array_equal(positions(df, baked), pinned)
+
+
+def test_a_written_seed_of_zero_holds_over_the_default_and_the_recipe_default_in_every_place(df):
+    layers = jitter_layers(random_state=0)
+    seeds = in_use(layers, plot_defaults={"random_state": 7})
+    assert [(ls.seed, ls.source) for ls in seeds] == [(0, "recipe")]
+    assert seed_caption(seeds) == "seed 0, written in the recipe" and reshuffle_offered(seeds) is False
+    plan = export_plot_seeds({"p": {"layers": layers}}, {}, default=DEFAULT, recipe_default=7)
+    assert seeds_per_plot_record(plan) == {"p": 0} and seed_sources_per_plot(plan) == {"p": "recipe"}
+    assert seeds_added_to_recipe(plan, {"p": {"layers": layers}}) == []
+    assert np.array_equal(positions(df, layers, plot_defaults={"random_state": 7}), positions(df, render_layers(layers, [0])))
+    assert not np.array_equal(positions(df, layers, plot_defaults={"random_state": 7}), positions(df, render_layers(layers, [7])))
+    assert [l["params"]["random_state"] for l in baked_layers(layers, plan)] == [0]
+
+
+def test_a_recipe_default_of_zero_is_a_seed_in_every_place(df):
+    """plot_defaults.random_state: 0 differs from "nothing written" only in the source and in a factory built with another
+    default (so the test uses a factory seed that is not 0)."""
+    layers = jitter_layers()
+    plan = export_plot_seeds({"p": {"layers": layers}}, {}, default=9, recipe_default=0)
+    assert [(ls.seed, ls.source) for ls in plan["p"]] == [(0, "recipe default")]
+    assert seeds_per_plot_record(plan) == {"p": 0} and seed_sources_per_plot(plan) == {"p": "recipe default"}
+    assert seed_caption(seed_in_use(layers, {"random_state": 0}, None, "p", default=9)) == "seed 0, recipe default (plot_defaults)"
+    assert reshuffle_offered(seed_in_use(layers, {"random_state": 0}, None, "p", default=9)) is False
+    assert seeds_added_to_recipe(plan, {"p": {"layers": layers}}) == []
+    recipe = recipe_with(layers)
+    recipe["plot_defaults"] = {"random_state": 0}
+    assert bake_plot_seeds(recipe, plan)["plot_defaults"] == {"random_state": 0}
+    # a factory whose own seed is 9: only the recipe default 0 gives the 0 picture
+    spec = {"mapping": {"x": "g", "y": "v"}, "layers": layers}
+
+    def shown(plot_defaults):
+        plot = VizFactory(random_state=9).render(df, {"plots": {"p": spec}, "plot_defaults": plot_defaults}, "p")
+        return np.vstack([np.asarray(c.get_offsets()) for c in plot.draw().axes[0].collections])
+
+    assert np.array_equal(shown({"random_state": 0}), positions(df, render_layers(layers, [0])))
+    assert not np.array_equal(shown({}), positions(df, render_layers(layers, [0])))

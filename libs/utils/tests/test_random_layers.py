@@ -5,7 +5,7 @@ Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/utils/tests/test_random_laye
 """
 import pytest
 
-from utils.random_layers import ALWAYS_RANDOM, is_random_layer, is_seed_value
+from utils.random_layers import ALWAYS_RANDOM, is_random_layer, is_seed_value, position_of, stat_of
 
 
 @pytest.mark.parametrize("name", ALWAYS_RANDOM)
@@ -92,3 +92,46 @@ def test_a_binned_summary_is_random_only_with_the_bootstrap_named():
         assert not is_random_layer(name, params)
     assert is_random_layer("stat_summary_bin", {"fun_data": "mean_cl_boot"})
     assert is_random_layer("geom_pointrange", {"stat": "summary_bin", "fun_data": "mean_cl_boot"})
+
+
+# -- plotnine accepts a position and a stat as text with or without its prefix (review, third round) -------------------
+# `position: position_jitter` is the same as `position: jitter`; plotnine adds the prefix when it is missing and takes
+# the name as written (no case change, no spaces). One normalisation, the same as plotnine's, in one place.
+
+@pytest.mark.parametrize("written, name", [("jitter", "position_jitter"), ("position_jitter", "position_jitter"),
+                                           ("dodge2", "position_dodge2"), ("position_dodge2", "position_dodge2")])
+def test_a_position_is_named_the_way_plotnine_names_it(written, name):
+    assert position_of({"position": written}) == name
+
+
+@pytest.mark.parametrize("written, name", [("sina", "stat_sina"), ("stat_sina", "stat_sina"),
+                                           ("summary_bin", "stat_summary_bin"), ("stat_summary_bin", "stat_summary_bin")])
+def test_a_stat_is_named_the_way_plotnine_names_it(written, name):
+    assert stat_of({"stat": written}) == name
+
+
+@pytest.mark.parametrize("params", [{}, {"position": None}, {"position": 3}, {"position": {"name": "jitter"}}, {"position": ["jitter"]}])
+def test_what_is_not_a_text_has_no_position_name(params):
+    assert position_of(params) is None and stat_of(params) is None
+
+
+@pytest.mark.parametrize("position", ["position_jitter", "position_jitterdodge"])
+def test_a_position_written_with_its_prefix_is_random(position):
+    assert is_random_layer("geom_point", {"position": position})
+
+
+@pytest.mark.parametrize("params", [
+    {"stat": "stat_sina"},
+    {"stat": "stat_summary"}, {"stat": "stat_summary", "fun_data": None},
+    {"stat": "stat_summary_bin", "fun_data": "mean_cl_boot"},
+])
+def test_a_stat_written_with_its_prefix_is_random(params):
+    assert is_random_layer("geom_pointrange", params)
+
+
+@pytest.mark.parametrize("params", [
+    {"stat": "stat_summary", "fun_data": "mean_se"}, {"stat": "stat_summary_bin"}, {"stat": "stat_identity"},
+    {"position": "position_dodge"}, {"position": "position_identity"},
+])
+def test_the_prefixed_spellings_that_are_not_random_stay_not_random(params):
+    assert not is_random_layer("geom_pointrange", params)

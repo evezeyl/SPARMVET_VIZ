@@ -444,6 +444,10 @@ def _seed_problems(name, params):
     ("geom_pointrange", {"stat": "summary", "random_state": 0}),
     ("geom_point", {"stat": "sina", "random_state": 0}),
     ("geom_bar", {"stat": "sina", "random_state": 0}),
+    ("geom_point", {"position": "position_jitter", "random_state": 0}),
+    ("geom_point", {"position": "position_jitterdodge", "random_state": 0}),
+    ("geom_point", {"stat": "stat_sina", "random_state": 0}),
+    ("geom_pointrange", {"stat": "stat_summary", "random_state": 0}),
 ])
 def test_a_seed_is_accepted_on_a_random_layer(name, params):
     assert _seed_problems(name, params) == []
@@ -455,6 +459,7 @@ def test_a_seed_is_accepted_on_a_random_layer(name, params):
     ("geom_bar", {"random_state": 0}),
     ("geom_pointrange", {"random_state": 0}),
     ("geom_pointrange", {"stat": "summary", "fun_data": "mean_se", "random_state": 0}),
+    ("geom_point", {"position": "position_dodge", "random_state": 0}),
 ])
 def test_a_seed_is_refused_on_a_layer_that_is_not_random(name, params):
     assert len(_seed_problems(name, params)) == 1

@@ -6,7 +6,7 @@ from typing import Dict, Any, List
 from viz_factory.registry import get_component
 from viz_factory.plot_config_resolver import (
     BATCHED_COMPONENTS, resolve_plot_config, spec_key_names, unknown_spec_keys)
-from utils.random_layers import is_random_layer, is_seed_value
+from utils.random_layers import is_random_layer, is_seed_value, position_of
 from viz_factory.checked_plot import (
     CheckedPlot, PlotContext, Step, draw_checked, explain_build_failure, plot_warnings, show_draw_errors)
 from viz_factory.errors import layer_label, plot_failure
@@ -68,10 +68,10 @@ def _seed_random_components(layer_name: str, params: dict, random_state) -> dict
     """
     from plotnine import position_jitter, position_jitterdodge
     params = dict(params)
-    position = params.get("position")
-    if position == "jitter":
+    position = position_of(params)            # `jitter` and `position_jitter` are the same position (plotnine's rule)
+    if position == "position_jitter":
         params["position"] = position_jitter(random_state=_generator(params.pop("random_state", random_state)))
-    elif position == "jitterdodge":
+    elif position == "position_jitterdodge":
         params["position"] = position_jitterdodge(random_state=_generator(params.pop("random_state", random_state)))
     elif layer_name in JITTER_COMPONENTS and not (layer_name == "geom_jitter" and "position" in params):
         params["random_state"] = _generator(params.get("random_state", random_state))
@@ -81,32 +81,23 @@ def _seed_random_components(layer_name: str, params: dict, random_state) -> dict
     return params
 
 
-def _refuse_unseeded_layer(layer_name: str, params: dict, plot_id: str) -> None:
-    """Raise when a random layer writes `random_state: null` or the word random (PROVISIONAL S1, Eve's rule of
-    2026-11-15): a seed is a number, so that the same recipe gives the same picture everywhere. A layer that writes
-    nothing takes the factory's seed. `VizFactory(random_state=None)` (a factory built without a seed, the handle
-    for tests) is not a layer and is not refused.
-    """
+def _refuse_unseeded_layer(layer_name: str, params: dict, plot_id: str, where: str) -> None:
+    """Raise when a random layer writes a `random_state` that is not a number: null, the word random, other text
+    (PROVISIONAL S1, Eve's rule of 2026-11-15, "every seed that is used is written"). A layer that writes nothing
+    takes the factory's seed. `VizFactory(random_state=None)` (a factory built without a seed, the handle for tests) is
+    not a layer and is not refused. `where` is how an error names the layer (`layer 2 (geom_point)`)."""
     if "random_state" in params and is_random_layer(layer_name, params):
-        _refuse_non_number(f"layer '{layer_name}'", params["random_state"], plot_id)
+        _refuse_non_number(where, params["random_state"], plot_id)
 
 
 def _refuse_non_number(where: str, written, plot_id: str) -> None:
+    """The one error form of the plot layer (`errors.plot_failure`): what, which plot and layer, and the fix."""
     if not is_seed_value(written):
-        pe = PipelineError(
-            component="VizFactory",
-            problem=f"The {where} of plot '{plot_id}' writes random_state: {written!r}, but a seed is a number.",
-            location=f"VizFactory.render(plot_id='{plot_id}'), {where}",
-            fix="In the data analysis recipe, write a number: random_state: 0 (any whole number; another number gives "
-                "another arrangement, the same number gives the same one).",
-            who="data_analysis_recipe_author",
-            category="visualization",
-            surface="plot_overlay",
-            severity="error",
-            evidence={"where": where, "random_state": written},
-        )
-        print(pe.format())
-        raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe)
+        raise plot_failure(
+            plot_id, f"random_state is {written!r}, but a seed is a number",
+            "write a number: random_state: 0 (any whole number; another number gives another arrangement, the same "
+            "number gives the same one)",
+            layer=where, evidence={"random_state": written}, reference="rules_viz_factory.md section 8")
 
 
 def _recipe_seed(plot_defaults: dict, plot_id: str, factory_seed):
@@ -347,7 +338,7 @@ class VizFactory:
                 raise plot_failure(plot_id, "a layer has no name", "write name: geom_point (or another component) for every layer",
                                    layer=where)
             if layer_name not in BATCHED_COMPONENTS:
-                _refuse_unseeded_layer(layer_name, layer_params, plot_id)
+                _refuse_unseeded_layer(layer_name, layer_params, plot_id, where)
                 layer_params = _seed_random_components(layer_name, layer_params, recipe_seed)
             try:
                 component_func = get_component(layer_name)

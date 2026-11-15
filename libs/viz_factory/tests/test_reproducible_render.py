@@ -48,6 +48,10 @@ JITTER_ROUTES = {
     "stat_sina": ([{"name": "stat_sina"}], None),
     "bootstrapped summary": ([{"name": "stat_summary", "params": {"fun_data": "mean_cl_boot"}}], None),
     "geom_point with stat sina": ([{"name": "geom_point", "params": {"stat": "sina"}}], None),
+    "position written position_jitter": ([{"name": "geom_point", "params": {"position": "position_jitter"}}], None),
+    "position written position_jitterdodge": ([{"name": "geom_point", "params": {"position": "position_jitterdodge"}}], {"x": "g", "y": "v", "fill": "h"}),
+    "stat written stat_sina": ([{"name": "geom_point", "params": {"stat": "stat_sina"}}], None),
+    "stat written stat_summary": ([{"name": "geom_pointrange", "params": {"stat": "stat_summary"}}], None),
     "summary with no function named (plotnine's default is the bootstrap)": ([{"name": "stat_summary"}], None),
     "bootstrapped summary on a geom": ([{"name": "geom_pointrange", "params": {"stat": "summary", "fun_data": "mean_cl_boot"}}], None),
 }
