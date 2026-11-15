@@ -2,7 +2,8 @@
 # provides: function:resolve_plot_config, function:compute_optimisation_layer,
 #           function:_dedupe_layers, constant:_BUILTIN_DEFAULTS,
 #           function:normalise_plot_spec, function:serialise_plot_spec, function:unknown_spec_keys, function:spec_key_names,
-#           function:layers_have_jitter (REPRO-SEED-2), function:recipe_pins_random_state (REPRO-RESHUFFLE-1)
+#           function:layers_have_random (REPRO-SEED-2), function:recipe_pins_random_state (REPRO-RESHUFFLE-1),
+#           function:resolve_layer_seeds, function:apply_pin_to_layers, function:fixed_seed_of, class:LayerSeed (SEED-HOLDS-1)
 # consumes: libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py,
 #              libs/viz_factory/tests/test_plot_config_resolver.py,
@@ -32,8 +33,10 @@ coord, facet, scale, and element_text overrides).
 from __future__ import annotations
 
 import copy
+from typing import Any, NamedTuple
 
 from utils.errors import VisualizationError
+from utils.random_layers import ALWAYS_RANDOM, is_random_layer
 
 # ---------------------------------------------------------------------------
 # L1 — Built-in defaults (constants)
@@ -63,7 +66,7 @@ _BUILTIN_DEFAULTS: dict = {
 # Allowed keys in plot_defaults: (unknown keys emit a PipelineError warning)
 _VALID_PLOT_DEFAULTS_KEYS: frozenset = frozenset({
     "palette", "theme", "default_font_family",
-    "facet_panel_spacing", "legend_position", "optimisation", "layers",
+    "facet_panel_spacing", "legend_position", "optimisation", "layers", "random_state",
 })
 
 # Keys recognised as part of the spec (not taxonomy / author metadata).
@@ -163,31 +166,65 @@ def _layer_dedup_key(layer: dict) -> tuple | None:
 # _dedupe_layers
 # ---------------------------------------------------------------------------
 
-# Components the factory treats by NAME, outside their own handler: it seeds the jitter ones and batches element_text
+# Components the factory treats by NAME, outside their own handler: it seeds the random ones and batches element_text
 # into one theme() call. The registry field `plotnine` of these is therefore never `exact`
 # (libs/viz_factory/tests/test_component_plotnine_field.py derives it from this set).
-SEEDED_JITTER_COMPONENTS = ("geom_jitter", "position_jitter", "position_jitterdodge")
 BATCHED_COMPONENTS = ("element_text",)
-FACTORY_NAMED_COMPONENTS = frozenset(SEEDED_JITTER_COMPONENTS + BATCHED_COMPONENTS)
+FACTORY_NAMED_COMPONENTS = frozenset(ALWAYS_RANDOM + BATCHED_COMPONENTS)
 
 
-def _is_jitter_layer(layer: dict) -> bool:
-    """True if a layer carries jitter — either a named jitter layer, or any layer with an
-    inline `position: jitter`/`jitterdodge` param. Shared by the L5 random_state injection
-    below and by callers (REPRO-SEED-2) that need to know whether drawing/recording a seed
-    for this plot is even meaningful before resolving the full config."""
-    lparams = layer.get("params") or {}
-    return (
-        layer.get("name") in SEEDED_JITTER_COMPONENTS
-        or lparams.get("position") in ("jitter", "jitterdodge")
-    )
+def _is_random_layer(layer: dict) -> bool:
+    """True if a layer is random: a component that draws random numbers, a layer placed with `position: jitter`
+    or `jitterdodge`, or a bootstrapped summary (`utils.random_layers`, the one rule the recipe checker shares).
+    Used by the L5 random_state injection below and by callers that need to know whether a seed is meaningful
+    for a plot before resolving the full config."""
+    return is_random_layer(layer.get("name"), layer.get("params"))
 
 
-def layers_have_jitter(layers: list[dict]) -> bool:
+def layers_have_random(layers: list[dict]) -> bool:
     """True if any layer in an unresolved L4 `layers:` list carries jitter (ADR-097
     decision 2 / REPRO-SEED-2) — used to decide whether a plot's seed is worth drawing,
     bookkeeping, or exporting at all, before paying for a full `resolve_plot_config()` call."""
-    return any(_is_jitter_layer(layer) for layer in (layers or []))
+    return any(_is_random_layer(layer) for layer in (layers or []))
+
+
+def _is_random_word(seed) -> bool:
+    """True for the spellings that mean "no fixed seed": None (null in YAML) and the word random,
+    in any case and with spaces. Mirrors viz_factory._generator, which is what really reads the value."""
+    return seed is None or (isinstance(seed, str) and seed.strip().lower() == "random")
+
+
+def _as_seed(seed):
+    """The seed as the number it stands for (the recipe may write 123 or "123"); a value that is
+    not a number is returned as written, so that the render refuses it with its own message."""
+    try:
+        return int(seed)
+    except (TypeError, ValueError):
+        return seed
+
+
+_NO_NUMBER = object()
+
+
+def _written_seed(layer: dict):
+    """The number a jitter layer's recipe writes as `random_state`, or _NO_NUMBER when it writes none
+    (no key, null, or the word random)."""
+    params = layer.get("params") or {}
+    if "random_state" not in params or _is_random_word(params["random_state"]):
+        return _NO_NUMBER
+    return _as_seed(params["random_state"])
+
+
+def fixed_seed_of(layers: list[dict]):
+    """The number written on the first jitter layer of a plot that carries one, or None when no jitter
+    layer carries a number. Only a yes/no for callers (Reshuffle is hidden when the recipe fixes a seed);
+    the seed each layer really uses is `resolve_layer_seeds`."""
+    for layer in (layers or []):
+        if _is_random_layer(layer):
+            written = _written_seed(layer)
+            if written is not _NO_NUMBER:
+                return written
+    return None
 
 
 def recipe_pins_random_state(layers: list[dict]) -> bool:
@@ -198,13 +235,55 @@ def recipe_pins_random_state(layers: list[dict]) -> bool:
     decide whether a "Reshuffle" control is meaningful: redrawing a seed the recipe
     author already fixed would silently override their choice without being obviously
     so — the control stays hidden in that case."""
-    for layer in (layers or []):
-        if not _is_jitter_layer(layer):
+    return fixed_seed_of(layers) is not None
+
+
+def apply_pin_to_layers(layers: list[dict], seed) -> None:
+    """Write an audit pin as `random_state` on every random layer, in place: it replaces any number the recipe
+    wrote. The one place that writes a seed into layers (the cascade does it)."""
+    for layer in layers:
+        if _is_random_layer(layer):
+            layer["params"] = {**(layer.get("params") or {}), "random_state": seed}
+
+
+class LayerSeed(NamedTuple):
+    """The seed one random layer of a plot uses, and where it comes from.
+
+    index: position of the layer in the plot's `layers:` list. layer: its name.
+    source: "audit" (pinned by an audit step), "recipe" (the number the recipe writes on THIS layer), "default"
+    (the recipe writes none: the factory's seed, 0 unless the factory was built with another), "recipe default"
+    (the recipe writes none on the layer but `plot_defaults.random_state`: PROVISIONAL S3).
+    """
+    index: int
+    layer: str
+    seed: Any
+    source: str
+
+
+def resolve_layer_seeds(layers: list[dict], audit_pin=None, *, default, recipe_default=None) -> tuple[LayerSeed, ...]:
+    """The seed of every random layer of a plot, in one place (SEED-HOLDS-1, ADR-104).
+
+    Per layer: a seed pinned by an audit step (cascade level L5, every random layer) > the number the recipe
+    writes on THIS layer > PROVISIONAL (S3) `plot_defaults.random_state`, the one seed of the whole recipe
+    (`recipe_default`) > the default (`default`: the factory's seed, 0) when the layer writes none. A layer that
+    writes a number keeps it and never gives it to another layer. Empty when the plot has no random layer.
+    (`random_state: null` and the word random are refused by the checker and the factory: a seed is a number.)
+    """
+    out = []
+    for index, layer in enumerate(layers or []):
+        if not _is_random_layer(layer):
             continue
-        rs = (layer.get("params") or {}).get("random_state")
-        if rs is not None and rs != "random":
-            return True
-    return False
+        name = layer.get("name") or ""
+        written = _written_seed(layer)
+        if audit_pin is not None:
+            out.append(LayerSeed(index, name, _as_seed(audit_pin), "audit"))
+        elif written is _NO_NUMBER and recipe_default is not None:
+            out.append(LayerSeed(index, name, _as_seed(recipe_default), "recipe default"))
+        elif written is _NO_NUMBER:
+            out.append(LayerSeed(index, name, default, "default"))
+        else:
+            out.append(LayerSeed(index, name, written, "recipe"))
+    return tuple(out)
 
 
 def _dedupe_layers(layers: list[dict]) -> list[dict]:
@@ -627,10 +706,7 @@ def resolve_plot_config(
         # Mutates the already-appended L1-L4 layers in place, before dedup — a plot with no
         # jitter at all simply has no layer to match, so this is a no-op for it.
         if "random_state" in override:
-            rs = override["random_state"]
-            for layer in all_layers:
-                if _is_jitter_layer(layer):
-                    layer["params"] = {**(layer.get("params") or {}), "random_state": rs}
+            apply_pin_to_layers(all_layers, override["random_state"])
             provenance["random_state"] = "L5"
 
     # ── Deduplicate layers ───────────────────────────────────────────────────

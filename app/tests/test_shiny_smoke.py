@@ -787,13 +787,17 @@ class TestReshuffleControl:
             qc_tab.first.click()
             _wait_shiny(page)
 
-    def test_shown_on_a_jitter_plot_with_no_pinned_seed(self, page: Page, shiny_app: ShinyAppProc):
+    def test_hidden_on_a_jitter_plot_whose_recipe_writes_its_seed(self, page: Page, shiny_app: ShinyAppProc):
+        """The phenotype plot writes `random_state: 0` on its jitter layer (SEED-HOLDS-1): the recipe fixes the seed, so
+        there is nothing to reshuffle. The control IS shown, and click-and-pin works, on a recipe that writes no seed:
+        test_shiny_seed_places.py (it edits the plot file for its own app)."""
         _load_data_analysis_recipe(page, shiny_app.url)
         _navigate_to_phenotype_plot(page)
         try:
+            page.wait_for_selector("#plot_group_phenotype_genome_length_fragmentation", timeout=10_000)
             expect(
                 page.locator("#plot_reshuffle_btn_phenotype_genome_length_fragmentation")
-            ).to_be_visible(timeout=10_000)
+            ).to_have_count(0)
         finally:
             self._restore_to_quality_control(page)
 
@@ -809,24 +813,6 @@ class TestReshuffleControl:
         _wait_shiny(page)
         page.wait_for_selector("#plot_group_assembly_quality_dotplot", timeout=10_000)
         expect(page.locator("#plot_reshuffle_btn_assembly_quality_dotplot")).to_have_count(0)
-
-    def test_click_pins_the_seed_and_hides_the_control(self, page: Page, shiny_app: ShinyAppProc):
-        """Clicking Reshuffle draws and pins a new seed — the control then disappears
-        (nothing left to reshuffle from until the pin is removed some other way)."""
-        _load_data_analysis_recipe(page, shiny_app.url)
-        _navigate_to_phenotype_plot(page)
-        try:
-            btn = page.locator("#plot_reshuffle_btn_phenotype_genome_length_fragmentation")
-            expect(btn).to_be_visible(timeout=10_000)
-            btn.click()
-            _wait_shiny(page)
-
-            expect(
-                page.locator("#plot_reshuffle_btn_phenotype_genome_length_fragmentation")
-            ).to_have_count(0, timeout=8_000)
-            _no_render_error(page)
-        finally:
-            self._restore_to_quality_control(page)
 
 
 # ---------------------------------------------------------------------------

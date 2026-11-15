@@ -19,7 +19,9 @@ from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
 from app.tests.conftest import shiny_app  # noqa: F401
-from app.tests.test_shiny_smoke import _load_data_analysis_recipe, _navigate_to_mlst_plot, _open_filters_panel, _wait_shiny
+from app.tests.test_shiny_smoke import (
+    _load_data_analysis_recipe, _navigate_to_mlst_plot, _navigate_to_phenotype_plot, _open_filters_panel, _wait_shiny,
+)
 
 DATA_DIR = Path("assets/test_data/1_test_data_ST22_dummy")
 
@@ -295,6 +297,39 @@ def test_import_a_bundle_reports_the_four_legs(loaded, tmp_path):
             for p in (_bl.get_location("user_data") / "_sessions").glob("*/assembly.json"):
                 if recipe_id in p.read_text():
                     shutil.rmtree(p.parent, ignore_errors=True)
+
+
+def test_the_export_records_the_seed_the_recipe_writes_and_writes_it_into_the_reproducibility_recipe(loaded):
+    """SEED-HOLDS-1 (ADR-104, Eve 2026-11-15): the plot of the dummy recipe writes `random_state: 0` on its jitter
+    layer. HOME draws no seed: the export draws the plot with that number, records it as `recipe`, and the
+    reproducibility recipe carries it. The edge cases (no seed written, a pin, two sessions, the reference pane) are
+    in test_shiny_seed_places.py, which runs its own apps."""
+    import yaml as _yaml
+
+    pid = "phenotype_genome_length_fragmentation"
+    _navigate_to_phenotype_plot(loaded)
+    _open_export_panel(loaded)
+    loaded.locator("#export_include_reproducibility").check(force=True)
+    _wait_shiny(loaded)
+    try:
+        z = _download(loaded)
+    finally:
+        loaded.locator("#export_include_reproducibility").uncheck(force=True)
+        _wait_shiny(loaded)
+        qc_tab = loaded.locator(".nav-link:has-text('Quality Control')")
+        if qc_tab.count() > 0:
+            qc_tab.first.click()
+            _wait_shiny(loaded)
+    run = _yaml.safe_load(z.read(next(n for n in z.namelist() if n.endswith("effective_run.yaml"))).decode())
+    assert run["seeds_per_plot"][pid] == 0 and run["seed_source_per_plot"][pid] == "recipe"
+    assert [(r["seed"], r["source"]) for r in run["seeds_per_layer"][pid]] == [(0, "recipe")]
+    assert run["seeds_added_to_recipe"] == []
+    recipe_name = next(n for n in z.namelist() if "/data_analysis_recipes_reproducibility/" in n
+                       and n.endswith(".yaml") and not n.endswith("effective_run.yaml"))
+    recipe = _yaml.safe_load(z.read(recipe_name).decode())
+    spec = next(g["plots"][pid]["spec"] for g in recipe["analysis_groups"].values() if pid in g["plots"])
+    assert {l["params"].get("random_state") for l in spec["layers"]
+            if (l.get("params") or {}).get("position") == "jitter"} == {0}
 
 
 def test_a_data_change_after_the_view_is_opened_blocks_the_export(loaded):

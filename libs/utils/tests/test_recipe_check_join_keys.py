@@ -207,9 +207,8 @@ def _j12_text(**extra):
 
 def test_j12_text_for_a_plain_step_covers_a_unique_and_a_repeated_key():
     text = _j12_text()
-    assert "If each value of the column appears once, the result has the same rows and copies of the columns named `_right`." in text
-    assert "If a value repeats, rows are multiplied." in text
-    assert "Remove the step if you did not mean this." in text
+    assert "The result has the same rows if each value of the column appears once, and more rows if a value repeats; the columns are copied with the suffix `_right`." in text
+    assert "Suggestion: remove the step if you did not mean this." in text
     assert text.startswith("Join of 'A' with itself on the same column")
     assert len(text) < 330
 
@@ -217,8 +216,8 @@ def test_j12_text_for_a_plain_step_covers_a_unique_and_a_repeated_key():
 def test_j12_text_for_semi_and_anti_says_no_column_is_copied():
     for how in ("semi", "anti"):
         text = _j12_text(how=how)
-        assert "no column is copied" in text and how in text
-        assert "_right" not in text and "multiplied" not in text
+        assert "No column is copied" in text and how in text
+        assert "_right" not in text and "more rows" not in text
 
 
 def test_j12_text_names_the_suffix_of_the_step():

@@ -5,7 +5,8 @@ from typing import Dict, Any, List
 # Explicit imports to ensure registration occurs
 from viz_factory.registry import get_component
 from viz_factory.plot_config_resolver import (
-    BATCHED_COMPONENTS, SEEDED_JITTER_COMPONENTS, resolve_plot_config, spec_key_names, unknown_spec_keys)
+    BATCHED_COMPONENTS, resolve_plot_config, spec_key_names, unknown_spec_keys)
+from utils.random_layers import is_random_layer, is_seed_value, position_of
 from viz_factory.checked_plot import (
     CheckedPlot, PlotContext, Step, draw_checked, explain_build_failure, plot_warnings, show_draw_errors)
 from viz_factory.errors import layer_label, plot_failure
@@ -30,11 +31,11 @@ import difflib
 # `random_state`, and VizFactory(random_state=...) changes the default for a whole factory
 # (tests that need a known arrangement, or a deliberate different one).
 #
-# The seed is a default, never a rule: `random_state: null` (or "random") on a layer, or
-# VizFactory(random_state=None), asks for a different arrangement on every render. Jitter can be
-# useful to try again, and the choice stays with the data analysis recipe author.
+# PROVISIONAL (S1, Eve's rule of 2026-11-15): a seed is a number. `random_state: null` or "random" on a layer is
+# refused (the same recipe gives the same picture); VizFactory(random_state=None) stays as the handle for a test
+# that needs a different arrangement each time.
 DEFAULT_RANDOM_STATE = 0
-RANDOM = "random"   # accepted spelling for "no seed", next to None / null
+RANDOM = "random"   # the word that means "no seed"; refused in a layer, see _refuse_unseeded_layer
 
 
 def _generator(seed):
@@ -53,22 +54,60 @@ def _generator(seed):
     return np.random.RandomState(int(seed))
 
 
-def _seed_random_components(layer_name: str, params: dict, random_state) -> dict:
-    """Give every random component a seed, unless the layer sets its own `random_state`.
+JITTER_COMPONENTS = ("geom_jitter", "position_jitter", "position_jitterdodge")
 
-    Covers the four ways jitter reaches a plot: a geom's `position: jitter` or `position:
-    jitterdodge` parameter, `geom_jitter`, and the `position_jitter` / `position_jitterdodge` layers.
+
+def _seed_random_components(layer_name: str, params: dict, random_state) -> dict:
+    """Give every random layer a seed, unless the layer sets its own `random_state`.
+
+    A layer is random when `utils.random_layers.is_random_layer` says so (the recipe checker uses the same rule).
+    It reaches a plot in these ways: a geom's `position: jitter` or `jitterdodge` parameter, `geom_jitter`, the
+    `position_jitter` / `position_jitterdodge` layers, `geom_sina` / `stat_sina`, and a bootstrapped summary
+    (`fun_data: mean_cl_boot`). The seed goes in as a numpy generator, never a bare number (plotnine reads 0 as
+    "no seed" for jitter).
     """
     from plotnine import position_jitter, position_jitterdodge
     params = dict(params)
-    position = params.get("position")
-    if position == "jitter":
+    position = position_of(params)            # `jitter` and `position_jitter` are the same position (plotnine's rule)
+    if position == "position_jitter":
         params["position"] = position_jitter(random_state=_generator(params.pop("random_state", random_state)))
-    elif position == "jitterdodge":
+    elif position == "position_jitterdodge":
         params["position"] = position_jitterdodge(random_state=_generator(params.pop("random_state", random_state)))
-    elif layer_name in SEEDED_JITTER_COMPONENTS and not (layer_name == "geom_jitter" and "position" in params):
+    elif layer_name in JITTER_COMPONENTS and not (layer_name == "geom_jitter" and "position" in params):
+        params["random_state"] = _generator(params.get("random_state", random_state))
+    elif is_random_layer(layer_name, params):
+        # sina and a bootstrapped summary: the seed is a parameter of the stat
         params["random_state"] = _generator(params.get("random_state", random_state))
     return params
+
+
+def _refuse_unseeded_layer(layer_name: str, params: dict, plot_id: str, where: str) -> None:
+    """Raise when a random layer writes a `random_state` that is not a number: null, the word random, other text
+    (PROVISIONAL S1, Eve's rule of 2026-11-15, "every seed that is used is written"). A layer that writes nothing
+    takes the factory's seed. `VizFactory(random_state=None)` (a factory built without a seed, the handle for tests) is
+    not a layer and is not refused. `where` is how an error names the layer (`layer 2 (geom_point)`)."""
+    if "random_state" in params and is_random_layer(layer_name, params):
+        _refuse_non_number(where, params["random_state"], plot_id)
+
+
+def _refuse_non_number(where: str, written, plot_id: str) -> None:
+    """The one error form of the plot layer (`errors.plot_failure`): what, which plot and layer, and the fix."""
+    if not is_seed_value(written):
+        raise plot_failure(
+            plot_id, f"random_state is {written!r}, but a seed is a number",
+            "write a number: random_state: 0 (any whole number; another number gives another arrangement, the same "
+            "number gives the same one)",
+            layer=where, evidence={"random_state": written}, reference="rules_viz_factory.md section 8")
+
+
+def _recipe_seed(plot_defaults: dict, plot_id: str, factory_seed):
+    """`plot_defaults.random_state` (PROVISIONAL S3: the one seed of the whole recipe), else the factory's seed.
+    null and the word random are refused like in a layer (S1)."""
+    if "random_state" not in plot_defaults:
+        return factory_seed
+    written = plot_defaults["random_state"]
+    _refuse_non_number("plot_defaults", written, plot_id)
+    return written
 
 
 def _refuse_plot_engine_not_built(data_analysis_recipe: Dict[str, Any], plot_id: str) -> None:
@@ -128,6 +167,11 @@ class VizFactory:
         # Deployment palettes override built-ins when names collide (intentional branding).
         self._palette_registry: dict = {**self._BUILTIN_PALETTES, **(palette_registry or {})}
 
+    @property
+    def default_random_state(self):
+        """The seed used by every random component whose recipe writes none (see DEFAULT_RANDOM_STATE)."""
+        return self._random_state
+
     def render(self, df: Any, data_analysis_recipe: Dict[str, Any], plot_id: str,
                aesthetic_override: dict | None = None):
         """
@@ -181,6 +225,8 @@ class VizFactory:
                 evidence={"unknown_keys": [str(k) for k in unknown]})
 
         plot_defaults = data_analysis_recipe.get('plot_defaults') or {}
+        # PROVISIONAL (S3): the seed of a random layer that writes none is the recipe's (plot_defaults), else the factory's
+        recipe_seed = _recipe_seed(plot_defaults, plot_id, self._random_state)
 
         # 1. Tier 3: Apply UI-driven filters (predicate pushdown on LazyFrame).
         # Must happen before collect() to preserve lazy evaluation.
@@ -297,7 +343,8 @@ class VizFactory:
                 raise plot_failure(plot_id, "a layer has no name", "write name: geom_point (or another component) for every layer",
                                    layer=where)
             if layer_name not in BATCHED_COMPONENTS:
-                layer_params = _seed_random_components(layer_name, layer_params, self._random_state)
+                _refuse_unseeded_layer(layer_name, layer_params, plot_id, where)
+                layer_params = _seed_random_components(layer_name, layer_params, recipe_seed)
             try:
                 component_func = get_component(layer_name)
             except ValueError as exc:

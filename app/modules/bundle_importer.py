@@ -31,8 +31,9 @@ three-leg draft):
   - engine      : this machine's installed versions/commit vs. what the bundle recorded.
   - recipe      : only checkable when the ORIGINAL (untranslated) recipe is still
                   available locally by id — the frozen copy inside the bundle has T3
-                  baked in by design and will never hash the same as the original, so
-                  comparing against it would be a false alarm, not a real check.
+                  baked in by design (and the jitter seeds the export used written on its layers),
+                  so it will never hash the same as the original; comparing against it would be
+                  a false alarm, not a real check.
   - t3_steps    : not independently re-derivable on import (T3 only ever existed in the
                   exporting session) — recorded for a field-by-field comparison against
                   another effective_run.yaml of the same session (the ADR-097 use case).
@@ -163,7 +164,9 @@ def _verify(
             recorded=effective_run.get("data_analysis_recipe_sha256"),
             detail=(
                 "Not independently re-checked: the bundle's recipe copy has your audited "
-                "T3 steps baked in as real actions, so it never hashes the same as the "
+                "T3 steps baked in as real actions and the random scatter (jitter) seeds the "
+                "export used written on its layers (listed in effective_run.yaml: "
+                "seeds_added_to_recipe), so it never hashes the same as the "
                 "original recipe by design, and no original recipe with this id was found "
                 "locally to compare against instead."
             ),

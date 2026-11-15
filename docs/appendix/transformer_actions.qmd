@@ -702,7 +702,7 @@ Kind: exact. Context: t1, t2.
 
 #### `polars_top_k`
 
-Keep the `k` rows with the largest values of `by`, largest first (Polars LazyFrame.top_k). The order of the result is the order of the values; It returns exactly `k` rows. When several rows are tied at the cut, only some of them are kept: which ones is not fixed, do not rely on it. A NaN (a failed calculation) comes first; a missing value is skipped, but rows with no value fill the `k` rows when the real values run out. To always keep the same rows, end `by` with a row number (write a polars_with_row_index step first and give its column last in `by`), or write polars_sort with maintain_order: true and then polars_head. To keep every row tied with the `k` best (possibly more than `k` rows), write polars_rank with method min, then a modif_filter on the rank.
+Keep the `k` rows with the largest values of `by`, largest first (Polars LazyFrame.top_k). The order of the result is the order of the values. It keeps at most `k` rows: exactly `k` when the table has `k` rows or more. If several rows have the same value as the `k`-th row, only some of them fit, and Polars does not promise which ones. Suggestion: to always keep the same rows, write a polars_with_row_index step first and use its column as the last column of `by`. Suggestion: to keep every row that ties with the `k` best, write polars_rank (method min), then a modif_filter on the rank; this can return more than `k` rows. A NaN (a failed calculation) comes first, and last if `reverse` is true for that column. Rows with no value come after the real values: they fill the `k` rows only when the real values run out. The steps of both suggestions are written in the example.
 
 Kind: exact. Context: t1, t2.
 
@@ -710,12 +710,26 @@ Kind: exact. Context: t1, t2.
 - action: polars_top_k
   k: 10
   by: [identity, sample_row]
-  reverse: false
+  reverse: [false, true]
+# Suggestion 1, always the same rows: write this step before, and keep sample_row last in `by` (with the `reverse` above the first tied rows of the table are kept).
+#   - action: polars_with_row_index
+#     name: sample_row
+# Suggestion 2, every row that ties with the k best (can be more than k rows): write these two steps instead.
+#   - action: polars_rank
+#     columns: [identity]
+#     method: min
+#     descending: true
+#     target_column: identity_rank
+#   - action: modif_filter
+#     column: identity_rank
+#     op: le
+#     value: 10
+#     na: remove
 ```
 
 #### `polars_bottom_k`
 
-Keep the `k` rows with the smallest values of `by`, smallest first (Polars LazyFrame.bottom_k). The order of the result is the order of the values; It returns exactly `k` rows. When several rows are tied at the cut, only some of them are kept: which ones is not fixed, do not rely on it. A NaN (a failed calculation) comes last; a missing value is skipped, but rows with no value fill the `k` rows when the real values run out. To always keep the same rows, end `by` with a row number (write a polars_with_row_index step first and give its column last in `by`), or write polars_sort with maintain_order: true and then polars_head. To keep every row tied with the `k` best (possibly more than `k` rows), write polars_rank with method min, then a modif_filter on the rank.
+Keep the `k` rows with the smallest values of `by`, smallest first (Polars LazyFrame.bottom_k). The order of the result is the order of the values. It keeps at most `k` rows: exactly `k` when the table has `k` rows or more. If several rows have the same value as the `k`-th row, only some of them fit, and Polars does not promise which ones. Suggestion: to always keep the same rows, write a polars_with_row_index step first and use its column as the last column of `by`. Suggestion: to keep every row that ties with the `k` best, write polars_rank (method min), then a modif_filter on the rank; this can return more than `k` rows. A NaN (a failed calculation) comes last, and first if `reverse` is true for that column. Rows with no value come after the real values: they fill the `k` rows only when the real values run out. The steps of both suggestions are written in the example.
 
 Kind: exact. Context: t1, t2.
 
@@ -723,7 +737,21 @@ Kind: exact. Context: t1, t2.
 - action: polars_bottom_k
   k: 10
   by: [identity, sample_row]
-  reverse: false
+  reverse: [false, false]
+# Suggestion 1, always the same rows: write this step before, and keep sample_row last in `by` (with the `reverse` above the first tied rows of the table are kept).
+#   - action: polars_with_row_index
+#     name: sample_row
+# Suggestion 2, every row that ties with the k best (can be more than k rows): write these two steps instead.
+#   - action: polars_rank
+#     columns: [identity]
+#     method: min
+#     descending: false
+#     target_column: identity_rank
+#   - action: modif_filter
+#     column: identity_rank
+#     op: le
+#     value: 10
+#     na: remove
 ```
 
 #### `polars_reverse`
@@ -781,6 +809,18 @@ Each action of this section summarises the whole table into **one row**: every c
 Other types and result types, all as Polars gives them: a categorical or list column gives null for `polars_sum`, `polars_mean`, `polars_median`, `polars_std`, `polars_var` and `polars_quantile`; a list column also gives null for `polars_min` and `polars_max`. The mean of integers is a float; the sum and the count of a Boolean column are unsigned integers; the mean of a Boolean column is the fraction of true values. **A `polars_sum` of a 64-bit integer column larger than the 64-bit range wraps around and gives a wrong value without any error** (for example `2**63 - 1` plus `1` gives `-9223372036854775808`): convert the column to a float type first.
 
 A text column never makes an aggregation fail: its result is null (or the byte-order limit for `polars_min` and `polars_max`) and the column stays in the result with its name. If a number was read as text, this null is the sign: check the declared type of the field. Two more things to know. `polars_quantile` uses the Polars default `interpolation: nearest`, which is not the linear interpolation of R and numpy: write `interpolation` in the step. `polars_first` and `polars_last` give the row that the previous steps left first or last: the order of the rows decides the result, so write a `polars_sort` with `maintain_order` before them when the row matters (ADR-090); on an empty table they give no row, where the other aggregations give 0 or null.
+
+#### A whole-number sum: what to know (no developer needed)
+
+A **whole-number sum** adds numbers that have no decimals (counts of reads, of samples, of genes). The computer stores each whole number in a box of a fixed size, and a box has a limit.
+
+- A **32-bit** box (`Int32`, `UInt32`) holds numbers up to about 2 thousand million (4 thousand million for `UInt32`). A total above the limit does **not** stop with an error: it wraps around and gives a wrong number, which can be negative. Example (run): in an `Int32` column, `2000000000 + 2000000000` gives `-294967296`. In an `Int64` column (64-bit) it gives `4000000000`.
+- A **decimal** column (`Float64`) keeps a limited number of digits. A total can differ from the exact one in its last digits: `0.1` added ten times gives `0.9999999999999999`. At very large sizes a small number can be lost: `9007199254740992.0 + 1.0` gives `9007199254740992.0`.
+- The last digits of a sum of decimal numbers can also differ between computers, because the order in which the numbers are added depends on how many processor threads are used. Example (run): the sum of 5 million decimal values gave `2499919154.4883113` with 1 thread and `2499919154.488312` with 2 or 8 threads.
+- For most recipes this does not matter: the usual totals are far below these limits. It matters for very large totals, and when a column is declared 32-bit.
+- The recipe checker warns when it sees a sum on a column declared `Int32` or `UInt32` (advice ST15). It cannot see a sum inside a formula, in a join result, or on a column made 32-bit by an earlier step.
+
+Suggestion: declare the column as 64-bit (`Int64`, whole numbers) or as a decimal type (`Float64`), in `input_fields` or with a `polars_cast` step before the sum.
 
 #### `polars_count`
 
@@ -887,7 +927,7 @@ Kind: exact. Context: t2, assembly.
 
 #### `polars_sum`
 
-Sum of each column, one row (Polars LazyFrame.sum). A null is skipped (a column with only nulls gives 0), a NaN makes the sum NaN, a text, Date, Datetime, categorical or list column gives null, a Boolean column gives the number of its true values (an unsigned integer). A sum of an integer column larger than the 64-bit range gives a wrong value without an error: convert the column to a float type first. The sum of an Int32 or UInt32 column wraps around above about 2 thousand million (4 for UInt32) with no error: cast to Int64 first.
+Sum of each column, one row (Polars LazyFrame.sum). A null is skipped (a column with only nulls gives 0), a NaN makes the sum NaN, a text, Date, Datetime, categorical or list column gives null, a Boolean column gives the number of its true values (an unsigned integer). A sum of an integer column larger than the 64-bit range gives a wrong value without an error: convert the column to a float type first. The sum of an Int32 or UInt32 column wraps around above about 2 thousand million (4 for UInt32) with no error: cast to Int64 first. In plain words: a whole-number sum adds numbers that have no decimals. A 32-bit whole-number column holds numbers only up to about 2 thousand million; a larger total does not stop with an error, it wraps around to a wrong, possibly negative, number (2000000000 + 2000000000 in an Int32 column gives -294967296; in an Int64 column it gives 4000000000). A decimal (Float64) sum has limited precision: the last digits of a total can differ from the exact one (0.1 added ten times gives 0.9999999999999999), and at very large sizes a small number can be lost (9007199254740992.0 + 1.0 gives 9007199254740992.0). The last digits of a sum of decimal numbers can also differ between computers, because the order in which the numbers are added depends on how many processor threads are used (a sum of 5 million decimal values gave 2499919154.4883113 with 1 thread and 2499919154.488312 with 2 or 8 threads). For most recipes this does not matter. Suggestion: declare the column as 64-bit (Int64) or as a decimal type (Float64). The same note is in the page of the transformer actions, in the section "A whole-number sum: what to know".
 
 Kind: exact. Context: t2, assembly.
 

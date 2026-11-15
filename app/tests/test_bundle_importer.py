@@ -360,6 +360,9 @@ def test_recipe_leg_not_checked_when_original_not_available_locally(tmp_path):
     zb, _run, _orig = _build_bundle(tmp_path)
     result = import_bundle(zb, bootloader=_fresh_bootloader(tmp_path))
     assert result.legs["recipe"].status == "not_checked"
+    # the wording names both things written into the frozen copy: the audited steps and the jitter seeds
+    assert "T3 steps" in result.legs["recipe"].detail
+    assert "seeds" in result.legs["recipe"].detail and "seeds_added_to_recipe" in result.legs["recipe"].detail
 
 
 def test_recipe_leg_checked_and_matches_when_original_available_locally(tmp_path):

@@ -77,7 +77,14 @@ _frame("polars_sum", "sum",
        "Sum of each column, one row (Polars LazyFrame.sum). A null is skipped (a column with only nulls gives 0), a NaN makes the sum NaN, "
        "a text, Date, Datetime, categorical or list column gives null, a Boolean column gives the number of its true values (an unsigned integer). "
        "A sum of an integer column larger than the 64-bit range gives a wrong value without an error: convert the column to a float type first. "
-       "The sum of an Int32 or UInt32 column wraps around above about 2 thousand million (4 for UInt32) with no error: cast to Int64 first.",
+       "The sum of an Int32 or UInt32 column wraps around above about 2 thousand million (4 for UInt32) with no error: cast to Int64 first. "
+       "In plain words: a whole-number sum adds numbers that have no decimals. A 32-bit whole-number column holds numbers only up to about 2 thousand million; "
+       "a larger total does not stop with an error, it wraps around to a wrong, possibly negative, number (2000000000 + 2000000000 in an Int32 column gives -294967296; in an Int64 column it gives 4000000000). "
+       "A decimal (Float64) sum has limited precision: the last digits of a total can differ from the exact one (0.1 added ten times gives 0.9999999999999999), and at very large sizes a small number can be lost (9007199254740992.0 + 1.0 gives 9007199254740992.0). "
+       "The last digits of a sum of decimal numbers can also differ between computers, because the order in which the numbers are added depends on how many processor threads are used (a sum of 5 million decimal values gave 2499919154.4883113 with 1 thread and 2499919154.488312 with 2 or 8 threads). "
+       "For most recipes this does not matter. "
+       "Suggestion: declare the column as 64-bit (Int64) or as a decimal type (Float64). "
+       "The same note is in the page of the transformer actions, in the section \"A whole-number sum: what to know\".",
        "- action: polars_sum")
 _frame("polars_min", "min",
        "Smallest value of each column, one row (Polars LazyFrame.min). A null is skipped (only nulls gives null), a NaN is ignored (only NaN gives NaN), "

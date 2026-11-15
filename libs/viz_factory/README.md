@@ -73,8 +73,13 @@ from viz_factory.plot_config_resolver import (
     normalise_plot_spec,    # (raw_spec: dict) -> dict  — idempotent L4 normalisation; raises VisualizationError on factory_id
     serialise_plot_spec,    # (canonical: dict) -> dict — serialise-safe form for Blueprint YAML save; never emits factory_id
     resolve_plot_config,    # (l4_spec, l2_defaults, df, l5_override) -> dict — full cascade merge
+    resolve_layer_seeds,    # (layers, audit_pin, default=) -> tuple[LayerSeed] — the one order of precedence for the seed, per random layer
 )
 ```
+
+### The seed of the random layers (SEED-HOLDS-1, ADR-104)
+
+Which layers are random is one rule, `utils.random_layers.is_random_layer` (jitter, `geom_sina`/`stat_sina`, a geom with `position: jitter`/`jitterdodge`, a bootstrapped summary, and any geom with `stat: sina`): the factory seeds exactly those and the recipe checker accepts `random_state` on exactly those. Order of precedence, per random layer, in `resolve_layer_seeds`: a seed pinned by an audit step (`aesthetic_override["random_state"]`, L5) > the number written on that layer in the recipe > PROVISIONAL (S3) `plot_defaults: random_state`, the one seed of the whole recipe > the factory's seed (`DEFAULT_RANDOM_STATE`, 0) when it writes none. No caller offers or draws a seed (Eve, 2026-11-15). A number written in the recipe is never replaced, and a layer that writes none never takes another layer's number. PROVISIONAL (S1): `random_state: null` and `random` in a layer are refused (`VisualizationError`, checker PS04); `VizFactory(random_state=None)` stays as the handle for tests. `libs/viz_factory/tests/test_every_component_randomness.py` draws every registered component to prove none is random once seeded.
 
 ---
 

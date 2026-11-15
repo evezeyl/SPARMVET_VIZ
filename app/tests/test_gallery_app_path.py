@@ -22,7 +22,7 @@ from utils.errors import IngestionError
 ROOT = Path(__file__).resolve().parents[2]
 SHIPPED = ROOT / "assets" / "gallery_data"
 # The examples that cannot be standard recipes yet (the same list as libs/viz_gallery/tests/test_gallery_examples_are_recipes.py).
-WAITING = {"beeswarm_sina"}
+WAITING: set = set()
 
 _spec = importlib.util.spec_from_file_location("gallery_previews", ROOT / "assets/scripts/gallery_previews.py")
 previews = importlib.util.module_from_spec(_spec)
