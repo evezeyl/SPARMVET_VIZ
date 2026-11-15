@@ -25,8 +25,8 @@ from shiny import reactive, render, ui
 
 from app.modules.t3_audit_engine import _apply_filter_rows, _op_label
 from app.modules.plot_seeds import (
-    bake_plot_seeds, export_plot_seeds, seed_pins_from_home_state, seed_sources_per_plot,
-    seeds_per_plot_record, render_seed_args, unfixed_seed_warning,
+    bake_plot_seeds, export_seed_plan, seed_recipe_note, seed_sources_per_plot, seeds_added_to_recipe,
+    seeds_per_layer_record, seeds_per_plot_record, render_seed_args, unfixed_seed_warning,
 )
 
 
@@ -851,19 +851,17 @@ def define_export_server(input, output, session, *,
                     all_plots = _filtered
                     scope_label = _active_gid
 
-        # ── SEED-HOLDS-1 (ADR-104 point 3, ADR-097 decision 2): one seed per exported plot ──
-        # audit pin > the seed written in the recipe > the seed HOME drew for the plot (last_drawn_seeds)
-        # > for `random_state: null` a seed drawn now > the library default. The plot is rendered with
-        # this seed, the record (seeds_per_plot) holds it, and the reproducibility recipe carries it.
-        # The pin is read whether or not the audit trail (t3_sandbox_enabled) is on: Reshuffle is not
-        # gated by it, so the export holds what the user saw.
+        # ── SEED-HOLDS-1 (ADR-104 point 3, ADR-097 decision 2): one seed per random layer of each plot ──
+        # audit pin > the number the recipe writes on that layer > the seed HOME drew for the plot
+        # (last_drawn_seeds) > for `random_state: null` a seed drawn now > the library default. The plot is
+        # rendered with these seeds, the record holds them, and the reproducibility recipe carries them.
+        # The pin is read from home_state with no audit-trail flag in between (plot_seeds.export_seed_plan):
+        # Reshuffle is not gated by it, so the export holds what the user saw.
         with reactive.isolate():
             _home_drawn = dict(last_drawn_seeds.get()) if last_drawn_seeds is not None else {}
-            _seed_pins = seed_pins_from_home_state(
-                home_state.get() if home_state is not None else None, [p for p, _ in all_plots]
-            )
-        _plot_seeds = export_plot_seeds(
-            dict(all_plots), _seed_pins, _home_drawn, default=viz_factory.default_random_state,
+            _home_state_now = home_state.get() if home_state is not None else None
+        _plot_seeds = export_seed_plan(
+            dict(all_plots), _home_state_now, _home_drawn, default=viz_factory.default_random_state,
         )
         _seed_warning = unfixed_seed_warning(_plot_seeds)
         if _seed_warning:
@@ -1315,6 +1313,8 @@ def define_export_server(input, output, session, *,
                 "data_source_paths": prov["data_source_paths"],
                 "seeds_per_plot": seeds_per_plot_record(_plot_seeds),
                 "seed_source_per_plot": seed_sources_per_plot(_plot_seeds),
+                "seeds_per_layer": seeds_per_layer_record(_plot_seeds),
+                "seeds_added_to_recipe": seeds_added_to_recipe(_plot_seeds, dict(all_plots)),
                 "t3_translation_skipped": (
                     mode2_skipped if wants_mode2 else
                     "not attempted — check 'Also include a reproducibility/reimport "
@@ -1711,6 +1711,10 @@ def define_export_server(input, output, session, *,
                     "",
                 ]
 
+            if wants_mode2:
+                _seed_note = seed_recipe_note(_plot_seeds, dict(all_plots))
+                if _seed_note:
+                    qmd_lines += ["## Random scatter seeds", ""] + [f"> {_l}" if _l else ">" for _l in _seed_note] + [""]
             qmd_lines += [
                 "---",
                 "",
@@ -1862,6 +1866,10 @@ def define_export_server(input, output, session, *,
                     "       your audited T3 steps baked in as real wrangling actions, per plot.",
                     "       Any plot whose steps couldn't be fully baked in is named in",
                     "       effective_run.yaml's t3_translation_skipped.",
+                    "       The random scatter (jitter) seeds the export wrote into it are listed below and in",
+                    "       effective_run.yaml (seeds_added_to_recipe, seeds_per_layer); a number the recipe",
+                    "       already wrote on a layer is kept.",
+                    *[f"       {_l}" for _l in seed_recipe_note(_plot_seeds, dict(all_plots))],
                     "  data_reproducibility/<dataset>.<ext> — the actual data files used.",
                 ] if wants_mode2 else []),
                 "",

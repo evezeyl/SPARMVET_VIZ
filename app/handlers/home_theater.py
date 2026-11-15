@@ -47,7 +47,9 @@ from app.modules.data_analysis_recipe_validator import home_advice_entries
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
 from viz_factory.plot_config_resolver import layers_have_jitter, recipe_pins_random_state
-from app.modules.plot_seeds import SessionSeedDraws, home_plot_seed, render_seed_args
+from app.modules.plot_seeds import (
+    SessionSeedDraws, home_plot_seeds, reference_render_args, remember_drawn_seed, render_seed_args,
+)
 
 from app.modules.t3_audit_engine import _apply_filter_rows
 from app.modules.sidebar_registry import is_panel_active
@@ -412,34 +414,28 @@ def define_server(input, output, session, *,
 
         @reactive.Calc
         def _effective_random_state():
-            """SEED-HOLDS-1 (ADR-104 point 3, ADR-097 decision 2): the seed this plot's jitter uses.
-            An audit pin (aesthetic_override.random_state) > the number the recipe writes > the
-            seed drawn for this session and plot (SessionSeedDraws: stable, so a tab switch never
-            changes the picture). The draw never replaces a recipe's number. The companion Effect
-            below remembers a drawn seed for the export (never here: a Calc must not write reactive
+            """SEED-HOLDS-1 (ADR-104 point 3, ADR-097 decision 2): the seed of every random layer of this plot.
+            Per layer: an audit pin > the number the recipe writes on that layer > this session's draw
+            (stable, so a tab switch never changes the picture). The draw never replaces a recipe's number
+            and a layer never takes another layer's number. All of it is plot_seeds.home_plot_seeds; the
+            Effect below remembers a drawn seed for the export (never here: a Calc must not write reactive
             state, R1, ui_implementation_contract.md section 14).
 
-            Returns a PlotSeed (seed, source); source "none" when the plot has no jitter.
+            Returns a tuple of LayerSeed; empty when the plot has no random layer.
             """
             spec = _resolve_active_spec(p_id)
-            overrides = (
-                (home_state.get() if home_state is not None else {})
-                .get("t3_plot_overrides", {})
-                .get(this_subtab)
-            ) or {}
-            return home_plot_seed(
-                (spec or {}).get("layers", []), overrides.get("random_state"),
+            return home_plot_seeds(
+                (spec or {}).get("layers", []), home_state.get() if home_state is not None else None,
                 _seed_draws, p_id, default=viz_factory.default_random_state,
             )
 
         @reactive.Effect
         def _persist_drawn_seed():
-            plot_seed = _effective_random_state()
-            if plot_seed.source != "drawn" or last_drawn_seeds is None:
+            if last_drawn_seeds is None:
                 return
-            current = last_drawn_seeds.get()
-            if current.get(p_id) != plot_seed.seed:
-                last_drawn_seeds.set({**current, p_id: plot_seed.seed})
+            updated = remember_drawn_seed(last_drawn_seeds.get(), p_id, _effective_random_state())
+            if updated is not None:
+                last_drawn_seeds.set(updated)
 
         @output(id=f"plot_group_{p_id}")
         @render.plot(alt=f"Plot: {p_id}")
@@ -628,12 +624,11 @@ def define_server(input, output, session, *,
             # SEED-HOLDS-1: the reference pane keeps the same arrangement as My view (recipe number or
             # this session's draw), so the two panes differ only by what the user changed; an audit
             # pin is one of those changes and is not applied here.
-            _base_seed = home_plot_seed(
-                spec.get("layers", []), None, _seed_draws, p_id, default=viz_factory.default_random_state,
+            _seed_args = reference_render_args(
+                spec.get("layers", []), _seed_draws, p_id, default=viz_factory.default_random_state,
             )
             try:
-                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
-                                          **render_seed_args(_base_seed, None))
+                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id, **_seed_args)
             except Exception as e:
                 # ADR-094/PIPELINE-ERROR-WIRE-2: now uses capture_entry() for VizFactory's
                 # real fix/who, same as _group_plot_handler's render catch.
