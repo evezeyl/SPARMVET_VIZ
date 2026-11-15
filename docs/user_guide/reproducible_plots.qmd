@@ -6,62 +6,50 @@ You can send your figures to a colleague, a reviewer or a journal. They (or you,
 
 ## The short version
 
-- **A number you write in your data analysis recipe always holds.** In the app, in the export bundle, and when someone re-runs the exported recipe, the plot uses exactly that number. The app never replaces it.
-- **A number fixed by an audit step is the same everywhere too.** If you fix an arrangement with "Reshuffle", the plot, the export bundle, the record and the re-run all use that number.
-- **If your recipe writes no number, the app draws one for you, per plot, once per session.** Open the same recipe tomorrow and the scatter may look different. The export uses the number the app showed you, records it in `effective_run.yaml`, and writes it into the recipe of the reproducibility bundle, so the exported picture can be repeated. The export also warns you for these plots.
-- **To get the same picture every time, write the number in your data analysis recipe.** Do not rely on the app's choice.
-- Your standard export always contains `effective_run.yaml` with the seed of every plot that uses jitter. It does **not** contain a copy of your data analysis recipe; see [Understanding Your Export](understanding_your_export.qmd) for what the standard export holds versus the opt-in reproducibility/reimport bundle (which does include the recipe, with the seeds written in).
+- **Every random layer has one seed, and it is the same everywhere.** A number you write on the layer in your data analysis recipe holds in the app, in the comparison panes, in the gallery and Blueprint, in the export bundle and when someone re-runs the exported recipe. If you write no number the seed is **0**. The app draws nothing per session: open the same recipe tomorrow and the scatter looks the same.
+- **A number fixed by an audit step is the same everywhere too.** If you fix an arrangement with "Reshuffle", the plot, the export bundle, the record and the re-run all use that number, and the export lists it as a step of the audit trail.
+- **Write the number you want in the recipe**, for example `random_state: 0`. The export writes every seed it used into the recipe of the reproducibility bundle, so nothing is left to a default there.
+- Your standard export always contains `effective_run.yaml` with the seed of every random layer. It does **not** contain a copy of your data analysis recipe; see [Understanding Your Export](understanding_your_export.qmd) for what the standard export holds versus the opt-in reproducibility/reimport bundle (which does include the recipe, with the seeds written in).
 
-## Random scatter ("jitter")
+## Random scatter ("jitter") and other random layers
 
-When many points have the same value, they sit on top of each other and you cannot count them. **Jitter** moves each point a small random amount sideways so you can see them all. The amounts are random, so the exact position of every point depends on the **seed**, a starting number.
+When many points have the same value, they sit on top of each other and you cannot count them. **Jitter** moves each point a small random amount sideways so you can see them all. The amounts are random, so the exact position of every point depends on the **seed**, a starting number. These layers are random and take a seed: `geom_jitter`, `position_jitter`, `position_jitterdodge`, a geom placed with `position: jitter` or `jitterdodge`, `geom_sina`, `stat_sina`, and a bootstrapped summary (`fun_data: mean_cl_boot` in `stat_summary`, `stat_summary_bin` or a geom with `stat: summary`).
 
 - With the **same seed**, the points are in the same place every time.
 - With a **different seed**, the points move: the picture looks a little different, though the data are the same.
 
-### Why the seed is not forced
+### The seed is a number
 
-One arrangement is only one possibility. Sometimes a different arrangement shows a pattern that another one hides, or looks clearer. So you can:
+One arrangement is only one possibility. Sometimes another one looks clearer. So you can **try other numbers** (the Reshuffle button, below) until you find an arrangement you like, and then **write that number** in the data analysis recipe.
 
-- **try other numbers** (the Reshuffle button, below) until you find an arrangement you like;
-- or write **`random_state: random`** (or `null`) in the recipe, to say that a different arrangement is fine. The app then shows one arrangement per session and records the number it used.
-
-When you are happy, **write the number you liked** in the data analysis recipe.
+`random_state: null` and `random_state: random` are **refused**: the checker and the plot factory say so and tell you to write a number. (This rule is provisional; it makes sure the same recipe gives the same picture.)
 
 ### How to write it
 
-Choose a number for one jitter layer:
+Choose a number for each random layer; the checker accepts it on exactly these layers:
 
 ```yaml
 layers:
   - name: geom_point
-  - name: position_jitter
     params:
-      random_state: 123      # another number gives another arrangement
-```
-
-Ask for a new arrangement every time (for exploring only):
-
-```yaml
+      position: jitter
+      random_state: 0        # another number gives another arrangement
+  - name: geom_sina
     params:
-      random_state: random
+      random_state: 123
 ```
 
 ## What your export contains
 
-Every export writes `effective_run.yaml` with a `seeds_per_plot` entry for every exported plot that uses jitter: the number that was really used to draw the exported picture. Next to it, `seed_source_per_plot` says where each number comes from (`audit`, `recipe`, `drawn`, `default`, or `mixed` when the layers of one plot differ). A plot can have several jitter layers: each layer has its own seed, a number written on one layer is never given to another, and `seeds_per_layer` lists every layer with its seed and source.
+Every export writes `effective_run.yaml` with a `seeds_per_plot` entry for every exported plot that has a random layer: the number that was really used to draw the exported picture. Next to it, `seed_source_per_plot` says where each number comes from (`audit`, `recipe`, `default`, or `mixed` when the layers of one plot differ). A plot can have several random layers: each layer has its own seed, a number written on one layer is never given to another, and `seeds_per_layer` lists every layer with its seed and source.
 
 | What decides the seed | What is recorded in `seeds_per_plot` | Will opening your own recipe again repeat it? |
 |---|---|---|
-| An audit step fixed it (Reshuffle) | that number (`audit`) | **Yes** in the same session; write it in the recipe to keep it. |
+| An audit step fixed it (Reshuffle) | that number (`audit`), also listed as a `random_seed` step in `t3_steps.yaml` and in the report | **Yes** in the same session; write it in the recipe to keep it. |
 | `random_state: 123` in the recipe | `123` (`recipe`) | **Yes**, always: the recipe fixes it. |
-| `random_state: random` or `null` in the recipe, plot shown in the app | the number the app drew for this session, e.g. `1847302991` (`drawn`) | **No**: a new session draws a new number. The exported picture is fully documented and repeats from the reproducibility recipe. |
-| nothing about the seed, plot shown in the app | the number the app drew for this session (`drawn`) | **No**, same as above. |
-| nothing about the seed, plot never shown in the app | the program default `0` (`default`) | Yes with the same SPARMVET version, but **write the number** for a final figure. |
+| nothing about the seed | `0` (`default`) | **Yes**, with the same SPARMVET version; write the number to make the recipe say it. |
 
-The export warns you, in plain words, about every plot whose number is neither written in the recipe nor fixed by an audit step, and tells you what to write in the recipe (`random_state: 123` on the jitter layer). It is a reminder, not an error.
-
-The opt-in reproducibility/reimport bundle (see [Understanding Your Export](understanding_your_export.qmd)) carries the number each plot was exported with, written on its jitter layers in the recipe copy. A number you wrote yourself stays; a plot that said `random` or nothing now has the number that was recorded, so whoever re-runs the bundle draws the same arrangement. The numbers the export added are listed in `seeds_added_to_recipe` (with what your recipe wrote there), in the bundle's `README.txt` and in `report.qmd`, because the recipe file itself does not show which numbers were added.
+The opt-in reproducibility/reimport bundle (see [Understanding Your Export](understanding_your_export.qmd)) carries the number each plot was exported with, written on its random layers in the recipe copy. A number you wrote yourself stays; a layer that said nothing now has the number that was recorded (0). The numbers the export added are listed in `seeds_added_to_recipe` (with what your recipe wrote there), in the bundle's `README.txt` and in `report.qmd`, because the recipe file itself does not show which numbers were added.
 
 ## The order of rows
 
@@ -73,14 +61,14 @@ But that order is *a* fixed order, not necessarily the one **you want**. If you 
 
 ## Checklist before you export a figure
 
-1. Does the plot use jitter? Write a **number** as `random_state` in the recipe, not `random`, and not nothing.
+1. Does the plot use jitter or another random layer? Write a **number** as `random_state` in the recipe (not `null`, not `random`).
 2. Do you need a particular order of bars, samples or rows? Add an explicit **sort**.
-3. Export, then look at `seeds_per_plot` and `seed_source_per_plot` in `effective_run.yaml`: every plot should say `recipe` or `audit`.
+3. Export, then look at `seeds_per_plot` and `seed_source_per_plot` in `effective_run.yaml`: every plot should say `recipe` or `audit`; `default` means the recipe writes no number (the seed was 0).
 
 ## Reshuffling in the app
 
-Plots that use jitter and have no number written in the recipe show a small **Reshuffle arrangement** button next to the plot. Clicking it draws a new arrangement and fixes it: the plot keeps that exact arrangement from then on, and the export uses it too (also when the audit trail is switched off in your app features), as if you had written the number into the data analysis recipe yourself. The button disappears once a number is fixed, whether by this button or by `random_state: <number>` in the recipe.
+Plots that use jitter and have no number written in the recipe show a small **Reshuffle arrangement** button next to the plot. Clicking it draws a new arrangement and fixes it: the plot keeps that exact arrangement from then on, and the export uses it too (also when the audit trail is switched off in your app features) and lists it as a step of the audit trail. The button disappears once a number is fixed, whether by this button or by `random_state: <number>` in the recipe.
 
-There is no button yet to remove a fixed number and go back to "random" from inside the app; edit the data analysis recipe (`random_state: random`, see above) to do that.
+There is no button yet to remove a fixed number; edit the data analysis recipe to do that.
 
 For the technical background (why the order can change, how the engine keeps it fixed, how to test it), see [Same input, same output](../foundations/reproducibility_same_input_same_output.qmd).

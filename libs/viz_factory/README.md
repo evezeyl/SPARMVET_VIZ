@@ -72,14 +72,14 @@ The resolver is the single merge point for all configuration tiers. It implement
 from viz_factory.plot_config_resolver import (
     normalise_plot_spec,    # (raw_spec: dict) -> dict  — idempotent L4 normalisation; raises VisualizationError on factory_id
     serialise_plot_spec,    # (canonical: dict) -> dict — serialise-safe form for Blueprint YAML save; never emits factory_id
-    resolve_plot_config,    # (l4_spec, l2_defaults, df, l5_override, fallback_random_state) -> dict — full cascade merge
-    resolve_layer_seeds,    # (layers, audit_pin, offered, default=) -> tuple[LayerSeed] — the one order of precedence for the jitter seed, per random layer
+    resolve_plot_config,    # (l4_spec, l2_defaults, df, l5_override) -> dict — full cascade merge
+    resolve_layer_seeds,    # (layers, audit_pin, default=) -> tuple[LayerSeed] — the one order of precedence for the seed, per random layer
 )
 ```
 
-### The jitter seed (SEED-HOLDS-1, ADR-104)
+### The seed of the random layers (SEED-HOLDS-1, ADR-104)
 
-Order of precedence, per random layer, in `resolve_layer_seeds`: a seed pinned by an audit step (`aesthetic_override["random_state"]`, L5) > the number written in the recipe (`random_state` on a jitter layer; `null` and `random` are not numbers) > the seed a caller offers (`render(..., fallback_random_state=n)`, which fills only the jitter layers that carry no number; HOME draws one per session) > the factory default (`DEFAULT_RANDOM_STATE`, 0). A number written in the recipe is never replaced by the offered seed, and a layer that writes none never takes another layer's number.
+Which layers are random is one rule, `utils.random_layers.is_random_layer` (jitter, `geom_sina`/`stat_sina`, a geom with `position: jitter`/`jitterdodge`, a bootstrapped summary): the factory seeds exactly those and the recipe checker accepts `random_state` on exactly those. Order of precedence, per random layer, in `resolve_layer_seeds`: a seed pinned by an audit step (`aesthetic_override["random_state"]`, L5) > the number written on that layer in the recipe > the factory's seed (`DEFAULT_RANDOM_STATE`, 0) when it writes none. No caller offers or draws a seed (Eve, 2026-11-15). A number written in the recipe is never replaced, and a layer that writes none never takes another layer's number. PROVISIONAL (S1): `random_state: null` and `random` in a layer are refused (`VisualizationError`, checker PS04); `VizFactory(random_state=None)` stays as the handle for tests. `libs/viz_factory/tests/test_every_component_randomness.py` draws every registered component to prove none is random once seeded.
 
 ---
 
