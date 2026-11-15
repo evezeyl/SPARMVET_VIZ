@@ -149,7 +149,7 @@ class VizFactory:
         return self._random_state
 
     def render(self, df: Any, data_analysis_recipe: Dict[str, Any], plot_id: str,
-               aesthetic_override: dict | None = None, fallback_random_state=None):
+               aesthetic_override: dict | None = None, drawn_random_state=None):
         """
         Main entry point for rendering a single plot by ID from a data analysis recipe.
         Supports both Polars LazyFrame and DataFrame.
@@ -164,9 +164,10 @@ class VizFactory:
             T3 L5 overrides for this specific plot (fill_color, fill_palette,
             colour, alpha, shape, size, theme). Supplied by home_theater from
             home_state['t3_plot_overrides'][plot_id]. VIZFAC-T3-OVERRIDE-1.
-        fallback_random_state : int | None
-            Seed for the jitter layers whose recipe writes no number (SEED-HOLDS-1); a number written in the
-            recipe holds, an audit pin in `aesthetic_override["random_state"]` beats both.
+        drawn_random_state : int | None
+            Seed for the random layers whose recipe writes `random_state: null` (SEED-HOLDS-1; an export draws one
+            and records it); a number written in the recipe holds, an audit pin in
+            `aesthetic_override["random_state"]` beats both.
         """
         _refuse_plot_engine_not_built(data_analysis_recipe, plot_id)
 
@@ -278,7 +279,7 @@ class VizFactory:
         # 3. Resolve five-tier cascade (L1 built-ins through L5 T3 override).
         resolved = resolve_plot_config(raw_spec, plot_defaults, df_pandas,
                                        aesthetic_override=aesthetic_override,
-                                       fallback_random_state=fallback_random_state)
+                                       drawn_random_state=drawn_random_state)
 
         # 4. Emit structured warnings for unrecognised plot_defaults keys and L5 mutex (ADR-079).
         for key in resolved["_unknown_plot_defaults_keys"]:

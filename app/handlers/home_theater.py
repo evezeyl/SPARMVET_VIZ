@@ -30,7 +30,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui
-# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes), app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes), app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/knowledge/architecture_decisions.md#ADR-097, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
@@ -47,9 +47,6 @@ from app.modules.data_analysis_recipe_validator import home_advice_entries
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
 from viz_factory.plot_config_resolver import layers_have_random, recipe_pins_random_state
-from app.modules.plot_seeds import (
-    SessionSeedDraws, home_plot_seeds, reference_render_args, remember_drawn_seed, render_seed_args,
-)
 
 from app.modules.t3_audit_engine import _apply_filter_rows, filter_rows_from_nodes
 from utils.na_choice import na_of, no_value_text
@@ -122,8 +119,7 @@ def define_server(input, output, session, *,
                   home_state=None, session_manager=None,
                   data_refresh_trigger=None,
                   notification_log=None,
-                  session_processing_issues=None,
-                  last_drawn_seeds=None):
+                  session_processing_issues=None):
     """Register all Home Theater reactive handlers.
 
     Parameters
@@ -163,11 +159,6 @@ def define_server(input, output, session, *,
         §12d Session ghost save/restore manager.
     session_processing_issues : reactive.Value[list] | None
         DIAG-RUNTIME-AUDIT-1: accumulates structured runtime error entries.
-    last_drawn_seeds : reactive.Value[dict] | None
-        REPRO-SEED-2 (ADR-097 decision 2): per-session bookkeeping of the last seed
-        actually drawn for each plot whose jitter seed isn't pinned by a T3 override —
-        {plot_id: seed}. Not audited T3 state; read by export (REPRO-PROV-1) to record
-        what was on screen rather than drawing a fresh, different number at export time.
     """
 
     from app.modules.notification_utils import make_notifier
@@ -389,38 +380,9 @@ def define_server(input, output, session, *,
         disc_y = {y_col} if y_col and "scale_y_discrete" in layer_names else set()
         return disc_x, disc_y
 
-    # SEED-HOLDS-1: the seed HOME draws for a plot whose recipe writes none, one per plot, stable
-    # for this session (plain dict inside, not reactive state, so a Calc may read it, R1).
-    _seed_draws = SessionSeedDraws()
-
     def _make_group_plot_handler(p_id: str):
         """Factory: returns a @render.plot fn that renders plot_group_{p_id}."""
         this_subtab = f"subtab_{p_id}"
-
-        @reactive.Calc
-        def _effective_random_state():
-            """SEED-HOLDS-1 (ADR-104 point 3, ADR-097 decision 2): the seed of every random layer of this plot.
-            Per layer: an audit pin > the number the recipe writes on that layer > this session's draw
-            (stable, so a tab switch never changes the picture). The draw never replaces a recipe's number
-            and a layer never takes another layer's number. All of it is plot_seeds.home_plot_seeds; the
-            Effect below remembers a drawn seed for the export (never here: a Calc must not write reactive
-            state, R1, ui_implementation_contract.md section 14).
-
-            Returns a tuple of LayerSeed; empty when the plot has no random layer.
-            """
-            spec = _resolve_active_spec(p_id)
-            return home_plot_seeds(
-                (spec or {}).get("layers", []), home_state.get() if home_state is not None else None,
-                _seed_draws, p_id, default=viz_factory.default_random_state,
-            )
-
-        @reactive.Effect
-        def _persist_drawn_seed():
-            if last_drawn_seeds is None:
-                return
-            updated = remember_drawn_seed(last_drawn_seeds.get(), p_id, _effective_random_state())
-            if updated is not None:
-                last_drawn_seeds.set(updated)
 
         @output(id=f"plot_group_{p_id}")
         @render.plot(alt=f"Plot: {p_id}")
@@ -523,14 +485,13 @@ def define_server(input, output, session, *,
                 .get(this_subtab)
             )
 
-            # SEED-HOLDS-1: the seed this plot uses (audit pin, recipe number, or this session's
-            # draw) is handed to the render in the one shape the export uses too (plot_seeds.py);
-            # the Effect above records a drawn seed from the same Calc, so what is shown and what
-            # is recorded always agree.
-            _seed_args = render_seed_args(_effective_random_state(), _t3_overrides)
+            # SEED-HOLDS-1 (ADR-104): HOME draws no seed. A layer that writes a number keeps it, a layer that
+            # writes none uses the factory's seed (0), an audit pin (Reshuffle) is in `_t3_overrides` and beats both:
+            # the same seeds as the comparison reference pane, the gallery, Blueprint and the export.
 
             try:
-                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id, **_seed_args)
+                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
+                                          aesthetic_override=_t3_overrides)
             except Exception as e:
                 # Capture error for session_processing_issues without violating R1
                 # (cannot call reactive.Value.set inside @render.*). ADR-094/
@@ -610,14 +571,10 @@ def define_server(input, output, session, *,
                 ax.axis("off")
                 return fig
 
-            # SEED-HOLDS-1: the reference pane keeps the same arrangement as My view (recipe number or
-            # this session's draw), so the two panes differ only by what the user changed; an audit
-            # pin is one of those changes and is not applied here.
-            _seed_args = reference_render_args(
-                spec.get("layers", []), _seed_draws, p_id, default=viz_factory.default_random_state,
-            )
+            # SEED-HOLDS-1: the reference pane draws with the same seeds as My view (recipe numbers, the factory's
+            # seed); an audit pin is a change the user made and is not applied here.
             try:
-                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id, **_seed_args)
+                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id)
             except Exception as e:
                 # ADR-094/PIPELINE-ERROR-WIRE-2: now uses capture_entry() for VizFactory's
                 # real fix/who, same as _group_plot_handler's render catch.
@@ -2211,7 +2168,6 @@ def define_server(input, output, session, *,
         t3_filter_rows=_t3_filter_rows,
         t3_drop_columns=_t3_drop_columns,
         view_keys=_data_analysis_recipe_keys,
-        last_drawn_seeds=last_drawn_seeds,
     )
 
     # ── 22-D: Session Management Panel ────────────────────────────────────────

@@ -1,27 +1,23 @@
 """app/modules/plot_seeds.py
-The seed of a plot's jitter, outside the Shiny handlers (Two-Category Law, ADR-045).
+The seed of a plot's random layers in the export, outside the Shiny handlers (Two-Category Law, ADR-045).
 
-SEED-HOLDS-1 (ADR-104 point 3): a seed written in the recipe holds; a seed pinned by an audit step is the
-same in the HOME plot, the results bundle, the reproducibility export and its re-run; HOME never replaces a
-recipe's seed by the one it drew. The order of precedence itself is one function in the cascade resolver
-(`viz_factory.plot_config_resolver.resolve_layer_seeds`, one seed per random LAYER: a layer's number never
-flows to another layer); this module only gathers its inputs for HOME and for the export, and shapes what
-each hands to the render and to the record. Every seed line of the handlers is a call to a function here.
-
-Not decided here (ADR-104, awaiting Eve): which seed a layer uses when its recipe writes none. Today HOME
-draws one per session and plot and the export reuses that number (library default when HOME never showed
-the plot); a layer that writes a number keeps it, in every place.
+SEED-HOLDS-1 (ADR-104, Eve 2026-11-15): a seed written in the recipe holds; a layer that writes none uses the
+factory's seed, 0, in EVERY place (HOME, the comparison reference pane, the gallery, Blueprint, the results bundle,
+the reproducibility export and its re-run); HOME draws no seed; an audit pin is the same everywhere. The order of
+precedence itself is one function in the cascade resolver (`viz_factory.plot_config_resolver.resolve_layer_seeds`,
+one seed per random LAYER: a layer's number never flows to another layer). HOME only passes the audit pin it holds
+in `home_state` to the render; this module shapes what the export hands to the render and to the record, and writes
+the used seeds into the reproducibility recipe, so that every seed used is written (recipe or audit pin).
 """
 from __future__ import annotations
 
 # @deps
-# provides: class:SessionSeedDraws, function:home_layer_seeds, function:home_plot_seeds, function:reference_render_args,
-#           function:render_seed_args, function:remember_drawn_seed, function:export_plot_seeds,
-#           function:export_seed_plan, function:seeds_per_plot_record, function:seed_sources_per_plot,
-#           function:seeds_per_layer_record, function:seeds_added_to_recipe, function:seed_recipe_note,
-#           function:unfixed_seed_warning, function:bake_plot_seeds, function:audit_pin_of, function:seed_pins_from_home_state
+# provides: function:audit_pin_of, function:seed_pins_from_home_state, function:render_seed_args,
+#           function:export_plot_seeds, function:export_seed_plan, function:seeds_per_plot_record,
+#           function:seed_sources_per_plot, function:seeds_per_layer_record, function:seeds_added_to_recipe,
+#           function:seed_recipe_note, function:unfixed_seed_warning, function:bake_plot_seeds
 # consumes: libs/viz_factory/src/viz_factory/plot_config_resolver.py (resolve_layer_seeds, LayerSeed)
-# consumed_by: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/tests/test_plot_seeds.py
+# consumed_by: app/handlers/export_handlers.py, app/tests/test_plot_seeds.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-104, .claude/rules/rules_viz_factory.md#8
 # @end_deps
 
@@ -29,12 +25,7 @@ import copy
 import secrets
 from typing import Callable
 
-from viz_factory.plot_config_resolver import (
-    LayerSeed,
-    layers_need_offered_seed,
-    recipe_asks_random,
-    resolve_layer_seeds,
-)
+from viz_factory.plot_config_resolver import recipe_asks_random, resolve_layer_seeds
 
 
 def _draw_seed() -> int:
@@ -42,27 +33,6 @@ def _draw_seed() -> int:
 
 
 Seeds = tuple  # tuple[LayerSeed, ...]: one entry per random layer of a plot; empty when it has none
-
-
-class SessionSeedDraws:
-    """The seed HOME draws for a plot whose recipe writes none: one per plot, stable for the whole session.
-
-    A plain dictionary, not reactive state: drawing here never writes a reactive value, so a Calc may call it
-    (ui_implementation_contract.md section 14, R1). Stable on purpose: before, the draw was remade whenever
-    `home_state` changed, so the picture could change on a tab switch.
-    """
-
-    def __init__(self, draw: Callable[[], int] = _draw_seed):
-        self._draw = draw
-        self._seeds: dict[str, int] = {}
-
-    def get(self, plot_id: str) -> int:
-        if plot_id not in self._seeds:
-            self._seeds[plot_id] = self._draw()
-        return self._seeds[plot_id]
-
-    def has(self, plot_id: str) -> bool:
-        return plot_id in self._seeds
 
 
 def audit_pin_of(home_state: dict | None, plot_id: str):
@@ -85,89 +55,47 @@ def seed_pins_from_home_state(home_state: dict | None, plot_ids) -> dict[str, ob
     return pins
 
 
-def home_layer_seeds(layers: list[dict], audit_pin, draws: SessionSeedDraws, plot_id: str, *, default) -> Seeds:
-    """The seed of every random layer HOME shows. Draws only when a layer takes one: no audit pin and a
-    random layer whose recipe writes no number."""
-    offered = draws.get(plot_id) if layers_need_offered_seed(layers, audit_pin) else None
-    return resolve_layer_seeds(layers, audit_pin, offered, default=default)
-
-
-def home_plot_seeds(layers: list[dict], home_state: dict | None, draws: SessionSeedDraws, plot_id: str, *,
-                    default) -> Seeds:
-    """What the HOME plot handler uses: the pin comes from home_state, with no flag in between."""
-    return home_layer_seeds(layers, audit_pin_of(home_state, plot_id), draws, plot_id, default=default)
-
-
-def reference_render_args(layers: list[dict], draws: SessionSeedDraws, plot_id: str, *, default) -> dict:
-    """The seed arguments of the comparison reference pane (T2, left): the same arrangement as My view
-    (recipe numbers, this session's draw), so the two panes differ only by what the user changed. An audit
-    pin is one of those changes and is not applied here."""
-    return render_seed_args(home_layer_seeds(layers, None, draws, plot_id, default=default), None)
-
-
-def offered_seed_of(seeds: Seeds):
-    """The one seed the caller offered (HOME's draw) when some layer took it, else None."""
-    return next((ls.seed for ls in seeds if ls.source == "drawn"), None)
-
-
-def remember_drawn_seed(current: dict, plot_id: str, seeds: Seeds) -> dict | None:
-    """The new {plot_id: seed} bookkeeping for the export, or None when nothing changes.
-
-    Written once per plot and session: calling it again with its own result gives None, so the Effect that
-    stores it settles (a value that changed on every call made an endless loop).
-    """
-    offered = offered_seed_of(seeds)
-    if offered is None or current.get(plot_id) == offered:
-        return None
-    return {**current, plot_id: offered}
-
-
 def render_seed_args(seeds: Seeds, t3_overrides: dict | None) -> dict:
-    """The keyword arguments of `VizFactory.render` that carry the seeds (HOME and the export both use this).
+    """The keyword arguments of `VizFactory.render` that carry the seeds of an exported plot.
 
-    An audit pin goes into the L5 override (it beats the recipe on every random layer). The seed of the layers
-    whose recipe writes no number goes in as the fallback, which fills only those layers: a layer that writes
-    a number keeps its own, and never gives it to another layer.
+    An audit pin goes into the L5 override (it beats the recipe on every random layer). The seed drawn for the
+    layers that write `random_state: null` goes in as `drawn_random_state`, which fills only those layers: a layer
+    that writes a number keeps its own and a layer that writes none keeps the factory's seed.
     """
     override = dict(t3_overrides) if t3_overrides else None
     audit = next((ls.seed for ls in seeds if ls.source == "audit"), None)
     if audit is not None:
         override = {**(override or {}), "random_state": audit}
-    fallback = next((ls.seed for ls in seeds if ls.source in ("drawn", "default")), None)
-    return {"aesthetic_override": override, "fallback_random_state": fallback}
+    drawn = next((ls.seed for ls in seeds if ls.source == "drawn"), None)
+    return {"aesthetic_override": override, "drawn_random_state": drawn}
 
 
 def export_plot_seeds(
     plots: dict[str, dict],
     audit_pins: dict[str, object],
-    home_drawn: dict[str, int],
     *,
     default,
     draw: Callable[[], int] = _draw_seed,
 ) -> dict[str, Seeds]:
     """The seed of every random layer of every exported plot, and so what is rendered and recorded.
 
-    Per layer: audit pin > the layer's own number > the seed HOME drew for this plot (`home_drawn`) > for a
-    layer that asks `random_state: null` a seed drawn now (recorded: "random on purpose" is still
-    reproducible) > the library default. `plots` is {plot_id: spec}; a plot HOME never showed has no entry
-    in `home_drawn`.
+    Per layer: audit pin > the layer's own number > the default (`default`: the factory's seed, 0) > for a layer
+    that writes `random_state: null` a seed drawn now (recorded: "random on purpose" is still reproducible).
+    `plots` is {plot_id: spec}.
     """
     seeds: dict[str, Seeds] = {}
     for plot_id, spec in plots.items():
         layers = (spec or {}).get("layers", [])
         pin = audit_pins.get(plot_id)
-        offered = home_drawn.get(plot_id)
-        if offered is None and pin is None and recipe_asks_random(layers):
-            offered = draw()
-        seeds[plot_id] = resolve_layer_seeds(layers, pin, offered, default=default)
+        drawn = draw() if pin is None and recipe_asks_random(layers) else None
+        seeds[plot_id] = resolve_layer_seeds(layers, pin, drawn, default=default)
     return seeds
 
 
-def export_seed_plan(plots: dict[str, dict], home_state: dict | None, home_drawn: dict[str, int], *,
-                     default, draw: Callable[[], int] = _draw_seed) -> dict[str, Seeds]:
+def export_seed_plan(plots: dict[str, dict], home_state: dict | None, *, default,
+                     draw: Callable[[], int] = _draw_seed) -> dict[str, Seeds]:
     """What the export handler calls: the pins come from home_state with no flag in between (like HOME)."""
-    return export_plot_seeds(plots, seed_pins_from_home_state(home_state, list(plots)), home_drawn,
-                             default=default, draw=draw)
+    return export_plot_seeds(plots, seed_pins_from_home_state(home_state, list(plots)), default=default, draw=draw)
 
 
 def _plot_seeds_flat(seeds: Seeds) -> list:
@@ -240,18 +168,19 @@ def seed_recipe_note(seeds: dict[str, Seeds], plots: dict[str, dict]) -> list[st
 
 
 def unfixed_seed_warning(seeds: dict[str, Seeds]) -> str | None:
-    """The export's warning, only for plots with a random layer whose seed is neither written in the recipe
-    nor pinned by an audit step (drawn or default); in plain words, with what to write in the recipe."""
-    unfixed = [pid for pid, layer_seeds in seeds.items() if any(ls.source in ("drawn", "default") for ls in layer_seeds)]
+    """The export's warning, only for plots with a layer that writes `random_state: null`: the export drew a seed,
+    recorded it and wrote it into the reproducibility recipe, but the user's own recipe still asks for a random
+    arrangement. In plain words, with what to write. None when there is nothing to say. (A layer that writes no
+    seed uses 0 and is not a warning: the seed is recorded and written, `seeds_added_to_recipe`.)"""
+    unfixed = [pid for pid, layer_seeds in seeds.items() if any(ls.source == "drawn" for ls in layer_seeds)]
     if not unfixed:
         return None
     shown = ", ".join(unfixed[:5]) + (f" and {len(unfixed) - 5} more" if len(unfixed) > 5 else "")
     return (
-        f"The seed of the random scatter is not fixed in the recipe for {len(unfixed)} plot(s): {shown}. "
-        "The export used one seed per plot and recorded it (seeds_per_plot in effective_run.yaml), and the "
-        "reproducibility recipe carries it, but opening your own recipe again can show a different arrangement. "
-        "To fix the picture, write the number on the jitter layer of each plot in the recipe, "
-        "for example `random_state: 123`."
+        f"The recipe asks for a random arrangement (random_state: null) in {len(unfixed)} plot(s): {shown}. "
+        "The export drew one seed per plot and recorded it (seeds_per_plot in effective_run.yaml), and the "
+        "reproducibility recipe carries it, but opening your own recipe again shows a different arrangement. "
+        "To fix the picture, write the number on the layer in the recipe, for example `random_state: 0`."
     )
 
 
