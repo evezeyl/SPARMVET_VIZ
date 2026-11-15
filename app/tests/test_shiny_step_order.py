@@ -150,14 +150,24 @@ def _confirm_scope(page: Page) -> None:
 
 
 def _reasons_and_apply(page: Page, reason: str, nodes: int) -> None:
-    """Give every empty reason, press Apply, and wait until the app says `nodes` audit steps are applied."""
-    reasons = page.locator('input[id^="t3_reason_"]')
+    """Give every empty reason, press Apply, and wait until the app says `nodes` audit steps are applied.
+
+    A reason box can appear a moment after another one: fill what is empty until the app enables Apply (it enables it only when
+    it has read every reason), then press it."""
     page.wait_for_function("() => [...document.querySelectorAll('input[id^=t3_reason_]')].some(e => !e.value)", timeout=15_000)
-    for i in range(reasons.count()):
-        if not reasons.nth(i).input_value():
-            reasons.nth(i).fill(reason)
-            reasons.nth(i).press("Tab")   # leaving the box sends the text now; a click sent before it would be refused by the Apply gate
-    _wait_shiny(page)
+    deadline = time.time() + 20
+    apply = page.locator("#btn_apply").first
+    while True:
+        reasons = page.locator('input[id^="t3_reason_"]')
+        for i in range(reasons.count()):
+            if not reasons.nth(i).input_value():
+                reasons.nth(i).fill(reason)
+                reasons.nth(i).press("Tab")   # leaving the box sends the text now; a click sent before it would be refused by the Apply gate
+        _wait_shiny(page)
+        if apply.is_enabled():
+            break
+        assert time.time() < deadline, "Apply was never enabled: a reason is not read by the app"
+        page.wait_for_timeout(250)
     _press(page, "#btn_apply")
     page.wait_for_function("(n) => document.body.textContent.includes('audit steps applied \u2014 ' + n + ' node(s)')",
                            arg=nodes, timeout=20_000)
@@ -173,6 +183,9 @@ def _start(page: Page, url: str) -> None:
     _open_app(page, url)
     page.locator(".nav-link:has-text('TG')").first.click()
     _wait_shiny(page)
+    # The app tracks the open plot tab from the tab widget: a step recorded before it knows the tab would be filed under no plot.
+    expect(page.locator(f"#plot_group_{PLOT} img")).to_be_visible(timeout=30_000)
+    _wait_shiny(page, 30_000)
     _open_filters_panel(page)
     page.locator("#tier_toggle input[value=T3]").check(force=True)   # the table shows My view
     _wait_shiny(page)
@@ -185,11 +198,16 @@ def _stage_filter(page: Page) -> None:
     _wait_shiny(page)
     page.locator("#fb_op").select_option("ge")
     _wait_shiny(page)
+    # The number box is mounted again after the operator changes, with the smallest value of the column (1) in it: a value typed
+    # before that is lost (found in repeated runs: the staged row read "score >= 1"). Wait for the new box, then type.
+    page.wait_for_function("() => document.querySelector('#fb_value')?.value === '1'", timeout=15_000)
     page.locator("#fb_value").fill(str(THRESHOLD))
     page.locator("#fb_value").press("Tab")
     _wait_shiny(page)
     _press(page, "#filter_add_row")
     _wait_shiny(page)
+    # the staged row says what the app read: column and value (a value typed too late would stage another one)
+    expect(page.locator("#filter_rows_ui")).to_contain_text(f"score \u2265 {THRESHOLD}", timeout=10_000)
     expect(page.locator("#filter_send_to_audit")).to_be_visible(timeout=10_000)
 
 
