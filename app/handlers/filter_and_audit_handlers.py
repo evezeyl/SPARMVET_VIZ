@@ -294,6 +294,19 @@ def define_filter_audit_server(input, output, session, *,
         return ui.tags.small(f"The range keeps the values with {closed_phrase(closed if closed in CLOSED_CHOICES else 'both')}.",
                              class_="text-muted fst-italic d-block spv-text-meta")
 
+    # The audit steps of the open plot, as the dialog reads them. A mirror in a Value with an idempotent guard (R3): the dialog reads
+    # this Value, not home_state, so a change of home_state that is not a change of these steps (a ghost save, a seed) does not
+    # mount the form again and does not wipe what the user is typing (R4, ui_implementation_contract.md section 14).
+    _dialog_audit_nodes = reactive.Value([])
+
+    @reactive.Effect
+    def _mirror_dialog_audit_nodes():
+        subtab = active_home_subtab.get()
+        nodes = list((home_state.get().get("t3_audit_steps_by_plot") or {}).get(subtab, [])) if home_state is not None and subtab else []
+        with reactive.isolate():
+            if _dialog_audit_nodes.get() != nodes:
+                _dialog_audit_nodes.set(nodes)
+
     def _active_frame():
         """The table the filter in the form acts on: the active plot's table (None when it cannot be built)."""
         subtab = active_home_subtab.get()
@@ -305,10 +318,8 @@ def define_filter_audit_server(input, output, session, *,
             return None
         # DECIDED 2026-11-15 (Eve, S2-1 (a)): in My view the dialog acts on the table after the plot's audited steps, so a column
         # that an earlier step dropped is not offered. One source: the same function as the table, the plot and the export.
-        nodes = ((home_state.get().get("t3_audit_steps_by_plot") or {}).get(subtab, [])
-                 if home_state is not None and subtab else [])
         try:
-            return dialog_frame(lf, nodes, tier_toggle.get() == "T3", p_id)
+            return dialog_frame(lf, _dialog_audit_nodes.get(), tier_toggle.get() == "T3", p_id)
         except AuditStepError:
             # The audit list of the plot cannot run: the table and the plot show why. The dialog offers nothing until a step is removed.
             _log.warning("filter dialog: the audit steps of the plot cannot run; no table is offered")
