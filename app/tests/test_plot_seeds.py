@@ -35,7 +35,6 @@ from app.modules.plot_seeds import (
     seeds_added_to_recipe,
     seeds_per_layer_record,
     seeds_per_plot_record,
-    unfixed_seed_warning,
     seed_pin_steps,
     with_seed_steps,
 )
@@ -43,7 +42,6 @@ from viz_factory.viz_factory import DEFAULT_RANDOM_STATE, VizFactory
 
 DEFAULT = DEFAULT_RANDOM_STATE
 HOME_DRAW = 4242       # the number HOME drew for the session
-EXPORT_DRAW = 999      # the number the export draws for a null plot never opened in HOME
 
 
 @pytest.fixture(scope="module")
@@ -86,7 +84,7 @@ def explicit(layers, seeds):
     return out
 
 
-# (recipe layers, audit pin, the seed each jitter layer must get). `null` is the layer that asks for a random one.
+# (recipe layers, audit pin, the seed each jitter layer must get).
 CASES = {
     "recipe 123": (jitter_layers(random_state=123), None, [123]),
     "recipe 0": (jitter_layers(random_state=0), None, [0]),
@@ -189,34 +187,16 @@ def test_the_export_reads_the_pin_from_home_state_whatever_the_audit_trail_flag(
 
 def test_a_plot_without_a_seed_uses_the_default_and_records_it_as_default(df):
     layers = jitter_layers()
-    plan = export_plot_seeds({"p": {"layers": layers}}, {}, default=DEFAULT, draw=lambda: EXPORT_DRAW)
+    plan = export_plot_seeds({"p": {"layers": layers}}, {}, default=DEFAULT)
     assert seeds_per_plot_record(plan) == {"p": DEFAULT}
     assert seed_sources_per_plot(plan) == {"p": "default"}
     assert np.array_equal(positions(df, layers, **render_seed_args(plan["p"], None)),
                           positions(df, jitter_layers(random_state=DEFAULT)))
 
 
-def test_a_null_layer_is_exported_with_a_drawn_and_recorded_seed(df):
-    layers = jitter_layers(random_state=None)
-    plan = export_plot_seeds({"p": {"layers": layers}}, {}, default=DEFAULT, draw=lambda: EXPORT_DRAW)
-    assert seeds_per_plot_record(plan) == {"p": EXPORT_DRAW}
-    assert plan["p"][0].source == "drawn"
-    assert np.array_equal(positions(df, layers, **render_seed_args(plan["p"], None)),
-                          positions(df, jitter_layers(random_state=EXPORT_DRAW)))
-
-
-def test_a_null_layer_next_to_a_layer_without_a_seed_keeps_the_other_layer_on_the_default(df):
-    layers = [jl(random_state=None), jl()]
-    plan = export_plot_seeds({"p": {"layers": layers}}, {}, default=DEFAULT, draw=lambda: EXPORT_DRAW)
-    assert [(ls.seed, ls.source) for ls in plan["p"]] == [(EXPORT_DRAW, "drawn"), (DEFAULT, "default")]
-    assert np.array_equal(positions(df, layers, **render_seed_args(plan["p"], None)),
-                          positions(df, render_layers(layers, [EXPORT_DRAW, DEFAULT])))
-
-
 def test_a_plot_with_no_random_layer_has_no_seed_and_no_record():
-    plan = export_plot_seeds({"p": {"layers": [{"name": "geom_bar"}]}}, {"p": 777}, default=DEFAULT, draw=lambda: 1)
+    plan = export_plot_seeds({"p": {"layers": [{"name": "geom_bar"}]}}, {"p": 777}, default=DEFAULT)
     assert seeds_per_plot_record(plan) == {} and seeds_per_layer_record(plan) == {}
-    assert unfixed_seed_warning(plan) is None
 
 
 def test_the_record_covers_every_exported_random_plot():
@@ -224,11 +204,10 @@ def test_the_record_covers_every_exported_random_plot():
         "a": {"layers": jitter_layers(random_state=1)},
         "b": {"layers": jitter_layers()},
         "c": {"layers": [{"name": "geom_bar"}]},
-        "d": {"layers": jitter_layers(random_state=None)},
     }
-    plan = export_plot_seeds(plots, {}, default=DEFAULT, draw=lambda: 7)
-    assert seeds_per_plot_record(plan) == {"a": 1, "b": DEFAULT, "d": 7}
-    assert set(seeds_per_layer_record(plan)) == {"a", "b", "d"}
+    plan = export_plot_seeds(plots, {}, default=DEFAULT)
+    assert seeds_per_plot_record(plan) == {"a": 1, "b": DEFAULT}
+    assert set(seeds_per_layer_record(plan)) == {"a", "b"}
 
 
 def test_the_record_per_layer_names_each_layer_its_seed_and_its_source():
@@ -245,28 +224,6 @@ def test_the_record_per_layer_names_each_layer_its_seed_and_its_source():
 # ---------------------------------------------------------------------------
 # the warning: only for a layer that asks for a random arrangement
 # ---------------------------------------------------------------------------
-
-def test_the_warning_names_only_plots_with_a_layer_that_writes_null():
-    plots = {
-        "plot_recipe": {"layers": jitter_layers(random_state=123)},
-        "plot_audit": {"layers": jitter_layers(random_state=None)},
-        "plot_null": {"layers": jitter_layers(random_state=None)},
-        "plot_default": {"layers": jitter_layers()},
-    }
-    plan = export_plot_seeds(plots, {"plot_audit": 777}, default=DEFAULT, draw=lambda: 7)
-    text = unfixed_seed_warning(plan)
-    assert text is not None and "plot_null" in text
-    for not_named in ("plot_recipe", "plot_audit", "plot_default"):
-        assert not_named not in text
-    assert "random_state" in text and "recipe" in text, "says in plain words what to write in the recipe"
-
-
-def test_no_warning_when_nothing_asks_for_a_random_arrangement():
-    """Nothing is unpinned any more: a layer without a seed uses 0, and the record says so."""
-    plots = {"a": {"layers": jitter_layers(random_state=1)}, "b": {"layers": jitter_layers()}}
-    assert unfixed_seed_warning(export_plot_seeds(plots, {"b": 2}, default=DEFAULT)) is None
-    assert unfixed_seed_warning(export_plot_seeds(plots, {}, default=DEFAULT)) is None
-
 
 # ---------------------------------------------------------------------------
 # the recipe the reproducibility export carries
@@ -288,9 +245,9 @@ def test_baking_writes_the_default_so_that_every_seed_used_is_written():
 
 
 def test_baking_keeps_a_number_the_recipe_wrote_and_fills_the_others():
-    layers = [jl(random_state=11), jl(), jl(random_state=None), {"name": "geom_bar"}]
-    plan = export_plot_seeds({"p": {"layers": layers}}, {}, default=DEFAULT, draw=lambda: 7)
-    assert [l.get("params", {}).get("random_state") for l in baked_layers(layers, plan)] == [11, DEFAULT, 7, None]
+    layers = [jl(random_state=11), jl(), {"name": "geom_bar"}]
+    plan = export_plot_seeds({"p": {"layers": layers}}, {}, default=DEFAULT)
+    assert [l.get("params", {}).get("random_state") for l in baked_layers(layers, plan)] == [11, DEFAULT, None]
 
 
 def test_baking_two_different_numbers_keeps_both():
@@ -331,14 +288,13 @@ def test_baking_leaves_plots_without_random_layers_untouched():
 # ---------------------------------------------------------------------------
 
 def test_the_seeds_added_to_the_recipe_are_listed_with_what_the_recipe_wrote():
-    layers = [jl(random_state=11), jl(), jl(random_state=None)]
+    layers = [jl(random_state=11), jl()]
     plots = {"p": {"layers": layers}, "q": {"layers": jitter_layers(random_state=3)}}
-    plan = export_plot_seeds(plots, {}, default=DEFAULT, draw=lambda: 5)
+    plan = export_plot_seeds(plots, {}, default=DEFAULT)
     assert seeds_added_to_recipe(plan, plots) == [
         {"plot": "p", "layer_index": 1, "layer": "geom_point", "seed": DEFAULT, "source": "default", "recipe_wrote": None},
-        {"plot": "p", "layer_index": 2, "layer": "geom_point", "seed": 5, "source": "drawn", "recipe_wrote": None},
     ]
-    pinned = export_plot_seeds(plots, {"q": 9}, default=DEFAULT, draw=lambda: 5)
+    pinned = export_plot_seeds(plots, {"q": 9}, default=DEFAULT)
     assert seeds_added_to_recipe(pinned, plots)[-1] == {
         "plot": "q", "layer_index": 0, "layer": "geom_point", "seed": 9, "source": "audit", "recipe_wrote": 3}
 
@@ -371,12 +327,12 @@ def test_the_bundle_plot_follows_an_audit_pin_when_the_audit_trail_is_off(df, re
 
 
 def test_other_overrides_are_kept_next_to_the_seed():
-    drawn = export_plot_seeds({"p": {"layers": jitter_layers(random_state=None)}}, {}, default=DEFAULT, draw=lambda: 5)["p"]
-    assert render_seed_args(drawn, {"alpha": 0.3}) == {"aesthetic_override": {"alpha": 0.3}, "drawn_random_state": 5}
+    plain = export_plot_seeds({"p": {"layers": jitter_layers()}}, {}, default=DEFAULT)["p"]
+    assert render_seed_args(plain, {"alpha": 0.3}) == {"aesthetic_override": {"alpha": 0.3}}
     audit = export_plot_seeds({"p": {"layers": jitter_layers()}}, {"p": 777}, default=DEFAULT)["p"]
     assert render_seed_args(audit, {"alpha": 0.3}) == {
-        "aesthetic_override": {"alpha": 0.3, "random_state": 777}, "drawn_random_state": None}
-    assert render_seed_args((), None) == {"aesthetic_override": None, "drawn_random_state": None}
+        "aesthetic_override": {"alpha": 0.3, "random_state": 777}}
+    assert render_seed_args((), None) == {"aesthetic_override": None}
 
 
 # ---------------------------------------------------------------------------

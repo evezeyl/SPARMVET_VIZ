@@ -804,6 +804,11 @@ class _Check:
                     # hold it (a geom placed with position jitter, a geom with a bootstrapped summary stat), and
                     # only on a random layer (SEED-HOLDS-1, utils.random_layers)
                     if key == "random_state" and is_random_layer(name, params):
+                        # PROVISIONAL (S1): a seed is a number; null and the word random are refused
+                        value = params[key]
+                        if value is None or (isinstance(value, str) and value.strip().lower() == "random"):
+                            self.add("PS04", f"{where}.params.{key}", f"random_state is {value!r}, but a seed is a number",
+                                     "write random_state: 0 (any whole number)")
                         continue
                     if key not in allowed:
                         close = difflib.get_close_matches(str(key), sorted(allowed), n=1, cutoff=0.6)

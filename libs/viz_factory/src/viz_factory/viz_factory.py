@@ -25,11 +25,11 @@ import difflib
 # `random_state`, and VizFactory(random_state=...) changes the default for a whole factory
 # (tests that need a known arrangement, or a deliberate different one).
 #
-# The seed is a default, never a rule: `random_state: null` (or "random") on a layer, or
-# VizFactory(random_state=None), asks for a different arrangement on every render. Jitter can be
-# useful to try again, and the choice stays with the data analysis recipe author.
+# PROVISIONAL (S1, Eve's rule of 2026-11-15): a seed is a number. `random_state: null` or "random" on a layer is
+# refused (the same recipe gives the same picture); VizFactory(random_state=None) stays as the handle for a test
+# that needs a different arrangement each time.
 DEFAULT_RANDOM_STATE = 0
-RANDOM = "random"   # accepted spelling for "no seed", next to None / null
+RANDOM = "random"   # the word that means "no seed"; refused in a layer, see _refuse_unseeded_layer
 
 
 def _generator(seed):
@@ -73,6 +73,32 @@ def _seed_random_components(layer_name: str, params: dict, random_state) -> dict
         # sina and a bootstrapped summary: the seed is a parameter of the stat
         params["random_state"] = _generator(params.get("random_state", random_state))
     return params
+
+
+def _refuse_unseeded_layer(layer_name: str, params: dict, plot_id: str) -> None:
+    """Raise when a random layer writes `random_state: null` or the word random (PROVISIONAL S1, Eve's rule of
+    2026-11-15): a seed is a number, so that the same recipe gives the same picture everywhere. A layer that writes
+    nothing takes the factory's seed. `VizFactory(random_state=None)` (a factory built without a seed, the handle
+    for tests) is not a layer and is not refused.
+    """
+    if "random_state" not in params or not is_random_layer(layer_name, params):
+        return
+    written = params["random_state"]
+    if written is None or (isinstance(written, str) and written.strip().lower() == RANDOM):
+        pe = PipelineError(
+            component="VizFactory",
+            problem=f"Layer '{layer_name}' of plot '{plot_id}' writes random_state: {written!r}, but a seed is a number.",
+            location=f"VizFactory.render(plot_id='{plot_id}'), layer {layer_name}",
+            fix="In the data analysis recipe, write a number: random_state: 0 (any whole number; another number gives "
+                "another arrangement, the same number gives the same one).",
+            who="data_analysis_recipe_author",
+            category="visualization",
+            surface="plot_overlay",
+            severity="error",
+            evidence={"layer_name": layer_name, "random_state": written},
+        )
+        print(pe.format())
+        raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
 
 def _refuse_plot_engine_not_built(data_analysis_recipe: Dict[str, Any], plot_id: str) -> None:
@@ -149,7 +175,7 @@ class VizFactory:
         return self._random_state
 
     def render(self, df: Any, data_analysis_recipe: Dict[str, Any], plot_id: str,
-               aesthetic_override: dict | None = None, drawn_random_state=None):
+               aesthetic_override: dict | None = None):
         """
         Main entry point for rendering a single plot by ID from a data analysis recipe.
         Supports both Polars LazyFrame and DataFrame.
@@ -164,10 +190,6 @@ class VizFactory:
             T3 L5 overrides for this specific plot (fill_color, fill_palette,
             colour, alpha, shape, size, theme). Supplied by home_theater from
             home_state['t3_plot_overrides'][plot_id]. VIZFAC-T3-OVERRIDE-1.
-        drawn_random_state : int | None
-            Seed for the random layers whose recipe writes `random_state: null` (SEED-HOLDS-1; an export draws one
-            and records it); a number written in the recipe holds, an audit pin in
-            `aesthetic_override["random_state"]` beats both.
         """
         _refuse_plot_engine_not_built(data_analysis_recipe, plot_id)
 
@@ -278,8 +300,7 @@ class VizFactory:
 
         # 3. Resolve five-tier cascade (L1 built-ins through L5 T3 override).
         resolved = resolve_plot_config(raw_spec, plot_defaults, df_pandas,
-                                       aesthetic_override=aesthetic_override,
-                                       drawn_random_state=drawn_random_state)
+                                       aesthetic_override=aesthetic_override)
 
         # 4. Emit structured warnings for unrecognised plot_defaults keys and L5 mutex (ADR-079).
         for key in resolved["_unknown_plot_defaults_keys"]:
@@ -361,6 +382,7 @@ class VizFactory:
                     element_text_batch[target] = layer_params
                 continue
 
+            _refuse_unseeded_layer(layer_name, layer_params, plot_id)
             layer_params = _seed_random_components(layer_name, layer_params, self._random_state)
 
             try:

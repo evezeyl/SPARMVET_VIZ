@@ -448,3 +448,26 @@ def test_a_seed_is_accepted_on_a_random_layer(name, params):
 ])
 def test_a_seed_is_refused_on_a_layer_that_is_not_random(name, params):
     assert len(_seed_problems(name, params)) == 1
+
+
+@pytest.mark.parametrize("written", [None, "random", " RANDOM "])
+@pytest.mark.parametrize("name, params", [
+    ("geom_sina", {}),
+    ("geom_point", {"position": "jitter"}),
+    ("geom_pointrange", {"stat": "summary", "fun_data": "mean_cl_boot"}),
+])
+def test_null_or_random_as_a_seed_is_refused_with_the_fix(name, params, written):
+    """PROVISIONAL (S1): a seed is a number; the checker names the fix."""
+    def put(r):
+        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(name=name, params={**params, "random_state": written})
+    result = check(mutated(put), catalogs=RANDOM_CATALOGS, file_stem="r")
+    found = [p for p in result.problems if p.code == "PS04" and "random_state" in p.message]
+    assert len(found) == 1 and "random_state: 0" in found[0].fix and "number" in found[0].message
+
+
+@pytest.mark.parametrize("written", [0, 7, "5"])
+def test_a_number_as_a_seed_is_not_refused_by_s1(written):
+    def put(r):
+        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(name="geom_sina", params={"random_state": written})
+    result = check(mutated(put), catalogs=RANDOM_CATALOGS, file_stem="r")
+    assert not [p for p in result.problems if p.code == "PS04" and "random_state" in p.message]

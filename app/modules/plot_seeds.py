@@ -15,7 +15,7 @@ from __future__ import annotations
 # provides: function:audit_pin_of, function:seed_pins_from_home_state, function:render_seed_args,
 #           function:export_plot_seeds, function:export_seed_plan, function:seeds_per_plot_record,
 #           function:seed_sources_per_plot, function:seeds_per_layer_record, function:seeds_added_to_recipe,
-#           function:seed_recipe_note, function:unfixed_seed_warning, function:bake_plot_seeds,
+#           function:seed_recipe_note, function:bake_plot_seeds,
 #           function:seed_pin_steps, function:with_seed_steps
 # consumes: libs/viz_factory/src/viz_factory/plot_config_resolver.py (resolve_layer_seeds, LayerSeed)
 # consumed_by: app/handlers/export_handlers.py, app/tests/test_plot_seeds.py
@@ -23,14 +23,8 @@ from __future__ import annotations
 # @end_deps
 
 import copy
-import secrets
-from typing import Callable
 
-from viz_factory.plot_config_resolver import recipe_asks_random, resolve_layer_seeds
-
-
-def _draw_seed() -> int:
-    return secrets.randbits(31)
+from viz_factory.plot_config_resolver import resolve_layer_seeds
 
 
 Seeds = tuple  # tuple[LayerSeed, ...]: one entry per random layer of a plot; empty when it has none
@@ -59,44 +53,31 @@ def seed_pins_from_home_state(home_state: dict | None, plot_ids) -> dict[str, ob
 def render_seed_args(seeds: Seeds, t3_overrides: dict | None) -> dict:
     """The keyword arguments of `VizFactory.render` that carry the seeds of an exported plot.
 
-    An audit pin goes into the L5 override (it beats the recipe on every random layer). The seed drawn for the
-    layers that write `random_state: null` goes in as `drawn_random_state`, which fills only those layers: a layer
-    that writes a number keeps its own and a layer that writes none keeps the factory's seed.
+    An audit pin goes into the L5 override (it beats the recipe on every random layer). Nothing else is passed: a
+    layer that writes a number keeps it and a layer that writes none uses the factory's seed.
     """
     override = dict(t3_overrides) if t3_overrides else None
     audit = next((ls.seed for ls in seeds if ls.source == "audit"), None)
     if audit is not None:
         override = {**(override or {}), "random_state": audit}
-    drawn = next((ls.seed for ls in seeds if ls.source == "drawn"), None)
-    return {"aesthetic_override": override, "drawn_random_state": drawn}
+    return {"aesthetic_override": override}
 
 
-def export_plot_seeds(
-    plots: dict[str, dict],
-    audit_pins: dict[str, object],
-    *,
-    default,
-    draw: Callable[[], int] = _draw_seed,
-) -> dict[str, Seeds]:
+def export_plot_seeds(plots: dict[str, dict], audit_pins: dict[str, object], *, default) -> dict[str, Seeds]:
     """The seed of every random layer of every exported plot, and so what is rendered and recorded.
 
-    Per layer: audit pin > the layer's own number > the default (`default`: the factory's seed, 0) > for a layer
-    that writes `random_state: null` a seed drawn now (recorded: "random on purpose" is still reproducible).
-    `plots` is {plot_id: spec}.
+    Per layer: audit pin > the layer's own number > the default (`default`: the factory's seed, 0). `plots` is
+    {plot_id: spec}.
     """
-    seeds: dict[str, Seeds] = {}
-    for plot_id, spec in plots.items():
-        layers = (spec or {}).get("layers", [])
-        pin = audit_pins.get(plot_id)
-        drawn = draw() if pin is None and recipe_asks_random(layers) else None
-        seeds[plot_id] = resolve_layer_seeds(layers, pin, drawn, default=default)
-    return seeds
+    return {
+        plot_id: resolve_layer_seeds((spec or {}).get("layers", []), audit_pins.get(plot_id), default=default)
+        for plot_id, spec in plots.items()
+    }
 
 
-def export_seed_plan(plots: dict[str, dict], home_state: dict | None, *, default,
-                     draw: Callable[[], int] = _draw_seed) -> dict[str, Seeds]:
-    """What the export handler calls: the pins come from home_state with no flag in between (like HOME)."""
-    return export_plot_seeds(plots, seed_pins_from_home_state(home_state, list(plots)), default=default, draw=draw)
+def export_seed_plan(plots: dict[str, dict], home_state: dict | None, *, default) -> dict[str, Seeds]:
+    """What the export handler calls: the pins come from home_state with no flag in between."""
+    return export_plot_seeds(plots, seed_pins_from_home_state(home_state, list(plots)), default=default)
 
 
 def _plot_seeds_flat(seeds: Seeds) -> list:
@@ -168,29 +149,12 @@ def seed_recipe_note(seeds: dict[str, Seeds], plots: dict[str, dict]) -> list[st
     return lines
 
 
-def unfixed_seed_warning(seeds: dict[str, Seeds]) -> str | None:
-    """The export's warning, only for plots with a layer that writes `random_state: null`: the export drew a seed,
-    recorded it and wrote it into the reproducibility recipe, but the user's own recipe still asks for a random
-    arrangement. In plain words, with what to write. None when there is nothing to say. (A layer that writes no
-    seed uses 0 and is not a warning: the seed is recorded and written, `seeds_added_to_recipe`.)"""
-    unfixed = [pid for pid, layer_seeds in seeds.items() if any(ls.source == "drawn" for ls in layer_seeds)]
-    if not unfixed:
-        return None
-    shown = ", ".join(unfixed[:5]) + (f" and {len(unfixed) - 5} more" if len(unfixed) > 5 else "")
-    return (
-        f"The recipe asks for a random arrangement (random_state: null) in {len(unfixed)} plot(s): {shown}. "
-        "The export drew one seed per plot and recorded it (seeds_per_plot in effective_run.yaml), and the "
-        "reproducibility recipe carries it, but opening your own recipe again shows a different arrangement. "
-        "To fix the picture, write the number on the layer in the recipe, for example `random_state: 0`."
-    )
-
-
 def bake_plot_seeds(recipe_cfg: dict, seeds: dict[str, Seeds]) -> dict:
     """A copy of the recipe in which every random layer carries the seed it was exported with.
 
     This is how the re-run reproduces the exported picture: the recipe is the scientific document, so the
-    seed is written there, not left to a draw. A number the recipe wrote on a layer holds (it is the same
-    number); an audit pin replaces it; a layer without a number gets the seed it was drawn with. A plot or
+    seed is written there, not left to a default. A number the recipe wrote on a layer holds (it is the same
+    number); an audit pin replaces it; a layer without a number gets the default it was exported with. A plot or
     layer that is not in the recipe, or is not a random layer there, is an error: nothing is skipped
     silently (ADR-104).
     """

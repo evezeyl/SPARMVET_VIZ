@@ -92,20 +92,34 @@ def test_plots_without_randomness_are_unchanged_by_the_seed(df):
     assert render_bytes(VizFactory(), df, layers) == render_bytes(VizFactory(random_state=99), df, layers)
 
 
-# --- the seed is a default, not a rule: an explicit "random" gives a new arrangement each time ----
+# --- PROVISIONAL (S1, Eve's rule of 2026-11-15): a seed is a number; null and "random" are refused ---------------
 
 
-@pytest.mark.parametrize("unseeded", [None, "random"])
-def test_a_layer_can_ask_for_a_different_arrangement_every_time(df, unseeded):
-    layers = [{"name": "geom_point"}, {"name": "position_jitter", "params": {"random_state": unseeded}}]
-    hashes = {render_bytes(VizFactory(), df, layers) for _ in range(RENDERS)}
-    assert len(hashes) > 1, "random_state: null / random must not be seeded"
+@pytest.mark.parametrize("written", [None, "random", " Random "])
+@pytest.mark.parametrize("layers", [
+    [{"name": "geom_point"}, {"name": "position_jitter", "params": {"random_state": "?"}}],
+    [{"name": "geom_point", "params": {"position": "jitter", "random_state": "?"}}],
+    [{"name": "geom_jitter", "params": {"random_state": "?"}}],
+    [{"name": "geom_sina", "params": {"random_state": "?"}}],
+    [{"name": "stat_summary", "params": {"fun_data": "mean_cl_boot", "random_state": "?"}}],
+])
+def test_a_recipe_that_writes_null_or_random_is_refused_with_the_fix(df, layers, written):
+    import copy
+    from utils.errors import VisualizationError
+    layers = copy.deepcopy(layers)
+    for layer in layers:
+        if (layer.get("params") or {}).get("random_state") == "?":
+            layer["params"]["random_state"] = written
+    with pytest.raises(VisualizationError) as raised:
+        render_bytes(VizFactory(), df, layers)
+    assert "random_state: 0" in raised.value.tip and "number" in str(raised.value).lower()
 
 
-@pytest.mark.parametrize("unseeded", [None, "random"])
-def test_a_factory_can_be_unseeded_for_all_its_jitter(df, unseeded):
+def test_the_factory_handle_for_tests_stays_a_factory_can_be_unseeded_for_all_its_jitter(df):
+    """VizFactory(random_state=None) is the library handle for a test that needs a different arrangement each time;
+    it is not a recipe key. Kept on purpose (S1)."""
     layers = [{"name": "geom_point", "params": {"position": "jitter"}}]
-    hashes = {render_bytes(VizFactory(random_state=unseeded), df, layers) for _ in range(RENDERS)}
+    hashes = {render_bytes(VizFactory(random_state=None), df, layers) for _ in range(RENDERS)}
     assert len(hashes) > 1
 
 

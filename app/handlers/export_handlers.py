@@ -25,7 +25,7 @@ from shiny import reactive, render, ui
 from app.modules.t3_audit_engine import _apply_filter_rows, _op_label
 from app.modules.plot_seeds import (
     bake_plot_seeds, export_seed_plan, seed_recipe_note, seed_sources_per_plot, seeds_added_to_recipe,
-    seeds_per_layer_record, seeds_per_plot_record, render_seed_args, unfixed_seed_warning, with_seed_steps,
+    seeds_per_layer_record, seeds_per_plot_record, render_seed_args, with_seed_steps,
 )
 
 
@@ -856,9 +856,9 @@ def define_export_server(input, output, session, *,
                     scope_label = _active_gid
 
         # ── SEED-HOLDS-1 (ADR-104 point 3, ADR-097 decision 2): one seed per random layer of each plot ──
-        # audit pin > the number the recipe writes on that layer > the factory's seed (0) when it writes none; a
-        # layer that writes `random_state: null` gets a seed drawn now. HOME draws no seed. The plot is rendered
-        # with these seeds, the record holds them, and the reproducibility recipe carries them.
+        # audit pin > the number the recipe writes on that layer > the factory's seed (0) when it writes none.
+        # HOME draws no seed and a recipe cannot ask for a random one (S1).
+        # The plot is rendered with these seeds, the record holds them, and the reproducibility recipe carries them.
         # The pin is read from home_state with no audit-trail flag in between (plot_seeds.export_seed_plan):
         # Reshuffle is not gated by it, so the export holds what the user saw.
         with reactive.isolate():
@@ -866,10 +866,6 @@ def define_export_server(input, output, session, *,
         _plot_seeds = export_seed_plan(
             dict(all_plots), _home_state_now, default=viz_factory.default_random_state,
         )
-        _seed_warning = unfixed_seed_warning(_plot_seeds)
-        if _seed_warning:
-            with reactive.isolate():
-                _notify(_seed_warning, type="warning", duration=12)
 
         # ── Collect T3 audit data (per-plot active nodes) ─────────────────
         _t3_by_plot: dict[str, list[dict]] = {}
