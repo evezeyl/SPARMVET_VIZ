@@ -12,7 +12,7 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_number, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
+# provides: function:dialog_value, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_number, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
 # consumes: polars, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
@@ -190,6 +190,32 @@ def value_widget_for(dtype, discrete_axis: bool, op: str) -> str:
     if op in ("in", "not_in") or (op in ("eq", "ne") and discrete_axis):
         return "list"
     return "number"
+
+
+def dialog_value(lf, column: str, dtype, discrete_axis: bool, op: str, *, picked=(), number=None, low=None, high=None,
+                 closed: str = "both", text: str = ""):
+    """What "+ Add" writes into the filter row: (operator, real value, ends), or None when nothing is chosen yet.
+
+    The value has the type of the column (ADR-104 point 7): values picked from a list are looked up in the map of the whole
+    column, a number of a number box is typed from the dtype, the two bounds of `between` are typed and put in order. eq or ne
+    on a list means in or not_in. Without a table (`dtype` None) the text is kept as written. Raises FilterValueError when a
+    value cannot be read in the type of the column.
+    """
+    widget = value_widget_for(dtype, discrete_axis, op) if dtype is not None else "text"
+    if widget == "range":
+        if low is None or high is None:
+            return None
+        low, high = typed_number(low, dtype), typed_number(high, dtype)
+        return op, ([high, low] if low > high else [low, high]), (closed if closed in CLOSED_CHOICES else "both")
+    if widget == "list":
+        labels = list(picked or ())
+        if not labels:
+            return None
+        return {"eq": "in", "ne": "not_in"}.get(op, op), pick_values(value_choices(lf, column), labels), "both"
+    if widget == "number":
+        return (op, typed_number(number, dtype), "both") if number is not None else None
+    text = (text or "").strip()
+    return (op, text, "both") if text else None
 
 
 def inapplicable_filter_rows(lf, filter_rows: list) -> list:

@@ -204,3 +204,74 @@ def test_the_audit_panel_writes_the_ends_as_brackets(closed, shown):
     from app.handlers.audit_stack import _condition_summary
     node = {"node_type": "filter_row", "params": {"column": "x", "op": "between", "value": [1, 3], "closed": closed}}
     assert _condition_summary(node) == f"x ∈ {shown}"
+
+
+# -- the value the dialog stores (what "+ Add" writes into the row) -------------------------------------------------
+
+from app.modules.t3_audit_engine import dialog_value  # noqa: E402
+
+
+def _lf():
+    return pl.LazyFrame({
+        "year": [1998, 2000, 2003], "x": [1.5, 2.5, 3.5], "t": ["a", "b", "c"], "b": [True, False, True],
+        "d": [D(2020, 1, 1), D(2020, 1, 2), None],
+    })
+
+
+def stored(column, op, discrete_axis=False, **widgets):
+    lf = _lf()
+    return dialog_value(lf, column, column_types(lf)[column], discrete_axis, op, **widgets)
+
+
+def test_a_list_picked_on_a_year_stores_real_numbers_not_text():
+    op, value, closed = stored("year", "in", True, picked=["1998", "2003"])
+    assert (op, value) == ("in", [1998, 2003]) and all(type(v) is int for v in value)
+
+
+def test_eq_and_ne_on_a_list_become_in_and_not_in():
+    assert stored("year", "eq", True, picked=["2000"])[:2] == ("in", [2000])
+    assert stored("t", "ne", False, picked=["a"])[:2] == ("not_in", ["a"])
+
+
+def test_a_comparison_on_a_discrete_year_stores_the_number_of_the_box():
+    op, value, _ = stored("year", "gt", True, number=1999)
+    assert (op, value) == ("gt", 1999) and type(value) is int
+
+
+def test_a_number_box_value_has_the_type_of_the_column():
+    assert type(stored("x", "ge", False, number=2)[1]) is float
+    assert type(stored("year", "ge", False, number=2000.0)[1]) is int
+
+
+def test_a_true_false_list_stores_real_booleans():
+    op, value, _ = stored("b", "in", False, picked=["True"])
+    assert value == [True] and type(value[0]) is bool
+
+
+def test_a_date_list_stores_the_year_month_day_text():
+    assert stored("d", "in", False, picked=["2020-01-02"])[:2] == ("in", ["2020-01-02"])
+
+
+def test_between_stores_typed_bounds_swapped_when_low_is_above_high_and_the_ends():
+    assert stored("year", "between", False, low=2003, high=1998, closed="left") == ("between", [1998, 2003], "left")
+    assert stored("x", "between", False, low=1, high=3)[1] == [1.0, 3.0]
+
+
+def test_an_unknown_end_is_both():
+    assert stored("year", "between", False, low=1, high=2, closed="weird")[2] == "both"
+
+
+def test_nothing_chosen_stores_nothing():
+    assert stored("t", "in", False, picked=[]) is None
+    assert stored("year", "gt", False, number=None) is None
+    assert stored("year", "between", False, low=None, high=2) is None
+
+
+def test_a_pick_that_is_not_in_the_column_is_reported():
+    with pytest.raises(FilterValueError):
+        stored("year", "in", True, picked=["1234"])
+
+
+def test_without_a_table_the_text_is_kept_as_written():
+    assert dialog_value(None, "c", None, False, "eq", text="  abc ") == ("eq", "abc", "both")
+    assert dialog_value(None, "c", None, False, "eq", text="  ") is None

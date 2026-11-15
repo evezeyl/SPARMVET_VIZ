@@ -29,8 +29,8 @@ from shiny import reactive, render, ui
 from app.src.bootloader import bootloader
 from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
-    CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column, pick_values,
-    typed_number, value_choices, value_widget_for,
+    CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
+    dialog_value, value_choices, value_widget_for,
 )
 from utils.filter_values import FilterValueError
 from utils.missing_values import dialog_lines, na_choice_texts
@@ -420,43 +420,21 @@ def define_filter_audit_server(input, output, session, *,
         discrete_axis = col in disc
         dtype = types.get(col)
         dtype_str = str(dtype) if dtype is not None else "Utf8"
-        widget = value_widget_for(dtype, discrete_axis, op) if dtype is not None else "text"
-        bt_closed = "both"
+        raw = safe_input(input, "fb_value", None)  # a list of texts, a number or a text, by the widget that was mounted
         try:
-            if widget == "range":
-                lo = safe_input(input, "fb_value_lo", None)
-                hi = safe_input(input, "fb_value_hi", None)
-                if lo is None or hi is None:
-                    return
-                lo, hi = typed_number(lo, dtype), typed_number(hi, dtype)
-                if lo > hi:
-                    lo, hi = hi, lo
-                value = [lo, hi]
-                bt_closed = safe_input(input, "fb_closed", "both")
-                if bt_closed not in CLOSED_CHOICES:
-                    bt_closed = "both"
-            elif widget == "list":
-                labels = list(safe_input(input, "fb_value", ()) or ())
-                if not labels:
-                    return  # nothing selected: do not add an empty filter
-                value = pick_values(value_choices(lf, col), labels)
-                if op == "eq":
-                    op = "in"
-                elif op == "ne":
-                    op = "not_in"
-            elif widget == "number":
-                raw = safe_input(input, "fb_value", None)
-                if raw is None:
-                    return
-                value = typed_number(raw, dtype)
-            else:
-                raw = safe_input(input, "fb_value", "")
-                if not (isinstance(raw, str) and raw.strip()):
-                    return
-                value = raw.strip()  # no table to read the type from: the text as written
+            chosen = dialog_value(
+                lf, col, dtype, discrete_axis, op,
+                picked=raw if isinstance(raw, (list, tuple)) else (),
+                number=raw if isinstance(raw, (int, float)) and not isinstance(raw, bool) else None,
+                low=safe_input(input, "fb_value_lo", None), high=safe_input(input, "fb_value_hi", None),
+                closed=safe_input(input, "fb_closed", "both"), text=raw if isinstance(raw, str) else "",
+            )
         except FilterValueError as exc:
             _notify(str(exc), type="error", duration=8)
             return
+        if chosen is None:
+            return  # nothing chosen yet: do not add an empty filter
+        op, value, bt_closed = chosen
 
         # NA-RULE-63: the tick of the dialog, never absent from a row (None: not mounted, the default of the operator)
         na_tick = safe_input(input, "fb_na", None)
