@@ -86,9 +86,13 @@ def test_validate_advice_entries_keep_heading_text_and_tip():
 
 
 def test_home_recipe_choice_renders_the_advice_entries():
+    """The advices are drawn by the notes under HOME's selector (recipe_gate_handlers.gate_notes, which follows the load gate),
+    and the selector panel mounts that slot."""
+    from app.handlers.recipe_gate_handlers import gate_notes
+    html = str(gate_notes({}, {"r": ["[J12] a float join key. Fix: cast it"]}, None))
+    assert "Advice (these recipes load and run)" in html and "[J12] a float join key" in html and ">r<" in html
     source = (REPO / "app" / "handlers" / "home_theater.py").read_text()
-    assert "home_advice_entries(getattr(bootloader" in source and "for name, texts in advices" in source
-    assert "Advice (these recipes load and run)" in source
+    assert 'ui.output_ui("recipe_gate_notes_ui")' in source
 
 
 def test_blueprint_validate_renders_the_advice_entries():
