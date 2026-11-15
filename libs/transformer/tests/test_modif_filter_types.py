@@ -102,3 +102,9 @@ def test_a_list_of_whole_numbers_and_decimals_is_a_valid_list_of_numbers():
     assert run("x", "in", [1.5, 2, 3.5]) == ["a", "c"]
     assert run("x", "not_in", [1.5, 2]) == ["b", "c"]
     assert run("year", "in", [1998, 2000.0, 2003.5]) == ["a", "b"]
+
+
+def test_a_comparison_on_a_category_column_compares_the_text_not_the_order_of_first_appearance():
+    frame = pl.DataFrame({"id": ["a", "b", "c"], "k": pl.Series(["v", "u", "w"], dtype=pl.Categorical)})
+    got = AVAILABLE_WRANGLING_ACTIONS["modif_filter"](frame.lazy(), {"column": "k", "op": "gt", "value": "u", "na": "remove"}).collect()
+    assert got["id"].to_list() == ["a", "c"]
