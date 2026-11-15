@@ -965,3 +965,33 @@ Earlier lines above are not edited; where they disagree with the following, the 
 2. A small builder for the export lines (`plot_engine`, `draw_checked`).
 3. A reviewer runs the full controls (headless, golden, browser gate, audits, doc links); push `dev`.
 4. PLOT-TABLE-ORDER-1, then V4, then V2 + V10 + V9.
+
+## Handoff 2026-11-15 09:10 (coordinator)
+
+**Merged, not pushed.** `d2c97bc6` (V3: the plot parameters of the exact components are read from plotnine). HEAD is not pushed; `origin/dev` is `f769c8dd`.
+
+**Eve's decisions of 2026-11-15, one line each** (channel `tmpAI/agent_channel.md`, M83 and M84):
+- 9: text greater/less not offered in the HOME filter (reversible); Date by date picker, Boolean by two-choice control.
+- 10a: `beeswarm_sina` converted to the new form.
+- 10b: small synthetic data made for `complex_template`.
+- 10c: the three removed actions found out; the orphan fragment `ResFinder_Abromics_wrangling.yaml` converted, not deleted.
+- 10e: Blueprint MAY author the plot entry's tier 3 (the note is in `recipe_format_spec.md` and at ADR-100).
+- 10d (investigation, no build): Blueprint must open a failing recipe and show its fix list (BP-STALE-VIEW-1).
+- 11 (explanation owed): list of every shipped-recipe result change, old vs new engine, in the changelog (RESULT-CHANGES-1).
+
+**Strategy (Eve, M83 point 2):** builds on a recommendation are PROVISIONAL (recorded with the commit, reversible) when no result changes silently and nothing is hidden; open points go to her in ONE ordered list with a default each.
+
+**Queue (build work that needs no decision):**
+1. Seed branch: default 0, `geom_sina` seeded, seeds written, `beeswarm_sina` converted there.
+2. Row order: ST13, then the tie and sum warnings.
+3. viz-errors (after review).
+4. typed-values (third review).
+5. Export lines.
+6. Full controls and push.
+7. PLOT-TABLE-ORDER-1.
+8. The warnings look.
+9. FILTER-PICKERS-1, with the value list on demand.
+10. RECIPES-SMALL-1.
+11. V4.
+
+**Records changed 2026-11-15 (not committed):** `recipe_format_spec.md` (tier 3 note); `architecture_decisions.md` (superseded markers at ADR-082, 093, 099; tier 3 note and RECIPES-SMALL note at ADR-100; filter-control note at ADR-104); `tasks.md` (FILTER-PICKERS-1, RECIPES-SMALL-1, RESULT-CHANGES-1, PY-RECIPE-1, BP-STALE-VIEW-1, SC4 and gallery-reason-list markers, process rule).

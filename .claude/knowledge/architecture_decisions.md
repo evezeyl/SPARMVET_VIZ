@@ -3830,7 +3830,7 @@ Resolves §6 of the research draft. Two were already settled by the May 10–11 
 | Q | Decision | Source |
 |---|---|---|
 | **Q1 — Preview trigger** | **On-Apply only.** Editing a node marks it pending; the Glimpse + plot recompute on Apply. Matches the HOME T3 Apply mental model and the existing `btn_bp_apply_node` gate. | Ratified (implemented) |
-| **Q2 — T3 authoring scope** | **Manifest only (T1/T2 + plots).** BLUEPRINT never authors or previews T3. T3 is HOME-only (publication finisher). Clean separation of concerns: BLUEPRINT = pipeline author, HOME = analyst. | Decided |
+| **Q2 — T3 authoring scope** | **Manifest only (T1/T2 + plots).** BLUEPRINT never authors or previews T3. T3 is HOME-only (publication finisher). Clean separation of concerns: BLUEPRINT = pipeline author, HOME = analyst. (superseded 2026-11-15, see the note at ADR-100) | Decided |
 | **Q3 — Branch storage** | **LOCKED (2026-05-20): branch = lineage bifurcation at a node.** A "branch" (Eve's manifest sense) splits one lineage into two **at a chosen node**: everything *upstream* of the node stays **shared** (the Tier 1 trunk is materialized once via `sink_parquet`; branches read it via `scan_parquet` — no recompute), and the child lineages **diverge downstream**. Physically this is the existing **fragment-per-component** structure — each branch is a new `!include` fragment (`wrangling/`, `output_fields/`, `assembly/`, `plots/`) wired into the master manifest; the canonical example is `Summary` / `Summary_quality` (shared source + `input_fields`, divergent wrangling/`output_fields`). This is the **Bifurcation Point Rule** (`rules_data_engine.md`) made interactive. NOT whole-file duplication: duplicating an entire manifest is the *rare* path, used only when adding genuinely new data (the usual start is a boilerplate template). Terminology: the TubeMap graph *fan-out* is the visual; the *manifest branch* is the lineage split. | Locked |
 | **Q4 — Comments / intent documentation** | **`comment:` keys (data-level), not `#` comments.** Intent documentation is a first-class **free-text `comment` field on every node / step / group / plot**, surfaced in the BLUEPRINT form. It is written into the manifest YAML as a `comment:` data key and is **preserved by the ingest** (PyYAML `SafeLoader` keeps data keys; round-trip-safe with no new dependency). The comment input MUST carry a **hover tooltip** nudging good-comment practice (e.g. "Write your intent — *why* this step, not what"). Hand-written **`#` free-form comments are NOT preserved** through a form round-trip (PyYAML strips them on load and `yaml.dump` on save) — accepted limitation. *v2:* adopt `ruamel.yaml` round-trip across loader + save paths only if `#`-comment preservation becomes a real need. Build task: BP-COMMENTS-1. | Decided 2026-05-20 |
 | **Q5 — Join authoring** | **Dedicated Joint Designer pane.** A BLUEPRINT sub-surface showing left + right ingredient schemas side-by-side with a live key-match preview, producing a canonical `join` recipe step. Not just a generic action form. | Decided |
@@ -3888,8 +3888,8 @@ Each of the functionalities listed in `BLUEPRINT.md` is classified MVP (ships in
 ### 4. T1/T2 vs T3 Boundary Statement (authoritative)
 
 - **BLUEPRINT writes the manifest:** `input_fields`, `wrangling.tier1`, `wrangling.tier2`, `join_manifests` (assembly), `output_fields`/`final_contract`, `analysis_groups`, and plot specs.
-- **BLUEPRINT never writes T3.** T3 audit nodes (filters, exclusions, column drops, aesthetic overrides) are authored exclusively in HOME by the analyst (ui_implementation_contract.md §12). BLUEPRINT does not preview, simulate, or read T3.
-- This boundary is a hard invariant. Any future request to surface T3 in BLUEPRINT requires a superseding ADR.
+- **BLUEPRINT never writes T3.** T3 audit nodes (filters, exclusions, column drops, aesthetic overrides) are authored exclusively in HOME by the analyst (ui_implementation_contract.md §12). BLUEPRINT does not preview, simulate, or read T3. (superseded 2026-11-15, see the note at ADR-100)
+- This boundary is a hard invariant. Any future request to surface T3 in BLUEPRINT requires a superseding ADR. (superseded 2026-11-15, see the note at ADR-100)
 
 ---
 
@@ -4537,7 +4537,7 @@ not just its documentation:
    no T3 and no audit stack at all; it is the IDE for building T1/T2 recipes. Gallery pushing a whole
    example into T3 was recipe-authoring wearing a T3 costume — one level deeper than what ADR-082 §4
    ("BLUEPRINT never authors T3 — T3 is HOME-only") already said, extended here to "no recipe-building
-   content in T3, regardless of source."
+   content in T3, regardless of source." (superseded 2026-11-15, see the note at ADR-100: Blueprint may author the plot entry's tier 3; the Gallery rule of this ADR is not changed by it)
 
 Eve also declined the alternative of building a real Gallery→BLUEPRINT handoff: GALLERY now serves
 purely as inspiration and a demonstration of what the app can plot; a builder who wants to reuse a
@@ -5051,7 +5051,7 @@ UI-HOME-AUDIT. Archive tag before the redesign: `archive/home-filters-uml-2026-1
 **Amends:** ADR-098 (what is built today becomes the starting point), ADR-085 (My view), ADR-086 (header choices,
 Compare), ADR-049 (propagation dialog), ADR-044 (content of the right panel), ADR-024 (audit stages), ADR-089 (audit
 cache), ADR-097 (forked recipe modes, verification legs). **Consistent with:** ADR-082 (T3 is HOME-only; BLUEPRINT
-never authors it), ADR-093 (no recipe content comes from anywhere else; the forked recipe is generated from the
+never authors it) (superseded 2026-11-15, see the note at ADR-100), ADR-093 (no recipe content comes from anywhere else; the forked recipe is generated from the
 user's own steps). **Not changed:** BLUEPRINT, GALLERY, VizFactory, the original cache, the original T1/T2.
 
 > **Reading guide (2026-11-14, ADR-SYNC-1; Eve's rule: the latest record holds).** This entry was written on 2026-11-11 and extended on 2026-11-12 (points 11 to 16, printed in reverse order until 2026-11-14, now in order 1 to 16; no text removed). Later points and later records supersede some earlier sentences, which stay below with an inline **[HISTORICAL ...]** marker. What holds now:
@@ -5062,7 +5062,7 @@ user's own steps). **Not changed:** BLUEPRINT, GALLERY, VizFactory, the original
 > - **Missing values:** ADR-103 (2026-11-14). The sentence on missing values in point 12 and "the NA rule (missing values are a visible, selectable value)" in "The software's role" are HISTORICAL; "never silent" holds.
 > - **Unknown recipe keys fail** (point 16(i) and ADR-100, DEC02); "unknown keys are warnings" in point 16(g) is HISTORICAL.
 > - **Column drops** follow the filter logic at any level (point 16(i); `home_audit_steps.md` 5a point 6); "Drops are not recommended outside plot level" (point 7) is HISTORICAL.
-> - **"BLUEPRINT never authors T3"** (header, from ADR-082): OPEN, see ADR-100 (a recipe maker may write any action in the plot entry's tier-3 list, DEC17).
+> - **"BLUEPRINT never authors T3"** (header, from ADR-082): OPEN, see ADR-100 (a recipe maker may write any action in the plot entry's tier-3 list, DEC17). (superseded 2026-11-15, see the note at ADR-100)
 > - **Point 15, items left open:** the entity noun (AR4, `home_audit_steps.md` 5a point 17), special datasets (AR1) and the action-registry test (AR2) were closed on 2026-11-12 (`home_audit_steps.md` section 16 item 7); the check on the plotted variable was withdrawn (point 16(e)). The rest: `home_audit_steps.md` section 16.
 > - **Status:** still not built, except what ADR-098 built.
 
@@ -5206,7 +5206,7 @@ with levels 0-2. **[HISTORICAL in part, 2026-11-14: the reach options and the le
 
 **OPEN, awaiting Eve.**
 - **`categorical`.** Record 1: DEC27 (Eve, 2026-11-13, `recipe_format_spec.md`:124): `categorical` is refused with the message "this was String". Record 2: commit `e9ac815f` (2026-11-13 22:15, an agent): the migration writes `Categorical` ("String would change the level order of plots"); 75 shipped fields hold `type: Categorical`. No later record by Eve settles it. Note 2026-11-15 (Eve): DEC27 was a refactoring choice for the shipped recipes, not a rule of the standard. The recipe standard follows Polars: both `Categorical` and `String` are usable and written as such; the type names are Polars' names. The shipped recipes change to `String` where the field is plain text and stay `Categorical` where the order of the categories or memory matters; the list is being prepared by the scientist viewpoint and nothing is migrated before Eve has seen it. (see the note of 2026-11-15: the standard follows Polars; the capitalised `Categorical` and `String` are both valid types. The old lower-case word `categorical` is still not a type name of the format.)
-- **Whether Blueprint may author a plot entry's tier 3.** Record 1: ADR-082 point 4 and ADR-099 header (2026-11-11): "BLUEPRINT never authors T3". Record 2: `home_audit_steps.md` 5a point 15 (2026-11-12) and DEC17 (2026-11-13): a recipe maker may write any registered action in the tier-3 list. The Blueprint form is not decided.
+- ~~**Whether Blueprint may author a plot entry's tier 3.**~~ **[DECIDED 2026-11-15 by Eve: see the note below.]** Record 1: ADR-082 point 4 and ADR-099 header (2026-11-11): "BLUEPRINT never authors T3". Record 2: `home_audit_steps.md` 5a point 15 (2026-11-12) and DEC17 (2026-11-13): a recipe maker may write any registered action in the tier-3 list.
 - **`column` or `columns` for the input column of `modif_` and `step_` actions** (point 8). Record 1: DEC15 (2026-11-13): `columns`, a list. Record 2: DEC39 (2026-11-13, same day): `modif_filter` takes `column`; the code follows it. Added 2026-11-14 after review.
 - **Whether FORMULA-SAFETY-1 (2026-11-13) and ADR-099 point 14 (2026-11-12) are one decision** (point 10), and **a time or size limit for formulas** (`tasks.md` FORMULA-SAFETY-1). Added 2026-11-14 after review.
 - **`derive_categories`** (point 7). Spec Q2 (line 189): "read it, then decide". The action is gone from the code; no record of Eve deciding it. Added 2026-11-14 after review.
@@ -5215,6 +5215,10 @@ with levels 0-2. **[HISTORICAL in part, 2026-11-14: the reach options and the le
 Note 2026-11-15 (Eve): `polars_join_where` becomes `modif_join_where` (it fixes the order of its result; DEC31, DEC32); being built on branch task/row-order.
 Note 2026-11-15 (Eve): an empty `exprs` of `polars_select`, an empty `on` of `polars_unpivot`, an empty `by` of `polars_top_k` / `polars_bottom_k` are refused with the reason (a writing error in the recipe); being built.
 Note 2026-11-15 (Eve): row order: the user is informed; warnings are clearly distinct from errors in the checker, HOME and Blueprint; the wording for ties in `top_k` waits for a test of what Polars does.
+
+**Note 2026-11-15 (Eve), tier 3 of a plot entry (channel M84, points 10e and 10a to 10c; supersedes the "no" of ADR-082 point 4, ADR-093 and ADR-099 header where they say Blueprint never authors tier 3).** Blueprint MAY author the plot entry's tier 3. Tier 3 is the data step that goes to a plot (a per-plot data preparation), NOT the plot recipe (geoms, mapping, theme). Good practice: steps shared by several plots go in the lower tiers (1 or 2); tier 3 holds what only that plot needs. Spec: `.claude/design/recipe_format_spec.md`, plot entry `steps`.
+
+**Note 2026-11-15 (Eve), the three removed actions and the shipped examples.** `beeswarm_sina` is converted to the new form (not removed). Small synthetic data is made for `complex_template`. The orphan fragment `ResFinder_Abromics_wrangling.yaml` is converted, not deleted: find what the three removed actions were, then convert the fragment accordingly.
 
 **Consequences.** Every recipe says what it does; an error names the place and the fix. Rule files and documents that still describe format 0: `.claude/design/decisions_2026-11-14/adr_sync_changes.md`.
 
@@ -5311,6 +5315,7 @@ Note 2026-11-15 (Eve): row order: the user is informed; warnings are clearly dis
 - **Seed when the recipe writes none.** Record 1: ADR-090 point 2 and `rules_viz_factory.md` section 8 (2026-11-05): default seed 0; the gallery and the export use 0. Record 2: ADR-097 point 2 (2026-11-09) and HOME's code: one seed drawn per session and plot, recorded in `effective_run.yaml`. Run 2026-11-14: the recorded seed does not reproduce the exported plot (`tmpAI/results.md` section 2). DECIDED 2026-11-15 (Eve): fixed at 0 by default, HOME draws no seed per session; see the note at the end of ADR-090. Still open: the seed field per jitter step (panel).
 - ~~**D1, a filter value of another type than its column** (`.claude/design/decisions_2026-11-14/proposals_for_eve.md`, FILTER-UNIFY-1): the engine converts it (coordinator's recommendation, with a plain error when it cannot) or refuses it (scientist viewpoint). Record against record: ADR-098 point 4 and VizFactory skip such a filter today; point 1 above forbids a silent skip.~~ **[Corrected 2026-11-14 after review: D1 is DECIDED, point 7 above. It is no longer open.]**
 - **Date and Boolean comparisons in the filter panel** (point 7). Eve asked for the options before any choice; nothing is built (M76, 2026-11-14). Added 2026-11-14 after review.
+- **[DECIDED 2026-11-15 by Eve, channel M84 point 9; the Date and Boolean items above are answered by it]** Text greater/less is not offered in the HOME filter (reversible). Date uses a date picker, Boolean a two-choice control; every type is usable with the control that fits it.
 
 
 ## ADR-105: Audit acts along the lineage, chosen by the user; exploration acts only on the data viewed (2026-11-12, confirmed 2026-11-14)
