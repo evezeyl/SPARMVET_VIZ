@@ -220,7 +220,7 @@ def changed_since_view(view_keys, current_keys) -> list[str]:
 def audited_frame(lf, rows: list, drops: list):
     """The "My view" data of one plot: filter rows, then column drops, on its base frame.
 
-    The base is the stored Tier 2 (Tier 1 when the join has no tier2 steps): build rule
+    The base is the stored Tier 2 (Tier 1 when the table has no tier2 steps): build rule
     T3 > T2 > T1. Same steps and order as the data preview in HOME. A drop of a column that is
     not in the frame is ignored, like in HOME.
     """
@@ -1050,7 +1050,7 @@ def define_export_server(input, output, session, *,
                             anchor_dir = bootloader.get_location("user_data") / "anchors"
                             out_path = anchor_dir / f"{target_ds}.parquet"
                             # Plots never show T1 (ADR-086): same base as HOME, the stored
-                            # Tier 2 (equal to T1 when the join has no tier2 steps).
+                            # Tier 2 (equal to T1 when the table has no tier2 steps).
                             lf = orchestrator.materialize_tier2(
                                 data_analysis_recipe_id=data_analysis_recipe_id,
                                 collection_id=target_ds,
@@ -1112,7 +1112,7 @@ def define_export_server(input, output, session, *,
 
                 # ── Export data by tier ───────────────────────────────────
                 # T1: always exported.
-                # T2: exported when the join has tier2 steps, read from the stored Tier 2
+                # T2: exported when the table has tier2 steps (a join, or a table a plot reads directly), read from the stored Tier 2
                 #     parquet (issue #10). Without tier2 steps T2 equals T1: no duplicate TSV.
                 # T3: only for advanced+ app features files, and only when tier_toggle == "T3".
 
@@ -1177,7 +1177,7 @@ def define_export_server(input, output, session, *,
 
                     # ── T3 / My view data, one file per plot (audit nodes are per plot) ──
                     # Build rule T3 > T2 > T1: the base is the stored Tier 2, which is Tier 1
-                    # when the join has no tier2 steps; the plot's filters and drops go on top.
+                    # when the table has no tier2 steps; the plot's filters and drops go on top.
                     # Written for every plot that has audited steps: its plot is built from this data,
                     # so the file must be there. Plots without audited steps have no T3 file.
                     if audited_plots:
@@ -1523,7 +1523,7 @@ def define_export_server(input, output, session, *,
                 )
                 _dh_qmd_rows.append(
                     f"| Tier 2 key ({_ds_k}) | `{_k['tier2_key'] or 'none (T2 equals T1)'}` | "
-                    "Chained key of the Tier 2 parquet: Tier 1 key and the join's tier2 steps |"
+                    "Chained key of the Tier 2 parquet: Tier 1 key and the tier2 steps of the table (a join, or a table a plot reads directly) |"
                 )
             if _dh_qmd_rows:
                 pass
