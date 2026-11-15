@@ -157,9 +157,7 @@ _LOG = logging.getLogger(__name__)
 # cannot be loaded, a transformation that fails; `SPARMVET_Error` and its subclasses), Polars refusing the data (a
 # missing column, a wrong type) and a missing file. ValueError is not in the list: it is also what a programmer's bad
 # conversion or a JSON/Unicode decoding fault raises, and showing those as the user's mistake hides a bug.
-# Known gap: the orchestrator raises a bare ValueError for an unknown join or data schema id
-# (app/modules/orchestrator.py, "No join or data schema" and "The join ... names"): the user then sees the
-# internal-error message below until it raises a project error type.
+# An unknown join or data schema id is a recipe mistake: the orchestrator raises DataAnalysisRecipeError for it.
 JOIN_PREVIEW_USER_ERRORS = (SPARMVET_Error, FileNotFoundError, pl.exceptions.PolarsError)
 
 JOIN_PREVIEW_INTERNAL_ERROR = "Preview failed: an internal error, not your recipe (details in the log)."

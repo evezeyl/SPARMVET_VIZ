@@ -8,7 +8,12 @@ import polars as pl
 import pytest
 
 from app.handlers.blueprint_handlers import JOIN_PREVIEW_INTERNAL_ERROR, run_join_preview, safe_join_preview
-from utils.errors import IngestionError
+from pathlib import Path
+
+from app.modules.orchestrator import DataOrchestrator
+from app.tests.tiny_recipe import tiny_recipe, write_tiny
+from utils.errors import DataAnalysisRecipeError, IngestionError
+from utils.recipe_factory import minimal_join
 
 
 def _frame(rows):
@@ -71,3 +76,39 @@ def test_the_two_messages_differ():
     assert mine != internal
     assert "internal error" in internal and "internal error" not in mine
     assert "Dataset 'x' could not be loaded" in mine
+
+
+# -- the two recipe mistakes the orchestrator names: the user must see them as their mistake, not as an internal error
+
+def _materialise_through_the_orchestrator(tmp_path, recipe, collection):
+    write_tiny(tmp_path, recipe)
+    orchestrator = DataOrchestrator(tmp_path, Path("."))
+
+    def materialise(ingredient_id):
+        out = tmp_path / f"{ingredient_id}.parquet"
+        orchestrator.materialize_tier1(data_analysis_recipe_id=recipe["id"], collection_id=collection, output_path=out)
+        return _frame({"k": ["a"]})
+    return materialise
+
+
+def test_an_unknown_join_id_is_shown_as_the_users_mistake(tmp_path):
+    materialise = _materialise_through_the_orchestrator(tmp_path, tiny_recipe("m"), "NoSuchJoin")
+    result = safe_join_preview(materialise, _rows, "l", "r", ["k"], ["k"])
+    assert result["error"].startswith("Preview failed: No join or data schema 'NoSuchJoin'")
+    assert result["error"] != JOIN_PREVIEW_INTERNAL_ERROR
+
+
+def test_a_join_that_names_an_unknown_schema_is_shown_as_the_users_mistake(tmp_path):
+    recipe = tiny_recipe("m")
+    recipe["joins"] = {"J": minimal_join(["A", "NoSuchSchema"], [])}
+    materialise = _materialise_through_the_orchestrator(tmp_path, recipe, "J")
+    result = safe_join_preview(materialise, _rows, "l", "r", ["k"], ["k"])
+    assert "which is not a data schema of this recipe" in result["error"] and "'NoSuchSchema'" in result["error"]
+    assert result["error"] != JOIN_PREVIEW_INTERNAL_ERROR
+
+
+def test_the_orchestrator_raises_the_recipe_error_type(tmp_path):
+    write_tiny(tmp_path, tiny_recipe("m"))
+    with pytest.raises(DataAnalysisRecipeError, match="No join or data schema"):
+        DataOrchestrator(tmp_path, Path(".")).materialize_tier1(
+            data_analysis_recipe_id="m", collection_id="Nope", output_path=tmp_path / "x.parquet")

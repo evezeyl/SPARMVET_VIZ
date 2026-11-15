@@ -9,7 +9,7 @@ import copy
 import polars as pl
 from pathlib import Path
 from typing import Any
-from utils.errors import IngestionError
+from utils.errors import DataAnalysisRecipeError, IngestionError
 from utils.hashing import get_parquet_metadata_hash
 from ingestion.ingestor import DataIngestor, find_dataset_file
 from transformer.data_wrangler import DataWrangler
@@ -218,7 +218,7 @@ class DataOrchestrator:
         # place (the first join, as the code did before) gives a table that looks right and is something else.
         if collection_spec is None:
             known = sorted(list(data_analysis_recipe.get("joins", {}) or {}) + list(all_schemas))
-            raise ValueError(
+            raise DataAnalysisRecipeError(
                 f"No join or data schema '{collection_id}' in data analysis recipe '{data_analysis_recipe_id}'. "
                 f"Known: {', '.join(known) or 'none'}.")
 
@@ -235,7 +235,7 @@ class DataOrchestrator:
         unknown = [ds_id for ds_id in ingredient_ids if ds_id not in ingredients]
         if unknown or not ingredient_ids:
             what = f"names {', '.join(repr(u) for u in unknown)}, which is not a data schema of this recipe" if unknown else "has no ingredients"
-            raise ValueError(
+            raise DataAnalysisRecipeError(
                 f"The join '{collection_id}' of data analysis recipe '{data_analysis_recipe_id}' {what}. "
                 f"Data schemas: {', '.join(sorted(all_schemas)) or 'none'}.")
         assembly_ingredients = {ds_id: ingredients[ds_id] for ds_id in ingredient_ids}
