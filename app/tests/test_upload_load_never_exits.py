@@ -108,10 +108,47 @@ def test_config_helper_returns_the_config_of_a_good_recipe(tmp_path):
     assert problems == [] and "data_schemas" in cfg.raw_config
 
 
-def test_blueprint_handlers_call_no_bare_configmanager():
+_BARE_CALL_ALLOWED: set = set()  # none: every call is inside a try that catches SystemExit
+
+
+def _unguarded_configmanager_calls():
+    """Every call of ConfigManager (under any alias) in `app/` that is not inside a `try` catching SystemExit."""
     import ast
     from pathlib import Path
-    src = Path(__file__).resolve().parents[1] / "handlers" / "blueprint_handlers.py"
-    calls = [n.lineno for n in ast.walk(ast.parse(src.read_text()))
-             if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "ConfigManager"]
-    assert calls == [], f"bare ConfigManager( at lines {calls}: use load_config_or_problems"
+    app = Path(__file__).resolve().parents[1]
+    found = []
+    for src in sorted(app.rglob("*.py")):
+        if "tests" in src.relative_to(app).parts:
+            continue
+        tree = ast.parse(src.read_text())
+        names = {"ConfigManager"}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module and node.module.endswith("config_loader"):
+                names |= {a.asname for a in node.names if a.name == "ConfigManager" and a.asname}
+        parents = {child: parent for parent in ast.walk(tree) for child in ast.iter_child_nodes(parent)}
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in names):
+                continue
+            rel = src.relative_to(app).as_posix()
+            if (rel, node.func.id) in _BARE_CALL_ALLOWED:
+                continue
+            guarded, child = False, node
+            while child in parents:
+                parent = parents[child]
+                if isinstance(parent, ast.Try) and child in parent.body:
+                    for handler in parent.handlers:
+                        kinds = handler.type.elts if isinstance(handler.type, ast.Tuple) else [handler.type]
+                        if any(k is None or getattr(k, "id", "") in ("SystemExit", "BaseException") for k in kinds):
+                            guarded = True
+                child = parent
+            if not guarded:
+                found.append(f"{rel}:{node.lineno}")
+    return found
+
+
+def test_no_file_of_the_app_calls_configmanager_where_systemexit_would_end_the_session():
+    """ConfigManager ends the program on a contradictory recipe. Under `app/` every call is inside a `try` that catches
+    SystemExit, or goes through load_config_or_problems. Found 2026-11-15: wrangle_studio.py called it as `_CM(...)` inside
+    `except Exception` (SystemExit is not an Exception), and the old scan looked at blueprint_handlers.py only."""
+    calls = _unguarded_configmanager_calls()
+    assert calls == [], f"bare ConfigManager call(s) at {calls}: use load_config_or_problems"

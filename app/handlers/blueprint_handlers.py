@@ -232,6 +232,38 @@ def _show_load_problems(name, problems):
         _LOG.exception("load problems could not be shown for %s", name)
 
 
+def blank_blueprint_view(wrangle_studio, includes_map, component_ctx_map, schema_registry, keep_component=False):
+    """Clear what Blueprint keeps of the previously opened recipe: the map, the YAML view, the three stores of
+    the recipe, the lineage and the open component (GATE-GAP-1). The one function every failed load goes through,
+    so the previous recipe is never shown as if it were the one that was asked for. `keep_component` leaves the YAML
+    view and the steps of a component that was just loaded from a valid fragment file."""
+    includes_map.set({})
+    component_ctx_map.set({})
+    schema_registry.set({})
+    wrangle_studio.active_tubemap_mermaid.set("")
+    wrangle_studio.active_lineage_chain.set([])
+    if not keep_component:
+        wrangle_studio.active_raw_yaml.set("")
+        wrangle_studio.logic_stack.set([])
+
+
+def tell_save_outcome(bootloader, notify) -> list[str]:
+    """After Blueprint wrote a recipe file: re-run HOME's load gate for the recipes whose files changed and tell the
+    author what it means for HOME (GATE-GAP-1). The save is never blocked: Blueprint is where a failing recipe is opened
+    and fixed. Returns the names of the recipes that were checked."""
+    before = set(bootloader.rejected_data_analysis_recipes)
+    changed = bootloader.recheck_changed_data_analysis_recipes()
+    for name in changed:
+        record = bootloader.rejected_data_analysis_recipes.get(name)
+        if record:
+            shown = "; ".join(record["problems"][:2])
+            notify(f"Saved. HOME will not use '{name}' until it passes its checks: {shown}. "
+                   "Blueprint still opens it; fix it and save again.", type="warning", duration=20)
+        elif name in before:
+            notify(f"'{name}' passes its checks again: HOME can use it.", type="message", duration=8)
+    return changed
+
+
 def _load_upload_or_report(file_info):
     """Load the uploaded file; on problems show them in a notification and return None (no node is added)."""
     name = file_info[0].get("name", "file")
@@ -321,15 +353,41 @@ def define_server(input, output, session, *,
             return True
         return False
 
-    def _do_refresh_blueprint(path: str) -> tuple[dict, dict]:
+    # GATE-GAP-1: the last load failure that was shown, so that one failing recipe is told once, not once per effect
+    # (selecting a recipe fires the refresh and the map sync).
+    _last_load_failure: dict = {"key": None}
+
+    def _fail_load(path, problems, keep_component=False):
+        """A recipe could not be opened: say which one and why, and clear what is left of the previous recipe."""
+        blank_blueprint_view(wrangle_studio, includes_map, component_ctx_map, schema_registry,
+                             keep_component=keep_component)
+        ui.update_select("dataset_pipeline_selector", choices=["No components found"])
+        with reactive.isolate():
+            _groups_refresh.set(_groups_refresh.get() + 1)
+        key = (str(path), tuple(problems))
+        if _last_load_failure["key"] == key:
+            return
+        _last_load_failure["key"] = key
+        _show_load_problems(Path(path).name, problems)
+
+    def _tell_save_outcome():
+        tell_save_outcome(bootloader, ui.notification_show)
+
+    def _do_refresh_blueprint(path: str):
         """Rebuild includes_map/ctx_map/schema_registry and bump _groups_refresh.
 
         Called on data analysis recipe load and after any group/plot CRUD mutation.
-        Returns (ctx_map, inc_map) for callers that need the data directly.
+        Returns (ctx_map, inc_map) for callers that need the data directly, or None when the recipe could not
+        be opened (the author was told and the view of the previous recipe was cleared, GATE-GAP-1).
         """
         if not path or not Path(path).exists():
             return {}, {}
         try:
+            cfg_loaded, load_problems = load_config_or_problems(path)
+            if cfg_loaded is None:
+                _fail_load(path, load_problems)
+                return None
+            _last_load_failure["key"] = None
             data_analysis_recipe_path = Path(path)
             data_analysis_recipe_dir = data_analysis_recipe_path.parent
             raw_text = data_analysis_recipe_path.read_text(encoding="utf-8")
@@ -371,11 +429,7 @@ def define_server(input, output, session, *,
             if groups:
                 ui.update_select("dataset_pipeline_selector", choices=groups)
             else:
-                cfg_inline, _lp = load_config_or_problems(path)
-                if cfg_inline is None:
-                    _show_load_problems(Path(path).name, _lp)
-                    return {}, {}
-                raw = cfg_inline.raw_config
+                raw = cfg_loaded.raw_config
                 inline_groups: dict = {}
                 for sid in raw.get("data_schemas", {}):
                     inline_groups.setdefault("data_schemas", {})[sid] = f"{sid} — wrangling"
@@ -402,8 +456,8 @@ def define_server(input, output, session, *,
             return ctx_map, inc_map
 
         except Exception as e:
-            print(f"[_do_refresh_blueprint] Error: {e}")
-            return {}, {}
+            _fail_load(path, [f"Blueprint could not read it: {type(e).__name__}: {e}"])
+            return None
 
     # ── Local helpers (pure logic, no Shiny decorators) ──────────────────────
 
@@ -777,7 +831,10 @@ def define_server(input, output, session, *,
                     mapper = BlueprintMapper(cfg_for_map.raw_config, active_node=schema_id)
                     wrangle_studio.active_tubemap_mermaid.set(mapper.generate_cy_elements())
                 except Exception as _e:
-                    print(f"[TubeMap highlight] Failed: {_e}")
+                    # GATE-GAP-1: the component is new and the map would be the previous one: say so, no "Loaded".
+                    _fail_load(master_path, _lp if cfg_for_map is None else [f"the map could not be drawn: {_e}"],
+                               keep_component=True)
+                    return
 
                 msg = f"✅ Loaded '{abs_file.name}' ({len(nodes)} step(s))"
                 ui.notification_show(msg, type="message")
@@ -966,8 +1023,9 @@ def define_server(input, output, session, *,
         try:
             cfg, _lp = load_config_or_problems(str(path_str))
             if cfg is None:
-                print(f"[sync_blueprint_mapper] {'; '.join(_lp)}")
+                _fail_load(path_str, _lp)
                 return
+            _last_load_failure["key"] = None
             info = wrangle_studio.active_component_info.get()
             active_node = info.get("schema_id") if info else None
             mapper = BlueprintMapper(cfg.raw_config, active_node=active_node)
@@ -977,7 +1035,7 @@ def define_server(input, output, session, *,
                 yaml.dump(cfg.raw_config, default_flow_style=False, sort_keys=False, allow_unicode=True)
             )
         except Exception as e:
-            print(f"[sync_blueprint_mapper] Failed: {e}")
+            _fail_load(path_str, [f"the map could not be drawn: {type(e).__name__}: {e}"])
 
     # --- Phase 18: Wrangle Studio Data Analysis Recipe Management ---
     @reactive.Effect
@@ -1007,7 +1065,10 @@ def define_server(input, output, session, *,
         path = input.stored_data_analysis_recipe_selector()
         if not path or not Path(path).exists():
             return
-        ctx_map, inc_map = _do_refresh_blueprint(path)
+        refreshed = _do_refresh_blueprint(path)
+        if refreshed is None:
+            return  # GATE-GAP-1: told, and the view of the previous recipe is cleared: no "loaded" message
+        ctx_map, inc_map = refreshed
         # UX-NOTIF-3: Data analysis recipe load notification — surface component count on data analysis recipe reload
         data_analysis_recipe_name = Path(path).name
         n_components = len(ctx_map) if ctx_map else len(inc_map)
@@ -1204,6 +1265,8 @@ def define_server(input, output, session, *,
                 f"✅ Saved to {Path(comp_path).name}", type="success")
         except OSError as e:
             ui.notification_show(f"❌ Save failed: {e}", type="error")
+            return
+        _tell_save_outcome()  # GATE-GAP-1: HOME's load gate runs again; the save itself is never blocked
 
     @reactive.Effect
     @reactive.event(input.btn_bp_apply_node)
@@ -1537,6 +1600,7 @@ def define_server(input, output, session, *,
                     except OSError:
                         pass
                 return False, f"Write failed: {exc}"
+            _tell_save_outcome()  # GATE-GAP-1: HOME's load gate runs again; the write itself is never blocked
             return True, plan.get("summary") or "Branch written to data analysis recipe."
 
         @output
@@ -2674,6 +2738,8 @@ def define_server(input, output, session, *,
             ui.notification_show("Data analysis recipe info saved.", type="message")
         except Exception as e:
             ui.notification_show(f"Save error: {e}", type="error")
+            return
+        _tell_save_outcome()  # GATE-GAP-1: HOME's load gate runs again; the save itself is never blocked
 
     # ══════════════════════════════════════════════════════════════════════
     # BP-NEW-1 — Create new data analysis recipe from scratch (ADR-082 Q2)
