@@ -29,6 +29,29 @@ MUST_NOT_BE_EMPTY = {
     "polars_join_asof": ("by", "by_left", "by_right"),
     "polars_join": ("on", "left_on", "right_on"),
     "polars_unique": ("subset",),
+    # an empty value returned the table unchanged (DEC36: nothing returns the table unchanged; ADR-104: no silent error)
+    "polars_cast": ("columns",), "polars_cum_count": ("columns",), "polars_cum_sum": ("columns",),
+    "polars_drop": ("columns",), "polars_drop_nans": ("subset",), "polars_drop_nulls": ("subset",),
+    "polars_dt_truncate": ("columns",), "polars_fill_nan": ("columns",), "polars_fill_null": ("columns",),
+    "polars_interpolate": ("columns",), "polars_list_join": ("columns",), "polars_list_slice": ("columns",),
+    "polars_rename": ("mapping",), "polars_round": ("columns",), "polars_shift": ("columns",), "polars_sort": ("by",),
+    "polars_str_extract": ("columns",), "polars_str_replace_all": ("columns",), "polars_str_split": ("columns",),
+    "polars_str_splitn": ("columns",), "polars_str_strip_chars": ("columns",), "polars_unnest": ("columns",),
+    "polars_with_columns": ("named_exprs",),
+}
+
+# An empty value that Polars itself gives a result other than "do nothing": not refused, and stated in the description.
+EMPTY_HAS_A_MEANING = {
+    ("polars_select", "exprs"): "an empty table (Polars select with nothing)",
+    ("polars_unpivot", "on"): "no value columns, so no rows",
+    ("polars_unpivot", "index"): "no id columns: every column is unpivoted",
+    ("polars_group_by", "named_aggs"): "the distinct groups only",
+    ("polars_group_by", "by"): "one row for the whole table",
+    ("polars_group_by_dynamic", "group_by"): "no grouping: the windows of the whole table",
+    ("polars_rolling", "group_by"): "no grouping: the windows of the whole table",
+    ("polars_top_k", "by"): "the first k rows in table order",
+    ("polars_bottom_k", "by"): "the first k rows in table order",
+    ("polars_describe", "percentiles"): "the statistics without percentiles",
 }
 
 
@@ -49,6 +72,10 @@ def apply() -> None:
             params[name]["min_items"] = 1
             if (action, name) in HINTS:
                 params[name]["min_items_hint"] = HINTS[(action, name)]
+    for (action, name), meaning in EMPTY_HAS_A_MEANING.items():
+        schema = ACTION_SCHEMAS[action]
+        assert name in schema["params"], f"{action} has no parameter {name}"
+        schema["description"] = schema["description"].rstrip() + f" An empty `{name}` gives {meaning}."
 
 
 apply()

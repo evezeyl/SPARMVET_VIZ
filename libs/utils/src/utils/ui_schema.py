@@ -121,7 +121,7 @@ def _min_items_problem(param_def: dict, value: Any) -> Optional[tuple]:
     what = "a mapping with" if isinstance(value, dict) else "a list of"
     hint = param_def.get("min_items_hint")
     fix = f"write {what} at least {wanted} item" + ("s" if wanted != 1 else "") + (f", or {hint}" if hint else "")
-    return ("is empty" if not value else f"has fewer than {wanted} items"), fix
+    return ("is empty, so the step would do nothing" if not value else f"has fewer than {wanted} items"), fix
 
 
 def _options_problem(param_def: dict, value: Any) -> Optional[str]:

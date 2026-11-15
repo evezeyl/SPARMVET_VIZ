@@ -256,7 +256,7 @@ def test_min_items_is_not_reported_twice_for_a_wrong_form():
 def test_min_items_message_says_empty_and_carries_the_hint():
     schema = {"params": {"by": {"widget": "list", "min_items": 1, "min_items_hint": "leave it out"}}}
     problem = step_problems("x", {"action": "x", "by": []}, schema)[0]
-    assert problem.message == "by is empty" and problem.text().endswith("write a list of at least 1 item, or leave it out")
+    assert problem.message == "by is empty, so the step would do nothing" and problem.text().endswith("write a list of at least 1 item, or leave it out")
     assert any("min_items_hint" in p for p in schema_declaration_problems({"params": {"by": {"widget": "list", "min_items_hint": "x"}}}))
 
 
