@@ -185,7 +185,7 @@ def handle_fill_gradient2(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Map a continuous variable to an n-colour gradient; use for custom multi-stop palettes (e.g. temperature maps, clinical risk scores).",
-    "yaml_example": "layers:\n  - name: scale_color_gradientn\n    params:\n      colours: [blue, white, red]",
+    "yaml_example": "layers:\n  - name: scale_color_gradientn\n    params:\n      colors: [blue, white, red]",
 })
 def handle_color_gradientn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_gradientn(**spec)
@@ -204,7 +204,7 @@ def handle_color_gradientn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Map a continuous fill variable to an n-colour gradient; use for heatmaps requiring more than two colour stops.",
-    "yaml_example": "layers:\n  - name: scale_fill_gradientn\n    params:\n      colours: [blue, white, red]",
+    "yaml_example": "layers:\n  - name: scale_fill_gradientn\n    params:\n      colors: [blue, white, red]",
 })
 def handle_fill_gradientn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_gradientn(**spec)
@@ -248,7 +248,7 @@ def handle_color_distiller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Map a continuous fill variable using an RColorBrewer palette; use for heatmaps when an RColorBrewer name is preferred over manual hex colours.",
-    "yaml_example": "layers:\n  - name: scale_fill_distiller\n    params:\n      palette: RdYlBu",
+    "yaml_example": "layers:\n  - name: scale_fill_distiller\n    params:\n      palette: RdYlBu\n      type: div",
 })
 def handle_fill_distiller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_distiller(**spec)
@@ -316,7 +316,7 @@ def _viridis_colour_map(spec: Dict[str, Any]) -> Dict[str, Any]:
     "allow_extra_params": False,
     "params": _VIRIDIS_PARAMS,
     "description": "Map a discrete colour variable to the perceptually-uniform viridis palette; the recommended default for discrete colour scales \u2014 accessible to colour-blind viewers. Not in plotnine: calls scale_color_cmap_d and takes the colour map from `option` (viridis when absent), written as `cmap_name`; give `option` or `cmap_name`, not both (the pair is refused).",
-    "yaml_example": "layers:\n  - name: scale_color_viridis_d\n    params:\n      option: D",
+    "yaml_example": "layers:\n  - name: scale_color_viridis_d\n    params:\n      option: viridis",
 })
 def handle_color_viridis_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     spec = _viridis_colour_map(spec)
@@ -333,7 +333,7 @@ def handle_color_viridis_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "allow_extra_params": False,
     "params": _VIRIDIS_PARAMS,
     "description": "Map a discrete fill variable to the viridis palette; use for grouped bars or heatmap categories where colour-blind accessibility matters. Not in plotnine: calls scale_fill_cmap_d and takes the colour map from `option` (viridis when absent), written as `cmap_name`; give `option` or `cmap_name`, not both (the pair is refused).",
-    "yaml_example": "layers:\n  - name: scale_fill_viridis_d\n    params:\n      option: D",
+    "yaml_example": "layers:\n  - name: scale_fill_viridis_d\n    params:\n      option: viridis",
 })
 def handle_fill_viridis_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     spec = _viridis_colour_map(spec)
@@ -354,7 +354,7 @@ def handle_fill_viridis_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "end": {"widget": "number", "label": "End of palette range (0–1)", "required": False, "default": 1},
     },
     "description": "Map a continuous colour variable to the perceptually-uniform viridis palette; the recommended default for sequential continuous colour scales. Not in plotnine: calls scale_color_cmap and takes the colour map from `option` (viridis when absent), written as `cmap_name`; give `option` or `cmap_name`, not both (the pair is refused).",
-    "yaml_example": "layers:\n  - name: scale_color_viridis_c\n    params:\n      option: D",
+    "yaml_example": "layers:\n  - name: scale_color_viridis_c\n    params:\n      option: viridis",
 })
 def handle_color_viridis_c(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     spec = _viridis_colour_map(spec)
@@ -375,7 +375,7 @@ def handle_color_viridis_c(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "end": {"widget": "number", "label": "End of palette range (0–1)", "required": False, "default": 1},
     },
     "description": "Map a continuous fill variable to the viridis palette; use for tile/raster heatmaps where perceptual uniformity is required. Not in plotnine: calls scale_fill_cmap and takes the colour map from `option` (viridis when absent), written as `cmap_name`; give `option` or `cmap_name`, not both (the pair is refused).",
-    "yaml_example": "layers:\n  - name: scale_fill_viridis_c\n    params:\n      option: D",
+    "yaml_example": "layers:\n  - name: scale_fill_viridis_c\n    params:\n      option: viridis",
 })
 def handle_fill_viridis_c(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     spec = _viridis_colour_map(spec)
@@ -480,7 +480,7 @@ def handle_fill_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete colour variable to an RColorBrewer palette; a practical choice for categorical data when a named palette name is sufficient.",
-    "yaml_example": "layers:\n  - name: scale_color_brewer\n    params:\n      palette: Set1",
+    "yaml_example": "layers:\n  - name: scale_color_brewer\n    params:\n      palette: Set1\n      type: qual",
 })
 def handle_color_brewer(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_color_brewer(**spec)
@@ -502,7 +502,7 @@ def handle_color_brewer(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete fill variable to an RColorBrewer palette; use for grouped bar charts or box plots when a named palette is preferable to manual hex values.",
-    "yaml_example": "layers:\n  - name: scale_fill_brewer\n    params:\n      palette: Set2",
+    "yaml_example": "layers:\n  - name: scale_fill_brewer\n    params:\n      palette: Set2\n      type: qual",
 })
 def handle_fill_brewer(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_fill_brewer(**spec)
@@ -1362,7 +1362,7 @@ def handle_shape(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete variable to manually specified point shapes; use when specific shapes must be assigned to named categories.",
-    "yaml_example": "layers:\n  - name: scale_shape_manual\n    params:\n      values: [16, 17, 15]",
+    "yaml_example": "layers:\n  - name: scale_shape_manual\n    params:\n      values: [o, s, '^']",
 })
 def handle_shape_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + scale_shape_manual(**spec)

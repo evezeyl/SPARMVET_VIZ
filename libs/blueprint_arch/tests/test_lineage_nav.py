@@ -160,3 +160,30 @@ class TestBuildPlotLineage:
         assert len(steps) > 0
         assert steps[-1]["schema_id"] == plot_id
         assert steps[-1]["type"] == "plot_spec"
+
+
+# ── a schema's own tier 2 (issue #77) ──────────────────────────────────────────
+
+class TestSchemaTier2InLineage:
+    """`ResFinder` has a tier-2 list, is plotted directly by `amr_heatmap` and is an ingredient of joins. Its tier 2
+    runs only where it is plotted directly; the lineage says so on its wrangling node, the same words in both roles."""
+
+    NOTE = "ResFinder / wrangling (tier 1; tier 2 only where ResFinder is plotted directly)"
+
+    def test_the_direct_plot_names_the_tier2(self):
+        labels = [s["label"] for s in build_plot_lineage("amr_heatmap", DATA_ANALYSIS_RECIPE) if s["type"] == "wrangling"]
+        assert labels == [self.NOTE]
+
+    def test_a_join_plot_names_it_the_same_way(self):
+        import yaml
+        class _Cap(yaml.SafeLoader): pass
+        _Cap.add_constructor("!include", lambda l, n: l.construct_scalar(n))
+        groups = yaml.load(Path(DATA_ANALYSIS_RECIPE).read_text(), Loader=_Cap).get("analysis_groups") or {}
+        lineages = [build_plot_lineage(p, DATA_ANALYSIS_RECIPE) for g in groups for p in get_plot_ids_in_group(g, DATA_ANALYSIS_RECIPE)]
+        res = [s["label"] for steps in lineages for s in steps
+               if s["type"] == "wrangling" and s["schema_id"] == "ResFinder" and any(t["type"] == "join" for t in steps)]
+        assert res and set(res) == {self.NOTE}
+
+    def test_a_schema_without_tier2_keeps_the_plain_label(self):
+        labels = {s["label"] for s in build_plot_lineage(KNOWN_PLOT, DATA_ANALYSIS_RECIPE) if s["type"] == "wrangling"}
+        assert "FastP / wrangling" in labels
