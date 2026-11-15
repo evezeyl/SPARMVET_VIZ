@@ -17,7 +17,7 @@ recipe, what is wrong and the fix, in the message style of spec P5.
 
 # @deps
 # provides: function:check_recipe, function:spec, class:Problem, class:Result
-# consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/engines.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/ui_schema.py, libs/utils/src/utils/formula_check.py, libs/utils/src/utils/recipe_paths.py, libs/utils/src/utils/polars_types.py, libs/utils/src/utils/filter_values.py
+# consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/engines.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/ui_schema.py, libs/utils/src/utils/formula_check.py, libs/utils/src/utils/recipe_paths.py, libs/utils/src/utils/polars_types.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/recipe_tiers.py
 # consumed_by: libs/utils/src/utils/recipe_loader.py, libs/utils/src/utils/recipe_factory.py, libs/utils/src/utils/recipe_migration.py, libs/utils/src/utils/strict_form_migration.py, libs/ingestion/src/ingestion/declared.py, libs/viz_gallery/src/viz_gallery/gallery_manager.py, libs/viz_gallery/src/viz_gallery/example_recipe.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, assets/scripts/convert_gallery_examples.py, assets/scripts/create_data_analysis_recipe.py, libs/utils/tests/test_recipe_check.py
 # doc: .claude/design/recipe_format_spec.md (sections 3 to 11, 14)
 # @end_deps
@@ -32,7 +32,7 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 import polars as pl
 import yaml
 
-from utils import action_names
+from utils import action_names, recipe_tiers
 from utils.action_names import TIER1_ONLY
 from utils.engines import ENGINES
 from utils.filter_values import FilterValueError, check_filter
@@ -260,17 +260,10 @@ class _Check:
             found["metadata_schema"] = raw["metadata_schema"]
         return found
 
-    def plot_targets(self, raw: dict) -> Set[str]:
-        targets = set()
-        for group in (raw.get("analysis_groups") or {}).values():
-            for plot in ((group or {}).get("plots") or {}).values() if isinstance(group, dict) else []:
-                if isinstance(plot, dict) and isinstance(plot.get("spec"), dict):
-                    targets.add(plot["spec"].get("target_dataset"))
-        return targets
-
     def schemas(self, raw: dict) -> None:
         seen: Dict[str, str] = {}
-        targets = self.plot_targets(raw)
+        # One reading of "a tier-2 list that is run nowhere" (utils.recipe_tiers, issue #77): the engine and this check agree.
+        unapplied = set(recipe_tiers.unapplied_schema_tier2(raw))
         for section in ("data_schemas", "additional_datasets_schemas"):
             body = raw.get(section)
             if body is None:
@@ -287,13 +280,13 @@ class _Check:
                 seen[sid] = section
                 self.schema_ids.add(sid)
                 self.schema_bodies[sid] = schema
-                self.schema(schema, path, sid in targets)
+                self.schema(schema, path, sid in unapplied)
         if "metadata_schema" in raw:
             self.schema_ids.add("metadata_schema")
             self.schema_bodies["metadata_schema"] = raw["metadata_schema"]
-            self.schema(raw["metadata_schema"], "metadata_schema", "metadata_schema" in targets)
+            self.schema(raw["metadata_schema"], "metadata_schema", "metadata_schema" in unapplied)
 
-    def schema(self, schema: Any, path: str, is_target: bool) -> None:
+    def schema(self, schema: Any, path: str, tier2_unapplied: bool) -> None:
         if not isinstance(schema, dict):
             self.add("S01", path, "a schema is a mapping", "write label, source, null_values, strip, input_fields, wrangling")
             return
@@ -323,8 +316,9 @@ class _Check:
                 self.sum_advices(wrangling, f"{path}.wrangling", fields_)
             if isinstance(wrangling, dict) and isinstance(fields_, dict) and fields_:
                 self.filter_value_problems(wrangling, f"{path}.wrangling", [(path.rsplit(".", 1)[-1], fields_)], joins=False)
-            if isinstance(wrangling, dict) and wrangling.get("tier2") and not is_target:
-                self.add("S07", f"{path}.wrangling.tier2", "tier2 of a schema applies only when the schema is plotted directly",
+            if tier2_unapplied:
+                self.add("S07", f"{path}.wrangling.tier2", "tier2 of a schema applies only when the schema is plotted directly: "
+                         "no plot reads this schema, so these steps would run nowhere (a join reads the tier 1 of its ingredients)",
                          "move the steps to a join, or plot this schema")
 
     def source(self, source: Any, path: str, present: bool) -> None:

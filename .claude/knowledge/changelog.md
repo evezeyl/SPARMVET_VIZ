@@ -4,6 +4,16 @@ Breaking changes are marked ⚠️. Renames that affect the data analysis recipe
 
 ---
 
+## [2026-11-15] — A schema plotted directly runs its own tier 2 (issue #77, RECIPE-DATASET-TIER2-1)
+
+- ⚠️ **Results change, by decision (DEC16, Eve 2026-11-12).** Every table has T1, T2 and T3 with or without a join; a schema that a plot reads directly is a collection and its own `wrangling.tier2` is its T2. Before, the engine read the tier-2 steps of joins only, so these steps were silently ignored: the recipe said one thing and the figure showed another.
+- What changed in the shipped recipes (all pipelines, templates, retest recipes and 39 gallery examples checked before and after; only one schema has a tier-2 list): `1_test_data_ST22_dummy`, schema `ResFinder`, plot `amr_heatmap`. Its T2 and the plot's table now have the column `total_gene_count` and are sorted by it (descending), then by `sample_id`; 70 rows before and after; the picture differs. Its T1 and every join that uses `ResFinder` as an ingredient are unchanged.
+- The T2 of such a schema is stored like a join's (`<name>__T2.parquet`, chained `tier2_key`, ADR-089); an empty list stores nothing (T2 equals T1). A schema's tier 2 is no longer part of the Tier 1 key, so every Tier 1 anchor is rebuilt once.
+- A join reads the T1 of its ingredients (spec line 357). A tier-2 list on a schema that is only an ingredient runs nowhere and is refused at load (S07).
+- One reading for everyone: `utils.recipe_tiers.tier2_steps` (engine, cache keys, HOME badge and tables, export, audit panel, checker, Blueprint lineage, which now notes on a schema's wrangling node that its tier 2 runs only where it is plotted directly).
+
+---
+
 ## [2026-11-06] — Tier 2 stored, export reads what the view shows, ADR-045 fixes
 
 ### Tier 2 as a parquet with a chained key (issue #10, ADR-089)
