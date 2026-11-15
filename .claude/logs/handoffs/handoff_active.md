@@ -732,6 +732,25 @@ Live progress file: `tmpAI/coordinator/progress_2026-11-14_session3.md` (not in 
 17. N6: AUDIT-REPAIR-1: for the four old words (`persona`, `manifest`, `profile`, `project`) and one UML tag, fix the text or adapt the exclusions. `recipe` waits for RECIPE-WORD-1. Evidence: `assets/scripts/audit_old_words.py --check`, `assets/scripts/audit_uml_model.py`.
 18. N14: TEST-ORDER-1 tests not written yet: where the audit writes a step (P5), the key of T3 and the per-collection key (P4), and property tests with `hypothesis` (a new dependency, D9). They depend on the unconfirmed stage-2 spec v0.1. Options: confirm the spec and allow the dependency, or leave those tests out.
 19. N16: `audit_uml_model.py` reports 6 violations in PKG-TIERS of `docs/UML/app.mdj`: five missing arrows (from `assets/scripts` to transformer, utils, viz_factory and viz_gallery; from `libs/test_lab/pyproject.toml` to utils) and one stale arrow (transformer to ingestion). Not new (no importing file gained an import in this session). A UML edit needs Eve's yes. Options: not recorded in the progress file.
+
+## Handoff 2026-11-15 08:45 (coordinator): Eve's decisions of this morning, what is built and in review
+
+**Decisions (Eve, 2026-11-15, channel M80 to M82):**
+- Seed: fixed at 0 by default; HOME draws no seed per session; the export uses the recipe's seed.
+- Categorical: the standard follows Polars; `Categorical` and `String` are both usable (DEC27 is a refactoring choice only). Shipped recipes change only after the scientist list is shown to Eve.
+- `polars_join_where` is renamed `modif_join_where` (DEC31, DEC32).
+- Ties in `top_k` / `bottom_k`: inform the user; warnings clearly distinct from errors; test what Polars does first.
+- The 64-bit sum: scientist's feedback only, low priority.
+- Empty `polars_select` `exprs`, `polars_unpivot` `on`, `polars_top_k` / `polars_bottom_k` `by`: refused with the reason.
+
+**New question for the panel (no build):** a restricted, structured Python file and back to a recipe (PY-RECIPE-1).
+
+**State (2026-11-15 08:45):**
+- HEAD `293d9c39`, not pushed (origin/dev `f769c8dd`).
+- Builders running: `task/seed-holds` (fixes), `task/typed-values` (additions after a review that said merge), `task/row-order`.
+- In review: `task/viz-params` (V3), `task/viz-errors` (V6, V7).
+- Panel round 5 running (brief `tmpAI/panel/brief_round5.md`).
+- Next: merge seed-holds, then typed-values; the full controls; push dev; then PLOT-TABLE-ORDER-1 and V4.
 20. N17: `.claude/rules/rules_verification_testing.md` section 8: add `--durations=10` after `-q` in the browser command, and correct "about 4 minutes" (the gate took 8 min 13 s). It is a rule file: Eve's double confirmation.
 
 **Blueprint**
