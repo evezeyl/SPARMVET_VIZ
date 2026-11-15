@@ -160,6 +160,22 @@ def value_choices(lf, column: str) -> dict:
     return choices
 
 
+# PROVISIONAL (L10): above this many values the dialog serves the list on demand while typing (Shiny's server-side selectize shows
+# at most 1000 matches of a search); up to it the whole list is in the page, nothing is hidden.
+LIST_ON_DEMAND_FROM = 1000
+
+
+def list_note(count: int) -> str:
+    """What the dialog says under a list of values served on demand (PROVISIONAL, L10), or "" when the whole list is shown.
+
+    The list shows at most 1000 matches of what is typed; when more values exist the note says so, so that no value is hidden in silence.
+    """
+    if count <= LIST_ON_DEMAND_FROM:
+        return ""
+    return (f"This column has {count:,} different values. The list shows at most {LIST_ON_DEMAND_FROM:,} matches of what you type: "
+            "when more values match, type more letters to see the others.")
+
+
 def pick_values(choices: dict, labels) -> list:
     """The real values of the texts the user picked, in the order picked; a text that is not in the column is reported."""
     missing = [label for label in labels if label not in choices]

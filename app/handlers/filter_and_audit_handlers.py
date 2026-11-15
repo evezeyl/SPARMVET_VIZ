@@ -31,7 +31,7 @@ from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
     dialog_value, not_offered_line, value_choices, value_widget_for, AuditStepError, dialog_frame,
-    column_bounds, compose_datetime, compose_duration, compose_time, control_hint,
+    column_bounds, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
 from utils.filter_values import UNIT_NS, FilterValueError, kind_of
 from utils.missing_values import dialog_lines, na_choice_texts
@@ -285,9 +285,19 @@ def define_filter_audit_server(input, output, session, *,
         widget = value_widget_for(dtype, col in disc, op) if dtype is not None else "text"
         if widget == "list":
             try:
-                return ui.input_selectize(
-                    "fb_value", label=None, choices=list(value_choices(lf, col)), selected=[], multiple=True,
-                    options={"placeholder": "Select value(s)…", "plugins": ["remove_button"], "dropdownParent": "body"},
+                labels = list(value_choices(lf, col))
+                options = {"placeholder": "Select value(s)…", "plugins": ["remove_button"], "dropdownParent": "body"}
+                if len(labels) <= LIST_ON_DEMAND_FROM:
+                    return ui.input_selectize("fb_value", label=None, choices=labels, selected=[], multiple=True, options=options)
+                # PROVISIONAL (L10): a long list is served on demand while typing (at most 1000 matches of a search); the
+                # whole list in the page froze the dialog (10000 values 6.6 s, 30000 values 87 s). The note says that more values match.
+                # The choices are sent after the page has the box (on_flushed): the update of an input made in the same flush is lost.
+                session.on_flushed(
+                    lambda: ui.update_selectize("fb_value", choices=labels, selected=None, server=True, session=session), once=True)
+                return ui.div(
+                    ui.input_selectize("fb_value", label=None, choices=[], selected=[], multiple=True,
+                                       options={**options, "maxOptions": LIST_ON_DEMAND_FROM}),
+                    ui.tags.small(list_note(len(labels)), class_="text-muted fst-italic d-block spv-text-meta", id="fb_value_note"),
                 )
             except Exception:
                 _log.exception("filter dialog: the values of column %r could not be listed", col)

@@ -11,7 +11,7 @@ import pytest
 
 from app.modules.t3_audit_engine import (
     CLOSED_CHOICES, between_prose, closed_phrase, column_type_line, column_types, describe_filter, number_range,
-    column_bounds, compose_datetime, compose_duration, compose_time, ops_for_column, pick_values, typed_operand, value_choices,
+    LIST_ON_DEMAND_FROM, column_bounds, compose_datetime, list_note, compose_duration, compose_time, ops_for_column, pick_values, typed_operand, value_choices,
     value_widget_for,
 )
 from utils.filter_values import FilterValueError
@@ -489,3 +489,20 @@ def test_the_default_boxes_reproduce_the_extremes_so_a_between_on_them_keeps_eve
     got = dialog_value(lf, "t", pl.Time, False, "between", low=compose_time(lo["h"], lo["min"], lo["s"]), high=compose_time(hi["h"], hi["min"], hi["s"]))
     row = {"column": "t", "op": got[0], "value": got[1], "dtype": "Time", "na": "remove", "closed": got[2]}
     assert _apply_filter_rows(lf, [row]).collect()["s"].to_list() == ["a", "b"]
+
+
+# -- the value list served on demand (PROVISIONAL, L10)
+
+def test_a_short_list_is_shown_whole_with_no_note():
+    assert list_note(0) == list_note(1) == list_note(LIST_ON_DEMAND_FROM) == ""
+
+
+@pytest.mark.parametrize("count", [LIST_ON_DEMAND_FROM + 1, 30_000, 100_000])
+def test_a_long_list_says_how_many_values_exist_and_that_a_search_shows_at_most_a_thousand(count):
+    text = list_note(count)
+    assert f"{count:,}" in text and "1,000" in text and "type more letters" in text
+
+
+def test_the_pick_of_the_last_of_100000_values_is_the_real_value():
+    lf = pl.LazyFrame({"name": [f"name_{i:06d}" for i in range(100_000)]})
+    assert dialog_value(lf, "name", pl.String, False, "in", picked=["name_099999"])[:2] == ("in", ["name_099999"])
