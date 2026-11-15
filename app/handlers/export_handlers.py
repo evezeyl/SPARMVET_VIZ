@@ -23,7 +23,7 @@ from pathlib import Path
 
 from shiny import reactive, render, ui
 
-from app.modules.t3_audit_engine import _apply_filter_rows, _op_label
+from app.modules.t3_audit_engine import _apply_filter_rows, _op_label, between_prose
 
 
 # ---------------------------------------------------------------------------
@@ -378,7 +378,11 @@ def _build_methods_section(
                     ", ".join(f'"{v}"' for v in val) if isinstance(val, list)
                     else f'"{val}"'
                 )
-                detail = f"where **{col}** is {op} {val_str}"
+                if params.get("op") == "between" and isinstance(val, list) and len(val) == 2:
+                    # ADR-104 point 8: the report says which ends of the range were included (an old step: both)
+                    detail = f"where **{col}** is " + between_prose(val, params.get("closed", "both"))
+                else:
+                    detail = f"where **{col}** is {op} {val_str}"
                 # NA-RULE-63: the choice made for the rows with no value in the column (an old step removed them)
                 detail += (", keeping the rows with no value in **" + col + "**"
                            if params.get("na") == "keep"
