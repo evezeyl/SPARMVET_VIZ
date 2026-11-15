@@ -26,8 +26,6 @@ from viz_factory.registry import register_plot_component
                    "default": "fixed", "options": ["fixed", "free", "free_x", "free_y"]},
         "dir": {"widget": "enum", "label": "Fill direction", "required": False,
                 "default": "h", "options": ["h", "v"]},
-        "strip_position": {"widget": "enum", "label": "Strip label position", "required": False,
-                           "default": "top", "options": ["top", "bottom", "left", "right"]},
     },
     "description": "Wrap a 1D sequence of panels by a single variable into a 2D grid; the default faceting choice when you have one grouping variable.",
     "yaml_example": "layers:\n  - name: facet_wrap\n    params:\n      facets: Country\n      ncol: 3",

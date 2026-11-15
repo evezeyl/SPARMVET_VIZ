@@ -294,6 +294,16 @@ def handle_fill_cmap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
 
 # ── Viridis scales ────────────────────────────────────────────────────────────
 
+def _viridis_colour_map(spec: Dict[str, Any]) -> Dict[str, Any]:
+    """The colour map of a viridis scale is written `option` (or `cmap_name`), never both: plotnine refuses `option`."""
+    spec = dict(spec)
+    if "cmap_name" in spec and "option" in spec:
+        raise ValueError("Write either `option` or `cmap_name` for the colour map of a viridis scale, not both.")
+    if "cmap_name" not in spec:
+        spec["cmap_name"] = spec.pop("option", "viridis")
+    return spec
+
+
 @register_plot_component("scale_color_viridis_d", ui_schema={
     "label": "Color viridis (discrete)",
     "category": "scale",
@@ -303,12 +313,11 @@ def handle_fill_cmap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "plotnine": "own",
     "allow_extra_params": False,
     "params": _VIRIDIS_PARAMS,
-    "description": "Map a discrete colour variable to the perceptually-uniform viridis palette; the recommended default for discrete colour scales \u2014 accessible to colour-blind viewers. Not in plotnine: calls scale_color_cmap_d and takes the colour map from `option` (viridis when absent), written as `cmap_name`.",
+    "description": "Map a discrete colour variable to the perceptually-uniform viridis palette; the recommended default for discrete colour scales \u2014 accessible to colour-blind viewers. Not in plotnine: calls scale_color_cmap_d and takes the colour map from `option` (viridis when absent), written as `cmap_name`; give `option` or `cmap_name`, not both (the pair is refused).",
     "yaml_example": "layers:\n  - name: scale_color_viridis_d\n    params:\n      option: D",
 })
 def handle_color_viridis_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
-    if "cmap_name" not in spec:
-        spec["cmap_name"] = spec.pop("option", "viridis")
+    spec = _viridis_colour_map(spec)
     return p + scale_color_cmap_d(**spec)
 
 
@@ -321,12 +330,11 @@ def handle_color_viridis_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "plotnine": "own",
     "allow_extra_params": False,
     "params": _VIRIDIS_PARAMS,
-    "description": "Map a discrete fill variable to the viridis palette; use for grouped bars or heatmap categories where colour-blind accessibility matters. Not in plotnine: calls scale_fill_cmap_d and takes the colour map from `option` (viridis when absent), written as `cmap_name`.",
+    "description": "Map a discrete fill variable to the viridis palette; use for grouped bars or heatmap categories where colour-blind accessibility matters. Not in plotnine: calls scale_fill_cmap_d and takes the colour map from `option` (viridis when absent), written as `cmap_name`; give `option` or `cmap_name`, not both (the pair is refused).",
     "yaml_example": "layers:\n  - name: scale_fill_viridis_d\n    params:\n      option: D",
 })
 def handle_fill_viridis_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
-    if "cmap_name" not in spec:
-        spec["cmap_name"] = spec.pop("option", "viridis")
+    spec = _viridis_colour_map(spec)
     return p + scale_fill_cmap_d(**spec)
 
 
@@ -343,12 +351,11 @@ def handle_fill_viridis_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "begin": {"widget": "number", "label": "Start of palette range (0–1)", "required": False, "default": 0},
         "end": {"widget": "number", "label": "End of palette range (0–1)", "required": False, "default": 1},
     },
-    "description": "Map a continuous colour variable to the perceptually-uniform viridis palette; the recommended default for sequential continuous colour scales. Not in plotnine: calls scale_color_cmap and takes the colour map from `option` (viridis when absent), written as `cmap_name`.",
+    "description": "Map a continuous colour variable to the perceptually-uniform viridis palette; the recommended default for sequential continuous colour scales. Not in plotnine: calls scale_color_cmap and takes the colour map from `option` (viridis when absent), written as `cmap_name`; give `option` or `cmap_name`, not both (the pair is refused).",
     "yaml_example": "layers:\n  - name: scale_color_viridis_c\n    params:\n      option: D",
 })
 def handle_color_viridis_c(p: ggplot, spec: Dict[str, Any]) -> ggplot:
-    if "cmap_name" not in spec:
-        spec["cmap_name"] = spec.pop("option", "viridis")
+    spec = _viridis_colour_map(spec)
     return p + scale_color_cmap(**spec)
 
 
@@ -365,12 +372,11 @@ def handle_color_viridis_c(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "begin": {"widget": "number", "label": "Start of palette range (0–1)", "required": False, "default": 0},
         "end": {"widget": "number", "label": "End of palette range (0–1)", "required": False, "default": 1},
     },
-    "description": "Map a continuous fill variable to the viridis palette; use for tile/raster heatmaps where perceptual uniformity is required. Not in plotnine: calls scale_fill_cmap and takes the colour map from `option` (viridis when absent), written as `cmap_name`.",
+    "description": "Map a continuous fill variable to the viridis palette; use for tile/raster heatmaps where perceptual uniformity is required. Not in plotnine: calls scale_fill_cmap and takes the colour map from `option` (viridis when absent), written as `cmap_name`; give `option` or `cmap_name`, not both (the pair is refused).",
     "yaml_example": "layers:\n  - name: scale_fill_viridis_c\n    params:\n      option: D",
 })
 def handle_fill_viridis_c(p: ggplot, spec: Dict[str, Any]) -> ggplot:
-    if "cmap_name" not in spec:
-        spec["cmap_name"] = spec.pop("option", "viridis")
+    spec = _viridis_colour_map(spec)
     return p + scale_fill_cmap(**spec)
 
 
@@ -592,7 +598,7 @@ def _resolve_continuous_spec(spec: Dict[str, Any]) -> Dict[str, Any]:
         "expand": {"widget": "string", "label": "Axis expand (e.g. [0, 0])", "required": False},
         "breaks_integer": {"widget": "bool", "label": "Force integer breaks", "required": False, "default": False},
     },
-    "description": "Control x-axis breaks, labels, limits, and expand for continuous numeric variables; use to customise tick spacing or suppress auto-expansion. Differs from plotnine: `breaks_integer: true` is accepted and sets the breaks to whole numbers (it is not a plotnine argument).",
+    "description": "Control x-axis breaks, labels, limits, and expand for continuous numeric variables; use to customise tick spacing or suppress auto-expansion. Differs from plotnine: `breaks_integer: true` is accepted and sets the breaks to whole numbers (it is not a plotnine argument); when `breaks` is also given, `breaks` is used and `breaks_integer` is ignored.",
     "yaml_example": "layers:\n  - name: scale_x_continuous\n    params:\n      breaks: [0, 25, 50, 75, 100]",
 })
 def handle_x_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -612,7 +618,7 @@ def handle_x_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "expand": {"widget": "string", "label": "Axis expand (e.g. [0, 0])", "required": False},
         "breaks_integer": {"widget": "bool", "label": "Force integer breaks", "required": False, "default": False},
     },
-    "description": "Control y-axis breaks, labels, limits, and expand for continuous numeric variables; use to set a fixed y range or custom tick marks. Differs from plotnine: `breaks_integer: true` is accepted and sets the breaks to whole numbers (it is not a plotnine argument).",
+    "description": "Control y-axis breaks, labels, limits, and expand for continuous numeric variables; use to set a fixed y range or custom tick marks. Differs from plotnine: `breaks_integer: true` is accepted and sets the breaks to whole numbers (it is not a plotnine argument); when `breaks` is also given, `breaks` is used and `breaks_integer` is ignored.",
     "yaml_example": "layers:\n  - name: scale_y_continuous\n    params:\n      limits: [0, 100]",
 })
 def handle_y_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -875,7 +881,6 @@ def handle_y_sqrt(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "allow_extra_params": True,
     "params": {
         "name": {"widget": "string", "label": "Axis label", "required": False},
-        "linear_width": {"widget": "number", "label": "Linear region half-width (linthresh)", "required": False, "default": 1},
         "breaks": {"widget": "string", "label": "Break points", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
     },
@@ -896,7 +901,6 @@ def handle_x_symlog(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "allow_extra_params": True,
     "params": {
         "name": {"widget": "string", "label": "Axis label", "required": False},
-        "linear_width": {"widget": "number", "label": "Linear region half-width (linthresh)", "required": False, "default": 1},
         "breaks": {"widget": "string", "label": "Break points", "required": False},
         "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
     },
@@ -1240,7 +1244,7 @@ def _coerce_tuple_kwargs(spec: Dict[str, Any], keys=("h", "c", "l", "range")) ->
         "range": {"widget": "string", "label": "Opacity range as [min, max] (0–1)", "required": False, "default": "[0.1, 1]"},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
-    "description": "Shorthand continuous alpha scale; equivalent to scale_alpha_continuous \u2014 maps a numeric variable to transparency. Differs from plotnine: a list of two items given for `h`, `c`, `l` or `range` is turned into a tuple, because YAML writes lists and plotnine needs tuples.",
+    "description": "Shorthand continuous alpha scale; equivalent to scale_alpha_continuous \u2014 maps a numeric variable to transparency. Differs from plotnine: a list of two items given for `range` is turned into a tuple, because YAML writes lists and plotnine needs tuples.",
     "yaml_example": "layers:\n  - name: scale_alpha\n    params:\n      range: [0.3, 1.0]",
 })
 def handle_alpha(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -1280,7 +1284,7 @@ def handle_alpha_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "range": {"widget": "string", "label": "Output size range as [min, max] (pt)", "required": False, "default": "[1, 6]"},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
-    "description": "Shorthand continuous size scale; equivalent to scale_size_continuous \u2014 maps a numeric variable to point size. Differs from plotnine: a list of two items given for `h`, `c`, `l` or `range` is turned into a tuple, because YAML writes lists and plotnine needs tuples.",
+    "description": "Shorthand continuous size scale; equivalent to scale_size_continuous \u2014 maps a numeric variable to point size. Differs from plotnine: a list of two items given for `range` is turned into a tuple, because YAML writes lists and plotnine needs tuples.",
     "yaml_example": "layers:\n  - name: scale_size\n    params:\n      range: [1, 8]",
 })
 def handle_size(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -1320,7 +1324,7 @@ def handle_size_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "name": {"widget": "string", "label": "Legend title", "required": False},
         "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
     },
-    "description": "Map a continuous variable to point area (not radius); use for bubble charts where area proportional to value is the perceptually correct encoding. Differs from plotnine: a list of two items given for `h`, `c`, `l` or `range` is turned into a tuple, because YAML writes lists and plotnine needs tuples.",
+    "description": "Map a continuous variable to point area (not radius); use for bubble charts where area proportional to value is the perceptually correct encoding. Differs from plotnine: a list of two items given for `range` is turned into a tuple, because YAML writes lists and plotnine needs tuples.",
     "yaml_example": "layers:\n  - name: scale_size_area\n    params:\n      max_size: 10",
 })
 def handle_size_area(p: ggplot, spec: Dict[str, Any]) -> ggplot:

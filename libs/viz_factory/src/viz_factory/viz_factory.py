@@ -3,7 +3,7 @@ from plotnine import ggplot, aes
 from typing import Dict, Any, List
 # Explicit imports to ensure registration occurs
 from viz_factory.registry import get_component
-from viz_factory.plot_config_resolver import resolve_plot_config
+from viz_factory.plot_config_resolver import BATCHED_COMPONENTS, SEEDED_JITTER_COMPONENTS, resolve_plot_config
 from utils.engines import engine_problem
 from utils.errors import VisualizationError
 from utils.filter_values import coerce_filter_value
@@ -58,8 +58,7 @@ def _seed_random_components(layer_name: str, params: dict, random_state) -> dict
         params["position"] = position_jitter(random_state=_generator(params.pop("random_state", random_state)))
     elif position == "jitterdodge":
         params["position"] = position_jitterdodge(random_state=_generator(params.pop("random_state", random_state)))
-    elif (layer_name == "geom_jitter" and "position" not in params) or \
-            layer_name in ("position_jitter", "position_jitterdodge"):
+    elif layer_name in SEEDED_JITTER_COMPONENTS and not (layer_name == "geom_jitter" and "position" in params):
         params["random_state"] = _generator(params.get("random_state", random_state))
     return params
 
@@ -332,7 +331,7 @@ class VizFactory:
             # Strip internal _tier / _meta keys before passing to components.
             layer_params = {k: v for k, v in layer_spec.get("params", {}).items()}
 
-            if layer_name == "element_text":
+            if layer_name in BATCHED_COMPONENTS:
                 # Collect axis-text overrides; target is the theme kwarg name.
                 target = layer_params.pop("target", None)
                 if target:

@@ -98,17 +98,9 @@ def test_the_catalog_has_every_component_and_is_plain_data():
     assert catalog["annotate"] is None
 
 
-# Schema parameters that plotnine refuses (the form offers them and the plot fails): ggplot2 names, not plotnine's.
-# A ratchet: a new wrong declaration fails the test, and fixing one forces this list to shrink. Issue #88.
-KNOWN_REFUSED_SCHEMA_PARAMETERS = {
-    "geom_density_2d": ["contour_var"],
-    "geom_label": ["fontface", "hjust", "vjust"],
-    "geom_quantile": ["method"],
-    "geom_rug": ["outside"],
-    "geom_text": ["check_overlap", "fontface", "hjust", "vjust"],
-    "stat_density_2d": ["adjust", "h"],
-    "stat_quantile": ["method"],
-}
+# Schema parameters that plotnine refuses (the form offers them and the plot fails): none since issue #88 was fixed.
+# A new wrong declaration fails the test.
+KNOWN_REFUSED_SCHEMA_PARAMETERS = {}
 
 
 def test_the_schema_parameters_of_geoms_and_stats_are_accepted_by_plotnine():

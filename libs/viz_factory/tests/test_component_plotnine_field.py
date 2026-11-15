@@ -25,6 +25,7 @@ import pytest
 from plotnine import ggplot, geom_point, theme_bw
 
 import viz_factory  # noqa: F401  (importing it registers the components)
+from viz_factory.plot_config_resolver import FACTORY_NAMED_COMPONENTS
 from viz_factory.registry import COMPONENT_SCHEMAS, PLOT_COMPONENTS
 
 FIELD = "plotnine"
@@ -37,6 +38,8 @@ def derive_kind(func, name: str) -> str:
     plotnine_object = getattr(plotnine, name, None)
     if plotnine_object is None:
         return "own"
+    if name in FACTORY_NAMED_COMPONENTS:
+        return "modified"  # the factory seeds or batches it by name, outside the handler
     function = ast.parse(textwrap.dedent(inspect.getsource(func))).body[0]
     body = list(function.body)
     if body and isinstance(body[0], ast.Expr) and isinstance(getattr(body[0], "value", None), ast.Constant):
@@ -188,3 +191,55 @@ def test_facet_wrap_is_exact_and_leaves_the_recipe_parameters_alone():
     spec = {"facets": "g"}
     PLOT_COMPONENTS["facet_wrap"](ggplot(), spec)
     assert spec == {"facets": "g"}
+
+
+def _refused_by_plotnine(name: str, argument: str) -> bool:
+    """Ask plotnine itself whether it refuses the argument: a layer when its geom/stat is built, others at the call."""
+    from plotnine.exceptions import PlotnineError
+    from viz_factory.arguments import _Geom, _Stat, _wrapped_object
+    wrapped = _wrapped_object(name)
+    if wrapped is None:
+        return False
+    if inspect.isclass(wrapped) and issubclass(wrapped, (_Geom, _Stat)):
+        try:
+            wrapped(**{argument: None}).to_layer()
+            return False
+        except PlotnineError as err:
+            return "not understood" in str(err)
+        except Exception:  # a value problem, not a name problem
+            return False
+    parameters = inspect.signature(wrapped).parameters.values()
+    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in parameters):
+        return False
+    return argument not in {p.name for p in parameters}
+
+
+def test_an_exact_component_declares_only_parameters_plotnine_accepts():
+    refused = {}
+    for name, schema in COMPONENT_SCHEMAS.items():
+        if schema[FIELD] != "exact":
+            continue
+        bad = sorted(a for a in (schema.get("params") or {}) if _refused_by_plotnine(name, a))
+        if bad:
+            refused[name] = bad
+    assert refused == {}, "an `exact` component declares parameters its plotnine object refuses"
+
+
+def test_a_component_the_factory_names_specially_is_never_exact():
+    assert FACTORY_NAMED_COMPONENTS <= set(PLOT_COMPONENTS)
+    assert [n for n in FACTORY_NAMED_COMPONENTS if COMPONENT_SCHEMAS[n][FIELD] == "exact"] == []
+    assert derive_kind(PLOT_COMPONENTS["geom_jitter"], "geom_jitter") == "modified"
+
+
+def test_viridis_c_refuses_option_together_with_cmap_name_and_keeps_each_alone():
+    for name in ("scale_color_viridis_c", "scale_fill_viridis_c", "scale_color_viridis_d", "scale_fill_viridis_d"):
+        with pytest.raises(ValueError, match="not both"):
+            PLOT_COMPONENTS[name](ggplot(), {"cmap_name": "magma", "option": "plasma"})
+        PLOT_COMPONENTS[name](ggplot(), {"option": "plasma"})
+        PLOT_COMPONENTS[name](ggplot(), {"cmap_name": "magma"})
+
+
+def test_the_tuple_sentence_of_alpha_and_size_scales_names_only_range():
+    for name in ("scale_alpha", "scale_size", "scale_size_area"):
+        description = COMPONENT_SCHEMAS[name]["description"]
+        assert "`h`, `c`" not in description and "`range`" in description
