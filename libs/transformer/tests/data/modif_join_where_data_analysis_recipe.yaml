@@ -1,18 +1,18 @@
-# Format 1 recipe of the 1:1:1 pair for polars_join_where (two ingredients, run by the assembler).
-id: polars_join_where
+# Format 1 recipe of the 1:1:1 pair for modif_join_where (two ingredients, run by the assembler).
+id: modif_join_where
 spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Test pair of polars_join_where
-  description: 'A join on conditions needs two ingredients: the left data is polars_join_where_test.tsv
-    and the right data polars_join_where_test_right.tsv. Run by the assembler, not by the
+  label: Test pair of modif_join_where
+  description: 'A join on conditions needs two ingredients: the left data is modif_join_where_test.tsv
+    and the right data modif_join_where_test_right.tsv. Run by the assembler, not by the
     wrangler (1:1:1 law, rules_data_engine.md section 2).'
 data_schemas:
-  polars_join_where:
+  modif_join_where:
     source:
       type: local_tsv
-      path: libs/transformer/tests/data/polars_join_where_test.tsv
+      path: libs/transformer/tests/data/modif_join_where_test.tsv
     null_values: ['']
     strip: false
     input_fields:
@@ -28,10 +28,10 @@ data_schemas:
     wrangling:
       tier1: []
       tier2: []
-  polars_join_where_right:
+  modif_join_where_right:
     source:
       type: local_tsv
-      path: libs/transformer/tests/data/polars_join_where_test_right.tsv
+      path: libs/transformer/tests/data/modif_join_where_test_right.tsv
     null_values: ['']
     strip: false
     input_fields:
@@ -45,14 +45,14 @@ data_schemas:
       tier1: []
       tier2: []
 joins:
-  polars_join_where:
+  modif_join_where:
     ingredients:
-    - dataset_id: polars_join_where
-    - dataset_id: polars_join_where_right
+    - dataset_id: modif_join_where
+    - dataset_id: modif_join_where_right
     steps:
       tier1:
-      - action: polars_join_where
-        right_ingredient: polars_join_where_right
+      - action: modif_join_where
+        right_ingredient: modif_join_where_right
         predicates:
         - pl.col('v') >= pl.col('lo')
         - pl.col('v') <= pl.col('hi')

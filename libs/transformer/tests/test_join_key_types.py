@@ -72,7 +72,7 @@ def test_string_against_categorical_fails_and_names_everything():
     with pytest.raises(TransformationError) as caught:
         _assemble(_left(pl.String), _right(pl.Categorical), [_join(on=["sample_id"])]).collect()
     text = f"{caught.value} {caught.value.tip}"
-    for part in (RECIPE, JOIN_ID, "step 0", "sample_id", "String", "Categorical", "'R'", "input_fields", JOIN, CAST):
+    for part in (RECIPE, JOIN_ID, "step 1", "sample_id", "String", "Categorical", "'R'", "input_fields", JOIN, CAST):
         assert part in text, f"{part!r} is not in: {text}"
 
 
@@ -140,7 +140,7 @@ def test_the_second_join_is_checked_against_the_result_of_the_first():
     assembler = DataAssembler({"L": _left(pl.String), "R": _right(pl.String), "T": third}, recipe_id=RECIPE, join_id=JOIN_ID)
     with pytest.raises(TransformationError) as caught:
         assembler.assemble(steps).collect()
-    assert "step 1" in str(caught.value) and "'T'" in str(caught.value)
+    assert "step 2" in str(caught.value) and "'T'" in str(caught.value)
 
 
 # -- what is not a type problem -----------------------------------------------------------------
@@ -149,7 +149,7 @@ def _fails_with(left, right, step, *parts):
     with pytest.raises(TransformationError) as caught:
         _assemble(left, right, [step]).collect()
     text = f"{caught.value} {caught.value.tip}"
-    for part in (RECIPE, JOIN_ID, "step 0", "'R'", *parts):
+    for part in (RECIPE, JOIN_ID, "step 1", "'R'", *parts):
         assert part in text, f"{part!r} is not in: {text}"
     return caught.value
 

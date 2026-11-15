@@ -131,7 +131,7 @@ def test_a_join_of_a_string_key_and_a_categorical_key_fails_and_says_how_to_fix_
     with pytest.raises(Exception) as caught:
         _build(_two_tables(tmp_path, "String", "Categorical"))
     text = f"{caught.value} {getattr(caught.value, 'tip', '')}"
-    for part in ("tiny", "'C'", "step 0", "sample_id", "String", "Categorical", "'R'", "input_fields", "polars_cast"):
+    for part in ("tiny", "'C'", "step 1", "sample_id", "String", "Categorical", "'R'", "input_fields", "polars_cast"):
         assert part in text, f"{part!r} is not in: {text}"
 
 

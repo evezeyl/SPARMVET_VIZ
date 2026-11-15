@@ -73,7 +73,12 @@ def test_all_problems_are_reported_not_only_the_first(tmp_path):
 
 def test_a_join_step_in_tier2_is_reported(tmp_path):
     step = {"action": "polars_join", "right_ingredient": "A", "on": ["a"], "how": "left", "maintain_order": "left_right"}
-    problems = _problems(tmp_path, lambda r: r.update(joins={"J": dict(JOIN, steps={"tier1": [], "tier2": [step]})}))
+    def change(r):
+        r.update(joins={"J": dict(JOIN, steps={"tier1": [], "tier2": [step]})})
+        # a plot reads the join, so its tier 2 is applied and J14 stays silent: only the step itself is wrong
+        r["analysis_groups"]["g"]["plots"]["p_j"] = dict(r["analysis_groups"]["g"]["plots"]["p"],
+                                                          spec=dict(r["analysis_groups"]["g"]["plots"]["p"]["spec"], target_dataset="J"))
+    problems = _problems(tmp_path, change)
     assert len(problems) == 1 and "only allowed in tier1" in problems[0].problem
 
 

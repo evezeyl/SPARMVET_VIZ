@@ -169,7 +169,7 @@ def test_a_window_action_without_any_aggregation_is_refused(action):
 # -- 7. predicates that compare columns of different types -----------------------------------------------
 
 def where(left, right, predicates):
-    return run("polars_join_where", left, {"right_ingredient": "R", "predicates": predicates, "__right_df__": right.lazy()})
+    return run("modif_join_where", left, {"right_ingredient": "R", "predicates": predicates, "__right_df__": right.lazy()})
 
 
 def test_where_a_date_against_a_datetime_is_refused_like_an_integer_against_a_float():
@@ -202,7 +202,7 @@ def test_where_the_type_rule_looks_inside_and_or_and_leaves_a_literal_alone():
 def test_the_joins_carry_the_field_of_polars_join_and_the_windows_the_field_of_polars_group_by():
     field = {name: ACTION_SCHEMAS[name]["polars"] for name in ACTION_SCHEMAS if name.startswith("polars_")}
     assert field["polars_join_asof"] == field["polars_join"] == "exact"
-    assert field["polars_join_where"] == field["polars_join"]
+    assert ACTION_SCHEMAS["modif_join_where"]["polars"] == "modified" and field.get("modif_join_where") is None
     assert field["polars_group_by_dynamic"] == field["polars_rolling"] == field["polars_group_by"] == "wrapper"
 
 
@@ -221,7 +221,7 @@ def test_a_polars_panic_in_a_step_becomes_a_plain_error_that_names_the_step(monk
     with pytest.raises(TransformationError) as caught:
         _assemble_with(monkeypatch, PanicException("attempt to divide by zero"))
     text = f"{caught.value} {caught.value.tip}"
-    assert "polars_sort" in text and "step 0" in text and "Polars stopped" in text and "divide by zero" in text
+    assert "polars_sort" in text and "step 1" in text and "Polars stopped" in text and "divide by zero" in text
     assert "PanicException" not in str(caught.value).split("Polars stopped")[0]
 
 
@@ -270,3 +270,16 @@ def test_the_own_sortedness_check_says_what_polars_says_without_by_so_the_polars
         if _not_ascending(frame, "t") != polars_refuses:
             different.append(key)
     assert not different
+
+
+def test_the_old_name_polars_join_where_is_not_registered_and_the_new_name_is():
+    """No alias and no shim (Eve, 2026-11-15): the engine does not know the old name."""
+    assert "polars_join_where" not in AVAILABLE_WRANGLING_ACTIONS and "polars_join_where" not in ACTION_SCHEMAS
+    assert "modif_join_where" in AVAILABLE_WRANGLING_ACTIONS
+
+
+def test_the_engine_refuses_the_old_name_and_names_the_new_one():
+    from transformer.registry import get_action_function
+    with pytest.raises(ValueError, match="modif_join_where") as caught:
+        get_action_function("polars_join_where")
+    assert "not exactly Polars" in str(caught.value)

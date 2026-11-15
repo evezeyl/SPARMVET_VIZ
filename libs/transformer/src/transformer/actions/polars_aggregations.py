@@ -76,7 +76,8 @@ PICKER.update({name: ("aggregation", T2ASM) for name in AGGREGATIONS})
 _frame("polars_sum", "sum",
        "Sum of each column, one row (Polars LazyFrame.sum). A null is skipped (a column with only nulls gives 0), a NaN makes the sum NaN, "
        "a text, Date, Datetime, categorical or list column gives null, a Boolean column gives the number of its true values (an unsigned integer). "
-       "A sum of an integer column larger than the 64-bit range gives a wrong value without an error: convert the column to a float type first.",
+       "A sum of an integer column larger than the 64-bit range gives a wrong value without an error: convert the column to a float type first. "
+       "The sum of an Int32 or UInt32 column wraps around above about 2 thousand million (4 for UInt32) with no error: cast to Int64 first.",
        "- action: polars_sum")
 _frame("polars_min", "min",
        "Smallest value of each column, one row (Polars LazyFrame.min). A null is skipped (only nulls gives null), a NaN is ignored (only NaN gives NaN), "

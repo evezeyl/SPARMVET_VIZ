@@ -55,9 +55,15 @@ OVERRIDE.update({("polars_top_k", "k"): {"widget": "number", "label": "k: how ma
 NOT_EXPOSED["polars_remove"] = {
     "constraints": "an equality written as a keyword (`remove(col=value)`) is the formula `pl.col('col') == value` in `predicates`; one way to write each test"}
 
-TIE_RULE = ("Polars does not promise which of several tied rows are kept at the cut, nor their order (measured with Polars 1.40.1: not the input order). "
-            "A recipe that needs one fixed result ends `by` with a column that is unique per row, for example the column that "
-            "polars_with_row_index writes.")
+def _tie_rule(nan_place: str) -> str:
+    """What was established by running Polars 1.40.1 about ties, NaN and missing values; `nan_place` is first (top_k) or last (bottom_k)."""
+    return ("It returns exactly `k` rows. When several rows are tied at the cut, only some of them are kept: which ones is not fixed, do not rely on it. "
+            f"A NaN (a failed calculation) comes {nan_place}; a missing value is skipped, but rows with no value fill the `k` rows when the real values run out. "
+            "To always keep the same rows, end `by` with a row number (write a polars_with_row_index step first and give its column last in `by`), "
+            "or write polars_sort with maintain_order: true and then polars_head. "
+            "To keep every row tied with the `k` best (possibly more than `k` rows), write polars_rank with method min, then a modif_filter on the rank.")
+
+
 POSITION_RULE = "It works on the order of the table at this step: after an unsorted or reshaping step, write a polars_sort with maintain_order: true first."
 
 _frame("polars_head", "head", f"Keep the first `n` rows (Polars LazyFrame.head). {POSITION_RULE} `n` is written in the step.",
@@ -70,9 +76,9 @@ _frame("polars_slice", "slice", f"Keep `length` rows from row `offset` on, to th
        "- action: polars_slice\n  offset: 10\n  length: 5")
 _frame("polars_gather_every", "gather_every", f"Keep every `n`-th row, starting at row `offset` (Polars LazyFrame.gather_every; the first row is 0). {POSITION_RULE}",
        "- action: polars_gather_every\n  n: 2\n  offset: 0")
-_frame("polars_top_k", "top_k", f"Keep the `k` rows with the largest values of `by`, largest first (Polars LazyFrame.top_k). The order of the result is the order of the values; {TIE_RULE}",
+_frame("polars_top_k", "top_k", f"Keep the `k` rows with the largest values of `by`, largest first (Polars LazyFrame.top_k). The order of the result is the order of the values; {_tie_rule('first')}",
        "- action: polars_top_k\n  k: 10\n  by: [identity, sample_row]\n  reverse: false")
-_frame("polars_bottom_k", "bottom_k", f"Keep the `k` rows with the smallest values of `by`, smallest first (Polars LazyFrame.bottom_k). The order of the result is the order of the values; {TIE_RULE}",
+_frame("polars_bottom_k", "bottom_k", f"Keep the `k` rows with the smallest values of `by`, smallest first (Polars LazyFrame.bottom_k). The order of the result is the order of the values; {_tie_rule('last')}",
        "- action: polars_bottom_k\n  k: 10\n  by: [identity, sample_row]\n  reverse: false")
 _frame("polars_reverse", "reverse", "Turn the row order around: the last row becomes the first (Polars LazyFrame.reverse). The result is exactly the table of the step read from the end; it does not sort.",
        "- action: polars_reverse")

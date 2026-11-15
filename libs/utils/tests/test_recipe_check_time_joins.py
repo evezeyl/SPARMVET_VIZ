@@ -23,7 +23,7 @@ WHERE = {
     "params": {"right_ingredient": {"widget": "string", "required": True},
                "predicates": {"widget": "list", "required": True}, "suffix": {"widget": "string", "required": False}},
 }
-CATALOG = {**CATALOGS, "actions": {**CATALOGS["actions"], "polars_join_asof": ASOF, "polars_join_where": WHERE}}
+CATALOG = {**CATALOGS, "actions": {**CATALOGS["actions"], "polars_join_asof": ASOF, "modif_join_where": WHERE}}
 
 
 def asof_recipe():
@@ -78,7 +78,7 @@ def test_an_asof_step_in_tier_2_of_the_join_is_refused():
 
 def where_recipe():
     raw = asof_recipe()
-    raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "polars_join_where", "right_ingredient": "B", "predicates": ["pl.col('w') > pl.col('t')"]}]
+    raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "modif_join_where", "right_ingredient": "B", "predicates": ["pl.col('w') > pl.col('t')"]}]
     return raw
 
 
@@ -103,3 +103,14 @@ def test_the_key_check_still_asks_a_plain_join_for_its_key():
     raw = asof_recipe()
     raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "polars_join", "right_ingredient": "B", "how": "left"}]
     assert "J05" in codes(raw)
+
+
+def test_the_old_name_polars_join_where_is_refused_and_the_message_names_the_new_one_and_why():
+    """A removed name is refused with its replacement (no alias, it does not run): the action fixes the order, so it is not exactly Polars."""
+    from utils.action_names import REMOVED_ACTIONS
+    raw = where_recipe()
+    raw["joins"]["AB"]["steps"]["tier1"][0]["action"] = "polars_join_where"
+    result = check_recipe(raw, "run", catalogs={**CATALOG, "old_action_names": dict(REMOVED_ACTIONS)}, graph=Graph())
+    problems = [p for p in result.problems if p.code == "ST02"]
+    assert problems and problems[0].severity == "E"
+    assert problems[0].fix == "write modif_join_where" and "not exactly Polars" in problems[0].message

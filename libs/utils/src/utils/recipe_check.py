@@ -47,6 +47,11 @@ TIER3_READ_BY_ENGINE = False
 # Tier-1 actions that only remove or reorder rows: they cannot change the columns or their types (exact names).
 JOIN_KEEPS_COLUMNS = frozenset({action_names.FILTER, action_names.SORT, action_names.UNIQUE, action_names.DROP_NULLS, action_names.SAMPLE})
 
+# Steps whose `maintain_order` says whether the order of the rows is fixed (ST13).
+_ORDER_STEPS = frozenset({action_names.SORT, action_names.UNIQUE, action_names.GROUP_BY, action_names.JOIN})
+
+_SUM_OF_COLUMN = re.compile(r"pl\.col\(\s*['\"]([^'\"]+)['\"]\s*\)\.sum\(\)")
+
 PROFILES = ("run", "build", "gallery", "audit")
 _AUDIT_ID = re.compile(r"^audit_[0-9a-f]{8}_\d+$")
 _SNAKE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -307,6 +312,8 @@ class _Check:
             self.add("S06", f"{path}.wrangling", "wrangling is required", "write wrangling: {tier1: []}")
         else:
             self.step_container(wrangling, f"{path}.wrangling", "S06", self.spec["elements"]["tiers"]["schema"])
+            if isinstance(wrangling, dict) and isinstance(fields_, dict):
+                self.sum_advices(wrangling, f"{path}.wrangling", fields_)
             if isinstance(wrangling, dict) and isinstance(fields_, dict) and fields_:
                 self.filter_value_problems(wrangling, f"{path}.wrangling", [(path.rsplit(".", 1)[-1], fields_)], joins=False)
             if tier2_unapplied:
@@ -408,6 +415,89 @@ class _Check:
                 self.add(code, f"{path}.{tier}", f"{tier} is a list of steps", f"write {tier}: [...]")
                 continue
             self.steps(steps, f"{path}.{tier}", tier)
+        self.order_advices(container, path, tiers)
+        self.tie_advices(container, path, tiers)
+
+    def sum_advices(self, wrangling: dict, path: str, fields: dict) -> None:
+        """ST15 (advice, never blocks): a sum on a column declared Int32 or UInt32 (D43, PROVISIONAL).
+
+        Only where the declared type is known: a step of this schema's own wrangling on a column of its input_fields, from
+        the start of tier 1 until a step that may change the columns (a cast is followed: its dtype becomes the type).
+        Not seen: a sum inside another formula (with_columns, mutate), a type made 32-bit by an earlier step, a join result.
+        """
+        types = {name: definition.get("type") for name, definition in fields.items() if isinstance(definition, dict)}
+        steps = [s for tier in ("tier1", "tier2") for s in (wrangling.get(tier) if isinstance(wrangling.get(tier), list) else [])]
+        positions = [(tier, i) for tier in ("tier1", "tier2") for i, _ in enumerate(wrangling.get(tier) if isinstance(wrangling.get(tier), list) else [], start=1)]
+        for (tier, index), step in zip(positions, steps):
+            if not isinstance(step, dict):
+                return
+            name = step.get("action")
+            where = f"{path}.{tier}[{index}]"
+            if name == action_names.CAST:
+                columns, dtype = step.get("columns"), step.get("dtype")
+                if not isinstance(columns, list) or not isinstance(dtype, str):
+                    return
+                for column in columns:
+                    types[column] = dtype
+                continue
+            wide = []
+            if name == action_names.SUM:
+                wide = list(types)
+            elif name == action_names.CUM_SUM and isinstance(step.get("columns"), list):
+                wide = step["columns"]
+            elif name == action_names.GROUP_BY and isinstance(step.get("named_aggs"), dict):
+                wide = [m for text in step["named_aggs"].values() if isinstance(text, str) for m in _SUM_OF_COLUMN.findall(text)]
+            for column in dict.fromkeys(wide):
+                if types.get(column) in ("Int32", "UInt32"):
+                    self.add("ST15", where,
+                             f"{name} of the column {column!r}, declared {types[column]}: the total of a 32-bit whole-number column wraps around "
+                             "above about 2 thousand million (4 for UInt32) with no error and gives a wrong, possibly negative, number "
+                             "(the checker does not see a sum inside a formula, in a join result, or on a column made 32-bit by an earlier step)",
+                             f"write a polars_cast step to Int64 for {column!r} before this step",
+                             "A")
+            if name not in JOIN_KEEPS_COLUMNS and name not in (action_names.SUM, action_names.CUM_SUM):
+                return  # the columns after this step are not known from the declarations
+
+    def tie_advices(self, container: dict, path: str, tiers: List[str]) -> None:
+        """ST14 (advice, never blocks): every top_k or bottom_k step. The checker cannot know whether ties exist in the data."""
+        for tier in tiers:
+            steps = container.get(tier)
+            for index, step in enumerate(steps if isinstance(steps, list) else [], start=1):
+                if isinstance(step, dict) and step.get("action") in (action_names.TOP_K, action_names.BOTTOM_K):
+                    nan_place = "first" if step["action"] == action_names.TOP_K else "last"
+                    self.add("ST14", f"{path}.{tier}[{index}]",
+                             f"{step['action']} returns exactly k rows; when rows are tied at the limit, which of them are kept is not fixed, do not rely on it. "
+                             f"A NaN comes {nan_place}; rows with no value fill the k rows when values run out",
+                             "to always keep the same rows, add a row number (polars_with_row_index) and give it last in `by`, or use polars_sort with maintain_order then polars_head; "
+                             "to keep every row tied with the k best, use polars_rank (method min) and a filter",
+                             "A")
+
+    def order_advices(self, container: dict, path: str, tiers: List[str]) -> None:
+        """ST13 (advice, never blocks): a position action after a step that does not keep the row order.
+
+        The checker knows an order only from what the recipe states: `maintain_order` of sort, unique, group_by and join
+        (the form requires it, so it is always written). The steps are read in order, tier by tier; the last of these
+        steps that comes before a position action decides. Nothing before it: the order is the file order, no advice.
+        """
+        unstated = None  # (path of the step, action) of the last step that does not keep the order
+        for tier in tiers:
+            steps = container.get(tier)
+            if not isinstance(steps, list):
+                continue
+            for index, step in enumerate(steps, start=1):
+                if not isinstance(step, dict):
+                    continue
+                name = step.get("action")
+                if name in _ORDER_STEPS and "maintain_order" in step:
+                    keeps = step["maintain_order"] not in (False, "none")
+                    unstated = None if keeps else (f"{path}.{tier}[{index}]", name)
+                elif name in action_names.POSITION_ACTIONS and unstated is not None:
+                    self.add("ST13", f"{path}.{tier}[{index}]",
+                             f"{name} keeps rows by their position, but the order of the rows is not fixed by {unstated[1]} "
+                             f"({unstated[0]}, maintain_order: {'none' if unstated[1] == action_names.JOIN else 'false'}): Polars does not promise the same rows. "
+                             "(The checker looks only at steps with a stated order parameter; it can miss, for example, a pivot or an explode before.)",
+                             f"write maintain_order: {'left_right' if unstated[1] == action_names.JOIN else 'true'} in that step, or write a polars_sort step with maintain_order: true before this one",
+                             "A")
 
     def steps(self, steps: list, path: str, tier: str) -> None:
         actions = (self.catalogs or {}).get("actions")
@@ -437,8 +527,11 @@ class _Check:
             if name not in actions:
                 legacy = (self.catalogs or {}).get("old_action_names", {}).get(name)
                 close = difflib.get_close_matches(str(name), list(actions), n=1, cutoff=0.6)
+                why = ""
+                if isinstance(legacy, dict):  # a removed name: the replacement and the reason
+                    why, legacy = f" (removed: {legacy['why']})", legacy["use"]
                 fix = f"write {legacy}" if legacy else f"write {close[0]}" if close else "choose a registered action"
-                self.add("ST02", f"{where}.action", f"{name!r} is not a registered action", fix)
+                self.add("ST02", f"{where}.action", f"{name!r} is not a registered action{why}", fix)
                 continue
             schema = actions[name]
             if not isinstance(schema, dict):
@@ -507,9 +600,14 @@ class _Check:
         if not isinstance(joins, dict):
             self.add("J01", "joins", "joins is a mapping of id to join", "write join id: {...}")
             return
+        unapplied_joins = set(recipe_tiers.unapplied_join_tier2(raw))
         for jid, join in joins.items():
             path = f"joins.{jid}"
             self.join_ids.add(jid)
+            if jid in unapplied_joins:
+                self.add("J14", f"{path}.steps.tier2", "tier2 of a join applies only when a plot reads the join: "
+                         "no plot reads this join, so these steps would run nowhere",
+                         "plot this join, or remove the steps")
             if jid in self.schema_ids:
                 self.add("X1", path, f"the id {jid!r} is also a schema", "a plot's target must name one thing: rename one")
             if not isinstance(join, dict):
@@ -605,13 +703,13 @@ class _Check:
                           "no column is copied; 'anti' removes every row that has a key, because each such row matches itself")
             else:
                 suffix = step.get("suffix") or "_right"
-                effect = (f"if the key is unique in {right_id!r} it adds no row and copies the columns of {right_id!r} again "
-                          f"(named with the suffix {suffix}); if the key repeats, the rows are multiplied (n x n for each repeated key value)")
-            self.add("J12", where,
-                     f"the join of {right_id!r} with itself uses the same key {left_keys} on both sides ('how': {how}): {effect}",
-                     "if this is not intended, remove the step; a self-join is usually written on two different columns "
-                     "(left_on and right_on), for example a column that points to another row",
-                     "A")
+                effect = (f"If each value of the column appears once, the result has the same rows and copies of the columns named `{suffix}`. "
+                          "If a value repeats, rows are multiplied.")
+            if how in ("semi", "anti"):
+                message = f"the join of {right_id!r} with itself uses the same key {left_keys} on both sides ('how': {how}): {effect}"
+            else:
+                message = f"Join of {right_id!r} with itself on the same column ({', '.join(map(repr, left_keys))}). {effect}"
+            self.add("J12", where, message, "Remove the step if you did not mean this.", "A")
         fields_by_table = {table: self.declared_fields(table) for table in set(left_tables) | {right_id}}
         for table, columns in ((None, left_keys), (right_id, right_keys)):
             tables = [t for t in dict.fromkeys(left_tables)] if table is None else [table]
