@@ -925,3 +925,24 @@ Earlier lines above are not edited; where they disagree with the following, the 
 9. Comparisons on Date, Boolean and text columns in the HOME filter.
 10. Small ones: `beeswarm_sina`, the complex template's data files, the orphan fragment, Blueprint's stale view, tier 3 in Blueprint.
 11. The rule-file proposals (double confirmation).
+
+## Handoff 2026-11-15 08:20 (coordinator): two merges, four builds running, panel round 4
+
+**(a) Merged, not pushed.** No control run yet on the merged tree.
+- `05a6fa30`: rule-file proposals. 16 proposals and a README under `.claude/design/decisions_2026-11-14/rule_file_proposals/`. No rule file was edited. A reviewer's verdict: "correct first", seven small corrections, being made now. Then they wait for Eve's double confirmation.
+- `4525fcb1`: VIZ-STANDARD-1, parts V1 and V8. Every plot component carries `plotnine: exact | modified | own`. The factory refuses a `plot_engine` it does not build. Code in `libs/utils/src/utils/engines.py`. Second review: MERGE.
+- `origin/dev` is still `f769c8dd`.
+
+**(b) Running**
+- `task/seed-holds`: SEED-HOLDS-1, fixes after review.
+- `task/typed-values`: EXPORT-FILTER-VALUE-1 and OPERATORS-SCREENS-1, in review by a reviewer who breaks the code.
+- `task/viz-params` (new): VIZ-STANDARD-1 step 3, V3. The shared parameter-reading module moves to `libs/utils`; a compare test; parameter lists read from plotnine with a hand overlay.
+- `task/viz-errors` (new): VIZ-STANDARD-1, V6 and V7. Five silent paths become errors; one error form, `draw_checked`.
+
+**(c) Panel round 4** (brief `tmpAI/panel/brief_round4.md`). The scientist, architect and user viewpoints reported on four open choices: the seed when the recipe writes none; the old type word `categorical`; row order with ties and position, and the prefix of `polars_join_where`; empty values Polars accepts and the 64-bit sum. The proposals go to Eve through session sparmvet-viz-57. Nothing is decided.
+
+**(d) Next, in order**
+1. Merge `seed-holds`, then `typed-values`.
+2. A small builder for the export lines (`plot_engine`, `draw_checked`).
+3. A reviewer runs the full controls (headless, golden, browser gate, audits, doc links); push `dev`.
+4. PLOT-TABLE-ORDER-1, then V4, then V2 + V10 + V9.
