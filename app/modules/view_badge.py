@@ -34,9 +34,8 @@ class ViewBadge:
 
 
 def has_tier2_steps(raw_config: dict, target_dataset: Optional[str]) -> bool:
-    """True when the join that builds the plot's dataset has tier-2 steps.
-
-    A plot that targets a bare data schema (no join) has none, so Result equals Raw.
+    """True when the plot's collection has tier-2 steps: a join's, or the own tier-2 list of a schema the plot
+    reads directly (issue #77). Without them Result equals Raw.
     """
     if not target_dataset:
         return False
