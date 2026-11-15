@@ -6,7 +6,7 @@ sample_id:
   is_entity_key: true
 source:
   original_name: "Source"
-  type: Categorical
+  type: String
   label: "Biological Source"
 year:
   original_name: "Year"
@@ -14,5 +14,5 @@ year:
   label: "Collection Year"
 country:
   original_name: "Country"
-  type: Categorical
+  type: String
   label: "Origin Country"

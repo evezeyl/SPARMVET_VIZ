@@ -5,20 +5,20 @@ sample_id:
   is_entity_key: true
 data:
   original_name: Data
-  type: Categorical
+  type: String
   null_values: ["None"]
   label: Data
 data_type:
   original_name: Data Type
-  type: Categorical
+  type: String
   label: Data Type
 predicted_phenotype:
   original_name: Predicted Phenotype
-  type: Categorical
+  type: String
   label: Predicted Phenotype
 cge_predicted_phenotype:
   original_name: CGE Predicted Phenotype
-  type: Categorical
+  type: String
   label: Cge Predicted Phenotype
 identity:
   original_name: '%Identity'
@@ -34,7 +34,7 @@ hsp_lengthtotal_length:
   label: Hsp Length/Total Length
 contig:
   original_name: Contig
-  type: Categorical
+  type: String
   label: Contig
 start:
   original_name: Start
@@ -46,5 +46,5 @@ end:
   label: End
 accession:
   original_name: Accession
-  type: Categorical
+  type: String
   label: Accession

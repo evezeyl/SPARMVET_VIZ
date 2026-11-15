@@ -3,7 +3,7 @@ sample_id:
   original_name: sample_id
   label: Sample ID
 Source:
-  type: Categorical
+  type: String
   original_name: Source
   label: Biological Source
 Year:
@@ -11,6 +11,6 @@ Year:
   original_name: Year
   label: Sampling Year
 Country:
-  type: Categorical
+  type: String
   original_name: Country
   label: Country of Origin

@@ -3,7 +3,7 @@ sample_id:
   original_name: sample_id
   label: Sample ID
 plasmid_name:
-  type: Categorical
+  type: String
   original_name: Plasmid
   label: Plasmid name
 identity:
@@ -15,6 +15,6 @@ overlap:
   original_name: '%Overlap'
   label: Sequence Overlap
 accession:
-  type: Categorical
+  type: String
   original_name: Accession
   label: NCBI Accession

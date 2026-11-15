@@ -4,13 +4,17 @@ sample_id:
   label: Sample Id
 mic_id:
   original_name: mic_id
-  type: Categorical
+  type: String
   label: Mic Id
 breakpoint:
   original_name: breakpoint
+  # The one shipped Categorical field, kept on purpose as the documented example (Eve, 2026-11-15): two values over
+  # 18437 rows, not plotted, not a join key. Every other nominal field of the shipped recipes is String.
   type: Categorical
   label: Breakpoint
 predicted_phenotype:
   original_name: phenotype
-  type: Categorical
+  # Enum: the order is the clinical scale and is written here; a value outside the list stops the load (names column and value).
+  type: Enum
+  categories: [S, I, R, NI]
   label: Phenotype
