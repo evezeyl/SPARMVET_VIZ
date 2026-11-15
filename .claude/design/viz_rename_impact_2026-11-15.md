@@ -1,63 +1,111 @@
-# Plot components: audit against plotnine, and the impact of the rename (2026-11-15)
+# Plot components: audit against plotnine, and the impact of the rename (2026-11-15, corrected 2026-11-16)
 
 Task VIZ-REGISTRY-AUDIT-1. Status: AUDIT AND PREPARATION ONLY. Nothing is renamed. The rename follows Eve's decision of 2026-11-15
-(ADR-106 note V1-B, channel M106-M108) and waits for her answers in section 7.
-Evidence: `libs/viz_factory/tests/test_registry_audit_vs_plotnine.py` (309 tests, runs plotnine 0.15.4) and
-`assets/scripts/viz_rename_table.py` (table and dry count). Every number below comes from one of the two.
+(ADR-106 note V1-B, channel M106-M108) and waits for her answers in section 8.
 
-Words used: a *component* is one name a recipe can write in `layers:` (for example `geom_point`, `theme_bw`).
-*exact* means the component only passes its parameters to the plotnine object of the same name. *modified* means it adds or changes something.
-*own* means plotnine has no object of that name.
+Where the numbers come from. Every number in this document is produced by one of two things, and nothing is counted by hand:
+
+- the tests in `libs/viz_factory/tests/test_registry_audit_vs_plotnine.py` (they run plotnine 0.15.4 and compare it with the registry);
+- the script `assets/scripts/viz_rename_table.py`. **One command regenerates every table and count of sections 6 and 9:**
+  `PYTHONPATH=. ./.venv/bin/python assets/scripts/viz_rename_table.py report --root .`
+  (the script leaves this document and itself out of the count; the sample of section 6.2 is `... sample --root . --per-class 30 --seed 1`).
+
+Plain words used here. A *component* is one name that a recipe can write in `layers:`, for example `geom_point` (points) or `theme_bw` (a black-and-white look).
+A component is *exact* when it only hands your parameters to the plotnine object of the same name, so you get exactly what the plotnine documentation describes.
+It is *modified* when it adds or changes something. It is *own* when plotnine has nothing of that name.
 
 ## 1. What changes for a recipe maker
 
 1. Every component name in a recipe gets a prefix. `geom_point` becomes `plotnine_geom_point`; `theme_bw` becomes `modif_theme_bw`;
-   `theme_dashboard` becomes `step_theme_dashboard`. The prefix tells you at a glance whether it is exactly plotnine (`plotnine_`),
-   plotnine with a documented change (`modif_`), or the project's own (`step_`).
+   `theme_dashboard` becomes `step_theme_dashboard`. The prefix tells you at a glance: `plotnine_` = exactly plotnine, `modif_` = plotnine with a change that is written down,
+   `step_` = the project's own.
 2. The `theme:` key of a plot and of `plot_defaults` also holds a component name, so it changes too.
-3. An old name is refused. The message says the new name and gives the command that converts your recipes.
-   There is no period in which both spellings work (Eve, 2026-11-15: "we need to detect all errors").
-4. The pictures do not change. The conversion only rewrites names. A test must show this before the rename is accepted (section 6, step 0).
-5. A recipe that was exported before the change (a results bundle) contains old names. It runs only after it is converted, and
-   the conversion changes the recipe file, so its recorded fingerprint (`data_analysis_recipe_sha256`) changes too (section 5, risk R1).
-   This is the one point that touches reproducibility; it needs your decision (question Q1).
+3. An old name is refused. The message gives the new name and the command that converts your recipes. Both spellings never work side by side
+   (Eve, 2026-11-15: "we need to detect all errors").
+4. Pictures must not change. The conversion only rewrites names. A test must prove this before the rename is accepted (section 7, step 0).
+5. A results bundle exported before the change contains old names. It runs only after conversion, and conversion changes the recipe file, so the recipe's recorded fingerprint
+   (`data_analysis_recipe_sha256`) changes. This is the one point that touches reproducibility; it needs your decision (question Q1).
 
 ## 2. The audit, in numbers (plotnine 0.15.4, run)
 
 | What | Count |
 |---|---|
 | Public plotnine objects (`plotnine.__all__`) | 232 |
-| Registered components | 191 (169 have a plotnine name, 22 have none) |
+| Registered components | 191 (169 carry a plotnine name, 22 carry a name plotnine does not have) |
 | Exact / modified / own | 123 / 46 / 22 |
 | Plotnine names not registered | 63 |
-| ... of which not components of a plot (aes, ggplot, ggsave, qplot, session theme setters, the mapping expressions) | 13 |
-| ... of which the other spelling of a registered component (`scale_colour_*` for `scale_color_*`, `geom_bin2d`, `stat_bin2d`, `theme_grey`) | 15 |
-| ... of which real gaps | 35 |
-| Exact components judged by running (example and no parameter) | 123 (122 drawn and compared picture by picture; `geom_smooth` structure only, it needs `scikit-misc` to draw) |
-| Differences in parameters, defaults or the object built, exact components | 0 |
-| Parameters of exact components | 1863, all read from plotnine |
-| Defaults plotnine has that the form cannot show | 54: 36 `nan`, 14 `after_stat(...)`, 8 `{}`, 4 `(-inf, inf)` (the 366 `None` defaults mean "absent") |
-| Parameters plotnine accepts that a recipe cannot write (listed with a reason in the registry) | `data`, `mapping` (59 layers each), `rescaler`, `oob` (31 scales each), `fun_y`, `fun_ymin`, `fun_ymax` (2 each) |
-| Modified components without their exact plotnine one next to them | 46 of 46 |
+| ... not components of a plot (`aes`, `ggplot`, `ggsave`, `qplot`, the session-theme setters, the expressions inside a mapping) | 13 |
+| ... the other spelling of a registered component (`scale_colour_manual` for `scale_color_manual`, `theme_grey`, `geom_bin2d`, `stat_bin2d`) | 15 |
+| ... real gaps | 35 |
+| Exact components compared with the direct plotnine call by running them (example and no parameter) | 123 |
+| Differences found between an exact component and plotnine (parameters, defaults, the plot built, the data drawn, the picture) | 0 |
+| Parameters of exact components, all read from plotnine | 1863 |
+| Modified components that do not offer all the plotnine parameters (section 2.3) | 21 of the 41 that wrap a plotnine object; 165 parameters; 13 of them cannot be written at all |
 
-Plain reading: the exact components are exact. The work is naming, the gaps, and the modified ones.
+How the comparison was made: for each exact component, the component of this project and the direct plotnine call are both asked to build the example from its help text, and again with no parameter.
+Both must give the same plot object. For a layer (a geom or a stat) the table that it will draw must also be equal; for a scale, theme, facet, coordinate or guide the picture must also be equal
+(`geom_smooth` is compared as an object only, it needs a package that is not installed to draw).
 
-### 2.1 The 35 real gaps (plotnine components no registered name covers)
+A default is the value plotnine uses when you write nothing. For 62 parameters of exact components that value is not a plain number or word, so the form cannot show it.
+Example: `geom_bar` draws its `y` as "the number of rows in each bar" (plotnine writes it `after_stat('count')`): a calculation, not a value you could type. The 62 are: 36 "not a number",
+14 calculations like that one, 4 "from minus infinity to infinity", 8 empty settings `{}`. In every case the component still uses plotnine's own default,
+because it hands plotnine nothing when you write nothing. The test `test_the_defaults_the_form_does_not_show_are_the_audited_62` pins the list.
+
+Plain reading: the exact components are exact. The work is the naming, the gaps, the modified components and the defects of section 5.
+
+### 2.1 The 35 real gaps (plotnine components that no registered name covers)
 
 - Scales, 21: the `datetime`, `ordinal`, `desaturate`, `gray` and `grey` variants for `color`, `colour` and `fill` (15); `scale_alpha_datetime`, `scale_alpha_ordinal`,
   `scale_size_datetime`, `scale_size_ordinal` (4); `scale_size_radius`, `scale_stroke` (2).
 - Layers, settings and helpers, 14: `annotation_logticks`, `annotation_stripes`, `expand_limits`, `lims`, `xlim`, `ylim`, `theme`, `watermark`, `stat_pointdensity`,
-  `geom_map` (needs `geopandas`, not installed), and the four labellers `label_both`, `label_context`, `label_value`, `labeller`
-  (a recipe writes their names as the value of the facet parameter `labeller`, which works; see section 4).
-- The exact list is `KNOWN_MISSING` in the test. A new plotnine object at an upgrade fails the test until it is classified.
+  `geom_map` (needs the package `geopandas`, not installed), and the four labellers `label_both`, `label_context`, `label_value`, `labeller`
+  (a recipe writes their names as the value of the facet parameter `labeller`, which works; section 4).
+- The exact list is `KNOWN_MISSING` in the test. A new plotnine object at an upgrade fails the test until somebody classifies it.
 
 ### 2.2 The 46 modified components, run
 
-| Group | Count | Meaning |
+| Group | Count | Meaning, with an example |
 |---|---|---|
-| Plotnine cannot add this object to a plot at all (`plot + element_text()` fails) | 15: `element_blank`, `element_line`, `element_rect`, `element_text`, `position_*` (8), `guide_legend`, `guide_colorbar`, `guide_colourbar` | The component adapts an object to a plot step (`target` names the theme setting, `mapping` names the aesthetic, the position goes to the last layer). An exact plotnine step next to it cannot exist. |
-| Equal to plotnine when the change is not used | 29: `annotate`, `facet_grid`, `ggtitle`, `guides`, `xlab`, `ylab`, `geom_jitter`, `geom_sina`, `stat_sina`, 5 scales, `scale_x_continuous`, `scale_y_continuous`, 13 themes | The change is a seed set by the factory (3), a list turned into a tuple (5), `breaks_integer` (2), extra theme settings (13), a formula for `facets` (1), a clearer refusal when a key is missing (5: `annotate`, `ggtitle`, `xlab`, `ylab`, `guides`). |
-| Different | 2: `stat_function` (a text function), `stat_identity` (does nothing, ignores its parameters) | |
+| Plotnine cannot put this object on a plot by itself | 15: `element_blank`, `element_line`, `element_rect`, `element_text`, `position_*` (8), `guide_legend`, `guide_colorbar`, `guide_colourbar` | In plotnine these are parts that you hand to something else (a text style goes inside `theme(...)`, a position inside a geom). A recipe needs a stand-alone step, so the project adds the missing information. Example: `element_text` here needs `target: axis_text_x`, which says WHICH text to style; plotnine's `element_text` has no such key. For these an exact "plotnine" twin cannot exist as a step. |
+| Equal to plotnine as long as you do not use the extra | 29: `annotate`, `facet_grid`, `ggtitle`, `guides`, `xlab`, `ylab`, `geom_jitter`, `geom_sina`, `stat_sina`, 5 scales, `scale_x_continuous`, `scale_y_continuous`, 13 themes | Example: `theme_bw` here also accepts extra theme settings in the same step; with none written it gives exactly plotnine's `theme_bw`. The extras are: a seed set by the factory (3), a list turned into a tuple (5), `breaks_integer` (2), extra theme settings (13), a formula such as `rows ~ cols` for `facets` (1), a clearer refusal when a key is missing (5: `annotate`, `ggtitle`, `xlab`, `ylab`, `guides`). |
+| Different | 2: `stat_function` (accepts a function written as text), `stat_identity` (does nothing, ignores its parameters) | |
+
+None of the 46 has its exact plotnine twin registered next to it today (tested).
+
+### 2.3 Plotnine parameters that modified components do not offer
+
+The form (Blueprint) and the component's list of parameters offer only what the component declares. For 21 modified components plotnine accepts more.
+Example: `scale_alpha` (transparency scale) does not list `limits`, `breaks`, `labels`, `trans`; plotnine has them.
+A recipe may still write them, the checker lets them through (they are plotnine's own names); but the form never shows them, and for 4 themes they cannot be written at all (section 5).
+Counted by comparing each component's parameter list with plotnine's signature (`data`, `mapping`, `rescaler`, `oob` left out: a table or a function, which a recipe cannot hold).
+
+| Modified component | Plotnine parameters it does not offer | How many | Cannot be written at all |
+|---|---|---|---|
+| `facet_grid` | `as_table`, `drop`, `labeller`, `shrink` | 4 | none |
+| `geom_jitter` | `geom`, `group`, `inherit_aes`, `position`, `random_state`, `raster`, `show_legend`, `stat`, `stroke`, `x`, `y` | 11 | none |
+| `geom_sina` | `adjust`, `bin_limit`, `bins`, `binwidth`, `bw`, `geom`, `group`, `inherit_aes`, `position`, `raster`, `show_legend`, `stat`, `stroke`, `style`, `x`, `y` | 16 | none |
+| `guide_colorbar` | `alpha`, `direction`, `display`, `draw_llim`, `draw_ulim`, `order`, `position`, `theme` | 8 | none |
+| `guide_colourbar` | `alpha`, `direction`, `display`, `draw_llim`, `draw_ulim`, `nbin`, `order`, `position`, `reverse`, `theme` | 10 | none |
+| `guide_legend` | `byrow`, `direction`, `order`, `override_aes`, `position`, `theme` | 6 | none |
+| `guides` | `colour`, `stroke` | 2 | none |
+| `position_dodge` | `preserve` | 1 | none |
+| `scale_alpha` | `aesthetics`, `breaks`, `expand`, `labels`, `limits`, `minor_breaks`, `na_value`, `trans` | 8 | none |
+| `scale_color_hue` | `aesthetics`, `breaks`, `color_space`, `direction`, `drop`, `expand`, `labels`, `limits`, `na_translate`, `na_value`, `s` | 11 | none |
+| `scale_fill_hue` | `aesthetics`, `breaks`, `color_space`, `direction`, `drop`, `expand`, `labels`, `limits`, `na_translate`, `na_value`, `s` | 11 | none |
+| `scale_size` | `aesthetics`, `breaks`, `expand`, `labels`, `limits`, `minor_breaks`, `na_value`, `trans` | 8 | none |
+| `scale_size_area` | `aesthetics`, `breaks`, `expand`, `labels`, `limits`, `minor_breaks`, `na_value`, `trans` | 8 | none |
+| `scale_x_continuous` | `aesthetics`, `guide`, `minor_breaks`, `na_value`, `trans` | 5 | none |
+| `scale_y_continuous` | `aesthetics`, `guide`, `minor_breaks`, `na_value`, `trans` | 5 | none |
+| `stat_function` | `alpha`, `args`, `arrow`, `color`, `geom`, `group`, `inherit_aes`, `lineend`, `linejoin`, `linetype`, `position`, `raster`, `show_legend`, `size`, `stat`, `x`, `y` | 17 | none |
+| `stat_sina` | `adjust`, `alpha`, `bin_limit`, `bins`, `binwidth`, `bw`, `color`, `fill`, `geom`, `group`, `inherit_aes`, `position`, `raster`, `shape`, `show_legend`, `size`, `stat`, `stroke`, `style`, `x`, `y` | 21 | none |
+| `theme_matplotlib` | `fname`, `rc`, `use_defaults` | 3 | `fname`, `rc`, `use_defaults` |
+| `theme_seaborn` | `context`, `font`, `font_scale`, `style` | 4 | `context`, `font`, `font_scale`, `style` |
+| `theme_tufte` | `ticks` | 1 | `ticks` |
+| `theme_xkcd` | `length`, `randomness`, `scale`, `stroke_color`, `stroke_size` | 5 | `length`, `randomness`, `scale`, `stroke_color`, `stroke_size` |
+| TOTAL: 21 components | | 165 | 13 |
+
+Test: `test_the_modified_components_hide_165_plotnine_parameters_from_the_form` and `test_a_hidden_parameter_is_written_through_the_component_unless_it_is_one_of_the_listed_themes_settings`.
+
 
 ## 3. The 22 names that exist in no plotnine
 
@@ -102,96 +150,241 @@ plotnine lets some parameters be Python functions or expressions. A recipe holds
 Short list of components with a function or expression parameter: `stat_summary`, `stat_summary_bin`, `stat_function`, `geom_smooth`, `stat_smooth`,
 all continuous and discrete scales (breaks, limits, labels, trans, rescaler, oob), the facets (`labeller`), every layer (`data`, and the mapping expressions).
 For `stat_summary` a transparent and reproducible way exists today: the named summaries of `fun_data`. A wider list (a quantile with its probability, `min`, `max`) would be
-a project addition and a decision of yours (N28, not decided here). One unchecked path found: `labels` given as a text.
+a project addition and a decision of yours (N28, not decided here). One unchecked path found: `labels` given as a text (defect D4, section 5).
 
-## 5. Impact of the rename (dry run)
+## 5. Defects found by the audit
 
-Counted by `assets/scripts/viz_rename_table.py count` on the tracked files of this branch. A line is counted once per component name on it.
-"Decided alone" means a recipe line `name: <component>` (also the flow form `{name: <component>, ...}`) that a script can rewrite with no doubt.
+Nothing is fixed here (the task is the audit). Each defect is pinned by a test in the audit file: an expected failure that turns into a red test the day somebody fixes it,
+so the entry is then removed. The run that shows each one is given.
 
-| group of files | files | occurrences | decided alone (recipe `name:` line) | to read or decide |
-|---|---|---|---|---|
-| viz library code (registration and name logic) | 16 | 1399 | 0 | 1399 |
-| viz library tests | 221 | 1332 | 408 | 924 |
-| history: logs, archives (kept as they were) | 27 | 723 | 0 | 723 |
-| records: design, knowledge, tasks, workflows | 29 | 430 | 24 | 406 |
-| other tests | 64 | 373 | 48 | 325 |
-| docs pages and READMEs | 13 | 304 | 4 | 300 |
-| gallery recipes and index | 70 | 249 | 87 | 162 |
-| scripts | 5 | 132 | 0 | 132 |
-| plot spec files | 25 | 65 | 62 | 3 |
-| other code (libs, app) | 7 | 43 | 0 | 43 |
-| rule files (listed, never edited by the rename) | 5 | 38 | 0 | 38 |
-| pipeline recipes (outside plots/) | 6 | 13 | 11 | 2 |
-| Blueprint pickers, forms and the agent tool | 1 | 8 | 0 | 8 |
-| template recipes | 4 | 8 | 6 | 2 |
-| retest recipes | 4 | 5 | 5 | 0 |
-| TOTAL | 497 | 5122 | 655 | 4467 |
+| # | Defect | The run that shows it | Pinned by |
+|---|---|---|---|
+| D1 | `theme_seaborn` and `theme_matplotlib` list `base_size` and `base_family` in their form, and refuse them. The message is also wrong: "'base_size' is not an argument of theme_seaborn. Fix: write base_size." | Layer `theme_seaborn` with `base_size: 12` gives `VisualizationError: layer 2 (theme_seaborn): 'base_size' is not an argument of theme_seaborn. Fix: write base_size.` Same for `base_family` and for `theme_matplotlib`. plotnine's `theme_seaborn` takes `style`, `context`, `font`, `font_scale`; `theme_matplotlib` takes `rc`, `fname`, `use_defaults`. | `test_defect_the_theme_setting_works[theme_seaborn offers base_size and refuses it]` and the matplotlib one |
+| D2 | The plotnine parameters of those two themes cannot be reached. The component sends every key that it does not know to `theme(...)`, which refuses it. The same for `theme_tufte` (`ticks`) and `theme_xkcd` (`length`, `randomness`, `scale`, `stroke_color`, `stroke_size`): 13 parameters of 4 themes. | `theme_seaborn` with `style: whitegrid` gives `PlotnineError: 'There no themeable element called: style'`; the direct call `plotnine.theme_seaborn(style='whitegrid')` works. Same for `context`, and `rc` of `theme_matplotlib`. | `test_defect_the_theme_setting_works[...style / context / rc...]`, and `test_a_hidden_parameter_is_written_through_the_component_...` (the list of 13) |
+| D3 | `guide_label` fails on every use. It was meant to set the legend labels through `guide_legend`, which has no `labels` argument. It says so (the message is clear) but it is offered in the form and the picker. | Layer `guide_label` with `mapping: color` and `labels: [a, b, c]` gives `guide_label cannot work: it passes labels to plotnine's guide_legend, which has no such argument.` | `test_defect_guide_label_fails_on_every_use_and_says_so` (question Q7) |
+| D4 | A text where a list was meant is read by plotnine as its letters and drawn with no message: three scales, three parameters. | `scale_x_continuous` with `breaks: [10, 50, 90]` and `labels: abc` draws the labels a, b, c. `scale_color_brewer` with `limits: abc` and `scale_color_manual` with `breaks: abc` are accepted too (the data here has the groups a, b, c, so the picture looks right; with other group names the legend would silently lose them). A text of the wrong length for `labels` IS refused. | `test_defect_a_text_where_a_list_is_meant_is_refused[...]` (3) |
+| D5 | The `geom_jitter` description said "`random_state: null` gives a new one each time", but the factory refuses null (a seed is a number; S1, 2026-11-15). Corrected in this round (text only). | Description before: "...; `random_state: null` gives a new one each time." Now: "...; a seed is a number: `random_state: 0` sets it; `null` and `random` are refused." | `test_no_description_says_that_a_null_or_random_seed_is_allowed` (it fails on the old text; seen) |
 
-How to read it: the recipe files that a person writes (plot specs, pipelines, templates, retest, gallery) are almost all "decided alone".
-Code, tests and prose are not: each line there must be read.
+Smaller point found on the way: the form offers `oob` and `rescaler` of 31 scales to nobody (they take a Python function, a recipe cannot hold one), and a text such as `oob: censor` is refused with "'str' object is not callable";
+plotnine's own function names (`censor`, `squish`) cannot be written. Listed in section 4.
 
-Files that name a component, by group (the 5122 occurrences are in 497 files; the dry run is repeatable):
+## 6. Impact of the rename (dry run)
 
-- Plot spec files (25 files, 65 occurrences, 62 decided alone). The 3 others are `theme:` keys, which are component names (decided with context).
-- Pipeline recipes (6 files), template recipes (4), retest recipes (4): 26 occurrences, 22 decided alone.
-- Gallery recipes and index (70 files, 249 occurrences): 87 recipe lines decided alone; 54 are the field `geom:` of `gallery_index.json`; the other 108 are text
-  (descriptions, comments, the guidance note of each example). Many examples use the flow form `{name: geom_area, params: ...}`, which the script reads.
-- Shipped recipes use 39 of the 191 components in 171 places: 27 exact, 11 modified, 1 own (`theme_legend_position`). The 152 other components are used only by tests and the form.
-- Blueprint pickers and forms: they read the registry (`schema_registry.py`), so the picker and the forms follow the new names by themselves.
-  What is hand-written: the list `_THEME_CHOICES` in `app/handlers/blueprint_handlers.py` (5 names), `app/handlers/home_theater.py` (4 mentions),
-  the agent tool `libs/blueprint_arch/src/blueprint_arch/agent_tools.py` and `agent_context.py`, and the agent instructions `config/ui/agents/blueprint_default.md` (the 8 occurrences counted).
-  The agent asks the registry for the list of components; to verify, not to guess: a test must show it offers only new names.
-- Docs: `docs/workflows/visualisation_factory.qmd` (97), `docs/appendix/viz_factory_components.qmd` (94), `docs/appendix/viz_factory_rationale.qmd` (22),
-  `docs/user_guide/blueprint_data_analysis_recipe_authoring.qmd` (19), `docs/user_guide/reproducible_plots.qmd` (9) and 8 others: 13 files, 304 occurrences.
-- Tests: viz library tests 221 files (1332 occurrences; many are the generated recipes in `libs/viz_factory/tests/test_data/`, 218 files), other tests 64 files (373).
-- Library code: `libs/viz_factory/src` 16 files, 1399 occurrences (each registration, the descriptions, the name logic of section 5.2).
-- Rule files: listed, never edited by the rename, a proposal after your yes: `.claude/rules/rules_viz_factory.md` (13 occurrences, sections 1, 2, 4, 6, 7),
-  `rules_data_analysis_recipe_structure.md` (18), `rules_gallery_standards.md` (3), `rules_documentation_aesthetics.md` (2), `rules_agent_role_bioscientist.md` (4),
-  `rules_code_quality.md`, `rules_test_lab.md`, `workspace_standard.md` (1 each, the words `labs` or `annotate`).
-- History (logs, archives, old conversations): 27 files, 723 occurrences. Kept as they were; they describe the past.
+All counts below are generated by `viz_rename_table.py report --root .` on the committed files of this branch. A line is counted once per component name on it.
+Three separate classes, because they ask different things of a person:
 
-### 5.1 What the script cannot decide alone (examples)
+- **MUST CHANGE**: a recipe line `name: <component>` (also inside a document or a test string), the `theme:` key of a plot spec, a component name written as a string in code or in a test (a registration, a list, an assertion).
+- **STAYS**: plotnine's own names (a direct call or an import in Python, the `wraps` line that names the plotnine object, the value of a `stat`, `position` or `geom` parameter, the `geom` field of the gallery index and the tag strip generated from it: proposal Q5), and history files (logs, archives, old conversations), which are kept as they were.
+- **READ by a person**: a name inside a sentence, a comment, a docstring or a message; every rule file (listed, edited only after your yes). Often the text must change too, but only a person can tell how.
 
-| Kind | Example | Why it needs a person |
+### 6.1 The counts
+
+| group of files | files with a name | MUST CHANGE | STAYS | READ by a person | all |
+|---|---|---|---|---|---|
+| viz library code (registration and name logic) | 13 | 465 | 581 | 325 | 1371 |
+| viz library tests | 221 | 1098 | 90 | 157 | 1345 |
+| history: logs, archives (kept as they were) | 65 | 0 | 799 | 0 | 799 |
+| records: design, knowledge, tasks, workflows | 29 | 33 | 1 | 396 | 430 |
+| other tests | 64 | 294 | 41 | 34 | 369 |
+| docs pages and READMEs | 14 | 60 | 1 | 246 | 307 |
+| gallery recipes and index | 70 | 87 | 70 | 92 | 249 |
+| scripts | 4 | 71 | 55 | 4 | 130 |
+| plot spec files | 25 | 65 | 0 | 0 | 65 |
+| rule files (listed, never edited by the rename) | 8 | 0 | 0 | 43 | 43 |
+| other code (libs, app) | 7 | 18 | 0 | 25 | 43 |
+| pipeline recipes (outside plots/) | 6 | 12 | 0 | 1 | 13 |
+| Blueprint pickers, forms and the agent tool | 1 | 8 | 0 | 0 | 8 |
+| template recipes | 4 | 8 | 0 | 0 | 8 |
+| retest recipes | 4 | 5 | 0 | 0 | 5 |
+| TOTAL | 535 | 2224 | 1638 | 1323 | 5185 |
+
+By kind of occurrence:
+
+- MUST CHANGE: 2224
+    - 1238: a component name written as a whole string (a registration, a list, an assertion)
+    - 730: a recipe line `name: <component>` (block or flow form)
+    - 230: recipe text inside a string: a recipe line `name: <component>` (block or flow form)
+    - 23: the `theme:` key of a plot spec or of plot_defaults (a component name; a `theme:` elsewhere is read first)
+    - 3: recipe text inside a string: the `theme:` key of a plot spec or of plot_defaults (a component name; a `theme:` elsewhere is read first)
+- STAYS: 1638
+    - 799: a history file, kept as it was
+    - 535: a direct plotnine call or import (plotnine's own name)
+    - 184: the `wraps` entry that names the plotnine object itself
+    - 35: the tag strip of a gallery example (generated from the `geom` taxonomy field; proposal Q5)
+    - 35: the value of a `stat` / `position` / `geom` parameter (plotnine's own object; proposal Q5)
+    - 34: the `geom` field of the gallery index (the exact plotnine function name; proposal Q5)
+    - 11: the value of the parameter `stat` (plotnine's own object; proposal Q5)
+    - 3: the value of the parameter `geom` (plotnine's own object; proposal Q5)
+    - 1: recipe text inside a string: the value of the parameter `geom` (plotnine's own object; proposal Q5)
+    - 1: the value of the parameter `position` (plotnine's own object; proposal Q5)
+- READ: 1323
+    - 670: prose
+    - 221: a name inside a sentence or message
+    - 200: a Python comment
+    - 71: a docstring
+    - 56: written text in a recipe (description, label, comment)
+    - 43: a rule file (listed, edited only after Eve's yes)
+    - 42: a recipe comment or continuation line
+    - 7: the value of the key `review_trigger`
+    - 2: text inside a multi-line string
+    - 2: the value of the key `name`
+    - 2: the value of the key `facet_scales`
+    - 2: the value of the key `labs`
+    - 1: the value of the key `theme`
+    - 1: the value of the key `optional`
+    - 1: the value of the key `coordinate_flip`
+    - 1: Python text outside a string or identifier
+    - 1: the value of the key `subtitle`
+
+In words (from the table above): 535 files name a component, 5185 times. 2224 occurrences must change, 1638 stay, 1323 are for a person to read.
+The recipe files a person writes are almost all in MUST CHANGE: 25 plot spec files (65), 6 pipeline recipes (12), 4 templates (8), 4 retest recipes (5), 70 gallery files (87 recipe lines; 70 stay; 92 are text to read).
+Shipped recipes use 39 of the 191 components in 171 places (27 exact, 11 modified, 1 own: `theme_legend_position`); the other 152 components are used only by tests and by the form.
+Blueprint pickers and forms read the registry, so they follow the new names by themselves; what is hand-written is the list `_THEME_CHOICES` in `app/handlers/blueprint_handlers.py` (the 8 occurrences
+of the Blueprint group) and the instructions of the agent; to verify, not to guess: a test must show that the picker and the agent offer only new names.
+Rule files, never edited by the rename: `rules_viz_factory.md`, `rules_data_analysis_recipe_structure.md`, `rules_gallery_standards.md`, `rules_documentation_aesthetics.md`,
+`rules_agent_role_bioscientist.md`, `rules_code_quality.md`, `rules_test_lab.md`, `workspace_standard.md` (43 occurrences; a proposal after your yes).
+
+### 6.2 How reliable the classification is (sampled by eye)
+
+Sample of 30 occurrences from each class (command `sample --per-class 30 --seed N`), every line read and judged.
+
+| Sample | MUST CHANGE wrong | STAYS wrong | READ wrong |
+|---|---|---|---|
+| First pass (seed 1) | 3 of 30 (10%): the `wraps` line that names the plotnine object | 0 of 30 | 6 of 30 (20%): five `yaml_example` texts with `\n  - name: ...` inside one string, one generated tag strip |
+| After the repair of those three causes (seed 2, other lines) | 0 of 30 | 0 of 30 | 0 of 30 |
+
+The line the review quoted, `app/tests/equality/reference_2_test_data_ST22_dummy.py:155`, is a docstring and is now READ (it was labelled a plotnine call).
+Doubtful by nature, left to a person: a theme-element spec such as `legend_title: {name: element_blank}` is counted MUST CHANGE (it names a registered component), but whether the nested element
+follows the new name depends on how the theme settings are converted; a message that tells the user "write name: geom_point" is READ (the message must follow, a person words it).
+0 of 30 in a class bounds that class's error rate at about 10 percent (95 percent confidence); 0 of 90 for the three together, at about 3 percent. It is not zero, and the first pass shows what kind of error remains possible: a line whose role depends on the code around it.
+
+### 6.3 Code that tests a name by its start (must change first)
+
+The prefix `plotnine_` breaks every test of the form "starts with `geom_`". Found by a repeatable search (`viz_rename_table.py sites`): every `startswith(...)`, `removeprefix`, `lstrip`, `.split("_")`,
+prefix string and regular expression with a family name, found by parsing the Python files under `libs/`, `app/` and `assets/scripts/`. 64 lines in 20 files; 23 lines in 6 files are production code.
+
+What breaks at each production site if the names change and the test does not:
+
+| file:line | What it does | What breaks |
 |---|---|---|
-| A component name used as a parameter VALUE | `libs/viz_factory/tests/test_data/stat_bin_test.yaml:12: stat: stat_bin`; `.../position_identity_test.yaml:11: position: position_identity` | It is plotnine's own object passed to a layer, not a component call. Proposal: it stays (question Q5). |
-| The same, in the gallery index and the plot taxonomy | `assets/gallery_data/gallery_index.json:22: "geom": "geom_area"` (54 lines) | The taxonomy says "the exact plotnine function name". Proposal: it stays plotnine's name (Q5). |
-| A `theme:` key | `app/tests/equality/recipes/.../multi_resistance_by_country.yaml:2: theme: theme_light` | In a plot spec or in `plot_defaults` it IS a component name and changes; in a deployment file or a document it may not. The script rewrites it only under `plots/` and `plot_defaults`. |
-| A name in a written text | `libs/viz_factory/tests/test_data/annotate_test.yaml:2: description: DECO-2 smoke test for annotate` | A description, label or comment: an author decides; the script lists it. |
-| A name that is also a recipe key | `libs/utils/src/utils/recipe_spec.yaml:95: labs: "a labs layer"`, `:94: facet_scales: ...`, `:96: coordinate_flip: ...` | A key of the recipe format shares the spelling of a component (`labs`, `guides`, `facet_scales`). The key stays; only the value naming the layer follows. |
-| A name inside code that works by prefix | `libs/viz_factory/src/viz_factory/plot_config_resolver.py:130-160` (`name.startswith("geom_")`, `"scale_fill_"`, ...), `libs/utils/src/utils/recipe_check.py:930` | Not a name: a rule on the shape of names. See 5.2. |
-| A name inside a palette | `plot_config_resolver.py:728-742` decides "the recipe already declares a `scale_fill_*`, so no palette is injected" by prefix | After the rename `plotnine_scale_fill_manual` no longer starts with `scale_fill_`, the palette would be added ON TOP of the user's own scale, silently. This is a bug the rename would create. |
-| A name inside a formula or expression | none found in shipped recipes (the script looks at keys `expression`, `fun`, `formula`) | The risk exists for `stat_function` texts and `mutate` expressions; the script reports any it finds. |
-| A name in a Python string or list | `app/handlers/blueprint_handlers.py:1801: _THEME_CHOICES = ["theme_light", "theme_bw", ...]`; 1475 quoted names in tests and code | Registrations, lists and assertions: read each one. The 581 calls `p9.geom_bar(...)` and imports of plotnine are plotnine's own names and stay. |
-| The two spellings | `scale_colour_manual` vs `scale_color_manual` | A recipe may have used the one that is registered; the script keeps the spelling it finds and adds the prefix (Q4). |
+| `plot_config_resolver.py:130` | geoms and stats are never merged, they pile up | `plotnine_geom_point` does not start with `geom_`: two geoms with the same name would count as one and the later replaces the earlier, so a layer silently disappears |
+| `plot_config_resolver.py:137` | one theme replaces the other | two themes both stay |
+| `plot_config_resolver.py:141`, `:146` | one coordinate system, one facet | a second one no longer replaces the first |
+| `plot_config_resolver.py:148`, `:150`, `:152`, `:154`, `:156`, `:158`, `:160` | one scale per aesthetic (fill, colour, x, y, other families) | the later scale no longer replaces the earlier: plotnine receives two |
+| `plot_config_resolver.py:313` | partial themes (settings only) go after a complete theme | the order is wrong: a complete theme erases the settings that came before |
+| `plot_config_resolver.py:656` | the key `facet_by` adds a facet unless the recipe has a facet layer | a facet layer written with the new name is not seen, a second facet is added |
+| `plot_config_resolver.py:719` | which theme is the plot's theme | the user's theme is not found, the default theme is used (the picture changes) |
+| `plot_config_resolver.py:732`, `:735`, `:736` | a palette is added only if the recipe has no scale of its own | the palette is added on top of the user's own scale (the picture changes, no message) |
+| `recipe_check.py:930` (`libs/utils`) | the checker looks for at least one geom or stat | every plot is reported as having no geom |
+| `data_analysis_recipe_validator.py:130` (`app/modules`) | the list of themes that the checker offers | the list is empty: every `theme:` key is refused |
+| `taxonomy.py:38` (`libs/viz_gallery`) | the geom of a gallery example, for the index and the search | `first_geom` returns an empty text for every example; the index loses its geom axis |
+| `errors.py:45` (`libs/viz_factory`) | the words of an error message ("the spec's theme" or "facet_by") | the message names the wrong thing |
+| `random_layers.py:50`, `:55` (`libs/utils`) | add `position_` or `stat_` to a plain word the user wrote in a PARAMETER (`position: jitter`) | not affected: that is plotnine's own vocabulary and stays. But the names it is compared with (`ALWAYS_RANDOM`, `stat_summary_bin`) are component names and follow the rename |
 
-### 5.2 Name logic that must change first (code that reads the shape of a name)
+The 41 other lines are in tests, debug scripts and `assets/scripts/rename_vocabulary.py` (3 `.split("_")`, to read: probably unrelated); they must follow the code.
+One function `component_family(name)` that strips the prefix and returns `geom`, `stat`, `scale_fill`, ... replaces all of them; a test must fail if a `startswith("geom_")` remains.
 
-The prefix `plotnine_` breaks every test of the form "starts with `geom_`". Places found:
-`plot_config_resolver.py` (lines 130 to 160 and 313, 656, 719, 732-737: which layers stack, which one replaces which, theme, facet, scale families),
-`ALWAYS_RANDOM`, `BATCHED_COMPONENTS` (`element_text`), `FACTORY_NAMED_COMPONENTS`, `FACET_SETTINGS` (4 names), `is_partial_theme`,
-`libs/utils/src/utils/random_layers.py` (50, 55: a position or stat written with its plotnine prefix), `libs/utils/src/utils/recipe_check.py:930` (`has_geom`),
-`plot_config_resolver.py` (palette guard, lines 728-742), and the test `derive_kind` in `test_component_plotnine_field.py`.
-One function `component_family(name)` that strips the prefix and returns `geom`, `stat`, `scale_fill`, ... replaces them all; a test fails if a `startswith("geom_")` remains.
+The complete list, generated:
 
-### 5.3 Risks the rename carries
+| file:line | what it does with a name |
+|---|---|
+| `app/modules/data_analysis_recipe_validator.py:130` | .startswith() theme_ |
+| `app/tests/test_render_every_plot.py:60` | .startswith() facet_grid, facet_wrap |
+| `assets/scripts/rename_vocabulary.py:42` | .split("_") splits a name into its parts |
+| `assets/scripts/rename_vocabulary.py:68` | .split("_") splits a name into its parts |
+| `assets/scripts/rename_vocabulary.py:308` | .split("_") splits a name into its parts |
+| `libs/utils/src/utils/random_layers.py:50` | prefix string position_ |
+| `libs/utils/src/utils/random_layers.py:55` | prefix string stat_ |
+| `libs/utils/src/utils/recipe_check.py:930` | .startswith() geom_, stat_ |
+| `libs/viz_factory/src/viz_factory/errors.py:45` | .startswith() theme_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:130` | .startswith() geom_; .startswith() stat_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:137` | .startswith() theme_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:141` | .startswith() coord_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:146` | .startswith() facet_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:148` | .startswith() scale_fill_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:150` | .startswith() scale_color_; .startswith() scale_colour_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:152` | .startswith() scale_x_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:154` | .startswith() scale_y_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:156` | .startswith() scale_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:158` | .split("_") splits a name into its parts |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:160` | prefix string scale_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:313` | .startswith() theme_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:656` | .startswith() facet_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:719` | .startswith() theme_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:732` | .startswith() scale_fill_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:735` | .startswith() scale_color_ |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py:736` | .startswith() scale_colour_ |
+| `libs/viz_factory/tests/debug_audit.py:81` | .startswith() coord_, element_, facet_, geom_, guide_, position_, scale_, theme_ |
+| `libs/viz_factory/tests/debug_runner.py:109` | .split("_") splits a name into its parts |
+| `libs/viz_factory/tests/debug_runner.py:130` | .startswith() position_ |
+| `libs/viz_factory/tests/debug_runner.py:133` | .startswith() geom_ |
+| `libs/viz_factory/tests/debug_runner.py:152` | .startswith() position_ |
+| `libs/viz_factory/tests/debug_viz_factory_audit.py:107` | prefix string coord_; prefix string facet_; prefix string geom_; prefix string scale_; prefix string theme_ |
+| `libs/viz_factory/tests/debug_viz_factory_audit.py:108` | prefix string element_; prefix string guide_; prefix string position_; prefix string stat_ |
+| `libs/viz_factory/tests/test_component_schemas.py:177` | .startswith() geom_ |
+| `libs/viz_factory/tests/test_every_component_randomness.py:60` | prefix string coord_; prefix string element_; prefix string facet_; prefix string guide_; prefix string scale_; prefix string theme_ |
+| `libs/viz_factory/tests/test_every_component_randomness.py:68` | .startswith() stat_ |
+| `libs/viz_factory/tests/test_every_component_randomness.py:69` | .startswith() position_ |
+| `libs/viz_factory/tests/test_every_component_randomness.py:146` | .startswith() geom_, stat_ |
+| `libs/viz_factory/tests/test_every_component_randomness.py:154` | .startswith() geom_ |
+| `libs/viz_factory/tests/test_every_component_randomness.py:162` | .startswith() theme_ |
+| `libs/viz_factory/tests/test_every_yaml_example_renders.py:57` | .startswith() geom_, stat_ |
+| `libs/viz_factory/tests/test_every_yaml_example_renders.py:61` | .startswith() position_ |
+| `libs/viz_factory/tests/test_every_yaml_example_renders.py:92` | .startswith() scale_ |
+| `libs/viz_factory/tests/test_every_yaml_example_renders.py:93` | .split("_") splits a name into its parts |
+| `libs/viz_factory/tests/test_every_yaml_example_renders.py:102` | .startswith() scale_x_, scale_y_ |
+| `libs/viz_factory/tests/test_every_yaml_example_renders.py:104` | .split("_") splits a name into its parts |
+| `libs/viz_factory/tests/test_every_yaml_example_renders.py:107` | .split("_") splits a name into its parts |
+| `libs/viz_factory/tests/test_every_yaml_example_renders.py:109` | .startswith() guide_ |
+| `libs/viz_factory/tests/test_no_silent_error.py:178` | .startswith() geom_ |
+| `libs/viz_factory/tests/test_plot_config_resolver.py:30` | .startswith() theme_ |
+| `libs/viz_factory/tests/test_plot_config_resolver.py:134` | .startswith() coord_ |
+| `libs/viz_factory/tests/test_plot_config_resolver.py:143` | .startswith() facet_ |
+| `libs/viz_factory/tests/test_plot_config_resolver.py:489` | .startswith() coord_ |
+| `libs/viz_factory/tests/test_plot_config_resolver.py:552` | .startswith() facet_ |
+| `libs/viz_factory/tests/test_plot_spec_roundtrip.py:30` | .startswith() geom_, stat_ |
+| `libs/viz_factory/tests/test_registry_audit_vs_plotnine.py:65` | prefix string scale_color_; prefix string scale_colour_ |
+| `libs/viz_factory/tests/test_registry_audit_vs_plotnine.py:86` | prefix string scale_ |
+| `libs/viz_factory/tests/test_registry_audit_vs_plotnine.py:87` | prefix string scale_ |
+| `libs/viz_factory/tests/test_registry_audit_vs_plotnine.py:88` | prefix string scale_ |
+| `libs/viz_factory/tests/test_registry_audit_vs_plotnine.py:89` | prefix string scale_ |
+| `libs/viz_factory/tests/test_theme_slots.py:30` | .startswith() theme_ |
+| `libs/viz_factory/tests/test_theme_slots.py:43` | .startswith() theme_ |
+| `libs/viz_factory/tests/viz_factory_integrity_suite.py:67` | .split("_") splits a name into its parts |
+| `libs/viz_gallery/src/viz_gallery/taxonomy.py:38` | .startswith() geom_, stat_ |
 
-- **R1 (science, reproducibility).** The conversion edits the recipe file, so `data_analysis_recipe_sha256` changes for every shipped recipe. Effects to check, not guessed:
-  saved sessions are keyed by it (the restore already warns "saved against another recipe version"); exported bundles hold old names and old fingerprints, and the import
-  verifies four hashes (ADR-097). The data caches should stay valid (tier keys exclude the plot specs, `rules_data_engine.md`): a test must show it.
-  A bundle exported before the rename: import refuses the old names with the migration command; after migration the file hash differs from the one recorded. Needs your decision (Q1).
-- **R2 (silent).** The palette guard and the layer replacement rules (5.2): a missed prefix test changes a picture without a message. The picture test (step 0) is the protection.
-- **R3.** The registry grows: 31 exact neighbours of modified components, and the gaps if you register them (Q3, Q4): about 267 components (191 + 31 exact neighbours + 30 gaps + 15 spellings).
-- **R4.** Descriptions, help texts, docs and the Blueprint agent instructions quote names; a doc built from the registry follows, a hand-written one does not (`check_doc_links.py` does not see names).
-- **R5.** The 15 modified components that plotnine cannot add to a plot have no possible exact neighbour (section 2.2).
+64 lines in 20 files; 23 lines in 6 production files (the rest in tests and scripts)
 
-## 6. What an old name will show, and the plan
+### 6.4 What the script cannot decide alone
+
+| Kind | Example | Why a person decides |
+|---|---|---|
+| A component name as a parameter VALUE | `libs/viz_factory/tests/test_data/stat_bin_test.yaml:12: stat: stat_bin` | plotnine's own object passed to a layer, not a component call. Proposal: stays (Q5). The script counts it as STAYS |
+| The `geom` field of the gallery index | `assets/gallery_data/gallery_index.json:22: "geom": "geom_area"` (34 lines; the tag strips of the examples, 35) | the taxonomy says "the exact plotnine function name". Proposal: stays (Q5) |
+| A `theme:` key | `app/tests/equality/recipes/2_test_data_ST22_dummy_dirty/plots/multi_resistance_by_country.yaml:2: theme: theme_light` | in a plot spec or in `plot_defaults` it IS a component name and changes; elsewhere it may not. The script rewrites it only under those two places |
+| A name in a written text | `libs/viz_factory/tests/test_data/annotate_test.yaml:2: description: DECO-2 smoke test for annotate` | a description, a label or a comment: an author words it |
+| A name that is also a recipe key | `libs/utils/src/utils/recipe_spec.yaml:95: labs: "a labs layer"`, `:94: facet_scales: ...` | a key of the recipe format shares the spelling of a component (`labs`, `guides`, `facet_scales`). The key stays |
+| A name inside a formula or expression | none found in the shipped recipes (the script looks at the keys `expression`, `fun`, `formula`) | the risk exists for the text of `stat_function` and for `mutate` expressions |
+| The two spellings | `scale_colour_manual` and `scale_color_manual` | the script keeps the spelling it finds and adds the prefix (Q4) |
+| A name that decides whether a palette is added | `plot_config_resolver.py:732-736` | see section 6.3: this one is code, not text |
+
+### 6.5 Risks the rename carries
+
+- **R1 (science, reproducibility).** The conversion edits the recipe file, so `data_analysis_recipe_sha256` changes for every shipped recipe. To check, not to assume: saved sessions are keyed by it
+  (the restore already warns "saved against another recipe version"); exported bundles hold old names and old fingerprints, and the import verifies four hashes (ADR-097). The data caches should stay valid
+  (the tier keys leave out the plot specs, `rules_data_engine.md`): a test must show it. Needs your decision (Q1).
+- **R2 (silent).** The sites of section 6.3: a missed prefix test changes a picture without a message. The picture test (step 0) is the protection.
+- **R3.** The registry grows: about 267 components (191 + 31 exact twins + 30 gaps + 15 spellings).
+- **R4.** Descriptions, help texts, docs and the Blueprint agent instructions quote names; a doc built from the registry follows, a hand-written one does not.
+- **R5.** The 15 modified components that plotnine cannot put on a plot have no possible exact twin (section 2.2).
+
+
+## 7. What an old name will show, and the plan
 
 An old name is refused where it is written: at load (the checker), in the Blueprint form, and when the plot is built. Proposed text (like the Polars names):
 
 > `geom_point` is the old name of `plotnine_geom_point` (renamed 2026-11-xx: every plotnine object now carries the prefix `plotnine_`).
-> Convert your recipes: `./.venv/bin/python assets/scripts/migrate_plot_names.py --apply <recipe folder>`
+> Convert your recipes: `<the migration command: a script to be written, not part of this audit>`
 
 The "did you mean" must come from an explicit table `old name -> new name` (a constant like `REMOVED_ACTIONS` in `utils/action_names.py`), not from text similarity:
 the current similarity (difflib, cut-off 0.6) finds `plotnine_geom_point` for `geom_point` but not `plotnine_labs` for `labs` (0.47).
@@ -201,10 +394,10 @@ Plan, in order, each step a commit with tests; one builder and one reviewer at a
 
 0. **Picture baseline, before anything changes.** A script renders every plot of every shipped recipe and gallery example and every `yaml_example`, and stores a hash of the picture
    (fixed seed, fixed size). It does not exist today (the golden baseline hashes tables, not pictures). Mutation check: change one default, see the hash move.
-1. **One function for the shape of a name** (5.2), with the old names still working: tests green, pictures identical. This step carries the risk R2 on its own.
+1. **One function for the shape of a name** (6.3), with the old names still working: tests green, pictures identical. This step carries the risk R2 on its own.
 2. **Rename in the registry**: decorators, `wraps`, descriptions, the table `OLD_COMPONENT_NAMES`; prefix equals field, tested for all components (Eve's M108).
 3. **Add the exact neighbours** (31) and, if decided, the gaps and spellings; each new exact component enters the audit test of this task (it proves it equals plotnine).
-4. **The migration script** `assets/scripts/migrate_plot_names.py` (dry run by default, `--apply`, idempotent, keeps comments, lists the hard cases with file and line, never guesses): runs on
+4. **The migration script** (to be written; dry run by default, `--apply`, idempotent, keeps comments, lists the hard cases with file and line, never guesses): runs on
    the 25 plot specs, pipelines, templates, retest, 37 gallery examples, the generated test recipes, and the documents' recipe snippets.
 5. **Blueprint**: `_THEME_CHOICES`, agent instructions, help; test: the picker and the agent offer new names only.
 6. **Docs**: the two component pages, the rationale, the authoring guide; the rule file proposal and the ADR-106 note (rule files only after your yes).
@@ -215,7 +408,7 @@ Plan, in order, each step a commit with tests; one builder and one reviewer at a
 Tests to write for the rename itself: the old-to-new table covers all 191; prefix equals registry field; every shipped recipe converted loads with the checker and draws the same picture as before;
 the converted recipes are stable when the script runs a second time; a recipe with an old name is refused with the exact text; no `startswith("geom_")`-like test is left in the code.
 
-## 7. Questions only Eve can answer (each with a default)
+## 8. Questions only Eve can answer (each with a default)
 
 - **Q1 (reproducibility).** A results bundle exported before the rename holds old names and the old recipe fingerprint. Options: (a) refuse it with the migration command, and say clearly that
   the converted recipe has a new fingerprint but the same data and picture (default); (b) the import converts it and records both fingerprints; (c) keep a read-only note in the bundle. Default (a).
@@ -235,202 +428,203 @@ the converted recipes are stable when the script runs a second time; a recipe wi
   Also: a text given to `labels` is read by plotnine as letters (found unchecked): add a check? Default yes.
 - **Q10 (rule files).** The prefix rule goes into `rules_viz_factory.md` (sections 1, 2, 7). Only after your yes.
 
-## 8. The table: old name -> new name for every component (generated)
+## 9. The table: old name -> new name for every component (generated)
 
-Generated by `./.venv/bin/python assets/scripts/viz_rename_table.py table`. The new name is the proposal of question Q2 (default). The 22 own names are `step_` unless Q7 or Q8 removes them.
+Generated by the command of the top of this document (`report`; the table alone: `viz_rename_table.py table`). Columns: the old name; the new name; the family of the component (what kind of thing it is);
+the registry field exact / modified / own, which decides the prefix; the prefix that follows. The new name is the proposal of question Q2 (default). The 22 own names are `step_` unless Q7 or Q8 removes them.
 
-| old name | new name | class | registry field |
-|---|---|---|---|
-| `annotate` | `modif_annotate` | annotation | modified |
-| `coord_cartesian` | `plotnine_coord_cartesian` | coord | exact |
-| `coord_equal` | `plotnine_coord_equal` | coord | exact |
-| `coord_fixed` | `plotnine_coord_fixed` | coord | exact |
-| `coord_flip` | `plotnine_coord_flip` | coord | exact |
-| `coord_lims` | `step_coord_lims` | coord | own |
-| `coord_trans` | `plotnine_coord_trans` | coord | exact |
-| `element_blank` | `modif_element_blank` | element | modified |
-| `element_line` | `modif_element_line` | element | modified |
-| `element_rect` | `modif_element_rect` | element | modified |
-| `element_text` | `modif_element_text` | element | modified |
-| `facet_cols` | `step_facet_cols` | facet | own |
-| `facet_grid` | `modif_facet_grid` | facet | modified |
-| `facet_labeller` | `step_facet_labeller` | facet | own |
-| `facet_margins` | `step_facet_margins` | facet | own |
-| `facet_null` | `plotnine_facet_null` | facet | exact |
-| `facet_rows` | `step_facet_rows` | facet | own |
-| `facet_scales` | `step_facet_scales` | facet | own |
-| `facet_space` | `step_facet_space` | facet | own |
-| `facet_wrap` | `plotnine_facet_wrap` | facet | exact |
-| `geom_abline` | `plotnine_geom_abline` | geom | exact |
-| `geom_area` | `plotnine_geom_area` | geom | exact |
-| `geom_bar` | `plotnine_geom_bar` | geom | exact |
-| `geom_bin_2d` | `plotnine_geom_bin_2d` | geom | exact |
-| `geom_blank` | `plotnine_geom_blank` | geom | exact |
-| `geom_boxplot` | `plotnine_geom_boxplot` | geom | exact |
-| `geom_col` | `plotnine_geom_col` | geom | exact |
-| `geom_count` | `plotnine_geom_count` | geom | exact |
-| `geom_crossbar` | `plotnine_geom_crossbar` | geom | exact |
-| `geom_density` | `plotnine_geom_density` | geom | exact |
-| `geom_density_2d` | `plotnine_geom_density_2d` | geom | exact |
-| `geom_dotplot` | `plotnine_geom_dotplot` | geom | exact |
-| `geom_errorbar` | `plotnine_geom_errorbar` | geom | exact |
-| `geom_errorbarh` | `plotnine_geom_errorbarh` | geom | exact |
-| `geom_freqpoly` | `plotnine_geom_freqpoly` | geom | exact |
-| `geom_histogram` | `plotnine_geom_histogram` | geom | exact |
-| `geom_hline` | `plotnine_geom_hline` | geom | exact |
-| `geom_jitter` | `modif_geom_jitter` | geom | modified |
-| `geom_label` | `plotnine_geom_label` | geom | exact |
-| `geom_line` | `plotnine_geom_line` | geom | exact |
-| `geom_linerange` | `plotnine_geom_linerange` | geom | exact |
-| `geom_path` | `plotnine_geom_path` | geom | exact |
-| `geom_point` | `plotnine_geom_point` | geom | exact |
-| `geom_pointdensity` | `plotnine_geom_pointdensity` | geom | exact |
-| `geom_pointrange` | `plotnine_geom_pointrange` | geom | exact |
-| `geom_polygon` | `plotnine_geom_polygon` | geom | exact |
-| `geom_qq` | `plotnine_geom_qq` | geom | exact |
-| `geom_qq_line` | `plotnine_geom_qq_line` | geom | exact |
-| `geom_quantile` | `plotnine_geom_quantile` | geom | exact |
-| `geom_raster` | `plotnine_geom_raster` | geom | exact |
-| `geom_rect` | `plotnine_geom_rect` | geom | exact |
-| `geom_ribbon` | `plotnine_geom_ribbon` | geom | exact |
-| `geom_rug` | `plotnine_geom_rug` | geom | exact |
-| `geom_segment` | `plotnine_geom_segment` | geom | exact |
-| `geom_sina` | `modif_geom_sina` | geom | modified |
-| `geom_smooth` | `plotnine_geom_smooth` | geom | exact |
-| `geom_spoke` | `plotnine_geom_spoke` | geom | exact |
-| `geom_step` | `plotnine_geom_step` | geom | exact |
-| `geom_text` | `plotnine_geom_text` | geom | exact |
-| `geom_tile` | `plotnine_geom_tile` | geom | exact |
-| `geom_violin` | `plotnine_geom_violin` | geom | exact |
-| `geom_vline` | `plotnine_geom_vline` | geom | exact |
-| `ggtitle` | `modif_ggtitle` | label | modified |
-| `guide_colorbar` | `modif_guide_colorbar` | guide | modified |
-| `guide_colourbar` | `modif_guide_colourbar` | guide | modified |
-| `guide_direction` | `step_guide_direction` | guide | own |
-| `guide_label` | `step_guide_label` | guide | own |
-| `guide_legend` | `modif_guide_legend` | guide | modified |
-| `guide_ncol` | `step_guide_ncol` | guide | own |
-| `guide_none` | `step_guide_none` | guide | own |
-| `guide_nrow` | `step_guide_nrow` | guide | own |
-| `guide_reverse` | `step_guide_reverse` | guide | own |
-| `guide_title` | `step_guide_title` | guide | own |
-| `guides` | `modif_guides` | guide | modified |
-| `labs` | `plotnine_labs` | label | exact |
-| `position_dodge` | `modif_position_dodge` | position | modified |
-| `position_dodge2` | `modif_position_dodge2` | position | modified |
-| `position_fill` | `modif_position_fill` | position | modified |
-| `position_identity` | `modif_position_identity` | position | modified |
-| `position_jitter` | `modif_position_jitter` | position | modified |
-| `position_jitterdodge` | `modif_position_jitterdodge` | position | modified |
-| `position_nudge` | `modif_position_nudge` | position | modified |
-| `position_stack` | `modif_position_stack` | position | modified |
-| `scale_alpha` | `modif_scale_alpha` | scale | modified |
-| `scale_alpha_continuous` | `plotnine_scale_alpha_continuous` | scale | exact |
-| `scale_alpha_discrete` | `plotnine_scale_alpha_discrete` | scale | exact |
-| `scale_alpha_identity` | `plotnine_scale_alpha_identity` | scale | exact |
-| `scale_alpha_manual` | `plotnine_scale_alpha_manual` | scale | exact |
-| `scale_color_brewer` | `plotnine_scale_color_brewer` | scale | exact |
-| `scale_color_cmap` | `plotnine_scale_color_cmap` | scale | exact |
-| `scale_color_cmap_d` | `plotnine_scale_color_cmap_d` | scale | exact |
-| `scale_color_continuous` | `plotnine_scale_color_continuous` | scale | exact |
-| `scale_color_discrete` | `plotnine_scale_color_discrete` | scale | exact |
-| `scale_color_distiller` | `plotnine_scale_color_distiller` | scale | exact |
-| `scale_color_gradient` | `plotnine_scale_color_gradient` | scale | exact |
-| `scale_color_gradient2` | `plotnine_scale_color_gradient2` | scale | exact |
-| `scale_color_gradientn` | `plotnine_scale_color_gradientn` | scale | exact |
-| `scale_color_hue` | `modif_scale_color_hue` | scale | modified |
-| `scale_color_identity` | `plotnine_scale_color_identity` | scale | exact |
-| `scale_color_manual` | `plotnine_scale_color_manual` | scale | exact |
-| `scale_color_viridis_c` | `step_scale_color_viridis_c` | scale | own |
-| `scale_color_viridis_d` | `step_scale_color_viridis_d` | scale | own |
-| `scale_fill_brewer` | `plotnine_scale_fill_brewer` | scale | exact |
-| `scale_fill_cmap` | `plotnine_scale_fill_cmap` | scale | exact |
-| `scale_fill_cmap_d` | `plotnine_scale_fill_cmap_d` | scale | exact |
-| `scale_fill_continuous` | `plotnine_scale_fill_continuous` | scale | exact |
-| `scale_fill_discrete` | `plotnine_scale_fill_discrete` | scale | exact |
-| `scale_fill_distiller` | `plotnine_scale_fill_distiller` | scale | exact |
-| `scale_fill_gradient` | `plotnine_scale_fill_gradient` | scale | exact |
-| `scale_fill_gradient2` | `plotnine_scale_fill_gradient2` | scale | exact |
-| `scale_fill_gradientn` | `plotnine_scale_fill_gradientn` | scale | exact |
-| `scale_fill_hue` | `modif_scale_fill_hue` | scale | modified |
-| `scale_fill_identity` | `plotnine_scale_fill_identity` | scale | exact |
-| `scale_fill_manual` | `plotnine_scale_fill_manual` | scale | exact |
-| `scale_fill_viridis_c` | `step_scale_fill_viridis_c` | scale | own |
-| `scale_fill_viridis_d` | `step_scale_fill_viridis_d` | scale | own |
-| `scale_linetype` | `plotnine_scale_linetype` | scale | exact |
-| `scale_linetype_discrete` | `plotnine_scale_linetype_discrete` | scale | exact |
-| `scale_linetype_identity` | `plotnine_scale_linetype_identity` | scale | exact |
-| `scale_linetype_manual` | `plotnine_scale_linetype_manual` | scale | exact |
-| `scale_shape` | `plotnine_scale_shape` | scale | exact |
-| `scale_shape_discrete` | `plotnine_scale_shape_discrete` | scale | exact |
-| `scale_shape_identity` | `plotnine_scale_shape_identity` | scale | exact |
-| `scale_shape_manual` | `plotnine_scale_shape_manual` | scale | exact |
-| `scale_size` | `modif_scale_size` | scale | modified |
-| `scale_size_area` | `modif_scale_size_area` | scale | modified |
-| `scale_size_continuous` | `plotnine_scale_size_continuous` | scale | exact |
-| `scale_size_discrete` | `plotnine_scale_size_discrete` | scale | exact |
-| `scale_size_identity` | `plotnine_scale_size_identity` | scale | exact |
-| `scale_size_manual` | `plotnine_scale_size_manual` | scale | exact |
-| `scale_stroke_continuous` | `plotnine_scale_stroke_continuous` | scale | exact |
-| `scale_stroke_identity` | `plotnine_scale_stroke_identity` | scale | exact |
-| `scale_x_continuous` | `modif_scale_x_continuous` | scale | modified |
-| `scale_x_date` | `plotnine_scale_x_date` | scale | exact |
-| `scale_x_datetime` | `plotnine_scale_x_datetime` | scale | exact |
-| `scale_x_discrete` | `plotnine_scale_x_discrete` | scale | exact |
-| `scale_x_log10` | `plotnine_scale_x_log10` | scale | exact |
-| `scale_x_reverse` | `plotnine_scale_x_reverse` | scale | exact |
-| `scale_x_sqrt` | `plotnine_scale_x_sqrt` | scale | exact |
-| `scale_x_symlog` | `plotnine_scale_x_symlog` | scale | exact |
-| `scale_x_timedelta` | `plotnine_scale_x_timedelta` | scale | exact |
-| `scale_y_continuous` | `modif_scale_y_continuous` | scale | modified |
-| `scale_y_date` | `plotnine_scale_y_date` | scale | exact |
-| `scale_y_datetime` | `plotnine_scale_y_datetime` | scale | exact |
-| `scale_y_discrete` | `plotnine_scale_y_discrete` | scale | exact |
-| `scale_y_log10` | `plotnine_scale_y_log10` | scale | exact |
-| `scale_y_reverse` | `plotnine_scale_y_reverse` | scale | exact |
-| `scale_y_sqrt` | `plotnine_scale_y_sqrt` | scale | exact |
-| `scale_y_symlog` | `plotnine_scale_y_symlog` | scale | exact |
-| `scale_y_timedelta` | `plotnine_scale_y_timedelta` | scale | exact |
-| `stat_bin` | `plotnine_stat_bin` | stat | exact |
-| `stat_bin_2d` | `plotnine_stat_bin_2d` | stat | exact |
-| `stat_bindot` | `plotnine_stat_bindot` | stat | exact |
-| `stat_boxplot` | `plotnine_stat_boxplot` | stat | exact |
-| `stat_count` | `plotnine_stat_count` | stat | exact |
-| `stat_density` | `plotnine_stat_density` | stat | exact |
-| `stat_density_2d` | `plotnine_stat_density_2d` | stat | exact |
-| `stat_ecdf` | `plotnine_stat_ecdf` | stat | exact |
-| `stat_ellipse` | `plotnine_stat_ellipse` | stat | exact |
-| `stat_function` | `modif_stat_function` | stat | modified |
-| `stat_hull` | `plotnine_stat_hull` | stat | exact |
-| `stat_identity` | `modif_stat_identity` | stat | modified |
-| `stat_qq` | `plotnine_stat_qq` | stat | exact |
-| `stat_qq_line` | `plotnine_stat_qq_line` | stat | exact |
-| `stat_quantile` | `plotnine_stat_quantile` | stat | exact |
-| `stat_sina` | `modif_stat_sina` | stat | modified |
-| `stat_smooth` | `plotnine_stat_smooth` | stat | exact |
-| `stat_sum` | `plotnine_stat_sum` | stat | exact |
-| `stat_summary` | `plotnine_stat_summary` | stat | exact |
-| `stat_summary_bin` | `plotnine_stat_summary_bin` | stat | exact |
-| `stat_unique` | `plotnine_stat_unique` | stat | exact |
-| `stat_ydensity` | `plotnine_stat_ydensity` | stat | exact |
-| `theme_538` | `modif_theme_538` | theme | modified |
-| `theme_bw` | `modif_theme_bw` | theme | modified |
-| `theme_classic` | `modif_theme_classic` | theme | modified |
-| `theme_custom` | `step_theme_custom` | theme | own |
-| `theme_dark` | `modif_theme_dark` | theme | modified |
-| `theme_dashboard` | `step_theme_dashboard` | theme | own |
-| `theme_gray` | `modif_theme_gray` | theme | modified |
-| `theme_legend_position` | `step_theme_legend_position` | theme | own |
-| `theme_light` | `modif_theme_light` | theme | modified |
-| `theme_linedraw` | `modif_theme_linedraw` | theme | modified |
-| `theme_matplotlib` | `modif_theme_matplotlib` | theme | modified |
-| `theme_minimal` | `modif_theme_minimal` | theme | modified |
-| `theme_publication` | `step_theme_publication` | theme | own |
-| `theme_seaborn` | `modif_theme_seaborn` | theme | modified |
-| `theme_tufte` | `modif_theme_tufte` | theme | modified |
-| `theme_void` | `modif_theme_void` | theme | modified |
-| `theme_xkcd` | `modif_theme_xkcd` | theme | modified |
-| `xlab` | `modif_xlab` | label | modified |
-| `ylab` | `modif_ylab` | label | modified |
+| old name | new name | family | registry field (exact / modified / own) | prefix that follows |
+|---|---|---|---|---|
+| `annotate` | `modif_annotate` | annotation | modified | `modif_` |
+| `coord_cartesian` | `plotnine_coord_cartesian` | coord | exact | `plotnine_` |
+| `coord_equal` | `plotnine_coord_equal` | coord | exact | `plotnine_` |
+| `coord_fixed` | `plotnine_coord_fixed` | coord | exact | `plotnine_` |
+| `coord_flip` | `plotnine_coord_flip` | coord | exact | `plotnine_` |
+| `coord_lims` | `step_coord_lims` | coord | own | `step_` |
+| `coord_trans` | `plotnine_coord_trans` | coord | exact | `plotnine_` |
+| `element_blank` | `modif_element_blank` | element | modified | `modif_` |
+| `element_line` | `modif_element_line` | element | modified | `modif_` |
+| `element_rect` | `modif_element_rect` | element | modified | `modif_` |
+| `element_text` | `modif_element_text` | element | modified | `modif_` |
+| `facet_cols` | `step_facet_cols` | facet | own | `step_` |
+| `facet_grid` | `modif_facet_grid` | facet | modified | `modif_` |
+| `facet_labeller` | `step_facet_labeller` | facet | own | `step_` |
+| `facet_margins` | `step_facet_margins` | facet | own | `step_` |
+| `facet_null` | `plotnine_facet_null` | facet | exact | `plotnine_` |
+| `facet_rows` | `step_facet_rows` | facet | own | `step_` |
+| `facet_scales` | `step_facet_scales` | facet | own | `step_` |
+| `facet_space` | `step_facet_space` | facet | own | `step_` |
+| `facet_wrap` | `plotnine_facet_wrap` | facet | exact | `plotnine_` |
+| `geom_abline` | `plotnine_geom_abline` | geom | exact | `plotnine_` |
+| `geom_area` | `plotnine_geom_area` | geom | exact | `plotnine_` |
+| `geom_bar` | `plotnine_geom_bar` | geom | exact | `plotnine_` |
+| `geom_bin_2d` | `plotnine_geom_bin_2d` | geom | exact | `plotnine_` |
+| `geom_blank` | `plotnine_geom_blank` | geom | exact | `plotnine_` |
+| `geom_boxplot` | `plotnine_geom_boxplot` | geom | exact | `plotnine_` |
+| `geom_col` | `plotnine_geom_col` | geom | exact | `plotnine_` |
+| `geom_count` | `plotnine_geom_count` | geom | exact | `plotnine_` |
+| `geom_crossbar` | `plotnine_geom_crossbar` | geom | exact | `plotnine_` |
+| `geom_density` | `plotnine_geom_density` | geom | exact | `plotnine_` |
+| `geom_density_2d` | `plotnine_geom_density_2d` | geom | exact | `plotnine_` |
+| `geom_dotplot` | `plotnine_geom_dotplot` | geom | exact | `plotnine_` |
+| `geom_errorbar` | `plotnine_geom_errorbar` | geom | exact | `plotnine_` |
+| `geom_errorbarh` | `plotnine_geom_errorbarh` | geom | exact | `plotnine_` |
+| `geom_freqpoly` | `plotnine_geom_freqpoly` | geom | exact | `plotnine_` |
+| `geom_histogram` | `plotnine_geom_histogram` | geom | exact | `plotnine_` |
+| `geom_hline` | `plotnine_geom_hline` | geom | exact | `plotnine_` |
+| `geom_jitter` | `modif_geom_jitter` | geom | modified | `modif_` |
+| `geom_label` | `plotnine_geom_label` | geom | exact | `plotnine_` |
+| `geom_line` | `plotnine_geom_line` | geom | exact | `plotnine_` |
+| `geom_linerange` | `plotnine_geom_linerange` | geom | exact | `plotnine_` |
+| `geom_path` | `plotnine_geom_path` | geom | exact | `plotnine_` |
+| `geom_point` | `plotnine_geom_point` | geom | exact | `plotnine_` |
+| `geom_pointdensity` | `plotnine_geom_pointdensity` | geom | exact | `plotnine_` |
+| `geom_pointrange` | `plotnine_geom_pointrange` | geom | exact | `plotnine_` |
+| `geom_polygon` | `plotnine_geom_polygon` | geom | exact | `plotnine_` |
+| `geom_qq` | `plotnine_geom_qq` | geom | exact | `plotnine_` |
+| `geom_qq_line` | `plotnine_geom_qq_line` | geom | exact | `plotnine_` |
+| `geom_quantile` | `plotnine_geom_quantile` | geom | exact | `plotnine_` |
+| `geom_raster` | `plotnine_geom_raster` | geom | exact | `plotnine_` |
+| `geom_rect` | `plotnine_geom_rect` | geom | exact | `plotnine_` |
+| `geom_ribbon` | `plotnine_geom_ribbon` | geom | exact | `plotnine_` |
+| `geom_rug` | `plotnine_geom_rug` | geom | exact | `plotnine_` |
+| `geom_segment` | `plotnine_geom_segment` | geom | exact | `plotnine_` |
+| `geom_sina` | `modif_geom_sina` | geom | modified | `modif_` |
+| `geom_smooth` | `plotnine_geom_smooth` | geom | exact | `plotnine_` |
+| `geom_spoke` | `plotnine_geom_spoke` | geom | exact | `plotnine_` |
+| `geom_step` | `plotnine_geom_step` | geom | exact | `plotnine_` |
+| `geom_text` | `plotnine_geom_text` | geom | exact | `plotnine_` |
+| `geom_tile` | `plotnine_geom_tile` | geom | exact | `plotnine_` |
+| `geom_violin` | `plotnine_geom_violin` | geom | exact | `plotnine_` |
+| `geom_vline` | `plotnine_geom_vline` | geom | exact | `plotnine_` |
+| `ggtitle` | `modif_ggtitle` | label | modified | `modif_` |
+| `guide_colorbar` | `modif_guide_colorbar` | guide | modified | `modif_` |
+| `guide_colourbar` | `modif_guide_colourbar` | guide | modified | `modif_` |
+| `guide_direction` | `step_guide_direction` | guide | own | `step_` |
+| `guide_label` | `step_guide_label` | guide | own | `step_` |
+| `guide_legend` | `modif_guide_legend` | guide | modified | `modif_` |
+| `guide_ncol` | `step_guide_ncol` | guide | own | `step_` |
+| `guide_none` | `step_guide_none` | guide | own | `step_` |
+| `guide_nrow` | `step_guide_nrow` | guide | own | `step_` |
+| `guide_reverse` | `step_guide_reverse` | guide | own | `step_` |
+| `guide_title` | `step_guide_title` | guide | own | `step_` |
+| `guides` | `modif_guides` | guide | modified | `modif_` |
+| `labs` | `plotnine_labs` | label | exact | `plotnine_` |
+| `position_dodge` | `modif_position_dodge` | position | modified | `modif_` |
+| `position_dodge2` | `modif_position_dodge2` | position | modified | `modif_` |
+| `position_fill` | `modif_position_fill` | position | modified | `modif_` |
+| `position_identity` | `modif_position_identity` | position | modified | `modif_` |
+| `position_jitter` | `modif_position_jitter` | position | modified | `modif_` |
+| `position_jitterdodge` | `modif_position_jitterdodge` | position | modified | `modif_` |
+| `position_nudge` | `modif_position_nudge` | position | modified | `modif_` |
+| `position_stack` | `modif_position_stack` | position | modified | `modif_` |
+| `scale_alpha` | `modif_scale_alpha` | scale | modified | `modif_` |
+| `scale_alpha_continuous` | `plotnine_scale_alpha_continuous` | scale | exact | `plotnine_` |
+| `scale_alpha_discrete` | `plotnine_scale_alpha_discrete` | scale | exact | `plotnine_` |
+| `scale_alpha_identity` | `plotnine_scale_alpha_identity` | scale | exact | `plotnine_` |
+| `scale_alpha_manual` | `plotnine_scale_alpha_manual` | scale | exact | `plotnine_` |
+| `scale_color_brewer` | `plotnine_scale_color_brewer` | scale | exact | `plotnine_` |
+| `scale_color_cmap` | `plotnine_scale_color_cmap` | scale | exact | `plotnine_` |
+| `scale_color_cmap_d` | `plotnine_scale_color_cmap_d` | scale | exact | `plotnine_` |
+| `scale_color_continuous` | `plotnine_scale_color_continuous` | scale | exact | `plotnine_` |
+| `scale_color_discrete` | `plotnine_scale_color_discrete` | scale | exact | `plotnine_` |
+| `scale_color_distiller` | `plotnine_scale_color_distiller` | scale | exact | `plotnine_` |
+| `scale_color_gradient` | `plotnine_scale_color_gradient` | scale | exact | `plotnine_` |
+| `scale_color_gradient2` | `plotnine_scale_color_gradient2` | scale | exact | `plotnine_` |
+| `scale_color_gradientn` | `plotnine_scale_color_gradientn` | scale | exact | `plotnine_` |
+| `scale_color_hue` | `modif_scale_color_hue` | scale | modified | `modif_` |
+| `scale_color_identity` | `plotnine_scale_color_identity` | scale | exact | `plotnine_` |
+| `scale_color_manual` | `plotnine_scale_color_manual` | scale | exact | `plotnine_` |
+| `scale_color_viridis_c` | `step_scale_color_viridis_c` | scale | own | `step_` |
+| `scale_color_viridis_d` | `step_scale_color_viridis_d` | scale | own | `step_` |
+| `scale_fill_brewer` | `plotnine_scale_fill_brewer` | scale | exact | `plotnine_` |
+| `scale_fill_cmap` | `plotnine_scale_fill_cmap` | scale | exact | `plotnine_` |
+| `scale_fill_cmap_d` | `plotnine_scale_fill_cmap_d` | scale | exact | `plotnine_` |
+| `scale_fill_continuous` | `plotnine_scale_fill_continuous` | scale | exact | `plotnine_` |
+| `scale_fill_discrete` | `plotnine_scale_fill_discrete` | scale | exact | `plotnine_` |
+| `scale_fill_distiller` | `plotnine_scale_fill_distiller` | scale | exact | `plotnine_` |
+| `scale_fill_gradient` | `plotnine_scale_fill_gradient` | scale | exact | `plotnine_` |
+| `scale_fill_gradient2` | `plotnine_scale_fill_gradient2` | scale | exact | `plotnine_` |
+| `scale_fill_gradientn` | `plotnine_scale_fill_gradientn` | scale | exact | `plotnine_` |
+| `scale_fill_hue` | `modif_scale_fill_hue` | scale | modified | `modif_` |
+| `scale_fill_identity` | `plotnine_scale_fill_identity` | scale | exact | `plotnine_` |
+| `scale_fill_manual` | `plotnine_scale_fill_manual` | scale | exact | `plotnine_` |
+| `scale_fill_viridis_c` | `step_scale_fill_viridis_c` | scale | own | `step_` |
+| `scale_fill_viridis_d` | `step_scale_fill_viridis_d` | scale | own | `step_` |
+| `scale_linetype` | `plotnine_scale_linetype` | scale | exact | `plotnine_` |
+| `scale_linetype_discrete` | `plotnine_scale_linetype_discrete` | scale | exact | `plotnine_` |
+| `scale_linetype_identity` | `plotnine_scale_linetype_identity` | scale | exact | `plotnine_` |
+| `scale_linetype_manual` | `plotnine_scale_linetype_manual` | scale | exact | `plotnine_` |
+| `scale_shape` | `plotnine_scale_shape` | scale | exact | `plotnine_` |
+| `scale_shape_discrete` | `plotnine_scale_shape_discrete` | scale | exact | `plotnine_` |
+| `scale_shape_identity` | `plotnine_scale_shape_identity` | scale | exact | `plotnine_` |
+| `scale_shape_manual` | `plotnine_scale_shape_manual` | scale | exact | `plotnine_` |
+| `scale_size` | `modif_scale_size` | scale | modified | `modif_` |
+| `scale_size_area` | `modif_scale_size_area` | scale | modified | `modif_` |
+| `scale_size_continuous` | `plotnine_scale_size_continuous` | scale | exact | `plotnine_` |
+| `scale_size_discrete` | `plotnine_scale_size_discrete` | scale | exact | `plotnine_` |
+| `scale_size_identity` | `plotnine_scale_size_identity` | scale | exact | `plotnine_` |
+| `scale_size_manual` | `plotnine_scale_size_manual` | scale | exact | `plotnine_` |
+| `scale_stroke_continuous` | `plotnine_scale_stroke_continuous` | scale | exact | `plotnine_` |
+| `scale_stroke_identity` | `plotnine_scale_stroke_identity` | scale | exact | `plotnine_` |
+| `scale_x_continuous` | `modif_scale_x_continuous` | scale | modified | `modif_` |
+| `scale_x_date` | `plotnine_scale_x_date` | scale | exact | `plotnine_` |
+| `scale_x_datetime` | `plotnine_scale_x_datetime` | scale | exact | `plotnine_` |
+| `scale_x_discrete` | `plotnine_scale_x_discrete` | scale | exact | `plotnine_` |
+| `scale_x_log10` | `plotnine_scale_x_log10` | scale | exact | `plotnine_` |
+| `scale_x_reverse` | `plotnine_scale_x_reverse` | scale | exact | `plotnine_` |
+| `scale_x_sqrt` | `plotnine_scale_x_sqrt` | scale | exact | `plotnine_` |
+| `scale_x_symlog` | `plotnine_scale_x_symlog` | scale | exact | `plotnine_` |
+| `scale_x_timedelta` | `plotnine_scale_x_timedelta` | scale | exact | `plotnine_` |
+| `scale_y_continuous` | `modif_scale_y_continuous` | scale | modified | `modif_` |
+| `scale_y_date` | `plotnine_scale_y_date` | scale | exact | `plotnine_` |
+| `scale_y_datetime` | `plotnine_scale_y_datetime` | scale | exact | `plotnine_` |
+| `scale_y_discrete` | `plotnine_scale_y_discrete` | scale | exact | `plotnine_` |
+| `scale_y_log10` | `plotnine_scale_y_log10` | scale | exact | `plotnine_` |
+| `scale_y_reverse` | `plotnine_scale_y_reverse` | scale | exact | `plotnine_` |
+| `scale_y_sqrt` | `plotnine_scale_y_sqrt` | scale | exact | `plotnine_` |
+| `scale_y_symlog` | `plotnine_scale_y_symlog` | scale | exact | `plotnine_` |
+| `scale_y_timedelta` | `plotnine_scale_y_timedelta` | scale | exact | `plotnine_` |
+| `stat_bin` | `plotnine_stat_bin` | stat | exact | `plotnine_` |
+| `stat_bin_2d` | `plotnine_stat_bin_2d` | stat | exact | `plotnine_` |
+| `stat_bindot` | `plotnine_stat_bindot` | stat | exact | `plotnine_` |
+| `stat_boxplot` | `plotnine_stat_boxplot` | stat | exact | `plotnine_` |
+| `stat_count` | `plotnine_stat_count` | stat | exact | `plotnine_` |
+| `stat_density` | `plotnine_stat_density` | stat | exact | `plotnine_` |
+| `stat_density_2d` | `plotnine_stat_density_2d` | stat | exact | `plotnine_` |
+| `stat_ecdf` | `plotnine_stat_ecdf` | stat | exact | `plotnine_` |
+| `stat_ellipse` | `plotnine_stat_ellipse` | stat | exact | `plotnine_` |
+| `stat_function` | `modif_stat_function` | stat | modified | `modif_` |
+| `stat_hull` | `plotnine_stat_hull` | stat | exact | `plotnine_` |
+| `stat_identity` | `modif_stat_identity` | stat | modified | `modif_` |
+| `stat_qq` | `plotnine_stat_qq` | stat | exact | `plotnine_` |
+| `stat_qq_line` | `plotnine_stat_qq_line` | stat | exact | `plotnine_` |
+| `stat_quantile` | `plotnine_stat_quantile` | stat | exact | `plotnine_` |
+| `stat_sina` | `modif_stat_sina` | stat | modified | `modif_` |
+| `stat_smooth` | `plotnine_stat_smooth` | stat | exact | `plotnine_` |
+| `stat_sum` | `plotnine_stat_sum` | stat | exact | `plotnine_` |
+| `stat_summary` | `plotnine_stat_summary` | stat | exact | `plotnine_` |
+| `stat_summary_bin` | `plotnine_stat_summary_bin` | stat | exact | `plotnine_` |
+| `stat_unique` | `plotnine_stat_unique` | stat | exact | `plotnine_` |
+| `stat_ydensity` | `plotnine_stat_ydensity` | stat | exact | `plotnine_` |
+| `theme_538` | `modif_theme_538` | theme | modified | `modif_` |
+| `theme_bw` | `modif_theme_bw` | theme | modified | `modif_` |
+| `theme_classic` | `modif_theme_classic` | theme | modified | `modif_` |
+| `theme_custom` | `step_theme_custom` | theme | own | `step_` |
+| `theme_dark` | `modif_theme_dark` | theme | modified | `modif_` |
+| `theme_dashboard` | `step_theme_dashboard` | theme | own | `step_` |
+| `theme_gray` | `modif_theme_gray` | theme | modified | `modif_` |
+| `theme_legend_position` | `step_theme_legend_position` | theme | own | `step_` |
+| `theme_light` | `modif_theme_light` | theme | modified | `modif_` |
+| `theme_linedraw` | `modif_theme_linedraw` | theme | modified | `modif_` |
+| `theme_matplotlib` | `modif_theme_matplotlib` | theme | modified | `modif_` |
+| `theme_minimal` | `modif_theme_minimal` | theme | modified | `modif_` |
+| `theme_publication` | `step_theme_publication` | theme | own | `step_` |
+| `theme_seaborn` | `modif_theme_seaborn` | theme | modified | `modif_` |
+| `theme_tufte` | `modif_theme_tufte` | theme | modified | `modif_` |
+| `theme_void` | `modif_theme_void` | theme | modified | `modif_` |
+| `theme_xkcd` | `modif_theme_xkcd` | theme | modified | `modif_` |
+| `xlab` | `modif_xlab` | label | modified | `modif_` |
+| `ylab` | `modif_ylab` | label | modified | `modif_` |
 
 191 components: 123 exact -> `plotnine_`, 46 modified -> `modif_`, 22 own -> `step_`

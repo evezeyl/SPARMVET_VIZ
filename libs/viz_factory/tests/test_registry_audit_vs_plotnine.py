@@ -302,7 +302,7 @@ def test_the_components_that_need_a_parameter_say_so():
 UNSHOWN_DEFAULTS = {"nan": 36, "{}": 8, "after_stat": 14, "(-inf, inf)": 4}
 
 
-def test_the_defaults_the_form_does_not_show_are_the_audited_54():
+def test_the_defaults_the_form_does_not_show_are_the_audited_62():
     import inspect
     from viz_factory.parameters import is_layer
     counts = {"nan": 0, "{}": 0, "after_stat": 0, "(-inf, inf)": 0}
