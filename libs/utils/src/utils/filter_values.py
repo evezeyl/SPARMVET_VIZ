@@ -203,8 +203,6 @@ def filter_condition(column: str, op: str, value: Any, dtype: Any, closed: str =
             expr = col.cast(pl.Utf8).is_in([str(v) for v in values]) if kind == "other" and other_as_text else col.is_in(values)
         return expr if op == "in" else ~expr
     operand = _operand(value, dtype, strict)
-    if kind == "category":
-        col = col.cast(pl.Utf8)
     return {"eq": col == operand, "ne": col != operand, "gt": col > operand, "ge": col >= operand,
             "lt": col < operand, "le": col <= operand}[op]
 
