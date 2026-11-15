@@ -135,3 +135,16 @@ def test_the_audited_removal_really_removes_the_rows_from_the_data(world):
     """The user removed a poor quality sample with an audited step: it must not be in the export data."""
     out = audited_frame(base(world), filter_nodes(AUDITED))
     assert "s2" not in ids(out) and ids(out) == ["s1"]
+
+
+def test_an_export_whose_audit_steps_cannot_run_is_refused_with_the_reason(world):
+    """PLOT-TABLE-ORDER-1: the text of EXPORT_NOT_CREATED.txt names the plot, the step, the column and the step that removed it."""
+    from app.handlers.export_handlers import blocked_audit_notice
+
+    nodes = filter_nodes([{"column": "sample_id", "op": "ne", "value": "s2", "dtype": "Utf8"}], ["group"])
+    nodes += filter_nodes([{"column": "group", "op": "eq", "value": "A", "dtype": "Utf8"}])
+    with pytest.raises(AuditStepError) as caught:
+        audited_frame(base(world), nodes)
+    text = blocked_audit_notice("the_plot", caught.value)
+    assert text.startswith("EXPORT NOT CREATED") and "'the_plot'" in text
+    assert "audit step 3" in text and "audit step 2" in text and "group" in text and "nothing was exported" in text
