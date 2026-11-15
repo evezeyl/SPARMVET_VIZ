@@ -8,6 +8,19 @@
 
 ---
 
+## Original recipe and audit recipe (confirmed by Eve, 2026-11-15)
+
+1. HOME opens the original recipe. It is the reference. HOME never changes it.
+2. Only Blueprint can edit a recipe.
+3. When you audit, HOME works on a copy of the original recipe. This copy is the audit recipe.
+4. The steps of the original recipe are in the copy. You cannot edit them or remove them.
+5. In the audit you can only add steps: remove rows, or remove a column. Each step has a reason.
+6. A step you added can be removed again. It leaves the audit recipe. The original recipe is not touched.
+7. The export is the audit recipe: the original steps plus the audit steps that are still in it.
+8. The original plot stays beside the audited plot, so you can see what the audit changed.
+
+---
+
 # Part A. For Eve (read this part alone)
 
 ## A1. What this is
