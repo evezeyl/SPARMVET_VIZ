@@ -1,5 +1,5 @@
 # @deps
-# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_imports_dir (IMPORT-PATH-1), method:get_agent_adapter, method:get_palettes, method:get_contact, attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), attr:data_analysis_recipe_advices (J12/J13, never reject), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate), attr:rejected_gallery_examples, attr:gallery_index_status (gallery check at start, DEC48)
+# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_imports_dir (IMPORT-PATH-1), method:get_agent_adapter, method:get_palettes, method:get_contact, attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), attr:data_analysis_recipe_advices (J12/J13, never reject), method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate), attr:rejected_gallery_examples, attr:gallery_index_status (gallery check at start, DEC48)
 # consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import), app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe, validate_data_analysis_recipe_data, checker_advices, read_data_analysis_recipe_header, resolve_contact — ADR-094), app.modules.gallery_examples (check_gallery_at_start, deferred import), app.modules.renamed_keys, utils.path_expansion
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
 # doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, ADR-087, ADR-094 (issue #38 closure note), project_conventions.md §"Deployment Resolution"
@@ -19,6 +19,8 @@
 #   get_location() reads from those resolved paths directly.
 import yaml
 import os
+import re
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Any
@@ -31,6 +33,7 @@ from app.modules.data_analysis_recipe_validator import (
     validate_data_analysis_recipe,
     validate_data_analysis_recipe_data,
 )
+from app.modules.cache_keys import files_signature
 from utils.path_expansion import expand_deployment_paths
 from app.modules.renamed_keys import (
     renamed_app_features_key_errors,
@@ -181,9 +184,12 @@ class Bootloader:
         # it is reported, with a contact, and the app keeps running on the recipes that pass.
         self.data_analysis_recipes_dir = self.get_location("data_analysis_recipes")
         self._all_data_analysis_recipes = self._discover_data_analysis_recipes()
+        self._gate_lock = threading.RLock()
+        self.data_analysis_recipe_gate_version = 0
         self.available_data_analysis_recipes, self.rejected_data_analysis_recipes = (
             self._validate_data_analysis_recipes(self._all_data_analysis_recipes)
         )
+        self._gate_state = {name: self._watch(path) for name, path in self._all_data_analysis_recipes.items()}
         self.default_data_analysis_recipe_name = self._resolve_default_data_analysis_recipe()
 
         # 4. Gallery check at start (DEC48, ADR-071): only when the Gallery is mounted. An example that fails is
@@ -372,44 +378,115 @@ class Bootloader:
         mf_files = list(self.data_analysis_recipes_dir.glob("*.yaml"))
         return {f.stem: str(f) for f in mf_files}
 
+    def _gate_one(self, path: str) -> tuple[list, list[str], str | None]:
+        """The two checks of the HOME load gate on one recipe: (problems, advices, contact of a rejection).
+
+        Structure (`validate_data_analysis_recipe`), then the data against the declared contract
+        (`validate_data_analysis_recipe_data`); the same functions BLUEPRINT's Validate action runs (VALIDATE-UI-1).
+        Advices never reject a recipe (HOME lists them)."""
+        raw_data_dir = self.get_location("raw_data")
+        problems = validate_data_analysis_recipe(path)
+        if not problems:
+            try:
+                problems = validate_data_analysis_recipe_data(path, raw_data_dir, data_lookup=self.data_lookup,
+                                                              imports_dir=self.get_imports_dir())
+            except Exception as e:
+                problems = [f"data-vs-contract check could not run: {e}"]
+        if problems:
+            header = read_data_analysis_recipe_header(path)
+            info = header.get("info") if header else None
+            return problems, [], resolve_contact(info, self.get_contact())
+        try:
+            advices = [f"{a.problem} Fix: {a.tip}" if a.tip else a.problem for a in checker_advices(path)]
+        except Exception as e:
+            advices = [f"[CHECK] the advices of the recipe could not be read: {e}"]
+        return [], advices, None
+
     def _validate_data_analysis_recipes(self, candidates: Dict[str, str]) -> tuple[Dict[str, str], Dict[str, dict]]:
         """HOME load gate (ADR-094): split discovered recipes into usable and rejected.
 
-        Runs once at startup (this is the module-level bootloader singleton, not per-session).
-        Two checks, same functions BLUEPRINT's own Validate action uses (VALIDATE-UI-1):
-        structure (`validate_data_analysis_recipe`) and data vs. declared contract
-        (`validate_data_analysis_recipe_data`). A recipe failing either never reaches
-        `available_data_analysis_recipes` — HOME must never silently run, or silently fail to
-        run, on a recipe that does not match its own contract.
+        Runs at startup, and again for a recipe whose files changed (`recheck_changed_data_analysis_recipes`, GATE-GAP-1).
+        A recipe failing either check never reaches `available_data_analysis_recipes` — HOME must never silently
+        run, or silently fail to run, on a recipe that does not match its own contract.
         """
         available: Dict[str, str] = {}
         rejected: Dict[str, dict] = {}
         self.data_analysis_recipe_advices: Dict[str, list[str]] = {}  # advices never reject a recipe; HOME lists them
-        raw_data_dir = self.get_location("raw_data")
         for name, path in candidates.items():
-            problems = validate_data_analysis_recipe(path)
-            if not problems:
-                try:
-                    problems = validate_data_analysis_recipe_data(path, raw_data_dir, data_lookup=self.data_lookup,
-                                                                  imports_dir=self.get_imports_dir())
-                except Exception as e:
-                    problems = [f"data-vs-contract check could not run: {e}"]
+            problems, advices, contact = self._gate_one(path)
             if problems:
-                header = read_data_analysis_recipe_header(path)
-                info = header.get("info") if header else None
-                rejected[name] = {
-                    "problems": [str(p) for p in problems],
-                    "contact": resolve_contact(info, self.get_contact()),
-                }
+                rejected[name] = {"problems": [str(p) for p in problems], "contact": contact}
             else:
                 available[name] = path
-                try:
-                    advices = [f"{a.problem} Fix: {a.tip}" if a.tip else a.problem for a in checker_advices(path)]
-                except Exception as e:
-                    advices = [f"[CHECK] the advices of the recipe could not be read: {e}"]
                 if advices:
                     self.data_analysis_recipe_advices[name] = advices
         return available, rejected
+
+    _INCLUDE_RE = re.compile(r"!include\s+['\"]?([^'\"\s#]+)")
+
+    @classmethod
+    def _recipe_files(cls, path: str) -> list[str]:
+        """The files a recipe is made of: the recipe, every file it includes (any depth, also outside its own folder,
+        also one that does not exist yet) and everything under its mirrored folder `<name>/`
+        (rules_data_analysis_recipe_structure.md section 1). Read as text, never loaded: it must work on a recipe that
+        does not load."""
+        files: dict[str, None] = {}
+        pending = [os.path.abspath(path)]
+        mirrored = Path(path).with_suffix("")
+        if mirrored.is_dir():
+            pending += [str(f) for f in sorted(mirrored.rglob("*")) if f.is_file()]
+        while pending:
+            current = pending.pop()
+            if current in files:
+                continue
+            files[current] = None
+            try:
+                text = Path(current).read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            for rel in cls._INCLUDE_RE.findall(text):
+                pending.append(os.path.abspath(os.path.join(os.path.dirname(current), rel)))
+        return sorted(files)
+
+    def _watch(self, path: str) -> tuple[list[str], tuple]:
+        files = self._recipe_files(path)
+        return files, files_signature(files)
+
+    def recheck_changed_data_analysis_recipes(self) -> list[str]:
+        """Run the HOME load gate again for every recipe whose files changed since it was last checked (GATE-GAP-1).
+
+        The one function for this: Blueprint calls it after each save and HOME's poll calls it, so a recipe saved
+        in Blueprint that now fails leaves `available_data_analysis_recipes`, enters `rejected_data_analysis_recipes`
+        with its problems and contact, and one that is repaired comes back. Returns the names that were checked
+        (empty when no file changed: no check runs). The dictionaries are replaced, never changed in place,
+        because other sessions may be reading them. The set of recipes is the one found at startup (ADR-094:
+        a new recipe file needs a restart)."""
+        with self._gate_lock:
+            changed = [name for name, (files, signature) in self._gate_state.items()
+                       if files_signature(files) != signature]
+            if not changed:
+                return []
+            available = dict(self.available_data_analysis_recipes)
+            rejected = dict(self.rejected_data_analysis_recipes)
+            advices = dict(self.data_analysis_recipe_advices)
+            for name in changed:
+                path = self._all_data_analysis_recipes[name]
+                available.pop(name, None)
+                rejected.pop(name, None)
+                advices.pop(name, None)
+                problems, found, contact = self._gate_one(path)
+                if problems:
+                    rejected[name] = {"problems": [str(p) for p in problems], "contact": contact}
+                else:
+                    available[name] = path
+                    if found:
+                        advices[name] = found
+                self._gate_state[name] = self._watch(path)
+            self.available_data_analysis_recipes = available
+            self.rejected_data_analysis_recipes = rejected
+            self.data_analysis_recipe_advices = advices
+            self.data_analysis_recipe_gate_version += 1
+            return changed
 
     def get_contact(self) -> str | None:
         """The deployment's own contact (ADR-094 fallback tier), or None if not configured."""
@@ -496,6 +573,11 @@ class Bootloader:
             return self.get_default_data_analysis_recipe()
         except FileNotFoundError:
             return None
+
+    @property
+    def discovered_data_analysis_recipes(self) -> Dict[str, str]:
+        """Every recipe file found at startup (name -> path), whether it passed the load gate or not."""
+        return dict(self._all_data_analysis_recipes)
 
     @property
     def has_usable_data_analysis_recipe(self) -> bool:

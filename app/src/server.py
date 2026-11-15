@@ -80,9 +80,18 @@ def server(input, output, session):
                     return target
         return "Untitled_Collection"  # no joins and no plot has a target_dataset either
 
+    # GATE-GAP-1: HOME's load gate (ADR-094) runs again for a recipe whose files changed (a save in Blueprint, an edit on
+    # disk). The poll re-checks only the recipes whose files changed (nothing runs otherwise) and invalidates
+    # `active_cfg` when the answer changes, so a recipe that now fails is no longer run and one that is repaired returns.
+    @reactive.poll(lambda: (bootloader.recheck_changed_data_analysis_recipes(),
+                            bootloader.data_analysis_recipe_gate_version)[1], 2)
+    def recipe_gate_version():
+        return bootloader.data_analysis_recipe_gate_version
+
     # 1. Reactive Data Analysis Recipe Authority (Universal Architecture)
     @reactive.Calc
     def active_cfg():
+        recipe_gate_version()
         # When the selector is hidden the deployment (or SPARMVET_DATA_ANALYSIS_RECIPE) names the data analysis recipe;
         # fall back to the data_analysis_recipe_id widget only when the selector is visible.
         data_analysis_recipe_id = _safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe_or_none())
@@ -91,6 +100,9 @@ def server(input, output, session):
         # enough to make all of them render their own "nothing to show" state instead of
         # raising. Fixing it once here, not at each of the ~15 call sites.
         if not data_analysis_recipe_id:
+            return SimpleNamespace(raw_config={})
+        # GATE-GAP-1: a recipe that no longer passes the gate is not read: nothing is computed from the failing file
+        if data_analysis_recipe_id not in bootloader.available_data_analysis_recipes:
             return SimpleNamespace(raw_config={})
         # ADR-089: the parsed data analysis recipe stays in memory only while none of its files changed on
         # disk (size and modification time are checked each time a session evaluates this).
