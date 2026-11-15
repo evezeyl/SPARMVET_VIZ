@@ -271,7 +271,7 @@ def handle_mygeom(p, spec):
 | `context` | Yes | Always `["plot"]` for geom/stat/theme components |
 | `tags` | Yes | Search keywords for the picker |
 | `wraps` | Yes | Link to plotnine source (`lib`, `attr_path`) |
-| `plotnine` | Yes | What the component is to plotnine (ADR-106 V1): `exact` (only passes its parameters to the plotnine object of the same name), `modified` (adds logic or wraps another object) or `own` (no plotnine object of that name). The value is re-derived from the code by `tests/test_component_plotnine_field.py`. A `modified` or `own` component ends its description with a sentence that starts `Differs from plotnine:` or `Not in plotnine:` and says what it changes. |
+| `plotnine` | Yes | What the component is to plotnine (ADR-106 V1): `exact` (only passes its parameters to the plotnine object of the same name), `modified` (adds logic or wraps another object) or `own` (no plotnine object of that name). The value is re-derived from the code by `libs/viz_factory/tests/test_component_plotnine_field.py`. A `modified` or `own` component ends its description with a sentence that starts `Differs from plotnine:` or `Not in plotnine:` and says what it changes. |
 | `allow_extra_params` | Yes | Must be `True` — allows any valid plotnine kwarg via data analysis recipe |
 | `params` | `modified` and `own`: written by hand. `exact`: never written, read from plotnine at registration | Dict of param definitions (widget, label, required, default, …) |
 | `overlay` | `exact`, optional | Per parameter name: `label`, `widget`, `options`, `hint`. It cannot add a name plotnine does not accept and cannot state a `default` or `required` (plotnine says both) |
@@ -286,7 +286,7 @@ annotation is one plain type (`bool`, `int`, `float`, `str`); otherwise it is `a
 plotnine accepts. plotnine spells names with `color`; an overlay may write `colour`, and it describes the `color`
 parameter. A parameter that cannot be read, an overlay entry for a name plotnine does not have, a `default` or `required`
 in an overlay, or a widget that contradicts plotnine's default (`number` for `shape`, whose default is `'o'`) stops the
-import with a message that names the component. `tests/test_exact_parameters_equal_plotnine.py` compares every `exact`
+import with a message that names the component. `libs/viz_factory/tests/test_exact_parameters_equal_plotnine.py` compares every `exact`
 component with plotnine, declared == accepted - not exposed.
 
 ### Category vocabulary

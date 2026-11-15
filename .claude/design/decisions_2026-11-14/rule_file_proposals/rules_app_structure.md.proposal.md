@@ -1,6 +1,6 @@
 # Proposal: `.claude/rules/rules_app_structure.md`
 
-Status: PROPOSAL for Eve's double confirmation. No rule file was edited. Checked by listing `app/modules` and `app/handlers` against the directory map (lines 36-90), `wc -l app/src/server.py` (263), `git log` for `app/modules/exporter.py`, and reading `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py:501-514`.
+Status: PROPOSAL for Eve's double confirmation. No rule file was edited. Checked by listing `app/modules` and `app/handlers` against the directory map (lines 36-90), `wc -l app/src/server.py` (263), `git log` for the removed `exporter.py` of `app/modules` (deleted in `99a14148`), and reading `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py:501-514`.
 
 ## 1. Line 39, server.py size (FACT; and a rule is exceeded)
 

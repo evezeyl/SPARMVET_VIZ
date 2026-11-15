@@ -57,7 +57,7 @@ done; nothing may be hidden. Format 1 makes every recipe explicit, versioned and
 | 6 | Containers follow ADR-041: named things are dictionaries, ordered operations are lists, `analysis_groups` and `plots` are ordered dictionaries; a wrong form is refused with the corrected text | DEC08, spec 5 | PARTLY: step containers and fields `recipe_check.py`:340-342, 378-396; duplicate keys refused by the new loader (`recipe_loader.py`, T10). NOT VERIFIED: one test per check that the message holds the corrected text; `sort_keys=False` at every writer |
 | 7 | `#` comments are free and kept by every tool; a `comment` key on info, schema, join, group, plot, step and layer; `comments` is refused | DEC07, spec 6.2 | PARTLY: `comment` and CM01 `recipe_check.py`:206, 282, 416, 473, 640, 664, 711; `comments` refused `recipe_spec.yaml`:80. NOT VERIFIED: writers keep `#` comments |
 | 8 | The schema-level `info`, `category`, `sub_category` are dropped; the recipe-level `info` stays free-form | DEC20, spec 7.1 | BUILT: `recipe_spec.yaml`:74-79 |
-| 9 | The two legacy recipes are removed (`config/data_analysis_recipes/VIGAS-P/`, `assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC_data_analysis_recipe.yaml`) | DEC12 | BUILT: both paths are gone |
+| 9 | The two legacy recipes are removed (`config/data_analysis_recipes/VIGAS-P/`, `Virulence_genes_APEC_data_analysis_recipe.yaml` in `assets/ref_data/Virulence_genes_APEC/`, removed in `4a93f9dd`) | DEC12 | BUILT: both paths are gone |
 
 **C. Fields, types, missing values, paths**
 

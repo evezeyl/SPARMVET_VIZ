@@ -370,12 +370,6 @@
 - **consumes:** `config/deployment/local/ (writes deployment file)`
 - **doc:** `docs/workflows/connector.qmd`, `.claude/knowledge/architecture_decisions.md#ADR-048`
 
-## `assets/scripts/debug_apply_data_analysis_recipe_standards.py`
-- **Role:** `info`
-- **provides:** `script:debug_apply_data_analysis_recipe_standards`
-- **consumes:** `libs/viz_factory/tests/test_data/ (YAML test data analysis recipes)`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
-
 ## `assets/scripts/debug_bootstrap_viz_yamls.py`
 - **Role:** `info`
 - **provides:** `script:debug_bootstrap_viz_yamls`
@@ -400,12 +394,6 @@
 - **consumes:** `assets/test_data/1_test_data_ST22_dummy/ (ground truth TSVs)`, `libs/test_lab (AquaSynthesizer)`
 - **consumed_by:** `assets/test_data/demo_high_integrity/ (writes synthetic TSVs)`
 - **doc:** `libs/test_lab/README.md`
-
-## `assets/scripts/normalize_data_analysis_recipe_fields.py`
-- **Role:** `info`
-- **provides:** `script:normalize_data_analysis_recipe_fields`
-- **consumes:** `config/data_analysis_recipes/ (YAML files)`
-- **doc:** `.claude/rules/rules_data_engine.md#4`
 
 ## `config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml`
 - **Role:** `branch`

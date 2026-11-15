@@ -38,7 +38,7 @@ Every transformation component MUST consist of a triplet in `libs/transformer/te
 ## 4. Documentation & Persistence
 
 - **README Update**: Add the action to the "Key Components" list in `libs/transformer/README.md`.
-- **User Documentation**: Append the component to `docs/workflows/transformer_implementation.qmd`.
+- **User Documentation**: Append the component to `docs/workflows/transformer_integrity.qmd` (the former `transformer_implementation.qmd` does not exist).
 - **Checkpoint Logic**: If implementing a Persistence action (Tier 1 Anchor), ensure it triggers the **Short-Circuit Rule** to bypass redundant Layer 1/2 processing.
 
 ## 5. Summary Presentation
