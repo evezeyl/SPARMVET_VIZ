@@ -171,6 +171,17 @@ def define_server(input, output, session, *,
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
 
+    # A plot's error or warning goes to the Processing issues table and to the Alerts panel, once, after the flush and under
+    # reactive.isolate() (a render may not write a reactive value; app/modules/plot_issue_reporter.py). VIZ-STANDARD-1, V7.
+    from app.modules.plot_issue_reporter import make_issue_reporter
+    _report_issue = make_issue_reporter(session, session_processing_issues, notification_log)
+
+    def _report_plot_exception(exc, component, location):
+        _report_issue(capture_entry(exc, component, location), str(exc), "error")
+
+    def _report_plot_warning(warning):
+        _report_issue(warning.with_timestamp().to_audit_row(), f"{warning.problem} Fix: {warning.fix}", "warning")
+
     # ── Phase 21-B: Dynamic plot handlers for analysis_groups ─────────────────
     # Enumerate all plot IDs at server init time so Shiny can register each
     # @render.plot slot. Handlers read active_cfg() at render time, not init time.
@@ -500,13 +511,7 @@ def define_server(input, output, session, *,
                 # PipelineError the library already built (errors.py's pipeline_error= carry
                 # kwarg, PIPELINE-ERROR-WIRE-2) when the exception has one; falls back to the
                 # exception's own message otherwise — same as before this change.
-                if session_processing_issues is not None:
-                    _entry = capture_entry(e, "DataOrchestrator", f"materialize(plot_id='{p_id}')")
-                    def _append_data_error(entry=_entry):
-                        current = session_processing_issues.get()
-                        if len(current) < 50:
-                            session_processing_issues.set(current + [entry])
-                    session.on_flushed(_append_data_error, once=True)
+                _report_plot_exception(e, "DataOrchestrator", f"materialize(plot_id='{p_id}')")
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 ax.text(0.5, 0.5, f"Data error: {e}", ha="center", va="center",
@@ -539,18 +544,8 @@ def define_server(input, output, session, *,
                 if _resolved_seed is not None else _t3_overrides
             )
 
-            def _report_draw_error(e, mode_label=""):
-                # Capture error for session_processing_issues without violating R1
-                # (cannot call reactive.Value.set inside @render.*). ADR-094/
-                # PIPELINE-ERROR-WIRE-2: capture_entry() now uses VizFactory's real
-                # PipelineError (fix/who) when the exception carries one, not just its message.
-                if session_processing_issues is not None:
-                    _entry = capture_entry(e, "VizFactory", f"render(plot_id='{p_id}'{mode_label})")
-                    def _append_render_error(entry=_entry):
-                        current = session_processing_issues.get()
-                        if len(current) < 50:
-                            session_processing_issues.set(current + [entry])
-                    session.on_flushed(_append_render_error, once=True)
+            def _report_draw_error(e):
+                _report_plot_exception(e, "VizFactory", f"render(plot_id='{p_id}')")
 
             try:
                 # VIZ-STANDARD-1 V7: plotnine draws after this function returns, so a draw error used to escape the
@@ -558,7 +553,7 @@ def define_server(input, output, session, *,
                 # place of the plot and reports it to the alerts panel; the plot itself is drawn once, by Shiny.
                 return show_draw_errors(
                     viz_factory.render(lf, synthetic_data_analysis_recipe, p_id, aesthetic_override=_render_overrides),
-                    on_error=_report_draw_error)
+                    on_error=_report_draw_error, on_warning=_report_plot_warning)
             except Exception as e:
                 _report_draw_error(e)
                 import matplotlib.pyplot as plt
@@ -614,13 +609,7 @@ def define_server(input, output, session, *,
                 # ADR-094/PIPELINE-ERROR-WIRE-2: was silent (no session_processing_issues
                 # capture at all) — the comparison-mode twin of _group_plot_handler's
                 # already-fixed first except block, previously missed.
-                if session_processing_issues is not None:
-                    _entry = capture_entry(e, "DataOrchestrator", f"materialize(plot_id='{p_id}', mode='cmp_base')")
-                    def _append_cmp_data_error(entry=_entry):
-                        current = session_processing_issues.get()
-                        if len(current) < 50:
-                            session_processing_issues.set(current + [entry])
-                    session.on_flushed(_append_cmp_data_error, once=True)
+                _report_plot_exception(e, "DataOrchestrator", f"materialize(plot_id='{p_id}', mode='cmp_base')")
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 ax.text(0.5, 0.5, f"Data error: {e}", ha="center", va="center",
@@ -629,20 +618,12 @@ def define_server(input, output, session, *,
                 return fig
 
             def _report_cmp_error(e):
-                # ADR-094/PIPELINE-ERROR-WIRE-2: now uses capture_entry() for VizFactory's
-                # real fix/who, same as _group_plot_handler's render catch.
-                if session_processing_issues is not None:
-                    _entry = capture_entry(e, "VizFactory", f"render(plot_id='{p_id}', mode='cmp_base')")
-                    def _append_cmp_error(entry=_entry):
-                        current = session_processing_issues.get()
-                        if len(current) < 50:
-                            session_processing_issues.set(current + [entry])
-                    session.on_flushed(_append_cmp_error, once=True)
+                _report_plot_exception(e, "VizFactory", f"render(plot_id='{p_id}', mode='cmp_base')")
 
             try:
                 # VIZ-STANDARD-1 V7: a draw error is shown in the plot's place, as in the main plot handler.
                 return show_draw_errors(viz_factory.render(lf, synthetic_data_analysis_recipe, p_id),
-                                        on_error=_report_cmp_error)
+                                        on_error=_report_cmp_error, on_warning=_report_plot_warning)
             except Exception as e:
                 _report_cmp_error(e)
                 import matplotlib.pyplot as plt
