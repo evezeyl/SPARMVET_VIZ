@@ -1,10 +1,13 @@
 import logging
 from typing import Callable, Dict, Any, Optional
 
+from viz_factory.parameters import ComponentParameterError, exact_parameters
+
 logger = logging.getLogger(__name__)
 
 # @deps
 # provides: decorator:register_plot_component, registry:PLOT_COMPONENTS, registry:COMPONENT_SCHEMAS, function:get_component
+# consumes: libs/viz_factory/src/viz_factory/parameters.py (exact_parameters)
 # consumed_by: libs/viz_factory/tests/test_component_plotnine_field.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/themes/core.py, libs/viz_factory/src/viz_factory/scales/core.py, libs/viz_factory/src/viz_factory/positions/core.py, libs/viz_factory/src/viz_factory/guides/core.py, libs/viz_factory/src/viz_factory/facets/core.py, libs/viz_factory/src/viz_factory/coords/core.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/schema_registry.py
 # doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
@@ -31,15 +34,32 @@ def register_plot_component(name: str, ui_schema: Optional[Dict[str, Any]] = Non
     `exact` (only passes its parameters to the plotnine object of the same name), `modified` (adds logic or wraps another
     object; its description says what it changes), `own` (no plotnine object of that name). It is declared in every
     schema and re-derived from the code by `tests/test_component_plotnine_field.py`.
+
+    The parameter list of an `exact` component is read from plotnine here, at registration (ADR-106 V3): its schema
+    carries a small `overlay` (label, widget, options per parameter name) and optionally `not_exposed` (name: reason),
+    and `params` is filled in from plotnine. A `modified` or `own` component writes its own `params`. A schema that
+    mixes the two, or a list that cannot be read, is an error that names the component.
     """
     def decorator(func: Callable):
         if name in PLOT_COMPONENTS:
             logger.warning(f"Overwriting plotting component: {name}")
         PLOT_COMPONENTS[name] = func
         if ui_schema is not None:
+            _read_exact_parameters(name, ui_schema)
             COMPONENT_SCHEMAS[name] = ui_schema
         return func
     return decorator
+
+
+def _read_exact_parameters(name: str, schema: Dict[str, Any]) -> None:
+    """Fill `params` and `not_exposed` of an `exact` schema from plotnine; refuse a schema that mixes the two kinds."""
+    if schema.get("plotnine") != "exact":
+        if "overlay" in schema or "not_exposed" in schema:
+            raise ComponentParameterError(f"{name}: `overlay` and `not_exposed` belong to an `exact` component; a `{schema.get('plotnine')}` one writes its own `params`")
+        return
+    if "params" in schema:
+        raise ComponentParameterError(f"{name}: an `exact` component does not write `params`; they are read from plotnine (write an `overlay`)")
+    schema["params"], schema["not_exposed"] = exact_parameters(name, schema)
 
 
 def get_component(name: str) -> Callable:

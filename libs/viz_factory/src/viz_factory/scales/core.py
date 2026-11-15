@@ -49,10 +49,9 @@ from viz_factory.registry import register_plot_component
 
 # ── Shared parameter dictionaries ─────────────────────────────────────────────
 
-_SCALE_GUIDE_PARAMS = {
-    "name": {"widget": "string", "label": "Scale title (legend / axis label)", "required": False},
-    "guide": {"widget": "enum", "label": "Guide type", "required": False,
-              "options": ["legend", "colorbar", "none"]},
+_SCALE_GUIDE_OVERLAY = {
+    "name": {"widget": "string", "label": "Scale title (legend / axis label)"},
+    "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "colorbar", "none"]},
 }
 
 _SCALE_AXIS_PARAMS = {
@@ -60,6 +59,14 @@ _SCALE_AXIS_PARAMS = {
     "breaks": {"widget": "string", "label": "Break points (list or expression)", "required": False},
     "labels": {"widget": "string", "label": "Break labels", "required": False},
     "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
+}
+
+# The same four entries as the overlay of the `exact` axis scales (plotnine says the defaults and what is required).
+_SCALE_AXIS_OVERLAY = {
+    "name": {"widget": "string", "label": "Axis label"},
+    "breaks": {"widget": "string", "label": "Break points (list or expression)"},
+    "labels": {"widget": "string", "label": "Break labels"},
+    "limits": {"widget": "string", "label": "Axis limits as [min, max]"},
 }
 
 _VIRIDIS_PARAMS = {
@@ -73,10 +80,9 @@ _VIRIDIS_PARAMS = {
               "options": ["legend", "colorbar", "none"]},
 }
 
-_SCALE_IDENTITY_PARAMS = {
-    "name": {"widget": "string", "label": "Legend title", "required": False},
-    "guide": {"widget": "enum", "label": "Guide type", "required": False,
-              "options": ["legend", "none"]},
+_SCALE_IDENTITY_OVERLAY = {
+    "name": {"widget": "string", "label": "Legend title"},
+    "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
 }
 
 
@@ -90,10 +96,10 @@ _SCALE_IDENTITY_PARAMS = {
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_color_gradient"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "low": {"widget": "color", "label": "Low value colour", "required": False, "default": "#132B43"},
-        "high": {"widget": "color", "label": "High value colour", "required": False, "default": "#56B1F7"},
-        **_SCALE_GUIDE_PARAMS,
+    "overlay": {
+        "low": {"widget": "color", "label": "Low value colour"},
+        "high": {"widget": "color", "label": "High value colour"},
+        **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Map a continuous variable to a 2-colour gradient; the simplest continuous colour scale \u2014 use scale_color_viridis_c for perceptual uniformity.",
     "yaml_example": "layers:\n  - name: scale_color_gradient\n    params:\n      low: '#132B43'\n      high: '#56B1F7'",
@@ -110,10 +116,10 @@ def handle_color_gradient(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_fill_gradient"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "low": {"widget": "color", "label": "Low value colour", "required": False, "default": "#132B43"},
-        "high": {"widget": "color", "label": "High value colour", "required": False, "default": "#56B1F7"},
-        **_SCALE_GUIDE_PARAMS,
+    "overlay": {
+        "low": {"widget": "color", "label": "Low value colour"},
+        "high": {"widget": "color", "label": "High value colour"},
+        **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Map a continuous fill variable to a 2-colour gradient; use for heatmaps or geom_tile where the fill encodes a numeric value.",
     "yaml_example": "layers:\n  - name: scale_fill_gradient\n    params:\n      low: white\n      high: '#345beb'",
@@ -130,12 +136,12 @@ def handle_fill_gradient(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_color_gradient2"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "low": {"widget": "color", "label": "Low end colour", "required": False, "default": "#2166AC"},
-        "mid": {"widget": "color", "label": "Midpoint colour", "required": False, "default": "#F7F7F7"},
-        "high": {"widget": "color", "label": "High end colour", "required": False, "default": "#D6604D"},
-        "midpoint": {"widget": "number", "label": "Data value at midpoint", "required": False, "default": 0},
-        **_SCALE_GUIDE_PARAMS,
+    "overlay": {
+        "low": {"widget": "color", "label": "Low end colour"},
+        "mid": {"widget": "color", "label": "Midpoint colour"},
+        "high": {"widget": "color", "label": "High end colour"},
+        "midpoint": {"widget": "number", "label": "Data value at midpoint"},
+        **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Diverging 2-stop gradient with a midpoint; use when the variable has a meaningful centre (e.g. z-scores, log fold-change).",
     "yaml_example": "layers:\n  - name: scale_color_gradient2\n    params:\n      low: blue\n      mid: white\n      high: red\n      midpoint: 0",
@@ -152,12 +158,12 @@ def handle_color_gradient2(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_fill_gradient2"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "low": {"widget": "color", "label": "Low end colour", "required": False, "default": "#2166AC"},
-        "mid": {"widget": "color", "label": "Midpoint colour", "required": False, "default": "#F7F7F7"},
-        "high": {"widget": "color", "label": "High end colour", "required": False, "default": "#D6604D"},
-        "midpoint": {"widget": "number", "label": "Data value at midpoint", "required": False, "default": 0},
-        **_SCALE_GUIDE_PARAMS,
+    "overlay": {
+        "low": {"widget": "color", "label": "Low end colour"},
+        "mid": {"widget": "color", "label": "Midpoint colour"},
+        "high": {"widget": "color", "label": "High end colour"},
+        "midpoint": {"widget": "number", "label": "Data value at midpoint"},
+        **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Diverging 2-stop fill gradient with a midpoint; use for heatmaps where the fill diverges around a central value.",
     "yaml_example": "layers:\n  - name: scale_fill_gradient2\n    params:\n      low: blue\n      mid: white\n      high: red\n      midpoint: 0",
@@ -174,9 +180,9 @@ def handle_fill_gradient2(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_color_gradientn"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "colors": {"widget": "string", "label": "Colour list (e.g. ['#blue','#white','#red'])", "required": True},
-        **_SCALE_GUIDE_PARAMS,
+    "overlay": {
+        "colors": {"widget": "string", "label": "Colour list (e.g. ['#blue','#white','#red'])"},
+        **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Map a continuous variable to an n-colour gradient; use for custom multi-stop palettes (e.g. temperature maps, clinical risk scores).",
     "yaml_example": "layers:\n  - name: scale_color_gradientn\n    params:\n      colours: [blue, white, red]",
@@ -193,9 +199,9 @@ def handle_color_gradientn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_fill_gradientn"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "colors": {"widget": "string", "label": "Colour list (e.g. ['#blue','#white','#red'])", "required": True},
-        **_SCALE_GUIDE_PARAMS,
+    "overlay": {
+        "colors": {"widget": "string", "label": "Colour list (e.g. ['#blue','#white','#red'])"},
+        **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Map a continuous fill variable to an n-colour gradient; use for heatmaps requiring more than two colour stops.",
     "yaml_example": "layers:\n  - name: scale_fill_gradientn\n    params:\n      colours: [blue, white, red]",
@@ -214,13 +220,11 @@ def handle_fill_gradientn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_color_distiller"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "palette": {"widget": "string", "label": "RColorBrewer palette (e.g. Blues, RdYlBu)", "required": False, "default": "Blues"},
-        "type": {"widget": "enum", "label": "Palette type", "required": False,
-                 "default": "seq", "options": ["seq", "div", "qual"]},
-        "direction": {"widget": "enum", "label": "Direction", "required": False,
-                      "default": "1", "options": ["1", "-1"]},
-        **_SCALE_GUIDE_PARAMS,
+    "overlay": {
+        "palette": {"widget": "string", "label": "RColorBrewer palette (e.g. Blues, RdYlBu)"},
+        "type": {"widget": "enum", "label": "Palette type", "options": ["seq", "div", "qual"]},
+        "direction": {"widget": "enum", "label": "Direction", "options": ["1", "-1"]},
+        **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Map a continuous colour variable using an RColorBrewer palette; use for sequential or diverging continuous data when a named palette name is sufficient.",
     "yaml_example": "layers:\n  - name: scale_color_distiller\n    params:\n      palette: Blues",
@@ -237,13 +241,11 @@ def handle_color_distiller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_fill_distiller"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "palette": {"widget": "string", "label": "RColorBrewer palette (e.g. Blues, RdYlBu)", "required": False, "default": "Blues"},
-        "type": {"widget": "enum", "label": "Palette type", "required": False,
-                 "default": "seq", "options": ["seq", "div", "qual"]},
-        "direction": {"widget": "enum", "label": "Direction", "required": False,
-                      "default": "1", "options": ["1", "-1"]},
-        **_SCALE_GUIDE_PARAMS,
+    "overlay": {
+        "palette": {"widget": "string", "label": "RColorBrewer palette (e.g. Blues, RdYlBu)"},
+        "type": {"widget": "enum", "label": "Palette type", "options": ["seq", "div", "qual"]},
+        "direction": {"widget": "enum", "label": "Direction", "options": ["1", "-1"]},
+        **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Map a continuous fill variable using an RColorBrewer palette; use for heatmaps when an RColorBrewer name is preferred over manual hex colours.",
     "yaml_example": "layers:\n  - name: scale_fill_distiller\n    params:\n      palette: RdYlBu",
@@ -262,9 +264,9 @@ def handle_fill_distiller(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_color_cmap"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "cmap_name": {"widget": "string", "label": "Matplotlib colormap name (e.g. viridis, Blues, RdBu)", "required": False, "default": "viridis"},
-        **_SCALE_GUIDE_PARAMS,
+    "overlay": {
+        "cmap_name": {"widget": "string", "label": "Matplotlib colormap name (e.g. viridis, Blues, RdBu)"},
+        **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Map a continuous colour variable using a matplotlib colormap by name; use when the colourmap name is already known from Python/matplotlib conventions.",
     "yaml_example": "layers:\n  - name: scale_color_cmap\n    params:\n      cmap_name: viridis",
@@ -281,9 +283,9 @@ def handle_color_cmap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_fill_cmap"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "cmap_name": {"widget": "string", "label": "Matplotlib colormap name (e.g. viridis, Blues, RdBu)", "required": False, "default": "viridis"},
-        **_SCALE_GUIDE_PARAMS,
+    "overlay": {
+        "cmap_name": {"widget": "string", "label": "Matplotlib colormap name (e.g. viridis, Blues, RdBu)"},
+        **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Map a continuous fill variable using a matplotlib colormap; use for heatmaps when a matplotlib colormap name is preferred.",
     "yaml_example": "layers:\n  - name: scale_fill_cmap\n    params:\n      cmap_name: plasma",
@@ -390,9 +392,9 @@ def handle_fill_viridis_c(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_color_cmap_d"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "cmap_name": {"widget": "string", "label": "Matplotlib colormap name", "required": False, "default": "tab10"},
-        **_SCALE_GUIDE_PARAMS,
+    "overlay": {
+        "cmap_name": {"widget": "string", "label": "Matplotlib colormap name"},
+        **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Map a discrete colour variable to a matplotlib colormap; use when the colormap name is from matplotlib and the variable is categorical.",
     "yaml_example": "layers:\n  - name: scale_color_cmap_d\n    params:\n      cmap_name: tab10",
@@ -409,9 +411,9 @@ def handle_color_cmap_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_fill_cmap_d"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "cmap_name": {"widget": "string", "label": "Matplotlib colormap name", "required": False, "default": "tab10"},
-        **_SCALE_GUIDE_PARAMS,
+    "overlay": {
+        "cmap_name": {"widget": "string", "label": "Matplotlib colormap name"},
+        **_SCALE_GUIDE_OVERLAY,
     },
     "description": "Map a discrete fill variable to a matplotlib colormap; use for categorical fill when a matplotlib colormap name is preferred over manual hex values.",
     "yaml_example": "layers:\n  - name: scale_fill_cmap_d\n    params:\n      cmap_name: Set2",
@@ -430,9 +432,9 @@ def handle_fill_cmap_d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_color_discrete"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Default discrete colour scale; use when you want plotnine to choose colours automatically for a categorical variable without specifying a palette.",
     "yaml_example": "layers:\n  - name: scale_color_discrete",
@@ -449,9 +451,9 @@ def handle_color_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_fill_discrete"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Default discrete fill scale; use when you want plotnine to choose fills automatically \u2014 override with scale_fill_manual when specific colours are required.",
     "yaml_example": "layers:\n  - name: scale_fill_discrete",
@@ -470,14 +472,12 @@ def handle_fill_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_color_brewer"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "palette": {"widget": "string", "label": "Brewer palette (e.g. Set1, Paired, Dark2)", "required": False, "default": "Set1"},
-        "type": {"widget": "enum", "label": "Palette type", "required": False,
-                 "default": "qual", "options": ["qual", "seq", "div"]},
-        "direction": {"widget": "enum", "label": "Direction", "required": False,
-                      "default": "1", "options": ["1", "-1"]},
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "palette": {"widget": "string", "label": "Brewer palette (e.g. Set1, Paired, Dark2)"},
+        "type": {"widget": "enum", "label": "Palette type", "options": ["qual", "seq", "div"]},
+        "direction": {"widget": "enum", "label": "Direction", "options": ["1", "-1"]},
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete colour variable to an RColorBrewer palette; a practical choice for categorical data when a named palette name is sufficient.",
     "yaml_example": "layers:\n  - name: scale_color_brewer\n    params:\n      palette: Set1",
@@ -494,14 +494,12 @@ def handle_color_brewer(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_fill_brewer"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "palette": {"widget": "string", "label": "Brewer palette (e.g. Set1, Paired, Dark2)", "required": False, "default": "Set1"},
-        "type": {"widget": "enum", "label": "Palette type", "required": False,
-                 "default": "qual", "options": ["qual", "seq", "div"]},
-        "direction": {"widget": "enum", "label": "Direction", "required": False,
-                      "default": "1", "options": ["1", "-1"]},
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "palette": {"widget": "string", "label": "Brewer palette (e.g. Set1, Paired, Dark2)"},
+        "type": {"widget": "enum", "label": "Palette type", "options": ["qual", "seq", "div"]},
+        "direction": {"widget": "enum", "label": "Direction", "options": ["1", "-1"]},
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete fill variable to an RColorBrewer palette; use for grouped bar charts or box plots when a named palette is preferable to manual hex values.",
     "yaml_example": "layers:\n  - name: scale_fill_brewer\n    params:\n      palette: Set2",
@@ -520,10 +518,10 @@ def handle_fill_brewer(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_color_manual"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "values": {"widget": "string", "label": "Named colour dict or list (e.g. {A: '#red', B: '#blue'})", "required": True},
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "values": {"widget": "string", "label": "Named colour dict or list (e.g. {A: '#red', B: '#blue'})"},
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete colour variable to exact hex values; use when brand colours or institution-specific palettes must be applied precisely.",
     "yaml_example": "layers:\n  - name: scale_color_manual\n    params:\n      values: ['#345beb', '#10a395', '#ffc107']",
@@ -540,10 +538,10 @@ def handle_color_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_fill_manual"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "values": {"widget": "string", "label": "Named colour dict or list (e.g. {A: '#red', B: '#blue'})", "required": True},
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "values": {"widget": "string", "label": "Named colour dict or list (e.g. {A: '#red', B: '#blue'})"},
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete fill variable to exact hex values; use when specific brand colours must be assigned to named categories.",
     "yaml_example": "layers:\n  - name: scale_fill_manual\n    params:\n      values: ['#345beb', '#10a395', '#ffc107']",
@@ -635,9 +633,9 @@ def handle_y_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_x_discrete"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        **_SCALE_AXIS_PARAMS,
-        "expand": {"widget": "string", "label": "Axis expand", "required": False},
+    "overlay": {
+        **_SCALE_AXIS_OVERLAY,
+        "expand": {"widget": "string", "label": "Axis expand"},
     },
     "description": "Control x-axis order and labels for discrete/categorical variables; use to reorder factor levels or rename axis tick labels.",
     "yaml_example": "layers:\n  - name: scale_x_discrete\n    params:\n      limits: [cat_a, cat_b, cat_c]",
@@ -654,9 +652,9 @@ def handle_x_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_y_discrete"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        **_SCALE_AXIS_PARAMS,
-        "expand": {"widget": "string", "label": "Axis expand", "required": False},
+    "overlay": {
+        **_SCALE_AXIS_OVERLAY,
+        "expand": {"widget": "string", "label": "Axis expand"},
     },
     "description": "Control y-axis order and labels for discrete variables; use with coord_flip bar charts to specify the vertical category order.",
     "yaml_example": "layers:\n  - name: scale_y_discrete\n    params:\n      limits: [low, medium, high]",
@@ -675,7 +673,7 @@ def handle_y_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_x_log10"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": _SCALE_AXIS_PARAMS,
+    "overlay": _SCALE_AXIS_OVERLAY,
     "description": "Apply a log10 transformation to the x-axis; use for variables spanning orders of magnitude such as bacterial counts or p-values.",
     "yaml_example": "layers:\n  - name: scale_x_log10",
 })
@@ -691,7 +689,7 @@ def handle_x_log10(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_y_log10"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": _SCALE_AXIS_PARAMS,
+    "overlay": _SCALE_AXIS_OVERLAY,
     "description": "Apply a log10 transformation to the y-axis; use for count data or MIC values where the distribution is heavily right-skewed.",
     "yaml_example": "layers:\n  - name: scale_y_log10",
 })
@@ -709,10 +707,10 @@ def handle_y_log10(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_x_reverse"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Axis label", "required": False},
-        "breaks": {"widget": "string", "label": "Break points", "required": False},
-        "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
+    "overlay": {
+        "name": {"widget": "string", "label": "Axis label"},
+        "breaks": {"widget": "string", "label": "Break points"},
+        "limits": {"widget": "string", "label": "Axis limits as [min, max]"},
     },
     "description": "Reverse the direction of the x-axis; use for dendrograms, forest plots, or year axes where decreasing order is conventional.",
     "yaml_example": "layers:\n  - name: scale_x_reverse",
@@ -729,10 +727,10 @@ def handle_x_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_y_reverse"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Axis label", "required": False},
-        "breaks": {"widget": "string", "label": "Break points", "required": False},
-        "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
+    "overlay": {
+        "name": {"widget": "string", "label": "Axis label"},
+        "breaks": {"widget": "string", "label": "Break points"},
+        "limits": {"widget": "string", "label": "Axis limits as [min, max]"},
     },
     "description": "Reverse the direction of the y-axis; use when higher values should appear at the bottom (e.g. depth deployments, rank plots).",
     "yaml_example": "layers:\n  - name: scale_y_reverse",
@@ -751,11 +749,11 @@ def handle_y_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_x_datetime"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Axis label", "required": False},
-        "date_labels": {"widget": "string", "label": "Date label format (e.g. %Y-%m-%d)", "required": False},
-        "date_breaks": {"widget": "string", "label": "Date break interval (e.g. 1 month)", "required": False},
-        "limits": {"widget": "string", "label": "Axis limits as [min_date, max_date]", "required": False},
+    "overlay": {
+        "name": {"widget": "string", "label": "Axis label"},
+        "date_labels": {"widget": "string", "label": "Date label format (e.g. %Y-%m-%d)"},
+        "date_breaks": {"widget": "string", "label": "Date break interval (e.g. 1 month)"},
+        "limits": {"widget": "string", "label": "Axis limits as [min_date, max_date]"},
     },
     "description": "Format and control a datetime x-axis; use when the x column is a Python datetime type and you need custom date formatting.",
     "yaml_example": "layers:\n  - name: scale_x_datetime\n    params:\n      date_labels: '%Y-%m'",
@@ -772,11 +770,11 @@ def handle_x_datetime(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_y_datetime"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Axis label", "required": False},
-        "date_labels": {"widget": "string", "label": "Date label format (e.g. %Y-%m-%d)", "required": False},
-        "date_breaks": {"widget": "string", "label": "Date break interval (e.g. 1 month)", "required": False},
-        "limits": {"widget": "string", "label": "Axis limits as [min_date, max_date]", "required": False},
+    "overlay": {
+        "name": {"widget": "string", "label": "Axis label"},
+        "date_labels": {"widget": "string", "label": "Date label format (e.g. %Y-%m-%d)"},
+        "date_breaks": {"widget": "string", "label": "Date break interval (e.g. 1 month)"},
+        "limits": {"widget": "string", "label": "Axis limits as [min_date, max_date]"},
     },
     "description": "Format and control a datetime y-axis; use for Gantt-style charts or horizontal time plots where the y axis is datetime.",
     "yaml_example": "layers:\n  - name: scale_y_datetime\n    params:\n      date_labels: '%Y-%m'",
@@ -793,11 +791,11 @@ def handle_y_datetime(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_x_date"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Axis label", "required": False},
-        "date_labels": {"widget": "string", "label": "Date label format (e.g. %b %Y)", "required": False},
-        "date_breaks": {"widget": "string", "label": "Date break interval (e.g. 3 months)", "required": False},
-        "limits": {"widget": "string", "label": "Axis limits as [min_date, max_date]", "required": False},
+    "overlay": {
+        "name": {"widget": "string", "label": "Axis label"},
+        "date_labels": {"widget": "string", "label": "Date label format (e.g. %b %Y)"},
+        "date_breaks": {"widget": "string", "label": "Date break interval (e.g. 3 months)"},
+        "limits": {"widget": "string", "label": "Axis limits as [min_date, max_date]"},
     },
     "description": "Format and control a date (not datetime) x-axis; use when the x column contains Python date objects.",
     "yaml_example": "layers:\n  - name: scale_x_date\n    params:\n      date_labels: '%Y'",
@@ -814,11 +812,11 @@ def handle_x_date(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_y_date"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Axis label", "required": False},
-        "date_labels": {"widget": "string", "label": "Date label format (e.g. %b %Y)", "required": False},
-        "date_breaks": {"widget": "string", "label": "Date break interval (e.g. 3 months)", "required": False},
-        "limits": {"widget": "string", "label": "Axis limits as [min_date, max_date]", "required": False},
+    "overlay": {
+        "name": {"widget": "string", "label": "Axis label"},
+        "date_labels": {"widget": "string", "label": "Date label format (e.g. %b %Y)"},
+        "date_breaks": {"widget": "string", "label": "Date break interval (e.g. 3 months)"},
+        "limits": {"widget": "string", "label": "Axis limits as [min_date, max_date]"},
     },
     "description": "Format and control a date y-axis; use when the y column contains Python date objects.",
     "yaml_example": "layers:\n  - name: scale_y_date\n    params:\n      date_labels: '%Y'",
@@ -837,10 +835,10 @@ def handle_y_date(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_x_sqrt"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Axis label", "required": False},
-        "breaks": {"widget": "string", "label": "Break points", "required": False},
-        "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
+    "overlay": {
+        "name": {"widget": "string", "label": "Axis label"},
+        "breaks": {"widget": "string", "label": "Break points"},
+        "limits": {"widget": "string", "label": "Axis limits as [min, max]"},
     },
     "description": "Apply a square-root transformation to the x-axis; intermediate between linear and log \u2014 use for count data with moderate right-skew.",
     "yaml_example": "layers:\n  - name: scale_x_sqrt",
@@ -857,10 +855,10 @@ def handle_x_sqrt(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_y_sqrt"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Axis label", "required": False},
-        "breaks": {"widget": "string", "label": "Break points", "required": False},
-        "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
+    "overlay": {
+        "name": {"widget": "string", "label": "Axis label"},
+        "breaks": {"widget": "string", "label": "Break points"},
+        "limits": {"widget": "string", "label": "Axis limits as [min, max]"},
     },
     "description": "Apply a square-root transformation to the y-axis; use for count histograms where log would exaggerate small values.",
     "yaml_example": "layers:\n  - name: scale_y_sqrt",
@@ -879,10 +877,10 @@ def handle_y_sqrt(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_x_symlog"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Axis label", "required": False},
-        "breaks": {"widget": "string", "label": "Break points", "required": False},
-        "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
+    "overlay": {
+        "name": {"widget": "string", "label": "Axis label"},
+        "breaks": {"widget": "string", "label": "Break points"},
+        "limits": {"widget": "string", "label": "Axis limits as [min, max]"},
     },
     "description": "Symmetric log transformation for x; handles zero and negative values unlike log10 \u2014 use when the variable includes negative values.",
     "yaml_example": "layers:\n  - name: scale_x_symlog",
@@ -899,10 +897,10 @@ def handle_x_symlog(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_y_symlog"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Axis label", "required": False},
-        "breaks": {"widget": "string", "label": "Break points", "required": False},
-        "limits": {"widget": "string", "label": "Axis limits as [min, max]", "required": False},
+    "overlay": {
+        "name": {"widget": "string", "label": "Axis label"},
+        "breaks": {"widget": "string", "label": "Break points"},
+        "limits": {"widget": "string", "label": "Axis limits as [min, max]"},
     },
     "description": "Symmetric log transformation for y; use when y spans both positive and negative values (e.g. log fold-change with true zero).",
     "yaml_example": "layers:\n  - name: scale_y_symlog",
@@ -921,10 +919,10 @@ def handle_y_symlog(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_x_timedelta"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Axis label", "required": False},
-        "breaks": {"widget": "string", "label": "Break points", "required": False},
-        "limits": {"widget": "string", "label": "Axis limits", "required": False},
+    "overlay": {
+        "name": {"widget": "string", "label": "Axis label"},
+        "breaks": {"widget": "string", "label": "Break points"},
+        "limits": {"widget": "string", "label": "Axis limits"},
     },
     "description": "Format a timedelta x-axis; use when x represents a duration (Python timedelta) rather than an absolute date.",
     "yaml_example": "layers:\n  - name: scale_x_timedelta",
@@ -941,10 +939,10 @@ def handle_x_timedelta(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_y_timedelta"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Axis label", "required": False},
-        "breaks": {"widget": "string", "label": "Break points", "required": False},
-        "limits": {"widget": "string", "label": "Axis limits", "required": False},
+    "overlay": {
+        "name": {"widget": "string", "label": "Axis label"},
+        "breaks": {"widget": "string", "label": "Break points"},
+        "limits": {"widget": "string", "label": "Axis limits"},
     },
     "description": "Format a timedelta y-axis; use when y represents elapsed time or a duration.",
     "yaml_example": "layers:\n  - name: scale_y_timedelta",
@@ -963,10 +961,10 @@ def handle_y_timedelta(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_size_continuous"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "range": {"widget": "string", "label": "Output size range as [min, max] (pt)", "required": False, "default": "[1, 6]"},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "name": {"widget": "string", "label": "Legend title"},
+        "range": {"widget": "string", "label": "Output size range as [min, max] (pt)"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a continuous variable to point size; use to encode a third numeric dimension in a scatter plot (bubble chart).",
     "yaml_example": "layers:\n  - name: scale_size_continuous\n    params:\n      range: [1, 10]",
@@ -983,10 +981,10 @@ def handle_size_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_size_discrete"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "range": {"widget": "string", "label": "Output size range as [min, max] (pt)", "required": False, "default": "[1, 6]"},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "name": {"widget": "string", "label": "Legend title"},
+        "range": {"widget": "string", "label": "Output size range as [min, max] (pt)"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete variable to point size; avoid if possible \u2014 size is harder to discriminate categorically than colour.",
     "yaml_example": "layers:\n  - name: scale_size_discrete",
@@ -1005,9 +1003,9 @@ def handle_size_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_shape_discrete"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete variable to point shape; use as a secondary encoding alongside colour for accessibility (works in greyscale).",
     "yaml_example": "layers:\n  - name: scale_shape_discrete",
@@ -1026,10 +1024,10 @@ def handle_shape_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_alpha_continuous"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "range": {"widget": "string", "label": "Opacity range as [min, max] (0–1)", "required": False, "default": "[0.1, 1]"},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "name": {"widget": "string", "label": "Legend title"},
+        "range": {"widget": "string", "label": "Opacity range as [min, max] (0–1)"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a continuous variable to point/fill transparency; use sparingly \u2014 alpha is hard to read accurately but can indicate density or confidence.",
     "yaml_example": "layers:\n  - name: scale_alpha_continuous\n    params:\n      range: [0.2, 1.0]",
@@ -1046,10 +1044,10 @@ def handle_alpha_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_alpha_discrete"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "range": {"widget": "string", "label": "Opacity range as [min, max] (0–1)", "required": False, "default": "[0.1, 1]"},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "name": {"widget": "string", "label": "Legend title"},
+        "range": {"widget": "string", "label": "Opacity range as [min, max] (0–1)"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete variable to alpha; rarely useful \u2014 prefer colour or shape for categorical distinction.",
     "yaml_example": "layers:\n  - name: scale_alpha_discrete",
@@ -1068,9 +1066,9 @@ def handle_alpha_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_linetype_discrete"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete variable to line type; use as a secondary encoding on line plots when colour alone is insufficient.",
     "yaml_example": "layers:\n  - name: scale_linetype_discrete",
@@ -1089,10 +1087,10 @@ def handle_linetype_discrete(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_stroke_continuous"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "range": {"widget": "string", "label": "Stroke width range as [min, max] (pt)", "required": False, "default": "[0.2, 2]"},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "name": {"widget": "string", "label": "Legend title"},
+        "range": {"widget": "string", "label": "Stroke width range as [min, max] (pt)"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a continuous variable to point stroke width; use to encode an extra numeric dimension when combined with a filled shape.",
     "yaml_example": "layers:\n  - name: scale_stroke_continuous\n    params:\n      range: [0.5, 2.0]",
@@ -1111,7 +1109,7 @@ def handle_stroke_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_color_identity"]}],
     "plotnine": "exact",
     "allow_extra_params": False,
-    "params": _SCALE_IDENTITY_PARAMS,
+    "overlay": _SCALE_IDENTITY_OVERLAY,
     "description": "Use literal colour values from a data column as colours; the data column must already contain valid colour strings (hex or named).",
     "yaml_example": "layers:\n  - name: scale_color_identity",
 })
@@ -1127,7 +1125,7 @@ def handle_color_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_fill_identity"]}],
     "plotnine": "exact",
     "allow_extra_params": False,
-    "params": _SCALE_IDENTITY_PARAMS,
+    "overlay": _SCALE_IDENTITY_OVERLAY,
     "description": "Use literal colour strings from a data column as fill values; the column must contain valid hex or named colour strings.",
     "yaml_example": "layers:\n  - name: scale_fill_identity",
 })
@@ -1143,7 +1141,7 @@ def handle_fill_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_size_identity"]}],
     "plotnine": "exact",
     "allow_extra_params": False,
-    "params": _SCALE_IDENTITY_PARAMS,
+    "overlay": _SCALE_IDENTITY_OVERLAY,
     "description": "Use literal numeric values from a data column directly as point sizes; bypasses the default size range mapping.",
     "yaml_example": "layers:\n  - name: scale_size_identity",
 })
@@ -1159,7 +1157,7 @@ def handle_size_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_shape_identity"]}],
     "plotnine": "exact",
     "allow_extra_params": False,
-    "params": _SCALE_IDENTITY_PARAMS,
+    "overlay": _SCALE_IDENTITY_OVERLAY,
     "description": "Use literal shape codes from a data column as shapes; the column must contain integer shape codes valid in plotnine.",
     "yaml_example": "layers:\n  - name: scale_shape_identity",
 })
@@ -1175,7 +1173,7 @@ def handle_shape_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_alpha_identity"]}],
     "plotnine": "exact",
     "allow_extra_params": False,
-    "params": _SCALE_IDENTITY_PARAMS,
+    "overlay": _SCALE_IDENTITY_OVERLAY,
     "description": "Use literal numeric values from a data column as alpha (transparency); values must be in [0, 1].",
     "yaml_example": "layers:\n  - name: scale_alpha_identity",
 })
@@ -1191,7 +1189,7 @@ def handle_alpha_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_linetype_identity"]}],
     "plotnine": "exact",
     "allow_extra_params": False,
-    "params": _SCALE_IDENTITY_PARAMS,
+    "overlay": _SCALE_IDENTITY_OVERLAY,
     "description": "Use literal linetype strings from a data column; the column must contain valid plotnine linetype names ('solid', 'dashed', etc.).",
     "yaml_example": "layers:\n  - name: scale_linetype_identity",
 })
@@ -1207,7 +1205,7 @@ def handle_linetype_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_stroke_identity"]}],
     "plotnine": "exact",
     "allow_extra_params": False,
-    "params": _SCALE_IDENTITY_PARAMS,
+    "overlay": _SCALE_IDENTITY_OVERLAY,
     "description": "Use literal numeric stroke widths from a data column; bypasses range mapping.",
     "yaml_example": "layers:\n  - name: scale_stroke_identity",
 })
@@ -1259,10 +1257,10 @@ def handle_alpha(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_alpha_manual"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "values": {"widget": "string", "label": "Per-category opacity dict or list", "required": True},
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "values": {"widget": "string", "label": "Per-category opacity dict or list"},
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete variable to manually specified alpha values; use when each category must have a specific opacity.",
     "yaml_example": "layers:\n  - name: scale_alpha_manual\n    params:\n      values: [0.3, 0.6, 1.0]",
@@ -1299,10 +1297,10 @@ def handle_size(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_size_manual"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "values": {"widget": "string", "label": "Per-category size dict or list (pt)", "required": True},
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "values": {"widget": "string", "label": "Per-category size dict or list (pt)"},
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete variable to manually specified point sizes; use when each category must have a specific size.",
     "yaml_example": "layers:\n  - name: scale_size_manual\n    params:\n      values: [2, 4, 8]",
@@ -1339,9 +1337,9 @@ def handle_size_area(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_shape"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Shorthand discrete shape scale; equivalent to scale_shape_discrete.",
     "yaml_example": "layers:\n  - name: scale_shape",
@@ -1358,10 +1356,10 @@ def handle_shape(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_shape_manual"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "values": {"widget": "string", "label": "Per-category shape dict or list (int or str)", "required": True},
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "values": {"widget": "string", "label": "Per-category shape dict or list (int or str)"},
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete variable to manually specified point shapes; use when specific shapes must be assigned to named categories.",
     "yaml_example": "layers:\n  - name: scale_shape_manual\n    params:\n      values: [16, 17, 15]",
@@ -1378,9 +1376,9 @@ def handle_shape_manual(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_linetype"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Shorthand discrete linetype scale; equivalent to scale_linetype_discrete.",
     "yaml_example": "layers:\n  - name: scale_linetype",
@@ -1397,10 +1395,10 @@ def handle_linetype(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_linetype_manual"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "values": {"widget": "string", "label": "Per-category linetype dict or list", "required": True},
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False, "options": ["legend", "none"]},
+    "overlay": {
+        "values": {"widget": "string", "label": "Per-category linetype dict or list"},
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "none"]},
     },
     "description": "Map a discrete variable to manually specified line types; use when specific dash patterns must be assigned to named line groups.",
     "yaml_example": "layers:\n  - name: scale_linetype_manual\n    params:\n      values: [solid, dashed, dotted]",
@@ -1461,10 +1459,9 @@ def handle_fill_hue(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_color_continuous"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False,
-                  "options": ["legend", "colorbar", "none"]},
+    "overlay": {
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "colorbar", "none"]},
     },
     "description": "Generic continuous colour scale dispatcher; delegates to the default continuous scale \u2014 rarely needed directly unless resetting a previously set scale.",
     "yaml_example": "layers:\n  - name: scale_color_continuous",
@@ -1481,10 +1478,9 @@ def handle_color_continuous(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["scale_fill_continuous"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
-    "params": {
-        "name": {"widget": "string", "label": "Legend title", "required": False},
-        "guide": {"widget": "enum", "label": "Guide type", "required": False,
-                  "options": ["legend", "colorbar", "none"]},
+    "overlay": {
+        "name": {"widget": "string", "label": "Legend title"},
+        "guide": {"widget": "enum", "label": "Guide type", "options": ["legend", "colorbar", "none"]},
     },
     "description": "Generic continuous fill scale dispatcher; use to reset fill to plotnine defaults after a manual or palette scale was applied upstream.",
     "yaml_example": "layers:\n  - name: scale_fill_continuous",

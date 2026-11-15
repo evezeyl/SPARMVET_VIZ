@@ -196,11 +196,12 @@ def test_facet_wrap_is_exact_and_leaves_the_recipe_parameters_alone():
 def _refused_by_plotnine(name: str, argument: str) -> bool:
     """Ask plotnine itself whether it refuses the argument: a layer when its geom/stat is built, others at the call."""
     from plotnine.exceptions import PlotnineError
-    from viz_factory.arguments import _Geom, _Stat, _wrapped_object
+    from viz_factory.arguments import _wrapped_object
+    from viz_factory.parameters import is_layer
     wrapped = _wrapped_object(name)
     if wrapped is None:
         return False
-    if inspect.isclass(wrapped) and issubclass(wrapped, (_Geom, _Stat)):
+    if is_layer(wrapped):
         try:
             wrapped(**{argument: None}).to_layer()
             return False

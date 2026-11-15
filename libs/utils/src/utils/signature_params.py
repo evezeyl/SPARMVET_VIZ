@@ -29,6 +29,7 @@ class ReadParameter:
     name: str
     kind: Any
     default: Any
+    annotation: Any = EMPTY
 
     @property
     def has_default(self) -> bool:
@@ -59,7 +60,7 @@ def read_parameters(target: Any, owner: str, rename: Optional[Mapping[str, str]]
         parameters = inspect.signature(target).parameters
     except (TypeError, ValueError) as exc:
         raise ParameterReadError(f"{owner}: the parameters of {target!r} cannot be read from its signature ({exc})") from exc
-    return [ReadParameter(source, rename.get(source, source), p.kind, p.default)
+    return [ReadParameter(source, rename.get(source, source), p.kind, p.default, p.annotation)
             for source, p in parameters.items() if source not in ("self", "cls")]
 
 

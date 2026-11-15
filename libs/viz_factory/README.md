@@ -225,19 +225,11 @@ from viz_factory.registry import register_plot_component
     "context": ["plot"],                  # always ["plot"] for geoms
     "tags": ["distribution", "my-geom"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_mygeom"]}],
+    "plotnine": "exact",                  # only passes its parameters to plotnine: they are read from plotnine
     "allow_extra_params": True,           # pass-through for plotnine kwargs not listed here
-    "params": {
-        "alpha": {
-            "widget": "number",
-            "label": "Opacity (0–1)",
-            "required": False,
-            "default": 1.0,
-        },
-        "fill": {
-            "widget": "color",
-            "label": "Fill colour (fixed, not mapped)",
-            "required": False,
-        },
+    "overlay": {                          # what plotnine does not say: label, widget, allowed values
+        "alpha": {"widget": "number", "label": "Opacity (0–1)"},
+        "fill": {"widget": "color", "label": "Fill colour (fixed, not mapped)"},
     },
 })
 def handle_mygeom(p, spec):
@@ -256,7 +248,21 @@ def handle_mygeom(p, spec):
 | `wraps` | Yes | Link to plotnine source (`lib`, `attr_path`) |
 | `plotnine` | Yes | What the component is to plotnine (ADR-106 V1): `exact` (only passes its parameters to the plotnine object of the same name), `modified` (adds logic or wraps another object) or `own` (no plotnine object of that name). The value is re-derived from the code by `tests/test_component_plotnine_field.py`. A `modified` or `own` component ends its description with a sentence that starts `Differs from plotnine:` or `Not in plotnine:` and says what it changes. |
 | `allow_extra_params` | Yes | Must be `True` — allows any valid plotnine kwarg via data analysis recipe |
-| `params` | Yes | Dict of param definitions (widget, label, required, …) |
+| `params` | `modified` and `own`: written by hand. `exact`: never written, read from plotnine at registration | Dict of param definitions (widget, label, required, default, …) |
+| `overlay` | `exact`, optional | Per parameter name: `label`, `widget`, `options`, `hint`. It cannot add a name plotnine does not accept and cannot state a `default` or `required` (plotnine says both) |
+| `not_exposed` | `exact`, optional | `{parameter: reason}` for what plotnine accepts and a recipe does not offer. `data`, `mapping` (layers) and `rescaler`, `oob` (scales: Python functions) are listed for every component that has them |
+
+### Where the parameter list of an `exact` component comes from (ADR-106 V3)
+
+An `exact` component's list is what plotnine accepts, read at registration by `viz_factory.parameters.exact_parameters`:
+the aesthetics and parameters of a geom's and a stat's own objects, or the signature of any other plotnine object
+(`utils.signature_params`, the reader the `polars_` actions use). The widget follows the type only when plotnine's
+annotation is one plain type (`bool`, `int`, `float`, `str`); otherwise it is `any`, so a form never refuses a value
+plotnine accepts. plotnine spells names with `color`; an overlay may write `colour`, and it describes the `color`
+parameter. A parameter that cannot be read, an overlay entry for a name plotnine does not have, a `default` or `required`
+in an overlay, or a widget that contradicts plotnine's default (`number` for `shape`, whose default is `'o'`) stops the
+import with a message that names the component. `tests/test_exact_parameters_equal_plotnine.py` compares every `exact`
+component with plotnine, declared == accepted - not exposed.
 
 ### Category vocabulary
 
@@ -270,7 +276,7 @@ Components do `p + geom_bar(**spec)` — the spec dict passes through directly t
 
 ### Which arguments a component accepts (`viz_factory.arguments`)
 
-The schema lists only the common arguments, so it cannot say which names are valid. `allowed_arguments(name)` returns
+`allowed_arguments(name)` returns
 what the component accepts: for a geom or stat exactly what plotnine accepts (aesthetics and parameters of its geom and
 stat, plus the layer arguments), for any other plotnine class or function its signature together with the schema, and
 `None` when the names are free-form (`annotate`, `element_*`, `theme_custom`). `unknown_arguments(name, names)` lists
