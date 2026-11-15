@@ -5321,6 +5321,8 @@ Note 2026-11-15 (Eve): row order: the user is informed; warnings are clearly dis
 - **Date and Boolean comparisons in the filter panel** (point 7). Eve asked for the options before any choice; nothing is built (M76, 2026-11-14). Added 2026-11-14 after review.
 - **[DECIDED 2026-11-15 by Eve, channel M84 point 9; the Date and Boolean items above are answered by it]** Text greater/less is not offered in the HOME filter (reversible). Date uses a date picker, Boolean a two-choice control; every type is usable with the control that fits it.
 
+**Note 2026-11-15 (Eve, channel M116, S2-1 decided (a) and (a)): the order of audit steps.** The audited steps run in the recorded order, in the table, the plot, the bundle and the exported recipe (one function). A filter on a column that an earlier audit step dropped is an error from the engine, caught and shown with the step, the column and the fix; it is never a silent result. The filter dialog stops offering a column that an earlier audit step dropped. The export is refused before it writes when a step cannot run. Built on `task/plot-table-order` (in review). Tracked in `.claude/tasks/tasks.md` section 7.
+
 
 ## ADR-105: Audit acts along the lineage, chosen by the user; exploration acts only on the data viewed (2026-11-12, confirmed 2026-11-14)
 
@@ -5362,3 +5364,5 @@ Note 2026-11-15 (Eve): row order: the user is informed; warnings are clearly dis
 
 **Not decided here:** V11 (the seed) and V12 (order of work). The seed: ADR-104 (a recipe seed holds; the default is OPEN).
 **Polars side:** the "Polars Parity Mandate" of `rules_data_engine.md` section 5 is qualified by ADR-100 (DEC32: a `polars_` action is exactly Polars; DEC41: Polars methods without an action are deferred **[no longer holds, 2026-11-14: Eve said to start them now, channel M77 point 4, see the note under ADR-100 point 6]**). Whether the mandate is withdrawn like V9 is not recorded: Eve to confirm in the rule file.
+
+**Note 2026-11-15 (Eve, channel M107 and M108): V1-B supersedes V1 (V1-A, 2026-11-14), and point 1 above is reversed for names.** Every true plotnine equivalent is named `plotnine_<name>`. A component with a documented change is `modif_<name>`, and the exact plotnine one stays registered next to it. A composite of several is `step_<name>`. No old name is accepted: an old name is refused with "did you mean <new name>" and the migration command. The field `exact` / `modified` / `own` stays, and a test checks that the prefix and the field agree. Eve: "the price of the transparency and reproducibility we opted for". Not built. The registry audit comes first; the rename waits for Eve to see the impact list (`.claude/tasks/tasks.md` section 7).
