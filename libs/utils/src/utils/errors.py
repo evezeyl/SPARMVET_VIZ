@@ -63,3 +63,10 @@ class DataAnalysisRecipeError(SPARMVET_Error):
     def __init__(self, message: str, tip: str = "Check YAML indentation and ensure required keys (input_fields, wrangling, output_fields) are present.",
                  pipeline_error: Optional[PipelineError] = None):
         super().__init__(message, context="DataAnalysisRecipe", tip=tip, pipeline_error=pipeline_error)
+
+
+class RecipeLoadError(DataAnalysisRecipeError, ValueError):
+    """A recipe file that cannot be loaded (broken YAML, missing include, contradictory file).
+
+    It is the project's recipe error (so a screen shows it as the recipe's problem) and also a ValueError, so the
+    callers that already catch ValueError around a recipe load keep working."""

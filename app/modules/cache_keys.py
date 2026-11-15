@@ -27,7 +27,9 @@ Two data analysis recipe hashes, two purposes:
 
 The loaded data analysis recipe is kept in memory and revalidated against the content of its files.
 """
+import contextlib
 import hashlib
+import io
 import json
 import os
 import threading
@@ -36,6 +38,7 @@ from importlib import metadata
 from pathlib import Path
 from typing import Any, Iterable, Union
 
+from utils.errors import RecipeLoadError
 from utils.config_loader import ConfigManager
 # The one reading of a collection's tier-2 list (issue #77); `tier2_steps` is used from here by the app.
 from utils.recipe_tiers import tier2_steps, without_tier2  # noqa: F401 - tier2_steps is part of this module's interface
@@ -176,12 +179,15 @@ def load_data_analysis_recipe(path: Union[str, Path]) -> LoadedDataAnalysisRecip
         entry = _CACHE.get(key)
         if entry is not None and files_signature(entry.files) == entry.signature:
             return entry
+        printed = io.StringIO()
         try:
-            config = ConfigManager(key)
+            with contextlib.redirect_stderr(printed):   # ConfigManager prints its [FATAL] block to stderr before it exits
+                config = ConfigManager(key)
         except SystemExit as stop:
             # ConfigManager ends the program on a contradictory file (ADR-077). A recipe broken on disk after the app
             # started (a save from Blueprint, GATE-GAP-1) must not end the session of every reader: an ordinary error.
-            raise ValueError(f"The data analysis recipe cannot be loaded (the loader stopped with {stop.code}): {key}") from None
+            from app.modules.data_analysis_recipe_validator import _load_error_text
+            raise RecipeLoadError(f"{_load_error_text(printed.getvalue(), stop)}; the data analysis recipe cannot be loaded ({key})") from None
         files = tuple(os.path.abspath(f) for f in config.loaded_files)
         loaded = LoadedDataAnalysisRecipe(
             path=key,
