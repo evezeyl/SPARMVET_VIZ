@@ -106,13 +106,13 @@ def test_read_date_column():
             read_filter_value(bad, pl.Date)
 
 
-def test_read_datetime_column():
-    assert read_filter_value("2020-01-31 10:30:00", pl.Datetime) == datetime.datetime(2020, 1, 31, 10, 30)
-    assert read_filter_value("2020-01-31T10:30:00.250000", pl.Datetime) == datetime.datetime(2020, 1, 31, 10, 30, 0, 250000)
-    assert read_filter_value(datetime.datetime(2020, 1, 31, 10, 30), pl.Datetime) == datetime.datetime(2020, 1, 31, 10, 30)
-    aware = read_filter_value("2020-01-31 10:30:00+00:00", pl.Datetime("us", "UTC"))
-    assert aware.tzinfo is not None
-    for bad in ("31/01/2020", "", None, 5, datetime.date(2020, 1, 31)):
+def test_read_datetime_column_gives_the_exact_text():
+    """The text keeps every digit (nanoseconds too) and its offset; the column's own unit and zone read it in `filter_condition`."""
+    assert read_filter_value("2020-01-31 10:30:00", pl.Datetime) == "2020-01-31 10:30:00"
+    assert read_filter_value(" 2020-01-31T10:30:00.000000007 ", pl.Datetime) == "2020-01-31T10:30:00.000000007"
+    assert read_filter_value("2020-01-31 10:30:00+02:00", pl.Datetime("us", "Europe/Paris")) == "2020-01-31 10:30:00+02:00"
+    assert read_filter_value(datetime.datetime(2020, 1, 31, 10, 30), pl.Datetime) == "2020-01-31T10:30:00"
+    for bad in ("31/01/2020", "", None, 5, datetime.date(2020, 1, 31), "2020-13-45 10:00:00"):
         with pytest.raises(FilterValueError):
             read_filter_value(bad, pl.Datetime)
 
@@ -135,7 +135,6 @@ def test_a_category_column_takes_text_only():
     (pl.Int64, 90), (pl.Int64, 90.5), (pl.Int64, 90.0), (pl.Float64, 90), (pl.Float64, 90.5), (pl.UInt8, 3),
     (pl.String, "a"), (pl.String, ""), (pl.Boolean, True), (pl.Boolean, False),
     (pl.Date, datetime.date(2020, 1, 1)), (pl.Datetime, datetime.datetime(2020, 1, 1, 10)), (pl.Categorical, "x"), (None, 5),
-    (pl.Time, 5),
 ])
 def test_strict_accepts_a_value_of_the_type_of_the_column(dtype, value):
     check_filter_value(value, dtype)
@@ -146,7 +145,7 @@ def test_strict_accepts_a_value_of_the_type_of_the_column(dtype, value):
     (pl.Int64, None, "empty"), (pl.String, 90, "a number"), (pl.String, True, "true or false"),
     (pl.Boolean, "true", "text"), (pl.Boolean, 1, "a number"),
     (pl.Date, 5, "a number"), (pl.Date, "2020-01-01", "text"), (pl.Date, datetime.datetime(2020, 1, 1, 10), "a date"),
-    (pl.Datetime, "2020-01-01 10:00:00", "text"), (pl.Datetime, 5, "a number"), (pl.Datetime, datetime.date(2020, 1, 1), "a date"),
+    (pl.Datetime, "01/01/2020", "text"), (pl.Datetime, 5, "a number"), (pl.Datetime, datetime.date(2020, 1, 1), "a date"),
     (pl.Categorical, 5, "a number"), (pl.Categorical, True, "true or false"),
 ])
 def test_strict_refuses_a_value_of_another_type_in_plain_words(dtype, value, given):
@@ -238,7 +237,7 @@ def test_strict_condition_refuses_text_on_a_number_column_and_does_not_convert()
 
 @pytest.mark.parametrize("column, op, value", [
     ("d", "eq", 5), ("d", "in", [5]), ("d", "eq", "2020-01-01"), ("d", "in", ["2020-01-01"]), ("d", "between", ["2020-01-01", "2020-01-03"]),
-    ("k", "eq", 5), ("k", "in", ["x", 5]), ("dt", "eq", "2020-01-01 10:00:00"), ("dt", "in", ["2020-01-01 10:00:00"]),
+    ("k", "eq", 5), ("k", "in", ["x", 5]), ("dt", "eq", "01/01/2020"), ("dt", "in", ["01/01/2020"]),
     ("dt", "eq", datetime.date(2020, 1, 1)),
 ])
 def test_strict_refuses_a_wrong_type_on_date_datetime_and_category_columns(column, op, value):
@@ -273,3 +272,44 @@ def test_datetime_values_are_compared_as_datetimes():
     assert got("not_in", ["2020-01-02 10:00:00"]) == ["a"]
     assert got("eq", datetime.datetime(2020, 1, 1, 10), strict=True) == ["a"]
     assert got("in", [datetime.datetime(2020, 1, 1, 10)], strict=True) == ["a"]
+
+
+def test_a_filter_on_a_category_with_numbers_is_refused_for_a_list_as_for_a_single_value():
+    for strict in (False, True):
+        for op, value in (("eq", 1), ("in", [1, 2]), ("not_in", [1]), ("in", ["x", 2])):
+            with pytest.raises(FilterValueError) as exc:
+                filter_condition("k", op, value, pl.Categorical, strict=strict)
+            assert "categories" in exc.value.problem
+
+
+@pytest.mark.parametrize("op, value", [("gt", True), ("ge", False), ("lt", True), ("le", False), ("between", [False, True])])
+def test_the_true_false_message_names_the_value_the_type_and_the_fix(op, value):
+    with pytest.raises(FilterValueError) as exc:
+        filter_condition("b", op, value, pl.Boolean)
+    text = exc.value.problem
+    shown = str(value[0] if isinstance(value, list) else value)
+    assert shown in text and "true or false" in text and "Boolean" in text and "greater" in text.lower() and exc.value.fix
+
+
+@pytest.mark.parametrize("dtype", [pl.Time, pl.Duration, pl.Binary])
+@pytest.mark.parametrize("op, value", [("in", ["10:30:00"]), ("eq", "10:30:00")])
+def test_time_duration_and_other_types_are_refused_in_plain_words(dtype, op, value):
+    with pytest.raises(FilterValueError) as exc:
+        filter_condition("t", op, value, dtype)
+    assert "not offered" in exc.value.problem and str(dtype) in exc.value.problem and exc.value.fix
+
+
+def test_an_unknown_type_keeps_the_text_comparison():
+    frame = pl.DataFrame({"s": ["a", "b"], "t": ["x", "y"]})
+    assert frame.filter(filter_condition("t", "in", ["x"], None))["s"].to_list() == ["a"]
+
+
+def test_check_filter_judges_the_operator_and_the_values_with_one_rule():
+    from utils.filter_values import check_filter
+    check_filter("gt", 5, pl.Int64)
+    check_filter("in", [1, 2.5], pl.Float64)
+    check_filter("between", [datetime.date(2020, 1, 1), datetime.date(2020, 1, 2)], pl.Date)
+    for op, value, dtype in (("gt", True, pl.Boolean), ("between", ["a", "b"], pl.String), ("in", [1], pl.Categorical),
+                             ("eq", "x", pl.Time), ("eq", 5, pl.Date), ("in", ["90"], pl.Int64)):
+        with pytest.raises(FilterValueError):
+            check_filter(op, value, dtype)

@@ -23,10 +23,29 @@ If deleted: the table, the plot and the action do not filter, and the export can
 # doc: .claude/knowledge/architecture_decisions.md#ADR-104
 # @end_deps
 import datetime
+import re
 from typing import Any
 
 import polars as pl
 
+# A date and time as text: year-month-day, hour:minute, optional seconds with up to nine digits, optional offset (Z or +hh:mm).
+_DATETIME_TEXT = re.compile(r"^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2}(\.\d{1,9})?)?(Z|[+-]\d{2}:?\d{2})?$")
+def _is_datetime_text(text: str) -> bool:
+    """The text is a real date and time (a month 13 or an hour 25 is not)."""
+    text = text.strip()
+    if not _DATETIME_TEXT.match(text):
+        return False
+    try:
+        datetime.date.fromisoformat(text[:10])
+    except ValueError:
+        return False
+    hour, minute = int(text[11:13]), int(text[14:16])
+    second = int(text[17:19]) if len(text) >= 19 and text[16] == ":" else 0
+    return hour < 24 and minute < 60 and second < 60
+
+
+_OFFSET = re.compile(r"(Z|[+-]\d{2}:?\d{2})$")
+_DATETIME_FIX = "write the date and time as year-month-day hour:minute:second, for example 2020-01-31 10:30:00"
 _WORDS = {"int": "whole numbers", "float": "decimal numbers", "bool": "true or false", "date": "dates", "datetime": "dates and times",
           "text": "text", "category": "categories"}
 
@@ -93,7 +112,7 @@ def read_filter_value(value: Any, dtype: Any) -> Any:
 
     Number columns: a float column gets a float; an integer column gets an int when the value is integer-valued ("90", 90.0),
     else a float ("90.5"), never truncated. True or false columns: True, False, "true", "false" in any case. Date columns:
-    a date or "YYYY-MM-DD". Date and time columns: a datetime or "YYYY-MM-DD HH:MM:SS" (a date alone is refused). Category columns: text.
+    a date or "YYYY-MM-DD". Date and time columns: the exact text "YYYY-MM-DD HH:MM:SS[.fraction][offset]" (a datetime gives its text; a date alone is refused). Category columns: text.
     Text and other columns: the value as it is.
     """
     kind = kind_of(dtype)
@@ -128,14 +147,12 @@ def read_filter_value(value: Any, dtype: Any) -> Any:
             pass
         raise _wrong(value, dtype, "write the date as year-month-day, for example 2020-01-31")
     if kind == "datetime":
+        # The exact text: nanoseconds and the offset survive; the column's own unit and zone read it in `filter_condition`.
         if isinstance(value, datetime.datetime):
-            return value
-        try:
-            if isinstance(value, str):
-                return datetime.datetime.fromisoformat(value.strip())
-        except ValueError:
-            pass
-        raise _wrong(value, dtype, "write the date and time as year-month-day hour:minute:second, for example 2020-01-31 10:30:00")
+            return value.isoformat()
+        if isinstance(value, str) and _is_datetime_text(value):
+            return value.strip()
+        raise _wrong(value, dtype, _DATETIME_FIX)
     if kind == "category" and not isinstance(value, str):
         raise _wrong(value, dtype, "write the value as text")
     return value
@@ -158,8 +175,37 @@ def check_filter_value(value: Any, dtype: Any) -> None:
         raise _wrong(value, dtype, "write true or false without quotes")
     if kind == "date" and not (isinstance(value, datetime.date) and not isinstance(value, datetime.datetime)):
         raise _wrong(value, dtype, "write the date without quotes as year-month-day, for example 2020-01-31")
-    if kind == "datetime" and not isinstance(value, datetime.datetime):
-        raise _wrong(value, dtype, "write the date and time without quotes, for example 2020-01-31 10:30:00")
+    if kind == "datetime" and not (isinstance(value, datetime.datetime) or (isinstance(value, str) and _is_datetime_text(value))):
+        raise _wrong(value, dtype, _DATETIME_FIX + " (a text keeps every digit, a recipe cannot hold nanoseconds as a date)")
+
+
+def _refuse_operator(op: str, value: Any, dtype: Any) -> None:
+    """The operator does not fit the type of the column: said in plain words, never zero rows and never a raw error."""
+    kind = kind_of(dtype)
+    if dtype is not None and kind == "other":
+        raise FilterValueError(f"A filter on a column that holds {dtype} is not offered", "filter another column, or change this column in the recipe")
+    if kind == "bool" and op in ("gt", "ge", "lt", "le", "between"):
+        shown = value[0] if isinstance(value, (list, tuple)) and value else value
+        raise FilterValueError(f"The value {shown} cannot be compared with greater than, less than or between: this column holds "
+                               f"{type_words(dtype)} ({dtype})", "use equal, not equal, one of or none of")
+    if op == "between" and kind not in ("int", "float", "date", "datetime"):
+        raise FilterValueError(f"between needs a column of numbers or dates, and this column holds {type_words(dtype)} ({dtype})",
+                               "use a column of numbers or dates, or one of the other operators")
+
+
+def check_filter(op: str, value: Any, dtype: Any) -> None:
+    """Strict mode for a whole filter: raise FilterValueError when the operator does not fit the column or a value has the wrong type.
+
+    One rule for the recipe checker and the recipe action. A list given to eq or ne is a list for in or not_in; a list with a
+    comparison is a shape error reported elsewhere and is not judged here.
+    """
+    _refuse_operator(op, value, dtype)
+    if op in ("in", "not_in", "between"):
+        values = list(value) if isinstance(value, (list, tuple)) else []
+    else:
+        values = list(value) if isinstance(value, (list, tuple)) and op in ("eq", "ne") else ([] if isinstance(value, (list, tuple)) else [value])
+    for item in values:
+        check_filter_value(item, dtype)
 
 
 def _operand(value: Any, dtype: Any, strict: bool) -> Any:
@@ -169,40 +215,78 @@ def _operand(value: Any, dtype: Any, strict: bool) -> Any:
     return read_filter_value(value, dtype)
 
 
-def filter_condition(column: str, op: str, value: Any, dtype: Any, closed: str = "both", *,
-                     strict: bool = False, other_as_text: bool = True) -> pl.Expr:
+def _unit_and_zone(dtype: Any) -> tuple:
+    """The time unit (ms, us, ns) and time zone of a date and time dtype, read from its name; us and no zone when it says nothing."""
+    text = str(dtype)
+    unit = re.search(r"time_unit='(\w+)'", text)
+    zone = re.search(r"time_zone='([^']+)'", text)
+    return (unit.group(1) if unit else "us"), (zone.group(1) if zone else None)
+
+
+def _datetime_values(values: list, dtype: Any) -> pl.Series:
+    """The values as one Series of the column's own dtype (unit and zone), parsed from their exact text.
+
+    A text without an offset is a wall-clock time in the zone of the column, an offset text is that instant shown in the zone of
+    the column; an offset on a column with no zone, a value finer than the column's unit and a text that is no date and time are
+    refused in plain words (nothing is cut, nothing is read as UTC by chance).
+    """
+    unit, zone = _unit_and_zone(dtype)
+    parts = []
+    for value in values:
+        text = value.isoformat() if isinstance(value, datetime.datetime) else str(value).strip()
+        if not _is_datetime_text(text):
+            raise _wrong(value, dtype, _DATETIME_FIX)
+        if zone is None and _OFFSET.search(text):
+            raise FilterValueError(f"The value {text!r} has a time zone offset, but this column has no time zone ({dtype})",
+                                   "write the date and time without an offset")
+        try:
+            fine = pl.Series([text]).str.to_datetime(time_unit="ns", time_zone=zone)
+        except Exception:
+            raise _wrong(value, dtype, _DATETIME_FIX) from None
+        coarse = fine.dt.cast_time_unit(unit)
+        if (coarse.dt.cast_time_unit("ns") != fine).any():
+            raise FilterValueError(f"The value {text!r} is finer than the unit of this column ({unit}); it would be cut",
+                                   f"write at most the digits of the unit ({unit})")
+        parts.append(coarse)
+    return pl.concat(parts) if parts else pl.Series([], dtype=pl.Datetime(unit, zone))
+
+
+def filter_condition(column: str, op: str, value: Any, dtype: Any, closed: str = "both", *, strict: bool = False) -> pl.Expr:
     """The Polars condition of one filter row: `column` `op` `value`, the value read (or checked, `strict`) against `dtype`.
 
-    A list given to eq or ne means in or not_in. `in` and `not_in` compare typed values, never their text; only a column of
-    another type (Categorical, Datetime, unknown) compares text when `other_as_text` (what the HOME table and the plot did).
-    `between` takes [low, high] and `closed` (both, left, right, none) names the ends included; it needs a number or a date
-    column. The rows with no value are not handled here (`na`, `keep_missing`).
+    A list given to eq or ne means in or not_in. `in` and `not_in` compare typed values, never their text; a date and time is
+    parsed from its exact text into the unit and zone of the column. `between` takes [low, high] and `closed` (both, left, right,
+    none) names the ends included; it needs a number or a date column. A column that holds a time, a duration or another type
+    that is not offered, and true or false with a comparison, are refused in plain words. An unknown type (`dtype` None) compares
+    text. The rows with no value are not handled here (`na`, `keep_missing`).
     """
     kind = kind_of(dtype)
     col = pl.col(column)
     if isinstance(value, (list, tuple)) and op in ("eq", "ne"):
         op = "in" if op == "eq" else "not_in"
-    if kind == "bool" and op in ("gt", "ge", "lt", "le", "between"):
-        raise FilterValueError("Greater than, less than and between are not defined for a column of true or false",
-                               "use equal, not equal, one of or none of")
+    _refuse_operator(op, value, dtype)
     if op == "between":
-        if kind not in ("int", "float", "date", "datetime"):
-            raise FilterValueError(f"between needs a column of numbers or dates, and this column holds {type_words(dtype)}",
-                                   "use a column of numbers or dates, or one of the other operators")
-        lo, hi = _numbers([_operand(v, dtype, strict) for v in value], kind)
+        operands = [_operand(v, dtype, strict) for v in value]
+        if kind == "datetime":
+            lo, hi = (pl.lit(x) for x in _datetime_values(operands, dtype))
+        else:
+            lo, hi = _numbers(operands, kind)
         return col.is_between(lo, hi, closed=closed)
     if op in ("in", "not_in"):
         raw = list(value) if isinstance(value, (list, tuple)) else [value]
-        if kind in ("text", "category"):
-            if strict:
-                for v in raw:
-                    check_filter_value(v, dtype)
-            expr = (col.cast(pl.Utf8) if kind == "category" else col).is_in([str(v) for v in raw])
+        operands = [_operand(v, dtype, strict) for v in raw]
+        if kind == "text":
+            expr = col.is_in([str(v) for v in operands])
+        elif kind == "category" or dtype is None:
+            expr = col.cast(pl.Utf8).is_in([str(v) for v in operands])
+        elif kind == "datetime":
+            expr = col.is_in(_datetime_values(operands, dtype).implode())
         else:
-            values = _numbers([_operand(v, dtype, strict) for v in raw], kind)
-            expr = col.cast(pl.Utf8).is_in([str(v) for v in values]) if kind == "other" and other_as_text else col.is_in(values)
+            expr = col.is_in(_numbers(operands, kind))
         return expr if op == "in" else ~expr
     operand = _operand(value, dtype, strict)
+    if kind == "datetime":
+        operand = pl.lit(_datetime_values([operand], dtype))
     return {"eq": col == operand, "ne": col != operand, "gt": col > operand, "ge": col >= operand,
             "lt": col < operand, "le": col <= operand}[op]
 

@@ -73,7 +73,7 @@ def test_between_on_a_text_column_is_refused_in_plain_words():
 @pytest.mark.parametrize("column, op, value, holds", [
     ("d", "eq", 5, "dates"), ("d", "in", [5], "dates"), ("d", "eq", "2020-01-01", "dates"), ("d", "in", ["2020-01-01"], "dates"),
     ("d", "between", ["2020-01-01", "2020-01-03"], "dates"),
-    ("dt", "eq", "2020-01-01 09:00:00", "dates and times"), ("dt", "in", ["2020-01-01 09:00:00"], "dates and times"),
+    ("dt", "eq", "01/01/2020", "dates and times"), ("dt", "in", ["01/01/2020"], "dates and times"),
     ("dt", "eq", datetime.date(2020, 1, 1), "dates and times"),
     ("k", "eq", 5, "categories"), ("k", "in", ["u", 5], "categories"),
     ("b", "gt", True, "true or false"), ("b", "between", [False, True], "true or false"),
@@ -108,3 +108,23 @@ def test_a_comparison_on_a_category_column_compares_the_text_not_the_order_of_fi
     frame = pl.DataFrame({"id": ["a", "b", "c"], "k": pl.Series(["v", "u", "w"], dtype=pl.Categorical)})
     got = AVAILABLE_WRANGLING_ACTIONS["modif_filter"](frame.lazy(), {"column": "k", "op": "gt", "value": "u", "na": "remove"}).collect()
     assert got["id"].to_list() == ["a", "c"]
+
+
+def test_an_exact_datetime_text_is_accepted_because_yaml_cannot_carry_nanoseconds():
+    assert run("dt", "in", ["2020-01-02 10:30:00"]) == ["b"]
+    assert run("dt", "eq", "2020-01-02T10:30:00") == ["b"]
+
+
+def test_nanoseconds_survive_the_recipe_step():
+    ns = pl.DataFrame({"id": ["a", "b"], "t": pl.Series([datetime.datetime(2020, 1, 1, 10, 30), datetime.datetime(2020, 1, 1, 10, 30)], dtype=pl.Datetime("us"))
+                       .cast(pl.Datetime("ns")) + pl.Series([0, 7]).cast(pl.Duration("ns"))})
+    got = AVAILABLE_WRANGLING_ACTIONS["modif_filter"](ns.lazy(), {"column": "t", "op": "eq", "value": "2020-01-01 10:30:00.000000007", "na": "remove"}).collect()
+    assert got["id"].to_list() == ["b"]
+
+
+@pytest.mark.parametrize("op, value", [("in", ["x"]), ("eq", "x")])
+def test_a_time_or_duration_column_is_refused_in_plain_words(op, value):
+    frame = pl.DataFrame({"id": ["a"], "tm": pl.Series([datetime.time(10, 30)])})
+    with pytest.raises(TransformationError) as exc:
+        AVAILABLE_WRANGLING_ACTIONS["modif_filter"](frame.lazy(), {"column": "tm", "op": op, "value": value, "na": "remove"})
+    assert "not offered" in str(exc.value) and "Time" in str(exc.value) and "InvalidOperation" not in str(exc.value)

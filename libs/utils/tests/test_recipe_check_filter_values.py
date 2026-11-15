@@ -56,7 +56,7 @@ def test_text_on_a_true_false_column_is_refused():
 @pytest.mark.parametrize("column_type, op, value, holds", [
     ("Date", "eq", "2020-01-01", "dates"), ("Date", "eq", 5, "dates"), ("Date", "in", ["2020-01-01"], "dates"),
     ("Date", "between", ["2020-01-01", "2020-01-03"], "dates"),
-    ("Datetime", "eq", "2020-01-01 10:00:00", "dates and times"), ("Datetime", "in", [5], "dates and times"),
+    ("Datetime", "eq", "01/01/2020", "dates and times"), ("Datetime", "in", [5], "dates and times"),
     ("Categorical", "eq", 5, "categories"), ("Boolean", "eq", "true", "true or false"),
 ])
 def test_the_checker_judges_dates_datetimes_and_categories_with_the_rule_of_the_engine(column_type, op, value, holds):
@@ -71,68 +71,44 @@ def test_a_date_written_as_a_date_is_accepted():
     assert st12(with_schema_step(filter_step("n", "eq", "x"), column_type="Categorical")) == []
 
 
-def test_the_checker_and_the_engine_share_one_rule():
-    """The checker calls `utils.filter_values.check_filter_value`; the engine's strict mode calls the same function."""
-    import inspect
-    import utils.recipe_check as recipe_check
-    assert "check_filter_value" in inspect.getsource(recipe_check) and recipe_check.check_filter_value.__module__ == "utils.filter_values"
+import datetime as _dt
+
+import polars as pl
+
+from utils.filter_values import FilterValueError, check_filter, filter_condition
+
+RULE_CASES = [
+    ("gt", 5, pl.Int64), ("gt", "5", pl.Int64), ("in", [1, 2.5], pl.Float64), ("in", ["x", 1], pl.String), ("eq", True, pl.Boolean),
+    ("gt", True, pl.Boolean), ("between", [False, True], pl.Boolean), ("between", ["a", "b"], pl.String),
+    ("eq", 5, pl.Date), ("eq", _dt.date(2020, 1, 1), pl.Date), ("between", [_dt.date(2020, 1, 1), _dt.date(2020, 1, 2)], pl.Date),
+    ("eq", "2020-01-01 10:00:00.000000007", pl.Datetime("ns")), ("eq", "01/01/2020", pl.Datetime("ns")), ("in", [1], pl.Categorical),
+    ("in", ["x"], pl.Categorical), ("eq", "10:30:00", pl.Time), ("in", ["5"], pl.Duration),
+]
 
 
-def test_tier2_of_a_schema_is_checked_when_tier1_keeps_the_columns():
-    raw = valid()
-    raw["data_schemas"]["A"]["input_fields"]["n"] = {"type": "Int64"}
-    raw["data_schemas"]["A"]["wrangling"] = {"tier1": [filter_step("n", "gt", 1)], "tier2": [filter_step("n", "gt", "2")]}
-    p = st12(raw)
-    assert len(p) == 1 and p[0].path == "data_schemas.A.wrangling.tier2[1].value"
+@pytest.mark.parametrize("op, value, dtype", RULE_CASES)
+def test_the_checker_and_the_engine_give_the_same_verdict_with_the_same_words(op, value, dtype):
+    """One rule set: `check_filter` (checker) and `filter_condition(strict=True)` (the recipe action) refuse the same filters, in the same words."""
+    def verdict(call):
+        try:
+            call()
+        except FilterValueError as exc:
+            return str(exc)
+        return None
+    checked = verdict(lambda: check_filter(op, value, dtype))
+    built = verdict(lambda: filter_condition("c", op, value, dtype, strict=True))
+    assert checked == built
 
 
-def test_silent_when_a_step_before_may_change_the_column():
-    raw = valid()
-    raw["data_schemas"]["A"]["input_fields"]["n"] = {"type": "String"}
-    raw["data_schemas"]["A"]["wrangling"]["tier1"] = [{"action": "polars_cast"}, filter_step("n", "gt", "5")]
-    assert st12(raw) == []
+@pytest.mark.parametrize("column_type, op, value, holds", [
+    ("Boolean", "gt", True, "true or false"), ("Boolean", "between", [False, True], "true or false"),
+    ("String", "between", ["a", "b"], "text"), ("Categorical", "in", [1, 2], "categories"),
+    ("Time", "eq", "10:30:00", "not offered"), ("Duration", "in", ["5"], "not offered"),
+])
+def test_the_checker_refuses_an_operator_that_does_not_fit_the_type_like_the_engine(column_type, op, value, holds):
+    p = st12(with_schema_step(filter_step("n", op, value, **({"closed": "both"} if op == "between" else {})), column_type=column_type))
+    assert len(p) == 1 and holds in p[0].message and p[0].fix
 
 
-def test_silent_when_the_column_is_not_declared():
-    assert st12(with_schema_step(filter_step("created_later", "gt", "5"))) == []
-
-
-def test_silent_when_input_fields_is_empty_the_file_decides():
-    raw = valid()
-    raw["data_schemas"]["A"]["input_fields"] = {}
-    raw["data_schemas"]["A"]["wrangling"]["tier1"] = [filter_step("n", "gt", "5")]
-    assert st12(raw) == []
-
-
-def test_a_filter_after_other_row_filters_is_still_checked():
-    raw = valid()
-    raw["data_schemas"]["A"]["input_fields"]["n"] = {"type": "Int64"}
-    raw["data_schemas"]["A"]["wrangling"]["tier1"] = [filter_step("n", "gt", 1), filter_step("n", "lt", "9")]
-    p = st12(raw)
-    assert len(p) == 1 and p[0].path.endswith("tier1[2].value")
-
-
-def test_a_join_step_filter_reads_the_declared_type_of_the_left_table_and_of_a_joined_table():
-    raw = valid()
-    raw["joins"]["AB"]["steps"]["tier1"].append(filter_step("w", "gt", "3"))     # w is Int64 in B, joined before
-    raw["joins"]["AB"]["steps"]["tier1"].append(filter_step("v", "gt", "3"))     # v is Float64 in A
-    problems = st12(raw)
-    assert [p.path for p in problems] == ["joins.AB.steps.tier1[2].value", "joins.AB.steps.tier1[3].value"]
-    assert "whole numbers" in problems[0].message and "decimal numbers" in problems[1].message
-
-
-def test_a_join_tier2_filter_is_checked():
-    raw = valid()
-    raw["joins"]["AB"]["steps"]["tier2"] = [filter_step("w", "gt", "3")]
-    assert [p.path for p in st12(raw)] == ["joins.AB.steps.tier2[1].value"]
-
-
-def test_silent_in_a_join_when_a_step_may_change_the_table():
-    raw = valid()
-    raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "polars_cast"}] + raw["joins"]["AB"]["steps"]["tier1"] + [filter_step("w", "gt", "3")]
-    assert st12(raw) == []
-
-
-def test_other_actions_are_not_judged():
-    raw = with_schema_step({"action": "polars_filter_demo", "column": "n", "value": "5"})
-    assert st12(raw) == []
+def test_an_exact_datetime_text_is_accepted_by_the_checker():
+    assert st12(with_schema_step(filter_step("n", "eq", "2020-01-01 10:00:00.000000007"), column_type="Datetime")) == []

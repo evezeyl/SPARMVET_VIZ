@@ -35,7 +35,7 @@ import yaml
 from utils import action_names
 from utils.action_names import TIER1_ONLY
 from utils.engines import ENGINES
-from utils.filter_values import FilterValueError, check_filter_value
+from utils.filter_values import FilterValueError, check_filter
 from utils.formula_check import formula_problems
 from utils.polars_types import PARAMETER_KEYS, dtype_with_parameters, text_dtype_names
 from utils.recipe_paths import containment_problems, shape_problems
@@ -500,16 +500,10 @@ class _Check:
         declared = _declared_dtype(owner[1]) if owner else None
         if declared is None:
             return
-        if op in ("in", "not_in", "between"):
-            values = value if isinstance(value, list) else []
-        else:
-            values = [] if isinstance(value, list) else [value]
-        for item in values:
-            try:
-                check_filter_value(item, declared)
-            except FilterValueError as exc:
-                self.add("ST12", where, f"{exc.problem} (column {column!r} of {owner[0]!r})", exc.fix)
-                return
+        try:
+            check_filter(op, value, declared)  # the rule of the engine: the operator fits the type, each value has it
+        except FilterValueError as exc:
+            self.add("ST12", where, f"{exc.problem} (column {column!r} of {owner[0]!r})", exc.fix)
 
     # -- joins
     def joins(self, raw: dict) -> None:

@@ -12,7 +12,7 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:dialog_value, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_number, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
+# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_number, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
 # consumes: polars, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
@@ -132,15 +132,20 @@ def value_choices(lf, column: str) -> dict:
     listed: it is counted on its own and treated by its own steps (ADR-103).
     """
     kind = kind_of(column_types(lf).get(column))
+    if kind == "datetime":
+        # The text Polars writes for the value: every digit of the column's unit (nanoseconds too) and its offset; the table,
+        # the plot and the export read the same text back in the column's own unit and zone (`filter_condition`).
+        texts = lf.select(pl.col(column).drop_nulls().unique().sort().cast(pl.String)).collect()[column].to_list()
+        return {t: t for t in texts}
     values = lf.select(pl.col(column).drop_nulls().unique()).collect()[column].to_list()
     if kind == "float":
         values = [float(v) for v in values if not (isinstance(v, float) and math.isnan(v))]
-    if kind in ("int", "float", "bool", "date", "datetime"):
+    if kind in ("int", "float", "bool", "date"):
         values = sorted(values)
     choices: dict = {}
     for v in values:
-        label = v.isoformat(sep=" ") if kind == "datetime" else v.isoformat() if kind == "date" else str(v)
-        choices[label] = label if kind in ("date", "datetime", "other", "category") else v
+        label = v.isoformat() if kind == "date" else str(v)
+        choices[label] = label if kind in ("date", "other", "category") else v
     if kind in ("text", "category", "other"):
         choices = dict(sorted(choices.items()))
     return choices
@@ -176,9 +181,16 @@ def ops_for_column(dtype, discrete_axis: bool) -> list:
     other column offers the list operators. Comparisons on text, dates and true/false columns are not decided.
     """
     numbers = ["eq", "ne", "gt", "ge", "lt", "le", "between"]
+    if dtype is not None and kind_of(dtype) == "other":
+        return []  # a time, a duration, ...: typed values are not built for them
     if kind_of(dtype) in ("int", "float"):
         return ["in", "not_in"] + numbers if discrete_axis else numbers
     return ["in", "not_in", "eq", "ne"]
+
+
+def not_offered_line(column: str, dtype) -> str:
+    """What the dialog says for a column whose type has no typed filter (a time, a duration, ...)."""
+    return f"A filter on {column} is not offered: the column holds {dtype}."
 
 
 def value_widget_for(dtype, discrete_axis: bool, op: str) -> str:
@@ -201,6 +213,8 @@ def dialog_value(lf, column: str, dtype, discrete_axis: bool, op: str, *, picked
     on a list means in or not_in. Without a table (`dtype` None) the text is kept as written. Raises FilterValueError when a
     value cannot be read in the type of the column.
     """
+    if dtype is not None and not ops_for_column(dtype, discrete_axis):
+        raise FilterValueError(not_offered_line(column, dtype), "filter another column")
     widget = value_widget_for(dtype, discrete_axis, op) if dtype is not None else "text"
     if widget == "range":
         if low is None or high is None:

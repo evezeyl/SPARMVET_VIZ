@@ -68,7 +68,7 @@ def action_modif_filter(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
     try:
         # strict: the value has the type of the column, nothing is converted (ADR-104 point 7)
         condition = filter_condition(column, clean["op"], clean["value"], schema[column], clean.get("closed", "both"),
-                                     strict=True, other_as_text=False)
+                                     strict=True)
     except FilterValueError as exc:
         raise TransformationError(f"step modif_filter, column {column!r}: {exc.problem}",
                                   tip=exc.fix[:1].upper() + exc.fix[1:] + "; the filter does not convert a value") from exc

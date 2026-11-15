@@ -30,7 +30,7 @@ from app.src.bootloader import bootloader
 from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
-    dialog_value, value_choices, value_widget_for,
+    dialog_value, not_offered_line, value_choices, value_widget_for,
 )
 from utils.filter_values import FilterValueError
 from utils.missing_values import dialog_lines, na_choice_texts
@@ -230,6 +230,8 @@ def define_filter_audit_server(input, output, session, *,
         _lf, types, disc = _dialog_table()
         col = _selected_column(types)
         choices = _op_choices(types.get(col), col in disc)
+        if not choices:
+            return ui.tags.small(not_offered_line(col, types.get(col)), class_="text-warning d-block")
         with reactive.isolate():
             kept = safe_input(input, "fb_op", None)
         return ui.input_select("fb_op", label=None, choices=choices, selected=kept if kept in choices else next(iter(choices)),
@@ -247,6 +249,8 @@ def define_filter_audit_server(input, output, session, *,
         col = _selected_column(types)
         dtype = types.get(col)
         choices = _op_choices(dtype, col in disc)
+        if not choices:
+            return ui.div()  # the operator slot says why (filter_op_ui)
         op = safe_input(input, "fb_op", next(iter(choices)))
         if op not in choices:
             op = next(iter(choices))

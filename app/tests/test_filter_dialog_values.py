@@ -71,11 +71,28 @@ def test_a_date_column_keeps_the_year_month_day_text_which_a_session_file_can_ho
 
 
 def test_a_datetime_column_lists_the_value_the_table_compares_and_keeps_its_text():
-    """The label is the date and time as year-month-day hour:minute:second; the stored value is that text (a session file holds no
+    """The label is the date and time as Polars writes it (every digit of the unit); the stored value is that text (a session file holds no
     datetime object); the table and the export read it back from the dtype (reviewer 2026-11-15: a picked value used to keep 0 rows)."""
     lf = pl.LazyFrame({"t": [datetime.datetime(2020, 1, 2, 10, 30), datetime.datetime(2020, 1, 1, 9), None]})
     choices = value_choices(lf, "t")
-    assert choices == {"2020-01-01 09:00:00": "2020-01-01 09:00:00", "2020-01-02 10:30:00": "2020-01-02 10:30:00"}
+    assert choices == {"2020-01-01 09:00:00.000000": "2020-01-01 09:00:00.000000", "2020-01-02 10:30:00.000000": "2020-01-02 10:30:00.000000"}
+
+
+def test_nanoseconds_below_the_microsecond_are_in_the_label():
+    t = (pl.Series([datetime.datetime(2020, 1, 1, 10, 30)], dtype=pl.Datetime("us")).cast(pl.Datetime("ns")) + pl.Series([7]).cast(pl.Duration("ns")))
+    assert list(value_choices(pl.DataFrame({"t": t}).lazy(), "t")) == ["2020-01-01 10:30:00.000000007"]
+
+
+def test_a_millisecond_column_lists_milliseconds():
+    t = pl.Series([datetime.datetime(2020, 1, 1, 10, 30, 0, 123000)]).cast(pl.Datetime("ms"))
+    assert list(value_choices(pl.DataFrame({"t": t}).lazy(), "t")) == ["2020-01-01 10:30:00.123"]
+
+
+@pytest.mark.parametrize("dtype", [pl.Time, pl.Duration])
+def test_a_time_or_duration_column_offers_nothing_and_says_so(dtype):
+    from app.modules.t3_audit_engine import not_offered_line
+    assert ops_for_column(dtype, False) == []
+    assert "not offered" in not_offered_line("t", dtype) and str(dtype) in not_offered_line("t", dtype)
 
 
 def test_a_datetime_with_microseconds_and_a_time_zone_keeps_them():
@@ -289,3 +306,10 @@ def test_a_pick_that_is_not_in_the_column_is_reported():
 def test_without_a_table_the_text_is_kept_as_written():
     assert dialog_value(None, "c", None, False, "eq", text="  abc ") == ("eq", "abc", "both")
     assert dialog_value(None, "c", None, False, "eq", text="  ") is None
+
+
+def test_adding_a_row_on_a_time_column_is_refused_in_plain_words():
+    lf = pl.LazyFrame({"t": [datetime.time(10, 30)]})
+    with pytest.raises(FilterValueError) as exc:
+        dialog_value(lf, "t", column_types(lf)["t"], False, "in", picked=["10:30:00"])
+    assert "not offered" in str(exc.value)
