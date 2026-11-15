@@ -20,6 +20,7 @@ The lists below are the audit result of 2026-11-15, plotnine 0.15.4. They are me
 """
 import copy
 import hashlib
+import inspect
 import io
 import re
 import warnings
@@ -33,6 +34,7 @@ matplotlib.use("Agg")
 
 import viz_factory  # noqa: F401  (registers the components)
 from test_every_yaml_example_renders import NOT_JUDGED, TABLE, layers_of, shape_of
+from viz_factory.parameters import accepted_names, canonical_name, is_layer
 from viz_factory.registry import COMPONENT_SCHEMAS, PLOT_COMPONENTS
 
 DF = TABLE.to_pandas()
@@ -220,6 +222,12 @@ def picture(p):
     return hashlib.sha256(buffer.getvalue()).hexdigest()
 
 
+def drawn_data(p):
+    """The tables the layers draw from, after plotnine has computed its statistics and trained its scales (what is drawn, without drawing)."""
+    p._build()
+    return [hashlib.sha256(layer.data.to_csv().encode()).hexdigest() for layer in p.layers]
+
+
 def build(name, params, direct):
     """The example of `name` with `params` on its target layer, through the registry or through plotnine itself."""
     layers = layers_of(name)
@@ -262,7 +270,11 @@ def test_exact_with_its_example_gives_the_same_plot_as_plotnine(name):
         assert through[1] == direct[1]
         return
     assert snapshot(through[1]) == snapshot(direct[1]), f"{name}: the registry builds another plot than plotnine"
-    if name not in NOT_JUDGED:
+    if is_layer(getattr(plotnine, name)):
+        # a geom or a stat: what it draws is its computed table (the picture of a density costs seconds and adds nothing to it)
+        assert attempt(lambda: drawn_data(through[1])) == attempt(lambda: drawn_data(direct[1])), f"{name}: other drawn data than plotnine"
+    elif name not in NOT_JUDGED:
+        # a scale, theme, coord, facet, guide, label: the effect is on the rendering, so the picture is compared
         assert attempt(lambda: picture(through[1])) == attempt(lambda: picture(direct[1])), f"{name}: another picture than plotnine"
 
 
@@ -367,3 +379,127 @@ def test_the_comparison_sees_a_changed_default():
     b = ggplot(DF, aes("x", "y")) + plotnine.geom_point(size=7)
     assert snapshot(a) != snapshot(b)
     assert picture(a) != picture(b)
+
+
+# ---- the parameters a modified component does not offer -------------------------------------------------------------
+
+# plotnine parameters of the wrapped object that the schema of a modified component does not list (the form does not offer them),
+# without `data`, `mapping`, `rescaler` and `oob` (a table or a function: a recipe holds neither). 21 of the 41 modified components that wrap an object.
+HIDDEN_IN_FORM_TOTAL = 165
+HIDDEN_COMPONENTS = 21
+# of those, the ones a recipe cannot pass even when it writes them: the component sends every key it does not know to `theme(...)`, which refuses it
+CANNOT_BE_WRITTEN = {
+    "theme_matplotlib": ["fname", "rc", "use_defaults"],
+    "theme_seaborn": ["context", "font", "font_scale", "style"],
+    "theme_tufte": ["ticks"],
+    "theme_xkcd": ["length", "randomness", "scale", "stroke_color", "stroke_size"],
+}
+FUNCTION_OR_TABLE = {"rescaler", "oob", "data", "mapping"}
+
+
+def hidden_parameters():
+    found = {}
+    for name, schema in sorted(COMPONENT_SCHEMAS.items()):
+        if schema["plotnine"] != "modified" or not schema.get("wraps"):
+            continue
+        obj = getattr(plotnine, schema["wraps"][0]["attr_path"][-1], None)
+        accepted = accepted_names(name, schema) if obj is not None else None
+        if accepted is None:
+            continue
+        declared = {canonical_name(k) if is_layer(obj) else k for k in schema["params"]}
+        hidden = sorted(h for h in accepted - declared if h not in FUNCTION_OR_TABLE)
+        if hidden:
+            found[name] = hidden
+    return found
+
+
+def test_the_modified_components_hide_165_plotnine_parameters_from_the_form():
+    found = hidden_parameters()
+    assert len(found) == HIDDEN_COMPONENTS
+    assert sum(len(v) for v in found.values()) == HIDDEN_IN_FORM_TOTAL
+
+
+def default_of(name, parameter):
+    obj = getattr(plotnine, COMPONENT_SCHEMAS[name]["wraps"][0]["attr_path"][-1])
+    if is_layer(obj):
+        layer = obj().to_layer()
+        defaults = {**layer.stat.DEFAULT_AES, **layer.stat.DEFAULT_PARAMS, **layer.geom.DEFAULT_AES, **layer.geom.DEFAULT_PARAMS}
+        return defaults.get(parameter, defaults.get(parameter.replace("color", "colour")))
+    default = inspect.signature(obj).parameters[parameter].default
+    return None if default is inspect.Parameter.empty else default
+
+
+def test_a_hidden_parameter_is_written_through_the_component_unless_it_is_one_of_the_listed_themes_settings():
+    """plotnine's own default of each hidden parameter is passed through the component and through plotnine: both must work."""
+    cannot = {}
+    for name, hidden in hidden_parameters().items():
+        layers = layers_of(name)
+        base, mapping = shape_of(name, layers)
+        for parameter in hidden:
+            value = default_of(name, parameter)
+            def call(direct):
+                p = ggplot(DF, aes(**mapping))
+                if base:
+                    p = PLOT_COMPONENTS[base](p, {})
+                spec = {parameter: copy.deepcopy(value)}
+                if name == "stat_function":
+                    spec["fun"] = lambda x: x
+                if direct:
+                    return p + getattr(plotnine, COMPONENT_SCHEMAS[name]["wraps"][0]["attr_path"][-1])(**spec)
+                return PLOT_COMPONENTS[name](p, spec)
+            if attempt(lambda: call(True))[0] == "ok" and attempt(lambda: call(False))[0] == "error":
+                cannot.setdefault(name, []).append(parameter)
+    assert cannot == CANNOT_BE_WRITTEN
+
+
+# ---- defects found by the audit, pinned: a fix turns the strict xfail into a failure, then remove the entry ----------
+
+def run_layers(mapping, layers):
+    from viz_factory.viz_factory import VizFactory, draw_checked
+    figure = draw_checked(VizFactory().render(TABLE, {"plots": {"p": {"target_dataset": "d", "mapping": mapping, "layers": layers}}}, "p"))
+    return [t.get_text() for axis in figure.axes for t in axis.get_xticklabels()]
+
+
+DEFECTS = {
+    "theme_seaborn offers base_size and refuses it": ("theme_seaborn", {"base_size": 12}),
+    "theme_matplotlib offers base_size and refuses it": ("theme_matplotlib", {"base_size": 12}),
+    "theme_seaborn style cannot be reached": ("theme_seaborn", {"style": "whitegrid"}),
+    "theme_seaborn context cannot be reached": ("theme_seaborn", {"context": "talk"}),
+    "theme_matplotlib rc cannot be reached": ("theme_matplotlib", {"rc": {"axes.grid": True}}),
+}
+
+
+@pytest.mark.parametrize("label", sorted(DEFECTS))
+@pytest.mark.xfail(strict=True, reason="defect of the audit: the wrapper sends every key to theme(), which refuses it (not fixed here)")
+def test_defect_the_theme_setting_works(label):
+    name, params = DEFECTS[label]
+    run_layers({"x": "x", "y": "y"}, [{"name": "geom_point"}, {"name": name, "params": params}])
+
+
+TEXT_AS_LIST = {
+    "labels: abc on a continuous scale": ("scale_x_continuous", {"breaks": [10, 50, 90], "labels": "abc"}, {"x": "x", "y": "y"}),
+    "limits: abc on a brewer scale": ("scale_color_brewer", {"limits": "abc"}, {"x": "x", "y": "y", "color": "g"}),
+    "breaks: abc on a manual scale": ("scale_color_manual", {"values": ["red", "blue", "green"], "breaks": "abc"}, {"x": "x", "y": "y", "color": "g"}),
+}
+
+
+@pytest.mark.parametrize("label", sorted(TEXT_AS_LIST))
+@pytest.mark.xfail(strict=True, reason="defect of the audit: a text where a list was meant is read by plotnine as its letters and drawn with no message")
+def test_defect_a_text_where_a_list_is_meant_is_refused(label):
+    name, params, mapping = TEXT_AS_LIST[label]
+    with pytest.raises(Exception):
+        run_layers(mapping, [{"name": "geom_point"}, {"name": name, "params": params}])
+
+
+def test_defect_guide_label_fails_on_every_use_and_says_so():
+    with pytest.raises(Exception, match="guide_label cannot work"):
+        run_layers({"x": "x", "y": "y", "color": "g"}, [{"name": "geom_point"}, {"name": "guide_label", "params": {"mapping": "color", "labels": ["a"]}}])
+
+
+# ---- what a description says must be true ---------------------------------------------------------------------------
+
+def test_no_description_says_that_a_null_or_random_seed_is_allowed():
+    """The factory refuses `random_state: null` and `random` (a seed is a number); a description must not offer them."""
+    wrong = [n for n, s in COMPONENT_SCHEMAS.items()
+             if re.search(r"random_state:\s*(null|random)\b[^.]*\b(gives|allows|new|different)", s["description"] + " " + s.get("yaml_example", ""))]
+    assert wrong == []
