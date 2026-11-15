@@ -63,21 +63,24 @@ def render_seed_args(seeds: Seeds, t3_overrides: dict | None) -> dict:
     return {"aesthetic_override": override}
 
 
-def export_plot_seeds(plots: dict[str, dict], audit_pins: dict[str, object], *, default) -> dict[str, Seeds]:
+def export_plot_seeds(plots: dict[str, dict], audit_pins: dict[str, object], *, default,
+                      recipe_default=None) -> dict[str, Seeds]:
     """The seed of every random layer of every exported plot, and so what is rendered and recorded.
 
-    Per layer: audit pin > the layer's own number > the default (`default`: the factory's seed, 0). `plots` is
-    {plot_id: spec}.
+    Per layer: audit pin > the layer's own number > PROVISIONAL (S3) `plot_defaults.random_state` of the recipe
+    (`recipe_default`) > the default (`default`: the factory's seed, 0). `plots` is {plot_id: spec}.
     """
     return {
-        plot_id: resolve_layer_seeds((spec or {}).get("layers", []), audit_pins.get(plot_id), default=default)
+        plot_id: resolve_layer_seeds((spec or {}).get("layers", []), audit_pins.get(plot_id), default=default,
+                                     recipe_default=recipe_default)
         for plot_id, spec in plots.items()
     }
 
 
-def export_seed_plan(plots: dict[str, dict], home_state: dict | None, *, default) -> dict[str, Seeds]:
+def export_seed_plan(plots: dict[str, dict], home_state: dict | None, *, default, recipe_default=None) -> dict[str, Seeds]:
     """What the export handler calls: the pins come from home_state with no flag in between."""
-    return export_plot_seeds(plots, seed_pins_from_home_state(home_state, list(plots)), default=default)
+    return export_plot_seeds(plots, seed_pins_from_home_state(home_state, list(plots)), default=default,
+                             recipe_default=recipe_default)
 
 
 def _plot_seeds_flat(seeds: Seeds) -> list:
@@ -127,7 +130,7 @@ def seeds_added_to_recipe(seeds: dict[str, Seeds], plots: dict[str, dict]) -> li
     return [
         {"plot": pid, "layer_index": ls.index, "layer": ls.layer, "seed": ls.seed, "source": ls.source,
          "recipe_wrote": _written_in_recipe(plots, pid, ls.index)}
-        for pid, layer_seeds in seeds.items() for ls in layer_seeds if ls.source != "recipe"
+        for pid, layer_seeds in seeds.items() for ls in layer_seeds if ls.source not in ("recipe", "recipe default")
     ]
 
 
@@ -180,7 +183,7 @@ def bake_plot_seeds(recipe_cfg: dict, seeds: dict[str, Seeds]) -> dict:
                     f"Plot '{plot_id}': layer {ls.index} ({ls.layer}) is not in the recipe, so its seed "
                     f"{ls.seed} cannot be written into the reproducibility recipe."
                 )
-            if ls.source != "recipe":
+            if ls.source not in ("recipe", "recipe default"):  # a recipe default is written in plot_defaults already
                 layers[ls.index]["params"] = {**(layers[ls.index].get("params") or {}), "random_state": ls.seed}
     return baked
 

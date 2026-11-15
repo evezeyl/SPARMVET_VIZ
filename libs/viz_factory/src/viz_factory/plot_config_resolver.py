@@ -66,7 +66,7 @@ _BUILTIN_DEFAULTS: dict = {
 # Allowed keys in plot_defaults: (unknown keys emit a PipelineError warning)
 _VALID_PLOT_DEFAULTS_KEYS: frozenset = frozenset({
     "palette", "theme", "default_font_family",
-    "facet_panel_spacing", "legend_position", "optimisation", "layers",
+    "facet_panel_spacing", "legend_position", "optimisation", "layers", "random_state",
 })
 
 # Keys recognised as part of the spec (not taxonomy / author metadata).
@@ -216,7 +216,8 @@ class LayerSeed(NamedTuple):
 
     index: position of the layer in the plot's `layers:` list. layer: its name.
     source: "audit" (pinned by an audit step), "recipe" (the number the recipe writes on THIS layer), "default"
-    (the recipe writes none: the factory's seed, 0 unless the factory was built with another).
+    (the recipe writes none: the factory's seed, 0 unless the factory was built with another), "recipe default"
+    (the recipe writes none on the layer but `plot_defaults.random_state`: PROVISIONAL S3).
     """
     index: int
     layer: str
@@ -224,11 +225,12 @@ class LayerSeed(NamedTuple):
     source: str
 
 
-def resolve_layer_seeds(layers: list[dict], audit_pin=None, *, default) -> tuple[LayerSeed, ...]:
+def resolve_layer_seeds(layers: list[dict], audit_pin=None, *, default, recipe_default=None) -> tuple[LayerSeed, ...]:
     """The seed of every random layer of a plot, in one place (SEED-HOLDS-1, ADR-104).
 
     Per layer: a seed pinned by an audit step (cascade level L5, every random layer) > the number the recipe
-    writes on THIS layer > the default (`default`: the factory's seed, 0) when the layer writes none. A layer that
+    writes on THIS layer > PROVISIONAL (S3) `plot_defaults.random_state`, the one seed of the whole recipe
+    (`recipe_default`) > the default (`default`: the factory's seed, 0) when the layer writes none. A layer that
     writes a number keeps it and never gives it to another layer. Empty when the plot has no random layer.
     (`random_state: null` and the word random are refused by the checker and the factory: a seed is a number.)
     """
@@ -240,6 +242,8 @@ def resolve_layer_seeds(layers: list[dict], audit_pin=None, *, default) -> tuple
         written = _written_seed(layer)
         if audit_pin is not None:
             out.append(LayerSeed(index, name, _as_seed(audit_pin), "audit"))
+        elif written is _NO_NUMBER and recipe_default is not None:
+            out.append(LayerSeed(index, name, _as_seed(recipe_default), "recipe default"))
         elif written is _NO_NUMBER:
             out.append(LayerSeed(index, name, default, "default"))
         else:

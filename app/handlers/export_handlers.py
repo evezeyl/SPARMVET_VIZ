@@ -865,6 +865,7 @@ def define_export_server(input, output, session, *,
             _home_state_now = home_state.get() if home_state is not None else None
         _plot_seeds = export_seed_plan(
             dict(all_plots), _home_state_now, default=viz_factory.default_random_state,
+            recipe_default=(cfg.raw_config.get("plot_defaults") or {}).get("random_state"),
         )
 
         # ── Collect T3 audit data (per-plot active nodes) ─────────────────

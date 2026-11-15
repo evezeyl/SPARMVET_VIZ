@@ -24,6 +24,17 @@ One arrangement is only one possibility. Sometimes another one looks clearer. So
 
 `random_state: null` and `random_state: random` are **refused**: the checker and the plot factory say so and tell you to write a number. (This rule is provisional; it makes sure the same recipe gives the same picture.)
 
+### One seed for the whole recipe (provisional)
+
+To give every random layer of a recipe the same seed without writing it on each layer, write it once in the recipe:
+
+```yaml
+plot_defaults:
+  random_state: 42
+```
+
+The order is: an audit step (Reshuffle), then the number on the layer, then `plot_defaults.random_state`, then 0. The export records `recipe default` as the source and does not add numbers to the recipe copy, because `plot_defaults` is already in it.
+
 ### How to write it
 
 Choose a number for each random layer; the checker accepts it on exactly these layers:
@@ -41,7 +52,7 @@ layers:
 
 ## What your export contains
 
-Every export writes `effective_run.yaml` with a `seeds_per_plot` entry for every exported plot that has a random layer: the number that was really used to draw the exported picture. Next to it, `seed_source_per_plot` says where each number comes from (`audit`, `recipe`, `default`, or `mixed` when the layers of one plot differ). A plot can have several random layers: each layer has its own seed, a number written on one layer is never given to another, and `seeds_per_layer` lists every layer with its seed and source.
+Every export writes `effective_run.yaml` with a `seeds_per_plot` entry for every exported plot that has a random layer: the number that was really used to draw the exported picture. Next to it, `seed_source_per_plot` says where each number comes from (`audit`, `recipe`, `recipe default`, `default`, or `mixed` when the layers of one plot differ). A plot can have several random layers: each layer has its own seed, a number written on one layer is never given to another, and `seeds_per_layer` lists every layer with its seed and source.
 
 | What decides the seed | What is recorded in `seeds_per_plot` | Will opening your own recipe again repeat it? |
 |---|---|---|

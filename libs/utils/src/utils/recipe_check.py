@@ -825,6 +825,12 @@ class _Check:
             self.add("PD01", "plot_defaults", "plot_defaults is a mapping", "write plot_defaults: {palette: ...}")
             return
         self.unknown_keys("plot_defaults", defaults, "plot_defaults", "PD01")
+        # PROVISIONAL (S3): the one seed of the whole recipe, a whole number
+        if "random_state" in defaults:
+            value = defaults["random_state"]
+            if isinstance(value, bool) or not isinstance(value, int):
+                self.add("PD01", "plot_defaults.random_state", f"random_state is {value!r}, but a seed is a whole number",
+                         "write random_state: 0 (any whole number)")
 
     # -- gallery profile
     def gallery(self, raw: dict) -> None:

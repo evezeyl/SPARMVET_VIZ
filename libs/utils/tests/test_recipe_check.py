@@ -471,3 +471,22 @@ def test_a_number_as_a_seed_is_not_refused_by_s1(written):
         r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(name="geom_sina", params={"random_state": written})
     result = check(mutated(put), catalogs=RANDOM_CATALOGS, file_stem="r")
     assert not [p for p in result.problems if p.code == "PS04" and "random_state" in p.message]
+
+
+# -- PROVISIONAL (S3): plot_defaults.random_state is the one seed of the whole recipe --------------------------------
+
+def _with_plot_defaults(value):
+    def put(r):
+        r["plot_defaults"] = {"random_state": value}
+    return check(mutated(put), file_stem="r")
+
+
+@pytest.mark.parametrize("value", [0, 7, 123456])
+def test_the_checker_knows_the_recipe_seed_key(value):
+    assert [p for p in _with_plot_defaults(value).problems if p.path.startswith("plot_defaults")] == []
+
+
+@pytest.mark.parametrize("value", [None, "random", "7", True, 1.5, [1]])
+def test_the_recipe_seed_is_a_whole_number(value):
+    found = [p for p in _with_plot_defaults(value).problems if p.path.startswith("plot_defaults")]
+    assert len(found) == 1 and found[0].code == "PD01" and "random_state: 0" in found[0].fix

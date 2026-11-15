@@ -67,10 +67,10 @@ def recipe_with(layers):
     return {"analysis_groups": {"grp": {"plots": {"p": {"spec": {"mapping": {"x": "g", "y": "v"}, "layers": layers}}}}}}
 
 
-def positions(df, layers, **render_kwargs):
+def positions(df, layers, plot_defaults=None, **render_kwargs):
     """The jittered positions of every point layer of the plot, stacked."""
     spec = {"mapping": {"x": "g", "y": "v"}, "layers": layers}
-    plot = VizFactory().render(df, {"plots": {"p": spec}, "plot_defaults": {}}, "p", **render_kwargs)
+    plot = VizFactory().render(df, {"plots": {"p": spec}, "plot_defaults": plot_defaults or {}}, "p", **render_kwargs)
     cols = plot.draw().axes[0].collections
     return np.vstack([np.asarray(c.get_offsets()) for c in cols]).copy()
 
@@ -370,3 +370,36 @@ def test_the_methods_text_names_the_pinned_seed():
     text = "\n".join(lines)
     assert "777" in text and "My plot" in text and "random" in text.lower()
     assert _build_methods_section(all_plots=[("p", {})], t3_by_plot={}, ds_to_plots={}, tiers_exported=["T1"]) == []
+
+
+# ---------------------------------------------------------------------------
+# PROVISIONAL (S3): the recipe default, in the export, the record and the re-run
+# ---------------------------------------------------------------------------
+
+def test_the_export_uses_the_recipe_default_records_it_and_does_not_add_it_to_the_recipe(df):
+    layers = [jl(random_state=11), jl()]
+    plots = {"p": {"layers": layers}}
+    plan = export_plot_seeds(plots, {}, default=DEFAULT, recipe_default=7)
+    assert [(ls.seed, ls.source) for ls in plan["p"]] == [(11, "recipe"), (7, "recipe default")]
+    assert seeds_per_plot_record(plan) == {"p": [11, 7]} and seed_sources_per_plot(plan) == {"p": "mixed"}
+    assert seeds_added_to_recipe(plan, plots) == [], "plot_defaults is in the recipe already"
+    assert seed_recipe_note(plan, plots) == []
+    shown = positions(df, layers, plot_defaults={"random_state": 7}, **render_seed_args(plan["p"], None))
+    assert np.array_equal(shown, positions(df, render_layers(layers, [11, 7])))
+
+
+def test_the_rerun_of_a_recipe_with_a_recipe_default_draws_the_exported_picture(df):
+    layers = jitter_layers()
+    plan = export_plot_seeds({"p": {"layers": layers}}, {}, default=DEFAULT, recipe_default=7)
+    recipe = recipe_with(layers)
+    recipe["plot_defaults"] = {"random_state": 7}
+    baked = bake_plot_seeds(recipe, plan)
+    assert baked["plot_defaults"] == {"random_state": 7}
+    assert baked["analysis_groups"]["grp"]["plots"]["p"]["spec"]["layers"] == layers, "the layers stay as written"
+    assert np.array_equal(positions(df, baked["analysis_groups"]["grp"]["plots"]["p"]["spec"]["layers"], plot_defaults=baked["plot_defaults"]),
+                          positions(df, layers, plot_defaults={"random_state": 7}, **render_seed_args(plan["p"], None)))
+
+
+def test_an_audit_pin_beats_the_recipe_default_in_the_export():
+    plan = export_plot_seeds({"p": {"layers": jitter_layers()}}, {"p": 777}, default=DEFAULT, recipe_default=7)
+    assert [(ls.seed, ls.source) for ls in plan["p"]] == [(777, "audit")]

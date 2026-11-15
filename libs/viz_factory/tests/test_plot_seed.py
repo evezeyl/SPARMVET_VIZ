@@ -38,10 +38,10 @@ def df():
     })
 
 
-def positions(df, layers, **render_kwargs) -> np.ndarray:
+def positions(df, layers, plot_defaults=None, **render_kwargs) -> np.ndarray:
     """The real jittered positions of the first point layer of a rendered plot."""
     spec = {"mapping": {"x": "g", "y": "v"}, "layers": layers}
-    plot = VizFactory().render(df, {"plots": {"p": spec}, "plot_defaults": {}}, "p", **render_kwargs)
+    plot = VizFactory().render(df, {"plots": {"p": spec}, "plot_defaults": plot_defaults or {}}, "p", **render_kwargs)
     return np.asarray(plot.draw().axes[0].collections[0].get_offsets()).copy()
 
 
@@ -53,8 +53,8 @@ def jitter(**params):
 # the pure rule, per layer
 # ---------------------------------------------------------------------------
 
-def seeds_of(layers, audit_pin=None, default=0):
-    return [(ls.seed, ls.source) for ls in resolve_layer_seeds(layers, audit_pin, default=default)]
+def seeds_of(layers, audit_pin=None, default=0, recipe_default=None):
+    return [(ls.seed, ls.source) for ls in resolve_layer_seeds(layers, audit_pin, default=default, recipe_default=recipe_default)]
 
 
 def test_no_jitter_means_no_seed():
@@ -142,3 +142,50 @@ def test_audit_pin_beats_recipe_seed_in_the_picture(df):
 
 def test_a_layer_that_writes_no_seed_has_the_factory_seed_in_the_picture(df):
     assert np.array_equal(positions(df, jitter()), positions(df, jitter(random_state=DEFAULT_RANDOM_STATE)))
+
+
+# ---------------------------------------------------------------------------
+# PROVISIONAL (S3): plot_defaults.random_state, the one seed of the whole recipe
+# order: audit pin > the layer's own number > plot_defaults.random_state > the factory's 0
+# ---------------------------------------------------------------------------
+
+def test_the_recipe_default_is_the_seed_of_a_layer_that_writes_none_and_says_so():
+    assert seeds_of(jitter(), recipe_default=7) == [(7, "recipe default")]
+    assert seeds_of(jitter(), recipe_default=0, default=9) == [(0, "recipe default")], "0 is a seed, not nothing"
+
+
+def test_the_order_audit_pin_then_layer_number_then_recipe_default_then_zero():
+    layers = [{"name": "geom_jitter", "params": {"random_state": 11}}, {"name": "geom_jitter", "params": {}}]
+    assert seeds_of(layers, recipe_default=7) == [(11, "recipe"), (7, "recipe default")]
+    assert seeds_of(layers, audit_pin=777, recipe_default=7) == [(777, "audit"), (777, "audit")]
+    assert seeds_of(layers) == [(11, "recipe"), (0, "default")]
+
+
+def test_the_recipe_default_gives_the_seed_in_the_picture_and_a_layer_number_still_holds(df):
+    assert np.array_equal(positions(df, jitter(), plot_defaults={"random_state": 7}), positions(df, jitter(random_state=7)))
+    assert not np.array_equal(positions(df, jitter(), plot_defaults={"random_state": 7}), positions(df, jitter()))
+    assert np.array_equal(positions(df, jitter(random_state=123), plot_defaults={"random_state": 7}), positions(df, jitter(random_state=123)))
+
+
+def test_the_recipe_default_does_not_beat_an_audit_pin_in_the_picture(df):
+    pinned = positions(df, jitter(), plot_defaults={"random_state": 7}, aesthetic_override={"random_state": 777})
+    assert np.array_equal(pinned, positions(df, jitter(random_state=777)))
+
+
+def test_the_recipe_default_reaches_every_random_component(df):
+    for layers in ([{"name": "geom_sina"}], [{"name": "geom_point"}, {"name": "position_jitter"}], [{"name": "geom_jitter"}]):
+        assert np.array_equal(positions(df, layers, plot_defaults={"random_state": 7}),
+                              positions(df, [dict(l, params={"random_state": 7}) if l["name"] != "geom_point" else l for l in layers]))
+
+
+@pytest.mark.parametrize("written", [None, "random"])
+def test_a_recipe_default_of_null_or_random_is_refused_too(df, written):
+    from utils.errors import VisualizationError
+    with pytest.raises(VisualizationError) as raised:
+        positions(df, jitter(), plot_defaults={"random_state": written})
+    assert "random_state: 0" in raised.value.tip
+
+
+def test_the_cascade_knows_the_key_and_does_not_call_it_unknown():
+    resolved = resolve_plot_config({"mapping": {"x": "g", "y": "v"}, "layers": jitter()}, {"random_state": 7}, None)
+    assert "random_state" not in resolved["_unknown_plot_defaults_keys"]

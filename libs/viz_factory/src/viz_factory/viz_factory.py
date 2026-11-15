@@ -81,24 +81,36 @@ def _refuse_unseeded_layer(layer_name: str, params: dict, plot_id: str) -> None:
     nothing takes the factory's seed. `VizFactory(random_state=None)` (a factory built without a seed, the handle
     for tests) is not a layer and is not refused.
     """
-    if "random_state" not in params or not is_random_layer(layer_name, params):
-        return
-    written = params["random_state"]
+    if "random_state" in params and is_random_layer(layer_name, params):
+        _refuse_non_number(f"layer '{layer_name}'", params["random_state"], plot_id)
+
+
+def _refuse_non_number(where: str, written, plot_id: str) -> None:
     if written is None or (isinstance(written, str) and written.strip().lower() == RANDOM):
         pe = PipelineError(
             component="VizFactory",
-            problem=f"Layer '{layer_name}' of plot '{plot_id}' writes random_state: {written!r}, but a seed is a number.",
-            location=f"VizFactory.render(plot_id='{plot_id}'), layer {layer_name}",
+            problem=f"The {where} of plot '{plot_id}' writes random_state: {written!r}, but a seed is a number.",
+            location=f"VizFactory.render(plot_id='{plot_id}'), {where}",
             fix="In the data analysis recipe, write a number: random_state: 0 (any whole number; another number gives "
                 "another arrangement, the same number gives the same one).",
             who="data_analysis_recipe_author",
             category="visualization",
             surface="plot_overlay",
             severity="error",
-            evidence={"layer_name": layer_name, "random_state": written},
+            evidence={"where": where, "random_state": written},
         )
         print(pe.format())
         raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe)
+
+
+def _recipe_seed(plot_defaults: dict, plot_id: str, factory_seed):
+    """`plot_defaults.random_state` (PROVISIONAL S3: the one seed of the whole recipe), else the factory's seed.
+    null and the word random are refused like in a layer (S1)."""
+    if "random_state" not in plot_defaults:
+        return factory_seed
+    written = plot_defaults["random_state"]
+    _refuse_non_number("plot_defaults", written, plot_id)
+    return written
 
 
 def _refuse_plot_engine_not_built(data_analysis_recipe: Dict[str, Any], plot_id: str) -> None:
@@ -217,6 +229,8 @@ class VizFactory:
             raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
         plot_defaults = data_analysis_recipe.get('plot_defaults') or {}
+        # PROVISIONAL (S3): the seed of a random layer that writes none is the recipe's (plot_defaults), else the factory's
+        recipe_seed = _recipe_seed(plot_defaults, plot_id, self._random_state)
 
         # 1. Tier 3: Apply UI-driven filters (predicate pushdown on LazyFrame).
         # Must happen before collect() to preserve lazy evaluation.
@@ -383,7 +397,7 @@ class VizFactory:
                 continue
 
             _refuse_unseeded_layer(layer_name, layer_params, plot_id)
-            layer_params = _seed_random_components(layer_name, layer_params, self._random_state)
+            layer_params = _seed_random_components(layer_name, layer_params, recipe_seed)
 
             try:
                 component_func = get_component(layer_name)
