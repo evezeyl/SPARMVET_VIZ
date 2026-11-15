@@ -6,7 +6,9 @@ An independent module that takes raw data and transforms it into a standardized 
 `Polar` is the library of choice.  This module offers different cleaning logics, depending on the data source. **It returns a tidy dataframe as output**.
 
 
-`Polars` is massively parallel and memory efficient. When you run a `LazyFrame`, it builds an execution plan that is only executed when you trigger a `.collect()`. Polars breaks the data into "chunks" to process them across all your CPU cores simultaneously (concurrency). This makes it extremely fast for large datasets, but Polars promises no row order unless it is asked for. The actions that can reorder rows (group by, sort, join, unique) therefore state their order rule in the step (`maintain_order`, `keep`), so the same input gives the same rows in the same order on every run (ADR-090). `libs/transformer/tests/test_deterministic_order.py` checks this.
+`Polars` is massively parallel and memory efficient. When you run a `LazyFrame`, it builds an execution plan that is only executed when you trigger a `.collect()`. Polars breaks the data into "chunks" to process them across all your CPU cores simultaneously (concurrency). This makes it extremely fast for large datasets.
+
+Polars promises no row order unless it is asked for. The actions that can reorder rows (group by, sort, join, unique) need their order parameter in the step (`maintain_order`, `keep`), and sample needs a `seed`. Actions that work by position (head, tail, slice, first, last, row index) use the order of the table at their step, so write a `polars_sort` with `maintain_order: true` before them. When rows tie, `top_k` and `bottom_k` do not promise which tied rows are kept, or in what order. The same input then gives the same rows in the same order on every run (ADR-090). `libs/transformer/tests/test_deterministic_order.py` checks this.
 
 This layer allows: 
     - **Staged Pipeline Architecture (ADR-013):** Data analysis recipes are structured in distinct parts: `input_fields` -> `wrangling` (tier 1, tier 2); the published columns of a join are its last tier-1 step.
@@ -54,7 +56,7 @@ The **Wrangling Pipeline** defined in the YAML data analysis recipe is a **Seque
 2.  **Duplicate Actions:** A list allows the same action to be called multiple times with different parameters (e.g., filling nulls in `@AMR` with "Negative" and filling nulls in `species` with "Unknown").
 
 **Key Principles:**
-1. **Sequentiality:** Steps are executed in the exact order they appear in the list. #TODO HERE difference sequential and polar lazy execution (sequential logic vs polar recipie that can optimize exectution by changing order of operations - CLARIFY and IMPORTANT - HOW this will work HERE #REVIEW - )
+1. **Sequentiality:** Steps are executed in the exact order they appear in the list.
 2. **Atomic Logic:** Each action is independent and operates on a Polars LazyFrame.
 3. **No hidden choices:** every column an action acts on is written in the step (`columns`), and a parameter that changes the result is required. No action quietly picks target columns or protects key columns.
 4. **Plain column selection:** `polars_select` and `polars_drop` take column names only and fail when a name is missing; a computed column is a `polars_with_columns` step first.

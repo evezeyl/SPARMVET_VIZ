@@ -241,72 +241,96 @@ config/app_features/
 
 ## Full flag reference
 
+The example below is the shipped file `config/app_features/developer.yaml`, unchanged. Which flags need which (the cascades) is in `.claude/rules/rules_app_features_flags.md`.
+
 ```yaml
-# config/app_features/<app features>.yaml
+# UI App features: Developer Mode
+name: "developer"
+display_name: "Workflow Developer"
 
-app_features_name: "pipeline-static"      # internal ID — must match filename prefix
-app_features_id: "pipeline-static"        # used by Bootloader — must match filename prefix
-display_name: "Automated Pipeline — Static"   # shown in UI
-logic_access: "None"                 # informational: None / Basic / Advanced / Full
+flags:
+  # Can the user interact with the Tier 3 View?
+  interactivity_enabled: true
+  # Does the user have access to the Gallery Browser?
+  gallery_enabled: true
+  # Can the user access the Blueprint Architect (data analysis recipe IDE)?
+  blueprint_enabled: true
+  # Can the user edit the YAML escape hatch in Blueprint IDE? (ADR-075; depends on blueprint_enabled)
+  data_analysis_recipe_edit_enabled: true
+  # Can the user converse with the BLUEPRINT AI Agent helper? (ADR-076; depends on blueprint_enabled)
+  blueprint_agent_enabled: true
+  # Can the user access the Test Lab (data utilities)?
+  test_lab_enabled: true
+  # Comparison Theater (Phase 12-A)
+  comparison_mode_enabled: true
+  # Session Management visibility
+  session_management_enabled: true
+  # External Import helper visibility
+  import_helper_enabled: true
+  # Can the user access T3 sandbox (wrangling + right sidebar audit panel)?
+  t3_sandbox_enabled: true
+  # Can the user export results (bundle zip + scope toggle)?
+  export_enabled: true
+  # Can the user export the consolidated audit report (HTML/PDF/DOCX)?
+  # Can the user upload replacement metadata (triggers T1 rebuild)?
+  metadata_ingestion_enabled: true
+  # Can the user ingest raw data files / Excel uploads?
+  data_ingestion_enabled: true
+  # Show/hide sidebar accordion panels
+  # Show active app features name in nav header
+  show_app_features_badge: true
 
-features:
-  # ── Group A: Viewing ──────────────────────────────────────────────────────
-  # (no dependencies; always meaningful)
-  export_enabled: true        # Export Results Bundle (zip) in Export
+data_analysis_recipe_selector:
+  visible: true
 
-  # ── Group B: T3 Sandbox / "My view" ───────────────────────────────────────
-  interactivity_enabled: false       # Master gate for the Filters panel + "My view" option
-  comparison_mode_enabled: false     # "Compare Result vs My view" option (requires interactivity)
-  session_management_enabled: false  # Session Save/Import + ghost save (requires interactivity)
-  t3_sandbox_enabled: false          # "Send to Audit" + propagation modal + right sidebar
-                                      # (decoupled from interactivity_enabled, ADR-085)
-
-  # ── Group C: Right Sidebar ────────────────────────────────────────────────
-  # Visibility driven by bootloader.get_sidebar_config("home", "right").visible (ADR-073),
-  # gated in practice on t3_sandbox_enabled above — not a separate flag.
-
-  # ── Group D: Data Ingestion ───────────────────────────────────────────────
-  metadata_ingestion_enabled: false  # Upload replacement metadata → T1 rebuild
-  import_helper_enabled: false       # Master gate for general data ingestion
-  data_ingestion_enabled: false      # Multi-file ingest + Excel converter (requires import_helper)
-
-  # ── Group E: Developer Features ───────────────────────────────────────────
-  test_lab_enabled: false            # Test Lab
-  gallery_enabled: false             # Gallery browser
-  blueprint_enabled: false           # Blueprint Architect (data analysis recipe design IDE)
-  data_analysis_recipe_edit_enabled: false       # Enables direct YAML editing in BLUEPRINT escape hatch
-                                     # (read-only view always available with blueprint_enabled)
-                                     # FATAL cascade (ADR-077): requires blueprint_enabled: true
-  blueprint_agent_enabled: false     # Conversational AI agent for data analysis recipe design (ADR-076)
-                                     # FATAL cascade (ADR-077): requires blueprint_enabled: true
-
-# Required when blueprint_agent_enabled: true
-blueprint_agent:
-  backend: disabled                  # claude_cli | claude_api | disabled
-  model: claude-sonnet-4-6           # model ID — used only with claude_api backend
-  api_key_env: ANTHROPIC_API_KEY     # env var holding the API key (claude_api only)
-  endpoint: ~                        # optional API endpoint override
-  instructions_file: "config/ui/agents/blueprint_agent.md"
-  gallery_awareness: false
+testing_mode: true
 
 automation:
   ghost_save:
-    enabled: false                   # Auto-save on btn_apply and filter commit
-    frequency_minutes: 1             # Interval if periodic save is implemented
+    enabled: true
+
+# BLUEPRINT AI Agent Helper (ADR-076). Active only when features.blueprint_agent_enabled
+# is true AND the configured backend initialises successfully (auth probe, binary present).
+# On any init failure the bootloader falls back to DisabledAdapter and hides the chat panel.
+# model, api_key_env, endpoint and gallery_awareness below are reserved for the claude_api and
+# local backends, which are not implemented yet (task CONFIG-AGENT-BACKENDS-1); only claude_cli runs.
+blueprint_agent:
+  enabled: true
+  backend: "claude_cli"             # claude_cli | claude_api | local | disabled
+  model: "claude-opus-4-7"          # claude_api only — ignored by other backends
+  api_key_env: "ANTHROPIC_API_KEY"  # claude_api only
+  endpoint: null                    # local only — full URL incl. port (e.g. http://localhost:11434)
+  instructions_file: "config/ui/agents/blueprint_default.md"
+  gallery_awareness: false          # reserved (Phase 1 = false; see ADR-076 §9)
+
+workspaces:
+  home:
+    left_sidebar: !include ../ui/sidebars/home_standard_left.yaml
+    right_sidebar: !include ../ui/sidebars/home_standard_right.yaml
+  blueprint:
+    left_sidebar: !include ../ui/sidebars/blueprint_standard_left.yaml
+    right_sidebar: !include ../ui/sidebars/blueprint_standard_right.yaml
+  gallery:
+    left_sidebar: !include ../ui/sidebars/gallery_focus_left.yaml
+    right_sidebar: !include ../ui/sidebars/gallery_focus_right.yaml
+  test_lab:
+    left_sidebar: !include ../ui/sidebars/testlab_standard_left.yaml
+    right_sidebar: !include ../ui/sidebars/testlab_standard_right.yaml
 ```
 
-## `theme_css` — per app features file Stylesheet (Optional)
+## `theme_css` — stylesheet of a deployment (optional)
 
-The `theme_css` field is an optional path to a CSS file that controls the visual styling of the dashboard for this app features. It defaults to `config/ui/theme.css` (the base stylesheet bundled with the app) if not set.
+`theme_css` is an optional key of the `branding:` block of the deployment file (`config/deployment/`), not of the app features file. It is the path of a CSS file; the default is `config/ui/theme.css`. The base stylesheet `config/ui/theme.css` always loads, and a different file is loaded after it, so it holds only the differences. An app features file that declares `theme_css` is refused at startup, and the message names `branding.theme_css` in the deployment file.
 
-The file is loaded at startup by `Bootloader.get_theme_css_path()` and injected into the page head via `ui.tags.style()`. To customise styling for a specific deployment or branding requirement, create a new CSS file and point `theme_css:` at it — no Python changes are needed.
+The file is loaded at startup by `Bootloader.get_theme_css_path()`, which reads `branding.theme_css` of the deployment file, and injected into the page head via `ui.tags.style()`. To customise styling for a deployment, create a new CSS file with only the differences and point `branding.theme_css` at it — no Python changes are needed.
 
 ```yaml
-# Example: custom branding for a specific deployment
-theme_css: "config/ui/acme_org_theme.css"
+# config/deployment/<deployment>.yaml (as in config/deployment/demo/web-demo.yaml)
+branding:
+  theme_css: "assets/demo/web_demo.css"
 ```
 
-The base theme (`config/ui/theme.css`) is always available as a reference and fallback. Editing it affects all app features files that do not declare an override.
+The base theme (`config/ui/theme.css`) is always available as a reference and fallback.
 
 ---
 

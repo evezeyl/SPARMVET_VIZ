@@ -51,6 +51,7 @@ import subprocess
 import uuid
 import zipfile
 from collections import deque
+from contextlib import redirect_stderr
 from datetime import datetime
 from pathlib import Path
 
@@ -76,6 +77,7 @@ from app.modules.data_analysis_recipe_validator import (
     load_uploaded_recipe,
     load_config_or_problems,
     validate_data_analysis_recipe_data,
+    _load_error_text,
 )
 from blueprint_arch.join_designer import (
     check_join_keys, compute_key_match, build_join_step, parse_join_step, JOIN_HOW_OPTIONS,
@@ -91,6 +93,7 @@ from blueprint_arch.agent_tools import call_tool, get_tool_definitions
 from blueprint_arch.agent_tool_parser import extract_tool_calls
 from blueprint_arch.new_recipe import new_recipe_draft
 from utils.recipe_factory import write_recipe
+from utils.errors import SPARMVET_Error
 from utils.pipeline_error import PipelineError, make_render_payload
 from app.src.render.pipeline_error_renderers import render_blueprint_inline
 
@@ -151,6 +154,55 @@ def _read_bp_draft(draft_dir: Path, data_analysis_recipe_path: str) -> dict | No
 
 
 _LOG = logging.getLogger(__name__)
+
+# The join preview shows these to the user as "Preview failed: <message>": the project's own errors (a dataset that
+# cannot be loaded, a transformation that fails; `SPARMVET_Error` and its subclasses), Polars refusing the data (a
+# missing column, a wrong type) and a file that is missing or cannot be read (OSError: FileNotFoundError,
+# PermissionError). A recipe file that cannot be parsed makes ConfigManager call sys.exit: run_join_preview turns that
+# SystemExit into the loader's own problem text. ValueError is not in the list: it is also what a programmer's bad
+# conversion or a JSON/Unicode decoding fault raises, and showing those as the user's mistake hides a bug.
+# An unknown join or data schema id is a recipe mistake: the orchestrator raises DataAnalysisRecipeError for it.
+JOIN_PREVIEW_USER_ERRORS = (SPARMVET_Error, OSError, pl.exceptions.PolarsError)
+
+JOIN_PREVIEW_INTERNAL_ERROR = "Preview failed: an internal error, not your recipe (details in the log)."
+
+
+def safe_join_preview(*args, **kwargs):
+    """`run_join_preview` for the reactive effect: no exception may escape.
+
+    WHY: an error that escapes a `reactive.Effect` makes Shiny close the user's session. An unexpected error (a
+    programming error) is logged with its traceback and shown with a message that does not blame the recipe.
+    A SystemExit is not an `Exception`: the one `run_join_preview` does not turn into a recipe problem is caught here too.
+    """
+    try:
+        return run_join_preview(*args, **kwargs)
+    except (Exception, SystemExit):
+        _LOG.exception("Join preview: unexpected error")
+        return {"error": JOIN_PREVIEW_INTERNAL_ERROR}
+
+
+def run_join_preview(materialise, key_rows, left_ing, right_ing, left_keys, right_keys):
+    """The result the Joint Designer shows for a key match; an expected error becomes {"error": ...}.
+
+    `materialise(ingredient_id)` returns (LazyFrame, {column: dtype}); `key_rows(lazyframe, keys)` the key tuples.
+    """
+    captured = io.StringIO()
+    try:
+        with redirect_stderr(captured):  # ConfigManager prints its [FATAL] block to stderr before it exits
+            left_lf, left_schema = materialise(left_ing)
+            right_lf, right_schema = materialise(right_ing)
+            verdict = check_join_keys(left_schema, right_schema, left_keys, right_keys, right_id=right_ing)
+            stats = (compute_key_match(key_rows(left_lf, left_keys), key_rows(right_lf, right_keys))
+                     if verdict["ok"] else {})
+    except JOIN_PREVIEW_USER_ERRORS as exc:
+        return {"error": f"Preview failed: {exc}"}
+    except SystemExit as exc:  # a recipe file that cannot be loaded: ConfigManager calls sys.exit(1)
+        return {"error": f"Preview failed: {_load_error_text(captured.getvalue(), exc)}"}
+    stats["verdict"] = verdict
+    stats["error"] = None
+    stats["_meta"] = {"left_ing": left_ing, "right_ing": right_ing,
+                      "left_keys": left_keys, "right_keys": right_keys}
+    return stats
 
 
 def _warn_on_upload(raw, name):
@@ -2144,24 +2196,13 @@ def define_server(input, output, session, *,
             return
         data_analysis_recipe_id = Path(data_analysis_recipe_path).stem
 
-        try:
-            with ui.Progress(min=0, max=2) as p:
-                p.set(0, message=f"Materialising {left_ing}…")
-                left_lf, left_schema = _jd_materialise(data_analysis_recipe_id, left_ing)
-                p.set(1, message=f"Materialising {right_ing}…")
-                right_lf, right_schema = _jd_materialise(data_analysis_recipe_id, right_ing)
-            verdict = check_join_keys(left_schema, right_schema, left_keys, right_keys, right_id=right_ing)
-            if verdict["ok"]:
-                stats = compute_key_match(_jd_key_rows(left_lf, left_keys), _jd_key_rows(right_lf, right_keys))
-            else:
-                stats = {}
-            stats["verdict"] = verdict
-            stats["error"] = None
-            stats["_meta"] = {"left_ing": left_ing, "right_ing": right_ing,
-                              "left_keys": left_keys, "right_keys": right_keys}
-            joint_preview.set(stats)
-        except Exception as exc:
-            joint_preview.set({"error": f"Preview failed: {exc}"})
+        with ui.Progress(min=0, max=2) as p:
+            def _materialise(ingredient_id):
+                p.set(0, message=f"Materialising {ingredient_id}…")
+                return _jd_materialise(data_analysis_recipe_id, ingredient_id)
+
+            joint_preview.set(safe_join_preview(
+                _materialise, _jd_key_rows, left_ing, right_ing, left_keys, right_keys))
 
     @output
     @render.ui
