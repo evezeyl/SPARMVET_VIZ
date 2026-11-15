@@ -3,7 +3,8 @@ from plotnine import ggplot, aes
 from typing import Dict, Any, List
 # Explicit imports to ensure registration occurs
 from viz_factory.registry import get_component
-from viz_factory.plot_config_resolver import BATCHED_COMPONENTS, SEEDED_JITTER_COMPONENTS, resolve_plot_config
+from viz_factory.plot_config_resolver import BATCHED_COMPONENTS, resolve_plot_config
+from utils.random_layers import is_random_layer
 from utils.engines import engine_problem
 from utils.errors import VisualizationError
 from utils.filter_values import coerce_filter_value
@@ -47,11 +48,17 @@ def _generator(seed):
     return np.random.RandomState(int(seed))
 
 
-def _seed_random_components(layer_name: str, params: dict, random_state) -> dict:
-    """Give every random component a seed, unless the layer sets its own `random_state`.
+JITTER_COMPONENTS = ("geom_jitter", "position_jitter", "position_jitterdodge")
 
-    Covers the four ways jitter reaches a plot: a geom's `position: jitter` or `position:
-    jitterdodge` parameter, `geom_jitter`, and the `position_jitter` / `position_jitterdodge` layers.
+
+def _seed_random_components(layer_name: str, params: dict, random_state) -> dict:
+    """Give every random layer a seed, unless the layer sets its own `random_state`.
+
+    A layer is random when `utils.random_layers.is_random_layer` says so (the recipe checker uses the same rule).
+    It reaches a plot in these ways: a geom's `position: jitter` or `jitterdodge` parameter, `geom_jitter`, the
+    `position_jitter` / `position_jitterdodge` layers, `geom_sina` / `stat_sina`, and a bootstrapped summary
+    (`fun_data: mean_cl_boot`). The seed goes in as a numpy generator, never a bare number (plotnine reads 0 as
+    "no seed" for jitter).
     """
     from plotnine import position_jitter, position_jitterdodge
     params = dict(params)
@@ -60,7 +67,10 @@ def _seed_random_components(layer_name: str, params: dict, random_state) -> dict
         params["position"] = position_jitter(random_state=_generator(params.pop("random_state", random_state)))
     elif position == "jitterdodge":
         params["position"] = position_jitterdodge(random_state=_generator(params.pop("random_state", random_state)))
-    elif layer_name in SEEDED_JITTER_COMPONENTS and not (layer_name == "geom_jitter" and "position" in params):
+    elif layer_name in JITTER_COMPONENTS and not (layer_name == "geom_jitter" and "position" in params):
+        params["random_state"] = _generator(params.get("random_state", random_state))
+    elif is_random_layer(layer_name, params):
+        # sina and a bootstrapped summary: the seed is a parameter of the stat
         params["random_state"] = _generator(params.get("random_state", random_state))
     return params
 

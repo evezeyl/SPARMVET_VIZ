@@ -46,7 +46,7 @@ from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_analysis_recipe_validator import home_advice_entries
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
-from viz_factory.plot_config_resolver import layers_have_jitter, recipe_pins_random_state
+from viz_factory.plot_config_resolver import layers_have_random, recipe_pins_random_state
 from app.modules.plot_seeds import (
     SessionSeedDraws, home_plot_seeds, reference_render_args, remember_drawn_seed, render_seed_args,
 )
@@ -679,7 +679,7 @@ def define_server(input, output, session, *,
             go back to "random")."""
             spec = _resolve_active_spec(p_id)
             layers = (spec or {}).get("layers", [])
-            if not layers_have_jitter(layers) or recipe_pins_random_state(layers):
+            if not layers_have_random(layers) or recipe_pins_random_state(layers):
                 return ui.div()
             # Deliberately NOT reactive.isolate() here, unlike _plot_cell_ui's own
             # collapse-state read: this output must re-render and hide itself the

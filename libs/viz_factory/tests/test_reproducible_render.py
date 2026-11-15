@@ -44,6 +44,10 @@ JITTER_ROUTES = {
     "geom_jitter": ([{"name": "geom_jitter", "params": {}}], None),
     "position_jitter layer": ([{"name": "geom_point"}, {"name": "position_jitter"}], None),
     "jitterdodge on a geom": ([{"name": "geom_point", "params": {"position": "jitterdodge"}}], {"x": "g", "y": "v", "fill": "h"}),
+    "geom_sina": ([{"name": "geom_sina"}], None),
+    "stat_sina": ([{"name": "stat_sina"}], None),
+    "bootstrapped summary": ([{"name": "stat_summary", "params": {"fun_data": "mean_cl_boot"}}], None),
+    "bootstrapped summary on a geom": ([{"name": "geom_pointrange", "params": {"stat": "summary", "fun_data": "mean_cl_boot"}}], None),
 }
 
 
@@ -54,13 +58,26 @@ def test_jitter_renders_identically_every_time(df, route):
     assert len(hashes) == 1, f"{route}: {RENDERS} renders gave {len(hashes)} different pictures"
 
 
-@pytest.mark.parametrize("route", ["position string on a geom", "geom_jitter", "position_jitter layer"])
+@pytest.mark.parametrize("route", [r for r in JITTER_ROUTES if r != "jitterdodge on a geom"])
 def test_a_different_factory_seed_gives_a_different_arrangement(df, route):
     layers, mapping = JITTER_ROUTES[route]
     default = render_bytes(VizFactory(), df, layers, mapping)
     other = render_bytes(VizFactory(random_state=DEFAULT_RANDOM_STATE + 7), df, layers, mapping)
     assert default != other
     assert other == render_bytes(VizFactory(random_state=DEFAULT_RANDOM_STATE + 7), df, layers, mapping)
+
+
+@pytest.mark.parametrize("layers", [
+    [{"name": "geom_sina", "params": {"random_state": 5}}],
+    [{"name": "stat_summary", "params": {"fun_data": "mean_cl_boot", "random_state": 5}}],
+])
+def test_a_seed_written_on_sina_or_a_bootstrapped_summary_wins_over_the_factory_seed(df, layers):
+    assert render_bytes(VizFactory(random_state=1), df, layers) == render_bytes(VizFactory(random_state=2), df, layers)
+
+
+def test_random_state_zero_repeats_on_sina(df):
+    layers = [{"name": "geom_sina", "params": {"random_state": 0}}]
+    assert len({render_bytes(VizFactory(random_state=None), df, layers) for _ in range(RENDERS)}) == 1
 
 
 def test_a_layer_can_set_its_own_seed(df):

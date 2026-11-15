@@ -413,3 +413,38 @@ def test_a_wrong_argument_says_what_the_component_is_to_plotnine():
 def test_without_the_kinds_the_message_is_as_before():
     message = _wrong_argument_message("geom_col", None)
     assert message == "colr_ is not an argument of geom_col"
+
+
+# -- random_state: accepted on a random layer and only on a random layer (SEED-HOLDS-1) --------------------------------
+
+RANDOM_CATALOGS = {**CATALOGS, "components": CATALOGS["components"] | {"geom_sina", "geom_pointrange", "geom_bar"},
+                   "component_arguments": {**CATALOGS["component_arguments"], "geom_point": {"position", "alpha"}, "geom_sina": {"random_state", "scale"},
+                                           "geom_pointrange": {"stat", "fun_data", "color"}, "geom_bar": {"fill"}}}
+
+
+def _seed_problems(name, params):
+    def put(r):
+        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(name=name, params=params)
+    result = check(mutated(put), catalogs=RANDOM_CATALOGS, file_stem="r")
+    return [p for p in result.problems if p.code == "PS04" and "random_state" in p.message]
+
+
+@pytest.mark.parametrize("name, params", [
+    ("geom_sina", {"random_state": 0}),
+    ("geom_point", {"position": "jitter", "random_state": 0}),
+    ("geom_point", {"position": "jitterdodge", "random_state": 3}),
+    ("geom_pointrange", {"stat": "summary", "fun_data": "mean_cl_boot", "random_state": 0}),
+])
+def test_a_seed_is_accepted_on_a_random_layer(name, params):
+    assert _seed_problems(name, params) == []
+
+
+@pytest.mark.parametrize("name, params", [
+    ("geom_point", {"random_state": 0}),
+    ("geom_point", {"position": "dodge", "random_state": 0}),
+    ("geom_bar", {"random_state": 0}),
+    ("geom_pointrange", {"random_state": 0}),
+    ("geom_pointrange", {"stat": "summary", "fun_data": "mean_se", "random_state": 0}),
+])
+def test_a_seed_is_refused_on_a_layer_that_is_not_random(name, params):
+    assert len(_seed_problems(name, params)) == 1

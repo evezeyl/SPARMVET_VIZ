@@ -1002,21 +1002,22 @@ def handle_rug(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["sina", "violin", "jitter", "points", "distribution", "comparison"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_sina"]}],
-    "plotnine": "exact",
+    "plotnine": "modified",
     "allow_extra_params": True,
-    "overlay": {
-        "scale": {"widget": "enum", "label": "Scale points to", "options": ["area", "count", "width"]},
-        "method": {"widget": "enum", "label": "Density method", "options": ["density", "counts"]},
-        "maxwidth": {"widget": "number", "label": "Maximum width of sina (0–1)"},
-        "alpha": {"widget": "number", "label": "Opacity (0–1)"},
-        "colour": {"widget": "color", "label": "Colour (fixed, not mapped)"},
-        "fill": {"widget": "color", "label": "Fill colour (for filled shapes)"},
-        "size": {"widget": "number", "label": "Point size"},
-        "shape": {"widget": "any", "label": "Shape (a code 0–25 or a marker name such as o)"},
-        "na_rm": {"widget": "bool", "label": "Silently remove NA rows"},
+    "params": {
+        "scale": {"widget": "enum", "label": "Scale points to", "options": ["area", "count", "width"], "required": False, "default": "area"},
+        "method": {"widget": "enum", "label": "Density method", "options": ["density", "counts"], "required": False, "default": "density"},
+        "maxwidth": {"widget": "number", "label": "Maximum width of sina (0\u20131)", "required": False},
+        "random_state": {"widget": "number", "label": "Random seed for the arrangement of the points", "required": False, "default": 0},
+        "alpha": {"widget": "number", "label": "Opacity (0\u20131)", "required": False},
+        "colour": {"widget": "color", "label": "Colour (fixed, not mapped)", "required": False},
+        "fill": {"widget": "color", "label": "Fill colour (for filled shapes)", "required": False},
+        "size": {"widget": "number", "label": "Point size", "required": False},
+        "shape": {"widget": "any", "label": "Shape (a code 0\u201325 or a marker name such as o)", "required": False},
+        "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
-    "description": "Jittered points constrained to the density shape (like violin + jitter); the publication-preferred alternative to geom_jitter for showing individual points.",
-    "yaml_example": "layers:\n  - name: geom_sina",
+    "description": "Jittered points constrained to the density shape (like violin + jitter); the publication-preferred alternative to geom_jitter for showing individual points. Differs from plotnine: the factory gives it a default seed, so the same recipe gives the same picture (write `random_state: 0` in the recipe).",
+    "yaml_example": "layers:\n  - name: geom_sina\n    params:\n      random_state: 0",
 })
 def handle_sina(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Sina plot (normalized violin)."""
@@ -1487,16 +1488,17 @@ def handle_stat_quantile(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "sina", "jitter", "violin", "density", "distribution"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_sina"]}],
-    "plotnine": "exact",
+    "plotnine": "modified",
     "allow_extra_params": True,
-    "overlay": {
-        "scale": {"widget": "enum", "label": "Scale points to", "options": ["area", "count", "width"]},
-        "method": {"widget": "enum", "label": "Density method", "options": ["density", "counts"]},
-        "maxwidth": {"widget": "number", "label": "Maximum width (0–1)"},
-        "na_rm": {"widget": "bool", "label": "Silently remove NA rows"},
+    "params": {
+        "scale": {"widget": "enum", "label": "Scale points to", "options": ["area", "count", "width"], "required": False, "default": "area"},
+        "method": {"widget": "enum", "label": "Density method", "options": ["density", "counts"], "required": False, "default": "density"},
+        "maxwidth": {"widget": "number", "label": "Maximum width (0\u20131)", "required": False},
+        "random_state": {"widget": "number", "label": "Random seed for the arrangement of the points", "required": False, "default": 0},
+        "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
-    "description": "Compute density-constrained jitter for sina plots; the default stat for geom_sina \u2014 use to change bandwidth scaling.",
-    "yaml_example": "layers:\n  - name: stat_sina",
+    "description": "Compute density-constrained jitter for sina plots; the default stat for geom_sina \u2014 use to change bandwidth scaling. Differs from plotnine: the factory gives it a default seed, so the same recipe gives the same picture (write `random_state: 0` in the recipe).",
+    "yaml_example": "layers:\n  - name: stat_sina\n    params:\n      random_state: 0",
 })
 def handle_stat_sina(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + stat_sina(**spec)
