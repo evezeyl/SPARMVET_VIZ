@@ -51,6 +51,7 @@ def test_a_position_action_after_a_step_that_does_not_keep_the_order_gets_the_ad
     assert result.errors == [] or "ST13" not in [p.code for p in result.errors]
     advice = result.advices[0]
     assert advice.severity == "A" and before["action"] in advice.message and "maintain_order" in advice.fix and position in advice.message
+    assert "only at steps with a stated order parameter" in advice.message and "pivot" in advice.message and "explode" in advice.message
 
 
 @pytest.mark.parametrize("before", [step("polars_sort", maintain_order=True), step("polars_unique", maintain_order=True), step("polars_group_by", maintain_order=True)],

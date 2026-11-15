@@ -457,7 +457,8 @@ class _Check:
                 if types.get(column) in ("Int32", "UInt32"):
                     self.add("ST15", where,
                              f"{name} of the column {column!r}, declared {types[column]}: the total of a 32-bit whole-number column wraps around "
-                             "above about 2 thousand million (4 for UInt32) with no error and gives a wrong, possibly negative, number",
+                             "above about 2 thousand million (4 for UInt32) with no error and gives a wrong, possibly negative, number "
+                             "(the checker does not see a sum inside a formula, in a join result, or on a column made 32-bit by an earlier step)",
                              f"write a polars_cast step to Int64 for {column!r} before this step",
                              "A")
             if name not in JOIN_KEEPS_COLUMNS and name not in (action_names.SUM, action_names.CUM_SUM):
@@ -469,11 +470,11 @@ class _Check:
             steps = container.get(tier)
             for index, step in enumerate(steps if isinstance(steps, list) else [], start=1):
                 if isinstance(step, dict) and step.get("action") in (action_names.TOP_K, action_names.BOTTOM_K):
+                    nan_place = "first" if step["action"] == action_names.TOP_K else "last"
                     self.add("ST14", f"{path}.{tier}[{index}]",
-                             f"{step['action']} returns exactly k rows; when rows are tied at the limit, which of them are kept is not fixed "
-                             "(it can differ between a small and a large table, and between runs in low-memory mode). "
-                             "A NaN comes first; rows with no value fill the k rows when values run out",
-                             "to always keep the same rows, add a row number (polars_with_row_index) and give it last in `by`; "
+                             f"{step['action']} returns exactly k rows; when rows are tied at the limit, which of them are kept is not fixed, do not rely on it. "
+                             f"A NaN comes {nan_place}; rows with no value fill the k rows when values run out",
+                             "to always keep the same rows, add a row number (polars_with_row_index) and give it last in `by`, or use polars_sort with maintain_order then polars_head; "
                              "to keep every row tied with the k best, use polars_rank (method min) and a filter",
                              "A")
 
@@ -499,7 +500,8 @@ class _Check:
                 elif name in action_names.POSITION_ACTIONS and unstated is not None:
                     self.add("ST13", f"{path}.{tier}[{index}]",
                              f"{name} keeps rows by their position, but the order of the rows is not fixed by {unstated[1]} "
-                             f"({unstated[0]}, maintain_order: {'none' if unstated[1] == action_names.JOIN else 'false'}): the rows kept can differ from one run or one Polars version to another",
+                             f"({unstated[0]}, maintain_order: {'none' if unstated[1] == action_names.JOIN else 'false'}): Polars does not promise the same rows. "
+                             "(The checker looks only at steps with a stated order parameter; it can miss, for example, a pivot or an explode before.)",
                              f"write maintain_order: {'left_right' if unstated[1] == action_names.JOIN else 'true'} in that step, or write a polars_sort step with maintain_order: true before this one",
                              "A")
 

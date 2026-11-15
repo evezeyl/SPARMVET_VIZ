@@ -28,7 +28,10 @@ def test_every_top_k_and_bottom_k_step_gets_the_advice(action):
     assert len(found) == 2 and found[0].path.endswith("[1]") and found[1].path.endswith("[2]")
     advice = found[0]
     assert advice.severity == "A" and action in advice.message and "exactly k rows" in advice.message
-    assert "polars_with_row_index" in advice.fix and "polars_rank" in advice.fix and "NaN" in advice.message
+    assert "polars_with_row_index" in advice.fix and "polars_rank" in advice.fix and "do not rely on it" in advice.message
+    assert "polars_sort" in advice.fix
+    for claim in ("streaming", "low-memory", "small table", "large table"):
+        assert claim not in advice.message + advice.fix, claim  # not established by running
     assert "ST14" not in [p.code for p in result.errors]
 
 
@@ -40,3 +43,9 @@ def test_other_steps_get_no_tie_advice():
 def test_the_advice_is_shown_to_the_author():
     from app.modules.data_analysis_recipe_validator import SHOWN_ADVICES
     assert "ST14" in SHOWN_ADVICES
+
+
+def test_the_nan_place_is_right_for_each_action():
+    top = [p for p in check_recipe(recipe([{"action": "polars_top_k"}]), "run", catalogs=CATALOG).advices if p.code == "ST14"][0]
+    bottom = [p for p in check_recipe(recipe([{"action": "polars_bottom_k"}]), "run", catalogs=CATALOG).advices if p.code == "ST14"][0]
+    assert "A NaN comes first" in top.message and "A NaN comes last" in bottom.message

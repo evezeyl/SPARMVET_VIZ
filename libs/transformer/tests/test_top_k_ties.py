@@ -34,9 +34,8 @@ def test_exactly_k_rows_come_back_when_rows_are_tied_at_the_cut(name):
 
 def test_a_nan_comes_first_in_top_k_and_last_in_bottom_k():
     frame = pl.DataFrame({"id": list("abcd"), "v": [9.0, NAN, 7.0, 7.0]})
-    top = run("polars_top_k", frame, k=2, by=["v"])
-    assert top["id"].to_list() == ["b", "a"]
-    assert run("polars_bottom_k", frame, k=2, by=["v"])["v"].to_list() == [7.0, 7.0]
+    assert run("polars_top_k", frame, k=2, by=["v"])["id"].to_list() == ["b", "a"]
+    assert run("polars_bottom_k", frame, k=2, by=["v"])["v"].to_list() == [7.0, 7.0]  # the NaN is not among the 2 smallest
 
 
 def test_rows_with_no_value_fill_the_k_rows_when_the_real_values_run_out():
@@ -65,8 +64,21 @@ def test_rank_with_method_min_and_a_filter_keeps_every_row_tied_with_the_k_best(
 
 
 @pytest.mark.parametrize("name", ["polars_top_k", "polars_bottom_k"])
-def test_the_description_states_what_is_true_and_not_the_old_claim(name):
+def test_the_description_holds_only_what_was_established_by_running(name):
     text = ACTION_SCHEMAS[name]["description"]
-    assert "not the input order" not in text
-    for needed in ("exactly `k` rows", "not fixed", "streaming", "NaN", "no value", "row number", "polars_sort", "polars_head", "polars_rank", "min"):
+    for needed in ("exactly `k` rows", "not fixed", "do not rely on it", "no value", "row number", "polars_sort", "polars_head", "polars_rank", "min"):
         assert needed in text, needed
+    for removed in ("not the input order", "small table", "streaming", "differ from run to run", "first tied rows"):
+        assert removed not in text, removed  # claims that the reviewer's runs did not support
+
+
+def test_the_nan_sentence_is_right_for_each_action():
+    top, bottom = ACTION_SCHEMAS["polars_top_k"]["description"], ACTION_SCHEMAS["polars_bottom_k"]["description"]
+    assert "comes first" in top and "comes last" not in top
+    assert "comes last" in bottom and "comes first" not in bottom
+
+
+def test_the_nan_position_is_what_the_description_says():
+    frame = pl.DataFrame({"id": list("abcd"), "v": [9.0, NAN, 7.0, 7.0]})
+    assert run("polars_top_k", frame, k=4, by=["v"])["id"].to_list()[0] == "b"
+    assert run("polars_bottom_k", frame, k=4, by=["v"])["id"].to_list()[-1] == "b"

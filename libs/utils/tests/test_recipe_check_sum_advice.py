@@ -40,6 +40,8 @@ def test_a_sum_on_a_32_bit_column_gets_the_advice(step, kind):
     found = advice([step], kind)
     assert len(found) == 1 and found[0].severity == "A"
     assert "wraps around" in found[0].message and "'n'" in found[0].message and "Int64" in found[0].fix
+    for blind in ("inside a formula", "join result", "earlier step"):
+        assert blind in found[0].message, blind  # what the checker cannot see is said in the advice
 
 
 @pytest.mark.parametrize("kind", ["Int64", "Float64", "Int16", "UInt64"])
