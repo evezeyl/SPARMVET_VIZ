@@ -223,3 +223,15 @@ def test_home_refuses_a_tier2_on_a_schema_that_is_only_an_ingredient(tmp_path):
 def test_home_accepts_a_tier2_on_a_schema_that_a_plot_reads(tmp_path):
     problems = validate_data_analysis_recipe(_gate_recipe(tmp_path, plot_schema=True))
     assert not any("[S07]" in str(p) for p in problems), [str(p) for p in problems]
+
+
+def test_home_refuses_a_join_tier2_that_no_plot_reads(tmp_path):
+    schema = minimal_schema("data/T.tsv", {"sample_id": "String", "group": "String"}, entity_key="sample_id")
+    schema["description"] = "one row per sample"
+    join = minimal_join(["T"], [])
+    join["description"] = "the samples"
+    join["steps"]["tier2"] = [KEEP_A]
+    recipe = minimal_recipe("gate_join", schemas={"T": schema}, joins={"C": join},
+                            plots={"p_t": minimal_plot("T", {"x": "group"})})
+    problems = validate_data_analysis_recipe(write_recipe(tmp_path / "gate_join.yaml", recipe))
+    assert any("[J14]" in str(p) for p in problems), [str(p) for p in problems]

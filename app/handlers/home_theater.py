@@ -285,7 +285,7 @@ def define_server(input, output, session, *,
         """Return a LazyFrame for the dataset referenced by spec (or tier1_anchor).
 
         T2 and T3 both read the assembly's stored Tier 2 parquet (issue #10; equal to T1
-        when the join has no tier2 steps). T3 adds per-plot audit nodes (filters, drops)
+        when the table has no tier2 steps). T3 adds per-plot audit nodes (filters, drops)
         on top of this base.
 
         `tier` defaults to the data view (tier_toggle). Plot handlers pass "T2"

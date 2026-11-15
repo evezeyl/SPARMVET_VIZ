@@ -5,7 +5,8 @@ join, or a schema that a plot reads directly (`target_dataset`). Its Tier 2 is:
 - for a join: `joins.<id>.steps.tier2`;
 - for a schema plotted directly: its own `wrangling.tier2`.
 A join reads the Tier 1 of its ingredients, so the tier-2 list of a schema applies only where that schema is plotted
-directly (spec line 357). A tier-2 list on a schema that no plot reads is run nowhere: the checker refuses it (S07).
+directly (spec line 357). A tier-2 list on a schema that no plot reads is run nowhere: the checker refuses it (S07). The same
+holds for a join: its tier-2 list runs only when a plot reads the join (J14).
 An empty or absent list means T2 equals T1 (ADR-089: nothing is stored).
 
 Pure functions on the resolved recipe (a dictionary); no engine, no disk. The engine (`DataOrchestrator`), the cache
@@ -13,7 +14,7 @@ keys, the export, HOME's badge, the checker and the Blueprint lineage all read t
 rule exists once.
 
 # @deps
-# provides: function:tier2_steps, function:step_list, function:plot_targets, function:unapplied_schema_tier2, function:without_tier2, function:schema_bodies
+# provides: function:tier2_steps, function:step_list, function:plot_targets, function:unapplied_schema_tier2, function:unapplied_join_tier2, function:without_tier2, function:schema_bodies
 # consumed_by: app/modules/cache_keys.py, app/modules/orchestrator.py (through cache_keys), libs/utils/src/utils/recipe_check.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/utils/tests/test_recipe_tiers.py, app/tests/test_schema_tier2.py
 # doc: .claude/design/recipe_format_spec.md (DEC16, line 357, S07, X4), .claude/knowledge/architecture_decisions.md#adr-089
 # @end_deps
@@ -78,6 +79,16 @@ def unapplied_schema_tier2(raw: dict) -> List[str]:
     targets = plot_targets(raw)
     return [sid for sid, schema in schema_bodies(raw).items()
             if isinstance(schema, dict) and step_list(schema.get("wrangling"), "tier2") and sid not in targets]
+
+
+def unapplied_join_tier2(raw: dict) -> List[str]:
+    """The joins whose non-empty tier-2 list is run nowhere: no plot reads the join (J14)."""
+    targets = plot_targets(raw)
+    joins = raw.get("joins") if isinstance(raw, dict) else None
+    if not isinstance(joins, dict):
+        return []
+    return [jid for jid, join in joins.items()
+            if isinstance(join, dict) and step_list(join.get("steps"), "tier2") and jid not in targets]
 
 
 def without_tier2(raw: dict) -> dict:
