@@ -10,7 +10,8 @@ Only names that a consumer needs are listed; add one with its first consumer.
 
 # @deps
 # provides: constant:JOIN, constant:SELECT, constant:DROP, constant:WITH_COLUMNS, constant:FILTER, constant:CAST,
-#           constant:STR_STRIP_CHARS, constant:STR_REPLACE_ALL, constant:UNIQUE, constant:DROP_NULLS, constant:SORT, constant:SAMPLE, constant:JOIN_ASOF, constant:JOIN_WHERE, constant:TIER1_ONLY
+#           constant:STR_STRIP_CHARS, constant:STR_REPLACE_ALL, constant:UNIQUE, constant:DROP_NULLS, constant:SORT, constant:SAMPLE, constant:JOIN_ASOF, constant:JOIN_WHERE, constant:GROUP_BY, constant:HEAD, constant:TAIL, constant:SLICE,
+#           constant:LIMIT, constant:GATHER_EVERY, constant:WITH_ROW_INDEX, constant:SUM, constant:CUM_SUM, constant:TOP_K, constant:BOTTOM_K, constant:POSITION_ACTIONS, constant:REMOVED_ACTIONS, constant:TIER1_ONLY
 # consumed_by: libs/utils/src/utils/recipe_check.py, libs/utils/src/utils/contract_migration.py, libs/transformer/tests/test_action_names.py,
 #              libs/id_reconciliation/src/id_reconciliation/recipe_steps.py, libs/blueprint_arch/src/blueprint_arch/join_designer.py,
 #              libs/blueprint_arch/src/blueprint_arch/t3_translator.py, libs/transformer/src/transformer/data_assembler.py,
@@ -32,7 +33,26 @@ FILTER = "modif_filter"
 SORT = "polars_sort"
 SAMPLE = "polars_sample"
 JOIN_ASOF = "polars_join_asof"
-JOIN_WHERE = "polars_join_where"
+JOIN_WHERE = "modif_join_where"
+GROUP_BY = "polars_group_by"
+HEAD = "polars_head"
+TAIL = "polars_tail"
+SLICE = "polars_slice"
+LIMIT = "polars_limit"
+GATHER_EVERY = "polars_gather_every"
+WITH_ROW_INDEX = "polars_with_row_index"
+TOP_K = "polars_top_k"
+SUM = "polars_sum"
+CUM_SUM = "polars_cum_sum"
+BOTTOM_K = "polars_bottom_k"
+
+# Removed action names and what replaces them: refused, with the replacement and the reason (never run, no alias).
+REMOVED_ACTIONS = {
+    "polars_join_where": {"use": JOIN_WHERE, "why": "the action fixes the order of the rows of its result, which Polars does not, so it is not exactly Polars"},
+}
+
+# Actions whose result depends on the position of a row (the checker advice ST13 looks for a stated order before them).
+POSITION_ACTIONS = frozenset({HEAD, TAIL, SLICE, LIMIT, GATHER_EVERY, WITH_ROW_INDEX})
 
 # Actions that are allowed only in tier 1 (spec ST05).
 TIER1_ONLY = frozenset({JOIN, JOIN_ASOF, JOIN_WHERE})

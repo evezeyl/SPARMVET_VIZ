@@ -26,6 +26,7 @@ try:
     from utils.config_loader import ConfigManager
     from transformer.data_wrangler import DataWrangler
     from transformer.data_assembler import DataAssembler
+    from transformer.anchor import write_anchor
 except ImportError as e:
     print(
         f"❌  ERROR: [Layer 2 Runner] Core imports failed. Check .venv install. {e}")
@@ -131,7 +132,8 @@ def run_assembler_debug(data_analysis_recipe_path: str, data_dir_override: str =
         assembler = DataAssembler(assembly_ingredients, recipe_id=Path(data_analysis_recipe_path).stem, join_id=assembly_id)
         consolidated_lf = assembler.assemble(filtered_steps)
         # the Tier 1 result, before the tier-2 steps and the contract
-        consolidated_lf.collect().write_parquet(intermediate_parquet)
+        # the same call as the orchestrator: a refused `validate` of a join is explained in plain words (join_diagnosis)
+        write_anchor(consolidated_lf, intermediate_parquet, decision_hash="debug_assembler", join_checks=assembler.join_checks)
         tier2 = DataWrangler._resolve_tier(assembly_info.get("steps"), "tier2")
         if tier2:
             print(f"  └── 🌿 Tier 2: {len(tier2)} steps.")

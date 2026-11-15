@@ -28,10 +28,10 @@ from test_action_recipe_pairs import ROOT, _run
 from test_polars_actions_equal_polars import Case, eager
 
 NAN = float("nan")
-GROUP = {"polars_rank", "polars_join_asof", "polars_join_where", "polars_group_by_dynamic", "polars_rolling"}
+GROUP = {"polars_rank", "polars_join_asof", "modif_join_where", "polars_group_by_dynamic", "polars_rolling"}
 # Polars gives the pairs of a join on conditions in another order on every run: the action orders them (first table, then second)
-# and the rows are compared with the direct call after sorting both; the order itself is tested in the preconditions file
-UNORDERED = {"polars_join_where"}
+# and the rows are compared with the direct call after sorting both; the order itself is tested in test_polars_time_joins_preconditions.py (modif_join_where section)
+UNORDERED = {"modif_join_where"}
 
 # one column with ties, a null and two NaN; a second one with ties and a null
 RANKED = pl.DataFrame({
@@ -99,19 +99,19 @@ CASES = [
                                  strategy="backward", suffix="_other", coalesce=False, allow_exact_matches=False)),
     Case("polars_join_asof", DATE_LEFT, {"right_ingredient": "R", "on": "d", "strategy": "forward", "tolerance": "2d", "__right_df__": DATE_RIGHT.lazy()},
          lambda lf: lf.join_asof(DATE_RIGHT.lazy(), on="d", strategy="forward", tolerance="2d")),
-    # -- polars_join_where: two predicates (the pair holds this case), one, a clashing column with a suffix, NaN, no match -----
-    Case("polars_join_where", WHERE_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('v') >= pl.col('lo')", "pl.col('v') <= pl.col('hi')"],
+    # -- modif_join_where: two predicates (the pair holds this case), one, a clashing column with a suffix, NaN, no match -----
+    Case("modif_join_where", WHERE_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('v') >= pl.col('lo')", "pl.col('v') <= pl.col('hi')"],
                                            "__right_df__": WHERE_RIGHT.lazy()},
          lambda lf: lf.join_where(WHERE_RIGHT.lazy(), pl.col("v") >= pl.col("lo"), pl.col("v") <= pl.col("hi"))),
-    Case("polars_join_where", WHERE_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('lo') < pl.col('v')"], "__right_df__": WHERE_RIGHT.lazy()},
+    Case("modif_join_where", WHERE_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('lo') < pl.col('v')"], "__right_df__": WHERE_RIGHT.lazy()},
          lambda lf: lf.join_where(WHERE_RIGHT.lazy(), pl.col("lo") < pl.col("v"))),
-    Case("polars_join_where", WHERE_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('v') >= pl.col('lo_r')"], "suffix": "_r",
+    Case("modif_join_where", WHERE_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('v') >= pl.col('lo_r')"], "suffix": "_r",
                                            "__right_df__": WHERE_RIGHT_CLASH.lazy()},
          lambda lf: lf.join_where(WHERE_RIGHT_CLASH.lazy(), pl.col("v") >= pl.col("lo_r"), suffix="_r")),
-    Case("polars_join_where", WHERE_FLOAT_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('v') >= pl.col('lo')", "pl.col('v') <= pl.col('hi')"],
+    Case("modif_join_where", WHERE_FLOAT_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('v') >= pl.col('lo')", "pl.col('v') <= pl.col('hi')"],
                                                  "__right_df__": WHERE_FLOAT_RIGHT.lazy()},
          lambda lf: lf.join_where(WHERE_FLOAT_RIGHT.lazy(), pl.col("v") >= pl.col("lo"), pl.col("v") <= pl.col("hi"))),
-    Case("polars_join_where", WHERE_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('v') > 100"], "__right_df__": WHERE_RIGHT.lazy()},
+    Case("modif_join_where", WHERE_LEFT, {"right_ingredient": "R", "predicates": ["pl.col('v') > 100"], "__right_df__": WHERE_RIGHT.lazy()},
          lambda lf: lf.join_where(WHERE_RIGHT.lazy(), pl.col("v") > 100)),
     # -- polars_group_by_dynamic: months per country (the pair holds this one), every option, a whole-number index, moments -----
     Case("polars_group_by_dynamic", WINDOWED,
@@ -204,3 +204,22 @@ def test_the_ingested_file_is_the_frame_of_the_case_and_the_result_equals_polars
         warnings.simplefilter("ignore")
         expected = eager(case.polars(case.frame.lazy()))
     assert_frame_equal(_canonical(case, got), _canonical(case, expected))
+
+
+# -- modif_join_where: the same rows as Polars (as a set), in the stated order, on a table big enough for Polars to vary ------------
+
+def test_modif_join_where_returns_the_rows_of_polars_as_a_set_and_in_the_stated_order_on_every_run():
+    """Rows equal Polars' rows (nothing added or dropped); order = first table, then second, on repeated runs (DEC31, DEC32)."""
+    import random
+    rng = random.Random(1)
+    size = 2000
+    left = pl.DataFrame({"i": list(range(size)), "a": [rng.randint(0, 100) for _ in range(size)]})
+    right = pl.DataFrame({"j": list(range(size)), "b": [rng.randint(0, 100) for _ in range(size)]})
+    action = AVAILABLE_WRANGLING_ACTIONS["modif_join_where"]
+    spec = {"right_ingredient": "R", "predicates": ["pl.col('a') < pl.col('b')", "pl.col('a') > pl.col('b') - 5"], "__right_df__": right.lazy()}
+    polars_rows = left.lazy().join_where(right.lazy(), pl.col("a") < pl.col("b"), pl.col("a") > pl.col("b") - 5).collect()
+    first = eager(action(left.lazy(), dict(spec)))
+    assert_frame_equal(first.sort(first.columns), polars_rows.sort(polars_rows.columns))
+    assert first.sort(["i", "j"]).equals(first), "the rows are not in the order: first table, then second table"
+    for _ in range(4):
+        assert eager(action(left.lazy(), dict(spec))).equals(first)

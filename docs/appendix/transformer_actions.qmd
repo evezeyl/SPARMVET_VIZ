@@ -513,7 +513,7 @@ Kind: wrapper. Context: t1, t2.
 
 #### `polars_cum_sum`
 
-Running sum (Polars Expr.cum_sum).
+Running sum (Polars Expr.cum_sum). The sum of an Int32 or UInt32 column wraps around above about 2 thousand million (4 for UInt32) with no error: cast to Int64 first.
 
 Kind: wrapper. Context: t1, t2.
 
@@ -702,7 +702,7 @@ Kind: exact. Context: t1, t2.
 
 #### `polars_top_k`
 
-Keep the `k` rows with the largest values of `by`, largest first (Polars LazyFrame.top_k). The order of the result is the order of the values; Polars does not promise which of several tied rows are kept at the cut, nor their order (measured with Polars 1.40.1: not the input order). A recipe that needs one fixed result ends `by` with a column that is unique per row, for example the column that polars_with_row_index writes.
+Keep the `k` rows with the largest values of `by`, largest first (Polars LazyFrame.top_k). The order of the result is the order of the values; It returns exactly `k` rows. When several rows are tied at the cut, only some of them are kept: which ones is not fixed, do not rely on it. A NaN (a failed calculation) comes first; a missing value is skipped, but rows with no value fill the `k` rows when the real values run out. To always keep the same rows, end `by` with a row number (write a polars_with_row_index step first and give its column last in `by`), or write polars_sort with maintain_order: true and then polars_head. To keep every row tied with the `k` best (possibly more than `k` rows), write polars_rank with method min, then a modif_filter on the rank.
 
 Kind: exact. Context: t1, t2.
 
@@ -715,7 +715,7 @@ Kind: exact. Context: t1, t2.
 
 #### `polars_bottom_k`
 
-Keep the `k` rows with the smallest values of `by`, smallest first (Polars LazyFrame.bottom_k). The order of the result is the order of the values; Polars does not promise which of several tied rows are kept at the cut, nor their order (measured with Polars 1.40.1: not the input order). A recipe that needs one fixed result ends `by` with a column that is unique per row, for example the column that polars_with_row_index writes.
+Keep the `k` rows with the smallest values of `by`, smallest first (Polars LazyFrame.bottom_k). The order of the result is the order of the values; It returns exactly `k` rows. When several rows are tied at the cut, only some of them are kept: which ones is not fixed, do not rely on it. A NaN (a failed calculation) comes last; a missing value is skipped, but rows with no value fill the `k` rows when the real values run out. To always keep the same rows, end `by` with a row number (write a polars_with_row_index step first and give its column last in `by`), or write polars_sort with maintain_order: true and then polars_head. To keep every row tied with the `k` best (possibly more than `k` rows), write polars_rank with method min, then a modif_filter on the rank.
 
 Kind: exact. Context: t1, t2.
 
@@ -887,7 +887,7 @@ Kind: exact. Context: t2, assembly.
 
 #### `polars_sum`
 
-Sum of each column, one row (Polars LazyFrame.sum). A null is skipped (a column with only nulls gives 0), a NaN makes the sum NaN, a text, Date, Datetime, categorical or list column gives null, a Boolean column gives the number of its true values (an unsigned integer). A sum of an integer column larger than the 64-bit range gives a wrong value without an error: convert the column to a float type first.
+Sum of each column, one row (Polars LazyFrame.sum). A null is skipped (a column with only nulls gives 0), a NaN makes the sum NaN, a text, Date, Datetime, categorical or list column gives null, a Boolean column gives the number of its true values (an unsigned integer). A sum of an integer column larger than the 64-bit range gives a wrong value without an error: convert the column to a float type first. The sum of an Int32 or UInt32 column wraps around above about 2 thousand million (4 for UInt32) with no error: cast to Int64 first.
 
 Kind: exact. Context: t2, assembly.
 
@@ -939,14 +939,14 @@ Kind: wrapper. Context: assembly.
   tolerance: 2d
 ```
 
-#### `polars_join_where`
+#### `modif_join_where`
 
-Join each row of the table of the step with every row of the second table `right_ingredient` for which all `predicates` are true: a join on conditions, not on equal keys (Polars LazyFrame.join_where). A predicate is a formula such as "pl.col('v') >= pl.col('lo')"; a column that has the same name in both tables is written with the suffix for the second table (`lo_right`). It is an inner join: a row can match several rows or none, and a row without a match is dropped. Polars returns the pairs in another order on every run; the action puts them in the order of the first table, then of the second, so the same input gives the same table. A predicate that is null for a pair (a null in a compared column) does not match; a NaN is larger than every number; columns of different types (Int64 against Float64, Date against Datetime) cannot be compared and the step fails.
+Join each row of the table of the step with every row of the second table `right_ingredient` for which all `predicates` are true: a join on conditions, not on equal keys (Polars LazyFrame.join_where). **What it changes against Polars: only the order of the rows.** Polars returns the matching pairs in another order on every run; this action returns the same pairs (the same rows as a set, none added, none dropped) in a fixed order: by the row of the first table, then by the row of the second table, so the same input gives the same table (DEC31, DEC32, ADR-090). A predicate is a formula such as "pl.col('v') >= pl.col('lo')"; a column that has the same name in both tables is written with the suffix for the second table (`lo_right`). It is an inner join: a row can match several rows or none, and a row without a match is dropped. A predicate that is null for a pair (a null in a compared column) does not match; a NaN is larger than every number; columns of different types (Int64 against Float64, Date against Datetime) cannot be compared and the step fails.
 
-Kind: wrapper. Context: assembly.
+Kind: modified. Context: assembly.
 
 ```yaml
-- action: polars_join_where
+- action: modif_join_where
   right_ingredient: reference_ranges
   predicates:
     - "pl.col('year') >= pl.col('start_year')"

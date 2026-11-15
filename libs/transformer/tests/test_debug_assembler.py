@@ -39,3 +39,17 @@ def test_a_shipped_pipeline_recipe_is_assembled_for_every_join(tmp_path, monkeyp
     debug_assembler.run_assembler_debug(SHIPPED, None, str(tmp_path))
     files = sorted(tmp_path.glob("EVE_contracted_*.parquet"))
     assert len(files) >= 5 and all(pl.read_parquet(f).height > 0 for f in files)
+
+
+def test_a_refused_validate_is_explained_in_plain_words_like_in_the_engine(tmp_path, monkeypatch):
+    """The runner collects the join itself: it gives the same plain message as the engine, not Polars' raw words (D35b)."""
+    monkeypatch.chdir(ROOT)
+    right = tmp_path / "right.tsv"
+    right.write_text("id\tv\na\t10\na\t11\nb\t20\n")
+    bad = tmp_path / "bad_data_analysis_recipe.yaml"
+    text = (ROOT / JOIN_PAIR).read_text().replace("libs/transformer/tests/data/polars_join_test_right.tsv", str(right))
+    bad.write_text(text.replace("        how: left\n", "        how: left\n        validate: m:1\n", 1))
+    with pytest.raises(Exception) as caught:
+        debug_assembler.run_assembler_debug(str(bad), None, str(tmp_path / "o"))
+    message = str(caught.value)
+    assert "did not fulfill" not in message and "validate 'm:1'" in message and "'polars_join_right'" in message and "id=" in message
