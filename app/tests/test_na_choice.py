@@ -18,7 +18,6 @@ from app.tests.test_filter_defects import LABELS, RULE, _num
 from blueprint_arch.t3_translator import UntranslatableNode, translate_plot_steps, translate_t3_node
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
 from utils.missing_values import count_missing, dialog_missing_lines
-from viz_factory.viz_factory import VizFactory
 
 
 def by_home(lf, row):
@@ -26,8 +25,7 @@ def by_home(lf, row):
 
 
 def by_plot(lf, row):
-    recipe = {"plots": {"p": {"mapping": {"x": "s"}, "layers": [{"name": "geom_bar", "params": {}}], "filters": [row]}}}
-    return VizFactory().render(lf, recipe, "p").data["s"].to_list()
+    return home_plot_data(lf, [row], {"mapping": {"x": "s"}, "layers": [{"name": "geom_bar", "params": {}}]})["s"].to_list()
 
 
 def by_export(lf, row):
@@ -270,7 +268,7 @@ def test_the_table_in_home_and_the_rerun_of_the_exported_recipe_give_the_rows_wr
 # ── review fixes (part 2b): audited_frame, the staged row, the audit params, the session, `between` ─────────
 
 from app.modules.t3_audit_engine import audited_frame  # noqa: E402
-from app.tests.audit_nodes import filter_nodes  # noqa: E402
+from app.tests.audit_nodes import filter_nodes, home_plot_data  # noqa: E402
 from app.modules.t3_audit_engine import audit_params_from_row, staged_filter_row  # noqa: E402
 
 

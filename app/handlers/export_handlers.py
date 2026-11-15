@@ -24,7 +24,7 @@ from pathlib import Path
 from shiny import reactive, render, ui
 
 from app.modules.export_refusal import export_refusal
-from app.modules.t3_audit_engine import AuditStepError, _op_label, audited_frame, between_prose
+from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
 
 
 # ---------------------------------------------------------------------------
@@ -248,20 +248,18 @@ def blocked_export_notice(changes: list[str], view_keys, current_keys) -> str:
     return "\n".join(lines)
 
 
-def blocked_audit_notice(plot_id: str, error: Exception) -> str:
-    """Text of `EXPORT_NOT_CREATED.txt` when the audited steps of a plot cannot run in their recorded order."""
-    return "\n".join([
-        "EXPORT NOT CREATED",
-        "",
-        f"The audit steps of the plot '{plot_id}' cannot run in the order they were recorded:",
-        "",
-        str(error),
-        "",
-        "What it means: the table, the plot and the recipe that the export writes would not agree, or the recipe would stop.",
-        "In a scientific export that must never happen silently, so nothing was exported.",
-        "",
-        "What to do: remove one of the two steps in the audit list of the plot (right panel), check the plot, export again.",
-    ])
+def blocked_audit_notice(failing: list) -> str:
+    """Text of `EXPORT_NOT_CREATED.txt` when the audited steps of plots cannot run in their recorded order: every failing plot, with its reason."""
+    lines = ["EXPORT NOT CREATED", "",
+             "The audit steps of " + ("this plot" if len(failing) == 1 else f"these {len(failing)} plots")
+             + " cannot run in the order they were recorded:", ""]
+    for plot_id, error in failing:
+        lines += [f"Plot '{plot_id}':", str(error), ""]
+    lines += ["What it means: the table, the plot and the recipe that the export writes would not agree, or the recipe would stop.",
+              "In a scientific export that must never happen silently, so nothing was exported.",
+              "",
+              "What to do: remove the step named for each plot in its audit list (right panel), check the plots, export again."]
+    return "\n".join(lines)
 
 
 def failed_plot_stub(exc: Exception) -> str:
@@ -366,7 +364,6 @@ def _build_methods_section(
         "exclusion_row": "Rows were explicitly excluded",
         "drop_column": "Column was permanently removed",
         "aesthetic_override": "Plot aesthetics were adjusted",
-        "developer_raw_yaml": "A custom data analysis recipe fragment was applied",
     }
 
     prose_items: list[str] = []
@@ -941,21 +938,16 @@ def define_export_server(input, output, session, *,
                 data_analysis_recipe_id=data_analysis_recipe_id, collection_id=target,
                 tier1_path=bootloader.get_location("user_data") / "anchors" / f"{target}.parquet", keys=export_keys)
 
-        for _p, _s in all_plots:
-            if _p not in audited_plots:
-                continue
-            try:
-                audited_frame(_base_frame(_s), _audited_nodes(_p))
-            except AuditStepError as _step_error:
-                _text = blocked_audit_notice(_p, _step_error)
-                with reactive.isolate():
-                    _notify(f"Export blocked: the audit steps of the plot '{_p}' cannot run. {_step_error}",
-                            type="error", duration=None)
-                _blocked = io.BytesIO()
-                with zipfile.ZipFile(_blocked, mode="w") as _bz:
-                    _bz.writestr("EXPORT_NOT_CREATED.txt", _text)
-                yield _blocked.getvalue()
-                return
+        _failing = audit_failures([(_p, (lambda _s=_s: _base_frame(_s)), _audited_nodes(_p)) for _p, _s in all_plots])
+        if _failing:
+            with reactive.isolate():
+                _notify("Export blocked: the audit steps cannot run for " + ", ".join(f"'{_p}'" for _p, _ in _failing)
+                        + ". " + " ".join(str(_e) for _, _e in _failing), type="error", duration=None)
+            _blocked = io.BytesIO()
+            with zipfile.ZipFile(_blocked, mode="w") as _bz:
+                _bz.writestr("EXPORT_NOT_CREATED.txt", blocked_audit_notice(_failing))
+            yield _blocked.getvalue()
+            return
 
         # Dataset → plots mapping (used for folder structure + README + report)
         import re as _re
@@ -1073,7 +1065,7 @@ def define_export_server(input, output, session, *,
                             lf = tier1_anchor()
 
                         # the same call as HOME's table and plot: audited steps in the recorded order
-                        lf = audited_frame(lf, _audited_nodes(p_id))
+                        lf = audited_frame(lf, _audited_nodes(p_id), p_id)
 
                         # VIZFAC-T3-EXPORT-1: pass L5 aesthetic_override so
                         # exported plots reflect analyst T3 overrides.
@@ -1207,7 +1199,7 @@ def define_export_server(input, output, session, *,
                                     )
                                 else:
                                     lf_t3 = tier1_anchor()
-                                lf_t3 = audited_frame(lf_t3, _audited_nodes(_t3_pid))
+                                lf_t3 = audited_frame(lf_t3, _audited_nodes(_t3_pid), _t3_pid)
                                 tsv_path = tmpdir_path / f"{safe_ds}_T3_{_t3_pid}.tsv"
                                 lf_t3.collect().write_csv(str(tsv_path), separator="\t")
                                 with open(tsv_path, "rb") as f:

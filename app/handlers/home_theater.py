@@ -512,7 +512,7 @@ def define_server(input, output, session, *,
             # and the results bundle). HOM-41: T1/T2 must not see T3-committed steps either.
             if in_my_view:
                 try:
-                    lf = audited_frame(_apply_filter_rows(lf, list(applied_filters.get())), _active_plot_t3_nodes(this_subtab))
+                    lf = audited_frame(_apply_filter_rows(lf, list(applied_filters.get())), _active_plot_t3_nodes(this_subtab), p_id)
                 except AuditStepError as e:
                     # PLOT-TABLE-ORDER-1: a step that cannot run is shown in the plot's place and in the Alerts panel, never skipped.
                     _report_plot_exception(e, "T3Audit", f"audit steps of plot '{p_id}'")
@@ -1342,7 +1342,7 @@ def define_server(input, output, session, *,
             # results bundle. A step that cannot run raises AuditStepError: it is shown below in the table's place and in
             # the Alerts panel, never skipped.
             if in_t3_preview:
-                lf = audited_frame(lf, _active_plot_t3_nodes())
+                lf = audited_frame(lf, _active_plot_t3_nodes(), p_id)
             # PREVIEW-ALLROWS-1: respect the "Show all rows" toggle; default 100-row cap.
             show_all = safe_input(input, "preview_all_rows", False)
             df = lf.collect() if show_all else lf.head(100).collect()

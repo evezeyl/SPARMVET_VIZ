@@ -128,7 +128,7 @@ AUDITED = [{"column": "sample_id", "op": "ne", "value": "s2", "dtype": "Utf8"}]
 def test_the_rule_has_no_way_to_let_exploration_in():
     """The function takes only the audit steps of the plot: exploration filters are not an argument at all."""
     import inspect
-    assert list(inspect.signature(audited_frame).parameters) == ["lf", "nodes"]
+    assert list(inspect.signature(audited_frame).parameters) == ["lf", "nodes", "plot_id"]
 
 
 def test_the_audited_removal_really_removes_the_rows_from_the_data(world):
@@ -145,6 +145,6 @@ def test_an_export_whose_audit_steps_cannot_run_is_refused_with_the_reason(world
     nodes += filter_nodes([{"column": "group", "op": "eq", "value": "A", "dtype": "Utf8"}])
     with pytest.raises(AuditStepError) as caught:
         audited_frame(base(world), nodes)
-    text = blocked_audit_notice("the_plot", caught.value)
+    text = blocked_audit_notice([("the_plot", caught.value)])
     assert text.startswith("EXPORT NOT CREATED") and "'the_plot'" in text
     assert "audit step 3" in text and "audit step 2" in text and "group" in text and "nothing was exported" in text

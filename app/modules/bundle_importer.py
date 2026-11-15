@@ -194,6 +194,14 @@ def import_bundle(zip_bytes: bytes, *, bootloader) -> ImportResult:
             )
         effective_run = yaml.safe_load(zf.read(run_name).decode())
 
+        # AUDIT-RAWYAML-REMOVE-1: a bundle whose audit record holds a step of a removed type is refused before anything is written.
+        from app.modules.renamed_keys import removed_audit_step_problem
+        for steps_name in (n for n in names if n.endswith("/t3_steps.yaml") or n == "t3_steps.yaml"):
+            record = yaml.safe_load(zf.read(steps_name).decode()) or {}
+            problem = removed_audit_step_problem(record.get("t3_steps") or {}, f"The bundle's {steps_name}", type_key="action")
+            if problem:
+                raise BundleImportError(problem)
+
         recipe_name = next(
             (n for n in names
              if "/data_analysis_recipes_reproducibility/" in n and n.endswith(".yaml")),

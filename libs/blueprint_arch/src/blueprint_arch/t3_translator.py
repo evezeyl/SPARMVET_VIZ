@@ -8,7 +8,7 @@ Rule); T3 steps are per-plot, so they can only be made replayable by the headles
 via a copy of the join that only this plot uses, not by writing into the shared `tier2:`
 list directly.
 
-Pure (stdlib, PyYAML and the shared `utils.filter_values`, which reads a value against a dtype name; it builds no table) — Two-Category Law, no
+Pure (stdlib and the shared `utils.filter_values`, which reads a value against a dtype name; it builds no table) — Two-Category Law, no
 Shiny. Caller (export/#45, via app/handlers/export_handlers.py) supplies the
 recipe's `raw_config` and each plot's own ordered, already-active T3 nodes
 (`t3_audit_steps_by_plot`, the same shape already extracted there) and gets back a frozen,
@@ -23,7 +23,7 @@ value — a real correctness bug, not a translator detail), the gap was closed b
 (cleaning/analytical.py) actions, following the existing pattern. All eight T3 filter ops
 (`eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in`, `not_in`) are now translatable. A plot whose T3
 steps use a node type with no translation at all (anything other than filter_row/
-exclusion_row/drop_column/developer_raw_yaml) is still skipped (named in the returned
+exclusion_row/drop_column) is still skipped (named in the returned
 `skipped` dict) rather than exported as falsely "fully reproducible".
 
 Where a fork says what it is (recipe format 1, work order W8): in its `comment` key, the
@@ -49,15 +49,13 @@ import hashlib
 import json
 from typing import Any
 
-import yaml
-
 from utils import action_names
 from utils.filter_values import FilterValueError, read_filter_value
 from utils.na_choice import na_of
 
 # @deps
 # provides: function:translate_t3_node, function:translate_plot_steps, function:build_mode2_recipe, class:UntranslatableNode
-# consumes: stdlib (copy, hashlib, json), PyYAML (developer_raw_yaml fragment parsing only), libs/utils/src/utils/na_choice.py (stdlib only), libs/utils/src/utils/filter_values.py
+# consumes: stdlib (copy, hashlib, json), libs/utils/src/utils/na_choice.py (stdlib only), libs/utils/src/utils/filter_values.py
 # consumed_by: app/handlers/export_handlers.py (REPRO-TRANSLATOR-1 wiring, #45/#48), libs/blueprint_arch/tests/test_t3_translator.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/reproducible_export_design.md#4D
 # @end_deps
@@ -153,21 +151,6 @@ def translate_t3_node(node: dict) -> list[dict]:
         if not column:
             raise UntranslatableNode(f"drop_column node has no column: {node!r}")
         return [{"action": DROP, "columns": [column]}]
-
-    if node_type == "developer_raw_yaml":
-        fragment = params.get("yaml_fragment", "")
-        try:
-            parsed = yaml.safe_load(fragment)
-        except yaml.YAMLError as exc:
-            raise UntranslatableNode(f"developer_raw_yaml fragment is not valid YAML: {exc}") from exc
-        if not isinstance(parsed, list) or not all(
-            isinstance(step, dict) and "action" in step for step in parsed
-        ):
-            raise UntranslatableNode(
-                f"developer_raw_yaml fragment is not a list of canonical action steps "
-                f"(each needs an 'action:' key, rules_data_analysis_recipe_structure.md §7): {fragment!r}"
-            )
-        return parsed
 
     raise UntranslatableNode(f"node_type {node_type!r} is not translatable: {node!r}")
 

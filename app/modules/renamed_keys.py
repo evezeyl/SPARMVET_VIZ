@@ -174,3 +174,40 @@ def legacy_session_problem(raw: dict, where: str) -> str | None:
     pairs = ", ".join(f"'{k}' is now '{RENAMED_SESSION_KEYS[k]}'" for k in old)
     return (f"{where} was saved before the configuration rename ({pairs}). "
             f"Convert it with: {MIGRATION_HINT} --sessions <sessions folder> --apply, or delete it.")
+
+
+# Audit step types that were removed (AUDIT-RAWYAML-REMOVE-1, Eve 2026-11-12; removed 2026-11-15). Nothing creates them. A session
+# file, an imported bundle or an audit list that holds one is refused with a message that names the step; it is never ignored
+# and never applied in one place only (it used to be ignored by the HOME table, plot and bundle and applied by the exported
+# recipe). The only place of the code that knows the name; the tombstone expires with Phase 40 (delete this block then).
+REMOVED_AUDIT_STEP_TYPES = {
+    "developer_raw_yaml": "it held a raw fragment of a recipe, and no screen created it any more",
+}
+
+
+def removed_audit_step_problem(steps_by_plot: dict, where: str, type_key: str = "node_type") -> str | None:
+    """A message naming the first audit step of a removed type in `{plot: [step, ...]}` (a list under another name is one plot), else None.
+
+    `type_key` is `node_type` in a session file and in the audit list, `action` in the `t3_steps.yaml` of a bundle.
+    """
+    for plot, steps in (steps_by_plot or {}).items():
+        for number, step in enumerate(steps or [], start=1):
+            kind = step.get(type_key) if isinstance(step, dict) else None
+            if kind in REMOVED_AUDIT_STEP_TYPES:
+                reason = f', reason: "{step["reason"]}"' if step.get("reason") else ""
+                return (f"{where} holds the audit step {number} of the plot '{plot}' (id {step.get('id', '?')}{reason}), "
+                        f"of the type '{kind}', which was removed: {REMOVED_AUDIT_STEP_TYPES[kind]}. It is refused, never "
+                        f"ignored. Fix: delete this step from the file (or delete the session), and record its effect again as "
+                        f"row filters and column drops.")
+    return None
+
+
+def removed_audit_step_in_ghost(raw: dict, where: str) -> str | None:
+    """`removed_audit_step_problem` for a stored session file: the per-plot lists and the flat legacy list."""
+    by_plot = raw.get("t3_audit_steps_by_plot")
+    if isinstance(by_plot, dict) and by_plot:
+        problem = removed_audit_step_problem(by_plot, where)
+        if problem:
+            return problem
+    flat = raw.get("t3_audit_steps")
+    return removed_audit_step_problem({"(all plots, old file)": flat}, where) if isinstance(flat, list) else None

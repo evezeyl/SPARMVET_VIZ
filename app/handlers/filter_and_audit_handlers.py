@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, AuditStepError), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -30,7 +30,7 @@ from app.src.bootloader import bootloader
 from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
-    dialog_value, not_offered_line, value_choices, value_widget_for,
+    dialog_value, not_offered_line, value_choices, value_widget_for, AuditStepError, dialog_frame,
 )
 from utils.filter_values import FilterValueError
 from utils.missing_values import dialog_lines, na_choice_texts
@@ -299,9 +299,19 @@ def define_filter_audit_server(input, output, session, *,
         subtab = active_home_subtab.get()
         p_id = subtab.removeprefix("subtab_") if subtab else None
         try:
-            return _resolve_active_lf(_resolve_active_spec(p_id))
+            lf = _resolve_active_lf(_resolve_active_spec(p_id))
         except Exception:
             _log.exception("filter dialog: the table the filter acts on could not be built")
+            return None
+        # DECIDED 2026-11-15 (Eve, S2-1 (a)): in My view the dialog acts on the table after the plot's audited steps, so a column
+        # that an earlier step dropped is not offered. One source: the same function as the table, the plot and the export.
+        nodes = ((home_state.get().get("t3_audit_steps_by_plot") or {}).get(subtab, [])
+                 if home_state is not None and subtab else [])
+        try:
+            return dialog_frame(lf, nodes, tier_toggle.get() == "T3", p_id)
+        except AuditStepError:
+            # The audit list of the plot cannot run: the table and the plot show why. The dialog offers nothing until a step is removed.
+            _log.warning("filter dialog: the audit steps of the plot cannot run; no table is offered")
             return None
 
     @output

@@ -14,11 +14,10 @@ import pytest
 
 import transformer.actions  # noqa: F401
 from app.modules.t3_audit_engine import audited_frame
-from app.tests.audit_nodes import filter_nodes
+from app.tests.audit_nodes import filter_nodes, home_plot_data
 from app.modules.t3_audit_engine import _apply_filter_rows
 from blueprint_arch.t3_translator import translate_t3_node
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
-from viz_factory.viz_factory import VizFactory
 
 D = datetime.date
 FRAME = pl.DataFrame({
@@ -42,8 +41,8 @@ def bundle(rows):
 
 
 def plot(rows):
-    recipe = {"plots": {"p": {"mapping": {"x": "s", "y": "n"}, "layers": [{"name": "geom_col", "params": {}}], "filters": rows}}}
-    return VizFactory().render(FRAME.lazy(), recipe, "p").data["s"].to_list()
+    """HOME's real path: the audit steps are applied to the frame, then the factory draws it."""
+    return home_plot_data(FRAME.lazy(), rows, {"mapping": {"x": "s", "y": "n"}, "layers": [{"name": "geom_col", "params": {}}]})["s"].to_list()
 
 
 def rerun(rows):

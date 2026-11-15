@@ -440,7 +440,7 @@ def test_rerun_equals_audit_data_for_a_threshold_on_an_integer_column(run, raw_c
 # ── N13 (PLOT-TABLE-ORDER-1): one audit list, one order, in the table, the plot, the bundle and the exported recipe ──
 # Decided by Eve 2026-11-14 (no silent error; the plot follows the table; the export is checked) and 2026-11-15 (the order
 # written in the recipe is the order performed in the audit; an engine that cannot filter a column that is not there
-# returns an error). The ORDER RULE is PROVISIONAL (S2-1): it lives in `audit_steps_in_order` only.
+# returns an error). The ORDER RULE (the recorded order) is DECIDED 2026-11-15 (S2-1): it lives in `audit_steps_in_order` only.
 
 def _home_plot_data(t2: pl.DataFrame, raw_config: dict, nodes: list) -> pl.DataFrame:
     """The rows the PLOT gets: the audited frame (the one function HOME's plot and the bundle's plot call) handed to the
@@ -590,7 +590,7 @@ def test_an_exclusion_on_a_dropped_column_is_an_error_not_a_skip(original):
 
 
 def test_the_order_rule_is_in_one_function(raw_config):
-    """The provisional order (S2-1): the list order. This test pins the one function that carries the rule, so that
+    """The decided order (2026-11-15, S2-1): the list order. This test pins the one function that carries the rule, so that
     changing the rule is a change of that function and of this test only."""
     from app.modules.t3_audit_engine import audit_steps_in_order
 
