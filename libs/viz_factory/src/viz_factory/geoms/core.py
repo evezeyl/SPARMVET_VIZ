@@ -1149,7 +1149,7 @@ def handle_stat_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows"},
     },
     "description": "Compute a summary function (default: mean_se) for each x group; use to overlay group summaries on geom_point or geom_jitter layers.",
-    "yaml_example": "layers:\n  - name: stat_summary\n    params:\n      fun_y: mean",
+    "yaml_example": "layers:\n  - name: stat_summary\n    params:\n      fun_data: mean_se",
 })
 def handle_stat_summary(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + stat_summary(**spec)
@@ -1540,7 +1540,7 @@ def handle_stat_sum(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows"},
     },
     "description": "Bin x then apply a summary function to y within each bin; use for smoothed summary curves when x is continuous and you want binned means.",
-    "yaml_example": "layers:\n  - name: stat_summary_bin\n    params:\n      fun_y: mean\n      bins: 20",
+    "yaml_example": "layers:\n  - name: stat_summary_bin\n    params:\n      fun_data: mean_se\n      bins: 20",
 })
 def handle_stat_summary_bin(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + stat_summary_bin(**spec)

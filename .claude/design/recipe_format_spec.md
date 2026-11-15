@@ -394,7 +394,7 @@ tier1:
     how: left
     maintain_order: left_right
     comment: reads quality and assembly quality side by side
-  - id: audit_7f3a                        # inserted by the audit mode
+  - id: audit_7f3a9c1e_1                  # inserted by the audit mode
     action: modif_filter
     column: Country
     op: eq
@@ -630,6 +630,9 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | ST10 | E | the value of a parameter has the wrong shape for its declared widget (a list where a scalar is declared and the reverse; a repeated key in a `mapping`) | the declared form and the corrected text |
 | ST11 | E | a conditional rule of the schema is broken (`when`, `require`, `one_of`, `exclusive`; R3) | the rule in words |
 | ST12 | E | a `modif_filter` value does not have the declared type of its column (a number for a number column, text for a text column, true or false for a true/false column; ADR-104 point 7, 2026-11-14). Silent when the declarations cannot tell the type of the column (a step before may create, rename or cast it); dates are not judged | what the value is, what the column holds, and how to write it |
+| ST13 | A | a position action (`polars_head`, `polars_tail`, `polars_slice`, `polars_limit`, `polars_gather_every`, `polars_with_row_index`) after a step that does not fix the row order (the last of `polars_sort`, `polars_unique`, `polars_group_by` before it has `maintain_order: false`, or `polars_join` has `maintain_order: none`); advice, not a refusal (DEC31, DEC32, ADR-090; Eve 2026-11-15, DECIDED 4). Silent when no such step comes before or the last one fixes the order. The ties of `polars_top_k` and `polars_bottom_k` have no advice yet (its wording waits for a test of what Polars does) | write `maintain_order: true` (`left_right` for a join) in that step, or a `polars_sort` step with `maintain_order: true` before this one |
+| ST14 | A | every `polars_top_k` / `polars_bottom_k` step (advice, PROVISIONAL D42, Eve 2026-11-15; the checker cannot know whether ties exist): exactly k rows, which tied rows are kept is not fixed (do not rely on it), a NaN comes first in `top_k` and last in `bottom_k`, rows with no value fill the k rows | add a row number (`polars_with_row_index`) last in `by`; to keep every row tied with the k best use `polars_rank` (method `min`) and a filter |
+| ST15 | A | a sum (`polars_sum`, `polars_cum_sum`, a `.sum()` of `pl.col('x')` in `polars_group_by`) on a column declared `Int32` or `UInt32` in the schema's own `input_fields` (advice, PROVISIONAL D43, Eve 2026-11-15; the total wraps around above about 2 thousand million with no error). Only where the declared type is known: the schema's own wrangling until a step that may change the columns; a `polars_cast` is followed. Not seen (said in the advice): a sum inside another formula (`polars_with_columns`), a join result, a type made 32-bit by an earlier step | write a `polars_cast` step to `Int64` for the column before the sum |
 | J01 | E | unknown key in a join (`info`, `output_fields`, `final_contract`, ...) | replacement |
 | J02 | E | join without `label` | |
 | J03 | A | join without `description` | |
@@ -643,6 +646,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | J11 | E | `left_on` and `right_on` have unequal length (CHECKER-JOIN-KEYS-1, 2026-11-14; silent when the type of a key cannot be known from the declarations) | write both with the same number of columns, paired by position |
 | J12 | A | a join of a table with itself on the same key on both sides (advice, not a refusal: with a unique key it adds no row and copies the columns again; with a repeated key it multiplies the rows) | if this is not intended, remove the step; a self-join is usually written on two different columns (`left_on` and `right_on`) |
 | J13 | A | a join key declared as a float type (advice, not a refusal: identifiers written differently, for example 001, 1 and 1.0, become the same number, and the join merges different samples without a message) | declare the key as a text type in `input_fields` (for example String or Categorical, as for other identifiers) |
+| J14 | E | `tier2` of a join that no plot reads (the steps would run nowhere; same rule as S07 for a schema; 2026-11-15, follow-up of RECIPE-DATASET-TIER2-1) | plot this join, or remove the steps |
 | G01 | E | group without `label`; unknown key | |
 | G02 | A | group without `description` | |
 | P01 | E | plot entry without `label` or `spec`; unknown key (`info`) | `description` |

@@ -16,15 +16,19 @@ from typing import Dict, Optional
 import polars as pl
 from polars.exceptions import PanicException
 
+from transformer.join_diagnosis import explain_validation_error
 from utils.errors import TransformationError
 
 
-def write_anchor(lf: pl.LazyFrame, path, decision_hash: Optional[str] = None, metadata: Optional[Dict[str, str]] = None) -> pl.LazyFrame:
+def write_anchor(lf: pl.LazyFrame, path, decision_hash: Optional[str] = None, metadata: Optional[Dict[str, str]] = None,
+                 join_checks: Optional[list] = None) -> pl.LazyFrame:
     """Write the table as Parquet and return a lazy scan of the written file.
 
     With a `decision_hash` the file carries it (and any extra `metadata`, text to text) in its footer, written by
     Polars itself: a table converted to Arrow and written with pyarrow can hold categorical columns that Polars cannot
     read back (issue #10, 2026-11-06).
+
+    `join_checks` (the assembler's `join_checks`) lets a refused `validate` of a join be explained in plain words after Polars raised it.
     """
     path = str(path)
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
@@ -34,6 +38,11 @@ def write_anchor(lf: pl.LazyFrame, path, decision_hash: Optional[str] = None, me
                                                        **{str(k): str(v) for k, v in (metadata or {}).items()}})
         else:
             lf.sink_parquet(path)
+    except pl.exceptions.ComputeError as exc:
+        explained = explain_validation_error(exc, join_checks)
+        if explained is None:
+            raise
+        raise explained from exc
     except PanicException as exc:
         # The plan of every step runs here, so this is where a Rust panic of Polars shows. A `PanicException` is a `BaseException`:
         # it passes every `except Exception` of the engine and the app (ADR-104). Only this class is caught; KeyboardInterrupt and SystemExit pass.

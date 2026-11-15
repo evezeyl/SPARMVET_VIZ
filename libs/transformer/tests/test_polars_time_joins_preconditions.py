@@ -314,7 +314,7 @@ def test_asof_a_number_tolerance_for_a_number_key_equals_polars():
 
 
 # =========================================================================================================
-# polars_join_where
+# modif_join_where
 # =========================================================================================================
 
 import random  # noqa: E402
@@ -325,7 +325,7 @@ BETWEEN = ["pl.col('v') >= pl.col('lo')", "pl.col('v') <= pl.col('hi')"]
 
 
 def where(left=W_LEFT, right=W_RIGHT, predicates=BETWEEN, **more):
-    return run("polars_join_where", left, {"right_ingredient": "R", "predicates": predicates, "__right_df__": right.lazy(), **more})
+    return run("modif_join_where", left, {"right_ingredient": "R", "predicates": predicates, "__right_df__": right.lazy(), **more})
 
 
 def pairs_in_the_order_of_the_tables(left, right, keep):
@@ -387,7 +387,7 @@ def test_where_a_column_in_both_tables_is_written_with_the_suffix_and_the_suffix
 
 def test_where_the_predicates_are_required_and_a_list_of_formula_texts():
     with pytest.raises(TransformationError, match="predicates is required"):
-        run("polars_join_where", W_LEFT, {"right_ingredient": "R", "__right_df__": W_RIGHT.lazy()})
+        run("modif_join_where", W_LEFT, {"right_ingredient": "R", "__right_df__": W_RIGHT.lazy()})
     with pytest.raises(TransformationError, match="predicates is empty"):
         where(predicates=[])
     with pytest.raises(TransformationError, match="one or more formulas"):
@@ -427,7 +427,7 @@ def test_where_an_empty_first_table_gives_an_empty_table_with_the_columns_of_pol
 
 def test_where_the_second_table_is_required():
     with pytest.raises(TransformationError, match="__right_df__"):
-        run("polars_join_where", W_LEFT, {"right_ingredient": "R", "predicates": BETWEEN})
+        run("modif_join_where", W_LEFT, {"right_ingredient": "R", "predicates": BETWEEN})
 
 
 # =========================================================================================================

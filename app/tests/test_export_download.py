@@ -78,6 +78,64 @@ def test_the_bundle_records_the_keys_and_has_the_data(loaded):
     assert not errors, errors
 
 
+def test_a_table_plotted_directly_has_its_t2_table_and_a_real_tier2_key(loaded):
+    """RECIPE-DATASET-TIER2-1 (issue 77): ResFinder is read by a plot directly (it is not a join) and has
+    tier-2 steps of its own: the bundle holds its T2 table, and its tier2_key is a hash, never `none`."""
+    z = _download(loaded)
+    names = z.namelist()
+    assert any(n.endswith("/ResFinder/T2_data.tsv") for n in names), names
+    readme = next(z.read(n).decode() for n in names if n.endswith("README.txt"))
+    assert re.search(r"ResFinder: tier2_key=[0-9a-f]{64}\n", readme), readme
+    qmd = next(z.read(n).decode() for n in names if n.endswith("report.qmd"))
+    assert re.search(r"Tier 2 key \(ResFinder\) \| `[0-9a-f]{64}`", qmd)
+
+
+def test_the_rerun_of_a_directly_plotted_table_equals_the_result_table_of_home(loaded):
+    """Export with the reproducibility bundle, import it (the re-run) and compare the re-run's tier-2 table of
+    ResFinder with the Result table that HOME shows for the original recipe."""
+    import shutil
+    import polars as pl
+    from app.modules.orchestrator import DataOrchestrator
+    from app.modules.bundle_importer import import_bundle
+    from app.src.bootloader import bootloader as _bl
+
+    loaded.locator("#export_include_reproducibility").check(force=True)
+    _wait_shiny(loaded)
+    z = _download(loaded)
+    loaded.locator("#export_include_reproducibility").uncheck(force=True)
+    _wait_shiny(loaded)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as out:
+        for name in z.namelist():
+            out.writestr(name, z.read(name))
+    original_id = "1_test_data_ST22_dummy"
+    recipes_dir = Path(_bl.data_analysis_recipes_dir)
+    raw = Path(_bl.get_location("raw_data"))
+    result = import_bundle(buf.getvalue(), bootloader=_bl)
+    work = Path(__import__("tempfile").mkdtemp(prefix="rerun_t2_"))
+    try:
+        home_orch = DataOrchestrator(recipes_dir, raw)
+        home_keys = home_orch.compute_data_analysis_recipe_keys(original_id)
+        home_t2 = home_orch.materialize_tier2(original_id, "ResFinder", work / "home.parquet",
+                                              keys=home_keys) if home_orch.materialize_tier1(
+            original_id, "ResFinder", work / "home.parquet", keys=home_keys) is not None else None
+        home_df = home_t2.collect()
+        re_orch = DataOrchestrator(recipes_dir, raw, imports_dir=Path(_bl.get_imports_dir()))
+        re_keys = re_orch.compute_data_analysis_recipe_keys(result.recipe_id)
+        re_orch.materialize_tier1(result.recipe_id, "ResFinder", work / "re.parquet", keys=re_keys)
+        re_df = re_orch.materialize_tier2(result.recipe_id, "ResFinder", work / "re.parquet", keys=re_keys).collect()
+        assert "total_gene_count" in home_df.columns
+        assert re_df.columns == home_df.columns
+        assert re_df.equals(home_df), "the re-run's tier-2 table differs from HOME's Result table"
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+        result.imported_recipe_path.unlink(missing_ok=True)
+        shutil.rmtree(_bl.get_imports_dir() / result.recipe_id, ignore_errors=True)
+        for p in (_bl.get_location("user_data") / "_sessions").glob("*/assembly.json"):
+            if result.recipe_id in p.read_text():
+                shutil.rmtree(p.parent, ignore_errors=True)
+
+
 def test_the_bundle_has_no_my_view_content_when_the_user_is_on_result(loaded):
     """Both plot and data choices start on Result: no T3 files, no filter trace."""
     names = _download(loaded).namelist()

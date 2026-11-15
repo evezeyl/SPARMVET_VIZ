@@ -151,6 +151,18 @@ To prevent silent failures, the factory performs a "Pre-Flight" check before ren
 - **Typo Detection**: If a data analysis recipe aesthetic (x, y, fill) references a missing column, the system uses string-similarity heuristics to suggest the closest matches in the dataset.
 - **Fail-Fast**: Invalid aesthetics trigger a `VisualizationError` with a helpful `tip` for the user, rather than producing an empty frame or crashing the UI.
 
+## One error form (VIZ-STANDARD-1, V6 and V7)
+
+Every error of the factory, and every error of plotnine that appears while the factory builds or draws a plot, is one `VisualizationError` that says what, which plot and layer, and how to fix it:
+
+    Plot 'p', layer 2 (geom_point): the value 'big' for 'size' is not a number. Fix: write a number, for example size: 3.
+
+- `layer N` is the position of the layer in the author's `layers:` list; a default or automatic layer is named by where it came from (`built-in layer (theme_bw)`).
+- The structured record (`pipeline_error`: who fixes it, where it is shown) and the fix alone (`tip`) travel with the error.
+- A component that cannot act fails: `element_*` without `target`, `guide_*` without `mapping` (and without its value for `guide_nrow`, `guide_ncol`, `guide_title`), `position_*` with no layer before it, `annotate` without `geom`, and a plot spec key that is not part of the format (`theem: theme_bw`). A component raises `CannotAct(what, fix)`; the factory adds the plot and the layer. The two filter paths (an unknown column is skipped, an unknown operator is ignored) are not covered yet: they wait for FILTER-UNIFY-1.
+- plotnine builds a plot lazily, so a wrong value is found when the plot is drawn. `VizFactory.render` therefore returns a `CheckedPlot` (a `ggplot`); when drawing fails it draws the plot again layer by layer, finds the layer and the parameter, and raises the form above. A plot that draws is drawn once.
+- `draw_checked(plot)` draws a plot once and returns its figure; `plot.save(...)` and Shiny's own draw are checked the same way. `show_draw_errors(plot, on_error=...)` is for a screen: a failing plot draws the message in the place of the plot and calls `on_error` (the alerts panel) instead of raising. A file that is exported never uses it.
+
 ## Documentation
 >
 > [!IMPORTANT]

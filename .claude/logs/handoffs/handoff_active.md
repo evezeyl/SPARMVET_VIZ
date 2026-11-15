@@ -1040,3 +1040,21 @@ Open for Eve (one number each in the channel list M86): L1 to L33; RECIPE-SCIENC
 
 **Channel:** my last messages M83 to M88 and M90 hold the findings and THE ONE LIST (M86, L1 to L33). Owed to sparmvet-viz-57: acknowledgement of its M87 to M90; the correction on ties; typed-values and recipes-small merged; three small choices from the fragment conversion (five more fragments included by nothing: delete, convert or wire; `gene` gives 13 rows, `[sample_id, gene]` gives 63 rows for the duplicate removal; wire the converted fragment into a recipe or not).
 13:08: the session resumed; the stopped workers continue in their worktrees (seed-holds, viz-errors, dataset-tier2); row-order gets its fix when a builder is free.
+
+## Handoff 2026-11-15 14:02 (coordinator)
+
+**Facts (clock read 2026-11-15 14:02):**
+- Merged since the restart, NOT pushed (origin/dev is `f769c8dd`); no control run on the merged tree yet.
+- `eafc570c` RECIPE-DATASET-TIER2-1 (issue 77): a table that a plot reads directly runs its own tier 2; one function `utils.recipe_tiers.tier2_steps`. The ONLY shipped result that changes (Eve, 2026-11-12): the Result (T2) of `ResFinder` in `1_test_data_ST22_dummy` gains `total_gene_count` and a sort; the picture of `amr_heatmap` follows. A hand-written Polars reading equals the engine; golden baseline regenerated for those 2 records; changelog entry.
+- `c442af4c` VIZ-STANDARD-1 parts V6 and V7: five silent paths of the plot factory are errors; one error form; a failed plot shows its message in its place and once in the Alerts, and no longer blanks HOME; the export says a failed plot was not drawn; a complete theme replaces a complete theme, a partial setting is added (`virulence_bar` follows its recipe, the only shipped picture that changes); a test renders the `yaml_example` of all 191 components. V1, V3, V5, V8 merged earlier; next V4, V2, V10, V9.
+- Built, in review: `task/small-fixes` (D27 agent tool, D13 Blueprint join preview, D26 two helper scripts removed, D17 two-line rule-file edit, D10 test that no template declares a decimal join key, D28 two doc sentences, D14 old uses in two files).
+- Being built: `task/seed-holds` (Eve's default 0: HOME draws no seed; `geom_sina` seeded; seeds written in recipes; `beeswarm_sina` converted; PROVISIONAL S1 and S3), `task/gate-gap` (GATE-GAP-1), `task/row-order` (third fix round: the `validate` message names the right join; numbering; tests).
+- Known follow-ups, not built: TIER2-FOLLOWUPS-1 (tier-2 merge: false sentence in the exported report `export_handlers.py` about line 1507; `docs/foundations/data_tiering_adr.qmd` lines 29-32; test of the exported T2 of a schema; a JOIN's tier-2 list that no plot reads runs nowhere with no message; Blueprint's Live Data Glimpse shows T1 for every table) and VIZ-FOLLOWUPS-1 (viz merge: named palette `viridis` never applies, `scale_fill_viridis_d` does not exist in plotnine 0.15.4, `scale_fill_cmap_d` does; five facet components `facet_cols`, `facet_rows`, `facet_margins`, `facet_scales`, `facet_space` fail on their own example with a misleading message; `guide_label` cannot work, Eve's choice rebuild or remove; no test pins that the alert is written after the flush; the rule "a partial theme setting written BEFORE a complete theme is kept" is not in the docs, Eve to confirm; warnings are not written into the export bundle).
+
+**Queue:**
+1. Merge `task/small-fixes`, `task/row-order`, `task/gate-gap`, `task/seed-holds` as their reviews pass (each branch merges the main branch into itself first).
+2. Then the export lines for `plot_engine`.
+3. Then a reviewer runs the FULL controls (headless, golden, browser gate, audits, doc links); then dev is pushed.
+4. Then TIER2-FOLLOWUPS-1, JOIN-KEY-ONE-1, EQUALITY-CHECK-1 step 1, the stage-2 spec brought to v0.2, PLOT-TABLE-ORDER-1, FILTER-PICKERS-1, the warnings look, VIZ-FOLLOWUPS-1 with V4.
+
+Records: `tasks.md` marked RECIPE-DATASET-TIER2-1 done; VIZ-STANDARD-1 V6/V7 merged; TIER2-FOLLOWUPS-1 and VIZ-FOLLOWUPS-1 added; section 5 items D27, D13, D26, D17, D10, D28, D14 marked "built on task/small-fixes, in review". Nothing committed.

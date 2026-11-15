@@ -1,0 +1,20 @@
+sample_id:
+  type: String
+  original_name: sample_id
+  label: Sample ID
+plasmid_name:
+  type: Categorical
+  original_name: Plasmid
+  label: Plasmid name
+identity:
+  type: Float64
+  original_name: '%Identity'
+  label: Sequence Identity
+overlap:
+  type: Float64
+  original_name: '%Overlap'
+  label: Sequence Overlap
+accession:
+  type: Categorical
+  original_name: Accession
+  label: NCBI Accession

@@ -223,7 +223,7 @@ def changed_since_view(view_keys, current_keys) -> list[str]:
 def audited_frame(lf, rows: list, drops: list):
     """The "My view" data of one plot: filter rows, then column drops, on its base frame.
 
-    The base is the stored Tier 2 (Tier 1 when the join has no tier2 steps): build rule
+    The base is the stored Tier 2 (Tier 1 when the table has no tier2 steps): build rule
     T3 > T2 > T1. Same steps and order as the data preview in HOME. A drop of a column that is
     not in the frame is ignored, like in HOME.
     """
@@ -272,6 +272,27 @@ def blocked_export_notice(changes: list[str], view_keys, current_keys) -> str:
         f"        tier1    {current_keys.tier1_key}",
     ]
     return "\n".join(lines)
+
+
+def failed_plot_stub(exc: Exception) -> str:
+    """The text of `plots/<id>_ERROR.txt`: the message once. The one error form (VIZ-STANDARD-1) already holds the fix, so the
+    fix line is added only for an error whose message does not say it."""
+    stub = f"Plot render failed:\n{exc}"
+    pipeline_error = getattr(exc, "pipeline_error", None)
+    if pipeline_error is not None and pipeline_error.fix and pipeline_error.fix not in str(exc):
+        stub += f"\n\nFix ({pipeline_error.who}): {pipeline_error.fix}"
+    return stub
+
+
+def plot_report_lines(p_id: str, label: str, caption: str, fig_id: str, plot_ext: str, failure: str | None) -> list:
+    """The lines of one plot in `report.qmd`: the figure, or, when the plot was not drawn, a note that says so and why.
+
+    A failed plot has no picture in the bundle, so a figure link would be a broken one (VIZ-STANDARD-1)."""
+    if failure is None:
+        return [f"### {label}", "", f"![{caption}](_render/{p_id}.{plot_ext}){{#{fig_id} width=95%}}", ""]
+    reason = " ".join(str(failure).split())
+    return [f"### {label}", "", f"> **This plot was not drawn.** {reason}  ",
+            f"> The same text is in `plots/{p_id}_ERROR.txt` of its dataset folder.", ""]
 
 
 def _embed_png_provenance(
@@ -1001,6 +1022,7 @@ def define_export_server(input, output, session, *,
             qmd_plot_fmt = plot_fmt if plot_fmt in _native else _fallback
             plot_bytes: dict[str, bytes] = {}      # p_id → bytes (user format)
             qmd_plot_bytes: dict[str, bytes] = {}  # p_id → bytes for Quarto (_render/)
+            failed_plots: dict[str, str] = {}      # p_id → why it was not drawn (the report says so, no figure link)
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmpdir_path = Path(tmpdir)
 
@@ -1032,7 +1054,7 @@ def define_export_server(input, output, session, *,
                             anchor_dir = bootloader.get_location("user_data") / "anchors"
                             out_path = anchor_dir / f"{target_ds}.parquet"
                             # Plots never show T1 (ADR-086): same base as HOME, the stored
-                            # Tier 2 (equal to T1 when the join has no tier2 steps).
+                            # Tier 2 (equal to T1 when the table has no tier2 steps).
                             lf = orchestrator.materialize_tier2(
                                 data_analysis_recipe_id=data_analysis_recipe_id,
                                 collection_id=target_ds,
@@ -1086,18 +1108,15 @@ def define_export_server(input, output, session, *,
                         # the exception carries one (errors.py pipeline_error= kwarg) --
                         # detection without guidance in a file nobody can ask a follow-up
                         # question about is worse than in a live UI.
-                        _pe = getattr(e, "pipeline_error", None)
-                        _stub = f"Plot render failed:\n{e}"
-                        if _pe is not None:
-                            _stub += f"\n\nFix ({_pe.who}): {_pe.fix}"
+                        failed_plots[p_id] = str(e)
                         zf.writestr(
                             f"{bundle_dir}/{_safe_ds}/plots/{p_id}_ERROR.txt",
-                            _stub,
+                            failed_plot_stub(e),
                         )
 
                 # ── Export data by tier ───────────────────────────────────
                 # T1: always exported.
-                # T2: exported when the join has tier2 steps, read from the stored Tier 2
+                # T2: exported when the table has tier2 steps (a join, or a table a plot reads directly), read from the stored Tier 2
                 #     parquet (issue #10). Without tier2 steps T2 equals T1: no duplicate TSV.
                 # T3: only for advanced+ app features files, and only when tier_toggle == "T3".
 
@@ -1162,7 +1181,7 @@ def define_export_server(input, output, session, *,
 
                     # ── T3 / My view data, one file per plot (audit nodes are per plot) ──
                     # Build rule T3 > T2 > T1: the base is the stored Tier 2, which is Tier 1
-                    # when the join has no tier2 steps; the plot's filters and drops go on top.
+                    # when the table has no tier2 steps; the plot's filters and drops go on top.
                     # Written for every plot that has audited steps: its plot is built from this data,
                     # so the file must be there. Plots without audited steps have no T3 file.
                     if audited_plots:
@@ -1509,7 +1528,7 @@ def define_export_server(input, output, session, *,
                 )
                 _dh_qmd_rows.append(
                     f"| Tier 2 key ({_ds_k}) | `{_k['tier2_key'] or 'none (T2 equals T1)'}` | "
-                    "Chained key of the Tier 2 parquet: Tier 1 key and the join's tier2 steps |"
+                    "Chained key of the Tier 2 parquet: Tier 1 key and the tier2 steps of the table (a join, or a table a plot reads directly) |"
                 )
             if _dh_qmd_rows:
                 pass
@@ -1577,12 +1596,7 @@ def define_export_server(input, output, session, *,
                 ds_note = spec.get("target_dataset") or "—"
                 fig_id = f"fig-{_re.sub(r'[^A-Za-z0-9]', '-', p_id)}"
                 caption = f"{label} — dataset: `{ds_note}`"
-                qmd_lines += [
-                    f"### {label}",
-                    "",
-                    f"![{caption}](_render/{p_id}.{plot_ext}){{#{fig_id} width=95%}}",
-                    "",
-                ]
+                qmd_lines += plot_report_lines(p_id, label, caption, fig_id, plot_ext, failed_plots.get(p_id))
 
             qmd_lines += [
                 "## Data files",

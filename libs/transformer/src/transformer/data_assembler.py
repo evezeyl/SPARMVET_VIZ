@@ -11,7 +11,9 @@ import polars as pl
 from polars.exceptions import PanicException
 from transformer.registry import get_action_function
 from utils.action_names import CAST, JOIN, JOIN_ASOF
+from transformer.join_diagnosis import JoinCheck
 from utils.errors import TransformationError
+from utils import join_keys
 from utils.pipeline_error import PipelineError
 
 
@@ -31,6 +33,7 @@ class DataAssembler:
         self.ingredients = ingredients
         self.recipe_id = recipe_id
         self.join_id = join_id
+        self.join_checks: List[JoinCheck] = []  # the joins that write `validate`, for the plain message of a refusal (join_diagnosis)
 
     @staticmethod
     def _key_columns(value: Any) -> List[str]:
@@ -76,7 +79,10 @@ class DataAssembler:
         where = f"in data analysis recipe '{self.recipe_id}', join '{self.join_id}', step {index} ({step['action']} with '{right_id}')"
 
         for left_keys, right_keys, left_name, right_name, shared_name in self._key_groups(step):
-            if len(left_keys) != len(right_keys):
+            problem = join_keys.join_key_problem(left_schema, right_schema, left_keys, right_keys)  # the one rule (utils.join_keys, JOIN-KEY-ONE-1)
+            if problem is None:
+                continue
+            if problem["kind"] == "length":
                 self._fail_join(
                     step, index,
                     f"The key lists of the join differ in length {where}: {left_name} has {len(left_keys)} column(s) {left_keys} and {right_name} has {len(right_keys)} column(s) {right_keys}.",
@@ -84,10 +90,8 @@ class DataAssembler:
                     f"or write '{shared_name}' when the columns have the same name in both tables.",
                     {"left_keys": str(left_keys), "right_keys": str(right_keys)},
                 )
-
-            missing_left = [c for c in left_keys if c not in left_schema]
-            missing_right = [c for c in right_keys if c not in right_schema]
-            if missing_left or missing_right:
+            if problem["kind"] == "missing":
+                missing_left, missing_right = problem["missing_left"], problem["missing_right"]
                 lacks = []
                 if missing_left:
                     lacks.append(f"key column(s) {missing_left} missing in the left table (its columns: {list(left_schema)})")
@@ -100,27 +104,24 @@ class DataAssembler:
                     "The left table is the table at this step: a column of a table joined later is not in it yet, and a step before the join may have renamed or dropped the column.",
                     {"missing_in_left": str(missing_left), "missing_in_right": str(missing_right)},
                 )
-
-            for left_col, right_col in zip(left_keys, right_keys):
-                left_type, right_type = left_schema[left_col], right_schema[right_col]
-                if left_type == right_type:
-                    continue
-                names = f"column '{left_col}'" if left_col == right_col else f"column '{left_col}' (left) and '{right_col}' (right)"
-                self._fail_join(
-                    step, index,
-                    f"The join key types differ {where}: {names} is {left_type} in the left table and {right_type} in '{right_id}'.",
-                    f"Declare the same type for this field in input_fields of both tables. A {CAST} step before the join changes only the left table "
-                    f"(the table at this step); the type of '{right_id}' is changed in its own input_fields or in its own wrangling. "
-                    "The engine does not change the type of a join key for you.",
-                    {"left_column": left_col, "right_column": right_col, "left_type": str(left_type), "right_type": str(right_type)},
-                )
+            first = problem["differing"][0]
+            left_col, right_col, left_type, right_type = first["left_column"], first["right_column"], first["left_type"], first["right_type"]
+            names = f"column '{left_col}'" if left_col == right_col else f"column '{left_col}' (left) and '{right_col}' (right)"
+            self._fail_join(
+                step, index,
+                f"The join key types differ {where}: {names} is {left_type} in the left table and {right_type} in '{right_id}'.",
+                f"Declare the same type for this field in input_fields of both tables. A {CAST} step before the join changes only the left table "
+                f"(the table at this step); the type of '{right_id}' is changed in its own input_fields or in its own wrangling. "
+                "The engine does not change the type of a join key for you.",
+                {"left_column": left_col, "right_column": right_col, "left_type": str(left_type), "right_type": str(right_type)},
+            )
 
     @staticmethod
     def _canonical_steps(steps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """A copy of the steps; every step must be written with its `action` key (no shorthand is guessed)."""
         import copy
         copied = copy.deepcopy(steps)
-        for index, step in enumerate(copied):
+        for index, step in enumerate(copied, start=1):
             if not isinstance(step, dict) or "action" not in step:
                 pe = PipelineError(
                     component="DataAssembler",
@@ -167,6 +168,9 @@ class DataAssembler:
             raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
         consolidated_lf: pl.LazyFrame = None
+        # the same steps without any `validate`: the table each join sees if no earlier validation counted, for the plain message of a refusal
+        plain_lf: pl.LazyFrame = None
+        track_plain = any(isinstance(s, dict) and s.get("validate") in ("1:1", "1:m", "m:1") for s in steps)
         start_index = 0
 
         # Process the remaining steps
@@ -185,7 +189,7 @@ class DataAssembler:
                     pe = PipelineError(
                         component="DataAssembler",
                         problem=f"Ingredient '{right_id}' required by '{action_name}' step is not available.",
-                        location=f"assembly step {i}: action='{action_name}', right_ingredient='{right_id}'",
+                        location=f"assembly step {i + 1}: action='{action_name}', right_ingredient='{right_id}'",
                         fix=f"Check right_ingredient spelling. Available ingredients: {available}",
                         who="data_analysis_recipe_author",
                         category="assembly",
@@ -209,7 +213,7 @@ class DataAssembler:
                     pe = PipelineError(
                         component="DataAssembler",
                         problem=f"Join key missing for '{action_name}' with right_ingredient='{right_id}'.",
-                        location=f"assembly step {i}: action='{action_name}'",
+                        location=f"assembly step {i + 1}: action='{action_name}'",
                         fix=(
                             "Add 'on': <column> to the join step (quoted — 'on' is a YAML boolean trap). "
                             f"Found keys in step: {actual_keys}"
@@ -230,10 +234,20 @@ class DataAssembler:
             if consolidated_lf is None:
                 first_key = list(self.ingredients.keys())[0]
                 consolidated_lf = self.ingredients[first_key]
-
+                plain_lf = consolidated_lf
 
             if action_name in (JOIN, JOIN_ASOF) and right_id:
-                self._check_join_key_types(step, i, consolidated_lf, self.ingredients[right_id])
+                self._check_join_key_types(step, i + 1, consolidated_lf, self.ingredients[right_id])
+
+            if action_name == JOIN and right_id and step.get("validate") in ("1:1", "1:m", "m:1"):
+                # Polars decides whether the join fails; this only lets the engine explain the failure afterwards (join_diagnosis)
+                left_keys = step.get("on") or step.get("left_on")
+                right_keys = step.get("on") or step.get("right_on")
+                if isinstance(left_keys, list) and isinstance(right_keys, list):
+                    self.join_checks.append(JoinCheck(
+                        location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {i + 1}",
+                        right_id=right_id, left=plain_lf, right=self.ingredients[right_id], validate=step["validate"],
+                        left_keys=left_keys, right_keys=right_keys, nulls_equal=bool(step.get("nulls_equal")), how=str(step.get("how", "left"))))
 
             # Execute the action via the shared registry (ADR-018).
             # Wrap Polars and registry errors in PipelineError for structured diagnostics
@@ -244,7 +258,7 @@ class DataAssembler:
                 pe = PipelineError(
                     component="DataAssembler",
                     problem=f"Unknown assembly action '{action_name}'.",
-                    location=f"assembly step {i}",
+                    location=f"assembly step {i + 1}",
                     fix=(
                         f"'{action_name}' is not registered. Check the action name in the data analysis recipe. "
                         "See rules_agent_role_bioscientist.md §8 for the authoritative action list."
@@ -260,11 +274,13 @@ class DataAssembler:
 
             try:
                 consolidated_lf = action_func(consolidated_lf, step)
+                if track_plain:
+                    plain_lf = action_func(plain_lf, {k: v for k, v in step.items() if k != "validate"})
             except pl.exceptions.ColumnNotFoundError as exc:
                 pe = PipelineError(
                     component="DataAssembler",
                     problem=f"Column not found during '{action_name}': {exc}",
-                    location=f"assembly step {i}: action='{action_name}'",
+                    location=f"assembly step {i + 1}: action='{action_name}'",
                     fix=(
                         "Verify the column exists at this point in the step list. "
                         "Columns from a joined ingredient are only available AFTER the join step."
@@ -282,7 +298,7 @@ class DataAssembler:
                 pe = PipelineError(
                     component="DataAssembler",
                     problem=f"Schema mismatch during '{action_name}': {exc}",
-                    location=f"assembly step {i}: action='{action_name}'",
+                    location=f"assembly step {i + 1}: action='{action_name}'",
                     fix=(
                         "Join keys on both sides must share the same dtype. "
                         "Add a cast step before the join to normalise the mismatched column."
@@ -302,7 +318,7 @@ class DataAssembler:
                 pe = PipelineError(
                     component="DataAssembler",
                     problem=str(exc),
-                    location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {i}: action='{action_name}'",
+                    location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {i + 1}: action='{action_name}'",
                     fix=getattr(exc, "tip", None) or "Review the step parameters and the data state at this point in the step list.",
                     who="data_analysis_recipe_author",
                     category="assembly",
@@ -316,8 +332,8 @@ class DataAssembler:
                 # (ADR-104). Only this class is caught here; KeyboardInterrupt and SystemExit pass.
                 pe = PipelineError(
                     component="DataAssembler",
-                    problem=f"Polars stopped at assembly step {i} ('{action_name}') on this input ({str(exc).strip()[:120]})",
-                    location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {i}: action='{action_name}'",
+                    problem=f"Polars stopped at assembly step {i + 1} ('{action_name}') on this input ({str(exc).strip()[:120]})",
+                    location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {i + 1}: action='{action_name}'",
                     fix="Check the values written in this step (a zero or very fine duration, an empty list) and the data it works on; "
                         "the action could not refuse this input before Polars ran.",
                     who="data_analysis_recipe_author",
@@ -332,7 +348,7 @@ class DataAssembler:
                 pe = PipelineError(
                     component="DataAssembler",
                     problem=f"Assembly step '{action_name}' raised an unexpected error: {type(exc).__name__}",
-                    location=f"assembly step {i}: action='{action_name}'",
+                    location=f"assembly step {i + 1}: action='{action_name}'",
                     fix="Review the step parameters and the data state at this point in the step list.",
                     who="data_analysis_recipe_author",
                     category="assembly",
