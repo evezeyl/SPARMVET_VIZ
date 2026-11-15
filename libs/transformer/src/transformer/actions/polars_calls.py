@@ -396,7 +396,7 @@ _expr("polars_fill_null", ["Expr", "fill_null"], "Replace nulls by a value or by
 _expr("polars_fill_nan", ["Expr", "fill_nan"], "Replace NaN values (not nulls) by a value (Polars Expr.fill_nan).",
       "- action: polars_fill_nan\n  columns: [identity]\n  value: 0.0")
 _expr("polars_shift", ["Expr", "shift"], "Shift the values down by `n` rows (Polars Expr.shift).", "- action: polars_shift\n  columns: [count]\n  n: 1")
-_expr("polars_cum_sum", ["Expr", "cum_sum"], "Running sum (Polars Expr.cum_sum).", "- action: polars_cum_sum\n  columns: [count]\n  reverse: false")
+_expr("polars_cum_sum", ["Expr", "cum_sum"], "Running sum (Polars Expr.cum_sum). The sum of an Int32 or UInt32 column wraps around above about 2 thousand million (4 for UInt32) with no error: cast to Int64 first.", "- action: polars_cum_sum\n  columns: [count]\n  reverse: false")
 _expr("polars_cum_count", ["Expr", "cum_count"], "Running count of non-null values (Polars Expr.cum_count).", "- action: polars_cum_count\n  columns: [count]\n  reverse: false")
 _expr("polars_interpolate", ["Expr", "interpolate"], "Fill nulls between values by interpolation (Polars Expr.interpolate).", "- action: polars_interpolate\n  columns: [reading]\n  method: linear")
 _expr("polars_round", ["Expr", "round"], "Round numbers to `decimals` places (Polars Expr.round); `decimals` is written in the step.", "- action: polars_round\n  columns: [identity]\n  decimals: 1")

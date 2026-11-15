@@ -50,7 +50,7 @@ from utils.recipe_loader import check_recipe_file
 REQUIRED_COVERAGE = frozenset({"structure", "actions", "components"})
 # Advices that tell the author what a choice does to the result (a float join key, a join of a table with itself, a position step after an unfixed row order).
 # The other advices (missing descriptions and the like) are for the author's own review and stay out of HOME's panel.
-SHOWN_ADVICES = frozenset({"J12", "J13", "ST13", "ST14"})
+SHOWN_ADVICES = frozenset({"J12", "J13", "ST13", "ST14", "ST15"})
 
 # Sections whose entries (dataset id -> spec) may carry a 'wrangling' block.
 _SCHEMA_SECTIONS = ("data_schemas", "additional_datasets_schemas")

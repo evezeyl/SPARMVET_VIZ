@@ -513,7 +513,7 @@ Kind: wrapper. Context: t1, t2.
 
 #### `polars_cum_sum`
 
-Running sum (Polars Expr.cum_sum).
+Running sum (Polars Expr.cum_sum). The sum of an Int32 or UInt32 column wraps around above about 2 thousand million (4 for UInt32) with no error: cast to Int64 first.
 
 Kind: wrapper. Context: t1, t2.
 
@@ -887,7 +887,7 @@ Kind: exact. Context: t2, assembly.
 
 #### `polars_sum`
 
-Sum of each column, one row (Polars LazyFrame.sum). A null is skipped (a column with only nulls gives 0), a NaN makes the sum NaN, a text, Date, Datetime, categorical or list column gives null, a Boolean column gives the number of its true values (an unsigned integer). A sum of an integer column larger than the 64-bit range gives a wrong value without an error: convert the column to a float type first.
+Sum of each column, one row (Polars LazyFrame.sum). A null is skipped (a column with only nulls gives 0), a NaN makes the sum NaN, a text, Date, Datetime, categorical or list column gives null, a Boolean column gives the number of its true values (an unsigned integer). A sum of an integer column larger than the 64-bit range gives a wrong value without an error: convert the column to a float type first. The sum of an Int32 or UInt32 column wraps around above about 2 thousand million (4 for UInt32) with no error: cast to Int64 first.
 
 Kind: exact. Context: t2, assembly.
 

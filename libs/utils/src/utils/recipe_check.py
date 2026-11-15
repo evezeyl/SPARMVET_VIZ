@@ -49,6 +49,8 @@ JOIN_KEEPS_COLUMNS = frozenset({action_names.FILTER, action_names.SORT, action_n
 # Steps whose `maintain_order` says whether the order of the rows is fixed (ST13).
 _ORDER_STEPS = frozenset({action_names.SORT, action_names.UNIQUE, action_names.GROUP_BY, action_names.JOIN})
 
+_SUM_OF_COLUMN = re.compile(r"pl\.col\(\s*['\"]([^'\"]+)['\"]\s*\)\.sum\(\)")
+
 PROFILES = ("run", "build", "gallery", "audit")
 _AUDIT_ID = re.compile(r"^audit_[0-9a-f]{8}_\d+$")
 _SNAKE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -316,6 +318,8 @@ class _Check:
             self.add("S06", f"{path}.wrangling", "wrangling is required", "write wrangling: {tier1: []}")
         else:
             self.step_container(wrangling, f"{path}.wrangling", "S06", self.spec["elements"]["tiers"]["schema"])
+            if isinstance(wrangling, dict) and isinstance(fields_, dict):
+                self.sum_advices(wrangling, f"{path}.wrangling", fields_)
             if isinstance(wrangling, dict) and wrangling.get("tier2") and not is_target:
                 self.add("S07", f"{path}.wrangling.tier2", "tier2 of a schema applies only when the schema is plotted directly",
                          "move the steps to a join, or plot this schema")
@@ -416,6 +420,45 @@ class _Check:
             self.steps(steps, f"{path}.{tier}", tier)
         self.order_advices(container, path, tiers)
         self.tie_advices(container, path, tiers)
+
+    def sum_advices(self, wrangling: dict, path: str, fields: dict) -> None:
+        """ST15 (advice, never blocks): a sum on a column declared Int32 or UInt32 (D43, PROVISIONAL).
+
+        Only where the declared type is known: a step of this schema's own wrangling on a column of its input_fields, from
+        the start of tier 1 until a step that may change the columns (a cast is followed: its dtype becomes the type).
+        Not seen: a sum inside another formula (with_columns, mutate), a type made 32-bit by an earlier step, a join result.
+        """
+        types = {name: definition.get("type") for name, definition in fields.items() if isinstance(definition, dict)}
+        steps = [s for tier in ("tier1", "tier2") for s in (wrangling.get(tier) if isinstance(wrangling.get(tier), list) else [])]
+        positions = [(tier, i) for tier in ("tier1", "tier2") for i, _ in enumerate(wrangling.get(tier) if isinstance(wrangling.get(tier), list) else [], start=1)]
+        for (tier, index), step in zip(positions, steps):
+            if not isinstance(step, dict):
+                return
+            name = step.get("action")
+            where = f"{path}.{tier}[{index}]"
+            if name == action_names.CAST:
+                columns, dtype = step.get("columns"), step.get("dtype")
+                if not isinstance(columns, list) or not isinstance(dtype, str):
+                    return
+                for column in columns:
+                    types[column] = dtype
+                continue
+            wide = []
+            if name == action_names.SUM:
+                wide = list(types)
+            elif name == action_names.CUM_SUM and isinstance(step.get("columns"), list):
+                wide = step["columns"]
+            elif name == action_names.GROUP_BY and isinstance(step.get("named_aggs"), dict):
+                wide = [m for text in step["named_aggs"].values() if isinstance(text, str) for m in _SUM_OF_COLUMN.findall(text)]
+            for column in dict.fromkeys(wide):
+                if types.get(column) in ("Int32", "UInt32"):
+                    self.add("ST15", where,
+                             f"{name} of the column {column!r}, declared {types[column]}: the total of a 32-bit whole-number column wraps around "
+                             "above about 2 thousand million (4 for UInt32) with no error and gives a wrong, possibly negative, number",
+                             f"write a polars_cast step to Int64 for {column!r} before this step",
+                             "A")
+            if name not in JOIN_KEEPS_COLUMNS and name not in (action_names.SUM, action_names.CUM_SUM):
+                return  # the columns after this step are not known from the declarations
 
     def tie_advices(self, container: dict, path: str, tiers: List[str]) -> None:
         """ST14 (advice, never blocks): every top_k or bottom_k step. The checker cannot know whether ties exist in the data."""
