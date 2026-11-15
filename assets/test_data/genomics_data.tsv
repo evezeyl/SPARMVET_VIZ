@@ -1,0 +1,31 @@
+Accession	Gene_List
+ACC0001	blaTEM-1;strB;aph(3')-Ia
+ACC0002	aph(3')-Ia;sul2
+ACC0003	tet(A); sul1; blaTEM-1; strB
+ACC0004	 sul2; sul1
+ACC0005	sul2;aph(3')-Ia;catA1;sul1
+ACC0006	"strB";"aph(3')-Ia";"catA1"
+ACC0007	catA1;blaTEM-1
+ACC0008	blaTEM-1; aph(3')-Ia; dfrA17; sul2
+ACC0009	
+ACC0010	sul1;tet(A);strA
+ACC0011	 blaTEM-1
+ACC0012	sul1;strB;aph(3')-Ia;tet(A)
+ACC0013	catA1; sul1; strB
+ACC0014	sul1
+ACC0015	dfrA17;aph(3')-Ia;strB
+ACC0016	blaTEM-1
+ACC0017	"sul2";"dfrA17";"aph(3')-Ia"
+ACC0018	 sul2;  catA1;  strB
+ACC0019	catA1;sul2
+ACC0020	catA1;aph(3')-Ia;blaTEM-1
+ACC0021	aph(3')-Ia;dfrA17;strB;strA
+ACC0022	strA
+ACC0023	blaTEM-1
+ACC0024	strB;sul2;sul1;strA
+ACC0025	 catA1; dfrA17
+ACC0026	blaTEM-1;strA;catA1;sul2
+ACC0027	strA;blaTEM-1
+ACC0028	"catA1"
+ACC0029	catA1
+ACC0030	tet(A);blaTEM-1

@@ -1,0 +1,24 @@
+{
+  "session_key": "a3f9c81b04e2:c4d29e1a3f80",
+  "data_analysis_recipe_id": "samples",
+  "data_analysis_recipe_sha256": "a3f9c81b04e2",
+  "data_batch_hash": "c4d29e1a3f80",
+  "saved_at": "2026-11-10T14:30:12",
+  "label": "written before the real value was kept",
+  "tier_toggle": "T3",
+  "t3_audit_steps_by_plot": {
+    "subtab_samples_plot": [
+      {"node_type": "filter_row", "id": "n1", "created_at": "2026-11-10T14:00", "plot_scope": "subtab_samples_plot", "active": true,
+       "params": {"column": "year", "op": "ge", "value": "2000", "dtype": "Int64"}, "reason": "years before 2000 were measured another way"},
+      {"node_type": "filter_row", "id": "n2", "created_at": "2026-11-10T14:05", "plot_scope": "subtab_samples_plot", "active": true,
+       "params": {"column": "weight", "op": "lt", "value": "90.5", "dtype": "Float64"}, "reason": "scale limit"},
+      {"node_type": "filter_row", "id": "n3", "created_at": "2026-11-10T14:10", "plot_scope": "subtab_samples_plot", "active": true,
+       "params": {"column": "year", "op": "not_in", "value": ["2003", "2004"], "dtype": "Int64"}, "reason": "two bad years"},
+      {"node_type": "filter_row", "id": "n4", "created_at": "2026-11-10T14:15", "plot_scope": "subtab_samples_plot", "active": true,
+       "params": {"column": "country", "op": "in", "value": ["NO", "SE"], "dtype": "String"}, "reason": "study scope"},
+      {"node_type": "filter_row", "id": "n5", "created_at": "2026-11-10T14:20", "plot_scope": "subtab_samples_plot", "active": true,
+       "params": {"column": "passed", "op": "in", "value": ["True"], "dtype": "Boolean"}, "reason": "passed QC only"}
+    ]
+  },
+  "t3_plot_overrides": {}
+}

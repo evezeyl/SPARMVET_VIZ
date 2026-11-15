@@ -17,7 +17,7 @@ recipe, what is wrong and the fix, in the message style of spec P5.
 
 # @deps
 # provides: function:check_recipe, function:spec, class:Problem, class:Result
-# consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/engines.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/ui_schema.py, libs/utils/src/utils/formula_check.py, libs/utils/src/utils/recipe_paths.py, libs/utils/src/utils/polars_types.py
+# consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/engines.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/ui_schema.py, libs/utils/src/utils/formula_check.py, libs/utils/src/utils/recipe_paths.py, libs/utils/src/utils/polars_types.py, libs/utils/src/utils/filter_values.py
 # consumed_by: libs/utils/src/utils/recipe_loader.py, libs/utils/src/utils/recipe_factory.py, libs/utils/src/utils/recipe_migration.py, libs/utils/src/utils/strict_form_migration.py, libs/ingestion/src/ingestion/declared.py, libs/viz_gallery/src/viz_gallery/gallery_manager.py, libs/viz_gallery/src/viz_gallery/example_recipe.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, assets/scripts/convert_gallery_examples.py, assets/scripts/create_data_analysis_recipe.py, libs/utils/tests/test_recipe_check.py
 # doc: .claude/design/recipe_format_spec.md (sections 3 to 11, 14)
 # @end_deps
@@ -27,7 +27,7 @@ import re
 from dataclasses import dataclass, field
 from functools import lru_cache
 from importlib import resources
-from typing import Any, Dict, Iterable, List, Optional, Set
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 import polars as pl
 import yaml
@@ -35,6 +35,7 @@ import yaml
 from utils import action_names
 from utils.action_names import TIER1_ONLY
 from utils.engines import ENGINES
+from utils.filter_values import FilterValueError, check_filter
 from utils.formula_check import formula_problems
 from utils.polars_types import PARAMETER_KEYS, dtype_with_parameters, text_dtype_names
 from utils.recipe_paths import containment_problems, shape_problems
@@ -320,6 +321,8 @@ class _Check:
             self.step_container(wrangling, f"{path}.wrangling", "S06", self.spec["elements"]["tiers"]["schema"])
             if isinstance(wrangling, dict) and isinstance(fields_, dict):
                 self.sum_advices(wrangling, f"{path}.wrangling", fields_)
+            if isinstance(wrangling, dict) and isinstance(fields_, dict) and fields_:
+                self.filter_value_problems(wrangling, f"{path}.wrangling", [(path.rsplit(".", 1)[-1], fields_)], joins=False)
             if isinstance(wrangling, dict) and wrangling.get("tier2") and not is_target:
                 self.add("S07", f"{path}.wrangling.tier2", "tier2 of a schema applies only when the schema is plotted directly",
                          "move the steps to a join, or plot this schema")
@@ -557,6 +560,42 @@ class _Check:
                     what, _, fix = message.partition(". Fix: ")
                     self.add("ST06", f"{where}.{name}", what, fix)
 
+
+    def filter_value_problems(self, steps: dict, path: str, tables: List[Tuple[str, Dict[str, Any]]], *, joins: bool) -> None:
+        """ST12: a `modif_filter` value does not have the declared type of its column (ADR-104 point 7).
+
+        Walks tier1 then tier2 with the tables known at each step: a step that only removes or reorders rows keeps them,
+        a join (in a join) adds the declared columns of its right table, any other step may change a column and ends the
+        check (silent: the engine is the judge there). A column absent from every known table is not judged either.
+        """
+        for tier in ("tier1", "tier2"):
+            for index, step in enumerate(steps.get(tier) or [], start=1):
+                if not isinstance(step, dict):
+                    return
+                action = step.get("action")
+                if action == action_names.FILTER:
+                    self.filter_value_at(step, f"{path}.{tier}[{index}].value", tables)
+                elif joins and "right_ingredient" in step:
+                    right = self.declared_fields(step["right_ingredient"])
+                    if right is None:
+                        return
+                    tables = tables + [(step["right_ingredient"], right)]
+                elif action not in JOIN_KEEPS_COLUMNS:
+                    return
+
+    def filter_value_at(self, step: dict, where: str, tables: List[Tuple[str, Dict[str, Any]]]) -> None:
+        column, op, value = step.get("column"), step.get("op"), step.get("value")
+        if not isinstance(column, str) or value is None:
+            return
+        owner = next(((name, fields[column]) for name, fields in tables if column in fields), None)
+        declared = _declared_dtype(owner[1]) if owner else None
+        if declared is None:
+            return
+        try:
+            check_filter(op, value, declared)  # the rule of the engine: the operator fits the type, each value has it
+        except FilterValueError as exc:
+            self.add("ST12", where, f"{exc.problem} (column {column!r} of {owner[0]!r})", exc.fix)
+
     # -- joins
     def joins(self, raw: dict) -> None:
         joins = raw.get("joins")
@@ -586,6 +625,9 @@ class _Check:
             else:
                 self.step_container(join["steps"], f"{path}.steps", "J07", self.spec["elements"]["tiers"]["join"])
                 self.join_steps(join["steps"], path, ingredient_ids)
+                first = self.declared_fields(ingredient_ids[0]) if ingredient_ids else None
+                if isinstance(join["steps"], dict) and first is not None:
+                    self.filter_value_problems(join["steps"], f"{path}.steps", [(ingredient_ids[0], first)], joins=True)
             labels = join.get("labels")
             if labels is not None and not (isinstance(labels, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in labels.items())):
                 self.add("J06", f"{path}.labels", "labels maps a column to a display text", "write labels: {column: text}")

@@ -965,3 +965,78 @@ Earlier lines above are not edited; where they disagree with the following, the 
 2. A small builder for the export lines (`plot_engine`, `draw_checked`).
 3. A reviewer runs the full controls (headless, golden, browser gate, audits, doc links); push `dev`.
 4. PLOT-TABLE-ORDER-1, then V4, then V2 + V10 + V9.
+
+## Handoff 2026-11-15 09:10 (coordinator)
+
+**Merged, not pushed.** `d2c97bc6` (V3: the plot parameters of the exact components are read from plotnine). HEAD is not pushed; `origin/dev` is `f769c8dd`.
+
+**Eve's decisions of 2026-11-15, one line each** (channel `tmpAI/agent_channel.md`, M83 and M84):
+- 9: text greater/less not offered in the HOME filter (reversible); Date by date picker, Boolean by two-choice control.
+- 10a: `beeswarm_sina` converted to the new form.
+- 10b: small synthetic data made for `complex_template`.
+- 10c: the three removed actions found out; the orphan fragment `ResFinder_Abromics_wrangling.yaml` converted, not deleted.
+- 10e: Blueprint MAY author the plot entry's tier 3 (the note is in `recipe_format_spec.md` and at ADR-100).
+- 10d (investigation, no build): Blueprint must open a failing recipe and show its fix list (BP-STALE-VIEW-1).
+- 11 (explanation owed): list of every shipped-recipe result change, old vs new engine, in the changelog (RESULT-CHANGES-1).
+
+**Strategy (Eve, M83 point 2):** builds on a recommendation are PROVISIONAL (recorded with the commit, reversible) when no result changes silently and nothing is hidden; open points go to her in ONE ordered list with a default each.
+
+**Queue (build work that needs no decision):**
+1. Seed branch: default 0, `geom_sina` seeded, seeds written, `beeswarm_sina` converted there.
+2. Row order: ST13, then the tie and sum warnings.
+3. viz-errors (after review).
+4. typed-values (third review).
+5. Export lines.
+6. Full controls and push.
+7. PLOT-TABLE-ORDER-1.
+8. The warnings look.
+9. FILTER-PICKERS-1, with the value list on demand.
+10. RECIPES-SMALL-1.
+11. V4.
+
+**Records changed 2026-11-15 (not committed):** `recipe_format_spec.md` (tier 3 note); `architecture_decisions.md` (superseded markers at ADR-082, 093, 099; tier 3 note and RECIPES-SMALL note at ADR-100; filter-control note at ADR-104); `tasks.md` (FILTER-PICKERS-1, RECIPES-SMALL-1, RESULT-CHANGES-1, PY-RECIPE-1, BP-STALE-VIEW-1, SC4 and gallery-reason-list markers, process rule).
+
+## Handoff 2026-11-15 09:20 (coordinator)
+
+Records of this morning, by the review session (channel M85 to M88). Not committed; the records are in the main tree. Eve's decisions, one line each:
+- **D22 (dated 2026-11-15):** yes, the formula allow-list as built (`fe856c26`) is accepted for now; FORMULA-SAFETY-1 and ADR-099 point 14 are closed as one decision.
+- **D23 (dated 2026-11-15):** no time or size limit for formulas now; the known limit is stated in the docs.
+- **Security rule (dated 2026-11-15):** two layers. In the app, nobody may misuse it to run anything but data science. At the deployment, who may deposit recipes and which options the user has is gated by the system; the app's checks do not replace that. Recorded in ADR-071; tasks DOCS-SECURITY-1 and SECURITY-REVIEW-END-1.
+- **Gate gap (found by running, architect):** HOME's load gate runs once at startup; a recipe saved from Blueprint is not checked again. Task GATE-GAP-1 (queued; evidence `tmpAI/panel/round5/blueprint_failed_load/details.md`).
+- **Blueprint with a failing recipe:** three places show the previous recipe with no message, one can freeze the session (the freeze was fixed with BP-UPLOAD-EXIT-1). Eve's choice open, L31: options A, B (recommended), C in BP-STALE-VIEW-1.
+- **Equality check plan:** EQUALITY-CHECK-1, step 1 a dirty copy of the ST22 data and one hand-written recipe (PROVISIONAL, tests only), step 2 every action, step 3 all shipped recipes; evidence `tmpAI/panel/round5/equality_check/`. RESULT-CHANGES-1 dropped (Eve: "we want the results to be correct").
+- **Scientist's two findings on the ST22 recipe (RECIPE-SCIENCE-1, Eve's choice L33 open):** the bars count gene rows (70) where the title speaks of samples (38); the inner join drops 4 of 42 metadata samples from the AMR table and 1 from the plasmid table with no message (JOIN-COUNTS-1 makes it visible).
+
+**What runs:** the seed branch `task/seed-holds` (default 0, no per-session seed in HOME; the per-step seed field is with the panel); row order `task/row-order` with the warnings (`modif_join_where`, the four empty values refused, the position advice); `recipes-small` (RECIPES-SMALL-1). Reviews running: the viz-errors and typed-values branches, third round.
+
+**Queue, in this order:**
+1. GATE-GAP-1
+2. EQUALITY-CHECK-1, step 1
+3. export lines
+4. full controls and push
+5. PLOT-TABLE-ORDER-1
+6. the warnings look (D36, D37; L8, L9)
+7. FILTER-PICKERS-1, with the value list on demand (L10) and Time and Duration controls
+8. V4
+9. DOCS-SECURITY-1
+
+Open for Eve (one number each in the channel list M86): L1 to L33; RECIPE-SCIENCE-1 and L31 (BP-STALE-VIEW-1) need her choice before their build.
+
+## Handoff 2026-11-15 09:42 (coordinator): RESTART HERE (usage limit; next session 13:00)
+
+**Git:** branch `feat/recipe-format-1`, HEAD `d6a2822a`. NOT pushed since `f769c8dd` (= origin/dev, the last tree with FULL controls passed). Merged on top, no control run on the merged tree yet: `b91a9fd5` clean-up, `05a6fa30` + `293d9c39` rule-file proposals, `4525fcb1` viz V1 + V8, `d2c97bc6` viz V3, `efcce204` typed filter values + all operators, `d6a2822a` template data + orphan fragment, and record commits. **No merge into main. Push dev only after a reviewer's FULL controls pass (headless, golden, browser gate, audits, doc links).**
+
+**Worktrees, each with `tmpAI/progress.md`; continue each with a NEW agent of the same kind in the SAME worktree (first `git status`, `git log -5`, read its progress note):**
+1. `.claude/worktrees/seed-holds` (`task/seed-holds`, builder sonnet/high). Fix round after review is DONE and merged with feat. RUNNING when the session stopped: Eve's DECIDED 1: HOME draws no seed, default 0 everywhere; `geom_sina` seeded (it was not); `random_state: 0` written in gallery `jitter_strip` and ST22 `phenotype_genome_length_dotplot`; `beeswarm_sina` converted (10a); the audit pin listed in the audit trail text; PROVISIONAL S1 (`random_state: null` refused) and S3 (`plot_defaults: random_state`), each its own commit. Then: review (reviewer breaks the code), merge.
+2. `.claude/worktrees/viz-errors` (`task/viz-errors`, builder sonnet/high). V6 + V7 built; review = FIX FIRST; fix list sent (blocker: `home_theater.py:550` reads a reactive value in `session.on_flushed`: alert lost, other plots blank, Export panel empty; export `_ERROR.txt` and `report.qmd`; `ggtitle`/`xlab`/`ylab` missing text; `guide_label` options; printed-only warnings to the Alerts; the theme drop on `virulence_bar`: complete theme replaces, partial setting adds; list every shipped picture that changes). Then: second review, merge.
+3. `.claude/worktrees/dataset-tier2` (`task/dataset-tier2`, builder-OPUS high, one opus at a time). RECIPE-DATASET-TIER2-1 (issue 77, decided 2026-11-12): a table plotted directly runs its own tier 2; shipped tables/pictures change by decision (`ResFinder` / `amr_heatmap`); baseline regenerated only for those; changelog. Then review, merge.
+4. `.claude/worktrees/row-order` (`task/row-order`, builder sonnet/medium). Review: MERGE everything EXCEPT 6b189414. TO SEND to a builder there (NOT yet sent): (a) the `validate` pre-check gives FALSE REFUSALS (45 of 20000 random cases: `how: inner` with an empty table; Polars accepts) and misses right/full/semi/anti: redesign as "diagnose on failure": Polars decides whether the join fails; only when Polars raises is the plain message built (step, tables, key, what `validate` asked, an example, the fix); test against Polars on random cases incl. empty tables; (b) wrong statements to correct in the description and in ST14: "Polars keeps the first tied rows on a small table" is NOT true (114 of 200 cases differ on 20-row tables); "in streaming the kept rows differ from run to run" was NOT reproduced: say only "which tied rows are kept is not fixed"; "a NaN comes first" is wrong for `bottom_k` (last); (c) ST15's text names its blind spots (a sum in a formula, a join result). Then a short second review, merge. NOTE: my channel M85 passed the scientist's "first tied rows on small tables" and "streaming differs" to Eve: CORRECT IT on the channel (not yet done).
+
+**Eve's decisions NOT YET RECORDED in tasks.md / ADRs (channel blocks M87 to M90 from sparmvet-viz-57; a scribe was dispatched at 09:42: check `git status` for its uncommitted edits and commit by file name):** D7 one join-key rule in `libs/utils` (JOIN-KEY-ONE-1, after row-order merges; her principle: one source of truth everywhere); D8 never skip a join silently, a self-join runs with a clear WARNING, a data-scientist viewpoint says whether any self-join case should be an error (no build of an error before her answer); D13 Blueprint join preview catches only expected errors (early); D10 template key to String + the float-key advice (exists: J13); D14 ALL old words corrected in every active file and the docs (scout lists hits per word first; propose exclusions for current vocabulary); D15 wait for the stage-2 spec; D16 correct the six arrows of the UML package diagram PKG-TIERS (StarUML open, native API only, then `audit_uml_model.py`); D17 YES to the two-line edit of `rules_verification_testing.md` section 8 (`--durations=10`, the true duration): her confirmation is given, a builder may edit that rule file for exactly this; D24 rule files updated to the current format: verify each statement against the code, ask only what no file answers, prepare the diffs; D26 scout first, then remove the two helper scripts and their docs if nothing calls them; D27 FIX NOW `agent_tools.py:202` (`get_field_contract` returns the removed `output_fields`), with a test; D28 a reviewer verifies the two doc statements, a builder corrects. D12 NOT decided: she read "filters" as interaction: tell her in one plain sentence that G-b is a read-only message under the taxonomy explorer listing the examples left out with the reason, no interaction, and say whether the taxonomy explorer itself was touched (have an agent check). Not answered: D11, C10, C11, Q7/Q8 (= D35 partly answered by D8, D36, D37), L1 to L4 (Categorical), S1 to S3 (seed; S1 and S3 are being built as PROVISIONAL).
+
+**Builder queue after the four worktrees (max 3 builders; opus one at a time):** GATE-GAP-1 (defect) -> EQUALITY-CHECK-1 step 1 (PROVISIONAL, tests only) -> D27 + D13 (small, Blueprint) -> JOIN-KEY-ONE-1 -> export lines for `plot_engine` -> FULL controls + push dev (as soon as seed, viz-errors, row-order, dataset-tier2 are merged) -> PLOT-TABLE-ORDER-1 -> FILTER-PICKERS-1 (date picker, Boolean two-choice, Time, Duration; value list on demand) -> warnings look (D36, D37, PROVISIONAL) + JOIN-COUNTS-1 -> FILTER-UNIFY-1 -> V4, V2 + V10, V9 -> D14 old words -> D26 -> DOCS-SECURITY-1 -> formula follow-ups -> D16 UML -> D17 rule-file edit -> RECIPE-SCIENCE-1 after Eve's answer (L33).
+
+**Read-only work ready to start:** data-scientist viewpoint on self-join use cases (D8); a scout for D14 (hits per old word) and D26 (callers of the two scripts); a reviewer for D28; a check of the gallery G-b sentence (D12).
+
+**Channel:** my last messages M83 to M88 and M90 hold the findings and THE ONE LIST (M86, L1 to L33). Owed to sparmvet-viz-57: acknowledgement of its M87 to M90; the correction on ties; typed-values and recipes-small merged; three small choices from the fragment conversion (five more fragments included by nothing: delete, convert or wire; `gene` gives 13 rows, `[sample_id, gene]` gives 63 rows for the duplicate removal; wire the converted fragment into a recipe or not).
+13:08: the session resumed; the stopped workers continue in their worktrees (seed-holds, viz-errors, dataset-tier2); row-order gets its fix when a builder is free.

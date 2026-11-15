@@ -62,12 +62,13 @@ def test_home_skips_a_missing_column_but_modif_filter_fails():
         run({**row, "na": "remove"})
 
 
-def test_home_coerces_a_text_value_to_the_number_of_the_column_but_modif_filter_does_not():
-    """Difference to decide: the filter panel sends text, so HOME casts it; a recipe writes the right type."""
+def test_home_reads_an_old_text_value_as_the_number_of_the_column_but_modif_filter_refuses_it():
+    """Decided (ADR-104 point 7): the panel keeps the real value; an old row holding text is read from its dtype, the action stays strict."""
     row = {"column": "n", "op": "eq", "value": "2"}
     assert home([row])["id"].to_list() == ["b"]
-    with pytest.raises(Exception):
+    with pytest.raises(TransformationError) as exc:
         run({**row, "na": "remove"})
+    assert "whole numbers" in str(exc.value)
 
 
 def test_home_keeps_the_missing_rows_of_a_filter_when_na_is_keep_like_modif_filter():
