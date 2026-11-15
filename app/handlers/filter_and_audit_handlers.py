@@ -16,8 +16,8 @@ Why filter UI and T3 audit live in one file:
 from __future__ import annotations
 
 # @deps
-# provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label), libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label, value_choices, pick_values, column_types, ops_for_column, value_widget_for, number_range, typed_number, CLOSED_CHOICES), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -29,7 +29,10 @@ from shiny import reactive, render, ui
 from app.src.bootloader import bootloader
 from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
+    CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column, pick_values,
+    typed_number, value_choices, value_widget_for,
 )
+from utils.filter_values import FilterValueError
 from utils.missing_values import dialog_lines, na_choice_texts
 from utils.na_choice import default_na, na_of
 
@@ -155,142 +158,137 @@ def define_filter_audit_server(input, output, session, *,
             ))
         return ui.div(*rows)
 
-    @output
-    @render.ui
-    def filter_form_ui():
-        """
-        Add-row form. Reads dataset columns + fb_col/fb_op input state.
-        Does NOT read _pending_filters — so appending a row doesn't reset the form.
-        Value type coercion happens at apply time in _apply_filter_rows;
-        values are always stored as strings here and cast to column dtype when filtering.
+    def _discrete_columns(spec) -> set:
+        """The columns the active plot uses as a discrete axis (a number column among them is picked from a list)."""
+        disc_x, disc_y = _spec_discrete_axes(spec)
+        return set(disc_x) | set(disc_y)
+
+    @reactive.Calc
+    def _dialog_table():
+        """(table, {column: dtype}, discrete-axis columns) of the active plot, for the add-row form.
+
+        The type comes from the schema of the table, never from a sample of rows (ADR-104 point 7). A table that cannot
+        be built or read gives (None, {}, set()) and the error is logged, not swallowed.
         """
         subtab = active_home_subtab.get()
         p_id = subtab.removeprefix("subtab_") if subtab else None
         spec = _resolve_active_spec(p_id)
-        disc_x, disc_y = _spec_discrete_axes(spec)
-        discrete_cols = disc_x | disc_y
-
+        lf = _active_frame()
         try:
-            lf = _resolve_active_lf(spec)
-            sample = lf.head(500).collect()
-            all_cols = sample.columns
-            dtypes = {c: str(sample[c].dtype) for c in all_cols}
+            types = column_types(lf) if lf is not None else {}
         except Exception:
-            all_cols = []
-            dtypes = {}
-            sample = None
+            _log.exception("filter dialog: the columns of the table could not be read")
+            return None, {}, set()
+        return lf, types, _discrete_columns(spec)
 
-        col_choices = {c: f"{c}  [{dtypes.get(c, '')}]" for c in all_cols} if all_cols else {}
-        sel_col = safe_input(input, "fb_col", all_cols[0] if all_cols else None)
-        sel_dtype = dtypes.get(sel_col, "Utf8") if sel_col else "Utf8"
-        is_discrete = (sel_col in discrete_cols) or (
-            "Int" not in sel_dtype and "Float" not in sel_dtype and "UInt" not in sel_dtype
-        )
+    def _selected_column(types: dict):
+        col = safe_input(input, "fb_col", next(iter(types), None))
+        return col if col in types else next(iter(types), None)
 
-        # Op choices depend on whether the column is discrete or continuous.
-        # Continuous columns get a `between` range operator (UX-FILTER-1).
-        # eq is the first option for both — most intuitive default.
-        if is_discrete:
-            op_choices = {o: op_choice_label(o) for o in ("in", "not_in", "eq", "ne")}
-        else:
-            op_choices = {o: op_choice_label(o)
-                          for o in ("eq", "ne", "gt", "ge", "lt", "le", "between")}
+    def _op_choices(dtype, discrete_axis: bool) -> dict:
+        ops = ops_for_column(dtype, discrete_axis) if dtype is not None else ["in", "not_in", "eq", "ne"]
+        return {o: op_choice_label(o) for o in ops}
 
-        sel_op = safe_input(input, "fb_op", next(iter(op_choices.keys())))
-        # If the user previously picked an op that's now unavailable (e.g.
-        # column changed dtype between renders), fall back to the first valid.
-        if sel_op not in op_choices:
-            sel_op = next(iter(op_choices.keys()))
+    @output
+    @render.ui
+    def filter_form_ui():
+        """Shell of the add-row form: the column select and the slots of its type line, operator and value.
 
-        # --- Value widget: dtype + op aware (UX-FILTER-1) -------------------
-        # Discrete column: multi-select selectize regardless of op.
-        # Numeric + 'between': two-handle range slider over the data's min/max.
-        # Numeric + scalar op: numeric input (emits float/int natively).
-        if is_discrete and sample is not None and sel_col and sel_col in sample.columns:
-            unique_vals = sorted([str(v) for v in sample[sel_col].drop_nulls().unique().to_list()])
-            value_widget = ui.input_selectize(
-                "fb_value", label=None,
-                choices=unique_vals, selected=[],
-                multiple=True,
-                options={"placeholder": "Select value(s)…", "plugins": ["remove_button"], "dropdownParent": "body"},
-            )
-        elif not is_discrete and sample is not None and sel_col and sel_col in sample.columns:
-            # Compute min/max from the sample for slider bounds and numeric placeholder.
-            is_int_col = "Int" in sel_dtype or "UInt" in sel_dtype
-            try:
-                col_series = sample[sel_col].drop_nulls()
-                if is_int_col:
-                    col_min = int(col_series.min()) if col_series.len() else 0
-                    col_max = int(col_series.max()) if col_series.len() else 1
-                else:
-                    col_min = float(col_series.min()) if col_series.len() else 0.0
-                    col_max = float(col_series.max()) if col_series.len() else 1.0
-            except Exception:
-                col_min, col_max = (0, 1) if is_int_col else (0.0, 1.0)
-            # Guard degenerate range (all values equal): widen by 1 so the slider works.
-            if col_min == col_max:
-                col_max = col_min + 1
-            step = 1 if is_int_col else (col_max - col_min) / 100 or 0.01
-
-            if sel_op == "between":
-                # Two numeric inputs (min, max) + an inclusivity toggle.
-                # Default: closed-both (min ≤ X ≤ max). User can flip to
-                # closed-none (min < X < max) for strict bounds.
-                sel_closed = safe_input(input, "fb_closed", "both")
-                inclusivity_label = (
-                    "min ≤ value ≤ max (inclusive)" if sel_closed == "both"
-                    else "min < value < max (exclusive)"
-                )
-                value_widget = ui.div(
-                    ui.div(
-                        ui.div(
-                            ui.tags.small("min", class_="text-muted"),
-                            ui.input_numeric(
-                                "fb_value_lo", label=None,
-                                value=col_min, step=step,
-                            ),
-                            class_="spv-flex-1",
-                        ),
-                        ui.div(
-                            ui.tags.small("max", class_="text-muted"),
-                            ui.input_numeric(
-                                "fb_value_hi", label=None,
-                                value=col_max, step=step,
-                            ),
-                            class_="spv-flex-1",
-                        ),
-                        class_="d-flex gap-1",
-                    ),
-                    ui.input_radio_buttons(
-                        "fb_closed", label=None,
-                        choices={"both": "≤ inclusive",
-                                 "none": "< exclusive"},
-                        selected=sel_closed,
-                        inline=True,
-                    ),
-                    ui.tags.small(inclusivity_label,
-                                  class_="text-muted fst-italic d-block spv-text-meta"),
-                )
-            else:
-                value_widget = ui.input_numeric(
-                    "fb_value", label=None,
-                    value=col_min, min=col_min, max=col_max, step=step,
-                )
-        else:
-            value_widget = ui.input_text("fb_value", label=None, placeholder="Value…")
-
+        Reads the table the filter acts on only (R4, ui_implementation_contract.md section 14: it does not read the
+        widgets it mounts, apart from an isolated read to keep the column the user chose when the plot changes).
+        """
+        _lf, types, _disc = _dialog_table()
+        col_choices = {c: f"{c}  [{types[c]}]" for c in types}
+        with reactive.isolate():
+            kept = safe_input(input, "fb_col", None)
+        selected = kept if kept in types else next(iter(types), None)
         return ui.div(
             ui.tags.small("Add filter row:", class_="fw-semibold text-muted d-block mb-1"),
-            # selected=sel_col preserves the user's column choice across re-renders
-            ui.input_select("fb_col", label=None, choices=col_choices, selected=sel_col),
+            ui.input_select("fb_col", label=None, choices=col_choices, selected=selected),
+            ui.output_ui("filter_type_ui"),
             ui.div(
-                ui.input_select("fb_op", label=None, choices=op_choices,
-                                selected=sel_op, width="100px"),
-                ui.div(value_widget, class_="spv-flex-1"),
+                ui.output_ui("filter_op_ui"),
+                ui.div(ui.output_ui("filter_value_ui"), class_="spv-flex-1"),
                 class_="d-flex gap-1 align-items-center"
             ),
             class_="mt-2 pt-2 border-top spv-text-sm",
         )
+
+    @output
+    @render.ui
+    def filter_type_ui():
+        """What the chosen column holds, in words ("Year holds whole numbers (Int64)."); reads fb_col only."""
+        _lf, types, _disc = _dialog_table()
+        col = _selected_column(types)
+        text = column_type_line(col, types[col]) if col in types else ""
+        return ui.tags.small(text, class_="text-muted d-block spv-text-meta", id="fb_col_type")
+
+    @output
+    @render.ui
+    def filter_op_ui():
+        """The operators of the chosen column; reads fb_col (and the table). The operator kept is read isolated."""
+        _lf, types, disc = _dialog_table()
+        col = _selected_column(types)
+        choices = _op_choices(types.get(col), col in disc)
+        with reactive.isolate():
+            kept = safe_input(input, "fb_op", None)
+        return ui.input_select("fb_op", label=None, choices=choices, selected=kept if kept in choices else next(iter(choices)),
+                               width="100px")
+
+    @output
+    @render.ui
+    def filter_value_ui():
+        """The value widget for the chosen column and operator; reads fb_col and fb_op, never the widget it mounts.
+
+        List of values: from the whole column. Number box: the range of the whole column. Two number boxes and the four
+        ends for `between`. A comparison on a number column that is a discrete axis uses the number box (Eve, 2026-11-14).
+        """
+        lf, types, disc = _dialog_table()
+        col = _selected_column(types)
+        dtype = types.get(col)
+        choices = _op_choices(dtype, col in disc)
+        op = safe_input(input, "fb_op", next(iter(choices)))
+        if op not in choices:
+            op = next(iter(choices))
+        widget = value_widget_for(dtype, col in disc, op) if dtype is not None else "text"
+        if widget == "list":
+            try:
+                return ui.input_selectize(
+                    "fb_value", label=None, choices=list(value_choices(lf, col)), selected=[], multiple=True,
+                    options={"placeholder": "Select value(s)…", "plugins": ["remove_button"], "dropdownParent": "body"},
+                )
+            except Exception:
+                _log.exception("filter dialog: the values of column %r could not be listed", col)
+                return ui.tags.small("The values of this column could not be listed.", class_="text-danger d-block")
+        if widget in ("number", "range"):
+            rng = number_range(lf, col)
+            is_int_col = "Int" in str(dtype)
+            col_min, col_max = rng if rng is not None else ((0, 1) if is_int_col else (0.0, 1.0))
+            if col_min == col_max:  # all values equal: widen by 1 so the box works
+                col_max = col_min + 1
+            step = 1 if is_int_col else (col_max - col_min) / 100 or 0.01
+            if widget == "number":
+                return ui.input_numeric("fb_value", label=None, value=col_min, min=col_min, max=col_max, step=step)
+            return ui.div(
+                ui.div(
+                    ui.div(ui.tags.small("min", class_="text-muted"),
+                           ui.input_numeric("fb_value_lo", label=None, value=col_min, step=step), class_="spv-flex-1"),
+                    ui.div(ui.tags.small("max", class_="text-muted"),
+                           ui.input_numeric("fb_value_hi", label=None, value=col_max, step=step), class_="spv-flex-1"),
+                    class_="d-flex gap-1",
+                ),
+                ui.input_radio_buttons("fb_closed", label=None, choices=CLOSED_CHOICES, selected="both"),
+                ui.output_ui("filter_closed_text_ui"),
+            )
+        return ui.input_text("fb_value", label=None, placeholder="Value…")
+
+    @output
+    @render.ui
+    def filter_closed_text_ui():
+        """The ends of the range in words; reads fb_closed only (the radio is mounted by filter_form_ui without reading it)."""
+        closed = safe_input(input, "fb_closed", "both")
+        return ui.tags.small(f"The range keeps the values with {closed_phrase(closed if closed in CLOSED_CHOICES else 'both')}.",
+                             class_="text-muted fst-italic d-block spv-text-meta")
 
     def _active_frame():
         """The table the filter in the form acts on: the active plot's table (None when it cannot be built)."""
@@ -408,65 +406,57 @@ def define_filter_audit_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.filter_add_row)
     def _filter_add_row():
-        """Append a new filter row to _pending_filters from the add-row form."""
+        """Append a new filter row to _pending_filters from the add-row form.
+
+        ADR-104 point 7: the row holds the real value in the type of the column (schema of the table, not a sample of
+        rows): the values picked from a list are looked up in a map built from the whole column, a number from a number
+        box is typed from the dtype. The row also carries the dtype, so a later reader can check the value against it.
+        """
         col = safe_input(input, "fb_col", None)
         op = safe_input(input, "fb_op", "eq")
-        # 'between' uses two separate numeric inputs (fb_value_lo / fb_value_hi)
-        # plus an inclusivity radio (fb_closed). Read all three and synthesise
-        # a tuple; auto-swap if the user enters lo > hi.
-        bt_closed = "both"  # default
-        if op == "between":
-            lo = safe_input(input, "fb_value_lo", None)
-            hi = safe_input(input, "fb_value_hi", None)
-            if lo is None or hi is None:
-                return
-            if lo > hi:
-                lo, hi = hi, lo
-            bt_closed = safe_input(input, "fb_closed", "both")
-            if bt_closed not in ("both", "none"):
-                bt_closed = "both"
-            raw_val = (lo, hi)
-        else:
-            raw_val = safe_input(input, "fb_value", "")
         if not col:
             return
-        # Determine dtype from current sample
-        subtab = active_home_subtab.get()
-        p_id = subtab.removeprefix("subtab_") if subtab else None
-        spec = _resolve_active_spec(p_id)
+        lf, types, disc = _dialog_table()
+        discrete_axis = col in disc
+        dtype = types.get(col)
+        dtype_str = str(dtype) if dtype is not None else "Utf8"
+        widget = value_widget_for(dtype, discrete_axis, op) if dtype is not None else "text"
+        bt_closed = "both"
         try:
-            lf = _resolve_active_lf(spec)
-            sample = lf.head(10).collect()
-            dtype_str = str(sample[col].dtype) if col in sample.columns else "Utf8"
-        except Exception:
-            dtype_str = "Utf8"
-
-        # raw_val type depends on the widget that produced it (UX-FILTER-1):
-        #   - between op       → tuple (lo, hi) of nums → between filter
-        #   - selectize multi  → list/tuple of strings  → set-membership filter
-        #   - input_numeric    → int/float              → scalar comparison
-        #   - input_text       → string                 → scalar comparison
-        if op == "between" and isinstance(raw_val, (list, tuple)) and len(raw_val) == 2:
-            # Two-numeric-input pair: native (lo, hi) tuple
-            lo, hi = raw_val
-            value = [lo, hi]
-        elif isinstance(raw_val, (list, tuple)):
-            # Selectize multi-pick: set membership
-            value = list(raw_val)
-            if not value:
-                return  # nothing selected — don't add an empty filter
-            if op == "eq":
-                op = "in"
-            elif op == "ne":
-                op = "not_in"
-        elif isinstance(raw_val, (int, float)):
-            # Numeric input: native scalar
-            value = raw_val
-        elif isinstance(raw_val, str) and raw_val.strip():
-            # Text input fallback: keep as string (downstream coercion if needed)
-            value = raw_val.strip()
-        else:
-            return  # empty/None — don't add
+            if widget == "range":
+                lo = safe_input(input, "fb_value_lo", None)
+                hi = safe_input(input, "fb_value_hi", None)
+                if lo is None or hi is None:
+                    return
+                lo, hi = typed_number(lo, dtype), typed_number(hi, dtype)
+                if lo > hi:
+                    lo, hi = hi, lo
+                value = [lo, hi]
+                bt_closed = safe_input(input, "fb_closed", "both")
+                if bt_closed not in CLOSED_CHOICES:
+                    bt_closed = "both"
+            elif widget == "list":
+                labels = list(safe_input(input, "fb_value", ()) or ())
+                if not labels:
+                    return  # nothing selected: do not add an empty filter
+                value = pick_values(value_choices(lf, col), labels)
+                if op == "eq":
+                    op = "in"
+                elif op == "ne":
+                    op = "not_in"
+            elif widget == "number":
+                raw = safe_input(input, "fb_value", None)
+                if raw is None:
+                    return
+                value = typed_number(raw, dtype)
+            else:
+                raw = safe_input(input, "fb_value", "")
+                if not (isinstance(raw, str) and raw.strip()):
+                    return
+                value = raw.strip()  # no table to read the type from: the text as written
+        except FilterValueError as exc:
+            _notify(str(exc), type="error", duration=8)
+            return
 
         # NA-RULE-63: the tick of the dialog, never absent from a row (None: not mounted, the default of the operator)
         na_tick = safe_input(input, "fb_na", None)
