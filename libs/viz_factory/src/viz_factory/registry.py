@@ -41,11 +41,12 @@ def register_plot_component(name: str, ui_schema: Optional[Dict[str, Any]] = Non
     mixes the two, or a list that cannot be read, is an error that names the component.
     """
     def decorator(func: Callable):
+        if ui_schema is not None:
+            _read_exact_parameters(name, ui_schema)  # a refused schema leaves both registries as they were
         if name in PLOT_COMPONENTS:
             logger.warning(f"Overwriting plotting component: {name}")
         PLOT_COMPONENTS[name] = func
         if ui_schema is not None:
-            _read_exact_parameters(name, ui_schema)
             COMPONENT_SCHEMAS[name] = ui_schema
         return func
     return decorator
