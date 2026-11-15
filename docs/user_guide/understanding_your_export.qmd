@@ -23,10 +23,14 @@ release_version:             ...
 seeds_per_plot:
   multi_resistance_by_country: 20261109143012
 seed_source_per_plot:
-  multi_resistance_by_country: drawn   # audit | recipe | drawn | default
+  multi_resistance_by_country: drawn   # audit | recipe | drawn | default | mixed
+seeds_per_layer:
+  multi_resistance_by_country:
+    - {layer_index: 1, layer: geom_point, seed: 20261109143012, source: drawn}
+seeds_added_to_recipe: []              # the seeds written into the reproducibility recipe, with what your recipe wrote
 ```
 
-`seeds_per_plot` holds, for every exported plot that uses random scatter (jitter), the seed that was really used to draw it. `seed_source_per_plot` says where it comes from; see [Reproducible plots](reproducible_plots.qmd). A plot marked `drawn` or `default` is not fixed in your recipe: write the number there for a final figure.
+`seeds_per_plot` holds, for every exported plot that uses random scatter (jitter), the seed that was really used to draw it. `seed_source_per_plot` says where it comes from; see [Reproducible plots](reproducible_plots.qmd). `seeds_per_layer` has one entry per jitter layer. `seeds_added_to_recipe` lists the seeds the export wrote into the reproducibility recipe (the file does not show which numbers were added). A plot marked `drawn` or `default` is not fixed in your recipe: write the number there for a final figure.
 
 These are **fingerprints** — mathematical summaries of a file, a set of files, or a decision. This page explains what each one means and why your export includes them.
 

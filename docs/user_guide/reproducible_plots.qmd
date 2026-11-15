@@ -49,7 +49,7 @@ Ask for a new arrangement every time (for exploring only):
 
 ## What your export contains
 
-Every export writes `effective_run.yaml` with a `seeds_per_plot` entry for every exported plot that uses jitter: the number that was really used to draw the exported picture. Next to it, `seed_source_per_plot` says where each number comes from (`audit`, `recipe`, `drawn` or `default`).
+Every export writes `effective_run.yaml` with a `seeds_per_plot` entry for every exported plot that uses jitter: the number that was really used to draw the exported picture. Next to it, `seed_source_per_plot` says where each number comes from (`audit`, `recipe`, `drawn`, `default`, or `mixed` when the layers of one plot differ). A plot can have several jitter layers: each layer has its own seed, a number written on one layer is never given to another, and `seeds_per_layer` lists every layer with its seed and source.
 
 | What decides the seed | What is recorded in `seeds_per_plot` | Will opening your own recipe again repeat it? |
 |---|---|---|
@@ -61,7 +61,7 @@ Every export writes `effective_run.yaml` with a `seeds_per_plot` entry for every
 
 The export warns you, in plain words, about every plot whose number is neither written in the recipe nor fixed by an audit step, and tells you what to write in the recipe (`random_state: 123` on the jitter layer). It is a reminder, not an error.
 
-The opt-in reproducibility/reimport bundle (see [Understanding Your Export](understanding_your_export.qmd)) carries the number each plot was exported with, written on its jitter layers in the recipe copy. A number you wrote yourself stays; a plot that said `random` or nothing now has the number that was recorded, so whoever re-runs the bundle draws the same arrangement.
+The opt-in reproducibility/reimport bundle (see [Understanding Your Export](understanding_your_export.qmd)) carries the number each plot was exported with, written on its jitter layers in the recipe copy. A number you wrote yourself stays; a plot that said `random` or nothing now has the number that was recorded, so whoever re-runs the bundle draws the same arrangement. The numbers the export added are listed in `seeds_added_to_recipe` (with what your recipe wrote there), in the bundle's `README.txt` and in `report.qmd`, because the recipe file itself does not show which numbers were added.
 
 ## The order of rows
 
