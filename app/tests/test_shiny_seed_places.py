@@ -1,15 +1,18 @@
 """SEED-HOLDS-1 (ADR-104): the seed lines of the real handlers, in a real app (browser).
 
 The pure functions are tested in test_plot_seeds.py; what only a running app can show is that the handlers
-CALL them and put nothing between (a flag, a replaced number, a dropped argument):
+CALL them and put nothing between (a flag, a replaced number, a dropped argument). HOME draws no seed
+(Eve, 2026-11-15): a layer that writes a number keeps it, a layer that writes none uses 0, in every place.
 
-  1. a seed written in the recipe holds in HOME (two sessions show the same picture; a session that drew over
-     it would show a different one), in the comparison reference pane, in the export and its record
-  2. a plot whose recipe writes no seed: the reference pane shows the same arrangement as My view
+  1. a seed written in the recipe (123) holds in HOME (two sessions show the same picture), in the comparison
+     reference pane, in the export and its record
+  2. a recipe that writes no seed: 0 in every place, so two sessions show the SAME arrangement, the reference
+     pane shows the same as My view, and the export records seed 0 as `default` and writes it into the
+     reproducibility recipe
   3. with the audit trail off (`pipeline-exploration-simple`: t3_sandbox_enabled false) the Reshuffle pin reaches
-     HOME and the export (the export once read it behind that flag)
+     HOME and the export, and the export lists it as a step (t3_steps.yaml, report)
 
-Each scenario starts its own app (the first edits a recipe file, restored afterwards).
+Each scenario starts its own app. The plot file of the dummy recipe is edited for the scenario and restored afterwards.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_shiny_seed_places.py -q
 """
@@ -34,11 +37,21 @@ from app.tests.test_shiny_smoke import _navigate_to_phenotype_plot, _wait_shiny
 REPO = Path(__file__).resolve().parents[2]
 PID = "phenotype_genome_length_fragmentation"
 PLOT_FILE = REPO / "config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy/plots/phenotype_genome_length_dotplot.yaml"
-# `random_state` is accepted by geom_jitter, not by geom_point (checker rule PS04): the test swaps the layer
-JITTER_LAYER = '  - name: "geom_point"\n    params: {alpha: 0.6, size: 2.5, position: "jitter"}'
-SEEDED_LAYER = '  - name: "geom_jitter"\n    params: {alpha: 0.6, size: 2.5, random_state: 123}'
+WRITTEN = 'position: "jitter", random_state: 0}'     # the shipped plot writes its seed (item 3 of SEED-HOLDS-1)
 LOCAL = "config/deployment/local/local.yaml"
 PIPELINE = "config/deployment/pipeline_test/pipeline_test.yaml"
+
+
+@contextmanager
+def plot_file_with(layer_params: str):
+    """The plot file of the dummy recipe with another written seed (or none) on its jitter layer; restored afterwards."""
+    original = PLOT_FILE.read_text()
+    assert WRITTEN in original, "the plot file changed: update this test"
+    PLOT_FILE.write_text(original.replace(WRITTEN, layer_params))
+    try:
+        yield
+    finally:
+        PLOT_FILE.write_text(original)
 
 
 def _free_port() -> int:
@@ -115,52 +128,49 @@ def export_run_and_png(page: Page, with_recipe: bool = False):
     return run, png, z
 
 
+def recipe_seeds(z: zipfile.ZipFile) -> set:
+    """The `random_state` written on the jitter layers of the plot in the bundle's reproducibility recipe."""
+    name = next(n for n in z.namelist() if "/data_analysis_recipes_reproducibility/" in n and n.endswith("1_test_data_ST22_dummy.yaml"))
+    recipe = yaml.safe_load(z.read(name).decode())
+    spec = next(g["plots"][PID]["spec"] for g in recipe["analysis_groups"].values() if PID in g["plots"])
+    return {l["params"].get("random_state") for l in spec["layers"] if (l.get("params") or {}).get("position") == "jitter"}
+
+
 def same_picture(a: bytes, b: bytes) -> bool:
     return ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"),
                                  Image.open(io.BytesIO(b)).convert("RGB")).getbbox() is None
 
 
 def test_a_seed_written_in_the_recipe_holds_in_home_the_reference_pane_and_the_export(browser, tmp_path):
-    original = PLOT_FILE.read_text()
-    assert JITTER_LAYER in original, "the plot file changed: update this test"
-    PLOT_FILE.write_text(original.replace(JITTER_LAYER, SEEDED_LAYER))
-    try:
-        with running_app("qa", LOCAL, tmp_path) as url:
-            shots, runs = [], []
-            for _ in range(2):                     # two sessions: each would draw its own seed if HOME drew over the recipe
-                context = browser.new_context()
-                page = context.new_page()
-                try:
-                    open_phenotype_plot(page, url, choose_recipe=True)
-                    shots.append(page.locator(f"#plot_group_{PID}").screenshot())
-                    if len(shots) == 1:
-                        page.locator("#plot_view input[value=CMP]").check(force=True)
-                        _wait_shiny(page)
-                        settle(page, f"plot_group_{PID}", f"plot_group_{PID}_cmp_base")
-                        reference = page.locator(f"#plot_group_{PID}_cmp_base").screenshot()
-                        mine = page.locator(f"#plot_group_{PID}").screenshot()
-                        assert same_picture(reference, mine), "the reference pane does not show the recipe's seed"
-                    run, png, z = export_run_and_png(page, with_recipe=len(runs) == 0)
-                    runs.append((run, png, z))
-                finally:
-                    context.close()
-        assert same_picture(shots[0], shots[1]), "two sessions show different pictures: HOME drew over the recipe's seed"
-        for run, _png, _z in runs:
-            assert run["seeds_per_plot"][PID] == 123 and run["seed_source_per_plot"][PID] == "recipe"
-            assert [r["seed"] for r in run["seeds_per_layer"][PID]] == [123]
-        assert same_picture(runs[0][1], runs[1][1]), "the export of two sessions differs although the recipe fixes the seed"
+    with plot_file_with('position: "jitter", random_state: 123}'), running_app("qa", LOCAL, tmp_path) as url:
+        shots, runs = [], []
+        for _ in range(2):                     # two sessions: each would draw its own seed if HOME drew over the recipe
+            context = browser.new_context()
+            page = context.new_page()
+            try:
+                open_phenotype_plot(page, url, choose_recipe=True)
+                shots.append(page.locator(f"#plot_group_{PID}").screenshot())
+                if len(shots) == 1:
+                    page.locator("#plot_view input[value=CMP]").check(force=True)
+                    _wait_shiny(page)
+                    settle(page, f"plot_group_{PID}", f"plot_group_{PID}_cmp_base")
+                    reference = page.locator(f"#plot_group_{PID}_cmp_base").screenshot()
+                    mine = page.locator(f"#plot_group_{PID}").screenshot()
+                    assert same_picture(reference, mine), "the reference pane does not show the recipe's seed"
+                runs.append(export_run_and_png(page, with_recipe=len(runs) == 0))
+            finally:
+                context.close()
+    assert same_picture(shots[0], shots[1]), "two sessions show different pictures: HOME drew over the recipe's seed"
+    for run, _png, _z in runs:
+        assert run["seeds_per_plot"][PID] == 123 and run["seed_source_per_plot"][PID] == "recipe"
+        assert [r["seed"] for r in run["seeds_per_layer"][PID]] == [123]
         assert run["seeds_added_to_recipe"] == []
-        z = runs[0][2]
-        recipe_name = next(n for n in z.namelist() if "/data_analysis_recipes_reproducibility/" in n and n.endswith(f"1_test_data_ST22_dummy.yaml"))
-        recipe = yaml.safe_load(z.read(recipe_name).decode())
-        spec = next(g["plots"][PID]["spec"] for g in recipe["analysis_groups"].values() if PID in g["plots"])
-        assert {l["params"].get("random_state") for l in spec["layers"] if l.get("name") == "geom_jitter"} == {123}
-    finally:
-        PLOT_FILE.write_text(original)
+    assert same_picture(runs[0][1], runs[1][1]), "the export of two sessions differs although the recipe fixes the seed"
+    assert recipe_seeds(runs[0][2]) == {123}
 
 
-def test_without_a_seed_in_the_recipe_the_reference_pane_shows_the_same_arrangement_as_my_view(browser, tmp_path):
-    with running_app("qa", LOCAL, tmp_path) as url:
+def test_without_a_seed_in_the_recipe_every_place_uses_zero_and_two_sessions_show_the_same_arrangement(browser, tmp_path):
+    with plot_file_with('position: "jitter"}'), running_app("qa", LOCAL, tmp_path) as url:
         page = browser.new_page()
         try:
             open_phenotype_plot(page, url, choose_recipe=True)
@@ -170,8 +180,7 @@ def test_without_a_seed_in_the_recipe_the_reference_pane_shows_the_same_arrangem
             reference = page.locator(f"#plot_group_{PID}_cmp_base").screenshot()
             mine = page.locator(f"#plot_group_{PID}").screenshot()
             assert same_picture(reference, mine), "the reference pane was drawn with another seed than My view"
-            # a second session draws its own seed, so its HOME plot differs (a HOME plot that dropped the
-            # drawn seed would show the library default in both sessions)
+            # a second session shows the SAME arrangement: nothing is drawn per session any more
             other_context = browser.new_context()
             other = other_context.new_page()
             try:
@@ -182,19 +191,24 @@ def test_without_a_seed_in_the_recipe_the_reference_pane_shows_the_same_arrangem
             page.locator("#plot_view input[value=T3]").check(force=True)
             _wait_shiny(page)
             settle(page, f"plot_group_{PID}")
-            assert not same_picture(other_view, page.locator(f"#plot_group_{PID}").screenshot()), \
-                "two sessions show the same arrangement: HOME did not use the seed it drew"
+            assert same_picture(other_view, page.locator(f"#plot_group_{PID}").screenshot()), \
+                "two sessions show different arrangements: HOME drew a seed"
+            run, _png, z = export_run_and_png(page, with_recipe=True)
         finally:
             page.close()
+    assert run["seeds_per_plot"][PID] == 0 and run["seed_source_per_plot"][PID] == "default"
+    assert [(r["seed"], r["source"]) for r in run["seeds_per_layer"][PID]] == [(0, "default")]
+    assert [(a["plot"], a["seed"], a["recipe_wrote"]) for a in run["seeds_added_to_recipe"]] == [(PID, 0, None)]
+    assert recipe_seeds(z) == {0}, "every seed used is written in the reproducibility recipe"
 
 
 def test_the_reshuffle_pin_reaches_home_and_the_export_when_the_audit_trail_is_off(browser, tmp_path):
-    with running_app("pipeline-exploration-simple", PIPELINE, tmp_path) as url:
+    with plot_file_with('position: "jitter"}'), running_app("pipeline-exploration-simple", PIPELINE, tmp_path) as url:
         page = browser.new_page()
         try:
             open_phenotype_plot(page, url, choose_recipe=False)
             run_a, png_a, _ = export_run_and_png(page)
-            assert run_a["seed_source_per_plot"][PID] == "drawn"
+            assert run_a["seed_source_per_plot"][PID] == "default" and run_a["seeds_per_plot"][PID] == 0
             shown = page.locator(f"#plot_group_{PID}")
             before = shown.screenshot()
             btn = page.locator(f"#plot_reshuffle_btn_{PID}")
@@ -203,9 +217,15 @@ def test_the_reshuffle_pin_reaches_home_and_the_export_when_the_audit_trail_is_o
             _wait_shiny(page)
             settle(page, f"plot_group_{PID}")
             assert not same_picture(shown.screenshot(), before), "HOME ignored the pinned seed (audit trail off)"
-            run_b, png_b, _ = export_run_and_png(page)
-            assert run_b["seed_source_per_plot"][PID] == "audit", "the export ignored the pinned seed (audit trail off)"
-            assert run_b["seeds_per_plot"][PID] != run_a["seeds_per_plot"][PID]
-            assert not same_picture(png_b, png_a)
+            run_b, png_b, z = export_run_and_png(page)
         finally:
             page.close()
+    assert run_b["seed_source_per_plot"][PID] == "audit", "the export ignored the pinned seed (audit trail off)"
+    assert run_b["seeds_per_plot"][PID] != 0
+    assert not same_picture(png_b, png_a)
+    # the pin is a step of the audit trail: listed in t3_steps.yaml and in the report
+    steps = yaml.safe_load(z.read(next(n for n in z.namelist() if n.endswith("t3_steps.yaml"))).decode())
+    (step,) = steps["t3_steps"][PID]
+    assert step["action"] == "random_seed" and step["seed"] == run_b["seeds_per_plot"][PID] and step["reason"]
+    report = z.read(next(n for n in z.namelist() if n.endswith("report.qmd"))).decode()
+    assert "random_seed" in report and str(step["seed"]) in report

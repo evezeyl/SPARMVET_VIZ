@@ -241,87 +241,37 @@ def test_import_a_bundle_reports_the_four_legs(loaded, tmp_path):
                     shutil.rmtree(p.parent, ignore_errors=True)
 
 
-def test_the_export_uses_and_records_the_seed_home_showed(loaded, shiny_app: ShinyAppProc):
-    """SEED-HOLDS-1 (ADR-104): the plot of the dummy recipe has a jitter layer and writes no seed.
-
-    HOME draws one seed per session and plot; the export must draw its plot with THAT seed and record it
-    (before, the export drew with the library default 0 and recorded HOME's number, which did not
-    reproduce its plot). A Reshuffle pins a new seed: the export must follow it, in the plot, in the
-    record and in the reproducibility recipe. The real handlers are on this path, so a seed dropped in
-    HOME or in the export changes a picture or a number here.
-    """
+def test_the_export_records_the_seed_the_recipe_writes_and_writes_it_into_the_reproducibility_recipe(loaded):
+    """SEED-HOLDS-1 (ADR-104, Eve 2026-11-15): the plot of the dummy recipe writes `random_state: 0` on its jitter
+    layer. HOME draws no seed: the export draws the plot with that number, records it as `recipe`, and the
+    reproducibility recipe carries it. The edge cases (no seed written, a pin, two sessions, the reference pane) are
+    in test_shiny_seed_places.py, which runs its own apps."""
     import yaml as _yaml
 
     pid = "phenotype_genome_length_fragmentation"
     _navigate_to_phenotype_plot(loaded)
     _open_export_panel(loaded)
-
-    def same_picture(a: bytes, b: bytes) -> bool:
-        """The PNG bytes carry the export time in their metadata; the pixels are the picture."""
-        return ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"),
-                                     Image.open(io.BytesIO(b)).convert("RGB")).getbbox() is None
-
-    def run_and_png(z):
-        run = _yaml.safe_load(z.read(next(n for n in z.namelist() if n.endswith("effective_run.yaml"))).decode())
-        png = next(z.read(n) for n in z.namelist() if n.endswith(f"/plots/{pid}.png"))
-        return run, png
-
+    loaded.locator("#export_include_reproducibility").check(force=True)
+    _wait_shiny(loaded)
     try:
-        run_a, png_a = run_and_png(_download(loaded))
-        seed_a = run_a["seeds_per_plot"][pid]
-        assert run_a["seed_source_per_plot"][pid] == "drawn"
-        assert seed_a != 0, "the export used the library default, not the seed HOME showed"
-
-        run_a2, png_a2 = run_and_png(_download(loaded))
-        assert run_a2["seeds_per_plot"][pid] == seed_a, "the drawn seed must be stable for the session"
-        assert same_picture(png_a2, png_a)
-
-        # A second session draws its own seed: its export must show a different arrangement, and the one
-        # recorded. (If the export ignored the seed it records, both sessions would export the same picture.)
-        other_context = loaded.context.browser.new_context()
-        other = other_context.new_page()
-        try:
-            _load_data_analysis_recipe(other, shiny_app.url)
-            _open_export_panel(other)
-            run_c, png_c = run_and_png(_download(other))
-        finally:
-            other_context.close()
-        assert run_c["seeds_per_plot"][pid] != seed_a, "two sessions drew the same seed"
-        assert not same_picture(png_c, png_a), "two sessions with different seeds exported the same picture"
-
-        shown = loaded.locator(f"#plot_group_{pid}")
-        expect(shown).to_be_visible(timeout=10_000)
-        home_before = shown.screenshot()
-        btn = loaded.locator(f"#plot_reshuffle_btn_{pid}")
-        expect(btn).to_be_visible(timeout=10_000)
-        btn.click()
-        _wait_shiny(loaded)
-        loaded.wait_for_timeout(1_500)
-        assert not same_picture(shown.screenshot(), home_before), "the HOME plot did not follow the Reshuffle seed"
-        _open_export_panel(loaded)
-        run_b, png_b = run_and_png(_download(loaded))
-        seed_b = run_b["seeds_per_plot"][pid]
-        assert run_b["seed_source_per_plot"][pid] == "audit"
-        assert seed_b != seed_a
-        assert not same_picture(png_b, png_a), "the export plot did not follow the pinned seed"
-
-        loaded.locator("#export_include_reproducibility").check(force=True)
-        _wait_shiny(loaded)
         z = _download(loaded)
+    finally:
         loaded.locator("#export_include_reproducibility").uncheck(force=True)
         _wait_shiny(loaded)
-        recipe_name = next(n for n in z.namelist() if "/data_analysis_recipes_reproducibility/" in n
-                           and n.endswith(".yaml") and not n.endswith("effective_run.yaml"))
-        recipe = _yaml.safe_load(z.read(recipe_name).decode())
-        spec = next(g["plots"][pid]["spec"] for g in recipe["analysis_groups"].values() if pid in g["plots"])
-        seeds_in_recipe = {l["params"].get("random_state") for l in spec["layers"]
-                           if (l.get("params") or {}).get("position") == "jitter"}
-        assert seeds_in_recipe == {seed_b}, "the reproducibility recipe must carry the seed the plot was exported with"
-    finally:
         qc_tab = loaded.locator(".nav-link:has-text('Quality Control')")
         if qc_tab.count() > 0:
             qc_tab.first.click()
             _wait_shiny(loaded)
+    run = _yaml.safe_load(z.read(next(n for n in z.namelist() if n.endswith("effective_run.yaml"))).decode())
+    assert run["seeds_per_plot"][pid] == 0 and run["seed_source_per_plot"][pid] == "recipe"
+    assert [(r["seed"], r["source"]) for r in run["seeds_per_layer"][pid]] == [(0, "recipe")]
+    assert run["seeds_added_to_recipe"] == []
+    recipe_name = next(n for n in z.namelist() if "/data_analysis_recipes_reproducibility/" in n
+                       and n.endswith(".yaml") and not n.endswith("effective_run.yaml"))
+    recipe = _yaml.safe_load(z.read(recipe_name).decode())
+    spec = next(g["plots"][pid]["spec"] for g in recipe["analysis_groups"].values() if pid in g["plots"])
+    assert {l["params"].get("random_state") for l in spec["layers"]
+            if (l.get("params") or {}).get("position") == "jitter"} == {0}
 
 
 def test_a_data_change_after_the_view_is_opened_blocks_the_export(loaded):
