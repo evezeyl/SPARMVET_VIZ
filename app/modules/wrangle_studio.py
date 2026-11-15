@@ -702,7 +702,9 @@ class WrangleStudio:
                         f"Available: {', '.join(available[:5])}"
                     )
 
-                plt = viz_factory.render(df.lazy(), render_data_analysis_recipe, viz_id)
+                # VIZ-STANDARD-1 V7: plotnine draws after this returns; a draw error is shown in the plot's place.
+                from viz_factory.viz_factory import show_draw_errors
+                plt = show_draw_errors(viz_factory.render(df.lazy(), render_data_analysis_recipe, viz_id))
                 return plt, ""
             except Exception as e:
                 msg = str(e)

@@ -98,7 +98,10 @@ class DataOrchestrator:
         return data_analysis_recipe_keys(loaded, data_hash)
 
     def prepare_ingredient(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None) -> pl.LazyFrame:
-        """Read one dataset of a data analysis recipe and apply its input contract and tier-1 wrangling.
+        """Read one dataset of a data analysis recipe and apply its input contract and tier-1 wrangling (its T1).
+
+        The schema's own tier-2 list is not run here: it is the T2 of the schema when a plot reads it directly, run by
+        `materialize_tier2` like a join's (issue #77); a join reads the T1 of its ingredients.
 
         Raises when the file cannot be read, a declared input column is missing, or a value does
         not fit its declared type. Shared by materialize_tier1 and the data analysis recipe data check, so
@@ -202,7 +205,8 @@ class DataOrchestrator:
             )
 
         # Path A: bare data_schema / additional_dataset / metadata_schema
-        # (e.g. a plot's target_dataset points directly to a source schema)
+        # (e.g. a plot's target_dataset points directly to a source schema). Its T1 is stored here; its own tier-2
+        # list is its T2, built by materialize_tier2 (issue #77).
         if collection_spec is None and collection_id in ingredients:
             print(f"      └── 💾 Materializing data_schema '{collection_id}' to: {output_path}")
             lf = ingredients[collection_id]
@@ -249,7 +253,10 @@ class DataOrchestrator:
 
     def materialize_tier2(self, data_analysis_recipe_id: str, collection_id: str, tier1_path: Path,
                           keys: DataAnalysisRecipeKeys | None = None) -> pl.LazyFrame:
-        """The Tier 2 data of one join, read from its stored parquet (ADR-089 point 6, issue #10).
+        """The Tier 2 data of one collection, read from its stored parquet (ADR-089 point 6, issue #10).
+
+        A collection is a join or a schema that a plot reads directly; its tier-2 list is `tier2_steps` (one reading,
+        `utils.recipe_tiers`, issue #77).
 
         - no tier2 steps: T2 equals T1, nothing is stored, the Tier 1 frame is returned;
         - stored file whose key matches: read, nothing is recomputed;

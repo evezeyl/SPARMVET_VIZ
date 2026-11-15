@@ -192,10 +192,12 @@ class TestLabels:
         )
         assert isinstance(result, ggplot)
 
-    def test_annotate_missing_geom_returns_unchanged(self, base_plot):
-        # Defensive: if spec.geom is missing, handler should no-op (return p)
-        result = get_component("annotate")(base_plot, {})
-        assert isinstance(result, ggplot)
+    def test_annotate_missing_geom_fails(self, base_plot):
+        # VIZ-STANDARD-1 V6: a component that cannot act fails; it used to return the plot unchanged and say nothing.
+        from viz_factory.errors import CannotAct
+        with pytest.raises(CannotAct) as error:
+            get_component("annotate")(base_plot, {})
+        assert "geom" in str(error.value) and "Fix:" in str(error.value)
 
 
 # ── Timedelta scales (re-enabled — worked fine in plotnine 0.15.3) ────────────

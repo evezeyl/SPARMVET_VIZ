@@ -1,7 +1,7 @@
 # @deps
 # provides: function:resolve_plot_config, function:compute_optimisation_layer,
 #           function:_dedupe_layers, constant:_BUILTIN_DEFAULTS,
-#           function:normalise_plot_spec, function:serialise_plot_spec,
+#           function:normalise_plot_spec, function:serialise_plot_spec, function:unknown_spec_keys, function:spec_key_names,
 #           function:layers_have_jitter (REPRO-SEED-2), function:recipe_pins_random_state (REPRO-RESHUFFLE-1)
 # consumes: libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py,
@@ -73,6 +73,21 @@ _CANONICAL_SPEC_KEYS: frozenset = frozenset({
     "palette", "labels", "guides", "filters", "title", "_meta",
 })
 
+def unknown_spec_keys(raw_spec: dict) -> list:
+    """The keys of a plot spec that are not part of the format, in the order written (VIZ-STANDARD-1, V6).
+
+    `normalise_plot_spec` moves them into `_meta`, where nothing reads them, so a mistyped key (`theem: theme_bw`) used to
+    be dropped without a word. The factory refuses them. `factory_id` and the flat aesthetics are not listed here:
+    `normalise_plot_spec` refuses those with its own message (ADR-083). An explicit `_meta` block is allowed.
+    """
+    return [k for k in raw_spec if k not in _CANONICAL_SPEC_KEYS and k != "factory_id" and k not in _LEGACY_FLAT_AES]
+
+
+def spec_key_names() -> list:
+    """The keys a plot spec may have, sorted, for a message."""
+    return sorted(k for k in _CANONICAL_SPEC_KEYS if k != "_meta")
+
+
 # Former flat aesthetic keys — checked early in normalise_plot_spec to raise a
 # helpful error (ADR-083). Not exported; use mapping: block for canonical specs.
 _LEGACY_FLAT_AES: frozenset = frozenset(
@@ -83,6 +98,18 @@ _LEGACY_FLAT_AES: frozenset = frozenset(
 # ---------------------------------------------------------------------------
 # Layer dedup key
 # ---------------------------------------------------------------------------
+
+def is_partial_theme(name: str) -> bool:
+    """True for a `theme_*` component that only sets some properties of the theme, read from the registry.
+
+    A component that wraps plotnine's `theme` itself (its `wraps` is `plotnine.theme`) sets properties; one that wraps a
+    named theme (`theme_bw`, `theme_minimal`, ...) is a complete theme. An unregistered name counts as complete: the
+    factory refuses it when it looks the component up.
+    """
+    from viz_factory.registry import COMPONENT_SCHEMAS
+    wraps = (COMPONENT_SCHEMAS.get(name) or {}).get("wraps") or []
+    return bool(wraps) and wraps[0].get("lib") == "plotnine" and list(wraps[0].get("attr_path") or []) == ["theme"]
+
 
 def _layer_dedup_key(layer: dict) -> tuple | None:
     """Return a (kind, target) dedup key for a layer, or None for geom/stat.
@@ -102,7 +129,9 @@ def _layer_dedup_key(layer: dict) -> tuple | None:
         return ("element_text", target)
     # Named layer families (single instance per plot)
     if name.startswith("theme_"):
-        return ("theme", None)
+        # A complete theme replaces a complete theme (one slot, the later wins). A partial theme setting is added to the theme
+        # (no slot): `theme_legend_position` after `theme_minimal` used to replace it, and the picture lost the minimal theme.
+        return None if is_partial_theme(name) else ("theme", None)
     if name.startswith("coord_"):
         return ("coord", None)
     if name.startswith("facet_"):
@@ -187,11 +216,19 @@ def _dedupe_layers(layers: list[dict]) -> list[dict]:
             key_to_last_idx[key] = i
 
     # Pass 2: keep layers that have no dedup key OR are the last for their key.
-    return [
+    kept = [
         layer for i, layer in enumerate(layers)
         if _layer_dedup_key(layer) is None
         or key_to_last_idx[_layer_dedup_key(layer)] == i
     ]
+    # plotnine drops what was set before when a complete theme is added, so a partial theme setting that came first would be lost:
+    # the complete theme goes before the first partial one.
+    complete = next((i for i, layer in enumerate(kept) if _layer_dedup_key(layer) == ("theme", None)), None)
+    first_partial = next((i for i, layer in enumerate(kept)
+                          if layer.get("name", "").startswith("theme_") and is_partial_theme(layer["name"])), None)
+    if complete is not None and first_partial is not None and complete > first_partial:
+        kept.insert(first_partial, kept.pop(complete))
+    return kept
 
 
 # ---------------------------------------------------------------------------
@@ -449,8 +486,8 @@ def resolve_plot_config(
     # ── L2: plot_defaults ────────────────────────────────────────────────────
     for key, val in (plot_defaults or {}).items():
         if key == "layers":
-            for layer in (val or []):
-                all_layers.append({**layer, "_tier": "L2"})
+            for number, layer in enumerate(val or [], start=1):
+                all_layers.append({**layer, "_tier": "L2", "_layer_no": number})
         elif key == "palette":
             seed["palette"] = val
             provenance["palette"] = "L2"
@@ -525,8 +562,9 @@ def resolve_plot_config(
         provenance["theme"] = "L4"
 
     # spec layers
-    for layer in spec.get("layers", []):
-        all_layers.append({**layer, "_tier": "L4"})
+    for number, layer in enumerate(spec.get("layers", []), start=1):
+        # `_layer_no` is the position in the author's list, so an error names the layer the author wrote
+        all_layers.append({**layer, "_tier": "L4", "_layer_no": number})
 
     # facet_by flat key → inject facet_wrap if no explicit facet_ layer in spec
     if spec.get("facet_by") and not any(
@@ -596,7 +634,7 @@ def resolve_plot_config(
     # theme: name of the surviving theme_* layer (or L1 fallback)
     resolved_theme = _BUILTIN_DEFAULTS["theme"]
     for layer in reversed(seed["layers"]):
-        if layer.get("name", "").startswith("theme_"):
+        if layer.get("name", "").startswith("theme_") and not is_partial_theme(layer["name"]):
             resolved_theme = layer["name"]
             break
     seed["theme"] = resolved_theme

@@ -10,6 +10,7 @@ from plotnine import (
     guides, guide_legend, guide_colorbar,
     ggplot
 )
+from viz_factory.errors import CannotAct
 from viz_factory.registry import register_plot_component
 
 
@@ -77,8 +78,8 @@ def handle_guides_group(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "label_position": {"widget": "enum", "label": "Key label position", "required": False,
                            "default": "right", "options": ["top", "bottom", "left", "right"]},
     },
-    "description": "Render a discrete guide as a key-legend; the default for categorical fill/colour \u2014 configure nrow, ncol, or key size here. Differs from plotnine: `mapping` names the aesthetic (color, fill, ...) the guide is set for, and without it nothing is added (a warning is printed).",
-    "yaml_example": "layers:\n  - name: guides\n    params:\n      fill: legend",
+    "description": "Render a discrete guide as a key-legend; the default for categorical fill/colour \u2014 configure nrow, ncol, or key size here. Differs from plotnine: `mapping` names the aesthetic (color, fill, ...) the guide is set for, and without it the plot fails with a message.",
+    "yaml_example": "layers:\n  - name: guide_legend\n    params:\n      mapping: fill\n      nrow: 2",
 })
 def handle_guide_legend(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
@@ -87,8 +88,8 @@ def handle_guide_legend(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
     mapping = spec.pop("mapping", None)
     if not mapping:
-        print("Warning: guide_legend requires a 'mapping' parameter.")
-        return p
+        raise CannotAct("guide_legend needs 'mapping', the aesthetic the guide is for",
+                        "write mapping: fill (or color, shape, size ...)")
     return p + guides(**{mapping: guide_legend(**spec)})
 
 
@@ -108,8 +109,8 @@ def handle_guide_legend(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "nbin": {"widget": "number", "label": "Number of color bins", "required": False, "default": 300},
         "reverse": {"widget": "bool", "label": "Reverse colorbar direction", "required": False, "default": False},
     },
-    "description": "Render a continuous guide as a gradient colour bar; use with continuous fill/colour scales to show the value range. Differs from plotnine: `mapping` names the aesthetic (color, fill, ...) the guide is set for, and without it nothing is added (a warning is printed).",
-    "yaml_example": "layers:\n  - name: guides\n    params:\n      fill: colorbar",
+    "description": "Render a continuous guide as a gradient colour bar; use with continuous fill/colour scales to show the value range. Differs from plotnine: `mapping` names the aesthetic (color, fill, ...) the guide is set for, and without it the plot fails with a message.",
+    "yaml_example": "layers:\n  - name: guide_colorbar\n    params:\n      mapping: fill",
 })
 def handle_guide_colorbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
@@ -118,8 +119,8 @@ def handle_guide_colorbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
     mapping = spec.pop("mapping", None)
     if not mapping:
-        print("Warning: guide_colorbar requires a 'mapping' parameter.")
-        return p
+        raise CannotAct("guide_colorbar needs 'mapping', the aesthetic the guide is for",
+                        "write mapping: fill (or color, shape, size ...)")
     return p + guides(**{mapping: guide_colorbar(**spec)})
 
 
@@ -138,7 +139,7 @@ def handle_guide_colorbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "barheight": {"widget": "number", "label": "Bar height (grid units)", "required": False},
     },
     "description": "British spelling alias for guide_colorbar; identical behaviour \u2014 use whichever spelling is consistent with the rest of your data analysis recipe. Differs from plotnine: the same call as guide_colorbar of this registry, written with the other spelling.",
-    "yaml_example": "layers:\n  - name: guides\n    params:\n      fill: colourbar",
+    "yaml_example": "layers:\n  - name: guide_colourbar\n    params:\n      mapping: fill",
 })
 def handle_guide_colourbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Alias for guide_colorbar."""
@@ -156,8 +157,8 @@ def handle_guide_colourbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "params": {
         "mapping": {"widget": "string", "label": "Aesthetic to hide guide for (e.g. color, fill)", "required": True},
     },
-    "description": "Suppress a guide entirely; use when the legend adds no information (e.g. fill is redundant with a text label or facet strip). Not in plotnine: hides the guide of the aesthetic named by `mapping`, the same as `guides` with false; without `mapping` nothing is done (a warning is printed).",
-    "yaml_example": "layers:\n  - name: guides\n    params:\n      fill: none",
+    "description": "Suppress a guide entirely; use when the legend adds no information (e.g. fill is redundant with a text label or facet strip). Not in plotnine: hides the guide of the aesthetic named by `mapping`, the same as `guides` with false; without `mapping` the plot fails with a message.",
+    "yaml_example": "layers:\n  - name: guide_none\n    params:\n      mapping: fill",
 })
 def handle_guide_none(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
@@ -166,8 +167,8 @@ def handle_guide_none(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
     mapping = spec.pop("mapping", None)
     if not mapping:
-        print("Warning: guide_none requires a 'mapping' parameter.")
-        return p
+        raise CannotAct("guide_none needs 'mapping', the aesthetic the guide is for",
+                        "write mapping: fill (or color, shape, size ...)")
     return p + guides(**{mapping: False})
 
 
@@ -183,8 +184,8 @@ def handle_guide_none(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "nrow": {"widget": "number", "label": "Number of rows in legend", "required": True},
     },
-    "description": "Set the number of rows in a legend; use to control legend layout when many categories would produce an overly tall legend. Not in plotnine: guide_legend with only the number of rows set, written as `nrow` (or `value`) for the aesthetic named by `mapping`; without `mapping` nothing is added (a warning is printed).",
-    "yaml_example": "layers:\n  - name: guide_nrow\n    params:\n      nrow: 2",
+    "description": "Set the number of rows in a legend; use to control legend layout when many categories would produce an overly tall legend. Not in plotnine: guide_legend with only the number of rows set, written as `nrow` (or `value`) for the aesthetic named by `mapping`; without `mapping` the plot fails with a message.",
+    "yaml_example": "layers:\n  - name: guide_nrow\n    params:\n      mapping: fill\n      nrow: 2",
 })
 def handle_guide_nrow(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
@@ -193,9 +194,12 @@ def handle_guide_nrow(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
     mapping = spec.pop("mapping", None)
     nrow = spec.pop("nrow", spec.pop("value", None))
-    if not mapping or nrow is None:
-        print("Warning: guide_nrow requires 'mapping' and 'nrow'.")
-        return p
+    if not mapping:
+        raise CannotAct("guide_nrow needs 'mapping', the aesthetic the guide is for",
+                        "write mapping: fill (or color, shape, size ...)")
+    if nrow is None:
+        raise CannotAct("guide_nrow needs 'nrow', the number it sets",
+                        "write nrow: 2 (the key `value` is also read)")
     return p + guides(**{mapping: guide_legend(nrow=nrow, **spec)})
 
 
@@ -211,8 +215,8 @@ def handle_guide_nrow(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "ncol": {"widget": "number", "label": "Number of columns in legend", "required": True},
     },
-    "description": "Set the number of columns in a legend; use to arrange legend keys horizontally when legend width is constrained. Not in plotnine: guide_legend with only the number of columns set, written as `ncol` (or `value`) for the aesthetic named by `mapping`; without `mapping` nothing is added (a warning is printed).",
-    "yaml_example": "layers:\n  - name: guide_ncol\n    params:\n      ncol: 3",
+    "description": "Set the number of columns in a legend; use to arrange legend keys horizontally when legend width is constrained. Not in plotnine: guide_legend with only the number of columns set, written as `ncol` (or `value`) for the aesthetic named by `mapping`; without `mapping` the plot fails with a message.",
+    "yaml_example": "layers:\n  - name: guide_ncol\n    params:\n      mapping: fill\n      ncol: 3",
 })
 def handle_guide_ncol(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
@@ -221,9 +225,12 @@ def handle_guide_ncol(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """
     mapping = spec.pop("mapping", None)
     ncol = spec.pop("ncol", spec.pop("value", None))
-    if not mapping or ncol is None:
-        print("Warning: guide_ncol requires 'mapping' and 'ncol'.")
-        return p
+    if not mapping:
+        raise CannotAct("guide_ncol needs 'mapping', the aesthetic the guide is for",
+                        "write mapping: fill (or color, shape, size ...)")
+    if ncol is None:
+        raise CannotAct("guide_ncol needs 'ncol', the number it sets",
+                        "write ncol: 2 (the key `value` is also read)")
     return p + guides(**{mapping: guide_legend(ncol=ncol, **spec)})
 
 
@@ -239,16 +246,19 @@ def handle_guide_ncol(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "title": {"widget": "string", "label": "Legend title text", "required": True},
     },
-    "description": "Override the title of a specific guide; use when the default column name would be unclear to report readers. Not in plotnine: guide_legend with only the title set, written as `title` (or `value`) for the aesthetic named by `mapping`; without `mapping` nothing is added (a warning is printed).",
-    "yaml_example": "layers:\n  - name: guide_title\n    params:\n      title: Resistance class",
+    "description": "Override the title of a specific guide; use when the default column name would be unclear to report readers. Not in plotnine: guide_legend with only the title set, written as `title` (or `value`) for the aesthetic named by `mapping`; without `mapping` the plot fails with a message.",
+    "yaml_example": "layers:\n  - name: guide_title\n    params:\n      mapping: fill\n      title: Resistance class",
 })
 def handle_guide_title(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to set title for a guide."""
     mapping = spec.pop("mapping", None)
     title = spec.pop("title", spec.pop("value", None))
     if not mapping:
-        print("Warning: guide_title requires 'mapping'.")
-        return p
+        raise CannotAct("guide_title needs 'mapping', the aesthetic the guide is for",
+                        "write mapping: fill (or color, shape, size ...)")
+    if title is None:
+        raise CannotAct("guide_title needs 'title', the text it sets",
+                        "write title: Resistance class (the key `value` is also read)")
     # Try to detect guide type or default to legend if unknown mapping
     return p + guides(**{mapping: guide_legend(title=title, **spec)})
 
@@ -265,17 +275,19 @@ def handle_guide_title(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "labels": {"widget": "bool", "label": "Show labels", "required": False, "default": True},
     },
-    "description": "Override the labels shown in a guide; use to recode technical column values to human-readable names without modifying source data. Not in plotnine: guide_legend with only whether the labels are shown or their format set, written as `labels` (or `value`) for the aesthetic named by `mapping`; without `mapping` nothing is added (a warning is printed).",
-    "yaml_example": "layers:\n  - name: guide_label\n    params:\n      labels: [Susceptible, Resistant]",
+    "description": "Not in plotnine: meant to set the legend labels through guide_legend, which has no `labels` argument, so it CANNOT WORK today and fails on every use with a message (the label text is set with `labels` on the scale, the look with element_text on legend_text_legend). Kept until it is decided whether to rebuild or remove it.",
+    "yaml_example": "layers:\n  - name: guide_label\n    params:\n      mapping: fill\n      labels: [Susceptible, Resistant]",
 })
 def handle_guide_label(p: ggplot, spec: Dict[str, Any]) -> ggplot:
-    """Helper to toggle/format labels for a guide."""
-    mapping = spec.pop("mapping", None)
-    labels = spec.pop("labels", spec.pop("value", True))
-    if not mapping:
-        print("Warning: guide_label requires 'mapping'.")
-        return p
-    return p + guides(**{mapping: guide_legend(labels=labels, **spec)})
+    """Cannot work today: plotnine's guide_legend has no `labels` argument. Fails with a message that says so.
+
+    It was meant to toggle, rotate and set the font of the legend labels (tasks_archive_viz_factory.md). Whether to rebuild it on
+    plotnine's own means or to remove it is for Eve to decide (VIZ-STANDARD-1); until then it does not pretend to act.
+    """
+    raise CannotAct(
+        "guide_label cannot work: it passes `labels` to plotnine's guide_legend, which has no such argument",
+        "set the label text with `labels` on the scale (for example scale_fill_manual with labels: [A, B]) and the look of the legend "
+        "labels with element_text and target legend_text_legend (element_blank hides them); guide_label waits for a decision")
 
 
 @register_plot_component("guide_direction", ui_schema={
@@ -291,16 +303,16 @@ def handle_guide_label(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "direction": {"widget": "enum", "label": "Legend direction", "required": True,
                       "default": "horizontal", "options": ["horizontal", "vertical"]},
     },
-    "description": "Set the guide layout direction to horizontal or vertical; use horizontal for a legend placed below or above the plot. Not in plotnine: guide_legend with only the direction (horizontal when absent) set, written as `direction` (or `value`) for the aesthetic named by `mapping`; without `mapping` nothing is added (a warning is printed).",
-    "yaml_example": "layers:\n  - name: guide_direction\n    params:\n      direction: horizontal",
+    "description": "Set the guide layout direction to horizontal or vertical; use horizontal for a legend placed below or above the plot. Not in plotnine: guide_legend with only the direction (horizontal when absent) set, written as `direction` (or `value`) for the aesthetic named by `mapping`; without `mapping` the plot fails with a message.",
+    "yaml_example": "layers:\n  - name: guide_direction\n    params:\n      mapping: fill\n      direction: horizontal",
 })
 def handle_guide_direction(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to set direction for a guide."""
     mapping = spec.pop("mapping", None)
     direction = spec.pop("direction", spec.pop("value", "horizontal"))
     if not mapping:
-        print("Warning: guide_direction requires 'mapping'.")
-        return p
+        raise CannotAct("guide_direction needs 'mapping', the aesthetic the guide is for",
+                        "write mapping: fill (or color, shape, size ...)")
     return p + guides(**{mapping: guide_legend(direction=direction, **spec)})
 
 
@@ -316,14 +328,14 @@ def handle_guide_direction(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "mapping": {"widget": "string", "label": "Aesthetic (e.g. color, fill)", "required": True},
         "reverse": {"widget": "bool", "label": "Reverse legend key order", "required": False, "default": True},
     },
-    "description": "Reverse the order of legend keys; use when the natural ordering of a factor places the most important category at the bottom of the legend. Not in plotnine: guide_legend with only whether the order is reversed (true when absent) set, written as `reverse` (or `value`) for the aesthetic named by `mapping`; without `mapping` nothing is added (a warning is printed).",
-    "yaml_example": "layers:\n  - name: guide_reverse\n    params:\n      reverse: true",
+    "description": "Reverse the order of legend keys; use when the natural ordering of a factor places the most important category at the bottom of the legend. Not in plotnine: guide_legend with only whether the order is reversed (true when absent) set, written as `reverse` (or `value`) for the aesthetic named by `mapping`; without `mapping` the plot fails with a message.",
+    "yaml_example": "layers:\n  - name: guide_reverse\n    params:\n      mapping: fill\n      reverse: true",
 })
 def handle_guide_reverse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Helper to reverse a guide."""
     mapping = spec.pop("mapping", None)
     reverse = spec.pop("reverse", spec.pop("value", True))
     if not mapping:
-        print("Warning: guide_reverse requires 'mapping'.")
-        return p
+        raise CannotAct("guide_reverse needs 'mapping', the aesthetic the guide is for",
+                        "write mapping: fill (or color, shape, size ...)")
     return p + guides(**{mapping: guide_legend(reverse=reverse, **spec)})
