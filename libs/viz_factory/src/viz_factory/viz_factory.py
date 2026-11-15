@@ -198,9 +198,14 @@ class VizFactory:
                 col = f.get("column")
                 if col is None:
                     continue
-                # Issue #56: a filter on a column this plot's data does not have is skipped, not an error.
+                # PLOT-TABLE-ORDER-1: a filter that the plot spec writes on a column the data does not have is an error, never
+                # skipped. (HOME and the export no longer hand their audited steps to this key: they apply them to the frame
+                # with `audited_frame`, in the recorded order, before the factory is called.)
                 if actual_dtypes and col not in actual_dtypes:
-                    continue
+                    raise plot_failure(
+                        plot_id, f"the filter on the column {col!r} names a column that the data does not have",
+                        f"write a column of the data ({', '.join(actual_dtypes)}) in the filter, or remove the filter",
+                        evidence={"filter_column": col, "columns": list(actual_dtypes)})
                 # ADR-104 point 7: the same condition as the HOME table and the recipe action (typed values; a value that
                 # cannot be read in the type of the column stops with a plain error). NA-RULE-63: `na` adds the rows with no value.
                 dtype = actual_dtypes.get(col) or f.get("dtype")

@@ -13,7 +13,8 @@ import polars as pl
 import pytest
 
 import transformer.actions  # noqa: F401
-from app.handlers.export_handlers import audited_frame
+from app.modules.t3_audit_engine import audited_frame
+from app.tests.audit_nodes import filter_nodes
 from app.modules.t3_audit_engine import _apply_filter_rows
 from blueprint_arch.t3_translator import translate_t3_node
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
@@ -37,7 +38,7 @@ def home_table(rows):
 
 
 def bundle(rows):
-    return audited_frame(FRAME.lazy(), rows, []).collect()["s"].to_list()
+    return audited_frame(FRAME.lazy(), filter_nodes(rows)).collect()["s"].to_list()
 
 
 def plot(rows):

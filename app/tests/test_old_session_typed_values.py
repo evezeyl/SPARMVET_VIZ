@@ -15,7 +15,8 @@ import polars as pl
 import pytest
 
 import transformer.actions  # noqa: F401
-from app.handlers.export_handlers import audited_frame
+from app.modules.t3_audit_engine import audited_frame
+from app.tests.audit_nodes import filter_nodes
 from app.modules.t3_audit_engine import _apply_filter_rows, filter_rows_from_nodes
 from blueprint_arch.t3_translator import build_mode2_recipe, translate_plot_steps
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
@@ -40,7 +41,7 @@ def views(nodes):
     recipe = {"plots": {"p": {"mapping": {"x": "s", "y": "n"}, "layers": [{"name": "geom_col", "params": {}}], "filters": rows}}}
     return {
         "home table": _apply_filter_rows(FRAME.lazy(), rows).collect()["s"].to_list(),
-        "bundle": audited_frame(FRAME.lazy(), rows, []).collect()["s"].to_list(),
+        "bundle": audited_frame(FRAME.lazy(), filter_nodes(rows)).collect()["s"].to_list(),
         "plot": VizFactory().render(FRAME.lazy(), recipe, "p").data["s"].to_list(),
         "re-run": lf.collect()["s"].to_list(),
     }

@@ -49,7 +49,7 @@ from utils.pipeline_error import capture_entry
 from viz_factory.plot_config_resolver import layers_have_jitter, recipe_pins_random_state
 from viz_factory.viz_factory import show_draw_errors
 
-from app.modules.t3_audit_engine import _apply_filter_rows, filter_rows_from_nodes
+from app.modules.t3_audit_engine import AuditStepError, _apply_filter_rows, audited_frame, filter_rows_from_nodes
 from utils.na_choice import na_of, no_value_text
 from app.modules.sidebar_registry import is_panel_active
 from app.handlers.session_handlers import define_session_server
@@ -479,23 +479,10 @@ def define_server(input, output, session, *,
             # "T3" = My view, "CMP" = Compare (right pane is My view).
             # GUARDED by test_shiny_smoke.py::TestPreviewFiltersOnReferenceViews (plot unchanged on Result).
             in_my_view = safe_input(input, "plot_view", "T2") in ("T3", "CMP")
-            filter_rows = (
-                (list(applied_filters.get()) + _t3_filter_rows(this_subtab))
-                if in_my_view else []
-            )
-            if filter_rows:
-                vf_filters = [
-                    {k: v for k, v in f.items() if k != "dtype"}
-                    for f in filter_rows
-                ]
-                # Promote eq/ne to in/not_in when value is a list
-                for vf in vf_filters:
-                    if isinstance(vf.get("value"), list):
-                        if vf["op"] in ("eq", "in"):
-                            vf["op"] = "in"
-                        elif vf["op"] in ("ne", "not_in"):
-                            vf["op"] = "not_in"
-                plot_spec["filters"] = vf_filters
+            # PLOT-TABLE-ORDER-1: the plot gets its data from the same frame as the table: the exploration filters, then the
+            # audited steps in their recorded order (`audited_frame`), applied below to the frame. Nothing is handed to the
+            # factory's `filters` key any more (that key is for what a recipe's plot spec writes), so the audited steps are
+            # applied once, in one order, and a step that cannot run is an error, never a skip.
             synthetic_data_analysis_recipe = {
                 "plots": {p_id: plot_spec},
                 "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
@@ -521,12 +508,21 @@ def define_server(input, output, session, *,
                 ax.axis("off")
                 return fig
 
-            # Apply T3 drop_column nodes (audit-committed drops) — per-plot.
-            # HOM-41 fix: T1/T2 must not see T3-committed drops either.
+            # My view: the exploration filters, then the audited steps in the recorded order (the same call as the table
+            # and the results bundle). HOM-41: T1/T2 must not see T3-committed steps either.
             if in_my_view:
-                drops = [c for c in _t3_drop_columns(this_subtab) if c in lf.collect_schema().names()]
-                if drops:
-                    lf = lf.drop(drops)
+                try:
+                    lf = audited_frame(_apply_filter_rows(lf, list(applied_filters.get())), _active_plot_t3_nodes(this_subtab))
+                except AuditStepError as e:
+                    # PLOT-TABLE-ORDER-1: a step that cannot run is shown in the plot's place and in the Alerts panel, never skipped.
+                    _report_plot_exception(e, "T3Audit", f"audit steps of plot '{p_id}'")
+                    import matplotlib.pyplot as plt
+                    import textwrap
+                    fig, ax = plt.subplots()
+                    ax.text(0.5, 0.5, "\n".join(textwrap.fill(line, 70) for line in f"Audit step error:\n{e}".splitlines()),
+                            ha="center", va="center", transform=ax.transAxes, color="#d62828", fontsize=8)
+                    ax.axis("off")
+                    return fig
 
             # VIZFAC-T3-OVERRIDE-1: Extract L5 aesthetic_override from home_state.
             _t3_overrides = (
@@ -1341,13 +1337,12 @@ def define_server(input, output, session, *,
             # ADR-098 (issue #56): exploration filters preview on every view, never saved;
             # audit-committed nodes apply only on "My view" (T3).
             in_t3_preview = tier_toggle.get() == "T3"
-            _preview_rows = list(applied_filters.get()) + (_t3_filter_rows() if in_t3_preview else [])
-            lf = _apply_filter_rows(lf, _preview_rows)
-            # Apply T3 drop_column nodes — committed audit drops (T3 only).
+            lf = _apply_filter_rows(lf, list(applied_filters.get()))
+            # PLOT-TABLE-ORDER-1: My view applies the audited steps in their recorded order, the same call as the plot and the
+            # results bundle. A step that cannot run raises AuditStepError: it is shown below in the table's place and in
+            # the Alerts panel, never skipped.
             if in_t3_preview:
-                drops = [c for c in _t3_drop_columns() if c in lf.collect_schema().names()]
-                if drops:
-                    lf = lf.drop(drops)
+                lf = audited_frame(lf, _active_plot_t3_nodes())
             # PREVIEW-ALLROWS-1: respect the "Show all rows" toggle; default 100-row cap.
             show_all = safe_input(input, "preview_all_rows", False)
             df = lf.collect() if show_all else lf.head(100).collect()
@@ -1361,6 +1356,8 @@ def define_server(input, output, session, *,
 
             return render.DataGrid(df, filters=False, height="300px")
         except Exception as e:
+            if isinstance(e, AuditStepError):
+                _report_plot_exception(e, "T3Audit", "audit steps of the data preview")
             return render.DataGrid(
                 pl.DataFrame({"Error": [str(e)]}),
                 filters=False

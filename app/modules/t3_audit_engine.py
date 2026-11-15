@@ -12,9 +12,9 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_number, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label
-# consumes: polars, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
-# consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py
+# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_number, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, class:AuditStepError
+# consumes: polars, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
+# consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_audited_frame_order.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
 
@@ -22,6 +22,8 @@ import math
 
 import polars as pl
 
+from utils.errors import TransformationError
+from utils.pipeline_error import PipelineError
 from utils.filter_values import FilterValueError, filter_condition, kind_of, read_filter_value, type_words
 from utils.missing_values import keep_missing
 from utils.na_choice import default_na, na_of
@@ -321,4 +323,93 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
         condition = filter_condition(col, f.get("op", "eq"), f.get("value"), dtype, f.get("closed", "both"))
         # NA-RULE-63: "keep" adds the rows with no value; a row without `na` removes them
         lf = lf.filter(keep_missing(condition, col, na_of(f)))
+    return lf
+
+
+# -- the audited steps of a plot, in one place (PLOT-TABLE-ORDER-1) -------------------------------------------------
+
+class AuditStepError(TransformationError):
+    """An audited step that cannot run on the table it meets: its column is not there.
+
+    The message says which step (its number in the plot's list and its reason), the column, the step that removed it
+    (when one did) and the fix. It carries a `PipelineError`, so the Alerts panel and the Processing issues table hold the same
+    text. The HOME table, the HOME plot and the export show or write it; none of them skips the step.
+    """
+
+
+def _step_words(step: dict) -> str:
+    what = (f"drop column {step['column']}" if step["kind"] == "drop"
+            else describe_filter(step["column"], step["row"]["op"], step["row"]["value"], step["row"]["na"],
+                                 step["row"].get("closed")))
+    reason = f', reason: "{step["reason"]}"' if step["reason"] else ""
+    return f"audit step {step['number']} ({what}{reason})"
+
+
+def _step_error(step: dict, remover: dict | None, columns: list) -> AuditStepError:
+    column = step["column"]
+    engine = f"step {'polars_drop' if step['kind'] == 'drop' else 'modif_filter'}: column {column!r} is not in the table"
+    if remover is not None:
+        why = f"The {_step_words(remover)} removed it before."
+        fix = (f"remove audit step {remover['number']} or audit step {step['number']} from the plot's audit list "
+               "(the steps run in the order they were recorded)")
+    else:
+        why = f"The table has the columns {', '.join(columns)}."
+        fix = f"remove audit step {step['number']} from the plot's audit list, or use a column of the table"
+    problem = f"The {_step_words(step)} cannot run: {engine}. {why}"
+    pipeline_error = PipelineError(
+        component="T3Audit", problem=problem, location=f"audit step {step['number']} of the plot",
+        fix=fix[:1].upper() + fix[1:] + ".", who="analyst", category="t3_apply", surface="audit_panel",
+        evidence={"audit_step": step["number"], "column": column,
+                  "removed_by_audit_step": remover["number"] if remover else None},
+        reference="ui_implementation_contract.md section 12 and 14; PLOT-TABLE-ORDER-1")
+    return AuditStepError(f"{problem} Fix: {fix}.", tip=fix[:1].upper() + fix[1:] + ".", pipeline_error=pipeline_error)
+
+
+def audit_steps_in_order(nodes: list) -> list[dict]:
+    """The data steps of a plot's audit list, in the order they are applied: THE ORDER RULE (one place).
+
+    PROVISIONAL (S2-1): the recorded order, the order of the list (Eve, 2026-11-15: "steps in the order written in the recipe
+    and performed in the audit in the same order"). It is also the order the exported recipe is written in
+    (`blueprint_arch.t3_translator.translate_plot_steps`). To change the rule change this function only; every consumer
+    (HOME table, HOME plot, Compare, the results bundle, the check before an export) reads the steps from here.
+
+    A step is `{"number", "kind": "filter" | "drop", "column", "reason", "row"}`; `row` is the filter row (`filter_rows_from_nodes`).
+    `number` is the position, counted from 1, among the active steps of the list (a plot style step is not counted: it is
+    not a step of the data). A step that is not a filter, an exclusion or a column drop does not touch the table here.
+    """
+    steps: list[dict] = []
+    number = 0
+    for node in nodes:
+        if not node.get("active", True) or node.get("node_type") == "aesthetic_override":
+            continue
+        number += 1
+        kind = node.get("node_type")
+        params = node.get("params", {}) or {}
+        if kind in ("filter_row", "exclusion_row") and "column" in params:
+            row = filter_rows_from_nodes([node])[0]
+            steps.append({"number": number, "kind": "filter", "column": row["column"], "reason": node.get("reason", ""), "row": row})
+        elif kind == "drop_column" and params.get("column"):
+            steps.append({"number": number, "kind": "drop", "column": params["column"], "reason": node.get("reason", ""), "row": None})
+    return steps
+
+
+def audited_frame(lf, nodes: list):
+    """The "My view" data of one plot: its audited steps applied to its base frame, in the order of `audit_steps_in_order`.
+
+    The base is the stored Tier 2 (Tier 1 when the table has no tier2 steps): build rule T3 > T2 > T1. The ONE function
+    for HOME's table, HOME's plot (also in Compare), the results bundle (`T3_data_<plot>.tsv` and the plot): they cannot
+    differ. A step whose column is not in the table at that point (never there, or removed by an earlier step) raises
+    `AuditStepError`; it is never skipped. Exploration filters are not an argument: they are not audited and are never
+    exported (HOME applies them with `_apply_filter_rows` before calling this).
+    """
+    removed_by: dict[str, dict] = {}
+    for step in audit_steps_in_order(nodes):
+        columns = lf.collect_schema().names()
+        if step["column"] not in columns:
+            raise _step_error(step, removed_by.get(step["column"]), columns)
+        if step["kind"] == "drop":
+            lf = lf.drop(step["column"])
+            removed_by[step["column"]] = step
+        else:
+            lf = _apply_filter_rows(lf, [step["row"]])
     return lf

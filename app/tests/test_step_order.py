@@ -40,7 +40,7 @@ import polars as pl
 import pytest
 import yaml
 
-from app.handlers.export_handlers import audited_frame
+from app.modules.t3_audit_engine import AuditStepError, audited_frame
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, tier2_key
 from app.modules.orchestrator import DataOrchestrator
 from blueprint_arch.t3_translator import build_mode2_recipe
@@ -320,17 +320,6 @@ def drop_column(node_id: str, column: str) -> dict:
     return {"id": node_id, "node_type": "drop_column", "params": {"column": column}, "reason": "test"}
 
 
-def home_rows_and_drops(nodes: list) -> tuple[list, list]:
-    """The filter rows and drops HOME hands to `audited_frame`, from a plot's active nodes (same rule as
-    `_t3_filter_rows` and `_t3_drop_columns`, `app/handlers/home_theater.py` lines 309-381, which are closures and
-    cannot be imported). It is a copy of those closures and must follow them."""
-    rows = [{"column": n["params"]["column"], "op": n["params"].get("op", "eq"), "value": n["params"].get("value"),
-             "dtype": n["params"].get("dtype", "Utf8")}
-            for n in nodes if n["node_type"] in ("filter_row", "exclusion_row")]
-    drops = [n["params"]["column"] for n in nodes if n["node_type"] == "drop_column"]
-    return rows, drops
-
-
 def test_home_audit_step_runs_after_the_recipe_tier2(original, removed, oracle_after):
     """Application order T1, recipe T2, then T3 (5a point 4): HOME's audited data of the canary plot is the removal
     applied to the stored T2, so the other samples keep their z-score over every sample.
@@ -340,8 +329,7 @@ def test_home_audit_step_runs_after_the_recipe_tier2(original, removed, oracle_a
     Eve) replaces it with the audit copy of the recipe, and the test then moves to that copy.
     """
     _, tier2, _ = original
-    rows, drops = home_rows_and_drops([exclusion("n1", [removed])])
-    audited = audited_frame(tier2.lazy(), rows, drops).collect()
+    audited = audited_frame(tier2.lazy(), [exclusion("n1", [removed])]).collect()
     assert_z_equals(audited, oracle_after, "HOME audit data of qa_population_zscore")
 
 
@@ -391,8 +379,7 @@ def test_the_exported_recipe_rerun_equals_the_audit_data(run, raw_config, origin
     """
     nodes = CONCORDANCE_CASES[case](removed, threshold)
     _, tier2, _ = original
-    rows, drops = home_rows_and_drops(nodes)
-    home = plain(audited_frame(tier2.lazy(), rows, drops).collect())
+    home = plain(audited_frame(tier2.lazy(), nodes).collect())
 
     exported, skipped = build_mode2_recipe(raw_config, {ZPLOT: nodes})
     assert not skipped, skipped
@@ -437,8 +424,7 @@ def test_rerun_equals_audit_data_for_a_threshold_on_an_integer_column(run, raw_c
     """
     _, tier2, _ = l50_original
     nodes = [filter_row("n1", "L50", "ge", value)]
-    rows, drops = home_rows_and_drops(nodes)
-    home = audited_frame(tier2.lazy(), rows, drops).collect()
+    home = audited_frame(tier2.lazy(), nodes).collect()
     exported, skipped = build_mode2_recipe(raw_config, {L50PLOT: nodes})
     assert not skipped, skipped
     target = exported["analysis_groups"]["QA Canaries"]["plots"][L50PLOT]["spec"]["target_dataset"]
@@ -451,77 +437,188 @@ def test_rerun_equals_audit_data_for_a_threshold_on_an_integer_column(run, raw_c
     assert rerun.equals(home)
 
 
-# ── N13: a filter and a drop on the SAME column (pinned 2026-11-14; fix waits for Eve, D3 and D5) ────────────
+# ── N13 (PLOT-TABLE-ORDER-1): one audit list, one order, in the table, the plot, the bundle and the exported recipe ──
+# Decided by Eve 2026-11-14 (no silent error; the plot follows the table; the export is checked) and 2026-11-15 (the order
+# written in the recipe is the order performed in the audit; an engine that cannot filter a column that is not there
+# returns an error). The ORDER RULE is PROVISIONAL (S2-1): it lives in `audit_steps_in_order` only.
 
 def _home_plot_data(t2: pl.DataFrame, raw_config: dict, nodes: list) -> pl.DataFrame:
-    """The rows the PLOT path hands to the picture: drops first, then VizFactory applies the filters.
-
-    THIS FUNCTION IS A COPY IN THE TEST, not the real code: the order (drops first, filters later in VizFactory) is
-    copied from the closure in `app/handlers/home_theater.py` (about lines 483-533) and from the results bundle
-    (`app/handlers/export_handlers.py` about lines 1001-1035), which cannot be imported (same limit as
-    `home_rows_and_drops`). Whoever builds the fix must replace this copy with the real, importable function and
-    remove the xfail mark of the test that uses it. Extracting it is application code and waits for Eve's D4.
-    """
+    """The rows the PLOT gets: the audited frame (the one function HOME's plot and the bundle's plot call) handed to the
+    real VizFactory with the recipe's own plot spec. The spec carries no `filters` key: the audited steps are not applied
+    twice, and not in a second order, inside the factory."""
     from viz_factory import VizFactory
 
-    rows, drops = home_rows_and_drops(nodes)
     spec = copy.deepcopy(raw_config["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]["spec"])
-    if rows:
-        spec["filters"] = [{k: v for k, v in f.items() if k != "dtype"} for f in rows]
-    lf = t2.lazy()
-    present = [c for c in drops if c in lf.collect_schema().names()]
-    if present:
-        lf = lf.drop(present)
-    figure = VizFactory().render(lf, {"plots": {ZPLOT: spec}, "plot_defaults": {}}, ZPLOT)
+    assert "filters" not in spec
+    figure = VizFactory().render(audited_frame(t2.lazy(), nodes), {"plots": {ZPLOT: spec}, "plot_defaults": {}}, ZPLOT)
     return pl.from_pandas(figure.data)
 
 
-@pytest.mark.xfail(strict=True, reason="N13 (D3): the plot path drops the column first and skips the filter on it silently "
-                                       "(plot 42 rows, table 21); decision pending. REAL: audited_frame, VizFactory().render, "
-                                       "DataOrchestrator. COPY: the drop-first order in _home_plot_data (from home_theater.py "
-                                       "~483-533); a fix in home_theater.py alone does not flip this test: replace the copy "
-                                       "with the real function and remove the mark")
-def test_the_plot_path_gets_the_rows_of_the_table_path_for_a_filter_then_a_drop_on_one_column(original, raw_config, raw_samples, threshold):
-    """Correct behaviour (not in dispute): one audit, "filter n50 >= threshold, then drop n50", gives the same rows to
-    the plot as to the table. Oracle: the raw files. Today the table has 21 rows and the plot 42.
+def _signature(frame: pl.DataFrame) -> tuple:
+    """What two frames must share: the columns and, per sample, the z-score (compared to 9 places)."""
+    frame = plain(frame).sort("sample_id")
+    return (sorted(frame.columns), frame["sample_id"].to_list(), [round(v, 9) for v in frame["n50_zscore"].to_list()])
 
-    Seen failing: this is the xfail itself (42 against 21); with the filter removed from the nodes both sides agree.
 
-    Real code: `audited_frame`, `VizFactory().render` (the silent skip), the orchestrator. Copy: the drop-first order
-    (`_home_plot_data`, see its docstring). The part that depends on real code only is
-    `test_vizfactory_does_not_skip_a_filter_on_a_missing_column`.
-    """
+def _four_ways(original, raw_config, run, nodes):
+    """The table, the plot, the results bundle's `T3_data_<plot>.tsv` (written and read back) and the re-run of the
+    exported recipe, for one audit list. A way that cannot run gives the exception it raised."""
+    import io
+
     _, tier2, _ = original
-    nodes = [filter_row("f", "n50", "ge", threshold), drop_column("d", "n50")]
-    rows, drops = home_rows_and_drops(nodes)
-    table = audited_frame(tier2.lazy(), rows, drops).collect()
-    expected = raw_samples.filter(pl.col("n50") >= threshold)
-    assert table.height == expected.height < raw_samples.height, "the table path must apply the filter (oracle: raw files)"
-    plot = _home_plot_data(tier2, raw_config, nodes)
-    assert plot.height == table.height, f"plot path {plot.height} rows, table path {table.height} rows"
+    out = {}
+
+    def way(name, make):
+        try:
+            out[name] = make()
+        except BaseException as exc:   # the engine's own error is a SparmvetError / PanicException: keep whatever it is
+            out[name] = exc
+
+    way("table", lambda: audited_frame(tier2.lazy(), nodes).collect())
+    way("plot", lambda: _home_plot_data(tier2, raw_config, nodes))
+
+    def bundle():
+        buffer = io.BytesIO()
+        audited_frame(tier2.lazy(), nodes).collect().write_csv(buffer, separator="\t")
+        return pl.read_csv(io.BytesIO(buffer.getvalue()), separator="\t", schema_overrides={"sample_id": pl.String})
+    way("bundle", bundle)
+
+    def rerun():
+        exported, skipped = build_mode2_recipe(raw_config, {ZPLOT: nodes})
+        assert not skipped, skipped
+        target = exported["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]["spec"]["target_dataset"]
+        return run(exported, target)[1]
+    way("rerun", rerun)
+    return out
 
 
-@pytest.mark.xfail(strict=True, reason="N13: VizFactory skips a filter whose column is missing")
+ORDERS = {
+    "A drop n50, then filter n50": lambda thr: [drop_column("d", "n50"), filter_row("f", "n50", "ge", thr)],
+    "B filter n50, then drop n50": lambda thr: [filter_row("f", "n50", "ge", thr), drop_column("d", "n50")],
+    "C1 drop n50, then filter country": lambda thr: [drop_column("d", "n50"), filter_row("f", "country", "in", ["Norway", "France"])],
+    "C2 filter country, then drop n50": lambda thr: [filter_row("f", "country", "in", ["Norway", "France"]), drop_column("d", "n50")],
+}
+
+
+@pytest.mark.parametrize("order", [o for o in sorted(ORDERS) if not o.startswith("A")])
+def test_table_plot_bundle_and_rerun_agree_for_an_order_that_can_run(original, raw_config, raw_samples, run, threshold, order):
+    """B, C1, C2: the table, the plot, the bundle file and the re-run of the exported recipe have the same rows and values,
+    and the row count equals the oracle (the raw files in plain Polars), so four equal no-ops cannot pass.
+
+    Seen failing: the old order (all filters, then all drops) breaks nothing here by itself; the old plot path (drops
+    first, the filter skipped) gives 42 rows for B; the mutation that makes `audit_steps_in_order` reverse the list
+    breaks B and C2 (a filter on a column that the drop removed) with an AuditStepError.
+    """
+    nodes = ORDERS[order](threshold)
+    ways = _four_ways(original, raw_config, run, nodes)
+    for name, result in ways.items():
+        assert isinstance(result, pl.DataFrame), f"{order}: the {name} way raised {result!r}"
+    if "country" in order:
+        expected = raw_samples.filter(pl.col("country").is_in(["Norway", "France"]))
+    else:
+        expected = raw_samples.filter(pl.col("n50") >= threshold)
+    assert 0 < expected.height < raw_samples.height, "the oracle must keep some and remove some"
+    for name, frame in ways.items():
+        assert frame.height == expected.height, f"{order}: the {name} way has {frame.height} rows, the oracle {expected.height}"
+        assert "n50" not in frame.columns, f"{order}: the drop did not happen in the {name} way"
+    reference = _signature(ways["table"])
+    for name in ("plot", "rerun"):
+        assert _signature(ways[name]) == reference, f"{order}: the {name} way differs from the table"
+    assert ways["bundle"]["sample_id"].to_list() == plain(ways["table"])["sample_id"].to_list(), f"{order}: bundle file differs"
+
+
+def test_a_drop_then_a_filter_on_one_column_is_an_error_in_the_table_the_plot_the_bundle_and_the_rerun(original, raw_config, run, threshold):
+    """Order A: no way returns rows, none skips the filter. The table, the plot and the bundle raise the same
+    AuditStepError, which names the step (number and reason), the column, the step that removed it and the fix; the
+    re-run of the exported recipe stops with the engine's own error.
+
+    Seen failing: the old code gave 21 rows (table, bundle) and 42 rows (plot) and no error.
+    """
+    ways = _four_ways(original, raw_config, run, ORDERS["A drop n50, then filter n50"](threshold))
+    for name in ("table", "plot", "bundle"):
+        error = ways[name]
+        assert isinstance(error, AuditStepError), f"{name}: {error!r}"
+    texts = {str(ways[name]) for name in ("table", "plot", "bundle")}
+    assert len(texts) == 1, "the three places say the same thing"
+    text = texts.pop()
+    assert "audit step 2" in text and "n50" in text, text
+    assert "audit step 1" in text and "removed it" in text, "it says which step removed the column"
+    assert "Fix: remove audit step 1 or audit step 2" in text, text
+    assert 'reason: "test"' in text, "it gives the reason of the step"
+    assert "column 'n50' is not in the table" in text, "the engine's own words"
+    assert ways["table"].pipeline_error is not None, "the Alerts panel gets the same text"
+    assert isinstance(ways["rerun"], BaseException) and "n50" in str(ways["rerun"]) and "not in the table" in str(ways["rerun"])
+
+
+def test_an_audit_step_on_a_column_that_never_existed_names_the_columns_and_the_fix(original):
+    """No earlier step removed the column: the error says the table has other columns, never "removed it"."""
+    _, tier2, _ = original
+    with pytest.raises(AuditStepError) as caught:
+        audited_frame(tier2.lazy(), [filter_row("f", "no_such_column", "ge", 1)]).collect()
+    text = str(caught.value)
+    assert "audit step 1" in text and "no_such_column" in text and "sample_id" in text, text
+    assert "removed it" not in text and "remove audit step 1 from the plot's audit list" in text, text
+
+
+def test_a_drop_of_a_column_that_an_earlier_step_dropped_is_an_error_too(original):
+    """Case G of the evidence: the re-run stops on it, so the table must not ignore it (table = re-run)."""
+    _, tier2, _ = original
+    with pytest.raises(AuditStepError, match=r"audit step 2.*audit step 1"):
+        audited_frame(tier2.lazy(), [drop_column("a", "n50"), drop_column("b", "n50")])
+
+
+def test_the_number_of_a_step_counts_the_active_data_steps_of_the_list(original, threshold):
+    """An inactive step and a plot style step are not counted; a step that was removed from the list is gone."""
+    _, tier2, _ = original
+    nodes = [{"node_type": "aesthetic_override", "params": {"alpha": 0.5}, "id": "a"},
+             {**drop_column("x", "country"), "active": False},
+             drop_column("d", "n50"), filter_row("f", "n50", "ge", threshold)]
+    with pytest.raises(AuditStepError, match=r"audit step 2 .*audit step 1"):
+        audited_frame(tier2.lazy(), nodes)
+
+
+def test_no_step_gives_the_frame_unchanged(original):
+    _, tier2, _ = original
+    assert audited_frame(tier2.lazy(), []).collect().equals(tier2)
+
+
+def test_an_exclusion_on_a_dropped_column_is_an_error_not_a_skip(original):
+    """Case E of the evidence: the table kept 41 rows, the plot 42 and the re-run stopped."""
+    _, tier2, _ = original
+    with pytest.raises(AuditStepError, match="n50"):
+        audited_frame(tier2.lazy(), [drop_column("d", "n50"), exclusion("e", ["1"]) | {"params": {"column": "n50", "op": "not_in", "value": [1.0]}}])
+
+
+def test_the_order_rule_is_in_one_function(raw_config):
+    """The provisional order (S2-1): the list order. This test pins the one function that carries the rule, so that
+    changing the rule is a change of that function and of this test only."""
+    from app.modules.t3_audit_engine import audit_steps_in_order
+
+    nodes = [filter_row("f", "n50", "ge", 1), drop_column("d", "n50"), exclusion("e", ["1"])]
+    assert [(s["number"], s["kind"], s["column"]) for s in audit_steps_in_order(nodes)] == [
+        (1, "filter", "n50"), (2, "drop", "n50"), (3, "filter", "sample_id")]
+
+
 def test_vizfactory_does_not_skip_a_filter_on_a_missing_column():
-    """Real code only: a filter on a column that the frame does not have must raise or report, never return all rows."""
+    """Real code only: a filter that a recipe's plot spec writes, on a column that the frame does not have, raises with the
+    one error form (the plot, the column, the fix); it never returns all rows."""
+    from utils.errors import VisualizationError
     from viz_factory import VizFactory
 
     frame = pl.LazyFrame({"x": [1, 2, 3, 4], "y": [1.0, 2.0, 3.0, 4.0]})
     spec = {"mapping": {"x": "x", "y": "y"}, "layers": [{"name": "geom_point", "params": {}}],
             "filters": [{"column": "n50", "op": "ge", "value": 3}]}
-    figure = VizFactory().render(frame, {"plots": {"p": spec}, "plot_defaults": {}}, "p")
-    assert figure.data.shape[0] != 4, "the filter on the missing column was skipped silently: all 4 rows are plotted"
+    with pytest.raises(VisualizationError, match=r"Plot 'p'.*'n50'.*Fix:"):
+        VizFactory().render(frame, {"plots": {"p": spec}, "plot_defaults": {}}, "p")
 
 
-def test_a_drop_then_a_filter_on_one_column_stops_the_exported_recipe_decision_pending(raw_config, run, threshold):
-    """CHARACTERISATION, decision pending (D3 and D5): "drop n50, then filter n50" is translated in the recorded
-    order and the re-run stops with "column ... is not in the table". HOME shows 21 rows for the same audit (it
-    regroups: filters, then drops). What the user should see, and whether the export is checked before it is
-    written, is Eve's choice; if she decides, this test changes with it.
+def test_the_plot_path_gets_the_rows_of_the_table_path_for_a_filter_then_a_drop_on_one_column(original, raw_config, raw_samples, threshold):
+    """Order B through the real function: the plot has the rows of the table, which are the oracle's (raw files).
+    Was an xfail: the plot had 42 rows, the table 21.
     """
-    nodes = [drop_column("d", "n50"), filter_row("f", "n50", "ge", threshold)]
-    exported, skipped = build_mode2_recipe(raw_config, {ZPLOT: nodes})
-    assert not skipped, skipped
-    target = exported["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]["spec"]["target_dataset"]
-    with pytest.raises(BaseException, match=r"n50.*not in the table"):
-        run(exported, target)
+    _, tier2, _ = original
+    nodes = [filter_row("f", "n50", "ge", threshold), drop_column("d", "n50")]
+    table = audited_frame(tier2.lazy(), nodes).collect()
+    expected = raw_samples.filter(pl.col("n50") >= threshold)
+    assert table.height == expected.height < raw_samples.height
+    assert _home_plot_data(tier2, raw_config, nodes).height == table.height
