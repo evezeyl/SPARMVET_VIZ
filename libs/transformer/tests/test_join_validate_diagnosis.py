@@ -212,3 +212,17 @@ def test_several_joins_are_named_in_the_order_of_the_recipe(tmp_path):
         two_joins(REPEATING_B.rename({"b": "c"}), REPEATING_B, tmp_path)
     text = str(caught.value)
     assert text.index("'C'") < text.index("'B'") and text.index("assembly step 1") < text.index("assembly step 2")
+
+
+def test_when_no_repeated_value_can_be_shown_the_text_says_only_that_polars_refused_and_invents_no_reason(tmp_path):
+    """Found by the random run: a full join with null keys that Polars refuses and where no key value repeats in either table."""
+    left = pl.DataFrame({"k": [None, 1, None], "j": [1, 1, 2], "a": [0, 1, 2]})
+    right = pl.DataFrame({"k": [None, 4, 2], "j": [None, 1, 4], "w": [0, 1, 2]})
+    step = {"on": ["k", "j"], "how": "full", "validate": "1:m", "nulls_equal": False}
+    assert polars_outcome(left, right, step) == "keys"
+    with pytest.raises(TransformationError) as caught:
+        engine(left, right, step, tmp_path)
+    text = str(caught.value)
+    assert "was refused by Polars" in text and "validate '1:m'" in text and "'R'" in text and "assembly step 1" in text
+    for invented in ("counts as", "missing key", "null", "None"):
+        assert invented not in text, invented
