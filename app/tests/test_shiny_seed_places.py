@@ -170,6 +170,20 @@ def test_without_a_seed_in_the_recipe_the_reference_pane_shows_the_same_arrangem
             reference = page.locator(f"#plot_group_{PID}_cmp_base").screenshot()
             mine = page.locator(f"#plot_group_{PID}").screenshot()
             assert same_picture(reference, mine), "the reference pane was drawn with another seed than My view"
+            # a second session draws its own seed, so its HOME plot differs (a HOME plot that dropped the
+            # drawn seed would show the library default in both sessions)
+            other_context = browser.new_context()
+            other = other_context.new_page()
+            try:
+                open_phenotype_plot(other, url, choose_recipe=True)
+                other_view = other.locator(f"#plot_group_{PID}").screenshot()
+            finally:
+                other_context.close()
+            page.locator("#plot_view input[value=T3]").check(force=True)
+            _wait_shiny(page)
+            settle(page, f"plot_group_{PID}")
+            assert not same_picture(other_view, page.locator(f"#plot_group_{PID}").screenshot()), \
+                "two sessions show the same arrangement: HOME did not use the seed it drew"
         finally:
             page.close()
 
