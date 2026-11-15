@@ -20,6 +20,7 @@ from types import SimpleNamespace
 from shiny import reactive, render, ui
 
 from app.modules.data_analysis_recipe_validator import home_advice_entries
+from app.modules.notification_utils import make_notifier
 
 POLL_SECONDS = 2
 
@@ -40,12 +41,54 @@ def follow_gate(available, current, remembered):
     return choices, selected, switched
 
 
+def follow_step(available, current, remembered, notice):
+    """One poll of the gate: (choices, selected, notice, announce).
+
+    `notice` is (the recipe that was left, the recipe shown instead) or None. It is set when the gate drops the open recipe and
+    it stays, over any number of later polls, until the recipe passes its checks again, a newer replacement takes its place, or
+    the user picks a recipe (`notice_after_pick`): the user is informed and never silently switched (ADR-104). `announce` is True
+    when the notice is new, so that it is written once to the Alerts log."""
+    choices, selected, switched = follow_gate(available, current, remembered)
+    if switched:
+        return choices, selected, switched, switched != notice
+    if notice and notice[0] in choices:
+        notice = None
+    return choices, selected, notice, False
+
+
+def notice_after_pick(notice, previous, value, available):
+    """(notice, announce) after the recipe selector changed from `previous` to `value` (None: off the page).
+
+    Three kinds of change:
+    - the recipe the selector held was dropped by the gate and the selector now holds another (the sidebar was built again
+      from the new list before the poll saw the change, for example on the way back from Blueprint): that is a replacement
+      nobody announced yet, so it becomes the notice (and is announced) unless it already is;
+    - the change the app makes itself (to the replacement), or a selector built again: the notice stays and, if the selector
+      came back on another recipe, names the one that is open now;
+    - a change away from the replacement: the user's own pick, the notice goes."""
+    if value is None:
+        return notice, False
+    if previous is not None and previous != value and previous not in available:
+        new = (previous, value)
+        return new, new != notice
+    if not notice or value == notice[1]:
+        return notice, False
+    if previous == notice[1]:
+        return None, False
+    return (notice[0], value), False
+
+
+def gate_notes_text(switched):
+    """The sentence of the notice: the recipe that was left and the one now open."""
+    return f"'{switched[0]}' was open and no longer passes its checks: HOME shows '{switched[1]}' instead."
+
+
 def gate_notes(rejected, advices, switched):
     """The notes under the selector: the recipe that was replaced, the recipes that are unavailable and why, the advices."""
     blocks = []
     if switched:
         blocks.append(ui.tags.small(
-            f"'{switched[0]}' was open and no longer passes its checks: HOME shows '{switched[1]}' instead.",
+            gate_notes_text(switched),
             class_="d-block fw-bold", style="font-size: 0.72rem; color: #d62828;"))
     if rejected:
         blocks.append(ui.div(
@@ -87,9 +130,10 @@ def usable_config(bootloader, recipe_id, load):
         return SimpleNamespace(raw_config={})
 
 
-def define_server(input, output, session, *, bootloader, safe_input, recipe_gate_version):
+def define_server(input, output, session, *, bootloader, safe_input, recipe_gate_version, notification_log=None):
     """Registers the poll of the gate, the selector follower and the notes output. `recipe_gate_version` is a reactive.Value
-    created by server.py (shared state read by `active_cfg`)."""
+    created by server.py (shared state read by `active_cfg`); `notification_log` is the Alerts log."""
+    _notify = make_notifier(notification_log)
 
     @reactive.poll(lambda: (bootloader.recheck_changed_data_analysis_recipes(),
                             bootloader.data_analysis_recipe_gate_version)[1], POLL_SECONDS)
@@ -111,18 +155,35 @@ def define_server(input, output, session, *, bootloader, safe_input, recipe_gate
         if recipe_gate_version.get() != v:   # idempotent guard (ui_implementation_contract.md section 14, R3)
             recipe_gate_version.set(v)
 
+    _last_value = [None]                 # the selector's value at the previous change (plain state, not reactive)
+
     @reactive.Effect
     @reactive.event(recipe_gate_version, ignore_init=True)
     def _follow():
         current = safe_input(input, "data_analysis_recipe_id", None)
         with reactive.isolate():
             remembered = _remembered.get()
-        choices, selected, switched = follow_gate(bootloader.available_data_analysis_recipes, current, remembered)
-        if switched:
-            _switched.set(switched)
-        elif current in choices:
-            _switched.set(None)
+            notice = _switched.get()
+        choices, selected, new_notice, announce = follow_step(bootloader.available_data_analysis_recipes, current, remembered,
+                                                              notice)
+        if new_notice != notice:
+            _switched.set(new_notice)
+        if announce:
+            _notify(gate_notes_text(new_notice), type="warning", duration=10)
         ui.update_select("data_analysis_recipe_id", choices=choices, selected=selected)
+
+    @reactive.Effect
+    def _user_picks():
+        """The notice goes when the user picks a recipe by hand (the selector changes away from the replacement)."""
+        value = safe_input(input, "data_analysis_recipe_id", None)
+        previous, _last_value[0] = _last_value[0], value
+        with reactive.isolate():
+            notice = _switched.get()
+        after, announce = notice_after_pick(notice, previous, value, bootloader.available_data_analysis_recipes)
+        if after != notice:
+            _switched.set(after)
+        if announce:
+            _notify(gate_notes_text(after), type="warning", duration=10)
 
     @output
     @render.ui
