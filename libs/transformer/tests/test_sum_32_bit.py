@@ -29,3 +29,28 @@ def test_the_cumulative_sum_wraps_too():
 def test_the_description_says_so(action):
     text = ACTION_SCHEMAS[action]["description"]
     assert "Int32" in text and "wraps around" in text and "Int64" in text
+
+
+# -- the note for a non-developer (ADVICE-TEXTS-1, Eve 2026-11-15): every number it states is run here -----------------
+from pathlib import Path
+
+PAGE = Path(__file__).resolve().parents[3] / "docs" / "appendix" / "transformer_actions.qmd"
+
+
+def _total(values, dtype):
+    return ACTIONS["polars_sum"](pl.DataFrame({"n": values}, schema={"n": dtype}).lazy(), {}).collect()["n"].to_list()[0]
+
+
+def test_the_numbers_of_the_note_are_what_polars_gives():
+    assert _total([2_000_000_000, 2_000_000_000], pl.Int32) == -294_967_296
+    assert _total([2_000_000_000, 2_000_000_000], pl.Int64) == 4_000_000_000
+    assert _total([0.1] * 10, pl.Float64) == 0.9999999999999999
+    assert _total([9007199254740992.0, 1.0], pl.Float64) == 9007199254740992.0
+
+
+@pytest.mark.parametrize("where", ["help", "page"])
+def test_the_help_and_the_page_state_the_note_with_its_suggestion(where):
+    text = ACTION_SCHEMAS["polars_sum"]["description"] if where == "help" else PAGE.read_text(encoding="utf-8")
+    for needed in ("-294967296", "4000000000", "0.9999999999999999", "9007199254740992.0", "wraps around", "Suggestion: declare the column as 64-bit",
+                   "Int64", "Float64", "does not matter"):
+        assert needed in text, needed
