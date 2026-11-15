@@ -59,7 +59,7 @@ Proposed:
 - Without `--apply` nothing in the gallery changes: new pictures go to `tmpAI/gallery_previews` and each is compared pixel by pixel with the committed one. `--apply` writes only pictures whose content did not change and new ones; a picture whose content differs is written only with `--changed` as well: look at it first, a figure must never change without a person seeing it.
 - Do NOT commit a bundle without a valid `preview_plot.png`.
 ```
-Why: `libs/viz_gallery/assets/generate_previews.py` does not exist (`ls` failed); `assets/scripts/gallery_previews.py` docstring and arguments (read). `--force` does not exist.
+Why: `generate_previews.py` in `libs/viz_gallery/assets/` does not exist (removed in `1437e3ad`) (`ls` failed); `assets/scripts/gallery_previews.py` docstring and arguments (read). `--force` does not exist.
 
 ## 7. Section 5, index (lines 88-93) (no change; one check)
 `assets/scripts/refresh_gallery.py` exists and `gallery_manager.rebuild_index` exists in `libs/viz_gallery/src/viz_gallery/gallery_manager.py`. Line 92 "Any bundle missing a required taxonomy field will be excluded from the index": now the gallery check runs at index rebuild (DEC48) and a failing example is "never listed nor opened" (`app/modules/gallery_listing.py`). Optional addition: `An example that fails the gallery check is not listed or opened; the viewer names it as "not shown, failed the check".` Kind: FACT.

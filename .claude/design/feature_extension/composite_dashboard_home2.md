@@ -3,7 +3,7 @@
 **Status:** EXPLORATORY — vision summary, nothing decided. Return-to-and-discuss.
 **Author:** @dasharch
 **Date:** 2026-05-22
-**Related:** [`dashboard_frontend_topology.md`](dashboard_frontend_topology.md) (HOME2 space vs. separate "app2" viewer), [`r_backend.md`](r_backend.md), [`bioinformatics_viz.md`](bioinformatics_viz.md), [`../../maps_advanced_geo.md`](../../maps_advanced_geo.md), `../spaces/FUTURE_SPACES.md`
+**Related:** [`dashboard_frontend_topology.md`](dashboard_frontend_topology.md) (HOME2 space vs. separate "app2" viewer), [`r_backend.md`](r_backend.md), [`bioinformatics_viz.md`](bioinformatics_viz.md), [`../maps_advanced_geo.md`](../maps_advanced_geo.md), `../spaces/FUTURE_SPACES.md`
 
 ---
 

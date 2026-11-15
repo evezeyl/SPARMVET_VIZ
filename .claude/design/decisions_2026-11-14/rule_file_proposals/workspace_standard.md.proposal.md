@@ -4,8 +4,8 @@ Status: PROPOSAL for Eve's double confirmation. No rule file was edited. Checked
 
 ## 1. Line 34, the Viz Factory row (FACT; follows `rules_viz_factory.md.proposal.md` change 1)
 
-Today (line 34): `| **Viz Factory** | Artist Pillar, Plotnine Parity, Core Geoms | [rules_viz_factory.md](...) |`
-Proposed: `| **Viz Factory** | Artist Pillar, how the library follows the recipe standard (exact / modified / own components), Core Geoms | [rules_viz_factory.md](...) |`
+Today (line 34): `| **Viz Factory** | Artist Pillar, Plotnine Parity, Core Geoms | [rules_viz_factory.md](../../../rules/rules_viz_factory.md) |`
+Proposed: `| **Viz Factory** | Artist Pillar, how the library follows the recipe standard (exact / modified / own components), Core Geoms | [rules_viz_factory.md](../../../rules/rules_viz_factory.md) |`
 Why: the parity mandate is replaced (ADR-106 V9, approved by Eve).
 
 ## 2. Lines 76, 96, 109, the `@deps` examples (FACT)
