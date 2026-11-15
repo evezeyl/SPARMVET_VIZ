@@ -14,7 +14,6 @@ Each scenario starts its own app (the first edits a recipe file, restored afterw
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_shiny_seed_places.py -q
 """
 import io
-import os
 import socket
 import subprocess
 import time
@@ -28,13 +27,16 @@ import yaml
 from PIL import Image, ImageChops
 from playwright.sync_api import Page, expect
 
-from app.tests.conftest import browser, page  # noqa: F401
+from app.tests.conftest import browser  # noqa: F401
+from app.tests.subprocess_env import app_env
 from app.tests.test_shiny_smoke import _navigate_to_phenotype_plot, _wait_shiny
 
 REPO = Path(__file__).resolve().parents[2]
 PID = "phenotype_genome_length_fragmentation"
 PLOT_FILE = REPO / "config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy/plots/phenotype_genome_length_dotplot.yaml"
-JITTER_LINE = 'params: {alpha: 0.6, size: 2.5, position: "jitter"}'
+# `random_state` is accepted by geom_jitter, not by geom_point (checker rule PS04): the test swaps the layer
+JITTER_LAYER = '  - name: "geom_point"\n    params: {alpha: 0.6, size: 2.5, position: "jitter"}'
+SEEDED_LAYER = '  - name: "geom_jitter"\n    params: {alpha: 0.6, size: 2.5, random_state: 123}'
 LOCAL = "config/deployment/local/local.yaml"
 PIPELINE = "config/deployment/pipeline_test/pipeline_test.yaml"
 
@@ -48,7 +50,8 @@ def _free_port() -> int:
 @contextmanager
 def running_app(app_features: str, deployment: str, tmp_path):
     port = _free_port()
-    env = {**os.environ, "PYTHONPATH": ".", "SPARMVET_APP_FEATURES": app_features, "SPARMVET_DEPLOYMENT": deployment}
+    env = app_env(SPARMVET_APP_FEATURES=app_features, SPARMVET_DEPLOYMENT=deployment)
+    Path(REPO / "tmpAI").mkdir(exist_ok=True)
     with open(REPO / "tmpAI" / f"seed_places_{app_features}.log", "w") as out:
         proc = subprocess.Popen([str(REPO / ".venv/bin/shiny"), "run", "app/src/main.py", "--port", str(port)],
                                 cwd=REPO, env=env, stdout=out, stderr=subprocess.STDOUT)
@@ -66,6 +69,14 @@ def running_app(app_features: str, deployment: str, tmp_path):
             proc.wait(timeout=20)
 
 
+def settle(page: Page, *ids: str) -> None:
+    """Wait until every plot is drawn (an image in it) and the spinners are gone: a screenshot taken while a plot
+    is still being drawn shows the spinner, not the picture."""
+    for plot_id in ids:
+        page.wait_for_selector(f"#{plot_id} img", timeout=60_000)
+    page.wait_for_timeout(8_000)
+
+
 def open_phenotype_plot(page: Page, url: str, choose_recipe: bool) -> None:
     page.goto(url)
     if choose_recipe:
@@ -77,7 +88,7 @@ def open_phenotype_plot(page: Page, url: str, choose_recipe: bool) -> None:
     _wait_shiny(page, 60_000)
     _navigate_to_phenotype_plot(page)
     expect(page.locator(f"#plot_group_{PID}")).to_be_visible(timeout=30_000)
-    page.wait_for_timeout(1_500)
+    settle(page, f"plot_group_{PID}")
 
 
 def open_export_panel(page: Page) -> None:
@@ -111,8 +122,8 @@ def same_picture(a: bytes, b: bytes) -> bool:
 
 def test_a_seed_written_in_the_recipe_holds_in_home_the_reference_pane_and_the_export(browser, tmp_path):
     original = PLOT_FILE.read_text()
-    assert JITTER_LINE in original, "the plot file changed: update this test"
-    PLOT_FILE.write_text(original.replace(JITTER_LINE, 'params: {alpha: 0.6, size: 2.5, position: "jitter", random_state: 123}'))
+    assert JITTER_LAYER in original, "the plot file changed: update this test"
+    PLOT_FILE.write_text(original.replace(JITTER_LAYER, SEEDED_LAYER))
     try:
         with running_app("qa", LOCAL, tmp_path) as url:
             shots, runs = [], []
@@ -125,7 +136,7 @@ def test_a_seed_written_in_the_recipe_holds_in_home_the_reference_pane_and_the_e
                     if len(shots) == 1:
                         page.locator("#plot_view input[value=CMP]").check(force=True)
                         _wait_shiny(page)
-                        page.wait_for_timeout(1_500)
+                        settle(page, f"plot_group_{PID}", f"plot_group_{PID}_cmp_base")
                         reference = page.locator(f"#plot_group_{PID}_cmp_base").screenshot()
                         mine = page.locator(f"#plot_group_{PID}").screenshot()
                         assert same_picture(reference, mine), "the reference pane does not show the recipe's seed"
@@ -143,7 +154,7 @@ def test_a_seed_written_in_the_recipe_holds_in_home_the_reference_pane_and_the_e
         recipe_name = next(n for n in z.namelist() if "/data_analysis_recipes_reproducibility/" in n and n.endswith(f"1_test_data_ST22_dummy.yaml"))
         recipe = yaml.safe_load(z.read(recipe_name).decode())
         spec = next(g["plots"][PID]["spec"] for g in recipe["analysis_groups"].values() if PID in g["plots"])
-        assert {l["params"].get("random_state") for l in spec["layers"] if (l.get("params") or {}).get("position") == "jitter"} == {123}
+        assert {l["params"].get("random_state") for l in spec["layers"] if l.get("name") == "geom_jitter"} == {123}
     finally:
         PLOT_FILE.write_text(original)
 
@@ -155,7 +166,7 @@ def test_without_a_seed_in_the_recipe_the_reference_pane_shows_the_same_arrangem
             open_phenotype_plot(page, url, choose_recipe=True)
             page.locator("#plot_view input[value=CMP]").check(force=True)
             _wait_shiny(page)
-            page.wait_for_timeout(1_500)
+            settle(page, f"plot_group_{PID}", f"plot_group_{PID}_cmp_base")
             reference = page.locator(f"#plot_group_{PID}_cmp_base").screenshot()
             mine = page.locator(f"#plot_group_{PID}").screenshot()
             assert same_picture(reference, mine), "the reference pane was drawn with another seed than My view"
@@ -176,7 +187,7 @@ def test_the_reshuffle_pin_reaches_home_and_the_export_when_the_audit_trail_is_o
             expect(btn).to_be_visible(timeout=10_000)
             btn.click()
             _wait_shiny(page)
-            page.wait_for_timeout(1_500)
+            settle(page, f"plot_group_{PID}")
             assert not same_picture(shown.screenshot(), before), "HOME ignored the pinned seed (audit trail off)"
             run_b, png_b, _ = export_run_and_png(page)
             assert run_b["seed_source_per_plot"][PID] == "audit", "the export ignored the pinned seed (audit trail off)"
