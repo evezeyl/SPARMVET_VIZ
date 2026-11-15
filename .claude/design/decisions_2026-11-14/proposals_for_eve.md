@@ -95,7 +95,7 @@ Brief with the options and what is already decided: `tmpAI/panel/brief_joins_gal
 2. **A step is dropped silently (READ, A):** the "redundant init" skip (`data_assembler.py:221-223`) covers every step whose right table is the first table, so a real self-join with different left and right keys is also dropped, without a message.
 3. **Hidden from the user (READ):** with a read-only gallery folder a failing example is still listed and opens; the reason an example is left out is never shown.
 4. **N15 is already decided:** `tasks.md:200` (Q3-GALLERY-SUBMISSION-1, Eve 2026-11-14) says `submit_example` stays. `tasks.md:134` asks again: that line should be closed, not answered again. Deleting the function would reconsider your decision.
-5. **Side finding, not verified by running (READ, A):** `complex_template.yaml` names `assets/test_data/genomics_data.tsv` and `metadata.tsv`, which do not exist, so the template cannot run as it is.
+5. **Side finding, not verified by running (READ, A):** `complex_template.yaml` names assets/test_data/genomics_data.tsv and `metadata.tsv`, which do not exist, so the template cannot run as it is.
 
 ### The points
 

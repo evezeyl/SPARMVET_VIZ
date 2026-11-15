@@ -683,6 +683,8 @@ class WrangleStudio:
                             render_data_analysis_recipe = {
                                 "plots": {viz_id: spec},
                                 "plot_defaults": full_cfg.get("plot_defaults", {}),
+                                # ADR-106 V8: the factory refuses an engine it does not implement
+                                **({"plot_engine": full_cfg["plot_engine"]} if "plot_engine" in full_cfg else {}),
                             }
                             break
 

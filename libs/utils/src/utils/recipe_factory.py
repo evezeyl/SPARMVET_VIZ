@@ -7,8 +7,8 @@ Two uses:
   of the keys (the order of `analysis_groups` and of `plots` is the order of the tabs, spec section 5), never write a
   YAML anchor, and write `!include` for an `Include`.
 
-Nothing here reads a data file or a registry: the factory spells no action name. The format version and the engine
-names are read from the specification data (`recipe_spec.yaml`), so they cannot go stale.
+Nothing here reads a data file or a registry: the factory spells no action name. The format version is read from the specification data (`recipe_spec.yaml`) and the engine
+names from `utils/engines.py`, so they cannot go stale.
 
 These writers are for NEW text. A tool that changes an existing recipe file edits its text, so that every comment of
 the author is kept (spec 6.2); it does not load the file and write it again with this module.

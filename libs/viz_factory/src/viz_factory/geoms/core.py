@@ -76,6 +76,7 @@ _STAT_DENSITY_PARAMS = {
     "context": ["plot"],
     "tags": ["distribution", "boxplot", "outliers", "quartiles", "summary"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_boxplot"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
@@ -107,6 +108,7 @@ def handle_boxplot(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["distribution", "violin", "density", "quartiles", "comparison"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_violin"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         **_GEOM_FILL_PARAMS,
@@ -133,6 +135,7 @@ def handle_violin(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["scatter", "points", "correlation", "relationship", "bivariate"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_point"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
@@ -160,6 +163,7 @@ def handle_point(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["line", "trend", "time-series", "connected", "evolution"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_line"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
@@ -190,6 +194,7 @@ def handle_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["bar", "count", "frequency", "categorical", "comparison", "distribution"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_bar"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
@@ -219,6 +224,7 @@ def handle_bar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["bar", "column", "identity", "value", "comparison"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_col"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         **_GEOM_FILL_PARAMS,
@@ -240,6 +246,7 @@ def handle_col(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["histogram", "distribution", "frequency", "numeric", "univariate"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_histogram"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "bins": {"widget": "number", "label": "Number of bins", "required": False, "default": 30},
@@ -270,6 +277,7 @@ def handle_histogram(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["smooth", "trend", "regression", "loess", "lm", "confidence"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_smooth"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         **_STAT_SMOOTH_PARAMS,
@@ -294,6 +302,7 @@ def handle_smooth(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["density", "distribution", "kde", "smooth", "univariate"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_density"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         **_STAT_DENSITY_PARAMS,
@@ -320,6 +329,7 @@ def handle_density(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["errorbar", "uncertainty", "confidence", "range", "annotation"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_errorbar"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "width": {"widget": "number", "label": "Whisker width (data units)", "required": False, "default": 0.5},
@@ -346,6 +356,7 @@ def handle_errorbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["pointrange", "uncertainty", "confidence", "range", "annotation"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_pointrange"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
@@ -375,6 +386,7 @@ def handle_pointrange(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["heatmap", "tile", "matrix", "fill", "correlation", "bivariate"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_tile"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
@@ -402,6 +414,7 @@ def handle_tile(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["raster", "heatmap", "fill", "fast", "grid", "matrix"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_raster"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
@@ -428,23 +441,24 @@ def handle_raster(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["text", "label", "annotation", "direct-label", "value"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_text"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "colour": {"widget": "color", "label": "Text colour", "required": False},
         "size": {"widget": "number", "label": "Font size (pt)", "required": False, "default": 11},
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
         "family": {"widget": "string", "label": "Font family", "required": False},
-        "fontface": {"widget": "enum", "label": "Font face", "required": False,
-                     "options": ["plain", "bold", "italic", "bold.italic"]},
-        "hjust": {"widget": "number", "label": "Horizontal justification (0=left, 0.5=center, 1=right)",
-                  "required": False, "default": 0.5},
-        "vjust": {"widget": "number", "label": "Vertical justification (0=bottom, 0.5=center, 1=top)",
-                  "required": False, "default": 0.5},
+        "fontweight": {"widget": "string", "label": "Font weight (normal, bold, ...)", "required": False},
+        "fontstyle": {"widget": "enum", "label": "Font style", "required": False,
+                      "options": ["normal", "italic", "oblique"]},
+        "ha": {"widget": "enum", "label": "Horizontal alignment", "required": False, "default": "center",
+               "options": ["left", "center", "right"]},
+        "va": {"widget": "enum", "label": "Vertical alignment", "required": False, "default": "center",
+               "options": ["top", "center", "bottom", "baseline"]},
         "angle": {"widget": "number", "label": "Text angle (degrees)", "required": False, "default": 0},
         "lineheight": {"widget": "number", "label": "Line height multiplier", "required": False, "default": 1.2},
         "nudge_x": {"widget": "number", "label": "Horizontal nudge (data units)", "required": False, "default": 0},
         "nudge_y": {"widget": "number", "label": "Vertical nudge (data units)", "required": False, "default": 0},
-        "check_overlap": {"widget": "bool", "label": "Skip overlapping labels", "required": False, "default": False},
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
     "description": "Add text labels at x/y positions; use to annotate points or bars with a value column \u2014 prefer geom_label when readability on busy backgrounds matters.",
@@ -461,6 +475,7 @@ def handle_text(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["label", "text", "annotation", "background", "box", "callout"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_label"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "colour": {"widget": "color", "label": "Text colour", "required": False},
@@ -468,10 +483,13 @@ def handle_text(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "size": {"widget": "number", "label": "Font size (pt)", "required": False, "default": 11},
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
         "family": {"widget": "string", "label": "Font family", "required": False},
-        "fontface": {"widget": "enum", "label": "Font face", "required": False,
-                     "options": ["plain", "bold", "italic", "bold.italic"]},
-        "hjust": {"widget": "number", "label": "Horizontal justification", "required": False, "default": 0.5},
-        "vjust": {"widget": "number", "label": "Vertical justification", "required": False, "default": 0.5},
+        "fontweight": {"widget": "string", "label": "Font weight (normal, bold, ...)", "required": False},
+        "fontstyle": {"widget": "enum", "label": "Font style", "required": False,
+                      "options": ["normal", "italic", "oblique"]},
+        "ha": {"widget": "enum", "label": "Horizontal alignment", "required": False, "default": "center",
+               "options": ["left", "center", "right"]},
+        "va": {"widget": "enum", "label": "Vertical alignment", "required": False, "default": "center",
+               "options": ["top", "center", "bottom", "baseline"]},
         "angle": {"widget": "number", "label": "Text angle (degrees)", "required": False, "default": 0},
         "nudge_x": {"widget": "number", "label": "Horizontal nudge (data units)", "required": False, "default": 0},
         "nudge_y": {"widget": "number", "label": "Vertical nudge (data units)", "required": False, "default": 0},
@@ -494,6 +512,7 @@ def handle_label(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["jitter", "scatter", "overplot", "spread", "distribution"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_jitter"]}],
+    "plotnine": "modified",
     "allow_extra_params": True,
     "params": {
         "width": {"widget": "number", "label": "Horizontal jitter amount", "required": False, "default": 0.4},
@@ -505,7 +524,7 @@ def handle_label(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "shape": {"widget": "number", "label": "Shape code (0–25)", "required": False, "default": 16},
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
-    "description": "Scatter points with random position noise; use to reduce overplotting in small categorical scatter plots \u2014 prefer geom_sina for publication.",
+    "description": "Scatter points with random position noise; use to reduce overplotting in small categorical scatter plots \u2014 prefer geom_sina for publication. Differs from plotnine: the factory gives it a default seed, so the same recipe gives the same picture; `random_state: null` gives a new one each time.",
     "yaml_example": "layers:\n  - name: geom_jitter\n    params:\n      width: 0.2\n      height: 0",
 })
 def handle_jitter(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -519,6 +538,7 @@ def handle_jitter(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["step", "staircase", "ecdf", "cumulative", "evolution"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_step"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         **_GEOM_LINE_PARAMS,
@@ -539,6 +559,7 @@ def handle_step(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["segment", "arrow", "lollipop", "annotation", "range"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_segment"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         **_GEOM_LINE_PARAMS,
@@ -561,6 +582,7 @@ def handle_segment(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["abline", "reference", "slope", "intercept", "diagonal", "annotation"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_abline"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "slope": {"widget": "number", "label": "Slope", "required": False, "default": 1},
@@ -581,6 +603,7 @@ def handle_abline(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["area", "fill", "stacked", "cumulative", "evolution", "proportion"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_area"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         **_GEOM_FILL_PARAMS,
@@ -603,6 +626,7 @@ def handle_area(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["bin2d", "heatmap", "density", "2d", "count", "correlation"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_bin_2d"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "bins": {"widget": "number", "label": "Number of bins in each direction", "required": False, "default": 30},
@@ -623,6 +647,7 @@ def handle_bin_2d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["blank", "utility", "limits", "expand"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_blank"]}],
+    "plotnine": "exact",
     "allow_extra_params": False,
     "params": {},
     "description": "Invisible layer that contributes only axis expansion; use to force axis limits without drawing any geometry.",
@@ -639,6 +664,7 @@ def handle_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["count", "scatter", "overplot", "size", "frequency"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_count"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
@@ -661,6 +687,7 @@ def handle_count(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["crossbar", "summary", "uncertainty", "median", "range"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_crossbar"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         **_GEOM_FILL_PARAMS,
@@ -683,11 +710,10 @@ def handle_crossbar(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["density2d", "contour", "bivariate", "kde", "heatmap"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_density_2d"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         **_GEOM_LINE_PARAMS,
-        "contour_var": {"widget": "enum", "label": "Variable to contour", "required": False, "default": "density",
-                        "options": ["density", "ndensity", "count"]},
     },
     "description": "2D kernel density contour lines; use to show the shape of a joint distribution overlaid on a scatter plot.",
     "yaml_example": "layers:\n  - name: geom_density_2d",
@@ -703,6 +729,7 @@ def handle_density_2d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["dotplot", "distribution", "count", "frequency", "univariate"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_dotplot"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "binwidth": {"widget": "number", "label": "Bin width (data units)", "required": False},
@@ -734,6 +761,7 @@ def handle_dotplot(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["errorbarh", "horizontal", "uncertainty", "confidence", "range"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_errorbarh"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "height": {"widget": "number", "label": "Whisker height (data units)", "required": False, "default": 0.5},
@@ -760,6 +788,7 @@ def handle_errorbarh(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["freqpoly", "frequency", "histogram", "line", "distribution"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_freqpoly"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "bins": {"widget": "number", "label": "Number of bins", "required": False, "default": 30},
@@ -780,6 +809,7 @@ def handle_freqpoly(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["hline", "reference", "horizontal", "threshold", "annotation"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_hline"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "yintercept": {"widget": "number", "label": "Y-intercept (Y value of the line)", "required": False,
@@ -800,6 +830,7 @@ def handle_hline(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["linerange", "range", "uncertainty", "vertical", "annotation"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_linerange"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
@@ -831,6 +862,7 @@ def handle_linerange(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["path", "connected", "trajectory", "time", "order"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_path"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         **_GEOM_LINE_PARAMS,
@@ -855,6 +887,7 @@ def handle_path(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["pointdensity", "density", "scatter", "overplot", "2d"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_pointdensity"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
@@ -876,6 +909,7 @@ def handle_pointdensity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["polygon", "shape", "fill", "region", "spatial"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_polygon"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         **_GEOM_FILL_PARAMS,
@@ -894,6 +928,7 @@ def handle_polygon(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["qq", "quantile", "normality", "distribution", "comparison"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_qq"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "distribution": {"widget": "string", "label": "Distribution name (e.g. norm, t, exp)",
@@ -919,6 +954,7 @@ def handle_geom_qq(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["qq", "reference", "normality", "line", "distribution"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_qq_line"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "distribution": {"widget": "string", "label": "Distribution name (e.g. norm, t)",
@@ -944,11 +980,11 @@ def handle_qq_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["quantile", "regression", "trend", "robust", "median"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_quantile"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "quantiles": {"widget": "string", "label": "Quantile(s) to fit (e.g. [0.25,0.5,0.75])",
                       "required": False, "default": "[0.25, 0.5, 0.75]"},
-        "method": {"widget": "string", "label": "Fitting method (rq)", "required": False, "default": "rq"},
         **_GEOM_LINE_PARAMS,
     },
     "description": "Fit and draw quantile regression lines; use to show how different quantiles of y change with x, especially for heteroscedastic data.",
@@ -965,6 +1001,7 @@ def handle_quantile(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["rect", "rectangle", "highlight", "region", "annotation"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_rect"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         **_GEOM_FILL_PARAMS,
@@ -983,6 +1020,7 @@ def handle_rect(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["ribbon", "band", "confidence", "range", "fill", "evolution"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_ribbon"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         **_GEOM_FILL_PARAMS,
@@ -1003,12 +1041,12 @@ def handle_ribbon(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["rug", "marginal", "ticks", "distribution", "annotation"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_rug"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "sides": {"widget": "enum", "label": "Sides to draw rug on", "required": False, "default": "bl",
                   "options": ["b", "l", "t", "r", "bl", "bt", "br", "lt", "lr", "tr", "blt", "blr", "btr",
                                "ltr", "bltr"]},
-        "outside": {"widget": "bool", "label": "Draw ticks outside plot area", "required": False, "default": False},
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False, "default": 1.0},
         "colour": {"widget": "color", "label": "Tick colour", "required": False},
         "size": {"widget": "number", "label": "Tick line width", "required": False},
@@ -1029,6 +1067,7 @@ def handle_rug(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["sina", "violin", "jitter", "points", "distribution", "comparison"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_sina"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "scale": {"widget": "enum", "label": "Scale points to", "required": False, "default": "area",
@@ -1057,6 +1096,7 @@ def handle_sina(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["spoke", "arrow", "angle", "direction", "vector"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_spoke"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "radius": {"widget": "number", "label": "Spoke radius (overrides mapped radius)", "required": False},
@@ -1082,6 +1122,7 @@ def handle_spoke(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["vline", "reference", "vertical", "threshold", "annotation"],
     "wraps": [{"lib": "plotnine", "attr_path": ["geom_vline"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "xintercept": {"widget": "number", "label": "X-intercept (X value of the line)", "required": False,
@@ -1105,6 +1146,7 @@ def handle_vline(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "count", "frequency", "bar", "categorical"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_count"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "width": {"widget": "number", "label": "Bar width (0–1)", "required": False},
@@ -1123,6 +1165,7 @@ def handle_stat_count(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "bin", "histogram", "frequency", "numeric"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_bin"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "bins": {"widget": "number", "label": "Number of bins", "required": False, "default": 30},
@@ -1147,9 +1190,10 @@ def handle_stat_bin(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "identity", "passthrough", "utility"],
     "wraps": [],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": {},
-    "description": "Pass data through unchanged (no statistical transformation); the default stat for most geoms \u2014 specify explicitly only when overriding another stat.",
+    "description": "Pass data through unchanged (no statistical transformation); the default stat for most geoms \u2014 specify explicitly only when overriding another stat. Differs from plotnine: adds nothing to the plot and ignores its parameters; every geom already uses the identity stat unless another is named.",
     "yaml_example": "layers:\n  - name: stat_identity",
 })
 def handle_stat_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -1163,6 +1207,7 @@ def handle_stat_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "summary", "aggregate", "function", "group"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_summary"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "fun_y": {"widget": "string", "label": "Function for y (e.g. 'mean', 'median')", "required": False},
@@ -1186,6 +1231,7 @@ def handle_stat_summary(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "boxplot", "quartiles", "IQR", "outliers"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_boxplot"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "coef": {"widget": "number", "label": "Whisker coefficient (IQR multiplier)", "required": False,
@@ -1207,6 +1253,7 @@ def handle_stat_boxplot(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "ydensity", "violin", "density", "distribution"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_ydensity"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "scale": {"widget": "enum", "label": "Scale violins to", "required": False, "default": "area",
@@ -1227,6 +1274,7 @@ def handle_stat_ydensity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "smooth", "trend", "regression", "loess", "lm"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_smooth"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {**_STAT_SMOOTH_PARAMS},
     "description": "Fit a smoothing model and compute confidence interval; the default stat for geom_smooth \u2014 specify directly to change the method without the smooth geometry.",
@@ -1242,6 +1290,7 @@ def handle_stat_smooth(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "density", "kde", "distribution", "smooth"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_density"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {**_STAT_DENSITY_PARAMS},
     "description": "Compute 1D kernel density; the default stat for geom_density \u2014 use to tune bandwidth or trim range independently of the geometry.",
@@ -1257,6 +1306,7 @@ def handle_stat_density(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "qq", "quantile", "normality", "distribution"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_qq"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "distribution": {"widget": "string", "label": "Distribution name (e.g. norm)",
@@ -1277,6 +1327,7 @@ def handle_stat_qq(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "ecdf", "cdf", "cumulative", "distribution"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_ecdf"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "n": {"widget": "number", "label": "Number of interpolation points", "required": False, "default": None},
@@ -1297,6 +1348,7 @@ def handle_stat_ecdf(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "unique", "deduplicate", "filter", "utility"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_unique"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
@@ -1336,6 +1388,7 @@ def _function_from_string(text: str):
     "context": ["plot"],
     "tags": ["stat", "function", "curve", "math", "annotation"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_function"]}],
+    "plotnine": "modified",
     "allow_extra_params": True,
     "params": {
         "fun": {"widget": "string", "label": "Function as Python expression (e.g. 'lambda x: x**2')",
@@ -1344,7 +1397,7 @@ def _function_from_string(text: str):
         "xlim": {"widget": "string", "label": "X range for evaluation [min, max]", "required": False},
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
-    "description": "Evaluate an arbitrary function over the x range; use to overlay a theoretical curve (e.g. normal distribution, growth model) on data.",
+    "description": "Evaluate an arbitrary function over the x range; use to overlay a theoretical curve (e.g. normal distribution, growth model) on data. Differs from plotnine: `fun` may be written as text (a math function name or a lambda over numbers); the text is checked and turned into a function with numpy maths only, where plotnine takes a function.",
     "yaml_example": "layers:\n  - name: stat_function\n    params:\n      fun: \"lambda x: 2 * x\"",
 })
 def handle_stat_function(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -1362,6 +1415,7 @@ def handle_stat_function(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "bin2d", "heatmap", "density", "2d", "count"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_bin_2d"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "bins": {"widget": "string", "label": "Bins per axis [x, y] or single number", "required": False,
@@ -1383,6 +1437,7 @@ def handle_stat_bin_2d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "bindot", "dotplot", "frequency", "distribution"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_bindot"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "binwidth": {"widget": "number", "label": "Bin width (data units)", "required": False},
@@ -1408,12 +1463,11 @@ def handle_stat_bindot(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "density2d", "contour", "bivariate", "kde"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_density_2d"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "contour": {"widget": "bool", "label": "Compute contours", "required": False, "default": True},
         "n": {"widget": "number", "label": "Grid points per axis for evaluation", "required": False, "default": 100},
-        "h": {"widget": "string", "label": "Bandwidth [x, y]", "required": False},
-        "adjust": {"widget": "number", "label": "Bandwidth adjustment multiplier", "required": False, "default": 1.0},
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
     "description": "Compute 2D kernel density estimate; the default stat for geom_density_2d \u2014 use to tune bandwidth or contour levels.",
@@ -1429,6 +1483,7 @@ def handle_stat_density_2d(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "ellipse", "confidence", "group", "cluster"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_ellipse"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "type": {"widget": "enum", "label": "Ellipse type", "required": False, "default": "t",
@@ -1450,6 +1505,7 @@ def handle_stat_ellipse(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "hull", "convex", "polygon", "group", "cluster"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_hull"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "geom": {"widget": "string", "label": "Geom to render hull with", "required": False, "default": "path"},
@@ -1468,6 +1524,7 @@ def handle_stat_hull(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "qq", "reference", "normality", "line"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_qq_line"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "distribution": {"widget": "string", "label": "Distribution name (e.g. norm)",
@@ -1492,11 +1549,11 @@ def handle_stat_qq_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "quantile", "regression", "trend", "robust"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_quantile"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "quantiles": {"widget": "string", "label": "Quantile(s) to fit (e.g. [0.25,0.5,0.75])",
                       "required": False, "default": "[0.25, 0.5, 0.75]"},
-        "method": {"widget": "string", "label": "Fitting method", "required": False, "default": "rq"},
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
     "description": "Fit quantile regression; the default stat for geom_quantile \u2014 use to change which quantiles are fitted.",
@@ -1512,6 +1569,7 @@ def handle_stat_quantile(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "sina", "jitter", "violin", "density", "distribution"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_sina"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "scale": {"widget": "enum", "label": "Scale points to", "required": False, "default": "area",
@@ -1534,6 +1592,7 @@ def handle_stat_sina(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "sum", "count", "size", "overplot"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_sum"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "geom": {"widget": "string", "label": "Geom to render", "required": False, "default": "point"},
@@ -1552,6 +1611,7 @@ def handle_stat_sum(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["stat", "summary", "bin", "aggregate", "group"],
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_summary_bin"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "fun_y": {"widget": "string", "label": "Function for y (e.g. 'mean', 'median')", "required": False},
@@ -1574,6 +1634,7 @@ def handle_stat_summary_bin(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["labels", "title", "axis", "legend", "annotation", "subtitle", "caption"],
     "wraps": [{"lib": "plotnine", "attr_path": ["labs"]}],
+    "plotnine": "exact",
     "allow_extra_params": True,
     "params": {
         "title": {"widget": "string", "label": "Plot title", "required": False},

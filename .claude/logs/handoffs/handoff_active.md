@@ -853,3 +853,96 @@ Earlier lines above are not edited; where they disagree with the following, the 
 6. Ties in `polars_top_k` and `polars_bottom_k`, and `polars_head` after a step with no promised order: advice only today, no decided rule.
 7. The one-line rule-file edit of `ui_implementation_contract.md` section 8, in branch `task/na-rule-b`.
 8. Aggregating a table that holds a text column gives a missing value and no message (Polars' behaviour).
+
+## Handoff 2026-11-15 01:06 (coordinator): the Polars actions and the NA rule are merged and pushed; what runs; what is next
+
+**(a) Pushed**
+- `origin/dev` = `f769c8dd`, after the full controls: headless suite 4935 passed, 22 xfailed; golden baseline result-identical; full browser gate 74 passed, 3 skipped; audit_docs_sync 0 violations; cross-library audit PASS; check_doc_links 50 problems (none in the ADR log, this handoff, the action page or the library READMEs).
+
+**(b) Merged since the handoff of 00:15** (into `feat/recipe-format-1`)
+- Polars table aggregations `4644a9ea`
+- NA rule part 2 `4674b604`
+- Polars rank, as-of join, join on conditions and time windows `f769c8dd`
+- The registry holds 68 actions.
+
+**(c) Running** (each in worktree `.claude/worktrees/<name>`, branch `task/<name>`)
+- `seed-holds`: SEED-HOLDS-1.
+- `viz-field-engine`: VIZ-STANDARD-1 step 2 (the field exact / modified / own on every plot component; the factory refuses an engine it does not implement).
+- `typed-values`: EXPORT-FILTER-VALUE-1 and OPERATORS-SCREENS-1 (the filter value typed at the source; every operator in HOME).
+- `cleanup-counts`: CLEANUP-COUNTS-1 (stated action counts, a test that gave false alarms in worktrees, the checker and empty lists, stale paths).
+
+**(d) Next**
+1. PLOT-TABLE-ORDER-1, after `typed-values` is merged (same files).
+2. VIZ-STANDARD-1 steps 3 to 5: parameters read from plotnine; one strict rule set for layer parameters; tests driven by the registry, silent paths, one error form.
+
+**(e) Open for Eve** (one line each)
+1. A same-key self-join runs with an advice (built) or is refused.
+2. `categorical`: DEC27 against the code.
+3. The seed when the recipe writes none.
+4. Whether Blueprint may author the plot entry's tier 3.
+5. Show all checker advices, or only those that can change a result.
+6. Ties in `polars_top_k` / `polars_bottom_k` and `polars_head` after a step with no promised order (advice only today).
+7. `polars_join_where` fixes the order of its result because Polars gives none: `polars_` or `modif_` prefix.
+8. The sum of a 64-bit integer column wraps around without an error (stated in the description, not checked).
+9. A Polars panic while a plan runs is reported but cannot name the step.
+10. Aggregating a table that holds a text column gives a missing value and no message (Polars' behaviour).
+11. Comparisons on Date and Boolean columns in the HOME filter (options are being prepared).
+
+## Handoff 2026-11-15 08:15 (coordinator): restart after the second usage-limit stop; what runs; what is next
+
+**(a) Git**
+- Branch `feat/recipe-format-1`, HEAD `b91a9fd5` (CLEANUP-COUNTS-1): a parameter may require at least one item; 40 actions refuse an empty list or mapping that would do nothing; the stated action counts follow the registry (68), with a test; tests that start the app in a subprocess use the sources of their own checkout.
+- `origin/dev` = `f769c8dd`. `b91a9fd5` is NOT pushed and has had NO control run.
+
+**(b) Running** (resumed at 08:07 after the stop at about 01:45; same agents, same worktrees; each worktree `.claude/worktrees/<name>`, branch `task/<name>`)
+- `seed-holds`: SEED-HOLDS-1. Last commit c098f116, plus uncommitted edits in `plot_config_resolver.py` and `test_plot_seed.py` (fixes after review). Left: merge of feat into the worktree, then the suites.
+- `typed-values`: EXPORT-FILTER-VALUE-1 and OPERATORS-SCREENS-1. Last commit 89043503 (review by a reviewer that breaks the code; that reviewer uses a temporary worktree `/tmp/claude-1000/old4674`). Left: the review result, the fixes, the merge.
+- `viz-field-engine`: VIZ-STANDARD-1 step 2. Fix 6894208c; merge of feat 9c27174c committed in the worktree. Left: the suites after the merge.
+- `rule-proposals`: the proposed changes of the stale rule files, for Eve's double confirmation. Last commit 21909669, plus one uncommitted proposal file. Left: the remaining rule files and the README. No rule file is edited.
+
+**(c) Merge order and controls**
+- When ready: `seed-holds`, then `typed-values`, then `viz-field-engine` (each has merged feat into its worktree). One branch at a time.
+- A reviewer runs the FULL controls on the merged tree (headless suite, golden baseline, browser gate, audits, doc links). Push `dev` only after they pass.
+
+**(d) Next, in order**
+1. PLOT-TABLE-ORDER-1, after `typed-values` is merged (same files).
+2. VIZ-STANDARD-1 steps 3 to 5: parameters read from plotnine; one strict rule set for layer parameters; tests driven by the registry; silent paths; one error form.
+3. The export lines for `plot_engine` (two lines given by the viz builder).
+4. A Polars panic names the step (pass a label from the orchestrator).
+5. The migration tool refuses `replace_values` without columns, earlier.
+6. Scribe: tasks, handoff, dependency index.
+7. Panel round on the open questions (seed default, `categorical`, ties, empty values Polars accepts): no viewpoints started yet.
+
+**(e) Open questions for Eve** (one at a time through the review session; full text: channel message M79 in `tmpAI/agent_channel.md`, and `tmpAI/panel/proposals_for_eve.md`)
+1. The seed when the recipe writes none.
+2. `categorical`: DEC27 against the code and the shipped fields.
+3. The prefix of `polars_join_where` (it fixes an order).
+4. Ties in `polars_top_k` and `polars_bottom_k`.
+5. The 64-bit sum wrap-around.
+6. Empty values that Polars accepts (`polars_select`, `polars_unpivot`, `polars_top_k`).
+7. A same-key self-join: run with an advice, or refuse.
+8. Which checker advices are shown (all, or only those that can change a result).
+9. Comparisons on Date, Boolean and text columns in the HOME filter.
+10. Small ones: `beeswarm_sina`, the complex template's data files, the orphan fragment, Blueprint's stale view, tier 3 in Blueprint.
+11. The rule-file proposals (double confirmation).
+
+## Handoff 2026-11-15 08:20 (coordinator): two merges, four builds running, panel round 4
+
+**(a) Merged, not pushed.** No control run yet on the merged tree.
+- `05a6fa30`: rule-file proposals. 16 proposals and a README under `.claude/design/decisions_2026-11-14/rule_file_proposals/`. No rule file was edited. A reviewer's verdict: "correct first", seven small corrections, being made now. Then they wait for Eve's double confirmation.
+- `4525fcb1`: VIZ-STANDARD-1, parts V1 and V8. Every plot component carries `plotnine: exact | modified | own`. The factory refuses a `plot_engine` it does not build. Code in `libs/utils/src/utils/engines.py`. Second review: MERGE.
+- `origin/dev` is still `f769c8dd`.
+
+**(b) Running**
+- `task/seed-holds`: SEED-HOLDS-1, fixes after review.
+- `task/typed-values`: EXPORT-FILTER-VALUE-1 and OPERATORS-SCREENS-1, in review by a reviewer who breaks the code.
+- `task/viz-params` (new): VIZ-STANDARD-1 step 3, V3. The shared parameter-reading module moves to `libs/utils`; a compare test; parameter lists read from plotnine with a hand overlay.
+- `task/viz-errors` (new): VIZ-STANDARD-1, V6 and V7. Five silent paths become errors; one error form, `draw_checked`.
+
+**(c) Panel round 4** (brief `tmpAI/panel/brief_round4.md`). The scientist, architect and user viewpoints reported on four open choices: the seed when the recipe writes none; the old type word `categorical`; row order with ties and position, and the prefix of `polars_join_where`; empty values Polars accepts and the 64-bit sum. The proposals go to Eve through session sparmvet-viz-57. Nothing is decided.
+
+**(d) Next, in order**
+1. Merge `seed-holds`, then `typed-values`.
+2. A small builder for the export lines (`plot_engine`, `draw_checked`).
+3. A reviewer runs the full controls (headless, golden, browser gate, audits, doc links); push `dev`.
+4. PLOT-TABLE-ORDER-1, then V4, then V2 + V10 + V9.

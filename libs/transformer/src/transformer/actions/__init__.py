@@ -6,5 +6,7 @@
 from transformer.actions import polars_calls  # noqa: F401  (the polars_ actions, W6)
 from transformer.actions import polars_aggregations  # noqa: F401  (the polars_ table aggregations)
 from transformer.actions import polars_rows  # noqa: F401  (the polars_ actions of the group rows)
+from transformer.actions import polars_time_joins  # noqa: F401  (rank, time and special joins)
 from transformer.actions import modified  # noqa: F401  (the modif_ actions, W6)
 from transformer.actions import composite  # noqa: F401  (the step_ actions, W6)
+from transformer.actions import min_items  # noqa: F401  (min_items: parameters that must not be empty; after all schemas)

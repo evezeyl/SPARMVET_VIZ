@@ -198,7 +198,6 @@ Draws text directly onto the plot coordinates. Make sure `label` is defined in t
   params:
     size: 10
     nudge_y: 0.5      # Push the text slightly above the point
-    check_overlap: true
 ```
 
 ### `geom_density_2d` (2D Density)

@@ -3,7 +3,8 @@ from plotnine import ggplot, aes
 from typing import Dict, Any, List
 # Explicit imports to ensure registration occurs
 from viz_factory.registry import get_component
-from viz_factory.plot_config_resolver import resolve_plot_config
+from viz_factory.plot_config_resolver import BATCHED_COMPONENTS, SEEDED_JITTER_COMPONENTS, resolve_plot_config
+from utils.engines import engine_problem
 from utils.errors import VisualizationError
 from utils.filter_values import filter_condition
 from utils.missing_values import keep_missing
@@ -13,9 +14,9 @@ import difflib
 
 # @deps
 # provides: class:VizFactory, function:VizFactory.render, constant:DEFAULT_RANDOM_STATE
-# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
+# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/engines.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/gallery_examples.py, app/tests/test_render_every_plot.py, libs/viz_factory/tests/
-# doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-081, ADR-090, ADR-094)
+# doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-081, ADR-090, ADR-094, ADR-106)
 # @end_deps
 
 # Default seed of every random plot component (jitter). With a fixed default the same data and the
@@ -59,10 +60,36 @@ def _seed_random_components(layer_name: str, params: dict, random_state) -> dict
         params["position"] = position_jitter(random_state=_generator(params.pop("random_state", random_state)))
     elif position == "jitterdodge":
         params["position"] = position_jitterdodge(random_state=_generator(params.pop("random_state", random_state)))
-    elif (layer_name == "geom_jitter" and "position" not in params) or \
-            layer_name in ("position_jitter", "position_jitterdodge"):
+    elif layer_name in SEEDED_JITTER_COMPONENTS and not (layer_name == "geom_jitter" and "position" in params):
         params["random_state"] = _generator(params.get("random_state", random_state))
     return params
+
+
+def _refuse_plot_engine_not_built(data_analysis_recipe: Dict[str, Any], plot_id: str) -> None:
+    """Raise when the recipe names a plot engine this library does not implement (ADR-106 V8).
+
+    No `plot_engine` key (library use outside a recipe, tests) means the implemented engine. The names are in
+    `utils.engines`, the same list the recipe checker uses (code T06).
+    """
+    if "plot_engine" not in data_analysis_recipe:
+        return
+    problem = engine_problem("plot_engine", data_analysis_recipe["plot_engine"])
+    if problem is None:
+        return
+    what, fix = problem
+    pe = PipelineError(
+        component="VizFactory",
+        problem=f"Plot '{plot_id}' cannot be drawn: {what}.",
+        location=f"VizFactory.render(plot_id='{plot_id}'), recipe key plot_engine",
+        fix=f"In the data analysis recipe, {fix}.",
+        who="data_analysis_recipe_author",
+        category="visualization",
+        surface="plot_overlay",
+        severity="error",
+        evidence={"plot_id": plot_id, "plot_engine": data_analysis_recipe["plot_engine"]},
+    )
+    print(pe.format())
+    raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
 
 class VizFactory:
@@ -123,6 +150,8 @@ class VizFactory:
             colour, alpha, shape, size, theme). Supplied by home_theater from
             home_state['t3_plot_overrides'][plot_id]. VIZFAC-T3-OVERRIDE-1.
         """
+        _refuse_plot_engine_not_built(data_analysis_recipe, plot_id)
+
         # Ensure LazyFrame for consistent ADR-010 handling
         if isinstance(df, pl.DataFrame):
             df = df.lazy()
@@ -253,7 +282,7 @@ class VizFactory:
             # Strip internal _tier / _meta keys before passing to components.
             layer_params = {k: v for k, v in layer_spec.get("params", {}).items()}
 
-            if layer_name == "element_text":
+            if layer_name in BATCHED_COMPONENTS:
                 # Collect axis-text overrides; target is the theme kwarg name.
                 target = layer_params.pop("target", None)
                 if target:
