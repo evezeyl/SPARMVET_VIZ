@@ -128,7 +128,7 @@ PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests -q
 
 ## Verified Decorator Registry
 
-The full list of atomic decorators (41 on 2026-11-14, read from the registry; it grows as the registry expands, ADR-035) is verified by the pytest files listed above. Below is a rapid overview, grouped by category:
+The full list of atomic decorators (68 on 2026-11-15, read from the registry; it grows as the registry expands, ADR-035) is verified by the pytest files listed above. Below is a rapid overview, grouped by category:
 
 ### Aggregation
 | Action Name | Description |

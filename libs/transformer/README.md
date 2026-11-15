@@ -18,7 +18,7 @@ The central engine for data wrangling and Phase 4 relational assembly. It enforc
 - `test_action_recipe_pairs.py` - [Test]: every registered action has its 1:1:1 pair (recipe and data file in `tests/data/`); the pair runs through ingestion and the wrangler and equals the direct Polars call.
 - `debug_wrangler.py` - [Dev Tool]: CLI runner that wrangles one format 1 recipe and writes the result as a TSV (`@verify` evidence). Entry: `main()`.
 - `debug_assembler.py` - [Dev Tool]: CLI runner for multi-source assembly (the join's last tier-1 step publishes the columns). Entry: `run_assembler_debug()`.
-- **Actions (`actions/`)**: `polars_calls.py` holds the `polars_<name>` actions (exactly the Polars call), `polars_aggregations.py` the twelve whole-table aggregations (`polars_sum` ... `polars_last`), `modified.py` the `modif_<name>` actions (today `modif_filter`), `composite.py` the `step_<name>` actions (today `step_top_n_other`), `base.py` the `register_action` decorator and the form schemas (`ACTION_SCHEMAS`).
+- **Actions (`actions/`)**: `polars_calls.py` holds the `polars_<name>` actions (exactly the Polars call), `polars_aggregations.py` the twelve whole-table aggregations (`polars_sum` ... `polars_last`), `modified.py` the `modif_<name>` actions (today `modif_filter`), `composite.py` the `step_<name>` actions (today `step_top_n_other`), `polars_rows.py` the ten row actions (pick, cut, number, reverse or remove rows: `polars_head` ... `polars_remove`), `polars_time_joins.py` rank, time windows and special joins (`polars_rank`, `polars_join_asof`, `polars_join_where`, `polars_group_by_dynamic`, `polars_rolling`; each states what order or sorted key it needs and refuses a table that does not meet it), `base.py` the `register_action` decorator and the form schemas (`ACTION_SCHEMAS`).
 - `Anchor (anchor.py)`: Tier 1 and Tier 2 disk anchors, written and read by the engine and never named in a data analysis recipe.
 - **Reactive State (Tier 3)**: Transient views generated via Predicate Pushdown. Supports **Gated Reactivity** via the `btn_apply` trigger, allowing for side-by-side inspection in **Comparison Mode** (T2 reference vs T3 active).
 - **Path Authority**: Persistence locations (Tiers 1-3) are determined by `config/connectors`, decoupling hardware from the UI.
@@ -109,21 +109,22 @@ PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests -q
 
 ## Registered Action Registry
 
-All 41 actions available for use in data analysis recipe `wrangling` and `steps` blocks, read from `ACTION_SCHEMAS` on 2026-11-14 (the prefix says what an action is: `polars_` exactly Polars, `modif_` a documented change, `step_` several calls). A description and a YAML example of each are in the [Action Gallery](../../docs/appendix/transformer_actions.qmd).
+All 68 actions available for use in data analysis recipe `wrangling` and `steps` blocks, read from `ACTION_SCHEMAS` on 2026-11-15 (the prefix says what an action is: `polars_` exactly Polars, `modif_` a documented change, `step_` several calls). A description and a YAML example of each are in the [Action Gallery](../../docs/appendix/transformer_actions.qmd).
 
 | Category | Actions |
 |---|---|
-| **Aggregation** | `polars_count`, `polars_first`, `polars_group_by`, `polars_last`, `polars_max`, `polars_mean`, `polars_median`, `polars_min`, `polars_null_count`, `polars_quantile`, `polars_std`, `polars_sum`, `polars_var`, `step_top_n_other` |
-| **Analytical** | `polars_all_horizontal`, `polars_any_horizontal`, `polars_cum_count`, `polars_cum_sum`, `polars_describe`, `polars_max_horizontal`, `polars_mean_horizontal`, `polars_min_horizontal`, `polars_shift`, `polars_sum_horizontal` |
+| **Aggregation** | `polars_group_by_dynamic`, `polars_rolling`, `polars_count`, `polars_first`, `polars_group_by`, `polars_last`, `polars_max`, `polars_mean`, `polars_median`, `polars_min`, `polars_null_count`, `polars_quantile`, `polars_std`, `polars_sum`, `polars_var`, `step_top_n_other` |
+| **Analytical** | `polars_rank`, `polars_all_horizontal`, `polars_any_horizontal`, `polars_cum_count`, `polars_cum_sum`, `polars_describe`, `polars_max_horizontal`, `polars_mean_horizontal`, `polars_min_horizontal`, `polars_shift`, `polars_sum_horizontal` |
 | **Cleaning** | `polars_coalesce`, `polars_drop_nans`, `polars_drop_nulls`, `polars_fill_nan`, `polars_fill_null`, `polars_interpolate`, `polars_unique` |
 | **Derivation** | `polars_with_columns` |
 | **Filtering** | `modif_filter`, `polars_sample` |
 | **List** | `polars_list_join`, `polars_list_slice` |
 | **Numeric** | `polars_round` |
 | **Ordering** | `polars_sort` |
-| **Relational** | `polars_join` |
+| **Relational** | `polars_join`, `polars_join_asof`, `polars_join_where` |
 | **Renaming** | `polars_rename` |
 | **Reshaping** | `polars_explode`, `polars_pivot`, `polars_str_split`, `polars_str_splitn`, `polars_unnest`, `polars_unpivot` |
+| **Rows** | `polars_bottom_k`, `polars_gather_every`, `polars_head`, `polars_limit`, `polars_remove`, `polars_reverse`, `polars_slice`, `polars_tail`, `polars_top_k`, `polars_with_row_index` |
 | **Selection** | `polars_drop`, `polars_select` |
 | **String** | `polars_str_extract`, `polars_str_replace_all`, `polars_str_strip_chars` |
 | **Temporal** | `polars_dt_truncate` |
@@ -134,7 +135,7 @@ All 41 actions available for use in data analysis recipe `wrangling` and `steps`
 ---|---|
 | **Cleaning** | `fill_nulls`, `drop_nulls`, `replace_values`, `rename`, `drop_duplicates`, `unique_rows`, `recode_values`, `sanitize_column_names`, `keep_columns`, `drop_columns`, `strip_whitespace`, `round_numeric`, `filter_range`, `add_constant`, `filter_eq`, `filter_ne`, `filter_gt`, `filter_lt`, `rename_columns`, `unique` |
 | **Expressions** | `regex_extract`, `cast`, `coalesce`, `label_if`, `mutate`, `regex_replace`, `null_if` |
-| **Analytical** | `top_n_other`, `window_agg`, `shift`, `fill_nulls_direction`, `sort`, `sample`, `cum_sum`, `cum_count`, `date_extract`, `date_truncate`, `list_slice`, `list_join`, `is_in`, `not_in`, `z_score`, `percentile`, `value_counts`, `describe_stats`, `select_by_pattern`, `horizontal_stats`, `any_horizontal`, `all_horizontal`, `interpolate` |
+| **Analytical** | `polars_rank`, `top_n_other`, `window_agg`, `shift`, `fill_nulls_direction`, `sort`, `sample`, `cum_sum`, `cum_count`, `date_extract`, `date_truncate`, `list_slice`, `list_join`, `is_in`, `not_in`, `z_score`, `percentile`, `value_counts`, `describe_stats`, `select_by_pattern`, `horizontal_stats`, `any_horizontal`, `all_horizontal`, `interpolate` |
 | **Advanced** | `split_and_explode`, `derive_categories`, `split_column_to_parts`, `divide_columns`, `split_column` |
 | **Reshaping** | `unpivot`, `explode`, `unnest`, `split_to_list`, `to_struct`, `pivot` |
 | **Performance** | `summarize`, `count_by_group` |
