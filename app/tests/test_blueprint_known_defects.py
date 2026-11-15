@@ -1,6 +1,6 @@
 """Defects found while building GATE-GAP-1, each pinned by a strict xfail until its own task fixes it (not fixed here).
 
-BP-SAVE-TUPLE-1  Blueprint's step save writes a multi-select parameter as `- !!python/tuple` and the file no longer loads.
+BP-SAVE-TUPLE-1 (fixed, the test below is a normal test now)  Blueprint's step save writes a multi-select parameter as `- !!python/tuple` and the file no longer loads.
 Steps: Blueprint, open a recipe with a `polars_fill_null` step, click the step, press Apply (the form re-reads `columns`
 from the selectize, which Shiny returns as a TUPLE), press Save. `_bp_apply_node_handler` keeps `[tuple]` for `columns`
 (`val if isinstance(val, list) else [val]`) and `_handle_data_analysis_recipe_save_internal` writes it with the default
@@ -20,7 +20,6 @@ from app.tests.test_blueprint_failed_load import Ui, Val
 SOURCE = Path(blueprint_handlers.__file__)
 
 
-@pytest.mark.xfail(strict=True, reason="BP-SAVE-TUPLE-1: a multi-select parameter reaches the file as !!python/tuple")
 def test_a_multi_select_parameter_is_saved_as_a_plain_list(monkeypatch):
     from blueprint_arch.schema_registry import register
     from transformer.actions.base import ACTION_SCHEMAS

@@ -21,7 +21,7 @@ from utils.engines import DATA_ENGINE, PLOT_ENGINE
 from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper, IncludeRef, represent_include
 
 
-yaml.add_representer(IncludeRef, represent_include)
+yaml.add_representer(IncludeRef, represent_include, Dumper=yaml.SafeDumper)
 
 
 class DataAnalysisRecipeScaffolder:
@@ -140,7 +140,7 @@ class DataAnalysisRecipeScaffolder:
         master = self._build_master(
             data_analysis_recipe_id, tsv_paths, dataset_ids, metadata_path, joins_config
         )
-        master_yaml = yaml.dump(master, sort_keys=False, allow_unicode=True)
+        master_yaml = yaml.safe_dump(master, sort_keys=False, allow_unicode=True)
         zf.writestr(f"{data_analysis_recipe_id}/{data_analysis_recipe_id}.yaml", master_yaml)
 
     def _infer_fields(self, df: pl.DataFrame):
@@ -160,7 +160,7 @@ class DataAnalysisRecipeScaffolder:
         return fields, pk_candidates
 
     def _write_fragment(self, zf, arcname: str, content: dict):
-        zf.writestr(arcname, yaml.dump(content, sort_keys=False, allow_unicode=True))
+        zf.writestr(arcname, yaml.safe_dump(content, sort_keys=False, allow_unicode=True))
 
     def _write_wrangling(self, zf, arcname: str, pk_candidates, tier1_steps):
         pk_hint = (
@@ -168,7 +168,7 @@ class DataAnalysisRecipeScaffolder:
             if pk_candidates
             else ""
         )
-        body = yaml.dump({"tier1": tier1_steps, "tier2": []}, sort_keys=False)
+        body = yaml.safe_dump({"tier1": tier1_steps, "tier2": []}, sort_keys=False)
         zf.writestr(arcname, pk_hint + body)
 
     def _write_assembly_stub(self, zf, arcname: str, right_ingredients: List[str]):
@@ -184,7 +184,7 @@ class DataAnalysisRecipeScaffolder:
             for ds_id in right_ingredients
         ]
         steps = {"steps": {"tier1": join_steps, "tier2": []}}
-        zf.writestr(arcname, yaml.dump(steps, sort_keys=False, allow_unicode=True))
+        zf.writestr(arcname, yaml.safe_dump(steps, sort_keys=False, allow_unicode=True))
 
     def _build_master(self, data_analysis_recipe_id, tsv_paths, dataset_ids, metadata_path, joins_config):
         data_schemas = {}

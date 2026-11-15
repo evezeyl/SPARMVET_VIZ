@@ -12,6 +12,7 @@ own tests in `libs/test_lab/tests` (`TestWritersEmitFormatOne`).
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_writers_emit_format_one.py -q
 """
+import ast
 import importlib.util
 from pathlib import Path
 
@@ -333,3 +334,62 @@ def test_the_help_of_the_script_says_what_it_writes(capsys):
     assert run_script("--help") == 0
     text = capsys.readouterr().out
     assert "format 1" in text and "--data_files" in text and "--out_file" in text
+
+
+# -- 6. every writer is a safe dumper that keeps the order of keys (BP-SAVE-TUPLE-1)
+
+# Files that write something that is not a recipe, or a document for a person: named here with the reason.
+NOT_A_RECIPE_WRITER = {
+    "libs/id_reconciliation/src/id_reconciliation/data_structures.py": "an id transformation file, not a recipe",
+    "libs/id_reconciliation/src/id_reconciliation/id_transformation.py": "an id transformation file, not a recipe",
+    "app/assets/report_template.qmd": "text of a report cell, read by a person",
+}
+
+
+def _safe_dumper_classes(tree) -> set:
+    return {n.name for n in ast.walk(tree) if isinstance(n, ast.ClassDef)
+            and any(getattr(b, "attr", getattr(b, "id", "")) == "SafeDumper" for b in n.bases)}
+
+
+def writer_faults(source: str, known_safe=frozenset()) -> list:
+    """Calls that write YAML and are not safe or reorder keys: a `dump` that is not a `safe_dump` with a SafeDumper
+    subclass, or any dump without `sort_keys=False`."""
+    tree = ast.parse(source)
+    safe = _safe_dumper_classes(tree) | set(known_safe)
+    faults = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr in ("dump", "safe_dump")
+                and getattr(node.func.value, "id", "") in ("yaml", "_yaml")):
+            continue
+        keywords = {k.arg: k.value for k in node.keywords}
+        dumper = getattr(keywords.get("Dumper"), "id", None)
+        if node.func.attr == "dump" and dumper not in safe:
+            faults.append((node.lineno, "dump without a SafeDumper subclass"))
+        sort = keywords.get("sort_keys")
+        if not (isinstance(sort, ast.Constant) and sort.value is False):
+            faults.append((node.lineno, "sort_keys is not False"))
+    return faults
+
+
+def test_every_yaml_writer_is_safe_and_keeps_the_order_of_keys():
+    faults = {}
+    safe = set()   # a dumper class can be defined in one file and imported in another
+    for base in ("app", "libs"):
+        for path in (ROOT / base).rglob("*.py"):
+            safe |= _safe_dumper_classes(ast.parse(path.read_text(encoding="utf-8")))
+    for base in ("app", "libs"):
+        for path in (ROOT / base).rglob("*.py"):
+            relative = path.relative_to(ROOT).as_posix()
+            if "/tests/" in relative or relative in NOT_A_RECIPE_WRITER or "/.venv/" in relative:
+                continue
+            found = writer_faults(path.read_text(encoding="utf-8"), safe)
+            if found:
+                faults[relative] = found
+    assert faults == {}
+
+
+def test_the_writer_scan_can_fail():
+    assert writer_faults("import yaml\nyaml.dump({}, f, default_flow_style=False, sort_keys=False)\n")
+    assert writer_faults("import yaml\nyaml.safe_dump({}, f)\n")
+    assert writer_faults("import yaml\nclass D(yaml.Dumper): pass\nyaml.dump({}, f, Dumper=D, sort_keys=False)\n")
+    assert not writer_faults("import yaml\nclass D(yaml.SafeDumper): pass\nyaml.dump({}, f, Dumper=D, sort_keys=False)\nyaml.safe_dump({}, sort_keys=False)\n")

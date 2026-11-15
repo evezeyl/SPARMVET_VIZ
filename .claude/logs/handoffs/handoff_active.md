@@ -1075,3 +1075,24 @@ Records: `tasks.md` marked RECIPE-DATASET-TIER2-1 done; VIZ-STANDARD-1 V6/V7 mer
 **HOME and recipe queue (decided; after the merges and the push):** PLOT-TABLE-ORDER-1; the warnings look + the self-join error and row counts (N3, N5, L32); the recipe overview in the right panel with the switch (N7(3)); RECIPE-FIXES by a data-scientist viewpoint then a builder (shipped pipelines: descriptions, N21 multi-resistance formula; gallery: every example in format 1 and rendered; the four fragments wired; the ResFinder piece per sample and gene, N9); OLD-WORDS agent (N12); the audit history log wording (N7(2)).
 
 **QUEUE as slots free:** (1) scribe: record the merges and Eve's decisions (done in this section's records); (2) reviewer: S2-1 evidence (both orders); (3) builder `filter-pickers` (resume `a1e6cda8…`); (4) reviewer: HOME-STATE-PER-RECIPE-1 (filters and audit steps carried over between recipes: establish by running).
+
+## Handoff 2026-11-15 19:10 (coordinator)
+
+**Merged `de917267` SMALL-FIXES-2** (the record in `tasks.md`, section 6):
+- Blueprint saves a multi-select value as a plain list (BP-SAVE-TUPLE-1; its xfail dropped).
+- The wrangler and the upload report count steps from 1, like the checker (STEP-NUMBERING-1).
+- Every YAML writer under `app/` and `libs/` uses the safe dumper and keeps key order (scan test `app/tests/test_writers_emit_format_one.py`).
+- A recipe that cannot be loaded raises `RecipeLoadError(DataAnalysisRecipeError, ValueError)` (`libs/utils/src/utils/errors.py`, `app/modules/cache_keys.py`). This repairs `app/tests/test_join_preview_errors.py::test_a_broken_yaml_is_shown_as_the_recipe_problem_not_an_exit`, which failed on `c46cd11b`.
+- Review: five mutations caught; headless 7024 passed, 13 xfailed; golden identical.
+
+**Running:**
+- The FULL controls on `de917267` (a reviewer, main tree). `dev` is pushed only on PASS (origin/dev is `f769c8dd`).
+- Builders: `task/seed-holds` (fix round after review); `task/plot-table-order` (PLOT-TABLE-ORDER-1, PROVISIONAL S2-1).
+- Stopped, to resume: `task/filter-pickers` (nothing committed).
+
+**Open findings from the review:**
+- (a) `app/tests/test_shiny_gate_gap.py::test_a_step_saved_in_blueprint_that_fails_the_gate_is_not_used_by_home` failed 1 run in 3 at line 77. Cause not established; being investigated with the FULL controls. Task GATE-GAP-FLAKY-1.
+- (b) Three scripts in `assets/scripts/` write YAML with an unsafe or unsorted dumper, outside the scan: `migrate_plot_specs.py` (`yaml.Dumper`), `SF_create_data_analysis_recipe.py` and `debug_bootstrap_viz_yamls.py` (plain `yaml.dump`; the last sorts keys). Task SCRIPT-DUMPERS-1.
+- (c) `assets/scripts/golden_baseline.py` on a broken recipe writes "SystemExit: 1" for it and exits 0. Task GOLDEN-BROKEN-RECIPE-1.
+
+Records: `tasks.md` section 6 (three done lines, three open lines). No commit made here; the coordinator commits.

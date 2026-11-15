@@ -160,3 +160,14 @@ def test_a_system_exit_from_anywhere_else_does_not_escape_the_effect():
         raise SystemExit(2)
     result = safe_join_preview(materialise, _rows, "l", "r", ["k"], ["k"])
     assert "error" in result
+
+
+def test_a_recipe_that_cannot_be_loaded_is_a_recipe_error_and_still_a_value_error(tmp_path):
+    """The callers that catch ValueError around a load keep working; the preview and the screens see the project's recipe error."""
+    from app.modules.cache_keys import load_data_analysis_recipe
+    from utils.errors import DataAnalysisRecipeError
+    (tmp_path / "m.yaml").write_text("id: m\nanalysis_groups: [unclosed\n  - : :\n", encoding="utf-8")
+    with pytest.raises(ValueError) as caught:
+        load_data_analysis_recipe(tmp_path / "m.yaml")
+    assert isinstance(caught.value, DataAnalysisRecipeError)
+    assert "cannot load data analysis recipe" in str(caught.value)
