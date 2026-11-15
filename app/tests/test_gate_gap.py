@@ -214,3 +214,14 @@ def test_the_text_HOME_shows_for_a_rejected_recipe_names_it_the_reason_and_the_c
     assert "does not use" in text.lower()
     none_contact = rejected_recipe_text("r", {"problems": ["p"], "contact": None})
     assert "not configured" in none_contact
+
+
+def test_a_recipe_broken_on_disk_after_start_is_an_ordinary_error_for_every_reader_of_HOME(tmp_path):
+    """HOME's readers go through load_data_analysis_recipe: ConfigManager's SystemExit is not an Exception, it ended the
+    session of the reader (found in the browser 2026-11-15: HOME's provenance effect after a save from Blueprint)."""
+    from app.modules.cache_keys import load_data_analysis_recipe
+    path = tmp_path / "broken.yaml"
+    path.write_text("id: broken\ninfo: [unclosed\n  - : :\n")
+
+    with pytest.raises(ValueError, match="cannot be loaded"):
+        load_data_analysis_recipe(path)

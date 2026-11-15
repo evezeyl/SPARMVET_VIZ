@@ -190,7 +190,12 @@ def load_data_analysis_recipe(path: Union[str, Path]) -> LoadedDataAnalysisRecip
         entry = _CACHE.get(key)
         if entry is not None and files_signature(entry.files) == entry.signature:
             return entry
-        config = ConfigManager(key)
+        try:
+            config = ConfigManager(key)
+        except SystemExit as stop:
+            # ConfigManager ends the program on a contradictory file (ADR-077). A recipe broken on disk after the app
+            # started (a save from Blueprint, GATE-GAP-1) must not end the session of every reader: an ordinary error.
+            raise ValueError(f"The data analysis recipe cannot be loaded (the loader stopped with {stop.code}): {key}") from None
         files = tuple(os.path.abspath(f) for f in config.loaded_files)
         loaded = LoadedDataAnalysisRecipe(
             path=key,

@@ -108,9 +108,7 @@ def test_config_helper_returns_the_config_of_a_good_recipe(tmp_path):
     assert problems == [] and "data_schemas" in cfg.raw_config
 
 
-# HOME's reader (`load_data_analysis_recipe`) calls ConfigManager bare on purpose: the recipe has passed HOME's load gate
-# (ADR-094), which is re-run for a changed recipe (GATE-GAP-1); a failed load there is never cached.
-_BARE_CALL_ALLOWED = {("modules/cache_keys.py", "ConfigManager")}
+_BARE_CALL_ALLOWED: set = set()  # none: every call is inside a try that catches SystemExit
 
 
 def _unguarded_configmanager_calls():

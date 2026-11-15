@@ -1688,9 +1688,19 @@ def define_server(input, output, session, *,
                         for name, texts in advices
                     ],
                 )
+            # GATE-GAP-1: the recipe that was open failed its checks (saved from Blueprint): the selector no longer offers
+            # it and the browser moves to the first one, so say it plainly instead of changing recipe silently
+            switched_block = None
+            if _current_data_analysis_recipe in rejected and data_analysis_recipe_choices:
+                switched_block = ui.tags.small(
+                    f"'{_current_data_analysis_recipe}' was open and no longer passes its checks: "
+                    f"HOME shows '{data_analysis_recipe_choices[0]}' instead.",
+                    class_="d-block fw-bold", style="font-size: 0.72rem; color: #d62828;",
+                )
             return ui.accordion_panel(
                 "Data analysis recipe Choice",
                 ui.div(
+                    switched_block,
                     ui.input_select("data_analysis_recipe_id", "Data analysis recipe",
                                     choices=data_analysis_recipe_choices,
                                     selected=_current_data_analysis_recipe),
