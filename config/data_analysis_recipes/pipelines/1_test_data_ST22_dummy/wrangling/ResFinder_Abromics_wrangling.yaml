@@ -1,21 +1,50 @@
-# Define your Polars wrangling steps here
-# Example for AMR Phenotype mapping:
-- action: "derive_categories"
-  source_column: "cge_predicted_phenotype"
-  target_column: "AMR_Categories_Summary"      
-  separator: ", "
-  reference_file: "config/references/amr_phenotypes/test_amr_categories_phenotype.tsv"
-  lookup_left: "cge_predicted_phenotype"
-  lookup_right: "Predicted Phenotype"
-  extract_column: "AMR Category (Class)"
-
-- action: "drop_duplicates"
-  target_column: "cge_gene_symbol"
-
-- action: "summarize"
-  target_column: "AMR_Categories_Summary"
-  group_by: ["sample_id", "AMR_Categories_Summary"]
-  agg: "count"
-  new_name: "gene_count"
-
-
+# Steps of a join (tier1) that sums up the antibiotic classes of a ResFinder table. Converted to format 1 from the old
+# fragment of the Abromics pipeline (derive_categories, drop_duplicates, summarize: all three actions are removed).
+#
+# It is included by no shipped recipe. To use it, a recipe's join needs two ingredients with these columns:
+#   ResFinder (the base): sample_id, gene, cge_predicted_phenotype (comma separated drug names, one cell per gene)
+#   AMR_phenotype_reference (right_ingredient): phenotype_name and amr_class, read from
+#     config/references/amr_phenotypes/test_amr_categories_phenotype.tsv ("Predicted Phenotype" and "AMR Category (Class)")
+#
+# 1. derive_categories, written as steps: one row per drug name, the class by a left join with the reference table, one row
+#    per original row again with the classes of its drugs, sorted, without repeats, joined with ", " (missing when no drug
+#    has a class in the reference). A row keeps its place.
+# 2. drop_duplicates: one row per gene, the first one kept, in the order of the table. This acts on all samples together
+#    (it was so in the old fragment); it is probably not the intention: "sample_id" and "gene" together would keep one row per
+#    gene and sample.
+# 3. summarize: the number of rows with a class, per sample and class.
+tier1:
+  - action: polars_with_row_index
+    name: fragment_row
+  - action: polars_with_columns
+    named_exprs:
+      drug_name: "pl.col('cge_predicted_phenotype').str.split(',')"
+  - action: polars_explode
+    columns: [drug_name]
+  - action: polars_str_strip_chars
+    columns: [drug_name]
+    characters: " \t\n\r"
+  - action: polars_join
+    right_ingredient: AMR_phenotype_reference
+    left_on: [drug_name]
+    right_on: [phenotype_name]
+    how: left
+    maintain_order: left_right
+  - action: polars_with_columns
+    named_exprs:
+      AMR_Categories_Summary: "pl.when(pl.col('amr_class').is_not_null().any().over('fragment_row')).then(pl.col('amr_class').drop_nulls().unique().sort().str.join(', ').over('fragment_row')).otherwise(None)"
+  - action: polars_unique
+    subset: [fragment_row]
+    keep: first
+    maintain_order: true
+  - action: polars_drop
+    columns: [fragment_row, drug_name, amr_class]
+  - action: polars_unique
+    subset: [gene]
+    keep: first
+    maintain_order: true
+  - action: polars_group_by
+    by: [sample_id, AMR_Categories_Summary]
+    maintain_order: true
+    named_aggs:
+      gene_count: "pl.col('AMR_Categories_Summary').count()"
