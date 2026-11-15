@@ -85,7 +85,7 @@ from viz_factory.plot_config_resolver import (
 | Palette name | Scale injected |
 |---|---|
 | Deployment palette name (in registry) | `scale_fill_manual` / `scale_color_manual` with hex list |
-| Viridis family (`viridis`, `plasma`, `magma`, `inferno`, `cividis`) | `scale_fill_viridis_d` / `scale_color_viridis_d` |
+| Viridis family (`viridis`, `plasma`, `magma`, `inferno`, `cividis`) | `scale_fill_cmap_d` / `scale_color_cmap_d` for a discrete column, `scale_fill_cmap` / `scale_color_cmap` for a numeric one, with `cmap_name` set to the palette name (plotnine has no `scale_*_viridis_*`) |
 | Any other string | `scale_fill_brewer` / `scale_color_brewer` |
 | Unknown name | Warning with list of valid palette names; no scale injected |
 
@@ -157,6 +157,14 @@ Every error of the factory, and every error of plotnine that appears while the f
 - A component that cannot act fails: `element_*` without `target`, `guide_*` without `mapping` (and without its value for `guide_nrow`, `guide_ncol`, `guide_title`), `position_*` with no layer before it, `annotate` without `geom`, and a plot spec key that is not part of the format (`theem: theme_bw`). A component raises `CannotAct(what, fix)`; the factory adds the plot and the layer. The two filter paths (an unknown column is skipped, an unknown operator is ignored) are not covered yet: they wait for FILTER-UNIFY-1.
 - plotnine builds a plot lazily, so a wrong value is found when the plot is drawn. `VizFactory.render` therefore returns a `CheckedPlot` (a `ggplot`); when drawing fails it draws the plot again layer by layer, finds the layer and the parameter, and raises the form above. A plot that draws is drawn once.
 - `draw_checked(plot)` draws a plot once and returns its figure; `plot.save(...)` and Shiny's own draw are checked the same way. `show_draw_errors(plot, on_error=...)` is for a screen: a failing plot draws the message in the place of the plot and calls `on_error` (the alerts panel) instead of raising. A file that is exported never uses it.
+
+### How a failed plot and a warning reach the user
+
+An error is raised by `draw_checked(plot)` (a file, an export). A screen calls `show_draw_errors(plot, on_error=..., on_warning=...)`: when drawing fails it draws the message in the place of the plot and calls `on_error`; a warning (the plot is still drawn: a palette that exists nowhere, a `plot_defaults` problem, a T3 `fill_color` and `fill_palette` together) is kept on the plot by `VizFactory.render` and `plot_warnings(plot)` returns the list; `show_draw_errors` calls `on_warning` once for each. In HOME both callbacks go to `make_issue_reporter` (`app/modules/plot_issue_reporter.py`): the render only queues the report, and after the flush it is written once to the Processing issues panel and to the Alerts panel (an error in the error colour, a warning in the warning colour).
+
+### Theme rule (to be confirmed by Eve)
+
+A complete theme (`theme_bw`, `theme_minimal`, ...) replaces a complete theme: the one written last wins, whatever its tier. A partial theme setting (`theme_legend_position` and the other components that wrap plotnine's `theme`) is added to the theme and replaces nothing; when it is written before a complete theme, the complete theme is moved before it, because plotnine drops what was set before when a complete theme is added. This is how the code works today (`_dedupe_layers` in `plot_config_resolver.py`); it has not been confirmed as the intended rule.
 
 ## Documentation
 >
