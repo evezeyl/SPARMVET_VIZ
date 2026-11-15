@@ -660,13 +660,13 @@ class _Check:
                           "no column is copied; 'anti' removes every row that has a key, because each such row matches itself")
             else:
                 suffix = step.get("suffix") or "_right"
-                effect = (f"if the key is unique in {right_id!r} it adds no row and copies the columns of {right_id!r} again "
-                          f"(named with the suffix {suffix}); if the key repeats, the rows are multiplied (n x n for each repeated key value)")
-            self.add("J12", where,
-                     f"the join of {right_id!r} with itself uses the same key {left_keys} on both sides ('how': {how}): {effect}",
-                     "if this is not intended, remove the step; a self-join is usually written on two different columns "
-                     "(left_on and right_on), for example a column that points to another row",
-                     "A")
+                effect = (f"If each value of the column appears once, the result has the same rows and copies of the columns named `{suffix}`. "
+                          "If a value repeats, rows are multiplied.")
+            if how in ("semi", "anti"):
+                message = f"the join of {right_id!r} with itself uses the same key {left_keys} on both sides ('how': {how}): {effect}"
+            else:
+                message = f"Join of {right_id!r} with itself on the same column ({', '.join(map(repr, left_keys))}). {effect}"
+            self.add("J12", where, message, "Remove the step if you did not mean this.", "A")
         fields_by_table = {table: self.declared_fields(table) for table in set(left_tables) | {right_id}}
         for table, columns in ((None, left_keys), (right_id, right_keys)):
             tables = [t for t in dict.fromkeys(left_tables)] if table is None else [table]
