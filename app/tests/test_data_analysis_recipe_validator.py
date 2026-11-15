@@ -178,6 +178,15 @@ def test_every_template_is_a_valid_data_analysis_recipe():
     assert {k: v for k, v in bad.items() if v} == {}
 
 
+def test_no_template_declares_a_float_join_key():
+    """D10: a sample id in a recipe is String or Categorical; a float key merges 001, 1 and 1.0 (checker advice J13)."""
+    from utils.recipe_loader import check_recipe_file
+    root = Path(__file__).resolve().parents[2] / "config" / "data_analysis_recipes" / "templates"
+    templates = sorted(root.glob("*.yaml"))
+    assert templates
+    assert {t.name for t in templates if "J13" in check_recipe_file(t).codes()} == set()
+
+
 # --- the same catalogues everywhere (DEC03, DEC09): the arguments and the themes are checked at HOME too -------------
 
 def _plot_spec(recipe):
