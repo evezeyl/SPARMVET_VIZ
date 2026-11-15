@@ -67,7 +67,7 @@ def test_rank_with_method_min_and_a_filter_keeps_every_row_tied_with_the_k_best(
 @pytest.mark.parametrize("name", ["polars_top_k", "polars_bottom_k"])
 def test_the_description_holds_only_what_was_established_by_running(name):
     text = ACTION_SCHEMAS[name]["description"]
-    for needed in ("keeps exactly `k` rows", "same value as the `k`-th row", "Polars does not promise which ones", "no value",
+    for needed in ("keeps at most `k` rows: exactly `k` when the table has `k` rows or more", "same value as the `k`-th row", "Polars does not promise which ones", "no value",
                    "Suggestion: to always keep the same rows", "polars_with_row_index", "last column of `by`",
                    "Suggestion: to keep every row that ties with the `k` best", "polars_rank (method min)", "more than `k` rows"):
         assert needed in text, needed
@@ -116,8 +116,8 @@ def test_the_example_holds_the_two_suggestions_as_steps_that_do_what_the_text_sa
 
 def test_the_nan_sentence_is_right_for_each_action():
     top, bottom = ACTION_SCHEMAS["polars_top_k"]["description"], ACTION_SCHEMAS["polars_bottom_k"]["description"]
-    assert "comes first, and last if" in top and "comes last, and first if" not in top
-    assert "comes last, and first if" in bottom and "comes first, and last if" not in bottom
+    assert "comes first, and last if `reverse` is true for that column" in top and "comes last, and first if" not in top
+    assert "comes last, and first if `reverse` is true for that column" in bottom and "comes first, and last if" not in bottom
 
 
 @pytest.mark.parametrize("name, place, other", [("polars_top_k", "first", "last"), ("polars_bottom_k", "last", "first")])
@@ -127,10 +127,35 @@ def test_reverse_puts_the_nan_on_the_other_side(name, place, other):
     reverse = run(name, frame, k=4, by=["v"], reverse=True)["id"].to_list()
     assert (plain[0] == "b") if place == "first" else (plain[-1] == "b")
     assert (reverse[-1] == "b") if place == "first" else (reverse[0] == "b")
-    assert f"comes {place}, and {other} if `reverse` is true" in ACTION_SCHEMAS[name]["description"]
+    assert f"comes {place}, and {other} if `reverse` is true for that column" in ACTION_SCHEMAS[name]["description"]
 
 
 def test_the_nan_position_is_what_the_description_says():
     frame = pl.DataFrame({"id": list("abcd"), "v": [9.0, NAN, 7.0, 7.0]})
     assert run("polars_top_k", frame, k=4, by=["v"])["id"].to_list()[0] == "b"
     assert run("polars_bottom_k", frame, k=4, by=["v"])["id"].to_list()[-1] == "b"
+
+
+@pytest.mark.parametrize("name", ["polars_top_k", "polars_bottom_k"])
+def test_a_table_with_fewer_rows_than_k_comes_back_whole(name):
+    assert run(name, TIED.head(3), k=10, by=["v"]).height == 3
+
+
+@pytest.mark.parametrize("name, reverse, place", [("polars_top_k", [True, False], "last"), ("polars_top_k", [False, True], "first"),
+                                                  ("polars_bottom_k", [True, False], "first"), ("polars_bottom_k", [False, True], "last")])
+def test_with_a_list_the_nan_side_follows_the_reverse_entry_of_the_column_that_holds_it(name, reverse, place):
+    frame = pl.DataFrame({"id": list("abcd"), "v": [9.0, NAN, 7.0, 7.0], "w": [1, 1, 1, 1]})
+    ids = run(name, frame, k=4, by=["v", "w"], reverse=reverse)["id"].to_list()
+    assert (ids[0] == "b") if place == "first" else (ids[-1] == "b")
+
+
+@pytest.mark.parametrize("name, values, best", [("polars_top_k", [9, 8, 7, 7, 5], ["a", "b", "c", "d"]),
+                                                ("polars_bottom_k", [1, 2, 3, 3, 5], ["a", "b", "c", "d"])])
+def test_the_rank_suggestion_keeps_the_kth_value_and_every_row_tied_with_it(name, values, best):
+    """Ranks are 1, 2, 3, 3, 5 for k = 3: a filter `lt` instead of `le` would drop the 3rd value and its tie."""
+    _, rank_and_filter = _suggestion_steps(name)
+    ranked = pl.DataFrame({"id": list("abcde"), "identity": values}).lazy()
+    for s in rank_and_filter:
+        s = {**s, "value": 3} if s["action"] == "modif_filter" else s
+        ranked = ACTIONS[s["action"]](ranked, {k: v for k, v in s.items() if k != "action"})
+    assert sorted(ranked.collect()["id"].to_list()) == best

@@ -52,5 +52,43 @@ def test_the_numbers_of_the_note_are_what_polars_gives():
 def test_the_help_and_the_page_state_the_note_with_its_suggestion(where):
     text = ACTION_SCHEMAS["polars_sum"]["description"] if where == "help" else PAGE.read_text(encoding="utf-8")
     for needed in ("-294967296", "4000000000", "0.9999999999999999", "9007199254740992.0", "wraps around", "Suggestion: declare the column as 64-bit",
-                   "Int64", "Float64", "does not matter"):
+                   "Int64", "Float64", "does not matter", "differ between computers", "processor threads"):
         assert needed in text, needed
+
+
+def _note_numbers():
+    """The numbers written in the note of the page, read from the page (inline code of the note's bullets)."""
+    text = PAGE.read_text(encoding="utf-8")
+    note = text[text.index("#### A whole-number sum"):text.index("#### `polars_count`")]
+    return note
+
+
+def test_every_number_of_the_page_note_is_the_value_computed_here():
+    note = _note_numbers()
+    computed = {
+        "`2000000000 + 2000000000` gives `-294967296`": _total([2_000_000_000] * 2, pl.Int32),
+        "it gives `4000000000`": _total([2_000_000_000] * 2, pl.Int64),
+        "`0.1` added ten times gives `0.9999999999999999`": _total([0.1] * 10, pl.Float64),
+        "`9007199254740992.0 + 1.0` gives `9007199254740992.0`": _total([9007199254740992.0, 1.0], pl.Float64),
+    }
+    for phrase, value in computed.items():
+        assert phrase in note, phrase
+        written = phrase.rsplit("`", 2)[1]
+        assert float(written) == float(value) and (isinstance(value, int) is ("." not in written)), (phrase, value)
+
+
+_SUM_5M = ("import polars as pl, random; random.seed(7); "
+           "print(repr(pl.DataFrame({'x': [random.random() * 1000 for _ in range(5_000_000)]}).lazy().sum().collect()['x'][0]))")
+
+
+def test_a_sum_of_decimals_agrees_across_thread_counts_to_about_12_digits():
+    """The last digits can differ with the number of threads (the note says so); only the stable part is pinned."""
+    import os
+    import subprocess
+    import sys
+    totals = []
+    for threads in ("1", "2"):
+        out = subprocess.run([sys.executable, "-c", _SUM_5M], capture_output=True, text=True, check=True,
+                             env={**os.environ, "POLARS_MAX_THREADS": threads}).stdout
+        totals.append(float(out))
+    assert abs(totals[0] - totals[1]) / totals[0] < 1e-12

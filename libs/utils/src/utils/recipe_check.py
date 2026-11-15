@@ -454,7 +454,7 @@ class _Check:
                              f"{name} of the column {column!r}, declared {types[column]}, can give a wrong total. A 32-bit whole-number total wraps around "
                              "above about 2 thousand million (4 for UInt32) with no error and can be negative "
                              "(the checker does not see a sum inside a formula, in a join result, or on a column made 32-bit by an earlier step).",
-                             f"Suggestion: write a polars_cast step to Int64 (whole numbers) or Float64 (decimal numbers) for {column!r} before this step.",
+                             f"Suggestion: write a polars_cast step to Int64 (whole numbers) or Float64 (decimal numbers; it holds about 15 to 16 exact digits, so very large whole numbers lose their last digits) for {column!r} before this step.",
                              "A")
             if name not in JOIN_KEEPS_COLUMNS and name not in (action_names.SUM, action_names.CUM_SUM):
                 return  # the columns after this step are not known from the declarations
@@ -467,9 +467,9 @@ class _Check:
                 if isinstance(step, dict) and step.get("action") in (action_names.TOP_K, action_names.BOTTOM_K):
                     nan_place = "first" if step["action"] == action_names.TOP_K else "last"
                     self.add("ST14", f"{path}.{tier}[{index}]",
-                             f"Warning: {step['action']} keeps exactly k rows. If several rows have the same value as the k-th row, only some of them fit, "
+                             f"Warning: {step['action']} keeps at most k rows: exactly k when the table has k rows or more. If several rows have the same value as the k-th row, only some of them fit, "
                              "and Polars does not promise which ones. "
-                             f"A NaN comes {nan_place} ({'last' if nan_place == 'first' else 'first'} if `reverse` is true). "
+                             f"A NaN comes {nan_place} ({'last' if nan_place == 'first' else 'first'} if `reverse` is true for that column). "
                              "Rows with no value fill the k rows when the real values run out.",
                              "Suggestion: to always keep the same rows, add a row number (`polars_with_row_index`) and use it as the last `by` column. "
                              "Suggestion: to keep every row that ties with the k best, use `polars_rank` (method `min`) and a filter; this can return more than k rows.",

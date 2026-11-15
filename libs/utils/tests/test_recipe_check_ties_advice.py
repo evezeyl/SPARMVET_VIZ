@@ -27,7 +27,7 @@ def test_every_top_k_and_bottom_k_step_gets_the_advice(action):
     found = [p for p in result.advices if p.code == "ST14"]
     assert len(found) == 2 and found[0].path.endswith("[1]") and found[1].path.endswith("[2]")
     advice = found[0]
-    assert advice.severity == "A" and action in advice.message and "keeps exactly k rows" in advice.message
+    assert advice.severity == "A" and action in advice.message and "keeps at most k rows: exactly k when the table has k rows or more" in advice.message
     assert "polars_with_row_index" in advice.fix and "polars_rank" in advice.fix
     assert "Polars does not promise which ones" in advice.message and "same value as the k-th row" in advice.message
     for claim in ("streaming", "low-memory", "small table", "large table"):

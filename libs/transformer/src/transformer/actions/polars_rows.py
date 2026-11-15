@@ -58,10 +58,10 @@ NOT_EXPOSED["polars_remove"] = {
 def _tie_rule(nan_place: str) -> str:
     """What was established by running Polars 1.40.1 about ties, NaN and missing values; `nan_place` is first (top_k) or last (bottom_k)."""
     other = "last" if nan_place == "first" else "first"
-    return ("It keeps exactly `k` rows. If several rows have the same value as the `k`-th row, only some of them fit, and Polars does not promise which ones. "
+    return ("It keeps at most `k` rows: exactly `k` when the table has `k` rows or more. If several rows have the same value as the `k`-th row, only some of them fit, and Polars does not promise which ones. "
             "Suggestion: to always keep the same rows, write a polars_with_row_index step first and use its column as the last column of `by`. "
             "Suggestion: to keep every row that ties with the `k` best, write polars_rank (method min), then a modif_filter on the rank; this can return more than `k` rows. "
-            f"A NaN (a failed calculation) comes {nan_place}, and {other} if `reverse` is true. "
+            f"A NaN (a failed calculation) comes {nan_place}, and {other} if `reverse` is true for that column. "
             "Rows with no value come after the real values: they fill the `k` rows only when the real values run out. "
             "The steps of both suggestions are written in the example.")
 

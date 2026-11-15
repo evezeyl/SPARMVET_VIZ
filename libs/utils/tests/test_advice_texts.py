@@ -94,6 +94,14 @@ def test_the_tie_advice_reads_as_a_warning_and_gives_both_remedies():
     assert "polars_rank" in p.fix and "`min`" in p.fix and "more than k rows" in p.fix
 
 
-def test_the_text_check_can_fail():
-    assert not "Fix this".startswith("Suggestion: ")  # a remedy written the old way is not accepted by the check above
-    assert len(sentences("One. Two. Three.")) == 3
+def test_the_shape_check_can_fail():
+    """The shape rules reject a remedy in the old form and a message with a remedy in it."""
+    class Old:
+        fix, message = "write it (spec section 13)", "The plot has no description. Suggestion: write it."
+    assert not Old.fix.startswith("Suggestion: ") and "Suggestion" in Old.message
+    assert len(sentences("One. Two. Three.")) == 3 and len(sentences("A `x` rule. It holds.")) == 2
+
+
+def test_the_float64_remedy_of_st15_says_what_it_costs():
+    p = advices("ST15")[0]
+    assert "Int64" in p.fix and "Float64" in p.fix and "15 to 16 exact digits" in p.fix and "lose their last digits" in p.fix
