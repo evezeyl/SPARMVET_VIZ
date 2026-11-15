@@ -46,7 +46,7 @@ from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_analysis_recipe_validator import home_advice_entries
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
-from viz_factory.plot_config_resolver import layers_have_random, recipe_pins_random_state
+from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
 from viz_factory.viz_factory import show_draw_errors
 
 from app.modules.t3_audit_engine import _apply_filter_rows, filter_rows_from_nodes
@@ -615,35 +615,37 @@ def define_server(input, output, session, *,
         _this_subtab = f"subtab_{p_id}"
         _reshuffle_output_id = f"plot_reshuffle_{p_id}"
         _reshuffle_btn_id = f"plot_reshuffle_btn_{p_id}"
+        _unpin_btn_id = f"plot_unpin_btn_{p_id}"
+
+        def _seeds_in_use():
+            """The seed of every random layer of this plot as it is drawn (plot_seeds.seed_in_use: the resolver's
+            precedence, audit pin > the layer's number > plot_defaults.random_state > 0). Reads home_state, so the
+            two outputs below re-render the moment a pin is set or removed."""
+            spec = _resolve_active_spec(p_id)
+            plot_defaults = (active_cfg().raw_config.get("plot_defaults") or {})
+            return seed_in_use((spec or {}).get("layers", []), plot_defaults,
+                               home_state.get() if home_state is not None else None, p_id,
+                               default=viz_factory.default_random_state)
 
         @output(id=_reshuffle_output_id)
         @render.ui
         def _plot_reshuffle_ui():
-            """REPRO-RESHUFFLE-1 (#49): a UI control to deliberately redraw and pin a
-            plot's jitter seed. Its own narrow output next to the badge — not a
-            revival of the Plot Style panel, which stays unmounted (fork issue #15,
-            ui_implementation_contract.md §12g.9). Shown only when reshuffling is
-            actually meaningful: the plot has a jitter-capable layer, the recipe
-            itself hasn't already pinned a fixed number, and no T3 override has
-            pinned one yet either (once pinned, by any mechanism, there is nothing
-            left to reshuffle from this button — edit the recipe or the override to
-            go back to "random")."""
-            spec = _resolve_active_spec(p_id)
-            layers = (spec or {}).get("layers", [])
-            if not layers_have_random(layers) or recipe_pins_random_state(layers):
-                return ui.div()
-            # Deliberately NOT reactive.isolate() here, unlike _plot_cell_ui's own
-            # collapse-state read: this output must re-render and hide itself the
-            # moment _handle_reshuffle below pins the seed into home_state.
-            _hs = home_state.get() if home_state is not None else {}
-            overrides = _hs.get("t3_plot_overrides", {}).get(_this_subtab) or {}
-            if overrides.get("random_state") is not None:
+            """REPRO-RESHUFFLE-1 (#49): a UI control to deliberately redraw and pin a plot's random seed. Its own
+            narrow output next to the badge, not a revival of the Plot Style panel (fork issue #15). Offered under
+            the same precedence as the resolver (plot_seeds.reshuffle_offered): only where the plot has a random
+            layer and no seed is written anywhere (no number on a layer, no plot_defaults.random_state) and no pin
+            exists yet. A pin applies to every random layer of the plot. The way back is the seed line's
+            "Remove the pinned seed" (below), which removes the pin.
+
+            Deliberately NOT reactive.isolate() here: this output must re-render and hide itself the moment
+            _handle_reshuffle pins the seed into home_state."""
+            if not reshuffle_offered(_seeds_in_use()):
                 return ui.div()
             return ui.input_action_button(
                 _reshuffle_btn_id, "🔀 Reshuffle arrangement",
                 class_="btn-outline-secondary btn-sm",
                 style="font-size:0.7em; padding:1px 6px;",
-                title="Draw a new random scatter arrangement and keep it fixed from now on.",
+                title=RESHUFFLE_TITLE,
             )
 
         @reactive.Effect
@@ -663,6 +665,45 @@ def define_server(input, output, session, *,
             plot_overrides = dict(overrides.get(_this_subtab, {}))
             plot_overrides["random_state"] = new_seed
             overrides[_this_subtab] = plot_overrides
+            home_state.set({**hs, "t3_plot_overrides": overrides})
+
+        @output(id=f"plot_seed_{p_id}")
+        @render.ui
+        def _plot_seed_ui():
+            """The seed this plot's random layers use and where it comes from, as one short line with the plot (HTML next
+            to the plot, never part of the image, so never exported). Nothing for a plot without a random layer. With
+            a pinned seed it also offers the way back: removing the pin."""
+            seeds = _seeds_in_use()
+            caption = seed_caption(seeds)
+            if caption is None:
+                return ui.div()
+            parts = [ui.tags.span(caption, class_="spv-view-note")]
+            if any(ls.source == "audit" for ls in seeds):
+                parts.append(ui.input_action_button(
+                    _unpin_btn_id, "Remove the pinned seed", class_="btn-link btn-sm spv-view-note",
+                    style="padding:0 6px;",
+                    title="Remove this audit step: the plot goes back to the seed of the recipe."))
+            return ui.div(*parts, class_="spv-view-badge-row")
+
+        @reactive.Effect
+        @reactive.event(getattr(input, _unpin_btn_id, lambda: None))
+        def _handle_unpin():
+            """The way back from Reshuffle: remove the pinned seed (the audit step) of this plot."""
+            if home_state is None:
+                return
+            try:
+                clicks = getattr(input, _unpin_btn_id)()
+            except Exception:
+                return
+            if not clicks:
+                return
+            hs = home_state.get()
+            overrides = dict(hs.get("t3_plot_overrides", {}))
+            plot_overrides = {k: v for k, v in (overrides.get(_this_subtab) or {}).items() if k != "random_state"}
+            if plot_overrides:
+                overrides[_this_subtab] = plot_overrides
+            else:
+                overrides.pop(_this_subtab, None)
             home_state.set({**hs, "t3_plot_overrides": overrides})
 
         @output(id=f"plot_badge_{p_id}")
@@ -697,7 +738,7 @@ def define_server(input, output, session, *,
             _is_open = _hs.get("plot_collapse_state", {}).get(p_id, True)
 
             if in_comparison:
-                content = ui.layout_columns(
+                content = ui.div(ui.output_ui(f"plot_seed_{p_id}"), ui.layout_columns(
                     ui.div(
                         ui.tags.div(
                             "T2 — Result (Reference)",
@@ -714,7 +755,7 @@ def define_server(input, output, session, *,
                         ui.output_plot(f"plot_group_{p_id}", height="440px"),
                     ),
                     col_widths=[6, 6],
-                )
+                ))
             else:
                 content = ui.div(
                     ui.div(
@@ -722,6 +763,7 @@ def define_server(input, output, session, *,
                         ui.output_ui(f"plot_reshuffle_{p_id}"),
                         class_="d-flex justify-content-between align-items-start",
                     ),
+                    ui.output_ui(f"plot_seed_{p_id}"),
                     ui.output_plot(f"plot_group_{p_id}", height="480px"),
                 )
 

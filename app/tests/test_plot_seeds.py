@@ -37,6 +37,9 @@ from app.modules.plot_seeds import (
     seeds_per_plot_record,
     seed_pin_steps,
     with_seed_steps,
+    reshuffle_offered,
+    seed_caption,
+    seed_in_use,
 )
 from viz_factory.viz_factory import DEFAULT_RANDOM_STATE, VizFactory
 
@@ -403,3 +406,76 @@ def test_the_rerun_of_a_recipe_with_a_recipe_default_draws_the_exported_picture(
 def test_an_audit_pin_beats_the_recipe_default_in_the_export():
     plan = export_plot_seeds({"p": {"layers": jitter_layers()}}, {"p": 777}, default=DEFAULT, recipe_default=7)
     assert [(ls.seed, ls.source) for ls in plan["p"]] == [(777, "audit")]
+
+
+# ---------------------------------------------------------------------------
+# what HOME shows and offers (review of SEED-HOLDS-1): the seed in use, with where it comes from, and Reshuffle
+# under the SAME precedence as the resolver: audit pin > the layer's number > plot_defaults.random_state > 0
+# ---------------------------------------------------------------------------
+
+def in_use(layers, plot_defaults=None, pin=None):
+    state = {"t3_plot_overrides": {"subtab_p": {"random_state": pin}}} if pin is not None else {}
+    return seed_in_use(layers, plot_defaults, state, "p", default=DEFAULT)
+
+
+@pytest.mark.parametrize("what, layers, plot_defaults, pin, offered", [
+    ("nothing written", jitter_layers(), None, None, True),
+    ("nothing written, other plot_defaults keys", jitter_layers(), {"theme": "theme_bw"}, None, True),
+    ("a number on the layer", jitter_layers(random_state=5), None, None, False),
+    ("a number 0 on the layer", jitter_layers(random_state=0), None, None, False),
+    ("plot_defaults.random_state", jitter_layers(), {"random_state": 7}, None, False),
+    ("plot_defaults.random_state 0", jitter_layers(), {"random_state": 0}, None, False),
+    ("a pin", jitter_layers(), None, 9, False),
+    ("a pin over a number", jitter_layers(random_state=5), None, 9, False),
+    ("mixed: one layer with a number, one without", [jl(random_state=11), jl()], None, None, False),
+    ("no random layer", [{"name": "geom_bar"}], None, None, False),
+    ("stat sina", [{"name": "geom_point", "params": {"stat": "sina"}}], None, None, True),
+])
+def test_reshuffle_is_offered_only_where_no_seed_is_written_anywhere(what, layers, plot_defaults, pin, offered):
+    assert reshuffle_offered(in_use(layers, plot_defaults, pin)) is offered, what
+
+
+def test_a_click_would_be_a_pin_that_hides_the_control_again():
+    layers = jitter_layers()
+    assert reshuffle_offered(in_use(layers)) is True
+    assert reshuffle_offered(in_use(layers, pin=123)) is False
+
+
+@pytest.mark.parametrize("layers, plot_defaults, pin, text", [
+    (jitter_layers(), None, None, "seed 0, default (nothing written in the recipe)"),
+    (jitter_layers(random_state=42), None, None, "seed 42, written in the recipe"),
+    (jitter_layers(random_state=0), None, None, "seed 0, written in the recipe"),
+    (jitter_layers(), {"random_state": 5}, None, "seed 5, recipe default (plot_defaults)"),
+    (jitter_layers(), None, 7, "seed 7, pinned in the audit"),
+    (jitter_layers(random_state=42), {"random_state": 5}, 7, "seed 7, pinned in the audit"),
+    ([jl(random_state=11), jl()], None, None, "seeds 11 (written in the recipe), 0 (default)"),
+    ([jl(random_state=11), jl()], {"random_state": 5}, None, "seeds 11 (written in the recipe), 5 (recipe default)"),
+    ([jl(random_state=3), {"name": "geom_bar"}, jl(random_state=3)], None, None, "seed 3, written in the recipe"),
+])
+def test_the_seed_line_says_the_seed_and_where_it_comes_from(layers, plot_defaults, pin, text):
+    assert seed_caption(in_use(layers, plot_defaults, pin)) == text
+
+
+def test_no_seed_line_for_a_plot_without_a_random_layer():
+    assert seed_caption(in_use([{"name": "geom_bar"}])) is None
+
+
+def test_a_pin_applies_to_every_random_layer_and_the_text_says_so():
+    """Kept as built (reviewer measured it): a pin replaces the seed of ALL the plot's random layers, also one the
+    recipe wrote a number on. The Reshuffle button is therefore only offered where no layer has a written seed."""
+    seeds = in_use([jl(random_state=11), jl()], pin=9)
+    assert [(ls.seed, ls.source) for ls in seeds] == [(9, "audit"), (9, "audit")]
+    from app.modules.plot_seeds import RESHUFFLE_TITLE
+    assert "every random layer" in RESHUFFLE_TITLE and "Remove the pinned seed" in RESHUFFLE_TITLE
+
+
+# ---------------------------------------------------------------------------
+# the default seed is the literal 0 (a mutation to 1 once survived every headless test)
+# ---------------------------------------------------------------------------
+
+def test_the_default_seed_is_the_number_zero_in_the_factory_and_in_the_export(df):
+    assert DEFAULT_RANDOM_STATE == 0 and VizFactory().default_random_state == 0
+    plan = export_plot_seeds({"p": {"layers": jitter_layers()}}, {}, default=VizFactory().default_random_state)
+    assert [(ls.seed, ls.source) for ls in plan["p"]] == [(0, "default")]
+    assert np.array_equal(positions(df, jitter_layers()), positions(df, jitter_layers(random_state=0)))
+    assert not np.array_equal(positions(df, jitter_layers()), positions(df, jitter_layers(random_state=1)))

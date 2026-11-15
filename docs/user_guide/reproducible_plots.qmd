@@ -13,7 +13,7 @@ You can send your figures to a colleague, a reviewer or a journal. They (or you,
 
 ## Random scatter ("jitter") and other random layers
 
-When many points have the same value, they sit on top of each other and you cannot count them. **Jitter** moves each point a small random amount sideways so you can see them all. The amounts are random, so the exact position of every point depends on the **seed**, a starting number. These layers are random and take a seed: `geom_jitter`, `position_jitter`, `position_jitterdodge`, a geom placed with `position: jitter` or `jitterdodge`, `geom_sina`, `stat_sina`, and a bootstrapped summary (`fun_data: mean_cl_boot` in `stat_summary`, `stat_summary_bin` or a geom with `stat: summary`).
+When many points have the same value, they sit on top of each other and you cannot count them. **Jitter** moves each point a small random amount sideways so you can see them all. The amounts are random, so the exact position of every point depends on the **seed**, a starting number. These layers are random and take a seed: `geom_jitter`, `position_jitter`, `position_jitterdodge`, a geom placed with `position: jitter` or `jitterdodge`, `geom_sina`, `stat_sina`, any geom with `stat: sina`, and a bootstrapped summary: `stat_summary` or a geom with `stat: summary` (plotnine's default function for it is the bootstrap, so it is random unless you name `mean_se`, `mean_cl_normal`, `mean_sdl` or `median_hilow`), and `stat_summary_bin` or `stat: summary_bin` with `fun_data: mean_cl_boot`.
 
 - With the **same seed**, the points are in the same place every time.
 - With a **different seed**, the points move: the picture looks a little different, though the data are the same.
@@ -78,8 +78,8 @@ But that order is *a* fixed order, not necessarily the one **you want**. If you 
 
 ## Reshuffling in the app
 
-Plots that use jitter and have no number written in the recipe show a small **Reshuffle arrangement** button next to the plot. Clicking it draws a new arrangement and fixes it: the plot keeps that exact arrangement from then on, and the export uses it too (also when the audit trail is switched off in your app features) and lists it as a step of the audit trail. The button disappears once a number is fixed, whether by this button or by `random_state: <number>` in the recipe.
+HOME shows, with every plot that has a random layer, one short line that says the seed in use and where it comes from: for example `seed 0, default (nothing written in the recipe)`, `seed 42, written in the recipe`, `seed 5, recipe default (plot_defaults)`, `seed 7, pinned in the audit`. A plot with several seeds lists them. The line is next to the picture, never inside it, so it is never exported.
 
-There is no button yet to remove a fixed number; edit the data analysis recipe to do that.
+Plots whose random layers have **no seed written anywhere** (no number on a layer, no `plot_defaults: random_state`) show a small **Reshuffle arrangement** button. Clicking it draws a new arrangement and pins it **for every random layer of the plot**: the export uses it too (also when the audit trail is switched off in your app features) and lists it as a step of the audit trail. The button is not offered where a seed is written (a click would override your recipe) or already pinned. A pinned seed shows a **Remove the pinned seed** link next to the seed line: it removes that audit step and the plot goes back to the seed of the recipe. In a plot where one layer has a number and another has none, the numbers you wrote hold and the other layer stays at the default 0; write its number in the recipe.
 
 For the technical background (why the order can change, how the engine keeps it fixed, how to test it), see [Same input, same output](../foundations/reproducibility_same_input_same_output.qmd).

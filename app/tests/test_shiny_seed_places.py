@@ -12,11 +12,13 @@ CALL them and put nothing between (a flag, a replaced number, a dropped argument
   3. with the audit trail off (`pipeline-exploration-simple`: t3_sandbox_enabled false) the Reshuffle pin reaches
      HOME and the export, and the export lists it as a step (t3_steps.yaml, report)
 
-Each scenario starts its own app. The plot file of the dummy recipe is edited for the scenario and restored afterwards.
+Each scenario starts its own app on a STAGED COPY of the recipes folder (the tracked plot file is never edited).
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_shiny_seed_places.py -q
 """
 import io
+import re
+import shutil
 import socket
 import subprocess
 import time
@@ -36,22 +38,34 @@ from app.tests.test_shiny_smoke import _navigate_to_phenotype_plot, _wait_shiny
 
 REPO = Path(__file__).resolve().parents[2]
 PID = "phenotype_genome_length_fragmentation"
-PLOT_FILE = REPO / "config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy/plots/phenotype_genome_length_dotplot.yaml"
+RECIPES = REPO / "config/data_analysis_recipes/pipelines"
+PLOT_FILE_IN_RECIPES = Path("1_test_data_ST22_dummy/plots/phenotype_genome_length_dotplot.yaml")
 WRITTEN = 'position: "jitter", random_state: 0}'     # the shipped plot writes its seed (item 3 of SEED-HOLDS-1)
 LOCAL = "config/deployment/local/local.yaml"
 PIPELINE = "config/deployment/pipeline_test/pipeline_test.yaml"
 
 
-@contextmanager
-def plot_file_with(layer_params: str):
-    """The plot file of the dummy recipe with another written seed (or none) on its jitter layer; restored afterwards."""
-    original = PLOT_FILE.read_text()
+def staged_deployment(deployment: str, layer_params: str, tmp_path: Path, recipe_seed: int | None = None) -> str:
+    """A deployment file whose recipes folder is a COPY of the shipped one, with another written seed (or none) on the
+    jitter layer of the phenotype plot. The repository is never edited, so a killed run leaves nothing behind."""
+    recipes = tmp_path / "recipes"
+    shutil.copytree(RECIPES, recipes)
+    plot_file = recipes / PLOT_FILE_IN_RECIPES
+    original = plot_file.read_text()
     assert WRITTEN in original, "the plot file changed: update this test"
-    PLOT_FILE.write_text(original.replace(WRITTEN, layer_params))
-    try:
-        yield
-    finally:
-        PLOT_FILE.write_text(original)
+    plot_file.write_text(original.replace(WRITTEN, layer_params))
+    if recipe_seed is not None:                 # PROVISIONAL (S3): the one seed of the whole recipe
+        recipe_file = recipes / "1_test_data_ST22_dummy.yaml"
+        text = recipe_file.read_text()
+        assert "plot_defaults:\n  theme: theme_minimal\n" in text
+        recipe_file.write_text(text.replace("plot_defaults:\n  theme: theme_minimal\n",
+                                            f"plot_defaults:\n  random_state: {recipe_seed}\n  theme: theme_minimal\n"))
+    text = (REPO / deployment).read_text()
+    text, n = re.subn(r'(?m)^(\s*data_analysis_recipes:\s*).*$', lambda m: f'{m.group(1)}"{recipes}/"', text)
+    assert n == 1
+    staged = tmp_path / "deployment.yaml"
+    staged.write_text(text)
+    return str(staged)
 
 
 def _free_port() -> int:
@@ -136,13 +150,18 @@ def recipe_seeds(z: zipfile.ZipFile) -> set:
     return {l["params"].get("random_state") for l in spec["layers"] if (l.get("params") or {}).get("position") == "jitter"}
 
 
+def seed_line(page: Page) -> str:
+    """The seed line HOME shows with the phenotype plot (text only; it is never part of the picture)."""
+    return " ".join(page.locator(f"#plot_seed_{PID}").inner_text().split())
+
+
 def same_picture(a: bytes, b: bytes) -> bool:
     return ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"),
                                  Image.open(io.BytesIO(b)).convert("RGB")).getbbox() is None
 
 
 def test_a_seed_written_in_the_recipe_holds_in_home_the_reference_pane_and_the_export(browser, tmp_path):
-    with plot_file_with('position: "jitter", random_state: 123}'), running_app("qa", LOCAL, tmp_path) as url:
+    with running_app("qa", staged_deployment(LOCAL, 'position: "jitter", random_state: 123}', tmp_path), tmp_path) as url:
         shots, runs = [], []
         for _ in range(2):                     # two sessions: each would draw its own seed if HOME drew over the recipe
             context = browser.new_context()
@@ -150,6 +169,8 @@ def test_a_seed_written_in_the_recipe_holds_in_home_the_reference_pane_and_the_e
             try:
                 open_phenotype_plot(page, url, choose_recipe=True)
                 shots.append(page.locator(f"#plot_group_{PID}").screenshot())
+                assert seed_line(page) == "seed 123, written in the recipe"
+                expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_have_count(0)
                 if len(shots) == 1:
                     page.locator("#plot_view input[value=CMP]").check(force=True)
                     _wait_shiny(page)
@@ -170,10 +191,11 @@ def test_a_seed_written_in_the_recipe_holds_in_home_the_reference_pane_and_the_e
 
 
 def test_without_a_seed_in_the_recipe_every_place_uses_zero_and_two_sessions_show_the_same_arrangement(browser, tmp_path):
-    with plot_file_with('position: "jitter"}'), running_app("qa", LOCAL, tmp_path) as url:
+    with running_app("qa", staged_deployment(LOCAL, 'position: "jitter"}', tmp_path), tmp_path) as url:
         page = browser.new_page()
         try:
             open_phenotype_plot(page, url, choose_recipe=True)
+            assert seed_line(page) == "seed 0, default (nothing written in the recipe)"
             page.locator("#plot_view input[value=CMP]").check(force=True)
             _wait_shiny(page)
             settle(page, f"plot_group_{PID}", f"plot_group_{PID}_cmp_base")
@@ -203,12 +225,13 @@ def test_without_a_seed_in_the_recipe_every_place_uses_zero_and_two_sessions_sho
 
 
 def test_the_reshuffle_pin_reaches_home_and_the_export_when_the_audit_trail_is_off(browser, tmp_path):
-    with plot_file_with('position: "jitter"}'), running_app("pipeline-exploration-simple", PIPELINE, tmp_path) as url:
+    with running_app("pipeline-exploration-simple", staged_deployment(PIPELINE, 'position: "jitter"}', tmp_path), tmp_path) as url:
         page = browser.new_page()
         try:
             open_phenotype_plot(page, url, choose_recipe=False)
             run_a, png_a, _ = export_run_and_png(page)
             assert run_a["seed_source_per_plot"][PID] == "default" and run_a["seeds_per_plot"][PID] == 0
+            assert seed_line(page) == "seed 0, default (nothing written in the recipe)"
             shown = page.locator(f"#plot_group_{PID}")
             before = shown.screenshot()
             btn = page.locator(f"#plot_reshuffle_btn_{PID}")
@@ -220,6 +243,20 @@ def test_the_reshuffle_pin_reaches_home_and_the_export_when_the_audit_trail_is_o
             # once pinned there is nothing left to reshuffle: the control disappears, and the plot shows no error
             expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_have_count(0, timeout=8_000)
             assert page.locator(".shiny-output-error").count() == 0
+            pinned_line = seed_line(page)
+            assert re.fullmatch(r"seed \d+, pinned in the audit Remove the pinned seed", pinned_line), pinned_line
+            pinned_picture = shown.screenshot()
+            # the way back: remove the pinned seed; the plot returns to the recipe's seed and Reshuffle is offered again
+            page.locator(f"#plot_unpin_btn_{PID}").click()
+            _wait_shiny(page)
+            settle(page, f"plot_group_{PID}")
+            expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_be_visible(timeout=8_000)
+            assert seed_line(page) == "seed 0, default (nothing written in the recipe)"
+            assert same_picture(shown.screenshot(), before), "removing the pinned seed did not bring the plot back"
+            assert not same_picture(shown.screenshot(), pinned_picture)
+            btn.click()                          # pin again for the export below
+            _wait_shiny(page)
+            settle(page, f"plot_group_{PID}")
             run_b, png_b, z = export_run_and_png(page)
         finally:
             page.close()
@@ -232,3 +269,19 @@ def test_the_reshuffle_pin_reaches_home_and_the_export_when_the_audit_trail_is_o
     assert step["action"] == "random_seed" and step["seed"] == run_b["seeds_per_plot"][PID] and step["reason"]
     report = z.read(next(n for n in z.namelist() if n.endswith("report.qmd"))).decode()
     assert "random_seed" in report and str(step["seed"]) in report
+
+
+def test_a_recipe_default_seed_is_shown_holds_and_hides_reshuffle(browser, tmp_path):
+    """PROVISIONAL (S3): plot_defaults.random_state is the seed of a layer that writes none; HOME says so, Reshuffle is
+    not offered (a click would override the recipe's seed) and the export records it as the recipe default."""
+    with running_app("qa", staged_deployment(LOCAL, 'position: "jitter"}', tmp_path, recipe_seed=5), tmp_path) as url:
+        page = browser.new_page()
+        try:
+            open_phenotype_plot(page, url, choose_recipe=True)
+            assert seed_line(page) == "seed 5, recipe default (plot_defaults)"
+            expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_have_count(0)
+            run, _png, _z = export_run_and_png(page)
+        finally:
+            page.close()
+    assert run["seeds_per_plot"][PID] == 5 and run["seed_source_per_plot"][PID] == "recipe default"
+    assert run["seeds_added_to_recipe"] == []

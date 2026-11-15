@@ -16,7 +16,8 @@ from __future__ import annotations
 #           function:export_plot_seeds, function:export_seed_plan, function:seeds_per_plot_record,
 #           function:seed_sources_per_plot, function:seeds_per_layer_record, function:seeds_added_to_recipe,
 #           function:seed_recipe_note, function:bake_plot_seeds,
-#           function:seed_pin_steps, function:with_seed_steps
+#           function:seed_pin_steps, function:with_seed_steps, function:seed_in_use, function:reshuffle_offered,
+#           function:seed_caption, constant:RESHUFFLE_TITLE
 # consumes: libs/viz_factory/src/viz_factory/plot_config_resolver.py (resolve_layer_seeds, LayerSeed)
 # consumed_by: app/handlers/export_handlers.py, app/tests/test_plot_seeds.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-104, .claude/rules/rules_viz_factory.md#8
@@ -216,3 +217,49 @@ def with_seed_steps(t3_by_plot: dict[str, list[dict]], seeds: dict[str, Seeds]) 
     for plot_id, steps in seed_pin_steps(seeds).items():
         listed[plot_id] = listed.get(plot_id, []) + steps
     return listed
+
+
+# ---------------------------------------------------------------------------
+# what HOME shows and offers: one rule, the resolver's precedence
+# ---------------------------------------------------------------------------
+
+RESHUFFLE_TITLE = ("Draw a new random arrangement and pin it for every random layer of this plot. "
+                   "Remove the pinned seed to go back.")
+_SOURCE_TEXT = {
+    "audit": "pinned in the audit",
+    "recipe": "written in the recipe",
+    "recipe default": "recipe default (plot_defaults)",
+    "default": "default (nothing written in the recipe)",
+}
+_SOURCE_SHORT = {**_SOURCE_TEXT, "recipe default": "recipe default", "default": "default"}
+
+
+def seed_in_use(layers: list[dict], plot_defaults: dict | None, home_state: dict | None, plot_id: str, *,
+                default) -> Seeds:
+    """The seed of every random layer as HOME draws it: the audit pin in `home_state`, the layer's own number,
+    `plot_defaults.random_state`, then the factory's `default`. The same function the export uses (resolver)."""
+    return resolve_layer_seeds(layers, audit_pin_of(home_state, plot_id), default=default,
+                               recipe_default=(plot_defaults or {}).get("random_state"))
+
+
+def reshuffle_offered(seeds: Seeds) -> bool:
+    """Reshuffle is offered only where the plot has a random layer and no seed is written anywhere: every random layer
+    is at the default. A written number (layer or plot_defaults) holds and a pin is already there. A pin applies to
+    every random layer, which is why a plot with one written number is not offered it (the other layer stays at 0)."""
+    return bool(seeds) and all(ls.source == "default" for ls in seeds)
+
+
+def seed_caption(seeds: Seeds) -> str | None:
+    """The one line HOME shows with a plot: the seed and where it comes from; None without a random layer.
+    Layers that share a seed and a source are one entry; different ones are listed."""
+    if not seeds:
+        return None
+    entries = []
+    for ls in seeds:
+        entry = (ls.seed, ls.source)
+        if entry not in entries:
+            entries.append(entry)
+    if len(entries) == 1:
+        seed, source = entries[0]
+        return f"seed {seed}, {_SOURCE_TEXT[source]}"
+    return "seeds " + ", ".join(f"{seed} ({_SOURCE_SHORT[source]})" for seed, source in entries)
