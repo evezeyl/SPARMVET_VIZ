@@ -394,7 +394,7 @@ tier1:
     how: left
     maintain_order: left_right
     comment: reads quality and assembly quality side by side
-  - id: audit_7f3a                        # inserted by the audit mode
+  - id: audit_7f3a9c1e_1                  # inserted by the audit mode
     action: modif_filter
     column: Country
     op: eq
