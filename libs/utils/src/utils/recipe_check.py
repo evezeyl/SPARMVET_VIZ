@@ -46,7 +46,7 @@ TIER3_READ_BY_ENGINE = False
 # Tier-1 actions that only remove or reorder rows: they cannot change the columns or their types (exact names).
 JOIN_KEEPS_COLUMNS = frozenset({action_names.FILTER, action_names.SORT, action_names.UNIQUE, action_names.DROP_NULLS, action_names.SAMPLE})
 
-# Steps whose `maintain_order` says whether the order of the rows is fixed (ST12).
+# Steps whose `maintain_order` says whether the order of the rows is fixed (ST13).
 _ORDER_STEPS = frozenset({action_names.SORT, action_names.UNIQUE, action_names.GROUP_BY, action_names.JOIN})
 
 PROFILES = ("run", "build", "gallery", "audit")
@@ -417,7 +417,7 @@ class _Check:
         self.order_advices(container, path, tiers)
 
     def order_advices(self, container: dict, path: str, tiers: List[str]) -> None:
-        """ST12 (advice, never blocks): a position action after a step that does not keep the row order.
+        """ST13 (advice, never blocks): a position action after a step that does not keep the row order.
 
         The checker knows an order only from what the recipe states: `maintain_order` of sort, unique, group_by and join
         (the form requires it, so it is always written). The steps are read in order, tier by tier; the last of these
@@ -436,7 +436,7 @@ class _Check:
                     keeps = step["maintain_order"] not in (False, "none")
                     unstated = None if keeps else (f"{path}.{tier}[{index}]", name)
                 elif name in action_names.POSITION_ACTIONS and unstated is not None:
-                    self.add("ST12", f"{path}.{tier}[{index}]",
+                    self.add("ST13", f"{path}.{tier}[{index}]",
                              f"{name} keeps rows by their position, but the order of the rows is not fixed by {unstated[1]} "
                              f"({unstated[0]}, maintain_order: {'none' if unstated[1] == action_names.JOIN else 'false'}): the rows kept can differ from one run or one Polars version to another",
                              f"write maintain_order: {'left_right' if unstated[1] == action_names.JOIN else 'true'} in that step, or write a polars_sort step with maintain_order: true before this one",
@@ -470,8 +470,11 @@ class _Check:
             if name not in actions:
                 legacy = (self.catalogs or {}).get("old_action_names", {}).get(name)
                 close = difflib.get_close_matches(str(name), list(actions), n=1, cutoff=0.6)
+                why = ""
+                if isinstance(legacy, dict):  # a removed name: the replacement and the reason
+                    why, legacy = f" (removed: {legacy['why']})", legacy["use"]
                 fix = f"write {legacy}" if legacy else f"write {close[0]}" if close else "choose a registered action"
-                self.add("ST02", f"{where}.action", f"{name!r} is not a registered action", fix)
+                self.add("ST02", f"{where}.action", f"{name!r} is not a registered action{why}", fix)
                 continue
             schema = actions[name]
             if not isinstance(schema, dict):

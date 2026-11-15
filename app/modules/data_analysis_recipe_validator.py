@@ -41,6 +41,7 @@ from typing import Iterator, Optional, Union
 import polars as pl
 import yaml
 from transformer.data_wrangler import DataWrangler
+from utils.action_names import REMOVED_ACTIONS
 from utils.config_loader import ConfigManager
 from utils.recipe_loader import check_recipe_file
 
@@ -49,7 +50,7 @@ from utils.recipe_loader import check_recipe_file
 REQUIRED_COVERAGE = frozenset({"structure", "actions", "components"})
 # Advices that tell the author what a choice does to the result (a float join key, a join of a table with itself, a position step after an unfixed row order).
 # The other advices (missing descriptions and the like) are for the author's own review and stay out of HOME's panel.
-SHOWN_ADVICES = frozenset({"J12", "J13", "ST12"})
+SHOWN_ADVICES = frozenset({"J12", "J13", "ST13"})
 
 # Sections whose entries (dataset id -> spec) may carry a 'wrangling' block.
 _SCHEMA_SECTIONS = ("data_schemas", "additional_datasets_schemas")
@@ -125,6 +126,7 @@ def checker_catalogs() -> dict:
         "component_arguments": {name: (None if arguments.get(name) is None else set(arguments[name])) for name in components},
         "component_kinds": {name: COMPONENT_SCHEMAS[name]["plotnine"] for name in components},
         "themes": {name for name in components if name.startswith("theme_")},
+        "old_action_names": dict(REMOVED_ACTIONS),
     }
 
 

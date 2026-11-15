@@ -105,10 +105,12 @@ def test_the_key_check_still_asks_a_plain_join_for_its_key():
     assert "J05" in codes(raw)
 
 
-def test_the_old_name_polars_join_where_is_refused_like_any_unknown_action():
-    """DECIDED 3 (Eve, 2026-11-15): the action that fixes the row order is modif_join_where; no alias for the old name."""
+def test_the_old_name_polars_join_where_is_refused_and_the_message_names_the_new_one_and_why():
+    """A removed name is refused with its replacement (no alias, it does not run): the action fixes the order, so it is not exactly Polars."""
+    from utils.action_names import REMOVED_ACTIONS
     raw = where_recipe()
     raw["joins"]["AB"]["steps"]["tier1"][0]["action"] = "polars_join_where"
-    problems = [p for p in check_recipe(raw, "run", catalogs=CATALOG, graph=Graph()).problems if p.code == "ST02"]
-    # the usual "did you mean" is difflib's closest registered name (today polars_join, not the new name): no rename map, no alias
-    assert problems and problems[0].fix.startswith("write ") and "not a registered action" in problems[0].message
+    result = check_recipe(raw, "run", catalogs={**CATALOG, "old_action_names": dict(REMOVED_ACTIONS)}, graph=Graph())
+    problems = [p for p in result.problems if p.code == "ST02"]
+    assert problems and problems[0].severity == "E"
+    assert problems[0].fix == "write modif_join_where" and "not exactly Polars" in problems[0].message

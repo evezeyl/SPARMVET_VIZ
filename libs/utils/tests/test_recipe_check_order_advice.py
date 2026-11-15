@@ -1,4 +1,4 @@
-"""ST12 (advice, never blocks): a position action after a step that does not fix the row order (Eve, 2026-11-15, DECIDED 4).
+"""ST13 (advice, never blocks): a position action after a step that does not fix the row order (Eve, 2026-11-15, DECIDED 4).
 
 `polars_head`, `polars_tail`, `polars_slice`, `polars_limit`, `polars_gather_every` and `polars_with_row_index` work on the
 position of a row. The checker knows an order only from what the recipe states: `maintain_order` of `polars_sort`,
@@ -47,8 +47,8 @@ UNFIXED = [step("polars_sort", maintain_order=False), step("polars_unique", main
 @pytest.mark.parametrize("before", UNFIXED, ids=lambda s: s["action"])
 def test_a_position_action_after_a_step_that_does_not_keep_the_order_gets_the_advice(before, position):
     result = found(recipe([before, step(position)]))
-    assert [p.code for p in result.advices] == ["ST12"], result.problems
-    assert result.errors == [] or "ST12" not in [p.code for p in result.errors]
+    assert [p.code for p in result.advices] == ["ST13"], result.problems
+    assert result.errors == [] or "ST13" not in [p.code for p in result.errors]
     advice = result.advices[0]
     assert advice.severity == "A" and before["action"] in advice.message and "maintain_order" in advice.fix and position in advice.message
 
@@ -56,24 +56,24 @@ def test_a_position_action_after_a_step_that_does_not_keep_the_order_gets_the_ad
 @pytest.mark.parametrize("before", [step("polars_sort", maintain_order=True), step("polars_unique", maintain_order=True), step("polars_group_by", maintain_order=True)],
                          ids=lambda s: s["action"])
 def test_no_advice_when_the_step_before_fixes_the_order(before):
-    assert "ST12" not in advice_codes(recipe([before, step("polars_head")]))
+    assert "ST13" not in advice_codes(recipe([before, step("polars_head")]))
 
 
 def test_no_advice_when_nothing_before_touches_the_order():
-    assert "ST12" not in advice_codes(recipe([step("polars_head")]))
-    assert "ST12" not in advice_codes(recipe([step("polars_select"), step("polars_head")]))
+    assert "ST13" not in advice_codes(recipe([step("polars_head")]))
+    assert "ST13" not in advice_codes(recipe([step("polars_select"), step("polars_head")]))
 
 
 def test_a_later_step_that_fixes_the_order_silences_the_advice_and_a_later_one_that_loses_it_brings_it_back():
-    assert "ST12" not in advice_codes(recipe([step("polars_unique", maintain_order=False), step("polars_sort", maintain_order=True), step("polars_head")]))
-    assert "ST12" in advice_codes(recipe([step("polars_sort", maintain_order=True), step("polars_unique", maintain_order=False), step("polars_head")]))
+    assert "ST13" not in advice_codes(recipe([step("polars_unique", maintain_order=False), step("polars_sort", maintain_order=True), step("polars_head")]))
+    assert "ST13" in advice_codes(recipe([step("polars_sort", maintain_order=True), step("polars_unique", maintain_order=False), step("polars_head")]))
 
 
 def test_the_advice_follows_into_tier_2_and_a_step_that_is_not_a_position_action_gets_none():
     raw = recipe([step("polars_unique", maintain_order=False)])
     raw["data_schemas"]["A"]["wrangling"]["tier2"] = [step("polars_head")]
-    assert "ST12" in advice_codes(raw)
-    assert "ST12" not in advice_codes(recipe([step("polars_unique", maintain_order=False), step("polars_select")]))
+    assert "ST13" in advice_codes(raw)
+    assert "ST13" not in advice_codes(recipe([step("polars_unique", maintain_order=False), step("polars_select")]))
 
 
 def test_a_join_that_does_not_keep_an_order_gets_the_advice_and_one_that_does_not():
@@ -82,15 +82,15 @@ def test_a_join_that_does_not_keep_an_order_gets_the_advice_and_one_that_does_no
         raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "left", "maintain_order": order}]
         raw["joins"]["AB"]["steps"]["tier2"] = [step("polars_head")]
         return advice_codes(raw)
-    assert "ST12" in with_join("none")
-    assert "ST12" not in with_join("left_right") and "ST12" not in with_join("left")
+    assert "ST13" in with_join("none")
+    assert "ST13" not in with_join("left_right") and "ST13" not in with_join("left")
 
 
 def test_the_advice_never_blocks():
     result = found(recipe([step("polars_unique", maintain_order=False), step("polars_head")]))
-    assert "ST12" in [p.code for p in result.advices] and "ST12" not in [p.code for p in result.errors]
+    assert "ST13" in [p.code for p in result.advices] and "ST13" not in [p.code for p in result.errors]
 
 
 def test_the_advice_is_not_written_for_the_ties_of_top_k_and_bottom_k():
     raw = recipe([step("polars_top_k"), step("polars_bottom_k")])
-    assert "ST12" not in advice_codes(raw)
+    assert "ST13" not in advice_codes(raw)

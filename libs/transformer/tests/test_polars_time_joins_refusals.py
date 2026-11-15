@@ -276,3 +276,10 @@ def test_the_old_name_polars_join_where_is_not_registered_and_the_new_name_is():
     """No alias and no shim (Eve, 2026-11-15): the engine does not know the old name."""
     assert "polars_join_where" not in AVAILABLE_WRANGLING_ACTIONS and "polars_join_where" not in ACTION_SCHEMAS
     assert "modif_join_where" in AVAILABLE_WRANGLING_ACTIONS
+
+
+def test_the_engine_refuses_the_old_name_and_names_the_new_one():
+    from transformer.registry import get_action_function
+    with pytest.raises(ValueError, match="modif_join_where") as caught:
+        get_action_function("polars_join_where")
+    assert "not exactly Polars" in str(caught.value)

@@ -99,6 +99,11 @@ def test_blueprint_validate_renders_the_advice_entries():
 def test_st12_the_order_advice_is_one_of_the_advices_shown_to_the_author_and_never_refuses(tmp_path):
     """DECIDED 4 (Eve, 2026-11-15): a position step after a step that does not fix the row order is advised, not refused."""
     from app.modules.data_analysis_recipe_validator import SHOWN_ADVICES
-    assert "ST12" in SHOWN_ADVICES
+    assert "ST13" in SHOWN_ADVICES
     path = _template_with_float_key(tmp_path)
-    assert all(not a.problem.startswith("[ST12]") for a in checker_advices(path))
+    assert all(not a.problem.startswith("[ST13]") for a in checker_advices(path))
+
+
+def test_the_app_checker_catalogue_carries_the_removed_action_names():
+    from app.modules.data_analysis_recipe_validator import checker_catalogs
+    assert checker_catalogs()["old_action_names"]["polars_join_where"]["use"] == "modif_join_where"
