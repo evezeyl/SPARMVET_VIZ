@@ -93,7 +93,7 @@ Proposed (replace the paragraph; keep the heading):
 ```
 **ALL** wrangling and join steps MUST use the `action:` key, and the value MUST be a registered action name (`polars_*`, `modif_*`, `step_*`: 68 actions today). A step with no `action`, an unknown action name (an old name such as `join`, `mutate`, `cast`, `sort` is one), an unknown parameter, or a missing required parameter is **refused by the checker before the run** (checks ST01, ST02, ST06). Nothing is skipped silently (ADR-100, ADR-104).
 ```
-Why: the old text says shorthand is "silently skipped"; the checker now refuses it (`recipe_check.py:406` ST01, `:428` ST02, `:451` ST06). The names `join`, `mutate`, `cast`, `sort` do not exist in the registry (verified by listing `AVAILABLE_WRANGLING_ACTIONS`: 68 names).
+Why: the old text says shorthand is "silently skipped"; the checker now refuses it (`recipe_check.py`, codes ST01, ST02, ST06). The names `join`, `mutate`, `cast`, `sort` do not exist in the registry (verified by listing `AVAILABLE_WRANGLING_ACTIONS`: 68 names).
 
 ## 8. Section 7, canonical example (lines 56-72) (FACT)
 
@@ -157,7 +157,7 @@ The code still holds the old repair as a safety net (`data_assembler.py:205`, `c
 When a tool writes a join step back to YAML it must write the key as the string `"on"` (`build_join_step` does).
 ```
 CHANGES A RULE (from "the engine recovers" to "the checker refuses").
-Why: ADR-100 "Supersedes: ... the last point of ADR-042 (an unquoted `on` is refused, DEC02 and check T07)"; `recipe_check.py:521`, `recipe_loader.py:40-43` (T07 from the loader); `data_assembler.py:205` still has `step.get(True)`.
+Why: ADR-100 "Supersedes: ... the last point of ADR-042 (an unquoted `on` is refused, DEC02 and check T07)"; `recipe_check.py` (code T07), `recipe_loader.py:40-43` (T07 from the loader); `data_assembler.py:205` still has `step.get(True)`.
 
 ## 12. Section 8, line 142 (FACT)
 
@@ -184,7 +184,7 @@ Proposed (replaces section 9 except the REMOVED banner, which is rewritten):
 A field is `{type: <Polars dtype name>, ...}`; `type` is required and has no default (ADR-100 point 4, DEC27, check FD02). The names are Polars names: `String`, `Int64`, `Float64`, `Boolean`, `Date`, `Datetime`, `Categorical`, `Enum` (needs `categories`), and the other integer, float and decimal types that a text file can hold. `null_values` and `strip` are stated on every schema, no default (DEC28).
 
 > **REMOVED (ADR-100, DEC27, 2026-11-14):** the old type names `categorical`, `utf8`, `string`, `character`, `numeric`, `float`, `integer`, `int`, `date`, `bool` are refused; the message names the Polars name to write (`recipe_spec.yaml` `renamed_types`).
-> Replacement: `String` for text and identifiers; `Float64`, `Int64`, `Date`, `Boolean` for the others.
+> Replacement: OPEN, Eve decides (`String`, or `Categorical` as the code does today; `libs/utils/src/utils/recipe_spec.yaml` `renamed_types.categorical` says Categorical). `Float64`, `Int64`, `Date`, `Boolean` for the others.
 > **Tombstone expires:** two phases after the phase that records this edit (add the task entry).
 
 **Key rule (ADR-102):** the columns of one join key must have the same declared type on both sides; differing types fail (check J09). Declare a join key as a text type (for example `String`) in `input_fields` of both tables. Nothing is cast to String for you.
@@ -203,7 +203,7 @@ Proposed:
 ```
 And add `layers` to the allowed-key list (line 225 block): `  layers: [...]   # default layers for every plot`.
 CHANGES A RULE.
-Why: ADR-100 "Amends ... ADR-099 point 16(g) (unknown keys fail, DEC02)"; `recipe_spec.yaml` `plot_defaults.optional` = `palette, theme, default_font_family, facet_panel_spacing, legend_position, optimisation, layers`; `plot_defaults.height` and `show_legend` are listed as "removed". Enforced: `recipe_check.py:798` (check PD01).
+Why: ADR-100 "Amends ... ADR-099 point 16(g) (unknown keys fail, DEC02)"; `recipe_spec.yaml` `plot_defaults.optional` = `palette, theme, default_font_family, facet_panel_spacing, legend_position, optimisation, layers`; `plot_defaults.height` and `show_legend` are listed as "removed". Enforced: `recipe_check.py` (check PD01).
 
 ## 16. Section 11 (lines 267-340), load errors (FACT)
 
@@ -216,7 +216,7 @@ Proposed: `... reports a dataset that cannot be loaded. (output_fields no longer
 Why: `output_fields` is refused (`recipe_spec.yaml`). Verify that `validate_data_analysis_recipe_data` no longer checks `output_fields` (its helper `_declared_columns`, line 340, still mentions the word in the docstring): see "Not settled" 5.
 
 16c. Add a bullet at the end of 11a: `Advices (severity A, for example J12 a self-join on the same key, J13 a float join key) are shown to the recipe maker in HOME's recipe choice and in Blueprint's Validate; they never block (ADR-102).`
-Why: ADR-102 status line; `recipe_check.py:558, 572`.
+Why: ADR-102 status line; `recipe_check.py` (the advice checks, J12 and J13).
 
 ## 17. Line numbers 100-115, `data_assembler.py:182-185` (FACT)
 
@@ -229,5 +229,5 @@ The citation `data_assembler.py:182-185` is now `data_assembler.py:205`. Covered
 1. DEC49 (change 6): the exact failure condition of a float-to-integer cast is in ADR-100 point 4 ("a float-to-integer cast that would drop decimals fails"); the code path was not read. A reviewer should read it before the sentence is pasted.
 2. Where `facet_by` lives: `recipe_spec.yaml` lists it as a key of `spec`; every shipped plot file (for example `2_test_data_ST22_dummy/plots/multi_resistance_by_country.yaml`) writes it under `mapping`. The checker has no hit for `facet_by`. Not decided; the rule text keeps both as they are.
 3. `Categorical` (change 14): ADR-100 OPEN list, Record 1 (DEC27 refuses it) against Record 2 (migration writes it; 75 shipped fields).
-4. SETTLED: `check_recipe` enforces the `plot_defaults` keys (`recipe_check.py:798`, `unknown_keys("plot_defaults", ..., "PD01")`).
+4. SETTLED: `check_recipe` enforces the `plot_defaults` keys (`recipe_check.py`, PD01 via `unknown_keys("plot_defaults", ..., "PD01")`).
 5. SETTLED in part: `validate_data_analysis_recipe_data` (`data_analysis_recipe_validator.py:345-395`) compares declared `input_fields` with the real columns; only its helper docstring (line 341) still names `output_fields`. Change 16b is right; also change that docstring when the file is next edited (code, not a rule file).

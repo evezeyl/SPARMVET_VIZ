@@ -122,18 +122,18 @@ class TestParameterCoverage:
 
     def test_geom_boxplot_core_params(self):
         params = COMPONENT_SCHEMAS["geom_boxplot"]["params"]
-        for key in ("alpha", "fill", "colour", "size", "width", "notch",
+        for key in ("alpha", "fill", "color", "size", "width", "notch",
                     "linetype", "position", "stat"):
             assert key in params, f"geom_boxplot missing param '{key}'"
 
     def test_geom_boxplot_has_outlier_controls(self):
         params = COMPONENT_SCHEMAS["geom_boxplot"]["params"]
-        for key in ("outlier_colour", "outlier_shape", "outlier_size"):
+        for key in ("outlier_color", "outlier_shape", "outlier_size"):
             assert key in params, f"geom_boxplot missing outlier param '{key}'"
 
     def test_geom_point_core_params(self):
         params = COMPONENT_SCHEMAS["geom_point"]["params"]
-        for key in ("alpha", "colour", "fill", "size", "shape", "stroke", "na_rm"):
+        for key in ("alpha", "color", "fill", "size", "shape", "stroke", "na_rm"):
             assert key in params, f"geom_point missing param '{key}'"
 
     def test_geom_line_has_linetype_controls(self):

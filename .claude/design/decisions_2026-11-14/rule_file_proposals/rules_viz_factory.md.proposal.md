@@ -24,7 +24,7 @@ Proposed:
 - **No silent path (V5, V6, V7, V8; ADR-104 point 1).** HOME runs the same full check as the gallery. A silent path is an error: one error form ("what, which plot and layer, how to fix"). The factory refuses a plot engine it does not implement; the export records the plotnine version.
 - **Verification.** A component is verified by its own test (section 3), not by a count of parity.
 ```
-Why: ADR-106 "Replaces", V1 to V10, "Eve approved the rule-file change with V9". Status of the build (ADR-106): only V5 is BUILT; V1 to V4, V6 to V10 are not, except the field `plotnine` on branch `task/viz-field-engine`. Not to be pasted as "done": the text states the rule, not the build. If Eve prefers, paste the first three bullets now and the rest as each V is built.
+Why: ADR-106 "Replaces", V1 to V10, "Eve approved the rule-file change with V9". Status of the build (checked 2026-11-15): merged: V5 (`70b01370`); V1 and V8 (`4525fcb1`: the field `plotnine: exact | modified | own` and the engine check). Not built: V2, V3, V4, V6, V7, V9, V10. The bullets are the rule, not the build: do not paste them as "done". If Eve prefers, paste the first three bullets now and the rest as each V is built.
 
 ## 2. Section 3, lines 26-32, the 1:1:1 Evidence Loop (CHANGES A RULE)
 
@@ -39,7 +39,7 @@ No visual component is considered verified without a test of its own, driven by 
 2. **A dataset** that provides the minimum required aesthetics.
 3. **A render** that succeeds, and for an `exact` component equals the direct plotnine call (V2).
 
-> **REMOVED (ADR-106 V10, 2026-11-14):** the 194 test recipes in `libs/viz_factory/tests/test_data/` (old recipe form) and the dead `viz_factory_integrity_suite.py` are dropped.
+> **TO BE REMOVED (V10, decided 2026-11-14, not built):** the 194 test recipes in `libs/viz_factory/tests/test_data/` (old recipe form) and the dead `viz_factory_integrity_suite.py` still exist on disk until V10 is built.
 > Replacement: tests driven by the registry (VIZ-STANDARD-1).
 > **Tombstone expires:** two phases after this edit.
 ```
@@ -55,7 +55,7 @@ Kind: CHANGES A RULE. Not built: both silent paths are open until the plot uses 
 
 Today: `Unknown keys in plot_defaults emit PipelineError(severity: warning ...) per ADR-079. Non-fatal.`
 Proposed: `Unknown keys in plot_defaults fail the checker (PD01, DEC02, ADR-100 point 2).`
-Why: `recipe_check.py:798`.
+Why: `recipe_check.py` (code PD01).
 
 ## 5. Section 8, the seed (lines 115-124) (CHANGES A RULE; one point OPEN)
 
@@ -66,10 +66,10 @@ The seed builder's two proposed lines (seed-holds progress note, "Proposed rule 
   `- Order of precedence, one function (\`plot_config_resolver.resolve_plot_seed\`): a seed pinned by an audit step (L5) > the number written in the recipe > the seed the caller offers when the recipe writes none or null (\`render(..., fallback_random_state=n)\`; HOME draws one per session and plot) > the factory default. The export renders with the seed HOME showed, records the seed it really used (\`seeds_per_plot\`, \`seed_source_per_plot\` in \`effective_run.yaml\`) and writes it into the reproducibility recipe.`
 - Line 119 (`DEFAULT_RANDOM_STATE = 0`): OPEN, awaiting Eve (see below).
 - Heading `(ADR-090)` becomes `(ADR-090, ADR-104 point 3)`.
-Why: ADR-104 point 3 (decided 2026-11-14); `adr_sync_changes.md` section 5 ("default seed 0 is OPEN; a recipe seed holds, ADR-104"). The text is for branch `task/seed-holds` (6 to 7 commits, all mutations caught; not merged at my last read): paste only after the merge.
+Why: ADR-104 point 3 (decided 2026-11-14); `adr_sync_changes.md` section 5 ("default seed 0 is OPEN; a recipe seed holds, ADR-104"). The text is for branch `task/seed-holds` (6 to 7 commits, all mutations caught; not merged at my last read): paste only after the merge. The names `plot_config_resolver.resolve_plot_seed` and `fallback_random_state` exist only on that branch (not found in `libs/viz_factory/src` on 2026-11-15): names to be checked again after the merge.
 OPEN, awaiting Eve (records say so): which seed is used when the recipe writes none, HOME's per-session draw (what the code does) or the default 0.
 
 ## Not settled
 1. The OPEN seed point above.
 2. Whether `viz_factory.py` `filters` carries `na` (change 3).
-3. Change 1: how much to paste before V1 to V4 and V6 to V10 are built.
+3. Change 1: how much to paste before V2, V3, V4, V6, V7, V9 and V10 are built (V1, V5 and V8 are merged).
