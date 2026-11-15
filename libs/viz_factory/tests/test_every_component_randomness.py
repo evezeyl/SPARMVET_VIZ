@@ -45,9 +45,6 @@ from utils.random_layers import ALWAYS_RANDOM, is_random_layer
 from viz_factory.registry import COMPONENT_SCHEMAS, PLOT_COMPONENTS
 from viz_factory.viz_factory import VizFactory
 
-# the workers are forked after the components are registered; polars threads make Python warn about fork, which is harmless here
-pytestmark = pytest.mark.filterwarnings("ignore:This process .* is multi-threaded:DeprecationWarning")
-
 # Explicit layers for what the example cannot draw
 EXPLICIT = {
     "stat_summary / mean_se": [{"name": "stat_summary", "params": {"fun_data": "mean_se"}}],
@@ -182,9 +179,11 @@ def _tasks():
 
 @pytest.fixture(scope="module")
 def results():
-    """{key: hashes or None} for every case, built once in a pool of processes (fork: the components are registered)."""
+    """{key: hashes or None} for every case, built once in a pool of processes. The workers are started clean (a
+    forkserver, never a fork of this process: a fork of a process that has run polars and matplotlib threads can hang
+    in a long test run); each worker imports this module, which registers the components."""
     workers = max(1, min(8, (os.cpu_count() or 2) - 1))
-    with ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context("fork")) as pool:
+    with ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context("forkserver")) as pool:
         return dict(pool.map(_work, _tasks(), chunksize=4))
 
 
