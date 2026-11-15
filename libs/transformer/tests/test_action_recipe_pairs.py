@@ -15,7 +15,7 @@ What each test proves:
   - every registered action is also tested for its behaviour: a case in `test_polars_actions_equal_polars.py` or a
     test file of its own that names it (a new action without a test fails here).
 
-`polars_join` (and `polars_join_asof`, `polars_join_where`) has two ingredients: its pair is a recipe with two data
+`polars_join` (and `polars_join_asof`, `modif_join_where`) has two ingredients: its pair is a recipe with two data
 schemas (`polars_join_test.tsv` is the left, `polars_join_test_right.tsv` the right) and the join is run by the
 assembler, as the app runs it.
 
@@ -43,7 +43,7 @@ HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
 JOIN = "polars_join"
 # the actions with a second ingredient: their pair has two data schemas and is run by the assembler
-JOINS = (JOIN, "polars_join_asof", "polars_join_where")
+JOINS = (JOIN, "polars_join_asof", "modif_join_where")
 PAIRED = sorted(AVAILABLE_WRANGLING_ACTIONS)
 
 # the direct Polars call of the action that is not plain Polars (a filter on the same column)
@@ -51,7 +51,7 @@ OWN_EXPECTED = {"modif_filter": lambda lf: lf.filter(pl.col("n") > 1)}
 # the actions that are not plain Polars calls: the test file that checks their behaviour
 OWN_TESTS = {"modif_filter": "test_modif_filter.py", "step_top_n_other": "test_top_n_other.py"}
 # the group "rank, time and special joins": the cases live in a file of their own (their list is not the 37 planned actions)
-OWN_TESTS.update({name: "test_polars_time_joins_equal_polars.py" for name in ("polars_rank", "polars_join_asof", "polars_join_where", "polars_group_by_dynamic", "polars_rolling")})
+OWN_TESTS.update({name: "test_polars_time_joins_equal_polars.py" for name in ("polars_rank", "polars_join_asof", "modif_join_where", "polars_group_by_dynamic", "polars_rolling")})
 
 # the table aggregations have a test file of their own, with the pairs checked there (polars_aggregations.py)
 OWN_TESTS.update({f"polars_{name}": "test_polars_aggregations_equal_polars.py" for name in AGGREGATIONS})

@@ -18,7 +18,7 @@ The central engine for data wrangling and Phase 4 relational assembly. It enforc
 - `test_action_recipe_pairs.py` - [Test]: every registered action has its 1:1:1 pair (recipe and data file in `tests/data/`); the pair runs through ingestion and the wrangler and equals the direct Polars call.
 - `debug_wrangler.py` - [Dev Tool]: CLI runner that wrangles one format 1 recipe and writes the result as a TSV (`@verify` evidence). Entry: `main()`.
 - `debug_assembler.py` - [Dev Tool]: CLI runner for multi-source assembly (the join's last tier-1 step publishes the columns). Entry: `run_assembler_debug()`.
-- **Actions (`actions/`)**: `polars_calls.py` holds the `polars_<name>` actions (exactly the Polars call), `polars_aggregations.py` the twelve whole-table aggregations (`polars_sum` ... `polars_last`), `modified.py` the `modif_<name>` actions (today `modif_filter`), `composite.py` the `step_<name>` actions (today `step_top_n_other`), `polars_rows.py` the ten row actions (pick, cut, number, reverse or remove rows: `polars_head` ... `polars_remove`), `polars_time_joins.py` rank, time windows and special joins (`polars_rank`, `polars_join_asof`, `polars_join_where`, `polars_group_by_dynamic`, `polars_rolling`; each states what order or sorted key it needs and refuses a table that does not meet it), `base.py` the `register_action` decorator and the form schemas (`ACTION_SCHEMAS`).
+- **Actions (`actions/`)**: `polars_calls.py` holds the `polars_<name>` actions (exactly the Polars call), `polars_aggregations.py` the twelve whole-table aggregations (`polars_sum` ... `polars_last`), `modified.py` the `modif_<name>` actions (today `modif_filter`), `composite.py` the `step_<name>` actions (today `step_top_n_other`), `polars_rows.py` the ten row actions (pick, cut, number, reverse or remove rows: `polars_head` ... `polars_remove`), `polars_time_joins.py` rank, time windows and special joins (`polars_rank`, `polars_join_asof`, `modif_join_where`, `polars_group_by_dynamic`, `polars_rolling`; each states what order or sorted key it needs and refuses a table that does not meet it), `base.py` the `register_action` decorator and the form schemas (`ACTION_SCHEMAS`).
 - `Anchor (anchor.py)`: Tier 1 and Tier 2 disk anchors, written and read by the engine and never named in a data analysis recipe.
 - **Reactive State (Tier 3)**: Transient views generated via Predicate Pushdown. Supports **Gated Reactivity** via the `btn_apply` trigger, allowing for side-by-side inspection in **Comparison Mode** (T2 reference vs T3 active).
 - **Path Authority**: Persistence locations (Tiers 1-3) are determined by `config/connectors`, decoupling hardware from the UI.
@@ -121,7 +121,7 @@ All 68 actions available for use in data analysis recipe `wrangling` and `steps`
 | **List** | `polars_list_join`, `polars_list_slice` |
 | **Numeric** | `polars_round` |
 | **Ordering** | `polars_sort` |
-| **Relational** | `polars_join`, `polars_join_asof`, `polars_join_where` |
+| **Relational** | `polars_join`, `polars_join_asof`, `modif_join_where` |
 | **Renaming** | `polars_rename` |
 | **Reshaping** | `polars_explode`, `polars_pivot`, `polars_str_split`, `polars_str_splitn`, `polars_unnest`, `polars_unpivot` |
 | **Rows** | `polars_bottom_k`, `polars_gather_every`, `polars_head`, `polars_limit`, `polars_remove`, `polars_reverse`, `polars_slice`, `polars_tail`, `polars_top_k`, `polars_with_row_index` |

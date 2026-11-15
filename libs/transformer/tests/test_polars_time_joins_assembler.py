@@ -100,7 +100,7 @@ def test_the_second_asof_step_is_checked_against_the_result_of_the_first():
     assert out["w"].to_list() == [None, 1, 2]
 
 
-# -- polars_join_where --------------------------------------------------------------------------------
+# -- modif_join_where --------------------------------------------------------------------------------
 
 from utils.action_names import JOIN_WHERE  # noqa: E402
 
@@ -119,7 +119,7 @@ def test_a_join_on_conditions_with_numbers_of_different_types_fails_through_the_
     right = _right().with_columns(pl.col("v").cast(pl.Float64))
     with pytest.raises(TransformationError) as caught:
         _assemble(_left(), right, [_where_step(predicates=["pl.col('v') >= pl.col('x')"])]).collect()
-    assert "cannot compare" in str(caught.value) and "polars_join_where" in str(caught.value) and "input_fields" in caught.value.tip
+    assert "cannot compare" in str(caught.value) and "modif_join_where" in str(caught.value) and "input_fields" in caught.value.tip
 
 
 def test_a_refused_step_keeps_its_own_plain_message_through_the_assembler():

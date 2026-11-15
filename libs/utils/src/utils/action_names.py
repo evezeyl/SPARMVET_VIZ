@@ -32,7 +32,7 @@ FILTER = "modif_filter"
 SORT = "polars_sort"
 SAMPLE = "polars_sample"
 JOIN_ASOF = "polars_join_asof"
-JOIN_WHERE = "polars_join_where"
+JOIN_WHERE = "modif_join_where"
 
 # Actions that are allowed only in tier 1 (spec ST05).
 TIER1_ONLY = frozenset({JOIN, JOIN_ASOF, JOIN_WHERE})

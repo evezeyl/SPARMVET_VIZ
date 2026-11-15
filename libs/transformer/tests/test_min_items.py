@@ -24,7 +24,7 @@ from utils.errors import TransformationError
 from utils.ui_schema import expected_shape, schema_declaration_problems, step_problems
 
 DATA = Path(__file__).resolve().parent / "data"
-JOINS = ("polars_join", "polars_join_asof", "polars_join_where")
+JOINS = ("polars_join", "polars_join_asof", "modif_join_where")
 CASES = [(a, p) for a, names in sorted(MUST_NOT_BE_EMPTY.items()) for p in names]
 
 

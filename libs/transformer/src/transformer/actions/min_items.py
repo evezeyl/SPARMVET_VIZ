@@ -25,7 +25,7 @@ MUST_NOT_BE_EMPTY = {
     "polars_pivot": ("on", "index", "values"),
     "polars_rank": ("columns",),
     "polars_remove": ("predicates",),
-    "polars_join_where": ("predicates",),
+    "modif_join_where": ("predicates",),
     "polars_join_asof": ("by", "by_left", "by_right"),
     "polars_join": ("on", "left_on", "right_on"),
     "polars_unique": ("subset",),
@@ -60,7 +60,7 @@ HINTS = {
     ("polars_join_asof", "by"): "leave it out to match on the key alone",
     ("polars_join_asof", "by_left"): "leave it out to match on the key alone",
     ("polars_join_asof", "by_right"): "leave it out to match on the key alone",
-    ("polars_join_where", "predicates"): "write one or more formulas, for example \"pl.col('year') >= pl.col('start_year')\"",
+    ("modif_join_where", "predicates"): "write one or more formulas, for example \"pl.col('year') >= pl.col('start_year')\"",
 }
 
 

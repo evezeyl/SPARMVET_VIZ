@@ -23,7 +23,7 @@ WHERE = {
     "params": {"right_ingredient": {"widget": "string", "required": True},
                "predicates": {"widget": "list", "required": True}, "suffix": {"widget": "string", "required": False}},
 }
-CATALOG = {**CATALOGS, "actions": {**CATALOGS["actions"], "polars_join_asof": ASOF, "polars_join_where": WHERE}}
+CATALOG = {**CATALOGS, "actions": {**CATALOGS["actions"], "polars_join_asof": ASOF, "modif_join_where": WHERE}}
 
 
 def asof_recipe():
@@ -78,7 +78,7 @@ def test_an_asof_step_in_tier_2_of_the_join_is_refused():
 
 def where_recipe():
     raw = asof_recipe()
-    raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "polars_join_where", "right_ingredient": "B", "predicates": ["pl.col('w') > pl.col('t')"]}]
+    raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "modif_join_where", "right_ingredient": "B", "predicates": ["pl.col('w') > pl.col('t')"]}]
     return raw
 
 
@@ -103,3 +103,11 @@ def test_the_key_check_still_asks_a_plain_join_for_its_key():
     raw = asof_recipe()
     raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "polars_join", "right_ingredient": "B", "how": "left"}]
     assert "J05" in codes(raw)
+
+
+def test_the_old_name_polars_join_where_is_refused_like_any_unknown_action_with_the_new_name_as_the_suggestion():
+    """DECIDED 3 (Eve, 2026-11-15): the action that fixes the row order is modif_join_where; no alias for the old name."""
+    raw = where_recipe()
+    raw["joins"]["AB"]["steps"]["tier1"][0]["action"] = "polars_join_where"
+    problems = [p for p in check_recipe(raw, "run", catalogs=CATALOG, graph=Graph()).problems if p.code == "ST02"]
+    assert problems and "modif_join_where" in problems[0].fix
