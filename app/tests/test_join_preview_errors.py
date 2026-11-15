@@ -112,3 +112,51 @@ def test_the_orchestrator_raises_the_recipe_error_type(tmp_path):
     with pytest.raises(DataAnalysisRecipeError, match="No join or data schema"):
         DataOrchestrator(tmp_path, Path(".")).materialize_tier1(
             data_analysis_recipe_id="m", collection_id="Nope", output_path=tmp_path / "x.parquet")
+
+
+# -- a recipe file that cannot be read or parsed is the user's mistake, and nothing may escape the effect
+
+def test_an_unreadable_data_file_is_shown_as_the_users_mistake(tmp_path):
+    """PermissionError is an OSError: a file the user cannot read is a data problem, not an internal error."""
+    def materialise(ingredient_id):
+        raise PermissionError(13, "Permission denied", str(tmp_path / "data.tsv"))
+    result = safe_join_preview(materialise, _rows, "l", "r", ["k"], ["k"])
+    assert result["error"].startswith("Preview failed: ") and "Permission denied" in result["error"]
+    assert result["error"] != JOIN_PREVIEW_INTERNAL_ERROR
+
+
+def test_a_file_made_unreadable_in_a_temporary_folder(tmp_path):
+    import os
+    if os.geteuid() == 0:
+        pytest.skip("root reads every file")
+    data = tmp_path / "data.tsv"
+    data.write_text("k\na\n")
+    data.chmod(0)
+
+    def materialise(ingredient_id):
+        data.read_text()
+    try:
+        result = safe_join_preview(materialise, _rows, "l", "r", ["k"], ["k"])
+    finally:
+        data.chmod(0o600)
+    assert "Permission denied" in result["error"] and result["error"] != JOIN_PREVIEW_INTERNAL_ERROR
+
+
+def test_a_broken_yaml_is_shown_as_the_recipe_problem_not_an_exit(tmp_path):
+    """ConfigManager calls sys.exit(1) on a broken file; SystemExit is not an Exception and would escape the effect."""
+    (tmp_path / "m.yaml").write_text("id: m\nanalysis_groups: [unclosed\n  - : :\n", encoding="utf-8")
+    orchestrator = DataOrchestrator(tmp_path, Path("."))
+
+    def materialise(ingredient_id):
+        orchestrator.materialize_tier1(data_analysis_recipe_id="m", collection_id="A", output_path=tmp_path / "x.parquet")
+    result = safe_join_preview(materialise, _rows, "l", "r", ["k"], ["k"])
+    assert result["error"].startswith("Preview failed: cannot load data analysis recipe")
+    assert "Malformed YAML" in result["error"]
+    assert result["error"] != JOIN_PREVIEW_INTERNAL_ERROR
+
+
+def test_a_system_exit_from_anywhere_else_does_not_escape_the_effect():
+    def materialise(ingredient_id):
+        raise SystemExit(2)
+    result = safe_join_preview(materialise, _rows, "l", "r", ["k"], ["k"])
+    assert "error" in result
