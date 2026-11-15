@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SHIPPED = ROOT / "assets" / "gallery_data"
 RECIPE = "data_analysis_recipe.yaml"
 # The examples that cannot be standard recipes yet (the same list as libs/viz_gallery/tests/test_gallery_examples_are_recipes.py).
-WAITING = {"beeswarm_sina"}
+WAITING: set = set()
 
 _spec = importlib.util.spec_from_file_location("refresh_gallery", ROOT / "assets/scripts/refresh_gallery.py")
 refresh = importlib.util.module_from_spec(_spec)

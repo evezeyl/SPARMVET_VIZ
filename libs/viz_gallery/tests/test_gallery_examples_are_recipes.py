@@ -20,9 +20,8 @@ from viz_gallery.taxonomy import example_taxonomy, tag_strip, with_tag_strip
 
 SHIPPED = Path(__file__).resolve().parents[3] / "assets" / "gallery_data"
 RECIPE = "data_analysis_recipe.yaml"
-WAITING = {
-    "beeswarm_sina": "its own step lives in tier 3 and the engine does not read tier 3 yet (spec 7.7, finding G9)",
-}
+# beeswarm_sina was here (its step lived in tier 3); converted 2026-11-15 (SEED-HOLDS-1: the step selected every row)
+WAITING: dict = {}
 
 
 def _bundles():

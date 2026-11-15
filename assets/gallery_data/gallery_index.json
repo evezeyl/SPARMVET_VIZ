@@ -1,17 +1,13 @@
 {
   "metadata": {
-    "generated_at": "2026-11-14 12:27:08",
-    "count": 33,
+    "generated_at": "2026-11-15 13:11:10",
+    "count": 34,
     "coverage": [
       "actions",
       "components",
       "structure"
     ],
-    "rejected": {
-      "beeswarm_sina": [
-        "the example is in the old gallery form (no spec_version). Fix: python assets/scripts/convert_gallery_examples.py --only beeswarm_sina --apply"
-      ]
-    }
+    "rejected": {}
   },
   "registry": {
     "area_simple": {
@@ -68,6 +64,20 @@
         "geom": "geom_bar",
         "show": "ranking",
         "sample_size": "any"
+      }
+    },
+    "beeswarm_sina": {
+      "name": "Beeswarm / Sina Plot",
+      "path": "assets/gallery_data/beeswarm_sina/data_analysis_recipe.yaml",
+      "has_preview": true,
+      "has_thumb": true,
+      "taxonomy": {
+        "family": "Distribution",
+        "pattern": "1 Numeric, 1 Categorical",
+        "difficulty": "Intermediate",
+        "geom": "geom_sina",
+        "show": "distribution",
+        "sample_size": "individual points"
       }
     },
     "boxplot_faceted": {
@@ -492,15 +502,8 @@
         "bar_simple",
         "lollipop_advanced"
       ],
-      "Comparison": [
-        "boxplot_faceted",
-        "dumbbell",
-        "error_bar",
-        "jitter_strip",
-        "point_faceted",
-        "violin_faceted"
-      ],
       "Distribution": [
+        "beeswarm_sina",
         "boxplot_simple",
         "density_simple",
         "ecdf",
@@ -510,6 +513,14 @@
         "ridgeline_advanced",
         "violin_boxplot",
         "violin_simple"
+      ],
+      "Comparison": [
+        "boxplot_faceted",
+        "dumbbell",
+        "error_bar",
+        "jitter_strip",
+        "point_faceted",
+        "violin_faceted"
       ],
       "Correlation": [
         "bubble",
@@ -541,6 +552,7 @@
       "1 Numeric, 1 Categorical": [
         "bar_horizontal",
         "bar_simple",
+        "beeswarm_sina",
         "boxplot_simple",
         "ecdf",
         "error_bar",
@@ -599,6 +611,7 @@
       ],
       "Intermediate": [
         "bar_grouped",
+        "beeswarm_sina",
         "boxplot_faceted",
         "bubble",
         "connected_scatter",
@@ -634,6 +647,9 @@
       ],
       "geom_bar": [
         "bar_simple"
+      ],
+      "geom_sina": [
+        "beeswarm_sina"
       ],
       "geom_boxplot": [
         "boxplot_faceted",
@@ -709,6 +725,7 @@
         "lollipop_advanced"
       ],
       "distribution": [
+        "beeswarm_sina",
         "boxplot_faceted",
         "boxplot_simple",
         "density_simple",
@@ -780,14 +797,15 @@
         "step_chart",
         "tile_simple"
       ],
-      "large": [
-        "density_2d_bin"
-      ],
       "individual points": [
+        "beeswarm_sina",
         "jitter_strip",
         "point_faceted",
         "point_simple",
         "scatter_smooth"
+      ],
+      "large": [
+        "density_2d_bin"
       ]
     }
   }
