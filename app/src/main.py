@@ -1,11 +1,12 @@
 # @deps
 # provides: app (Shiny App instance, entry point), docs_available (bool flag for conditional docs link)
-# consumes: shiny, app.src.ui, app.src.server
+# consumes: shiny, app.src.ui, app.src.server, app.src.bootloader (get_agent_adapter at start)
 # consumed_by: Shiny runner (uvicorn/shiny run), __main__, help modal handlers
 # @end_deps
 # app/src/app.py
 from pathlib import Path
 from shiny import App
+from app.src.bootloader import bootloader
 from app.src.ui import app_ui
 from app.src.server import server
 
@@ -20,6 +21,10 @@ _www = Path(__file__).parent / "www"
 # render simply shows no link — fails closed, never a broken link.
 _docs_site = Path(__file__).parent.parent.parent / "docs" / "_site"
 docs_available = _docs_site.exists()
+
+# The Blueprint agent adapter runs an auth probe (`claude -p ok`, several seconds). Built here, once, before the first
+# session exists: built lazily inside a render it blocked every session and held Shiny's reactive lock (CONTROLS-FIX-1).
+bootloader.get_agent_adapter()
 
 _static_assets = {"/": _www}
 if docs_available:
