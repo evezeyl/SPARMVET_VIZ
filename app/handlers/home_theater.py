@@ -30,7 +30,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui
-# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes), app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes), app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/knowledge/architecture_decisions.md#ADR-097, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
@@ -47,6 +47,7 @@ from app.modules.data_analysis_recipe_validator import home_advice_entries
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
 from viz_factory.plot_config_resolver import layers_have_jitter, recipe_pins_random_state
+from viz_factory.viz_factory import show_draw_errors
 
 from app.modules.t3_audit_engine import _apply_filter_rows, filter_rows_from_nodes
 from utils.na_choice import na_of, no_value_text
@@ -169,6 +170,17 @@ def define_server(input, output, session, *,
 
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
+
+    # A plot's error or warning goes to the Processing issues table and to the Alerts panel, once, after the flush and under
+    # reactive.isolate() (a render may not write a reactive value; app/modules/plot_issue_reporter.py). VIZ-STANDARD-1, V7.
+    from app.modules.plot_issue_reporter import make_issue_reporter
+    _report_issue = make_issue_reporter(session, session_processing_issues, notification_log)
+
+    def _report_plot_exception(exc, component, location):
+        _report_issue(capture_entry(exc, component, location), str(exc), "error")
+
+    def _report_plot_warning(warning):
+        _report_issue(warning.with_timestamp().to_audit_row(), f"{warning.problem} Fix: {warning.fix}", "warning")
 
     # ── Phase 21-B: Dynamic plot handlers for analysis_groups ─────────────────
     # Enumerate all plot IDs at server init time so Shiny can register each
@@ -499,13 +511,7 @@ def define_server(input, output, session, *,
                 # PipelineError the library already built (errors.py's pipeline_error= carry
                 # kwarg, PIPELINE-ERROR-WIRE-2) when the exception has one; falls back to the
                 # exception's own message otherwise — same as before this change.
-                if session_processing_issues is not None:
-                    _entry = capture_entry(e, "DataOrchestrator", f"materialize(plot_id='{p_id}')")
-                    def _append_data_error(entry=_entry):
-                        current = session_processing_issues.get()
-                        if len(current) < 50:
-                            session_processing_issues.set(current + [entry])
-                    session.on_flushed(_append_data_error, once=True)
+                _report_plot_exception(e, "DataOrchestrator", f"materialize(plot_id='{p_id}')")
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 ax.text(0.5, 0.5, f"Data error: {e}", ha="center", va="center",
@@ -538,21 +544,18 @@ def define_server(input, output, session, *,
                 if _resolved_seed is not None else _t3_overrides
             )
 
+            def _report_draw_error(e):
+                _report_plot_exception(e, "VizFactory", f"render(plot_id='{p_id}')")
+
             try:
-                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
-                                          aesthetic_override=_render_overrides)
+                # VIZ-STANDARD-1 V7: plotnine draws after this function returns, so a draw error used to escape the
+                # try below and reach the user as a raw error. `show_draw_errors` draws the one-form message in the
+                # place of the plot and reports it to the alerts panel; the plot itself is drawn once, by Shiny.
+                return show_draw_errors(
+                    viz_factory.render(lf, synthetic_data_analysis_recipe, p_id, aesthetic_override=_render_overrides),
+                    on_error=_report_draw_error, on_warning=_report_plot_warning)
             except Exception as e:
-                # Capture error for session_processing_issues without violating R1
-                # (cannot call reactive.Value.set inside @render.*). ADR-094/
-                # PIPELINE-ERROR-WIRE-2: capture_entry() now uses VizFactory's real
-                # PipelineError (fix/who) when the exception carries one, not just its message.
-                if session_processing_issues is not None:
-                    _entry = capture_entry(e, "VizFactory", f"render(plot_id='{p_id}')")
-                    def _append_render_error(entry=_entry):
-                        current = session_processing_issues.get()
-                        if len(current) < 50:
-                            session_processing_issues.set(current + [entry])
-                    session.on_flushed(_append_render_error, once=True)
+                _report_draw_error(e)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 ax.text(0.5, 0.5, f"Render error:\n{e}", ha="center", va="center",
@@ -606,13 +609,7 @@ def define_server(input, output, session, *,
                 # ADR-094/PIPELINE-ERROR-WIRE-2: was silent (no session_processing_issues
                 # capture at all) — the comparison-mode twin of _group_plot_handler's
                 # already-fixed first except block, previously missed.
-                if session_processing_issues is not None:
-                    _entry = capture_entry(e, "DataOrchestrator", f"materialize(plot_id='{p_id}', mode='cmp_base')")
-                    def _append_cmp_data_error(entry=_entry):
-                        current = session_processing_issues.get()
-                        if len(current) < 50:
-                            session_processing_issues.set(current + [entry])
-                    session.on_flushed(_append_cmp_data_error, once=True)
+                _report_plot_exception(e, "DataOrchestrator", f"materialize(plot_id='{p_id}', mode='cmp_base')")
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 ax.text(0.5, 0.5, f"Data error: {e}", ha="center", va="center",
@@ -620,18 +617,15 @@ def define_server(input, output, session, *,
                 ax.axis("off")
                 return fig
 
+            def _report_cmp_error(e):
+                _report_plot_exception(e, "VizFactory", f"render(plot_id='{p_id}', mode='cmp_base')")
+
             try:
-                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id)
+                # VIZ-STANDARD-1 V7: a draw error is shown in the plot's place, as in the main plot handler.
+                return show_draw_errors(viz_factory.render(lf, synthetic_data_analysis_recipe, p_id),
+                                        on_error=_report_cmp_error, on_warning=_report_plot_warning)
             except Exception as e:
-                # ADR-094/PIPELINE-ERROR-WIRE-2: now uses capture_entry() for VizFactory's
-                # real fix/who, same as _group_plot_handler's render catch.
-                if session_processing_issues is not None:
-                    _entry = capture_entry(e, "VizFactory", f"render(plot_id='{p_id}', mode='cmp_base')")
-                    def _append_cmp_error(entry=_entry):
-                        current = session_processing_issues.get()
-                        if len(current) < 50:
-                            session_processing_issues.set(current + [entry])
-                    session.on_flushed(_append_cmp_error, once=True)
+                _report_cmp_error(e)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 ax.text(0.5, 0.5, f"Render error:\n{e}", ha="center", va="center",

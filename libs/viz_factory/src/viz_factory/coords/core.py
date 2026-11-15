@@ -127,7 +127,7 @@ def handle_coord_trans(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "ylim": {"widget": "string", "label": "Y limits as [min, max]", "required": False},
     },
     "description": "Set axis limits that also drop data outside the range (unlike coord_cartesian); use when out-of-range points should not influence statistics. Not in plotnine: the same call as coord_cartesian under another name (limits that do not remove data).",
-    "yaml_example": "layers:\n  - name: coord_lims\n    params:\n      x: [0, 100]",
+    "yaml_example": "layers:\n  - name: coord_lims\n    params:\n      xlim: [0, 100]",
 })
 def handle_coord_lims(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """

@@ -271,6 +271,27 @@ def blocked_export_notice(changes: list[str], view_keys, current_keys) -> str:
     return "\n".join(lines)
 
 
+def failed_plot_stub(exc: Exception) -> str:
+    """The text of `plots/<id>_ERROR.txt`: the message once. The one error form (VIZ-STANDARD-1) already holds the fix, so the
+    fix line is added only for an error whose message does not say it."""
+    stub = f"Plot render failed:\n{exc}"
+    pipeline_error = getattr(exc, "pipeline_error", None)
+    if pipeline_error is not None and pipeline_error.fix and pipeline_error.fix not in str(exc):
+        stub += f"\n\nFix ({pipeline_error.who}): {pipeline_error.fix}"
+    return stub
+
+
+def plot_report_lines(p_id: str, label: str, caption: str, fig_id: str, plot_ext: str, failure: str | None) -> list:
+    """The lines of one plot in `report.qmd`: the figure, or, when the plot was not drawn, a note that says so and why.
+
+    A failed plot has no picture in the bundle, so a figure link would be a broken one (VIZ-STANDARD-1)."""
+    if failure is None:
+        return [f"### {label}", "", f"![{caption}](_render/{p_id}.{plot_ext}){{#{fig_id} width=95%}}", ""]
+    reason = " ".join(str(failure).split())
+    return [f"### {label}", "", f"> **This plot was not drawn.** {reason}  ",
+            f"> The same text is in `plots/{p_id}_ERROR.txt` of its dataset folder.", ""]
+
+
 def _embed_png_provenance(
     png_bytes: bytes, prov: dict, plot_id: str, dataset_key: str = ""
 ) -> bytes:
@@ -997,6 +1018,7 @@ def define_export_server(input, output, session, *,
             qmd_plot_fmt = plot_fmt if plot_fmt in _native else _fallback
             plot_bytes: dict[str, bytes] = {}      # p_id → bytes (user format)
             qmd_plot_bytes: dict[str, bytes] = {}  # p_id → bytes for Quarto (_render/)
+            failed_plots: dict[str, str] = {}      # p_id → why it was not drawn (the report says so, no figure link)
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmpdir_path = Path(tmpdir)
 
@@ -1082,13 +1104,10 @@ def define_export_server(input, output, session, *,
                         # the exception carries one (errors.py pipeline_error= kwarg) --
                         # detection without guidance in a file nobody can ask a follow-up
                         # question about is worse than in a live UI.
-                        _pe = getattr(e, "pipeline_error", None)
-                        _stub = f"Plot render failed:\n{e}"
-                        if _pe is not None:
-                            _stub += f"\n\nFix ({_pe.who}): {_pe.fix}"
+                        failed_plots[p_id] = str(e)
                         zf.writestr(
                             f"{bundle_dir}/{_safe_ds}/plots/{p_id}_ERROR.txt",
-                            _stub,
+                            failed_plot_stub(e),
                         )
 
                 # ── Export data by tier ───────────────────────────────────
@@ -1572,12 +1591,7 @@ def define_export_server(input, output, session, *,
                 ds_note = spec.get("target_dataset") or "—"
                 fig_id = f"fig-{_re.sub(r'[^A-Za-z0-9]', '-', p_id)}"
                 caption = f"{label} — dataset: `{ds_note}`"
-                qmd_lines += [
-                    f"### {label}",
-                    "",
-                    f"![{caption}](_render/{p_id}.{plot_ext}){{#{fig_id} width=95%}}",
-                    "",
-                ]
+                qmd_lines += plot_report_lines(p_id, label, caption, fig_id, plot_ext, failed_plots.get(p_id))
 
             qmd_lines += [
                 "## Data files",
