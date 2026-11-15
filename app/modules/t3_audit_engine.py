@@ -22,6 +22,7 @@ import math
 
 import polars as pl
 
+from utils import action_names
 from utils.errors import TransformationError
 from utils.pipeline_error import PipelineError
 from utils.filter_values import FilterValueError, filter_condition, kind_of, read_filter_value, type_words
@@ -347,7 +348,7 @@ def _step_words(step: dict) -> str:
 
 def _step_error(step: dict, remover: dict | None, columns: list) -> AuditStepError:
     column = step["column"]
-    engine = f"step {'polars_drop' if step['kind'] == 'drop' else 'modif_filter'}: column {column!r} is not in the table"
+    engine = f"step {action_names.DROP if step['kind'] == 'drop' else action_names.FILTER}: column {column!r} is not in the table"
     if remover is not None:
         why = f"The {_step_words(remover)} removed it before."
         fix = (f"remove audit step {remover['number']} or audit step {step['number']} from the plot's audit list "
