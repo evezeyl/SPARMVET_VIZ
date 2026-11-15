@@ -153,12 +153,29 @@ def _read_bp_draft(draft_dir: Path, data_analysis_recipe_path: str) -> dict | No
 
 _LOG = logging.getLogger(__name__)
 
-# The join preview shows these to the user as "Preview failed": the project's own errors (a dataset that cannot be
-# loaded, a transformation that fails), an unknown join or schema or a missing recipe file (ValueError,
-# FileNotFoundError of the orchestrator) and Polars refusing the data (a missing column, a wrong type). Any other
-# exception (NameError, AttributeError, TypeError, ImportError...) is a programming error: it must reach the log
-# and the developer, not be shown as the user's mistake.
-JOIN_PREVIEW_USER_ERRORS = (SPARMVET_Error, ValueError, FileNotFoundError, pl.exceptions.PolarsError)
+# The join preview shows these to the user as "Preview failed: <message>": the project's own errors (a dataset that
+# cannot be loaded, a transformation that fails; `SPARMVET_Error` and its subclasses), Polars refusing the data (a
+# missing column, a wrong type) and a missing file. ValueError is not in the list: it is also what a programmer's bad
+# conversion or a JSON/Unicode decoding fault raises, and showing those as the user's mistake hides a bug.
+# Known gap: the orchestrator raises a bare ValueError for an unknown join or data schema id
+# (app/modules/orchestrator.py, "No join or data schema" and "The join ... names"): the user then sees the
+# internal-error message below until it raises a project error type.
+JOIN_PREVIEW_USER_ERRORS = (SPARMVET_Error, FileNotFoundError, pl.exceptions.PolarsError)
+
+JOIN_PREVIEW_INTERNAL_ERROR = "Preview failed: an internal error, not your recipe (details in the log)."
+
+
+def safe_join_preview(*args, **kwargs):
+    """`run_join_preview` for the reactive effect: no exception may escape.
+
+    WHY: an error that escapes a `reactive.Effect` makes Shiny close the user's session. An unexpected error (a
+    programming error) is logged with its traceback and shown with a message that does not blame the recipe.
+    """
+    try:
+        return run_join_preview(*args, **kwargs)
+    except Exception:
+        _LOG.exception("Join preview: unexpected error")
+        return {"error": JOIN_PREVIEW_INTERNAL_ERROR}
 
 
 def run_join_preview(materialise, key_rows, left_ing, right_ing, left_keys, right_keys):
@@ -2177,7 +2194,7 @@ def define_server(input, output, session, *,
                 p.set(0, message=f"Materialising {ingredient_id}…")
                 return _jd_materialise(data_analysis_recipe_id, ingredient_id)
 
-            joint_preview.set(run_join_preview(
+            joint_preview.set(safe_join_preview(
                 _materialise, _jd_key_rows, left_ing, right_ing, left_keys, right_keys))
 
     @output
