@@ -295,7 +295,44 @@ def _join_action(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
         raise TransformationError("polars_join needs the resolved right table (__right_df__)", tip="The assembler resolves `right_ingredient`")
     kwargs = _kwargs(clean, pl.LazyFrame.join, "polars_join")
     kwargs.pop("other", None)
+    _check_validate(lf, right, clean)
     return lf.join(right, **kwargs)
+
+
+def _check_validate(lf: pl.LazyFrame, right: pl.LazyFrame, spec: dict) -> None:
+    """Polars checks `validate` when the plan runs and answers "join keys did not fulfill 1:1 validation": say it in plain words here.
+
+    Only when the step writes `validate` 1:1, 1:m or m:1: the key columns of the side that must be unique are read (a
+    second, key-only pass over that table). A null key counts as a repeat only with `nulls_equal` (as in Polars).
+    """
+    wanted = spec.get("validate")
+    if wanted not in ("1:1", "1:m", "m:1"):
+        return
+    left_keys = spec.get("on") or spec.get("left_on")
+    right_keys = spec.get("on") or spec.get("right_on")
+    sides = []
+    if wanted in ("1:1", "1:m"):
+        sides.append(("first table (the table of the step)", lf, left_keys))
+    if wanted in ("1:1", "m:1"):
+        sides.append((f"second table {spec.get('right_ingredient')!r}", right, right_keys))
+    for name, frame, keys in sides:
+        if not isinstance(keys, list) or not keys:
+            return
+        try:
+            keyed = frame.select(keys)
+            if not spec.get("nulls_equal"):
+                keyed = keyed.drop_nulls()
+            repeated = keyed.group_by(keys).len().filter(pl.col("len") > 1).sort("len", descending=True).collect()
+        except pl.exceptions.ColumnNotFoundError:
+            return  # Polars says which column is missing, with its own words
+        if repeated.height:
+            example = repeated.row(0, named=True)
+            value = ", ".join(f"{k}={example[k]!r}" for k in keys)
+            raise TransformationError(
+                f"step polars_join (the first table with the second table {spec.get('right_ingredient')!r}): validate '{wanted}' asks that the key {keys} appears at most once in the {name}, but "
+                f"{repeated.height} key value(s) repeat there (for example {value} appears {example['len']} times)",
+                tip=f"Remove or merge the repeated rows of the {name} before the join, or write the validate that matches the data "
+                    "('m:m' asks nothing; '1:m' asks the first table to be unique; 'm:1' asks the second table to be unique)")
 
 
 _join_target = pl.LazyFrame.join
