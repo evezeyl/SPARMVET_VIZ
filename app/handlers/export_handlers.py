@@ -22,7 +22,7 @@ from pathlib import Path
 
 from shiny import reactive, render, ui
 
-from app.modules.t3_audit_engine import _apply_filter_rows, _op_label
+from app.modules.t3_audit_engine import _apply_filter_rows, _op_label, between_prose
 from app.modules.plot_seeds import (
     bake_plot_seeds, export_seed_plan, seed_recipe_note, seed_sources_per_plot, seeds_added_to_recipe,
     seeds_per_layer_record, seeds_per_plot_record, render_seed_args, with_seed_steps,
@@ -382,7 +382,11 @@ def _build_methods_section(
                     ", ".join(f'"{v}"' for v in val) if isinstance(val, list)
                     else f'"{val}"'
                 )
-                detail = f"where **{col}** is {op} {val_str}"
+                if params.get("op") == "between" and isinstance(val, list) and len(val) == 2:
+                    # ADR-104 point 8: the report says which ends of the range were included (an old step: both)
+                    detail = f"where **{col}** is " + between_prose(val, params.get("closed", "both"))
+                else:
+                    detail = f"where **{col}** is {op} {val_str}"
                 # NA-RULE-63: the choice made for the rows with no value in the column (an old step removed them)
                 detail += (", keeping the rows with no value in **" + col + "**"
                            if params.get("na") == "keep"

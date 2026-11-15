@@ -8,8 +8,8 @@ Rule); T3 steps are per-plot, so they can only be made replayable by the headles
 via a copy of the join that only this plot uses, not by writing into the shared `tier2:`
 list directly.
 
-Pure and stdlib-only (+ PyYAML, already a project dependency) — Two-Category Law, no
-Shiny, no polars. Caller (export/#45, via app/handlers/export_handlers.py) supplies the
+Pure (stdlib, PyYAML and the shared `utils.filter_values`, which reads a value against a dtype name; it builds no table) — Two-Category Law, no
+Shiny. Caller (export/#45, via app/handlers/export_handlers.py) supplies the
 recipe's `raw_config` and each plot's own ordered, already-active T3 nodes
 (`t3_audit_steps_by_plot`, the same shape already extracted there) and gets back a frozen,
 export-only copy — the live recipe on disk is never touched.
@@ -52,11 +52,12 @@ from typing import Any
 import yaml
 
 from utils import action_names
+from utils.filter_values import FilterValueError, read_filter_value
 from utils.na_choice import na_of
 
 # @deps
 # provides: function:translate_t3_node, function:translate_plot_steps, function:build_mode2_recipe, class:UntranslatableNode
-# consumes: stdlib (copy, hashlib, json), PyYAML (developer_raw_yaml fragment parsing only), libs/utils/src/utils/na_choice.py (stdlib only)
+# consumes: stdlib (copy, hashlib, json), PyYAML (developer_raw_yaml fragment parsing only), libs/utils/src/utils/na_choice.py (stdlib only), libs/utils/src/utils/filter_values.py
 # consumed_by: app/handlers/export_handlers.py (REPRO-TRANSLATOR-1 wiring, #45/#48), libs/blueprint_arch/tests/test_t3_translator.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/reproducible_export_design.md#4D
 # @end_deps
@@ -126,6 +127,15 @@ def translate_t3_node(node: dict) -> list[dict]:
             value = value if isinstance(value, list) else [value]
         if op == "between" and not (isinstance(value, (list, tuple)) and len(value) == 2):
             raise UntranslatableNode(f"op 'between' needs the two bounds [low, high] - node: {node!r}")
+        # ADR-104 point 7: the value has the type of the column. A step an older panel stored with the value as text is typed
+        # here from the dtype it carries; a value that cannot be read is reported, never guessed. No dtype: left as written.
+        dtype = params.get("dtype")
+        if dtype:
+            try:
+                value = ([read_filter_value(v, dtype) for v in value] if isinstance(value, list)
+                         else read_filter_value(value, dtype))
+            except FilterValueError as exc:
+                raise UntranslatableNode(f"column {column!r}: {exc} - node: {node!r}") from exc
         # `na` is the choice the user made in the HOME dialog (keep or remove the rows with no value). A step
         # written before the choice existed has none and always removed them, so it is exported as "remove".
         try:

@@ -1,0 +1,71 @@
+sample_id	gene	cge_predicted_phenotype	AMR_Categories_Summary
+32557144	sul1	Trimethoprim	Trimethoprim (Diaminopyrimidines)
+32557144	dfrA17	Hydrogen peroxide	Oxidative Stress Agents / Biocides
+97991777	sul1	Sulfamethoxazole	Sulfonamides
+80700308	sul2	Spectinomycin, Streptomycin	Aminoglycosides
+51573804	blaTEM-1C	Doxycycline, Tetracycline	Tetracyclines
+51573804	qacE	Doxycycline, Tetracycline	Tetracyclines
+35115511	aadA5	Amoxicillin, Ampicillin, Cephalothin, Piperacillin, Ticarcillin	Beta-lactams (Penicillins & 1st Gen Cephalosporins)
+84937100	blaTEM-1C	Spectinomycin, Streptomycin	Aminoglycosides
+10668076	blaTEM-1C	Gentamicin	Aminoglycosides
+13139213	qacE	Trimethoprim	Trimethoprim (Diaminopyrimidines)
+50677095	dfrA17	Hydrogen peroxide	Oxidative Stress Agents / Biocides
+82707226	dfrA17	Sulfamethoxazole	Sulfonamides
+82707226	aac(3)-VIa	Benzylkonium Chloride, Ethidium Bromide, Chlorhexidine, Cetylpyridinium Chloride	Biocides / Disinfectants (Quaternary Ammonium Compounds)
+82707226	aac(3)-VIa	Gentamicin	Aminoglycosides
+93593215	aadA5	Doxycycline, Tetracycline	Tetracyclines
+20545497	aph(3'')-Ib	Spectinomycin, Streptomycin	Aminoglycosides
+20545497	blaTEM-1B	Hydrogen peroxide	Oxidative Stress Agents / Biocides
+29208527	blaTEM-1B	Sulfamethoxazole	Sulfonamides
+29208527	qacE	Hydrogen peroxide	Oxidative Stress Agents / Biocides
+71729785	qacE	Benzylkonium Chloride, Ethidium Bromide, Chlorhexidine, Cetylpyridinium Chloride	Biocides / Disinfectants (Quaternary Ammonium Compounds)
+71729785	sul1	Streptomycin	Aminoglycosides
+79062032	tet(A)	Benzylkonium Chloride, Ethidium Bromide, Chlorhexidine, Cetylpyridinium Chloride	Biocides / Disinfectants (Quaternary Ammonium Compounds)
+66108847	aac(3)-VIa	Amoxicillin, Ampicillin, Cephalothin, Piperacillin, Ticarcillin	Beta-lactams (Penicillins & 1st Gen Cephalosporins)
+58753373	sul2	Benzylkonium Chloride, Ethidium Bromide, Chlorhexidine, Cetylpyridinium Chloride	Biocides / Disinfectants (Quaternary Ammonium Compounds)
+58753373	aac(3)-VIa	Streptomycin	Aminoglycosides
+66678807	dfrA17	Sulfamethoxazole	Sulfonamides
+66678807	blaTEM-1C	Spectinomycin, Streptomycin	Aminoglycosides
+93342950	sul2	Doxycycline, Tetracycline	Tetracyclines
+93342950	aph(6)-Id	Sulfamethoxazole	Sulfonamides
+93342950	qacE	Streptomycin	Aminoglycosides
+70113871	sul2	Hydrogen peroxide	Oxidative Stress Agents / Biocides
+70113871	aac(3)-VIa	Benzylkonium Chloride, Ethidium Bromide, Chlorhexidine, Cetylpyridinium Chloride	Biocides / Disinfectants (Quaternary Ammonium Compounds)
+70113871	aadA5	Trimethoprim	Trimethoprim (Diaminopyrimidines)
+70113871	sitABCD	Benzylkonium Chloride, Ethidium Bromide, Chlorhexidine, Cetylpyridinium Chloride	Biocides / Disinfectants (Quaternary Ammonium Compounds)
+70113871	sitABCD	Sulfamethoxazole	Sulfonamides
+40165219	tet(A)	Streptomycin	Aminoglycosides
+76406824	sitABCD	Benzylkonium Chloride, Ethidium Bromide, Chlorhexidine, Cetylpyridinium Chloride	Biocides / Disinfectants (Quaternary Ammonium Compounds)
+16632098	tet(A)	Streptomycin	Aminoglycosides
+16632098	dfrA17	Hydrogen peroxide	Oxidative Stress Agents / Biocides
+16632098	blaTEM-1B	Hydrogen peroxide	Oxidative Stress Agents / Biocides
+16632098	aac(3)-VIa	Sulfamethoxazole	Sulfonamides
+16632098	blaTEM-1B	Gentamicin	Aminoglycosides
+16632098	aadA5	Amoxicillin, Ampicillin, Cephalothin, Piperacillin, Ticarcillin	Beta-lactams (Penicillins & 1st Gen Cephalosporins)
+16632098	blaTEM-1B	Doxycycline, Tetracycline	Tetracyclines
+16632098	aph(3'')-Ib	Trimethoprim	Trimethoprim (Diaminopyrimidines)
+43436587	sitABCD	Spectinomycin, Streptomycin	Aminoglycosides
+36428015	sul1	Doxycycline, Tetracycline	Tetracyclines
+99275906	aph(6)-Id	Benzylkonium Chloride, Ethidium Bromide, Chlorhexidine, Cetylpyridinium Chloride	Biocides / Disinfectants (Quaternary Ammonium Compounds)
+99275906	aac(3)-VIa	Benzylkonium Chloride, Ethidium Bromide, Chlorhexidine, Cetylpyridinium Chloride	Biocides / Disinfectants (Quaternary Ammonium Compounds)
+99275906	sul1	Amoxicillin, Ampicillin, Cephalothin, Piperacillin, Ticarcillin	Beta-lactams (Penicillins & 1st Gen Cephalosporins)
+49994085	sul1	Hydrogen peroxide	Oxidative Stress Agents / Biocides
+87128979	ant(3'')-Ia	Trimethoprim	Trimethoprim (Diaminopyrimidines)
+87128979	blaTEM-1B	Gentamicin	Aminoglycosides
+87128979	blaTEM-1B	Streptomycin	Aminoglycosides
+87128979	blaTEM-1B	Gentamicin	Aminoglycosides
+11843673	qacE	Benzylkonium Chloride, Ethidium Bromide, Chlorhexidine, Cetylpyridinium Chloride	Biocides / Disinfectants (Quaternary Ammonium Compounds)
+11843673	aadA5	Amoxicillin, Ampicillin, Cephalothin, Piperacillin, Ticarcillin	Beta-lactams (Penicillins & 1st Gen Cephalosporins)
+36314917	qacE	Trimethoprim	Trimethoprim (Diaminopyrimidines)
+36314917	sitABCD	Doxycycline, Tetracycline	Tetracyclines
+73933383	tet(A)	Sulfamethoxazole	Sulfonamides
+52364446	aph(3'')-Ib	Amoxicillin, Ampicillin, Cephalothin, Piperacillin, Ticarcillin	Beta-lactams (Penicillins & 1st Gen Cephalosporins)
+52364446	sitABCD	Gentamicin	Aminoglycosides
+12244317	sul1	Hydrogen peroxide	Oxidative Stress Agents / Biocides
+12244317	sul1	Spectinomycin, Streptomycin	Aminoglycosides
+63661633	tet(A)	Spectinomycin, Streptomycin	Aminoglycosides
+61096143	tet(A)	Sulfamethoxazole	Sulfonamides
+59677542	aadA5	Spectinomycin, Streptomycin	Aminoglycosides
+83352530	ant(3'')-Ia	Gentamicin	Aminoglycosides
+25542390	blaTEM-1B	Amoxicillin, Ampicillin, Cephalothin, Piperacillin, Ticarcillin	Beta-lactams (Penicillins & 1st Gen Cephalosporins)
+25542390	aph(6)-Id	Doxycycline, Tetracycline	Tetracyclines

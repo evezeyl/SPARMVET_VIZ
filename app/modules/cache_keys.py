@@ -1,7 +1,7 @@
 """
 @deps
-provides: function:load_data_analysis_recipe, function:tier1_key, function:tier2_key, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys
-consumes: libs/utils/src/utils/config_loader.py
+provides: function:load_data_analysis_recipe, function:tier1_material, function:tier2_steps (from utils.recipe_tiers), function:tier1_key, function:tier2_key, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys
+consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_tiers.py
 consumed_by: app/modules/orchestrator.py, app/modules/session_manager.py, app/src/server.py, app/tests/test_cache_keys.py
 doc: .claude/knowledge/architecture_decisions.md#adr-089, docs/foundations/reproducibility_hash_schema.qmd
 @end_deps
@@ -11,7 +11,7 @@ Cache chain keys (ADR-089), headless, no Shiny.
 Every stored stage has a key made from its own inputs and the key of the stage before it:
 
     tier1_key = hash(engine version, resolved data analysis recipe minus downstream-only parts, data_batch_hash)
-    tier2_key = hash(tier1_key, the join's tier2 steps)
+    tier2_key = hash(tier1_key, the collection's tier2 steps: a join's, or a schema plotted directly)
 
 so a change anywhere upstream reaches every stage after it, and nothing is missed.
 
@@ -37,6 +37,8 @@ from pathlib import Path
 from typing import Any, Iterable, Union
 
 from utils.config_loader import ConfigManager
+# The one reading of a collection's tier-2 list (issue #77); `tier2_steps` is used from here by the app.
+from utils.recipe_tiers import tier2_steps, without_tier2  # noqa: F401 - tier2_steps is part of this module's interface
 
 # Bump when an action's behaviour or these key rules change: it invalidates every stored stage.
 ENGINE_CACHE_VERSION = "4"   # 4: recipe format 1 (the published columns are a polars_select step, no final_contract; new actions and ingestion); 3: the key order of final_contract (issue #86); 2: deterministic row order (ADR-090)
@@ -73,27 +75,11 @@ def engine_fingerprint() -> str:
 
 
 def tier1_material(raw: dict) -> dict:
-    """The resolved data analysis recipe without the downstream-only parts (fail-safe: unknown parts stay in)."""
-    material = {k: v for k, v in raw.items() if k not in _DOWNSTREAM_TOP_LEVEL}
-    joins = material.get("joins")
-    if isinstance(joins, dict):
-        stripped = {}
-        for join_id, spec in joins.items():
-            steps = spec.get("steps") if isinstance(spec, dict) else None
-            if isinstance(steps, dict) and "tier2" in steps:
-                spec = {**spec, "steps": {k: v for k, v in steps.items() if k != "tier2"}}
-            stripped[join_id] = spec
-        material["joins"] = stripped
-    return material
+    """The resolved data analysis recipe without the downstream-only parts (fail-safe: unknown parts stay in).
 
-
-def tier2_steps(raw: dict, join_id: str) -> list:
-    """The tier2 steps of one join's step list (empty when there are none: T2 equals T1)."""
-    joins = raw.get("joins")
-    spec = joins.get(join_id) if isinstance(joins, dict) else None
-    steps = spec.get("steps") if isinstance(spec, dict) else None
-    steps = steps.get("tier2") if isinstance(steps, dict) else None
-    return list(steps) if steps else []
+    The tier-2 list of every collection (a join's `steps.tier2`, a schema's `wrangling.tier2`) is downstream of
+    Tier 1: it goes into the chained `tier2_key` instead (`utils.recipe_tiers`, issue #77)."""
+    return without_tier2({k: v for k, v in raw.items() if k not in _DOWNSTREAM_TOP_LEVEL})
 
 
 # ---------------------------------------------------------------------------

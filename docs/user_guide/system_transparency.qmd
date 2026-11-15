@@ -98,7 +98,8 @@ The **Filters** accordion in the left sidebar lets you narrow down what is plott
 
 1. Select a column from the dropdown (scoped to the active plot's dataset).
 2. Choose an operator: `∈ any of` / `∉ none of` / `= equals` / `≠ not equal` for categories; `=`, `≠`, `>`, `≥`, `<`, `≤`, `↔ between` for numbers. One selected value reads "column = value"; several read "any of".
-3. Select or type a value, then click **+ Add** to stage the row.
+   The line under the column says what it holds ("year holds whole numbers (Int64)"). A number column that the plot draws as categories offers both the list operators and the comparisons (`>`, `<`, `↔ between` use number boxes).
+3. Select or type a value, then click **+ Add** to stage the row. `↔ between` asks which ends are included (both, only min, only max, neither).
 4. Repeat for as many conditions as you need — rows on the same column use AND logic.
 5. Click **Apply** to show the filter: in the data table on every view, in the plots on My view only. A badge says "N preview filter(s) on, not saved" on Raw and Result. In Compare, the left plot (Result) ignores preview filters. The 🗑 icon removes a row and its effect at once.
 6. Click **Reset** to clear all filters.
