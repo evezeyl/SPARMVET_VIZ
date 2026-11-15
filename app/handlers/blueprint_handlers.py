@@ -91,6 +91,7 @@ from blueprint_arch.agent_tools import call_tool, get_tool_definitions
 from blueprint_arch.agent_tool_parser import extract_tool_calls
 from blueprint_arch.new_recipe import new_recipe_draft
 from utils.recipe_factory import write_recipe
+from utils.errors import SPARMVET_Error
 from utils.pipeline_error import PipelineError, make_render_payload
 from app.src.render.pipeline_error_renderers import render_blueprint_inline
 
@@ -151,6 +152,33 @@ def _read_bp_draft(draft_dir: Path, data_analysis_recipe_path: str) -> dict | No
 
 
 _LOG = logging.getLogger(__name__)
+
+# The join preview shows these to the user as "Preview failed": the project's own errors (a dataset that cannot be
+# loaded, a transformation that fails), an unknown join or schema or a missing recipe file (ValueError,
+# FileNotFoundError of the orchestrator) and Polars refusing the data (a missing column, a wrong type). Any other
+# exception (NameError, AttributeError, TypeError, ImportError...) is a programming error: it must reach the log
+# and the developer, not be shown as the user's mistake.
+JOIN_PREVIEW_USER_ERRORS = (SPARMVET_Error, ValueError, FileNotFoundError, pl.exceptions.PolarsError)
+
+
+def run_join_preview(materialise, key_rows, left_ing, right_ing, left_keys, right_keys):
+    """The result the Joint Designer shows for a key match; an expected error becomes {"error": ...}.
+
+    `materialise(ingredient_id)` returns (LazyFrame, {column: dtype}); `key_rows(lazyframe, keys)` the key tuples.
+    """
+    try:
+        left_lf, left_schema = materialise(left_ing)
+        right_lf, right_schema = materialise(right_ing)
+        verdict = check_join_keys(left_schema, right_schema, left_keys, right_keys, right_id=right_ing)
+        stats = (compute_key_match(key_rows(left_lf, left_keys), key_rows(right_lf, right_keys))
+                 if verdict["ok"] else {})
+    except JOIN_PREVIEW_USER_ERRORS as exc:
+        return {"error": f"Preview failed: {exc}"}
+    stats["verdict"] = verdict
+    stats["error"] = None
+    stats["_meta"] = {"left_ing": left_ing, "right_ing": right_ing,
+                      "left_keys": left_keys, "right_keys": right_keys}
+    return stats
 
 
 def _warn_on_upload(raw, name):
@@ -2144,24 +2172,13 @@ def define_server(input, output, session, *,
             return
         data_analysis_recipe_id = Path(data_analysis_recipe_path).stem
 
-        try:
-            with ui.Progress(min=0, max=2) as p:
-                p.set(0, message=f"Materialising {left_ing}…")
-                left_lf, left_schema = _jd_materialise(data_analysis_recipe_id, left_ing)
-                p.set(1, message=f"Materialising {right_ing}…")
-                right_lf, right_schema = _jd_materialise(data_analysis_recipe_id, right_ing)
-            verdict = check_join_keys(left_schema, right_schema, left_keys, right_keys, right_id=right_ing)
-            if verdict["ok"]:
-                stats = compute_key_match(_jd_key_rows(left_lf, left_keys), _jd_key_rows(right_lf, right_keys))
-            else:
-                stats = {}
-            stats["verdict"] = verdict
-            stats["error"] = None
-            stats["_meta"] = {"left_ing": left_ing, "right_ing": right_ing,
-                              "left_keys": left_keys, "right_keys": right_keys}
-            joint_preview.set(stats)
-        except Exception as exc:
-            joint_preview.set({"error": f"Preview failed: {exc}"})
+        with ui.Progress(min=0, max=2) as p:
+            def _materialise(ingredient_id):
+                p.set(0, message=f"Materialising {ingredient_id}…")
+                return _jd_materialise(data_analysis_recipe_id, ingredient_id)
+
+            joint_preview.set(run_join_preview(
+                _materialise, _jd_key_rows, left_ing, right_ing, left_keys, right_keys))
 
     @output
     @render.ui
