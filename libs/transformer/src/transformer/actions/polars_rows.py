@@ -57,11 +57,25 @@ NOT_EXPOSED["polars_remove"] = {
 
 def _tie_rule(nan_place: str) -> str:
     """What was established by running Polars 1.40.1 about ties, NaN and missing values; `nan_place` is first (top_k) or last (bottom_k)."""
-    return ("It returns exactly `k` rows. When several rows are tied at the cut, only some of them are kept: which ones is not fixed, do not rely on it. "
-            f"A NaN (a failed calculation) comes {nan_place}; a missing value is skipped, but rows with no value fill the `k` rows when the real values run out. "
-            "To always keep the same rows, end `by` with a row number (write a polars_with_row_index step first and give its column last in `by`), "
-            "or write polars_sort with maintain_order: true and then polars_head. "
-            "To keep every row tied with the `k` best (possibly more than `k` rows), write polars_rank with method min, then a modif_filter on the rank.")
+    other = "last" if nan_place == "first" else "first"
+    return ("It keeps exactly `k` rows. If several rows have the same value as the `k`-th row, only some of them fit, and Polars does not promise which ones. "
+            "Suggestion: to always keep the same rows, write a polars_with_row_index step first and use its column as the last column of `by`. "
+            "Suggestion: to keep every row that ties with the `k` best, write polars_rank (method min), then a modif_filter on the rank; this can return more than `k` rows. "
+            f"A NaN (a failed calculation) comes {nan_place}, and {other} if `reverse` is true. "
+            "Rows with no value come after the real values: they fill the `k` rows only when the real values run out. "
+            "The steps of both suggestions are written in the example.")
+
+
+def _tie_example(action: str) -> str:
+    """The step, then the two suggestions of the description as steps that can be copied (comments; the tests run them)."""
+    descending = "true" if action == "polars_top_k" else "false"
+    first_tied = "[false, true]" if action == "polars_top_k" else "[false, false]"
+    return (f"- action: {action}\n  k: 10\n  by: [identity, sample_row]\n  reverse: {first_tied}\n"
+            "# Suggestion 1, always the same rows: write this step before, and keep sample_row last in `by` (with the `reverse` above the first tied rows of the table are kept).\n"
+            "#   - action: polars_with_row_index\n#     name: sample_row\n"
+            "# Suggestion 2, every row that ties with the k best (can be more than k rows): write these two steps instead.\n"
+            f"#   - action: polars_rank\n#     columns: [identity]\n#     method: min\n#     descending: {descending}\n#     target_column: identity_rank\n"
+            "#   - action: modif_filter\n#     column: identity_rank\n#     op: le\n#     value: 10\n#     na: remove")
 
 
 POSITION_RULE = "It works on the order of the table at this step: after an unsorted or reshaping step, write a polars_sort with maintain_order: true first."
@@ -76,10 +90,10 @@ _frame("polars_slice", "slice", f"Keep `length` rows from row `offset` on, to th
        "- action: polars_slice\n  offset: 10\n  length: 5")
 _frame("polars_gather_every", "gather_every", f"Keep every `n`-th row, starting at row `offset` (Polars LazyFrame.gather_every; the first row is 0). {POSITION_RULE}",
        "- action: polars_gather_every\n  n: 2\n  offset: 0")
-_frame("polars_top_k", "top_k", f"Keep the `k` rows with the largest values of `by`, largest first (Polars LazyFrame.top_k). The order of the result is the order of the values; {_tie_rule('first')}",
-       "- action: polars_top_k\n  k: 10\n  by: [identity, sample_row]\n  reverse: false")
-_frame("polars_bottom_k", "bottom_k", f"Keep the `k` rows with the smallest values of `by`, smallest first (Polars LazyFrame.bottom_k). The order of the result is the order of the values; {_tie_rule('last')}",
-       "- action: polars_bottom_k\n  k: 10\n  by: [identity, sample_row]\n  reverse: false")
+_frame("polars_top_k", "top_k", f"Keep the `k` rows with the largest values of `by`, largest first (Polars LazyFrame.top_k). The order of the result is the order of the values. {_tie_rule('first')}",
+       _tie_example("polars_top_k"))
+_frame("polars_bottom_k", "bottom_k", f"Keep the `k` rows with the smallest values of `by`, smallest first (Polars LazyFrame.bottom_k). The order of the result is the order of the values. {_tie_rule('last')}",
+       _tie_example("polars_bottom_k"))
 _frame("polars_reverse", "reverse", "Turn the row order around: the last row becomes the first (Polars LazyFrame.reverse). The result is exactly the table of the step read from the end; it does not sort.",
        "- action: polars_reverse")
 _frame("polars_with_row_index", "with_row_index",

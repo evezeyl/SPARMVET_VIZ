@@ -67,7 +67,9 @@ class DataAnalysisRecipeProblem:
 
     def __str__(self) -> str:
         text = f"{self.data_analysis_recipe}: {self.location}: {self.problem}"
-        return f"{text} Tip: {self.tip}" if self.tip else text
+        if not self.tip:
+            return text
+        return f"{text} {self.tip}" if self.tip.startswith("Suggestion:") else f"{text} Tip: {self.tip}"
 
 
 def find_data_analysis_recipes(directory: Union[str, Path]) -> list[Path]:
