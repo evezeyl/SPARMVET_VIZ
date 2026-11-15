@@ -94,3 +94,11 @@ def test_home_recipe_choice_renders_the_advice_entries():
 def test_blueprint_validate_renders_the_advice_entries():
     source = (REPO / "app" / "handlers" / "blueprint_handlers.py").read_text()
     assert "validate_advice_entries(result.get(\"advice_problems\"" in source and "*advice_rows," in source
+
+
+def test_st12_the_order_advice_is_one_of_the_advices_shown_to_the_author_and_never_refuses(tmp_path):
+    """DECIDED 4 (Eve, 2026-11-15): a position step after a step that does not fix the row order is advised, not refused."""
+    from app.modules.data_analysis_recipe_validator import SHOWN_ADVICES
+    assert "ST12" in SHOWN_ADVICES
+    path = _template_with_float_key(tmp_path)
+    assert all(not a.problem.startswith("[ST12]") for a in checker_advices(path))

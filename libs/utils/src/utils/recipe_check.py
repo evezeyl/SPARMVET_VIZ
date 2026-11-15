@@ -46,6 +46,9 @@ TIER3_READ_BY_ENGINE = False
 # Tier-1 actions that only remove or reorder rows: they cannot change the columns or their types (exact names).
 JOIN_KEEPS_COLUMNS = frozenset({action_names.FILTER, action_names.SORT, action_names.UNIQUE, action_names.DROP_NULLS, action_names.SAMPLE})
 
+# Steps whose `maintain_order` says whether the order of the rows is fixed (ST12).
+_ORDER_STEPS = frozenset({action_names.SORT, action_names.UNIQUE, action_names.GROUP_BY, action_names.JOIN})
+
 PROFILES = ("run", "build", "gallery", "audit")
 _AUDIT_ID = re.compile(r"^audit_[0-9a-f]{8}_\d+$")
 _SNAKE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -411,6 +414,33 @@ class _Check:
                 self.add(code, f"{path}.{tier}", f"{tier} is a list of steps", f"write {tier}: [...]")
                 continue
             self.steps(steps, f"{path}.{tier}", tier)
+        self.order_advices(container, path, tiers)
+
+    def order_advices(self, container: dict, path: str, tiers: List[str]) -> None:
+        """ST12 (advice, never blocks): a position action after a step that does not keep the row order.
+
+        The checker knows an order only from what the recipe states: `maintain_order` of sort, unique, group_by and join
+        (the form requires it, so it is always written). The steps are read in order, tier by tier; the last of these
+        steps that comes before a position action decides. Nothing before it: the order is the file order, no advice.
+        """
+        unstated = None  # (path of the step, action) of the last step that does not keep the order
+        for tier in tiers:
+            steps = container.get(tier)
+            if not isinstance(steps, list):
+                continue
+            for index, step in enumerate(steps, start=1):
+                if not isinstance(step, dict):
+                    continue
+                name = step.get("action")
+                if name in _ORDER_STEPS and "maintain_order" in step:
+                    keeps = step["maintain_order"] not in (False, "none")
+                    unstated = None if keeps else (f"{path}.{tier}[{index}]", name)
+                elif name in action_names.POSITION_ACTIONS and unstated is not None:
+                    self.add("ST12", f"{path}.{tier}[{index}]",
+                             f"{name} keeps rows by their position, but the order of the rows is not fixed by {unstated[1]} "
+                             f"({unstated[0]}, maintain_order: {'none' if unstated[1] == action_names.JOIN else 'false'}): the rows kept can differ from one run or one Polars version to another",
+                             f"write maintain_order: {'left_right' if unstated[1] == action_names.JOIN else 'true'} in that step, or write a polars_sort step with maintain_order: true before this one",
+                             "A")
 
     def steps(self, steps: list, path: str, tier: str) -> None:
         actions = (self.catalogs or {}).get("actions")

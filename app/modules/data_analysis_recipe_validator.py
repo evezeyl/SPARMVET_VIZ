@@ -47,9 +47,9 @@ from utils.recipe_loader import check_recipe_file
 # What the recipe checker must have looked at before a recipe is accepted (its `coverage`): the form of the file, every
 # step against the action registry, every plot layer against the component registry.
 REQUIRED_COVERAGE = frozenset({"structure", "actions", "components"})
-# Advices that tell the author what a choice does to the result (a float join key, a join of a table with itself).
+# Advices that tell the author what a choice does to the result (a float join key, a join of a table with itself, a position step after an unfixed row order).
 # The other advices (missing descriptions and the like) are for the author's own review and stay out of HOME's panel.
-SHOWN_ADVICES = frozenset({"J12", "J13"})
+SHOWN_ADVICES = frozenset({"J12", "J13", "ST12"})
 
 # Sections whose entries (dataset id -> spec) may carry a 'wrangling' block.
 _SCHEMA_SECTIONS = ("data_schemas", "additional_datasets_schemas")
