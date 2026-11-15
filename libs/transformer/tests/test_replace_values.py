@@ -110,7 +110,10 @@ def test_new_value_collides_with_an_existing_untouched_value():
     assert out["v"].to_list() == ["O157", "O157", "H7"]
 
 
-def test_missing_columns_key_defaults_to_no_columns_and_is_a_no_op():
+def test_missing_columns_key_gives_a_step_that_the_checker_and_the_engine_refuse():
+    # The old action did nothing without `columns` (a silent no-op). The converted step has an empty `named_exprs`, and
+    # an empty list or mapping that would do nothing is refused (DEC36, ADR-104), so the old fault now shows.
+    from utils.errors import TransformationError
     frame = pl.DataFrame({"v": ["a", "b"]}).lazy()
-    out = action_replace_values(frame, {"to_replace": ["a"], "new_value": "Z"}).collect()
-    assert out["v"].to_list() == ["a", "b"]
+    with pytest.raises(TransformationError, match="named_exprs is empty"):
+        action_replace_values(frame, {"to_replace": ["a"], "new_value": "Z"})

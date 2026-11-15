@@ -5,7 +5,6 @@ ended on a blank page because a state object was only created in developer mode;
 under `qa` only, so nothing noticed. Each app features is launched here with a deployment that suits it.
 Browser test: needs Playwright and takes about 15 s per app features.
 """
-import os
 import socket
 import subprocess
 import time
@@ -13,6 +12,7 @@ import urllib.request
 from pathlib import Path
 
 import pytest
+from app.tests.subprocess_env import app_env
 from playwright.sync_api import Page, expect
 
 REPO = Path(__file__).resolve().parents[2]
@@ -48,7 +48,7 @@ def test_every_shipped_app_features_is_covered():
 def test_app_features_renders_home_without_server_error(page: Page, tmp_path, app_features, deployment):
     log = tmp_path / "server.log"
     port = _free_port()
-    env = {**os.environ, "PYTHONPATH": ".", "SPARMVET_APP_FEATURES": app_features, "SPARMVET_DEPLOYMENT": deployment}
+    env = app_env(SPARMVET_APP_FEATURES=app_features, SPARMVET_DEPLOYMENT=deployment)
     with open(log, "w") as out:
         proc = subprocess.Popen([str(REPO / ".venv/bin/shiny"), "run", "app/src/main.py", "--port", str(port)],
                                 cwd=REPO, env=env, stdout=out, stderr=subprocess.STDOUT)

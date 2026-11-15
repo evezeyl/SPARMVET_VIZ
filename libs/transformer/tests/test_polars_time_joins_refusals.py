@@ -129,7 +129,7 @@ def asof(**more):
 def test_asof_an_empty_by_is_refused_in_plain_words(more):
     with pytest.raises(TransformationError, match="by") as caught:
         asof(**more)
-    assert "empty" in str(caught.value) and "Leave" in caught.value.tip
+    assert "is empty" in str(caught.value) and "leave it out" in str(caught.value)
 
 
 def test_asof_a_non_empty_by_still_works():

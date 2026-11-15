@@ -388,7 +388,7 @@ def test_where_a_column_in_both_tables_is_written_with_the_suffix_and_the_suffix
 def test_where_the_predicates_are_required_and_a_list_of_formula_texts():
     with pytest.raises(TransformationError, match="predicates is required"):
         run("polars_join_where", W_LEFT, {"right_ingredient": "R", "__right_df__": W_RIGHT.lazy()})
-    with pytest.raises(TransformationError, match="one or more formulas"):
+    with pytest.raises(TransformationError, match="predicates is empty"):
         where(predicates=[])
     with pytest.raises(TransformationError, match="one or more formulas"):
         where(predicates=[5])

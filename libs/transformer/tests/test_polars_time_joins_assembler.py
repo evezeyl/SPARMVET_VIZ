@@ -125,4 +125,4 @@ def test_a_join_on_conditions_with_numbers_of_different_types_fails_through_the_
 def test_a_refused_step_keeps_its_own_plain_message_through_the_assembler():
     with pytest.raises(TransformationError) as caught:
         _assemble(_left(), _right(), [_where_step(predicates=[])]).collect()
-    assert "one or more formulas" in str(caught.value) and RECIPE in str(caught.value.pipeline_error.location) and "Write for example" in caught.value.tip
+    assert "predicates is empty" in str(caught.value) and "one or more formulas" in str(caught.value) and RECIPE in str(caught.value.pipeline_error.location)

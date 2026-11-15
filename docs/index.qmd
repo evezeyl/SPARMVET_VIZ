@@ -23,7 +23,7 @@ As prototyping option we chose:
 
 ### Integrity & Trust {.unnumbered}
 As of **April 2026**, the system has achieved **100% Test Integrity**:
-- **Transformer**: 60/60 registered actions verified via atomic integrity suites (62 total, 2 relational tested via assembly).
+- **Transformer**: every registered action is checked by the pytest gate (`libs/transformer/tests`): a recipe/data pair, a behaviour test and a run through the real path; the count is in `docs/appendix/transformer_actions.qmd`.
 - **Viz Factory**: 172/172 components validated via the 1:1:1 evidence loop (TSV/YAML/PNG).
 - **Clean-Room Verification**: All system outputs are reproducible using library-native CLI runners.
 

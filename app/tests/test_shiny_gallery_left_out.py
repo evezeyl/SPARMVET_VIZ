@@ -4,7 +4,6 @@ The gallery folder is a temporary copy with one example broken (an unknown plot 
 deployment file; the repository is not touched. Browser test: needs Playwright, about 30 s.
 Run: PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_gallery_left_out.py -q
 """
-import os
 import re
 import shutil
 import socket
@@ -14,6 +13,7 @@ import urllib.request
 from pathlib import Path
 
 import pytest
+from app.tests.subprocess_env import app_env
 from playwright.sync_api import Page, expect
 
 REPO = Path(__file__).resolve().parents[2]
@@ -48,7 +48,7 @@ def broken_gallery_app(tmp_path_factory):
     dep_file = work / "deployment.yaml"
     dep_file.write_text(deployment)
     port = _free_port()
-    env = {**os.environ, "PYTHONPATH": ".:" + os.environ.get("PYTHONPATH", ""), "SPARMVET_APP_FEATURES": "qa", "SPARMVET_DEPLOYMENT": str(dep_file)}
+    env = app_env(SPARMVET_APP_FEATURES="qa", SPARMVET_DEPLOYMENT=str(dep_file))
     with open(work / "server.log", "w") as out:
         proc = subprocess.Popen([str(REPO / ".venv/bin/shiny"), "run", "app/src/main.py", "--port", str(port)],
                                 cwd=REPO, env=env, stdout=out, stderr=subprocess.STDOUT)
