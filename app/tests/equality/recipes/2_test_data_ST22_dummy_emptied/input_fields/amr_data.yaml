@@ -1,0 +1,24 @@
+sample_id:
+  type: String
+  original_name: sample_id
+  label: Sample ID
+gene:
+  type: Categorical
+  original_name: Gene
+  label: Gene name
+predicted_phenotype:
+  type: Categorical
+  original_name: Predicted Phenotype
+  label: Predicted Phenotype
+identity:
+  type: Float64
+  original_name: '%Identity'
+  label: Sequence Identity
+overlap:
+  type: Float64
+  original_name: '%Overlap'
+  label: Sequence Overlap
+accession:
+  type: Categorical
+  original_name: Accession
+  label: NCBI Accession

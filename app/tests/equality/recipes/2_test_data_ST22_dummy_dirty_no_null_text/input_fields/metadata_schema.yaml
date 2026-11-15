@@ -1,0 +1,16 @@
+sample_id:
+  type: String
+  original_name: sample_id
+  label: Sample ID
+Source:
+  type: Categorical
+  original_name: Source
+  label: Biological Source
+Year:
+  type: Float64
+  original_name: Year
+  label: Sampling Year
+Country:
+  type: Categorical
+  original_name: Country
+  label: Country of Origin
