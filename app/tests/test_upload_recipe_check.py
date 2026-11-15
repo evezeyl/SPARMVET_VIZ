@@ -36,14 +36,14 @@ def test_valid_fragment_as_bare_list_gives_no_line():
 def test_bad_step_in_fragment_names_step_and_problem():
     raw = {"wrangling": {"tier1": [{"action": "polars_cast", "columns": ["a"], "dtype": "Int64"}, {"action": "polars_cast", "nope": 1}]}}
     lines = uploaded_recipe_report(raw)
-    assert any(l.startswith("[ST03] tier1[1] (polars_cast)") and "nope" in l for l in lines)
+    assert any(l.startswith("[ST03] tier1[2] (polars_cast)") and "nope" in l for l in lines)
     assert any(l.startswith("[ST04] tier1[1] (polars_cast)") for l in lines)
     assert not any("tier1[0]" in l for l in lines)
 
 
 def test_unknown_action_in_fragment():
     lines = uploaded_recipe_report({"wrangling": [{"action": "no_such_action"}]})
-    assert lines and lines[0].startswith("[ST02] steps[0]")
+    assert lines and lines[0].startswith("[ST02] steps[1]")
 
 
 def test_empty_mapping_and_empty_file_say_nothing_to_import():

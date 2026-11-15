@@ -21,7 +21,7 @@ from utils.engines import DATA_ENGINE, PLOT_ENGINE
 from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper, IncludeRef, represent_include
 
 
-yaml.add_representer(IncludeRef, represent_include)
+yaml.add_representer(IncludeRef, represent_include, Dumper=yaml.SafeDumper)
 
 
 class DataAnalysisRecipeScaffolder:

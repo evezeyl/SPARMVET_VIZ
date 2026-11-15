@@ -24,7 +24,7 @@ def represent_include(dumper, data):
     return dumper.represent_scalar('!include', data.path, style='')
 
 
-yaml.add_representer(IncludeRef, represent_include)
+yaml.add_representer(IncludeRef, represent_include, Dumper=yaml.SafeDumper)
 
 
 class DataAnalysisRecipeBootstrapper:
