@@ -9,7 +9,7 @@ It treated the seven paths as typing errors and only removed the backticks. Eve 
 
 How it was checked: the sentence and its section were read; `git log -S` and `git log --diff-filter` found when it was written; every candidate file was read, and every script was run with `--help`; the sentence was compared with the revised rules (ADR-100 to ADR-106, the decisions of 2026-11-13 to 2026-11-15) and with the code at commit 5be9f103.
 
-Result: all seven are clear corrections. Two side findings are real questions for Eve (end of this file).
+Result: six are clear corrections. Path 4 is a real question for Eve (two rule files disagree). Two side findings are also questions for Eve (end of this file).
 
 ---
 
@@ -34,14 +34,25 @@ Result: all seven are clear corrections. Two side findings are real questions fo
 - **Evidence.** commit 1437e3ad; the help text above; `gallery_examples.py:72`.
 - **Verdict.** Clear correction.
 
-## 4. `rules_runtime_environment.md` line 79: example of the TYPE_CHECKING exception
+## 4. `rules_runtime_environment.md` line 79: example of the TYPE_CHECKING exception (REAL QUESTION FOR EVE)
 
-- **Purpose.** The paragraph allows one exception to the "no import between domain libraries" rule: a type used only for checking, never at run time. The sentence gives one real example so that a reader knows what the exception looks like. Written in commit 213eb055 (2026-05-12).
-- **What exists today.** The example file (pipeline.py in libs/transformer/) was removed in commit 74abfc48 (2026-11-14, nothing used it). No library uses the exception now: `grep TYPE_CHECKING` over `libs` and `app` finds one use, in `app/modules/test_lab_studio.py` (the application layer, not a domain library). The rule itself is alive: `scripts/audit_cross_lib.py:36-64` still exempts the pattern, and ADR-011 (`architecture_decisions.md:126`) states it.
-- **Against the revised rules.** No contradiction. `rules_test_lab.md:58` keeps the same exception.
-- **Proposed new line.** Replace "Example: libs/transformer/pipeline.py annotates DataIngestor for type-checking only" by: "No library uses this exception today (checked 2026-11-15); `scripts/audit_cross_lib.py` still allows it." The rest of the sentence ("the actual instance is injected at runtime by the caller") stays.
-- **Evidence.** commit 74abfc48; grep result above; `audit_cross_lib.py`.
-- **Verdict.** Clear correction. (A different choice would be to delete the whole exception, because nothing uses it. That changes a rule and ADR-011; not proposed.)
+(A "TYPE_CHECKING exception" is an import that only the type checker reads and that never runs when the program runs.)
+
+- **Purpose.** The paragraph allows one exception to the "no import between domain libraries" rule. The sentence gives one real example so that a reader knows what it looks like. Written in commit 213eb055 (2026-05-12).
+- **What exists today.** The example file (pipeline.py in libs/transformer/) was removed in commit 74abfc48 (2026-11-14, nothing used it). No library uses the exception now: `grep TYPE_CHECKING` over `libs` and `app` finds one use, in `app/modules/test_lab_studio.py` (the application layer, not a domain library). `scripts/audit_cross_lib.py:63-64` skips every import inside a TYPE_CHECKING block for every library, and ADR-011 (`architecture_decisions.md:126`) allows the pattern.
+- **The two rule files disagree (found by the reviewer).**
+  - `rules_runtime_environment.md:79` says a domain library MAY use a type of another domain library under TYPE_CHECKING ("If a domain lib needs to reference a type from another domain lib solely for static analysis ... the import MUST be guarded").
+  - `rules_test_lab.md:58` says, for `libs/id_reconciliation` only: "TYPE_CHECKING guards allowed per ADR-016 consumes_typeonly: pattern, but only for stdlib types. Do not annotate types from other domain libs even under TYPE_CHECKING."
+  - So the general rule is wider than the rule for that one library. The audit script cannot enforce the stricter one, because it skips all TYPE_CHECKING imports. No library uses either today.
+- **Options.**
+  - (a) Drop the example sentence only (new text: "No library uses this exception today (checked 2026-11-15); `scripts/audit_cross_lib.py` still allows it."). The disagreement stays.
+  - (b) Drop the example and make the two files say the same thing. Either the general rule becomes the stricter one (types of other domain libraries are never annotated; this changes a rule and ADR-011), or `rules_test_lab.md:58` is reworded as a stated exception of that library to the general rule ("stricter here, because ...").
+  - (c) Leave both as they are.
+- **Default.** (a) now, because it only removes a dead example and decides nothing; the disagreement is Eve's choice, and I recommend (b) with the general rule kept and line 58 worded as a stricter local rule, since no library uses the pattern and the audit cannot tell the two apart.
+- **Evidence.** commit 74abfc48; the grep result; `audit_cross_lib.py:36-64`; the two quoted lines.
+- **Verdict.** Real question for Eve (default a).
+
+---
 
 ## 5 and 6. `rules_test_lab.md` lines 64 and 182: short paths
 
@@ -65,7 +76,7 @@ Result: all seven are clear corrections. Two side findings are real questions fo
 
 ## Real questions for Eve found on the way (not part of the seven)
 
-1. `rules_code_quality.md` lines 175 to 195: the plan says an emoji scan (`--emoji-only`) is "active now" and that the script is added as "Routine 14" of the scheduled audits. Nothing scans for emoji today (checked `scripts/` and `assets/scripts/`), and Routine 14 is already the CSS audit (`.claude/workflows/schedule_commands.md:468`). Options: (A) correct the two sentences to say so; (B) write a small emoji scan now; (C) leave as is. Default: A.
+1. `rules_code_quality.md` lines 175 to 195: the plan says an emoji scan (`--emoji-only`) is "active now" and that the script is added as "Routine 14" of the scheduled audits (the sentence names `schedule_commands.md`, but the routine list is in `audit_routine_registry.md`). Nothing scans for emoji today (checked `scripts/` and `assets/scripts/`), and Routine 14 is already the CSS audit (`.claude/workflows/audit_routine_registry.md:468`). Options: (A) correct the two sentences to say so; (B) write a small emoji scan now; (C) leave as is. Default: A.
 2. `rules_test_lab.md` line 64 and `libs/id_reconciliation/src/id_reconciliation/data_structures.py:5`: the rule calls `pattern_detector.py` a "thin re-export shim" and a second re-export exists "for backward compat". Eve's rule is no shims. Options: (A) keep; (B) change the callers to import from `utils.id_patterns` and delete the shim (a code task, then a rule edit). Default: B as a task, not now.
 
 Can the audit pass without the edits? No: all seven are in `.claude/rules/`, which the checker scans.
