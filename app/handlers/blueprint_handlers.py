@@ -95,6 +95,16 @@ from utils.pipeline_error import PipelineError, make_render_payload
 from app.src.render.pipeline_error_renderers import render_blueprint_inline
 
 
+def safe_dump_recipe(content) -> str:
+    """Text of a recipe file: safe dumper (no Python-only tags, a tuple becomes a list), keys in the order given."""
+    return yaml.safe_dump(content, default_flow_style=False, sort_keys=False, allow_unicode=True)
+
+
+def _plain_list(value) -> list:
+    """A multi-select value as a plain list (Shiny returns a tuple; a tuple would be saved as a Python tag)."""
+    return list(value) if isinstance(value, (list, tuple)) else [value]
+
+
 # ── BP-AUTOSAVE-1: pure draft ghost helpers ───────────────────────────────────
 
 def _draft_key(data_analysis_recipe_path: str) -> str:
@@ -787,7 +797,7 @@ def define_server(input, output, session, *,
             nodes = _parse_logic_to_nodes(wrangling, f"Master: {selected}")
             wrangle_studio.logic_stack.set(nodes)
             wrangle_studio.active_raw_yaml.set(
-                yaml.dump(raw, default_flow_style=False, sort_keys=False))
+                safe_dump_recipe(raw))
             # BP-PLOT-COMMIT-1: inline component (no standalone file) — Save is disabled.
             wrangle_studio.active_component_path.set("")
 
@@ -922,7 +932,7 @@ def define_server(input, output, session, *,
             cy_json = mapper.generate_cy_elements()
             wrangle_studio.active_tubemap_mermaid.set(cy_json)
             wrangle_studio.active_raw_yaml.set(
-                yaml.dump(cfg.raw_config, default_flow_style=False, sort_keys=False, allow_unicode=True)
+                safe_dump_recipe(cfg.raw_config)
             )
         except Exception as e:
             print(f"[sync_blueprint_mapper] Failed: {e}")
@@ -1146,8 +1156,8 @@ def define_server(input, output, session, *,
             return
 
         try:
-            with open(comp_path, "w") as f:
-                yaml.dump(content, f, default_flow_style=False, sort_keys=False)
+            with open(comp_path, "w", encoding="utf-8") as f:
+                f.write(safe_dump_recipe(content))
             ui.notification_show(
                 f"✅ Saved to {Path(comp_path).name}", type="success")
         except OSError as e:
@@ -1222,12 +1232,10 @@ def define_server(input, output, session, *,
                 if val is not None:
                     multi = param_def.get("multi", False)
                     if multi:
-                        new_params[param_key] = (
-                            val if isinstance(val, list) else [val]
-                        )
+                        new_params[param_key] = _plain_list(val)
                     else:
                         new_params[param_key] = (
-                            val[0] if isinstance(val, list) and val else val
+                            val[0] if isinstance(val, (list, tuple)) and val else val
                         )
             elif widget_type in ("expression", "string"):
                 val = safe_input(input, input_id, "")
@@ -1244,9 +1252,7 @@ def define_server(input, output, session, *,
                 val = safe_input(input, input_id, [] if multi else "")
                 if val:
                     if multi:
-                        new_params[param_key] = (
-                            val if isinstance(val, list) else [val]
-                        )
+                        new_params[param_key] = _plain_list(val)
                     else:
                         new_params[param_key] = val
             elif widget_type == "column_or_literal":

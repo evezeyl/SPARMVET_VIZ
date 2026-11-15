@@ -1855,7 +1855,7 @@ class WrangleStudio:
             if not isinstance(yaml_obj, dict):
                 # File is a plain list or scalar — show as raw YAML
                 return ui.tags.pre(
-                    yaml.dump(yaml_obj, default_flow_style=False,
+                    yaml.safe_dump(yaml_obj, default_flow_style=False,
                               sort_keys=False, allow_unicode=True),
                     style="background:#1e1e2e;color:#cdd6f4;padding:15px;"
                           "border-radius:6px;overflow:auto;max-height:600px;"
@@ -1871,7 +1871,7 @@ class WrangleStudio:
                 is_collection = isinstance(val, (dict, list))
                 icon = "📂" if is_collection else "🔑"
                 val_yaml = (
-                    yaml.dump(val, default_flow_style=False,
+                    yaml.safe_dump(val, default_flow_style=False,
                               sort_keys=False, allow_unicode=True)
                     if is_collection else str(val)
                 )

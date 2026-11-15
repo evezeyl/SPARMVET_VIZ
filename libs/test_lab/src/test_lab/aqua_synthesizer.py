@@ -110,7 +110,7 @@ class AquaSynthesizer:
         scenarios_dir.mkdir(parents=True, exist_ok=True)
         path = scenarios_dir / f"{name}.yaml"
         wrapped = {"synthetic_data_config": {**config, "scenario": {"name": name}}}
-        content = self.MANDATORY_HEADER + yaml.dump(wrapped, sort_keys=False, allow_unicode=True)
+        content = self.MANDATORY_HEADER + yaml.safe_dump(wrapped, sort_keys=False, allow_unicode=True)
         path.write_text(content)
         return path
 

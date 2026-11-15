@@ -128,7 +128,7 @@ class DataAnalysisRecipeBootstrapper:
             # Write Fragment: input_fields
             input_fields_file = fragments_dir / f"{dataset_id}_input_fields.yaml"
             with open(input_fields_file, 'w') as f:
-                yaml.dump(fields, f, sort_keys=False)
+                yaml.safe_dump(fields, f, sort_keys=False)
 
             # Write Fragment: wrangling (tiered, ADR-024 §3)
             tier1_steps = id_cleaning_steps.get(dataset_id, [])
@@ -140,7 +140,7 @@ class DataAnalysisRecipeBootstrapper:
             )
             with open(wrangling_file, 'w') as f:
                 f.write(f"{pk_hints}")
-                yaml.dump({"tier1": tier1_steps, "tier2": []}, f, sort_keys=False)
+                yaml.safe_dump({"tier1": tier1_steps, "tier2": []}, f, sort_keys=False)
 
             # Prefer a project-relative path; fall back to absolute for files outside cwd.
             resolved = Path(tsv_p).resolve()
@@ -192,6 +192,6 @@ class DataAnalysisRecipeBootstrapper:
 
         master_file = data_analysis_recipe_dir / f"{data_analysis_recipe_id}.yaml"
         with open(master_file, 'w') as f:
-            yaml.dump(master_data_analysis_recipe, f, sort_keys=False)
+            yaml.safe_dump(master_data_analysis_recipe, f, sort_keys=False)
 
         return master_file
