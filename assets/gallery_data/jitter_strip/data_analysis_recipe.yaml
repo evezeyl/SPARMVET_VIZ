@@ -37,6 +37,6 @@ analysis_groups:
           target_dataset: example
           mapping: {x: species, y: resistance_pct, color: species}
           layers:
-            - {name: geom_jitter, params: {width: 0.2, alpha: 0.6, size: 2}}
+            - {name: geom_jitter, params: {width: 0.2, alpha: 0.6, size: 2, random_state: 0}}
             - {name: labs, params: {x: Species, y: Resistance (%), color: Species}}
             - {name: theme_minimal, params: {}}
