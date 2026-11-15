@@ -196,6 +196,8 @@ plot.spec.target_dataset  →  assembly.final_contract        (if declared)
 
 **Fix Format button (⚙️):** Runs `normalize_data_analysis_recipe_fields.py` on the active file in-place, enforcing ADR-041 Rich Dict format. Shows diff count in notification.
 
+> **NOTE (2026-11-15):** `normalize_data_analysis_recipe_fields.py` was removed (nothing called it; it read and wrote the removed keys `output_fields` / `final_contract`). The Fix Format button would need new code against recipe format 1.
+
 ---
 
 ## 5. Zone B Tab 3 — YAML (Raw Source)
