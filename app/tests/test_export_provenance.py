@@ -135,3 +135,13 @@ class TestEngineAndEnvironmentFields:
         if not p["containerized"]:
             assert p["image_ref"] is None
         assert p["uv_lock_sha256"] is None or isinstance(p["uv_lock_sha256"], str)
+
+
+def test_the_report_row_of_the_tier_2_key_says_what_the_key_covers():
+    """The text of report.qmd is built inside the download handler, which only a browser run reaches; here the sentence
+    is pinned in the source of the handler (read only), so that a change of it is seen without a browser."""
+    from pathlib import Path
+    from app.handlers import export_handlers
+    source = Path(export_handlers.__file__).read_text(encoding="utf-8")
+    assert ("Chained key of the Tier 2 parquet: Tier 1 key and the tier2 steps of the table "
+            "(a join, or a table a plot reads directly)") in source
