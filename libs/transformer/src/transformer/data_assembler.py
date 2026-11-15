@@ -13,6 +13,7 @@ from transformer.registry import get_action_function
 from utils.action_names import CAST, JOIN, JOIN_ASOF
 from transformer.join_diagnosis import JoinCheck
 from utils.errors import TransformationError
+from utils import join_keys
 from utils.pipeline_error import PipelineError
 
 
@@ -78,7 +79,10 @@ class DataAssembler:
         where = f"in data analysis recipe '{self.recipe_id}', join '{self.join_id}', step {index} ({step['action']} with '{right_id}')"
 
         for left_keys, right_keys, left_name, right_name, shared_name in self._key_groups(step):
-            if len(left_keys) != len(right_keys):
+            problem = join_keys.join_key_problem(left_schema, right_schema, left_keys, right_keys)  # the one rule (utils.join_keys, JOIN-KEY-ONE-1)
+            if problem is None:
+                continue
+            if problem["kind"] == "length":
                 self._fail_join(
                     step, index,
                     f"The key lists of the join differ in length {where}: {left_name} has {len(left_keys)} column(s) {left_keys} and {right_name} has {len(right_keys)} column(s) {right_keys}.",
@@ -86,10 +90,8 @@ class DataAssembler:
                     f"or write '{shared_name}' when the columns have the same name in both tables.",
                     {"left_keys": str(left_keys), "right_keys": str(right_keys)},
                 )
-
-            missing_left = [c for c in left_keys if c not in left_schema]
-            missing_right = [c for c in right_keys if c not in right_schema]
-            if missing_left or missing_right:
+            if problem["kind"] == "missing":
+                missing_left, missing_right = problem["missing_left"], problem["missing_right"]
                 lacks = []
                 if missing_left:
                     lacks.append(f"key column(s) {missing_left} missing in the left table (its columns: {list(left_schema)})")
@@ -102,20 +104,17 @@ class DataAssembler:
                     "The left table is the table at this step: a column of a table joined later is not in it yet, and a step before the join may have renamed or dropped the column.",
                     {"missing_in_left": str(missing_left), "missing_in_right": str(missing_right)},
                 )
-
-            for left_col, right_col in zip(left_keys, right_keys):
-                left_type, right_type = left_schema[left_col], right_schema[right_col]
-                if left_type == right_type:
-                    continue
-                names = f"column '{left_col}'" if left_col == right_col else f"column '{left_col}' (left) and '{right_col}' (right)"
-                self._fail_join(
-                    step, index,
-                    f"The join key types differ {where}: {names} is {left_type} in the left table and {right_type} in '{right_id}'.",
-                    f"Declare the same type for this field in input_fields of both tables. A {CAST} step before the join changes only the left table "
-                    f"(the table at this step); the type of '{right_id}' is changed in its own input_fields or in its own wrangling. "
-                    "The engine does not change the type of a join key for you.",
-                    {"left_column": left_col, "right_column": right_col, "left_type": str(left_type), "right_type": str(right_type)},
-                )
+            first = problem["differing"][0]
+            left_col, right_col, left_type, right_type = first["left_column"], first["right_column"], first["left_type"], first["right_type"]
+            names = f"column '{left_col}'" if left_col == right_col else f"column '{left_col}' (left) and '{right_col}' (right)"
+            self._fail_join(
+                step, index,
+                f"The join key types differ {where}: {names} is {left_type} in the left table and {right_type} in '{right_id}'.",
+                f"Declare the same type for this field in input_fields of both tables. A {CAST} step before the join changes only the left table "
+                f"(the table at this step); the type of '{right_id}' is changed in its own input_fields or in its own wrangling. "
+                "The engine does not change the type of a join key for you.",
+                {"left_column": left_col, "right_column": right_col, "left_type": str(left_type), "right_type": str(right_type)},
+            )
 
     @staticmethod
     def _canonical_steps(steps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
