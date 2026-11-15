@@ -53,8 +53,29 @@ def test_text_on_a_true_false_column_is_refused():
     assert len(p) == 1 and "true or false" in p[0].message
 
 
-def test_a_date_column_is_not_judged():
-    assert st12(with_schema_step(filter_step("n", "eq", "2020-01-01"), column_type="Date")) == []
+@pytest.mark.parametrize("column_type, op, value, holds", [
+    ("Date", "eq", "2020-01-01", "dates"), ("Date", "eq", 5, "dates"), ("Date", "in", ["2020-01-01"], "dates"),
+    ("Date", "between", ["2020-01-01", "2020-01-03"], "dates"),
+    ("Datetime", "eq", "2020-01-01 10:00:00", "dates and times"), ("Datetime", "in", [5], "dates and times"),
+    ("Categorical", "eq", 5, "categories"), ("Boolean", "eq", "true", "true or false"),
+])
+def test_the_checker_judges_dates_datetimes_and_categories_with_the_rule_of_the_engine(column_type, op, value, holds):
+    p = st12(with_schema_step(filter_step("n", op, value, **({"closed": "both"} if op == "between" else {})), column_type=column_type))
+    assert len(p) == 1 and holds in p[0].message and p[0].fix
+
+
+def test_a_date_written_as_a_date_is_accepted():
+    import datetime
+    assert st12(with_schema_step(filter_step("n", "eq", datetime.date(2020, 1, 1)), column_type="Date")) == []
+    assert st12(with_schema_step(filter_step("n", "in", [datetime.datetime(2020, 1, 1, 10)]), column_type="Datetime")) == []
+    assert st12(with_schema_step(filter_step("n", "eq", "x"), column_type="Categorical")) == []
+
+
+def test_the_checker_and_the_engine_share_one_rule():
+    """The checker calls `utils.filter_values.check_filter_value`; the engine's strict mode calls the same function."""
+    import inspect
+    import utils.recipe_check as recipe_check
+    assert "check_filter_value" in inspect.getsource(recipe_check) and recipe_check.check_filter_value.__module__ == "utils.filter_values"
 
 
 def test_tier2_of_a_schema_is_checked_when_tier1_keeps_the_columns():

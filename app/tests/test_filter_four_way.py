@@ -28,6 +28,7 @@ FRAME = pl.DataFrame({
     "t": ["89", "90", "91", None],
     "b": [True, False, True, None],
     "d": [D(2020, 1, 1), D(2020, 1, 2), D(2020, 1, 3), None],
+    "dt": [datetime.datetime(2020, 1, 1, 9), datetime.datetime(2020, 1, 2, 10, 30), datetime.datetime(2020, 1, 3, 0, 0, 0, 250000), None],
 })
 
 
@@ -123,3 +124,22 @@ def test_old_step_with_true_as_text_keeps_the_rows_it_means(op, value):
 def test_date_column_four_views_agree(op, value, kept):
     """The panel keeps a date as year-month-day text (a session file holds no date object); the export types it from the dtype."""
     agree([stored("d", op, value, "remove")], kept)
+
+
+@pytest.mark.parametrize("na", ["remove", "keep"])
+@pytest.mark.parametrize("op, value, kept", [
+    ("in", ["2020-01-02 10:30:00"], ["b"]), ("not_in", ["2020-01-02 10:30:00"], ["a", "c"]),
+    ("in", ["2020-01-01 09:00:00", "2020-01-03 00:00:00.250000"], ["a", "c"]), ("eq", ["2020-01-02 10:30:00"], ["b"]),
+])
+def test_datetime_column_four_views_agree(op, value, kept, na):
+    """What the dialog lists for a date and time column, once picked, keeps the same rows in the table, the plot, the bundle and the
+    re-run of the export (reviewer 2026-11-15: it used to keep none, silently, and the re-run raised a raw Polars error)."""
+    agree([stored("dt", op, value, na)], kept + (["d"] if na == "keep" else []))
+
+
+def test_the_dialog_list_of_a_datetime_column_picks_rows_in_every_view():
+    from app.modules.t3_audit_engine import dialog_value, value_choices
+    lf = FRAME.lazy()
+    label = next(iter(value_choices(lf, "dt")))
+    op, value, _ = dialog_value(lf, "dt", FRAME.schema["dt"], False, "in", picked=[label])
+    agree([stored("dt", op, value, "remove")], ["a"])

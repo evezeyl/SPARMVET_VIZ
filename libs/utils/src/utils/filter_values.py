@@ -27,7 +27,8 @@ from typing import Any
 
 import polars as pl
 
-_WORDS = {"int": "whole numbers", "float": "decimal numbers", "bool": "true or false", "date": "dates", "text": "text"}
+_WORDS = {"int": "whole numbers", "float": "decimal numbers", "bool": "true or false", "date": "dates", "datetime": "dates and times",
+          "text": "text", "category": "categories"}
 
 
 class FilterValueError(ValueError):
@@ -39,7 +40,8 @@ class FilterValueError(ValueError):
 
 
 def kind_of(dtype: Any) -> str:
-    """The family of a dtype (a Polars dtype or its name): int, float, bool, date, text, or other (Datetime, Categorical, unknown)."""
+    """The family of a dtype (a Polars dtype or its name): int, float, bool, date, datetime, text, category (Categorical, Enum),
+    or other (Time, Duration, unknown)."""
     s = str(dtype) if dtype is not None else ""
     if "Int" in s:
         return "int"
@@ -49,6 +51,10 @@ def kind_of(dtype: Any) -> str:
         return "bool"
     if s == "Date":
         return "date"
+    if s.startswith("Datetime"):
+        return "datetime"
+    if s.startswith(("Categorical", "Enum")):
+        return "category"
     if s in ("String", "Utf8"):
         return "text"
     return "other"
@@ -87,7 +93,8 @@ def read_filter_value(value: Any, dtype: Any) -> Any:
 
     Number columns: a float column gets a float; an integer column gets an int when the value is integer-valued ("90", 90.0),
     else a float ("90.5"), never truncated. True or false columns: True, False, "true", "false" in any case. Date columns:
-    a date or "YYYY-MM-DD". Text and other columns: the value as it is.
+    a date or "YYYY-MM-DD". Date and time columns: a datetime or "YYYY-MM-DD HH:MM:SS" (a date alone is refused). Category columns: text.
+    Text and other columns: the value as it is.
     """
     kind = kind_of(dtype)
     if kind in ("int", "float"):
@@ -120,23 +127,39 @@ def read_filter_value(value: Any, dtype: Any) -> Any:
         except ValueError:
             pass
         raise _wrong(value, dtype, "write the date as year-month-day, for example 2020-01-31")
+    if kind == "datetime":
+        if isinstance(value, datetime.datetime):
+            return value
+        try:
+            if isinstance(value, str):
+                return datetime.datetime.fromisoformat(value.strip())
+        except ValueError:
+            pass
+        raise _wrong(value, dtype, "write the date and time as year-month-day hour:minute:second, for example 2020-01-31 10:30:00")
+    if kind == "category" and not isinstance(value, str):
+        raise _wrong(value, dtype, "write the value as text")
     return value
 
 
 def check_filter_value(value: Any, dtype: Any) -> None:
     """Strict mode: raise FilterValueError unless `value` already has the type of a column of `dtype`. Nothing is converted.
 
-    Number columns take a number (not text, not true/false); text columns take text; true/false columns take True or False.
-    Date and other columns are not judged here.
+    Number columns take a number (not text, not true/false); text and category columns take text; true/false columns take True or
+    False; date columns take a date, date and time columns a datetime (written without quotes in a recipe, which reads them as
+    such). Time, duration and unknown columns are not judged here.
     """
     kind = kind_of(dtype)
     is_number = isinstance(value, (int, float)) and not isinstance(value, bool)
     if kind in ("int", "float") and not is_number:
         raise _wrong(value, dtype, _number_fix(kind))
-    if kind == "text" and not isinstance(value, str):
+    if kind in ("text", "category") and not isinstance(value, str):
         raise _wrong(value, dtype, "write the value as text, in quotes")
     if kind == "bool" and not isinstance(value, bool):
         raise _wrong(value, dtype, "write true or false without quotes")
+    if kind == "date" and not (isinstance(value, datetime.date) and not isinstance(value, datetime.datetime)):
+        raise _wrong(value, dtype, "write the date without quotes as year-month-day, for example 2020-01-31")
+    if kind == "datetime" and not isinstance(value, datetime.datetime):
+        raise _wrong(value, dtype, "write the date and time without quotes, for example 2020-01-31 10:30:00")
 
 
 def _operand(value: Any, dtype: Any, strict: bool) -> Any:
@@ -159,21 +182,35 @@ def filter_condition(column: str, op: str, value: Any, dtype: Any, closed: str =
     col = pl.col(column)
     if isinstance(value, (list, tuple)) and op in ("eq", "ne"):
         op = "in" if op == "eq" else "not_in"
+    if kind == "bool" and op in ("gt", "ge", "lt", "le", "between"):
+        raise FilterValueError("Greater than, less than and between are not defined for a column of true or false",
+                               "use equal, not equal, one of or none of")
     if op == "between":
-        if kind not in ("int", "float", "date"):
+        if kind not in ("int", "float", "date", "datetime"):
             raise FilterValueError(f"between needs a column of numbers or dates, and this column holds {type_words(dtype)}",
                                    "use a column of numbers or dates, or one of the other operators")
-        lo, hi = (_operand(v, dtype, strict) for v in value)
+        lo, hi = _numbers([_operand(v, dtype, strict) for v in value], kind)
         return col.is_between(lo, hi, closed=closed)
     if op in ("in", "not_in"):
-        values = [_operand(v, dtype, strict) for v in (value if isinstance(value, (list, tuple)) else [value])]
-        if kind == "text":
-            expr = col.is_in([str(v) for v in values])
-        elif kind == "other" and other_as_text:
-            expr = col.cast(pl.Utf8).is_in([str(v) for v in values])
+        raw = list(value) if isinstance(value, (list, tuple)) else [value]
+        if kind in ("text", "category"):
+            if strict:
+                for v in raw:
+                    check_filter_value(v, dtype)
+            expr = (col.cast(pl.Utf8) if kind == "category" else col).is_in([str(v) for v in raw])
         else:
-            expr = col.is_in(values)
+            values = _numbers([_operand(v, dtype, strict) for v in raw], kind)
+            expr = col.cast(pl.Utf8).is_in([str(v) for v in values]) if kind == "other" and other_as_text else col.is_in(values)
         return expr if op == "in" else ~expr
     operand = _operand(value, dtype, strict)
+    if kind == "category":
+        col = col.cast(pl.Utf8)
     return {"eq": col == operand, "ne": col != operand, "gt": col > operand, "ge": col >= operand,
             "lt": col < operand, "le": col <= operand}[op]
+
+
+def _numbers(values: list, kind: str) -> list:
+    """A list of whole numbers and decimals is a list of numbers: when one is a decimal, all are, so Polars takes it as one list."""
+    if kind in ("int", "float") and any(isinstance(v, float) for v in values):
+        return [float(v) for v in values]
+    return values

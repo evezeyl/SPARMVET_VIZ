@@ -70,6 +70,20 @@ def test_a_date_column_keeps_the_year_month_day_text_which_a_session_file_can_ho
     assert choices == {"2020-01-01": "2020-01-01", "2020-01-02": "2020-01-02"}
 
 
+def test_a_datetime_column_lists_the_value_the_table_compares_and_keeps_its_text():
+    """The label is the date and time as year-month-day hour:minute:second; the stored value is that text (a session file holds no
+    datetime object); the table and the export read it back from the dtype (reviewer 2026-11-15: a picked value used to keep 0 rows)."""
+    lf = pl.LazyFrame({"t": [datetime.datetime(2020, 1, 2, 10, 30), datetime.datetime(2020, 1, 1, 9), None]})
+    choices = value_choices(lf, "t")
+    assert choices == {"2020-01-01 09:00:00": "2020-01-01 09:00:00", "2020-01-02 10:30:00": "2020-01-02 10:30:00"}
+
+
+def test_a_datetime_with_microseconds_and_a_time_zone_keeps_them():
+    tz = pl.DataFrame({"t": [datetime.datetime(2020, 1, 1, 9, 0, 0, 250000)]}).with_columns(pl.col("t").dt.replace_time_zone("UTC")).lazy()
+    (label,) = value_choices(tz, "t")
+    assert "250000" in label and "+00:00" in label
+
+
 def test_text_and_category_columns_keep_text():
     lf = pl.LazyFrame({"t": ["b", "a", None], "k": pl.Series(["y", "x", "y"], dtype=pl.Categorical)})
     assert value_choices(lf, "t") == {"a": "a", "b": "b"}

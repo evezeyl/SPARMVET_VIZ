@@ -127,21 +127,21 @@ def column_type_line(column: str, dtype) -> str:
 def value_choices(lf, column: str) -> dict:
     """The values of the whole column as the dialog lists them: {text shown: real value}, sorted, no missing value.
 
-    The real value is a number for a number column, True or False for a true/false column, text for the rest. A date is
-    kept as its year-month-day text (a session file holds no date object; the export types it from the dtype). NaN is not
+    The real value is a number for a number column, True or False for a true/false column, text for the rest. A date or a date and time is
+    kept as its text (year-month-day, hour:minute:second) (a session file holds no date object; the export types it from the dtype). NaN is not
     listed: it is counted on its own and treated by its own steps (ADR-103).
     """
     kind = kind_of(column_types(lf).get(column))
     values = lf.select(pl.col(column).drop_nulls().unique()).collect()[column].to_list()
     if kind == "float":
         values = [float(v) for v in values if not (isinstance(v, float) and math.isnan(v))]
-    if kind in ("int", "float", "bool", "date"):
+    if kind in ("int", "float", "bool", "date", "datetime"):
         values = sorted(values)
     choices: dict = {}
     for v in values:
-        label = v.isoformat() if kind == "date" else str(v)
-        choices[label] = label if kind in ("date", "other") else v
-    if kind in ("text", "other"):
+        label = v.isoformat(sep=" ") if kind == "datetime" else v.isoformat() if kind == "date" else str(v)
+        choices[label] = label if kind in ("date", "datetime", "other", "category") else v
+    if kind in ("text", "category", "other"):
         choices = dict(sorted(choices.items()))
     return choices
 

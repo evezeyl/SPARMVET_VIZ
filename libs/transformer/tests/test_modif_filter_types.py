@@ -17,6 +17,8 @@ from utils.errors import TransformationError
 FRAME = pl.DataFrame({
     "id": ["a", "b", "c"], "year": [1998, 2000, 2003], "x": [1.5, 2.5, 3.5], "s": ["p", "q", "r"], "b": [True, False, True],
     "d": [datetime.date(2020, 1, 1), datetime.date(2020, 1, 2), datetime.date(2020, 1, 3)],
+    "dt": [datetime.datetime(2020, 1, 1, 9), datetime.datetime(2020, 1, 2, 10, 30), datetime.datetime(2020, 1, 3)],
+    "k": pl.Series(["u", "v", "u"], dtype=pl.Categorical),
 })
 
 
@@ -68,7 +70,35 @@ def test_between_on_a_text_column_is_refused_in_plain_words():
     assert "between" in str(exc.value) and "numbers or dates" in str(exc.value)
 
 
-def test_a_date_column_is_not_judged_here():
-    """Date and Boolean comparisons are not decided (ADR-104 point 7): a date column keeps the behaviour of Polars."""
+@pytest.mark.parametrize("column, op, value, holds", [
+    ("d", "eq", 5, "dates"), ("d", "in", [5], "dates"), ("d", "eq", "2020-01-01", "dates"), ("d", "in", ["2020-01-01"], "dates"),
+    ("d", "between", ["2020-01-01", "2020-01-03"], "dates"),
+    ("dt", "eq", "2020-01-01 09:00:00", "dates and times"), ("dt", "in", ["2020-01-01 09:00:00"], "dates and times"),
+    ("dt", "eq", datetime.date(2020, 1, 1), "dates and times"),
+    ("k", "eq", 5, "categories"), ("k", "in", ["u", 5], "categories"),
+    ("b", "gt", True, "true or false"), ("b", "between", [False, True], "true or false"),
+])
+def test_a_wrong_type_on_a_date_a_datetime_a_category_or_a_true_false_column_gives_a_plain_error(column, op, value, holds):
+    """Before: 0 rows with no message (Date eq 5, Boolean gt True) or a raw Polars error ("unable to find column")."""
+    with pytest.raises(TransformationError) as exc:
+        run(column, op, value, **({"closed": "both"} if op == "between" else {}))
+    text = str(exc.value)
+    assert "modif_filter" in text and repr(column) in text and holds in text
+    assert "unable to find column" not in text and "ComputeError" not in text and "TypeError" not in text
+    assert exc.value.tip
+
+
+def test_dates_and_datetimes_written_as_dates_work():
     assert run("d", "in", [datetime.date(2020, 1, 2)]) == ["b"]
     assert run("d", "ge", datetime.date(2020, 1, 2)) == ["b", "c"]
+    assert run("d", "between", [datetime.date(2020, 1, 1), datetime.date(2020, 1, 2)], closed="left") == ["a"]
+    assert run("dt", "in", [datetime.datetime(2020, 1, 2, 10, 30)]) == ["b"]
+    assert run("dt", "gt", datetime.datetime(2020, 1, 1, 9)) == ["b", "c"]
+    assert run("k", "in", ["u"]) == ["a", "c"]
+    assert run("k", "eq", "v") == ["b"]
+
+
+def test_a_list_of_whole_numbers_and_decimals_is_a_valid_list_of_numbers():
+    assert run("x", "in", [1.5, 2, 3.5]) == ["a", "c"]
+    assert run("x", "not_in", [1.5, 2]) == ["b", "c"]
+    assert run("year", "in", [1998, 2000.0, 2003.5]) == ["a", "b"]
