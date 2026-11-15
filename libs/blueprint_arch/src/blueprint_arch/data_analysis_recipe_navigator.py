@@ -828,7 +828,7 @@ def _inc_path(val):
 def _render_block_key(key: str, value, indent: int) -> str:
     """yaml.dump {key: value} and re-indent every line by `indent` spaces."""
     pad = " " * indent
-    dumped = yaml.dump(
+    dumped = yaml.safe_dump(
         {key: value}, default_flow_style=False, sort_keys=False, allow_unicode=True
     ).rstrip("\n")
     return "\n".join((pad + line) if line else line for line in dumped.split("\n"))
@@ -1063,7 +1063,7 @@ def generate_branch_plan(
                 return _branch_error(f"Cannot read source plot spec '{spec_inc}': {exc}")
         elif isinstance(spec_raw, dict) and spec_raw:
             # the new file holds the spec itself: an included file has no wrapper key (spec 6.1, check F01)
-            src_spec_text = yaml.dump(
+            src_spec_text = yaml.safe_dump(
                 spec_raw, default_flow_style=False, sort_keys=False,
                 allow_unicode=True)
         else:

@@ -160,7 +160,7 @@ _Dumper.add_representer(_Folded, lambda dumper, data: dumper.represent_scalar("t
 
 
 def _short(value: Any) -> bool:
-    return len(yaml.dump(value, Dumper=_Dumper, default_flow_style=True, width=10 ** 6, allow_unicode=True)) <= 72
+    return len(yaml.dump(value, Dumper=_Dumper, default_flow_style=True, sort_keys=False, width=10 ** 6, allow_unicode=True)) <= 72
 
 
 def _layout(recipe: dict) -> dict:

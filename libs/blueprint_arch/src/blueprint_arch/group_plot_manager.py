@@ -47,7 +47,7 @@ _IncludeLoader.add_constructor(
 )
 
 
-class _IncludeDumper(yaml.Dumper):
+class _IncludeDumper(yaml.SafeDumper):
     pass
 
 
@@ -150,7 +150,7 @@ def create_plot(data_analysis_recipe_path: str, group_id: str,
     if not spec_file.exists():
         stub = {"spec": {"target_dataset": "", "mapping": {}, "layers": []}}
         with open(spec_file, "w", encoding="utf-8") as f:
-            yaml.dump(stub, f, default_flow_style=False, sort_keys=False)
+            yaml.safe_dump(stub, f, default_flow_style=False, sort_keys=False)
 
     rel = f"{stem}/plots/{plot_id}.yaml"
     grp_plots[plot_id] = {"label": label.strip() or plot_id, "spec": _IncludeTag(rel)}

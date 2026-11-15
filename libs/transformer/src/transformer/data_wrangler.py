@@ -86,7 +86,7 @@ class DataWrangler:
 
         transformed_lf = lf
 
-        for step_idx, rule in enumerate(wrangling_rules):
+        for step_idx, rule in enumerate(wrangling_rules, start=1):
             action_name = rule.get("action")
             if not action_name:
                 pe = PipelineError(

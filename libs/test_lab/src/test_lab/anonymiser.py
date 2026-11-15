@@ -243,7 +243,7 @@ class Anonymiser:
                 f"to restore original {id_column}."
             ),
         }
-        return yaml.dump([snippet], default_flow_style=False, allow_unicode=True)
+        return yaml.safe_dump([snippet], default_flow_style=False, sort_keys=False, allow_unicode=True)
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -356,5 +356,5 @@ class Anonymiser:
             }
         }
         path.write_text(
-            self.MANDATORY_HEADER + yaml.dump(payload, default_flow_style=False, allow_unicode=True)
+            self.MANDATORY_HEADER + yaml.safe_dump(payload, default_flow_style=False, sort_keys=False, allow_unicode=True)
         )
