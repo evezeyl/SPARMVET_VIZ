@@ -18,7 +18,10 @@ from __future__ import annotations
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
 
+import datetime
 import math
+import re
+from decimal import Decimal
 
 import polars as pl
 
@@ -26,7 +29,9 @@ from utils import action_names
 from app.modules.renamed_keys import FIX_IN_APP, audit_step_defect
 from utils.errors import TransformationError
 from utils.pipeline_error import PipelineError
-from utils.filter_values import FilterValueError, filter_condition, kind_of, read_filter_value, type_words
+from utils.filter_values import (
+    UNIT_NS, FilterValueError, duration_ns, filter_condition, kind_of, read_filter_value, type_words, unit_and_zone,
+)
 from utils.missing_values import keep_missing
 from utils.na_choice import default_na, na_of
 
@@ -172,66 +177,227 @@ def number_range(lf, column: str):
     return None if row[0] is None else (row[0], row[1])
 
 
-def typed_number(raw, dtype):
-    """A number of the number box in the type of the column (an integer column keeps an integer, a decimal column a decimal)."""
-    return read_filter_value(raw, dtype)
+def typed_operand(raw, dtype):
+    """What a control gave, in the type of the column, as the panel stores it (ADR-104 point 7).
+
+    A number keeps the type of the column (an integer column an integer, a decimal column a decimal), true or false a real
+    boolean, a date its year-month-day text (a session file holds no date object; the export types it from the dtype), a
+    date and time, a time of day and a duration their exact text. A value that cannot be read is a `FilterValueError`.
+    """
+    value = read_filter_value(raw, dtype)
+    return value.isoformat() if kind_of(dtype) == "date" else value
 
 
 def ops_for_column(dtype, discrete_axis: bool) -> list:
-    """The operators the dialog offers for a column of `dtype`.
+    """The operators the dialog offers for a column of `dtype` (ADR-104 point 4; Eve 2026-11-15, D9: every type has the control that fits it).
 
-    A number column offers the comparisons and `between`; when the plot uses it as a discrete axis it also offers the list
-    operators first, so that a list can be picked and "> 1998 and < 2003" can still be written (Eve, 2026-11-14). Every
-    other column offers the list operators. Comparisons on text, dates and true/false columns are not decided.
+    - A number column offers the comparisons and `between`; when the plot uses it as a discrete axis it also offers the list
+      operators first, so that a list can be picked and "> 1998 and < 2003" can still be written (Eve, 2026-11-14).
+    - A date and a date and time column offer the list (`in`, `not_in`) and every comparison with a date picker.
+    - A time of day and a duration column offer the comparisons (equal, not equal, greater, less, `between`): the values
+      are typed in a box, a list of exact times would not help.
+    - A true/false column offers equal and not equal: one of two choices; `in` and `not_in` would mean the same.
+    - Text and category columns offer the list operators. Greater and less on text is not offered (decided).
+    - A column of another type (binary, lists, ...) offers nothing.
     """
     numbers = ["eq", "ne", "gt", "ge", "lt", "le", "between"]
-    if dtype is not None and kind_of(dtype) == "other":
-        return []  # a time, a duration, ...: typed values are not built for them
-    if kind_of(dtype) in ("int", "float"):
+    kind = kind_of(dtype)
+    if dtype is not None and kind == "other":
+        return []
+    if kind in ("int", "float"):
         return ["in", "not_in"] + numbers if discrete_axis else numbers
+    if kind == "bool":
+        return ["eq", "ne"]
+    if kind in ("date", "datetime"):
+        return ["in", "not_in"] + numbers
+    if kind in ("time", "duration"):
+        return numbers
     return ["in", "not_in", "eq", "ne"]
 
 
 def not_offered_line(column: str, dtype) -> str:
-    """What the dialog says for a column whose type has no typed filter (a time, a duration, ...)."""
-    return f"A filter on {column} is not offered: the column holds {dtype}."
+    """What the dialog says for a column whose type has no filter (binary, lists, ...); the suggestion follows it."""
+    return f"No filter is offered on {column}: the column holds {dtype}."
 
 
 def value_widget_for(dtype, discrete_axis: bool, op: str) -> str:
-    """The widget of the value: "list" (pick values), "number" (one number box) or "range" (two number boxes, `between`)."""
-    if kind_of(dtype) not in ("int", "float"):
-        return "list"
-    if op == "between":
-        return "range"
-    if op in ("in", "not_in") or (op in ("eq", "ne") and discrete_axis):
-        return "list"
-    return "number"
+    """The widget of the value, by type and operator.
+
+    "list" (pick values), "number" and "range" (number boxes, `between`), "bool" (two choices), and per type "date",
+    "datetime", "time", "duration" (one control) with the suffix "_range" for `between` (two controls).
+    """
+    kind = kind_of(dtype)
+    if kind in ("int", "float"):
+        if op == "between":
+            return "range"
+        if op in ("in", "not_in") or (op in ("eq", "ne") and discrete_axis):
+            return "list"
+        return "number"
+    if kind == "bool":
+        return "bool"
+    if kind in ("date", "datetime", "time", "duration"):
+        if kind in ("date", "datetime") and op in ("in", "not_in"):
+            return "list"
+        return f"{kind}_range" if op == "between" else kind
+    return "list"
 
 
-def dialog_value(lf, column: str, dtype, discrete_axis: bool, op: str, *, picked=(), number=None, low=None, high=None,
+# -- what the boxes of a time, a date and time and a duration write (one place, so that the stored text is the one the rule reads)
+
+def _incomplete(what: str, missing: str):
+    return FilterValueError(f"{what} is not complete: {missing}, so no filter is added", "fill every box of it (0 is a value)")
+
+
+def _plain_number(value) -> str:
+    """A number of a box as text without a trailing zero: 90.0 -> "90", 1.50 -> "1.5", 0.1234567 stays exact."""
+    text = format(Decimal(repr(value)) if isinstance(value, float) else Decimal(value), "f")
+    return text.rstrip("0").rstrip(".") if "." in text else text
+
+
+def compose_time(hour, minute, second) -> str:
+    """The text of the three boxes of a time of day: hour:minute:second, up to nine digits after the second (a Polars Time keeps nanoseconds)."""
+    if hour is None or minute is None or second is None:
+        raise _incomplete("The time", "the box of the hour, the minutes or the seconds is empty")
+    if int(hour) != hour or int(minute) != minute:
+        raise FilterValueError("The hour and the minutes must be whole numbers", "write a whole number, for example 10 and 30")
+    if not 0 <= hour <= 23 or not 0 <= minute <= 59 or not 0 <= second < 60:
+        raise FilterValueError(f"{hour}:{minute}:{second} is not a time of day (the hour is 0 to 23, the minutes 0 to 59, the seconds 0 up to 60)",
+                               "write a time of day, for example 10 : 30 : 0")
+    whole, _dot, fraction = _plain_number(second).partition(".")
+    return f"{int(hour):02d}:{int(minute):02d}:{whole.zfill(2)}" + (f".{fraction}" if fraction else "")
+
+
+def compose_datetime(date, hour, minute, second) -> str:
+    """The text of a date picker and the three boxes of a time: year-month-day hour:minute:second (read in the time zone of the column)."""
+    if date is None:
+        raise _incomplete("The date and time", "no date is chosen")
+    return f"{date.isoformat()} {compose_time(hour, minute, second)}"
+
+
+def compose_duration(number, unit) -> str:
+    """The text of the number box and the unit of a duration: "90 min"."""
+    if number is None:
+        raise _incomplete("The duration", "the number box is empty")
+    if unit not in UNIT_NS:
+        raise FilterValueError(f"The unit {unit!r} is not a unit of time", f"choose one of {', '.join(UNIT_NS)}")
+    return f"{_plain_number(number)} {unit}"
+
+
+def _order_key(kind: str, value):
+    """What puts two bounds of `between` in order: texts of one layout compare as written, a duration by its length."""
+    if kind == "duration":
+        return duration_ns(value)
+    return value
+
+
+def readable_duration(count_ns: int) -> tuple:
+    """A duration in nanoseconds as (number, unit): the largest unit that holds it exactly (5400 s is 90 min, 0 is 0 s)."""
+    if count_ns == 0:
+        return 0, "s"
+    for unit in ("w", "d", "h", "min", "s", "ms", "us", "ns"):
+        if count_ns % UNIT_NS[unit] == 0:
+            return count_ns // UNIT_NS[unit], unit
+    return count_ns, "ns"
+
+
+_OFFSET = re.compile(r"(Z|[+-]\d{2}:?\d{2})$")
+
+
+def _time_parts(text: str) -> dict:
+    """{"h", "min", "s"} of "hh:mm:ss[.fraction]"; the seconds are a float that is exact to the nine digits of a Time."""
+    hour, minute, rest = text.split(":")
+    return {"h": int(hour), "min": int(minute), "s": int(rest) if "." not in rest else float(rest)}
+
+
+def column_bounds(lf, column: str, dtype):
+    """The smallest and the largest value of the whole column as the values of the boxes ((low, high) of dicts), or None with no value.
+
+    A date: {"date"}. A date and time: {"date", "h", "min", "s"} in the wall clock of the column's time zone. A time of day:
+    {"h", "min", "s"}. A duration: {"number", "unit"}. Exact (nothing is cut), so that "between lowest and highest" keeps every row.
+    """
+    kind = kind_of(dtype)
+    if kind not in ("date", "datetime", "time", "duration"):
+        return None
+    expr = pl.col(column)
+    if kind == "date":
+        lo, hi = lf.select(expr.min().alias("lo"), expr.max().alias("hi")).collect().row(0)
+        return None if lo is None else ({"date": lo}, {"date": hi})
+    if kind == "datetime":
+        lo, hi = lf.select(expr.min().cast(pl.String).alias("lo"), expr.max().cast(pl.String).alias("hi")).collect().row(0)
+        if lo is None:
+            return None
+        def parts(text):
+            text = _OFFSET.sub("", text)
+            return {"date": datetime.date.fromisoformat(text[:10]), **_time_parts(text[11:])}
+        return parts(lo), parts(hi)
+    lo, hi = lf.select(expr.min().cast(pl.Int64).alias("lo"), expr.max().cast(pl.Int64).alias("hi")).collect().row(0)
+    if lo is None:
+        return None
+    if kind == "time":
+        def parts(ns):
+            seconds, fraction = divmod(ns, 10**9)
+            minutes, second = divmod(seconds, 60)
+            hour, minute = divmod(minutes, 60)
+            return {"h": hour, "min": minute, "s": second if not fraction else float(Decimal(second) + Decimal(fraction) / 10**9)}
+        return parts(lo), parts(hi)
+    per = UNIT_NS[unit_and_zone(dtype)[0]]
+    def parts(count):
+        number, unit = readable_duration(count * per)
+        return {"number": number, "unit": unit}
+    return parts(lo), parts(hi)
+
+
+def control_hint(dtype) -> str:
+    """One line under the controls of a date and time or a duration, saying how what is typed is read (nothing is silent)."""
+    kind = kind_of(dtype)
+    if kind == "datetime":
+        unit, zone = unit_and_zone(dtype)
+        where = f"in the time zone of the column ({zone})" if zone else "as written: the column has no time zone"
+        return f"The date and time are read {where}; the column keeps {unit}, a finer value is refused."
+    if kind == "duration":
+        unit, _zone = unit_and_zone(dtype)
+        return f"The column keeps durations in {unit}; a finer value is refused, not cut."
+    if kind == "time":
+        return "The time is read as hour, minute and second (up to nine digits after the second)."
+    return ""
+
+
+def dialog_value(lf, column: str, dtype, discrete_axis: bool, op: str, *, picked=(), operand=None, low=None, high=None,
                  closed: str = "both", text: str = ""):
     """What "+ Add" writes into the filter row: (operator, real value, ends), or None when nothing is chosen yet.
 
     The value has the type of the column (ADR-104 point 7): values picked from a list are looked up in the map of the whole
-    column, a number of a number box is typed from the dtype, the two bounds of `between` are typed and put in order. eq or ne
-    on a list means in or not_in. Without a table (`dtype` None) the text is kept as written. Raises FilterValueError when a
-    value cannot be read in the type of the column.
+    column; what a control gave (`operand`, or `low` and `high` for `between`, put in order) is typed from the dtype: a number,
+    true or false, a date as year-month-day text, a date and time, a time or a duration as exact text (`compose_time`,
+    `compose_datetime`, `compose_duration` build that text from the boxes). eq or ne on a list means in or not_in. Without a
+    table (`dtype` None) the text is kept as written. Raises FilterValueError when a value cannot be read in the type of the
+    column, or when a control of a date, true/false, time or duration is empty (never a silent no-op there).
     """
     if dtype is not None and not ops_for_column(dtype, discrete_axis):
         raise FilterValueError(not_offered_line(column, dtype), "filter another column")
     widget = value_widget_for(dtype, discrete_axis, op) if dtype is not None else "text"
-    if widget == "range":
+    kind = kind_of(dtype)
+    ends = closed if closed in CLOSED_CHOICES else "both"
+    if widget == "range" or widget.endswith("_range"):
+        if kind not in ("int", "float") and (low is None or high is None):
+            raise FilterValueError(f"No {type_words(dtype)[:-1]} is chosen in one of the two boxes of between, so no filter is added",
+                                   "choose both ends")
         if low is None or high is None:
             return None
-        low, high = typed_number(low, dtype), typed_number(high, dtype)
-        return op, ([high, low] if low > high else [low, high]), (closed if closed in CLOSED_CHOICES else "both")
+        low, high = typed_operand(low, dtype), typed_operand(high, dtype)
+        swap = _order_key(kind, low) > _order_key(kind, high)
+        return op, ([high, low] if swap else [low, high]), ends
     if widget == "list":
         labels = list(picked or ())
         if not labels:
             return None
         return {"eq": "in", "ne": "not_in"}.get(op, op), pick_values(value_choices(lf, column), labels), "both"
-    if widget == "number":
-        return (op, typed_number(number, dtype), "both") if number is not None else None
+    if widget in ("number", "bool", "date", "datetime", "time", "duration"):
+        if operand is None:
+            if widget == "number":
+                return None
+            raise FilterValueError(f"No value is chosen for {type_words(dtype)}, so no filter is added", "choose it in the box")
+        return op, typed_operand(operand, dtype), "both"
     text = (text or "").strip()
     return (op, text, "both") if text else None
 

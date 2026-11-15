@@ -24,6 +24,7 @@ If deleted: the table, the plot and the action do not filter, and the export can
 # @end_deps
 import datetime
 import re
+from decimal import Decimal
 from typing import Any
 
 import polars as pl
@@ -47,7 +48,41 @@ def _is_datetime_text(text: str) -> bool:
 _OFFSET = re.compile(r"(Z|[+-]\d{2}:?\d{2})$")
 _DATETIME_FIX = "write the date and time as year-month-day hour:minute:second, for example 2020-01-31 10:30:00"
 _WORDS = {"int": "whole numbers", "float": "decimal numbers", "bool": "true or false", "date": "dates", "datetime": "dates and times",
-          "text": "text", "category": "categories"}
+          "time": "times of day", "duration": "durations", "text": "text", "category": "categories"}
+
+# A time of day as text: hour:minute, optional seconds with up to nine digits (a Polars Time keeps nanoseconds).
+_TIME_TEXT = re.compile(r"^(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,9}))?)?$")
+_TIME_FIX = "write the time as hour:minute:second, for example 10:30:00 (up to nine digits after the second)"
+# A duration as text: a number and a unit, for example "90 min" or "1.5 h" (a Polars Duration keeps one unit: ns, us or ms).
+_DURATION_TEXT = re.compile(r"^\s*(-?\d+(?:\.\d+)?)\s*(ns|us|ms|s|min|h|d|w)\s*$")
+UNIT_NS = {"ns": 1, "us": 10**3, "ms": 10**6, "s": 10**9, "min": 60 * 10**9, "h": 3600 * 10**9, "d": 86400 * 10**9, "w": 7 * 86400 * 10**9}
+_DURATION_FIX = "write the duration as a number and a unit (ns, us, ms, s, min, h, d or w), for example 90 min or 1.5 h"
+
+
+def _time_ns(text: str) -> int | None:
+    """Nanoseconds since midnight of a time written as text, or None when it is not a real time (an hour 25 is not)."""
+    m = _TIME_TEXT.match(text.strip())
+    if not m:
+        return None
+    hour, minute, second = int(m.group(1)), int(m.group(2)), int(m.group(3) or 0)
+    if hour > 23 or minute > 59 or second > 59:
+        return None
+    fraction = int((m.group(4) or "").ljust(9, "0")) if m.group(4) else 0
+    return ((hour * 60 + minute) * 60 + second) * 10**9 + fraction
+
+
+def duration_ns(text: str) -> Decimal | None:
+    """The nanoseconds of a duration written as text (exact, a Decimal), or None when it is not a number and a unit."""
+    m = _DURATION_TEXT.match(text)
+    return Decimal(m.group(1)) * UNIT_NS[m.group(2)] if m else None
+
+
+def _duration_text(value: Any) -> str:
+    """A duration as the text the panel stores: "<number> <unit>"; a timedelta is written in microseconds."""
+    if isinstance(value, datetime.timedelta):
+        return f"{(value.days * 86400 + value.seconds) * 10**6 + value.microseconds} us"
+    m = _DURATION_TEXT.match(str(value))
+    return f"{m.group(1)} {m.group(2)}" if m else str(value)
 
 
 class FilterValueError(ValueError):
@@ -55,16 +90,17 @@ class FilterValueError(ValueError):
 
     def __init__(self, problem: str, fix: str = "") -> None:
         self.problem, self.fix = problem, fix
-        super().__init__(f"{problem}. Fix: {fix}" if fix else problem)
+        super().__init__(f"{problem}. Suggestion: {fix}" if fix else problem)
 
 
 def kind_of(dtype: Any) -> str:
     """The family of a dtype (a Polars dtype or its name): int, float, bool, date, datetime, text, category (Categorical, Enum),
-    or other (Time, Duration, unknown)."""
+    time, duration, or other (unknown, binary, lists, ...)."""
     s = str(dtype) if dtype is not None else ""
-    if "Int" in s:
+    # startswith, not "in": a List(Int64) or an Array(Float64, 3) column is not a number column
+    if s.startswith(("Int", "UInt")):
         return "int"
-    if "Float" in s or "Decimal" in s:
+    if s.startswith(("Float", "Decimal")):
         return "float"
     if s == "Boolean":
         return "bool"
@@ -72,6 +108,10 @@ def kind_of(dtype: Any) -> str:
         return "date"
     if s.startswith("Datetime"):
         return "datetime"
+    if s == "Time":
+        return "time"
+    if s.startswith("Duration"):
+        return "duration"
     if s.startswith(("Categorical", "Enum")):
         return "category"
     if s in ("String", "Utf8"):
@@ -95,6 +135,10 @@ def _given(value: Any) -> str:
         return "text"
     if isinstance(value, (datetime.date, datetime.datetime)):
         return "a date"
+    if isinstance(value, datetime.time):
+        return "a time"
+    if isinstance(value, datetime.timedelta):
+        return "a duration"
     return "a list"
 
 
@@ -153,6 +197,16 @@ def read_filter_value(value: Any, dtype: Any) -> Any:
         if isinstance(value, str) and _is_datetime_text(value):
             return value.strip()
         raise _wrong(value, dtype, _DATETIME_FIX)
+    if kind == "time":
+        if isinstance(value, datetime.time):
+            return value.isoformat()
+        if isinstance(value, str) and _time_ns(value) is not None:
+            return value.strip()
+        raise _wrong(value, dtype, _TIME_FIX)
+    if kind == "duration":
+        if isinstance(value, datetime.timedelta) or (isinstance(value, str) and duration_ns(value) is not None):
+            return _duration_text(value)
+        raise _wrong(value, dtype, _DURATION_FIX)
     if kind == "category" and not isinstance(value, str):
         raise _wrong(value, dtype, "write the value as text")
     return value
@@ -177,6 +231,10 @@ def check_filter_value(value: Any, dtype: Any) -> None:
         raise _wrong(value, dtype, "write the date without quotes as year-month-day, for example 2020-01-31")
     if kind == "datetime" and not (isinstance(value, datetime.datetime) or (isinstance(value, str) and _is_datetime_text(value))):
         raise _wrong(value, dtype, _DATETIME_FIX + " (a text keeps every digit, a recipe cannot hold nanoseconds as a date)")
+    if kind == "time" and not (isinstance(value, datetime.time) or (isinstance(value, str) and _time_ns(value) is not None)):
+        raise _wrong(value, dtype, _TIME_FIX + " (in quotes, because a recipe reads 10:30:00 without quotes as a number)")
+    if kind == "duration" and not (isinstance(value, datetime.timedelta) or (isinstance(value, str) and duration_ns(value) is not None)):
+        raise _wrong(value, dtype, _DURATION_FIX + " (in quotes)")
 
 
 def _refuse_operator(op: str, value: Any, dtype: Any) -> None:
@@ -188,9 +246,9 @@ def _refuse_operator(op: str, value: Any, dtype: Any) -> None:
         shown = value[0] if isinstance(value, (list, tuple)) and value else value
         raise FilterValueError(f"The value {shown} cannot be compared with greater than, less than or between: this column holds "
                                f"{type_words(dtype)} ({dtype})", "use equal, not equal, one of or none of")
-    if op == "between" and kind not in ("int", "float", "date", "datetime"):
-        raise FilterValueError(f"between needs a column of numbers or dates, and this column holds {type_words(dtype)} ({dtype})",
-                               "use a column of numbers or dates, or one of the other operators")
+    if op == "between" and kind not in ("int", "float", "date", "datetime", "time", "duration"):
+        raise FilterValueError(f"between needs a column of numbers, dates or times, and this column holds {type_words(dtype)} ({dtype})",
+                               "use a column of numbers, dates or times, or one of the other operators")
 
 
 def check_filter(op: str, value: Any, dtype: Any) -> None:
@@ -215,7 +273,7 @@ def _operand(value: Any, dtype: Any, strict: bool) -> Any:
     return read_filter_value(value, dtype)
 
 
-def _unit_and_zone(dtype: Any) -> tuple:
+def unit_and_zone(dtype: Any) -> tuple:
     """The time unit (ms, us, ns) and time zone of a date and time dtype, read from its name; us and no zone when it says nothing."""
     text = str(dtype)
     unit = re.search(r"time_unit='(\w+)'", text)
@@ -230,7 +288,7 @@ def _datetime_values(values: list, dtype: Any) -> pl.Series:
     the column; an offset on a column with no zone, a value finer than the column's unit and a text that is no date and time are
     refused in plain words (nothing is cut, nothing is read as UTC by chance).
     """
-    unit, zone = _unit_and_zone(dtype)
+    unit, zone = unit_and_zone(dtype)
     parts = []
     for value in values:
         text = value.isoformat() if isinstance(value, datetime.datetime) else str(value).strip()
@@ -251,6 +309,43 @@ def _datetime_values(values: list, dtype: Any) -> pl.Series:
     return pl.concat(parts) if parts else pl.Series([], dtype=pl.Datetime(unit, zone))
 
 
+def _time_values(values: list, dtype: Any) -> pl.Series:
+    """The values as one Series of Time (nanoseconds since midnight, exact), parsed from their text."""
+    counts = []
+    for value in values:
+        text = value.isoformat() if isinstance(value, datetime.time) else str(value)
+        ns = _time_ns(text)
+        if ns is None:
+            raise _wrong(value, dtype, _TIME_FIX)
+        counts.append(ns)
+    return pl.Series(counts, dtype=pl.Int64).cast(pl.Time)
+
+
+def _duration_values(values: list, dtype: Any) -> pl.Series:
+    """The values as one Series of Duration in the unit of the column; a value finer than that unit is refused (nothing is cut)."""
+    unit, _zone = unit_and_zone(dtype)
+    counts = []
+    for value in values:
+        text = _duration_text(value)
+        ns = duration_ns(text)
+        if ns is None:
+            raise _wrong(value, dtype, _DURATION_FIX)
+        count = ns / UNIT_NS[unit]
+        if count != count.to_integral_value():
+            raise FilterValueError(f"The value {text!r} is finer than the unit of this column ({unit}); it would be cut",
+                                   f"write at most the digits of the unit ({unit}), for example a whole number of {unit}")
+        counts.append(int(count))
+    return pl.Series(counts, dtype=pl.Int64).cast(pl.Duration(unit))
+
+
+_AS_SERIES = {"datetime": _datetime_values, "time": _time_values, "duration": _duration_values}
+
+
+def _typed_series(values: list, dtype: Any) -> pl.Series:
+    """The values as one Series of the dtype of the column: date and time, time of day and duration are parsed from their exact text."""
+    return _AS_SERIES[kind_of(dtype)](values, dtype)
+
+
 def filter_condition(column: str, op: str, value: Any, dtype: Any, closed: str = "both", *, strict: bool = False) -> pl.Expr:
     """The Polars condition of one filter row: `column` `op` `value`, the value read (or checked, `strict`) against `dtype`.
 
@@ -267,8 +362,9 @@ def filter_condition(column: str, op: str, value: Any, dtype: Any, closed: str =
     _refuse_operator(op, value, dtype)
     if op == "between":
         operands = [_operand(v, dtype, strict) for v in value]
-        if kind == "datetime":
-            lo, hi = (pl.lit(x) for x in _datetime_values(operands, dtype))
+        if kind in _AS_SERIES:
+            pair = _typed_series(operands, dtype)
+            lo, hi = pl.lit(pair.slice(0, 1)), pl.lit(pair.slice(1, 1))   # a Series, not Python objects: no digit is cut
         else:
             lo, hi = _numbers(operands, kind)
         return col.is_between(lo, hi, closed=closed)
@@ -279,14 +375,14 @@ def filter_condition(column: str, op: str, value: Any, dtype: Any, closed: str =
             expr = col.is_in([str(v) for v in operands])
         elif kind == "category" or dtype is None:
             expr = col.cast(pl.Utf8).is_in([str(v) for v in operands])
-        elif kind == "datetime":
-            expr = col.is_in(_datetime_values(operands, dtype).implode())
+        elif kind in _AS_SERIES:
+            expr = col.is_in(_typed_series(operands, dtype).implode())
         else:
             expr = col.is_in(_numbers(operands, kind))
         return expr if op == "in" else ~expr
     operand = _operand(value, dtype, strict)
-    if kind == "datetime":
-        operand = pl.lit(_datetime_values([operand], dtype))
+    if kind in _AS_SERIES:
+        operand = pl.lit(_typed_series([operand], dtype))
     return {"eq": col == operand, "ne": col != operand, "gt": col > operand, "ge": col >= operand,
             "lt": col < operand, "le": col <= operand}[op]
 

@@ -71,7 +71,7 @@ def action_modif_filter(lf: pl.LazyFrame, spec: Dict[str, Any]) -> pl.LazyFrame:
                                      strict=True)
     except FilterValueError as exc:
         raise TransformationError(f"step modif_filter, column {column!r}: {exc.problem}",
-                                  tip=exc.fix[:1].upper() + exc.fix[1:] + "; the filter does not convert a value") from exc
+                                  tip="Suggestion: " + exc.fix + "; the filter does not convert a value") from exc
     keep = condition.fill_null(False)
     if clean["na"] == "keep":
         keep = keep | pl.col(column).is_null()

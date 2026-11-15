@@ -11,7 +11,8 @@ import pytest
 
 from app.modules.t3_audit_engine import (
     CLOSED_CHOICES, between_prose, closed_phrase, column_type_line, column_types, describe_filter, number_range,
-    ops_for_column, pick_values, typed_number, value_choices, value_widget_for,
+    column_bounds, compose_datetime, compose_duration, compose_time, ops_for_column, pick_values, typed_operand, value_choices,
+    value_widget_for,
 )
 from utils.filter_values import FilterValueError
 
@@ -88,11 +89,11 @@ def test_a_millisecond_column_lists_milliseconds():
     assert list(value_choices(pl.DataFrame({"t": t}).lazy(), "t")) == ["2020-01-01 10:30:00.123"]
 
 
-@pytest.mark.parametrize("dtype", [pl.Time, pl.Duration])
-def test_a_time_or_duration_column_offers_nothing_and_says_so(dtype):
+@pytest.mark.parametrize("dtype", [pl.Binary, pl.List(pl.Int64)])
+def test_a_column_of_another_type_offers_nothing_and_says_so(dtype):
     from app.modules.t3_audit_engine import not_offered_line
     assert ops_for_column(dtype, False) == []
-    assert "not offered" in not_offered_line("t", dtype) and str(dtype) in not_offered_line("t", dtype)
+    assert "No filter is offered" in not_offered_line("t", dtype) and str(dtype) in not_offered_line("t", dtype)
 
 
 def test_a_datetime_with_microseconds_and_a_time_zone_keeps_them():
@@ -142,8 +143,9 @@ def test_a_number_column_that_is_not_a_discrete_axis_offers_the_comparisons():
     assert ops_for_column(pl.Float64, False) == ["eq", "ne", "gt", "ge", "lt", "le", "between"]
 
 
-@pytest.mark.parametrize("dtype", [pl.String, pl.Boolean, pl.Date, pl.Categorical])
-def test_other_columns_offer_the_list_operators(dtype):
+@pytest.mark.parametrize("dtype", [pl.String, pl.Categorical])
+def test_text_and_category_columns_offer_the_list_operators_and_no_greater_or_less(dtype):
+    """Greater and less on text is not offered (Eve, 2026-11-15, D9)."""
     assert ops_for_column(dtype, False) == ops_for_column(dtype, True) == ["in", "not_in", "eq", "ne"]
 
 
@@ -161,22 +163,54 @@ def test_a_number_column_that_is_not_discrete_uses_the_number_box(op, widget):
     assert value_widget_for(pl.Float64, False, op) == widget
 
 
-@pytest.mark.parametrize("dtype", [pl.String, pl.Boolean, pl.Date])
-def test_other_columns_use_the_list(dtype):
+@pytest.mark.parametrize("dtype", [pl.String, pl.Categorical])
+def test_text_columns_use_the_list(dtype):
     assert {value_widget_for(dtype, False, op) for op in ("in", "not_in", "eq", "ne")} == {"list"}
+
+
+# -- the control that fits the type (FILTER-PICKERS-1, Eve 2026-11-15, D9)
+
+ALL = ["in", "not_in", "eq", "ne", "gt", "ge", "lt", "le", "between"]
+COMPARE = ["eq", "ne", "gt", "ge", "lt", "le", "between"]
+
+
+@pytest.mark.parametrize("dtype", [pl.Date, pl.Datetime, pl.Datetime("ns", "UTC")])
+def test_a_date_and_a_date_time_column_offer_the_list_and_every_comparison(dtype):
+    assert ops_for_column(dtype, False) == ops_for_column(dtype, True) == ALL
+
+
+@pytest.mark.parametrize("dtype", [pl.Time, pl.Duration, pl.Duration("ns")])
+def test_a_time_and_a_duration_column_offer_the_comparisons_and_no_list(dtype):
+    assert ops_for_column(dtype, False) == COMPARE
+
+
+def test_a_true_false_column_offers_equal_and_not_equal_only():
+    """In and none-of on one choice of two mean the same as equal and not equal; greater, less and between mean nothing."""
+    assert ops_for_column(pl.Boolean, False) == ops_for_column(pl.Boolean, True) == ["eq", "ne"]
+
+
+@pytest.mark.parametrize("dtype, op, widget", [
+    (pl.Boolean, "eq", "bool"), (pl.Boolean, "ne", "bool"),
+    (pl.Date, "in", "list"), (pl.Date, "not_in", "list"), (pl.Date, "eq", "date"), (pl.Date, "gt", "date"), (pl.Date, "between", "date_range"),
+    (pl.Datetime, "in", "list"), (pl.Datetime, "ne", "datetime"), (pl.Datetime, "le", "datetime"), (pl.Datetime, "between", "datetime_range"),
+    (pl.Time, "eq", "time"), (pl.Time, "ge", "time"), (pl.Time, "between", "time_range"),
+    (pl.Duration, "eq", "duration"), (pl.Duration, "lt", "duration"), (pl.Duration, "between", "duration_range"),
+])
+def test_the_widget_follows_the_type_and_the_operator(dtype, op, widget):
+    assert value_widget_for(dtype, False, op) == widget
 
 
 # -- a number from the number box has the type of the column
 
 @pytest.mark.parametrize("raw, dtype, expected", [(1998, pl.Int64, 1998), (1998.0, pl.Int64, 1998), (90.5, pl.Int64, 90.5), (90, pl.Float64, 90.0)])
 def test_a_number_of_the_box_is_typed_from_the_schema(raw, dtype, expected):
-    got = typed_number(raw, dtype)
+    got = typed_operand(raw, dtype)
     assert got == expected and type(got) is type(expected)
 
 
 def test_an_empty_number_box_is_reported():
     with pytest.raises(FilterValueError):
-        typed_number(None, pl.Int64)
+        typed_operand(None, pl.Int64)
 
 
 # -- the four ends of between
@@ -265,18 +299,13 @@ def test_eq_and_ne_on_a_list_become_in_and_not_in():
 
 
 def test_a_comparison_on_a_discrete_year_stores_the_number_of_the_box():
-    op, value, _ = stored("year", "gt", True, number=1999)
+    op, value, _ = stored("year", "gt", True, operand=1999)
     assert (op, value) == ("gt", 1999) and type(value) is int
 
 
 def test_a_number_box_value_has_the_type_of_the_column():
-    assert type(stored("x", "ge", False, number=2)[1]) is float
-    assert type(stored("year", "ge", False, number=2000.0)[1]) is int
-
-
-def test_a_true_false_list_stores_real_booleans():
-    op, value, _ = stored("b", "in", False, picked=["True"])
-    assert value == [True] and type(value[0]) is bool
+    assert type(stored("x", "ge", False, operand=2)[1]) is float
+    assert type(stored("year", "ge", False, operand=2000.0)[1]) is int
 
 
 def test_a_date_list_stores_the_year_month_day_text():
@@ -294,7 +323,7 @@ def test_an_unknown_end_is_both():
 
 def test_nothing_chosen_stores_nothing():
     assert stored("t", "in", False, picked=[]) is None
-    assert stored("year", "gt", False, number=None) is None
+    assert stored("year", "gt", False, operand=None) is None
     assert stored("year", "between", False, low=None, high=2) is None
 
 
@@ -308,8 +337,155 @@ def test_without_a_table_the_text_is_kept_as_written():
     assert dialog_value(None, "c", None, False, "eq", text="  ") is None
 
 
-def test_adding_a_row_on_a_time_column_is_refused_in_plain_words():
-    lf = pl.LazyFrame({"t": [datetime.time(10, 30)]})
+def test_adding_a_row_on_a_column_of_another_type_is_refused_in_plain_words():
+    lf = pl.LazyFrame({"t": [b"x"]})
     with pytest.raises(FilterValueError) as exc:
-        dialog_value(lf, "t", column_types(lf)["t"], False, "in", picked=["10:30:00"])
-    assert "not offered" in str(exc.value)
+        dialog_value(lf, "t", column_types(lf)["t"], False, "in", picked=["x"])
+    assert "No filter is offered" in str(exc.value) and "Suggestion:" in str(exc.value)
+
+
+
+# -- the value a picker stores (FILTER-PICKERS-1)
+
+T = datetime.time
+
+
+def _typed_lf():
+    return pl.LazyFrame({
+        "b": [True, False, None], "d": [D(2020, 1, 1), D(2020, 1, 2), D(2020, 1, 3)],
+        "dt": pl.Series([datetime.datetime(2020, 1, 1, 9), datetime.datetime(2020, 1, 2, 10, 30), None], dtype=pl.Datetime("us")),
+        "t": pl.Series([T(9, 0), T(10, 30), None], dtype=pl.Time),
+        "u": pl.Series([60, 5400, None], dtype=pl.Int64).cast(pl.Duration("us")) * 10**6,
+    })
+
+
+def stored2(column, op, **widgets):
+    lf = _typed_lf()
+    return dialog_value(lf, column, column_types(lf)[column], False, op, **widgets)
+
+
+@pytest.mark.parametrize("raw, expected", [("true", True), ("false", False), (True, True), (False, False)])
+@pytest.mark.parametrize("op", ["eq", "ne"])
+def test_the_true_false_control_stores_a_real_boolean_even_false(op, raw, expected):
+    got = stored2("b", op, operand=raw)
+    assert got == (op, expected, "both") and type(got[1]) is bool
+
+
+def test_a_date_picker_stores_the_year_month_day_text_for_each_comparison():
+    for op in ("eq", "ne", "gt", "ge", "lt", "le"):
+        assert stored2("d", op, operand=D(2020, 1, 2)) == (op, "2020-01-02", "both")
+
+
+def test_two_date_pickers_store_the_dates_in_order_and_the_ends():
+    assert stored2("d", "between", low=D(2020, 1, 3), high=D(2020, 1, 1), closed="none") == ("between", ["2020-01-01", "2020-01-03"], "none")
+
+
+def test_a_date_list_still_stores_the_text_of_the_dates_picked():
+    assert stored2("d", "not_in", picked=["2020-01-02"]) == ("not_in", ["2020-01-02"], "both")
+
+
+def test_a_cleared_date_picker_says_so_it_is_not_silent():
+    with pytest.raises(FilterValueError) as exc:
+        stored2("d", "gt", operand=None)
+    assert "date" in exc.value.problem and "Suggestion:" in str(exc.value)
+
+
+def test_a_time_stores_the_text_of_the_three_boxes_exact():
+    assert stored2("t", "gt", operand=compose_time(10, 30, 0)) == ("gt", "10:30:00", "both")
+    assert stored2("t", "eq", operand=compose_time(0, 0, 0.5)) == ("eq", "00:00:00.5", "both")
+    assert stored2("t", "eq", operand=compose_time(23, 59, 59.123456789)) == ("eq", "23:59:59.123456789", "both")
+
+
+def test_two_time_boxes_are_put_in_order():
+    assert stored2("t", "between", low=compose_time(11, 0, 0), high=compose_time(9, 0, 0)) == ("between", ["09:00:00", "11:00:00"], "both")
+
+
+@pytest.mark.parametrize("parts", [(None, 0, 0), (1, None, 0), (1, 0, None), (1.5, 0, 0), (25, 0, 0), (1, 60, 0), (1, 0, 60), (1, 0, -1)])
+def test_a_time_that_is_empty_or_not_a_time_is_a_plain_error_not_a_filter(parts):
+    with pytest.raises(FilterValueError) as exc:
+        stored2("t", "eq", operand=compose_time(*parts))
+    assert "Suggestion:" in str(exc.value)
+
+
+def test_a_date_time_is_the_date_and_the_three_boxes():
+    assert compose_datetime(D(2020, 1, 2), 10, 30, 0) == "2020-01-02 10:30:00"
+    assert stored2("dt", "ge", operand=compose_datetime(D(2020, 1, 2), 10, 30, 0)) == ("ge", "2020-01-02 10:30:00", "both")
+    got = stored2("dt", "between", low=compose_datetime(D(2020, 1, 3), 0, 0, 0), high=compose_datetime(D(2020, 1, 1), 0, 0, 0))
+    assert got == ("between", ["2020-01-01 00:00:00", "2020-01-03 00:00:00"], "both")
+
+
+def test_a_date_time_with_no_date_is_a_plain_error():
+    with pytest.raises(FilterValueError) as exc:
+        compose_datetime(None, 10, 30, 0)
+    assert "date" in exc.value.problem and "Suggestion:" in str(exc.value)
+
+
+def test_a_date_time_list_still_stores_the_exact_text():
+    lf = _typed_lf()
+    label = next(iter(value_choices(lf, "dt")))
+    op, value, _ = dialog_value(lf, "dt", column_types(lf)["dt"], False, "in", picked=[label])
+    assert (op, value) == ("in", [label])
+
+
+def test_a_duration_is_a_number_and_a_unit():
+    assert compose_duration(90, "min") == "90 min"
+    assert compose_duration(90.0, "min") == "90 min"
+    assert compose_duration(1.5, "h") == "1.5 h"
+    assert stored2("u", "gt", operand=compose_duration(1.5, "h")) == ("gt", "1.5 h", "both")
+
+
+def test_two_durations_are_put_in_order_whatever_their_units():
+    got = stored2("u", "between", low=compose_duration(2, "h"), high=compose_duration(30, "min"))
+    assert got == ("between", ["30 min", "2 h"], "both")
+
+
+@pytest.mark.parametrize("number, unit", [(None, "min"), (5, None), (5, "years"), (5, "")])
+def test_a_duration_with_no_number_or_no_known_unit_is_a_plain_error(number, unit):
+    with pytest.raises(FilterValueError) as exc:
+        stored2("u", "eq", operand=compose_duration(number, unit))
+    assert "Suggestion:" in str(exc.value)
+
+
+def test_the_dialog_values_of_the_new_types_have_the_type_of_the_column_in_the_stored_row():
+    """The row the dialog stages passes the check the app makes on an audit step (a value of False or 0 is a value)."""
+    from app.modules.renamed_keys import audit_step_defect
+    for column, op, widgets in (("b", "eq", {"operand": "false"}), ("d", "gt", {"operand": D(2020, 1, 1)}),
+                                ("t", "lt", {"operand": compose_time(0, 0, 0)}), ("u", "ge", {"operand": compose_duration(0, "s")})):
+        o, v, _ = stored2(column, op, **widgets)
+        step = {"node_type": "filter_row", "params": {"column": column, "op": o, "value": v, "na": "remove"}}
+        assert audit_step_defect(step) is None, (column, v)
+
+
+# -- the defaults of the boxes come from the whole column, exact
+
+def test_the_bounds_of_the_column_fill_the_boxes_exact():
+    lf = pl.LazyFrame({
+        "d": [D(2020, 1, 3), D(2020, 1, 1)],
+        "dt": pl.Series([datetime.datetime(2020, 1, 2, 10, 30, 0, 250000), datetime.datetime(2020, 1, 1, 9)], dtype=pl.Datetime("us")).dt.replace_time_zone("Europe/Paris"),
+        "t": pl.Series([36000 * 10**9 + 123456789, 3600 * 10**9], dtype=pl.Int64).cast(pl.Time),
+        "u": pl.Series([5400, 7200], dtype=pl.Int64).cast(pl.Duration("us")) * 10**6,
+    })
+    types = column_types(lf)
+    lo, hi = column_bounds(lf, "d", types["d"])
+    assert (lo, hi) == ({"date": D(2020, 1, 1)}, {"date": D(2020, 1, 3)})
+    lo, hi = column_bounds(lf, "dt", types["dt"])
+    assert lo == {"date": D(2020, 1, 1), "h": 9, "min": 0, "s": 0} and hi == {"date": D(2020, 1, 2), "h": 10, "min": 30, "s": 0.25}
+    lo, hi = column_bounds(lf, "t", types["t"])
+    assert lo == {"h": 1, "min": 0, "s": 0} and hi == {"h": 10, "min": 0, "s": 0.123456789}
+    lo, hi = column_bounds(lf, "u", types["u"])
+    assert lo == {"number": 90, "unit": "min"} and hi == {"number": 2, "unit": "h"}
+
+
+def test_the_bounds_of_a_column_with_no_value_are_none():
+    assert column_bounds(pl.LazyFrame({"d": [None, None]}, schema={"d": pl.Date}), "d", pl.Date) is None
+
+
+def test_the_default_boxes_reproduce_the_extremes_so_a_between_on_them_keeps_every_row():
+    """A default that cut a digit would drop the largest row from `between lowest and highest` (silent)."""
+    from app.modules.t3_audit_engine import _apply_filter_rows
+    t = pl.Series([36000 * 10**9 + 123456789, 3600 * 10**9 + 7], dtype=pl.Int64).cast(pl.Time)
+    lf = pl.LazyFrame({"s": ["a", "b"], "t": t})
+    lo, hi = column_bounds(lf, "t", column_types(lf)["t"])
+    got = dialog_value(lf, "t", pl.Time, False, "between", low=compose_time(lo["h"], lo["min"], lo["s"]), high=compose_time(hi["h"], hi["min"], hi["s"]))
+    row = {"column": "t", "op": got[0], "value": got[1], "dtype": "Time", "na": "remove", "closed": got[2]}
+    assert _apply_filter_rows(lf, [row]).collect()["s"].to_list() == ["a", "b"]
