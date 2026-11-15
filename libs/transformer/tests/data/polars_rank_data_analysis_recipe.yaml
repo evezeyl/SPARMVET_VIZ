@@ -1,0 +1,32 @@
+# Format 1 recipe of the 1:1:1 pair for polars_rank; data: polars_rank_test.tsv.
+id: polars_rank
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
+info:
+  label: Test pair of polars_rank
+  description: One recipe and one data file for the action polars_rank (1:1:1 law,
+    rules_data_engine.md section 2). Every key is written; nothing is a default.
+source:
+  type: local_tsv
+  path: libs/transformer/tests/data/polars_rank_test.tsv
+null_values: ['']
+strip: false
+input_fields:
+  id:
+    type: String
+    label: id
+  x:
+    type: Float64
+    label: x
+  n:
+    type: Int64
+    label: n
+wrangling:
+  tier1:
+  - action: polars_rank
+    columns: [x]
+    method: min
+    descending: false
+    target_column: x_rank
+  tier2: []

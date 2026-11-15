@@ -3,17 +3,20 @@ from plotnine import ggplot, aes
 from typing import Dict, Any, List
 # Explicit imports to ensure registration occurs
 from viz_factory.registry import get_component
-from viz_factory.plot_config_resolver import resolve_plot_config
+from viz_factory.plot_config_resolver import BATCHED_COMPONENTS, SEEDED_JITTER_COMPONENTS, resolve_plot_config
+from utils.engines import engine_problem
 from utils.errors import VisualizationError
 from utils.filter_values import coerce_filter_value
+from utils.missing_values import keep_missing
+from utils.na_choice import na_of
 from utils.pipeline_error import PipelineError
 import difflib
 
 # @deps
 # provides: class:VizFactory, function:VizFactory.render, constant:DEFAULT_RANDOM_STATE
-# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py
+# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/engines.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/gallery_examples.py, app/tests/test_render_every_plot.py, libs/viz_factory/tests/
-# doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-081, ADR-090, ADR-094)
+# doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-081, ADR-090, ADR-094, ADR-106)
 # @end_deps
 
 # Default seed of every random plot component (jitter). With a fixed default the same data and the
@@ -57,10 +60,36 @@ def _seed_random_components(layer_name: str, params: dict, random_state) -> dict
         params["position"] = position_jitter(random_state=_generator(params.pop("random_state", random_state)))
     elif position == "jitterdodge":
         params["position"] = position_jitterdodge(random_state=_generator(params.pop("random_state", random_state)))
-    elif (layer_name == "geom_jitter" and "position" not in params) or \
-            layer_name in ("position_jitter", "position_jitterdodge"):
+    elif layer_name in SEEDED_JITTER_COMPONENTS and not (layer_name == "geom_jitter" and "position" in params):
         params["random_state"] = _generator(params.get("random_state", random_state))
     return params
+
+
+def _refuse_plot_engine_not_built(data_analysis_recipe: Dict[str, Any], plot_id: str) -> None:
+    """Raise when the recipe names a plot engine this library does not implement (ADR-106 V8).
+
+    No `plot_engine` key (library use outside a recipe, tests) means the implemented engine. The names are in
+    `utils.engines`, the same list the recipe checker uses (code T06).
+    """
+    if "plot_engine" not in data_analysis_recipe:
+        return
+    problem = engine_problem("plot_engine", data_analysis_recipe["plot_engine"])
+    if problem is None:
+        return
+    what, fix = problem
+    pe = PipelineError(
+        component="VizFactory",
+        problem=f"Plot '{plot_id}' cannot be drawn: {what}.",
+        location=f"VizFactory.render(plot_id='{plot_id}'), recipe key plot_engine",
+        fix=f"In the data analysis recipe, {fix}.",
+        who="data_analysis_recipe_author",
+        category="visualization",
+        surface="plot_overlay",
+        severity="error",
+        evidence={"plot_id": plot_id, "plot_engine": data_analysis_recipe["plot_engine"]},
+    )
+    print(pe.format())
+    raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
 
 class VizFactory:
@@ -129,6 +158,8 @@ class VizFactory:
             Seed for the jitter layers whose recipe writes no number (SEED-HOLDS-1); a number written in the
             recipe holds, an audit pin in `aesthetic_override["random_state"]` beats both.
         """
+        _refuse_plot_engine_not_built(data_analysis_recipe, plot_id)
+
         # Ensure LazyFrame for consistent ADR-010 handling
         if isinstance(df, pl.DataFrame):
             df = df.lazy()
@@ -175,6 +206,7 @@ class VizFactory:
                 col = f.get("column")
                 op = f.get("op", "eq")
                 val = f.get("value")
+                na = na_of(f)  # NA-RULE-63: "keep" adds the rows with no value; a row without `na` removes them
                 if col is None:
                     continue
                 # Issue #56: a filter on a column this plot's data does not have is skipped, not an error.
@@ -198,14 +230,14 @@ class VizFactory:
                         lo = coerce_filter_value(lo, actual_dt)
                         hi = coerce_filter_value(hi, actual_dt)
                     bt_closed = f.get("closed", "both")
-                    df = df.filter(pl.col(col).is_between(lo, hi, closed=bt_closed))
+                    df = df.filter(keep_missing(pl.col(col).is_between(lo, hi, closed=bt_closed), col, na))
                     continue
 
                 if op in ("in", "not_in"):
                     vals = val if is_list_val else [val]
                     str_vals = [str(v) for v in vals]
                     expr = pl.col(col).cast(pl.Utf8).is_in(str_vals)
-                    df = df.filter(expr if op == "in" else ~expr)
+                    df = df.filter(keep_missing(expr if op == "in" else ~expr, col, na))
                     continue
 
                 # String operand on a numeric column — coerce before compare.
@@ -218,17 +250,17 @@ class VizFactory:
                     val = coerce_filter_value(val, actual_dt)
 
                 if op == "eq":
-                    df = df.filter(pl.col(col) == val)
+                    df = df.filter(keep_missing(pl.col(col) == val, col, na))
                 elif op == "ne":
-                    df = df.filter(pl.col(col) != val)
+                    df = df.filter(keep_missing(pl.col(col) != val, col, na))
                 elif op == "gt":
-                    df = df.filter(pl.col(col) > val)
+                    df = df.filter(keep_missing(pl.col(col) > val, col, na))
                 elif op == "ge":
-                    df = df.filter(pl.col(col) >= val)
+                    df = df.filter(keep_missing(pl.col(col) >= val, col, na))
                 elif op == "lt":
-                    df = df.filter(pl.col(col) < val)
+                    df = df.filter(keep_missing(pl.col(col) < val, col, na))
                 elif op == "le":
-                    df = df.filter(pl.col(col) <= val)
+                    df = df.filter(keep_missing(pl.col(col) <= val, col, na))
 
         # 2. Single materialisation point — after all Polars filters (ADR-010).
         df_pandas = df.collect().to_pandas()
@@ -311,7 +343,7 @@ class VizFactory:
             # Strip internal _tier / _meta keys before passing to components.
             layer_params = {k: v for k, v in layer_spec.get("params", {}).items()}
 
-            if layer_name == "element_text":
+            if layer_name in BATCHED_COMPONENTS:
                 # Collect axis-text overrides; target is the theme kwarg name.
                 target = layer_params.pop("target", None)
                 if target:

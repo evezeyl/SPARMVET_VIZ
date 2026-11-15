@@ -12,7 +12,8 @@ be removed in the commit that fixes it. The expected values are the decided rule
   #63  the NA rule decided by Eve on 2026-11-14 (M65): the engine follows Polars. Every operator removes
        a row with a missing value (null), `!=` and none-of included; NaN is a number larger than every number
        (kept by `!=`, none-of, `>`, `>=`, removed by `<`); `na: keep` of `modif_filter` adds the null rows
-       and never changes what happens to NaN. The count sentences are not built yet (xfail "no count").
+       and never changes what happens to NaN. The count sentences are `utils.missing_values` (NA-RULE-63 part 1); the choice `na` reaches the HOME table and the plot
+       in part 2 (`app/tests/test_na_choice.py`).
 
 DECISION TO TAKE (do not forget): each defect below was verified on 2026-11-13 and must be verified
 again before it is fixed; if an issue is outdated or the rule changed, change or delete its test
@@ -204,8 +205,13 @@ def test_a_column_with_nan_only_is_untouched_by_na():
     assert ids(lf, [{"column": "x", "op": "gt", "value": "1"}]) == ["a", "b"]
 
 
-def test_a_missing_value_is_not_counted_or_reported_today(with_missing):
-    """Pins the gap: the engine returns rows only. The count of rows removed for a missing value
-    ('N rows have no value in this column') is part of P1 and will replace this test."""
-    result = _apply_filter_rows(with_missing, [{"column": "g", "op": "ne", "value": "A"}])
-    assert hasattr(result, "collect") and not hasattr(result, "removed_missing")
+def test_the_rows_a_filter_removes_for_a_missing_value_are_counted_and_reported_on_the_table_it_acts_on(with_missing):
+    """NA-RULE-63 part 2: the dialog counts the null rows of the column on the table the filter acts on, and the
+    count is what the filter then does: `!=` with remove drops exactly that many rows, with keep it drops none."""
+    from utils.missing_values import count_missing, dialog_missing_lines
+    counts = count_missing(with_missing, "g")
+    assert counts.null_rows == 1 and counts.nan_rows == 0
+    assert dialog_missing_lines("g", "ne", "remove", counts)[0] == "1 row has no value in g: it is removed"
+    row = {"column": "g", "op": "ne", "value": "Z"}          # no row equals Z: only the null row can go
+    assert with_missing.collect().height - _apply_filter_rows(with_missing, [{**row, "na": "remove"}]).collect().height == counts.null_rows
+    assert with_missing.collect().height == _apply_filter_rows(with_missing, [{**row, "na": "keep"}]).collect().height

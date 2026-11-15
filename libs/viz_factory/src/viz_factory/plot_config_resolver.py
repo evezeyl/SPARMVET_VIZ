@@ -130,6 +130,14 @@ def _layer_dedup_key(layer: dict) -> tuple | None:
 # _dedupe_layers
 # ---------------------------------------------------------------------------
 
+# Components the factory treats by NAME, outside their own handler: it seeds the jitter ones and batches element_text
+# into one theme() call. The registry field `plotnine` of these is therefore never `exact`
+# (libs/viz_factory/tests/test_component_plotnine_field.py derives it from this set).
+SEEDED_JITTER_COMPONENTS = ("geom_jitter", "position_jitter", "position_jitterdodge")
+BATCHED_COMPONENTS = ("element_text",)
+FACTORY_NAMED_COMPONENTS = frozenset(SEEDED_JITTER_COMPONENTS + BATCHED_COMPONENTS)
+
+
 def _is_jitter_layer(layer: dict) -> bool:
     """True if a layer carries jitter — either a named jitter layer, or any layer with an
     inline `position: jitter`/`jitterdodge` param. Shared by the L5 random_state injection
@@ -137,7 +145,7 @@ def _is_jitter_layer(layer: dict) -> bool:
     for this plot is even meaningful before resolving the full config."""
     lparams = layer.get("params") or {}
     return (
-        layer.get("name") in ("geom_jitter", "position_jitter", "position_jitterdodge")
+        layer.get("name") in SEEDED_JITTER_COMPONENTS
         or lparams.get("position") in ("jitter", "jitterdodge")
     )
 

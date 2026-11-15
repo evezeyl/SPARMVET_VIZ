@@ -27,6 +27,7 @@ from __future__ import annotations
 
 from shiny import reactive, render, ui
 
+from utils.na_choice import na_of, no_value_text
 from utils.pipeline_error import PipelineError
 from app.modules.cache_keys import tier2_steps
 from app.modules.session_manager import (
@@ -74,6 +75,14 @@ def _format_value(val) -> str:
 
 
 def _params_summary(node: dict) -> str:
+    text = _condition_summary(node)
+    if node.get("node_type") in ("filter_row", "exclusion_row"):
+        # NA-RULE-63: a step without `na` (made before the choice) always removed the rows with no value
+        text += " · " + no_value_text(na_of(node.get("params")))
+    return text
+
+
+def _condition_summary(node: dict) -> str:
     p = node.get("params", {})
     nt = node.get("node_type", "")
     if nt == "filter_row":

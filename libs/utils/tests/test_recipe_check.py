@@ -387,3 +387,29 @@ def test_a_missing_companion_file_is_gp05(tmp_path):
 def test_an_unknown_profile_is_a_programming_error():
     with pytest.raises(ValueError):
         check_recipe(valid(), "other")
+
+
+# -- what a plot component is to plotnine, shown with a wrong argument (ADR-106 V1) ----------------
+
+KINDS = {"geom_col": "exact", "geom_point": "modified", "theme_bw": "own"}
+
+
+def _wrong_argument_message(component, kinds):
+    def put_wrong_argument(r):
+        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(name=component, params={"colr_": 1})
+    catalogs = {**CATALOGS, "component_arguments": {**CATALOGS["component_arguments"], component: {"fill"}}}
+    if kinds is not None:
+        catalogs["component_kinds"] = kinds
+    result = check(mutated(put_wrong_argument), catalogs=catalogs, file_stem="r")
+    return next(p.message for p in result.problems if p.code == "PS04" and "colr_" in p.message)
+
+
+def test_a_wrong_argument_says_what_the_component_is_to_plotnine():
+    assert "exactly plotnine's geom_col" in _wrong_argument_message("geom_col", KINDS)
+    assert "changes plotnine's geom_point" in _wrong_argument_message("geom_point", KINDS)
+    assert "is not in plotnine" in _wrong_argument_message("theme_bw", KINDS)
+
+
+def test_without_the_kinds_the_message_is_as_before():
+    message = _wrong_argument_message("geom_col", None)
+    assert message == "colr_ is not an argument of geom_col"

@@ -1,7 +1,7 @@
 # @deps
 # provides: DataAnalysisRecipeBootstrapper class (bootstrap, id_cleaning_steps) — infers TSV schemas
 #           and writes data analysis recipe YAML fragments (analysis_groups, joins, tiered wrangling)
-# consumes: polars, pathlib, typing, yaml, re (stdlib/third-party)
+# consumes: polars, pathlib, typing, yaml, re (stdlib/third-party), libs/utils/src/utils/engines.py
 # consumed_by: libs/test_lab/tests/test_bootstrapper.py
 # @end_deps
 import polars as pl
@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 import yaml
 import re
+
+from utils.engines import DATA_ENGINE, PLOT_ENGINE
 
 
 class IncludeRef:
@@ -164,8 +166,8 @@ class DataAnalysisRecipeBootstrapper:
         master_data_analysis_recipe: Dict[str, Any] = {
             "id": data_analysis_recipe_id,
             "spec_version": 1,
-            "data_engine": "python-polars",
-            "plot_engine": "python-plotnine",
+            "data_engine": DATA_ENGINE,
+            "plot_engine": PLOT_ENGINE,
             "info": {
                 "label": data_analysis_recipe_id.replace('_', ' ').title(),
                 "version": "1.0",

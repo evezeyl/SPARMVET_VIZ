@@ -280,3 +280,24 @@ class TestCombinedCatalog:
         combined = get_combined_catalog()
         assert combined["actions"] == get_action_catalog()
         assert combined["components"] == get_component_catalog()
+
+
+# -- what a plot component is to plotnine (ADR-106 V1) -----------------------------------------------
+
+def test_component_origin_says_what_a_component_is_to_plotnine():
+    from blueprint_arch.schema_registry import component_origin
+    assert component_origin("geom_point") == "Exactly plotnine's geom_point: its arguments are plotnine's."
+    assert component_origin("theme_bw").startswith("Changes plotnine's theme_bw")
+    assert component_origin("theme_dashboard").startswith("Not in plotnine")
+    assert component_origin("no_such_component") == ""
+
+
+def test_every_component_of_the_catalog_has_an_origin_line():
+    from blueprint_arch.schema_registry import component_origin
+    assert [n for n in get_component_catalog() if not component_origin(n)] == []
+
+
+def test_the_agent_tool_lists_what_a_component_is_to_plotnine():
+    from blueprint_arch.agent_tools import _tool_get_available_components
+    components = _tool_get_available_components({})["data"]["components"]
+    assert {c["plotnine"] for c in components} == {"exact", "modified", "own"}

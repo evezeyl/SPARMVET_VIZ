@@ -30,7 +30,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui
-# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes), app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/knowledge/architecture_decisions.md#ADR-097, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
@@ -51,7 +51,8 @@ from app.modules.plot_seeds import (
     SessionSeedDraws, home_plot_seeds, reference_render_args, remember_drawn_seed, render_seed_args,
 )
 
-from app.modules.t3_audit_engine import _apply_filter_rows
+from app.modules.t3_audit_engine import _apply_filter_rows, filter_rows_from_nodes
+from utils.na_choice import na_of, no_value_text
 from app.modules.sidebar_registry import is_panel_active
 from app.handlers.session_handlers import define_session_server
 from app.handlers.export_handlers import define_export_server
@@ -366,23 +367,7 @@ def define_server(input, output, session, *,
         a `not_in` filter once committed). The audit-trail distinction
         between the two node types is purely documentary — see ADR-049.
         """
-        rows: list[dict] = []
-        for n in _active_plot_t3_nodes(plot_id):
-            if not n.get("active", True):
-                continue
-            nt = n.get("node_type")
-            if nt not in ("filter_row", "exclusion_row"):
-                continue
-            p = n.get("params", {})
-            if "column" not in p:
-                continue
-            rows.append({
-                "column": p.get("column"),
-                "op": p.get("op", "eq"),
-                "value": p.get("value"),
-                "dtype": p.get("dtype", "Utf8"),
-            })
-        return rows
+        return filter_rows_from_nodes(_active_plot_t3_nodes(plot_id))
 
     # _apply_filter_rows moved to app/modules/t3_audit_engine.py (Phase 24-A, ADR-051)
     # Imported at module top.
@@ -496,6 +481,8 @@ def define_server(input, output, session, *,
             synthetic_data_analysis_recipe = {
                 "plots": {p_id: plot_spec},
                 "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
+                # ADR-106 V8: the factory refuses an engine it does not implement (checker code T06 refuses it earlier)
+                **({"plot_engine": cfg.raw_config["plot_engine"]} if "plot_engine" in cfg.raw_config else {}),
             }
 
             try:
@@ -600,6 +587,8 @@ def define_server(input, output, session, *,
             synthetic_data_analysis_recipe = {
                 "plots": {p_id: plot_spec},
                 "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
+                # ADR-106 V8: the factory refuses an engine it does not implement (checker code T06 refuses it earlier)
+                **({"plot_engine": cfg.raw_config["plot_engine"]} if "plot_engine" in cfg.raw_config else {}),
             }
             try:
                 lf = _resolve_active_lf(spec, tier="T2")  # reference = T2 (ADR-086)
@@ -2086,7 +2075,7 @@ def define_server(input, output, session, *,
             return ui.div()
 
         _OP = {"eq": "=", "ne": "≠", "gt": ">", "ge": "≥",
-               "lt": "<", "le": "≤", "in": "∈", "not_in": "∉"}
+               "lt": "<", "le": "≤", "in": "∈", "not_in": "∉", "between": "↔"}
 
         def _fmt_val(v) -> str:
             if isinstance(v, (list, tuple)):
@@ -2124,11 +2113,11 @@ def define_server(input, output, session, *,
             val = _fmt_val(f.get("value", ""))
             rows.append(ui.tooltip(
                 ui.div(
-                    ui.span(f"🔍 {col} {op} {val}", style=_MONO),
+                    ui.span(f"🔍 {col} {op} {val} · {no_value_text(na_of(f))}", style=_MONO),
                     ui.span("sidebar", style=_BADGE_SB),
                     style=_ROW,
                 ),
-                f"Source: sidebar | {col} {f.get('op')} {f.get('value')}",
+                f"Source: sidebar | {col} {f.get('op')} {f.get('value')} | {no_value_text(na_of(f))}",
                 placement="left",
             ))
         for n in t3_nodes:
@@ -2142,11 +2131,11 @@ def define_server(input, output, session, *,
             reason = (n.get("reason") or "").strip() or "no reason yet"
             rows.append(ui.tooltip(
                 ui.div(
-                    ui.span(f"{pk_pfx}{icon} {col} {op} {val}", style=_MONO),
+                    ui.span(f"{pk_pfx}{icon} {col} {op} {val} · {no_value_text(na_of(p))}", style=_MONO),
                     ui.span("T3", style=_BADGE_T3),
                     style=_ROW,
                 ),
-                f"T3 audit | Reason: {reason}",
+                f"T3 audit | {no_value_text(na_of(p))} | Reason: {reason}",
                 placement="left",
             ))
 

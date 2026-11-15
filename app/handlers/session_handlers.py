@@ -11,7 +11,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_session_server, output:session_management_ui, output:session_export_active
-# consumes: shiny, pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)
+# consumes: shiny, pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
@@ -19,6 +19,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from shiny import reactive, render, ui
+from app.modules.session_manager import normalise_audit_steps
 from app.src.bootloader import bootloader
 
 
@@ -406,6 +407,9 @@ def define_session_server(input, output, session, *,
                         type="warning", duration=10,
                     )
 
+            # NA-RULE-63: steps made before the choice `na` existed are carried as "remove", what they always
+            # did. After the checksum above, which is over the file as it was written.
+            by_plot = normalise_audit_steps(by_plot)
             new_state = {
                 **state,
                 "t3_audit_steps_by_plot": by_plot,

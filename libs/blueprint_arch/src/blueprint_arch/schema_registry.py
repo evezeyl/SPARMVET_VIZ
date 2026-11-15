@@ -1,5 +1,5 @@
 # @deps
-# provides: function:get_action_catalog, function:get_component_catalog, function:get_combined_catalog, function:get_actions_for_context, function:get_actions_by_category, function:get_components_for_context, function:search_actions, function:search_components, function:register
+# provides: function:component_origin, function:get_action_catalog, function:get_component_catalog, function:get_combined_catalog, function:get_actions_for_context, function:get_actions_by_category, function:get_components_for_context, function:search_actions, function:search_components, function:register
 # consumes: nothing — catalogs injected at startup by app/src/server.py via register()
 # consumed_by: app/handlers/blueprint_handlers.py, app/modules/wrangle_studio.py
 # doc: .claude/knowledge/architecture_decisions.md (ADR-075), .claude/rules/rules_app_structure.md §2
@@ -63,6 +63,20 @@ def get_combined_catalog() -> dict:
         "actions": get_action_catalog(),
         "components": get_component_catalog(),
     }
+
+
+def component_origin(name: str) -> str:
+    """What a plot component is to plotnine, in plain words, for the picker and the help (ADR-106 V1).
+
+    Reads the `plotnine` field of the component's schema (exact, modified, own); the sentence that says what a modified or
+    own component changes is at the end of its description. Empty for a name that is not in the component catalog.
+    """
+    kind = _COMPONENT_SCHEMAS.get(name, {}).get("plotnine")
+    return {
+        "exact": f"Exactly plotnine's {name}: its arguments are plotnine's.",
+        "modified": f"Changes plotnine's {name}: see the last sentence of the description.",
+        "own": "Not in plotnine: see the description for what it does.",
+    }.get(kind, "")
 
 
 def get_actions_for_context(context: str) -> dict:

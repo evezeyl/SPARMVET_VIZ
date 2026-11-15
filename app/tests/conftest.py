@@ -12,10 +12,26 @@ cause T1 materialization timeouts.
 
 from pathlib import Path
 import pytest
+
+from app.tests.subprocess_env import app_env
 from playwright.sync_api import sync_playwright
 from shiny.pytest import create_app_fixture
 
 APP_PATH = Path(__file__).parent.parent / "src" / "main.py"
+
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _app_runs_this_checkouts_sources():
+    """`create_app_fixture` starts the app with the environment of this process: give it this checkout's sources.
+
+    Without it, in a git worktree the editable installs of the shared .venv make the app import the main checkout.
+    """
+    mp = pytest.MonkeyPatch()
+    mp.setenv("PYTHONPATH", app_env()["PYTHONPATH"])
+    yield
+    mp.undo()
+
 
 shiny_app = create_app_fixture(str(APP_PATH), scope="module")
 

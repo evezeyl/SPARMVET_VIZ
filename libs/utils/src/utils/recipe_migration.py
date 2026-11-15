@@ -16,7 +16,7 @@ guess: a type it does not know is reported for a person. Safe to run twice: a ke
 
 # @deps
 # provides: function:migrate_text, function:migrate_steps_text, function:migrate_recipe_file, constant:SANITISER_TEXTS, class:MigrationReport
-# consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/step_migration.py
+# consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/engines.py, libs/utils/src/utils/step_migration.py
 # consumed_by: libs/utils/tests/test_recipe_migration.py, assets/scripts/migrate_recipe_format.py
 # doc: .claude/design/recipe_format_spec.md (4.1, 7.3, 7.4, 12)
 # @end_deps
@@ -29,6 +29,7 @@ from typing import Dict, List, Optional, Tuple
 
 import yaml
 
+from utils.engines import DATA_ENGINE, PLOT_ENGINE
 from utils.polars_types import text_dtype_names
 from utils.recipe_check import spec
 from utils.step_migration import NotConvertible, convert_step
@@ -38,7 +39,7 @@ SANITISER_TEXTS = ("", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "no
 
 _FIELD_KEY_RENAMES = {"is_primary_key": "is_entity_key", "source_name": "original_name"}
 _SCHEMA_SECTIONS = ("data_schemas", "additional_datasets_schemas")
-_ENGINES = (("spec_version", "1"), ("data_engine", "python-polars"), ("plot_engine", "python-plotnine"))
+_ENGINES = (("spec_version", "1"), ("data_engine", DATA_ENGINE), ("plot_engine", PLOT_ENGINE))
 
 
 @dataclass
