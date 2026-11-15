@@ -217,6 +217,9 @@ def test_the_reshuffle_pin_reaches_home_and_the_export_when_the_audit_trail_is_o
             _wait_shiny(page)
             settle(page, f"plot_group_{PID}")
             assert not same_picture(shown.screenshot(), before), "HOME ignored the pinned seed (audit trail off)"
+            # once pinned there is nothing left to reshuffle: the control disappears, and the plot shows no error
+            expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_have_count(0, timeout=8_000)
+            assert page.locator(".shiny-output-error").count() == 0
             run_b, png_b, z = export_run_and_png(page)
         finally:
             page.close()
