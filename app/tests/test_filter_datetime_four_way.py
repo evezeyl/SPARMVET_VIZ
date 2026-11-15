@@ -161,3 +161,12 @@ def test_a_filter_on_a_time_or_duration_column_is_a_plain_error_in_every_view(va
     with pytest.raises(Exception) as rerun:
         AVAILABLE_WRANGLING_ACTIONS["modif_filter"](f.lazy(), step).collect()
     assert "InvalidOperation" not in str(rerun.value)
+
+
+@pytest.mark.parametrize("zone", [None, "Europe/Paris"])
+def test_a_scalar_equal_keeps_the_nanoseconds_too(zone):
+    f = frame("ns", zone)
+    suffix = "+02:00" if zone else ""
+    for op, expected in (("eq", ["b"]), ("ne", ["a", "c"])):
+        row = {"column": "t", "op": op, "value": f"2020-07-02 10:30:00.000000007{suffix}", "dtype": str(f.schema["t"]), "na": "remove"}
+        agree(f, [row], expected)

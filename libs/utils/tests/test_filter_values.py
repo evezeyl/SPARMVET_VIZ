@@ -112,7 +112,7 @@ def test_read_datetime_column_gives_the_exact_text():
     assert read_filter_value(" 2020-01-31T10:30:00.000000007 ", pl.Datetime) == "2020-01-31T10:30:00.000000007"
     assert read_filter_value("2020-01-31 10:30:00+02:00", pl.Datetime("us", "Europe/Paris")) == "2020-01-31 10:30:00+02:00"
     assert read_filter_value(datetime.datetime(2020, 1, 31, 10, 30), pl.Datetime) == "2020-01-31T10:30:00"
-    for bad in ("31/01/2020", "", None, 5, datetime.date(2020, 1, 31), "2020-13-45 10:00:00"):
+    for bad in ("31/01/2020", "", None, 5, datetime.date(2020, 1, 31), "2020-13-45 10:00:00", "2020-01-01 25:00:00", "2020-01-01 10:61:00", "2020-01-01 10:30:61"):
         with pytest.raises(FilterValueError):
             read_filter_value(bad, pl.Datetime)
 
