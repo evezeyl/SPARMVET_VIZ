@@ -41,6 +41,17 @@ Why: ADR-100 point 3 (one checker for HOME, Blueprint, importer, scripts and tes
 ## 4. Lines 13, 98, 114, 288 (no change)
 `ConfigManager` still exists (`config_loader.py:57`), so the prohibitions against using it for synthetic configs stay true.
 
+## 5. Line 155, the id-cleaning action names (FACT)
+
+Today (line 155, section 4c): `When called with \`id_cleaning_steps\` param, the Bootstrapper may inject steps into \`tier1:\` wrangling. Valid actions: \`strip_whitespace\`, \`cast\` (String only), \`regex_replace\`. No other wrangling is injected by the Bootstrapper.`
+
+Proposed (only the list of names changes):
+`Valid actions (the caller passes them in \`id_cleaning_steps\`; each must be a registered action): \`polars_str_strip_chars\` (for \`strip_whitespace\`: without \`characters\` it strips whitespace), \`polars_cast\` with \`dtype: String\` (for \`cast\`), \`polars_str_replace_all\` (for \`regex_replace\`, with \`pattern\` and \`value\`). No other wrangling is injected by the Bootstrapper.`
+
+Registered names (verified 2026-11-15): \`polars_str_strip_chars\` (\`libs/transformer/src/transformer/actions/polars_calls.py:420-421\`), \`polars_cast\` (\`:402-403\`), \`polars_str_replace_all\` (\`:413-414\`). All three have a registered replacement, so this is FACT. The old names \`strip_whitespace\` and \`regex_replace\` do not occur in \`libs/transformer/src\` (grep, 2026-11-15). \`cast\` was not grepped (a common word).
+Why: \`bootstrapper.py:69, 80, 90-92\` takes the steps from the caller (\`id_cleaning_steps\`); it does not name the actions itself, so the rule describes what a caller may pass. Not verified: whether the caller side (TEST_LAB UI) still sends the old names; not read.
+Kind: FACT.
+
 ## Not settled
 1. Whether the checker accepts the bootstrapper's output in profile `build` (not run).
 2. Whether TL-BOOTSTRAP-FIX-1 is closed (not in `tasks.md`).

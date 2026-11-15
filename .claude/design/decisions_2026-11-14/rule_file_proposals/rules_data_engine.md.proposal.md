@@ -12,7 +12,7 @@ Each change: FACT or CHANGES A RULE.
 
 Today: `  provides: [rule:3tier_lifecycle, rule:wrangling_block_structure, rule:decorator_standards, rule:polars_parity]`
 Proposed: `  provides: [rule:3tier_lifecycle, rule:wrangling_block_structure, rule:decorator_standards, rule:polars_actions]`
-Why: follows change 8 (the parity mandate is replaced). Run `build_dep_graph.py` after the edit: `rules_agent_role_bioscientist.md` and the dependency index list `rule:polars_parity`.
+Why: follows change 9 (the parity mandate is replaced). Run `build_dep_graph.py` after the edit: `rules_agent_role_bioscientist.md` and the dependency index list `rule:polars_parity`.
 
 ## 2. Lines 21 and 27, cache keys (FACT, pending a build)
 
@@ -31,6 +31,7 @@ Proposed: keep the three bullets and add after line 40:
 - **A `polars_` action is exactly Polars (DEC32):** the Polars name, all Polars parameters with the Polars names and defaults. A test compares it with the direct Polars call (`libs/transformer/tests/test_polars_actions_equal_polars.py`). A special need is a separate `modif_` action, or is written in the recipe.
 - **No hidden choice (DEC33):** a parameter that changes the result is required, or its default is the Polars default. For `modif_` and `step_` actions a default is allowed only when the parameter is "off when absent".
 - **No silent no-op (DEC36):** an action that gets a missing parameter, a missing column or an empty list or mapping that would do nothing fails and names the step (`libs/transformer/tests/test_actions_must_act.py`). 40 of the 68 actions refuse an empty list or mapping (`min_items.py`, merged `b91a9fd5`).
+- OPEN: `column` against `columns` for the input column of `modif_` and `step_` actions (ADR-100 point 8, DEC15 against DEC39); the code and the shipped recipes use `column` today. The parameter names above are not changed by this point until Eve decides.
 ```
 CHANGES A RULE (new rules; they are decided in ADR-100 and already enforced by the tests named).
 Why: ADR-100 point 6; DEC31 to DEC36 (`recipe_format_spec.md:133-138`). Commits `d0108338`, `4659a4bc` (empty list refused).
@@ -62,7 +63,7 @@ Why: `polars_calls.py:228-229` sets both `polars` and `wraps`.
 
 Today (line 62): `The engine rejects flat \`wrangling:\` lists with a \`DataAnalysisRecipeError\`. ...`
 Proposed: `The checker refuses a \`wrangling\` that is not a mapping of \`tier1\` (and optionally \`tier2\`) (check S06), before the run; HOME's gate does not load such a recipe.`
-Why: `recipe_check.py:297-299` (S06). I did not verify that the engine still raises `DataAnalysisRecipeError` itself; the checker is the gate (ADR-100 point 3), so the checker is named.
+Why: `recipe_check.py` (code S06). I did not verify that the engine still raises `DataAnalysisRecipeError` itself; the checker is the gate (ADR-100 point 3), so the checker is named.
 
 ## 8. Section 4, lines 64-74 (CHANGES A RULE)
 

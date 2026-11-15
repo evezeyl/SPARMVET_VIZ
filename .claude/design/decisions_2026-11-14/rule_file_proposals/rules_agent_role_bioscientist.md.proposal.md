@@ -13,7 +13,7 @@ Each change: FACT (corrects a fact) or CHANGES A RULE.
 
 Today (line 19, middle): `Shorthand like \`- join: {...}\` or \`- mutate: [...]\` is silently ignored by the engine and produces wrong data with no error.`
 Proposed: `Shorthand like \`- join: {...}\`, an old action name (\`join\`, \`mutate\`, \`cast\`, \`sort\`) or an unknown parameter is refused by the checker before the run (ST01, ST02, ST06). A step must name a registered action (section 8).`
-Why: `recipe_check.py:406, 428, 451`; the names `join`, `mutate`, `cast`, `sort` are not in the registry.
+Why: `recipe_check.py`, codes ST01, ST02, ST06; the names `join`, `mutate`, `cast`, `sort` are not in the registry.
 
 ## 2. Prohibition 2 (line 20) (FACT)
 
@@ -39,7 +39,7 @@ Today (line 71): `... canonical steps syntax (§7), plot spec format (§8), \`fi
 Proposed: `... canonical steps syntax (§7), plot spec format (§8), published columns (§5). |`
 Today (line 72): `... Decorator standards, Polars parity. |`
 Proposed: `... Decorator standards (action names, parameters, determinism, missing values). |`
-Why: `final_contract` removed (ADR-100 point 5); the "Polars parity mandate" is replaced (see `rules_data_engine.md.proposal.md` change 7).
+Why: `final_contract` removed (ADR-100 point 5); the "Polars parity mandate" is replaced (see `rules_data_engine.md.proposal.md` change 9). OPEN (ADR-106, last line): the Polars mandate, Eve to confirm.
 Line 74 also: `YAML resilience (boolean traps)` stays true (an unquoted `on` is refused, T07).
 
 ## 6. Section 2, line 89 (FACT)
@@ -75,6 +75,7 @@ Proposed replacement of line 111:
 Also replace line 97 `Always tiered. \`tier1:\` is mandatory (even if empty):` by `A schema's \`wrangling\` is required and has \`tier1\` (mandatory, even if empty); \`tier2\` applies only when the schema is plotted directly (check S07):`.
 CHANGES A RULE (silent skip becomes a failure; `filter_range` becomes `modif_filter` with required `na`).
 Why: `filter_range` is not registered; `modif_filter` takes `column`, `op`, `value`, `na` (ADR-100 point 6, DEC39, DEC29); ADR-103 point 2; DEC24 built `9bfdaf4c`.
+OPEN: `column` against `columns` (ADR-100 point 8, DEC15 against DEC39); the code and the shipped recipes use `column` today.
 
 ## 8. Section 3-B, lines 113-144 (CHANGES A RULE for 144, FACT for the rest)
 
@@ -189,8 +190,8 @@ Proposed (replaces lines 407 and 411-425; keep the "Documentation standard" para
 
 **Composite:** `step_top_n_other`
 
-> **REMOVED (ADR-100 points 6 and 7, DEC31, DEC40, 2026-11-13/14):** `fill_nulls`, `replace_values`, `drop_duplicates`, `unique_rows`, `recode_values`, `sanitize_column_names`, `keep_columns`, `drop_columns`, `strip_whitespace`, `round_numeric`, `filter_range`, `add_constant`, `filter_eq`, `filter_ne`, `filter_gt`, `filter_lt`, `rename_columns`, `unique`, `regex_extract`, `cast`, `label_if`, `mutate`, `regex_replace`, `null_if`, `window_agg`, `fill_nulls_direction`, `sort`, `cum_sum`, `cum_count`, `date_extract`, `date_truncate`, `list_slice`, `list_join`, `is_in`, `not_in`, `z_score`, `value_counts`, `describe_stats`, `select_by_pattern`, `horizontal_stats`, `any_horizontal`, `all_horizontal`, `interpolate`, `split_and_explode`, `split_column_to_parts`, `divide_columns`, `split_column`, `unpivot`, `explode`, `unnest`, `split_to_list`, `to_struct`, `pivot`, `summarize`, `count_by_group`, `join`, `join_filter`, `percentile`, `derive_categories`, `top_n_other`, `shift`, `sample`, `coalesce`.
-> Replacement: the `polars_` action of the same Polars name, `modif_filter` for every filter, `polars_group_by` for `summarize`, `polars_str_splitn` for `split_column`; no replacement for `percentile` (DEC40). Old names are refused by the checker with the nearest valid name (ST02) and by the migration tool.
+> **REMOVED (ADR-100 points 6 and 7, DEC31, DEC40, 2026-11-13/14):** `fill_nulls`, `drop_nulls`, `replace_values`, `rename`, `drop_duplicates`, `unique_rows`, `recode_values`, `sanitize_column_names`, `keep_columns`, `drop_columns`, `strip_whitespace`, `round_numeric`, `filter_range`, `add_constant`, `filter_eq`, `filter_ne`, `filter_gt`, `filter_lt`, `rename_columns`, `unique`, `regex_extract`, `cast`, `label_if`, `mutate`, `regex_replace`, `null_if`, `window_agg`, `fill_nulls_direction`, `sort`, `cum_sum`, `cum_count`, `date_extract`, `date_truncate`, `list_slice`, `list_join`, `is_in`, `not_in`, `z_score`, `value_counts`, `describe_stats`, `select_by_pattern`, `horizontal_stats`, `any_horizontal`, `all_horizontal`, `interpolate`, `split_and_explode`, `split_column_to_parts`, `divide_columns`, `split_column`, `unpivot`, `explode`, `unnest`, `split_to_list`, `to_struct`, `pivot`, `summarize`, `count_by_group`, `join`, `join_filter`, `percentile`, `derive_categories`, `top_n_other`, `shift`, `sample`, `coalesce`.
+> Replacement: `drop_nulls` is `polars_drop_nulls` and `rename` is `polars_rename`, both registered (`libs/transformer/src/transformer/actions/polars_calls.py:279` and `:273`, through the `_frame` helper; a grep for the literal `register_action("polars_rename"` finds nothing, which is not an error). The `polars_` action of the same Polars name, `modif_filter` for every filter, `polars_group_by` for `summarize`, `polars_str_splitn` for `split_column`; no replacement for `percentile` (DEC40). Old names are refused by the checker with the nearest valid name (ST02) and by the migration tool.
 > **Tombstone expires:** two phases after this edit (add the task entry).
 
 **Persistence (engine-internal, do not write):** `scan_parquet`, `sink_parquet` (DEC42).
