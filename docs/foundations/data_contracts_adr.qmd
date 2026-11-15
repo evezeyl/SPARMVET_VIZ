@@ -108,12 +108,12 @@ Every field states its `type`, and the type is a Polars type name that a text fi
 
 | Type | What it is | When to use it |
 | :--- | :--- | :--- |
-| `String` | Text | Identifiers, free text, labels you do not need as a factor |
-| `Categorical` | Text with repeated values | Genes, species, countries used as plot categories |
+| `String` | Text | Identifiers, free text, nominal labels: genes, species, countries (the shipped recipes use `String`; a plot draws them in alphabetical order) |
+| `Categorical` | Text with repeated values | When you want a Polars category; the shipped recipes keep one (figshare `breakpoint`) as the documented example |
 | `Int64`, `Float64` | Whole and decimal numbers | Counts, percentages, measurements |
 | `Date`, `Datetime` | Calendar dates and timestamps (`format` is a field key for non-standard text) | Sampling and submission dates |
 | `Boolean` | True/False | Resistance flags, pass/fail status |
-| `Enum` | Fixed list of values (written in `categories`) | Ordered levels |
+| `Enum` | Fixed list of values (written in `categories`, also the order of axis and legend) | Ordered levels, for example `[S, I, R, NI]` |
 
 ::: {.callout-tip}
 ### Read, then clean

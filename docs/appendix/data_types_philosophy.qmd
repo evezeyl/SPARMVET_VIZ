@@ -2,6 +2,8 @@
 
 In the **SPARMVET_VIZ** architecture, the choice of data types is not merely about storage optimization—it is about **relational integrity** and **visual consistency**. 
 
+> **Note (2026-11-15, Eve):** the shipped recipes declare `String` for nominal fields (genes, species, countries, identifiers) and `Enum` with the order written in `categories` for ordered ones; one `Categorical` field is kept as the documented example. `Categorical` stays a valid type of the format. Sections 3 and 4 below describe the earlier practice of casting to a category in `output_fields`; read them with this note.
+
 ## 1. Why Categorical?
 
 Polars `Categorical` type (equivalent to R's `factor` or Pandas' `category`) represents string data as small integer indices into a string pool. This is the **Primary Discrete Scale** for all visualizations and joins in the project.
