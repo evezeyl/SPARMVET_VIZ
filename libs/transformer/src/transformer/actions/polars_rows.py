@@ -55,9 +55,12 @@ OVERRIDE.update({("polars_top_k", "k"): {"widget": "number", "label": "k: how ma
 NOT_EXPOSED["polars_remove"] = {
     "constraints": "an equality written as a keyword (`remove(col=value)`) is the formula `pl.col('col') == value` in `predicates`; one way to write each test"}
 
-TIE_RULE = ("Polars does not promise which of several tied rows are kept at the cut, nor their order (measured with Polars 1.40.1: not the input order). "
-            "A recipe that needs one fixed result ends `by` with a column that is unique per row, for example the column that "
-            "polars_with_row_index writes.")
+TIE_RULE = ("It returns exactly `k` rows. When several rows are tied at the cut, only some of them are kept, and which ones is not fixed: "
+            "Polars keeps the first tied rows on a small table, other rows on a large one, and in the low-memory (streaming) engine the kept rows can differ from run to run. "
+            "A NaN (a failed calculation) counts as the largest value and comes first; a missing value is skipped, but rows with no value fill the `k` rows when the real values run out. "
+            "To always keep the same rows, end `by` with a row number (write a polars_with_row_index step first and give its column last in `by`), "
+            "or write polars_sort with maintain_order: true and then polars_head. "
+            "To keep every row tied with the `k` best (possibly more than `k` rows), write polars_rank with method min, then a modif_filter on the rank.")
 POSITION_RULE = "It works on the order of the table at this step: after an unsorted or reshaping step, write a polars_sort with maintain_order: true first."
 
 _frame("polars_head", "head", f"Keep the first `n` rows (Polars LazyFrame.head). {POSITION_RULE} `n` is written in the step.",
