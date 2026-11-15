@@ -507,9 +507,14 @@ class _Check:
         if not isinstance(joins, dict):
             self.add("J01", "joins", "joins is a mapping of id to join", "write join id: {...}")
             return
+        unapplied_joins = set(recipe_tiers.unapplied_join_tier2(raw))
         for jid, join in joins.items():
             path = f"joins.{jid}"
             self.join_ids.add(jid)
+            if jid in unapplied_joins:
+                self.add("J14", f"{path}.steps.tier2", "tier2 of a join applies only when a plot reads the join: "
+                         "no plot reads this join, so these steps would run nowhere",
+                         "plot this join, or remove the steps")
             if jid in self.schema_ids:
                 self.add("X1", path, f"the id {jid!r} is also a schema", "a plot's target must name one thing: rename one")
             if not isinstance(join, dict):

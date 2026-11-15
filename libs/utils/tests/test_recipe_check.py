@@ -196,6 +196,8 @@ CASES = [
     ("J05", "E", lambda r: r["joins"]["AB"]["steps"]["tier1"][0].update(left_on="id", right_on="id"), "run"),
     ("J06", "E", lambda r: r["joins"]["AB"].update(labels=["v"]), "run"),
     ("J07", "E", lambda r: r["joins"]["AB"].update(steps=[{"action": "polars_join"}]), "run"),
+    ("J14", "E", lambda r: (r["joins"]["AB"]["steps"].update(tier2=[{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]),
+                            r["analysis_groups"]["g"]["plots"]["p"]["spec"].update(target_dataset="A")), "run"),
     ("J07", "E", lambda r: r["joins"]["AB"].update(steps={"tier2": []}), "run"),
     ("X1", "E", lambda r: r["joins"].update(A=copy.deepcopy(r["joins"]["AB"])), "run"),
     ("G01", "E", lambda r: r["analysis_groups"]["g"].pop("label"), "run"),
@@ -236,6 +238,11 @@ def test_each_row_of_the_catalogue_is_found_with_the_fix(code, severity, change,
     assert all(isinstance(p, Problem) for p in result.problems)
     if severity == "E" and code not in ("ST08",):
         assert found[0].fix or code in ("T01",), f"{code} names no fix"
+
+
+def test_a_join_tier2_that_a_plot_reads_is_not_refused():
+    raw = mutated(lambda r: r["joins"]["AB"]["steps"].update(tier2=[{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]))
+    assert "J14" not in check(raw, file_stem="r").codes()
 
 
 def test_a_problem_reads_as_recipe_path_what_and_fix():

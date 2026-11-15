@@ -5,7 +5,7 @@ T2. Before issue #77 the tier-2 list of a schema plotted directly was ignored by
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/utils/tests/test_recipe_tiers.py -q
 """
-from utils.recipe_tiers import plot_targets, step_list, tier2_steps, unapplied_schema_tier2, without_tier2
+from utils.recipe_tiers import plot_targets, step_list, tier2_steps, unapplied_join_tier2, unapplied_schema_tier2, without_tier2
 
 STEP_A = {"action": "modif_filter", "column": "group", "op": "eq", "value": "A", "na": "remove"}
 STEP_B = {"action": "polars_sort", "by": ["group"], "descending": [False], "maintain_order": True}
@@ -89,6 +89,20 @@ def test_a_schema_tier2_read_by_a_plot_is_applied_even_when_it_is_also_an_ingred
 
 def test_an_empty_tier2_is_never_unapplied():
     assert unapplied_schema_tier2(_recipe(t_tier2=[], targets=("J",))) == []
+
+
+def test_a_join_tier2_that_no_plot_reads_is_unapplied():
+    assert unapplied_join_tier2(_recipe(j_tier2=[STEP_B], targets=("T",))) == ["J"]
+
+
+def test_a_join_tier2_read_by_a_plot_is_applied():
+    assert unapplied_join_tier2(_recipe(j_tier2=[STEP_B], targets=("J",))) == []
+
+
+def test_an_empty_or_absent_join_tier2_is_never_unapplied():
+    assert unapplied_join_tier2(_recipe(j_tier2=[], targets=("T",))) == []
+    assert unapplied_join_tier2(_recipe(targets=("T",))) == []
+    assert unapplied_join_tier2({}) == []
 
 
 # -- without_tier2: what Tier 1 depends on ---------------------------------------------------
