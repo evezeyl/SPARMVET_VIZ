@@ -1,6 +1,6 @@
 # Rule file proposals (RULES-FORMAT1-1, prepared 2026-11-15)
 
-No file under `.claude/rules/` was edited. Each `<rule file>.proposal.md` lists numbered changes: the lines today, the text today, the proposed text, why (decision with file:line), and whether it only corrects a fact (FACT) or "CHANGES A RULE". Each ends with "Not settled". Counts are the numbered sections of the file (some are "no change, checked") and the number of times "CHANGES A RULE" appears (a change may name it twice).
+No file under `.claude/rules/` was edited. Each `<rule file>.proposal.md` lists numbered changes: the lines today, the text today, the proposed text, why (decision with file:line), and whether it only corrects a fact (FACT) or "CHANGES A RULE". Each ends with "Not settled". The "Sections" column counts the numbered sections of each proposal file; the number in brackets is how many of them are changes (the rest are "no change, checked" or OPEN points). The "CHANGES A RULE" column is the number of times that marker appears (a change may name it twice).
 
 Read in this order (the files agents read most first):
 
@@ -11,17 +11,17 @@ Read in this order (the files agents read most first):
 | 3 | `rules_data_engine.md` | 11 | about 5 | action naming and no hidden choice, determinism, `output_fields`, parity mandate (Eve to confirm), cache-key marker |
 | 4 | `rules_verification_testing.md` | 5 | 0 | viz integrity suite, browser duration (D17) |
 | 5 | `rules_viz_factory.md` | 5 | about 5 | parity mandate replaced (ADR-106 V9), evidence loop, seed (one point OPEN) |
-| 6 | `workspace_standard.md` | 2 changes | 0 | Viz row, `@deps` examples with old action names |
-| 7 | `ui_implementation_contract.md` | 6 changes | 1 | ADR-098 contradicts lines 95-99 and 262-273; ADR-105 marker on 12g; example with old actions |
-| 8 | `rules_test_lab.md` | 3 | 2 | bootstrapper output in format 1, known bugs historical, gate |
-| 9 | `rules_app_structure.md` | 5 | 1 (server.py over its limit: Eve decides) | removed `exporter.py`, two missing modules, `output_fields` |
-| 10 | `rules_ui_dashboard.md` | 3 | 1 | T3 wording synced with the contract; marker on ADR-086 |
-| 11 | `rules_app_features_flags.md` | 2 | marker only | target cascade of ADR-099 point 11 (NOT BUILT) |
-| 12 | `rules_gallery_standards.md` | 6 | about 4 | 5-axis taxonomy on the plot entry, generated tag strip, preview script path |
-| 13 | `rules_code_quality.md` | 2 | 0 | removed suite named, `output_fields` example |
-| 14 | `rules_toolchain.md` | 1 | 0 | four tools used this week are not listed |
-| 15 | `dasharch.md` | 2 | 1 | `integrity_report.txt` does not exist; wrong workflow path |
-| 16 | `rules_asset_scripts.md` | 1 | 0 | one script name does not exist |
+| 6 | `workspace_standard.md` | 4 (2 changes) | 0 | Viz row, `@deps` examples with old action names |
+| 7 | `ui_implementation_contract.md` | 8 (6 changes) | 1 | ADR-098 contradicts lines 95-99 and 262-273; ADR-105 marker on 12g; example with old actions |
+| 8 | `rules_test_lab.md` | 5 (4 changes) | 2 | bootstrapper output in format 1, known bugs historical, gate |
+| 9 | `rules_app_structure.md` | 6 (5 changes) | 1 (server.py over its limit: Eve decides) | removed `exporter.py`, two missing modules, `output_fields` |
+| 10 | `rules_ui_dashboard.md` | 5 (2 changes, 1 OPEN point) | 1 | T3 wording synced with the contract; marker on ADR-086 |
+| 11 | `rules_app_features_flags.md` | 3 (2 changes) | marker only | target cascade of ADR-099 point 11 (NOT BUILT) |
+| 12 | `rules_gallery_standards.md` | 7 (6 changes) | about 4 | 5-axis taxonomy on the plot entry, generated tag strip, preview script path |
+| 13 | `rules_code_quality.md` | 3 (2 changes) | 0 | removed suite named, `output_fields` example |
+| 14 | `rules_toolchain.md` | 2 (1 change) | 0 | four tools used this week are not listed |
+| 15 | `dasharch.md` | 3 (2 changes) | 1 | `integrity_report.txt` does not exist; wrong workflow path |
+| 16 | `rules_asset_scripts.md` | 2 (1 change) | 0 | one script name does not exist |
 
 No change needed (checked):
 
