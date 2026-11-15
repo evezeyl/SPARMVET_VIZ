@@ -123,7 +123,7 @@ spec:
 ```
 
 - `geo_source` is a new optional spec block, parsed only when a `geom_map` layer is present.
-- Boundary assets are registered centrally (`config/geo/boundaries.yaml`: name → path + default keys + provenance), resolved by the bootloader and injected into VizFactory (same pattern as palettes, ADR-081 §6a — never read from disk inside the library).
+- Boundary assets are registered centrally (a new `boundaries.yaml` in `config/geo/`, not created yet: name → path + default keys + provenance), resolved by the bootloader and injected into VizFactory (same pattern as palettes, ADR-081 §6a — never read from disk inside the library).
 - Region-key reconciliation is the user's responsibility (clean join), aided by TEST_LAB's ID-reconciliation tool.
 
 ---

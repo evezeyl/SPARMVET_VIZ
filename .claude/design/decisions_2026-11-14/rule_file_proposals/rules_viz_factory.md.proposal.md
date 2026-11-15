@@ -2,7 +2,7 @@
 
 Status: PROPOSAL for Eve's double confirmation. No rule file was edited.
 Checked against: ADR-106 (V1 to V10, decided 2026-11-14), ADR-104 points 1, 3, 4 and 7, `viz_plan_for_eve.md` section 5, the seed builder's proposed lines
-(`.claude/worktrees/seed-holds/tmpAI/progress.md`, main tree, "Proposed rule lines"), `libs/viz_factory/tests/test_data` (194 old-form recipes),
+(`tmpAI/progress.md` of the seed-holds worktree (not in git), main tree, "Proposed rule lines"), `libs/viz_factory/tests/test_data` (194 old-form recipes),
 `recipe_check.py` PD01 (plot_defaults unknown keys fail). Newer fact from the coordinator: on branch `task/viz-field-engine` (NOT merged) the components carry a field `plotnine` (exact 125, modified 44, own 22) and twelve components lost a parameter plotnine refuses.
 
 ## 1. Lines 4, 11, 13-19, the Artist Parity Mandate (CHANGES A RULE; approved by Eve as V9)

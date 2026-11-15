@@ -818,7 +818,7 @@ the same TSV (identical structure and error patterns) for regression testing acr
 |---|---|
 | `test_lab_studio.py` | UI and server handlers for all TEST_LAB tools |
 | `libs/test_lab/` | Existing library — `aqua_synthesizer.py`, `bootstrapper.py` are the foundations to build on. `reconciler.py` (`KeyReconciler`) is migrated wholesale into `libs/id_reconciliation/` and deleted after TL-IDLIB-TESTS-1 passes. |
-| `libs/id_reconciliation/` | New library (to be created) — pure ID matching logic, pattern detection, id transformation generation. Tier 1 only (utils + polars). See `.claude/outdated/design/id_reconciliation_module_sketch.md` (outdated, history). |
+| `libs/id_reconciliation/` | New library (to be created) — pure ID matching logic, pattern detection, id transformation generation. Tier 1 only (utils + polars). See `.claude/design/outdated/id_reconciliation_module_sketch.md` (outdated, history). |
 
 ---
 
@@ -869,7 +869,7 @@ New Tier 1 library. Zero imports from other domain libs — only `polars` + `uti
 
 - **TL-IDLIB-MATCH-1** `[sonnet/high]`: Core matching engine — `data_structures.py` (`IDPair`, `MatchResult`, `PatternSuggestion`, `IdTransformation` dataclasses) + `matcher.py` (exact string match → certainty 1.0; `rapidfuzz` token-set ratio fuzzy → certainty 0.0–0.99; unmatched → certainty 0.0). Port all logic from `reconciler.py` (`KeyReconciler.calculate_intersection_score`, `.reconcile`) — do not duplicate, delete `reconciler.py` after TL-IDLIB-TESTS-1 passes. Add `rapidfuzz` to `libs/id_reconciliation/pyproject.toml`. Gate: `test_exact_match` passes; `test_fuzzy_match` passes (rapidfuzz scoring); boundary-aware match confirmed.
 
-- **TL-IDLIB-PATTERN-1** `[sonnet/high]`: Pattern detector — `pattern_detector.py` (prefix/suffix removal, delimiter extraction, case normalisation, substring extraction, regex; patterns ranked by `(expected_matches DESC, expected_certainty DESC, simplicity ASC)`). Port `suggest_regex` from `reconciler.py`; the underlying primitive will be extracted to `libs/utils/id_patterns.py` in TL-UTILS-PATTERN-1. Gate: `test_pattern_suggestion` passes (prefix `"sample_"` detected and ranked first).
+- **TL-IDLIB-PATTERN-1** `[sonnet/high]`: Pattern detector — `pattern_detector.py` (prefix/suffix removal, delimiter extraction, case normalisation, substring extraction, regex; patterns ranked by `(expected_matches DESC, expected_certainty DESC, simplicity ASC)`). Port `suggest_regex` from `reconciler.py`; the underlying primitive will be extracted to `libs/utils/src/utils/id_patterns.py` in TL-UTILS-PATTERN-1. Gate: `test_pattern_suggestion` passes (prefix `"sample_"` detected and ranked first).
 
 - **TL-IDLIB-ID-TRANSFORMATION-1** `[sonnet/medium]`: Recode workflow + id transformation persistence — `steps.py` (`apply_recode_step` for actions: `regex_replace`, `mutate` via Polars expression, `drop_duplicates`, `null_if`, `drop_nulls`; `IdTransformation.to_yaml` / `from_yaml`). Gate: `test_transformation_persistence` passes (save + load round-trip); `test_recode_workflow` passes (prefix removal + delimiter extraction).
 
