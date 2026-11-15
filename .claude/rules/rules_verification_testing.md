@@ -142,7 +142,7 @@ PYTHONPATH=. ./.venv/bin/python -m pytest libs app/tests \
   --ignore=app/tests/test_export_download.py --ignore=app/tests/test_every_app_features_starts.py -q
 ```
 
-Browser tests (about 14 minutes, measured 13 min 35 s on 2026-11-15 with other test runs active on the machine, the five slowest are in `test_export_download.py`; the first three run under the `qa` app features, `test_every_app_features_starts.py` launches each shipped app features by itself):
+Browser tests (about 14 minutes (one measurement, 13 min 35 s, on a machine busy with other test runs; expect less when idle); the first three run under the `qa` app features, `test_every_app_features_starts.py` launches each shipped app features by itself):
 
 ```bash
 PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest \
