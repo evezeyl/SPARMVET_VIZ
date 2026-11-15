@@ -43,7 +43,7 @@ from pathlib import Path
 import polars as pl
 from shiny import reactive, render, ui
 from app.modules.cache_keys import load_data_analysis_recipe
-from app.modules.data_analysis_recipe_validator import home_advice_entries, rejected_recipe_text
+from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
 from viz_factory.plot_config_resolver import layers_have_jitter, recipe_pins_random_state
@@ -1637,69 +1637,15 @@ def define_server(input, output, session, *,
             )
 
         def _render_data_analysis_recipe_choice():
-            rejected = bootloader.rejected_data_analysis_recipes
-            rejected_block = None
-            if rejected:
-                rejected_block = ui.div(
-                    ui.tags.small(
-                        f"{len(rejected)} recipe(s) unavailable — failed data or structure check:",
-                        class_="text-muted d-block mt-2 mb-1",
-                        style="font-size: 0.68rem;",
-                    ),
-                    *[
-                        ui.div(
-                            ui.tags.div(name, style="font-size: 0.72rem; font-weight: 600; color: #d62828;"),
-                            ui.tags.div(
-                                "; ".join(r["problems"][:2]) + (" ..." if len(r["problems"]) > 2 else ""),
-                                style="font-size: 0.68rem;",
-                            ),
-                            ui.tags.div(
-                                f"Contact: {r['contact']}" if r.get("contact") else
-                                "Contact: not configured for this deployment",
-                                style="font-size: 0.68rem; color: #6c757d;",
-                            ),
-                            style="margin: 2px 0 6px 0; padding: 4px 6px; "
-                                  "background: #ffe0e0; border-radius: 3px;",
-                        )
-                        for name, r in sorted(rejected.items())
-                    ],
-                )
-            advice_block = None
-            advices = home_advice_entries(getattr(bootloader, "data_analysis_recipe_advices", {}))
-            if advices:
-                advice_block = ui.div(
-                    ui.tags.small(
-                        "Advice (these recipes load and run):",
-                        class_="text-muted d-block mt-2 mb-1",
-                        style="font-size: 0.68rem;",
-                    ),
-                    *[
-                        ui.div(
-                            ui.tags.div(name, style="font-size: 0.72rem; font-weight: 600;"),
-                            *[ui.tags.div(text, style="font-size: 0.68rem;") for text in texts],
-                            style="margin: 2px 0 6px 0; padding: 4px 6px; background: #fff3cd; border-radius: 3px;",
-                        )
-                        for name, texts in advices
-                    ],
-                )
-            # GATE-GAP-1: the recipe that was open failed its checks (saved from Blueprint): the selector no longer offers
-            # it and the browser moves to the first one, so say it plainly instead of changing recipe silently
-            switched_block = None
-            if _current_data_analysis_recipe in rejected and data_analysis_recipe_choices:
-                switched_block = ui.tags.small(
-                    f"'{_current_data_analysis_recipe}' was open and no longer passes its checks: "
-                    f"HOME shows '{data_analysis_recipe_choices[0]}' instead.",
-                    class_="d-block fw-bold", style="font-size: 0.72rem; color: #d62828;",
-                )
+            """The selector, and a slot for the notes under it (what is unavailable and why, advices). The notes follow the
+            load gate (recipe_gate_handlers.py, GATE-GAP-1) without rebuilding the selector the user is using (R4)."""
             return ui.accordion_panel(
                 "Data analysis recipe Choice",
                 ui.div(
-                    switched_block,
                     ui.input_select("data_analysis_recipe_id", "Data analysis recipe",
                                     choices=data_analysis_recipe_choices,
                                     selected=_current_data_analysis_recipe),
-                    rejected_block,
-                    advice_block,
+                    ui.output_ui("recipe_gate_notes_ui"),
                     class_="d-flex flex-column gap-1"
                 ),
                 icon=ui.tags.i(class_="bi bi-folder-fill")

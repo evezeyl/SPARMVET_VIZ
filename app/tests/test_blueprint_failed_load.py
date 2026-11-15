@@ -331,3 +331,18 @@ def test_every_blueprint_writer_of_a_recipe_file_re_checks_after_it_wrote():
     callers = {fn.name for fn in ast.walk(define) if isinstance(fn, ast.FunctionDef)
                and any(isinstance(c, ast.Call) and getattr(c.func, "id", "") == "_tell_save_outcome" for c in ast.walk(fn))}
     assert {"_write_branch_plan", "_handle_data_analysis_recipe_save_internal", "_handle_meta_save"} <= callers, callers
+
+
+@pytest.mark.parametrize("kind", KINDS)
+def test_after_a_failed_load_the_component_list_is_emptied_and_says_so(harness, tmp_path, kind):
+    """Pinned as built (GATE-GAP-1, nothing new decided): the list of components of the previous recipe is replaced by
+    "No components found". Still possible in Blueprint after a failed load: pick another recipe, press Validate (it reads the
+    file and lists the problems with their fix), download the recipe bundle. Not possible: see or edit the failing file
+    inside Blueprint (the map, the YAML view and the steps are empty): a fix list is Eve's open choice."""
+    path = _broken_recipes(tmp_path)[kind]
+
+    harness.ns["_do_refresh_blueprint"](str(path))
+
+    selects = [kw.get("choices") for _args, kw in harness.ui.selects]
+    assert ["No components found"] in selects, selects
+    assert harness.groups_refresh.get() > 0  # the lists that depend on the recipe redraw
