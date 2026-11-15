@@ -45,9 +45,10 @@ _THEME_BASE_PARAMS = {
     "context": ["plot"],
     "tags": ["theme", "gray", "grey", "ggplot2", "default"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_gray"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
-    "description": "ggplot2 default theme with grey panel background and white gridlines; familiar to R users but less clean than theme_bw for publications.",
+    "description": "ggplot2 default theme with grey panel background and white gridlines; familiar to R users but less clean than theme_bw for publications. Differs from plotnine: `base_size` and `base_family` go to the theme; every other key is added on top of it as a `theme()` setting, so one layer sets the theme and its details.",
     "yaml_example": "layers:\n  - name: theme_gray",
 })
 def handle_theme_gray(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -60,9 +61,10 @@ def handle_theme_gray(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "bw", "black", "white", "clean"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_bw"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
-    "description": "Black-and-white theme with white background and dark gridlines; a good default for publications and reports.",
+    "description": "Black-and-white theme with white background and dark gridlines; a good default for publications and reports. Differs from plotnine: `base_size` and `base_family` go to the theme; every other key is added on top of it as a `theme()` setting, so one layer sets the theme and its details.",
     "yaml_example": "layers:\n  - name: theme_bw",
 })
 def handle_theme_bw(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -75,9 +77,10 @@ def handle_theme_bw(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "linedraw", "black", "lines"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_linedraw"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
-    "description": "Theme with white background and black lines/ticks only; the cleanest monochrome option for print output.",
+    "description": "Theme with white background and black lines/ticks only; the cleanest monochrome option for print output. Differs from plotnine: `base_size` and `base_family` go to the theme; every other key is added on top of it as a `theme()` setting, so one layer sets the theme and its details.",
     "yaml_example": "layers:\n  - name: theme_linedraw",
 })
 def handle_theme_linedraw(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -90,9 +93,10 @@ def handle_theme_linedraw(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "light", "clean", "minimal"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_light"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
-    "description": "Light grey axes and gridlines on white background; a clean default that is lighter than theme_bw \u2014 use for dashboard or web output.",
+    "description": "Light grey axes and gridlines on white background; a clean default that is lighter than theme_bw \u2014 use for dashboard or web output. Differs from plotnine: `base_size` and `base_family` go to the theme; every other key is added on top of it as a `theme()` setting, so one layer sets the theme and its details.",
     "yaml_example": "layers:\n  - name: theme_light",
 })
 def handle_theme_light(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -105,9 +109,10 @@ def handle_theme_light(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "minimal", "clean", "no-background"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_minimal"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
-    "description": "Minimal theme with no background annotations; maximises data-ink ratio \u2014 use for clean figures in manuscripts.",
+    "description": "Minimal theme with no background annotations; maximises data-ink ratio \u2014 use for clean figures in manuscripts. Differs from plotnine: `base_size` and `base_family` go to the theme; every other key is added on top of it as a `theme()` setting, so one layer sets the theme and its details.",
     "yaml_example": "layers:\n  - name: theme_minimal",
 })
 def handle_theme_minimal(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -120,9 +125,10 @@ def handle_theme_minimal(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "classic", "axes", "no-grid", "publication"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_classic"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
-    "description": "Classic axes-only theme (no gridlines, no panel border background); the standard for journal figures in many life-science journals.",
+    "description": "Classic axes-only theme (no gridlines, no panel border background); the standard for journal figures in many life-science journals. Differs from plotnine: `base_size` and `base_family` go to the theme; every other key is added on top of it as a `theme()` setting, so one layer sets the theme and its details.",
     "yaml_example": "layers:\n  - name: theme_classic",
 })
 def handle_theme_classic(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -135,9 +141,10 @@ def handle_theme_classic(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "void", "blank", "empty", "map"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_void"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
-    "description": "Empty theme with no axes or background; use for network plots, map layers, or any visualisation that supplies its own spatial context.",
+    "description": "Empty theme with no axes or background; use for network plots, map layers, or any visualisation that supplies its own spatial context. Differs from plotnine: `base_size` and `base_family` go to the theme; every other key is added on top of it as a `theme()` setting, so one layer sets the theme and its details.",
     "yaml_example": "layers:\n  - name: theme_void",
 })
 def handle_theme_void(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -150,9 +157,10 @@ def handle_theme_void(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "dark", "night", "dark-background"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_dark"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
-    "description": "Dark grey panel background; use for screen display when a dark UI background makes a dark plot less jarring.",
+    "description": "Dark grey panel background; use for screen display when a dark UI background makes a dark plot less jarring. Differs from plotnine: `base_size` and `base_family` go to the theme; every other key is added on top of it as a `theme()` setting, so one layer sets the theme and its details.",
     "yaml_example": "layers:\n  - name: theme_dark",
 })
 def handle_theme_dark(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -165,9 +173,10 @@ def handle_theme_dark(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "538", "fivethirtyeight", "news", "editorial"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_538"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
-    "description": "FiveThirtyEight-style theme with soft gridlines and custom fonts; use for editorial data journalism aesthetics.",
+    "description": "FiveThirtyEight-style theme with soft gridlines and custom fonts; use for editorial data journalism aesthetics. Differs from plotnine: `base_size` and `base_family` go to the theme; every other key is added on top of it as a `theme()` setting, so one layer sets the theme and its details.",
     "yaml_example": "layers:\n  - name: theme_538",
 })
 def handle_theme_538(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -180,9 +189,10 @@ def handle_theme_538(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "matplotlib", "python", "default"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_matplotlib"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
-    "description": "Matplotlib default theme; use when visual consistency with Python matplotlib output is needed.",
+    "description": "Matplotlib default theme; use when visual consistency with Python matplotlib output is needed. Differs from plotnine: `base_size` and `base_family` go to the theme; every other key is added on top of it as a `theme()` setting, so one layer sets the theme and its details.",
     "yaml_example": "layers:\n  - name: theme_matplotlib",
 })
 def handle_theme_matplotlib(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -195,9 +205,10 @@ def handle_theme_matplotlib(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "seaborn", "stats", "sns"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_seaborn"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
-    "description": "Seaborn-style theme with whitegrid aesthetic; use when visual consistency with seaborn output is needed.",
+    "description": "Seaborn-style theme with whitegrid aesthetic; use when visual consistency with seaborn output is needed. Differs from plotnine: `base_size` and `base_family` go to the theme; every other key is added on top of it as a `theme()` setting, so one layer sets the theme and its details.",
     "yaml_example": "layers:\n  - name: theme_seaborn",
 })
 def handle_theme_seaborn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -210,9 +221,10 @@ def handle_theme_seaborn(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "tufte", "minimalist", "data-ink", "publication"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_tufte"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
-    "description": "Edward Tufte's minimalist theme with no gridlines and axis spines removed; use for highly data-dense tables-as-charts.",
+    "description": "Edward Tufte's minimalist theme with no gridlines and axis spines removed; use for highly data-dense tables-as-charts. Differs from plotnine: `base_size` and `base_family` go to the theme; every other key is added on top of it as a `theme()` setting, so one layer sets the theme and its details.",
     "yaml_example": "layers:\n  - name: theme_tufte",
 })
 def handle_theme_tufte(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -225,9 +237,10 @@ def handle_theme_tufte(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "xkcd", "comic", "hand-drawn", "fun"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_xkcd"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": _THEME_BASE_PARAMS,
-    "description": "xkcd webcomic-style hand-drawn theme; use for informal or illustrative figures only \u2014 not for scientific publications.",
+    "description": "xkcd webcomic-style hand-drawn theme; use for informal or illustrative figures only \u2014 not for scientific publications. Differs from plotnine: `base_size` and `base_family` go to the theme; every other key is added on top of it as a `theme()` setting, so one layer sets the theme and its details.",
     "yaml_example": "layers:\n  - name: theme_xkcd",
 })
 def handle_theme_xkcd(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -240,12 +253,13 @@ def handle_theme_xkcd(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "dashboard", "sparmvet", "default", "bw"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_bw"]}],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "base_size": {"widget": "number", "label": "Base font size (pt)", "required": False, "default": 14},
         "base_family": {"widget": "string", "label": "Base font family", "required": False},
     },
-    "description": "SPARMVET custom dashboard theme tuned for app display; the default theme in SPARMVET data analysis recipes \u2014 omit for the platform default.",
+    "description": "SPARMVET custom dashboard theme tuned for app display; the default theme in SPARMVET data analysis recipes \u2014 omit for the platform default. Not in plotnine: theme_bw with `base_size` 14 unless given; other keys are added as `theme()` settings.",
     "yaml_example": "layers:\n  - name: theme_dashboard",
 })
 def handle_theme_dashboard(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -259,12 +273,13 @@ def handle_theme_dashboard(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "publication", "journal", "classic", "print"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme_classic"]}],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "base_size": {"widget": "number", "label": "Base font size (pt)", "required": False, "default": 11},
         "base_family": {"widget": "string", "label": "Base font family", "required": False},
     },
-    "description": "SPARMVET custom publication theme with minimal gridlines and increased font sizes; use when preparing figures for manuscripts.",
+    "description": "SPARMVET custom publication theme with minimal gridlines and increased font sizes; use when preparing figures for manuscripts. Not in plotnine: theme_classic with `base_size` 11 unless given; other keys are added as `theme()` settings.",
     "yaml_example": "layers:\n  - name: theme_publication",
 })
 def handle_theme_publication(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -278,12 +293,13 @@ def handle_theme_publication(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "legend", "position", "placement"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme"]}],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "position": {"widget": "enum", "label": "Legend position", "required": True,
                      "default": "right", "options": ["top", "bottom", "left", "right", "none"]},
     },
-    "description": "Move the legend to a named position (top, bottom, left, right, none); use as a lightweight alternative to a full theme_custom call.",
+    "description": "Move the legend to a named position (top, bottom, left, right, none); use as a lightweight alternative to a full theme_custom call. Not in plotnine: calls theme(legend_position=position) with `position` (right when absent).",
     "yaml_example": "layers:\n  - name: theme_legend_position\n    params:\n      position: bottom",
 })
 def handle_theme_legend_position(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -297,9 +313,10 @@ def handle_theme_legend_position(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "custom", "element_text", "element_rect", "element_line"],
     "wraps": [{"lib": "plotnine", "attr_path": ["theme"]}],
+    "plotnine": "own",
     "allow_extra_params": True,
     "params": {},
-    "description": "Arbitrary theme() override; use to adjust any individual theme element when none of the named themes or element_* layers provide enough control.",
+    "description": "Arbitrary theme() override; use to adjust any individual theme element when none of the named themes or element_* layers provide enough control. Not in plotnine: calls theme(**params); a value written as {name: element_text, params: {...}} (also element_line, element_rect, element_blank) is turned into that element, any other value is passed on as it is.",
     "yaml_example": "layers:\n  - name: theme_custom\n    params:\n      axis_text_x: {angle: 45, hjust: 1}",
 })
 def handle_theme_custom(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -328,6 +345,7 @@ def handle_theme_custom(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "element_text", "font", "axis", "text", "rotate"],
     "wraps": [{"lib": "plotnine", "attr_path": ["element_text"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": {
         "target": {"widget": "string", "label": "Theme target (e.g. axis_text_x, strip_text)", "required": True},
@@ -340,7 +358,7 @@ def handle_theme_custom(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "hjust": {"widget": "number", "label": "Horizontal justification (0–1)", "required": False},
         "vjust": {"widget": "number", "label": "Vertical justification (0–1)", "required": False},
     },
-    "description": "Customise a specific text element (axis labels, title, strip text); use inside theme_custom or directly to rotate axis text or change font size.",
+    "description": "Customise a specific text element (axis labels, title, strip text); use inside theme_custom or directly to rotate axis text or change font size. Differs from plotnine: plotnine's element_text only builds the element; here `target` names the theme setting (for example axis_text_x) the element is applied to, and without `target` nothing is applied (a warning is printed).",
     "yaml_example": "layers:\n  - name: element_text\n    params:\n      target: axis_text_x\n      angle: 45\n      hjust: 1",
 })
 def handle_element_text(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -358,6 +376,7 @@ def handle_element_text(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "element_line", "axis", "grid", "line"],
     "wraps": [{"lib": "plotnine", "attr_path": ["element_line"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": {
         "target": {"widget": "string", "label": "Theme target (e.g. axis_line, panel_grid)", "required": True},
@@ -366,7 +385,7 @@ def handle_element_text(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "linetype": {"widget": "enum", "label": "Line type", "required": False,
                      "options": ["solid", "dashed", "dotted", "dotdash", "longdash", "twodash"]},
     },
-    "description": "Customise a specific line element (gridlines, axis lines); use to change gridline colour, thickness, or linetype for a particular theme element.",
+    "description": "Customise a specific line element (gridlines, axis lines); use to change gridline colour, thickness, or linetype for a particular theme element. Differs from plotnine: plotnine's element_line only builds the element; here `target` names the theme setting (for example axis_text_x) the element is applied to, and without `target` nothing is applied (a warning is printed).",
     "yaml_example": "layers:\n  - name: element_line\n    params:\n      target: panel_grid_major\n      colour: '#eeeeee'",
 })
 def handle_element_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -384,6 +403,7 @@ def handle_element_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "element_rect", "panel", "background", "border"],
     "wraps": [{"lib": "plotnine", "attr_path": ["element_rect"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": {
         "target": {"widget": "string", "label": "Theme target (e.g. panel_background, legend_key)", "required": True},
@@ -391,7 +411,7 @@ def handle_element_line(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "colour": {"widget": "color", "label": "Border colour", "required": False},
         "size": {"widget": "number", "label": "Border line width", "required": False},
     },
-    "description": "Customise a specific rectangle element (panel background, legend background); use to change background fills or border colours.",
+    "description": "Customise a specific rectangle element (panel background, legend background); use to change background fills or border colours. Differs from plotnine: plotnine's element_rect only builds the element; here `target` names the theme setting (for example axis_text_x) the element is applied to, and without `target` nothing is applied (a warning is printed).",
     "yaml_example": "layers:\n  - name: element_rect\n    params:\n      target: panel_background\n      fill: white",
 })
 def handle_element_rect(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -409,11 +429,12 @@ def handle_element_rect(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["theme", "element_blank", "remove", "hide", "axis"],
     "wraps": [{"lib": "plotnine", "attr_path": ["element_blank"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": {
         "target": {"widget": "string", "label": "Theme target to remove (e.g. axis_text_x, panel_grid)", "required": True},
     },
-    "description": "Remove a theme element entirely (make it invisible); use to hide axis lines, gridlines, or strip backgrounds.",
+    "description": "Remove a theme element entirely (make it invisible); use to hide axis lines, gridlines, or strip backgrounds. Differs from plotnine: plotnine's element_blank only builds the element; here `target` names the theme setting (for example axis_text_x) the element is applied to, and without `target` nothing is applied (a warning is printed).",
     "yaml_example": "layers:\n  - name: element_blank\n    params:\n      target: panel_grid_minor",
 })
 def handle_element_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -438,11 +459,12 @@ def handle_element_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["label", "xlab", "axis", "x", "title"],
     "wraps": [{"lib": "plotnine", "attr_path": ["xlab"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": {
         "label": {"widget": "string", "label": "X-axis label text", "required": True},
     },
-    "description": "Set the x-axis label; a shorthand alternative to using labs with an x= parameter.",
+    "description": "Set the x-axis label; a shorthand alternative to using labs with an x= parameter. Differs from plotnine: the text is read from the key `label` (empty when absent) and any other key is ignored.",
     "yaml_example": "layers:\n  - name: xlab\n    params:\n      label: Year of isolation",
 })
 def handle_xlab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -462,11 +484,12 @@ def handle_xlab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["label", "ylab", "axis", "y", "title"],
     "wraps": [{"lib": "plotnine", "attr_path": ["ylab"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": {
         "label": {"widget": "string", "label": "Y-axis label text", "required": True},
     },
-    "description": "Set the y-axis label; a shorthand alternative to using labs with a y= parameter.",
+    "description": "Set the y-axis label; a shorthand alternative to using labs with a y= parameter. Differs from plotnine: the text is read from the key `label` (empty when absent) and any other key is ignored.",
     "yaml_example": "layers:\n  - name: ylab\n    params:\n      label: Number of isolates",
 })
 def handle_ylab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -482,12 +505,13 @@ def handle_ylab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["label", "ggtitle", "title", "subtitle"],
     "wraps": [{"lib": "plotnine", "attr_path": ["ggtitle"]}],
+    "plotnine": "modified",
     "allow_extra_params": False,
     "params": {
         "title": {"widget": "string", "label": "Plot title text", "required": True},
         "subtitle": {"widget": "string", "label": "Subtitle (below title)", "required": False},
     },
-    "description": "Set the plot title and optional subtitle; a shorthand alternative to labs(title=..., subtitle=...).",
+    "description": "Set the plot title and optional subtitle; a shorthand alternative to labs(title=..., subtitle=...). Differs from plotnine: the title is read from the key `title` (empty when absent) and the optional `subtitle`; any other key is ignored.",
     "yaml_example": "layers:\n  - name: ggtitle\n    params:\n      label: AMR prevalence by year",
 })
 def handle_ggtitle(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -506,6 +530,7 @@ def handle_ggtitle(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["annotate", "text", "segment", "rect", "line", "arrow"],
     "wraps": [{"lib": "plotnine", "attr_path": ["annotate"]}],
+    "plotnine": "modified",
     "allow_extra_params": True,
     "params": {
         "geom": {"widget": "enum", "label": "Annotation geom type", "required": True,
@@ -521,7 +546,7 @@ def handle_ggtitle(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "size": {"widget": "number", "label": "Size", "required": False},
         "alpha": {"widget": "number", "label": "Opacity (0–1)", "required": False},
     },
-    "description": "Add a single annotation geometry (text, rect, segment) at specified coordinates without a data source; use for static annotations like significance brackets.",
+    "description": "Add a single annotation geometry (text, rect, segment) at specified coordinates without a data source; use for static annotations like significance brackets. Differs from plotnine: the geom is named by the key `geom` and every other key is an argument of that geom; without `geom` nothing is added and no message is shown.",
     "yaml_example": "layers:\n  - name: annotate\n    params:\n      geom: text\n      x: 2020\n      y: 80\n      label: 'n=42'",
 })
 def handle_annotate(p: ggplot, spec: Dict[str, Any]) -> ggplot:

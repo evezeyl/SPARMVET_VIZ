@@ -254,6 +254,7 @@ def handle_mygeom(p, spec):
 | `context` | Yes | Always `["plot"]` for geom/stat/theme components |
 | `tags` | Yes | Search keywords for the picker |
 | `wraps` | Yes | Link to plotnine source (`lib`, `attr_path`) |
+| `plotnine` | Yes | What the component is to plotnine (ADR-106 V1): `exact` (only passes its parameters to the plotnine object of the same name), `modified` (adds logic or wraps another object) or `own` (no plotnine object of that name). The value is re-derived from the code by `tests/test_component_plotnine_field.py`. A `modified` or `own` component ends its description with a sentence that starts `Differs from plotnine:` or `Not in plotnine:` and says what it changes. |
 | `allow_extra_params` | Yes | Must be `True` — allows any valid plotnine kwarg via data analysis recipe |
 | `params` | Yes | Dict of param definitions (widget, label, required, …) |
 

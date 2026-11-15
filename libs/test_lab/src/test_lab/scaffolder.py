@@ -16,6 +16,7 @@ import polars as pl
 import yaml
 
 from utils import action_names
+from utils.engines import DATA_ENGINE, PLOT_ENGINE
 
 from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper, IncludeRef, represent_include
 
@@ -205,8 +206,8 @@ class DataAnalysisRecipeScaffolder:
         master: Dict[str, Any] = {
             "id": data_analysis_recipe_id,
             "spec_version": 1,
-            "data_engine": "python-polars",
-            "plot_engine": "python-plotnine",
+            "data_engine": DATA_ENGINE,
+            "plot_engine": PLOT_ENGINE,
             "info": {
                 "label": data_analysis_recipe_id.replace('_', ' ').title(),
                 "version": "1.0",

@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 # @deps
 # provides: decorator:register_plot_component, registry:PLOT_COMPONENTS, registry:COMPONENT_SCHEMAS, function:get_component
-# consumed_by: libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/themes/core.py, libs/viz_factory/src/viz_factory/scales/core.py, libs/viz_factory/src/viz_factory/positions/core.py, libs/viz_factory/src/viz_factory/guides/core.py, libs/viz_factory/src/viz_factory/facets/core.py, libs/viz_factory/src/viz_factory/coords/core.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/schema_registry.py
+# consumed_by: libs/viz_factory/tests/test_component_plotnine_field.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/themes/core.py, libs/viz_factory/src/viz_factory/scales/core.py, libs/viz_factory/src/viz_factory/positions/core.py, libs/viz_factory/src/viz_factory/guides/core.py, libs/viz_factory/src/viz_factory/facets/core.py, libs/viz_factory/src/viz_factory/coords/core.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/schema_registry.py
 # doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
 
@@ -25,7 +25,12 @@ def register_plot_component(name: str, ui_schema: Optional[Dict[str, Any]] = Non
     will automatically become available to the VizFactory.
 
     Optional `ui_schema` kwarg populates COMPONENT_SCHEMAS for BLUEPRINT IDE form generation
-    (ADR-075). Schema format: {label, category, context, tags, params: {param: {widget, ...}}}.
+    (ADR-075). Schema format: {label, category, context, tags, plotnine, params: {param: {widget, ...}}}.
+
+    `plotnine` (ADR-106 V1) says what the component is to plotnine, like the field `polars` of an action:
+    `exact` (only passes its parameters to the plotnine object of the same name), `modified` (adds logic or wraps another
+    object; its description says what it changes), `own` (no plotnine object of that name). It is declared in every
+    schema and re-derived from the code by `tests/test_component_plotnine_field.py`.
     """
     def decorator(func: Callable):
         if name in PLOT_COMPONENTS:

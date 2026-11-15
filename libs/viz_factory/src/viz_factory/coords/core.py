@@ -19,6 +19,7 @@ from viz_factory.registry import register_plot_component
     "context": ["plot"],
     "tags": ["coord", "cartesian", "zoom", "limits", "xlim", "ylim"],
     "wraps": [{"lib": "plotnine", "attr_path": ["coord_cartesian"]}],
+    "plotnine": "exact",
     "allow_extra_params": False,
     "params": {
         "xlim": {"widget": "string", "label": "X limits as [min, max] (e.g. [0, 100])", "required": False},
@@ -39,6 +40,7 @@ def handle_coord_cartesian(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["coord", "flip", "horizontal", "rotate", "bar"],
     "wraps": [{"lib": "plotnine", "attr_path": ["coord_flip"]}],
+    "plotnine": "exact",
     "allow_extra_params": False,
     "params": {},
     "description": "Swap x and y axes; use for horizontal bar charts or when x-axis labels are long and overlap vertically.",
@@ -55,6 +57,7 @@ def handle_coord_flip(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["coord", "fixed", "aspect", "ratio", "square"],
     "wraps": [{"lib": "plotnine", "attr_path": ["coord_fixed"]}],
+    "plotnine": "exact",
     "allow_extra_params": False,
     "params": {
         "ratio": {"widget": "number", "label": "Aspect ratio (y/x units)", "required": False, "default": 1.0},
@@ -75,6 +78,7 @@ def handle_coord_fixed(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["coord", "equal", "1:1", "square", "aspect"],
     "wraps": [{"lib": "plotnine", "attr_path": ["coord_equal"]}],
+    "plotnine": "exact",
     "allow_extra_params": False,
     "params": {
         "xlim": {"widget": "string", "label": "X limits as [min, max]", "required": False},
@@ -94,6 +98,7 @@ def handle_coord_equal(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["coord", "transform", "log", "sqrt", "axis"],
     "wraps": [{"lib": "plotnine", "attr_path": ["coord_trans"]}],
+    "plotnine": "exact",
     "allow_extra_params": False,
     "params": {
         "x": {"widget": "string", "label": "X transformation (e.g. 'log10', 'sqrt')", "required": False},
@@ -115,12 +120,13 @@ def handle_coord_trans(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "context": ["plot"],
     "tags": ["coord", "limits", "zoom", "clip", "xlim", "ylim"],
     "wraps": [{"lib": "plotnine", "attr_path": ["coord_cartesian"]}],
+    "plotnine": "own",
     "allow_extra_params": False,
     "params": {
         "xlim": {"widget": "string", "label": "X limits as [min, max] (strict — clips data)", "required": False},
         "ylim": {"widget": "string", "label": "Y limits as [min, max]", "required": False},
     },
-    "description": "Set axis limits that also drop data outside the range (unlike coord_cartesian); use when out-of-range points should not influence statistics.",
+    "description": "Set axis limits that also drop data outside the range (unlike coord_cartesian); use when out-of-range points should not influence statistics. Not in plotnine: the same call as coord_cartesian under another name (limits that do not remove data).",
     "yaml_example": "layers:\n  - name: coord_lims\n    params:\n      x: [0, 100]",
 })
 def handle_coord_lims(p: ggplot, spec: Dict[str, Any]) -> ggplot:
