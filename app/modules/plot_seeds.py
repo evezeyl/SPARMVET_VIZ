@@ -15,7 +15,8 @@ from __future__ import annotations
 # provides: function:audit_pin_of, function:seed_pins_from_home_state, function:render_seed_args,
 #           function:export_plot_seeds, function:export_seed_plan, function:seeds_per_plot_record,
 #           function:seed_sources_per_plot, function:seeds_per_layer_record, function:seeds_added_to_recipe,
-#           function:seed_recipe_note, function:unfixed_seed_warning, function:bake_plot_seeds
+#           function:seed_recipe_note, function:unfixed_seed_warning, function:bake_plot_seeds,
+#           function:seed_pin_steps, function:with_seed_steps
 # consumes: libs/viz_factory/src/viz_factory/plot_config_resolver.py (resolve_layer_seeds, LayerSeed)
 # consumed_by: app/handlers/export_handlers.py, app/tests/test_plot_seeds.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-104, .claude/rules/rules_viz_factory.md#8
@@ -218,3 +219,33 @@ def bake_plot_seeds(recipe_cfg: dict, seeds: dict[str, Seeds]) -> dict:
             if ls.source != "recipe":
                 layers[ls.index]["params"] = {**(layers[ls.index].get("params") or {}), "random_state": ls.seed}
     return baked
+
+
+def seed_pin_steps(seeds: dict[str, Seeds]) -> dict[str, list[dict]]:
+    """{plot_id: [step]}: the audit pin of each pinned plot as a step of the audit trail (Eve, 2026-11-15).
+
+    The pin (Reshuffle, or an audit override) changes the picture, so it is a decision of the user and is listed like
+    one: in `t3_steps.yaml`, in the Methods text and in the audit trail table of the report, and it is part of the
+    audit-steps hash. It is not read from `t3_sandbox_enabled`: Reshuffle works without the audit trail.
+    """
+    steps = {}
+    for plot_id, layer_seeds in seeds.items():
+        pinned = [ls for ls in layer_seeds if ls.source == "audit"]
+        if pinned:
+            steps[plot_id] = [{
+                "node_type": "random_seed",
+                "id": f"random_seed_{plot_id}",
+                "created_at": "",
+                "params": {"seed": pinned[0].seed, "layers": [ls.index for ls in pinned]},
+                "reason": "The arrangement of the random points was fixed with this seed (Reshuffle arrangement, or an "
+                          "audit override); it replaces any seed written in the recipe for these layers.",
+            }]
+    return steps
+
+
+def with_seed_steps(t3_by_plot: dict[str, list[dict]], seeds: dict[str, Seeds]) -> dict[str, list[dict]]:
+    """A copy of the audited steps per plot with the seed step of each pinned plot added at the end."""
+    listed = {plot_id: list(nodes) for plot_id, nodes in t3_by_plot.items()}
+    for plot_id, steps in seed_pin_steps(seeds).items():
+        listed[plot_id] = listed.get(plot_id, []) + steps
+    return listed

@@ -36,6 +36,8 @@ from app.modules.plot_seeds import (
     seeds_per_layer_record,
     seeds_per_plot_record,
     unfixed_seed_warning,
+    seed_pin_steps,
+    with_seed_steps,
 )
 from viz_factory.viz_factory import DEFAULT_RANDOM_STATE, VizFactory
 
@@ -375,3 +377,40 @@ def test_other_overrides_are_kept_next_to_the_seed():
     assert render_seed_args(audit, {"alpha": 0.3}) == {
         "aesthetic_override": {"alpha": 0.3, "random_state": 777}, "drawn_random_state": None}
     assert render_seed_args((), None) == {"aesthetic_override": None, "drawn_random_state": None}
+
+
+# ---------------------------------------------------------------------------
+# the audit pin is a step of the audit trail (Eve, 2026-11-15): listed in t3_steps.yaml, the Methods text and the
+# audit trail table of the report, whatever the audit-trail flag
+# ---------------------------------------------------------------------------
+
+def test_a_pinned_plot_has_one_audit_step_that_says_the_seed_and_the_layers():
+    plan = export_plot_seeds({"p": {"layers": [jl(random_state=11), {"name": "geom_bar"}, jl()]},
+                              "q": {"layers": jitter_layers(random_state=3)}}, {"p": 777}, default=DEFAULT)
+    steps = seed_pin_steps(plan)
+    assert list(steps) == ["p"], "a plot that is not pinned has no step"
+    (step,) = steps["p"]
+    assert step["node_type"] == "random_seed"
+    assert step["params"] == {"seed": 777, "layers": [0, 2]}
+    assert step["reason"].strip(), "an audit step carries its reason"
+
+
+def test_the_seed_step_is_added_after_the_audited_steps_and_the_input_is_not_changed():
+    nodes = {"p": [{"node_type": "filter_row", "params": {}, "reason": "r"}]}
+    before = copy.deepcopy(nodes)
+    plan = export_plot_seeds({"p": {"layers": jitter_layers()}, "q": {"layers": jitter_layers()}}, {"p": 5, "q": 6}, default=DEFAULT)
+    listed = with_seed_steps(nodes, plan)
+    assert [n["node_type"] for n in listed["p"]] == ["filter_row", "random_seed"]
+    assert [n["node_type"] for n in listed["q"]] == ["random_seed"]
+    assert nodes == before
+    assert with_seed_steps({}, export_plot_seeds({"p": {"layers": jitter_layers()}}, {}, default=DEFAULT)) == {}
+
+
+def test_the_methods_text_names_the_pinned_seed():
+    from app.handlers.export_handlers import _build_methods_section
+    plan = export_plot_seeds({"p": {"layers": jitter_layers()}}, {"p": 777}, default=DEFAULT)
+    lines = _build_methods_section(all_plots=[("p", {"title": "My plot"})], t3_by_plot=with_seed_steps({}, plan),
+                                   ds_to_plots={}, tiers_exported=["T1"])
+    text = "\n".join(lines)
+    assert "777" in text and "My plot" in text and "random" in text.lower()
+    assert _build_methods_section(all_plots=[("p", {})], t3_by_plot={}, ds_to_plots={}, tiers_exported=["T1"]) == []

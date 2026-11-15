@@ -25,7 +25,7 @@ from shiny import reactive, render, ui
 from app.modules.t3_audit_engine import _apply_filter_rows, _op_label
 from app.modules.plot_seeds import (
     bake_plot_seeds, export_seed_plan, seed_recipe_note, seed_sources_per_plot, seeds_added_to_recipe,
-    seeds_per_layer_record, seeds_per_plot_record, render_seed_args, unfixed_seed_warning,
+    seeds_per_layer_record, seeds_per_plot_record, render_seed_args, unfixed_seed_warning, with_seed_steps,
 )
 
 
@@ -355,6 +355,7 @@ def _build_methods_section(
         "exclusion_row": "Rows were explicitly excluded",
         "drop_column": "Column was permanently removed",
         "aesthetic_override": "Plot aesthetics were adjusted",
+        "random_seed": "The arrangement of the random points was fixed",
         "developer_raw_yaml": "A custom data analysis recipe fragment was applied",
     }
 
@@ -395,6 +396,9 @@ def _build_methods_section(
             elif nt == "aesthetic_override":
                 scope = f" for plot *{plot_label}*"
                 sentence = f"Plot aesthetics were adjusted{scope}."
+            elif nt == "random_seed":
+                sentence = (f"The arrangement of the random points of plot *{plot_label}* was fixed with the seed "
+                            f"**{params.get('seed')}**.")
             else:
                 scope = f" (plot: *{plot_label}*)" if p_id != "__all__" else ""
                 sentence = f"{verb}{scope}."
@@ -884,6 +888,10 @@ def define_export_server(input, output, session, *,
                 if _subtab in _overrides_all and _overrides_all[_subtab]:
                     _t3_aesthetic_overrides[_pid] = _overrides_all[_subtab]
 
+        # The audit pin of a plot (Reshuffle, or an audit override) is a step of the audit trail too, whatever the
+        # audit-trail flag: listed in t3_steps.yaml, the Methods text and the report's audit table, and hashed.
+        _t3_listed = with_seed_steps(_t3_by_plot, _plot_seeds)
+
         # The export is the Result (T2) plus the AUDITED T3 steps (committed with a reason, e.g.
         # removing poor quality data): the user's decision for the publication, always applied.
         # Exploration (filters tried in T1/T2/My view, not sent to audit) is a sandbox and is never
@@ -960,7 +968,7 @@ def define_export_server(input, output, session, *,
                 stage_keys=stage_keys,
                 orchestrator=orchestrator,
                 anchor_dir=anchor_dir,
-                t3_by_plot=_t3_by_plot,
+                t3_by_plot=_t3_listed,
                 t3_aesthetic_overrides=_t3_aesthetic_overrides,
             )
 
@@ -1185,7 +1193,7 @@ def define_export_server(input, output, session, *,
 
                 # ── t3_steps.yaml (when T3 has committed changes) — Mode 1 content: the
                 # human-readable audit record backing the Methods prose, not the recipe. ──
-                if _t3_by_plot or _t3_aesthetic_overrides:
+                if _t3_listed or _t3_aesthetic_overrides:
                     try:
                         import yaml as _yaml
                         t3_steps_data = {
@@ -1201,12 +1209,18 @@ def define_export_server(input, output, session, *,
                                     }
                                     for n in _nodes
                                 ]
-                                for _pid, _nodes in _t3_by_plot.items()
+                                for _pid, _nodes in _t3_listed.items()
                             },
                         }
                         # Aesthetic overrides are stored separately from audit step (§12c)
-                        if _t3_aesthetic_overrides:
-                            t3_steps_data["t3_aesthetic_overrides"] = _t3_aesthetic_overrides
+                        # the seed is listed as a step above, not a second time here
+                        _overrides_listed = {
+                            _pid: {k: v for k, v in _ov.items() if k != "random_state"}
+                            for _pid, _ov in _t3_aesthetic_overrides.items()
+                        }
+                        _overrides_listed = {_pid: _ov for _pid, _ov in _overrides_listed.items() if _ov}
+                        if _overrides_listed:
+                            t3_steps_data["t3_aesthetic_overrides"] = _overrides_listed
                         zf.writestr(
                             f"{bundle_dir}/t3_steps.yaml",
                             _yaml.safe_dump(t3_steps_data, sort_keys=False, allow_unicode=True),
@@ -1546,7 +1560,7 @@ def define_export_server(input, output, session, *,
             # ── Methods section (auto-generated from the audited T3 steps) ───
             _methods_lines = _build_methods_section(
                 all_plots=all_plots,
-                t3_by_plot=_t3_by_plot,
+                t3_by_plot=_t3_listed,
                 ds_to_plots=ds_to_plots,
                 tiers_exported=tiers_exported,
                 t3_aesthetic_overrides=_t3_aesthetic_overrides,
@@ -1600,9 +1614,9 @@ def define_export_server(input, output, session, *,
                 qmd_lines.append("")
 
             # ── T3 Audit Trail section ────────────────────────────────────
-            if _t3_by_plot:
+            if _t3_listed:
                 qmd_lines += ["## T3 Audit Trail", ""]
-                for _pid, _nodes in _t3_by_plot.items():
+                for _pid, _nodes in _t3_listed.items():
                     _spec_title = next(
                         (s.get("title") for p, s in all_plots if p == _pid), None
                     )
