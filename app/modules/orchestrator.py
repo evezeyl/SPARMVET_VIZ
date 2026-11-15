@@ -242,7 +242,8 @@ class DataOrchestrator:
 
         # ADR-089: the chained Tier 1 key (the resolved recipe with every included file, the data content and the engine
         # version) is written into the anchor, so any upstream change rebuilds it.
-        lf = write_anchor(lf, str(output_path), decision_hash=keys.tier1_key, metadata={TIER1_KEY_META: keys.tier1_key})
+        lf = write_anchor(lf, str(output_path), decision_hash=keys.tier1_key, metadata={TIER1_KEY_META: keys.tier1_key},
+                          join_checks=assembler.join_checks)
 
         print(f"[Orchestrator] ✅ materialize_tier1 DONE — assembly '{collection_id}' in {time.perf_counter()-_t_start:.2f}s → {output_path}")
         return lf

@@ -11,6 +11,7 @@ import polars as pl
 from polars.exceptions import PanicException
 from transformer.registry import get_action_function
 from utils.action_names import CAST, JOIN, JOIN_ASOF
+from transformer.join_diagnosis import JoinCheck
 from utils.errors import TransformationError
 from utils.pipeline_error import PipelineError
 
@@ -31,6 +32,7 @@ class DataAssembler:
         self.ingredients = ingredients
         self.recipe_id = recipe_id
         self.join_id = join_id
+        self.join_checks: List[JoinCheck] = []  # the joins that write `validate`, for the plain message of a refusal (join_diagnosis)
 
     @staticmethod
     def _key_columns(value: Any) -> List[str]:
@@ -234,6 +236,16 @@ class DataAssembler:
 
             if action_name in (JOIN, JOIN_ASOF) and right_id:
                 self._check_join_key_types(step, i, consolidated_lf, self.ingredients[right_id])
+
+            if action_name == JOIN and right_id and step.get("validate") in ("1:1", "1:m", "m:1"):
+                # Polars decides whether the join fails; this only lets the engine explain the failure afterwards (join_diagnosis)
+                left_keys = step.get("on") or step.get("left_on")
+                right_keys = step.get("on") or step.get("right_on")
+                if isinstance(left_keys, list) and isinstance(right_keys, list):
+                    self.join_checks.append(JoinCheck(
+                        location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {i + 1}",
+                        right_id=right_id, left=consolidated_lf, right=self.ingredients[right_id], validate=step["validate"],
+                        left_keys=left_keys, right_keys=right_keys, nulls_equal=bool(step.get("nulls_equal")), how=str(step.get("how", "left"))))
 
             # Execute the action via the shared registry (ADR-018).
             # Wrap Polars and registry errors in PipelineError for structured diagnostics
