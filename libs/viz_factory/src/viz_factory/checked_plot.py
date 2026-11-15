@@ -1,7 +1,7 @@
 """A plot that explains its own failure: the plot the factory builds, and the one checked call that draws it (VIZ-STANDARD-1, V7).
 
 # @deps
-# provides: class:CheckedPlot, class:PlotContext, class:Step, function:draw_checked, function:show_draw_errors, function:explain_build_failure
+# provides: class:CheckedPlot, class:PlotContext, class:Step, function:draw_checked, function:show_draw_errors, function:plot_warnings, function:explain_build_failure
 # consumes: libs/viz_factory/src/viz_factory/errors.py, libs/viz_factory/src/viz_factory/arguments.py, libs/viz_factory/src/viz_factory/registry.py, plotnine, matplotlib
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py, app/handlers/home_theater.py, app/modules/wrangle_studio.py, app/modules/gallery_examples.py
 # doc: .claude/design/decisions_2026-11-14/viz_plan_for_eve.md (V7), .claude/rules/rules_viz_factory.md
@@ -193,6 +193,7 @@ class PlotContext:
         self.df = df
         self.mapping = dict(mapping)
         self.steps: list[Step] = []
+        self.warnings: list = []   # PipelineError of severity warning: the plot draws, the author is told
         self.in_place = False
         self.on_error: Optional[Callable[[VisualizationError], None]] = None
 
@@ -305,8 +306,17 @@ def draw_checked(plot, plot_id: str = "plot"):
         raise _plain_failure(exc, plot_id) from exc
 
 
-def show_draw_errors(plot: CheckedPlot, on_error: Optional[Callable[[VisualizationError], None]] = None) -> CheckedPlot:
+def plot_warnings(plot) -> list:
+    """The warnings found while the plot was built (an unknown `plot_defaults` key, a palette that could not be applied ...)."""
+    context = getattr(plot, "_sparmvet", None)
+    return list(context.warnings) if context is not None else []
+
+
+def show_draw_errors(plot: CheckedPlot, on_error: Optional[Callable[[VisualizationError], None]] = None,
+                     on_warning: Optional[Callable[[Any], None]] = None) -> CheckedPlot:
     """A copy of the plot that, when drawing fails, draws the error message in its place and calls `on_error(error)`.
+
+    `on_warning(pipeline_error)` is called once for each warning found while the plot was built (the plot still draws).
 
     For a screen (HOME, the Blueprint preview): the user reads what is wrong, where the plot would be, and the alerts
     panel gets the same record. The copy draws exactly like the plot when drawing works.
@@ -314,6 +324,9 @@ def show_draw_errors(plot: CheckedPlot, on_error: Optional[Callable[[Visualizati
     context = getattr(plot, "_sparmvet", None)
     if context is None:
         raise TypeError("show_draw_errors needs a plot built by VizFactory.render")
+    if on_warning is not None:
+        for warning in context.warnings:
+            on_warning(warning)
     other = copy.deepcopy(plot)
     other._sparmvet = context.with_in_place(on_error)
     return other

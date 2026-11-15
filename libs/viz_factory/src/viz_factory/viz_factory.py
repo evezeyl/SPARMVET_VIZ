@@ -6,7 +6,7 @@ from viz_factory.registry import get_component
 from viz_factory.plot_config_resolver import (
     BATCHED_COMPONENTS, SEEDED_JITTER_COMPONENTS, resolve_plot_config, spec_key_names, unknown_spec_keys)
 from viz_factory.checked_plot import (
-    CheckedPlot, PlotContext, Step, draw_checked, explain_build_failure, show_draw_errors)
+    CheckedPlot, PlotContext, Step, draw_checked, explain_build_failure, plot_warnings, show_draw_errors)
 from viz_factory.errors import layer_label, plot_failure
 from utils.engines import engine_problem
 from utils.errors import VisualizationError
@@ -14,6 +14,7 @@ from utils.filter_values import coerce_filter_value
 from utils.missing_values import keep_missing
 from utils.na_choice import na_of
 from utils.pipeline_error import PipelineError
+import dataclasses
 import difflib
 
 # @deps
@@ -145,6 +146,17 @@ class VizFactory:
         """
         _refuse_plot_engine_not_built(data_analysis_recipe, plot_id)
 
+        # Warnings: the plot still draws, but the author must be told (VIZ-STANDARD-1). They are kept on the plot, where a screen
+        # reads them (`plot_warnings`), and also printed. A warning that is the same twice is kept once.
+        warnings_found: list = []
+
+        def warn(pe: PipelineError, plot_scoped: bool = True) -> None:
+            if plot_scoped:
+                pe = dataclasses.replace(pe, problem=f"Plot '{plot_id}': {pe.problem}")
+            print(pe.format())
+            if not any((w.problem, w.location) == (pe.problem, pe.location) for w in warnings_found):
+                warnings_found.append(pe)
+
         # Ensure LazyFrame for consistent ADR-010 handling
         if isinstance(df, pl.DataFrame):
             df = df.lazy()
@@ -261,7 +273,7 @@ class VizFactory:
             pe = PipelineError(
                 component="VizFactory",
                 problem=f"Unknown plot_defaults key '{key}' — ignored.",
-                location=f"VizFactory.render(plot_id='{plot_id}')",
+                location="recipe plot_defaults",
                 fix=(
                     f"Remove or correct the key '{key}' in the data analysis recipe 'plot_defaults:' block. "
                     "Valid keys: palette, theme, default_font_family, facet_panel_spacing, "
@@ -274,7 +286,7 @@ class VizFactory:
                 evidence={"unknown_key": key},
                 reference="rules_data_analysis_recipe_structure.md §10",
             )
-            print(pe.format())
+            warn(pe, plot_scoped=False)
         if resolved["_l5_mutex_warn"]:
             pe = PipelineError(
                 component="VizFactory",
@@ -286,7 +298,7 @@ class VizFactory:
                 surface="audit_panel",
                 severity="warning",
             )
-            print(pe.format())
+            warn(pe)
 
         # 5. Validate aesthetics — all mapped columns must exist in the dataset.
         mapping_spec = resolved["mapping"]
@@ -306,6 +318,7 @@ class VizFactory:
         # drawn (plotnine builds lazily) is traced to a layer and a parameter and raised in the one error form (V7).
         context = PlotContext(plot_id, df_pandas, mapping_spec)
         p = CheckedPlot(df_pandas, aes(**mapping_spec))
+        context.warnings = warnings_found
         p._sparmvet = context
 
         def apply(p, step: Step):
@@ -391,7 +404,7 @@ class VizFactory:
             has_fill_scale = "fill" not in palette_scope
             has_color_scale = "color" not in palette_scope
             p = apply(p, Step(
-                "palette", {}, lambda q, _params: self._apply_palette(q, palette_name, mapping_spec, has_fill_scale, has_color_scale),
+                "palette", {}, lambda q, _params: self._apply_palette(q, palette_name, mapping_spec, has_fill_scale, has_color_scale, warn),
                 label=f"the palette '{palette_name}'"))
 
         return p
@@ -403,6 +416,7 @@ class VizFactory:
         mapping_spec: dict,
         has_fill_scale: bool,
         has_color_scale: bool,
+        warn,
     ):
         """Inject a named palette as a plotnine fill/colour scale (BP-COLOR-3).
 
@@ -461,7 +475,7 @@ class VizFactory:
                         severity="warning",
                         evidence={"palette_name": palette_name, "error": str(exc)[:200]},
                     )
-                    print(pe.format())
+                    warn(pe)
             else:
                 try:
                     from plotnine import scale_fill_brewer, scale_color_brewer
@@ -487,6 +501,6 @@ class VizFactory:
                         evidence={"palette_name": palette_name, "error": str(exc)[:200]},
                         reference="rules_viz_factory.md §6c",
                     )
-                    print(pe.format())
+                    warn(pe)
 
         return p
