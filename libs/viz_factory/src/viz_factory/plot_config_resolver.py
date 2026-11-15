@@ -73,6 +73,21 @@ _CANONICAL_SPEC_KEYS: frozenset = frozenset({
     "palette", "labels", "guides", "filters", "title", "_meta",
 })
 
+def unknown_spec_keys(raw_spec: dict) -> list:
+    """The keys of a plot spec that are not part of the format, in the order written (VIZ-STANDARD-1, V6).
+
+    `normalise_plot_spec` moves them into `_meta`, where nothing reads them, so a mistyped key (`theem: theme_bw`) used to
+    be dropped without a word. The factory refuses them. `factory_id` and the flat aesthetics are not listed here:
+    `normalise_plot_spec` refuses those with its own message (ADR-083). An explicit `_meta` block is allowed.
+    """
+    return [k for k in raw_spec if k not in _CANONICAL_SPEC_KEYS and k != "factory_id" and k not in _LEGACY_FLAT_AES]
+
+
+def spec_key_names() -> list:
+    """The keys a plot spec may have, sorted, for a message."""
+    return sorted(k for k in _CANONICAL_SPEC_KEYS if k != "_meta")
+
+
 # Former flat aesthetic keys — checked early in normalise_plot_spec to raise a
 # helpful error (ADR-083). Not exported; use mapping: block for canonical specs.
 _LEGACY_FLAT_AES: frozenset = frozenset(
@@ -449,8 +464,8 @@ def resolve_plot_config(
     # ── L2: plot_defaults ────────────────────────────────────────────────────
     for key, val in (plot_defaults or {}).items():
         if key == "layers":
-            for layer in (val or []):
-                all_layers.append({**layer, "_tier": "L2"})
+            for number, layer in enumerate(val or [], start=1):
+                all_layers.append({**layer, "_tier": "L2", "_layer_no": number})
         elif key == "palette":
             seed["palette"] = val
             provenance["palette"] = "L2"
@@ -525,8 +540,9 @@ def resolve_plot_config(
         provenance["theme"] = "L4"
 
     # spec layers
-    for layer in spec.get("layers", []):
-        all_layers.append({**layer, "_tier": "L4"})
+    for number, layer in enumerate(spec.get("layers", []), start=1):
+        # `_layer_no` is the position in the author's list, so an error names the layer the author wrote
+        all_layers.append({**layer, "_tier": "L4", "_layer_no": number})
 
     # facet_by flat key → inject facet_wrap if no explicit facet_ layer in spec
     if spec.get("facet_by") and not any(

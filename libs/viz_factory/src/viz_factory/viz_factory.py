@@ -3,7 +3,11 @@ from plotnine import ggplot, aes
 from typing import Dict, Any, List
 # Explicit imports to ensure registration occurs
 from viz_factory.registry import get_component
-from viz_factory.plot_config_resolver import BATCHED_COMPONENTS, SEEDED_JITTER_COMPONENTS, resolve_plot_config
+from viz_factory.plot_config_resolver import (
+    BATCHED_COMPONENTS, SEEDED_JITTER_COMPONENTS, resolve_plot_config, spec_key_names, unknown_spec_keys)
+from viz_factory.checked_plot import (
+    CheckedPlot, PlotContext, Step, draw_checked, explain_build_failure, show_draw_errors)
+from viz_factory.errors import layer_label, plot_failure
 from utils.engines import engine_problem
 from utils.errors import VisualizationError
 from utils.filter_values import coerce_filter_value
@@ -77,19 +81,8 @@ def _refuse_plot_engine_not_built(data_analysis_recipe: Dict[str, Any], plot_id:
     if problem is None:
         return
     what, fix = problem
-    pe = PipelineError(
-        component="VizFactory",
-        problem=f"Plot '{plot_id}' cannot be drawn: {what}.",
-        location=f"VizFactory.render(plot_id='{plot_id}'), recipe key plot_engine",
-        fix=f"In the data analysis recipe, {fix}.",
-        who="data_analysis_recipe_author",
-        category="visualization",
-        surface="plot_overlay",
-        severity="error",
-        evidence={"plot_id": plot_id, "plot_engine": data_analysis_recipe["plot_engine"]},
-    )
-    print(pe.format())
-    raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe)
+    raise plot_failure(plot_id, f"it cannot be drawn: {what} (recipe key plot_engine)", f"in the data analysis recipe, {fix}",
+                       evidence={"plot_id": plot_id, "plot_engine": data_analysis_recipe["plot_engine"]})
 
 
 class VizFactory:
@@ -158,22 +151,21 @@ class VizFactory:
 
         raw_spec = data_analysis_recipe.get('plots', {}).get(plot_id)
         if not raw_spec:
-            pe = PipelineError(
-                component="VizFactory",
-                problem=f"Plot ID '{plot_id}' not found in data analysis recipe.",
-                location=f"VizFactory.render(plot_id='{plot_id}')",
-                fix=(
-                    "Verify that the plot_id is declared under 'analysis_groups.<group>.plots' "
-                    "in the data analysis recipe and that the `spec: !include` path resolves correctly."
-                ),
-                who="data_analysis_recipe_author",
-                category="visualization",
-                surface="plot_overlay",
-                severity="error",
-                evidence={"plot_id": plot_id, "available_plots": list(data_analysis_recipe.get("plots", {}).keys())},
-            )
-            print(pe.format())
-            raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe)
+            raise plot_failure(
+                plot_id, "it is not in the data analysis recipe",
+                "declare it under 'analysis_groups.<group>.plots' in the data analysis recipe and check that the `spec: !include` path resolves",
+                evidence={"plot_id": plot_id, "available_plots": list(data_analysis_recipe.get("plots", {}).keys())})
+
+        # A key that is not part of the plot spec format used to be moved to `_meta` and ignored: `theem: theme_bw`
+        # drew the plot without the theme and said nothing (VIZ-STANDARD-1, V6).
+        unknown = unknown_spec_keys(raw_spec)
+        if unknown:
+            known = spec_key_names()
+            close = difflib.get_close_matches(str(unknown[0]), known, n=1, cutoff=0.6)
+            raise plot_failure(
+                plot_id, "; ".join(f"{key!r} is not a key of a plot spec" for key in unknown),
+                f"write {close[0]}" if close else "remove it, or write one of " + ", ".join(known),
+                evidence={"unknown_keys": [str(k) for k in unknown]})
 
         plot_defaults = data_analysis_recipe.get('plot_defaults') or {}
 
@@ -258,8 +250,11 @@ class VizFactory:
         df_pandas = df.collect().to_pandas()
 
         # 3. Resolve five-tier cascade (L1 built-ins through L5 T3 override).
-        resolved = resolve_plot_config(raw_spec, plot_defaults, df_pandas,
-                                       aesthetic_override=aesthetic_override)
+        try:
+            resolved = resolve_plot_config(raw_spec, plot_defaults, df_pandas,
+                                           aesthetic_override=aesthetic_override)
+        except VisualizationError as exc:
+            raise plot_failure(plot_id, exc.message, exc.tip) from exc
 
         # 4. Emit structured warnings for unrecognised plot_defaults keys and L5 mutex (ADR-079).
         for key in resolved["_unknown_plot_defaults_keys"]:
@@ -299,125 +294,93 @@ class VizFactory:
         for aesthetic, col_name in mapping_spec.items():
             if col_name not in all_cols:
                 matches = difflib.get_close_matches(col_name, all_cols, n=1, cutoff=0.6)
-                tip = f"Ensure column '{col_name}' exists in the target_dataset after all wrangling and assembly steps."
-                if matches:
-                    tip += f" Hint: Did you mean '{matches[0]}'?"
-                pe = PipelineError(
-                    component="VizFactory",
-                    problem=f"Aesthetic '{aesthetic}' references unknown column '{col_name}'.",
-                    location=f"VizFactory.render(plot_id='{plot_id}')",
-                    fix=tip,
-                    who="data_analysis_recipe_author",
-                    category="visualization",
-                    surface="plot_overlay",
-                    severity="error",
-                    evidence={
-                        "aesthetic": aesthetic,
-                        "column": col_name,
-                        "near_match": matches[0] if matches else None,
-                        "available_columns": all_cols[:20],
-                    },
-                    reference="rules_data_analysis_recipe_structure.md §8",
-                )
-                print(pe.format())
-                raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe)
+                raise plot_failure(
+                    plot_id, f"the aesthetic '{aesthetic}' is mapped to the column '{col_name}', which the data does not have",
+                    (f"write '{matches[0]}' (the closest column)" if matches else
+                     f"use a column that exists in the target_dataset after all wrangling and assembly steps") + ".",
+                    evidence={"aesthetic": aesthetic, "column": col_name, "near_match": matches[0] if matches else None,
+                              "available_columns": all_cols[:20]},
+                    reference="rules_data_analysis_recipe_structure.md §8")
 
-        # 6. Build the ggplot object.
-        p = ggplot(df_pandas, aes(**mapping_spec))
+        # 6. Build the plot. It is a CheckedPlot: it keeps the steps it was built from, so that a failure while it is
+        # drawn (plotnine builds lazily) is traced to a layer and a parameter and raised in the one error form (V7).
+        context = PlotContext(plot_id, df_pandas, mapping_spec)
+        p = CheckedPlot(df_pandas, aes(**mapping_spec))
+        p._sparmvet = context
 
-        # 7. Apply resolved layers sequentially.
-        # element_text layers are batched and applied together via a single theme()
-        # call to avoid redundant theme accumulation overhead.
-        element_text_batch: dict = {}
+        def apply(p, step: Step):
+            """Apply one step; a failure of the component is the one error form, naming this layer."""
+            try:
+                out = step.func(p, dict(step.params))
+            except Exception as exc:
+                raise explain_build_failure(plot_id, p, step, exc) from exc
+            context.steps.append(step)
+            return out
+
+        # 7. Apply resolved layers sequentially. The element_text layers (axis-text overrides, L3 and above) go last.
+        deferred: list = []
         for layer_spec in resolved["layers"]:
             layer_name = layer_spec.get("name")
-            # Strip internal _tier / _meta keys before passing to components.
+            tier, number = layer_spec.get("_tier"), layer_spec.get("_layer_no")
+            # `_tier` / `_layer_no` are internal markers; only the params go to the component.
             layer_params = {k: v for k, v in layer_spec.get("params", {}).items()}
+            where = layer_label(tier, number, str(layer_name))
 
-            if layer_name in BATCHED_COMPONENTS:
-                # Collect axis-text overrides; target is the theme kwarg name.
-                target = layer_params.pop("target", None)
-                if target:
-                    element_text_batch[target] = layer_params
-                continue
-
-            layer_params = _seed_random_components(layer_name, layer_params, self._random_state)
-
+            if not layer_name:
+                raise plot_failure(plot_id, "a layer has no name", "write name: geom_point (or another component) for every layer",
+                                   layer=where)
+            if layer_name not in BATCHED_COMPONENTS:
+                layer_params = _seed_random_components(layer_name, layer_params, self._random_state)
             try:
                 component_func = get_component(layer_name)
             except ValueError as exc:
                 all_registered = list(__import__("viz_factory.registry", fromlist=["PLOT_COMPONENTS"]).PLOT_COMPONENTS.keys())
                 matches = difflib.get_close_matches(layer_name, all_registered, n=1, cutoff=0.6)
-                pe = PipelineError(
-                    component="VizFactory",
-                    problem=f"Layer component '{layer_name}' is not registered.",
-                    location=f"VizFactory.render(plot_id='{plot_id}')",
-                    fix=(
-                        f"'{layer_name}' is not a registered plot component. "
-                        + (f"Did you mean '{matches[0]}'? " if matches else "")
-                        + "See rules_viz_factory.md §1 and libs/viz_factory/src/viz_factory/ for the component list."
-                    ),
-                    who="data_analysis_recipe_author",
-                    category="visualization",
-                    surface="plot_overlay",
-                    severity="error",
-                    evidence={"layer_name": layer_name, "near_match": matches[0] if matches else None},
-                    reference="rules_viz_factory.md §1",
-                )
-                print(pe.format())
-                raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
-            try:
-                p = component_func(p, layer_params)
-            except Exception as exc:
-                pe = PipelineError(
-                    component="VizFactory",
-                    problem=f"Layer '{layer_name}' raised {type(exc).__name__}: {exc}",
-                    location=f"VizFactory.render(plot_id='{plot_id}')",
-                    fix="Review the layer parameters in the data analysis recipe spec. Check that all parameter values match the plotnine API for this component.",
-                    who="data_analysis_recipe_author",
-                    category="visualization",
-                    surface="plot_overlay",
-                    severity="error",
-                    evidence={"layer_name": layer_name, "params": str(layer_params)[:200], "error_type": type(exc).__name__, "error_detail": str(exc)[:200]},
-                )
-                print(pe.format())
-                raise VisualizationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
+                raise plot_failure(
+                    plot_id, f"'{layer_name}' is not a registered plot component",
+                    f"write {matches[0]}" if matches else "write the name of a registered component (see libs/viz_factory/README.md)",
+                    layer=where, evidence={"layer_name": layer_name, "near_match": matches[0] if matches else None},
+                    reference="rules_viz_factory.md §1") from exc
+
+            step = Step(layer_name, layer_params, component_func, tier=tier, layer_no=number)
+            if layer_name in BATCHED_COMPONENTS:
+                deferred.append(step)
+                continue
+            p = apply(p, step)
             print(f"Applied layer: {layer_name}")
 
-        # Apply batched element_text axis overrides (L3 optimisation + any L4/L5).
-        if element_text_batch:
-            from plotnine import theme, element_text
-            theme_kwargs = {
-                target: element_text(**et_params)
-                for target, et_params in element_text_batch.items()
-            }
-            p = p + theme(**theme_kwargs)
-            print(f"Applied axis text overrides: {list(element_text_batch.keys())}")
+        for step in deferred:
+            p = apply(p, step)
+        if deferred:
+            print(f"Applied axis text overrides: {[s.params.get('target') for s in deferred]}")
 
         # 8. Apply flat labels / guides blocks (backwards-compat with spec-level dicts).
         # In typical data analysis recipes these come from a labs layer; the flat keys are legacy.
         labels_block = resolved.get("labels", {})
         if labels_block:
             from plotnine import labs
-            p = p + labs(**labels_block)
+            p = apply(p, Step("labels", dict(labels_block), lambda q, params: q + labs(**params), label="the spec's labels"))
             print(f"Applied labels: {list(labels_block.keys())}")
 
         guides_block = resolved.get("guides", {})
         if guides_block:
             from plotnine import guides, guide_legend, guide_colorbar
-            guide_map = {}
             _guide_ctors = {"guide_legend": guide_legend, "guide_colorbar": guide_colorbar}
-            for aes_key, guide_spec in guides_block.items():
-                if isinstance(guide_spec, dict):
-                    guide_spec = dict(guide_spec)  # copy before pop
-                    ctor_name = guide_spec.pop("name", "guide_legend")
-                    ctor = _guide_ctors.get(ctor_name, guide_legend)
-                    guide_map[aes_key] = ctor(**guide_spec)
-                elif guide_spec is False or guide_spec == "none":
-                    guide_map[aes_key] = False
-            if guide_map:
-                p = p + guides(**guide_map)
-                print(f"Applied guides: {list(guide_map.keys())}")
+
+            def _guides(q, params):
+                guide_map = {}
+                for aes_key, guide_spec in params.items():
+                    if isinstance(guide_spec, dict):
+                        guide_spec = dict(guide_spec)  # copy before pop
+                        ctor_name = guide_spec.pop("name", "guide_legend")
+                        ctor = _guide_ctors.get(ctor_name, guide_legend)
+                        guide_map[aes_key] = ctor(**guide_spec)
+                    elif guide_spec is False or guide_spec == "none":
+                        guide_map[aes_key] = False
+                return q + guides(**guide_map) if guide_map else q
+
+            p = apply(p, Step("guides", dict(guides_block), _guides, label="the spec's guides"))
+            print(f"Applied guides: {list(guides_block.keys())}")
 
         # 9. Palette injection (BP-COLOR-3, §6c).
         # palette_scope encodes which aesthetics still need a scale after dedup —
@@ -427,9 +390,9 @@ class VizFactory:
             palette_scope = resolved["palette_scope"]
             has_fill_scale = "fill" not in palette_scope
             has_color_scale = "color" not in palette_scope
-            p = self._apply_palette(
-                p, palette_name, mapping_spec, has_fill_scale, has_color_scale
-            )
+            p = apply(p, Step(
+                "palette", {}, lambda q, _params: self._apply_palette(q, palette_name, mapping_spec, has_fill_scale, has_color_scale),
+                label=f"the palette '{palette_name}'"))
 
         return p
 
