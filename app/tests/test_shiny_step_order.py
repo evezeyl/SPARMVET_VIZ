@@ -11,11 +11,15 @@ temporary folder of `tmpAI/`; no tracked file is touched. In the qa app features
 - order B (filter score >= 16, then drop score): the table and the plot both show the filtered rows (15). The plot differs
   from the Result plot, and the drop does not change it (the old plot path skipped the filter on the dropped column and drew
   all 30 rows);
-- order A (drop score, then filter score >= 16): the table's place and the plot's place both show the error, naming the audit
-  step, the column and the step that removed it; the Alerts panel holds it; the export is refused with `EXPORT_NOT_CREATED.txt`
-  and the same reason.
+- order A (drop score, then filter score >= 16, the filter staged before the drop): the table's place and the plot's place
+  both show the error, naming the plot, the audit step, the column and the step that removed it; the Alerts panel holds it;
+  the export is refused with `EXPORT_NOT_CREATED.txt` and the same reason;
+- the filter dialog does not offer a column that an earlier audit step dropped (DECIDED 2026-11-15, S2-1 (a));
+- two exports that succeed with audited steps (a filter; a filter then a drop): the `T3_data_<plot>.tsv` of the bundle holds
+  the rows and values of a reference built in plain Polars from the raw file, and the plot of the bundle is the picture of a
+  direct render of that reference (so a bundle that took an unfiltered frame fails).
 
-Not tested here: that the filter dialog still offers a column that an earlier audit step dropped (it does; open point).
+Waits are on the app's state (the "audit steps applied" count, the row summary, the option list), never on time.
 
 Run: PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_step_order.py -q
 """
@@ -29,6 +33,7 @@ import zipfile
 from pathlib import Path
 
 import numpy as np
+import polars as pl
 import pytest
 import yaml
 from PIL import Image
@@ -98,20 +103,28 @@ def _table_text(page: Page) -> str:
     return page.locator("#home_data_preview").inner_text()
 
 
-def _table_rows(page: Page) -> int:
-    """Rows of the data table, from its summary ("Viewing rows 1 through 15 of 15")."""
-    summary = page.locator("#home_data_preview .shiny-data-grid-summary")
-    expect(summary).to_be_visible(timeout=15_000)
-    return int(summary.inner_text().split(" of ")[-1].split()[0])
+def _expect_rows(page: Page, n: int) -> None:
+    """The data table says it holds n rows ("Viewing rows 1 through 15 of 15"): a retrying assertion on the app's state."""
+    expect(page.locator("#home_data_preview .shiny-data-grid-summary")).to_contain_text(f" of {n}", timeout=20_000)
 
 
 def _plot_image(page: Page) -> Image.Image:
-    box = page.locator(f"#plot_group_{PLOT}")
-    expect(box.locator("img")).to_be_visible(timeout=20_000)
-    page.wait_for_timeout(500)
-    # the image itself, not a screenshot of the screen (a notification can lie over the plot)
+    """The picture the plot shows now: the image itself (a notification can lie over a screenshot), after Shiny is idle."""
+    _wait_shiny(page, 30_000)
+    expect(page.locator(f"#plot_group_{PLOT} img")).to_be_visible(timeout=20_000)
     data = page.evaluate("(sel) => document.querySelector(sel + ' img').src", f"#plot_group_{PLOT}")
     return Image.open(io.BytesIO(base64.b64decode(data.split(",", 1)[1]))).convert("RGB")
+
+
+def _plot_until(page: Page, predicate, what: str) -> Image.Image:
+    """Read the plot until `predicate(image)` holds (a retrying read of the app's state, at most 20 s)."""
+    deadline = time.time() + 20
+    image = _plot_image(page)
+    while not predicate(image):
+        assert time.time() < deadline, f"the plot never became: {what}"
+        page.wait_for_timeout(250)
+        image = _plot_image(page)
+    return image
 
 
 def _red_pixels(image: Image.Image) -> int:
@@ -123,19 +136,37 @@ def _same_picture(a: Image.Image, b: Image.Image) -> bool:
     return a.size == b.size and np.array_equal(np.asarray(a), np.asarray(b))
 
 
-def _confirm_and_apply(page: Page, reason: str) -> None:
-    page.wait_for_timeout(800)
-    if page.locator("#propagation_confirm").count() and page.locator("#propagation_confirm").is_visible():
-        page.locator("#propagation_confirm").click()
-        _wait_shiny(page)
+def _press(page: Page, selector: str) -> None:
+    """Press a Shiny action button once it is visible. The click is made in the page: a notification can lie over the button."""
+    expect(page.locator(selector).first).to_be_visible(timeout=15_000)
+    expect(page.locator(selector).first).to_be_enabled(timeout=15_000)   # Apply stays disabled until every reason is read by the app
+    page.eval_on_selector(selector, "e => e.click()")
+
+
+def _confirm_scope(page: Page) -> None:
+    """The scope dialog (this plot only is the default); the step stays pending, its reason box appears after it."""
+    _press(page, "#propagation_confirm")
+    _wait_shiny(page)
+
+
+def _reasons_and_apply(page: Page, reason: str, nodes: int) -> None:
+    """Give every empty reason, press Apply, and wait until the app says `nodes` audit steps are applied."""
     reasons = page.locator('input[id^="t3_reason_"]')
+    page.wait_for_function("() => [...document.querySelectorAll('input[id^=t3_reason_]')].some(e => !e.value)", timeout=15_000)
     for i in range(reasons.count()):
         if not reasons.nth(i).input_value():
             reasons.nth(i).fill(reason)
+            reasons.nth(i).press("Tab")   # leaving the box sends the text now; a click sent before it would be refused by the Apply gate
     _wait_shiny(page)
-    page.locator("#btn_apply").first.click()
-    _wait_shiny(page)
-    page.wait_for_timeout(800)
+    _press(page, "#btn_apply")
+    page.wait_for_function("(n) => document.body.textContent.includes('audit steps applied \u2014 ' + n + ' node(s)')",
+                           arg=nodes, timeout=20_000)
+    _wait_shiny(page, 30_000)
+
+
+def _confirm_and_apply(page: Page, reason: str, nodes: int) -> None:
+    _confirm_scope(page)
+    _reasons_and_apply(page, reason, nodes)
 
 
 def _start(page: Page, url: str) -> None:
@@ -146,10 +177,10 @@ def _start(page: Page, url: str) -> None:
     page.locator("#tier_toggle input[value=T3]").check(force=True)   # the table shows My view
     _wait_shiny(page)
     _wait_for_fb_col_option(page, "score")
-    assert _table_rows(page) == N
+    _expect_rows(page, N)
 
 
-def _filter_step(page: Page) -> None:
+def _stage_filter(page: Page) -> None:
     page.locator("#fb_col").select_option("score")
     _wait_shiny(page)
     page.locator("#fb_op").select_option("ge")
@@ -157,19 +188,34 @@ def _filter_step(page: Page) -> None:
     page.locator("#fb_value").fill(str(THRESHOLD))
     page.locator("#fb_value").press("Tab")
     _wait_shiny(page)
-    page.locator("#filter_add_row").click()
+    _press(page, "#filter_add_row")
     _wait_shiny(page)
-    page.locator("#filter_send_to_audit").click()
-    _wait_shiny(page)
-    _confirm_and_apply(page, "keep the good scores")
+    expect(page.locator("#filter_send_to_audit")).to_be_visible(timeout=10_000)
 
 
-def _drop_step(page: Page) -> None:
+def _send_staged_filter(page: Page, nodes: int) -> None:
+    _press(page, "#filter_send_to_audit")
+    _wait_shiny(page)
+    _confirm_and_apply(page, "keep the good scores", nodes)
+
+
+def _filter_step(page: Page, nodes: int) -> None:
+    _stage_filter(page)
+    _send_staged_filter(page, nodes)
+
+
+def _pending_drop(page: Page) -> None:
+    """Deselect `score` and send the drop to audit; the scope dialog is confirmed, the step stays pending (no Apply yet)."""
     page.evaluate("() => $('#preview_col_selector')[0].selectize.removeItem('score')")
     _wait_shiny(page)
-    page.locator("#col_drop_to_audit").click()
+    _press(page, "#col_drop_to_audit")
     _wait_shiny(page)
-    _confirm_and_apply(page, "score is not needed")
+    _confirm_scope(page)
+
+
+def _drop_step(page: Page, nodes: int) -> None:
+    _pending_drop(page)
+    _reasons_and_apply(page, "score is not needed", nodes)
 
 
 def _alerts(page: Page) -> list:
@@ -180,6 +226,55 @@ def _alerts(page: Page) -> list:
     return page.locator("#notification_log_accordion .spv-tag-row").all_inner_texts()
 
 
+def _export_bundle(page: Page) -> zipfile.ZipFile:
+    if not page.locator("#export_bundle_download").is_visible():
+        page.locator("#nav_accordion .accordion-button:has-text('Export')").first.click()
+        _wait_shiny(page)
+    expect(page.locator("#export_bundle_download")).to_be_visible(timeout=10_000)
+    page.locator("#export_user_name").fill("autotest")
+    with page.expect_download(timeout=240_000) as info:
+        page.locator("#export_bundle_download").click()
+    return zipfile.ZipFile(io.BytesIO(Path(info.value.path()).read_bytes()))
+
+
+# -- the reference: plain Polars from the raw file, and a direct render of it --------------------------------------------------
+
+def _raw() -> pl.DataFrame:
+    return pl.read_csv(WORK / "t.tsv", separator="\t", schema_overrides={"sample_id": pl.String})
+
+
+def _reference_png(frame: pl.DataFrame) -> Image.Image:
+    """The plot of the staged recipe drawn directly from a frame (no app), saved like the export saves it (png, 300 dpi, 8 x 5)."""
+    from viz_factory import VizFactory
+    recipe = yaml.safe_load((WORK / "recipes" / "t.yaml").read_text(encoding="utf-8"))
+    spec = recipe["analysis_groups"]["tg"]["plots"][PLOT]["spec"]
+    figure = VizFactory().render(frame.lazy(), {"plots": {PLOT: spec}, "plot_defaults": recipe.get("plot_defaults", {})}, PLOT)
+    path = WORK / "reference.png"
+    figure.save(str(path), verbose=False, format="png", dpi=300, width=8, height=5)
+    return Image.open(path).convert("RGB")
+
+
+def _bundle_file(archive: zipfile.ZipFile, suffix: str) -> bytes:
+    names = [n for n in archive.namelist() if n.endswith(suffix)]
+    assert len(names) == 1, (suffix, archive.namelist())
+    return archive.read(names[0])
+
+
+def _check_bundle(archive: zipfile.ZipFile, reference: pl.DataFrame, dropped: bool) -> None:
+    """The T3 data file and the plot of the bundle are the reference, not the unfiltered table."""
+    names = archive.namelist()
+    assert not any(n.endswith("EXPORT_NOT_CREATED.txt") for n in names), "the export was refused"
+    data = pl.read_csv(io.BytesIO(_bundle_file(archive, f"/T3_data_{PLOT}.tsv")), separator="\t", schema_overrides={"sample_id": pl.String})
+    expected = reference.drop("score") if dropped else reference
+    assert data.height == expected.height < N, f"the T3 data file has {data.height} rows, the reference {expected.height}"
+    assert data.columns == expected.columns, (data.columns, expected.columns)
+    assert data.sort("sample_id").equals(expected.sort("sample_id")), "rows or values differ from the reference"
+    picture = Image.open(io.BytesIO(_bundle_file(archive, f"/plots/{PLOT}.png"))).convert("RGB")
+    assert _red_pixels(picture) == 0, "the bundle plot is an error picture"
+    assert _same_picture(picture, _reference_png(reference)), "the bundle plot is not the plot of the reference rows"
+    assert not _same_picture(picture, _reference_png(_raw())), "the bundle plot shows the unfiltered table"
+
+
 def test_order_b_filter_then_drop_gives_the_same_rows_in_the_table_and_the_plot(page: Page, staged_app):
     _start(page, staged_app)
     page.locator("#plot_view input[value=T2]").check(force=True)
@@ -187,13 +282,12 @@ def test_order_b_filter_then_drop_gives_the_same_rows_in_the_table_and_the_plot(
     result_plot = _plot_image(page)                       # the Result plot: all 30 rows
     page.locator("#plot_view input[value=T3]").check(force=True)
     _wait_shiny(page)
-    _filter_step(page)
-    assert _table_rows(page) == N - THRESHOLD + 1, "the table shows the filtered rows"
-    filtered_plot = _plot_image(page)
-    assert not _same_picture(filtered_plot, result_plot), "the plot of My view shows the filter"
-    _drop_step(page)
-    assert _table_rows(page) == N - THRESHOLD + 1, "the table keeps the filtered rows after the drop"
-    assert "score" not in page.locator("#home_data_preview thead").inner_text()
+    _filter_step(page, 1)
+    _expect_rows(page, N - THRESHOLD + 1)                 # the table shows the filtered rows
+    filtered_plot = _plot_until(page, lambda im: not _same_picture(im, result_plot), "different from the Result plot (the filter shown)")
+    _drop_step(page, 2)
+    expect(page.locator("#home_data_preview thead")).not_to_contain_text("score", timeout=20_000)
+    _expect_rows(page, N - THRESHOLD + 1)                 # the table keeps the filtered rows after the drop
     after_drop = _plot_image(page)
     assert _red_pixels(after_drop) == 0, "the plot is drawn, not an error"
     assert _same_picture(after_drop, filtered_plot), "the drop of a column the plot does not use must not change the plot"
@@ -201,31 +295,63 @@ def test_order_b_filter_then_drop_gives_the_same_rows_in_the_table_and_the_plot(
     assert not [a for a in _alerts(page) if "cannot run" in a], "no audit step error for an order that can run"
 
 
+def test_the_filter_dialog_does_not_offer_a_column_that_an_earlier_audit_step_dropped(page: Page, staged_app):
+    _start(page, staged_app)
+    assert "score" in page.locator("#fb_col option").evaluate_all("els => els.map(e => e.value)")
+    _drop_step(page, 1)
+    page.wait_for_function("() => ![...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
+    assert page.locator("#fb_col option").evaluate_all("els => els.map(e => e.value)") == ["sample_id", "year"]
+    # the other views are the tables as they are: Result still offers the column
+    page.locator("#tier_toggle input[value=T2]").check(force=True)
+    _wait_shiny(page)
+    page.wait_for_function("() => [...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
+
+
 def test_order_a_drop_then_filter_shows_the_error_in_the_table_and_the_plot_and_blocks_the_export(page: Page, staged_app):
+    """Order A cannot be made by recording the drop first and then opening the dialog (it does not offer the dropped column and
+    Apply clears the staged rows). It still can be made while the drop is pending: the dialog acts on the applied steps only. The
+    engine must then refuse the list, never skip a step."""
     _start(page, staged_app)
     page.locator("#plot_view input[value=T3]").check(force=True)
     _wait_shiny(page)
-    _drop_step(page)
-    assert "score" not in page.locator("#home_data_preview thead").inner_text()
-    # the dialog still offers the dropped column (open point of PLOT-TABLE-ORDER-1): the user can record the second step
-    _filter_step(page)
-    expect(page.locator("#home_data_preview")).to_contain_text("audit step 2", timeout=15_000)
+    _pending_drop(page)                       # step 1, pending
+    _stage_filter(page)                       # the dialog still offers `score`: the drop is not applied yet
+    _press(page, "#filter_send_to_audit")
+    _wait_shiny(page)
+    _confirm_scope(page)                      # step 2, pending
+    _reasons_and_apply(page, "recorded in this order", 2)
+    expect(page.locator("#home_data_preview")).to_contain_text("audit step 2", timeout=20_000)
     table = _table_text(page)
-    for needle in ("audit step 2", "score", "audit step 1", "removed it", "Fix"):
+    for needle in ("audit step 2 of the plot 'per_year'", "score", "audit step 1", "removed it", "Fix"):
         assert needle in table, f"the table's place does not say {needle!r}: {table!r}"
-    plot = _plot_image(page)
-    assert _red_pixels(plot) > 100, "the error (red text) is drawn in the plot's place; the filter is not skipped"
+    plot = _plot_until(page, lambda im: _red_pixels(im) > 100, "the error text (red) in the plot's place; the filter is not skipped")
+    assert _red_pixels(plot) > 100
     found = [a for a in _alerts(page) if "cannot run" in a]
-    assert len(found) == 1, found
-    # the export is checked before anything is written
-    if not page.locator("#export_bundle_download").is_visible():
-        page.locator("#nav_accordion .accordion-button:has-text('Export')").first.click()
-        _wait_shiny(page)
-    expect(page.locator("#export_bundle_download")).to_be_visible(timeout=10_000)
-    page.locator("#export_user_name").fill("autotest")
-    with page.expect_download(timeout=120_000) as info:
-        page.locator("#export_bundle_download").click()
-    archive = zipfile.ZipFile(io.BytesIO(Path(info.value.path()).read_bytes()))
+    assert len(found) == 1 and "'per_year'" in found[0], found
+    archive = _export_bundle(page)            # the export is checked before anything is written
     assert archive.namelist() == ["EXPORT_NOT_CREATED.txt"], archive.namelist()
     notice = archive.read("EXPORT_NOT_CREATED.txt").decode()
     assert "audit step 2" in notice and "audit step 1" in notice and "'per_year'" in notice, notice
+
+
+def test_an_export_with_an_audited_filter_holds_the_filtered_rows_and_plot(page: Page, staged_app):
+    _start(page, staged_app)
+    page.locator("#plot_view input[value=T3]").check(force=True)
+    _wait_shiny(page)
+    _filter_step(page, 1)
+    _expect_rows(page, N - THRESHOLD + 1)
+    reference = _raw().filter(pl.col("score") >= THRESHOLD)
+    assert reference.height == N - THRESHOLD + 1
+    _check_bundle(_export_bundle(page), reference, dropped=False)
+
+
+def test_an_export_with_a_filter_then_a_drop_holds_the_filtered_rows_without_the_column(page: Page, staged_app):
+    _start(page, staged_app)
+    page.locator("#plot_view input[value=T3]").check(force=True)
+    _wait_shiny(page)
+    _filter_step(page, 1)
+    _drop_step(page, 2)
+    expect(page.locator("#home_data_preview thead")).not_to_contain_text("score", timeout=20_000)
+    _expect_rows(page, N - THRESHOLD + 1)
+    reference = _raw().filter(pl.col("score") >= THRESHOLD)
+    _check_bundle(_export_bundle(page), reference, dropped=True)
