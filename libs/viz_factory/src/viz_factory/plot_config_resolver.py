@@ -1,7 +1,7 @@
 # @deps
 # provides: function:resolve_plot_config, function:compute_optimisation_layer,
 #           function:_dedupe_layers, constant:_BUILTIN_DEFAULTS,
-#           function:normalise_plot_spec, function:serialise_plot_spec,
+#           function:normalise_plot_spec, function:serialise_plot_spec, function:unknown_spec_keys, function:spec_key_names,
 #           function:layers_have_jitter (REPRO-SEED-2), function:recipe_pins_random_state (REPRO-RESHUFFLE-1)
 # consumes: libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py,
