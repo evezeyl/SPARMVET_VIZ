@@ -254,6 +254,14 @@ def test_the_reshuffle_pin_reaches_home_and_the_export_when_the_audit_trail_is_o
             assert seed_line(page) == "seed 0, default (nothing written in the recipe)"
             assert same_picture(shown.screenshot(), before), "removing the pinned seed did not bring the plot back"
             assert not same_picture(shown.screenshot(), pinned_picture)
+            # after the way back the export holds no trace of the pin: the recipe's seed, no step, no word in the report
+            run_c, png_c, z_c = export_run_and_png(page)
+            assert run_c["seed_source_per_plot"][PID] == "default" and run_c["seeds_per_plot"][PID] == 0
+            assert same_picture(png_c, png_a), "the export after removing the pin is not the export before it"
+            names = z_c.namelist()
+            assert not any(n.endswith("t3_steps.yaml") for n in names), "a step file was written for a removed pin"
+            report_c = z_c.read(next(n for n in names if n.endswith("report.qmd"))).decode()
+            assert "random_seed" not in report_c and "pinned" not in report_c.lower()
             btn.click()                          # pin again for the export below
             _wait_shiny(page)
             settle(page, f"plot_group_{PID}")
