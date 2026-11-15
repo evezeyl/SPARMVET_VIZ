@@ -46,6 +46,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:build_sibling_map, function:build_lineage_chain, function:build_schema_registry, function:load_fields_file, function:resolve_fields_for_schema, function:build_plot_lineage, function:get_plot_ids_in_group, function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml)
+# consumes: libs/utils/src/utils/recipe_tiers.py
 # consumed_by: app/handlers/blueprint_handlers.py, app/handlers/home_theater.py, app/handlers/export_handlers.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-074
 # @end_deps
@@ -54,6 +55,8 @@ import re
 from pathlib import Path
 
 import yaml
+
+from utils.recipe_tiers import step_list
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -720,6 +723,29 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
             "rel": rel,
         }
 
+    def _wrangling_label(sid: str) -> str:
+        """`<id> / wrangling`, with a note when the schema has a tier-2 list (issue #77).
+
+        A schema's tier 2 runs only where a plot reads the schema directly; a join reads its tier 1. The note says so in
+        both places, so a node shared by both kinds of plot (the export deduplicates by id) is true for both."""
+        block = None
+        for section in ("data_schemas", "additional_datasets_schemas"):
+            found = (tree.get(section) or {}).get(sid)
+            if isinstance(found, dict):
+                block = found
+        if sid == "metadata_schema" and isinstance(tree.get("metadata_schema"), dict):
+            block = tree["metadata_schema"]
+        wrangling = block.get("wrangling") if isinstance(block, dict) else None
+        rel = _rel_path(wrangling)
+        if rel:
+            try:
+                wrangling = yaml.load((data_analysis_recipe_dir / rel).read_text(encoding="utf-8"), Loader=_CapLoader)  # noqa: S506
+            except Exception:
+                wrangling = None
+        if step_list(wrangling, "tier2"):
+            return f"{sid} / wrangling (tier 1; tier 2 only where {sid} is plotted directly)"
+        return f"{sid} / wrangling"
+
     def _source_path_for(sid: str) -> str:
         for section in ("data_schemas", "additional_datasets_schemas"):
             block = (tree.get(section) or {}).get(sid)
@@ -736,7 +762,7 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
         return ""
 
     if target_dataset:
-        # Prefer a join entry; fall back to a direct data schema (T1-only path)
+        # Prefer a join entry (the engine's order); fall back to a direct data schema
         join_rel = next(
             (r for r, e in ctx_map.items()
              if e.get("schema_id") == target_dataset and e.get("role") == "join"),
@@ -754,11 +780,11 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
                 )
                 if wrn_rel:
                     steps.append(_step("wrangling", ing_id,
-                                       f"{ing_id} / wrangling", wrn_rel))
+                                       _wrangling_label(ing_id), wrn_rel))
             steps.append(_step("join", target_dataset, target_dataset, join_rel))
 
         else:
-            # Direct data schema — no assembly layer
+            # Direct data schema, no assembly layer: its wrangling node holds its T1 and its T2 (issue #77)
             steps.append(_step("data_source", target_dataset, target_dataset,
                                _source_path_for(target_dataset)))
             wrn_rel = next(
@@ -769,7 +795,7 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
             )
             if wrn_rel:
                 steps.append(_step("wrangling", target_dataset,
-                                   f"{target_dataset} / wrangling", wrn_rel))
+                                   _wrangling_label(target_dataset), wrn_rel))
 
     steps.append(_step("plot_spec", plot_id, plot_label))
     return steps

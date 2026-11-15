@@ -75,10 +75,11 @@
       "predicted_phenotype:Categorical",
       "identity:Float64",
       "overlap:Float64",
-      "status:String"
+      "status:String",
+      "total_gene_count:UInt32"
      ],
      "rows": 70,
-     "sha256": "17d7acce887ddb97c7c83ae61ba8d58061aff1c80e9e451f0e29eb60fa1fdcb7"
+     "sha256": "3e76b2351b149382c1ae13b460f0ba4061f923413f5623c0e3a3d4db68ec6d53"
     },
     "assembly_quality_dotplot": {
      "columns": [
@@ -629,10 +630,11 @@
       "predicted_phenotype:Categorical",
       "identity:Float64",
       "overlap:Float64",
-      "status:String"
+      "status:String",
+      "total_gene_count:UInt32"
      ],
      "rows": 70,
-     "sha256": "17d7acce887ddb97c7c83ae61ba8d58061aff1c80e9e451f0e29eb60fa1fdcb7"
+     "sha256": "3e76b2351b149382c1ae13b460f0ba4061f923413f5623c0e3a3d4db68ec6d53"
     },
     "ResFinder_with_metadata": {
      "columns": [
