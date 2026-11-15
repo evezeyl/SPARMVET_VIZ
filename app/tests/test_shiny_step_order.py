@@ -46,6 +46,7 @@ from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
 REPO = Path(__file__).resolve().parents[2]
 WORK = REPO / "tmpAI" / "browser_step_order"
 PLOT = "per_year"
+OTHER_PLOT = "per_score"
 N = 30
 THRESHOLD = 16     # score >= 16 keeps 15 of the 30 rows
 
@@ -65,7 +66,9 @@ def staged_app():
     schema["description"] = "One row per sample."
     plot = minimal_plot("t", {"x": "year"}, [{"name": "geom_bar", "params": {}}], label="per year")
     plot["description"] = "The number of samples per year."
-    recipe = minimal_recipe("t", label="T", schemas={"t": schema}, plots={PLOT: plot})
+    other = minimal_plot("t", {"x": "score"}, [{"name": "geom_bar", "params": {}}], label="per score")
+    other["description"] = "The number of samples per score: a second plot of the same table, with no audit steps."
+    recipe = minimal_recipe("t", label="T", schemas={"t": schema}, plots={PLOT: plot, OTHER_PLOT: other})
     recipe["info"]["description"] = "A table of 30 samples and one plot, for a browser test of the audit step order."
     group = recipe["analysis_groups"].pop("main")
     group.update({"label": "TG", "description": "The one group."})
@@ -350,6 +353,8 @@ def test_order_a_drop_then_filter_shows_the_error_in_the_table_and_the_plot_and_
     assert archive.namelist() == ["EXPORT_NOT_CREATED.txt"], archive.namelist()
     notice = archive.read("EXPORT_NOT_CREATED.txt").decode()
     assert "audit step 2" in notice and "audit step 1" in notice and "'per_year'" in notice, notice
+    # two plots in scope, the second one sound: the export is refused as a whole, and the notice says so and names the failing plot only
+    assert "nothing was exported" in notice and "Plot 'per_year':" in notice and f"Plot '{OTHER_PLOT}':" not in notice, notice
 
 
 def test_an_export_with_an_audited_filter_holds_the_filtered_rows_and_plot(page: Page, staged_app):
@@ -373,3 +378,27 @@ def test_an_export_with_a_filter_then_a_drop_holds_the_filtered_rows_without_the
     _expect_rows(page, N - THRESHOLD + 1)
     reference = _raw().filter(pl.col("score") >= THRESHOLD)
     _check_bundle(_export_bundle(page), reference, dropped=True)
+
+
+def test_the_dialog_of_another_plot_is_not_emptied_by_a_drop_on_this_one(page: Page, staged_app):
+    """A drop on plot A (this plot only) must not reach plot B's dialog, also not for a moment on the switch: B lists `score`
+    in every state the page goes through after the click, and never an empty list (round 3, point 4)."""
+    _start(page, staged_app)
+    page.locator("#plot_view input[value=T3]").check(force=True)
+    _wait_shiny(page)
+    _drop_step(page, 1)
+    page.wait_for_function("() => ![...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
+    page.evaluate("""() => {
+        window.__dialogStates = [];
+        const record = () => window.__dialogStates.push([...document.querySelectorAll('#fb_col option')].map(o => o.value).join(','));
+        new MutationObserver(record).observe(document.body, {childList: true, subtree: true});
+    }""")
+    page.locator(".nav-link:has-text('per score')").first.click()
+    page.wait_for_function("() => [...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
+    _wait_shiny(page, 30_000)
+    states = page.evaluate("() => window.__dialogStates")
+    assert states and states[-1] == "sample_id,year,score", states
+    assert "" not in states, f"the dialog was empty for a moment: {states}"
+    # and back: plot A still has the drop
+    page.locator(".nav-link:has-text('per year')").first.click()
+    page.wait_for_function("() => ![...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)

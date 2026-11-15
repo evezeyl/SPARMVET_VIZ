@@ -294,18 +294,28 @@ def define_filter_audit_server(input, output, session, *,
         return ui.tags.small(f"The range keeps the values with {closed_phrase(closed if closed in CLOSED_CHOICES else 'both')}.",
                              class_="text-muted fst-italic d-block spv-text-meta")
 
-    # The audit steps of the open plot, as the dialog reads them. A mirror in a Value with an idempotent guard (R3): the dialog reads
-    # this Value, not home_state, so a change of home_state that is not a change of these steps (a ghost save, a seed) does not
-    # mount the form again and does not wipe what the user is typing (R4, ui_implementation_contract.md section 14).
-    _dialog_audit_nodes = reactive.Value([])
+    # The audit steps of the open plot, as the dialog reads them. `_dialog_audit_steps_changed` is a Value with an idempotent guard (R3)
+    # that only SIGNALS a change of these steps: the dialog depends on it, not on home_state, so a change of home_state that is not a
+    # change of these steps (a ghost save, a seed) does not mount the form again and does not wipe what the user is typing (R4,
+    # ui_implementation_contract.md section 14). The steps themselves are read fresh, for the plot open NOW, in the same step that
+    # reads the plot's table (`_audit_nodes_of`): a mirror holding the steps would be one flush late on a plot switch (outputs
+    # created before the mirror's effect run first, with the new plot's table and the old plot's steps; shown by
+    # `app/tests/test_dialog_mirror_window.py`).
+    _dialog_audit_steps_changed = reactive.Value([])
+
+    def _audit_nodes_of(subtab) -> list:
+        with reactive.isolate():
+            by_plot = (home_state.get().get("t3_audit_steps_by_plot") or {}) if home_state is not None else {}
+        return list(by_plot.get(subtab, [])) if subtab else []
 
     @reactive.Effect
-    def _mirror_dialog_audit_nodes():
+    def _signal_dialog_audit_steps():
         subtab = active_home_subtab.get()
-        nodes = list((home_state.get().get("t3_audit_steps_by_plot") or {}).get(subtab, [])) if home_state is not None and subtab else []
+        by_plot = (home_state.get().get("t3_audit_steps_by_plot") or {}) if home_state is not None else {}   # the dependency
+        nodes = list(by_plot.get(subtab, [])) if subtab else []
         with reactive.isolate():
-            if _dialog_audit_nodes.get() != nodes:
-                _dialog_audit_nodes.set(nodes)
+            if _dialog_audit_steps_changed.get() != nodes:
+                _dialog_audit_steps_changed.set(nodes)
 
     def _active_frame():
         """The table the filter in the form acts on: the active plot's table (None when it cannot be built)."""
@@ -319,7 +329,8 @@ def define_filter_audit_server(input, output, session, *,
         # DECIDED 2026-11-15 (Eve, S2-1 (a)): in My view the dialog acts on the table after the plot's audited steps, so a column
         # that an earlier step dropped is not offered. One source: the same function as the table, the plot and the export.
         try:
-            return dialog_frame(lf, _dialog_audit_nodes.get(), tier_toggle.get() == "T3", p_id)
+            _dialog_audit_steps_changed.get()   # the dependency: a change of this plot's steps builds the dialog again
+            return dialog_frame(lf, _audit_nodes_of(subtab), tier_toggle.get() == "T3", p_id)
         except AuditStepError:
             # The audit list of the plot cannot run: the table and the plot show why. The dialog offers nothing until a step is removed.
             _log.warning("filter dialog: the audit steps of the plot cannot run; no table is offered")
