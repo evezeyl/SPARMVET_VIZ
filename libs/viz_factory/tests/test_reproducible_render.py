@@ -47,6 +47,8 @@ JITTER_ROUTES = {
     "geom_sina": ([{"name": "geom_sina"}], None),
     "stat_sina": ([{"name": "stat_sina"}], None),
     "bootstrapped summary": ([{"name": "stat_summary", "params": {"fun_data": "mean_cl_boot"}}], None),
+    "geom_point with stat sina": ([{"name": "geom_point", "params": {"stat": "sina"}}], None),
+    "summary with no function named (plotnine's default is the bootstrap)": ([{"name": "stat_summary"}], None),
     "bootstrapped summary on a geom": ([{"name": "geom_pointrange", "params": {"stat": "summary", "fun_data": "mean_cl_boot"}}], None),
 }
 
@@ -95,7 +97,7 @@ def test_plots_without_randomness_are_unchanged_by_the_seed(df):
 # --- PROVISIONAL (S1, Eve's rule of 2026-11-15): a seed is a number; null and "random" are refused ---------------
 
 
-@pytest.mark.parametrize("written", [None, "random", " Random "])
+@pytest.mark.parametrize("written", [None, "random", " Random ", "abc", 1.5])
 @pytest.mark.parametrize("layers", [
     [{"name": "geom_point"}, {"name": "position_jitter", "params": {"random_state": "?"}}],
     [{"name": "geom_point", "params": {"position": "jitter", "random_state": "?"}}],
@@ -127,3 +129,12 @@ def test_seed_zero_really_seeds_the_arrangement(df):
     """plotnine treats random_state=0 as no seed; a generator object makes 0 work (ADR-090)."""
     layers = [{"name": "geom_point"}, {"name": "position_jitter", "params": {"random_state": 0}}]
     assert len({render_bytes(VizFactory(random_state=None), df, layers) for _ in range(RENDERS)}) == 1
+
+
+def test_the_default_seed_is_the_number_zero(df):
+    """Written as the literal: a test that compares with DEFAULT_RANDOM_STATE cannot see the constant change."""
+    assert DEFAULT_RANDOM_STATE == 0 and VizFactory().default_random_state == 0
+    for layers in ([{"name": "geom_point", "params": {"position": "jitter"}}], [{"name": "geom_sina"}],
+                   [{"name": "geom_point", "params": {"stat": "sina"}}]):
+        written = [dict(layer, params={**layer.get("params", {}), "random_state": 0}) for layer in layers]
+        assert render_bytes(VizFactory(), df, layers) == render_bytes(VizFactory(random_state=None), df, written)

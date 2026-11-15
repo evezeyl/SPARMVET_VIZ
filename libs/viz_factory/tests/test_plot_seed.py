@@ -178,7 +178,7 @@ def test_the_recipe_default_reaches_every_random_component(df):
                               positions(df, [dict(l, params={"random_state": 7}) if l["name"] != "geom_point" else l for l in layers]))
 
 
-@pytest.mark.parametrize("written", [None, "random"])
+@pytest.mark.parametrize("written", [None, "random", "abc"])
 def test_a_recipe_default_of_null_or_random_is_refused_too(df, written):
     from utils.errors import VisualizationError
     with pytest.raises(VisualizationError) as raised:

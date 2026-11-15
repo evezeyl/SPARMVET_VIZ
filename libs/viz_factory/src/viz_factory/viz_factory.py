@@ -5,7 +5,7 @@ from typing import Dict, Any, List
 from viz_factory.registry import get_component
 from viz_factory.plot_config_resolver import (
     BATCHED_COMPONENTS, resolve_plot_config, spec_key_names, unknown_spec_keys)
-from utils.random_layers import is_random_layer
+from utils.random_layers import is_random_layer, is_seed_value
 from viz_factory.checked_plot import (
     CheckedPlot, PlotContext, Step, draw_checked, explain_build_failure, plot_warnings, show_draw_errors)
 from viz_factory.errors import layer_label, plot_failure
@@ -91,7 +91,7 @@ def _refuse_unseeded_layer(layer_name: str, params: dict, plot_id: str) -> None:
 
 
 def _refuse_non_number(where: str, written, plot_id: str) -> None:
-    if written is None or (isinstance(written, str) and written.strip().lower() == RANDOM):
+    if not is_seed_value(written):
         pe = PipelineError(
             component="VizFactory",
             problem=f"The {where} of plot '{plot_id}' writes random_state: {written!r}, but a seed is a number.",
