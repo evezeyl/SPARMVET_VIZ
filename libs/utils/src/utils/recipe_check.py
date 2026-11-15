@@ -232,7 +232,7 @@ class _Check:
             self.add("CM01", "info.comment", "a comment is text", "write text")
         for key in ("description", "contact"):
             if not info.get(key):
-                self.add("I02", f"info.{key}", f"info.{key} is missing", "write it (spec section 13)", "A")
+                self.add("I02", f"info.{key}", f"info.{key} is missing", "Suggestion: write it (spec section 13).", "A")
 
     def entity(self, raw: dict) -> None:
         entity = raw.get("entity")
@@ -296,7 +296,7 @@ class _Check:
         if "label" not in schema:
             self.add("S03", path, "the schema has no label", "add label")
         if not schema.get("description"):
-            self.add("S04", f"{path}.description", "the schema has no description", "write the grain: what one row is (spec section 13)", "A")
+            self.add("S04", f"{path}.description", "The schema has no description, so the grain (what one row is) is not stated.", "Suggestion: write the grain: what one row is (spec section 13).", "A")
         if "comment" in schema and not isinstance(schema["comment"], str):
             self.add("CM01", f"{path}.comment", "a comment is text", "write text")
         self.source(schema.get("source"), f"{path}.source", "source" in schema)
@@ -452,10 +452,10 @@ class _Check:
             for column in dict.fromkeys(wide):
                 if types.get(column) in ("Int32", "UInt32"):
                     self.add("ST15", where,
-                             f"{name} of the column {column!r}, declared {types[column]}: the total of a 32-bit whole-number column wraps around "
-                             "above about 2 thousand million (4 for UInt32) with no error and gives a wrong, possibly negative, number "
-                             "(the checker does not see a sum inside a formula, in a join result, or on a column made 32-bit by an earlier step)",
-                             f"write a polars_cast step to Int64 for {column!r} before this step",
+                             f"{name} of the column {column!r}, declared {types[column]}, can give a wrong total. A 32-bit whole-number total wraps around "
+                             "above about 2 thousand million (4 for UInt32) with no error and can be negative "
+                             "(the checker does not see a sum inside a formula, in a join result, or on a column made 32-bit by an earlier step).",
+                             f"Suggestion: write a polars_cast step to Int64 (whole numbers) or Float64 (decimal numbers; it holds about 15 to 16 exact digits, so very large whole numbers lose their last digits) for {column!r} before this step.",
                              "A")
             if name not in JOIN_KEEPS_COLUMNS and name not in (action_names.SUM, action_names.CUM_SUM):
                 return  # the columns after this step are not known from the declarations
@@ -468,10 +468,12 @@ class _Check:
                 if isinstance(step, dict) and step.get("action") in (action_names.TOP_K, action_names.BOTTOM_K):
                     nan_place = "first" if step["action"] == action_names.TOP_K else "last"
                     self.add("ST14", f"{path}.{tier}[{index}]",
-                             f"{step['action']} returns exactly k rows; when rows are tied at the limit, which of them are kept is not fixed, do not rely on it. "
-                             f"A NaN comes {nan_place}; rows with no value fill the k rows when values run out",
-                             "to always keep the same rows, add a row number (polars_with_row_index) and give it last in `by`, or use polars_sort with maintain_order then polars_head; "
-                             "to keep every row tied with the k best, use polars_rank (method min) and a filter",
+                             f"Warning: {step['action']} keeps at most k rows: exactly k when the table has k rows or more. If several rows have the same value as the k-th row, only some of them fit, "
+                             "and Polars does not promise which ones. "
+                             f"A NaN comes {nan_place} ({'last' if nan_place == 'first' else 'first'} if `reverse` is true for that column). "
+                             "Rows with no value fill the k rows when the real values run out.",
+                             "Suggestion: to always keep the same rows, add a row number (`polars_with_row_index`) and use it as the last `by` column. "
+                             "Suggestion: to keep every row that ties with the k best, use `polars_rank` (method `min`) and a filter; this can return more than k rows.",
                              "A")
 
     def order_advices(self, container: dict, path: str, tiers: List[str]) -> None:
@@ -496,9 +498,10 @@ class _Check:
                 elif name in action_names.POSITION_ACTIONS and unstated is not None:
                     self.add("ST13", f"{path}.{tier}[{index}]",
                              f"{name} keeps rows by their position, but the order of the rows is not fixed by {unstated[1]} "
-                             f"({unstated[0]}, maintain_order: {'none' if unstated[1] == action_names.JOIN else 'false'}): Polars does not promise the same rows. "
-                             "(The checker looks only at steps with a stated order parameter; it can miss, for example, a pivot or an explode before.)",
-                             f"write maintain_order: {'left_right' if unstated[1] == action_names.JOIN else 'true'} in that step, or write a polars_sort step with maintain_order: true before this one",
+                             f"({unstated[0]}, maintain_order: {'none' if unstated[1] == action_names.JOIN else 'false'}), so Polars does not promise the same rows "
+                             "(the checker looks only at steps with a stated order parameter; it can miss, for example, a pivot or an explode before).",
+                             f"Suggestion: write maintain_order: {'left_right' if unstated[1] == action_names.JOIN else 'true'} in that step. "
+                             "Suggestion: write a polars_sort step with maintain_order: true before this one.",
                              "A")
 
     def steps(self, steps: list, path: str, tier: str) -> None:
@@ -619,7 +622,7 @@ class _Check:
             if "label" not in join:
                 self.add("J02", path, "the join has no label", "add label")
             if not join.get("description"):
-                self.add("J03", f"{path}.description", "the join has no description", "write the grain and the join type (spec section 13)", "A")
+                self.add("J03", f"{path}.description", "The join has no description, so its grain and its join type are not stated.", "Suggestion: write the grain and the join type (spec section 13).", "A")
             if "comment" in join and not isinstance(join["comment"], str):
                 self.add("CM01", f"{path}.comment", "a comment is text", "write text")
             ingredient_ids = self.ingredients(join.get("ingredients"), f"{path}.ingredients")
@@ -700,18 +703,18 @@ class _Check:
         if right_id in left_tables and left_keys == right_keys:
             how = step.get("how", "left")
             if how in ("semi", "anti"):
-                effect = (f"no column is copied; '{how}' keeps only the rows whose key is found in {right_id!r} itself"
+                effect = (f"No column is copied; 'semi' keeps only the rows whose key is found in {right_id!r} itself."
                           if how == "semi" else
-                          "no column is copied; 'anti' removes every row that has a key, because each such row matches itself")
+                          "No column is copied; 'anti' removes every row that has a key, because each such row matches itself.")
             else:
                 suffix = step.get("suffix") or "_right"
-                effect = (f"If each value of the column appears once, the result has the same rows and copies of the columns named `{suffix}`. "
-                          "If a value repeats, rows are multiplied.")
+                effect = (f"The result has the same rows if each value of the column appears once, and more rows if a value repeats; "
+                          f"the columns are copied with the suffix `{suffix}`.")
             if how in ("semi", "anti"):
-                message = f"the join of {right_id!r} with itself uses the same key {left_keys} on both sides ('how': {how}): {effect}"
+                message = f"The join of {right_id!r} with itself uses the same key {left_keys} on both sides ('how': {how}). {effect}"
             else:
                 message = f"Join of {right_id!r} with itself on the same column ({', '.join(map(repr, left_keys))}). {effect}"
-            self.add("J12", where, message, "Remove the step if you did not mean this.", "A")
+            self.add("J12", where, message, "Suggestion: remove the step if you did not mean this.", "A")
         fields_by_table = {table: self.declared_fields(table) for table in set(left_tables) | {right_id}}
         for table, columns in ((None, left_keys), (right_id, right_keys)):
             tables = [t for t in dict.fromkeys(left_tables)] if table is None else [table]
@@ -722,9 +725,9 @@ class _Check:
                     declared = _declared_dtype(field) if field is not None else None
                     if declared is not None and declared in (pl.Float32, pl.Float64):
                         self.add("J13", where,
-                                 f"the join key {column!r} is declared {declared} in {name!r}: identifiers written differently "
-                                 "(for example 001, 1 and 1.0) become the same number, leading zeros are lost, and the join merges different samples without a message",
-                                 f"declare the key as a text type in input_fields of {name!r} (for example String or Categorical, as for other identifiers)",
+                                 f"The join key {column!r} is declared {declared} in {name!r}. Identifiers written differently "
+                                 "(for example 001, 1 and 1.0) become the same number, leading zeros are lost, and the join merges different samples without a message.",
+                                 f"Suggestion: declare the key as a text type in input_fields of {name!r} (for example String or Categorical, as for other identifiers).",
                                  "A")
                         break
 
@@ -848,7 +851,7 @@ class _Check:
             if "label" not in group:
                 self.add("G01", path, "the group has no label (the tab text)", "add label")
             if not group.get("description"):
-                self.add("G02", f"{path}.description", "the group has no description", "write the question its plots answer", "A")
+                self.add("G02", f"{path}.description", "The group has no description, so the question its plots answer is not stated.", "Suggestion: write the question its plots answer.", "A")
             if "comment" in group and not isinstance(group["comment"], str):
                 self.add("CM01", f"{path}.comment", "a comment is text", "write text")
             plots = group.get("plots")
@@ -872,7 +875,7 @@ class _Check:
             if key not in plot:
                 self.add("P01", path, f"{key} is required", f"add {key}")
         if not plot.get("description"):
-            self.add("P02", f"{path}.description", "the plot has no description", "write what is drawn and counted (spec section 13)", "A")
+            self.add("P02", f"{path}.description", "The plot has no description, so what is drawn and counted is not stated.", "Suggestion: write what is drawn and counted (spec section 13).", "A")
         if "comment" in plot and not isinstance(plot["comment"], str):
             self.add("CM01", f"{path}.comment", "a comment is text", "write text")
         if "steps" in plot:
