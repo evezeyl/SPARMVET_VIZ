@@ -2,7 +2,7 @@
 
 Why this module exists: the recipe reads like Polars code, and a name that starts with `polars_` means
 "exactly the Polars call" (`recipe_format_spec.md` 7.5.1, DEC31 to DEC34). The parameters of every action are
-read from `inspect.signature` of the Polars object it wraps, so a Polars release that adds or changes a
+read from the signature of the Polars object it wraps (`utils.signature_params`), so a Polars release that adds or changes a
 parameter shows up here and in the registry tests instead of being missed. What a recipe maker must state
 and Polars would default (the order rule of `sort`, `unique`, `join`, `sample`; the `decimals` of `round`)
 is marked required in `REQUIRED`: a choice that changes the result is written in the recipe (DEC33, DEC34).
@@ -30,11 +30,12 @@ from transformer.actions.base import ACTION_SCHEMAS, register_action
 from utils.errors import TransformationError
 from utils.formula_check import FormulaError, evaluate_formula
 from utils.polars_types import text_dtype_names
+from utils.signature_params import call_arguments, read_parameters, widget_for_default
 from utils.ui_schema import step_problems
 
 # @deps
 # provides: action:polars_select, action:polars_drop, action:polars_with_columns, action:polars_rename, action:polars_unique, action:polars_sort, action:polars_drop_nulls, action:polars_drop_nans, action:polars_explode, action:polars_unnest, action:polars_unpivot, action:polars_pivot, action:polars_join, action:polars_sample, action:polars_describe, action:polars_cast, action:polars_fill_null, action:polars_fill_nan, action:polars_shift, action:polars_cum_sum, action:polars_cum_count, action:polars_interpolate, action:polars_round, action:polars_str_replace_all, action:polars_str_extract, action:polars_str_split, action:polars_str_strip_chars, action:polars_list_join, action:polars_list_slice, action:polars_dt_truncate, action:polars_coalesce, action:polars_sum_horizontal, action:polars_mean_horizontal, action:polars_min_horizontal, action:polars_max_horizontal, action:polars_all_horizontal, action:polars_any_horizontal
-# consumes: libs/utils/src/utils/ui_schema.py (step_problems)
+# consumes: libs/utils/src/utils/ui_schema.py (step_problems), libs/utils/src/utils/signature_params.py (read_parameters, call_arguments)
 # consumed_by: libs/transformer/tests/test_polars_actions_equal_polars.py, libs/transformer/tests/test_registry_polars_rules.py
 # doc: .claude/design/recipe_format_spec.md#7.5.1
 # @end_deps
@@ -139,18 +140,16 @@ def _resolve(path):
     return obj
 
 
-def _widget_for(name: str, param: inspect.Parameter, action: str) -> dict:
+def _widget_for(name: str, default, action: str) -> dict:
     if (action, name) in OVERRIDE:
         return dict(OVERRIDE[(action, name)])
     if action == "polars_join" and name == "maintain_order":
         return dict(JOIN_ORDER)
     if name in HINTS:
         return dict(HINTS[name])
-    default = param.default
-    if isinstance(default, bool):
-        return {"widget": "bool"}
-    if isinstance(default, (int, float)):
-        return {"widget": "number"}
+    widget = widget_for_default(default)
+    if widget:
+        return {"widget": widget}
     if name in ("value", "fill_value"):
         return {"widget": "column_or_literal"}
     return {"widget": "string"}
@@ -160,18 +159,15 @@ def _params_from_signature(action: str, target, kind: str) -> dict:
     """The parameter definitions of an action: every Polars parameter, Polars defaults, ours added."""
     params: Dict[str, dict] = {}
     skipped = NOT_EXPOSED.get(action, {})
-    for name, p in inspect.signature(target).parameters.items():
-        if name in ("self", "cls") or name in skipped:
+    for p in read_parameters(target, action, RECIPE_NAME):
+        if p.source in skipped or p.source in MERGED:
             continue
-        ours = RECIPE_NAME.get(name, name)
-        if name in MERGED:
-            continue
-        definition = _widget_for(ours, p, action)
-        definition.setdefault("label", ours)
-        required = (p.default is inspect.Parameter.empty and p.kind not in (p.VAR_POSITIONAL, p.VAR_KEYWORD)) \
-            or ours in REQUIRED.get(action, set()) or (p.kind is p.VAR_POSITIONAL and ours in ("exprs", "columns", "by"))
+        definition = _widget_for(p.name, p.default, action)
+        definition.setdefault("label", p.name)
+        required = p.required_by_signature or p.name in REQUIRED.get(action, set()) \
+            or (p.kind is inspect.Parameter.VAR_POSITIONAL and p.name in ("exprs", "columns", "by"))
         definition["required"] = bool(required)
-        params[ours] = definition
+        params[p.name] = definition
     if kind == EXPR:
         params = {"columns": {**LIST_OF_COLUMNS, "label": "Columns the call is applied to", "required": True},
                   **params,
@@ -183,13 +179,7 @@ def _params_from_signature(action: str, target, kind: str) -> dict:
 
 def _kwargs(spec: dict, target, action: str) -> dict:
     """The keyword arguments of the Polars call: every declared parameter the step gave, under its Polars name."""
-    out = {}
-    for name, p in inspect.signature(target).parameters.items():
-        ours = RECIPE_NAME.get(name, name)
-        if name in ("self", "cls") or name in MERGED or p.kind is p.VAR_KEYWORD or spec.get(ours) is None:
-            continue
-        out[name] = spec[ours]
-    return out
+    return call_arguments(target, spec, action, RECIPE_NAME, skip=tuple(MERGED))
 
 
 def _dtype(name: str):

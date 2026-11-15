@@ -3,7 +3,7 @@ Which arguments a plot component accepts: its schema's parameters plus what the 
 
 # @deps
 # provides: function:allowed_arguments, function:unknown_arguments, function:argument_catalog
-# consumes: libs/viz_factory/src/viz_factory/registry.py (COMPONENT_SCHEMAS), plotnine
+# consumes: libs/viz_factory/src/viz_factory/registry.py (COMPONENT_SCHEMAS), libs/viz_factory/src/viz_factory/parameters.py (accepted_names), plotnine
 # consumed_by: app/modules/data_analysis_recipe_validator.py (the recipe checker's catalogs), libs/viz_factory/tests/test_component_arguments.py
 # doc: .claude/design/recipe_format_spec.md (section 8, RG5; check PS04), libs/viz_factory/README.md (allow_extra_params)
 # @end_deps
@@ -26,16 +26,10 @@ The result is plain data (`argument_catalog`), so the recipe checker in `libs/ut
 importing this library (spec section 14).
 """
 import importlib
-import inspect
 from typing import Iterable, Optional
 
-from plotnine.geoms.geom import geom as _Geom
-from plotnine.stats.stat import stat as _Stat
-
+from viz_factory.parameters import accepted_names, is_geom, is_layer
 from viz_factory.registry import COMPONENT_SCHEMAS
-
-# Arguments of the layer itself, accepted by every geom and stat (plotnine `geom._verify_arguments`).
-_LAYER_ARGUMENTS = frozenset({"data", "mapping", "show_legend", "inherit_aes", "raster"})
 
 
 def _wrapped_object(name: str):
@@ -51,25 +45,18 @@ def _wrapped_object(name: str):
 def allowed_arguments(name: str) -> Optional[frozenset]:
     """The argument names a component accepts, or None when they cannot be listed (free-form). KeyError if unknown."""
     schema = COMPONENT_SCHEMAS[name]
-    declared = frozenset((schema.get("params") or {}))
     wrapped = _wrapped_object(name)
     if wrapped is None:
         return None
-    if inspect.isclass(wrapped) and issubclass(wrapped, (_Geom, _Stat)):
-        # Only what plotnine accepts, not the schema: a schema parameter that plotnine refuses (13 today, issue #88)
-        # makes the plot fail, so it must not be reported as valid.
-        layer = wrapped().to_layer()
-        return _LAYER_ARGUMENTS | frozenset(
-            set(layer.geom.aesthetics()) | set(layer.geom.DEFAULT_PARAMS)
-            | set(layer.stat.aesthetics()) | set(layer.stat.DEFAULT_PARAMS)
-        )
-    try:
-        parameters = inspect.signature(wrapped).parameters.values()
-    except (TypeError, ValueError):
+    # One reading of plotnine for the schema and for the checker (`viz_factory.parameters`): the list a form offers and
+    # the names the checker accepts cannot drift apart.
+    accepted = accepted_names(name, schema)
+    if accepted is None:
         return None
-    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in parameters):
-        return None
-    return declared | frozenset(p.name for p in parameters if p.kind is not inspect.Parameter.VAR_POSITIONAL)
+    if is_layer(wrapped):
+        # a geom accepts `colour` wherever it accepts `color` (it renames the spelling on the way in); a stat only as the aesthetic
+        return accepted | frozenset(n.replace("color", "colour") for n in accepted if "color" in n and (is_geom(wrapped) or n == "color"))
+    return frozenset(schema.get("params") or {}) | accepted
 
 
 def unknown_arguments(name: str, names: Iterable[str]) -> list:
