@@ -255,7 +255,7 @@ def test_t3_ghost_carries_a_self_consistency_hash(sm):
 
 def test_t3_ghost_hash_is_stable_for_identical_content(sm):
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
-    audit_steps = [make_audit_step("filter_row", {"column": "species"}, reason="test")]
+    audit_steps = [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")]
     sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, "T3", audit_steps, {}, label="a")
     sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, "T3", list(audit_steps), {}, label="b")
     ghosts = sm.list_t3_ghosts(key)
@@ -267,9 +267,9 @@ def test_t3_ghost_hash_differs_for_different_content(sm):
     legacy flat list, is the authoritative, current representation (Phase 22-J)."""
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
     sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, "T3", label="a",
-                       t3_audit_steps_by_plot={"subtab_p": [make_audit_step("filter_row", {"column": "species"}, reason="x")]})
+                       t3_audit_steps_by_plot={"subtab_p": [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="x")]})
     sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, "T3", label="b",
-                       t3_audit_steps_by_plot={"subtab_p": [make_audit_step("exclusion_row", {"column": "species"}, reason="x")]})
+                       t3_audit_steps_by_plot={"subtab_p": [make_audit_step("exclusion_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="x")]})
     ghosts = sm.list_t3_ghosts(key)
     assert ghosts[0]["t3_audit_steps_sha256"] != ghosts[1]["t3_audit_steps_sha256"]
 

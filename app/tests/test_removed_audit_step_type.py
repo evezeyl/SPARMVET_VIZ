@@ -62,8 +62,11 @@ def test_the_removed_type_is_never_ignored_even_as_the_only_step():
         audited_frame(FRAME, [removed_node()])
 
 
-def test_an_inactive_removed_step_is_not_looked_at_like_any_inactive_step():
-    assert audited_frame(FRAME, [{**removed_node(), "active": False}, filter_node()]).collect().height == 3
+def test_an_inactive_removed_step_is_refused_too_like_in_a_session_file():
+    """One rule for the list and the files (round 3, point 2): a switched-off step of a removed type is refused, never applied
+    or ignored in one place and refused in another. Nothing creates an inactive step today (contract 12c, F-07)."""
+    with pytest.raises(AuditStepError, match="audit step 1"):
+        audited_frame(FRAME, [{**removed_node(), "active": False}, filter_node()])
 
 
 # -- a stored session file and an imported session zip ------------------------------------------------------------------
@@ -87,7 +90,7 @@ def test_a_session_file_with_the_removed_type_is_refused_when_it_is_read(tmp_pat
 
 def test_the_flat_list_of_an_old_session_file_is_refused_too(tmp_path):
     sm, key = _session(tmp_path, flat=[removed_node()])
-    with pytest.raises(LegacySessionError, match="was removed"):
+    with pytest.raises(LegacySessionError, match="removed"):
         sm.list_t3_ghosts(key)
 
 
@@ -106,7 +109,7 @@ def test_an_imported_session_zip_with_the_removed_type_is_refused_and_nothing_is
     source, key = _session(tmp_path / "from", {"subtab_p": [removed_node()]})
     archive = source.export_session_zip(key)
     target = SessionManager(tmp_path / "to")
-    with pytest.raises(LegacySessionError, match="was removed"):
+    with pytest.raises(LegacySessionError, match="removed"):
         target.import_session_zip(archive)
     assert not list(target.root.glob("*")), "a refused import leaves nothing behind"
 
@@ -123,13 +126,13 @@ def _bundle(steps_yaml: dict | None) -> bytes:
 
 
 def test_a_bundle_whose_audit_record_holds_the_removed_type_is_refused_before_anything_is_written():
-    record = {"t3_steps": {"p": [{"action": "filter_row", "column": "x", "reason": "r"}, {"action": REMOVED, "reason": "old"}]}}
+    record = {"t3_steps": {"p": [{"action": "filter_row", "column": "x", "op": "ge", "value": 2, "reason": "r"}, {"action": REMOVED, "reason": "old"}]}}
     with pytest.raises(BundleImportError, match=r"audit step 2 of the plot 'p'.*was removed"):
         import_bundle(_bundle(record), bootloader=None)   # bootloader is never reached
 
 
 def test_a_bundle_without_the_type_goes_on_to_its_own_checks():
-    record = {"t3_steps": {"p": [{"action": "filter_row", "column": "x", "reason": "r"}]}}
+    record = {"t3_steps": {"p": [{"action": "filter_row", "column": "x", "op": "ge", "value": 2, "reason": "r"}]}}
     with pytest.raises(BundleImportError, match="no reproducibility recipe"):
         import_bundle(_bundle(record), bootloader=None)
 

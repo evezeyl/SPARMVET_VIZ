@@ -286,9 +286,9 @@ class SessionManager:
     @staticmethod
     def _read_current_json(path: Path, label: str) -> dict:
         """Read a stored session file; refuse one written before the rename, naming the fix."""
-        from app.modules.renamed_keys import legacy_session_problem, removed_audit_step_in_ghost
+        from app.modules.renamed_keys import legacy_session_problem, refused_audit_step_in_ghost
         data = json.loads(path.read_text())
-        problem = legacy_session_problem(data, f"{label} ({path.name})") or removed_audit_step_in_ghost(data, f"{label} ({path.name})")
+        problem = legacy_session_problem(data, f"{label} ({path.name})") or refused_audit_step_in_ghost(data, f"{label} ({path.name})")
         if problem:
             raise LegacySessionError(problem)
         return data
@@ -530,11 +530,11 @@ class SessionManager:
             t3_files = [n for n in names if "/t3_" in n and n.endswith(".json")]
             if not assembly_files and not t3_files:
                 raise ValueError("ZIP does not contain a valid session (no assembly.json or t3_*.json found).")
-            from app.modules.renamed_keys import legacy_session_problem, removed_audit_step_in_ghost
+            from app.modules.renamed_keys import legacy_session_problem, refused_audit_step_in_ghost
             for name in assembly_files + t3_files:
                 data = json.loads(zf.read(name))
                 problem = (legacy_session_problem(data, f"Imported session file {name}")
-                           or removed_audit_step_in_ghost(data, f"Imported session file {name}"))
+                           or refused_audit_step_in_ghost(data, f"Imported session file {name}"))
                 if problem:
                     raise LegacySessionError(problem)
             zf.extractall(self.root)

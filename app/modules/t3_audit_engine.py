@@ -23,7 +23,7 @@ import math
 import polars as pl
 
 from utils import action_names
-from app.modules.renamed_keys import REMOVED_AUDIT_STEP_TYPES
+from app.modules.renamed_keys import FIX_IN_APP, audit_step_defect
 from utils.errors import TransformationError
 from utils.pipeline_error import PipelineError
 from utils.filter_values import FilterValueError, filter_condition, kind_of, read_filter_value, type_words
@@ -371,17 +371,16 @@ def _step_error(step: dict, remover: dict | None, columns: list, plot_id: str | 
     return AuditStepError(f"{problem} Fix: {fix}.", tip=fix[:1].upper() + fix[1:] + ".", pipeline_error=pipeline_error)
 
 
-def _removed_type_error(node: dict, number: int, plot_id: str | None) -> AuditStepError:
-    """The step type was removed (AUDIT-RAWYAML-REMOVE-1): the step is refused, never ignored and never applied in one place only."""
-    kind = node.get("node_type")
+def _refused_step_error(node: dict, number: int, defect: str, plot_id: str | None) -> AuditStepError:
+    """A step the app cannot apply (unknown or removed type, or missing what it needs): refused, never skipped in silence."""
     reason = f', reason: "{node["reason"]}"' if node.get("reason") else ""
-    problem = (f"The audit step {number}{_of_plot(plot_id)} (id {node.get('id', '?')}{reason}) has the type '{kind}', "
-               f"which was removed: {REMOVED_AUDIT_STEP_TYPES[kind]}.")
-    fix = f"remove audit step {number} from the plot's audit list; record its effect again as row filters and column drops"
+    off = ", switched off" if not node.get("active", True) else ""
+    problem = f"The audit step {number}{_of_plot(plot_id)} (id {node.get('id', '?')}{reason}{off}) is refused: {defect}."
+    fix = (f"remove audit step {number} with the trash icon of the audit panel, or {FIX_IN_APP}")
     pipeline_error = PipelineError(
         component="T3Audit", problem=problem, location=f"audit step {number}{_of_plot(plot_id)}",
         fix=fix[:1].upper() + fix[1:] + ".", who="analyst", category="t3_apply", surface="audit_panel",
-        evidence={"plot": plot_id, "audit_step": number, "removed_type": kind}, reference="AUDIT-RAWYAML-REMOVE-1")
+        evidence={"plot": plot_id, "audit_step": number, "step_type": node.get("node_type")}, reference="PLOT-TABLE-ORDER-1")
     return AuditStepError(f"{problem} Fix: {fix}.", tip=fix[:1].upper() + fix[1:] + ".", pipeline_error=pipeline_error)
 
 
@@ -396,23 +395,28 @@ def audit_steps_in_order(nodes: list, plot_id: str | None = None) -> list[dict]:
 
     A step is `{"number", "kind": "filter" | "drop", "column", "reason", "row"}`; `row` is the filter row (`filter_rows_from_nodes`).
     `number` is the position, counted from 1, among the active steps of the list (a plot style step is not counted: it is
-    not a step of the data). A step of a type that was removed raises `AuditStepError`; a step of any other type does not
-    touch the table here.
+    not a step of the data). A step the app cannot apply (an unknown or removed type, or a step without its column, operator or
+    value) raises `AuditStepError`, switched off or not: it is never skipped in silence.
     """
     steps: list[dict] = []
-    number = 0
+    number = 0      # position among the active data steps: what the messages say
+    position = 0    # position among all data steps, switched off or not: what a refusal says
     for node in nodes:
-        if not node.get("active", True) or node.get("node_type") == "aesthetic_override":
+        if node.get("node_type") in ("aesthetic_override", "random_seed"):
+            continue
+        position += 1
+        defect = audit_step_defect(node)
+        if defect:
+            raise _refused_step_error(node, position, defect, plot_id)
+        if not node.get("active", True):
             continue
         number += 1
-        kind = node.get("node_type")
-        params = node.get("params", {}) or {}
-        if kind in REMOVED_AUDIT_STEP_TYPES:
-            raise _removed_type_error(node, number, plot_id)
-        if kind in ("filter_row", "exclusion_row") and "column" in params:
+        kind = node["node_type"]
+        params = node.get("params") or {}
+        if kind in ("filter_row", "exclusion_row"):
             row = filter_rows_from_nodes([node])[0]
             steps.append({"number": number, "kind": "filter", "column": row["column"], "reason": node.get("reason", ""), "row": row})
-        elif kind == "drop_column" and params.get("column"):
+        else:
             steps.append({"number": number, "kind": "drop", "column": params["column"], "reason": node.get("reason", ""), "row": None})
     return steps
 
