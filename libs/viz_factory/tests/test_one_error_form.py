@@ -145,3 +145,15 @@ def test_without_show_draw_errors_saving_a_failing_plot_raises(tmp_path):
     with pytest.raises(VisualizationError):
         plot.save(tmp_path / "never.png", verbose=False)
     assert not (tmp_path / "never.png").exists()
+
+
+def test_a_text_for_an_argument_whose_default_is_a_number_is_not_called_not_a_number_without_proof():
+    # scale_color_brewer's `palette` has the default 1 and also takes a name: 'Set1' needs `type: qual`, it is not "not a number".
+    error = failure([{"name": "geom_point", "params": {}}, {"name": "scale_color_brewer", "params": {"palette": "Set1"}}],
+                    mapping={"x": "x", "y": "y", "color": "g"})
+    assert "is not a number" not in str(error)
+
+
+def test_a_keyword_refused_deeper_inside_plotnine_is_not_blamed_on_the_layer():
+    error = failure([{"name": "geom_point"}, {"name": "theme_custom", "params": {"axis_text_x": {"angle": 45}}}])
+    assert "is not an argument of theme_custom" not in str(error)

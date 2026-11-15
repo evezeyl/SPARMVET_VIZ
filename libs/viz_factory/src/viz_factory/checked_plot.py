@@ -50,6 +50,10 @@ class Step:
         return self.label or layer_label(self.tier, self.layer_no, self.name)
 
 
+_ARITHMETIC = re.compile(r"unsupported operand|not supported for dtype|could not convert string to float|"
+                         r"not supported between instances|must be real number|invalid literal for int")
+
+
 def _short(exc: BaseException, limit: int = 160) -> str:
     text = str(exc).strip().splitlines()[0] if str(exc).strip() else type(exc).__name__
     return text if len(text) <= limit else text[: limit - 3] + "..."
@@ -91,13 +95,15 @@ def _default_of(name: str, key: str):
         return None
 
 
-def describe_failure(exc: BaseException, name: str, culprit: Optional[tuple]) -> tuple:
+def describe_failure(exc: BaseException, name: str, culprit: Optional[tuple], params: Optional[dict] = None) -> tuple:
     """(what, fix) for an exception of plotnine in layer `name`; `culprit` is (parameter, value) when one was found."""
     text = str(exc)
     unknown = re.search(r"Parameters \{(.*?)\},? are not understood", text)
     keyword = re.search(r"got an unexpected keyword argument '([^']+)'", text)
-    if unknown or keyword:
-        names = ((re.findall(r"'([^']+)'", unknown.group(1)) or [unknown.group(1)]) if unknown else [keyword.group(1)])
+    named = ((re.findall(r"'([^']+)'", unknown.group(1)) or [unknown.group(1)]) if unknown else [keyword.group(1)] if keyword else [])
+    # Only a name the author wrote is "not an argument of" this layer; a keyword refused deeper inside plotnine is not.
+    names = [n for n in named if params is None or n in params]
+    if names:
         from viz_factory.arguments import allowed_arguments
         try:
             allowed = allowed_arguments(name)
@@ -120,7 +126,11 @@ def describe_failure(exc: BaseException, name: str, culprit: Optional[tuple]) ->
     if culprit is not None:
         key, value = culprit
         default = _default_of(name, key)
-        if isinstance(value, str) and isinstance(default, (int, float)) and not isinstance(default, bool) and not _number(value):
+        # "is not a number" is said only when both facts agree: plotnine's own default for it is a number, and the error
+        # is an arithmetic one on text. A palette named 'Set1' where the default is 1 is not that (the argument takes both).
+        arithmetic = isinstance(exc, (TypeError, ValueError)) and _ARITHMETIC.search(str(exc))
+        if (isinstance(value, str) and isinstance(default, (int, float)) and not isinstance(default, bool)
+                and not _number(value) and arithmetic):
             example = 3 if default > 1 else 0.5
             return f"the value {value!r} for '{key}' is not a number", f"write a number, for example {key}: {example}"
         return (f"the value {value!r} for '{key}' is refused by plotnine ({type(exc).__name__}: {_short(exc)})",
@@ -155,7 +165,7 @@ def explain_build_failure(plot_id: str, p_before, step: Step, exc: BaseException
         return True
 
     culprit = _find_culprit(builds, step.params)
-    what, fix = describe_failure(exc, step.name, culprit)
+    what, fix = describe_failure(exc, step.name, culprit, step.params)
     evidence["error_detail"] = str(exc)[:200]
     return plot_failure(plot_id, what, fix, layer=where, evidence=evidence)
 
@@ -237,7 +247,7 @@ class PlotContext:
                                 evidence={"error_type": type(exc).__name__, "error_detail": str(exc)[:200]})
         index, culprit = found
         step = self.steps[index]
-        what, fix = describe_failure(exc, step.name, culprit)
+        what, fix = describe_failure(exc, step.name, culprit, step.params)
         return plot_failure(self.plot_id, what, fix, layer=step.where,
                             evidence={"layer": step.name, "params": str(step.params)[:200],
                                       "error_type": type(exc).__name__, "error_detail": str(exc)[:200]})

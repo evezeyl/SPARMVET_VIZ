@@ -184,3 +184,28 @@ def test_the_yaml_example_of_the_component_renders_and_draws(name):
     if only_geom_text:
         mapping["label"] = "g"
     VizFactory().render(DF, {"plots": {"p": {"target_dataset": "d", "mapping": mapping, "layers": layers}}}, "p").draw()
+
+
+# -- ggtitle, xlab, ylab: a missing key used to give an empty text ----------------------------------------------
+
+@pytest.mark.parametrize("name,key", [("ggtitle", "title"), ("xlab", "label"), ("ylab", "label")])
+def test_a_label_component_without_its_key_fails(name, key):
+    error = refused([POINT, {"name": name, "params": {}}])
+    assert_form(error, 2, name)
+    assert f"needs '{key}'" in str(error) and f"write {key}:" in str(error)
+
+
+@pytest.mark.parametrize("name,wrong", [("ggtitle", "label"), ("xlab", "title"), ("ylab", "text")])
+def test_a_label_component_given_another_key_fails_and_names_the_right_one(name, wrong):
+    error = refused([POINT, {"name": name, "params": {wrong: "A text"}}])
+    assert_form(error, 2, name)
+    assert repr(wrong) in str(error)
+
+
+@pytest.mark.parametrize("name,params,shown", [
+    ("ggtitle", {"title": "T", "subtitle": "S"}, "T"), ("xlab", {"label": "Years"}, "Years"), ("ylab", {"label": "Counts"}, "Counts")])
+def test_a_label_component_with_its_key_sets_the_text(name, params, shown):
+    plot = VizFactory().render(DF, recipe([POINT, {"name": name, "params": params}]), "p")
+    figure = plot.draw()
+    texts = [t.get_text() for t in figure.findobj(matplotlib.text.Text)]
+    assert shown in texts

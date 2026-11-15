@@ -318,7 +318,7 @@ def handle_theme_legend_position(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "allow_extra_params": True,
     "params": {},
     "description": "Arbitrary theme() override; use to adjust any individual theme element when none of the named themes or element_* layers provide enough control. Not in plotnine: calls theme(**params); a value written as {name: element_text, params: {...}} (also element_line, element_rect, element_blank) is turned into that element, any other value is passed on as it is.",
-    "yaml_example": "layers:\n  - name: theme_custom\n    params:\n      axis_text_x: {angle: 45, hjust: 1}",
+    "yaml_example": "layers:\n  - name: theme_custom\n    params:\n      axis_text_x:\n        name: element_text\n        params: {angle: 45, hjust: 1}",
 })
 def handle_theme_custom(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     theme_kwargs = {}
@@ -454,6 +454,17 @@ def handle_element_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
 # Data analysis recipe authors often want one-line label setters rather than the full
 # labs(x=..., y=...) call. These wrap plotnine's single-axis helpers.
 
+def _read_text(name: str, spec: Dict[str, Any], key: str, example: str, allowed: tuple) -> Any:
+    """The text a label component sets. A missing key or another key is an error: it used to give an empty text, silently."""
+    unknown = sorted(k for k in spec if k not in allowed)
+    if unknown:
+        raise CannotAct(f"{name} reads {' and '.join(repr(k) for k in allowed)} and does not know {', '.join(repr(k) for k in unknown)}",
+                        f"write {key}: {example}")
+    if spec.get(key) is None:
+        raise CannotAct(f"{name} needs '{key}', the text it sets", f"write {key}: {example}")
+    return spec[key]
+
+
 @register_plot_component("xlab", ui_schema={
     "label": "X-axis label",
     "category": "annotation",
@@ -465,17 +476,16 @@ def handle_element_blank(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "params": {
         "label": {"widget": "string", "label": "X-axis label text", "required": True},
     },
-    "description": "Set the x-axis label; a shorthand alternative to using labs with an x= parameter. Differs from plotnine: the text is read from the key `label` (empty when absent) and any other key is ignored.",
+    "description": "Set the x-axis label; a shorthand alternative to using labs with an x= parameter. Differs from plotnine: the text is read from the key `label`; without it, or with any other key, the plot fails with a message.",
     "yaml_example": "layers:\n  - name: xlab\n    params:\n      label: Year of isolation",
 })
 def handle_xlab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Set the x-axis label.
 
-    Spec accepts either {"label": "..."} or just a plain string (passed via
-    spec["label"] by viz_factory's flat-aesthetic standardisation).
+    Spec is {"label": "..."}; a missing key fails (VIZ-STANDARD-1, V6).
     """
     from plotnine import xlab
-    label = spec.get("label", "")
+    label = _read_text("xlab", spec, "label", "Year of isolation", ("label",))
     return p + xlab(label)
 
 
@@ -490,13 +500,13 @@ def handle_xlab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "params": {
         "label": {"widget": "string", "label": "Y-axis label text", "required": True},
     },
-    "description": "Set the y-axis label; a shorthand alternative to using labs with a y= parameter. Differs from plotnine: the text is read from the key `label` (empty when absent) and any other key is ignored.",
+    "description": "Set the y-axis label; a shorthand alternative to using labs with a y= parameter. Differs from plotnine: the text is read from the key `label`; without it, or with any other key, the plot fails with a message.",
     "yaml_example": "layers:\n  - name: ylab\n    params:\n      label: Number of isolates",
 })
 def handle_ylab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Set the y-axis label."""
     from plotnine import ylab
-    label = spec.get("label", "")
+    label = _read_text("ylab", spec, "label", "Number of isolates", ("label",))
     return p + ylab(label)
 
 
@@ -512,13 +522,13 @@ def handle_ylab(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "title": {"widget": "string", "label": "Plot title text", "required": True},
         "subtitle": {"widget": "string", "label": "Subtitle (below title)", "required": False},
     },
-    "description": "Set the plot title and optional subtitle; a shorthand alternative to labs(title=..., subtitle=...). Differs from plotnine: the title is read from the key `title` (empty when absent) and the optional `subtitle`; any other key is ignored.",
-    "yaml_example": "layers:\n  - name: ggtitle\n    params:\n      label: AMR prevalence by year",
+    "description": "Set the plot title and optional subtitle; a shorthand alternative to labs(title=..., subtitle=...). Differs from plotnine: the title is read from the key `title` (plotnine's own argument name) and the optional `subtitle`; without `title`, or with any other key, the plot fails with a message.",
+    "yaml_example": "layers:\n  - name: ggtitle\n    params:\n      title: AMR prevalence by year",
 })
 def handle_ggtitle(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Set the plot title (and optional subtitle)."""
     from plotnine import ggtitle
-    title = spec.get("title", "")
+    title = _read_text("ggtitle", spec, "title", "AMR prevalence by year", ("title", "subtitle"))
     subtitle = spec.get("subtitle")
     if subtitle:
         return p + ggtitle(title, subtitle=subtitle)
