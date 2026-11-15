@@ -995,3 +995,29 @@ Earlier lines above are not edited; where they disagree with the following, the 
 11. V4.
 
 **Records changed 2026-11-15 (not committed):** `recipe_format_spec.md` (tier 3 note); `architecture_decisions.md` (superseded markers at ADR-082, 093, 099; tier 3 note and RECIPES-SMALL note at ADR-100; filter-control note at ADR-104); `tasks.md` (FILTER-PICKERS-1, RECIPES-SMALL-1, RESULT-CHANGES-1, PY-RECIPE-1, BP-STALE-VIEW-1, SC4 and gallery-reason-list markers, process rule).
+
+## Handoff 2026-11-15 09:20 (coordinator)
+
+Records of this morning, by the review session (channel M85 to M88). Not committed; the records are in the main tree. Eve's decisions, one line each:
+- **D22 (dated 2026-11-15):** yes, the formula allow-list as built (`fe856c26`) is accepted for now; FORMULA-SAFETY-1 and ADR-099 point 14 are closed as one decision.
+- **D23 (dated 2026-11-15):** no time or size limit for formulas now; the known limit is stated in the docs.
+- **Security rule (dated 2026-11-15):** two layers. In the app, nobody may misuse it to run anything but data science. At the deployment, who may deposit recipes and which options the user has is gated by the system; the app's checks do not replace that. Recorded in ADR-071; tasks DOCS-SECURITY-1 and SECURITY-REVIEW-END-1.
+- **Gate gap (found by running, architect):** HOME's load gate runs once at startup; a recipe saved from Blueprint is not checked again. Task GATE-GAP-1 (queued; evidence `tmpAI/panel/round5/blueprint_failed_load/details.md`).
+- **Blueprint with a failing recipe:** three places show the previous recipe with no message, one can freeze the session (the freeze was fixed with BP-UPLOAD-EXIT-1). Eve's choice open, L31: options A, B (recommended), C in BP-STALE-VIEW-1.
+- **Equality check plan:** EQUALITY-CHECK-1, step 1 a dirty copy of the ST22 data and one hand-written recipe (PROVISIONAL, tests only), step 2 every action, step 3 all shipped recipes; evidence `tmpAI/panel/round5/equality_check/`. RESULT-CHANGES-1 dropped (Eve: "we want the results to be correct").
+- **Scientist's two findings on the ST22 recipe (RECIPE-SCIENCE-1, Eve's choice L33 open):** the bars count gene rows (70) where the title speaks of samples (38); the inner join drops 4 of 42 metadata samples from the AMR table and 1 from the plasmid table with no message (JOIN-COUNTS-1 makes it visible).
+
+**What runs:** the seed branch `task/seed-holds` (default 0, no per-session seed in HOME; the per-step seed field is with the panel); row order `task/row-order` with the warnings (`modif_join_where`, the four empty values refused, the position advice); `recipes-small` (RECIPES-SMALL-1). Reviews running: the viz-errors and typed-values branches, third round.
+
+**Queue, in this order:**
+1. GATE-GAP-1
+2. EQUALITY-CHECK-1, step 1
+3. export lines
+4. full controls and push
+5. PLOT-TABLE-ORDER-1
+6. the warnings look (D36, D37; L8, L9)
+7. FILTER-PICKERS-1, with the value list on demand (L10) and Time and Duration controls
+8. V4
+9. DOCS-SECURITY-1
+
+Open for Eve (one number each in the channel list M86): L1 to L33; RECIPE-SCIENCE-1 and L31 (BP-STALE-VIEW-1) need her choice before their build.
