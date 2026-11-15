@@ -221,7 +221,7 @@ def test_a_polars_panic_in_a_step_becomes_a_plain_error_that_names_the_step(monk
     with pytest.raises(TransformationError) as caught:
         _assemble_with(monkeypatch, PanicException("attempt to divide by zero"))
     text = f"{caught.value} {caught.value.tip}"
-    assert "polars_sort" in text and "step 0" in text and "Polars stopped" in text and "divide by zero" in text
+    assert "polars_sort" in text and "step 1" in text and "Polars stopped" in text and "divide by zero" in text
     assert "PanicException" not in str(caught.value).split("Polars stopped")[0]
 
 

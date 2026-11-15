@@ -44,7 +44,7 @@ def test_the_asof_key_of_two_types_fails_and_names_everything():
     with pytest.raises(TransformationError) as caught:
         _assemble(_left(), right, [_step(on="t")]).collect()
     text = f"{caught.value} {caught.value.tip}"
-    for part in (RECIPE, JOIN_ID, "step 0", "'t'", "Int64", "Float64", "'R'", "input_fields", JOIN_ASOF):
+    for part in (RECIPE, JOIN_ID, "step 1", "'t'", "Int64", "Float64", "'R'", "input_fields", JOIN_ASOF):
         assert part in text, f"{part!r} is not in: {text}"
 
 

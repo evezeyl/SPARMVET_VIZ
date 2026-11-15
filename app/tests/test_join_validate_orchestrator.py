@@ -37,7 +37,7 @@ def test_a_refused_validate_names_the_recipe_the_join_the_step_and_the_table(tmp
         _build(world)
     text = f"{caught.value} {getattr(caught.value, 'tip', '')}"
     assert "did not fulfill" not in text, text
-    for part in ("tiny", "join 'C'", "assembly step 0", "'R'", "validate 'm:1'", "sample_id", "s1", "2 times"):
+    for part in ("tiny", "join 'C'", "assembly step 1", "'R'", "validate 'm:1'", "sample_id", "s1", "2 times"):
         assert part in text, f"{part!r} is not in: {text}"
 
 

@@ -86,7 +86,7 @@ def test_the_message_for_each_validate_value_names_the_table_and_the_example(val
         engine(left, right, {"on": ["k"], "how": "inner", "validate": validate, "nulls_equal": False}, tmp_path)
     text = str(caught.value)
     assert "first table" in text if validate != "m:1" else "second table 'R'" in text
-    assert "k=1" in text and "2 times" in text and "polars_join" in text and "assembly step 0" in text
+    assert "k=1" in text and "2 times" in text and "polars_join" in text and "assembly step 1" in text
     assert caught.value.tip and "validate" in caught.value.tip
 
 
@@ -116,7 +116,7 @@ def test_the_second_join_is_named_when_the_first_is_fine(tmp_path):
     with pytest.raises(TransformationError) as caught:
         two_joins(UNIQUE_C, REPEATING_B, tmp_path)
     text = str(caught.value)
-    assert "'B'" in text and "assembly step 1" in text and "k=1" in text
+    assert "'B'" in text and "assembly step 2" in text and "k=1" in text
     assert "'C'" not in text and "could not be found" not in text
 
 
@@ -124,14 +124,14 @@ def test_the_first_join_is_named_when_it_is_the_one_that_repeats(tmp_path):
     with pytest.raises(TransformationError) as caught:
         two_joins(REPEATING_B.rename({"b": "c"}), UNIQUE_C.rename({"c": "b"}), tmp_path)
     text = str(caught.value)
-    assert "'C'" in text and "assembly step 0" in text and "'B'" not in text
+    assert "'C'" in text and "assembly step 1" in text and "'B'" not in text
 
 
 def test_both_are_named_when_both_repeat(tmp_path):
     with pytest.raises(TransformationError) as caught:
         two_joins(REPEATING_B.rename({"b": "c"}), REPEATING_B, tmp_path)
     text = str(caught.value)
-    assert "'C'" in text and "'B'" in text and "assembly step 0" in text and "assembly step 1" in text
+    assert "'C'" in text and "'B'" in text and "assembly step 1" in text and "assembly step 2" in text
 
 
 def test_repeated_null_keys_that_polars_accepts_do_not_mislead_the_message_about_the_other_join(tmp_path):
