@@ -111,3 +111,12 @@ def test_a_panel_that_is_not_there_is_skipped():
     report = make_issue_reporter(session, None, None)
     report(entry(), "bad", "error")
     session.flush()
+
+
+def test_nothing_is_written_before_the_flush(parts):
+    """The render only queues the report (R1: a render may not write a reactive value); the panels change after the flush."""
+    session, issues, alerts, report = parts
+    report(entry(), "Plot 'p': bad.", "error")
+    assert read(issues) == [] and read(alerts) == []
+    session.flush()
+    assert len(read(issues)) == 1 and len(read(alerts)) == 1

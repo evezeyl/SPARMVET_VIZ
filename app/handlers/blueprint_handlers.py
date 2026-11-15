@@ -51,6 +51,7 @@ import subprocess
 import uuid
 import zipfile
 from collections import deque
+from contextlib import redirect_stderr
 from datetime import datetime
 from pathlib import Path
 
@@ -76,6 +77,7 @@ from app.modules.data_analysis_recipe_validator import (
     load_uploaded_recipe,
     load_config_or_problems,
     validate_data_analysis_recipe_data,
+    _load_error_text,
 )
 from blueprint_arch.join_designer import (
     check_join_keys, compute_key_match, build_join_step, parse_join_step, JOIN_HOW_OPTIONS,
@@ -91,8 +93,19 @@ from blueprint_arch.agent_tools import call_tool, get_tool_definitions
 from blueprint_arch.agent_tool_parser import extract_tool_calls
 from blueprint_arch.new_recipe import new_recipe_draft
 from utils.recipe_factory import write_recipe
+from utils.errors import SPARMVET_Error
 from utils.pipeline_error import PipelineError, make_render_payload
 from app.src.render.pipeline_error_renderers import render_blueprint_inline
+
+
+def safe_dump_recipe(content) -> str:
+    """Text of a recipe file: safe dumper (no Python-only tags, a tuple becomes a list), keys in the order given."""
+    return yaml.safe_dump(content, default_flow_style=False, sort_keys=False, allow_unicode=True)
+
+
+def _plain_list(value) -> list:
+    """A multi-select value as a plain list (Shiny returns a tuple; a tuple would be saved as a Python tag)."""
+    return list(value) if isinstance(value, (list, tuple)) else [value]
 
 
 # ── BP-AUTOSAVE-1: pure draft ghost helpers ───────────────────────────────────
@@ -152,6 +165,55 @@ def _read_bp_draft(draft_dir: Path, data_analysis_recipe_path: str) -> dict | No
 
 _LOG = logging.getLogger(__name__)
 
+# The join preview shows these to the user as "Preview failed: <message>": the project's own errors (a dataset that
+# cannot be loaded, a transformation that fails; `SPARMVET_Error` and its subclasses), Polars refusing the data (a
+# missing column, a wrong type) and a file that is missing or cannot be read (OSError: FileNotFoundError,
+# PermissionError). A recipe file that cannot be parsed makes ConfigManager call sys.exit: run_join_preview turns that
+# SystemExit into the loader's own problem text. ValueError is not in the list: it is also what a programmer's bad
+# conversion or a JSON/Unicode decoding fault raises, and showing those as the user's mistake hides a bug.
+# An unknown join or data schema id is a recipe mistake: the orchestrator raises DataAnalysisRecipeError for it.
+JOIN_PREVIEW_USER_ERRORS = (SPARMVET_Error, OSError, pl.exceptions.PolarsError)
+
+JOIN_PREVIEW_INTERNAL_ERROR = "Preview failed: an internal error, not your recipe (details in the log)."
+
+
+def safe_join_preview(*args, **kwargs):
+    """`run_join_preview` for the reactive effect: no exception may escape.
+
+    WHY: an error that escapes a `reactive.Effect` makes Shiny close the user's session. An unexpected error (a
+    programming error) is logged with its traceback and shown with a message that does not blame the recipe.
+    A SystemExit is not an `Exception`: the one `run_join_preview` does not turn into a recipe problem is caught here too.
+    """
+    try:
+        return run_join_preview(*args, **kwargs)
+    except (Exception, SystemExit):
+        _LOG.exception("Join preview: unexpected error")
+        return {"error": JOIN_PREVIEW_INTERNAL_ERROR}
+
+
+def run_join_preview(materialise, key_rows, left_ing, right_ing, left_keys, right_keys):
+    """The result the Joint Designer shows for a key match; an expected error becomes {"error": ...}.
+
+    `materialise(ingredient_id)` returns (LazyFrame, {column: dtype}); `key_rows(lazyframe, keys)` the key tuples.
+    """
+    captured = io.StringIO()
+    try:
+        with redirect_stderr(captured):  # ConfigManager prints its [FATAL] block to stderr before it exits
+            left_lf, left_schema = materialise(left_ing)
+            right_lf, right_schema = materialise(right_ing)
+            verdict = check_join_keys(left_schema, right_schema, left_keys, right_keys, right_id=right_ing)
+            stats = (compute_key_match(key_rows(left_lf, left_keys), key_rows(right_lf, right_keys))
+                     if verdict["ok"] else {})
+    except JOIN_PREVIEW_USER_ERRORS as exc:
+        return {"error": f"Preview failed: {exc}"}
+    except SystemExit as exc:  # a recipe file that cannot be loaded: ConfigManager calls sys.exit(1)
+        return {"error": f"Preview failed: {_load_error_text(captured.getvalue(), exc)}"}
+    stats["verdict"] = verdict
+    stats["error"] = None
+    stats["_meta"] = {"left_ing": left_ing, "right_ing": right_ing,
+                      "left_keys": left_keys, "right_keys": right_keys}
+    return stats
+
 
 def _warn_on_upload(raw, name):
     """Report the problems of an uploaded file; the nodes are still added (rules_data_analysis_recipe_structure.md 11a).
@@ -178,6 +240,38 @@ def _show_load_problems(name, problems):
         ui.notification_show(f"{name} could not be opened: {shown}", type="warning", duration=15)
     except Exception:
         _LOG.exception("load problems could not be shown for %s", name)
+
+
+def blank_blueprint_view(wrangle_studio, includes_map, component_ctx_map, schema_registry, keep_component=False):
+    """Clear what Blueprint keeps of the previously opened recipe: the map, the YAML view, the three stores of
+    the recipe, the lineage and the open component (GATE-GAP-1). The one function every failed load goes through,
+    so the previous recipe is never shown as if it were the one that was asked for. `keep_component` leaves the YAML
+    view and the steps of a component that was just loaded from a valid fragment file."""
+    includes_map.set({})
+    component_ctx_map.set({})
+    schema_registry.set({})
+    wrangle_studio.active_tubemap_mermaid.set("")
+    wrangle_studio.active_lineage_chain.set([])
+    if not keep_component:
+        wrangle_studio.active_raw_yaml.set("")
+        wrangle_studio.logic_stack.set([])
+
+
+def tell_save_outcome(bootloader, notify) -> list[str]:
+    """After Blueprint wrote a recipe file: re-run HOME's load gate for the recipes whose files changed and tell the
+    author what it means for HOME (GATE-GAP-1). The save is never blocked: Blueprint is where a failing recipe is opened
+    and fixed. Returns the names of the recipes that were checked."""
+    before = set(bootloader.rejected_data_analysis_recipes)
+    changed = bootloader.recheck_changed_data_analysis_recipes()
+    for name in changed:
+        record = bootloader.rejected_data_analysis_recipes.get(name)
+        if record:
+            shown = "; ".join(record["problems"][:2])
+            notify(f"Saved. HOME will not use '{name}' until it passes its checks: {shown}. "
+                   "Blueprint still opens it; fix it and save again.", type="warning", duration=20)
+        elif name in before:
+            notify(f"'{name}' passes its checks again: HOME can use it.", type="message", duration=8)
+    return changed
 
 
 def _load_upload_or_report(file_info):
@@ -269,15 +363,41 @@ def define_server(input, output, session, *,
             return True
         return False
 
-    def _do_refresh_blueprint(path: str) -> tuple[dict, dict]:
+    # GATE-GAP-1: the last load failure that was shown, so that one failing recipe is told once, not once per effect
+    # (selecting a recipe fires the refresh and the map sync).
+    _last_load_failure: dict = {"key": None}
+
+    def _fail_load(path, problems, keep_component=False):
+        """A recipe could not be opened: say which one and why, and clear what is left of the previous recipe."""
+        blank_blueprint_view(wrangle_studio, includes_map, component_ctx_map, schema_registry,
+                             keep_component=keep_component)
+        ui.update_select("dataset_pipeline_selector", choices=["No components found"])
+        with reactive.isolate():
+            _groups_refresh.set(_groups_refresh.get() + 1)
+        key = (str(path), tuple(problems))
+        if _last_load_failure["key"] == key:
+            return
+        _last_load_failure["key"] = key
+        _show_load_problems(Path(path).name, problems)
+
+    def _tell_save_outcome():
+        tell_save_outcome(bootloader, ui.notification_show)
+
+    def _do_refresh_blueprint(path: str):
         """Rebuild includes_map/ctx_map/schema_registry and bump _groups_refresh.
 
         Called on data analysis recipe load and after any group/plot CRUD mutation.
-        Returns (ctx_map, inc_map) for callers that need the data directly.
+        Returns (ctx_map, inc_map) for callers that need the data directly, or None when the recipe could not
+        be opened (the author was told and the view of the previous recipe was cleared, GATE-GAP-1).
         """
         if not path or not Path(path).exists():
             return {}, {}
         try:
+            cfg_loaded, load_problems = load_config_or_problems(path)
+            if cfg_loaded is None:
+                _fail_load(path, load_problems)
+                return None
+            _last_load_failure["key"] = None
             data_analysis_recipe_path = Path(path)
             data_analysis_recipe_dir = data_analysis_recipe_path.parent
             raw_text = data_analysis_recipe_path.read_text(encoding="utf-8")
@@ -319,11 +439,7 @@ def define_server(input, output, session, *,
             if groups:
                 ui.update_select("dataset_pipeline_selector", choices=groups)
             else:
-                cfg_inline, _lp = load_config_or_problems(path)
-                if cfg_inline is None:
-                    _show_load_problems(Path(path).name, _lp)
-                    return {}, {}
-                raw = cfg_inline.raw_config
+                raw = cfg_loaded.raw_config
                 inline_groups: dict = {}
                 for sid in raw.get("data_schemas", {}):
                     inline_groups.setdefault("data_schemas", {})[sid] = f"{sid} — wrangling"
@@ -350,8 +466,8 @@ def define_server(input, output, session, *,
             return ctx_map, inc_map
 
         except Exception as e:
-            print(f"[_do_refresh_blueprint] Error: {e}")
-            return {}, {}
+            _fail_load(path, [f"Blueprint could not read it: {type(e).__name__}: {e}"])
+            return None
 
     # ── Local helpers (pure logic, no Shiny decorators) ──────────────────────
 
@@ -725,7 +841,10 @@ def define_server(input, output, session, *,
                     mapper = BlueprintMapper(cfg_for_map.raw_config, active_node=schema_id)
                     wrangle_studio.active_tubemap_mermaid.set(mapper.generate_cy_elements())
                 except Exception as _e:
-                    print(f"[TubeMap highlight] Failed: {_e}")
+                    # GATE-GAP-1: the component is new and the map would be the previous one: say so, no "Loaded".
+                    _fail_load(master_path, _lp if cfg_for_map is None else [f"the map could not be drawn: {_e}"],
+                               keep_component=True)
+                    return
 
                 msg = f"✅ Loaded '{abs_file.name}' ({len(nodes)} step(s))"
                 ui.notification_show(msg, type="message")
@@ -787,7 +906,7 @@ def define_server(input, output, session, *,
             nodes = _parse_logic_to_nodes(wrangling, f"Master: {selected}")
             wrangle_studio.logic_stack.set(nodes)
             wrangle_studio.active_raw_yaml.set(
-                yaml.dump(raw, default_flow_style=False, sort_keys=False))
+                safe_dump_recipe(raw))
             # BP-PLOT-COMMIT-1: inline component (no standalone file) — Save is disabled.
             wrangle_studio.active_component_path.set("")
 
@@ -914,18 +1033,19 @@ def define_server(input, output, session, *,
         try:
             cfg, _lp = load_config_or_problems(str(path_str))
             if cfg is None:
-                print(f"[sync_blueprint_mapper] {'; '.join(_lp)}")
+                _fail_load(path_str, _lp)
                 return
+            _last_load_failure["key"] = None
             info = wrangle_studio.active_component_info.get()
             active_node = info.get("schema_id") if info else None
             mapper = BlueprintMapper(cfg.raw_config, active_node=active_node)
             cy_json = mapper.generate_cy_elements()
             wrangle_studio.active_tubemap_mermaid.set(cy_json)
             wrangle_studio.active_raw_yaml.set(
-                yaml.dump(cfg.raw_config, default_flow_style=False, sort_keys=False, allow_unicode=True)
+                safe_dump_recipe(cfg.raw_config)
             )
         except Exception as e:
-            print(f"[sync_blueprint_mapper] Failed: {e}")
+            _fail_load(path_str, [f"the map could not be drawn: {type(e).__name__}: {e}"])
 
     # --- Phase 18: Wrangle Studio Data Analysis Recipe Management ---
     @reactive.Effect
@@ -955,7 +1075,10 @@ def define_server(input, output, session, *,
         path = input.stored_data_analysis_recipe_selector()
         if not path or not Path(path).exists():
             return
-        ctx_map, inc_map = _do_refresh_blueprint(path)
+        refreshed = _do_refresh_blueprint(path)
+        if refreshed is None:
+            return  # GATE-GAP-1: told, and the view of the previous recipe is cleared: no "loaded" message
+        ctx_map, inc_map = refreshed
         # UX-NOTIF-3: Data analysis recipe load notification — surface component count on data analysis recipe reload
         data_analysis_recipe_name = Path(path).name
         n_components = len(ctx_map) if ctx_map else len(inc_map)
@@ -1146,12 +1269,14 @@ def define_server(input, output, session, *,
             return
 
         try:
-            with open(comp_path, "w") as f:
-                yaml.dump(content, f, default_flow_style=False, sort_keys=False)
+            with open(comp_path, "w", encoding="utf-8") as f:
+                f.write(safe_dump_recipe(content))
             ui.notification_show(
                 f"✅ Saved to {Path(comp_path).name}", type="success")
         except OSError as e:
             ui.notification_show(f"❌ Save failed: {e}", type="error")
+            return
+        _tell_save_outcome()  # GATE-GAP-1: HOME's load gate runs again; the save itself is never blocked
 
     @reactive.Effect
     @reactive.event(input.btn_bp_apply_node)
@@ -1222,12 +1347,10 @@ def define_server(input, output, session, *,
                 if val is not None:
                     multi = param_def.get("multi", False)
                     if multi:
-                        new_params[param_key] = (
-                            val if isinstance(val, list) else [val]
-                        )
+                        new_params[param_key] = _plain_list(val)
                     else:
                         new_params[param_key] = (
-                            val[0] if isinstance(val, list) and val else val
+                            val[0] if isinstance(val, (list, tuple)) and val else val
                         )
             elif widget_type in ("expression", "string"):
                 val = safe_input(input, input_id, "")
@@ -1244,9 +1367,7 @@ def define_server(input, output, session, *,
                 val = safe_input(input, input_id, [] if multi else "")
                 if val:
                     if multi:
-                        new_params[param_key] = (
-                            val if isinstance(val, list) else [val]
-                        )
+                        new_params[param_key] = _plain_list(val)
                     else:
                         new_params[param_key] = val
             elif widget_type == "column_or_literal":
@@ -1485,6 +1606,7 @@ def define_server(input, output, session, *,
                     except OSError:
                         pass
                 return False, f"Write failed: {exc}"
+            _tell_save_outcome()  # GATE-GAP-1: HOME's load gate runs again; the write itself is never blocked
             return True, plan.get("summary") or "Branch written to data analysis recipe."
 
         @output
@@ -2144,24 +2266,13 @@ def define_server(input, output, session, *,
             return
         data_analysis_recipe_id = Path(data_analysis_recipe_path).stem
 
-        try:
-            with ui.Progress(min=0, max=2) as p:
-                p.set(0, message=f"Materialising {left_ing}…")
-                left_lf, left_schema = _jd_materialise(data_analysis_recipe_id, left_ing)
-                p.set(1, message=f"Materialising {right_ing}…")
-                right_lf, right_schema = _jd_materialise(data_analysis_recipe_id, right_ing)
-            verdict = check_join_keys(left_schema, right_schema, left_keys, right_keys, right_id=right_ing)
-            if verdict["ok"]:
-                stats = compute_key_match(_jd_key_rows(left_lf, left_keys), _jd_key_rows(right_lf, right_keys))
-            else:
-                stats = {}
-            stats["verdict"] = verdict
-            stats["error"] = None
-            stats["_meta"] = {"left_ing": left_ing, "right_ing": right_ing,
-                              "left_keys": left_keys, "right_keys": right_keys}
-            joint_preview.set(stats)
-        except Exception as exc:
-            joint_preview.set({"error": f"Preview failed: {exc}"})
+        with ui.Progress(min=0, max=2) as p:
+            def _materialise(ingredient_id):
+                p.set(0, message=f"Materialising {ingredient_id}…")
+                return _jd_materialise(data_analysis_recipe_id, ingredient_id)
+
+            joint_preview.set(safe_join_preview(
+                _materialise, _jd_key_rows, left_ing, right_ing, left_keys, right_keys))
 
     @output
     @render.ui
@@ -2633,6 +2744,8 @@ def define_server(input, output, session, *,
             ui.notification_show("Data analysis recipe info saved.", type="message")
         except Exception as e:
             ui.notification_show(f"Save error: {e}", type="error")
+            return
+        _tell_save_outcome()  # GATE-GAP-1: HOME's load gate runs again; the save itself is never blocked
 
     # ══════════════════════════════════════════════════════════════════════
     # BP-NEW-1 — Create new data analysis recipe from scratch (ADR-082 Q2)

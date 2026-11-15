@@ -187,7 +187,7 @@ _TOOL_CALL_PROTOCOL = textwrap.dedent("""\
     Available tools:
       get_available_actions    — list registered actions; args: {"context": "t1|t2|assembly"}
       get_available_components — list registered viz_factory components
-      get_field_contract       — get input_fields/output_fields for a schema; args: {"schema_id": "..."}
+      get_field_contract       — get the input_fields (the typed columns the app reads) and the wrangling tiers of a schema; args: {"schema_id": "..."}
       get_data_schema_summary  — privacy-preserving column stats; args: {"schema_id": "..."}
       get_current_data_analysis_recipe_section — read a data analysis recipe section; args: {"section_path": "data_schemas.amr_results"}
       validate_data_analysis_recipe_fragment — validate candidate YAML; args: {"yaml_fragment": "..."}

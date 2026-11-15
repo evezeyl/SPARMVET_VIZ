@@ -1,6 +1,6 @@
 """
 @deps
-provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:checker_advices, const:SHOWN_ADVICES, function:home_advice_entries, function:validate_advice_entries, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, class:DataAnalysisRecipeProblem
+provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:checker_advices, const:SHOWN_ADVICES, function:home_advice_entries, function:validate_advice_entries, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, function:rejected_recipe_text (GATE-GAP-1), class:DataAnalysisRecipeProblem
 consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (load_recipe), libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/orchestrator.py
 consumed_by: app/tests/test_upload_load_never_exits.py, app/tests/test_upload_recipe_check.py, app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
@@ -135,9 +135,9 @@ def _fragment_report(raw) -> list[str]:
     from utils.ui_schema import step_problems
     wrangling = raw.get("wrangling") if isinstance(raw, dict) else None
     if isinstance(wrangling, list):
-        located = [("steps", i, s) for i, s in enumerate(wrangling)]
+        located = [("steps", i, s) for i, s in enumerate(wrangling, start=1)]
     elif isinstance(wrangling, dict):
-        located = [(t, i, s) for t in ("tier1", "tier2", "tier3") for i, s in enumerate(wrangling.get(t) or [])]
+        located = [(t, i, s) for t in ("tier1", "tier2", "tier3") for i, s in enumerate(wrangling.get(t) or [], start=1)]
     else:
         located = []
     if not located:
@@ -426,3 +426,16 @@ def resolve_contact(info: Optional[dict], deployment_contact: Optional[str]) -> 
         if recipe_contact:
             return str(recipe_contact)
     return deployment_contact or None
+
+
+def rejected_recipe_text(name: str, record: dict) -> str:
+    """What HOME says when the recipe it was showing no longer passes the gate (GATE-GAP-1): which one, why, who to ask.
+
+    `record` is an entry of `bootloader.rejected_data_analysis_recipes`. At most three problems are listed."""
+    problems = [str(p) for p in record.get("problems", [])]
+    shown = "; ".join(problems[:3]) or "see Validate in Blueprint"
+    more = f" (and {len(problems) - 3} more)" if len(problems) > 3 else ""
+    contact = record.get("contact") or "not configured for this deployment"
+    return (f"The data analysis recipe '{name}' failed its checks after its files changed, so HOME does not use it. "
+            f"Problems: {shown}{more}. Open it in Blueprint, fix it and save; HOME takes it back when it passes. "
+            f"Contact: {contact}.")

@@ -1,3 +1,4 @@
+import pandas as pd
 import polars as pl
 from plotnine import ggplot, aes
 from typing import Dict, Any, List
@@ -408,7 +409,7 @@ class VizFactory:
             has_fill_scale = "fill" not in palette_scope
             has_color_scale = "color" not in palette_scope
             p = apply(p, Step(
-                "palette", {}, lambda q, _params: self._apply_palette(q, palette_name, mapping_spec, has_fill_scale, has_color_scale, warn),
+                "palette", {}, lambda q, _params: self._apply_palette(q, palette_name, mapping_spec, has_fill_scale, has_color_scale, warn, df_pandas),
                 label=f"the palette '{palette_name}'"))
 
         return p
@@ -421,6 +422,7 @@ class VizFactory:
         has_fill_scale: bool,
         has_color_scale: bool,
         warn,
+        df=None,
     ):
         """Inject a named palette as a plotnine fill/colour scale (BP-COLOR-3).
 
@@ -461,11 +463,22 @@ class VizFactory:
             _viridis_palettes = {"viridis", "plasma", "magma", "inferno", "cividis"}
             if palette_name in _viridis_palettes:
                 try:
-                    from plotnine import scale_fill_viridis_d, scale_color_viridis_d
+                    # plotnine has no scale_*_viridis_*; the colour map is applied with scale_*_cmap_d (a discrete
+                    # aesthetic) or scale_*_cmap (a numeric one), chosen by the dtype of the mapped column.
+                    from plotnine import scale_fill_cmap, scale_fill_cmap_d, scale_color_cmap, scale_color_cmap_d
+
+                    def _is_continuous(aes_key: str) -> bool:
+                        column = mapping_spec.get(aes_key)
+                        return df is not None and column in df.columns and \
+                            pd.api.types.is_numeric_dtype(df[column]) and not pd.api.types.is_bool_dtype(df[column])
+
                     if uses_fill:
-                        p = p + scale_fill_viridis_d(option=palette_name)
+                        scale = scale_fill_cmap if _is_continuous("fill") else scale_fill_cmap_d
+                        p = p + scale(cmap_name=palette_name)
                     if uses_color:
-                        p = p + scale_color_viridis_d(option=palette_name)
+                        colour_key = "color" if "color" in mapping_spec else "colour"
+                        scale = scale_color_cmap if _is_continuous(colour_key) else scale_color_cmap_d
+                        p = p + scale(cmap_name=palette_name)
                     print(f"[VizFactory] Applied viridis palette '{palette_name}'")
                 except Exception as exc:
                     pe = PipelineError(

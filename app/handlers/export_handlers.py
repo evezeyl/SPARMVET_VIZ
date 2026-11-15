@@ -22,6 +22,7 @@ from pathlib import Path
 
 from shiny import reactive, render, ui
 
+from app.modules.export_refusal import export_refusal
 from app.modules.t3_audit_engine import _apply_filter_rows, _op_label, between_prose
 from app.modules.plot_seeds import (
     bake_plot_seeds, export_seed_plan, seed_recipe_note, seed_sources_per_plot, seeds_added_to_recipe,
@@ -809,11 +810,20 @@ def define_export_server(input, output, session, *,
         app_features = current_app_features.get()
         dpi = 300 if preset == "web" else 600
 
-        cfg = active_cfg()
         data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
-        # ADR-089: one set of chained keys for the whole export; every stored stage is checked
-        # against it instead of being reused by file name.
-        export_keys = orchestrator.compute_data_analysis_recipe_keys(data_analysis_recipe_id)
+        try:
+            cfg = active_cfg()
+            # ADR-089: one set of chained keys for the whole export; every stored stage is checked
+            # against it instead of being reused by file name.
+            export_keys = orchestrator.compute_data_analysis_recipe_keys(data_analysis_recipe_id)
+            _unreadable = None
+        except (ValueError, FileNotFoundError) as _error:  # GATE-GAP-1: the recipe cannot be read any more
+            _unreadable = _error
+        with reactive.isolate():
+            _refusal = export_refusal(bootloader, data_analysis_recipe_id, _unreadable, _notify)
+        if _refusal is not None:
+            yield _refusal
+            return
 
         # EXPORT-KEYCHECK-1: the keys of the open view must equal the keys now. If a data analysis recipe or
         # data file changed after the view was opened, refuse: what is exported must be what the

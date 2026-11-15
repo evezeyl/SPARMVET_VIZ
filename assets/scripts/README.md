@@ -35,7 +35,6 @@ python assets/scripts/<script>.py --help
 | Script | Purpose |
 |---|---|
 | `build_dep_graph.py` | Scan `@deps` blocks across all project files and write `assets/dep_graph.html` + `dependency_index.md`. Run after adding or changing `@deps` annotations. |
-| `debug_apply_data_analysis_recipe_standards.py` | Apply ADR-041 data analysis recipe standards to test YAML files in `libs/viz_factory/tests/test_data/`. |
 | `debug_bootstrap_viz_yamls.py` | Bootstrap test data analysis recipes from scratch into `libs/viz_factory/tests/test_data/`. |
 
 > Note: `debug_viz_factory_audit.py` was relocated to `libs/viz_factory/tests/` (ADR-032 — library-internal debug runners belong in their own `libs/<x>/tests/`).

@@ -1140,10 +1140,9 @@ def handle_stat_identity(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_summary"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
+    "not_exposed": {key: "plotnine takes a Python function here, which a recipe cannot hold; use fun_data (a name such as mean_se)"
+                    for key in ("fun_y", "fun_ymin", "fun_ymax")},
     "overlay": {
-        "fun_y": {"widget": "string", "label": "Function for y (e.g. 'mean', 'median')"},
-        "fun_ymin": {"widget": "string", "label": "Function for ymin"},
-        "fun_ymax": {"widget": "string", "label": "Function for ymax"},
         "fun_data": {"widget": "string", "label": "Function returning data frame"},
         "geom": {"widget": "string", "label": "Geom to render (e.g. point, errorbar, bar)"},
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows"},
@@ -1531,10 +1530,9 @@ def handle_stat_sum(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     "wraps": [{"lib": "plotnine", "attr_path": ["stat_summary_bin"]}],
     "plotnine": "exact",
     "allow_extra_params": True,
+    "not_exposed": {key: "plotnine takes a Python function here, which a recipe cannot hold; use fun_data (a name such as mean_se)"
+                    for key in ("fun_y", "fun_ymin", "fun_ymax")},
     "overlay": {
-        "fun_y": {"widget": "string", "label": "Function for y (e.g. 'mean', 'median')"},
-        "fun_ymin": {"widget": "string", "label": "Function for ymin"},
-        "fun_ymax": {"widget": "string", "label": "Function for ymax"},
         "bins": {"widget": "number", "label": "Number of bins"},
         "binwidth": {"widget": "number", "label": "Bin width (data units)"},
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows"},

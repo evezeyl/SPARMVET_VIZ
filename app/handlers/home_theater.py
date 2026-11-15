@@ -43,7 +43,7 @@ from pathlib import Path
 import polars as pl
 from shiny import reactive, render, ui
 from app.modules.cache_keys import load_data_analysis_recipe
-from app.modules.data_analysis_recipe_validator import home_advice_entries
+from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
 from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
@@ -87,7 +87,9 @@ def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
     """
     seen = set()
     results = []
-    for data_analysis_recipe_id, data_analysis_recipe_path in bootloader.available_data_analysis_recipes.items():
+    # every discovered recipe, not only the ones that passed the gate at start: one that fails now and is repaired later
+    # must find its plot slots (GATE-GAP-1); a recipe that does not load is skipped below
+    for data_analysis_recipe_id, data_analysis_recipe_path in bootloader.discovered_data_analysis_recipes.items():
         try:
             cfg = load_data_analysis_recipe(data_analysis_recipe_path).config
             # Collect from analysis_groups
@@ -823,6 +825,7 @@ def define_server(input, output, session, *,
         # whichever authoring workspaces this deployment actually enables, instead of either
         # crashing (the bug) or a generic "Data Assembly Failed" exception message (unhelpful —
         # there is no recipe to assemble yet, this is not a failure of one).
+        active_cfg()  # GATE-GAP-1: depends on the gate answer, so this output redraws when a recipe passes or fails
         if not bootloader.has_usable_data_analysis_recipe:
             _next_steps = []
             if bootloader.is_enabled("blueprint_enabled"):
@@ -835,15 +838,26 @@ def define_server(input, output, session, *,
                 _hint = "Ask this deployment's operator to add one."
             _rejected = bootloader.rejected_data_analysis_recipes
             _why = (
-                f"{len(_rejected)} data analysis recipe(s) exist but failed validation — "
-                "see Data analysis recipe Choice in the sidebar for details."
+                f"{len(_rejected)} data analysis recipe(s) exist but failed validation "
+                "(also listed in Data analysis recipe Choice in the sidebar)."
                 if _rejected else
                 "No data analysis recipe files were found."
             )
             return ui.div(
                 ui.tags.h5("No data analysis recipes yet", class_="mb-2"),
                 ui.markdown(f"{_why} Open {_hint}"),
+                *[ui.tags.p(rejected_recipe_text(_name, _rec), class_="small mb-1")
+                  for _name, _rec in sorted(_rejected.items())],
                 class_="alert alert-info m-3",
+            )
+
+        # GATE-GAP-1: the recipe open in HOME failed its checks after its files changed: say so, show nothing computed from it
+        _open_recipe = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe_or_none())
+        if _open_recipe in bootloader.rejected_data_analysis_recipes:
+            return ui.div(
+                ui.tags.h5("This data analysis recipe is not available", class_="mb-2"),
+                ui.tags.p(rejected_recipe_text(_open_recipe, bootloader.rejected_data_analysis_recipes[_open_recipe])),
+                class_="alert alert-warning m-3",
             )
 
         # 2. Results Theater (Home) Logic — ADR-043 Unified Home Theater
@@ -1618,59 +1632,15 @@ def define_server(input, output, session, *,
             )
 
         def _render_data_analysis_recipe_choice():
-            rejected = bootloader.rejected_data_analysis_recipes
-            rejected_block = None
-            if rejected:
-                rejected_block = ui.div(
-                    ui.tags.small(
-                        f"{len(rejected)} recipe(s) unavailable — failed data or structure check:",
-                        class_="text-muted d-block mt-2 mb-1",
-                        style="font-size: 0.68rem;",
-                    ),
-                    *[
-                        ui.div(
-                            ui.tags.div(name, style="font-size: 0.72rem; font-weight: 600; color: #d62828;"),
-                            ui.tags.div(
-                                "; ".join(r["problems"][:2]) + (" ..." if len(r["problems"]) > 2 else ""),
-                                style="font-size: 0.68rem;",
-                            ),
-                            ui.tags.div(
-                                f"Contact: {r['contact']}" if r.get("contact") else
-                                "Contact: not configured for this deployment",
-                                style="font-size: 0.68rem; color: #6c757d;",
-                            ),
-                            style="margin: 2px 0 6px 0; padding: 4px 6px; "
-                                  "background: #ffe0e0; border-radius: 3px;",
-                        )
-                        for name, r in sorted(rejected.items())
-                    ],
-                )
-            advice_block = None
-            advices = home_advice_entries(getattr(bootloader, "data_analysis_recipe_advices", {}))
-            if advices:
-                advice_block = ui.div(
-                    ui.tags.small(
-                        "Advice (these recipes load and run):",
-                        class_="text-muted d-block mt-2 mb-1",
-                        style="font-size: 0.68rem;",
-                    ),
-                    *[
-                        ui.div(
-                            ui.tags.div(name, style="font-size: 0.72rem; font-weight: 600;"),
-                            *[ui.tags.div(text, style="font-size: 0.68rem;") for text in texts],
-                            style="margin: 2px 0 6px 0; padding: 4px 6px; background: #fff3cd; border-radius: 3px;",
-                        )
-                        for name, texts in advices
-                    ],
-                )
+            """The selector, and a slot for the notes under it (what is unavailable and why, advices). The notes follow the
+            load gate (recipe_gate_handlers.py, GATE-GAP-1) without rebuilding the selector the user is using (R4)."""
             return ui.accordion_panel(
                 "Data analysis recipe Choice",
                 ui.div(
                     ui.input_select("data_analysis_recipe_id", "Data analysis recipe",
                                     choices=data_analysis_recipe_choices,
                                     selected=_current_data_analysis_recipe),
-                    rejected_block,
-                    advice_block,
+                    ui.output_ui("recipe_gate_notes_ui"),
                     class_="d-flex flex-column gap-1"
                 ),
                 icon=ui.tags.i(class_="bi bi-folder-fill")

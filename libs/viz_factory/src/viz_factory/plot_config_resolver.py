@@ -114,6 +114,9 @@ def is_partial_theme(name: str) -> bool:
     return bool(wraps) and wraps[0].get("lib") == "plotnine" and list(wraps[0].get("attr_path") or []) == ["theme"]
 
 
+FACET_SETTINGS = ("facet_scales", "facet_space", "facet_margins", "facet_labeller")
+
+
 def _layer_dedup_key(layer: dict) -> tuple | None:
     """Return a (kind, target) dedup key for a layer, or None for geom/stat.
 
@@ -137,6 +140,9 @@ def _layer_dedup_key(layer: dict) -> tuple | None:
         return None if is_partial_theme(name) else ("theme", None)
     if name.startswith("coord_"):
         return ("coord", None)
+    if name in FACET_SETTINGS:
+        # These change a setting of the facet written before them; they are not a facet, so they must not replace it.
+        return (name, None)
     if name.startswith("facet_"):
         return ("facet", None)
     if name.startswith("scale_fill_"):
