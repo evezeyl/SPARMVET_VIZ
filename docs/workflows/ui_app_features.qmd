@@ -244,12 +244,10 @@ config/app_features/
 ```yaml
 # config/app_features/<app features>.yaml
 
-app_features_name: "pipeline-static"      # internal ID — must match filename prefix
-app_features_id: "pipeline-static"        # used by Bootloader — must match filename prefix
-display_name: "Automated Pipeline — Static"   # shown in UI
-logic_access: "None"                 # informational: None / Basic / Advanced / Full
+name: "pipeline-static"                   # internal ID — must match the file name (without .yaml)
+display_name: "Automated Pipeline - Static"   # shown in UI
 
-features:
+flags:
   # ── Group A: Viewing ──────────────────────────────────────────────────────
   # (no dependencies; always meaningful)
   export_enabled: true        # Export Results Bundle (zip) in Export
@@ -279,6 +277,15 @@ features:
                                      # FATAL cascade (ADR-077): requires blueprint_enabled: true
   blueprint_agent_enabled: false     # Conversational AI agent for data analysis recipe design (ADR-076)
                                      # FATAL cascade (ADR-077): requires blueprint_enabled: true
+
+  show_app_features_badge: true      # Show the active app features name in the nav header
+
+# false: the operator names the data analysis recipe with default_data_analysis_recipe in the deployment file
+data_analysis_recipe_selector:
+  visible: false
+
+# false: data injected by the pipeline; true: pre-fill the data selector from the data analysis recipe defaults
+testing_mode: false
 
 # Required when blueprint_agent_enabled: true
 blueprint_agent:
