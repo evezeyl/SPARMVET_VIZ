@@ -49,3 +49,27 @@ def test_the_first_step_is_number_one_not_zero():
         DataWrangler().run(pl.LazyFrame({"a": [1]}), [{"column": "a"}])
     assert "step 1 " in raised.value.pipeline_error.problem
     assert [line for line in uploaded_recipe_report({"wrangling": {"tier1": [{"column": "a"}]}}) if "tier1[1]" in line]
+
+
+def test_the_same_number_in_the_checker_the_wrangler_the_assembler_and_the_upload_report():
+    """Wrangling steps: checker, wrangler, upload report. Join steps: checker and assembler (tests of the assembler: test_step_numbering.py).
+    Both lists count from 1, so the second step of either is number 2 everywhere."""
+    import polars as pl
+    from app.tests.test_step_numbering import two_step_recipe
+    from transformer.data_assembler import DataAssembler
+    from utils.recipe_check import check_recipe as check
+
+    raw, steps = two_step_recipe()
+    found = [p for p in check(raw, "run", catalogs=checker_catalogs()).problems if p.code == "J05"]
+    with pytest.raises(TransformationError) as assembling:
+        DataAssembler({"A": pl.LazyFrame({"a": ["a"]}), "B": pl.LazyFrame({"a": ["a"]})}, recipe_id="r", join_id="AB").assemble(steps)
+    with pytest.raises(TransformationError) as wrangling:
+        DataWrangler().run(pl.LazyFrame({"sample_id": ["a"], "reads": [1]}), STEPS)
+    upload = [line for line in uploaded_recipe_report({"wrangling": {"tier1": STEPS}}) if "no_such_action" in line]
+    numbers = {
+        "checker (join)": int(re.search(r"\[(\d+)\]", found[0].path).group(1)),
+        "assembler": int(re.search(r"step (\d+)", assembling.value.pipeline_error.location).group(1)),
+        "wrangler": int(re.search(r"step (\d+)", wrangling.value.pipeline_error.location).group(1)),
+        "upload report": int(re.search(r"tier1\[(\d+)\]", upload[0]).group(1)),
+    }
+    assert set(numbers.values()) == {2}, numbers
