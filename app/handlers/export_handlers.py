@@ -23,7 +23,7 @@ from pathlib import Path
 from shiny import reactive, render, ui
 
 from app.modules.export_refusal import export_refusal
-from app.modules.t3_audit_engine import _apply_filter_rows, _op_label, between_prose
+from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
 from app.modules.plot_seeds import (
     bake_plot_seeds, export_seed_plan, seed_recipe_note, seed_sources_per_plot, seeds_added_to_recipe,
     seeds_per_layer_record, seeds_per_plot_record, render_seed_args, with_seed_steps,
@@ -221,30 +221,6 @@ def changed_since_view(view_keys, current_keys) -> list[str]:
     return changes
 
 
-def audited_frame(lf, rows: list, drops: list):
-    """The "My view" data of one plot: filter rows, then column drops, on its base frame.
-
-    The base is the stored Tier 2 (Tier 1 when the table has no tier2 steps): build rule
-    T3 > T2 > T1. Same steps and order as the data preview in HOME. A drop of a column that is
-    not in the frame is ignored, like in HOME.
-    """
-    lf = _apply_filter_rows(lf, rows)
-    present = set(lf.collect_schema().names())
-    present_drops = [c for c in drops if c in present]
-    return lf.drop(present_drops) if present_drops else lf
-
-
-def plot_content_rules(audited_rows: list, audited_drops: list) -> tuple[list, list]:
-    """The filter rows and column drops that go into one exported plot (and its T3 data file).
-
-    Only AUDITED T3 steps (committed with a reason, for example to remove poor quality data) are
-    exported, always: they are the user's decision for the publication. Anything not sent to audit
-    (the exploration filters of T1/T2/My view) is a sandbox to understand the data and is NEVER
-    exported (Eve, 2026-11-06).
-    """
-    return list(audited_rows), list(audited_drops)
-
-
 def blocked_export_notice(changes: list[str], view_keys, current_keys) -> str:
     """Plain-language explanation shown (and written in the bundle) when an export is refused."""
     lines = [
@@ -272,6 +248,20 @@ def blocked_export_notice(changes: list[str], view_keys, current_keys) -> str:
         f"        data     {current_keys.data_batch_hash}",
         f"        tier1    {current_keys.tier1_key}",
     ]
+    return "\n".join(lines)
+
+
+def blocked_audit_notice(failing: list) -> str:
+    """Text of `EXPORT_NOT_CREATED.txt` when the audited steps of plots cannot run in their recorded order: every failing plot, with its reason."""
+    lines = ["EXPORT NOT CREATED", "",
+             "The audit steps of " + ("this plot" if len(failing) == 1 else f"these {len(failing)} plots")
+             + " cannot run in the order they were recorded:", ""]
+    for plot_id, error in failing:
+        lines += [f"Plot '{plot_id}':", str(error), ""]
+    lines += ["What it means: the table, the plot and the recipe that the export writes would not agree, or the recipe would stop.",
+              "In a scientific export that must never happen silently, so nothing was exported.",
+              "",
+              "What to do: remove the step named for each plot in its audit list (right panel), check the plots, export again."]
     return "\n".join(lines)
 
 
@@ -378,7 +368,6 @@ def _build_methods_section(
         "drop_column": "Column was permanently removed",
         "aesthetic_override": "Plot aesthetics were adjusted",
         "random_seed": "The arrangement of the random points was fixed",
-        "developer_raw_yaml": "A custom data analysis recipe fragment was applied",
     }
 
     prose_items: list[str] = []
@@ -930,16 +919,10 @@ def define_export_server(input, output, session, *,
         # exported, from any view (Eve, 2026-11-06).
         active_tier = tier_toggle.get()
 
-        def _plot_rules(p_id: str) -> tuple[list, list]:
-            audited_rows = t3_filter_rows(f"subtab_{p_id}") if t3_filter_rows is not None else []
-            audited_drops = t3_drop_columns(f"subtab_{p_id}") if t3_drop_columns is not None else []
-            return plot_content_rules(audited_rows, audited_drops)
-
-        def _audited_rows(p_id: str) -> list[dict]:
-            return _plot_rules(p_id)[0]
-
-        def _audited_drops(p_id: str) -> list[str]:
-            return _plot_rules(p_id)[1]
+        def _audited_nodes(p_id: str) -> list[dict]:
+            """The plot's audited steps, in the recorded order: the input of `audited_frame` (exploration is not part of it)."""
+            by_plot = (home_state.get().get("t3_audit_steps_by_plot") or {}) if home_state is not None else {}
+            return list(by_plot.get(f"subtab_{p_id}", []))
 
         def _has_audited_steps(p_id: str) -> bool:
             audited_rows = t3_filter_rows(f"subtab_{p_id}") if t3_filter_rows is not None else []
@@ -947,6 +930,28 @@ def define_export_server(input, output, session, *,
             return bool(audited_rows or audited_drops)
 
         audited_plots = {p for p, _ in all_plots if _has_audited_steps(p)}
+
+        # PLOT-TABLE-ORDER-1: check before anything is written. If the audited steps of a plot in scope cannot run in their
+        # recorded order, the table, the plot and the exported recipe would differ or fail: nothing is exported for this scope.
+        def _base_frame(spec: dict):
+            """The base of a plot's My view: the stored Tier 2 (Tier 1 without tier2 steps), as the data and plot sections read it."""
+            target = spec.get("target_dataset")
+            if not target:
+                return tier1_anchor()
+            return orchestrator.materialize_tier2(
+                data_analysis_recipe_id=data_analysis_recipe_id, collection_id=target,
+                tier1_path=bootloader.get_location("user_data") / "anchors" / f"{target}.parquet", keys=export_keys)
+
+        _failing = audit_failures([(_p, (lambda _s=_s: _base_frame(_s)), _audited_nodes(_p)) for _p, _s in all_plots])
+        if _failing:
+            with reactive.isolate():
+                _notify("Export blocked: the audit steps cannot run for " + ", ".join(f"'{_p}'" for _p, _ in _failing)
+                        + ". " + " ".join(str(_e) for _, _e in _failing), type="error", duration=None)
+            _blocked = io.BytesIO()
+            with zipfile.ZipFile(_blocked, mode="w") as _bz:
+                _bz.writestr("EXPORT_NOT_CREATED.txt", blocked_audit_notice(_failing))
+            yield _blocked.getvalue()
+            return
 
         # Dataset → plots mapping (used for folder structure + README + report)
         import re as _re
@@ -1042,17 +1047,6 @@ def define_export_server(input, output, session, *,
                     try:
                         # Build synthetic data analysis recipe with applied filters
                         plot_spec = copy.deepcopy(spec)
-                        _rows = _audited_rows(p_id)
-                        if _rows:
-                            vf_filters = [
-                                {k: v for k, v in f.items() if k != "dtype"}
-                                for f in _rows
-                            ]
-                            for vf in vf_filters:
-                                if isinstance(vf.get("value"), list):
-                                    vf["op"] = "in" if vf["op"] in ("eq", "in") else "not_in"
-                            plot_spec["filters"] = vf_filters
-
                         synthetic_data_analysis_recipe = {
                             "plots": {p_id: plot_spec},
                             "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
@@ -1074,9 +1068,8 @@ def define_export_server(input, output, session, *,
                         else:
                             lf = tier1_anchor()
 
-                        _drops = [c for c in _audited_drops(p_id) if c in lf.collect_schema().names()]
-                        if _drops:
-                            lf = lf.drop(_drops)
+                        # the same call as HOME's table and plot: audited steps in the recorded order
+                        lf = audited_frame(lf, _audited_nodes(p_id), p_id)
 
                         # VIZFAC-T3-EXPORT-1: pass L5 aesthetic_override so
                         # exported plots reflect analyst T3 overrides.
@@ -1210,7 +1203,7 @@ def define_export_server(input, output, session, *,
                                     )
                                 else:
                                     lf_t3 = tier1_anchor()
-                                lf_t3 = audited_frame(lf_t3, _audited_rows(_t3_pid), _audited_drops(_t3_pid))
+                                lf_t3 = audited_frame(lf_t3, _audited_nodes(_t3_pid), _t3_pid)
                                 tsv_path = tmpdir_path / f"{safe_ds}_T3_{_t3_pid}.tsv"
                                 lf_t3.collect().write_csv(str(tsv_path), separator="\t")
                                 with open(tsv_path, "rb") as f:

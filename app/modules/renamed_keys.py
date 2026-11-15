@@ -174,3 +174,72 @@ def legacy_session_problem(raw: dict, where: str) -> str | None:
     pairs = ", ".join(f"'{k}' is now '{RENAMED_SESSION_KEYS[k]}'" for k in old)
     return (f"{where} was saved before the configuration rename ({pairs}). "
             f"Convert it with: {MIGRATION_HINT} --sessions <sessions folder> --apply, or delete it.")
+
+
+# Audit steps. A step the app cannot apply is refused with a plain message and never skipped in silence (Eve, 2026-11-15; PLOT-TABLE-ORDER-1).
+# Refused: a type that is not known, a type that was removed (AUDIT-RAWYAML-REMOVE-1, Eve 2026-11-12, removed 2026-11-15; nothing creates it
+# any more; the tombstone expires with Phase 40) and a step that lacks what it needs to run. One rule for the audit list, a stored session
+# file, an imported session zip and the audit record of an imported bundle; `active` does not matter (nothing creates an inactive step today).
+# `random_seed` is the seed pin the export adds to its audit record; it is known, and it is not a data step.
+KNOWN_AUDIT_STEP_TYPES = ("filter_row", "exclusion_row", "drop_column", "aesthetic_override", "random_seed")
+REMOVED_AUDIT_STEP_TYPES = {
+    "developer_raw_yaml": "it held a raw fragment of a recipe, and no screen created it any more",
+}
+_STEP_NEEDS = {"filter_row": ("column", "op", "value"), "exclusion_row": ("column", "op", "value"), "drop_column": ("column",)}
+_NEEDS_WORDS = {"column": "the column", "op": "the operator", "value": "the value"}
+
+# What the user can do in the app (first); a maintainer's pointer to the file comes after it.
+FIX_IN_APP = "start a new session from the recipe and record the filter or the column removal again with the filter dialog"
+
+
+def audit_step_defect(step, type_key: str = "node_type", flat: bool = False) -> str | None:
+    """Why the app cannot apply this audit step, in a few words, or None when it can.
+
+    `type_key` is `node_type` in a session file and in the audit list and `action` in the `t3_steps.yaml` of a bundle, where the
+    parameters sit in the step itself (`flat`).
+    """
+    if not isinstance(step, dict):
+        return "it is not a step (a mapping with a type and parameters)"
+    kind = step.get(type_key)
+    if kind in REMOVED_AUDIT_STEP_TYPES:
+        return f"it has the type '{kind}', which was removed: {REMOVED_AUDIT_STEP_TYPES[kind]}"
+    if kind not in KNOWN_AUDIT_STEP_TYPES:
+        return f"it has the type {kind!r}, which this app does not know, so it cannot be applied"
+    params = step if flat else (step.get("params") or {})
+    missing = [k for k in _STEP_NEEDS.get(kind, ()) if params.get(k) is None or params.get(k) == ""]
+    if missing:
+        return f"a {kind} step needs {' and '.join(_NEEDS_WORDS[k] for k in missing)} and it has none, so it cannot be applied"
+    return None
+
+
+def refused_audit_step_problem(steps_by_plot: dict, where: str, type_key: str = "node_type", flat: bool = False) -> str | None:
+    """A message naming the first audit step of `{plot: [step, ...]}` that the app cannot apply, else None.
+
+    The user's action in the app comes first; the pointer for a maintainer (where the step is in the file) after it.
+    """
+    for plot, steps in (steps_by_plot or {}).items():
+        number = 0
+        for step in steps or []:
+            if isinstance(step, dict) and step.get(type_key) in ("aesthetic_override", "random_seed"):
+                continue
+            number += 1
+            defect = audit_step_defect(step, type_key, flat)
+            if defect:
+                reason = f', reason: "{step["reason"]}"' if isinstance(step, dict) and step.get("reason") else ""
+                ident = f"id {step.get('id', '?')}" if isinstance(step, dict) and step.get("id") else "no id"
+                return (f"{where} cannot be read: the audit step {number} of the plot '{plot}' ({ident}{reason}) is refused, {defect}. "
+                        f"The file is refused as a whole, nothing of it is used. Fix: {FIX_IN_APP}. For a maintainer: the step is "
+                        f"entry {number} of the list of the plot '{plot}' in `t3_audit_steps_by_plot` (the step list of the file); "
+                        f"taking that entry out makes the file readable again.")
+    return None
+
+
+def refused_audit_step_in_ghost(raw: dict, where: str) -> str | None:
+    """`refused_audit_step_problem` for a stored session file: the per-plot lists and the flat legacy list."""
+    by_plot = raw.get("t3_audit_steps_by_plot")
+    if isinstance(by_plot, dict) and by_plot:
+        problem = refused_audit_step_problem(by_plot, where)
+        if problem:
+            return problem
+    flat = raw.get("t3_audit_steps")
+    return refused_audit_step_problem({"(all plots, old file)": flat}, where) if isinstance(flat, list) else None

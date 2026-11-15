@@ -41,10 +41,9 @@ _NODE_META = {
     "exclusion_row":     ("🚫", "Exclusion"),
     "drop_column":       ("✂️",  "Drop Column"),
     "aesthetic_override":("🎨", "Plot Style"),
-    "developer_raw_yaml":("⚙️",  "Dev Fragment"),
 }
 
-_REASON_REQUIRED = {"filter_row", "exclusion_row", "drop_column", "developer_raw_yaml"}
+_REASON_REQUIRED = {"filter_row", "exclusion_row", "drop_column"}
 
 
 def _safe_input_suffix(node_id: str) -> str:
@@ -106,9 +105,6 @@ def _condition_summary(node: dict) -> str:
     if nt == "aesthetic_override":
         keys = [k for k in ("fill", "colour", "alpha", "shape") if k in p]
         return ", ".join(keys) if keys else "overrides"
-    if nt == "developer_raw_yaml":
-        frag = str(p.get("yaml_fragment", ""))
-        return frag[:40] + "…" if len(frag) > 40 else frag
     return str(p)[:40]
 
 

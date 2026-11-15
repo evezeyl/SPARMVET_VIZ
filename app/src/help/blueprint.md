@@ -31,7 +31,7 @@ Branch a data schema, assembly, join, or plot node to split its lineage: upstrea
 Every applied change is pushed onto a session undo stack — use it to step back through recent edits.
 
 ### YAML Escape Hatch
-The YAML panel shows the raw data analysis recipe fragment for the selected node. It is read-only unless the app features enables `data_analysis_recipe_edit_enabled` (developer/qa) — there it becomes editable, and a save stages a `developer_raw_yaml` T3 node.
+The YAML panel shows the raw data analysis recipe fragment for the selected node. It is read-only unless the app features enables `data_analysis_recipe_edit_enabled` (developer/qa) — there it becomes editable.
 
 ### AI Agent
 A conversational helper panel in the right sidebar (when the app features enables `blueprint_agent_enabled` and a backend is configured) — ask it about the active data analysis recipe or request changes.

@@ -4,6 +4,13 @@ Breaking changes are marked ⚠️. Renames that affect the data analysis recipe
 
 ---
 
+## [2026-11-15] — The audit steps of a plot run in their recorded order everywhere (PLOT-TABLE-ORDER-1, S2-1)
+
+- ⚠️ **Results change, by decision (Eve 2026-11-14 and 2026-11-15).** One function, `audited_frame` (`app/modules/t3_audit_engine.py`), builds the My view frame of a plot from its audit steps in the order they were recorded: HOME table, HOME plot (and Compare), the results bundle and its plot, and the check before an export. Before: the table and the bundle data ran all filters then all drops, the plot ran all drops then skipped a filter on a dropped column silently, the exported recipe kept the recorded order.
+- A step whose column does not exist, or was removed by an earlier step, is an error that names the plot, the step, the column and the fix; the export refuses (`EXPORT_NOT_CREATED.txt` names every failing plot). A spec `filters` entry of the plot factory on a missing column raises too (it was skipped).
+- The filter dialog acts on the table after the plot's audited steps: a dropped column is not offered (My view only).
+- The audit step type `developer_raw_yaml` is removed (AUDIT-RAWYAML-REMOVE-1): a session file, an imported bundle or an audit list that holds one is refused with a message that names the step.
+
 ## [2026-11-15] — A schema plotted directly runs its own tier 2 (issue #77, RECIPE-DATASET-TIER2-1)
 
 - ⚠️ **Results change, by decision (DEC16, Eve 2026-11-12).** Every table has T1, T2 and T3 with or without a join; a schema that a plot reads directly is a collection and its own `wrangling.tier2` is its T2. Before, the engine read the tier-2 steps of joins only, so these steps were silently ignored: the recipe said one thing and the figure showed another.
