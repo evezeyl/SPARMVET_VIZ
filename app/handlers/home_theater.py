@@ -47,6 +47,7 @@ from app.modules.data_analysis_recipe_validator import home_advice_entries
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
 from viz_factory.plot_config_resolver import layers_have_jitter, recipe_pins_random_state
+from viz_factory.viz_factory import show_draw_errors
 
 from app.modules.t3_audit_engine import _apply_filter_rows, filter_rows_from_nodes
 from utils.na_choice import na_of, no_value_text
@@ -538,21 +539,28 @@ def define_server(input, output, session, *,
                 if _resolved_seed is not None else _t3_overrides
             )
 
-            try:
-                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
-                                          aesthetic_override=_render_overrides)
-            except Exception as e:
+            def _report_draw_error(e, mode_label=""):
                 # Capture error for session_processing_issues without violating R1
                 # (cannot call reactive.Value.set inside @render.*). ADR-094/
                 # PIPELINE-ERROR-WIRE-2: capture_entry() now uses VizFactory's real
                 # PipelineError (fix/who) when the exception carries one, not just its message.
                 if session_processing_issues is not None:
-                    _entry = capture_entry(e, "VizFactory", f"render(plot_id='{p_id}')")
+                    _entry = capture_entry(e, "VizFactory", f"render(plot_id='{p_id}'{mode_label})")
                     def _append_render_error(entry=_entry):
                         current = session_processing_issues.get()
                         if len(current) < 50:
                             session_processing_issues.set(current + [entry])
                     session.on_flushed(_append_render_error, once=True)
+
+            try:
+                # VIZ-STANDARD-1 V7: plotnine draws after this function returns, so a draw error used to escape the
+                # try below and reach the user as a raw error. `show_draw_errors` draws the one-form message in the
+                # place of the plot and reports it to the alerts panel; the plot itself is drawn once, by Shiny.
+                return show_draw_errors(
+                    viz_factory.render(lf, synthetic_data_analysis_recipe, p_id, aesthetic_override=_render_overrides),
+                    on_error=_report_draw_error)
+            except Exception as e:
+                _report_draw_error(e)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 ax.text(0.5, 0.5, f"Render error:\n{e}", ha="center", va="center",
@@ -620,9 +628,7 @@ def define_server(input, output, session, *,
                 ax.axis("off")
                 return fig
 
-            try:
-                return viz_factory.render(lf, synthetic_data_analysis_recipe, p_id)
-            except Exception as e:
+            def _report_cmp_error(e):
                 # ADR-094/PIPELINE-ERROR-WIRE-2: now uses capture_entry() for VizFactory's
                 # real fix/who, same as _group_plot_handler's render catch.
                 if session_processing_issues is not None:
@@ -632,6 +638,13 @@ def define_server(input, output, session, *,
                         if len(current) < 50:
                             session_processing_issues.set(current + [entry])
                     session.on_flushed(_append_cmp_error, once=True)
+
+            try:
+                # VIZ-STANDARD-1 V7: a draw error is shown in the plot's place, as in the main plot handler.
+                return show_draw_errors(viz_factory.render(lf, synthetic_data_analysis_recipe, p_id),
+                                        on_error=_report_cmp_error)
+            except Exception as e:
+                _report_cmp_error(e)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
                 ax.text(0.5, 0.5, f"Render error:\n{e}", ha="center", va="center",
