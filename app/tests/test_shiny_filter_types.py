@@ -172,3 +172,18 @@ def test_between_offers_the_four_ends_and_each_gives_its_rows(page: Page, typed_
         page.locator("#filter_remove_0").click()
         _wait_shiny(page)
         _wait_rows(page, PREVIEW)
+
+
+def test_on_a_discrete_year_equal_picks_from_the_list_and_greater_than_uses_the_number_box(page: Page, typed_app):
+    """The widget follows the operator: eq and ne use the list, a comparison uses one number box (Eve, 2026-11-14)."""
+    _open_dialog(page, typed_app)
+    for op in ("eq", "ne", "in", "not_in"):
+        page.locator("#fb_op").select_option(op)
+        _wait_shiny(page)
+        expect(page.locator("#fb_value-selectized")).to_be_visible(timeout=5_000)
+        assert page.locator("input#fb_value[type=number]").count() == 0, op
+    for op in ("gt", "ge", "lt", "le"):
+        page.locator("#fb_op").select_option(op)
+        _wait_shiny(page)
+        expect(page.locator("input#fb_value[type=number]")).to_be_visible(timeout=5_000)
+        assert page.locator("#fb_value-selectized").count() == 0, op
