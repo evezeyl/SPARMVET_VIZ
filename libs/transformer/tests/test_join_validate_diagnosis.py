@@ -86,7 +86,7 @@ def test_the_message_for_each_validate_value_names_the_table_and_the_example(val
         engine(left, right, {"on": ["k"], "how": "inner", "validate": validate, "nulls_equal": False}, tmp_path)
     text = str(caught.value)
     assert "first table" in text if validate != "m:1" else "second table 'R'" in text
-    assert "k=1" in text and "2 times" in text and "polars_join" in text and "assembly step 1" in text
+    assert "k=1" in text and "2 times" in text and "polars_join" in text and "assembly step 0" in text
     assert caught.value.tip and "validate" in caught.value.tip
 
 
@@ -94,3 +94,56 @@ def test_a_step_without_validate_is_not_registered_and_a_polars_error_that_is_no
     assembler = DataAssembler({"L": pl.DataFrame({"k": [1]}).lazy(), "R": pl.DataFrame({"k": [1], "w": [1]}).lazy()}, recipe_id="r", join_id="LR")
     assembler.assemble([{"action": "polars_join", "right_ingredient": "R", "on": ["k"], "how": "inner", "maintain_order": "left_right"}])
     assert assembler.join_checks == []
+
+
+# -- several joins that write validate: every one is tried, the one whose keys really repeat is named -----------------------
+
+A = pl.DataFrame({"k": [1, 2, 3], "a": [1, 2, 3]})
+UNIQUE_C = pl.DataFrame({"k": [1, 2, 3], "c": [1, 2, 3]})
+REPEATING_B = pl.DataFrame({"k": [1, 1, 2], "b": [1, 2, 3]})
+NULLS_C = pl.DataFrame({"k": [None, None, 1], "c": [1, 2, 3]})  # Polars accepts repeated nulls with nulls_equal off
+
+
+def two_joins(first, second, tmp_path, how="left"):
+    ingredients = {"A": A.lazy(), "C": first.lazy(), "B": second.lazy()}
+    assembler = DataAssembler(ingredients, recipe_id="r", join_id="J")
+    steps = [{"action": "polars_join", "right_ingredient": name, "on": ["k"], "how": how, "validate": "m:1", "maintain_order": "left_right"} for name in ("C", "B")]
+    lf = assembler.assemble(steps)
+    write_anchor(lf, tmp_path / "t.parquet", decision_hash="h", join_checks=assembler.join_checks)
+
+
+def test_the_second_join_is_named_when_the_first_is_fine(tmp_path):
+    with pytest.raises(TransformationError) as caught:
+        two_joins(UNIQUE_C, REPEATING_B, tmp_path)
+    text = str(caught.value)
+    assert "'B'" in text and "assembly step 1" in text and "k=1" in text
+    assert "'C'" not in text and "could not be found" not in text
+
+
+def test_the_first_join_is_named_when_it_is_the_one_that_repeats(tmp_path):
+    with pytest.raises(TransformationError) as caught:
+        two_joins(REPEATING_B.rename({"b": "c"}), UNIQUE_C.rename({"c": "b"}), tmp_path)
+    text = str(caught.value)
+    assert "'C'" in text and "assembly step 0" in text and "'B'" not in text
+
+
+def test_both_are_named_when_both_repeat(tmp_path):
+    with pytest.raises(TransformationError) as caught:
+        two_joins(REPEATING_B.rename({"b": "c"}), REPEATING_B, tmp_path)
+    text = str(caught.value)
+    assert "'C'" in text and "'B'" in text and "assembly step 0" in text and "assembly step 1" in text
+
+
+def test_repeated_null_keys_that_polars_accepts_do_not_mislead_the_message_about_the_other_join(tmp_path):
+    with pytest.raises(TransformationError) as caught:
+        two_joins(NULLS_C, REPEATING_B, tmp_path)
+    text = str(caught.value)
+    assert "'B'" in text and "'C'" not in text and "counts as a value" not in text
+
+
+def test_in_a_full_join_a_repeated_null_key_is_a_repeat_and_the_message_says_so(tmp_path):
+    left = pl.DataFrame({"k": [None, None, 4], "j": [1, 1, 2], "a": [0, 1, 2]})  # found by the random run: Polars raises, with two key columns
+    right = pl.DataFrame({"k": [None, 3, 5], "j": [2, None, 2], "w": [0, 1, 2]})
+    assert polars_outcome(left, right, {"on": ["k", "j"], "how": "full", "validate": "1:m", "nulls_equal": False}) == "keys"
+    with pytest.raises(TransformationError, match="counts as a value in a full join"):
+        engine(left, right, {"on": ["k", "j"], "how": "full", "validate": "1:m", "nulls_equal": False}, tmp_path)

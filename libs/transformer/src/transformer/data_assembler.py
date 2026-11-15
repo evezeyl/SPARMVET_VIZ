@@ -243,7 +243,7 @@ class DataAssembler:
                 right_keys = step.get("on") or step.get("right_on")
                 if isinstance(left_keys, list) and isinstance(right_keys, list):
                     self.join_checks.append(JoinCheck(
-                        location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {i + 1}",
+                        location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {i}",
                         right_id=right_id, left=consolidated_lf, right=self.ingredients[right_id], validate=step["validate"],
                         left_keys=left_keys, right_keys=right_keys, nulls_equal=bool(step.get("nulls_equal")), how=str(step.get("how", "left"))))
 
