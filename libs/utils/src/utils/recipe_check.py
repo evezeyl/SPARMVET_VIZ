@@ -34,6 +34,7 @@ import yaml
 
 from utils import action_names, recipe_tiers
 from utils.action_names import TIER1_ONLY
+from utils.random_layers import is_random_layer, is_seed_value
 from utils.engines import ENGINES
 from utils.filter_values import FilterValueError, check_filter
 from utils.formula_check import formula_problems
@@ -934,6 +935,16 @@ class _Check:
             params = layer.get("params") or {}
             if allowed is not None and isinstance(params, dict):
                 for key in params:
+                    # a seed is accepted on a random layer even where plotnine's own list of the component does not
+                    # hold it (a geom placed with position jitter, a geom with a bootstrapped summary stat), and
+                    # only on a random layer (SEED-HOLDS-1, utils.random_layers)
+                    if key == "random_state" and is_random_layer(name, params):
+                        # PROVISIONAL (S1): a seed is a number; null, the word random and other text are refused
+                        value = params[key]
+                        if not is_seed_value(value):
+                            self.add("PS04", f"{where}.params.{key}", f"random_state is {value!r}, but a seed is a number",
+                                     "write random_state: 0 (any whole number)")
+                        continue
                     if key not in allowed:
                         close = difflib.get_close_matches(str(key), sorted(allowed), n=1, cutoff=0.6)
                         self.add("PS04", f"{where}.params.{key}", f"{key} is not an argument of {name}{_plotnine_note(name, kinds)}",
@@ -949,6 +960,12 @@ class _Check:
             self.add("PD01", "plot_defaults", "plot_defaults is a mapping", "write plot_defaults: {palette: ...}")
             return
         self.unknown_keys("plot_defaults", defaults, "plot_defaults", "PD01")
+        # PROVISIONAL (S3): the one seed of the whole recipe, a whole number
+        if "random_state" in defaults:
+            value = defaults["random_state"]
+            if not is_seed_value(value):
+                self.add("PD01", "plot_defaults.random_state", f"random_state is {value!r}, but a seed is a whole number",
+                         "write random_state: 0 (any whole number)")
 
     # -- gallery profile
     def gallery(self, raw: dict) -> None:

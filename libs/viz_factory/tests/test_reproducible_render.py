@@ -44,6 +44,16 @@ JITTER_ROUTES = {
     "geom_jitter": ([{"name": "geom_jitter", "params": {}}], None),
     "position_jitter layer": ([{"name": "geom_point"}, {"name": "position_jitter"}], None),
     "jitterdodge on a geom": ([{"name": "geom_point", "params": {"position": "jitterdodge"}}], {"x": "g", "y": "v", "fill": "h"}),
+    "geom_sina": ([{"name": "geom_sina"}], None),
+    "stat_sina": ([{"name": "stat_sina"}], None),
+    "bootstrapped summary": ([{"name": "stat_summary", "params": {"fun_data": "mean_cl_boot"}}], None),
+    "geom_point with stat sina": ([{"name": "geom_point", "params": {"stat": "sina"}}], None),
+    "position written position_jitter": ([{"name": "geom_point", "params": {"position": "position_jitter"}}], None),
+    "position written position_jitterdodge": ([{"name": "geom_point", "params": {"position": "position_jitterdodge"}}], {"x": "g", "y": "v", "fill": "h"}),
+    "stat written stat_sina": ([{"name": "geom_point", "params": {"stat": "stat_sina"}}], None),
+    "stat written stat_summary": ([{"name": "geom_pointrange", "params": {"stat": "stat_summary"}}], None),
+    "summary with no function named (plotnine's default is the bootstrap)": ([{"name": "stat_summary"}], None),
+    "bootstrapped summary on a geom": ([{"name": "geom_pointrange", "params": {"stat": "summary", "fun_data": "mean_cl_boot"}}], None),
 }
 
 
@@ -54,13 +64,26 @@ def test_jitter_renders_identically_every_time(df, route):
     assert len(hashes) == 1, f"{route}: {RENDERS} renders gave {len(hashes)} different pictures"
 
 
-@pytest.mark.parametrize("route", ["position string on a geom", "geom_jitter", "position_jitter layer"])
+@pytest.mark.parametrize("route", [r for r in JITTER_ROUTES if r != "jitterdodge on a geom"])
 def test_a_different_factory_seed_gives_a_different_arrangement(df, route):
     layers, mapping = JITTER_ROUTES[route]
     default = render_bytes(VizFactory(), df, layers, mapping)
     other = render_bytes(VizFactory(random_state=DEFAULT_RANDOM_STATE + 7), df, layers, mapping)
     assert default != other
     assert other == render_bytes(VizFactory(random_state=DEFAULT_RANDOM_STATE + 7), df, layers, mapping)
+
+
+@pytest.mark.parametrize("layers", [
+    [{"name": "geom_sina", "params": {"random_state": 5}}],
+    [{"name": "stat_summary", "params": {"fun_data": "mean_cl_boot", "random_state": 5}}],
+])
+def test_a_seed_written_on_sina_or_a_bootstrapped_summary_wins_over_the_factory_seed(df, layers):
+    assert render_bytes(VizFactory(random_state=1), df, layers) == render_bytes(VizFactory(random_state=2), df, layers)
+
+
+def test_random_state_zero_repeats_on_sina(df):
+    layers = [{"name": "geom_sina", "params": {"random_state": 0}}]
+    assert len({render_bytes(VizFactory(random_state=None), df, layers) for _ in range(RENDERS)}) == 1
 
 
 def test_a_layer_can_set_its_own_seed(df):
@@ -75,20 +98,34 @@ def test_plots_without_randomness_are_unchanged_by_the_seed(df):
     assert render_bytes(VizFactory(), df, layers) == render_bytes(VizFactory(random_state=99), df, layers)
 
 
-# --- the seed is a default, not a rule: an explicit "random" gives a new arrangement each time ----
+# --- PROVISIONAL (S1, Eve's rule of 2026-11-15): a seed is a number; null and "random" are refused ---------------
 
 
-@pytest.mark.parametrize("unseeded", [None, "random"])
-def test_a_layer_can_ask_for_a_different_arrangement_every_time(df, unseeded):
-    layers = [{"name": "geom_point"}, {"name": "position_jitter", "params": {"random_state": unseeded}}]
-    hashes = {render_bytes(VizFactory(), df, layers) for _ in range(RENDERS)}
-    assert len(hashes) > 1, "random_state: null / random must not be seeded"
+@pytest.mark.parametrize("written", [None, "random", " Random ", "abc", 1.5])
+@pytest.mark.parametrize("layers", [
+    [{"name": "geom_point"}, {"name": "position_jitter", "params": {"random_state": "?"}}],
+    [{"name": "geom_point", "params": {"position": "jitter", "random_state": "?"}}],
+    [{"name": "geom_jitter", "params": {"random_state": "?"}}],
+    [{"name": "geom_sina", "params": {"random_state": "?"}}],
+    [{"name": "stat_summary", "params": {"fun_data": "mean_cl_boot", "random_state": "?"}}],
+])
+def test_a_recipe_that_writes_null_or_random_is_refused_with_the_fix(df, layers, written):
+    import copy
+    from utils.errors import VisualizationError
+    layers = copy.deepcopy(layers)
+    for layer in layers:
+        if (layer.get("params") or {}).get("random_state") == "?":
+            layer["params"]["random_state"] = written
+    with pytest.raises(VisualizationError) as raised:
+        render_bytes(VizFactory(), df, layers)
+    assert "random_state: 0" in raised.value.tip and "number" in str(raised.value).lower()
 
 
-@pytest.mark.parametrize("unseeded", [None, "random"])
-def test_a_factory_can_be_unseeded_for_all_its_jitter(df, unseeded):
+def test_the_factory_handle_for_tests_stays_a_factory_can_be_unseeded_for_all_its_jitter(df):
+    """VizFactory(random_state=None) is the library handle for a test that needs a different arrangement each time;
+    it is not a recipe key. Kept on purpose (S1)."""
     layers = [{"name": "geom_point", "params": {"position": "jitter"}}]
-    hashes = {render_bytes(VizFactory(random_state=unseeded), df, layers) for _ in range(RENDERS)}
+    hashes = {render_bytes(VizFactory(random_state=None), df, layers) for _ in range(RENDERS)}
     assert len(hashes) > 1
 
 
@@ -96,3 +133,12 @@ def test_seed_zero_really_seeds_the_arrangement(df):
     """plotnine treats random_state=0 as no seed; a generator object makes 0 work (ADR-090)."""
     layers = [{"name": "geom_point"}, {"name": "position_jitter", "params": {"random_state": 0}}]
     assert len({render_bytes(VizFactory(random_state=None), df, layers) for _ in range(RENDERS)}) == 1
+
+
+def test_the_default_seed_is_the_number_zero(df):
+    """Written as the literal: a test that compares with DEFAULT_RANDOM_STATE cannot see the constant change."""
+    assert DEFAULT_RANDOM_STATE == 0 and VizFactory().default_random_state == 0
+    for layers in ([{"name": "geom_point", "params": {"position": "jitter"}}], [{"name": "geom_sina"}],
+                   [{"name": "geom_point", "params": {"stat": "sina"}}]):
+        written = [dict(layer, params={**layer.get("params", {}), "random_state": 0}) for layer in layers]
+        assert render_bytes(VizFactory(), df, layers) == render_bytes(VizFactory(random_state=None), df, written)

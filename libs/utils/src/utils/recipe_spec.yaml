@@ -40,7 +40,7 @@ elements:
     optional: [title, theme, facet_by, palette, labels, guides, filters]
   plot_defaults:
     required: []
-    optional: [palette, theme, default_font_family, facet_panel_spacing, legend_position, optimisation, layers]
+    optional: [palette, theme, default_font_family, facet_panel_spacing, legend_position, optimisation, layers, random_state]
   layer:
     required: [name]
     optional: [params, comment]

@@ -46,7 +46,7 @@ from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
-from viz_factory.plot_config_resolver import layers_have_jitter, recipe_pins_random_state
+from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
 from viz_factory.viz_factory import show_draw_errors
 
 from app.modules.t3_audit_engine import _apply_filter_rows, filter_rows_from_nodes
@@ -122,8 +122,7 @@ def define_server(input, output, session, *,
                   home_state=None, session_manager=None,
                   data_refresh_trigger=None,
                   notification_log=None,
-                  session_processing_issues=None,
-                  last_drawn_seeds=None):
+                  session_processing_issues=None):
     """Register all Home Theater reactive handlers.
 
     Parameters
@@ -163,11 +162,6 @@ def define_server(input, output, session, *,
         §12d Session ghost save/restore manager.
     session_processing_issues : reactive.Value[list] | None
         DIAG-RUNTIME-AUDIT-1: accumulates structured runtime error entries.
-    last_drawn_seeds : reactive.Value[dict] | None
-        REPRO-SEED-2 (ADR-097 decision 2): per-session bookkeeping of the last seed
-        actually drawn for each plot whose jitter seed isn't pinned by a T3 override —
-        {plot_id: seed}. Not audited T3 state; read by export (REPRO-PROV-1) to record
-        what was on screen rather than drawing a fresh, different number at export time.
     """
 
     from app.modules.notification_utils import make_notifier
@@ -404,42 +398,6 @@ def define_server(input, output, session, *,
         """Factory: returns a @render.plot fn that renders plot_group_{p_id}."""
         this_subtab = f"subtab_{p_id}"
 
-        @reactive.Calc
-        def _effective_random_state():
-            """REPRO-SEED-2 (ADR-097 decision 2): resolve the seed this plot's jitter
-            should use. A T3-pinned override (aesthetic_override.random_state) always
-            wins and is returned as-is — it's already recorded via T3 state itself, so
-            nothing new needs bookkeeping. Otherwise, draw one fresh seed and return it;
-            the companion @reactive.Effect below is what remembers it (never here —
-            a @reactive.Calc must not write reactive state, R1, ui_implementation_contract.md
-            §14). Depends on home_state, so a recipe/T3 switch naturally redraws; an
-            unrelated re-render that doesn't touch home_state keeps the same draw,
-            avoiding visible jitter "flicker" with no user action behind it.
-
-            Returns (value, was_freshly_drawn).
-            """
-            spec = _resolve_active_spec(p_id)
-            if not layers_have_jitter((spec or {}).get("layers", [])):
-                return None, False
-            overrides = (
-                (home_state.get() if home_state is not None else {})
-                .get("t3_plot_overrides", {})
-                .get(this_subtab)
-            ) or {}
-            pinned = overrides.get("random_state")
-            if pinned is not None:
-                return pinned, False
-            return secrets.randbits(31), True
-
-        @reactive.Effect
-        def _persist_drawn_seed():
-            value, was_drawn = _effective_random_state()
-            if not was_drawn or last_drawn_seeds is None:
-                return
-            current = last_drawn_seeds.get()
-            if current.get(p_id) != value:
-                last_drawn_seeds.set({**current, p_id: value})
-
         @output(id=f"plot_group_{p_id}")
         @render.plot(alt=f"Plot: {p_id}")
         def _group_plot_handler():
@@ -535,16 +493,9 @@ def define_server(input, output, session, *,
                 .get(this_subtab)
             )
 
-            # REPRO-SEED-2 (ADR-097 decision 2): merge in the resolved seed (pinned
-            # override, or this session's drawn number) — reads the same Calc the
-            # bookkeeping Effect reads, so what's shown and what gets recorded always
-            # agree. None when the plot has no jitter at all (layers_have_jitter) —
-            # leaves _t3_overrides untouched rather than adding a meaningless key.
-            _resolved_seed, _ = _effective_random_state()
-            _render_overrides = (
-                {**(_t3_overrides or {}), "random_state": _resolved_seed}
-                if _resolved_seed is not None else _t3_overrides
-            )
+            # SEED-HOLDS-1 (ADR-104): HOME draws no seed. A layer that writes a number keeps it, a layer that
+            # writes none uses the factory's seed (0), an audit pin (Reshuffle) is in `_t3_overrides` and beats both:
+            # the same seeds as the comparison reference pane, the gallery, Blueprint and the export.
 
             def _report_draw_error(e):
                 _report_plot_exception(e, "VizFactory", f"render(plot_id='{p_id}')")
@@ -554,7 +505,7 @@ def define_server(input, output, session, *,
                 # try below and reach the user as a raw error. `show_draw_errors` draws the one-form message in the
                 # place of the plot and reports it to the alerts panel; the plot itself is drawn once, by Shiny.
                 return show_draw_errors(
-                    viz_factory.render(lf, synthetic_data_analysis_recipe, p_id, aesthetic_override=_render_overrides),
+                    viz_factory.render(lf, synthetic_data_analysis_recipe, p_id, aesthetic_override=_t3_overrides),
                     on_error=_report_draw_error, on_warning=_report_plot_warning)
             except Exception as e:
                 _report_draw_error(e)
@@ -619,6 +570,8 @@ def define_server(input, output, session, *,
                 ax.axis("off")
                 return fig
 
+            # SEED-HOLDS-1: the reference pane draws with the same seeds as My view (recipe numbers, the factory's
+            # seed); an audit pin is a change the user made and is not applied here.
             def _report_cmp_error(e):
                 _report_plot_exception(e, "VizFactory", f"render(plot_id='{p_id}', mode='cmp_base')")
 
@@ -664,35 +617,37 @@ def define_server(input, output, session, *,
         _this_subtab = f"subtab_{p_id}"
         _reshuffle_output_id = f"plot_reshuffle_{p_id}"
         _reshuffle_btn_id = f"plot_reshuffle_btn_{p_id}"
+        _unpin_btn_id = f"plot_unpin_btn_{p_id}"
+
+        def _seeds_in_use():
+            """The seed of every random layer of this plot as it is drawn (plot_seeds.seed_in_use: the resolver's
+            precedence, audit pin > the layer's number > plot_defaults.random_state > 0). Reads home_state, so the
+            two outputs below re-render the moment a pin is set or removed."""
+            spec = _resolve_active_spec(p_id)
+            plot_defaults = (active_cfg().raw_config.get("plot_defaults") or {})
+            return seed_in_use((spec or {}).get("layers", []), plot_defaults,
+                               home_state.get() if home_state is not None else None, p_id,
+                               default=viz_factory.default_random_state)
 
         @output(id=_reshuffle_output_id)
         @render.ui
         def _plot_reshuffle_ui():
-            """REPRO-RESHUFFLE-1 (#49): a UI control to deliberately redraw and pin a
-            plot's jitter seed. Its own narrow output next to the badge — not a
-            revival of the Plot Style panel, which stays unmounted (fork issue #15,
-            ui_implementation_contract.md §12g.9). Shown only when reshuffling is
-            actually meaningful: the plot has a jitter-capable layer, the recipe
-            itself hasn't already pinned a fixed number, and no T3 override has
-            pinned one yet either (once pinned, by any mechanism, there is nothing
-            left to reshuffle from this button — edit the recipe or the override to
-            go back to "random")."""
-            spec = _resolve_active_spec(p_id)
-            layers = (spec or {}).get("layers", [])
-            if not layers_have_jitter(layers) or recipe_pins_random_state(layers):
-                return ui.div()
-            # Deliberately NOT reactive.isolate() here, unlike _plot_cell_ui's own
-            # collapse-state read: this output must re-render and hide itself the
-            # moment _handle_reshuffle below pins the seed into home_state.
-            _hs = home_state.get() if home_state is not None else {}
-            overrides = _hs.get("t3_plot_overrides", {}).get(_this_subtab) or {}
-            if overrides.get("random_state") is not None:
+            """REPRO-RESHUFFLE-1 (#49): a UI control to deliberately redraw and pin a plot's random seed. Its own
+            narrow output next to the badge, not a revival of the Plot Style panel (fork issue #15). Offered under
+            the same precedence as the resolver (plot_seeds.reshuffle_offered): only where the plot has a random
+            layer and no seed is written anywhere (no number on a layer, no plot_defaults.random_state) and no pin
+            exists yet. A pin applies to every random layer of the plot. The way back is the seed line's
+            "Remove the pinned seed" (below), which removes the pin.
+
+            Deliberately NOT reactive.isolate() here: this output must re-render and hide itself the moment
+            _handle_reshuffle pins the seed into home_state."""
+            if not reshuffle_offered(_seeds_in_use()):
                 return ui.div()
             return ui.input_action_button(
                 _reshuffle_btn_id, "🔀 Reshuffle arrangement",
                 class_="btn-outline-secondary btn-sm",
                 style="font-size:0.7em; padding:1px 6px;",
-                title="Draw a new random scatter arrangement and keep it fixed from now on.",
+                title=RESHUFFLE_TITLE,
             )
 
         @reactive.Effect
@@ -712,6 +667,45 @@ def define_server(input, output, session, *,
             plot_overrides = dict(overrides.get(_this_subtab, {}))
             plot_overrides["random_state"] = new_seed
             overrides[_this_subtab] = plot_overrides
+            home_state.set({**hs, "t3_plot_overrides": overrides})
+
+        @output(id=f"plot_seed_{p_id}")
+        @render.ui
+        def _plot_seed_ui():
+            """The seed this plot's random layers use and where it comes from, as one short line with the plot (HTML next
+            to the plot, never part of the image, so never exported). Nothing for a plot without a random layer. With
+            a pinned seed it also offers the way back: removing the pin."""
+            seeds = _seeds_in_use()
+            caption = seed_caption(seeds)
+            if caption is None:
+                return ui.div()
+            parts = [ui.tags.span(caption, class_="spv-view-note")]
+            if any(ls.source == "audit" for ls in seeds):
+                parts.append(ui.input_action_button(
+                    _unpin_btn_id, "Remove the pinned seed", class_="btn-link btn-sm spv-view-note",
+                    style="padding:0 6px;",
+                    title="Remove this audit step: the plot goes back to the seed of the recipe."))
+            return ui.div(*parts, class_="spv-view-badge-row")
+
+        @reactive.Effect
+        @reactive.event(getattr(input, _unpin_btn_id, lambda: None))
+        def _handle_unpin():
+            """The way back from Reshuffle: remove the pinned seed (the audit step) of this plot."""
+            if home_state is None:
+                return
+            try:
+                clicks = getattr(input, _unpin_btn_id)()
+            except Exception:
+                return
+            if not clicks:
+                return
+            hs = home_state.get()
+            overrides = dict(hs.get("t3_plot_overrides", {}))
+            plot_overrides = {k: v for k, v in (overrides.get(_this_subtab) or {}).items() if k != "random_state"}
+            if plot_overrides:
+                overrides[_this_subtab] = plot_overrides
+            else:
+                overrides.pop(_this_subtab, None)
             home_state.set({**hs, "t3_plot_overrides": overrides})
 
         @output(id=f"plot_badge_{p_id}")
@@ -746,7 +740,7 @@ def define_server(input, output, session, *,
             _is_open = _hs.get("plot_collapse_state", {}).get(p_id, True)
 
             if in_comparison:
-                content = ui.layout_columns(
+                content = ui.div(ui.output_ui(f"plot_seed_{p_id}"), ui.layout_columns(
                     ui.div(
                         ui.tags.div(
                             "T2 — Result (Reference)",
@@ -763,7 +757,7 @@ def define_server(input, output, session, *,
                         ui.output_plot(f"plot_group_{p_id}", height="440px"),
                     ),
                     col_widths=[6, 6],
-                )
+                ))
             else:
                 content = ui.div(
                     ui.div(
@@ -771,6 +765,7 @@ def define_server(input, output, session, *,
                         ui.output_ui(f"plot_reshuffle_{p_id}"),
                         class_="d-flex justify-content-between align-items-start",
                     ),
+                    ui.output_ui(f"plot_seed_{p_id}"),
                     ui.output_plot(f"plot_group_{p_id}", height="480px"),
                 )
 
@@ -2179,7 +2174,6 @@ def define_server(input, output, session, *,
         t3_filter_rows=_t3_filter_rows,
         t3_drop_columns=_t3_drop_columns,
         view_keys=_data_analysis_recipe_keys,
-        last_drawn_seeds=last_drawn_seeds,
     )
 
     # ── 22-D: Session Management Panel ────────────────────────────────────────

@@ -1,34 +1,43 @@
+id: beeswarm_sina
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  name: Beeswarm / Sina Plot
+  label: Beeswarm / Sina Plot
+  description: >-
+    Shows individual data points distributed within a category using a jittered-violin hybrid. Better than boxplot
+    alone when sample size is small to medium and individual values matter.
   submission_date: '2026-05-03'
-  family: Distribution
-  pattern: 1 Numeric, 1 Categorical
-  difficulty: Intermediate
-  geom: geom_sina
-  show: distribution
-  sample_size: individual points
-data_path: example_data.tsv
-plots:
-  beeswarm_sina:
-    layers:
-    - params:
-        alpha: 0.6
-        size: 2
-      name: geom_sina
-    - name: labs
-      params:
-        title: MIC Distribution by Species (Sina Plot)
-        x: Species
-        y: MIC Value
-    mapping:
-      x: species
-      y: mic_value
-      color: species
-wrangling:
-  tier1: []
-  tier2: []
-  tier3:
-  - action: filter_rows
-    column: mic_value
-    operator: '>'
-    value: 0
+data_schemas:
+  example:
+    label: Example data
+    description: >-
+      The data of this example: 100 rows and 2 columns (species, mic_value).
+    source: {type: local_tsv, path: ./assets/gallery_data/beeswarm_sina/example_data.tsv}
+    null_values: []
+    strip: true
+    input_fields:
+      species: {type: String}
+      mic_value: {type: Float64}
+    wrangling: {tier1: []}
+analysis_groups:
+  example:
+    label: Example
+    description: The one plot of this example.
+    plots:
+      beeswarm_sina:
+        label: Beeswarm / Sina Plot
+        description: >-
+          Drawn with geom_sina; x is species, y is mic_value, color is species.
+        taxonomy: {family: Distribution, pattern: '1 Numeric, 1 Categorical', difficulty: Intermediate, show: distribution,
+          sample_size: individual points}
+        spec:
+          target_dataset: example
+          mapping: {x: species, y: mic_value, color: species}
+          layers:
+            - {name: geom_sina, params: {alpha: 0.6, size: 2, random_state: 0}}
+            - name: labs
+              params:
+                title: MIC Distribution by Species (Sina Plot)
+                x: Species
+                y: MIC Value

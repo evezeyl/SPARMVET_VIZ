@@ -12,9 +12,8 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
-# consumes: app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), polars, shiny
+# consumes: app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), polars, shiny
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
-#            reactive.Value:last_drawn_seeds (REPRO-SEED-2/REPRO-PROV-1, ADR-097)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text), .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/export_specification.md, .claude/design/reproducible_export_design.md
 # @end_deps
@@ -25,6 +24,10 @@ from shiny import reactive, render, ui
 
 from app.modules.export_refusal import export_refusal
 from app.modules.t3_audit_engine import _apply_filter_rows, _op_label, between_prose
+from app.modules.plot_seeds import (
+    bake_plot_seeds, export_seed_plan, seed_recipe_note, seed_sources_per_plot, seeds_added_to_recipe,
+    seeds_per_layer_record, seeds_per_plot_record, render_seed_args, with_seed_steps,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -374,6 +377,7 @@ def _build_methods_section(
         "exclusion_row": "Rows were explicitly excluded",
         "drop_column": "Column was permanently removed",
         "aesthetic_override": "Plot aesthetics were adjusted",
+        "random_seed": "The arrangement of the random points was fixed",
         "developer_raw_yaml": "A custom data analysis recipe fragment was applied",
     }
 
@@ -418,6 +422,9 @@ def _build_methods_section(
             elif nt == "aesthetic_override":
                 scope = f" for plot *{plot_label}*"
                 sentence = f"Plot aesthetics were adjusted{scope}."
+            elif nt == "random_seed":
+                sentence = (f"The arrangement of the random points of plot *{plot_label}* was fixed with the seed "
+                            f"**{params.get('seed')}**.")
             else:
                 scope = f" (plot: *{plot_label}*)" if p_id != "__all__" else ""
                 sentence = f"{verb}{scope}."
@@ -467,8 +474,7 @@ def define_export_server(input, output, session, *,
                          session_processing_issues=None,
                          t3_filter_rows=None,
                          t3_drop_columns=None,
-                         view_keys=None,
-                         last_drawn_seeds=None):
+                         view_keys=None):
     """Register export-bundle + system-tools handlers.
 
     Reactive deps (kwargs):
@@ -485,8 +491,6 @@ def define_export_server(input, output, session, *,
       t3_filter_rows     : callable(subtab_id) -> list[dict]  audited filter/exclusion rows (HOME's)
       t3_drop_columns    : callable(subtab_id) -> list[str]   audited column drops (HOME's)
       view_keys          : reactive.Calc[DataAnalysisRecipeKeys]  the keys the open view was built on
-      last_drawn_seeds   : reactive.Value[dict] | None  REPRO-SEED-2 (ADR-097): {plot_id: seed}
-                           bookkeeping for plots whose jitter seed isn't pinned by a T3 override
     """
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
@@ -853,23 +857,6 @@ def define_export_server(input, output, session, *,
             for p_id, spec in top_plots.items():
                 all_plots.append((p_id, spec))
 
-        # REPRO-SEED-2 (ADR-097 decision 2): non-blocking nudge, never a refusal — the
-        # export is still fully reproducible via the number actually drawn (recorded in
-        # last_drawn_seeds), this just flags that a future render would draw a different one.
-        if last_drawn_seeds is not None:
-            with reactive.isolate():
-                _unpinned = [p for p, _ in all_plots if p in last_drawn_seeds.get()]
-            if _unpinned:
-                with reactive.isolate():
-                    _notify(
-                        f"{len(_unpinned)} plot(s) use an unpinned random seed "
-                        "(random_state: random) — exported with the number actually drawn "
-                        "this session, but a future render would draw a different one. Pin a "
-                        "fixed seed for a final/publication export if you need the same "
-                        "arrangement every time.",
-                        type="warning", duration=8,
-                    )
-
         # ── Mode 2 add-on (ADR-097 decision 1, #45): Publication content (plots,
         # report, T3 justification) is always built, unchanged — this is additive, not
         # a second, separate "reproducibility-only" bundle that suppresses it. That
@@ -903,6 +890,19 @@ def define_export_server(input, output, session, *,
                     all_plots = _filtered
                     scope_label = _active_gid
 
+        # ── SEED-HOLDS-1 (ADR-104 point 3, ADR-097 decision 2): one seed per random layer of each plot ──
+        # audit pin > the number the recipe writes on that layer > the factory's seed (0) when it writes none.
+        # HOME draws no seed and a recipe cannot ask for a random one (S1).
+        # The plot is rendered with these seeds, the record holds them, and the reproducibility recipe carries them.
+        # The pin is read from home_state with no audit-trail flag in between (plot_seeds.export_seed_plan):
+        # Reshuffle is not gated by it, so the export holds what the user saw.
+        with reactive.isolate():
+            _home_state_now = home_state.get() if home_state is not None else None
+        _plot_seeds = export_seed_plan(
+            dict(all_plots), _home_state_now, default=viz_factory.default_random_state,
+            recipe_default=(cfg.raw_config.get("plot_defaults") or {}).get("random_state"),
+        )
+
         # ── Collect T3 audit data (per-plot active nodes) ─────────────────
         _t3_by_plot: dict[str, list[dict]] = {}
         _t3_aesthetic_overrides: dict[str, dict] = {}
@@ -919,6 +919,10 @@ def define_export_server(input, output, session, *,
                 _subtab = f"subtab_{_pid}"
                 if _subtab in _overrides_all and _overrides_all[_subtab]:
                     _t3_aesthetic_overrides[_pid] = _overrides_all[_subtab]
+
+        # The audit pin of a plot (Reshuffle, or an audit override) is a step of the audit trail too, whatever the
+        # audit-trail flag: listed in t3_steps.yaml, the Methods text and the report's audit table, and hashed.
+        _t3_listed = with_seed_steps(_t3_by_plot, _plot_seeds)
 
         # The export is the Result (T2) plus the AUDITED T3 steps (committed with a reason, e.g.
         # removing poor quality data): the user's decision for the publication, always applied.
@@ -996,7 +1000,7 @@ def define_export_server(input, output, session, *,
                 stage_keys=stage_keys,
                 orchestrator=orchestrator,
                 anchor_dir=anchor_dir,
-                t3_by_plot=_t3_by_plot,
+                t3_by_plot=_t3_listed,
                 t3_aesthetic_overrides=_t3_aesthetic_overrides,
             )
 
@@ -1078,7 +1082,7 @@ def define_export_server(input, output, session, *,
                         # exported plots reflect analyst T3 overrides.
                         _plot_override = _t3_aesthetic_overrides.get(p_id)
                         fig = viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
-                                                 aesthetic_override=_plot_override)
+                                                 **render_seed_args(_plot_seeds[p_id], _plot_override))
 
                         # Save user-chosen format → zip under {dataset}/plots/
                         plot_path = tmpdir_path / f"{p_id}.{plot_fmt}"
@@ -1219,7 +1223,7 @@ def define_export_server(input, output, session, *,
 
                 # ── t3_steps.yaml (when T3 has committed changes) — Mode 1 content: the
                 # human-readable audit record backing the Methods prose, not the recipe. ──
-                if _t3_by_plot or _t3_aesthetic_overrides:
+                if _t3_listed or _t3_aesthetic_overrides:
                     try:
                         import yaml as _yaml
                         t3_steps_data = {
@@ -1235,12 +1239,18 @@ def define_export_server(input, output, session, *,
                                     }
                                     for n in _nodes
                                 ]
-                                for _pid, _nodes in _t3_by_plot.items()
+                                for _pid, _nodes in _t3_listed.items()
                             },
                         }
                         # Aesthetic overrides are stored separately from audit step (§12c)
-                        if _t3_aesthetic_overrides:
-                            t3_steps_data["t3_aesthetic_overrides"] = _t3_aesthetic_overrides
+                        # the seed is listed as a step above, not a second time here
+                        _overrides_listed = {
+                            _pid: {k: v for k, v in _ov.items() if k != "random_state"}
+                            for _pid, _ov in _t3_aesthetic_overrides.items()
+                        }
+                        _overrides_listed = {_pid: _ov for _pid, _ov in _overrides_listed.items() if _ov}
+                        if _overrides_listed:
+                            t3_steps_data["t3_aesthetic_overrides"] = _overrides_listed
                         zf.writestr(
                             f"{bundle_dir}/t3_steps.yaml",
                             _yaml.safe_dump(t3_steps_data, sort_keys=False, allow_unicode=True),
@@ -1261,6 +1271,9 @@ def define_export_server(input, output, session, *,
                     import yaml as _yaml
 
                     mode2_cfg, mode2_skipped = build_mode2_recipe(cfg.raw_config, _t3_by_plot)
+                    # SEED-HOLDS-1: the seed each plot was exported with is written into this recipe, so the
+                    # re-run draws the same arrangement (the recipe is the scientific document).
+                    mode2_cfg = bake_plot_seeds(mode2_cfg, _plot_seeds)
                     zf.writestr(
                         f"{bundle_dir}/data_analysis_recipes_reproducibility/{data_analysis_recipe_id}.yaml",
                         _yaml.safe_dump(mode2_cfg, sort_keys=False, allow_unicode=True),
@@ -1319,17 +1332,6 @@ def define_export_server(input, output, session, *,
             # explains a result difference, not a problem with the analysis). Comparison
             # is per-field, not a single collapsed code and not eyeball-only — #48's
             # per-leg verify logic is the actual comparison tool.
-            with reactive.isolate():
-                _seeds_per_plot: dict[str, object] = {}
-                for _p_id, _ in all_plots:
-                    _pinned = (_t3_aesthetic_overrides.get(_p_id) or {}).get("random_state")
-                    if _pinned is not None:
-                        _seeds_per_plot[_p_id] = _pinned
-                    elif last_drawn_seeds is not None:
-                        _drawn = last_drawn_seeds.get().get(_p_id)
-                        if _drawn is not None:
-                            _seeds_per_plot[_p_id] = _drawn
-
             import yaml as _yaml
             effective_run = {
                 "_about": (
@@ -1352,7 +1354,10 @@ def define_export_server(input, output, session, *,
                 "release_version": prov["release_version"],
                 "software_versions": prov["software_versions"],
                 "data_source_paths": prov["data_source_paths"],
-                "seeds_per_plot": _seeds_per_plot,
+                "seeds_per_plot": seeds_per_plot_record(_plot_seeds),
+                "seed_source_per_plot": seed_sources_per_plot(_plot_seeds),
+                "seeds_per_layer": seeds_per_layer_record(_plot_seeds),
+                "seeds_added_to_recipe": seeds_added_to_recipe(_plot_seeds, dict(all_plots)),
                 "t3_translation_skipped": (
                     mode2_skipped if wants_mode2 else
                     "not attempted — check 'Also include a reproducibility/reimport "
@@ -1585,7 +1590,7 @@ def define_export_server(input, output, session, *,
             # ── Methods section (auto-generated from the audited T3 steps) ───
             _methods_lines = _build_methods_section(
                 all_plots=all_plots,
-                t3_by_plot=_t3_by_plot,
+                t3_by_plot=_t3_listed,
                 ds_to_plots=ds_to_plots,
                 tiers_exported=tiers_exported,
                 t3_aesthetic_overrides=_t3_aesthetic_overrides,
@@ -1634,9 +1639,9 @@ def define_export_server(input, output, session, *,
                 qmd_lines.append("")
 
             # ── T3 Audit Trail section ────────────────────────────────────
-            if _t3_by_plot:
+            if _t3_listed:
                 qmd_lines += ["## T3 Audit Trail", ""]
-                for _pid, _nodes in _t3_by_plot.items():
+                for _pid, _nodes in _t3_listed.items():
                     _spec_title = next(
                         (s.get("title") for p, s in all_plots if p == _pid), None
                     )
@@ -1744,6 +1749,10 @@ def define_export_server(input, output, session, *,
                     "",
                 ]
 
+            if wants_mode2:
+                _seed_note = seed_recipe_note(_plot_seeds, dict(all_plots))
+                if _seed_note:
+                    qmd_lines += ["## Random scatter seeds", ""] + [f"> {_l}" if _l else ">" for _l in _seed_note] + [""]
             qmd_lines += [
                 "---",
                 "",
@@ -1895,6 +1904,10 @@ def define_export_server(input, output, session, *,
                     "       your audited T3 steps baked in as real wrangling actions, per plot.",
                     "       Any plot whose steps couldn't be fully baked in is named in",
                     "       effective_run.yaml's t3_translation_skipped.",
+                    "       The random scatter (jitter) seeds the export wrote into it are listed below and in",
+                    "       effective_run.yaml (seeds_added_to_recipe, seeds_per_layer); a number the recipe",
+                    "       already wrote on a layer is kept.",
+                    *[f"       {_l}" for _l in seed_recipe_note(_plot_seeds, dict(all_plots))],
                     "  data_reproducibility/<dataset>.<ext> — the actual data files used.",
                 ] if wants_mode2 else []),
                 "",

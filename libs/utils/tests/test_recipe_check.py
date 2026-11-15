@@ -420,3 +420,88 @@ def test_a_wrong_argument_says_what_the_component_is_to_plotnine():
 def test_without_the_kinds_the_message_is_as_before():
     message = _wrong_argument_message("geom_col", None)
     assert message == "colr_ is not an argument of geom_col"
+
+
+# -- random_state: accepted on a random layer and only on a random layer (SEED-HOLDS-1) --------------------------------
+
+RANDOM_CATALOGS = {**CATALOGS, "components": CATALOGS["components"] | {"geom_sina", "geom_pointrange", "geom_bar"},
+                   "component_arguments": {**CATALOGS["component_arguments"], "geom_point": {"position", "alpha", "stat"}, "geom_sina": {"random_state", "scale"},
+                                           "geom_pointrange": {"stat", "fun_data", "color"}, "geom_bar": {"fill", "stat"}}}
+
+
+def _seed_problems(name, params):
+    def put(r):
+        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(name=name, params=params)
+    result = check(mutated(put), catalogs=RANDOM_CATALOGS, file_stem="r")
+    return [p for p in result.problems if p.code == "PS04" and "random_state" in p.message]
+
+
+@pytest.mark.parametrize("name, params", [
+    ("geom_sina", {"random_state": 0}),
+    ("geom_point", {"position": "jitter", "random_state": 0}),
+    ("geom_point", {"position": "jitterdodge", "random_state": 3}),
+    ("geom_pointrange", {"stat": "summary", "fun_data": "mean_cl_boot", "random_state": 0}),
+    ("geom_pointrange", {"stat": "summary", "random_state": 0}),
+    ("geom_point", {"stat": "sina", "random_state": 0}),
+    ("geom_bar", {"stat": "sina", "random_state": 0}),
+    ("geom_point", {"position": "position_jitter", "random_state": 0}),
+    ("geom_point", {"position": "position_jitterdodge", "random_state": 0}),
+    ("geom_point", {"stat": "stat_sina", "random_state": 0}),
+    ("geom_pointrange", {"stat": "stat_summary", "random_state": 0}),
+])
+def test_a_seed_is_accepted_on_a_random_layer(name, params):
+    assert _seed_problems(name, params) == []
+
+
+@pytest.mark.parametrize("name, params", [
+    ("geom_point", {"random_state": 0}),
+    ("geom_point", {"position": "dodge", "random_state": 0}),
+    ("geom_bar", {"random_state": 0}),
+    ("geom_pointrange", {"random_state": 0}),
+    ("geom_pointrange", {"stat": "summary", "fun_data": "mean_se", "random_state": 0}),
+    ("geom_point", {"position": "position_dodge", "random_state": 0}),
+])
+def test_a_seed_is_refused_on_a_layer_that_is_not_random(name, params):
+    assert len(_seed_problems(name, params)) == 1
+
+
+@pytest.mark.parametrize("written", [None, "random", " RANDOM ", "abc", "1.5", 2.5, True])
+@pytest.mark.parametrize("name, params", [
+    ("geom_sina", {}),
+    ("geom_point", {"position": "jitter"}),
+    ("geom_pointrange", {"stat": "summary", "fun_data": "mean_cl_boot"}),
+])
+def test_null_or_random_as_a_seed_is_refused_with_the_fix(name, params, written):
+    """PROVISIONAL (S1): a seed is a number; the checker names the fix."""
+    def put(r):
+        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(name=name, params={**params, "random_state": written})
+    result = check(mutated(put), catalogs=RANDOM_CATALOGS, file_stem="r")
+    found = [p for p in result.problems if p.code == "PS04" and "random_state" in p.message]
+    assert len(found) == 1 and "random_state: 0" in found[0].fix and "number" in found[0].message
+
+
+@pytest.mark.parametrize("written", [0, 7, "5"])
+def test_a_number_as_a_seed_is_not_refused_by_s1(written):
+    def put(r):
+        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(name="geom_sina", params={"random_state": written})
+    result = check(mutated(put), catalogs=RANDOM_CATALOGS, file_stem="r")
+    assert not [p for p in result.problems if p.code == "PS04" and "random_state" in p.message]
+
+
+# -- PROVISIONAL (S3): plot_defaults.random_state is the one seed of the whole recipe --------------------------------
+
+def _with_plot_defaults(value):
+    def put(r):
+        r["plot_defaults"] = {"random_state": value}
+    return check(mutated(put), file_stem="r")
+
+
+@pytest.mark.parametrize("value", [0, 7, 123456, "7"])
+def test_the_checker_knows_the_recipe_seed_key(value):
+    assert [p for p in _with_plot_defaults(value).problems if p.path.startswith("plot_defaults")] == []
+
+
+@pytest.mark.parametrize("value", [None, "random", "abc", True, 1.5, [1]])
+def test_the_recipe_seed_is_a_whole_number(value):
+    found = [p for p in _with_plot_defaults(value).problems if p.path.startswith("plot_defaults")]
+    assert len(found) == 1 and found[0].code == "PD01" and "random_state: 0" in found[0].fix

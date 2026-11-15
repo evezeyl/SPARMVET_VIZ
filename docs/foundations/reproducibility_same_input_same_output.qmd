@@ -38,6 +38,7 @@ Jitter moves points by a small random amount so they do not overlap. Without a s
 
 - Every action that could reorder rows follows the rule in the table above, and has a test that states the rule on data large enough to show a random order.
 - Every random component uses a **fixed default seed** (`DEFAULT_RANDOM_STATE = 0`).
+- A number the recipe writes on a random layer always holds; a layer that writes none uses the factory's seed 0 in every place (HOME, the comparison panes, the gallery, Blueprint, the export and its re-run); a seed fixed by an audit step wins over both (`resolve_layer_seeds`, ADR-104, Eve 2026-11-15). HOME draws no seed. Which layers are random is one rule, `utils.random_layers`, shared with the recipe checker; every registered component is drawn twice in `libs/viz_factory/tests/test_every_component_randomness.py`.
 - `ENGINE_CACHE_VERSION` was raised, so anchors built before the rules existed are rebuilt (ADR-089).
 
 ## How to control it
@@ -55,16 +56,11 @@ layers:
       random_state: 123      # another number gives another arrangement
 ```
 
-- To get a **different arrangement every time** (you want to try again), say so explicitly:
-
-```yaml
-    params:
-      random_state: null     # or: random
-```
+- `random_state: null` and `random` are refused (PROVISIONAL, S1): a seed is a number.
 
 ### When you write a test
 
-- `VizFactory(random_state=7)` fixes the seed for a whole factory: the same picture every time, and a different one from the default. `VizFactory(random_state=None)` makes it random for the whole factory.
+- `VizFactory(random_state=7)` fixes the seed for a whole factory: the same picture every time, and a different one from the default. `VizFactory(random_state=None)` makes it random for the whole factory (the handle for a test that needs a different arrangement each time; it is not a recipe key).
 - To test an order rule, write the **definition** of the order (for example "groups come out in first-appearance order") and compare against it, on data with many groups and ties. A test that only compares two runs can pass by luck.
 - To prove a test can fail, switch the fix off once and see the test fail. The tests for ADR-090 were checked this way, including the original bug.
 
@@ -78,7 +74,7 @@ plotnine, the plotting library, treats `random_state=0` as **no seed** (it check
 
 ## Randomness on purpose
 
-The seed is a **default, never a rule**. Jitter can be useful to try again, and a fixed picture is only one possible choice. The choice can be made in the data analysis recipe (`random_state`), or in the app itself: a plot with an unpinned jitter layer shows a "Reshuffle arrangement" button (`app/handlers/home_theater.py`, `_plot_reshuffle_ui`/`_handle_reshuffle`, issue #49) that draws and pins a new seed into that plot's T3 `aesthetic_override` — the same state shape and export path `random_state: random`'s auto-recorded seed already uses (`seeds_per_plot` in `effective_run.yaml`), so a reshuffled arrangement is exported and reproducible exactly like a recipe-pinned one.
+A different arrangement can be useful to try. In the app it is the **Reshuffle arrangement** button (`app/handlers/home_theater.py`, `_plot_reshuffle_ui`/`_handle_reshuffle`, issue #49): it draws a seed and pins it into that plot's T3 `aesthetic_override`, so a reshuffled arrangement is exported, listed as a `random_seed` step and reproducible exactly like a recipe-pinned one. A recipe itself cannot ask for a random arrangement (S1).
 
 ## Related
 

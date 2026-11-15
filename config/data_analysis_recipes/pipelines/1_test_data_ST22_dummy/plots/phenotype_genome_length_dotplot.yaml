@@ -8,7 +8,7 @@ mapping:
   color: "ST"           # Overlay sequence type for context
 layers:
   - name: "geom_point"
-    params: {alpha: 0.6, size: 2.5, position: "jitter"} # Jitter X since scores are integers
+    params: {alpha: 0.6, size: 2.5, position: "jitter", random_state: 0} # Jitter X since scores are integers; the seed is written so the arrangement is the same everywhere
   - name: "geom_smooth" # The "Tendence" model suggested by User
     params: {method: "lm", se: true, color: "black", alpha: 0.2}
   - name: "facet_wrap"
