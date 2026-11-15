@@ -169,6 +169,9 @@ class DataAssembler:
             raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe)
 
         consolidated_lf: pl.LazyFrame = None
+        # the same steps without any `validate`: the table each join sees if no earlier validation counted, for the plain message of a refusal
+        plain_lf: pl.LazyFrame = None
+        track_plain = any(isinstance(s, dict) and s.get("validate") in ("1:1", "1:m", "m:1") for s in steps)
         start_index = 0
 
         # Process the remaining steps
@@ -232,7 +235,7 @@ class DataAssembler:
             if consolidated_lf is None:
                 first_key = list(self.ingredients.keys())[0]
                 consolidated_lf = self.ingredients[first_key]
-
+                plain_lf = consolidated_lf
 
             if action_name in (JOIN, JOIN_ASOF) and right_id:
                 self._check_join_key_types(step, i + 1, consolidated_lf, self.ingredients[right_id])
@@ -244,7 +247,7 @@ class DataAssembler:
                 if isinstance(left_keys, list) and isinstance(right_keys, list):
                     self.join_checks.append(JoinCheck(
                         location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {i + 1}",
-                        right_id=right_id, left=consolidated_lf, right=self.ingredients[right_id], validate=step["validate"],
+                        right_id=right_id, left=plain_lf, right=self.ingredients[right_id], validate=step["validate"],
                         left_keys=left_keys, right_keys=right_keys, nulls_equal=bool(step.get("nulls_equal")), how=str(step.get("how", "left"))))
 
             # Execute the action via the shared registry (ADR-018).
@@ -272,6 +275,8 @@ class DataAssembler:
 
             try:
                 consolidated_lf = action_func(consolidated_lf, step)
+                if track_plain:
+                    plain_lf = action_func(plain_lf, {k: v for k, v in step.items() if k != "validate"})
             except pl.exceptions.ColumnNotFoundError as exc:
                 pe = PipelineError(
                     component="DataAssembler",

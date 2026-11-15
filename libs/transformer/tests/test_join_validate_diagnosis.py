@@ -11,6 +11,7 @@ one or two key columns): the plain message appears exactly when Polars raises, a
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/transformer/tests/test_join_validate_diagnosis.py -q
 """
 import random
+import re
 
 import polars as pl
 import pytest
@@ -141,9 +142,73 @@ def test_repeated_null_keys_that_polars_accepts_do_not_mislead_the_message_about
     assert "'B'" in text and "'C'" not in text and "counts as a value" not in text
 
 
-def test_in_a_full_join_a_repeated_null_key_is_a_repeat_and_the_message_says_so(tmp_path):
+def test_in_a_full_join_a_repeated_null_key_is_shown_as_a_fact_and_no_rule_is_invented(tmp_path):
     left = pl.DataFrame({"k": [None, None, 4], "j": [1, 1, 2], "a": [0, 1, 2]})  # found by the random run: Polars raises, with two key columns
     right = pl.DataFrame({"k": [None, 3, 5], "j": [2, None, 2], "w": [0, 1, 2]})
     assert polars_outcome(left, right, {"on": ["k", "j"], "how": "full", "validate": "1:m", "nulls_equal": False}) == "keys"
-    with pytest.raises(TransformationError, match="counts as a value in a full join"):
+    with pytest.raises(TransformationError) as caught:
         engine(left, right, {"on": ["k", "j"], "how": "full", "validate": "1:m", "nulls_equal": False}, tmp_path)
+    text = str(caught.value)
+    assert "k=None" in text and "counts as" not in text and "missing key value" not in text
+
+
+# -- several joins, every how, null keys: Polars decides which join is named ------------------------------------------------
+
+def independent_oracle(base, rights, steps):
+    """Which joins does Polars refuse, each run alone on the table it sees (the earlier joins WITHOUT validate), all columns."""
+    refused, current = [], base.lazy()
+    for number, (right, step) in enumerate(zip(rights, steps), start=1):
+        common = dict(on=step["on"], how=step["how"], nulls_equal=step["nulls_equal"], maintain_order="left_right", coalesce=True)
+        try:
+            current.join(right.lazy(), validate=step["validate"], **common).collect()
+        except pl.exceptions.ComputeError as exc:
+            if "did not fulfill" in str(exc):
+                refused.append(number)
+        current = current.join(right.lazy(), **common)
+    return refused
+
+
+def test_the_joins_named_are_exactly_those_polars_refuses_on_random_multi_join_cases(tmp_path):
+    rng = random.Random(11)
+    named_cases = clean_cases = 0
+    for case in range(2500):
+        keys = rng.choice([["k"], ["k", "j"]])
+        count = rng.choice([2, 3])
+        base, _ = tables(rng, keys)
+        base = base.rename({"a": "a0"}) if "a" in base.columns else base
+        rights, steps = [], []
+        for number in range(count):
+            right = tables(rng, keys)[1].rename({"w": f"w{number}"})
+            rights.append(right)
+            steps.append({"on": keys, "how": rng.choice(["inner", "left", "full"]), "validate": rng.choice(["1:1", "1:m", "m:1", "m:m"]),
+                          "nulls_equal": rng.choice([False, True])})
+        # a join with how full adds the key columns of the right table: later joins use the columns of the base only
+        expected = independent_oracle(base, rights, steps)
+        ingredients = {"base": base.lazy(), **{f"R{n + 1}": r.lazy() for n, r in enumerate(rights)}}
+        assembler = DataAssembler(ingredients, recipe_id="r", join_id="J")
+        try:
+            lf = assembler.assemble([{"action": "polars_join", "right_ingredient": f"R{n + 1}", "maintain_order": "left_right", "coalesce": True, **step} for n, step in enumerate(steps)])
+            write_anchor(lf, tmp_path / "t.parquet", decision_hash="h", join_checks=assembler.join_checks)
+            outcome = None
+        except TransformationError as exc:
+            outcome = str(exc)
+        except pl.exceptions.ComputeError as exc:
+            outcome = "RAW " + str(exc)
+        if expected:
+            named_cases += 1
+            assert outcome is not None and not outcome.startswith("RAW") and "did not fulfill" not in outcome, (case, steps, outcome)
+            if "cannot be used with how" not in outcome:
+                named = [int(n) for n in re.findall(r"polars_join with the second table 'R(\d)'", outcome)]
+                assert named == expected, (case, steps, expected, outcome)
+        else:
+            clean_cases += 1
+            assert outcome is None or "cannot be used with how" in outcome or outcome.startswith("RAW"), (case, steps, outcome)
+    assert named_cases > 300 and clean_cases > 300, (named_cases, clean_cases)
+    print("multi-join cases:", named_cases, "refused,", clean_cases, "accepted")
+
+
+def test_several_joins_are_named_in_the_order_of_the_recipe(tmp_path):
+    with pytest.raises(TransformationError) as caught:
+        two_joins(REPEATING_B.rename({"b": "c"}), REPEATING_B, tmp_path)
+    text = str(caught.value)
+    assert text.index("'C'") < text.index("'B'") and text.index("assembly step 1") < text.index("assembly step 2")

@@ -45,29 +45,45 @@ def _repeated(frame: pl.LazyFrame, keys: List[str], nulls_equal: bool) -> pl.Dat
     return keyed.group_by(keys).len().filter(pl.col("len") > 1).sort("len", descending=True).collect()
 
 
-def _repeats(check: JoinCheck, wanted: str) -> Optional[tuple]:
-    """(message, tip) when the keys of THIS join really repeat where `wanted` asked for unique keys, else None."""
+def _polars_refuses(check: JoinCheck) -> bool:
+    """Ask POLARS: does this join, run alone on the key columns only with the same how, validate and nulls_equal, fail its validation?
+
+    Polars' rule for missing key values is not simple (it differs between how and validate), so it is never rebuilt here.
+    """
+    try:
+        check.left.select(check.left_keys).join(check.right.select(check.right_keys), left_on=check.left_keys, right_on=check.right_keys,
+                                                how=check.how, validate=check.validate, nulls_equal=check.nulls_equal).collect()
+        return False
+    except pl.exceptions.ComputeError as exc:
+        return "did not fulfill" in str(exc)
+    except Exception:  # noqa: BLE001 - another failure is not a refused validation of this join
+        return False
+
+
+def _explain(check: JoinCheck, wanted: str) -> tuple:
+    """(message, tip) for a join that Polars refuses: the repeated key value is counted from the keys when one can be shown, no reason is guessed."""
     sides = []
     if wanted in ("1:1", "1:m"):
         sides.append(("first table (the table of the step)", check.left, check.left_keys))
     if wanted in ("1:1", "m:1"):
         sides.append((f"second table {check.right_id!r}", check.right, check.right_keys))
-    # a missing key counts as a repeat only with nulls_equal, except in a full join where Polars counts it: look without, then (full only) with
-    for with_nulls in ((check.nulls_equal, True) if check.how == "full" and not check.nulls_equal else (check.nulls_equal,)):
+    head = f"{check.location}: polars_join with the second table {check.right_id!r}: validate '{wanted}'"
+    tip = ("Check the key columns of the tables for repeated values, or write the validate that matches the data "
+           "('m:m' asks nothing; '1:m' asks the first table to be unique; 'm:1' asks the second table to be unique)")
+    for with_nulls in dict.fromkeys((check.nulls_equal, True)):  # the second pass only shows a repeated missing value, as a fact
         for name, frame, keys in sides:
             try:
                 repeated = _repeated(frame, keys, with_nulls)
-            except Exception:  # noqa: BLE001 - a side that cannot be read here is not the one to name
+            except Exception:  # noqa: BLE001 - a side that cannot be read here shows no example
                 continue
             if repeated.height:
                 example = repeated.row(0, named=True)
                 value = ", ".join(f"{k}={example[k]!r}" for k in keys)
-                nulls = "" if with_nulls == check.nulls_equal else " (a missing key value counts as a value in a full join)"
-                return (f"{check.location}: polars_join with the second table {check.right_id!r}: validate '{wanted}' asks that the key {keys} appears at most once in the {name}, "
-                        f"but {repeated.height} key value(s) repeat there (for example {value} appears {example['len']} times){nulls}",
+                return (f"{head} asks that the key {keys} appears at most once in the {name}, but {repeated.height} key value(s) repeat there "
+                        f"(for example {value} appears {example['len']} times)",
                         f"Remove or merge the repeated rows of the {name} before the join, or write the validate that matches the data "
                         "('m:m' asks nothing; '1:m' asks the first table to be unique; 'm:1' asks the second table to be unique)")
-    return None
+    return (f"{head} was refused by Polars for the key {check.left_keys}; no repeated key value could be shown in the tables as they are before the join", tip)
 
 
 def explain_validation_error(exc: BaseException, checks: Optional[List[JoinCheck]]) -> Optional[TransformationError]:
@@ -90,13 +106,15 @@ def explain_validation_error(exc: BaseException, checks: Optional[List[JoinCheck
     if not found:
         return None
     wanted = found.group(1)
-    candidates = [c for c in checks if c.validate == wanted]
-    explained = [r for r in (_repeats(c, wanted) for c in candidates) if r]
-    if explained:
+    # Polars reports one refusal; every listed join is asked, each with its own validate, and each one Polars refuses is named (the recipe's own order)
+    candidates = list(checks)
+    refused = [c for c in candidates if _polars_refuses(c)]
+    if refused:
+        explained = [_explain(c, c.validate) for c in refused]
         return TransformationError("; and ".join(m for m, _ in explained), tip=explained[0][1])
     if not candidates:
         return None
     named = "; ".join(f"{c.location} (second table {c.right_id!r}, key {c.left_keys})" for c in candidates)
     return TransformationError(
-        f"polars_join: Polars refused validate '{wanted}' in one of these joins: {named}; the repeated key values could not be found in the tables as they are before the join",
-        tip="Check the key columns of the tables for repeated or missing values, or write validate 'm:m' (it asks nothing)")
+        f"polars_join: Polars refused validate '{wanted}' in one of these joins: {named}",
+        tip="Check the key columns of the tables for repeated values, or write validate 'm:m' (it asks nothing)")
