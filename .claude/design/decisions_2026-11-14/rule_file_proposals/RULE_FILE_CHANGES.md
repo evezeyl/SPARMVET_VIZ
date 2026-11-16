@@ -31,7 +31,7 @@ Two technical words in the rows: a "thin re-export shim" is a file that only pas
 
 ## Counts (2026-11-16, counted from the rows below)
 
-The count of 2026-11-15 said 128 rows; the list held 131 (rows R129 to R131 were added after the count and "proposed" was 109, not 106). Counted again on 2026-11-16, with the 12 rows R132 to R143 added:
+The count of 2026-11-15 said 128 rows; the list held 131 (rows R129 to R131 were added after the count and "proposed" was 109, not 106). Counted again on 2026-11-16, with the 13 rows R132 to R144 added:
 
 | Status | Rows |
 |---|---|
@@ -41,8 +41,8 @@ The count of 2026-11-15 said 128 rows; the list held 131 (rows R129 to R131 were
 | applied, confirmation recorded elsewhere | 3 |
 | applied, Eve named only in the rule text | 5 |
 | applied, no confirmation found | 7 |
-| confirmed by Eve 2026-11-16, applied | 12 |
-| Total | 143 |
+| confirmed by Eve 2026-11-16, applied | 13 |
+| Total | 144 |
 
 ## What Eve is asked to do
 
@@ -210,3 +210,4 @@ The count of 2026-11-15 said 128 rows; the list held 131 (rows R129 to R131 were
 | R141 | panel-developer.md (.claude/agents/) | 10-11 | (no line) | Two lines: read agent_principles.md and decision_compliance.md first and the Decisions block of the brief; the goal quoted | M150 point 3: one line in each agent file, plus one line quoting the goal (model, effort and tools unchanged). | Eve, 2026-11-16, channel block M150; ledger D-0125; task DECISION-RULES-1 | confirmed by Eve 2026-11-16 (channel M150: "b plus CLAUDE pointer", goal text "1. ok"; ledger D-0125); applied in the same commit as this row |
 | R142 | panel-scientist.md (.claude/agents/) | 10-11 | (no line) | Two lines: read agent_principles.md and decision_compliance.md first and the Decisions block of the brief; the goal quoted | M150 point 3: one line in each agent file, plus one line quoting the goal (model, effort and tools unchanged). | Eve, 2026-11-16, channel block M150; ledger D-0125; task DECISION-RULES-1 | confirmed by Eve 2026-11-16 (channel M150: "b plus CLAUDE pointer", goal text "1. ok"; ledger D-0125); applied in the same commit as this row |
 | R143 | panel-user.md (.claude/agents/) | 10-11 | (no line) | Two lines: read agent_principles.md and decision_compliance.md first and the Decisions block of the brief; the goal quoted | M150 point 3: one line in each agent file, plus one line quoting the goal (model, effort and tools unchanged). | Eve, 2026-11-16, channel block M150; ledger D-0125; task DECISION-RULES-1 | confirmed by Eve 2026-11-16 (channel M150: "b plus CLAUDE pointer", goal text "1. ok"; ledger D-0125); applied in the same commit as this row |
+| R144 | coordinator_guard.py (.claude/hooks/) | docstring rule 5; DECISION_GATED and brief_problem; Agent branch | (the hook only refused Fable agents, edits and work commands) | A builder, builder-opus or reviewer call is refused when its brief has neither a Decisions block with numbers that exist in the ledger nor a NONE-CHECKED line with a path that exists; scouts, scribes and panel agents are not gated; no other rule changes | Eve approved the hook (M150 point 4); the check is of form only, the reviewer checks the content. | Eve, 2026-11-16, channel block M150 point 4; ledger D-0125; task DECISION-RULES-1 | confirmed by Eve 2026-11-16 (channel M150: the hook is point 4; ledger D-0125); applied in the same commit as this row |
