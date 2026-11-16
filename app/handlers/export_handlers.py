@@ -740,13 +740,17 @@ def define_export_server(input, output, session, *,
             return
         _import_bundle_state.set(("ok", result))
         n_mismatch = sum(1 for leg in result.legs.values() if leg.status == "mismatch")
+        problems = list(getattr(result, "problems", None) or [])
         _notify(
             f"✅ Imported as '{result.recipe_id}'. "
-            + (f"{n_mismatch} leg(s) mismatch — see the report below."
-               if n_mismatch else "All checked legs match.")
+            + (f"{n_mismatch} leg(s) mismatch — see the report below." if n_mismatch
+               else "A leg could not be checked — see the next message." if problems
+               else "All checked legs match.")
             + " Reload the app (F5) to see it in the Data analysis recipe selector.",
-            type="warning" if n_mismatch else "message", duration=12,
+            type="warning" if (n_mismatch or problems) else "message", duration=12,
         )
+        for problem in problems:
+            _notify("⚠️ " + problem, type="warning", duration=12)
 
     @output
     @render.ui

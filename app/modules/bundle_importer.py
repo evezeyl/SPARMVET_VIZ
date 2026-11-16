@@ -53,6 +53,7 @@ import yaml
 
 from app.modules.cache_keys import engine_fingerprint
 from app.modules.data_analysis_recipe_validator import engine_load_problems
+from app.modules.error_notice import notice
 from app.modules.orchestrator import IMPORT_DATA_FOLDER, DataOrchestrator
 from app.modules.session_manager import SessionManager
 
@@ -76,6 +77,7 @@ class ImportResult:
     session_key: str
     legs: dict[str, LegResult]
     skipped_t3_plots: dict[str, str] = field(default_factory=dict)
+    problems: list[str] = field(default_factory=list)    # what could not be checked because of an error, in plain words (D-0050)
 
 
 def _find_in_zip(names: list[str], suffix: str) -> str | None:
@@ -119,6 +121,7 @@ def _verify(
     local_data_batch_hash: str,
     local_recipe_sha256: str | None,
     data_detail: str,
+    recipe_problem: str | None = None,
 ) -> dict[str, LegResult]:
     legs: dict[str, LegResult] = {}
 
@@ -157,6 +160,13 @@ def _verify(
             recorded=recorded_recipe,
             actual=local_recipe_sha256,
             detail="Compared against the original (untranslated) recipe found locally by id.",
+        )
+    elif recipe_problem:
+        # a local recipe with this id exists but could not be hashed: the leg is not checked, and the reason is the real one
+        legs["recipe"] = LegResult(
+            status="not_checked",
+            recorded=effective_run.get("data_analysis_recipe_sha256"),
+            detail=recipe_problem,
         )
     else:
         legs["recipe"] = LegResult(
@@ -305,18 +315,25 @@ def import_bundle(zip_bytes: bytes, *, bootloader) -> ImportResult:
     # just wrote, which differs from it by design) — check whether the importing user
     # already has one locally under the same id (e.g. the same repo/recipe set).
     local_recipe_sha256_original: str | None = None
+    recipe_problem: str | None = None
+    original_path = None
     try:
         original_path = bootloader.available_data_analysis_recipes.get(original_recipe_id)
         if original_path:
             local_recipe_sha256_original = sm.compute_data_analysis_recipe_sha256(Path(original_path))
-    except (Exception, SystemExit):
-        # Already startup-vetted (ADR-094) in the normal case; guarded anyway in case the
-        # file changed on disk since then — same SystemExit risk as above, never let it
-        # reach the caller.
+    except (Exception, SystemExit) as exc:
+        # Already startup-vetted (ADR-094) in the normal case; guarded anyway in case the file changed on disk since then
+        # (SystemExit: ConfigManager exits on a contradictory recipe). The leg is still "not checked", but the reason is
+        # the real one, not "not found" (D-0050).
         local_recipe_sha256_original = None
+        reason = f"SystemExit: the recipe loader stopped (code {exc.code})" if isinstance(exc, SystemExit) else exc
+        recipe_problem = notice(
+            f"The recipe with the id '{original_recipe_id}' on this machine ({original_path}) could not be read, so the "
+            "recipe leg was not checked",
+            "repair or remove that recipe (Blueprint shows what is wrong with it) and import the bundle again", reason)
 
     legs = _verify(effective_run, data_batch_hash, local_recipe_sha256_original,
-                   _data_detail(set(source_files), named, carried))
+                   _data_detail(set(source_files), named, carried), recipe_problem)
 
     skipped = effective_run.get("t3_translation_skipped")
     skipped = skipped if isinstance(skipped, dict) else {}
@@ -327,4 +344,5 @@ def import_bundle(zip_bytes: bytes, *, bootloader) -> ImportResult:
         session_key=session_key,
         legs=legs,
         skipped_t3_plots=skipped,
+        problems=[recipe_problem] if recipe_problem else [],
     )
