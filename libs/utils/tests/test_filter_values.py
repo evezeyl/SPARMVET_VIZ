@@ -32,7 +32,7 @@ def rows(column, op, value, dtype=None, **kw):
     (pl.Int64, "int"), (pl.UInt8, "int"), ("Int32", "int"), (pl.Float64, "float"), (pl.Float32, "float"), (pl.Decimal(10, 2), "float"),
     (pl.Boolean, "bool"), (pl.Date, "date"), (pl.String, "text"), (pl.Utf8, "text"), ("String", "text"),
     (pl.Datetime, "datetime"), (pl.Datetime("us", "UTC"), "datetime"), (pl.Categorical, "category"), (pl.Enum(["a"]), "category"),
-    (pl.Time, "other"), (None, "other"),
+    (pl.Time, "time"), (pl.Duration, "duration"), (pl.Duration("ns"), "duration"), (pl.Binary, "other"), (None, "other"),
 ])
 def test_kind_of(dtype, kind):
     assert kind_of(dtype) == kind
@@ -84,7 +84,7 @@ def test_read_other_integer_widths():
 def test_a_value_that_cannot_be_read_as_a_number_is_reported_never_guessed(bad, dtype):
     with pytest.raises(FilterValueError) as exc:
         read_filter_value(bad, dtype)
-    assert "number" in str(exc.value) and "Fix:" in str(exc.value)
+    assert "number" in str(exc.value) and "Suggestion:" in str(exc.value)
 
 
 @pytest.mark.parametrize("value, expected", [("True", True), ("true", True), ("FALSE", False), (True, True), (False, False)])
@@ -153,7 +153,7 @@ def test_strict_refuses_a_value_of_another_type_in_plain_words(dtype, value, giv
         check_filter_value(value, dtype)
     text = str(exc.value)
     assert given in exc.value.problem and type_words(dtype) in exc.value.problem
-    assert "Fix:" in text and exc.value.fix
+    assert "Suggestion:" in text and exc.value.fix
     assert "Polars" not in text and "ComputeError" not in text
 
 
@@ -291,9 +291,9 @@ def test_the_true_false_message_names_the_value_the_type_and_the_fix(op, value):
     assert shown in text and "true or false" in text and "Boolean" in text and "greater" in text.lower() and exc.value.fix
 
 
-@pytest.mark.parametrize("dtype", [pl.Time, pl.Duration, pl.Binary])
+@pytest.mark.parametrize("dtype", [pl.Binary, pl.List(pl.Int64)])
 @pytest.mark.parametrize("op, value", [("in", ["10:30:00"]), ("eq", "10:30:00")])
-def test_time_duration_and_other_types_are_refused_in_plain_words(dtype, op, value):
+def test_other_types_are_refused_in_plain_words(dtype, op, value):
     with pytest.raises(FilterValueError) as exc:
         filter_condition("t", op, value, dtype)
     assert "not offered" in exc.value.problem and str(dtype) in exc.value.problem and exc.value.fix
@@ -313,3 +313,171 @@ def test_check_filter_judges_the_operator_and_the_values_with_one_rule():
                              ("eq", "x", pl.Time), ("eq", 5, pl.Date), ("in", ["90"], pl.Int64)):
         with pytest.raises(FilterValueError):
             check_filter(op, value, dtype)
+
+
+# -- a time of day and a duration: typed from their text (FILTER-PICKERS-1)
+
+T = datetime.time
+TIMES = pl.DataFrame({
+    "s": ["a", "b", "c", "d"], "t": pl.Series([T(9, 0), T(10, 30), T(10, 30, 0, 250000), None], dtype=pl.Time),
+})
+SECONDS = [60, 5400, 7200, None]   # one minute, 90 minutes, two hours, no value
+
+
+def durations(unit):
+    ns = pl.Series([None if x is None else x * 10**9 for x in SECONDS], dtype=pl.Int64).cast(pl.Duration("ns"))
+    return pl.DataFrame({"s": ["a", "b", "c", "d"], "u": ns.dt.cast_time_unit(unit)})
+
+
+DURATIONS = {unit: durations(unit) for unit in ("us", "ms", "ns")}
+
+
+def rows_of(frame, column, op, value, **kw):
+    return frame.filter(filter_condition(column, op, value, frame.schema[column], **kw))["s"].to_list()
+
+
+@pytest.mark.parametrize("op, value, kept", [
+    ("eq", "10:30:00", ["b"]), ("ne", "10:30:00", ["a", "c"]), ("gt", "10:30:00", ["c"]), ("ge", "10:30:00", ["b", "c"]),
+    ("lt", "10:30", ["a"]), ("le", "10:30:00", ["a", "b"]), ("in", ["09:00:00", "10:30:00.25"], ["a", "c"]),
+    ("not_in", ["09:00:00"], ["b", "c"]), ("between", ["09:00:00", "10:30:00"], ["a", "b"]),
+])
+def test_a_time_column_compares_times_typed_from_their_text(op, value, kept):
+    assert rows_of(TIMES, "t", op, value) == kept
+
+
+@pytest.mark.parametrize("closed, kept", [("both", ["a", "b"]), ("left", ["a"]), ("right", ["b"]), ("none", [])])
+def test_a_time_between_has_its_four_ends(closed, kept):
+    assert rows_of(TIMES, "t", "between", ["09:00:00", "10:30:00"], closed=closed) == kept
+
+
+def test_a_time_keeps_its_nanoseconds_nothing_is_cut():
+    f = pl.DataFrame({"s": ["a", "b"], "t": pl.Series([36000 * 10**9 + 7, 36000 * 10**9], dtype=pl.Int64).cast(pl.Time)})
+    assert rows_of(f, "t", "eq", "10:00:00.000000007") == ["a"]
+    assert rows_of(f, "t", "between", ["10:00:00.000000007", "10:00:00.000000007"]) == ["a"]
+
+
+@pytest.mark.parametrize("value", ["25:00:00", "10:60", "10", "ten", "10:30:61", "10:30:00.1234567891", True, 5])
+@pytest.mark.parametrize("strict", [False, True])
+def test_a_time_that_is_not_a_time_is_a_plain_error(value, strict):
+    with pytest.raises(FilterValueError) as exc:
+        filter_condition("t", "eq", value, pl.Time, strict=strict)
+    assert "times of day" in exc.value.problem and "Time" in exc.value.problem and "Suggestion:" in str(exc.value)
+    assert "Polars" not in str(exc.value) and "ComputeError" not in str(exc.value)
+
+
+def test_a_time_object_is_read_and_written_as_text():
+    assert read_filter_value(T(10, 30), pl.Time) == "10:30:00"
+    assert read_filter_value(T(10, 30, 0, 250000), pl.Time) == "10:30:00.250000"
+    assert read_filter_value(" 10:30 ", pl.Time) == "10:30"
+    check_filter_value(T(10, 30), pl.Time)
+    check_filter_value("10:30:00", pl.Time)
+
+
+@pytest.mark.parametrize("unit", ["us", "ms", "ns"])
+@pytest.mark.parametrize("op, value, kept", [
+    ("eq", "90 min", ["b"]), ("ne", "90 min", ["a", "c"]), ("gt", "1.5 h", ["c"]), ("ge", "5400 s", ["b", "c"]), ("lt", "2 h", ["a", "b"]),
+    ("le", "1 min", ["a"]), ("between", ["1 min", "90 min"], ["a", "b"]), ("between", ["0 s", "2 h"], ["a", "b", "c"]),
+    ("in", ["1 min", "2 h"], ["a", "c"]), ("not_in", ["1 min"], ["b", "c"]),
+])
+def test_a_duration_column_compares_durations_typed_from_number_and_unit(unit, op, value, kept):
+    assert rows_of(DURATIONS[unit], "u", op, value) == kept
+
+
+def test_a_duration_written_as_a_timedelta_is_read_as_text():
+    assert read_filter_value(datetime.timedelta(minutes=90), pl.Duration) == "5400000000 us"
+    check_filter_value(datetime.timedelta(minutes=90), pl.Duration)
+
+
+@pytest.mark.parametrize("value", ["", "90", "min", "ninety minutes", "1,5 h", "90 minutes", "1e3 s", None, True])
+@pytest.mark.parametrize("strict", [False, True])
+def test_a_duration_that_is_not_a_number_and_a_unit_is_a_plain_error(value, strict):
+    with pytest.raises(FilterValueError) as exc:
+        filter_condition("u", "eq", value, pl.Duration("us"), strict=strict)
+    assert "Suggestion:" in str(exc.value) and "Polars" not in str(exc.value)
+
+
+def test_a_duration_finer_than_the_unit_of_the_column_is_refused_not_cut():
+    with pytest.raises(FilterValueError) as exc:
+        filter_condition("u", "eq", "1.0000005 s", pl.Duration("us"))
+    assert "finer than the unit" in exc.value.problem and "us" in exc.value.problem
+
+
+def test_a_negative_duration_is_a_duration():
+    f = pl.DataFrame({"s": ["a", "b"], "u": pl.Series([-5 * 10**6, 5 * 10**6], dtype=pl.Int64).cast(pl.Duration("us"))})
+    assert rows_of(f, "u", "lt", "0 s") == ["a"]
+    assert rows_of(f, "u", "eq", "-5 s") == ["a"]
+
+
+def test_greater_than_on_a_time_or_duration_is_not_refused_but_true_false_still_is():
+    assert rows_of(TIMES, "t", "gt", "09:00:00") == ["b", "c"]
+    with pytest.raises(FilterValueError):
+        filter_condition("b", "gt", True, pl.Boolean)
+
+
+def test_check_filter_judges_a_time_and_a_duration():
+    from utils.filter_values import check_filter
+    check_filter("between", ["09:00:00", "10:00:00"], pl.Time)
+    check_filter("gt", "90 min", pl.Duration)
+    for op, value, dtype in (("eq", 5, pl.Time), ("eq", "90", pl.Duration), ("in", ["25:00"], pl.Time)):
+        with pytest.raises(FilterValueError):
+            check_filter(op, value, dtype)
+
+
+def test_a_date_between_and_comparisons_on_real_dates_and_on_their_year_month_day_text():
+    D = datetime.date
+    f = pl.DataFrame({"s": ["a", "b", "c"], "d": [D(2020, 1, 1), D(2020, 1, 2), D(2020, 1, 3)]})
+    for value in ("2020-01-02", D(2020, 1, 2)):
+        assert rows_of(f, "d", "gt", value) == ["c"]
+        assert rows_of(f, "d", "le", value) == ["a", "b"]
+    assert rows_of(f, "d", "between", ["2020-01-02", "2020-01-03"], closed="left") == ["b"]
+    assert rows_of(f, "d", "between", [D(2020, 1, 1), D(2020, 1, 3)], closed="none") == ["b"]
+
+
+def test_a_datetime_between_keeps_nanoseconds():
+    t = pl.Series([datetime.datetime(2020, 1, 1, 10, 30)], dtype=pl.Datetime("us")).cast(pl.Datetime("ns"))
+    t = pl.concat([t, t + pl.Series([7], dtype=pl.Int64).cast(pl.Duration("ns"))])
+    f = pl.DataFrame({"s": ["a", "b"], "t": t})
+    assert rows_of(f, "t", "between", ["2020-01-01 10:30:00.000000007", "2020-01-01 10:30:00.000000007"]) == ["b"]
+
+
+# -- a wall-clock time that does not exist, or exists twice, in the time zone of the column (daylight-saving change)
+
+PARIS = pl.Datetime("us", "Europe/Paris")
+GAP = "2020-03-29 02:30:00"      # the clock jumps from 02:00 to 03:00: this time does not exist
+TWICE = "2020-10-25 02:30:00"    # the clock goes back from 03:00 to 02:00: this time exists twice
+
+
+def _paris_frame():
+    naive = pl.Series([datetime.datetime(2020, 3, 29, 1, 0), datetime.datetime(2020, 3, 29, 4, 0), datetime.datetime(2020, 10, 24, 12, 0)], dtype=pl.Datetime("us"))
+    return pl.DataFrame({"s": ["a", "b", "c"], "t": naive.dt.replace_time_zone("Europe/Paris")})
+
+
+@pytest.mark.parametrize("strict", [False, True])
+@pytest.mark.parametrize("op, value", [("eq", GAP), ("gt", GAP), ("in", [GAP]), ("between", ["2020-03-29 01:00:00", GAP])])
+def test_a_time_that_does_not_exist_in_the_zone_of_the_column_says_so(op, value, strict):
+    with pytest.raises(FilterValueError) as exc:
+        filter_condition("t", op, value, PARIS, strict=strict)
+    text = str(exc.value)
+    assert "does not exist" in exc.value.problem and "Europe/Paris" in exc.value.problem and GAP in exc.value.problem
+    assert "is text" not in text and "Suggestion: choose a time before or after the change" in text
+
+
+@pytest.mark.parametrize("strict", [False, True])
+@pytest.mark.parametrize("op, value", [("eq", TWICE), ("le", TWICE), ("not_in", [TWICE])])
+def test_a_time_that_exists_twice_in_the_zone_of_the_column_says_so_and_what_the_dialog_can_do(op, value, strict):
+    with pytest.raises(FilterValueError) as exc:
+        filter_condition("t", op, value, PARIS, strict=strict)
+    text = str(exc.value)
+    assert "exists twice" in exc.value.problem and "Europe/Paris" in exc.value.problem and TWICE in exc.value.problem
+    assert "is text" not in text and "Suggestion:" in text
+    assert "boxes" in exc.value.problem and "list" in exc.value.fix and "before or after the change" in exc.value.fix
+
+
+def test_the_times_around_the_change_and_a_time_with_its_offset_still_work():
+    f = _paris_frame()
+    assert f.filter(filter_condition("t", "ge", "2020-03-29 03:00:00", PARIS))["s"].to_list() == ["b", "c"]
+    assert f.filter(filter_condition("t", "lt", "2020-03-29 01:59:59", PARIS))["s"].to_list() == ["a"]
+    # an exact text with its offset says which of the two: it is read, not refused
+    assert f.filter(filter_condition("t", "eq", "2020-03-29 03:00:00+02:00", PARIS))["s"].to_list() == []
+    filter_condition("t", "eq", "2020-10-25 02:30:00+01:00", PARIS)
+    filter_condition("t", "eq", "2020-10-25 02:30:00+02:00", PARIS)

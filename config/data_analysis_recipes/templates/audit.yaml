@@ -21,7 +21,7 @@ data_schemas:
     input_fields:
       lab_id:
         original_name: lab_id
-        type: Categorical
+        type: String
         is_entity_key: true
         label: Source Laboratory
       submission_date:
@@ -30,7 +30,7 @@ data_schemas:
         label: Date of Submission
       status:
         original_name: status
-        type: Categorical
+        type: String
         label: Processing Status
       turnaround_time:
         original_name: turnaround_time

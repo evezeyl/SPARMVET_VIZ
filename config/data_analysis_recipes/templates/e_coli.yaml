@@ -25,15 +25,15 @@ data_schemas:
         label: Sample ID
       serotype:
         original_name: serotype
-        type: Categorical
+        type: String
         label: Serotype
       sequence_type:
         original_name: ST
-        type: Categorical
+        type: String
         label: Sequence Type
       ctx_m_gene:
         original_name: bla_CTX-M
-        type: Categorical
+        type: String
         label: CTX-M Gene
       growth_rate:
         original_name: growth_rate
@@ -62,11 +62,11 @@ metadata_schema:
       label: Collection Date
     country_of_origin:
       original_name: country_of_origin
-      type: Categorical
+      type: String
       label: Country of Origin
     hospital_site:
       original_name: hospital_site
-      type: Categorical
+      type: String
       label: Hospital Site
     patient_age:
       original_name: patient_age
@@ -74,7 +74,7 @@ metadata_schema:
       label: Patient Age
     patient_outcome:
       original_name: patient_outcome
-      type: Categorical
+      type: String
       label: Outcome
   wrangling:
     tier1: []

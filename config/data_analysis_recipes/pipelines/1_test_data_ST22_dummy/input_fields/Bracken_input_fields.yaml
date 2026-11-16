@@ -5,7 +5,7 @@ sample_id:
   is_entity_key: true
 taxon_1:
   original_name: "taxon_1"
-  type: Categorical
+  type: String
   label: "Primary Taxon"
 proportion_1:
   original_name: "proportion_1"

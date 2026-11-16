@@ -4,4 +4,4 @@ sample_id:
   is_entity_key: true
 gene_presence:
   original_name: "Gene_List"
-  type: "Categorical"
+  type: "String"

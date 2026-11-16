@@ -16,14 +16,14 @@ import plotnine as p9
 import polars as pl
 
 # recipe: input_fields/*.yaml -- slug: type, original_name (the exact header in the file)
-METADATA_FIELDS = {"sample_id": ("sample_id", pl.String), "Source": ("Source", pl.Categorical),
-                   "Year": ("Year", pl.Float64), "Country": ("Country", pl.Categorical)}
-AMR_FIELDS = {"sample_id": ("sample_id", pl.String), "gene": ("Gene", pl.Categorical),
-              "predicted_phenotype": ("Predicted Phenotype", pl.Categorical), "identity": ("%Identity", pl.Float64),
-              "overlap": ("%Overlap", pl.Float64), "accession": ("Accession", pl.Categorical)}
-PLASMID_FIELDS = {"sample_id": ("sample_id", pl.String), "plasmid_name": ("Plasmid", pl.Categorical),
+METADATA_FIELDS = {"sample_id": ("sample_id", pl.String), "Source": ("Source", pl.String),
+                   "Year": ("Year", pl.Float64), "Country": ("Country", pl.String)}
+AMR_FIELDS = {"sample_id": ("sample_id", pl.String), "gene": ("Gene", pl.String),
+              "predicted_phenotype": ("Predicted Phenotype", pl.String), "identity": ("%Identity", pl.Float64),
+              "overlap": ("%Overlap", pl.Float64), "accession": ("Accession", pl.String)}
+PLASMID_FIELDS = {"sample_id": ("sample_id", pl.String), "plasmid_name": ("Plasmid", pl.String),
                   "identity": ("%Identity", pl.Float64), "overlap": ("%Overlap", pl.Float64),
-                  "accession": ("Accession", pl.Categorical)}
+                  "accession": ("Accession", pl.String)}
 
 
 def read_schema(path: Path, fields: dict, null_values: list[str], strip: bool = True) -> pl.DataFrame:

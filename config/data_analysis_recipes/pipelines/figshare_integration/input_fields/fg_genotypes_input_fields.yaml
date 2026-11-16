@@ -1,6 +1,6 @@
 host_animal_common:
   original_name: host_animal_common
-  type: Categorical
+  type: String
   label: Host Animal Common
 sample_id:
   original_name: sample_id
@@ -8,24 +8,24 @@ sample_id:
   label: Sample Id
 gene:
   original_name: gene
-  type: Categorical
+  type: String
   label: Gene
 gene_type:
   original_name: gene_type
-  type: Categorical
+  type: String
   label: Gene Type
 gene_identifier:
   original_name: gene_identifier
-  type: Categorical
+  type: String
   null_values: ["NA"]
   label: Gene Identifier
 gene_name_family:
   original_name: gene_name_family
-  type: Categorical
+  type: String
   null_values: ["NA"]
   label: Gene Name Family
 resistance_class:
   original_name: resistance_class
-  type: Categorical
+  type: String
   null_values: ["NA"]
   label: Resistance Class

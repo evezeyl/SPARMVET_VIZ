@@ -82,7 +82,7 @@ RULE_CASES = [
     ("gt", True, pl.Boolean), ("between", [False, True], pl.Boolean), ("between", ["a", "b"], pl.String),
     ("eq", 5, pl.Date), ("eq", _dt.date(2020, 1, 1), pl.Date), ("between", [_dt.date(2020, 1, 1), _dt.date(2020, 1, 2)], pl.Date),
     ("eq", "2020-01-01 10:00:00.000000007", pl.Datetime("ns")), ("eq", "01/01/2020", pl.Datetime("ns")), ("in", [1], pl.Categorical),
-    ("in", ["x"], pl.Categorical), ("eq", "10:30:00", pl.Time), ("in", ["5"], pl.Duration),
+    ("in", ["x"], pl.Categorical), ("eq", "25:00:00", pl.Time), ("in", ["5"], pl.Duration),
 ]
 
 
@@ -103,7 +103,7 @@ def test_the_checker_and_the_engine_give_the_same_verdict_with_the_same_words(op
 @pytest.mark.parametrize("column_type, op, value, holds", [
     ("Boolean", "gt", True, "true or false"), ("Boolean", "between", [False, True], "true or false"),
     ("String", "between", ["a", "b"], "text"), ("Categorical", "in", [1, 2], "categories"),
-    ("Time", "eq", "10:30:00", "not offered"), ("Duration", "in", ["5"], "not offered"),
+    ("Time", "eq", "25:00:00", "times of day"), ("Duration", "in", ["5"], "durations"),
 ])
 def test_the_checker_refuses_an_operator_that_does_not_fit_the_type_like_the_engine(column_type, op, value, holds):
     p = st12(with_schema_step(filter_step("n", op, value, **({"closed": "both"} if op == "between" else {})), column_type=column_type))
