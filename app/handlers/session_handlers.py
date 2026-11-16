@@ -433,6 +433,18 @@ def define_session_server(input, output, session, *,
                 type="warning", duration=8,
             )
 
+        # A comparison needs both keys. When one is missing it did not happen, and that is said (D-0050): without it the
+        # restored steps look checked when they were not.
+        _not_compared = [f"the {name} key of {where}"
+                         for name, current, saved in (("recipe", current_msig, saved_msig), ("data", current_dbh, saved_dbh))
+                         for where, value in (("the open view", current), ("the saved session", saved)) if not value]
+        if _not_compared:
+            _notify("⚠️ " + notice(
+                "The saved audit steps could not be compared with the open recipe and data, so nobody checked that they were "
+                "made on them (missing: " + ", ".join(_not_compared) + ")",
+                "load the recipe and its data in this view first, then restore again, or check the steps by hand before you go on"),
+                type="warning", duration=10)
+
         # Load T3 ghosts list for this session
         try:
             t3_ghosts, skipped_saves = session_manager.scan_t3_ghosts(session_key)

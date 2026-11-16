@@ -28,6 +28,7 @@ from __future__ import annotations
 from shiny import reactive, render, ui
 
 from utils.fix_text import fix_label
+from app.modules.error_notice import notice
 from utils.na_choice import na_of, no_value_text
 from utils.pipeline_error import PipelineError
 from app.modules.cache_keys import tier2_steps
@@ -957,7 +958,12 @@ def _write_t3_ghost(state: dict, session_manager, notif_log: list | None = None)
     msig = state.get("data_analysis_recipe_sha256") or ""
     dbh = state.get("data_batch_hash") or ""
     if not msig or not dbh:
-        return
+        missing = " and ".join(name for name, value in (("recipe", msig), ("data", dbh)) if not value)
+        return "⚠️ " + notice(
+            f"The audit steps were applied in this view but not saved: this session has no {missing} key yet, so there is no "
+            "session file to write them to; they are lost when the page is reloaded",
+            "look in the Alerts panel for a problem with the recipe or its data (the keys are computed from them), then apply "
+            "again; export the bundle to keep the steps")
     from app.modules.session_manager import SessionManager
     session_key = SessionManager.compute_session_key(msig, dbh)
     try:
