@@ -154,7 +154,7 @@ def key_columns(step: Mapping[str, Any]) -> tuple:
 # Join steps that name a right table (the as-of join and the join on conditions are joins too).
 JOIN_ACTIONS = (action_names.JOIN, action_names.JOIN_ASOF, action_names.JOIN_WHERE)
 
-_LABEL = {action_names.JOIN: "join", action_names.JOIN_ASOF: "as-of join", action_names.JOIN_WHERE: "join on conditions"}
+_LABEL = {action_names.JOIN: "a join", action_names.JOIN_ASOF: "an as-of join", action_names.JOIN_WHERE: "a join on conditions"}
 
 
 def self_join(base_id: str, earlier_steps: Sequence[Any], step: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
@@ -164,7 +164,7 @@ def self_join(base_id: str, earlier_steps: Sequence[Any], step: Mapping[str, Any
     held by, the table being joined: the first table of the join (`base_id`) or a table joined by an earlier step. Polars
     reports nothing for it and it is never an error; the user is told what it does.
 
-    Returns {"table", "action", "how", "left_keys", "right_keys", "same_key", "nulls_equal", "suffix", "base_itself", "key_columns"}:
+    Returns {"table", "is_base", "action", "how", "left_keys", "right_keys", "same_key", "nulls_equal", "suffix", "base_itself", "key_columns"}:
       same_key     the key columns are the same, in the same order, on both sides (and there is at least one)
       base_itself  the table is the first table, and the table at this step still has its keys (only rows removed, other
                    columns written, or joined with a join that keeps the left keys): then the key columns are the keys of
@@ -188,15 +188,57 @@ def self_join(base_id: str, earlier_steps: Sequence[Any], step: Mapping[str, Any
     return {
         "table": right_id, "action": action, "how": step.get("how", "left" if action == action_names.JOIN else None),
         "left_keys": left_keys, "right_keys": right_keys, "same_key": same_key, "nulls_equal": bool(step.get("nulls_equal")),
-        "suffix": step.get("suffix") or "_right", "key_columns": key_columns(step),
+        "suffix": step.get("suffix") or "_right", "key_columns": key_columns(step), "is_base": right_id == base_id,
         "base_itself": action == action_names.JOIN and right_id == base_id and same_key and _left_is_base_itself(earlier_steps, left_keys),
     }
+
+
+def _times(table: str) -> str:
+    return (f"A key value that appears a times in the table at this step and b times in {table!r} gives a x b rows")
+
+
+def _left(table: str, nulls_equal: bool, suffix: str) -> str:
+    gone = ("a missing key matches a missing key like any other value" if nulls_equal
+            else "a row with a missing key is kept once, with empty copied columns")
+    return f"{_times(table)}, and {gone}; the columns are copied with the suffix `{suffix}`"
+
+
+def _inner(table: str, nulls_equal: bool, suffix: str) -> str:
+    gone = ("a missing key matches a missing key like any other value" if nulls_equal else "a row with a missing key is dropped")
+    return f"{_times(table)}, and {gone}; the columns are copied with the suffix `{suffix}`"
+
+
+def _right(table: str, nulls_equal: bool, suffix: str) -> str:
+    gone = ("a missing key matches a missing key like any other value" if nulls_equal
+            else f"a row of {table!r} with a missing key is kept once, with empty columns for the table at this step")
+    return f"{_times(table)}, and {gone}; the columns are copied with the suffix `{suffix}`"
+
+
+def _full(table: str, nulls_equal: bool, suffix: str) -> str:
+    gone = ("a missing key matches a missing key like any other value" if nulls_equal
+            else "a row with a missing key is kept once from each side, with empty columns for the other side")
+    return f"{_times(table)}, and {gone}; the columns are copied with the suffix `{suffix}`"
+
+
+def _semi(table: str, nulls_equal: bool, suffix: str) -> str:
+    gone = ("a missing key matches a missing key, so every row stays" if nulls_equal else "a row with a missing key is dropped")
+    return f"No column is copied; each row whose key is found in {table!r} stays once, and {gone}"
+
+
+def _anti(table: str, nulls_equal: bool, suffix: str) -> str:
+    kept = ("a missing key matches a missing key, so such a row is removed" if nulls_equal else "a row with a missing key is kept")
+    return f"No column is copied; it removes the rows whose key is found in {table!r}, and {kept}"
+
+
+# What a join on the same key does, by kind of join (checked against real runs: libs/transformer/tests/test_self_join_build.py)
+_SAME_KEY_RESULT = {"left": _left, "inner": _inner, "right": _right, "full": _full, "semi": _semi, "anti": _anti}
 
 
 def self_join_text(found: Mapping[str, Any], counts: Optional[Mapping[str, Any]] = None) -> tuple:
     """(what happens, the suggestions) for a self-join that `self_join` found. One text for the checker and the build.
 
-    The message holds no remedy and does not end with a period (the checker adds it); every suggestion starts with "Suggestion:".
+    The message holds no remedy; every suggestion starts with "Suggestion:". How the two are joined into one sentence, with one
+    period, is `utils.fix_text.with_fix`, the same for every reader.
     `counts` (the build only, where the data is known): {"before", "after", "missing_left", "missing_right"} - the number of
     rows before and after the join and of rows with a missing key in the key columns, in the left table and in the right
     table (None when the join has no key columns). They are added as a last sentence.
@@ -212,18 +254,10 @@ def self_join_text(found: Mapping[str, Any], counts: Optional[Mapping[str, Any]]
             what = (f"The join of {table!r} with itself on the same key {keys} with how 'anti' keeps only the rows whose key is missing, "
                     f"because a missing key never matches. If no row has a missing key, the result is empty")
         fix = (f"{remove} Suggestion: to find the rows of {table!r} that have no partner in another table, write that other table as right_ingredient.")
-    elif same and found["action"] == action_names.JOIN and how == "anti":
-        what = (f"This step joins {table!r} to a table that already holds it, on the same key {keys}, with how 'anti'. "
-                f"It removes the rows whose key is found in {table!r}; no column is copied")
-        fix = remove
-    elif same and found["action"] == action_names.JOIN and how == "semi":
-        what = (f"The join of {table!r} with itself uses the same key {keys} ('how': semi). "
-                f"No column is copied; 'semi' keeps only the rows whose key is found in {table!r} itself")
-        fix = remove
-    elif same and found["action"] == action_names.JOIN:
-        what = (f"Join of {table!r} with itself on the same column ({', '.join(map(repr, keys))}). "
-                f"The result has the same rows if each value of the column appears once, and more rows if a value repeats; "
-                f"the columns are copied with the suffix `{found['suffix']}`")
+    elif same and found["action"] == action_names.JOIN and how in _SAME_KEY_RESULT:
+        head = (f"Join of {table!r} with itself on the same column ({', '.join(map(repr, keys))}) with how '{how}'" if found["is_base"]
+                else f"This step joins {table!r} to a table that already holds it, on the same key {keys}, with how '{how}'")
+        what = head + ". " + _SAME_KEY_RESULT[how](table, nulls_equal, found["suffix"])
         fix = remove
     else:
         has_keys = bool(found["key_columns"][0])
@@ -236,7 +270,7 @@ def self_join_text(found: Mapping[str, Any], counts: Optional[Mapping[str, Any]]
         kind = f", with how {how!r}" if how else ""
         missing = ("" if not has_keys else "; a row whose key is missing matches rows whose key is missing (nulls_equal)" if nulls_equal
                    else "; a row whose key is missing never matches")
-        what = (f"This step is a {label} of {table!r} with a table that already holds it{on}{kind}. "
+        what = (f"This step is {label} of {table!r} with a table that already holds it{on}{kind}. "
                 f"Each row is matched with rows of the same table, which answers a real question (a parent and a child column, for example) "
                 f"and is a mistake if you meant another table{missing}")
         fix = f"{remove} Suggestion: if you meant another table, write that table as right_ingredient."

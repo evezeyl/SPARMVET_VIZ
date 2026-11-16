@@ -205,20 +205,20 @@ def _j12_text(**extra):
     return problem.message + " | " + problem.fix
 
 
-def test_j12_text_for_a_plain_step_covers_a_unique_and_a_repeated_key():
+def test_j12_text_for_a_plain_step_says_what_a_repeated_key_and_a_missing_key_do():
+    """The default kind of join is left: a key value that appears a times and b times gives a x b rows; a missing key is kept once."""
     text = _j12_text()
-    assert "The result has the same rows if each value of the column appears once, and more rows if a value repeats; the columns are copied with the suffix `_right` | " in text
-    assert ".. " not in text and "`_right`. |" not in text   # one period between what happens and the suggestion (text() adds it)
+    assert text.startswith("Join of 'A' with itself on the same column ('id') with how 'left'.")
+    assert "gives a x b rows, and a row with a missing key is kept once, with empty copied columns; the columns are copied with the suffix `_right` | " in text
     assert "Suggestion: remove the step if you did not mean this." in text
-    assert text.startswith("Join of 'A' with itself on the same column")
-    assert len(text) < 330
+    assert len(text) < 450
 
 
 def test_j12_text_for_semi_says_no_column_is_copied():
     """The anti-join of the base table with itself is the advice J12 too (D-0183, test_self_join_rule.py)."""
     text = _j12_text(how="semi")
-    assert "No column is copied" in text and "semi" in text
-    assert "_right" not in text and "more rows" not in text
+    assert "No column is copied" in text and "semi" in text and "a row with a missing key is dropped" in text
+    assert "_right" not in text and "a x b" not in text
 
 
 def _j12_anti_text(*earlier):

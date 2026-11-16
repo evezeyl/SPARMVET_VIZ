@@ -145,3 +145,80 @@ def test_a_self_join_that_fails_when_it_runs_is_still_reported_by_its_own_error_
 def test_the_build_never_raises_for_a_self_join():
     for how in ("anti", "left", "inner", "semi", "full"):
         run([step(how=how)])
+
+
+# -- what the text of each kind of self-join claims is what a real run gives (fix round 2026-11-16) ------------------------------
+
+from collections import Counter  # noqa: E402
+
+from utils import join_keys  # noqa: E402
+
+TABLES = {
+    "unique key": ["a", "b", "c"],
+    "repeated key and 2 missing keys": ["a", "a", "b", "c", None, None],
+    "only missing keys": [None, None, None],
+    "one row, missing": [None],
+    "one value, three rows": ["a", "a", "a"],
+}
+PHRASE = {   # the part of the text that states the rule of each kind
+    "left": "gives a x b rows, and a row with a missing key is kept once, with empty copied columns",
+    "inner": "gives a x b rows, and a row with a missing key is dropped",
+    "right": "gives a x b rows, and a row of 'A' with a missing key is kept once, with empty columns for the table at this step",
+    "full": "gives a x b rows, and a row with a missing key is kept once from each side, with empty columns for the other side",
+    "semi": "each row whose key is found in 'A' stays once, and a row with a missing key is dropped",
+    "anti": "keeps only the rows whose key is missing, because a missing key never matches",
+}
+
+
+def rows_claimed(keys, how, nulls_equal=False):
+    """The number of rows the text of the kind says: a key value that appears n times gives n x n rows (a self-join: a = b = n)."""
+    groups = Counter(k for k in keys if k is not None)
+    keyed, missing = sum(n * n for n in groups.values()), keys.count(None)
+    if nulls_equal:   # a missing key is a value like any other
+        keyed, missing = keyed + missing * missing, 0
+        return {"left": keyed, "inner": keyed, "right": keyed, "full": keyed, "semi": len(keys), "anti": 0}[how]
+    return {"left": keyed + missing, "inner": keyed, "right": keyed + missing, "full": keyed + 2 * missing,
+            "semi": len(keys) - missing, "anti": missing}[how]
+
+
+def self_join_of(keys, how, nulls_equal=False):
+    asm = DataAssembler({"A": pl.LazyFrame({"k": keys, "v": list(range(len(keys)))}, schema={"k": pl.String, "v": pl.Int64})}, recipe_id="r", join_id="J")
+    step_ = {"action": JOIN, "right_ingredient": "A", "how": how, "on": ["k"], "maintain_order": "left_right", **({"nulls_equal": True} if nulls_equal else {})}
+    return asm, asm.assemble([step_]).collect(), step_
+
+
+@pytest.mark.parametrize("how", ["left", "inner", "right", "full", "semi", "anti"])
+@pytest.mark.parametrize("name", sorted(TABLES))
+def test_the_rows_of_a_real_run_are_what_the_text_of_the_kind_says(how, name):
+    keys = TABLES[name]
+    asm, result, step_ = self_join_of(keys, how)
+    assert result.height == rows_claimed(keys, how), (how, name)
+    text = join_keys.self_join_text(join_keys.self_join("A", [], step_))[0]
+    assert PHRASE[how] in text
+
+
+@pytest.mark.parametrize("how", ["left", "inner", "right", "full", "semi", "anti"])
+def test_with_nulls_equal_a_missing_key_is_a_value_like_any_other(how):
+    keys = TABLES["repeated key and 2 missing keys"]
+    _, result, step_ = self_join_of(keys, how, nulls_equal=True)
+    assert result.height == rows_claimed(keys, how, nulls_equal=True)
+    text = join_keys.self_join_text(join_keys.self_join("A", [], step_))[0]
+    assert "a missing key matches a missing key" in text or "a missing key included" in text
+
+
+def test_the_inner_self_join_of_a_table_with_a_repeated_key_and_two_missing_keys_gives_6_rows():
+    """The case of the review: the two rows with a missing key are dropped, the repeated key adds two (2 x 2 + 1 + 1 = 6)."""
+    _, result, _ = self_join_of(TABLES["repeated key and 2 missing keys"], "inner")
+    assert result.height == 6 and result["k"].null_count() == 0
+
+
+def test_the_old_sentence_that_a_repeated_key_only_adds_rows_is_gone():
+    for how in PHRASE:
+        text = join_keys.self_join_text(join_keys.self_join("A", [], {"action": JOIN, "right_ingredient": "A", "how": how, "on": ["k"]}))[0]
+        assert "the same rows if each value of the column appears once" not in text
+
+
+def test_the_claim_check_can_fail():
+    """A wrong claim (inner keeps the missing keys) is not what the real run gives."""
+    keys = TABLES["repeated key and 2 missing keys"]
+    assert self_join_of(keys, "inner")[1].height != rows_claimed(keys, "left")
