@@ -21,6 +21,14 @@ subagent carries an agent_id and passes). Three rules:
    tmpAI/, git apply/restore/checkout --, and python used inline. git commit, merge, log,
    diff, status, worktree stay allowed.
 
+5. Agent that starts a builder, builder-opus or reviewer is refused when its brief has neither a
+   "Decisions" block whose numbers all exist in the decision ledger nor a line "NONE-CHECKED: <path>"
+   whose path is a regular file inside the project folder, not the ledger itself (Eve, 2026-11-16,
+   M150 point 4; ledger D-0125). Only the form is
+   checked: the reviewer checks the content. Scouts, scribes and panel agents are not gated. A ledger
+   that is missing or malformed refuses the call too (a check that cannot run must not pass). The ledger is read with
+   assets/scripts/decision_ledger.py; the form of the block is in .claude/workflows/decision_compliance.md.
+
 There is no exception inside the hook: when a refusal is a real minor case (a one-line
 fix), the coordinator STOPS its coordination work and tells Eve, who answers or runs -solo.
 
@@ -28,6 +36,7 @@ Fails open: any error, a missing marker or a call from a worker lets the tool ru
 Marker: created by the trigger -coordinate, removed by -solo (CLAUDE.md section 2.1).
 """
 
+import importlib.util
 import json
 import os
 import re
@@ -40,6 +49,19 @@ WORKERS = {
     "panel-scientist", "panel-architect", "panel-developer", "panel-user",
 }
 CHEAP_MODELS = {"haiku", "sonnet"}
+# Workers whose brief must quote decisions (M150 point 4); scouts and scribes are exempt.
+DECISION_GATED = {"builder", "builder-opus", "reviewer"}
+LEDGER_RELATIVE = Path(".claude/knowledge/decision_ledger.md")
+LEDGER_SCRIPT = Path(__file__).resolve().parents[2] / "assets" / "scripts" / "decision_ledger.py"
+DECISIONS_HEADING = re.compile(r"^\s*(?:#{1,6}\s*)?(?:\*\*)?decisions(?:\*\*)?\s*(?::.*|\(.*)?$", re.IGNORECASE)
+NONE_CHECKED = re.compile(r"^\s*(?:[-*]\s*)?NONE-CHECKED:\s*(\S+)", re.MULTILINE)
+DECISION_TOKEN = re.compile(r"\bD-\d+\b")
+HOW_TO_WRITE = (
+    "Write it in the brief: a line `Decisions`, then one line per decision, each with its number and her words, e.g. "
+    '`- D-0112: "yes - if same identity favor the one that has higest overlap/coverage."` (numbers: ./.venv/bin/python assets/scripts/decision_ledger.py list; '
+    "file .claude/knowledge/decision_ledger.md). When a scout checked that no decision applies, write instead a line "
+    "`NONE-CHECKED: <path of the saved scout report>` (a regular file inside the project folder; not the ledger). See .claude/workflows/decision_compliance.md section 6."
+)
 # Work that belongs to a worker: suites, audits, the app, renders, scripts, installs.
 WORK_COMMAND = re.compile(
     r"(pytest|run_audits|audit_[a-z_]+\.py|debug_[a-z_]+\.py|playwright|quarto\s+render"
@@ -82,6 +104,78 @@ def bash_writes_files(command: str) -> str:
         if any(not _inside_tmpai(t) for t in paths):
             return match.group(1) + " on a path outside tmpAI/"
     return ""
+
+
+def _decisions_block(brief: str) -> str:
+    """Return the text of the "Decisions" block of a brief: its heading line to the next blank line or heading."""
+    lines = brief.split("\n")
+    for start, text in enumerate(lines):
+        if DECISIONS_HEADING.match(text):
+            block = [text]
+            for more in lines[start + 1:]:
+                if not more.strip() or more.lstrip().startswith("#"):
+                    break
+                block.append(more)
+            return "\n".join(block)
+    return ""
+
+
+def _load_ledger_reader():
+    spec = importlib.util.spec_from_file_location("decision_ledger", LEDGER_SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _none_checked_problem(written: str, project: Path) -> str:
+    """Return why a NONE-CHECKED path is not accepted, or an empty string.
+
+    Accepted: a regular file INSIDE the project folder (the saved scout report), other than the ledger itself.
+    Only surrounding quotes and trailing punctuation are removed from the written path: a leading dot is part of it.
+    """
+    text = written.strip("`'\"").rstrip("`'\".,;")
+    path = Path(text)
+    resolved = (path if path.is_absolute() else project / path).resolve()
+    try:
+        resolved.relative_to(project.resolve())
+    except ValueError:
+        return f"NONE-CHECKED names {text}, which is outside the project folder (it must be the saved scout report, inside the project)"
+    if resolved == (project / LEDGER_RELATIVE).resolve():
+        return "NONE-CHECKED names the ledger itself, which is not a scout report"
+    if not resolved.is_file():
+        return f"NONE-CHECKED names {text}, which is not a regular file that exists (a directory or a device does not count)"
+    return ""
+
+
+def brief_problem(brief: str, project: Path) -> str:
+    """Return what is missing in the brief of a builder or reviewer (an empty string when the form is right)."""
+    missing_file = ""
+    found = NONE_CHECKED.search(brief)
+    if found:
+        missing_file = _none_checked_problem(found.group(1), project)
+        if not missing_file:
+            return ""
+    ledger = project / LEDGER_RELATIVE
+    try:
+        reader = _load_ledger_reader()
+    except Exception as error:
+        return f"the ledger reader {LEDGER_SCRIPT} cannot be loaded ({error}), so no decision number can be checked."
+    cited = DECISION_TOKEN.findall(_decisions_block(brief))
+    try:
+        not_in_ledger = reader.missing_numbers(cited, ledger)
+    except FileNotFoundError:
+        return f"the decision ledger {LEDGER_RELATIVE} does not exist, so no decision number can be checked."
+    except ValueError as error:
+        return f"the decision ledger cannot be read ({error}); fix it first."
+    if cited and not not_in_ledger:
+        return ""
+    if not_in_ledger:
+        reason = "the Decisions block cites " + ", ".join(not_in_ledger) + ", not in the ledger"
+    elif _decisions_block(brief):
+        reason = "the Decisions block holds no decision number (D-0001 form)"
+    else:
+        reason = "the brief has no Decisions block" + ("" if found else " and no NONE-CHECKED line")
+    return "; ".join(x for x in (reason, missing_file) if x) + "."
 
 
 def refuse(message: str) -> int:
@@ -145,6 +239,13 @@ def main() -> int:
         # A named worker may be given haiku or sonnet in the call (haiku for a mechanical
         # edit); opus only comes from the builder-opus definition, never from a parameter.
         if kind != "fork" and (model in CHEAP_MODELS or (kind in WORKERS and model == "")):
+            if kind in DECISION_GATED:
+                problem = brief_problem(str(tool_input.get("prompt") or ""), project)
+                if problem:
+                    return refuse(
+                        f"Coordinator mode: the brief for a {kind} must quote the decisions it depends on (M150): "
+                        + problem + " " + HOW_TO_WRITE
+                    )
             return 0
         return refuse(
             "Coordinator mode: this agent would run on Fable. Use a named worker (scout, "
