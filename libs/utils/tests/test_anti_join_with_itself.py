@@ -106,3 +106,36 @@ def test_the_checker_does_not_refuse_the_anti_join_with_another_table():
     raw = valid()
     raw["joins"]["AB"]["steps"]["tier1"][0].update(how="anti")
     assert codes(raw, "J15") == []
+
+
+# -- a step before that does not make the left table another table (round 2026-11-16) -------------------------------
+
+@pytest.mark.parametrize("before", [
+    {"action": action_names.HEAD, "n": 3},
+    {"action": action_names.REMOVE, "predicates": ["pl.col('v') < 2"]},
+    {"action": action_names.WITH_COLUMNS, "named_exprs": {"double": "pl.col('v') * 2"}},
+    {"action": action_names.RENAME, "mapping": {"v": "value"}},
+], ids=["head", "remove", "with_columns another column", "rename another column"])
+def test_a_step_that_removes_rows_or_writes_other_columns_keeps_the_table_itself(before):
+    assert anti_join_with_itself("A", [before], join()) == {"table": "A", "keys": ["id"]}
+
+
+@pytest.mark.parametrize("before", [
+    {"action": action_names.WITH_COLUMNS, "named_exprs": {"id": "pl.col('id').str.to_uppercase()"}},   # writes the key
+    {"action": action_names.RENAME, "mapping": {"id": "key"}},                                         # renames the key away
+    {"action": action_names.RENAME, "mapping": {"other": "id"}},                                       # writes the key by a rename
+    {"action": action_names.WITH_COLUMNS, "named_exprs": "not a mapping"},                             # cannot be read
+    {"action": action_names.RENAME},                                                                    # cannot be read
+])
+def test_a_step_that_writes_or_renames_the_key_or_cannot_be_read_is_every_other_self_join(before):
+    assert anti_join_with_itself("A", [before], join()) is None
+
+
+@pytest.mark.parametrize("before,expected", [
+    ({"action": action_names.WITH_COLUMNS, "named_exprs": {"id": "pl.col('id')"}}, (0, 1)),   # writes the key: J12
+    ({"action": action_names.UNIQUE}, (1, 0)),                                                 # only removes rows: J15
+])
+def test_the_checker_gives_j15_or_j12_never_neither(before, expected):
+    raw = recipe()
+    raw["joins"]["AB"]["steps"]["tier1"].insert(0, before)
+    assert (len(codes(raw, "J15")), len(codes(raw, "J12"))) == expected

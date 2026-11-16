@@ -726,26 +726,25 @@ class _Check:
                 return
             if "right_ingredient" in before:
                 left_tables.append(before["right_ingredient"])
-            elif before.get("action") not in JOIN_KEEPS_COLUMNS:
-                return
+            # any other step leaves the tables that make the left table as they are: it can change the rows or the columns
+            # of the left table, but not which tables were joined, so the advice below is still given (D-0078: no self-join is silent)
         anti = join_keys.anti_join_with_itself(ingredient_ids[0], tier1[:position], step)
         if anti is not None:
             what, fix = join_keys.anti_join_with_itself_text(anti)
             self.add("J15", where, what, fix)
         elif right_id in left_tables and left_keys == right_keys:
             how = step.get("how", "left")
-            if how in ("semi", "anti"):
-                effect = (f"No column is copied; 'semi' keeps only the rows whose key is found in {right_id!r} itself."
-                          if how == "semi" else
-                          "No column is copied; 'anti' removes every row that has a key, because each such row matches itself.")
+            if how == "anti":
+                message = (f"This step joins {right_id!r} to a table that already holds it, on the same key {left_keys}, with how 'anti'. "
+                           f"It removes the rows whose key is found in {right_id!r}; no column is copied.")
+            elif how == "semi":
+                message = (f"The join of {right_id!r} with itself uses the same key {left_keys} ('how': semi). "
+                           f"No column is copied; 'semi' keeps only the rows whose key is found in {right_id!r} itself.")
             else:
                 suffix = step.get("suffix") or "_right"
-                effect = (f"The result has the same rows if each value of the column appears once, and more rows if a value repeats; "
-                          f"the columns are copied with the suffix `{suffix}`.")
-            if how in ("semi", "anti"):
-                message = f"The join of {right_id!r} with itself uses the same key {left_keys} on both sides ('how': {how}). {effect}"
-            else:
-                message = f"Join of {right_id!r} with itself on the same column ({', '.join(map(repr, left_keys))}). {effect}"
+                message = (f"Join of {right_id!r} with itself on the same column ({', '.join(map(repr, left_keys))}). "
+                           f"The result has the same rows if each value of the column appears once, and more rows if a value repeats; "
+                           f"the columns are copied with the suffix `{suffix}`.")
             self.add("J12", where, message, "Suggestion: remove the step if you did not mean this.", "A")
         fields_by_table = {table: self.declared_fields(table) for table in set(left_tables) | {right_id}}
         for table, columns in ((None, left_keys), (right_id, right_keys)):

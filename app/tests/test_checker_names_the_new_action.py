@@ -51,3 +51,10 @@ def test_the_removed_actions_of_the_older_table_still_name_their_replacement():
     problem, = refusal("polars_join_where")
     assert "Suggestion: use modif_join_where." == problem.fix
     assert set(REMOVED_ACTIONS) <= set(CATALOGS["old_action_names"])
+
+
+def test_the_label_is_not_doubled_in_the_text_of_the_refusal():
+    """After the one label function (`utils.fix_text`): 'Fix: Suggestion: ...' must not be read."""
+    for name in ("mutate", "scan_parquet", "polars_sortt"):
+        text = refusal(name)[0].text()
+        assert "Fix: Suggestion" not in text and "Suggestion:" in text

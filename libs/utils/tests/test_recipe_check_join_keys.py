@@ -220,6 +220,34 @@ def test_j12_text_for_semi_says_no_column_is_copied():
     assert "_right" not in text and "more rows" not in text
 
 
+def _j12_anti_text(*earlier):
+    """An anti-join that J15 does not catch: of a table joined before, or of the base table after a step that may change the key."""
+    raw = valid()
+    steps = raw["joins"]["AB"]["steps"]["tier1"]
+    steps[:] = [*earlier, {"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "anti"}]
+    problems = advices(raw, "J12")
+    assert len(problems) == 1 and advices(raw, "J15") == []
+    return problems[0].message + " | " + problems[0].fix
+
+
+def test_j12_text_for_anti_of_a_table_joined_before_says_what_it_does():
+    """Left join of B, then anti of B on the key: it removes the rows whose key is found in B (a real build keeps 3 of 5 rows:
+    `app/tests/test_every_self_join_gets_a_message.py`, case 14). The old text said it removed every row, which is false here."""
+    text = _j12_anti_text({"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "left"})
+    assert "removes the rows whose key is found in 'B'" in text and "no column is copied" in text.lower()
+    assert "matches itself" not in text and "every row that has a key" not in text
+    assert text.endswith("Suggestion: remove the step if you did not mean this.")
+
+
+def test_j12_text_for_anti_of_the_base_table_after_a_step_that_writes_the_key():
+    raw = valid()
+    steps = raw["joins"]["AB"]["steps"]["tier1"]
+    steps[:] = [{"action": "polars_with_columns", "named_exprs": {"id": "pl.col('id').str.to_uppercase()"}},
+                {"action": "polars_join", "right_ingredient": "A", "on": "id", "how": "anti"}]
+    problem, = advices(raw, "J12")
+    assert "removes the rows whose key is found in 'A'" in problem.message and advices(raw, "J15") == []
+
+
 def test_j12_text_names_the_suffix_of_the_step():
     text = _j12_text(suffix="_again")
     assert "_again" in text and "_right" not in text
