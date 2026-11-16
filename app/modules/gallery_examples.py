@@ -60,7 +60,7 @@ class InputsChangedDuringBuild(RuntimeError):
 
 def tell_inputs_changed(change) -> None:
     """A preview was drawn from a table built while its recipe or data changed: the preview command FAILS with the plain notice
-    (RELAYED from Eve by her review session, M167, not yet a ledger line; D-0050 no silent error). A picture that may mix the files
+    (Eve's decision D-0181, option b: "The gallery preview command fails (option b) when its input files change during a build"; D-0050 no silent error). A picture that may mix the files
     from before and after the change is never drawn: the example gets no picture, the command prints why and exits with 1."""
     from app.modules.data_change_notice import inputs_changed_during_build_notice
     raise InputsChangedDuringBuild(inputs_changed_during_build_notice(change.text, "run the command again when the files are stable"))
