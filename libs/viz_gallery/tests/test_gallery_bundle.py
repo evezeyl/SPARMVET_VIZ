@@ -25,6 +25,7 @@ TAXONOMY = {"family": "Ranking", "pattern": "1 Numeric, 1 Categorical", "difficu
 SPEC = {"mapping": {"x": "species", "y": "value"}, "layers": [{"name": "labs", "params": {"title": "T"}}, {"name": "geom_col", "params": {}}]}
 META = "## My Plot\n\n> an old strip\n\n### Suitability\nUse it to compare.\n"
 PNG = b"\x89PNG\r\n\x1a\n"
+CATALOGS = {"actions": {}, "components": {"geom_col", "labs"}, "component_arguments": {"geom_col": None, "labs": None}}
 
 
 def _recipe(name="my_plot", gallery="assets/gallery_data", **changes):
@@ -250,7 +251,7 @@ def _submit(manager, tmp_path, **changes):
     preview.write_bytes(PNG)
     arguments = dict(name="My Plot", data=pl.DataFrame({"species": ["E. coli", "S. aureus"], "value": [1.5, 2.0]}),
                      meta_markdown=META, taxonomy=TAXONOMY, plot_spec=SPEC, preview_path=str(preview),
-                     description="Use it to compare.")
+                     description="Use it to compare.", catalogs=CATALOGS)
     arguments.update(changes)
     return Path(manager.submit_example(**arguments))
 
@@ -282,3 +283,22 @@ def test_a_submission_without_picture_or_with_an_absolute_gallery_folder_is_refu
     with pytest.raises(ValueError, match="relative to the project root"):
         _submit(GalleryManager(str(tmp_path / "absolute")), tmp_path)
     assert list((tmp_path / "absolute").iterdir()) == [] and list(Path("assets/gallery_data").iterdir()) == []
+
+
+def test_a_submission_with_an_unknown_layer_name_is_refused_and_leaves_nothing(tmp_path, monkeypatch):
+    """The same catalogs as the app: a layer name that is not a registered component is not called valid (D-0050)."""
+    monkeypatch.chdir(tmp_path)
+    manager = GalleryManager("assets/gallery_data")
+    spec = {**SPEC, "layers": [{"name": "labs", "params": {"title": "T"}}, {"name": "geom_colum", "params": {}}]}
+    with pytest.raises(ValueError, match="geom_colum"):
+        _submit(manager, tmp_path, plot_spec=spec)
+    assert list(Path("assets/gallery_data").iterdir()) == []
+
+
+@pytest.mark.parametrize("catalogs", [{}, {"actions": {}}, {"components": {"geom_col", "labs"}}], ids=["none", "no-components", "no-actions"])
+def test_a_check_that_did_not_cover_the_actions_and_the_components_is_refused(tmp_path, monkeypatch, catalogs):
+    monkeypatch.chdir(tmp_path)
+    manager = GalleryManager("assets/gallery_data")
+    with pytest.raises(ValueError, match="was not checked against"):
+        _submit(manager, tmp_path, catalogs=catalogs)
+    assert list(Path("assets/gallery_data").iterdir()) == []

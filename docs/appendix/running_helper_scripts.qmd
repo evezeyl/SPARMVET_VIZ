@@ -26,7 +26,7 @@ PYTHON="./.venv/bin/python"
 Scaffolds a new pipeline data analysis recipe from a directory of TSV files. Inspects column headers and infers a starting Rich Dictionary `input_fields` block. The flags use underscores, not hyphens, and `--primary_key_data` is required — the engine needs at least one primary-key column name to generate PK hints.
 
 ```bash
-./.venv/bin/python assets/scripts/create_data_analysis_recipe.py \
+PYTHONPATH=. ./.venv/bin/python assets/scripts/create_data_analysis_recipe.py \
     --data_dir assets/test_data/my_data_analysis_recipe/ \
     --primary_key_data sample_id \
     --out_file config/data_analysis_recipes/pipelines/my_data_analysis_recipe.yaml
@@ -36,6 +36,16 @@ Scaffolds a new pipeline data analysis recipe from a directory of TSV files. Ins
 one of the two; `--metadata_file` (optional); `--primary_key_data` (**required**, one or more column
 names, checked against each file in turn); `--primary_key_metadata` (optional); `--out_file` (alias
 `--outfile`, optional — defaults to a timestamped file under `assets/template_data_analysis_recipes/`).
+
+### Convert the gallery examples to recipe format 1
+
+**Script:** `assets/scripts/convert_gallery_examples.py`
+
+Rewrites the gallery examples that are still in the old compact form as standard recipes, and sets the tag strip of each `example_meta.md`. Without `--apply` it writes nothing and lists what it would do. Like the script above, it judges the recipe with the actions and plot components of the app, so it needs `PYTHONPATH=.` (without it, it says so and stops).
+
+```bash
+PYTHONPATH=. ./.venv/bin/python assets/scripts/convert_gallery_examples.py --only bar_simple dumbbell --apply
+```
 
 ---
 

@@ -246,6 +246,23 @@ def test_the_script_writes_a_recipe_that_passes_the_checker_loads_and_reads_its_
     assert raw["metadata_schema"]["input_fields"]["sample_id"]["is_entity_key"] is True
 
 
+def test_the_script_refuses_a_recipe_with_an_unknown_action_name_like_the_app_does(project, monkeypatch, capsys):
+    """The script judged its recipe without the action catalog, so an unknown action name passed (D-0050)."""
+    real_build = create_script.build
+
+    def build_with_a_wrong_action(*arguments, **keywords):
+        recipe = real_build(*arguments, **keywords)
+        table = next(iter(recipe["data_schemas"].values()))
+        table["wrangling"]["tier1"] = [{"action": "keep_columns", "columns": ["sample_id"]}]
+        return recipe
+
+    monkeypatch.setattr(create_script, "build", build_with_a_wrong_action)
+    code = run_script("--data_files", "data/samples.tsv", "--primary_key_data", "sample_id", "--out_file", "recipes/scaffold.yaml")
+    assert code == 1
+    assert "ST02" in capsys.readouterr().out
+    assert not (project / "recipes" / "scaffold.yaml").exists()
+
+
 def test_the_script_writes_no_old_word_in_any_file(project):
     assert run_script("--data_files", "data/samples.tsv", "--primary_key_data", "sample_id", "--out_file", "recipes/scaffold.yaml") == 0
     files = written_files(project / "recipes")

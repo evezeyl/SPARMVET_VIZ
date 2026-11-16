@@ -40,7 +40,7 @@ META_FILE = "example_meta.md"
 PREVIEW_FILE = "preview_plot.png"
 THUMB_FILE = "preview_thumb.png"
 INDEX_FILE = "gallery_index.json"
-CONVERT_HINT = "python assets/scripts/convert_gallery_examples.py --only {name} --apply"
+CONVERT_HINT = "PYTHONPATH=. ./.venv/bin/python assets/scripts/convert_gallery_examples.py --only {name} --apply (from the project root)"
 
 
 @dataclass(frozen=True)
@@ -161,13 +161,16 @@ class GalleryManager:
         return examples, "rewritten"
 
     def submit_example(self, name: str, data: pl.DataFrame, meta_markdown: str, taxonomy: Dict[str, str],
-                       plot_spec: dict, preview_path: str, description: str = "") -> str:
+                       plot_spec: dict, preview_path: str, description: str = "", *, catalogs: dict) -> str:
         """Write a new example folder as a standard recipe and return its path.
 
         The recipe is checked before anything is written: a wrong taxonomy term or plot specification raises
         `ValueError` with the reasons and leaves no folder. `taxonomy` holds the five typed axes; the geom is read
         from the layers. `preview_path` is the picture of the plot (rendered by the caller through the app's path);
-        it is required because an example without its picture is not shown.
+        it is required because an example without its picture is not shown. `catalogs` are the registries of the actions
+        and the plot components as plain data (`checker_catalogs()` of the app layer, which this library may not
+        import): the same ones the app judges every example with, so an unknown action or layer name is refused here
+        too (D-0050); a check that did not cover both is refused.
         """
         if not Path(preview_path).is_file():
             raise ValueError(f"the preview picture {preview_path} does not exist. Fix: render the plot and pass its PNG file")
@@ -190,9 +193,12 @@ class GalleryManager:
                 data_path=f"./{(target / DATA_FILE).as_posix()}", fields=fields, taxonomy=taxonomy,
                 plot_id=slug, plot_spec=plot_spec, data_description=data_summary(staging / DATA_FILE),
                 plot_description=plot_summary(plot_spec), submission_date=datetime.now().strftime("%Y-%m-%d"))
-            errors = check_recipe(recipe, "gallery", file_stem=folder_name).errors
-            if errors:
-                raise ValueError("the example is not a valid gallery recipe:\n" + "\n".join(problem.text() for problem in errors))
+            result = check_recipe(recipe, "gallery", file_stem=folder_name, catalogs=catalogs)
+            if not {"actions", "components"} <= result.coverage:
+                raise ValueError("the example was not checked against the actions and the plot components, so it cannot be called valid. "
+                                 "Fix: pass catalogs that hold `actions` and `components` (checker_catalogs())")
+            if result.errors:
+                raise ValueError("the example is not a valid gallery recipe:\n" + "\n".join(problem.text() for problem in result.errors))
             (staging / RECIPE_FILE).write_text(dump_example(recipe), encoding="utf-8")
             (staging / META_FILE).write_text(with_tag_strip(meta_markdown, tag_strip(example_taxonomy(recipe))), encoding="utf-8")
             shutil.copy(preview_path, staging / PREVIEW_FILE)

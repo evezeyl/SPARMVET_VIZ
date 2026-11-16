@@ -9,6 +9,7 @@ import polars as pl
 from typing import Dict, Any, List
 # Import the registry functions
 from transformer.registry import get_action_function
+from utils.step_migration import removed_action_catalog
 from utils.action_names import JOIN
 from utils.errors import TransformationError, DataAnalysisRecipeError
 from utils.pipeline_error import PipelineError
@@ -115,7 +116,7 @@ class DataWrangler:
                     component="DataWrangler",
                     problem=f"Action '{action_name}' is not registered.",
                     location=f"wrangling step {step_idx}",
-                    fix=(
+                    fix=str(exc) if action_name in removed_action_catalog() else (
                         f"'{action_name}' is not a registered wrangling action. "
                         "See rules_agent_role_bioscientist.md §8 for the authoritative action list."
                     ),

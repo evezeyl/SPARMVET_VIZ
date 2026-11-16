@@ -285,3 +285,34 @@ def test_split_and_explode_works_on_a_categorical_column_as_the_old_action_did()
     got = _new(convert_step({"action": "split_and_explode", "columns": ["genes"], "separator": ","}), frame)
     expected = frame.lazy().with_columns(pl.col("genes").cast(pl.String).str.split(",")).explode("genes").collect()
     assert got.to_dicts() == expected.to_dicts() and got["genes"].dtype == pl.String
+
+
+# -- split_column_to_parts: converted, with no frozen snapshot of the old action --------------------------------------
+# The test of the old action (`test_replacements_by_polars_steps.py`, removed with the old actions in 6f3ec110) pinned that
+# `split_column_to_parts` lost the part left over ("a/b/c" into two columns kept "b" and dropped "c") and that the Polars
+# steps keep it ("b/c"). The old action cannot run any more, so the old half is not tested again (it stays in the history of
+# that file); what the migration writes and what the new steps give is tested here, with the remainder case.
+
+SPLIT_STEPS = [
+    {"action": "polars_str_splitn", "columns": ["sp"], "by": "/", "n": 2, "target_column": "_split_parts"},
+    {"action": "polars_unnest", "columns": ["_split_parts"]},
+    {"action": "polars_rename", "mapping": {"field_0": "genus", "field_1": "species"}},
+]
+
+
+def test_split_column_to_parts_is_converted_to_splitn_unnest_rename():
+    old = {"action": "split_column_to_parts", "column": "sp", "separator": "/", "new_columns": ["genus", "species"]}
+    assert convert_step(copy.deepcopy(old)) == SPLIT_STEPS
+
+
+def test_split_column_to_parts_reads_the_column_alias_and_writes_the_default_separator():
+    old = {"action": "split_column_to_parts", "columns": ["sp"], "new_columns": ["genus", "species"]}
+    assert convert_step(copy.deepcopy(old)) == SPLIT_STEPS  # the old default separator "/" is written into the step
+
+
+def test_the_converted_steps_split_and_keep_the_part_that_is_left_over():
+    frame = pl.DataFrame({"sp": ["Escherichia/coli", "Klebsiella/pneumoniae/extra", "Salmonella", None]})
+    result = _new(SPLIT_STEPS, frame)
+    assert result.columns == ["sp", "genus", "species"]  # the source column stays (no drop_source in the old step)
+    assert result["genus"].to_list() == ["Escherichia", "Klebsiella", "Salmonella", None]
+    assert result["species"].to_list() == ["coli", "pneumoniae/extra", None, None]

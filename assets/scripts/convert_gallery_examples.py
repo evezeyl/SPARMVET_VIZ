@@ -13,7 +13,8 @@ recipe, the same format as every other recipe:
     it is read from the first geom_ or stat_ layer of the plot;
   - steps: `tier1` and `tier2` go to the schema, `tier3` goes to `steps: {tier3: [...]}` on the plot entry.
 
-The result is checked with `check_recipe` (profile `gallery`) before it is written. An example that the checker
+The result is checked with `check_recipe` (profile `gallery`) before it is written, with the same catalogs of actions
+and plot components as the app (`checker_catalogs()`), so an unknown action or layer name is refused here too. An example that the checker
 refuses is NOT converted and its reasons are printed (for example steps in tier 3: the engine does not read tier 3
 yet). A file with `#` comments is not converted either: a rewrite would lose them.
 
@@ -22,10 +23,10 @@ recipe, for converted and for already standard examples. No other line of that f
 
 Without --apply nothing is written: the script lists what it would do. Safe to run twice.
 
-Examples:
-  .venv/bin/python assets/scripts/convert_gallery_examples.py
-  .venv/bin/python assets/scripts/convert_gallery_examples.py --only bar_simple dumbbell
-  .venv/bin/python assets/scripts/convert_gallery_examples.py --apply
+Examples (from the project root, `PYTHONPATH=.` because the catalogs are read from the app layer):
+  PYTHONPATH=. .venv/bin/python assets/scripts/convert_gallery_examples.py
+  PYTHONPATH=. .venv/bin/python assets/scripts/convert_gallery_examples.py --only bar_simple dumbbell
+  PYTHONPATH=. .venv/bin/python assets/scripts/convert_gallery_examples.py --apply
 """
 import argparse
 import os
@@ -107,7 +108,21 @@ def data_path_for(folder: Path, root: Path) -> str:
     return f"./{relative}/{DATA_FILE}"
 
 
-def convert_bundle(folder: Path, root: Path) -> Outcome:
+def checker_catalogs() -> dict:
+    """The catalogs of actions and plot components of the app. `app` is found only from the project root with PYTHONPATH=.,
+    so it is imported here and not at the top: `--help` works without it, and a run without it says what to type."""
+    try:
+        from app.modules.data_analysis_recipe_validator import checker_catalogs as app_catalogs
+    except ModuleNotFoundError as error:
+        if error.name != "app":
+            raise
+        raise ValueError("The script judges each recipe with the actions and plot components of the app, and Python cannot find the folder `app` from here. "
+                         "Suggestion: run it from the project root with PYTHONPATH=., for example: "
+                         "PYTHONPATH=. ./.venv/bin/python assets/scripts/convert_gallery_examples.py --apply") from error
+    return app_catalogs()
+
+
+def convert_bundle(folder: Path, root: Path, catalogs: dict) -> Outcome:
     """Read one example folder and say what to write; nothing is written here."""
     name = folder.name
     recipe_path, meta_path, data_file = folder / RECIPE_FILE, folder / META_FILE, folder / DATA_FILE
@@ -138,7 +153,7 @@ def convert_bundle(folder: Path, root: Path) -> Outcome:
             data_path=data_path_for(folder, root), fields=fields, taxonomy=info, plot_id=plot_id, plot_spec=plot_spec,
             data_description=data_summary(data_file), plot_description=plot_summary(plot_spec),
             tier1=wrangling.get("tier1"), tier2=wrangling.get("tier2"), tier3=wrangling.get("tier3"))
-        errors = check_recipe(recipe, "gallery", file_stem=name).errors
+        errors = check_recipe(recipe, "gallery", file_stem=name, catalogs=catalogs).errors
         if errors:
             return Outcome(name, "not converted", [problem.text() for problem in errors])
         outcome = Outcome(name, "converted", recipe_text=dump_example(recipe))
@@ -172,11 +187,12 @@ def convert(gallery: Path, root: Path, only: Optional[List[str]] = None, apply: 
     unknown = sorted(set(only or []) - {d.name for d in folders})
     if unknown:
         raise ValueError(f"no such example folder in {gallery}: {', '.join(unknown)}")
+    catalogs = checker_catalogs()
     outcomes = []
     for folder in folders:
         if only and folder.name not in only:
             continue
-        outcome = convert_bundle(folder, root)
+        outcome = convert_bundle(folder, root, catalogs)
         if apply:
             if outcome.recipe_text is not None:
                 (folder / RECIPE_FILE).write_text(outcome.recipe_text, encoding="utf-8")
