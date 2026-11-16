@@ -1,7 +1,7 @@
 """A plot that explains its own failure: the plot the factory builds, and the one checked call that draws it (VIZ-STANDARD-1, V7).
 
 # @deps
-# provides: class:CheckedPlot, class:PlotContext, class:Step, function:draw_checked, function:show_draw_errors, function:plot_warnings, function:explain_build_failure
+# provides: class:CheckedPlot, class:PlotContext, class:Step, function:plot_environment, function:draw_checked, function:show_draw_errors, function:plot_warnings, function:explain_build_failure
 # consumes: libs/viz_factory/src/viz_factory/errors.py, libs/viz_factory/src/viz_factory/arguments.py, libs/viz_factory/src/viz_factory/registry.py, plotnine, matplotlib
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py, app/handlers/home_theater.py, app/modules/wrangle_studio.py, app/modules/gallery_examples.py
 # doc: .claude/design/decisions_2026-11-14/viz_plan_for_eve.md (V7), .claude/rules/rules_viz_factory.md
@@ -33,6 +33,25 @@ from plotnine import aes, ggplot
 from utils.errors import VisualizationError
 
 from viz_factory.errors import CannotAct, layer_label, plot_failure
+
+
+def plot_environment():
+    """The names a text evaluated by plotnine can see: numpy maths and nothing else (PLOT-TEXT-RUNS-CODE-1).
+
+    plotnine evaluates the `formula` of a smoother and a facet expression in the frame where the plot was made, which
+    was `VizFactory.render`: its local names (the table, the recipe, `self`) were visible. The recipe check admits only
+    the allowed names (`utils.formula_check.MATH_FUNCTIONS`, `np`, `math`, `pi`, `e`); this makes them the only ones
+    that exist. `math` is numpy too, so `math.sqrt(x)` works on a column. (Python's own builtins stay visible to any
+    `eval`; the check on the text is what keeps them out of reach.)
+    """
+    import numpy as np
+    from plotnine.mapping._env import Environment
+    from utils.formula_check import MATH_CONSTANTS, MATH_FUNCTIONS
+
+    names = {name: getattr(np, name) for name in MATH_FUNCTIONS}
+    names.update(MATH_CONSTANTS)
+    names.update({"np": np, "numpy": np, "math": np})
+    return Environment([names])
 
 
 @dataclass
@@ -209,6 +228,7 @@ class PlotContext:
     def build(self, count: int, skip: Optional[tuple] = None):
         """The plot with the first `count` steps, as a plain ggplot; `skip` = (step index, parameter) leaves one parameter out."""
         p = ggplot(self.df, aes(**self.mapping))
+        p.environment = plot_environment()
         for index, step in enumerate(self.steps[:count]):
             params = dict(step.params)
             if skip and skip[0] == index:

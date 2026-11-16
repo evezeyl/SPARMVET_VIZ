@@ -24,6 +24,8 @@ from shiny import reactive, render, ui
 
 from app.modules.export_refusal import export_refusal
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
+from utils.fix_text import fix_label
+from app.modules.qmd_text import code as _qc, mermaid_label as _qm, plain as _qp, yaml_string as _qy
 from app.modules.plot_seeds import (
     bake_plot_seeds, export_seed_plan, seed_recipe_note, seed_sources_per_plot, seeds_added_to_recipe,
     seeds_per_layer_record, seeds_per_plot_record, render_seed_args, with_seed_steps,
@@ -271,8 +273,14 @@ def failed_plot_stub(exc: Exception) -> str:
     stub = f"Plot render failed:\n{exc}"
     pipeline_error = getattr(exc, "pipeline_error", None)
     if pipeline_error is not None and pipeline_error.fix and pipeline_error.fix not in str(exc):
-        stub += f"\n\nFix ({pipeline_error.who}): {pipeline_error.fix}"
+        stub += f"\n\n{fix_label(pipeline_error.fix, pipeline_error.who)}"
     return stub
+
+
+def _quote(name) -> str:
+    """A file name inside a Markdown link target (a space or a bracket would end the link)."""
+    from urllib.parse import quote
+    return quote(str(name), safe="")
 
 
 def plot_report_lines(p_id: str, label: str, caption: str, fig_id: str, plot_ext: str, failure: str | None) -> list:
@@ -280,10 +288,10 @@ def plot_report_lines(p_id: str, label: str, caption: str, fig_id: str, plot_ext
 
     A failed plot has no picture in the bundle, so a figure link would be a broken one (VIZ-STANDARD-1)."""
     if failure is None:
-        return [f"### {label}", "", f"![{caption}](_render/{p_id}.{plot_ext}){{#{fig_id} width=95%}}", ""]
+        return [f"### {_qp(label)}", "", f"![{caption}](_render/{_quote(p_id)}.{plot_ext}){{#{fig_id} width=95%}}", ""]
     reason = " ".join(str(failure).split())
-    return [f"### {label}", "", f"> **This plot was not drawn.** {reason}  ",
-            f"> The same text is in `plots/{p_id}_ERROR.txt` of its dataset folder.", ""]
+    return [f"### {_qp(label)}", "", f"> **This plot was not drawn.** {_qp(reason)}  ",
+            f"> The same text is in {_qc(f'plots/{p_id}_ERROR.txt')} of its dataset folder.", ""]
 
 
 def _embed_png_provenance(
@@ -374,11 +382,11 @@ def _build_methods_section(
 
     # T3 node prose
     for p_id, nodes in (t3_by_plot or {}).items():
-        plot_label = next(
+        plot_label = _qp(next(
             (s.get("title") or p_id.replace("_", " ").title()
              for pid, s in all_plots if pid == p_id),
             p_id.replace("_", " ").title(),
-        )
+        ))
         for n in nodes:
             nt = n.get("node_type", "")
             params = n.get("params", {})
@@ -386,16 +394,16 @@ def _build_methods_section(
             verb = _node_verb.get(nt, "An adjustment was applied")
 
             if nt in ("filter_row", "exclusion_row"):
-                col = params.get("column", "?")
-                op = _op_prose.get(params.get("op", "eq"), params.get("op", ""))
+                col = _qp(params.get("column", "?"))
+                op = _qp(_op_prose.get(params.get("op", "eq"), params.get("op", "")))
                 val = params.get("value", "")
                 val_str = (
-                    ", ".join(f'"{v}"' for v in val) if isinstance(val, list)
-                    else f'"{val}"'
+                    ", ".join(f'"{_qp(v)}"' for v in val) if isinstance(val, list)
+                    else f'"{_qp(val)}"'
                 )
                 if params.get("op") == "between" and isinstance(val, list) and len(val) == 2:
                     # ADR-104 point 8: the report says which ends of the range were included (an old step: both)
-                    detail = f"where **{col}** is " + between_prose(val, params.get("closed", "both"))
+                    detail = f"where **{col}** is " + _qp(between_prose(val, params.get("closed", "both")))
                 else:
                     detail = f"where **{col}** is {op} {val_str}"
                 # NA-RULE-63: the choice made for the rows with no value in the column (an old step removed them)
@@ -405,7 +413,7 @@ def _build_methods_section(
                 scope = f" (plot: *{plot_label}*)" if p_id != "__all__" else ""
                 sentence = f"{verb} {detail}{scope}."
             elif nt == "drop_column":
-                col = params.get("column", "?")
+                col = _qp(params.get("column", "?"))
                 scope = f" (plot: *{plot_label}*)" if p_id != "__all__" else ""
                 sentence = f"Column **{col}** was permanently removed from the exported data{scope}."
             elif nt == "aesthetic_override":
@@ -413,26 +421,26 @@ def _build_methods_section(
                 sentence = f"Plot aesthetics were adjusted{scope}."
             elif nt == "random_seed":
                 sentence = (f"The arrangement of the random points of plot *{plot_label}* was fixed with the seed "
-                            f"**{params.get('seed')}**.")
+                            f"**{_qp(params.get('seed'))}**.")
             else:
                 scope = f" (plot: *{plot_label}*)" if p_id != "__all__" else ""
                 sentence = f"{verb}{scope}."
 
             if reason:
-                sentence += f" *Reason: {reason}*"
+                sentence += f" *Reason: {_qp(reason)}*"
             prose_items.append(sentence)
 
     # Aesthetic overrides prose (from t3_plot_overrides — stored separately per §12c)
     for p_id, overrides in (t3_aesthetic_overrides or {}).items():
-        plot_label = next(
+        plot_label = _qp(next(
             (s.get("title") or p_id.replace("_", " ").title()
              for pid, s in all_plots if pid == p_id),
             p_id.replace("_", " ").title(),
-        )
+        ))
         if overrides:
             keys = [k for k in ("fill", "colour", "alpha", "shape", "size", "theme") if k in overrides]
             if keys:
-                detail = ", ".join(keys)
+                detail = _qp(", ".join(keys))
                 prose_items.append(
                     f"Plot visual properties ({detail}) were overridden for plot *{plot_label}*."
                 )
@@ -1482,9 +1490,9 @@ def define_export_server(input, output, session, *,
 
             qmd_lines = [
                 "---",
-                f'title: "Results Report — {data_analysis_recipe_id}"',
-                f'date: "{now.strftime("%Y-%m-%d")}"',
-                f'author: "{safe_name}"',
+                f"title: {_qy('Results Report — ' + str(data_analysis_recipe_id))}",
+                f"date: {_qy(now.strftime('%Y-%m-%d'))}",
+                f"author: {_qy(safe_name)}",
                 'format:',
                 '  html:',
                 '    self-contained: true',
@@ -1506,10 +1514,10 @@ def define_export_server(input, output, session, *,
                 "",
                 "## Overview",
                 "",
-                f"Data analysis recipe: **{data_analysis_recipe_id}**  ",
-                f"App features: **{app_features}**  ",
-                f"Export preset: **{preset}**  ",
-                f"Generated: {now.strftime('%Y-%m-%d %H:%M:%S')}  ",
+                f"Data analysis recipe: **{_qp(data_analysis_recipe_id)}**  ",
+                f"App features: **{_qp(app_features)}**  ",
+                f"Export preset: **{_qp(preset)}**  ",
+                f"Generated: {_qp(now.strftime('%Y-%m-%d %H:%M:%S'))}  ",
                 "",
                 "## Dataset → Plot Mapping",
                 "",
@@ -1517,8 +1525,8 @@ def define_export_server(input, output, session, *,
                 "|---------|-------|",
             ]
             for ds_key, safe_ds, plot_list in mapping_rows:
-                plots_str = ", ".join(f"`{p}`" for p in plot_list)
-                qmd_lines.append(f"| `{ds_key}` | {plots_str} |")
+                plots_str = ", ".join(_qc(p, True) for p in plot_list)
+                qmd_lines.append(f"| {_qc(ds_key, True)} | {plots_str} |")
             qmd_lines.append("")
 
             # Decision hash rows for QMD provenance table
@@ -1526,11 +1534,11 @@ def define_export_server(input, output, session, *,
             _dh_qmd_rows = []
             for _ds_k, _k in prov.get("stage_keys", {}).items():
                 _dh_qmd_rows.append(
-                    f"| Tier 1 key ({_ds_k}) | `{_k['tier1_key']}` | "
+                    f"| Tier 1 key ({_qp(_ds_k)}) | {_qc(_k['tier1_key'], True)} | "
                     "Chained key of the Tier 1 parquet: engine version, resolved data analysis recipe, data |"
                 )
                 _dh_qmd_rows.append(
-                    f"| Tier 2 key ({_ds_k}) | `{_k['tier2_key'] or 'none (T2 equals T1)'}` | "
+                    f"| Tier 2 key ({_qp(_ds_k)}) | {_qc(_k['tier2_key'] or 'none (T2 equals T1)', True)} | "
                     "Chained key of the Tier 2 parquet: Tier 1 key and the tier2 steps of the table (a join, or a table a plot reads directly) |"
                 )
             if _dh_qmd_rows:
@@ -1538,8 +1546,8 @@ def define_export_server(input, output, session, *,
             elif _prov_dh:
                 for _ds_k, _ds_h in _prov_dh.items():
                     _dh_qmd_rows.append(
-                        f"| Decision hash ({_ds_k}) | `{_ds_h}` | "
-                        f"SHA256 of wrangling steps for `{_ds_k}` — read from Parquet metadata key `sparmvet_decision_hash` |"
+                        f"| Decision hash ({_qp(_ds_k)}) | {_qc(_ds_h, True)} | "
+                        f"SHA256 of wrangling steps for {_qc(_ds_k, True)} — read from Parquet metadata key `sparmvet_decision_hash` |"
                     )
             else:
                 _dh_qmd_rows.append(
@@ -1548,15 +1556,15 @@ def define_export_server(input, output, session, *,
                 )
             # Software version row
             _sw_qmd = prov.get("software_versions", {})
-            _sw_qmd_str = "; ".join(f"{k}={v}" for k, v in _sw_qmd.items()) if _sw_qmd else "n/a"
+            _sw_qmd_str = _qp("; ".join(f"{k}={v}" for k, v in _sw_qmd.items()) if _sw_qmd else "n/a")
 
             qmd_lines += [
                 "## Provenance",
                 "",
-                f"**Git commit:** `{prov['git_commit']}`  ",
-                f"**Release:** `{prov['release_version']}`  ",
+                f"**Git commit:** {_qc(prov['git_commit'])}  ",
+                f"**Release:** {_qc(prov['release_version'])}  ",
                 f"**Software:** {_sw_qmd_str}  ",
-                f"**Data analysis recipe:** `{prov['data_analysis_recipe_name']}` — `{prov['data_analysis_recipe_path']}`  ",
+                f"**Data analysis recipe:** {_qc(prov['data_analysis_recipe_name'])} — {_qc(prov['data_analysis_recipe_path'])}  ",
                 "",
                 "> The full verification record — recipe/data/T3-steps/engine hashes, per-plot",
                 "> seeds, environment — is in **`effective_run.yaml`**, included in this bundle.",
@@ -1598,7 +1606,7 @@ def define_export_server(input, output, session, *,
                 label = spec.get("title") or p_id.replace("_", " ").title()
                 ds_note = spec.get("target_dataset") or "—"
                 fig_id = f"fig-{_re.sub(r'[^A-Za-z0-9]', '-', p_id)}"
-                caption = f"{label} — dataset: `{ds_note}`"
+                caption = f"{_qp(label)} — dataset: {_qc(ds_note)}"
                 qmd_lines += plot_report_lines(p_id, label, caption, fig_id, plot_ext, failed_plots.get(p_id))
 
             qmd_lines += [
@@ -1615,8 +1623,8 @@ def define_export_server(input, output, session, *,
                     f"{df_preview.height} rows × {len(df_preview.columns)} columns"
                     if df_preview is not None else ""
                 )
-                plots_str = ", ".join(f"`{p}`" for p in plot_list)
-                qmd_lines += [f"### {ds_key}", ""]
+                plots_str = ", ".join(_qc(p) for p in plot_list)
+                qmd_lines += [f"### {_qp(ds_key)}", ""]
                 qmd_lines.append(f"*Used by: {plots_str}*  ")
                 if shape_note:
                     qmd_lines.append(f"*{shape_note}*  ")
@@ -1627,7 +1635,7 @@ def define_export_server(input, output, session, *,
                         "T3": "Analyst-filtered data (T3)",
                     }.get(tier, tier)
                     qmd_lines.append(
-                        f"[{tier_label}]({safe_ds}/{tier}_data.tsv)"
+                        f"[{tier_label}]({_quote(safe_ds)}/{tier}_data.tsv)"
                     )
                 qmd_lines.append("")
 
@@ -1638,7 +1646,7 @@ def define_export_server(input, output, session, *,
                     _spec_title = next(
                         (s.get("title") for p, s in all_plots if p == _pid), None
                     )
-                    _section_label = _spec_title or _pid.replace("_", " ").title()
+                    _section_label = _qp(_spec_title or _pid.replace("_", " ").title())
                     qmd_lines += [
                         f"### {_section_label}",
                         "",
@@ -1648,12 +1656,12 @@ def define_export_server(input, output, session, *,
                     for _i, _n in enumerate(_nodes, 1):
                         _action = _n.get("node_type", "?")
                         _params = _n.get("params", {})
-                        _details = "; ".join(
+                        _details = _qp("; ".join(
                             f"{k}={v}" for k, v in _params.items()
-                        ) if _params else "—"
-                        _reason = (_n.get("reason") or "—").replace("|", "\\|")
+                        )) if _params else "—"
+                        _reason = _qp(_n.get("reason") or "—")
                         qmd_lines.append(
-                            f"| {_i} | `{_action}` | {_details} | {_reason} |"
+                            f"| {_i} | {_qc(_action, True)} | {_details} | {_reason} |"
                         )
                     qmd_lines.append("")
 
@@ -1674,11 +1682,11 @@ def define_export_server(input, output, session, *,
                     "|------|-----------|----------|---------|",
                 ]
                 for _pe in _pe_entries:
-                    _ts = (_pe.get("timestamp") or "")[:19].replace("T", " ")
+                    _ts = _qp((_pe.get("timestamp") or "")[:19].replace("T", " "))
                     _comp = _pe.get("component", "?")
-                    _sev = _pe.get("severity", "error").upper()
-                    _prob = (_pe.get("problem") or "Unknown error")[:120].replace("|", "\\|")
-                    qmd_lines.append(f"| {_ts} | `{_comp}` | {_sev} | {_prob} |")
+                    _sev = _qp(_pe.get("severity", "error").upper())
+                    _prob = _qp((_pe.get("problem") or "Unknown error")[:120])
+                    qmd_lines.append(f"| {_ts} | {_qc(_comp, True)} | {_sev} | {_prob} |")
                 qmd_lines.append("")
 
             # ── Data Lineage section ──────────────────────────────────────
@@ -1705,7 +1713,7 @@ def define_export_server(input, output, session, *,
                 qmd_lines += ["```{mermaid}", "flowchart LR"]
                 for _nid, _nd in _lineage_nodes.items():
                     _t = _nd["type"]
-                    _lbl = _nd["label"].replace('"', "'")
+                    _lbl = _qm(_nd["label"])
                     _tlbl = _mmd_type_labels.get(_t, _t)
                     _open, _close = _mmd_shapes.get(_t, ('["', '"]'))
                     qmd_lines.append(
@@ -1731,8 +1739,8 @@ def define_export_server(input, output, session, *,
                 ):
                     _nd_rel = _nd.get("rel") or "—"
                     qmd_lines.append(
-                        f"| `{_nd['type']}` | `{_nd['schema_id']}` "
-                        f"| {_nd['label']} | `{_nd_rel}` |"
+                        f"| {_qc(_nd['type'], True)} | {_qc(_nd['schema_id'], True)} "
+                        f"| {_qp(_nd['label'])} | {_qc(_nd_rel, True)} |"
                     )
                 qmd_lines += [
                     "",
@@ -1745,7 +1753,7 @@ def define_export_server(input, output, session, *,
             if wants_mode2:
                 _seed_note = seed_recipe_note(_plot_seeds, dict(all_plots))
                 if _seed_note:
-                    qmd_lines += ["## Random scatter seeds", ""] + [f"> {_l}" if _l else ">" for _l in _seed_note] + [""]
+                    qmd_lines += ["## Random scatter seeds", ""] + [f"> {_qp(_l)}" if _l else ">" for _l in _seed_note] + [""]
             qmd_lines += [
                 "---",
                 "",
@@ -1777,7 +1785,7 @@ def define_export_server(input, output, session, *,
                     (render_tmp / f"{p_id}.{qmd_plot_fmt}").write_bytes(raw)
                 try:
                     result = _sp.run(
-                        ["quarto", "render", str(qmd_tmp),
+                        ["quarto", "render", str(qmd_tmp), "--no-execute",
                          "--to", out_ext,
                          "--output", f"report.{out_ext}"],
                         capture_output=True, text=True, timeout=120,

@@ -18,6 +18,7 @@ A component that cannot act raises `CannotAct`, with what and how to fix; the fa
 from typing import Optional
 
 from utils.errors import VisualizationError
+from utils.fix_text import fix_label
 from utils.pipeline_error import PipelineError
 
 
@@ -31,7 +32,7 @@ class CannotAct(VisualizationError):
     def __init__(self, what: str, fix: str):
         self.what = what
         self.fix = fix
-        super().__init__(f"{what}. Fix: {fix}.", tip=fix)
+        super().__init__(f"{what}. {fix_label(fix.rstrip('. '))}.", tip=fix)
 
 
 _TIER_LABELS = {"L1": "built-in", "L2": "plot_defaults", "L3": "automatic", "L5": "override"}
@@ -70,4 +71,4 @@ def plot_failure(plot_id: str, what: str, fix: str, *, layer: Optional[str] = No
         evidence=evidence or {},
         reference=reference or "",
     )
-    return VisualizationError(f"{pipeline_error.problem} Fix: {fix}.", tip=fix, pipeline_error=pipeline_error)
+    return VisualizationError(f"{pipeline_error.problem} {fix_label(fix)}.", tip=fix, pipeline_error=pipeline_error)

@@ -9,8 +9,27 @@ from typing import Dict, Any
 import copy
 
 from plotnine import facet_wrap, facet_grid, facet_null, ggplot
+from utils.plot_text_check import facet_sides, facet_variables
 from viz_factory.errors import CannotAct
 from viz_factory.registry import register_plot_component
+
+
+def _columns(p: ggplot):
+    """The columns of the plot's data, or None when the plot has no table."""
+    data = getattr(p, "data", None)
+    return list(data.columns) if hasattr(data, "columns") else None
+
+
+def _built(component: str, make):
+    """Build the facet; what plotnine refuses is said in our words (it names no layer and gives no fix)."""
+    try:
+        return make()
+    except CannotAct:
+        raise
+    except Exception as exc:
+        first = (str(exc).strip().splitlines() or [type(exc).__name__])[0][:140]
+        raise CannotAct(f"plotnine could not build the {component} ({type(exc).__name__}: {first})",
+                        "Suggestion: write the exact name of a column of the data, or a list of names") from exc
 
 
 def _facet_before(p: ggplot, component: str, setting: str, grid_only: bool):
@@ -47,7 +66,7 @@ def _facet_before(p: ggplot, component: str, setting: str, grid_only: bool):
         "scales": {"widget": "enum", "label": "Scale freedom", "options": ["fixed", "free", "free_x", "free_y"]},
         "dir": {"widget": "enum", "label": "Fill direction", "options": ["h", "v"]},
     },
-    "description": "Wrap a 1D sequence of panels by a single variable into a 2D grid; the default faceting choice when you have one grouping variable.",
+    "description": "Wrap a 1D sequence of panels by a single variable into a 2D grid; the default faceting choice when you have one grouping variable. You write a column name, a list of names or `~ a + b`; the library hands plotnine a list of exact column names, because plotnine cut a name with a space (`~Collection year` became the column `Collection`).",
     "yaml_example": "layers:\n  - name: facet_wrap\n    params:\n      facets: Country\n      ncol: 3",
 })
 def handle_facet_wrap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
@@ -80,16 +99,24 @@ def handle_facet_grid(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     Standard 2D grid of panels.
     Supports both formula-style 'facets' (rows ~ cols) or explicit 'rows'/'cols'.
     """
+    spec = dict(spec)
+    columns = _columns(p)
     facets = spec.pop("facets", None)
-    if facets and "~" in facets:
-        items = [i.strip() for i in facets.split("~")]
-        if len(items) == 2:
-            spec["rows"] = items[0] if items[0] != "." else None
-            spec["cols"] = items[1] if items[1] != "." else None
-
-    # Remove 'facets' if still present for some reason (to avoid signature error)
-    spec.pop("facets", None)
-    return p + facet_grid(**spec)
+    if facets is not None:
+        if isinstance(facets, str):
+            try:
+                spec["rows"], spec["cols"] = facet_sides(facets, columns)
+            except ValueError as exc:
+                raise CannotAct(f"the facet formula {facets!r} is not rows ~ columns ({exc})", "Suggestion: write rows ~ columns, with one ~") from exc
+        else:
+            spec["rows"] = facets
+    # exact names, as a list (a text would be cut by plotnine at the first space, dash or dot)
+    for side in ("rows", "cols"):
+        if spec.get(side) is not None:
+            spec[side] = facet_variables(spec[side], columns)
+        if spec.get(side) == []:
+            spec[side] = None
+    return p + _built("facet_grid", lambda: facet_grid(**spec))
 
 
 @register_plot_component("facet_rows", ui_schema={
@@ -113,7 +140,7 @@ def handle_facet_rows(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     row_var = spec.pop("facets", None)
     if row_var is None:
         raise CannotAct("facet_rows has no column to split by", "write the column in `facets` (for example facets: Country); `rows` belongs to facet_grid")
-    return p + facet_grid(rows=row_var, **spec)
+    return p + _built("facet_grid", lambda: facet_grid(rows=facet_variables(row_var, _columns(p)), **spec))
 
 
 @register_plot_component("facet_cols", ui_schema={
@@ -137,7 +164,7 @@ def handle_facet_cols(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     col_var = spec.pop("facets", None)
     if col_var is None:
         raise CannotAct("facet_cols has no column to split by", "write the column in `facets` (for example facets: Year); `cols` belongs to facet_grid")
-    return p + facet_grid(cols=col_var, **spec)
+    return p + _built("facet_grid", lambda: facet_grid(cols=facet_variables(col_var, _columns(p)), **spec))
 
 
 @register_plot_component("facet_null", ui_schema={

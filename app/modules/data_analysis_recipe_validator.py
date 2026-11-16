@@ -43,6 +43,7 @@ import yaml
 from transformer.data_wrangler import DataWrangler
 from utils.step_migration import old_action_hint, removed_action_catalog
 from utils.config_loader import ConfigManager
+from utils.fix_text import fix_label
 from utils.recipe_loader import check_recipe_file
 
 # What the recipe checker must have looked at before a recipe is accepted (its `coverage`): the form of the file, every
@@ -158,7 +159,7 @@ def _fragment_report(raw) -> list[str]:
             continue
         flat = {**{k: v for k, v in step.items() if k != "params"}, **(step.get("params") or {})}
         for p in step_problems(name, flat, actions[name]):
-            lines.append(f"[{p.code}] {where} ({name}): {p.message}" + (f" Fix: {p.fix}" if p.fix else ""))
+            lines.append(f"[{p.code}] {where} ({name}): {p.message}" + (f" {fix_label(p.fix)}" if p.fix else ""))
     return lines
 
 
@@ -212,7 +213,7 @@ def _load_fragment(path: Path) -> tuple[Optional[dict], list[str]]:
     except Exception as exc:
         return None, [f"[LOAD] the file cannot be read: {exc}"]
     if found:
-        return None, [f"[LOAD] [{p.code}] {p.path + ': ' if p.path else ''}{p.message}" + (f" Fix: {p.fix}" if p.fix else "")
+        return None, [f"[LOAD] [{p.code}] {p.path + ': ' if p.path else ''}{p.message}" + (f" {fix_label(p.fix)}" if p.fix else "")
                       for p in found]
     return raw, []
 
@@ -246,7 +247,7 @@ def uploaded_recipe_report(raw, profile: str = "build") -> list[str]:
         result = check_recipe(raw, profile, catalogs=checker_catalogs())
     except Exception as exc:
         return [f"[CHECK] the recipe could not be checked: {exc}"]
-    return [f"[{p.code}] {p.path + ': ' if p.path else ''}{p.message}" + (f" Fix: {p.fix}" if p.fix else "")
+    return [f"[{p.code}] {p.path + ': ' if p.path else ''}{p.message}" + (f" {fix_label(p.fix)}" if p.fix else "")
             for p in result.errors]
 
 

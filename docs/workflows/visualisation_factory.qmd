@@ -74,7 +74,7 @@ implemented elements:
 - `geom_histogram`: Continuous frequency distributions.
 - `geom_boxplot`: Quartile summaries.
 - `geom_violin`: Density summaries (violin plots).
-- `geom_smooth`: Regression lines and CI ribbons.
+- `geom_smooth`: Regression lines and CI ribbons. A `formula` is a model formula over `x` and `y` (`y ~ x + I(x**2)`, `y ~ np.log(x)`, `y ~ bs(x, df=4)`); it is checked before it is used, and anything else is refused with a suggestion (a text of a recipe never runs as code).
 - `geom_density`: 1D Kernel density estimation.
 - `geom_errorbar`: Uncertainty visualization (range).
 - `geom_pointrange`: Uncertainty visualization (point + range).
@@ -106,6 +106,7 @@ implemented elements:
 ### Faceting (facets/core.py)
 - `facet_wrap`: Wrap panels by one or more variables.
 - `facet_grid`: 2D grid of panels (rows ~ columns).
+- A facet variable is the name of a column of the plotted table. A computed value (for example `Year > 2000`) is made first by a recipe step (`polars_with_columns`) and then named; a facet written as an expression is refused with a suggestion.
 
 ### Spatial Positions (positions/core.py)
 - `position_dodge`: Side-by-side.
