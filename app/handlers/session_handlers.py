@@ -19,14 +19,21 @@ from __future__ import annotations
 from pathlib import Path
 
 from shiny import reactive, render, ui
+from shiny.types import SilentException
+from app.modules.error_notice import issue_entry, notice
+from app.modules.plot_issue_reporter import make_issue_reporter
 from app.modules.session_manager import normalise_audit_steps
 from app.src.bootloader import bootloader
+
+
+_NOT_READ = object()   # a box of the screen that could not be read (does not exist yet, or failed)
 
 
 def define_session_server(input, output, session, *,
                           session_manager, current_app_features, home_state,
                           safe_input=None,
-                          notification_log=None):
+                          notification_log=None,
+                          session_processing_issues=None):
     """Register session-management UI + import/restore/delete reactive handlers.
 
     Parameters
@@ -43,6 +50,19 @@ def define_session_server(input, output, session, *,
     """
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
+    # A render may not write a reactive value: what a render finds wrong goes through the plot issue reporter, as a plot's
+    # error does (Processing issues table and Alerts panel, once, after the flush).
+    _report_issue = make_issue_reporter(session, session_processing_issues, notification_log)
+
+    # What was told for which click, so that a failure is told once per click and not at every re-run of the effect below
+    # (the effect re-runs whenever any box of the screen changes, and a click count stays above zero).
+    _told: dict[tuple, tuple] = {}
+
+    def _tell_once(action: str, session_key: str, token, text: str) -> None:
+        if _told.get((action, session_key)) == (token, text):
+            return
+        _told[(action, session_key)] = (token, text)
+        _notify(text, type="error", duration=10)
 
     # HOM-53 (Eve, 2026-11-08): session_management_ui had no reactive dependency on
     # anything that changes after a delete — list_all_sessions() was a plain filesystem
@@ -246,6 +266,19 @@ def define_session_server(input, output, session, *,
         proj_tag = f"_{data_analysis_recipe_id}" if data_analysis_recipe_id else ""
         return f"{ts}{proj_tag}_session.zip"
 
+    def _read_input(input_id: str, action: str, session_key: str):
+        """The value of a box of the session screen. A box that does not exist yet (SilentException) is the normal state of
+        a session whose card is not drawn: nothing is said. Any other failure to read it is told."""
+        try:
+            return getattr(input, input_id)()
+        except SilentException:
+            return _NOT_READ
+        except Exception as exc:
+            _tell_once(f"read_{action}", session_key, input_id, notice(
+                f"The {action} control of the session {session_key[:24]} could not be read",
+                "reload the page (F5); the session screen does not respond until the control can be read", exc))
+            return _NOT_READ
+
     # Session restore + delete handlers are registered dynamically per session.
     # Because Shiny requires input IDs to be registered at render time, we use
     # a single reactive scan over all known sessions to catch clicks.
@@ -260,26 +293,31 @@ def define_session_server(input, output, session, *,
 
             # Restore
             restore_id = f"session_restore_{safe_sk}"
-            try:
-                clicks = getattr(input, restore_id)()
-                if clicks and clicks > 0:
+            clicks = _read_input(restore_id, "restore", sk)
+            if clicks is not _NOT_READ and clicks and clicks > 0:
+                try:
                     _restore_session(sk)
-            except Exception:
-                pass
+                except Exception as exc:
+                    _tell_once("restore", sk, clicks, notice(
+                        f"The session {sk[:24]} could not be restored",
+                        "check that the session folder can be read and try Restore again; if it keeps failing, "
+                        "delete the session and record the steps again", exc))
 
             # Delete
             delete_id = f"session_delete_{safe_sk}"
-            try:
-                clicks = getattr(input, delete_id)()
-                if clicks and clicks > 0:
+            clicks = _read_input(delete_id, "delete", sk)
+            if clicks is not _NOT_READ and clicks and clicks > 0:
+                try:
                     session_manager.delete_session(sk)
                     _session_list_version.set(_session_list_version.get() + 1)  # HOM-53
                     _notify(
                         f"🗑 Session deleted: {sk[:24]}…",
                         type="message", duration=4,
                     )
-            except Exception:
-                pass
+                except Exception as exc:
+                    _tell_once("delete", sk, clicks, notice(
+                        f"The session {sk[:24]} could not be deleted",
+                        "close any program that uses the session folder, check that it can be written and try again", exc))
 
             # Label (REPRO-SESSION-LABELS-1, #50): saved on blur (ui.input_text's own
             # update_on="blur"), not a separate button. Idempotent guard (R3,
@@ -293,12 +331,16 @@ def define_session_server(input, output, session, *,
             # what the user typed, nothing else in this panel reads the label, and a
             # forced re-render would reset any OTHER session's box mid-edit (R4).
             label_id = f"session_label_input_{safe_sk}"
-            try:
-                new_label = (getattr(input, label_id)() or "").strip()
-                if new_label != session_manager.get_session_label(sk):
-                    session_manager.set_session_label(sk, new_label)
-            except Exception:
-                pass
+            label_box = _read_input(label_id, "label", sk)
+            if label_box is not _NOT_READ:
+                new_label = (label_box or "").strip()
+                try:
+                    if new_label != session_manager.get_session_label(sk):
+                        session_manager.set_session_label(sk, new_label)
+                except Exception as exc:
+                    _tell_once("label", sk, new_label, notice(
+                        f"The label of the session {sk[:24]} could not be saved",
+                        "check that the session folder can be written and type the label again", exc))
 
     # HOM-54: confirm-before-destroy, same ui.modal/modal_button/modal_show/modal_remove
     # pattern as the propagation modal in filter_and_audit_handlers.py.
