@@ -38,12 +38,13 @@ def notice_after_data_change(view_data_batch_hash: str | None, new_data_batch_ha
     return data_files_changed_notice(view_data_batch_hash is not None and view_data_batch_hash == new_data_batch_hash)
 
 
-def inputs_changed_during_build_notice(what_changed: str) -> str:
+def inputs_changed_during_build_notice(what_changed: str, suggestion: str = "reload the page (F5) to read the current files") -> str:
     """The sentence for a table that was built while its inputs changed (STALE-KEY-STORE-1): what happened, then a Suggestion.
 
     `what_changed` is the clause the orchestrator gives (`InputsChanged.text`), for example "the data files changed" or
     "the data analysis recipe can no longer be read (...)". The table was returned but not stored: it can mix the files
-    from before and after the change. Nothing is re-read by itself and nothing is blocked.
+    from before and after the change. Nothing is re-read by itself and nothing is blocked. `suggestion` is for a caller
+    that is not a page (the gallery previews are drawn by a command).
     """
     return (f"While a table was being built, {what_changed}, so what is shown may not match the files on disk. "
-            "Suggestion: reload the page (F5) to read the current files.")
+            f"Suggestion: {suggestion}.")
