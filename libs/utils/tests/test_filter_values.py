@@ -438,3 +438,46 @@ def test_a_datetime_between_keeps_nanoseconds():
     t = pl.concat([t, t + pl.Series([7], dtype=pl.Int64).cast(pl.Duration("ns"))])
     f = pl.DataFrame({"s": ["a", "b"], "t": t})
     assert rows_of(f, "t", "between", ["2020-01-01 10:30:00.000000007", "2020-01-01 10:30:00.000000007"]) == ["b"]
+
+
+# -- a wall-clock time that does not exist, or exists twice, in the time zone of the column (daylight-saving change)
+
+PARIS = pl.Datetime("us", "Europe/Paris")
+GAP = "2020-03-29 02:30:00"      # the clock jumps from 02:00 to 03:00: this time does not exist
+TWICE = "2020-10-25 02:30:00"    # the clock goes back from 03:00 to 02:00: this time exists twice
+
+
+def _paris_frame():
+    naive = pl.Series([datetime.datetime(2020, 3, 29, 1, 0), datetime.datetime(2020, 3, 29, 4, 0), datetime.datetime(2020, 10, 24, 12, 0)], dtype=pl.Datetime("us"))
+    return pl.DataFrame({"s": ["a", "b", "c"], "t": naive.dt.replace_time_zone("Europe/Paris")})
+
+
+@pytest.mark.parametrize("strict", [False, True])
+@pytest.mark.parametrize("op, value", [("eq", GAP), ("gt", GAP), ("in", [GAP]), ("between", ["2020-03-29 01:00:00", GAP])])
+def test_a_time_that_does_not_exist_in_the_zone_of_the_column_says_so(op, value, strict):
+    with pytest.raises(FilterValueError) as exc:
+        filter_condition("t", op, value, PARIS, strict=strict)
+    text = str(exc.value)
+    assert "does not exist" in exc.value.problem and "Europe/Paris" in exc.value.problem and GAP in exc.value.problem
+    assert "is text" not in text and "Suggestion: choose a time before or after the change" in text
+
+
+@pytest.mark.parametrize("strict", [False, True])
+@pytest.mark.parametrize("op, value", [("eq", TWICE), ("le", TWICE), ("not_in", [TWICE])])
+def test_a_time_that_exists_twice_in_the_zone_of_the_column_says_so_and_what_the_dialog_can_do(op, value, strict):
+    with pytest.raises(FilterValueError) as exc:
+        filter_condition("t", op, value, PARIS, strict=strict)
+    text = str(exc.value)
+    assert "exists twice" in exc.value.problem and "Europe/Paris" in exc.value.problem and TWICE in exc.value.problem
+    assert "is text" not in text and "Suggestion:" in text
+    assert "boxes" in exc.value.problem and "list" in exc.value.fix and "before or after the change" in exc.value.fix
+
+
+def test_the_times_around_the_change_and_a_time_with_its_offset_still_work():
+    f = _paris_frame()
+    assert f.filter(filter_condition("t", "ge", "2020-03-29 03:00:00", PARIS))["s"].to_list() == ["b", "c"]
+    assert f.filter(filter_condition("t", "lt", "2020-03-29 01:59:59", PARIS))["s"].to_list() == ["a"]
+    # an exact text with its offset says which of the two: it is read, not refused
+    assert f.filter(filter_condition("t", "eq", "2020-03-29 03:00:00+02:00", PARIS))["s"].to_list() == []
+    filter_condition("t", "eq", "2020-10-25 02:30:00+01:00", PARIS)
+    filter_condition("t", "eq", "2020-10-25 02:30:00+02:00", PARIS)

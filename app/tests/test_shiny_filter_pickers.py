@@ -280,3 +280,39 @@ def test_an_empty_box_says_so_and_adds_no_filter(page: Page, typed_app):
     expect(page.locator("#shiny-notification-panel")).to_contain_text("The time is not complete", timeout=10_000)
     expect(page.locator("#shiny-notification-panel")).to_contain_text("Suggestion:")
     expect(page.locator("#filter_rows_ui")).to_contain_text("No filters yet")
+
+
+def _clear_date(page: Page, selector: str, key: str) -> None:
+    """Empty a date box the way a user does, then leave it with `key`: Enter (the picker used to fill in today) or Tab (blur)."""
+    box = page.locator(selector)
+    box.click()
+    box.press("Control+a")
+    box.press("Delete")
+    box.press(key)
+    if key == "Enter":
+        box.press("Tab")
+    _wait_shiny(page)
+
+
+@pytest.mark.parametrize("key", ["Enter", "Tab"])
+@pytest.mark.parametrize("op, selector", [("gt", "#fb_value input"), ("between", "#fb_value_lo input"), ("between", "#fb_value_hi input")])
+def test_a_cleared_date_box_stays_empty_stages_nothing_and_says_what_to_do(page: Page, typed_app, op, selector, key):
+    """Eve 2026-11-15: a filter that lacks its value is refused, never filled in. The datepicker took Enter in an empty box as "today"."""
+    _open_dialog(page, typed_app, "day")
+    _choose_op(page, op)
+    _clear_date(page, selector, key)
+    expect(page.locator(selector)).to_have_value("")                     # no date was put in its place
+    page.locator("#filter_add_row").click()
+    expect(page.locator("#shiny-notification-panel")).to_contain_text("No date is chosen, so no filter is added", timeout=10_000)
+    expect(page.locator("#shiny-notification-panel")).to_contain_text("Suggestion: choose a date")
+    expect(page.locator("#filter_rows_ui")).to_contain_text("No filters yet")
+
+
+def test_the_date_of_a_date_and_time_cleared_is_refused_too(page: Page, typed_app):
+    _open_dialog(page, typed_app, "start")
+    _choose_op(page, "ge")
+    _clear_date(page, "#fb_value input", "Enter")
+    expect(page.locator("#fb_value input")).to_have_value("")
+    page.locator("#filter_add_row").click()
+    expect(page.locator("#shiny-notification-panel")).to_contain_text("No date is chosen", timeout=10_000)
+    expect(page.locator("#filter_rows_ui")).to_contain_text("No filters yet")

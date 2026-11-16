@@ -11,7 +11,7 @@ import pytest
 
 from app.modules.t3_audit_engine import (
     CLOSED_CHOICES, between_prose, closed_phrase, column_type_line, column_types, describe_filter, number_range,
-    LIST_ON_DEMAND_FROM, column_bounds, compose_datetime, list_note, compose_duration, compose_time, ops_for_column, pick_values, typed_operand, value_choices,
+    LIST_ON_DEMAND_FROM, column_bounds, compose_date, compose_datetime, list_note, compose_duration, compose_time, ops_for_column, pick_values, typed_operand, value_choices,
     value_widget_for,
 )
 from utils.filter_values import FilterValueError
@@ -384,10 +384,21 @@ def test_a_date_list_still_stores_the_text_of_the_dates_picked():
     assert stored2("d", "not_in", picked=["2020-01-02"]) == ("not_in", ["2020-01-02"], "both")
 
 
-def test_a_cleared_date_picker_says_so_it_is_not_silent():
-    with pytest.raises(FilterValueError) as exc:
-        stored2("d", "gt", operand=None)
-    assert "date" in exc.value.problem and "Suggestion:" in str(exc.value)
+@pytest.mark.parametrize("cleared", [None, ""])
+def test_a_cleared_date_box_is_no_date_chosen_never_a_date_filled_in(cleared):
+    """Eve 2026-11-15: a filter that lacks its value is refused, never filled in. The value the handler gets from an empty box is None
+    (or an empty text): the row cannot be added, the message says what happened and what to do."""
+    for call in (lambda: compose_date(cleared), lambda: stored2("d", "gt", operand=cleared),
+                 lambda: stored2("d", "between", low=cleared, high=D(2020, 1, 3)), lambda: stored2("d", "between", low=D(2020, 1, 1), high=cleared),
+                 lambda: compose_datetime(cleared, 10, 30, 0)):
+        with pytest.raises(FilterValueError) as exc:
+            call()
+        assert "No date is chosen" in exc.value.problem and "no filter is added" in exc.value.problem
+        assert str(exc.value).endswith("Suggestion: choose a date")
+
+
+def test_a_chosen_date_passes_compose_date():
+    assert compose_date(D(2020, 1, 2)) == D(2020, 1, 2)
 
 
 def test_a_time_stores_the_text_of_the_three_boxes_exact():
@@ -417,7 +428,7 @@ def test_a_date_time_is_the_date_and_the_three_boxes():
 def test_a_date_time_with_no_date_is_a_plain_error():
     with pytest.raises(FilterValueError) as exc:
         compose_datetime(None, 10, 30, 0)
-    assert "date" in exc.value.problem and "Suggestion:" in str(exc.value)
+    assert "No date is chosen" in exc.value.problem and "Suggestion:" in str(exc.value)
 
 
 def test_a_date_time_list_still_stores_the_exact_text():
@@ -506,3 +517,31 @@ def test_a_long_list_says_how_many_values_exist_and_that_a_search_shows_at_most_
 def test_the_pick_of_the_last_of_100000_values_is_the_real_value():
     lf = pl.LazyFrame({"name": [f"name_{i:06d}" for i in range(100_000)]})
     assert dialog_value(lf, "name", pl.String, False, "in", picked=["name_099999"])[:2] == ("in", ["name_099999"])
+
+
+# -- a time that does not exist (or exists twice) in the zone of the column is refused when the row is added
+
+@pytest.mark.parametrize("parts, what", [((D(2020, 3, 29), 2, 30, 0), "does not exist"), ((D(2020, 10, 25), 2, 30, 0), "exists twice")])
+@pytest.mark.parametrize("op", ["eq", "gt", "le"])
+def test_a_daylight_saving_time_is_refused_at_add_with_a_message_that_says_what_happened(op, parts, what):
+    t = pl.Series([datetime.datetime(2020, 1, 1, 9)], dtype=pl.Datetime("us")).dt.replace_time_zone("Europe/Paris")
+    lf = pl.LazyFrame({"t": t})
+    with pytest.raises(FilterValueError) as exc:
+        dialog_value(lf, "t", column_types(lf)["t"], False, op, operand=compose_datetime(*parts))
+    assert what in exc.value.problem and "Europe/Paris" in exc.value.problem and "is text" not in str(exc.value)
+    assert "Suggestion: choose a time before or after the change" in str(exc.value)
+
+
+def test_a_between_with_a_time_that_does_not_exist_is_refused_at_add():
+    t = pl.Series([datetime.datetime(2020, 1, 1, 9)], dtype=pl.Datetime("us")).dt.replace_time_zone("Europe/Paris")
+    lf = pl.LazyFrame({"t": t})
+    with pytest.raises(FilterValueError) as exc:
+        dialog_value(lf, "t", column_types(lf)["t"], False, "between", low=compose_datetime(D(2020, 3, 28), 0, 0, 0), high=compose_datetime(D(2020, 3, 29), 2, 30, 0))
+    assert "does not exist" in exc.value.problem
+
+
+def test_the_hours_around_the_change_are_accepted_at_add():
+    t = pl.Series([datetime.datetime(2020, 1, 1, 9)], dtype=pl.Datetime("us")).dt.replace_time_zone("Europe/Paris")
+    lf = pl.LazyFrame({"t": t})
+    for parts in ((D(2020, 3, 29), 1, 59, 59), (D(2020, 3, 29), 3, 0, 0), (D(2020, 10, 25), 1, 59, 59), (D(2020, 10, 25), 3, 0, 0)):
+        assert dialog_value(lf, "t", column_types(lf)["t"], False, "gt", operand=compose_datetime(*parts)) is not None

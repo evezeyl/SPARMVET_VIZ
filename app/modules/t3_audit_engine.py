@@ -12,9 +12,9 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_number, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:audit_failures, class:AuditStepError
+# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:audit_failures, class:AuditStepError
 # consumes: polars, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
-# consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_step_order.py, app/tests/test_removed_audit_step_type.py, app/tests/test_audit_error_names_the_plot.py
+# consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_step_order.py, app/tests/test_removed_audit_step_type.py, app/tests/test_audit_error_names_the_plot.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
 
@@ -223,10 +223,13 @@ def ops_for_column(dtype, discrete_axis: bool) -> list:
     if kind in ("int", "float"):
         return ["in", "not_in"] + numbers if discrete_axis else numbers
     if kind == "bool":
+        # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 1: true/false offers equal and not equal only.
         return ["eq", "ne"]
     if kind in ("date", "datetime"):
+        # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 2: the operators of a date: the list, every comparison and between.
         return ["in", "not_in"] + numbers
     if kind in ("time", "duration"):
+        # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 2: a time of day and a duration offer the comparisons and between, no list.
         return numbers
     return ["in", "not_in", "eq", "ne"]
 
@@ -283,11 +286,19 @@ def compose_time(hour, minute, second) -> str:
     return f"{int(hour):02d}:{int(minute):02d}:{whole.zfill(2)}" + (f".{fraction}" if fraction else "")
 
 
+def compose_date(date):
+    """The date of a date picker, or a plain refusal when the box is empty (Eve, 2026-11-15: a filter that lacks its value is refused, never filled in).
+
+    The picker gives None (or an empty text) for a cleared box; no date is put in its place.
+    """
+    if date is None or date == "":
+        raise FilterValueError("No date is chosen, so no filter is added", "choose a date")
+    return date
+
+
 def compose_datetime(date, hour, minute, second) -> str:
     """The text of a date picker and the three boxes of a time: year-month-day hour:minute:second (read in the time zone of the column)."""
-    if date is None:
-        raise _incomplete("The date and time", "no date is chosen")
-    return f"{date.isoformat()} {compose_time(hour, minute, second)}"
+    return f"{compose_date(date).isoformat()} {compose_time(hour, minute, second)}"
 
 
 def compose_duration(number, unit) -> str:
@@ -334,6 +345,7 @@ def column_bounds(lf, column: str, dtype):
     kind = kind_of(dtype)
     if kind not in ("date", "datetime", "time", "duration"):
         return None
+    # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 6: the boxes of a time, a date or a duration start at the smallest and the largest value of the column.
     expr = pl.col(column)
     if kind == "date":
         lo, hi = lf.select(expr.min().alias("lo"), expr.max().alias("hi")).collect().row(0)
@@ -395,6 +407,8 @@ def dialog_value(lf, column: str, dtype, discrete_axis: bool, op: str, *, picked
     kind = kind_of(dtype)
     ends = closed if closed in CLOSED_CHOICES else "both"
     if widget == "range" or widget.endswith("_range"):
+        if kind == "date":
+            compose_date(low), compose_date(high)
         if kind not in ("int", "float") and (low is None or high is None):
             raise FilterValueError(f"No {type_words(dtype)[:-1]} is chosen in one of the two boxes of between, so no filter is added",
                                    "choose both ends")
@@ -402,18 +416,24 @@ def dialog_value(lf, column: str, dtype, discrete_axis: bool, op: str, *, picked
             return None
         low, high = typed_operand(low, dtype), typed_operand(high, dtype)
         swap = _order_key(kind, low) > _order_key(kind, high)
-        return op, ([high, low] if swap else [low, high]), ends
+        value = [high, low] if swap else [low, high]
+        filter_condition(column, op, value, dtype, ends)   # the rule judges the whole value now: a time that does not exist is refused here, not at Apply
+        return op, value, ends
     if widget == "list":
         labels = list(picked or ())
         if not labels:
             return None
         return {"eq": "in", "ne": "not_in"}.get(op, op), pick_values(value_choices(lf, column), labels), "both"
     if widget in ("number", "bool", "date", "datetime", "time", "duration"):
+        if kind == "date":
+            compose_date(operand)
         if operand is None:
             if widget == "number":
                 return None
             raise FilterValueError(f"No value is chosen for {type_words(dtype)}, so no filter is added", "choose it in the box")
-        return op, typed_operand(operand, dtype), "both"
+        value = typed_operand(operand, dtype)
+        filter_condition(column, op, value, dtype)         # the rule judges the whole value now (a time of a zone that has no such time is refused here)
+        return op, value, "both"
     text = (text or "").strip()
     return (op, text, "both") if text else None
 

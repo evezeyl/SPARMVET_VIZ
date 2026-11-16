@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, AuditStepError, column_bounds, compose_time, compose_datetime, compose_duration, control_hint), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, AuditStepError, column_bounds, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -41,7 +41,10 @@ _log = logging.getLogger(__name__)
 
 
 def _time_boxes(suffix: str, d: dict):
-    """The three boxes of a time of day: hour, minute, second (the seconds take up to nine digits). `d` holds the defaults."""
+    """The three boxes of a time of day: hour, minute, second (the seconds take up to nine digits). `d` holds the defaults.
+
+    PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 3: three number boxes for a time of day (Shiny for Python has no time input).
+    """
     def box(label, id_, value, **kw):
         return ui.div(ui.tags.small(label, class_="text-muted"), ui.input_numeric(id_, label=None, value=value, **kw), class_="spv-flex-1")
     return ui.div(
@@ -52,14 +55,30 @@ def _time_boxes(suffix: str, d: dict):
     )
 
 
+def _date_picker(id_: str, value):
+    """A date picker whose Enter key does not choose a date.
+
+    The widget (bootstrap-datepicker) takes Enter in an empty box as "choose the highlighted day" and fills in TODAY, a date the user did
+    not choose (reproduced 2026-11-16: the box showed today and the staged line read "day > <today>"). Keyboard navigation off keeps
+    an emptied box empty, so the dialog sees "no date chosen" and refuses the row (`compose_date`). The calendar and typing stay.
+    """
+    tag = ui.input_date(id_, label=None, value=value, format="yyyy-mm-dd")
+    for child in tag.children:
+        if getattr(child, "name", None) == "input":
+            child.attrs["data-date-keyboard-navigation"] = "false"
+    return tag
+
+
 def _control(kind: str, suffix: str, d: dict):
     """The control of one value of a date, date and time, time of day or duration; `suffix` is "" (one value), "_lo" or "_hi" (between)."""
     if kind == "date":
-        return ui.input_date(f"fb_value{suffix}", label=None, value=d.get("date"), format="yyyy-mm-dd")
+        return _date_picker(f"fb_value{suffix}", d.get("date"))
     if kind == "datetime":
-        return ui.div(ui.input_date(f"fb_value{suffix}", label=None, value=d.get("date"), format="yyyy-mm-dd"), _time_boxes(suffix, d))
+        # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 5: a date and time is a date picker plus the three boxes of a time.
+        return ui.div(_date_picker(f"fb_value{suffix}", d.get("date")), _time_boxes(suffix, d))
     if kind == "time":
         return _time_boxes(suffix, d)
+    # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 4: a duration is a number with a choice of 8 units (ns, us, ms, s, min, h, d, w).
     return ui.div(  # duration: a number and its unit
         ui.div(ui.input_numeric(f"fb_value{suffix}", label=None, value=d.get("number", 0), step=1), class_="spv-flex-1"),
         ui.div(ui.input_select(f"fb_unit{suffix}", label=None, choices=list(UNIT_NS), selected=d.get("unit", "s")), class_="spv-flex-1"),

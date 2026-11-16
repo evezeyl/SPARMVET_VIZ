@@ -17,7 +17,7 @@ libs/utils/src/utils/recipe_check.py, app/handlers/filter_and_audit_handlers.py.
 If deleted: the table, the plot and the action do not filter, and the export cannot type an old value.
 """
 # @deps
-# provides: function:kind_of, function:type_words, function:read_filter_value, function:check_filter_value, function:filter_condition, class:FilterValueError
+# provides: function:kind_of, function:type_words, function:read_filter_value, function:check_filter_value, function:filter_condition, function:check_filter, function:unit_and_zone, function:duration_ns, constant:UNIT_NS, class:FilterValueError
 # consumes: polars
 # consumed_by: app/modules/t3_audit_engine.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/transformer/src/transformer/actions/modified.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py, libs/utils/src/utils/recipe_check.py, app/handlers/filter_and_audit_handlers.py, libs/utils/tests/test_filter_values.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-104
@@ -281,6 +281,23 @@ def unit_and_zone(dtype: Any) -> tuple:
     return (unit.group(1) if unit else "us"), (zone.group(1) if zone else None)
 
 
+def _wall_clock_in_zone(text: str, zone: str) -> pl.Series:
+    """A wall-clock text read in `zone`; a time that does not exist there (the clock jumps over it) or exists twice (the clock goes back)
+    is refused in plain words, never read as another time and never reported as an unreadable text."""
+    naive = pl.Series([text]).str.to_datetime(time_unit="ns")
+    try:
+        return naive.dt.replace_time_zone(zone, ambiguous="raise", non_existent="raise")
+    except Exception as exc:
+        if naive.dt.replace_time_zone(zone, ambiguous="earliest", non_existent="null").is_null().all():
+            raise FilterValueError(
+                f"The time {text} does not exist in the time zone of the column ({zone}) on that day: the clock jumps over it at the change to summer time",
+                "choose a time before or after the change") from exc
+        raise FilterValueError(
+            f"The time {text} exists twice in the time zone of the column ({zone}) on that day: the clock goes back at the change to winter time, "
+            "and the boxes of the dialog cannot say which of the two",
+            "choose a time before or after the change; to pick one of the two, use the list (one of / none of), which holds each time with its offset") from exc
+
+
 def _datetime_values(values: list, dtype: Any) -> pl.Series:
     """The values as one Series of the column's own dtype (unit and zone), parsed from their exact text.
 
@@ -291,6 +308,7 @@ def _datetime_values(values: list, dtype: Any) -> pl.Series:
     unit, zone = unit_and_zone(dtype)
     parts = []
     for value in values:
+        # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 7: a value finer than the unit of the column is refused, never cut (below).
         text = value.isoformat() if isinstance(value, datetime.datetime) else str(value).strip()
         if not _is_datetime_text(text):
             raise _wrong(value, dtype, _DATETIME_FIX)
@@ -298,7 +316,12 @@ def _datetime_values(values: list, dtype: Any) -> pl.Series:
             raise FilterValueError(f"The value {text!r} has a time zone offset, but this column has no time zone ({dtype})",
                                    "write the date and time without an offset")
         try:
-            fine = pl.Series([text]).str.to_datetime(time_unit="ns", time_zone=zone)
+            if zone is not None and not _OFFSET.search(text):
+                fine = _wall_clock_in_zone(text, zone)
+            else:
+                fine = pl.Series([text]).str.to_datetime(time_unit="ns", time_zone=zone)
+        except FilterValueError:
+            raise
         except Exception:
             raise _wrong(value, dtype, _DATETIME_FIX) from None
         coarse = fine.dt.cast_time_unit(unit)
@@ -331,6 +354,7 @@ def _duration_values(values: list, dtype: Any) -> pl.Series:
         if ns is None:
             raise _wrong(value, dtype, _DURATION_FIX)
         count = ns / UNIT_NS[unit]
+        # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 7: a value finer than the unit of the column is refused, never cut.
         if count != count.to_integral_value():
             raise FilterValueError(f"The value {text!r} is finer than the unit of this column ({unit}); it would be cut",
                                    f"write at most the digits of the unit ({unit}), for example a whole number of {unit}")
