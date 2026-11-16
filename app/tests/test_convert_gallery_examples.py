@@ -137,6 +137,9 @@ def test_a_stale_tag_strip_of_a_standard_example_is_set_again(tmp_path):
     (lambda text: text.replace("  show: change\n", ""), "GP02"),
     (lambda text: text + "  second:\n    layers: []\n    mapping: {}\n", "wrangling"),
     (lambda text: "- a list\n", "not a YAML mapping"),
+    # the same catalogs as the app: an action or a layer that is not registered is not called valid (D-0050)
+    (lambda text: text.replace("  tier1: []", "  tier1:\n  - action: keep_columns\n    columns: [species]"), "ST02"),
+    (lambda text: text.replace("      name: geom_point", "      name: geom_pointt"), "geom_pointt"),
 ])
 def test_an_example_that_cannot_be_converted_is_left_as_it_is_with_the_reason(tmp_path, change, reason):
     text = change(OLD)

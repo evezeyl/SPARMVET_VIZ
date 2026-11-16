@@ -12,26 +12,81 @@ the same table for every case below.
 Pure: no Polars, no engine. Consumed by: the migration tool (`recipe_migration.py`) and the differential test.
 
 # @deps
-# provides: function:convert_step, class:NotConvertible, constant:REMOVED_ACTIONS
+# provides: function:convert_step, class:NotConvertible, constant:REMOVED_ACTIONS, constant:NEW_ACTIONS, function:removed_action_catalog, function:removed_text
 # consumed_by: libs/utils/src/utils/recipe_migration.py, libs/transformer/tests/test_step_conversion.py
 # doc: .claude/design/home_evidence/actions_and_polars_2026-11-13.md sections 15, 25, 26
 # @end_deps
 """
 from typing import Any, Callable, Dict, List, Optional
 
+from utils.action_names import REMOVED_ACTIONS as LATER_REMOVED_ACTIONS
+
 STRIP_CHARACTERS = ' \t\n\r"'
 COLUMN_KEYS = ("columns", "column", "source", "source_column", "target_column")
 
-# old actions that leave the vocabulary, with what to do instead
+# old actions that leave the vocabulary: why, and what to use instead (None: nothing in the repository says what replaces it)
 REMOVED_ACTIONS = {
-    "percentile": "removed (it was rank divided by the row count, not a percentile); use polars_with_columns with pl.col(c).rank() / pl.len()",
-    "value_counts": "removed; use polars_group_by with pl.len() and a named aggregation",
-    "select_by_pattern": "removed; name the columns in polars_select",
-    "sanitize_column_names": "removed; the slug and original_name of input_fields name the columns, or write a polars_rename mapping",
-    "derive_categories": "removed; a lookup is a polars_join with a reference table as an ingredient",
-    "scan_parquet": "engine function, not a recipe action",
-    "sink_parquet": "engine function, not a recipe action",
+    "percentile": {"why": "it was rank divided by the row count, not a percentile",
+                   "use": "polars_with_columns with pl.col(c).rank() / pl.len()"},
+    "value_counts": {"why": None, "use": "polars_group_by with pl.len() and a named aggregation"},
+    "select_by_pattern": {"why": None, "use": "polars_select with the column names written out"},
+    "sanitize_column_names": {"why": None, "use": "the slug and original_name of input_fields, or a polars_rename mapping"},
+    "derive_categories": {"why": None, "use": "a polars_join with a reference table as an ingredient"},
+    "scan_parquet": {"why": "an engine function, not a recipe action", "use": None},
+    "sink_parquet": {"why": "an engine function, not a recipe action", "use": None},
 }
+
+# The new action(s) that the migration of each old action writes (checked against the converters in
+# `libs/transformer/tests/test_old_action_names_are_named.py`): the answer to "which action do I write now?".
+NEW_ACTIONS = {
+    "add_constant": "polars_with_columns", "all_horizontal": "polars_all_horizontal", "any_horizontal": "polars_any_horizontal",
+    "cast": "polars_cast", "coalesce": "polars_coalesce", "count_by_group": "polars_with_columns", "cum_count": "polars_cum_count",
+    "cum_sum": "polars_cum_sum", "date_extract": "polars_with_columns", "date_truncate": "polars_dt_truncate",
+    "describe_stats": "polars_describe", "divide_columns": "polars_with_columns", "drop_columns": "polars_drop",
+    "drop_duplicates": "polars_unique", "drop_nulls": "polars_drop_nulls", "explode": "polars_explode",
+    "fill_nulls": "polars_fill_null", "fill_nulls_direction": "polars_fill_null", "filter_eq": "modif_filter",
+    "filter_gt": "modif_filter", "filter_lt": "modif_filter", "filter_ne": "modif_filter", "filter_range": "modif_filter",
+    "horizontal_stats": "polars_max_horizontal, polars_sum_horizontal", "interpolate": "polars_interpolate",
+    "is_in": "modif_filter", "join": "polars_join", "join_filter": "polars_join", "keep_columns": "polars_select",
+    "label_if": "polars_with_columns", "list_join": "polars_list_join", "list_slice": "polars_list_slice",
+    "mutate": "polars_with_columns", "not_in": "modif_filter", "null_if": "polars_with_columns", "pivot": "polars_pivot",
+    "recode_values": "polars_with_columns", "regex_extract": "polars_str_extract", "regex_replace": "polars_str_replace_all",
+    "rename": "polars_rename", "rename_columns": "polars_rename", "replace_values": "polars_with_columns",
+    "round_numeric": "polars_round", "sample": "polars_sample", "shift": "polars_shift", "sort": "polars_sort",
+    "split_and_explode": "polars_explode, polars_with_columns", "split_column": "polars_rename, polars_str_splitn, polars_unnest",
+    "split_column_to_parts": "polars_rename, polars_str_splitn, polars_unnest", "split_to_list": "polars_str_split",
+    "strip_whitespace": "polars_str_strip_chars", "summarize": "polars_group_by", "to_struct": "polars_drop, polars_with_columns",
+    "top_n_other": "step_top_n_other", "unique": "polars_unique", "unique_rows": "polars_unique", "unnest": "polars_unnest",
+    "unpivot": "polars_unpivot", "window_agg": "polars_with_columns", "z_score": "polars_with_columns",
+}
+
+
+def removed_text(name: str) -> str:
+    """The sentence of a removed action for the migration report: why it left, and what to use instead."""
+    entry = REMOVED_ACTIONS[name]
+    why = f" ({entry['why']})" if entry["why"] else ""
+    use = f"; use {entry['use']}" if entry["use"] else ""
+    return f"removed{why}{use}"
+
+
+def removed_action_catalog() -> Dict[str, Dict[str, Optional[str]]]:
+    """Every action name of the old recipe format as {"use": ..., "why": ...}, for the checker and the registry (D-0099).
+
+    `use` is what the migration writes in its place (None when the repository names nothing); `why` is the reason, when
+    one is written. The names of actions removed later (`utils.action_names.REMOVED_ACTIONS`) are included.
+    """
+    catalog: Dict[str, Dict[str, Optional[str]]] = {
+        name: {"use": use, "why": "an action of the old recipe format"} for name, use in NEW_ACTIONS.items()}
+    for name, entry in REMOVED_ACTIONS.items():
+        catalog[name] = {"use": entry["use"], "why": entry["why"] or "an action of the old recipe format"}
+    catalog.update({name: dict(entry) for name, entry in LATER_REMOVED_ACTIONS.items()})
+    return catalog
+
+
+def old_action_hint(name: str) -> Optional[str]:
+    """"Suggestion: use <the new action>." for a removed or old action name, or None when the repository names nothing (D-0099)."""
+    entry = removed_action_catalog().get(name)
+    return f"Suggestion: use {entry['use']}." if entry and entry["use"] else None
 
 
 class NotConvertible(ValueError):
@@ -476,7 +531,7 @@ def convert_step(step: dict, *, strings: Optional[List[str]] = None, keys: Optio
     `keep_columns` and `drop_columns`. Raises NotConvertible when a decision of the author is needed."""
     name = step.get("action")
     if name in REMOVED_ACTIONS:
-        raise NotConvertible(f"{name}: {REMOVED_ACTIONS[name]}")
+        raise NotConvertible(f"{name}: {removed_text(name)}")
     if name in ("keep_columns", "drop_columns"):
         if run != "B":
             raise NotConvertible(f"{name}: converted in run B (polars_select, polars_drop)")

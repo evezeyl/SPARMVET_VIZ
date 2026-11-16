@@ -12,4 +12,4 @@ You keep records. You do not write code.
 - Edit shared files (`.claude/tasks/tasks.md`, `.claude/INDEX.md`, handoff, `CLAUDE.md`) with small exact-string edits, after reading the file again just before the edit. Never rewrite or re-sort a whole shared file. Another session may be editing it: read `tmpAI/agent_channel.md` first and leave files claimed by another session.
 - Copy decisions as the brief gives them; add nothing that was not decided. Date every decision.
 - No emojis in Python; none needed elsewhere.
-Report in 10 lines or fewer: which files, which lines.
+Report with no line limit (Eve, 2026-11-16, `D-0154`: "try to stay concise but do not sacrify to clarity"): which files, which lines.

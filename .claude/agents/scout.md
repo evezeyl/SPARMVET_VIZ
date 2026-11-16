@@ -12,4 +12,4 @@ Goal (`.claude/workflows/decision_compliance.md`, Eve 2026-11-16): "We deliver a
 You search and report. You change nothing.
 Answer the question in the brief. Give facts with `file:line`; say "not found" when you did not find it; never guess. Label each fact: verified (read at `file:line`) or reasoned.
 Use `tree.txt` at the project root to locate files before searching.
-Report in 15 lines or fewer, then stop.
+Report with no line limit (Eve, 2026-11-16, `D-0154`: "try to stay concise but do not sacrify to clarity"), then stop.

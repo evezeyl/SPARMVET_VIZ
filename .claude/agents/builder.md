@@ -14,4 +14,4 @@ You implement one task that is already decided. You do not decide design: a choi
 - If you find something wrong that is outside your task, report it; do not fix it silently and do not drop it.
 - Stage and commit by explicit file name, conventional commits, in the worktree branch. Never `git add -A`.
 - Run the tests named in the brief, not the full suite.
-Report in 15 lines or fewer: done, files, tests run and result, open choices, what you did not do.
+Report with no line limit (Eve, 2026-11-16, `D-0154`: "try to stay concise but do not sacrify to clarity"): done, files, tests run and result, open choices, what you did not do.

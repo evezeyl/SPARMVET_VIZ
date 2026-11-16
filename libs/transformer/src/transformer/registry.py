@@ -16,7 +16,7 @@
 from typing import Callable, Dict, Any
 import polars as pl
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
-from utils.action_names import REMOVED_ACTIONS
+from utils.step_migration import old_action_hint, removed_action_catalog
 
 # We must import the main actions __init__.py here just to trigger the auto-load process
 import transformer.actions
@@ -26,9 +26,10 @@ def get_action_function(action_name: str) -> Callable:
     """Returns the function for a given action, or raises a friendly error."""
     if action_name not in AVAILABLE_WRANGLING_ACTIONS:
         available = ", ".join(AVAILABLE_WRANGLING_ACTIONS.keys())
-        removed = REMOVED_ACTIONS.get(action_name)
+        removed = removed_action_catalog().get(action_name)
         if removed:
-            raise ValueError(f"Action '{action_name}' was removed: write '{removed['use']}' ({removed['why']}).")
+            hint = old_action_hint(action_name)
+            raise ValueError(f"Action '{action_name}' was removed ({removed['why']})." + (f" {hint}" if hint else ""))
         raise ValueError(
             f"Action '{action_name}' is not registered. Available actions: {available}")
     return AVAILABLE_WRANGLING_ACTIONS[action_name]

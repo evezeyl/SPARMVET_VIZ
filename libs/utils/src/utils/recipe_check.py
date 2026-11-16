@@ -49,7 +49,7 @@ from utils.ui_schema import STEP_KEYS, step_problems
 TIER3_READ_BY_ENGINE = False
 
 # Tier-1 actions that only remove or reorder rows: they cannot change the columns or their types (exact names).
-JOIN_KEEPS_COLUMNS = frozenset({action_names.FILTER, action_names.SORT, action_names.UNIQUE, action_names.DROP_NULLS, action_names.SAMPLE})
+JOIN_KEEPS_COLUMNS = join_keys.JOIN_KEEPS_COLUMNS
 
 # Steps whose `maintain_order` says whether the order of the rows is fixed (ST13).
 _ORDER_STEPS = frozenset({action_names.SORT, action_names.UNIQUE, action_names.GROUP_BY, action_names.JOIN})
@@ -544,10 +544,13 @@ class _Check:
             if name not in actions:
                 legacy = (self.catalogs or {}).get("old_action_names", {}).get(name)
                 close = difflib.get_close_matches(str(name), list(actions), n=1, cutoff=0.6)
-                why = ""
-                if isinstance(legacy, dict):  # a removed name: the replacement and the reason
-                    why, legacy = f" (removed: {legacy['why']})", legacy["use"]
-                fix = f"write {legacy}" if legacy else f"write {close[0]}" if close else "choose a registered action"
+                why, use = "", None
+                if isinstance(legacy, dict):  # a removed name: the replacement (when one is known) and the reason
+                    why, use = (f" (removed: {legacy['why']})" if legacy.get("why") else ""), legacy.get("use")
+                elif legacy:
+                    use = legacy
+                fix = (f"Suggestion: use {use}." if use else f"Suggestion: write {close[0]}." if close
+                       else "Suggestion: choose a registered action.")
                 self.add("ST02", f"{where}.action", f"{name!r} is not a registered action{why}", fix)
                 continue
             schema = actions[name]
@@ -558,21 +561,29 @@ class _Check:
             self.formulas(step, schema, where)
 
     def formulas(self, step: dict, schema: dict, where: str) -> None:
+        """ST06 for every formula the step holds: a parameter that is a text, a mapping of texts or a list of texts.
+
+        A parameter takes formulas when its schema says `widget: expression` (one text) or `value_widget: expression` (the
+        values of a mapping, the items of a list). A formula parameter without that mark is not read, so the registry
+        test `app/tests/test_checker_reads_every_formula_place.py` fails for an action that evaluates a formula in
+        a parameter the schema does not mark (D-0030).
+        """
         for name, definition in schema.get("params", {}).items():
             value = step.get(name)
             if value is None:
                 continue
             if definition.get("widget") == "expression" and isinstance(value, str):
                 values = [value]
-            elif definition.get("widget") == "mapping" and definition.get("value_widget") == "expression" and isinstance(value, dict):
+            elif definition.get("value_widget") == "expression" and definition.get("widget") == "mapping" and isinstance(value, dict):
                 values = [v for v in value.values() if isinstance(v, str)]
+            elif definition.get("value_widget") == "expression" and definition.get("widget") == "list" and isinstance(value, list):
+                values = [v for v in value if isinstance(v, str)]
             else:
                 continue
             for text in values:
                 for message in formula_problems(text):
                     what, _, fix = message.partition(". Fix: ")
                     self.add("ST06", f"{where}.{name}", what, fix)
-
 
     def filter_value_problems(self, steps: dict, path: str, tables: List[Tuple[str, Dict[str, Any]]], *, joins: bool) -> None:
         """ST12: a `modif_filter` value does not have the declared type of its column (ADR-104 point 7).
@@ -689,7 +700,11 @@ class _Check:
                     self.add("T07", where, "an unquoted on became the key true", "quote it: 'on'")
 
     def join_advices(self, tier1: list, position: int, where: str, ingredient_ids: List[str]) -> None:
-        """J12, J13 (advice, never blocks): a join of a table with itself on the same key; a join key declared as a float.
+        """J15 (error), J12, J13 (advice, never block): the anti-join of a table with itself on the same key; any other join of a
+        table with itself on the same key; a join key declared as a float.
+
+        J15 (D-0078): `how: anti` of the base table with itself keeps no row that has a key; the rule is
+        `join_keys.anti_join_with_itself`, the same one the build asks. It replaces J12 for that step.
 
         J12: the right table is the base table or a table already joined, and the key columns are the same on both sides:
         it adds no row of information and copies the columns. J13: a key declared Float32 or Float64 turns identifiers
@@ -711,22 +726,25 @@ class _Check:
                 return
             if "right_ingredient" in before:
                 left_tables.append(before["right_ingredient"])
-            elif before.get("action") not in JOIN_KEEPS_COLUMNS:
-                return
-        if right_id in left_tables and left_keys == right_keys:
+            # any other step leaves the tables that make the left table as they are: it can change the rows or the columns
+            # of the left table, but not which tables were joined, so the advice below is still given (D-0078: no self-join is silent)
+        anti = join_keys.anti_join_with_itself(ingredient_ids[0], tier1[:position], step)
+        if anti is not None:
+            what, fix = join_keys.anti_join_with_itself_text(anti)
+            self.add("J15", where, what, fix)
+        elif right_id in left_tables and left_keys == right_keys:
             how = step.get("how", "left")
-            if how in ("semi", "anti"):
-                effect = (f"No column is copied; 'semi' keeps only the rows whose key is found in {right_id!r} itself."
-                          if how == "semi" else
-                          "No column is copied; 'anti' removes every row that has a key, because each such row matches itself.")
+            if how == "anti":
+                message = (f"This step joins {right_id!r} to a table that already holds it, on the same key {left_keys}, with how 'anti'. "
+                           f"It removes the rows whose key is found in {right_id!r}; no column is copied.")
+            elif how == "semi":
+                message = (f"The join of {right_id!r} with itself uses the same key {left_keys} ('how': semi). "
+                           f"No column is copied; 'semi' keeps only the rows whose key is found in {right_id!r} itself.")
             else:
                 suffix = step.get("suffix") or "_right"
-                effect = (f"The result has the same rows if each value of the column appears once, and more rows if a value repeats; "
-                          f"the columns are copied with the suffix `{suffix}`.")
-            if how in ("semi", "anti"):
-                message = f"The join of {right_id!r} with itself uses the same key {left_keys} on both sides ('how': {how}). {effect}"
-            else:
-                message = f"Join of {right_id!r} with itself on the same column ({', '.join(map(repr, left_keys))}). {effect}"
+                message = (f"Join of {right_id!r} with itself on the same column ({', '.join(map(repr, left_keys))}). "
+                           f"The result has the same rows if each value of the column appears once, and more rows if a value repeats; "
+                           f"the columns are copied with the suffix `{suffix}`.")
             self.add("J12", where, message, "Suggestion: remove the step if you did not mean this.", "A")
         fields_by_table = {table: self.declared_fields(table) for table in set(left_tables) | {right_id}}
         for table, columns in ((None, left_keys), (right_id, right_keys)):

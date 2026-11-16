@@ -134,7 +134,7 @@ def _remove_schema():
                      "A predicate must be a true/false condition (a comparison such as `pl.col('x') > 0`); a number or text formula is refused.",
                      "- action: polars_remove\n  predicates:\n    - \"pl.col('identity') < 90\"")
     schema["polars"] = "wrapper"
-    schema["params"]["predicates"] = {"widget": "list", "item_widget": "expression", "required": True,
+    schema["params"]["predicates"] = {"widget": "list", "value_widget": "expression", "required": True,
                                       "label": "Rows to remove: one or more Polars boolean expressions as text, combined with AND"}
     return schema
 
