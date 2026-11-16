@@ -439,9 +439,15 @@ def test_the_answers_of_points_5_and_6_and_of_the_verification_questions_are_dec
         assert re.search(r"cd1b0ac7 #\d{4}", e["source"]), (number, e["source"])
         assert "(#2" in e["evidence"], number          # her words are quoted with the line of the transcript
     text = REAL_LEDGER.read_text(encoding="utf-8")
-    # her proposal of the reset waits for her confirmation: it has no number and no status of a decision
-    assert "HER PROPOSAL, waits for her confirmation, not decided" in text
-    assert "D-0177" not in entries
+    # her proposal of the reset was decided by her next turns (D-0177, D-0178); the entry says so and keeps the old text
+    assert "NOW DECIDED by `D-0177` and `D-0178`" in text
+    assert "HER PROPOSAL, waited for her confirmation, not decided at the time" in text
+    for number in ["D-0177", "D-0178", "D-0179", "D-0180", "D-0181"]:
+        e = entries[number]
+        assert e["taken_by"] == "EVE" and e["status"] == "DECIDED", number
+        assert re.search(r"cd1b0ac7 #\d{4}", e["source"]), (number, e["source"])
+        assert "(#2" in e["evidence"], number
+    assert "D-0014" in entries["D-0178"]["relation"] and "D-0014" in entries["D-0179"]["relation"]
 
 
 MOVED_OUT_OF_THE_DECISION_FIELD = {
