@@ -1,5 +1,5 @@
 {
-"note": "content of every golden table before CATEGORICAL-MIGRATION-1 (commit 806dc852): row count, column names, content hash; types are not recorded on purpose",
+"note": "content of every golden table before CATEGORICAL-MIGRATION-1 (commit 806dc852): row count, column names, content hash; types are not recorded on purpose. demo_abromics entries moved on purpose 2026-11-16 (DEMO-JOIN-1, ledger D-0167: the join keeps every sample): they record the table of the new recipe",
 "recipes": {
 "1_Abromics_general_pipeline": {
 "plots": {
@@ -826,8 +826,8 @@
 "year",
 "country"
 ],
-"rows": 28,
-"sha256": "f756e1549cd217799c42c87d774cb7cbca57b3101bb9ffcf59723f0fc3d3e1af"
+"rows": 40,
+"sha256": "861adfae631a1ffc355643a1d648c4e38cdace1a6bceac9be98c7acc136e579e"
 }
 },
 "t1": {
@@ -839,8 +839,8 @@
 "year",
 "country"
 ],
-"rows": 28,
-"sha256": "f756e1549cd217799c42c87d774cb7cbca57b3101bb9ffcf59723f0fc3d3e1af"
+"rows": 40,
+"sha256": "861adfae631a1ffc355643a1d648c4e38cdace1a6bceac9be98c7acc136e579e"
 }
 },
 "t2": {
@@ -852,8 +852,8 @@
 "year",
 "country"
 ],
-"rows": 28,
-"sha256": "f756e1549cd217799c42c87d774cb7cbca57b3101bb9ffcf59723f0fc3d3e1af"
+"rows": 40,
+"sha256": "861adfae631a1ffc355643a1d648c4e38cdace1a6bceac9be98c7acc136e579e"
 }
 }
 },
