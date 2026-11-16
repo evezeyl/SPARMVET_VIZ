@@ -40,7 +40,7 @@ META_FILE = "example_meta.md"
 PREVIEW_FILE = "preview_plot.png"
 THUMB_FILE = "preview_thumb.png"
 INDEX_FILE = "gallery_index.json"
-CONVERT_HINT = "PYTHONPATH=. ./.venv/bin/python assets/scripts/convert_gallery_examples.py --only {name} --apply (from the project root)"
+CONVERT_HINT = "From the project root run: PYTHONPATH=. ./.venv/bin/python assets/scripts/convert_gallery_examples.py --only {name} --apply"
 
 
 @dataclass(frozen=True)
