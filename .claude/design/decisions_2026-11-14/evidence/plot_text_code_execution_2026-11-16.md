@@ -91,9 +91,19 @@ Do not work before and after (plotnine or patsy refuses them, or the name is out
 
 ## Pictures
 
-(filled in at the end of the task, see the report)
+RUN: every gallery example (34, through `render_example`, the app's own path) and every plot of the three shipped pipeline recipes (23) was drawn with the unchanged code (commit `3d69e14f`, `git archive` copy) and with the changed code, and the sha256 of each picture file compared: **57 of 57 identical, 0 errors**. The golden baseline (`assets/scripts/golden_baseline.py --check app/tests/golden/baseline.json`) says `result-identical` (it records the tables, not the pictures, so it is a second check, not the first). Scripts: `tmpAI/probe/render_all.py` (scratch).
+
+## The tests
+
+- `libs/utils/tests/test_plot_text_check.py` (208): the grammar, the layer rules, the facets with and without the columns.
+- `libs/viz_factory/tests/test_plot_text_runs_no_code.py` (103): every reached site, with a marker file that must not exist after the refusal; the allowed formulas and facets still draw; a component fetched by name is checked; the other sites stay closed.
+- `libs/utils/tests/test_recipe_check.py`: six new rows for PS06 and three more tests.
+- `app/tests/test_plot_text_gate.py`: HOME's load gate refuses the same texts.
+- Mutations, each seen failing and restored with `git checkout -- <file>`: the factory check removed (43 tests fail); the checker check removed (11 fail); `eval` let into the allowed functions (2 fail); the facet plain-name rule loosened (52 fail); the factory column rule removed (4 fail; the plain-name rule still refuses the code, so the factory is protected twice).
 
 ## What was not checked
+
+- The known limit of section 15 holds here too: an allowed formula can still be slow or large (for example `bs(x, df=100000000)` asks patsy for a huge matrix). Nothing here limits the size of a number given as an option; it is not code execution.
 
 - The real export handler (`export_handlers.py`) was not run end to end (see the `report.qmd` section).
 - Combinations of two texts in one layer (each argument was tried alone).
