@@ -700,18 +700,23 @@ class _Check:
                     self.add("T07", where, "an unquoted on became the key true", "quote it: 'on'")
 
     def join_advices(self, tier1: list, position: int, where: str, ingredient_ids: List[str]) -> None:
-        """J15 (error), J12, J13 (advice, never block): the anti-join of a table with itself on the same key; any other join of a
-        table with itself on the same key; a join key declared as a float.
+        """J12, J13 (advice, never block): a join of a table with itself; a join key declared as a float.
 
-        J15 (D-0078): `how: anti` of the base table with itself keeps no row that has a key; the rule is
-        `join_keys.anti_join_with_itself`, the same one the build asks. It replaces J12 for that step.
+        J12 (D-0183, Eve 2026-11-16): the right table is the first table of the join or a table joined by an earlier step.
+        Every kind of join, every `how`, the same or other key columns, and the as-of join and the join on conditions give
+        it; none is an error, Polars reports nothing for it. `join_keys.self_join` decides, `join_keys.self_join_text` writes
+        the text; the build asks the same two functions and adds the row numbers.
 
-        J12: the right table is the base table or a table already joined, and the key columns are the same on both sides:
-        it adds no row of information and copies the columns. J13: a key declared Float32 or Float64 turns identifiers
-        written differently ("001", "1", "1.0") into one number, and a join then merges different samples without a
-        message (JOIN-FLOAT-1). The engine keeps what the recipe declares; the advice says what it means.
+        J13: a key declared Float32 or Float64 turns identifiers written differently ("001", "1", "1.0") into one number,
+        and a join then merges different samples without a message (JOIN-FLOAT-1). The engine keeps what the recipe
+        declares; the advice says what it means.
         """
         step = tier1[position]
+        if ingredient_ids:
+            found = join_keys.self_join(ingredient_ids[0], tier1[:position], step)
+            if found is not None:
+                what, fix = join_keys.self_join_text(found)
+                self.add("J12", where, what, fix, "A")
         on = step.get("on", step.get(True))
         left_keys = _as_list(on if on is not None else step.get("left_on"))
         right_keys = _as_list(on if on is not None else step.get("right_on"))
@@ -726,26 +731,6 @@ class _Check:
                 return
             if "right_ingredient" in before:
                 left_tables.append(before["right_ingredient"])
-            # any other step leaves the tables that make the left table as they are: it can change the rows or the columns
-            # of the left table, but not which tables were joined, so the advice below is still given (D-0078: no self-join is silent)
-        anti = join_keys.anti_join_with_itself(ingredient_ids[0], tier1[:position], step)
-        if anti is not None:
-            what, fix = join_keys.anti_join_with_itself_text(anti)
-            self.add("J15", where, what, fix)
-        elif right_id in left_tables and left_keys == right_keys:
-            how = step.get("how", "left")
-            if how == "anti":
-                message = (f"This step joins {right_id!r} to a table that already holds it, on the same key {left_keys}, with how 'anti'. "
-                           f"It removes the rows whose key is found in {right_id!r}; no column is copied.")
-            elif how == "semi":
-                message = (f"The join of {right_id!r} with itself uses the same key {left_keys} ('how': semi). "
-                           f"No column is copied; 'semi' keeps only the rows whose key is found in {right_id!r} itself.")
-            else:
-                suffix = step.get("suffix") or "_right"
-                message = (f"Join of {right_id!r} with itself on the same column ({', '.join(map(repr, left_keys))}). "
-                           f"The result has the same rows if each value of the column appears once, and more rows if a value repeats; "
-                           f"the columns are copied with the suffix `{suffix}`.")
-            self.add("J12", where, message, "Suggestion: remove the step if you did not mean this.", "A")
         fields_by_table = {table: self.declared_fields(table) for table in set(left_tables) | {right_id}}
         for table, columns in ((None, left_keys), (right_id, right_keys)):
             tables = [t for t in dict.fromkeys(left_tables)] if table is None else [table]
