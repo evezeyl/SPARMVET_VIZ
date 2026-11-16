@@ -124,10 +124,76 @@ def test_blueprint_tells_the_user_in_the_form_of_the_home_notice():
     assert "While a table was being built, the data analysis recipe changed" in happened and "reload the page (F5)" in suggestion
 
 
-def test_the_gallery_build_tells_on_the_error_stream_and_passes_the_callback(capsys):
-    gallery_examples.tell_inputs_changed(InputsChanged("the data files changed"))
-    err = capsys.readouterr().err
-    assert "the data files changed" in err and "Suggestion: run the command again" in err
+def test_the_gallery_build_fails_with_the_plain_notice(capsys):
+    with pytest.raises(gallery_examples.InputsChangedDuringBuild) as raised:
+        gallery_examples.tell_inputs_changed(InputsChanged("the data files changed"))
+    text = str(raised.value)
+    assert text.startswith("While a table was being built, the data files changed") and "Suggestion: run the command again" in text
+
+
+@pytest.fixture
+def scratch():
+    """A folder under tmpAI/ (agent scratch): the recipe of an example may only name a data path relative to the project root."""
+    import shutil
+    import tempfile
+    base = ROOT / "tmpAI"
+    base.mkdir(exist_ok=True)
+    folder = Path(tempfile.mkdtemp(prefix="gallery_build_change_", dir=base))
+    yield folder
+    shutil.rmtree(folder, ignore_errors=True)
+
+
+def _gallery_copy(folder):
+    """One example copied to `folder`, its data path pointing at the copy."""
+    import shutil
+    from app.modules.gallery_examples import rebuild_gallery_index
+    gallery = folder / "gallery"
+    shutil.copytree(ROOT / "assets" / "gallery_data" / "bar_simple", gallery / "bar_simple")
+    recipe = gallery / "bar_simple" / "data_analysis_recipe.yaml"
+    relative = (gallery / "bar_simple" / "example_data.tsv").relative_to(ROOT)
+    recipe.write_text(recipe.read_text().replace("./assets/gallery_data/bar_simple/example_data.tsv", f"./{relative}"))
+    rebuild_gallery_index(gallery)
+    return gallery
+
+
+def test_the_preview_command_fails_with_exit_1_and_the_notice_when_the_data_changes_during_a_build(scratch, capsys, monkeypatch):
+    """The command (assets/scripts/gallery_previews.py main) exits 1, prints the notice, and writes no picture, also with --apply."""
+    import importlib.util
+    from app.modules.orchestrator import DataOrchestrator
+    spec = importlib.util.spec_from_file_location("gallery_previews", ROOT / "assets" / "scripts" / "gallery_previews.py")
+    command = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(command)
+    gallery = _gallery_copy(scratch)
+    data = gallery / "bar_simple" / "example_data.tsv"
+    picture = gallery / "bar_simple" / "preview_plot.png"
+    picture_before = picture.read_bytes()
+    real = DataOrchestrator.prepare_ingredient
+
+    def ingest_then_the_file_changes(self, *args, **kwargs):
+        lf = real(self, *args, **kwargs)
+        data.write_text(data.read_text() + data.read_text().splitlines()[1] + "\n")
+        return lf
+
+    monkeypatch.chdir(ROOT)
+    monkeypatch.setattr(DataOrchestrator, "prepare_ingredient", ingest_then_the_file_changes)
+    code = command.main(["--gallery", str(gallery), "--out", str(scratch / "out"), "--apply"])
+    shown = capsys.readouterr().out
+    assert code == 1
+    assert "bar_simple" in shown and "error" in shown and "While a table was being built, the data files changed" in shown
+    assert "Suggestion: run the command again when the files are stable" in shown
+    assert picture.read_bytes() == picture_before, "a picture that may mix two states must not be written"
+    assert not (scratch / "out" / "bar_simple.png").exists()
+
+
+def test_the_preview_command_still_succeeds_when_nothing_changes_during_the_build(scratch, capsys, monkeypatch):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("gallery_previews", ROOT / "assets" / "scripts" / "gallery_previews.py")
+    command = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(command)
+    gallery = _gallery_copy(scratch)
+    monkeypatch.chdir(ROOT)
+    assert command.main(["--gallery", str(gallery), "--out", str(scratch / "out")]) == 0
+    assert "error: 0" in capsys.readouterr().out
 
 
 def test_the_gallery_build_hands_the_callback_to_both_tiers(tmp_path):

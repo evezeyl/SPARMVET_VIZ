@@ -22,7 +22,6 @@ If deleted: the examples are checked for structure only and the previews cannot 
 import contextlib
 import io
 import shutil
-import sys
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
@@ -55,12 +54,16 @@ def rebuild_gallery_index(gallery_dir: Union[str, Path]) -> dict:
     return GalleryManager(str(gallery_dir)).rebuild_index(checker_catalogs())
 
 
+class InputsChangedDuringBuild(RuntimeError):
+    """A preview table was built while its recipe or data changed (STALE-KEY-STORE-1): the picture may mix two states."""
+
+
 def tell_inputs_changed(change) -> None:
-    """A preview was drawn from a table built while its recipe or data changed (STALE-KEY-STORE-1): say so on the error
-    stream (a preview is drawn by a command, not in a page). Tell only: the picture is still drawn and nothing is blocked."""
+    """A preview was drawn from a table built while its recipe or data changed: the preview command FAILS with the plain notice
+    (RELAYED from Eve by her review session, M167, not yet a ledger line; D-0050 no silent error). A picture that may mix the files
+    from before and after the change is never drawn: the example gets no picture, the command prints why and exits with 1."""
     from app.modules.data_change_notice import inputs_changed_during_build_notice
-    print("WARNING: " + inputs_changed_during_build_notice(change.text, "run the command again when the files are stable"),
-          file=sys.stderr)
+    raise InputsChangedDuringBuild(inputs_changed_during_build_notice(change.text, "run the command again when the files are stable"))
 
 
 def _build(example_dir: Path, work_dir: Path, project_root: Path) -> Tuple[dict, str, pl.LazyFrame]:
