@@ -162,9 +162,8 @@ def check_old_lines_unchanged(path, baseline):
     for number, old in baseline.items():
         assert number in entries, "%s was lost" % number
         new = entries[number]
-        assert new["date"] == old["date"], "%s changed its date" % number
-        assert _first_words(new) == _first_words(old), "%s changed its decision" % number
-        assert new["old_key"] == old["old_key"], "%s changed its old key" % number
+        for field in dl.FIELDS:
+            assert new[field] == old[field], "%s changed its field %s" % (number, field)
 
 
 def test_real_ledger_parses_and_is_numbered_without_gaps():
@@ -182,7 +181,7 @@ def test_real_ledger_status_follows_taken_by():
     assert any(e["taken_by"] == "EVE" for e in entries.values())
 
 
-def test_real_ledger_earlier_lines_keep_number_date_and_first_words(tmp_path):
+def test_real_ledger_earlier_lines_are_unchanged_in_every_field(tmp_path):
     baseline = baseline_entries(tmp_path)
     assert len(baseline) == BASELINE_LAST
     check_old_lines_unchanged(REAL_LEDGER, baseline)
@@ -226,6 +225,17 @@ def test_mutations_of_a_copy_of_the_ledger_are_caught(tmp_path):
     assert _has_failure(check_statuses, _mutated(tmp_path, wrong_status))
     assert _has_failure(check_header_counts, _mutated(tmp_path, header_off))
     assert _has_failure(check_old_lines_unchanged, _mutated(tmp_path, renumbered), baseline)
+
+    def late_word(t):
+        m = re.search(r"\nD-0003 \|(?:[^|]*\|){2} ([^|]*) \|", t)
+        assert len(m.group(1).split()) > 8
+        return t[:m.start(1)] + m.group(1) + " extra" + t[m.end(1):]
+
+    def evidence(t):
+        return re.sub(r"(\nD-0003 \|[^\n]*?) \| ([^|\n]*) \| ([^|\n]*)\n", r"\1 | \2 changed | \3\n", t, count=1)
+
+    assert _has_failure(check_old_lines_unchanged, _mutated(tmp_path, late_word), baseline)
+    assert _has_failure(check_old_lines_unchanged, _mutated(tmp_path, evidence), baseline)
     # the unmutated copy passes every check
     ok = _mutated(tmp_path, lambda t: t)
     for check in (check_numbering, check_statuses, check_header_counts, check_relations):
