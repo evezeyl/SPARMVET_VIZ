@@ -87,7 +87,13 @@ def define_session_server(input, output, session, *,
             return ui.div(ui.p("Session manager unavailable.", class_="text-muted small"))
 
         _session_list_version.get()  # HOM-53: subscribe, re-render after delete/delete-all
-        sessions = session_manager.list_all_sessions()
+        sessions, unreadable = session_manager.scan_sessions()
+        for item in unreadable:
+            _report_issue(*issue_entry(
+                "SessionManager", f"{item['session_key']}/{item['name']}",
+                f"The file {item['name']} of the session {item['session_key']} could not be read, so it is not in this list",
+                "restore the file from a copy, or delete the session folder by hand and record the steps again", item["reason"]),
+                "error")
 
         active_key = ""
         if home_state is not None:
@@ -373,6 +379,22 @@ def define_session_server(input, output, session, *,
         ui.modal_remove()
         _notify(f"🗑 Deleted {n} session(s).", type="message", duration=4)
 
+    def _tell_skipped_saves(skipped_saves: list[dict], restored: dict | None) -> None:
+        """A save that cannot be read is still skipped; the user is told which one, why, and what was restored instead (D-0050).
+
+        File names hold their time stamp, so a skipped name that sorts after the restored one is a NEWER save."""
+        for item in skipped_saves:
+            if restored is None:
+                what = (f"The save {item['name']} of this session could not be read and was skipped; no readable save is left, "
+                        "so the audit steps start empty")
+            elif item["name"] > Path(restored["file"]).name:
+                what = (f"The newest save {item['name']} of this session could not be read and was skipped; the OLDER save of "
+                        f"{restored.get('saved_at', '')[:16]} was restored instead")
+            else:
+                what = f"The older save {item['name']} of this session could not be read and was skipped"
+            _notify("⚠️ " + notice(what, "check the restored audit steps before you go on; the damaged file stays in the session "
+                                    "folder, keep it or delete it by hand", item["reason"]), type="warning", duration=12)
+
     def _restore_session(session_key: str) -> None:
         """Run T1/T2 restore + open T3 ghost picker notification."""
         if session_manager is None or home_state is None:
@@ -413,10 +435,11 @@ def define_session_server(input, output, session, *,
 
         # Load T3 ghosts list for this session
         try:
-            t3_ghosts = session_manager.list_t3_ghosts(session_key)
+            t3_ghosts, skipped_saves = session_manager.scan_t3_ghosts(session_key)
         except LegacySessionError as exc:
             _notify(f"❌ {exc}", type="error", duration=12)
             return
+        _tell_skipped_saves(skipped_saves, t3_ghosts[0] if t3_ghosts else None)
         if t3_ghosts:
             # Restore most-recent T3 ghost into home_state.
             # Phase 22-J: list_t3_ghosts emits both flat t3_audit_steps (legacy) and

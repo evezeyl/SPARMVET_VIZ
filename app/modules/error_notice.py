@@ -20,20 +20,24 @@ import datetime
 from utils.fix_text import SUGGESTION, with_fix
 
 
-def what_failed(what: str, exc: BaseException | None = None) -> str:
-    """`<what happened> (<ErrorType>: <the error's own words>)`; the error is left out when there is none."""
+def what_failed(what: str, exc: BaseException | str | None = None) -> str:
+    """`<what happened> (<ErrorType>: <the error's own words>)`; the error is left out when there is none.
+
+    A text instead of an exception is a reason that was already written as `ErrorType: words` (a scan that kept it)."""
     if exc is None:
         return what.rstrip(". ")
+    if isinstance(exc, str):
+        return f"{what.rstrip('. ')} ({exc})"
     detail = " ".join(str(exc).split()) or "no message"
     return f"{what.rstrip('. ')} ({type(exc).__name__}: {detail})"
 
 
-def notice(what: str, suggestion: str, exc: BaseException | None = None) -> str:
+def notice(what: str, suggestion: str, exc: BaseException | str | None = None) -> str:
     """One text for the user: what happened, then `Suggestion: <suggestion>` (exactly one period between them)."""
     return with_fix(what_failed(what, exc), f"{SUGGESTION} {suggestion}")
 
 
-def issue_entry(component: str, location: str, what: str, suggestion: str, exc: BaseException | None = None,
+def issue_entry(component: str, location: str, what: str, suggestion: str, exc: BaseException | str | None = None,
                 severity: str = "error") -> tuple[dict, str]:
     """`(entry, message)` for `make_issue_reporter`: the row of the Processing issues table and the text of the Alerts panel.
 
