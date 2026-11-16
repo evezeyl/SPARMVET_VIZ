@@ -5,7 +5,7 @@ plot_engine: python-plotnine
 info:
   label: 'Demo: Abromics Pipeline (High Integrity)'
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
-  description: Synchronized test data for Phase 4/5 demonstration.
+  description: "Synchronized test data for Phase 4/5 demonstration. The table `demo join` starts from the 27 samples of the metadata and adds the MLST results: 12 samples have no MLST result and show the sequence type \"Non Determined\"; a sample with several MLST results has several rows (40 rows for 27 samples). Removed by this recipe, on purpose: the 3 metadata lines that have no sample id, and the 2 MLST rows of 2 samples that are not in the metadata."
   version: '1.2'
 data_schemas:
   MLST:

@@ -144,6 +144,16 @@ def test_the_description_numbers_are_true(built):
     assert f"the {expected['mlst_only_rows']} MLST rows of {len(expected['mlst_only_samples'])} samples" in text
 
 
+def test_the_recipe_description_shown_in_home_says_the_same_numbers(built):
+    """HOME shows the `info:` block of the recipe (Info panel) and no join description: the warning must be there too."""
+    expected = _expected()
+    text = built["raw"]["info"]["description"]
+    assert f"{len(expected['without_mlst'])} samples have no MLST result" in text
+    assert f"{expected['rows']} rows for {len(expected['samples'])} samples" in text
+    assert f"the {expected['no_id_lines']} metadata lines that have no sample id" in text
+    assert f"the {expected['mlst_only_rows']} MLST rows of {len(expected['mlst_only_samples'])} samples" in text
+
+
 def test_the_recipe_says_why_in_a_comment_next_to_each_step():
     """Her decision asks for visible steps: each of the three steps carries a `#` comment that says why."""
     lines = (RECIPES_DIR / "demo_abromics.yaml").read_text(encoding="utf-8").splitlines()
