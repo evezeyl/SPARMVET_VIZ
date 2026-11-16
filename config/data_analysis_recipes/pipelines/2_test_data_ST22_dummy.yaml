@@ -55,7 +55,7 @@ data_schemas:
 joins:
   AMR_Profile_Joint:
     label: "AMR Profile Joint"
-    description: "One row per resistance gene hit with the sample's source, year and country (inner join: a sample with no hit, or not in the metadata, has no row), and the flag Multiresistant that is Yes when the hits of the sample name more than one distinct predicted phenotype (a drug, not a drug class; a missing phenotype is not counted)."
+    description: "One row per resistance gene hit with the sample's source, year and country (inner join: a sample with no hit, or not in the metadata, has no row), and the flag Multiresistant that is Yes when the hits of the sample name more than one distinct predicted phenotype (a drug, not a drug class; a missing phenotype is not counted, because missing here means that no resistance phenotype has been detected)."
     ingredients:
       - dataset_id: amr_data
       - dataset_id: metadata_schema

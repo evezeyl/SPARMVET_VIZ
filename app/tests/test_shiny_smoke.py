@@ -120,7 +120,7 @@ def _navigate_to_mlst_plot(page: Page) -> None:
     """Navigate to the AMR/Virulence group → mlst_bar plot (has 'year' numeric column).
 
     Group label: "💊 AMR and ☠️ Virulence" (from data analysis recipe description field).
-    Plot tab: "Mlst Bar" (from p_id.replace("_"," ").title() in dynamic_tabs).
+    Plot tab: "MLST Bar" (from p_id.replace("_"," ").title() in dynamic_tabs).
     If navigation fails the caller should skip — this is dataset-specific.
     """
     # Group tab label comes from data analysis recipe description field (home_theater.py L709)
@@ -131,7 +131,7 @@ def _navigate_to_mlst_plot(page: Page) -> None:
     amr_tab.first.click()
     _wait_shiny(page)
     # Plot tab label = p_id.replace("_"," ").title() when no explicit label
-    mlst_tab = page.locator(".nav-link:has-text('Mlst Bar')")
+    mlst_tab = page.locator(".nav-link:has-text('MLST Bar')")
     if mlst_tab.count() > 0:
         mlst_tab.first.click()
         _wait_shiny(page)
@@ -420,7 +420,7 @@ class TestRecipeSwitchPlotRender:
         _choose_recipe(page, "1_test_data_ST22_dummy")
         page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=20_000)
         _wait_shiny(page)
-        page.get_by_text("Qc Reads Horizontal Barplot", exact=False).first.click()
+        page.get_by_text("QC Reads Horizontal Barplot", exact=False).first.click()
         _wait_shiny(page)
 
         _choose_recipe(page, "1_Abromics_general_pipeline")
@@ -440,7 +440,7 @@ class TestRecipeSwitchPlotRender:
         expect(page.locator("#data_analysis_recipe_id")).to_have_value("1_test_data_ST22_dummy")
         # Wait for a plot sub-tab name unique to ST22 dummy (not just "Quality Control",
         # which both recipes have) — proof the DOM actually switched, not just the <select>.
-        page.wait_for_selector("text=Qc Reads Horizontal Barplot", timeout=20_000)
+        page.wait_for_selector("text=QC Reads Horizontal Barplot", timeout=20_000)
         _wait_shiny(page)
 
 
@@ -841,7 +841,7 @@ class TestViewBadges:
 
     def _open_plot(self, page: Page) -> None:
         """After a data analysis recipe switch no plot tab is selected (own finding), so click the first one."""
-        page.locator(".nav-link:has-text('Qc Reads Horizontal Barplot')").first.click()
+        page.locator(".nav-link:has-text('QC Reads Horizontal Barplot')").first.click()
         _wait_shiny(page)
 
     def _choose(self, page: Page, group: str, value: str) -> None:
@@ -916,7 +916,7 @@ class TestPreviewFiltersOnReferenceViews:
             self, page: Page, shiny_app: ShinyAppProc):
         _load_data_analysis_recipe(page, shiny_app.url)
         _open_filters_panel(page)
-        page.locator(".nav-link:has-text('Qc Reads Horizontal Barplot')").first.click()
+        page.locator(".nav-link:has-text('QC Reads Horizontal Barplot')").first.click()
         _wait_shiny(page)
         before = self._grid_rows(page)
         page.locator("#fb_col").select_option(index=1)
@@ -941,7 +941,7 @@ class TestPreviewFiltersOnReferenceViews:
         """GUARDED: the trash icon undoes a filter at once; the user does not press Apply again."""
         _load_data_analysis_recipe(page, shiny_app.url)
         _open_filters_panel(page)
-        page.locator(".nav-link:has-text('Qc Reads Horizontal Barplot')").first.click()
+        page.locator(".nav-link:has-text('QC Reads Horizontal Barplot')").first.click()
         _wait_shiny(page)
         before = self._grid_rows(page)
         page.locator("#fb_col").select_option(index=1)
@@ -964,7 +964,7 @@ class TestPreviewFiltersOnReferenceViews:
         Raw/Result plots are the recipe's plots."""
         _load_data_analysis_recipe(page, shiny_app.url)
         _open_filters_panel(page)
-        page.locator(".nav-link:has-text('Qc Reads Horizontal Barplot')").first.click()
+        page.locator(".nav-link:has-text('QC Reads Horizontal Barplot')").first.click()
         _wait_shiny(page)
         img = page.locator(".shiny-plot-output img").first
         expect(img).to_be_visible(timeout=15_000)

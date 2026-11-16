@@ -93,6 +93,7 @@ from blueprint_arch.agent_tools import call_tool, get_tool_definitions
 from blueprint_arch.agent_tool_parser import extract_tool_calls
 from blueprint_arch.new_recipe import new_recipe_draft
 from utils.recipe_factory import write_recipe
+from app.modules.data_change_notice import inputs_changed_during_build_notice
 from utils.errors import SPARMVET_Error
 from utils.fix_text import fix_prefix
 from utils.pipeline_error import PipelineError, make_render_payload
@@ -256,6 +257,12 @@ def blank_blueprint_view(wrangle_studio, includes_map, component_ctx_map, schema
     if not keep_component:
         wrangle_studio.active_raw_yaml.set("")
         wrangle_studio.logic_stack.set([])
+
+
+def tell_inputs_changed(change, notify=None) -> None:
+    """Blueprint built a table while its recipe or data changed (STALE-KEY-STORE-1): tell the user, in the form of HOME's notice
+    (what happened, then a Suggestion). Tell only: nothing is re-read, blocked or locked."""
+    (notify or ui.notification_show)("⚠️ " + inputs_changed_during_build_notice(change.text), type="warning", duration=12)
 
 
 def tell_save_outcome(bootloader, notify) -> list[str]:
@@ -719,7 +726,8 @@ def define_server(input, output, session, *,
                         orchestrator.materialize_tier1(
                             data_analysis_recipe_id=bp_data_analysis_recipe_id,
                             collection_id=schema_id,
-                            output_path=out_p
+                            output_path=out_p,
+                            on_inputs_changed=tell_inputs_changed
                         )
                         wrangle_studio.active_anchor_path.set(str(out_p))
                     except Exception as e:
@@ -772,7 +780,8 @@ def define_server(input, output, session, *,
                             orchestrator.materialize_tier1(
                                 data_analysis_recipe_id=bp_data_analysis_recipe_id,
                                 collection_id=target_ds,
-                                output_path=out_p
+                                output_path=out_p,
+                                on_inputs_changed=tell_inputs_changed
                             )
                             wrangle_studio.active_anchor_path.set(str(out_p))
                         except Exception as e:
@@ -798,7 +807,8 @@ def define_server(input, output, session, *,
                             orchestrator.materialize_tier1(
                                 data_analysis_recipe_id=bp_data_analysis_recipe_id,
                                 collection_id=target_ds,
-                                output_path=out_p
+                                output_path=out_p,
+                                on_inputs_changed=tell_inputs_changed
                             )
                             wrangle_studio.active_anchor_path.set(str(out_p))
                         except Exception as e:
@@ -940,7 +950,8 @@ def define_server(input, output, session, *,
                     orchestrator.materialize_tier1(
                         data_analysis_recipe_id=bp_data_analysis_recipe_id,
                         collection_id=selected,
-                        output_path=out_p
+                        output_path=out_p,
+                        on_inputs_changed=tell_inputs_changed
                     )
                     wrangle_studio.active_anchor_path.set(str(out_p))
                 except Exception as e:
@@ -967,7 +978,8 @@ def define_server(input, output, session, *,
                         orchestrator.materialize_tier1(
                             data_analysis_recipe_id=bp_data_analysis_recipe_id,
                             collection_id=plot_target_ds,
-                            output_path=out_p
+                            output_path=out_p,
+                            on_inputs_changed=tell_inputs_changed
                         )
                         wrangle_studio.active_anchor_path.set(str(out_p))
                     except Exception as _me:
@@ -2233,7 +2245,7 @@ def define_server(input, output, session, *,
         anchor_dir.mkdir(parents=True, exist_ok=True)
         out_p = anchor_dir / f"_jd_{ingredient_id}.parquet"
         orchestrator.materialize_tier1(
-            data_analysis_recipe_id=data_analysis_recipe_id, collection_id=ingredient_id, output_path=out_p)
+            data_analysis_recipe_id=data_analysis_recipe_id, collection_id=ingredient_id, output_path=out_p, on_inputs_changed=tell_inputs_changed)
         lf = pl.scan_parquet(out_p)
         return lf, {name: str(dtype) for name, dtype in lf.collect_schema().items()}
 

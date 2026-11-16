@@ -113,7 +113,7 @@ analysis_groups:
           - name: geom_bar
             params: {}
       growth_rate_by_st:
-        label: "Growth Rate By St"
+        label: "Growth Rate By ST"
         taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
         description: "Growth rate distribution by sequence type."
         spec:

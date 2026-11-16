@@ -42,7 +42,9 @@ from pathlib import Path
 
 import polars as pl
 from shiny import reactive, render, ui
+from shiny.session import session_context
 from app.modules.cache_keys import load_data_analysis_recipe
+from app.modules.data_change_notice import inputs_changed_during_build_notice, notice_after_data_change
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.fix_text import fix_label
@@ -168,6 +170,18 @@ def define_server(input, output, session, *,
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
 
+    def _tell_inputs_changed(change):
+        """The orchestrator built a table while its recipe or data changed (STALE-KEY-STORE-1): say so, in the form of the
+        data-change notice. Told after the flush, under isolate: the tables are built inside renders, which may not write
+        the Alerts log (R1). Nothing is re-read and nothing is blocked."""
+        text = "⚠️ " + inputs_changed_during_build_notice(change.text)
+
+        def show():
+            with session_context(session), reactive.isolate():
+                _notify(text, type="warning", duration=12)
+
+        session.on_flushed(show, once=True)
+
     # A plot's error or warning goes to the Processing issues table and to the Alerts panel, once, after the flush and under
     # reactive.isolate() (a render may not write a reactive value; app/modules/plot_issue_reporter.py). VIZ-STANDARD-1, V7.
     from app.modules.plot_issue_reporter import make_issue_reporter
@@ -275,6 +289,7 @@ def define_server(input, output, session, *,
                 collection_id=target_ds,
                 output_path=out_path,
                 keys=_data_analysis_recipe_keys(),
+                on_inputs_changed=_tell_inputs_changed,
             )
         return tier1_anchor()
 
@@ -298,7 +313,7 @@ def define_server(input, output, session, *,
             # not caught here: showing Tier 1 in place of a failed Tier 2 would be a false result.
             return orchestrator.materialize_tier2(
                 data_analysis_recipe_id=data_analysis_recipe_id, collection_id=target_ds,
-                tier1_path=out_path, keys=_data_analysis_recipe_keys())
+                tier1_path=out_path, keys=_data_analysis_recipe_keys(), on_inputs_changed=_tell_inputs_changed)
         return _resolve_t1_lf(spec)
 
     def _active_plot_t3_nodes(plot_id: str | None = None) -> list[dict]:
@@ -872,6 +887,7 @@ def define_server(input, output, session, *,
                 collection_id=coll_id,
                 output_path=out_path,
                 keys=_data_analysis_recipe_keys(),
+                on_inputs_changed=_tell_inputs_changed,
             )
 
         except Exception as e:
@@ -1218,10 +1234,14 @@ def define_server(input, output, session, *,
             # different data_batch_hash — that's expected, not an alert.
             same_data_analysis_recipe = prev_msig and prev_msig == new_msig
             if same_data_analysis_recipe and prev_dbh and prev_dbh != new_dbh:
-                _notify(
-                    "⚠️ Source data files for this project have changed — re-assembling.",
-                    type="warning", duration=8,
-                )
+                # The keys of the view are computed once (`_data_analysis_recipe_keys`): unless an import of this
+                # session recomputed them, the tables on screen still come from the earlier files.
+                try:
+                    with reactive.isolate():
+                        view_dbh = _data_analysis_recipe_keys().data_batch_hash
+                except Exception:
+                    view_dbh = None
+                _notify("⚠️ " + notice_after_data_change(view_dbh, new_dbh), type="warning", duration=12)
             needs_update = (
                 cur.get("data_analysis_recipe_sha256") != new_msig
                 or cur.get("data_batch_hash") != new_dbh

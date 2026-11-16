@@ -18,6 +18,8 @@ from __future__ import annotations
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text), .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/export_specification.md, .claude/design/reproducible_export_design.md
 # @end_deps
 
+import io
+import zipfile
 from pathlib import Path
 
 from shiny import reactive, render, ui
@@ -223,13 +225,19 @@ def changed_since_view(view_keys, current_keys) -> list[str]:
     return changes
 
 
-def blocked_export_notice(changes: list[str], view_keys, current_keys) -> str:
-    """Plain-language explanation shown (and written in the bundle) when an export is refused."""
+def blocked_export_notice(changes: list[str], view_keys, current_keys, during_build: bool = False) -> str:
+    """Plain-language explanation shown (and written in the bundle) when an export is refused.
+
+    `during_build`: the change was seen while a table of the export was being built (STALE-KEY-STORE-1), so a table of the
+    export may mix the files from before and after it."""
     lines = [
         "EXPORT NOT CREATED",
         "",
-        "Something changed on disk after this view was opened: " + "; ".join(changes) + ".",
+        "Something changed on disk " + ("while a table of this export was being built: " if during_build
+                                        else "after this view was opened: ") + "; ".join(changes) + ".",
         "",
+        *(["A table built while its files change can mix the old and the new state, and an export must never hold that without a word.",
+           ""] if during_build else []),
         "What it means: the plots and tables on your screen were built from the earlier files. An export",
         "made now would be built from the new files, so it could differ from what you looked at. In a",
         "scientific export that must never happen silently, so nothing was exported.",
@@ -251,6 +259,26 @@ def blocked_export_notice(changes: list[str], view_keys, current_keys) -> str:
         f"        tier1    {current_keys.tier1_key}",
     ]
     return "\n".join(lines)
+
+
+def blocked_export_zip(text: str) -> bytes:
+    """The zip handed to the user in place of an export that is refused: only `EXPORT_NOT_CREATED.txt`."""
+    blocked = io.BytesIO()
+    with zipfile.ZipFile(blocked, mode="w") as archive:
+        archive.writestr("EXPORT_NOT_CREATED.txt", text)
+    return blocked.getvalue()
+
+
+def refusal_for_build_changes(changes: list[str], view_keys, current_keys, notify) -> bytes | None:
+    """The refusal (zip with only EXPORT_NOT_CREATED.txt, plus the error notification) when a table of the export was built while
+    its recipe or data changed, else None. The same refusal as a change since the view; the tables were returned but not stored,
+    and the export records the held keys, so nothing may be exported (D-0005: the export refuses when files changed)."""
+    if not changes:
+        return None
+    view_keys = view_keys if view_keys is not None else current_keys     # no view (a headless caller): the keys of this export
+    notify("Export blocked: " + "; ".join(changes) + " while a table of this export was being built. "
+           "Reload the page (F5), check the plots, then export again.", type="error", duration=None)
+    return blocked_export_zip(blocked_export_notice(changes, view_keys, current_keys, during_build=True))
 
 
 def blocked_audit_notice(failing: list) -> str:
@@ -834,11 +862,16 @@ def define_export_server(input, output, session, *,
                 _notify("Export blocked: " + "; ".join(_changes) + " changed since this view was opened. "
                         "Reload the page (F5), check the plots, then export again.",
                         type="error", duration=None)
-            _blocked = io.BytesIO()
-            with zipfile.ZipFile(_blocked, mode="w") as _bz:
-                _bz.writestr("EXPORT_NOT_CREATED.txt", _text)
-            yield _blocked.getvalue()
+            yield blocked_export_zip(_text)
             return
+
+        # A table of this export built while its recipe or data changed is returned but not stored: the orchestrator tells
+        # through this list, and the export is refused at the end (STALE-KEY-STORE-1, D-0005, D-0050).
+        _build_changes: list[str] = []
+
+        def _on_build_change(change):
+            if change.text not in _build_changes:
+                _build_changes.append(change.text)
 
         groups = cfg.raw_config.get("analysis_groups", {})
         top_plots = cfg.raw_config.get("plots", {})
@@ -948,7 +981,8 @@ def define_export_server(input, output, session, *,
                 return tier1_anchor()
             return orchestrator.materialize_tier2(
                 data_analysis_recipe_id=data_analysis_recipe_id, collection_id=target,
-                tier1_path=bootloader.get_location("user_data") / "anchors" / f"{target}.parquet", keys=export_keys)
+                tier1_path=bootloader.get_location("user_data") / "anchors" / f"{target}.parquet", keys=export_keys,
+                on_inputs_changed=_on_build_change)
 
         _failing = audit_failures([(_p, (lambda _s=_s: _base_frame(_s)), _audited_nodes(_p)) for _p, _s in all_plots])
         if _failing:
@@ -1072,6 +1106,7 @@ def define_export_server(input, output, session, *,
                                 collection_id=target_ds,
                                 tier1_path=out_path,
                                 keys=export_keys,
+                                on_inputs_changed=_on_build_change,
                             )
                         else:
                             lf = tier1_anchor()
@@ -1153,6 +1188,7 @@ def define_export_server(input, output, session, *,
                                 collection_id=target_ds,
                                 output_path=out_path,
                                 keys=export_keys,
+                                on_inputs_changed=_on_build_change,
                             )
                         else:
                             lf_t1 = tier1_anchor()
@@ -1177,6 +1213,7 @@ def define_export_server(input, output, session, *,
                                 collection_id=target_ds,
                                 tier1_path=bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet",
                                 keys=export_keys,
+                                on_inputs_changed=_on_build_change,
                             )
                             df_t2 = lf_t2.collect()
                             tsv_path = tmpdir_path / f"{safe_ds}_T2.tsv"
@@ -1208,6 +1245,7 @@ def define_export_server(input, output, session, *,
                                         collection_id=target_ds,
                                         tier1_path=bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet",
                                         keys=export_keys,
+                                        on_inputs_changed=_on_build_change,
                                     )
                                 else:
                                     lf_t3 = tier1_anchor()
@@ -1926,6 +1964,12 @@ def define_export_server(input, output, session, *,
                 "       audited steps: T3_data_<plot>.tsv.",
             ]
             zf.writestr(f"{bundle_dir}/README.txt", "\n".join(readme_lines))
+
+        with reactive.isolate():
+            _build_refusal = refusal_for_build_changes(_build_changes, _view, export_keys, _notify)
+        if _build_refusal is not None:
+            yield _build_refusal
+            return
 
         buf.seek(0)
         yield buf.read()
