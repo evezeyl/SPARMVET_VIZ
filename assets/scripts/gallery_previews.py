@@ -18,6 +18,10 @@ With --apply the new `preview_plot.png` and `preview_thumb.png` are written into
 pictures whose content did not change (identical, size only) and for new ones. A picture whose content differs is
 written only with --changed as well: look at it first, a figure must never change without a person seeing it.
 
+When the recipe or the data of an example change while its table is being built, the picture could mix the two states: that
+example gets no picture, the command prints "While a table was being built, ...changed... Suggestion: run the command again when
+the files are stable" in its row, and the command exits with 1 (like any example that cannot be drawn). Nothing is written, also with --apply.
+
 Run from the project root (the data path of a recipe is relative to it).
 
 Examples:

@@ -54,6 +54,18 @@ def rebuild_gallery_index(gallery_dir: Union[str, Path]) -> dict:
     return GalleryManager(str(gallery_dir)).rebuild_index(checker_catalogs())
 
 
+class InputsChangedDuringBuild(RuntimeError):
+    """A preview table was built while its recipe or data changed (STALE-KEY-STORE-1): the picture may mix two states."""
+
+
+def tell_inputs_changed(change) -> None:
+    """A preview was drawn from a table built while its recipe or data changed: the preview command FAILS with the plain notice
+    (Eve's decision D-0181, option b: "The gallery preview command fails (option b) when its input files change during a build"; D-0050 no silent error). A picture that may mix the files
+    from before and after the change is never drawn: the example gets no picture, the command prints why and exits with 1."""
+    from app.modules.data_change_notice import inputs_changed_during_build_notice
+    raise InputsChangedDuringBuild(inputs_changed_during_build_notice(change.text, "run the command again when the files are stable"))
+
+
 def _build(example_dir: Path, work_dir: Path, project_root: Path) -> Tuple[dict, str, pl.LazyFrame]:
     """Load the example as the app loads a recipe and build the table its plot reads."""
     from app.modules.cache_keys import clear_data_analysis_recipe_cache
@@ -78,8 +90,8 @@ def _build(example_dir: Path, work_dir: Path, project_root: Path) -> Tuple[dict,
     keys = orchestrator.compute_data_analysis_recipe_keys(example_id)
     anchor = work_dir / f"{example_id}.parquet"
     target = entry["spec"]["target_dataset"]
-    orchestrator.materialize_tier1(example_id, target, anchor, keys=keys)
-    return raw, plot_id, orchestrator.materialize_tier2(example_id, target, anchor, keys=keys)
+    orchestrator.materialize_tier1(example_id, target, anchor, keys=keys, on_inputs_changed=tell_inputs_changed)
+    return raw, plot_id, orchestrator.materialize_tier2(example_id, target, anchor, keys=keys, on_inputs_changed=tell_inputs_changed)
 
 
 def example_table(example_dir: Union[str, Path], work_dir: Union[str, Path]) -> pl.DataFrame:

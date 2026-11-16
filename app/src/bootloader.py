@@ -196,6 +196,12 @@ class Bootloader:
         # left out of the index with its reason; the app never stops because of one.
         self._check_gallery_if_enabled()
 
+        # 5. Stored tables: a writer killed in the middle leaves a hidden temporary file the size of a table (STALE-KEY-STORE-1).
+        # Leftovers older than a short age are removed; a recent file may be a write in progress by another process.
+        from transformer.anchor import remove_orphan_temporaries
+        for removed in remove_orphan_temporaries(self.get_location("user_data") / "anchors"):
+            print(f"[Bootloader] Removed the leftover temporary file of a killed writer: anchors/{removed}")
+
     def _check_gallery_if_enabled(self) -> None:
         """ADR-071: the gallery is touched only when `gallery_enabled` is on."""
         self.rejected_gallery_examples: dict[str, list[str]] = {}
