@@ -80,6 +80,25 @@ def _parse(column: pl.Expr, name: str, dtype, field: Dict[str, Any]) -> pl.Expr:
     return text.cast(dtype, strict=False)
 
 
+def _what_is_held(shown: List[str], count: int) -> str:
+    """'the value X' for one value, 'the values X, Y' for several."""
+    return f"the value {shown}" if count == 1 else f"the values {shown}"
+
+
+def _type_hint(slug: str, type_name: str) -> str:
+    """What to try when a column's values do not fit its type: the suggestion that makes sense for that type."""
+    base = f"Suggestion: correct the data, or declare the type that column '{slug}' really has"
+    if type_name in ("Float64", "Float32", "Float16", "Decimal"):
+        return f"{base} (String if it is text). "
+    if type_name.startswith(("Int", "UInt")):
+        return f"{base} (Float64 for decimals, String if it is text). "
+    if type_name in ("Date", "Datetime", "Time"):
+        return f"{base} (String if it is text). Suggestion: write `format` for '{slug}' if the dates are written in a form other than year-month-day, for example %d/%m/%Y. "
+    if type_name == "Boolean":
+        return f"{base} (String if it is text). Suggestion: a Boolean reads the words true and false (upper or lower case); change the data, or list another word in null_values if it means missing. "
+    return f"{base}. "
+
+
 def apply_declared(lf: pl.LazyFrame, dataset_name: str, schema: Dict[str, Any], fields: Dict[str, Any]) -> pl.LazyFrame:
     """Strip, apply the null words, then parse each declared column with its declared dtype (all text on entry)."""
     schema_keys(dataset_name, schema)
@@ -120,15 +139,15 @@ def apply_declared(lf: pl.LazyFrame, dataset_name: str, schema: Dict[str, Any], 
         shown = ", ".join(repr(v) for v in values)
         if fields[slug]["type"] == "Enum":
             levels = ", ".join(str(c) for c in fields[slug]["categories"])
-            problems.append(f"The column '{slug}' is declared as Enum with the values {levels}. The data holds the value(s) {shown}, "
-                            "which are not in that list.")
+            plural = len(values) != 1
+            problems.append(f"The column '{slug}' is declared as Enum with the values {levels}. The data holds {_what_is_held(shown, len(values))}, "
+                            f"which {'are' if plural else 'is'} not in that list.")
             tips.append(f"Suggestion: add the value to `categories` of '{slug}' in the recipe if it is a real level. "
                         "Suggestion: correct the data if it is a typing error (the values are compared exactly, upper and lower case differ).")
         else:
-            problems.append(f"The column '{slug}' is declared as {fields[slug]['type']}. The data holds the value(s) {shown}, "
+            problems.append(f"The column '{slug}' is declared as {fields[slug]['type']}. The data holds {_what_is_held(shown, len(values))}, "
                             "which cannot be read as that type.")
-            tips.append(f"Suggestion: correct the data, or declare the type that column '{slug}' really has (Float64 for decimals). "
-                        "Suggestion: list the word in null_values if it means missing.")
+            tips.append(_type_hint(slug, fields[slug]["type"]) + "Suggestion: list the word in null_values if it means missing.")
     if problems:
         raise _fail(f"Data schema '{dataset_name}': values that do not fit the declared type. " + " ".join(problems), " ".join(dict.fromkeys(tips)))
     return lf.with_columns(parsed)
