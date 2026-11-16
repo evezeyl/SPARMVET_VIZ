@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, AuditStepError), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -31,12 +31,82 @@ from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
     dialog_value, not_offered_line, value_choices, value_widget_for, AuditStepError, dialog_frame,
+    column_bounds, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
-from utils.filter_values import FilterValueError
+from utils.filter_values import UNIT_NS, FilterValueError, kind_of
 from utils.missing_values import dialog_lines, na_choice_texts
 from utils.na_choice import default_na, na_of
 
 _log = logging.getLogger(__name__)
+
+
+def _time_boxes(suffix: str, d: dict):
+    """The three boxes of a time of day: hour, minute, second (the seconds take up to nine digits). `d` holds the defaults.
+
+    PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 3: three number boxes for a time of day (Shiny for Python has no time input).
+    """
+    def box(label, id_, value, **kw):
+        return ui.div(ui.tags.small(label, class_="text-muted"), ui.input_numeric(id_, label=None, value=value, **kw), class_="spv-flex-1")
+    return ui.div(
+        box("hour", f"fb_h{suffix}", d.get("h", 0), min=0, max=23, step=1),
+        box("minute", f"fb_min{suffix}", d.get("min", 0), min=0, max=59, step=1),
+        box("second", f"fb_s{suffix}", d.get("s", 0), min=0, step=1),
+        class_="d-flex gap-1",
+    )
+
+
+# Sends the raw text of every date box of the filter dialog to the server beside the date the widget read (`fb_value_raw`, `fb_value_lo_raw`...):
+# the widget "repairs" free text (today for a partial text, a rolled-over day for 2023-02-30), so `compose_date` reads the text itself, strictly.
+# Registered once per page; it also sends the text at insertion, so a stale value of an earlier box is never compared with a new one.
+_DATE_RAW_SCRIPT = """
+(function () {
+  function send(input) {
+    var box = input.closest('.shiny-date-input');
+    if (box && box.id && window.Shiny && Shiny.setInputValue) Shiny.setInputValue(box.id + '_raw', input.value, {priority: 'event'});
+  }
+  if (!window.__spvDateRaw) {
+    window.__spvDateRaw = true;
+    $(document).on('input change keyup blur changeDate', '.shiny-date-input[id^="fb_value"] input', function () { send(this); });
+  }
+  document.querySelectorAll('.shiny-date-input[id^="fb_value"] input').forEach(send);
+})();
+"""
+
+
+def _date_picker(id_: str, value):
+    """A date picker that never chooses a date for the user.
+
+    The widget (bootstrap-datepicker) repairs what is typed: Enter in an empty box chooses the highlighted day (today), and with the
+    default `forceParse` a partial text, a text that is not a date or 2023-02-30 is replaced by another date in the box. Keyboard
+    navigation is off (no Enter that picks a day; the arrow keys of the calendar do not work, typing the date does) and `forceParse` is
+    off (the box keeps what the user typed, so it can be corrected). The raw text is sent to the server (`_DATE_RAW_SCRIPT`) and read
+    strictly by `compose_date`. The calendar stays for the mouse.
+
+    PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 8: keep the calendar and read the typed text strictly (option: a plain text box with the calendar only as a helper).
+    """
+    tag = ui.input_date(id_, label=None, value=value, format="yyyy-mm-dd")
+    for child in tag.children:
+        if getattr(child, "name", None) == "input":
+            child.attrs["data-date-keyboard-navigation"] = "false"
+            child.attrs["data-date-force-parse"] = "false"
+    return ui.TagList(tag, ui.tags.script(ui.HTML(_DATE_RAW_SCRIPT)))
+
+
+def _control(kind: str, suffix: str, d: dict):
+    """The control of one value of a date, date and time, time of day or duration; `suffix` is "" (one value), "_lo" or "_hi" (between)."""
+    if kind == "date":
+        return _date_picker(f"fb_value{suffix}", d.get("date"))
+    if kind == "datetime":
+        # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 5: a date and time is a date picker plus the three boxes of a time.
+        return ui.div(_date_picker(f"fb_value{suffix}", d.get("date")), _time_boxes(suffix, d))
+    if kind == "time":
+        return _time_boxes(suffix, d)
+    # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 4: a duration is a number with a choice of 8 units (ns, us, ms, s, min, h, d, w).
+    return ui.div(  # duration: a number and its unit
+        ui.div(ui.input_numeric(f"fb_value{suffix}", label=None, value=d.get("number", 0), step=1), class_="spv-flex-1"),
+        ui.div(ui.input_select(f"fb_unit{suffix}", label=None, choices=list(UNIT_NS), selected=d.get("unit", "s")), class_="spv-flex-1"),
+        class_="d-flex gap-1",
+    )
 
 
 def define_filter_audit_server(input, output, session, *,
@@ -231,7 +301,7 @@ def define_filter_audit_server(input, output, session, *,
         col = _selected_column(types)
         choices = _op_choices(types.get(col), col in disc)
         if not choices:
-            return ui.tags.small(not_offered_line(col, types.get(col)), class_="text-warning d-block")
+            return ui.tags.small(f"{not_offered_line(col, types.get(col))} Suggestion: filter another column.", class_="text-warning d-block")
         with reactive.isolate():
             kept = safe_input(input, "fb_op", None)
         return ui.input_select("fb_op", label=None, choices=choices, selected=kept if kept in choices else next(iter(choices)),
@@ -257,13 +327,47 @@ def define_filter_audit_server(input, output, session, *,
         widget = value_widget_for(dtype, col in disc, op) if dtype is not None else "text"
         if widget == "list":
             try:
-                return ui.input_selectize(
-                    "fb_value", label=None, choices=list(value_choices(lf, col)), selected=[], multiple=True,
-                    options={"placeholder": "Select value(s)…", "plugins": ["remove_button"], "dropdownParent": "body"},
+                labels = list(value_choices(lf, col))
+                options = {"placeholder": "Select value(s)…", "plugins": ["remove_button"], "dropdownParent": "body"}
+                if len(labels) <= LIST_ON_DEMAND_FROM:
+                    return ui.input_selectize("fb_value", label=None, choices=labels, selected=[], multiple=True, options=options)
+                # PROVISIONAL (L10): a long list is served on demand while typing (at most 1000 matches of a search); the
+                # whole list in the page froze the dialog (10000 values 6.6 s, 30000 values 87 s). The note says that more values match.
+                # The choices are sent after the page has the box (on_flushed): the update of an input made in the same flush is lost.
+                session.on_flushed(
+                    lambda: ui.update_selectize("fb_value", choices=labels, selected=None, server=True, session=session), once=True)
+                return ui.div(
+                    ui.input_selectize("fb_value", label=None, choices=[], selected=[], multiple=True,
+                                       options={**options, "maxOptions": LIST_ON_DEMAND_FROM}),
+                    ui.tags.small(list_note(len(labels)), class_="text-muted fst-italic d-block spv-text-meta", id="fb_value_note"),
                 )
             except Exception:
                 _log.exception("filter dialog: the values of column %r could not be listed", col)
                 return ui.tags.small("The values of this column could not be listed.", class_="text-danger d-block")
+        if widget == "bool":
+            return ui.input_radio_buttons("fb_value", label=None, choices={"true": "true", "false": "false"}, selected="true", inline=True)
+        if widget.removesuffix("_range") in ("date", "datetime", "time", "duration"):
+            kind = widget.removesuffix("_range")
+            try:
+                bounds = column_bounds(lf, col, dtype)
+            except Exception:
+                _log.exception("filter dialog: the range of column %r could not be read", col)
+                bounds = None
+            lo, hi = bounds if bounds is not None else ({}, {})
+            hint = control_hint(dtype)
+            hint_ui = ui.tags.small(hint, class_="text-muted fst-italic d-block spv-text-meta") if hint else ui.div()
+            if not widget.endswith("_range"):
+                return ui.div(_control(kind, "", lo), hint_ui)
+            return ui.div(
+                ui.div(
+                    ui.div(ui.tags.small("min", class_="text-muted"), _control(kind, "_lo", lo), class_="spv-flex-1"),
+                    ui.div(ui.tags.small("max", class_="text-muted"), _control(kind, "_hi", hi), class_="spv-flex-1"),
+                    class_="d-flex gap-1 flex-wrap",
+                ),
+                ui.input_radio_buttons("fb_closed", label=None, choices=CLOSED_CHOICES, selected="both"),
+                ui.output_ui("filter_closed_text_ui"),
+                hint_ui,
+            )
         if widget in ("number", "range"):
             rng = number_range(lf, col)
             is_int_col = "Int" in str(dtype)
@@ -457,14 +561,39 @@ def define_filter_audit_server(input, output, session, *,
         dtype = types.get(col)
         dtype_str = str(dtype) if dtype is not None else "Utf8"
         raw = safe_input(input, "fb_value", None)  # a list of texts, a number or a text, by the widget that was mounted
+        kind = kind_of(dtype)
+        widget = value_widget_for(dtype, discrete_axis, op) if dtype is not None else "text"
+
+        def _boxes(suffix: str):
+            """What the controls of a date, date and time, time or duration hold, as the text the rule reads (an empty box is a plain error)."""
+            value = safe_input(input, f"fb_value{suffix}", None)
+            if kind == "time":
+                return compose_time(*(safe_input(input, f"fb_{k}{suffix}", None) for k in ("h", "min", "s")))
+            raw = safe_input(input, f"fb_value{suffix}_raw", None)   # the text of the date box (None: not sent yet, the date was not typed)
+            if kind == "datetime":
+                return compose_datetime(value, *(safe_input(input, f"fb_{k}{suffix}", None) for k in ("h", "min", "s")), typed=raw)
+            if kind == "duration":
+                return compose_duration(value, safe_input(input, f"fb_unit{suffix}", None))
+            if kind == "date":
+                return compose_date(value, raw)
+            return value   # true/false
+
         try:
-            chosen = dialog_value(
-                lf, col, dtype, discrete_axis, op,
-                picked=raw if isinstance(raw, (list, tuple)) else (),
-                number=raw if isinstance(raw, (int, float)) and not isinstance(raw, bool) else None,
-                low=safe_input(input, "fb_value_lo", None), high=safe_input(input, "fb_value_hi", None),
-                closed=safe_input(input, "fb_closed", "both"), text=raw if isinstance(raw, str) else "",
-            )
+            if widget != "list" and kind in ("bool", "date", "datetime", "time", "duration"):
+                ranged = widget.endswith("_range")
+                chosen = dialog_value(
+                    lf, col, dtype, discrete_axis, op,
+                    operand=None if ranged else _boxes(""), low=_boxes("_lo") if ranged else None,
+                    high=_boxes("_hi") if ranged else None, closed=safe_input(input, "fb_closed", "both"),
+                )
+            else:
+                chosen = dialog_value(
+                    lf, col, dtype, discrete_axis, op,
+                    picked=raw if isinstance(raw, (list, tuple)) else (),
+                    operand=raw if isinstance(raw, (int, float)) and not isinstance(raw, bool) else None,
+                    low=safe_input(input, "fb_value_lo", None), high=safe_input(input, "fb_value_hi", None),
+                    closed=safe_input(input, "fb_closed", "both"), text=raw if isinstance(raw, str) else "",
+                )
         except FilterValueError as exc:
             _notify(str(exc), type="error", duration=8)
             return

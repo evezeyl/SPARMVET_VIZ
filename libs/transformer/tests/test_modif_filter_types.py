@@ -67,7 +67,7 @@ def test_a_value_of_the_type_of_the_column_works(column, op, value, expected):
 def test_between_on_a_text_column_is_refused_in_plain_words():
     with pytest.raises(TransformationError) as exc:
         run("s", "between", ["p", "q"])
-    assert "between" in str(exc.value) and "numbers or dates" in str(exc.value)
+    assert "between" in str(exc.value) and "numbers, dates or times" in str(exc.value)
 
 
 @pytest.mark.parametrize("column, op, value, holds", [
@@ -122,9 +122,38 @@ def test_nanoseconds_survive_the_recipe_step():
     assert got["id"].to_list() == ["b"]
 
 
+def _times_and_durations():
+    return pl.DataFrame({"id": ["a", "b"], "tm": pl.Series([datetime.time(9, 0), datetime.time(10, 30)]),
+                         "du": pl.Series([datetime.timedelta(minutes=1), datetime.timedelta(minutes=90)])})
+
+
+def _run_on(frame, column, op, value, **extra):
+    return AVAILABLE_WRANGLING_ACTIONS["modif_filter"](frame.lazy(), {"column": column, "op": op, "value": value, "na": "remove", **extra}).collect()["id"].to_list()
+
+
+@pytest.mark.parametrize("column, op, value, kept", [
+    ("tm", "gt", "09:30:00", ["b"]), ("tm", "in", ["09:00:00"], ["a"]), ("tm", "between", ["09:00", "10:00"], ["a"]),
+    ("du", "gt", "5 min", ["b"]), ("du", "between", ["1 min", "1.5 h"], ["a", "b"]), ("du", "eq", "90 min", ["b"]),
+])
+def test_a_time_or_duration_column_is_filtered_with_the_text_of_its_value(column, op, value, kept):
+    """FILTER-PICKERS-1: the recipe step holds a time or a duration as text (YAML cannot carry either), the same rule as the HOME table."""
+    assert _run_on(_times_and_durations(), column, op, value) == kept
+
+
+@pytest.mark.parametrize("column, op, value", [
+    ("tm", "eq", "x"), ("tm", "in", ["25:00:00"]), ("tm", "eq", 5), ("du", "eq", "90"), ("du", "gt", 90), ("du", "in", ["ninety"]),
+])
+def test_a_time_or_duration_value_that_is_not_one_is_refused_in_plain_words(column, op, value):
+    with pytest.raises(TransformationError) as exc:
+        _run_on(_times_and_durations(), column, op, value)
+    text = str(exc.value)
+    assert "InvalidOperation" not in text and "ComputeError" not in text
+    assert ("times of day" if column == "tm" else "durations") in text
+
+
 @pytest.mark.parametrize("op, value", [("in", ["x"]), ("eq", "x")])
-def test_a_time_or_duration_column_is_refused_in_plain_words(op, value):
-    frame = pl.DataFrame({"id": ["a"], "tm": pl.Series([datetime.time(10, 30)])})
+def test_a_column_of_another_type_is_refused_in_plain_words(op, value):
+    frame = pl.DataFrame({"id": ["a"], "tm": pl.Series([b"x"], dtype=pl.Binary)})
     with pytest.raises(TransformationError) as exc:
         AVAILABLE_WRANGLING_ACTIONS["modif_filter"](frame.lazy(), {"column": "tm", "op": op, "value": value, "na": "remove"})
-    assert "not offered" in str(exc.value) and "Time" in str(exc.value) and "InvalidOperation" not in str(exc.value)
+    assert "not offered" in str(exc.value) and "Binary" in str(exc.value) and "InvalidOperation" not in str(exc.value)
