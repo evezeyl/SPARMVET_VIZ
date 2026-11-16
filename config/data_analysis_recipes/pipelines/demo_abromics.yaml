@@ -20,7 +20,7 @@ data_schemas:
     wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
 metadata_schema:
   label: "metadata"
-  description: "One row per metadata line (source, year, country); in this demo file some sample ids are repeated, empty or written as a dash."
+  description: "One row per metadata line (source, year, country). In this demo file no sample id is repeated, but three lines have no usable id (one empty, one written as a dash, one written as two quote marks); all three are read as missing."
   source:
     type: local_tsv
     path: ./assets/test_data/demo_high_integrity/test_data_test_metadata_20260307_105756.tsv

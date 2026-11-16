@@ -219,7 +219,7 @@ joins:
 
   ST22_Anchor:
     label: "ST22 Anchor"
-    description: Primary joined dataset for ST22 Dummy analysis.
+    description: "One row per sample, selected virulence gene and AMR gene hit (a sample with no AMR hit counts as one hit): metadata, FastP, ResFinder, MLST and VirulenceFinder joined, then only the genes of the APEC/STEC list kept (inner join)."
     ingredients:
     - dataset_id: metadata_schema
     - dataset_id: FastP
@@ -273,7 +273,7 @@ joins:
 
   QA_fanout_exhibit:
     label: "QA fanout exhibit"
-    description: QA canary, EXHIBIT of a known defect - two long tables joined on one key (issue #68).
+    description: "QA canary, EXHIBIT of a known defect - two long tables joined on one key (issue #68)."
     ingredients:
     - dataset_id: metadata_schema
     - dataset_id: ResFinder
@@ -282,7 +282,7 @@ joins:
 
   QA_aggregated_no_key:
     label: "QA aggregated no key"
-    description: QA canary - T2 is an aggregate without sample_id, so a sample cannot be removed from it by its ID (issue #60).
+    description: "QA canary - T2 is an aggregate without sample_id, so a sample cannot be removed from it by its ID (issue #60)."
     ingredients:
     - dataset_id: metadata_schema
     steps: !include '1_test_data_ST22_dummy/wrangling/QA_aggregated_no_key.yaml'
@@ -310,7 +310,7 @@ analysis_groups:
       assembly_quality_dotplot:
         label: "Assembly Quality Dotplot"
         taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Intermediate"}
-        description: "Provides a distribution of assembly quality metrics per sample. Facetted boxplot to identify assembly outliers across metrics (N50, Length, etc.)."
+        description: "One boxplot per assembly measure (N50, total length, largest contig) showing how the values spread over the samples, to see outliers."
         spec: !include '1_test_data_ST22_dummy/plots/Quast_assembly_quality_barplot.yaml'
 
   Curiosity:
@@ -319,7 +319,7 @@ analysis_groups:
     plots:
       phenotype_genome_length_fragmentation:
         label: "Phenotype Genome Length Fragmentation"
-        description: "Provides a distribution of genome length per sample by phenotype."
+        description: "Each point is one sample and one quality measure (genome length, N50, number of contigs): the measure against the phenotype count (resistance points of the sample), coloured by sequence type, with a trend line, one panel per measure."
         spec: !include '1_test_data_ST22_dummy/plots/phenotype_genome_length_dotplot.yaml'
 
   Results:
@@ -334,7 +334,7 @@ analysis_groups:
       virulence_bar:
         label: "Virulence Bar"
         taxonomy: {"family": "Ranking", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Intermediate"}
-        description: "Bar chart counting selected virulence genes."
+        description: "One bar per sample counting table rows, coloured by selected virulence gene; the table has one row per sample, virulence gene and AMR gene hit, so a sample with more AMR hits weighs more."
         spec: !include '1_test_data_ST22_dummy/plots/VirulenceFinder_counts_bar.yaml'
       mlst_bar:
         label: "Mlst Bar"
@@ -344,12 +344,12 @@ analysis_groups:
       year_distribution:
         label: "Year Distribution"
         taxonomy: {"family": "Ranking", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
-        description: "T1/T2 tier-toggle test: T1 shows all years, T2 filters to 2023-2025 only. Missing bars prove the toggle works. Use this plot to verify T1↔T2 toggle. T2 drops rows outside 2023-2025 — earlier years disappear."
+        description: "Bars count samples (one row per sample) per year, coloured by country. The result (T2) keeps only the years 2023 to 2025; the raw data table (T1) also holds 2022, so compare the two data tables to verify the toggle."
         spec: !include '1_test_data_ST22_dummy/plots/year_distribution.yaml'
       virulence_variants:
         label: "Virulence Variants"
         taxonomy: {"family": "Correlation", "pattern": "2 Categorical", "difficulty": "Advanced"}
-        description: "Integration plot showing AMR + Virulence + MLST. Heatmap showing the distribution of whitelisted virulence genes, facetted by the MLST sequence type."
+        description: "Heatmap with one tile per sample and selected virulence gene, coloured by whether the gene was detected."
         spec: !include '1_test_data_ST22_dummy/plots/integration_plot.yaml'
 
   Cat 🐱:
@@ -364,7 +364,7 @@ analysis_groups:
 
   QA Canaries:
     label: "QA canaries (not for publication): each plot isolates one failure mode; the expected numbers are in its title"
-    description: "QA canaries (not for publication): each plot isolates one failure mode; the expected numbers are in its title"
+    description: "QA canaries (not for publication): each plot isolates one failure mode; the expected numbers are in its title."
     plots:
       qa_amr_genes_per_sample:
         label: "Qa Amr Genes Per Sample"
@@ -389,7 +389,7 @@ analysis_groups:
       qa_facet_by_mapping:
         label: "Qa Facet By Mapping"
         taxonomy: {"family": "Ranking", "pattern": "1 Categorical, 1 Categorical", "difficulty": "Simple"}
-        description: "facet_by written in mapping must give 3 panels. Canary for the documented spelling of facets. The panels must exist; if the plot has a single panel, facet_by in mapping is being ignored (issue"
+        description: "facet_by written in mapping must give 3 panels. Canary for the documented spelling of facets. The panels must exist; if the plot has a single panel, facet_by in mapping is being ignored (issue 65)."
         spec: !include '1_test_data_ST22_dummy/plots/qa_facet_by_mapping.yaml'
       qa_fanout_rows_per_sample:
         label: "Qa Fanout Rows Per Sample"

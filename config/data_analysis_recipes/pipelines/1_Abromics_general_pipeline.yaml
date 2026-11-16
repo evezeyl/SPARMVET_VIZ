@@ -64,7 +64,7 @@ additional_datasets_schemas:
 joins:
   AR1_MLST_Serotype_Virulence:
     label: "AR1 MLST Serotype Virulence"
-    description: Joins MLST results with metadata for the main distribution plot.
+    description: "One row per sample and selected virulence gene: MLST and metadata, joined to the VirulenceFinder genes that are in the APEC/STEC list (inner join, so a sample with none of these genes has no row)."
     ingredients:
     - dataset_id: MLST
     - dataset_id: metadata_schema
