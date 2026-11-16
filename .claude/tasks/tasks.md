@@ -102,6 +102,7 @@ Plan: `.claude/design/home_stage2_mechanism_spec.md` section 5 (packages P0-P12;
   - P5 PROVISIONAL: a date and time is a date picker plus three boxes (`_control`).
   - P6 PROVISIONAL: the boxes start at the smallest and the largest value of the column (`column_bounds`).
   - P7 PROVISIONAL: a value finer than the unit of the column is refused, never cut (`_datetime_values`, `_duration_values`).
+  - P8 PROVISIONAL: the date box is read strictly: the text must be a whole date year-month-day (one-digit month and day accepted) or a day picked in the calendar; the calendar's own repairs (today, rolled-over day) are switched off; keyboard-only users type the date, the arrow keys of the calendar do not work (`_date_picker`, `compose_date`).
   - Decided by Eve, built as decided: the date picker, the two-choice control for true/false, no greater/less on text, every type usable. Also PROVISIONAL (L10, own commit): the value list served on demand above 1000 values.
 - [ ] **TIME-NANOSECONDS-DRAW-1** `[sonnet/medium]` — found by the reviewer of FILTER-PICKERS-1 (2026-11-16; it existed before that branch): a table that holds a Time or a Duration column with digits finer than a microsecond cannot be drawn ("non-zero nanoseconds"), even with no filter. Reproduce with a Time column that holds `10:00:00.000000007`; find where the table reaches Python objects (microsecond precision) and keep the digits or say plainly what is cut. Tests first; a table with such a column must draw or say why not.
 

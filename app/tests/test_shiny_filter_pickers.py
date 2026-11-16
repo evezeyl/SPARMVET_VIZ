@@ -363,7 +363,7 @@ def test_each_box_of_between_is_checked_the_same_way(page: Page, typed_app, box,
 
 
 @pytest.mark.parametrize("key", ["Tab", "Enter"])
-@pytest.mark.parametrize("column, op, staged", [("day", "gt", "day > 2020-01-02"), ("start", "ge", "start ≥ 2020-01-02 00:00:00")])
+@pytest.mark.parametrize("column, op, staged", [("day", "gt", "day > 2020-01-02"), ("start", "ge", "start ≥ 2020-01-02 09:00:00")])
 def test_a_date_typed_with_one_digit_month_and_day_is_accepted_and_the_staged_line_shows_it_in_full(page: Page, typed_app, column, op, staged, key):
     """"2020-1-2" is unambiguous: it is accepted, and the staged line says 2020-01-02 (nothing is hidden)."""
     _open_dialog(page, typed_app, column)

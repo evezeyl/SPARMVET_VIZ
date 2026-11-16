@@ -81,6 +81,8 @@ def _date_picker(id_: str, value):
     navigation is off (no Enter that picks a day; the arrow keys of the calendar do not work, typing the date does) and `forceParse` is
     off (the box keeps what the user typed, so it can be corrected). The raw text is sent to the server (`_DATE_RAW_SCRIPT`) and read
     strictly by `compose_date`. The calendar stays for the mouse.
+
+    PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 8: keep the calendar and read the typed text strictly (option: a plain text box with the calendar only as a helper).
     """
     tag = ui.input_date(id_, label=None, value=value, format="yyyy-mm-dd")
     for child in tag.children:

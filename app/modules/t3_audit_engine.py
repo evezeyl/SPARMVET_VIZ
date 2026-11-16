@@ -299,6 +299,9 @@ def compose_date(date, typed=None):
     of one digit is fine) or picked in the calendar: the picker's own reading of free text is not trusted (it fills in today for a
     partial text, rolls 2023-02-30 over to 2023-03-02, reads 03/05/2022 as another date), so the text is read strictly here and must
     equal what the picker read. An empty box is "no date chosen".
+
+    PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 8: the calendar stays for the mouse, the box is typed as year-month-day and read strictly (no keyboard navigation in
+    the calendar); "2022-3-5" is accepted (unambiguous) and the staged line shows 2022-03-05.
     """
     if typed is not None:
         text = typed.strip()
