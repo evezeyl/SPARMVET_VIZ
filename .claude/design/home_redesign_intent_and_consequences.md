@@ -1,6 +1,8 @@
 # The HOME redesign: intent, succession of operations, consequences
 
-**Status:** draft 2 for Eve to read and correct, 2026-11-16 (task HOME-REDESIGN-INTENT-1). Draft 1 (`e9fc1e15`) was checked by a reviewer and a reader who had only the document (main tree `tmpAI/panel/round7/intent_check/`); this draft corrects what they found. Written by reading only. Nothing in the code, the tests, the rule files, the ADRs or the other design files was changed.
+**DRAFT for Eve's correction, 2026-11-16. Written by an agent from the sources listed at the end; checked twice against her words (two reviews, two reading tests). Not confirmed by her. Until she confirms it, nothing of stage 2, the audit or the export is built from it.**
+
+**Status:** draft 3 for Eve to read and correct, 2026-11-16 (task HOME-REDESIGN-INTENT-1). Draft 1 (`e9fc1e15`) was checked by a reviewer and a reader who had only the document (main tree `tmpAI/panel/round7/intent_check/`); drafts 2 (`ff57c7c6`) and 3 correct what they found. Written by reading only. Nothing in the code, the tests, the rule files, the ADRs or the other design files was changed.
 **Who reads it:** every agent that touches HOME, the audit or the export, before it builds or asks Eve a question.
 **What wins:** Eve's own words, the later over the earlier. A record written by an agent counts as hers only where it quotes her or names her with a date; where only a record names her and her own words were not found, the statement says so.
 
@@ -25,7 +27,7 @@
 8. A step added in the audit can be removed; this touches the audit recipe only. The final steps carry who and when. A separate history log, written by default, keeps the removed steps. [READ: Tcd L1383, L1264; CH M118]
 9. Order: tier 1, then tier 2, then tier 3. In each list the recipe's steps come first, then the audit steps in the order recorded. The table, the plot, the bundle and the export run the same order. A step that cannot run is an error, never a skip. [READ: AS:135; S2:123; ADR:5343; Tcd L986]
 10. The original plots stay beside the audited plots, as evidence. [READ: T92 L8336, L7849]
-11. Exploration is never exported; the audit steps with reasons always are. She confirmed "the export is the audit recipe" and described a results export "with the data used", the user choosing the data (2026-11-15). Older records (2026-11-09, 11-12) say the standard export only names the recipe and the data. Her later words win; what they leave open is O1. [READ: Tcd L1497; S2:19; ADR:4857-4866; AS:346]
+11. Exploration is never exported; the audit steps with reasons always are. She confirmed "the export is the audit recipe" and described a results export "with the data used", the user choosing the data (2026-11-15). Older records (2026-11-09, 11-12) say the standard export only names the recipe and the data. Her later words win. Her answer to the question "Q3, is the audit recipe always in the export?" chose no option: it is not decided (O1). [READ: Tcd L1497; CH M131; S2:19; ADR:4857-4866; AS:346]
 12. If the recipe or the data changes while an audit is open, the export is refused until the user re-bases the audit. [READ: Tcd L1013; LG line 92]
 13. The app informs and warns; the user decides. It must work for any recipe and any field (data-agnostic). The example of section (b) is an illustration only. [READ: T92 L3370, L8522, L9167]
 14. **Built today:** the older per-plot model ("My view", "Plot to show"). The audit recipe, the ticks and the engine's reading of T3 are **not built**. [READ: S2:32-49; `recipe_check.py:46-47`; `home_theater.py:433-469`]
@@ -38,6 +40,9 @@
 - **Node**: one stage of one table or plot (T1 or T2 of a table, T3 of a plot). **Lineage**: the tree of nodes from the source files to the plots. [READ: AS:27; AS:138; T92 L9308 ("we have a graph/tree")]
 - **Tick**: one line in the step dialog that states one write ("write at T1 of table X, read by plots a and b"). [READ: AS:138]
 - **Result**: the original plot and the data it reads (its T3, or T2 when T3 is empty). [READ: PF:13]
+- **Exploration**: the HOME mode for looking at the data of the open plot; it changes nothing. **Audit mode**: the HOME mode where audit steps are made and removed. [READ: PF:9-11; AS:36]
+- **Compare**: in audit mode, the original Result plot beside the audited plot, an on/off toggle. [READ: AS:52; T92 L8673 ("the comparison mode is only in audit now")]
+- **Session**: the saved unfinished work of one recipe on one data set; its name is the recipe hash and the data hash. [READ: T92 L7815; ADR:5238]
 
 ---
 
@@ -84,9 +89,9 @@ An earlier statement of hers that says the same as principle 3 (CH M139 asked ag
 | Where an audit step acts | her words, 2026-11-11 13:44, T92 L1224: "I think it should always be applied on T3" | her words, 2026-11-11 15:19, T92 L1563: "change the data T1 and T2 and T3 depending on the propagation choices"; then the lineage and ticks (T92 L9308, 2026-11-12) [READ] |
 | Exploration filters and plots | her words, 2026-11-11 12:25, T92 L681: "the plot changes only in my view" | her words, 2026-11-12 08:56, T92 L7849: "In exploration mode we will have only one plot : Results - immutable" [READ] |
 | A draft before Apply | her words, 2026-11-12 09:16, T92 L7936: "may be we keep it simple : no preview - send to audit button ?" | her words, 09:21, T92 L7953: "yes : one step preview before validation in audit seems good" [READ] |
-| T3 in Blueprint | her words, 2026-11-08 08:10, Tad L24062: "No T3 should exist in blueprint" | her words, 2026-11-15 08:05, Tcd L670 (e): "blueprint can add to tier 3 for a plot" [READ] |
+| T3 in Blueprint | her words, 2026-11-08 08:10, Tad L24062: "No T3 should exist in blueprint"; 2026-11-09 11:01, Tad L47977: "blueprint will never and should never write T3 - HOME can ... T3 blongs to HOME" | her words, 2026-11-15 08:05, Tcd L670 (e): "blueprint can add to tier 3 for a plot" [READ] |
 | Missing values in filters | her words, 2026-11-12 13:33, T92 L9231: "missing values are treated as a real value" | her words, 2026-11-14 18:06, Tcd L178: "follow polars and informs clearly" (ADR-103) [READ] |
-| Recipe file in the export | her words, 2026-11-09 13:11, Tad L50822: "mode 1 - should not contain the recipe"; 2026-11-12 09:48, T92 L8069: "include recipe and data as one bundle option with the waring" | her words, 2026-11-15 22:07, Tcd L1497: two exports, "one mode where export can be with results in home (the recipe produced this with the data used ...) ... the other mode export the changes in the audit"; same turn: "original and audit recipe correct" (the paragraph whose line 7 is "The export is the audit recipe", S2:19). What stays open: O1 [READ] |
+| Recipe file in the export | her words, 2026-11-09 10:23, Tad L47649: the normal export "also exports the recipe ... which actually is overkill if we have an export for reproducibility"; 13:11, Tad L50822: "mode 1 - should not contain the recipe"; 13:28, Tad L51145: "remove the things that says never includes ... we have to see those 2 modes as complement of each others not as separate"; 2026-11-12 09:48, T92 L8069: "include recipe and data as one bundle option with the waring" | her words, 2026-11-15 22:07, Tcd L1497: two exports, "one mode where export can be with results in home (the recipe produced this with the data used ...) ... the other mode export the changes in the audit"; same turn: "original and audit recipe correct" (the paragraph whose line 7 is "The export is the audit recipe", S2:19). What stays open: O1 [READ] |
 | Source of truth of the audit | records of 2026-11-11 (agent text): "the step list is the source of truth", AS:245, AS:342; "the step list is derived from" the events, AS:646 (D2) | record naming her, 2026-11-13: the copy is the source of truth, AS:164; her N7-2 of 2026-11-15: the log is separate and the final steps are "not derived from it" (CH:638; Tcd L1264) [READ] |
 | Ticks | record of 2026-11-12 (first version of P5): "tick boxes on the results", "earliest safe point" (RG:110 row P5) | her words, 2026-11-12 13:46, T92 L9308 ("what is the Tick is what is done"); record AS:138 [READ] |
 
@@ -126,7 +131,7 @@ An earlier statement of hers that says the same as principle 3 (CH M139 asked ag
 - The dialog lists, as tick lines, every node where `sample_id` exists, backwards to the roots and forwards to every descendant. [READ: ADR:5335; AS:138; T92 L10291]
 - The user ticks T1 of `Quast_with_metadata` and T1 of `MLST_with_metadata`. [READ: AS:138; T92 L9308]
 - The dialog shows rows and entities before and after for every table and plot downstream, the later steps that summarise rows, and a preview of the open plot. [READ: AS:138; HO:48; T92 L9558]
-- Messages come in three levels: information (nothing to do), warning (the user ticks "I understand"), block (technical only). [READ: AS:568-574 ("decided 2026-11-12, Eve"); T92 L3370]
+- Messages come in three levels: information (nothing to do), warning (the user ticks "I understand"), block (technical only: a column or key that no longer exists, a renamed key, a step the audit recipe cannot represent, a failed recomputation; nothing is applied). [READ: AS:568-574, AS:574 ("decided 2026-11-12, Eve"); T92 L3370]
 - A filter on a join key is allowed with a warning that the join may change; a **drop** of a join-key column is refused. [READ: AS:134; RG:114 (the guide's item O12, "From Eve's answers of 2026-11-13: DECIDED ... drop of a key column refused"); her words in that turn: "yes - make fail", T92 L11773]
 - A free-text reason is required; no fixed categories; the help suggests a hashtag form (`#technical failure: ...`). [READ: ADR:5125; AS:612; T92 L8522]
 - Apply or Cancel. Cancel changes nothing. [READ: ADR:5337]
@@ -154,7 +159,7 @@ An earlier statement of hers that says the same as principle 3 (CH M139 asked ag
 **8. A step is removed.**
 - A step added in the audit can be removed again; it leaves the audit recipe only. [READ: Tcd L1383]
 - Her word on undo: "In audit ? the unto is the remove step button" (T92 L11773, 2026-11-13). Her word on what removal does: "could just everything be redone without the step deleted ?" (T92 L1798, 2026-11-11). [READ]
-- The records add three controls, "Undo last", "Revert to step N", "Remove all" (AS:327-328; AS:452-459 under "Decided (Eve)" of 2026-11-11; HO:124). Her own words for these three names were not found. CONFIRM (O11). [READ]
+- The records add three controls, "Undo last", "Revert to step N", "Remove all" (AS:327-328; AS:452-459 under "Decided (Eve)" of 2026-11-11; HO:124). Her own words for these three names were not found. The reading guide records the other side: "in audit mode the undo is the remove-step button" (RG:114, from her answers of 2026-11-13; it answers where Blueprint's undo goes, `tasks.md:261`). So HO:124 and AS:327 (three controls) disagree with RG:114. CONFIRM (O11). [READ]
 - Removing is "recompute without it"; later steps are kept and re-checked (applied, not concerned, broken). [READ: AS:318-323]
 - **The trace:** the final steps no longer hold the removed step; the separate history log, written by default, keeps "removed" with who and when; the final steps are the record that matters. [READ: Tcd L858 ("steps removed are of no use ... what is important is that the final autit steps applied are recorded"), Tcd L880, Tcd L1264; CH:437, CH:638]
 
@@ -220,8 +225,10 @@ An earlier statement of hers that says the same as principle 3 (CH M139 asked ag
 **O1. What the two ways of exporting hold.** After her words of 2026-11-15 (C9), open:
 - Reading A: both ways hold the recipe file (the audit way the audit recipe); the raw data files only behind a tick with the sensitive-data warning. Her support: "raw data can be sensitive - recipe is not expected to be" (T92 L8062, 2026-11-12).
 - Reading B: the results way names the data used by hash and path and holds the recipe file; the raw data files behind a tick.
-- Reading C: as recorded on 2026-11-12: recipe and raw data together behind one tick, off by default (AS:346; her words T92 L8069). Her later words of 2026-11-15 make this less likely, not impossible.
-- Sources: Tcd L1497; S2:19; ADR:4857-4866; AS:346; QC:94-103.
+- Reading C: as recorded on 2026-11-12: recipe and raw data together behind one tick, off by default (AS:346; her words T92 L8069). Her later words of 2026-11-15 make this less likely, not impossible. Note: ADR:4857 ("Mode 1 must never contain the recipe") rests on her 13:11 words of 2026-11-09; 17 minutes later she asked to "remove the things that says never includes" and called the two modes complements (Tad L51145).
+- Reading D: both bundles in one zip, "which would make sense when you finish a project" (Tad L47663, 2026-11-09 10:30; also ADR:4900, "combinable into one zip").
+- Supports, for every reading: the audit (T3) steps "are still kept in the 'normal' export because they contain the justification" (Tad L47649, 2026-11-09); "it is the data used that is exported ... not the default data" (Tad L3298, 2026-11-05).
+- Sources: Tcd L1497; CH M131; S2:19; ADR:4857-4866, 4900; AS:346; Tad L47649, L47663, L50822, L51145; QC:94-103.
 
 **O2. When the audit recipe file is first written** (first step, switching audit on, or session start). No record and no turn of hers answers (QC:24).
 
@@ -239,7 +246,7 @@ An earlier statement of hers that says the same as principle 3 (CH M139 asked ag
 
 **O9. Data changed, session.** "Audit steps of the old data stay with the old session" is a record (HM section 5 (3); HO:59); her words cover only recomputation (T92 L10022). CONFIRM.
 
-**O10. Where the step panel and the recipe overview sit.** Records: accordions in the right panel with a switch to a dialog (ADR:5183); the right panel kept, slightly wider, adjustable (HO:124, decided 2026-11-13). Her words: "difficult for me to decide without trying it" (Tcd L880); the overview display wants proposals with colours first (CH M118). To settle with pictures.
+**O10. The final place of the recipe overview, and its display.** Decided: the recipe overview is built as accordions in the right panel, with one switch that moves it into a dialog (ADR:5183, "DECIDED 2026-11-15 (Eve)"); the step list stays in the right panel, slightly wider, adjustable (HO:124, decided 2026-11-13). Her words: "it can be coded so its easier to change place ... difficult for me to decide without trying it" (Tcd L880). Open: only the final place (panel or dialog), after trying it, and the display (colours, insertion point, where the lineage joins), for which she wants proposals first (Tcd L1264; CH M118).
 
 **O11. The undo controls.** Her word: "the unto is the remove step button" (T92 L11773). Records: "Undo last", "Revert to step N", "Remove all" (AS:327-328, AS:452-459, HO:124). Readings: (a) only a remove button per step; (b) the three controls as well. What they touch is not open (C4).
 
@@ -248,6 +255,8 @@ An earlier statement of hers that says the same as principle 3 (CH M139 asked ag
 ---
 
 ## (e) Where today's build, the spec, the rule files or the docs contradict (a) to (c)
+
+Some entries are contradictions **between two records**, reported here as found and not resolved by this page: E9, E11, E13, E14, E17, and the older sentence AS:135 ("a step is written at **one** of these") against the tick lines that write a step at several nodes (AS:138). They are not errors of this page.
 
 | # | Place (file:line) | What it says or does | Contradicts |
 |---|---|---|---|
@@ -283,12 +292,12 @@ An earlier statement of hers that says the same as principle 3 (CH M139 asked ag
 
 ## Sources read (with dates)
 
-**Transcripts** (Eve's turns extracted with the automatic summaries removed; script and extracts in worktree `tmpAI/intent_turns/`):
+**Transcripts** (Eve's turns extracted with the automatic summaries removed; script and extracts in worktree `tmpAI/intent_turns/`). **Read in order, every turn of hers:** `92f68895` and `cd1b0ac7` (up to 2026-11-16 06:39), and `ad032c0c` for 2026-11-08 to 11-11 (by the second reviewer). **Only searched by keyword:** `ad032c0c` for 2026-11-04 to 11-07, and all the others.
 | File | Dates (UTC) | How read |
 |---|---|---|
 | `4f9d21b6-...jsonl` | 2026-11-04 13:04-13:13 | listed (2 turns) |
 | `82e7337d-...jsonl`, `b7fd8e77-...jsonl` | 2026-11-04 14:53 | listed (1 turn each) |
-| `ad032c0c-...jsonl` | 2026-11-04 15:12 to 11-11 09:30 | 264 turns; searched (audit, export, T3, exploration, session, reproducib); turns read in full around the hits |
+| `ad032c0c-...jsonl` | 2026-11-04 15:12 to 11-11 09:30 | 264 turns; by me searched by keyword (audit, export, T3, exploration, session, reproducib), turns read in full around the hits; the turns of 2026-11-08 to 11-11 read in order by the second reviewer (`intent_check/review2.md` section 3) |
 | `902da972-...jsonl` | 2026-11-07 07:45 to 11-14 10:07 | searched; no redesign turn found |
 | `92f68895-...jsonl` (HOME session) | 2026-11-11 09:41 to 11-14 13:47 | all 158 turns of Eve read in order |
 | `9b22d54e-...jsonl` | 2026-11-11 10:15 | listed |
