@@ -2,9 +2,11 @@
 
 In the **SPARMVET_VIZ** architecture, the choice of data types is not merely about storage optimization—it is about **relational integrity** and **visual consistency**. 
 
+> **Note (2026-11-15, Eve):** the shipped recipes declare `String` for nominal fields (genes, species, countries, identifiers) and `Enum` with the order written in `categories` for ordered ones; one `Categorical` field is kept as the documented example. `Categorical` stays a valid type of the format. Sections 3 and 4 below describe the earlier practice of casting to a category in `output_fields`; read them with this note.
+
 ## 1. Why Categorical?
 
-Polars `Categorical` type (equivalent to R's `factor` or Pandas' `category`) represents string data as small integer indices into a string pool. This is the **Primary Discrete Scale** for all visualizations and joins in the project.
+Polars `Categorical` type (equivalent to R's `factor` or Pandas' `category`) represents string data as small integer indices into a string pool. A plot draws any text column (`String`) as a discrete scale as well, so `Categorical` is not needed for plots. Since Eve's decision of 2026-11-15 the shipped recipes declare `String` for nominal fields and keep one `Categorical` field (the figshare `breakpoint`) as the documented example.
 
 ### Comparison Table: Discrete Handling
 
@@ -26,32 +28,36 @@ If the key is a numeric ID in one source and a string in another (or one side wa
 
 ## 3. Visualization Benefits (Plotnine)
 
-By casting discrete metadata (Species, ST-Type, Resistance Class) to `categorical` at the **Contract Guard** (`output_fields`) layer, we ensure that:
-1.  **Plotnine** correctly identifies the scale as discrete without manual `factor()` calls in Python.
-2.  Consistent color legends are maintained across different datasets.
-3.  Missing levels are handled gracefully without breaking the scale.
+Discrete metadata (species, ST type, resistance class) is declared as `String` in `input_fields`. Then:
+1.  **Plotnine** draws the column as a discrete scale without manual `factor()` calls.
+2.  The levels are drawn in alphabetical order (byte order: upper case before lower case, numbers written as text sort as text, so `10` comes before `93`). The order does not depend on the order of the rows in the file.
+3.  A level whose order has a meaning (for example `S, I, R, NI`) is declared `Enum` with the order written in `categories`; axis and legend then follow that order. A value that is not in the list stops the load with a message that names the column and the value.
+4.  An empty cell is a missing value (it is not refused); the row is kept.
 
 ## 4. The "Clean-then-Cast" Workflow
 
-In a high-integrity pipeline, data cleaning (string normalization) and data typing (relational encoding) have a strict order of operations.
+Data typing and cleaning have a fixed order: the declared type is applied when the file is read, then `strip` and `null_values`, then the wrangling steps work on typed columns.
 
-### Why perform cleaning on Strings?
-Polars `Categorical` types are integer-encoded once materialized. Performing operations like `.str.strip_chars()` or `.str.extract()` on a Categorical column is computationally more expensive (or unsupported for some complex regex) because Polars would have to de-encode the values back to strings, transform them, and then re-encode them into a new category pool.
+### Why text fields are `String`
+Polars `Categorical` and `Enum` columns are integer-encoded once materialized, and a text step (`str.*`) on an `Enum` column fails (it expects `String`). A `String` column can be used by any text step and by a join with any other `String` key.
 
 ### The Strategy
-All **Wrangling Actions** (Layer 1) should operate on columns while they are still in their raw `pl.String` (utf8) state. The conversion to `pl.Categorical` occurs during the **Contract Guard** (`output_fields`) as the terminal operation of the pipeline.
+Text-cleaning steps work on `String` columns. The engine does not cast to `Categorical` at the end of the pipeline; the type of a column is the one declared in `input_fields` (or the one a step gives it).
 
 **Order of Operations:**
-1.  **Ingestion**: Data is loaded for `input_fields`.
-2.  **Wrangling**: String-based cleaning (stripping, regex, replacements).
-3.  **Contract (TERMINAL)**: Columns are selected and **cast to `categorical`** for downstream joins and plotting.
+1.  **Ingestion**: the file is read as text; `strip` and `null_values` are applied; each column is parsed with its declared type. A value the type cannot read stops the load.
+2.  **Wrangling**: the steps of `tier1` and `tier2`, on typed columns.
+3.  **Plot**: a `String` column is drawn in alphabetical order, an `Enum` column in its written order.
 
 ## 5. Usage in Data analysis recipes
 
-Every discrete metadata field in your `output_fields` contract should be explicitly cast to ensure this downstream consistency:
+Every field states its type in `input_fields`. The old lower-case words (`categorical`, `utf8`) are refused by the checker, which names the Polars type to write:
 
 ```yaml
-output_fields:
-  species: { type: "categorical" }  # High-integrity discrete scale (Terminal Cast)
-  sample_id: { type: "utf8" }       # Unique identifier (Permanent String)
+input_fields:
+  species: { type: String }       # nominal: drawn in alphabetical order
+  sample_id: { type: String }     # identifier and join key
+  predicted_phenotype:            # ordered: the written order is the plot order
+    type: Enum
+    categories: [S, I, R, NI]
 ```

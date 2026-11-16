@@ -4,22 +4,22 @@ sample_id:
   label: Sample Id
 host_animal_species:
   original_name: host_animal_species
-  type: Categorical
+  type: String
   label: Host Animal Species
 host_animal_common:
   original_name: host_animal_common
-  type: Categorical
+  type: String
   label: Host Animal Common
 specimen_source_tissue:
   original_name: specimen_source_tissue
-  type: Categorical
+  type: String
   label: Specimen Source Tissue
 final_diagnosis:
   original_name: final_diagnosis
-  type: Categorical
+  type: String
   null_values: ["NA", "n/a"]
   label: Final Diagnosis
 animal_infection_site_uti:
   original_name: animal_infection_site_uti
-  type: Categorical
+  type: String
   label: Animal Infection Site Uti

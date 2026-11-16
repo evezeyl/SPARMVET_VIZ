@@ -21,8 +21,8 @@ data_schemas:
     strip: true
     input_fields:
       sample_id: {original_name: sample_id, type: String, label: Sample, is_entity_key: true}
-      gene: {original_name: gene, type: Categorical, label: Gene}
-      predicted_phenotype: {original_name: predicted_phenotype, type: Categorical, label: Phenotype}
+      gene: {original_name: gene, type: String, label: Gene}
+      predicted_phenotype: {original_name: predicted_phenotype, type: String, label: Phenotype}
     wrangling:
       tier1:
         - action: polars_select

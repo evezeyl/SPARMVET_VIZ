@@ -28,7 +28,7 @@ data_schemas:
         label: Measurement Value
       group:
         original_name: Group
-        type: Categorical
+        type: String
         label: Sample Group
     wrangling:
       tier1:
@@ -49,7 +49,7 @@ metadata_schema:
       is_entity_key: true
     category:
       original_name: Category
-      type: Categorical
+      type: String
       label: Biological Category
   wrangling:
     tier1: []

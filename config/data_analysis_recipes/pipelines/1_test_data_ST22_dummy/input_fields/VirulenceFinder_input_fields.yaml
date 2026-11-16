@@ -5,9 +5,9 @@ sample_id:
   is_entity_key: true
 serotype:
   original_name: "serotypefinder_serotype"
-  type: Categorical
+  type: String
   label: "Serotype (Finder)"
 virulence_raw:
   original_name: "virulence_finder_virulencegenes_proteinname"
-  type: Categorical
+  type: String
   label: "Raw Virulence Hit"

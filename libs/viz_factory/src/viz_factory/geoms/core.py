@@ -484,7 +484,7 @@ def handle_label(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "shape": {"widget": "number", "label": "Shape code (0–25)", "required": False, "default": 16},
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
-    "description": "Scatter points with random position noise; use to reduce overplotting in small categorical scatter plots \u2014 prefer geom_sina for publication. Differs from plotnine: the factory gives it a default seed, so the same recipe gives the same picture; `random_state: null` gives a new one each time.",
+    "description": "Scatter points with random position noise; use to reduce overplotting in small categorical scatter plots \u2014 prefer geom_sina for publication. Differs from plotnine: the factory gives it a default seed, so the same recipe gives the same picture; a seed is a number: `random_state: 0` sets it; `null` and `random` are refused.",
     "yaml_example": "layers:\n  - name: geom_jitter\n    params:\n      width: 0.2\n      height: 0",
 })
 def handle_jitter(p: ggplot, spec: Dict[str, Any]) -> ggplot:
