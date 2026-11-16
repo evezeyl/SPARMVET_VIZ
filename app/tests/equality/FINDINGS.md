@@ -6,12 +6,20 @@ on the shipped clean data and on a deliberately dirty copy (`data/dirty/EDITS.md
 engine, the shipped recipe or the shipped data was changed. A difference is kept as a failing test in
 `test_findings_open.py` (not collected by default; `README.md` says how to run it).
 
-Result in one line: on the clean data all 22 comparisons are equal; on the dirty data 16 of 22 are equal and 6 differ
-(all from F1); a second dirty run with the recipe's own `null_values: []` gives 5 differences (F2).
+Result in one line (updated 2026-11-16): on the clean data all 22 comparisons are equal; on the dirty data all 22 are
+now equal (the 6 differences of F1 were corrected in the shipped recipe, commit 7f4ea21a); a second dirty run with the
+recipe's own `null_values: []` still gives 5 differences (F2).
 
 ## Differences (engine and hand-written side give different results)
 
 ### F1. A missing phenotype is counted as a resistance class (`Multiresistant`, table `AMR_Profile_Joint`)
+- **Corrected 2026-11-16** (commit 7f4ea21a, RECIPE-FIXES-1): the shipped formula is now
+  `pl.col('predicted_phenotype_clean').drop_nulls().n_unique().over('sample_id') > 1`, so a missing phenotype no longer
+  counts by itself. On the shipped data no number moves (16 of 38 samples are multi-resistant before and after). The four
+  staged copies under `recipes/` were regenerated from the shipped folder with `make_dirty_data.py`, and the six cases
+  of F1 now pass in the normal run. The text below is what was found; it is kept as the record.
+- **One question stays open and is Eve's:** whether a phenotype written `unknown[...]` counts as a class. With it counted
+  16 samples are multi-resistant; left out, 11 (5 samples change). Nothing was changed for it.
 - **Recipe says** (`assembly/AMR_Profile_Joint.yaml`, step 4 comment): "sample carries >1 distinct resistance class";
   README: "isolates resistant to >= 2 antimicrobial classes". The expression is
   `pl.col('predicted_phenotype_clean').n_unique().over('sample_id') > 1`.
@@ -70,6 +78,6 @@ Result in one line: on the clean data all 22 comparisons are equal; on the dirty
 
 ## Choices made on the hand-written side where the recipe is silent
 
-A missing phenotype is not a class (F1); an empty cell is a text, not a missing value, unless `null_values` says so
+A missing phenotype is not a class (F1, now also what the recipe does); an empty cell is a text, not a missing value, unless `null_values` says so
 (F2); a non-whole Year is refused; ascending sort, missing first, Source and Country by their text. A reading of Eve's
 that differs turns a finding into an agreement or the other way round.
