@@ -155,7 +155,8 @@ def test_a_value_outside_the_enum_list_is_refused_naming_column_and_value(tmp_pa
     with pytest.raises(Exception) as exc:  # noqa: PT011 - the type is the engine's; the text is what the user reads
         _render("figshare_integration", "plot_a_phenotype_bar", base=base)
     message = str(exc.value)
-    assert "predicted_phenotype" in message and "NI" in message
+    assert "The column 'predicted_phenotype' is declared as Enum with the values S, I, R" in message and "'NI'" in message
+    assert "Suggestion: add the value to `categories`" in exc.value.tip
 
 
 def test_a_changed_enum_order_changes_the_drawn_order(tmp_path):
