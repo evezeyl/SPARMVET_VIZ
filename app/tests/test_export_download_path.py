@@ -40,8 +40,9 @@ def _fresh_cache():
 class _Bootloader:
     """What the export reads of the Bootloader."""
 
-    def __init__(self, world):
+    def __init__(self, world, flags=()):
         self.world = world
+        self.flags = set(flags)
         self.rejected_data_analysis_recipes = {}
         self.available_data_analysis_recipes = {"tiny": world.data_analysis_recipes_dir / "tiny.yaml"}
 
@@ -52,10 +53,10 @@ class _Bootloader:
         return "tiny"
 
     def is_enabled(self, flag):
-        return False
+        return flag in self.flags
 
 
-def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None):
+def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None, extra_values=None, flags=(), **handler_kwargs):
     """`define_export_server` with the smallest set of real and fake parts; returns the generator function of the download."""
     captured = {}
 
@@ -73,13 +74,15 @@ def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None):
     monkeypatch.setattr(subprocess, "run", lambda args, *a, **k: subprocess.CompletedProcess(args, 1, "", "no render in this test")
                         if args and args[0] == "quarto" else real_run(args, *a, **k))
     cfg = load_data_analysis_recipe(world.data_analysis_recipes_dir / "tiny.yaml").config
-    values = {"export_user_name": "test", "export_scope": "global", "export_preset": "web", "export_plot_format": "png"}
+    values = {"export_user_name": "test", "export_scope": "global", "export_preset": "web", "export_plot_format": "png",
+              **(extra_values or {})}
     export_handlers.define_export_server(
         SimpleNamespace(import_bundle_upload=None), lambda fn: fn, None,
-        bootloader=_Bootloader(world), orchestrator=world.orch, viz_factory=VizFactory(),
+        bootloader=_Bootloader(world, flags), orchestrator=world.orch, viz_factory=VizFactory(),
         current_app_features=SimpleNamespace(get=lambda: "qa"), active_cfg=lambda: cfg,
         tier1_anchor=tier1_anchor or (lambda: pl.DataFrame().lazy()), tier_toggle=SimpleNamespace(get=lambda: "T2"),
-        home_state=None, safe_input=lambda _input, key, default: values.get(key, default), view_keys=lambda: view_keys)
+        **{"home_state": None, **handler_kwargs},
+        safe_input=lambda _input, key, default: values.get(key, default), view_keys=lambda: view_keys)
     return captured["fn"]
 
 

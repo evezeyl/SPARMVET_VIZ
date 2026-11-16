@@ -24,6 +24,7 @@ from pathlib import Path
 
 from shiny import reactive, render, ui
 
+from app.modules.error_notice import notice
 from app.modules.export_refusal import export_refusal
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
 from utils.fix_text import fix_label
@@ -120,12 +121,16 @@ def build_export_provenance(
 
     # Data source paths (EXPORT-AUDIT-COMPLETE-1)
     data_source_paths: dict[str, str] = {}
+    problems: list[str] = []     # what could not be recorded, in plain words: the caller shows them (D-0050)
     if orchestrator is not None:
         try:
             _src = orchestrator.get_source_files(data_analysis_recipe_id)
             data_source_paths = {k: str(v) for k, v in (_src or {}).items()}
-        except Exception:
-            pass
+        except Exception as exc:
+            problems.append(notice(
+                "The paths of the data files could not be read, so this export records no data file paths (and a "
+                "reproducibility bundle holds no data files)",
+                "reload the page (F5), check that the data folder of the recipe can be read and export again", exc))
 
     # Decision hashes per dataset from Parquet metadata (EXPORT-HASH-2)
     decision_hashes: dict[str, str] = {}
@@ -197,6 +202,7 @@ def build_export_provenance(
         "release_version": release_version,
         "software_versions": sw_versions,
         "data_source_paths": data_source_paths,
+        "problems": problems,
         # ADR-097 decision 3 — the four verification legs (recipe/data above; engine + T3 here):
         "t3_audit_steps_sha256": t3_audit_steps_sha256,
         "engine_fingerprint": engine_fingerprint(),
@@ -323,9 +329,11 @@ def plot_report_lines(p_id: str, label: str, caption: str, fig_id: str, plot_ext
 
 
 def _embed_png_provenance(
-    png_bytes: bytes, prov: dict, plot_id: str, dataset_key: str = ""
+    png_bytes: bytes, prov: dict, plot_id: str, dataset_key: str = "", on_problem=None
 ) -> bytes:
-    """Embed provenance as iTXt chunks in PNG bytes (EXPORT-IMG-META-1)."""
+    """Embed provenance as iTXt chunks in PNG bytes (EXPORT-IMG-META-1).
+
+    When the keys cannot be written the picture is returned as it was and `on_problem(exc)` is called (D-0050)."""
     try:
         from PIL import Image, PngImagePlugin
         import io as _io
@@ -349,14 +357,18 @@ def _embed_png_provenance(
         out = _io.BytesIO()
         img.save(out, format="PNG", pnginfo=info)
         return out.getvalue()
-    except Exception:
+    except Exception as exc:
+        if on_problem is not None:
+            on_problem(exc)
         return png_bytes
 
 
 def _embed_svg_provenance(
-    svg_bytes: bytes, prov: dict, plot_id: str, dataset_key: str = ""
+    svg_bytes: bytes, prov: dict, plot_id: str, dataset_key: str = "", on_problem=None
 ) -> bytes:
-    """Embed provenance as SVG <metadata> XML block (EXPORT-IMG-META-1)."""
+    """Embed provenance as SVG <metadata> XML block (EXPORT-IMG-META-1).
+
+    When the keys cannot be written the picture is returned as it was and `on_problem(exc)` is called (D-0050)."""
     try:
         import xml.etree.ElementTree as _ET
         _ET.register_namespace("", "http://www.w3.org/2000/svg")
@@ -375,7 +387,9 @@ def _embed_svg_provenance(
             f"sparmvet:created_at={prov.get('created_at', '')}",
         ])
         return _ET.tostring(root, encoding="unicode").encode("utf-8")
-    except Exception:
+    except Exception as exc:
+        if on_problem is not None:
+            on_problem(exc)
         return svg_bytes
 
 
@@ -1054,6 +1068,17 @@ def define_export_server(input, output, session, *,
                 t3_by_plot=_t3_listed,
                 t3_aesthetic_overrides=_t3_aesthetic_overrides,
             )
+            for _prov_problem in prov.get("problems", []):
+                with reactive.isolate():
+                    _notify("⚠️ " + _prov_problem, type="warning", duration=12)
+
+            # Parts of this export that are replaced by a `*_ERROR.txt` file inside the zip (D-0050: the user is told on
+            # screen too, once, when the export is finished) and pictures that could not take the keys.
+            _unwritten: list[tuple[str, str]] = []
+            _picture_failures: list[tuple[str, Exception]] = []
+
+            def _lost(what: str, exc) -> None:
+                _unwritten.append((what, f"{type(exc).__name__}: {' '.join(str(exc).split()) or 'no message'}"))
 
             # ── Render and save plots ─────────────────────────────────────
             # plot_bytes  → zip's plots/   in the user's chosen format (always).
@@ -1133,10 +1158,11 @@ def define_export_server(input, output, session, *,
                         with open(plot_path, "rb") as f:
                             raw = f.read()
                         # EXPORT-IMG-META-1: embed provenance in image bytes
+                        _no_keys = lambda exc, _p=p_id: _picture_failures.append((_p, exc))   # noqa: E731
                         if plot_fmt == "png":
-                            raw = _embed_png_provenance(raw, prov, p_id, _ds_key)
+                            raw = _embed_png_provenance(raw, prov, p_id, _ds_key, on_problem=_no_keys)
                         elif plot_fmt == "svg":
-                            raw = _embed_svg_provenance(raw, prov, p_id, _ds_key)
+                            raw = _embed_svg_provenance(raw, prov, p_id, _ds_key, on_problem=_no_keys)
                         plot_bytes[p_id] = raw
                         zf.writestr(f"{bundle_dir}/{_safe_ds}/plots/{p_id}.{plot_fmt}", raw)
 
@@ -1159,10 +1185,22 @@ def define_export_server(input, output, session, *,
                         # detection without guidance in a file nobody can ask a follow-up
                         # question about is worse than in a live UI.
                         failed_plots[p_id] = str(e)
+                        _lost(f"the plot '{p_id}'", e)
                         zf.writestr(
                             f"{bundle_dir}/{_safe_ds}/plots/{p_id}_ERROR.txt",
                             failed_plot_stub(e),
                         )
+
+                if _picture_failures:
+                    _names = ", ".join(f"'{_p}'" for _p, _ in _picture_failures[:8]) + (
+                        f" and {len(_picture_failures) - 8} more" if len(_picture_failures) > 8 else "")
+                    with reactive.isolate():
+                        _notify("⚠️ " + notice(
+                            f"The recipe and data keys could not be written into {len(_picture_failures)} picture(s) ({_names}), "
+                            "so those files carry no keys",
+                            "the keys of this export are in README.txt, report.qmd and effective_run.yaml of the bundle; export "
+                            "again if you need them inside the pictures", _picture_failures[0][1]),
+                            type="warning", duration=12)
 
                 # ── Export data by tier ───────────────────────────────────
                 # T1: always exported.
@@ -1203,6 +1241,7 @@ def define_export_server(input, output, session, *,
                         with open(tsv_path, "rb") as f:
                             zf.writestr(f"{bundle_dir}/{safe_ds}/T1_data.tsv", f.read())
                     except Exception as e:
+                        _lost(f"the T1 data of '{ds_key}'", e)
                         zf.writestr(
                             f"{bundle_dir}/{safe_ds}/T1_data_ERROR.txt",
                             f"T1 data export failed:\n{e}"
@@ -1226,6 +1265,7 @@ def define_export_server(input, output, session, *,
                                 zf.writestr(f"{bundle_dir}/{safe_ds}/T2_data.tsv", f.read())
                             exported_t2.add(ds_key)
                     except Exception as e:
+                        _lost(f"the T2 data of '{ds_key}'", e)
                         zf.writestr(
                             f"{bundle_dir}/{safe_ds}/T2_data_ERROR.txt",
                             f"T2 data export failed:\n{e}"
@@ -1259,6 +1299,7 @@ def define_export_server(input, output, session, *,
                                 with open(tsv_path, "rb") as f:
                                     zf.writestr(f"{bundle_dir}/{safe_ds}/T3_data_{_t3_pid}.tsv", f.read())
                             except Exception as e:
+                                _lost(f"the audited data of the plot '{_t3_pid}'", e)
                                 zf.writestr(
                                     f"{bundle_dir}/{safe_ds}/T3_data_{_t3_pid}_ERROR.txt",
                                     f"T3 data export failed:\n{e}"
@@ -1299,6 +1340,7 @@ def define_export_server(input, output, session, *,
                             _yaml.safe_dump(t3_steps_data, sort_keys=False, allow_unicode=True),
                         )
                     except Exception as e:
+                        _lost("t3_steps.yaml (the audit steps with their reasons)", e)
                         zf.writestr(f"{bundle_dir}/t3_steps_ERROR.txt", str(e))
 
             # ── Mode 2 add-on: the heavy, Mode-2-exclusive content (ADR-097, #45) ──
@@ -1333,6 +1375,7 @@ def define_export_server(input, output, session, *,
                                     f.read(),
                                 )
                         except Exception as e:
+                            _lost(f"the data file '{_ds_id}' of the reproducibility bundle", e)
                             zf.writestr(
                                 f"{bundle_dir}/data_reproducibility/{_ds_id}_ERROR.txt", str(e)
                             )
@@ -1365,6 +1408,13 @@ def define_export_server(input, output, session, *,
                         f"{bundle_dir}/data_analysis_recipes_reproducibility/ERROR.txt", str(e)
                     )
                     mode2_skipped = {"_error": str(e)}
+                    with reactive.isolate():
+                        _notify("⚠️ " + notice(
+                            "The reproducibility part of this export could not be built, so the bundle holds no recipe and no "
+                            "data files for a re-run (its reason is in data_analysis_recipes_reproducibility/ERROR.txt)",
+                            "the rest of the bundle is complete, but do not use it to re-run the analysis; fix the cause and "
+                            "export again with the reproducibility box ticked", e),
+                            type="warning", duration=15)
 
             # ── effective_run.yaml — written UNCONDITIONALLY, identical content either
             # way, bundle root (ADR-097, #45 corrected scope, Eve 2026-11-09): the single
@@ -1515,6 +1565,7 @@ def define_export_server(input, output, session, *,
                         )
                         _lineage_ok = True
             except Exception as _le:
+                _lost("the lineage graph", _le)
                 zf.writestr(
                     f"{bundle_dir}/lineage/lineage_graph_ERROR.txt",
                     f"Lineage graph generation failed:\n{_le}",
@@ -1843,6 +1894,14 @@ def define_export_server(input, output, session, *,
             if rendered_report_bytes:
                 zf.writestr(f"{bundle_dir}/report.{out_ext}", rendered_report_bytes)
             else:
+                _quarto_words = " ".join((render_stderr or "").split())[:240] or "it produced no output file"
+                with reactive.isolate():
+                    _notify("⚠️ " + notice(
+                        f"Quarto could not render report.{out_ext}, so the bundle holds the report source report.qmd and "
+                        f"no rendered report ({_quarto_words})",
+                        "install Quarto (quarto.org) if it is missing, or render report.qmd yourself with "
+                        f"`quarto render report.qmd --to {out_ext}`; the plots and data files are complete"),
+                        type="warning", duration=15)
                 zf.writestr(
                     f"{bundle_dir}/report_RENDER_FAILED.txt",
                     f"Quarto could not render report.{out_ext}.\n\n"
@@ -1974,6 +2033,16 @@ def define_export_server(input, output, session, *,
         if _build_refusal is not None:
             yield _build_refusal
             return
+
+        if _unwritten:
+            _listed = "; ".join(f"{_what} ({_why})" for _what, _why in _unwritten[:6]) + (
+                f"; and {len(_unwritten) - 6} more" if len(_unwritten) > 6 else "")
+            with reactive.isolate():
+                _notify("⚠️ " + notice(
+                    f"{len(_unwritten)} part(s) of this export could not be written and are replaced by *_ERROR.txt files "
+                    f"inside the bundle: {_listed}",
+                    "open the *_ERROR.txt files of the bundle for the reason of each, fix the cause and export again; do not "
+                    "publish this bundle as complete"), type="error", duration=None)
 
         buf.seek(0)
         yield buf.read()
