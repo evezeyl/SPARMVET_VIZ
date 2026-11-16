@@ -75,6 +75,14 @@ def test_an_old_type_name_is_refused_and_named(tmp_path, old_name):
         ingest(tmp_path, "id\tx\ns1\t1\n", {"id": {"type": "String"}, "x": {"type": old_name}}, **EXPLICIT)
 
 
+def test_the_old_categorical_word_gets_the_three_suggestions(tmp_path):
+    with pytest.raises(IngestionError) as caught:
+        ingest(tmp_path, "id\tx\ns1\ta\n", {"id": {"type": "String"}, "x": {"type": "categorical"}}, **EXPLICIT)
+    text = str(caught.value)
+    assert "write `String` for a category with no order" in text and "write `Enum` with `categories:`" in text
+    assert "`Categorical` is also accepted" in text
+
+
 def test_a_field_without_a_type_fails_and_names_the_field(tmp_path):
     with pytest.raises(IngestionError, match="no_type_here"):
         ingest(tmp_path, "id\tno_type_here\ns1\t1\n", {"id": {"type": "String"}, "no_type_here": {}}, **EXPLICIT)

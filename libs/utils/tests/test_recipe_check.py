@@ -252,9 +252,17 @@ def test_a_problem_reads_as_recipe_path_what_and_fix():
     assert "Float64" in text and "Fix:" in text
 
 
-def test_categorical_is_refused_with_this_was_string():
-    result = check(mutated(lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(type="categorical")))
-    assert "String" in result.problems[0].fix
+def test_old_categorical_is_refused_with_the_three_suggestions():
+    """Eve 2026-11-15: String for a category with no order, Enum for an order, Categorical also accepted.
+
+    The order drawn for each was verified on a plot: String alphabetical, Enum as written, Categorical as the rows come.
+    """
+    problem = check(mutated(lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(type="categorical"))).problems[0]
+    assert "no longer read" in problem.message
+    assert "write `String` for a category with no order" in problem.fix and "alphabetical order" in problem.fix
+    assert "write `Enum` with `categories:`" in problem.fix
+    assert "`Categorical` is also accepted" in problem.fix and "order of the rows" in problem.fix
+    assert not problem.fix.startswith("write Categorical")
 
 
 def test_build_profile_accepts_placeholders_that_run_refuses():

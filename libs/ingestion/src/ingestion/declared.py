@@ -50,8 +50,10 @@ def field_dtype(dataset_name: str, slug: str, field: Dict[str, Any]):
         raise _fail(f"Data schema '{dataset_name}', field '{slug}': type is missing",
                     f"Write a Polars dtype for '{slug}', for example type: String. Allowed: {', '.join(text_dtype_names())}.")
     if name not in text_dtype_names():
-        replacement = recipe_spec().get("renamed_types", {}).get(name)
-        hint = f" Write {replacement}." if replacement else ""
+        spec = recipe_spec()
+        advice = spec.get("type_suggestions", {}).get(name)
+        replacement = spec.get("renamed_types", {}).get(name)
+        hint = " " + " ".join(advice) if advice else f" Write {replacement}." if replacement else ""
         raise _fail(f"Data schema '{dataset_name}', field '{slug}': '{name}' is not a Polars dtype that a text file can hold.{hint}",
                     f"Allowed: {', '.join(text_dtype_names())}.")
     try:

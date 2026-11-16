@@ -384,8 +384,10 @@ class _Check:
             self.add("FD02", f"{path}.type", "type is required", "write a Polars dtype: " + ", ".join(text_dtype_names()))
         elif not isinstance(type_, str) or type_ not in text_dtype_names():
             old = self.spec["renamed_types"].get(str(type_).lower()) if isinstance(type_, str) else None
-            fix = f"write {old}" if old else "write one of " + ", ".join(text_dtype_names())
-            self.add("FD02", f"{path}.type", f"{type_!r} is not a Polars dtype that a text file can hold", fix)
+            advice = self.spec.get("type_suggestions", {}).get(str(type_).lower()) if isinstance(type_, str) else None
+            fix = " ".join(advice) if advice else f"write {old}" if old else "write one of " + ", ".join(text_dtype_names())
+            self.add("FD02", f"{path}.type", f"{type_!r} is not a Polars dtype that a text file can hold (the old word is no longer read)" if advice
+                     else f"{type_!r} is not a Polars dtype that a text file can hold", fix)
         elif isinstance(type_, str):
             for key, users in PARAMETER_KEYS.items():
                 if key in definition and type_ not in users:
