@@ -128,3 +128,23 @@ def test_a_grid_formula_with_two_tildes_is_refused_in_our_words():
     with pytest.raises(VisualizationError) as error:
         draw(two_columns(), [layer("facet_grid", facets="Collection ~ Collection year ~ x")])
     assert "one ~" in str(error.value) and "Suggestion:" in str(error.value)
+
+
+def test_the_help_of_facet_wrap_says_in_one_sentence_what_is_handed_to_plotnine():
+    """facet_wrap stays `exact` (Eve's naming rule is not ours to change); the description says what the library does with the text."""
+    from viz_factory.registry import COMPONENT_SCHEMAS
+    schema = COMPONENT_SCHEMAS["facet_wrap"]
+    assert schema["plotnine"] == "exact"
+    assert "list of exact column names" in schema["description"] and "Collection year" in schema["description"]
+
+
+def test_what_only_our_reader_of_rows_and_cols_protects_is_drawn_right_by_facet_grid():
+    """plotnine takes a text that is not a column as an expression: `a + b` would add the two columns (one panel per sum), and a
+    name with a space around it is not a column. Our reader (`facet_variables`, for `rows` and `cols`) splits `a + b` into two
+    variables and strips the spaces, so the panels are the product, with the right titles."""
+    data = two_columns()
+    _, texts, panels = draw(data, [layer("facet_grid", rows="Collection + Collection year")])
+    shown = " ".join(texts)   # two row variables: the strip holds both values
+    assert panels == 6 and all(v in shown for v in ("u", "v", "2001", "2002", "2003"))
+    _, texts, panels = draw(data, [layer("facet_grid", cols=" Collection year ")])
+    assert panels == 3 and {"2001", "2002", "2003"} <= texts

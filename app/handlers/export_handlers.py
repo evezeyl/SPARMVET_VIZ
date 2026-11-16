@@ -24,6 +24,7 @@ from shiny import reactive, render, ui
 
 from app.modules.export_refusal import export_refusal
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
+from utils.fix_text import fix_label
 from app.modules.qmd_text import code as _qc, mermaid_label as _qm, plain as _qp, yaml_string as _qy
 from app.modules.plot_seeds import (
     bake_plot_seeds, export_seed_plan, seed_recipe_note, seed_sources_per_plot, seeds_added_to_recipe,
@@ -272,7 +273,7 @@ def failed_plot_stub(exc: Exception) -> str:
     stub = f"Plot render failed:\n{exc}"
     pipeline_error = getattr(exc, "pipeline_error", None)
     if pipeline_error is not None and pipeline_error.fix and pipeline_error.fix not in str(exc):
-        stub += f"\n\nFix ({pipeline_error.who}): {pipeline_error.fix}"
+        stub += f"\n\n{fix_label(pipeline_error.fix, pipeline_error.who)}"
     return stub
 
 

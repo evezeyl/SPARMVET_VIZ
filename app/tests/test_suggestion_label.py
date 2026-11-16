@@ -84,3 +84,40 @@ def test_home_prints_its_alerts_and_warnings_through_the_same_function():
     home = (ROOT / "app/handlers/home_theater.py").read_text()
     assert "fix_label(fix, who or" in audit and "Fix ({who}): {fix}" not in audit
     assert "{fix_label(warning.fix)}" in home and "Fix: {warning.fix}" not in home
+
+
+# ---- the other places a fix is printed (third fix round) --------------------------------------------------------------
+
+def a_pipeline_error(fix):
+    from utils.pipeline_error import PipelineError
+    return PipelineError(component="VizFactory", problem="Plot 'p': something is wrong.", location="plot p", fix=fix,
+                         who="data_analysis_recipe_author", category="visualization", surface="plot_overlay", severity="error")
+
+
+def test_the_plot_failure_overlay_has_one_label():
+    """The Alerts and the text drawn over a failed plot: `PipelineError.format` and the payload of the renderers."""
+    from utils.pipeline_error import make_render_payload
+    suggestion = a_pipeline_error("Suggestion: write a column of the data")
+    assert "Fix" not in suggestion.format().split("Surface")[0].split("Location:")[1] and "  Suggestion: write a column of the data" in suggestion.format()
+    payload = make_render_payload(suggestion)
+    assert payload["fix_md"] == "> Suggestion: write a column of the data"
+    ordinary = a_pipeline_error("write 3")
+    assert "  Fix (data_analysis_recipe_author): write 3" in ordinary.format()
+    assert make_render_payload(ordinary)["fix_md"] == "> **Fix (Data analysis recipe Author):** write 3"
+
+
+def test_the_exported_plot_failure_file_has_one_label():
+    from app.handlers.export_handlers import failed_plot_stub
+    error = VisualizationError("Plot 'p': it failed.", tip="Suggestion: write 3", pipeline_error=a_pipeline_error("Suggestion: write 3"))
+    assert "Fix" not in failed_plot_stub(error)
+    other = VisualizationError("Plot 'p': it failed.", tip="x", pipeline_error=a_pipeline_error("write 3"))
+    assert "Fix (data_analysis_recipe_author): write 3" in failed_plot_stub(other)
+
+
+def test_the_join_verdict_of_blueprint_uses_the_same_rule():
+    """The verdict fixes are written "Pick ..." today, so nothing doubled there; the rule is applied (checked: no verdict fix starts with Suggestion)."""
+    from utils.fix_text import fix_prefix
+    assert fix_prefix("Pick the same number of key columns") == "Fix: " and fix_prefix("Suggestion: pick the same number") == ""
+    source = (ROOT / "app/handlers/blueprint_handlers.py").read_text()
+    assert 'ui.tags.strong(fix_prefix(verdict["fix"]))' in source and 'ui.tags.strong("Fix: ")' not in source
+    assert "Suggestion" not in (ROOT / "libs/blueprint_arch/src/blueprint_arch/join_designer.py").read_text()

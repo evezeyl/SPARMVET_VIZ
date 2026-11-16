@@ -15,7 +15,7 @@ What each function does, and what it keeps: the text must READ the same in the r
 - `code(text)`: a text inside an inline code span: one line, a delimiter longer than any run of backticks in the text, and a
   space on both sides when the text could be read as an inline expression (`` `{python} x` ``) or touches a backtick;
   a shortcode is defused. In a table cell (`table=True`) a text with a `|` is written as `plain` text.
-- `yaml_string(text)`: a text as a double-quoted YAML string (the front matter): quotes, backslashes and new lines escaped.
+- `yaml_string(text)`: a text for the front matter (title, author): `plain`, then a double-quoted YAML string.
 - `mermaid_label(text)`: a text inside the quotes of a Mermaid node: no quote, no backtick, no angle bracket, one line.
 
 # @deps
@@ -30,9 +30,11 @@ import unicodedata
 
 # Characters that start a new line for a Markdown reader, or that are not text at all
 _LINE_BREAKS = re.compile(r"[\r\n\v\f\u0085  ]+")
-_ALWAYS = re.compile(r"[\\`*\[\]{}<|$@^~]")
+_ALWAYS = re.compile(r"[\\`*\[\]{}<>|$@^~]")   # `>` too: Quarto read `>\}\}` as the end of a shortcode
 _LEADING = re.compile(r"^(\s*)([#>:+\-=]|\d+[.)])")
 _UNDERSCORE = re.compile(r"(?<![A-Za-z0-9])_|_(?![A-Za-z0-9])")
+# a backtick followed by an opening brace (with or without spaces): Quarto reads it as an inline expression `{python} x` once an engine is on
+_INLINE_EXPRESSION = re.compile(r"`\s*\{")
 _ENTITY = re.compile(r"&(?=#|[A-Za-z]+;)")
 
 
@@ -44,7 +46,7 @@ def one_line(text) -> str:
 
 def plain(text) -> str:
     """A text inside a line of Markdown, harmless to Quarto and Markdown and reading the same (see the module text)."""
-    t = one_line(text)
+    t = one_line(text).replace("{{", "{\u200b{").replace("}}", "}\u200b}")   # Quarto reads `{{< ... >}}`, and stops at a lone `>}}`, in the text Pandoc has already unescaped (a title: RUN)
     t = _ALWAYS.sub(lambda m: "\\" + m.group(), t)
     t = _UNDERSCORE.sub(r"\\_", t)
     t = _ENTITY.sub(r"\\&", t)
@@ -62,25 +64,33 @@ def plain(text) -> str:
 def code(text, table: bool = False) -> str:
     """A text as an inline code span: the same text shows, nothing in it is read as code or syntax.
 
-    Quarto reads a shortcode `{{< ... >}}` (`include` reads a file, `env` reads a variable) even inside a code span, so a
+    A text that holds a backtick followed by an opening brace, or that starts with a brace, could be read by Quarto as an
+    inline expression (`{python} x`) whatever the padding (RUN: padding did not stop it), so it is written with `plain`
+    (the same text shows, escaped, without the monospace font). Quarto reads a shortcode `{{< ... >}}` (`include` reads a file, `env` reads a variable) even inside a code span, so a
     zero-width space is put between `{{` and `<`. In a table cell a `|` cannot be shown inside a code span (a backslash
     would show), so such a text is written with `plain` there (it reads the same, without the monospace font).
     """
     t = one_line(text)
-    if table and "|" in t:
+    if (table and "|" in t) or _INLINE_EXPRESSION.search(t) or t.lstrip().startswith("{"):
         return plain(t)
     t = t.replace("{{<", "{{\u200b<")
     longest = max((len(run) for run in re.findall(r"`+", t)), default=0)
     fence = "`" * (longest + 1)
-    pad = " " if t.startswith(("{", "`", " ")) or t.endswith(("`", " ")) else ""
+    pad = " " if t.startswith(("`", " ")) or t.endswith(("`", " ")) else ""
     if not t:
         return "` `"
     return f"{fence}{pad}{t}{pad}{fence}"
 
 
 def yaml_string(text) -> str:
-    """A text as a double-quoted YAML scalar (a JSON string is one)."""
-    return json.dumps(str(text), ensure_ascii=False)
+    """A text for the front matter (title, author): harmless as Markdown, as TeX and as a shortcode, then a double-quoted YAML scalar.
+
+    Quarto reads a title as Markdown and, for PDF, hands it to TeX: a recipe file named `\\input{/etc/hostname}` put that file into
+    the PDF title, and `{{< include ... >}}` in the id made the render fail (found 2026-11-16). `plain` escapes the backslash,
+    the braces and the angle brackets and breaks `{{`, so the title shows the text; the result is a JSON string, which is a valid YAML
+    double-quoted scalar (quotes, backslashes and new lines escaped).
+    """
+    return json.dumps(plain(text), ensure_ascii=False)
 
 
 def mermaid_label(text) -> str:

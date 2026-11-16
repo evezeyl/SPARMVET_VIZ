@@ -66,7 +66,7 @@ def _facet_before(p: ggplot, component: str, setting: str, grid_only: bool):
         "scales": {"widget": "enum", "label": "Scale freedom", "options": ["fixed", "free", "free_x", "free_y"]},
         "dir": {"widget": "enum", "label": "Fill direction", "options": ["h", "v"]},
     },
-    "description": "Wrap a 1D sequence of panels by a single variable into a 2D grid; the default faceting choice when you have one grouping variable.",
+    "description": "Wrap a 1D sequence of panels by a single variable into a 2D grid; the default faceting choice when you have one grouping variable. You write a column name, a list of names or `~ a + b`; the library hands plotnine a list of exact column names, because plotnine cut a name with a space (`~Collection year` became the column `Collection`).",
     "yaml_example": "layers:\n  - name: facet_wrap\n    params:\n      facets: Country\n      ncol: 3",
 })
 def handle_facet_wrap(p: ggplot, spec: Dict[str, Any]) -> ggplot:
