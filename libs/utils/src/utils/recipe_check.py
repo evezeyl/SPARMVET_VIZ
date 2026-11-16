@@ -37,7 +37,7 @@ from utils.action_names import TIER1_ONLY
 from utils.random_layers import is_random_layer, is_seed_value
 from utils.engines import ENGINES
 from utils.filter_values import FilterValueError, check_filter
-from utils.fix_text import fix_label
+from utils.fix_text import with_fix
 from utils.formula_check import formula_problems
 from utils.plot_text_check import facet_variable_problems, layer_text_problems
 from utils import join_keys
@@ -103,7 +103,7 @@ class Problem:
     def text(self, recipe: str = "") -> str:
         """`recipe : path : what is wrong. Fix: what to write.` (spec P5)."""
         head = " : ".join(part for part in (recipe, self.path) if part)
-        body = f"{self.message}. {fix_label(self.fix)}" if self.fix else self.message
+        body = with_fix(self.message, self.fix)
         return f"{head} : [{self.code}] {body}" if head else f"[{self.code}] {body}"
 
 

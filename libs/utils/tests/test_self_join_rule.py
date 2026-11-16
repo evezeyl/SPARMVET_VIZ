@@ -166,7 +166,7 @@ def test_with_nulls_equal_a_missing_key_matches_and_the_text_says_so():
                                   {"action": action_names.JOIN_WHERE, "right_ingredient": "A", "predicates": ["x"]}])
 def test_every_text_has_the_shape_what_happens_then_suggestions(step):
     what, fix = self_join_text(self_join("A", [], step))
-    assert "Suggestion" not in what and not what.endswith(".") and len(sentences(what)) <= 2
+    assert "Suggestion" not in what and len(sentences(what)) <= 2   # how the two become one sentence: test_with_fix_one_period.py
     assert fix.startswith("Suggestion: ") and all(part.startswith("Suggestion: ") for part in sentences(fix))
 
 

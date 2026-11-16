@@ -403,8 +403,7 @@ class Bootloader:
             info = header.get("info") if header else None
             return problems, [], resolve_contact(info, self.get_contact())
         try:
-            advices = [(f"{a.problem} {a.tip}" if a.tip.startswith("Suggestion:") else f"{a.problem} Fix: {a.tip}") if a.tip else a.problem
-                       for a in checker_advices(path)]
+            advices = [a.text() for a in checker_advices(path)]
         except Exception as e:
             advices = [f"[CHECK] the advices of the recipe could not be read: {e}"]
         return [], advices, None
