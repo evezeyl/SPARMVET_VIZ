@@ -556,21 +556,29 @@ class _Check:
             self.formulas(step, schema, where)
 
     def formulas(self, step: dict, schema: dict, where: str) -> None:
+        """ST06 for every formula the step holds: a parameter that is a text, a mapping of texts or a list of texts.
+
+        A parameter takes formulas when its schema says `widget: expression` (one text) or `value_widget: expression` (the
+        values of a mapping, the items of a list). A formula parameter without that mark is not read, so the registry
+        test `app/tests/test_checker_reads_every_formula_place.py` fails for an action that evaluates a formula in
+        a parameter the schema does not mark (D-0030).
+        """
         for name, definition in schema.get("params", {}).items():
             value = step.get(name)
             if value is None:
                 continue
             if definition.get("widget") == "expression" and isinstance(value, str):
                 values = [value]
-            elif definition.get("widget") == "mapping" and definition.get("value_widget") == "expression" and isinstance(value, dict):
+            elif definition.get("value_widget") == "expression" and definition.get("widget") == "mapping" and isinstance(value, dict):
                 values = [v for v in value.values() if isinstance(v, str)]
+            elif definition.get("value_widget") == "expression" and definition.get("widget") == "list" and isinstance(value, list):
+                values = [v for v in value if isinstance(v, str)]
             else:
                 continue
             for text in values:
                 for message in formula_problems(text):
                     what, _, fix = message.partition(". Fix: ")
                     self.add("ST06", f"{where}.{name}", what, fix)
-
 
     def filter_value_problems(self, steps: dict, path: str, tables: List[Tuple[str, Dict[str, Any]]], *, joins: bool) -> None:
         """ST12: a `modif_filter` value does not have the declared type of its column (ADR-104 point 7).
