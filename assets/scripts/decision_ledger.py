@@ -6,7 +6,8 @@ its number and has ten fields separated by " | " (the layout is explained at the
   D-0001 | date | area | decision | source | taken by | status | relation | her words and evidence | old key
 
 Only a line taken by EVE is DECIDED. A line taken by an AGENT is PROVISIONAL. A line whose
-record does not say who decided is NOT-STATED. A brief that starts a builder or a reviewer quotes the numbers
+record does not say who decided is NOT-STATED. A line that holds a plan the review session relayed, which she has not said in her own words, is
+taken by REVIEW SESSION and is RELAYED (not decided until she confirms it). A brief that starts a builder or a reviewer quotes the numbers
 it depends on (`.claude/workflows/decision_compliance.md`); the hook `.claude/hooks/coordinator_guard.py`
 reads them with `read_ledger` of this file, so there is one reading function.
 
@@ -28,8 +29,8 @@ DEFAULT_LEDGER = Path(__file__).resolve().parents[2] / ".claude" / "knowledge" /
 NUMBER = re.compile(r"D-\d{4}")
 LINE = re.compile(r"^D-\d{4} \| ")
 FIELDS = ("number", "date", "area", "decision", "source", "taken_by", "status", "relation", "evidence", "old_key")
-TAKEN_BY = {"EVE", "AGENT", "NOT STATED"}
-STATUS = {"DECIDED", "PROVISIONAL", "NOT-STATED"}
+TAKEN_BY = {"EVE", "AGENT", "NOT STATED", "REVIEW SESSION"}
+STATUS = {"DECIDED", "PROVISIONAL", "NOT-STATED", "RELAYED"}
 
 
 def read_ledger(path: Path) -> dict:
@@ -53,7 +54,7 @@ def read_ledger(path: Path) -> dict:
             raise ValueError(f"{path}:{lineno}: taken by '{entry['taken_by']}' is not one of {sorted(TAKEN_BY)}")
         if entry["status"] not in STATUS:
             raise ValueError(f"{path}:{lineno}: status '{entry['status']}' is not one of {sorted(STATUS)}")
-        expected = {"EVE": "DECIDED", "AGENT": "PROVISIONAL", "NOT STATED": "NOT-STATED"}[entry["taken_by"]]
+        expected = {"EVE": "DECIDED", "AGENT": "PROVISIONAL", "NOT STATED": "NOT-STATED", "REVIEW SESSION": "RELAYED"}[entry["taken_by"]]
         if entry["status"] != expected:
             raise ValueError(f"{path}:{lineno}: taken by {entry['taken_by']} must have status {expected}, found {entry['status']}")
         entries[entry["number"]] = entry

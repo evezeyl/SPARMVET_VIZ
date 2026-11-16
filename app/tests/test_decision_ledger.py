@@ -33,10 +33,12 @@ def write(tmp_path, *lines, header="# ledger\n\nsome text that is not a decision
 
 
 def test_read_ledger_reads_every_decision_line_and_ignores_text(tmp_path):
-    p = write(tmp_path, line("D-0001"), line("D-0002", "AGENT", "PROVISIONAL"), line("D-0003", "NOT STATED", "NOT-STATED"))
+    p = write(tmp_path, line("D-0001"), line("D-0002", "AGENT", "PROVISIONAL"), line("D-0003", "NOT STATED", "NOT-STATED"),
+              line("D-0004", "REVIEW SESSION", "RELAYED"))
     entries = dl.read_ledger(p)
-    assert list(entries) == ["D-0001", "D-0002", "D-0003"]
+    assert list(entries) == ["D-0001", "D-0002", "D-0003", "D-0004"]
     assert entries["D-0002"]["status"] == "PROVISIONAL"
+    assert entries["D-0004"]["status"] == "RELAYED"
     assert entries["D-0001"]["evidence"] == "her words"
 
 
@@ -62,6 +64,8 @@ def test_missing_file_raises(tmp_path):
     (line("D-0001", "EVE", "PROVISIONAL"), "must have status DECIDED"),
     (line("D-0001", "AGENT", "DECIDED"), "must have status PROVISIONAL"),
     (line("D-0001", "NOT STATED", "DECIDED"), "must have status NOT-STATED"),
+    (line("D-0001", "REVIEW SESSION", "DECIDED"), "must have status RELAYED"),
+    (line("D-0001", "EVE", "RELAYED"), "must have status DECIDED"),
     (line("D-0001", "SOMEONE", "DECIDED"), "taken by"),
     (line("D-0001", "EVE", "MAYBE"), "status"),
 ])
@@ -110,7 +114,7 @@ def test_real_ledger_parses_and_is_numbered_without_gaps():
     entries = dl.read_ledger(REAL_LEDGER)
     numbers = list(entries)
     assert numbers == ["D-%04d" % i for i in range(1, len(numbers) + 1)]
-    assert len(numbers) >= 129
+    assert len(numbers) >= 142
 
 
 def test_real_ledger_holds_the_old_ledger_counts_and_the_new_decisions():
@@ -120,10 +124,36 @@ def test_real_ledger_holds_the_old_ledger_counts_and_the_new_decisions():
     by = {k: sum(1 for e in old if e["taken_by"] == k) for k in ("EVE", "AGENT", "NOT STATED")}
     assert by == {"EVE": 104, "AGENT": 1, "NOT STATED": 2}
     assert [e["status"] for e in entries.values() if e["taken_by"] == "AGENT"] == ["PROVISIONAL"]
-    new = [e for e in entries.values() if e["date"] == "2026-11-16"]
+    new = [e for e in entries.values() if e["date"] == "2026-11-16" and e["taken_by"] == "EVE"]
     assert len(new) == 22 and all(e["status"] == "DECIDED" for e in new)
     for key in ("M150", "M153", "M154"):
         assert any(e["old_key"] == key for e in new)
+
+
+def test_a_decision_of_her_own_turns_names_the_transcript_line_and_was_compared():
+    entries = dl.read_ledger(REAL_LEDGER)
+    for number in ["D-%04d" % i for i in range(108, 130)]:
+        e = entries[number]
+        assert e["taken_by"] == "EVE", number
+        assert re.search(r"cd1b0ac7 #\d{4}", e["source"]), (number, e["source"])
+        assert "was not compared" not in e["evidence"], number
+
+
+def test_the_review_sessions_plan_is_on_its_own_lines_that_are_not_decided():
+    entries = dl.read_ledger(REAL_LEDGER)
+    relayed = [e for e in entries.values() if e["taken_by"] == "REVIEW SESSION"]
+    assert len(relayed) == 13
+    for e in relayed:
+        assert e["status"] == "RELAYED"
+        assert e["date"] == "2026-11-16"
+        splits = dl.NUMBER.findall(e["relation"])
+        assert e["relation"].startswith("split from D-") and splits, e["number"]
+        assert all(entries[n]["status"] == "DECIDED" for n in splits), e["number"]
+        assert "not her words" in e["evidence"], e["number"]
+
+
+def test_a_line_keeps_the_colon_of_the_old_ledger_after_hedged():
+    assert "| (hedged): ADR-100 point 7" in REAL_LEDGER.read_text(encoding="utf-8")
 
 
 def test_real_ledger_relations_name_numbers_that_exist():
