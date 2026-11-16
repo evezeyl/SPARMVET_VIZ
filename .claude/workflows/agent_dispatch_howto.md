@@ -57,7 +57,7 @@ A worker stops (budget, wrong tag, a harder part found). The coordinator:
 ## 5. The decision panel (open choices only)
 
 Use it when a choice has two or more valid approaches, not for routine work.
-1. A `scout` first collects what is already decided (ADRs, design files, `tasks.md`). The coordinator writes a brief (aim for 10 lines, never more than 20, the extra only for a complex problem): the question, the options, the files to read, the facts tagged DECIDED / CONFIRM / OPEN.
+1. A `scout` first collects what is already decided (ADRs, design files, `tasks.md`). The coordinator writes a brief (no length limit; Eve, 2026-11-16, `D-0154`: "try to stay concise but do not sacrify to clarity"): the question, the options, the files to read, the facts tagged DECIDED / CONFIRM / OPEN.
 2. It starts at most 3 viewpoints **at once**, one round. Choose by the question:
    - affects results or data: `panel-scientist` + `panel-architect` (+ `panel-developer` if the build is big);
    - affects what the user sees or decides: `panel-user` + `panel-scientist` + `panel-architect`;
@@ -77,6 +77,16 @@ Flag first, even if all viewpoints like the option: anything that changes a resu
 ## 7. Where it is not enforced
 
 - `.claude/agents/*.md` fixes each worker's model and tools; the settings fix the default model and refuse `Agent(model:fable)`.
-- The guard hook (only for a session in coordinator mode) refuses: Edit/Write outside `tmpAI/`; Bash commands that run test suites, audits, scripts, the app or renders (git stays allowed, because the coordinator merges); starting an agent that would run on Fable (any agent that is neither a named worker nor called with `model: haiku` or `sonnet`, a `fork`, or a named worker called with another model such as opus).
+- The guard hook (only for a session in coordinator mode) refuses: Edit/Write outside `tmpAI/`; Bash commands that run test suites, audits, scripts, the app or renders (git stays allowed, because the coordinator merges); starting an agent that would run on Fable (any agent that is neither a named worker nor called with `model: haiku` or `sonnet`, a `fork`, or a named worker called with another model such as opus); starting any agent except `scout`, `scribe` and the `panel-*` agents (a general agent included) with a brief that has no "Decisions" block of ledger lines that are DECIDED and taken by EVE (`D-0156`, `D-0159`) and no `NONE-CHECKED: <path>` line (the path is a scout's report saved by the coordinator or a scribe under `tmpAI/`, `D-0155`). The block may follow the heading after empty lines (`D-0157`); a ledger that is missing or unreadable refuses the call (`D-0158`). The form and an example are in `.claude/workflows/decision_compliance.md` section 6.
 - Not enforced by any tool: "do not read big files" and "do not do work in a Bash command the hook does not know". Those are rules: if the coordinator does it anyway, tell it to delegate.
 - There is no `.claude/models` folder in Claude Code; the model is a line in each agent file.
+
+## 8. The "Decisions" block of a brief (Eve, 2026-11-16: point 5 = A, `D-0164`; her addition `D-0165`; point 6 = C, `D-0166`)
+
+**[ADDED by an agent, not Eve's words]** The wording of this section is an agent's; the decisions are hers and are named by number. The full definition is in `.claude/workflows/decision_compliance.md` section 6.
+
+- **Who needs it.** Every agent the coordinator starts, except `scout`, `scribe` and the `panel-*` agents (`D-0156`), a general agent included.
+- **What it holds.** A line `Decisions`, then one list item per decision: its number, then words of THAT ledger line between quotation marks (a contiguous piece of its decision or of her words, at least 12 characters; `...` marks a cut). Only lines that are DECIDED and taken by EVE can be quoted (`D-0159`). Example: `- D-0050: "No silent error that is the rule."`. A bare number, a number on the heading line, and words of another line are refused (`D-0166`).
+- **`NONE-CHECKED: <path>`.** The line says that no decision applies and none is needed (wording of the review session, M158, not Eve's words); the path is the saved report of the scout that checked (a regular file inside the project, saved by the coordinator or a scribe under `tmpAI/`, `D-0155`). Her addition (`D-0165`): "no decisions that to be reported when one needed". So, **where no decision exists and one is needed, that is an open point: it goes to the numbered list for her and is not hidden behind `NONE-CHECKED`.**
+- **Who checks what.** The hook checks the form; the reviewer checks the content (rule E, checkpoint 3 of `decision_compliance.md`).
+- **When the hook refuses.** The refusal names the number and says what to add; it shows the start of the ledger line. The ledger is read first: a missing or unreadable ledger refuses the call, also with a valid `NONE-CHECKED` line (`D-0158`).

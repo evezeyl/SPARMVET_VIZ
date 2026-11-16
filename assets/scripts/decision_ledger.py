@@ -9,7 +9,8 @@ Only a line taken by EVE is DECIDED. A line taken by an AGENT is PROVISIONAL. A 
 record does not say who decided is NOT-STATED. A line that holds a plan the review session relayed, which she has not said in her own words, is
 taken by REVIEW SESSION and is RELAYED (not decided until she confirms it). A brief that starts a builder or a reviewer quotes the numbers
 it depends on (`.claude/workflows/decision_compliance.md`); the hook `.claude/hooks/coordinator_guard.py`
-reads them with `read_ledger` of this file, so there is one reading function.
+reads them with `read_ledger` of this file, so there is one reading function, and accepts only the numbers of lines that are DECIDED and
+taken by EVE (D-0159).
 
 Why: one source of truth for what Eve decided, readable by a script, so that a brief cannot cite
 a decision that does not exist.
@@ -18,6 +19,7 @@ Examples:
   ./.venv/bin/python assets/scripts/decision_ledger.py list
   ./.venv/bin/python assets/scripts/decision_ledger.py list --status PROVISIONAL
   ./.venv/bin/python assets/scripts/decision_ledger.py check D-0001 D-0108
+  ./.venv/bin/python assets/scripts/decision_ledger.py check --decided D-0001 D-0108   (the hook's rule: only lines she decided)
   ./.venv/bin/python assets/scripts/decision_ledger.py --ledger /path/to/other_ledger.md check D-0001
 """
 import argparse
@@ -65,6 +67,12 @@ def _missing(numbers, entries: dict) -> list:
     return [n for n in numbers if not NUMBER.fullmatch(n) or n not in entries]
 
 
+def not_decided(numbers, entries: dict) -> list:
+    """Return (number, status) for each cited number that exists but is not taken by EVE and DECIDED (Eve, 2026-11-16, D-0159)."""
+    return [(n, entries[n]["status"]) for n in numbers
+            if n in entries and not (entries[n]["taken_by"] == "EVE" and entries[n]["status"] == "DECIDED")]
+
+
 def missing_numbers(numbers, path: Path) -> list:
     """Return the cited numbers that are not in the ledger (a malformed number counts as missing), in the order given."""
     return _missing(numbers, read_ledger(path))
@@ -78,6 +86,8 @@ def main(argv=None) -> int:
     lst.add_argument("--status", choices=sorted(STATUS), help="only decisions with this status")
     chk = sub.add_parser("check", help="exit 0 when every number exists in the ledger, else exit 1 and name the missing ones")
     chk.add_argument("numbers", nargs="+", help="numbers such as D-0001")
+    chk.add_argument("--decided", action="store_true",
+                     help="also refuse a number whose line is not DECIDED and taken by EVE (the rule of the hook)")
     args = ap.parse_args(argv)
     try:
         entries = read_ledger(args.ledger)
@@ -94,6 +104,11 @@ def main(argv=None) -> int:
     if missing:
         print("MISSING from the ledger " + str(args.ledger) + ": " + ", ".join(missing), file=sys.stderr)
         return 1
+    if args.decided:
+        undecided = not_decided(args.numbers, entries)
+        if undecided:
+            print("NOT DECIDED by Eve in " + str(args.ledger) + ": " + ", ".join(f"{n} ({s})" for n, s in undecided), file=sys.stderr)
+            return 1
     print("OK: " + ", ".join(args.numbers))
     return 0
 

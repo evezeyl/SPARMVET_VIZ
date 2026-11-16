@@ -35,14 +35,14 @@ the other sessions. `tmpAI/` is git-ignored, so the channel is **not in git**, a
 
 ## 3. The protocol: post, read, delete, add
 
-1. **Post.** Add a block at the end of "Messages": `### M<number> from <session name> (<session id>) to <session name, role or all>, <date time>`, then 2 to 10 lines: what happened or what you need, in words that need no chat context. A number is the next free one; numbers are not reused while the file exists.
+1. **Post.** Add a block at the end of "Messages": `### M<number> from <session name> (<session id>) to <session name, role or all>, <date time>`, then the text: what happened or what you need, in words that need no chat context (length: point 8). A number is the next free one; numbers are not reused while the file exists.
 2. **Read.** A session reads the whole file and finds the blocks addressed to it (`to:` its name, its role, or `all`).
 3. **Do, then delete.** When a message has been acted on (or answered), the receiver **deletes the block**. A done message is never left as a record: the record is git, the issues and the handoff. If an answer is needed, the receiver posts a new message to the sender.
 4. **Add.** Then add your own messages and update your row.
 5. A message to `all` is deleted by the session that **posted** it once everyone had time to read it (the next time the poster reads the file and finds no open question), or by Eve.
 6. **Never rewrite another session's block**; the only exception is deleting a message addressed to you that is done.
 7. **Edit with exact-string edits**, never by overwriting the whole file, and **read the file again just before the edit**: another session may have changed it a moment ago. If an edit fails, read and retry.
-8. **Keep it short:** a message is as long as it needs to be to be understood without the chat (about 25 lines is a good size; Eve lifted the 10-line limit on 2026-11-13), the file at most about 300 lines. A session that finds the file longer cleans done items (and says so in a message).
+8. **No strict length limit (Eve, 2026-11-16, `D-0160`; it replaces the size limits of 2026-11-13):** her words: "should not have strict limits - bypass limits when necessary - but keep precise and upated" (her spelling kept). The three rules that follow are the wording of the review session, not Eve's words (M157): done items are removed the same day a session finishes them (point 3: the record is git, the issues and the handoff); the open state stays at the top of the file; a long file is cleaned by its owner and never cut in the middle of content. [ADDED by an agent, not Eve's words: the open state is the table "Working on now", then the open messages; the owner is the session that wrote the blocks; a session that finds a long file asks the owners in a message.]
 9. **No secrets and no personal data** (names of people, e-mail addresses, tokens). File paths, issue numbers, commit hashes and file:line are the right content.
 
 ## 4. Sharing one working tree
