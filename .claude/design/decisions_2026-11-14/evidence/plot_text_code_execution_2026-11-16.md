@@ -107,7 +107,7 @@ RUN: every gallery example (34, through `render_example`, the app's own path) an
 
 - The known limit of section 15 holds here too: an allowed formula can still be slow or large (for example `bs(x, df=100000000)` asks patsy for a huge matrix). Nothing here limits the size of a number given as an option; it is not code execution.
 
-- The real export handler (`export_handlers.py`) was not run end to end (see the `report.qmd` section).
+- The real export handler is run end to end only by the browser test `app/tests/test_export_download.py` (ordinary texts: the bundle's content is unchanged); the hostile texts are tested on the text functions, on the handler's syntax and on Quarto, not through a Shiny session.
 - Combinations of two texts in one layer (each argument was tried alone).
 - A plotnine, patsy or mizani release other than the installed ones: a test (`libs/viz_factory/tests/test_plot_text_runs_no_code.py`) would have to be extended by the brute-force script; the script is scratch and not in the repository. A new plotnine release that evaluates another argument is not caught by the tests.
 - `facet_by` in `plot_defaults` or in a T3 override: neither takes it.
