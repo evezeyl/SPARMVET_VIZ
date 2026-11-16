@@ -8,7 +8,7 @@ from viz_factory.plot_config_resolver import (
     BATCHED_COMPONENTS, resolve_plot_config, spec_key_names, unknown_spec_keys)
 from utils.random_layers import is_random_layer, is_seed_value, position_of
 from viz_factory.checked_plot import (
-    CheckedPlot, PlotContext, Step, draw_checked, explain_build_failure, plot_warnings, show_draw_errors)
+    CheckedPlot, PlotContext, Step, draw_checked, explain_build_failure, plot_environment, plot_warnings, show_draw_errors)
 from viz_factory.errors import layer_label, plot_failure
 from utils.engines import engine_problem
 from utils.errors import VisualizationError
@@ -318,6 +318,7 @@ class VizFactory:
         # drawn (plotnine builds lazily) is traced to a layer and a parameter and raised in the one error form (V7).
         context = PlotContext(plot_id, df_pandas, mapping_spec)
         p = CheckedPlot(df_pandas, aes(**mapping_spec))
+        p.environment = plot_environment()   # the only names a text evaluated by plotnine can see (PS06)
         context.warnings = warnings_found
         p._sparmvet = context
 

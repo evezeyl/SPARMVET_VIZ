@@ -220,6 +220,17 @@ CASES = [
     ("PS04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append({"name": "geom_colum"}), "run"),
     ("PS04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(params={"colour_": 1}), "run"),
     ("PS05", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"].update(theme="theme_nope"), "run"),
+    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append(
+        {"name": "geom_smooth", "params": {"method": "lm", "formula": "y ~ I(__import__('os').getcwd())"}}), "run"),
+    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append(
+        {"name": "stat_smooth", "params": {"formula": "y ~ np.load('/etc/passwd')"}}), "run"),
+    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append(
+        {"name": "facet_wrap", "params": {"facets": "__import__('os').getcwd()"}}), "run"),
+    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append(
+        {"name": "facet_grid", "params": {"rows": "g", "cols": ["h", "len(open('/x').read())"]}}), "run"),
+    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["mapping"].update(facet_by="f(a + b)"), "run"),
+    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append(
+        {"name": "stat_function", "params": {"fun": "__import__('os').getcwd()"}}), "run"),
     ("PD01", "E", lambda r: r.update(plot_defaults={"height": 3}), "run"),
     ("CM01", "E", lambda r: r["data_schemas"]["A"].update(comment=3), "run"),
     ("CM01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(comment=["x"]), "run"),
@@ -505,3 +516,41 @@ def test_the_checker_knows_the_recipe_seed_key(value):
 def test_the_recipe_seed_is_a_whole_number(value):
     found = [p for p in _with_plot_defaults(value).problems if p.path.startswith("plot_defaults")]
     assert len(found) == 1 and found[0].code == "PD01" and "random_state: 0" in found[0].fix
+
+
+# -- PS06: a text of a layer that plotnine evaluates as Python (PLOT-TEXT-RUNS-CODE-1) --------------------------------------
+
+def _layer_problems(params, name="geom_smooth", catalogs=CATALOGS):
+    def put(r):
+        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append({"name": name, "params": params})
+    return [p for p in check(mutated(put), catalogs=catalogs, file_stem="r").problems if p.code == "PS06"]
+
+
+def test_ps06_is_found_without_any_catalogue_and_names_the_layer_and_the_text():
+    def put(r):
+        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append(
+            {"name": "geom_smooth", "params": {"formula": "y ~ I(eval(x))"}})
+    found = [p for p in check_recipe(mutated(put)).problems if p.code == "PS06"]
+    assert len(found) == 1
+    assert found[0].path.endswith("layers[2].params.formula")
+    assert "'y ~ I(eval(x))'" in found[0].message and "'eval'" in found[0].message
+    assert found[0].fix.startswith("Suggestion: ")
+
+
+@pytest.mark.parametrize("name, params", [
+    ("geom_smooth", {"method": "lm", "formula": "y ~ x + I(x**2)"}),
+    ("geom_smooth", {"method": "lm", "formula": "y ~ np.log(x)"}),
+    ("stat_smooth", {"formula": "y ~ bs(x, df=4)"}),
+    ("facet_wrap", {"facets": "~ metric"}),
+    ("facet_wrap", {"facets": "country"}),
+    ("facet_grid", {"facets": "row_group ~ col_group"}),
+    ("facet_grid", {"rows": "a", "cols": "b"}),
+    ("stat_function", {"fun": "lambda x: x ** 2"}),
+])
+def test_ps06_leaves_what_a_scientist_writes_alone(name, params):
+    assert _layer_problems(params, name) == []
+
+
+def test_ps06_facet_by_in_the_mapping_is_a_plain_column_name():
+    ok = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["mapping"].update(facet_by="country"))
+    assert "PS06" not in check(ok, file_stem="r").codes()
