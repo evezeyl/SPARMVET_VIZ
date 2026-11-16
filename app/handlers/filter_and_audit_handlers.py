@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, AuditStepError, column_bounds, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -31,7 +31,7 @@ from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
     dialog_value, not_offered_line, value_choices, value_widget_for, AuditStepError, dialog_frame,
-    column_bounds, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
+    column_bounds, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
 from utils.filter_values import UNIT_NS, FilterValueError, kind_of
 from utils.missing_values import dialog_lines, na_choice_texts
@@ -55,18 +55,39 @@ def _time_boxes(suffix: str, d: dict):
     )
 
 
-def _date_picker(id_: str, value):
-    """A date picker whose Enter key does not choose a date.
+# Sends the raw text of every date box of the filter dialog to the server beside the date the widget read (`fb_value_raw`, `fb_value_lo_raw`...):
+# the widget "repairs" free text (today for a partial text, a rolled-over day for 2023-02-30), so `compose_date` reads the text itself, strictly.
+# Registered once per page; it also sends the text at insertion, so a stale value of an earlier box is never compared with a new one.
+_DATE_RAW_SCRIPT = """
+(function () {
+  function send(input) {
+    var box = input.closest('.shiny-date-input');
+    if (box && box.id && window.Shiny && Shiny.setInputValue) Shiny.setInputValue(box.id + '_raw', input.value, {priority: 'event'});
+  }
+  if (!window.__spvDateRaw) {
+    window.__spvDateRaw = true;
+    $(document).on('input change keyup blur changeDate', '.shiny-date-input[id^="fb_value"] input', function () { send(this); });
+  }
+  document.querySelectorAll('.shiny-date-input[id^="fb_value"] input').forEach(send);
+})();
+"""
 
-    The widget (bootstrap-datepicker) takes Enter in an empty box as "choose the highlighted day" and fills in TODAY, a date the user did
-    not choose (reproduced 2026-11-16: the box showed today and the staged line read "day > <today>"). Keyboard navigation off keeps
-    an emptied box empty, so the dialog sees "no date chosen" and refuses the row (`compose_date`). The calendar and typing stay.
+
+def _date_picker(id_: str, value):
+    """A date picker that never chooses a date for the user.
+
+    The widget (bootstrap-datepicker) repairs what is typed: Enter in an empty box chooses the highlighted day (today), and with the
+    default `forceParse` a partial text, a text that is not a date or 2023-02-30 is replaced by another date in the box. Keyboard
+    navigation is off (no Enter that picks a day; the arrow keys of the calendar do not work, typing the date does) and `forceParse` is
+    off (the box keeps what the user typed, so it can be corrected). The raw text is sent to the server (`_DATE_RAW_SCRIPT`) and read
+    strictly by `compose_date`. The calendar stays for the mouse.
     """
     tag = ui.input_date(id_, label=None, value=value, format="yyyy-mm-dd")
     for child in tag.children:
         if getattr(child, "name", None) == "input":
             child.attrs["data-date-keyboard-navigation"] = "false"
-    return tag
+            child.attrs["data-date-force-parse"] = "false"
+    return ui.TagList(tag, ui.tags.script(ui.HTML(_DATE_RAW_SCRIPT)))
 
 
 def _control(kind: str, suffix: str, d: dict):
@@ -546,11 +567,14 @@ def define_filter_audit_server(input, output, session, *,
             value = safe_input(input, f"fb_value{suffix}", None)
             if kind == "time":
                 return compose_time(*(safe_input(input, f"fb_{k}{suffix}", None) for k in ("h", "min", "s")))
+            raw = safe_input(input, f"fb_value{suffix}_raw", None)   # the text of the date box (None: not sent yet, the date was not typed)
             if kind == "datetime":
-                return compose_datetime(value, *(safe_input(input, f"fb_{k}{suffix}", None) for k in ("h", "min", "s")))
+                return compose_datetime(value, *(safe_input(input, f"fb_{k}{suffix}", None) for k in ("h", "min", "s")), typed=raw)
             if kind == "duration":
                 return compose_duration(value, safe_input(input, f"fb_unit{suffix}", None))
-            return value   # date, true/false
+            if kind == "date":
+                return compose_date(value, raw)
+            return value   # true/false
 
         try:
             if widget != "list" and kind in ("bool", "date", "datetime", "time", "duration"):

@@ -286,19 +286,44 @@ def compose_time(hour, minute, second) -> str:
     return f"{int(hour):02d}:{int(minute):02d}:{whole.zfill(2)}" + (f".{fraction}" if fraction else "")
 
 
-def compose_date(date):
-    """The date of a date picker, or a plain refusal when the box is empty (Eve, 2026-11-15: a filter that lacks its value is refused, never filled in).
+_TYPED_DATE = re.compile(r"^(\d{4})-(\d{1,2})-(\d{1,2})$")
+_DATE_SUGGESTION = "write the date as year-month-day, for example 2023-02-28, or pick it in the calendar"
 
-    The picker gives None (or an empty text) for a cleared box; no date is put in its place.
+
+def compose_date(date, typed=None):
+    """The date of a date picker, or a plain refusal (Eve, 2026-11-15: a filter that lacks its value is refused, never filled in, and
+    nothing is changed without a word).
+
+    `date` is what the picker read. `typed` is the raw text of the box (None for a date picked in the calendar or the default of the box,
+    where the widget wrote the text itself). The date that is staged is EXACTLY a date written in full as year-month-day (a month or day
+    of one digit is fine) or picked in the calendar: the picker's own reading of free text is not trusted (it fills in today for a
+    partial text, rolls 2023-02-30 over to 2023-03-02, reads 03/05/2022 as another date), so the text is read strictly here and must
+    equal what the picker read. An empty box is "no date chosen".
     """
+    if typed is not None:
+        text = typed.strip()
+        if text == "":
+            raise FilterValueError("No date is chosen, so no filter is added", "choose a date")
+        m = _TYPED_DATE.match(text)
+        if m is None:
+            raise FilterValueError(f"The text {text!r} in the date box is not a date written as year-month-day, so no filter is added",
+                                   _DATE_SUGGESTION)
+        try:
+            read = datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            raise FilterValueError(f"The date {text} does not exist, so no filter is added", _DATE_SUGGESTION) from None
+        if date != read:
+            raise FilterValueError(f"The date box holds {text!r}, but the calendar read another date ({date}), so no filter is added",
+                                   _DATE_SUGGESTION)
+        return read
     if date is None or date == "":
         raise FilterValueError("No date is chosen, so no filter is added", "choose a date")
     return date
 
 
-def compose_datetime(date, hour, minute, second) -> str:
+def compose_datetime(date, hour, minute, second, typed=None) -> str:
     """The text of a date picker and the three boxes of a time: year-month-day hour:minute:second (read in the time zone of the column)."""
-    return f"{compose_date(date).isoformat()} {compose_time(hour, minute, second)}"
+    return f"{compose_date(date, typed).isoformat()} {compose_time(hour, minute, second)}"
 
 
 def compose_duration(number, unit) -> str:

@@ -545,3 +545,58 @@ def test_the_hours_around_the_change_are_accepted_at_add():
     lf = pl.LazyFrame({"t": t})
     for parts in ((D(2020, 3, 29), 1, 59, 59), (D(2020, 3, 29), 3, 0, 0), (D(2020, 10, 25), 1, 59, 59), (D(2020, 10, 25), 3, 0, 0)):
         assert dialog_value(lf, "t", column_types(lf)["t"], False, "gt", operand=compose_datetime(*parts)) is not None
+
+
+# -- the date staged is exactly a date the user typed in full or picked (Eve 2026-11-15: never filled in, never changed without a word)
+
+SUGGEST = "Suggestion: write the date as year-month-day, for example 2023-02-28, or pick it in the calendar"
+
+
+@pytest.mark.parametrize("typed, parsed", [
+    ("2023-0", D(2026, 11, 16)), ("abc", D(2026, 11, 16)), ("20220305", D(2026, 11, 16)),            # the widget fills in today
+    ("2023-02-30", D(2023, 3, 2)),                                                                      # the widget rolls over
+    ("03/05/2022", D(2008, 11, 11)), ("2023-0", None), ("99999-01-01", D(2026, 11, 16)),              # another order, partial, too long
+])
+def test_a_text_that_is_not_a_whole_date_is_refused_whatever_the_widget_read(typed, parsed):
+    with pytest.raises(FilterValueError) as exc:
+        compose_date(parsed, typed)
+    assert "no filter is added" in exc.value.problem and str(exc.value).endswith(SUGGEST)
+    assert typed in exc.value.problem
+
+
+def test_an_impossible_date_says_that_it_does_not_exist():
+    with pytest.raises(FilterValueError) as exc:
+        compose_date(D(2023, 3, 2), "2023-02-30")
+    assert "does not exist" in exc.value.problem
+
+
+@pytest.mark.parametrize("typed, parsed, expected", [
+    ("2022-03-05", D(2022, 3, 5), D(2022, 3, 5)), (" 2022-03-05 ", D(2022, 3, 5), D(2022, 3, 5)),
+    ("2022-3-5", D(2022, 3, 5), D(2022, 3, 5)),                    # unambiguous: accepted, the staged line shows 2022-03-05
+])
+def test_a_date_typed_in_full_is_the_date_staged(typed, parsed, expected):
+    assert compose_date(parsed, typed) == expected
+
+
+def test_a_typed_date_that_the_widget_read_as_another_date_is_refused():
+    with pytest.raises(FilterValueError) as exc:
+        compose_date(D(2022, 3, 6), "2022-03-05")
+    assert "no filter is added" in exc.value.problem and str(exc.value).endswith(SUGGEST)
+
+
+def test_an_empty_typed_text_is_no_date_chosen():
+    with pytest.raises(FilterValueError) as exc:
+        compose_date(D(2026, 11, 16), "  ")
+    assert str(exc.value).endswith("Suggestion: choose a date")
+
+
+def test_without_the_typed_text_the_picked_date_is_used():
+    """A date picked in the calendar or the default of the box: the widget wrote the text itself, there is nothing to compare."""
+    assert compose_date(D(2022, 3, 5)) == D(2022, 3, 5)
+
+
+def test_the_date_of_a_date_and_time_is_checked_the_same_way():
+    with pytest.raises(FilterValueError) as exc:
+        compose_datetime(D(2026, 11, 16), 10, 30, 0, typed="abc")
+    assert str(exc.value).endswith(SUGGEST)
+    assert compose_datetime(D(2022, 3, 5), 10, 30, 0, typed="2022-03-05") == "2022-03-05 10:30:00"

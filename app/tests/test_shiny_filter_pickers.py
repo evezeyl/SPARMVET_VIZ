@@ -316,3 +316,69 @@ def test_the_date_of_a_date_and_time_cleared_is_refused_too(page: Page, typed_ap
     page.locator("#filter_add_row").click()
     expect(page.locator("#shiny-notification-panel")).to_contain_text("No date is chosen", timeout=10_000)
     expect(page.locator("#filter_rows_ui")).to_contain_text("No filters yet")
+
+
+def _type_date(page: Page, selector: str, text: str, key: str) -> None:
+    """Type text into a date box as a user does (no repair by the test), then leave it with `key`: Enter or Tab."""
+    box = page.locator(selector)
+    box.click()
+    box.press("Control+a")
+    box.press("Delete")
+    box.press_sequentially(text)
+    box.press(key)
+    if key == "Enter":
+        box.press("Tab")
+    _wait_shiny(page)
+
+
+SUGGESTION = "Suggestion: write the date as year-month-day, for example 2023-02-28, or pick it in the calendar"
+BAD_TEXTS = ["2023-0", "abc", "20220305", "2023-02-30", "03/05/2022"]
+
+
+@pytest.mark.parametrize("key", ["Tab", "Enter"])
+@pytest.mark.parametrize("column, op", [("day", "gt"), ("start", "ge")])
+@pytest.mark.parametrize("text", BAD_TEXTS)
+def test_a_date_that_is_not_typed_in_full_is_refused_and_the_box_keeps_the_text(page: Page, typed_app, text, column, op, key):
+    """The date WIDGET used to replace the text (today, 2023-03-02, "8-11-11") and a filter was staged: nothing is staged now, the message
+    says what happened, and the box still holds what the user typed so that it can be corrected."""
+    _open_dialog(page, typed_app, column)
+    _choose_op(page, op)
+    _type_date(page, "#fb_value input", text, key)
+    expect(page.locator("#fb_value input")).to_have_value(text)
+    page.locator("#filter_add_row").click()
+    expect(page.locator("#shiny-notification-panel")).to_contain_text("no filter is added", timeout=10_000)
+    expect(page.locator("#shiny-notification-panel")).to_contain_text(SUGGESTION)
+    expect(page.locator("#filter_rows_ui")).to_contain_text("No filters yet")
+
+
+@pytest.mark.parametrize("key", ["Tab", "Enter"])
+@pytest.mark.parametrize("box", ["#fb_value_lo input", "#fb_value_hi input"])
+def test_each_box_of_between_is_checked_the_same_way(page: Page, typed_app, box, key):
+    _open_dialog(page, typed_app, "day")
+    _choose_op(page, "between")
+    _type_date(page, box, "2023-02-30", key)
+    page.locator("#filter_add_row").click()
+    expect(page.locator("#shiny-notification-panel")).to_contain_text("The date 2023-02-30 does not exist", timeout=10_000)
+    expect(page.locator("#filter_rows_ui")).to_contain_text("No filters yet")
+
+
+@pytest.mark.parametrize("key", ["Tab", "Enter"])
+@pytest.mark.parametrize("column, op, staged", [("day", "gt", "day > 2020-01-02"), ("start", "ge", "start ≥ 2020-01-02 00:00:00")])
+def test_a_date_typed_with_one_digit_month_and_day_is_accepted_and_the_staged_line_shows_it_in_full(page: Page, typed_app, column, op, staged, key):
+    """"2020-1-2" is unambiguous: it is accepted, and the staged line says 2020-01-02 (nothing is hidden)."""
+    _open_dialog(page, typed_app, column)
+    _choose_op(page, op)
+    _type_date(page, "#fb_value input", "2020-1-2", key)
+    page.locator("#filter_add_row").click()
+    expect(page.locator("#filter_rows_ui")).to_contain_text(staged, timeout=10_000)
+
+
+def test_a_date_picked_in_the_calendar_is_staged_as_picked(page: Page, typed_app):
+    _open_dialog(page, typed_app, "day")
+    _choose_op(page, "gt")
+    page.locator("#fb_value input").click()
+    page.locator(".datepicker-days td.day:not(.old):not(.new)", has_text="15").first.click()   # the 15th of the month shown (January 2020)
+    _wait_shiny(page)
+    expect(page.locator("#fb_value input")).to_have_value("2020-01-15")
+    page.locator("#filter_add_row").click()
+    expect(page.locator("#filter_rows_ui")).to_contain_text("day > 2020-01-15", timeout=10_000)
