@@ -49,7 +49,6 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 import polars as pl
 
-from app.modules.data_analysis_recipe_validator import checker_catalogs
 from utils.polars_types import text_dtype_names
 from utils.recipe_check import check_recipe
 from utils.recipe_factory import Include, minimal_plot, minimal_recipe, minimal_schema, write_fragment, write_recipe
@@ -190,6 +189,20 @@ def split_into_files(recipe: dict, out_file: Path) -> Dict[Path, object]:
             fragments[folder / name] = schema[key]
             schema[key] = Include(f"{out_file.stem}/{name}")
     return fragments
+
+
+def checker_catalogs() -> dict:
+    """The catalogs of actions and plot components of the app. `app` is found only from the project root with PYTHONPATH=.,
+    so it is imported here and not at the top: `--help` works without it, and a run without it says what to type."""
+    try:
+        from app.modules.data_analysis_recipe_validator import checker_catalogs as app_catalogs
+    except ModuleNotFoundError as error:
+        if error.name != "app":
+            raise
+        raise Refused("The script judges the recipe with the actions and plot components of the app, and Python cannot find the folder `app` from here. "
+                      "Suggestion: run it from the project root with PYTHONPATH=., for example: "
+                      "PYTHONPATH=. ./.venv/bin/python assets/scripts/create_data_analysis_recipe.py --data_files <file.tsv> --primary_key_data <column> --out_file <recipe.yaml>") from error
+    return app_catalogs()
 
 
 def create(out_file: Path, data_files: Sequence[Path], key_columns: Sequence[str],

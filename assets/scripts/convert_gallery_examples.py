@@ -38,7 +38,6 @@ from typing import List, Optional
 
 import yaml
 
-from app.modules.data_analysis_recipe_validator import checker_catalogs
 from utils.recipe_check import check_recipe
 from viz_gallery.example_recipe import DATA_FILE, data_contract, data_summary, dump_example, example_recipe, plot_summary
 from viz_gallery.gallery_manager import META_FILE, RECIPE_FILE
@@ -107,6 +106,20 @@ def data_path_for(folder: Path, root: Path) -> str:
     if relative.startswith(".."):
         raise ValueError(f"the gallery folder {folder} is outside the project root {root}. Fix: pass --root")
     return f"./{relative}/{DATA_FILE}"
+
+
+def checker_catalogs() -> dict:
+    """The catalogs of actions and plot components of the app. `app` is found only from the project root with PYTHONPATH=.,
+    so it is imported here and not at the top: `--help` works without it, and a run without it says what to type."""
+    try:
+        from app.modules.data_analysis_recipe_validator import checker_catalogs as app_catalogs
+    except ModuleNotFoundError as error:
+        if error.name != "app":
+            raise
+        raise ValueError("The script judges each recipe with the actions and plot components of the app, and Python cannot find the folder `app` from here. "
+                         "Suggestion: run it from the project root with PYTHONPATH=., for example: "
+                         "PYTHONPATH=. ./.venv/bin/python assets/scripts/convert_gallery_examples.py --apply") from error
+    return app_catalogs()
 
 
 def convert_bundle(folder: Path, root: Path, catalogs: dict) -> Outcome:

@@ -37,6 +37,16 @@ one of the two; `--metadata_file` (optional); `--primary_key_data` (**required**
 names, checked against each file in turn); `--primary_key_metadata` (optional); `--out_file` (alias
 `--outfile`, optional — defaults to a timestamped file under `assets/template_data_analysis_recipes/`).
 
+### Convert the gallery examples to recipe format 1
+
+**Script:** `assets/scripts/convert_gallery_examples.py`
+
+Rewrites the gallery examples that are still in the old compact form as standard recipes, and sets the tag strip of each `example_meta.md`. Without `--apply` it writes nothing and lists what it would do. Like the script above, it judges the recipe with the actions and plot components of the app, so it needs `PYTHONPATH=.` (without it, it says so and stops).
+
+```bash
+PYTHONPATH=. ./.venv/bin/python assets/scripts/convert_gallery_examples.py --only bar_simple dumbbell --apply
+```
+
 ---
 
 ## 2. Create a Figshare / External Dataset Data Analysis Recipe
