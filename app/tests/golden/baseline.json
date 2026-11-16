@@ -7,11 +7,11 @@
     "abromics_st_by_country": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "sequence_type:String",
-      "serotype:Categorical",
+      "serotype:String",
       "selected_virulence_genes:String",
       "vf_protein:String"
      ],
@@ -21,11 +21,11 @@
     "abromics_st_by_source": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "sequence_type:String",
-      "serotype:Categorical",
+      "serotype:String",
       "selected_virulence_genes:String",
       "vf_protein:String"
      ],
@@ -37,11 +37,11 @@
     "AR1_MLST_Serotype_Virulence": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "sequence_type:String",
-      "serotype:Categorical",
+      "serotype:String",
       "selected_virulence_genes:String",
       "vf_protein:String"
      ],
@@ -53,11 +53,11 @@
     "AR1_MLST_Serotype_Virulence": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "sequence_type:String",
-      "serotype:Categorical",
+      "serotype:String",
       "selected_virulence_genes:String",
       "vf_protein:String"
      ],
@@ -71,8 +71,8 @@
     "amr_heatmap": {
      "columns": [
       "sample_id:String",
-      "gene:Categorical",
-      "predicted_phenotype:Categorical",
+      "gene:String",
+      "predicted_phenotype:String",
       "identity:Float64",
       "overlap:Float64",
       "status:String",
@@ -84,8 +84,8 @@
     "assembly_quality_dotplot": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
-      "country:Categorical",
+      "source:String",
+      "country:String",
       "metric:String",
       "value:Float64"
      ],
@@ -95,8 +95,8 @@
     "miaou": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
-      "country:Categorical",
+      "source:String",
+      "country:String",
       "metric:String",
       "value:Float64"
      ],
@@ -106,11 +106,11 @@
     "mlst_bar": {
      "columns": [
       "sample_id:String",
-      "scheme:Categorical",
+      "scheme:String",
       "sequence_type:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "era:String"
      ],
      "rows": 33,
@@ -119,7 +119,7 @@
     "phenotype_genome_length_fragmentation": {
      "columns": [
       "sample_id:String",
-      "ST:Categorical",
+      "ST:String",
       "phenotype_count:Int32",
       "quality_metric:String",
       "quality_value:Float64"
@@ -129,7 +129,7 @@
     },
     "qa_aggregated_no_key": {
      "columns": [
-      "country:Categorical",
+      "country:String",
       "year_label:String",
       "n_samples:UInt32"
      ],
@@ -139,7 +139,7 @@
     "qa_amr_genes_per_sample": {
      "columns": [
       "sample_id:String",
-      "country:Categorical",
+      "country:String",
       "n_amr_genes:UInt32"
      ],
      "rows": 42,
@@ -148,9 +148,9 @@
     "qa_facet_by_mapping": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "year_label:String"
      ],
      "rows": 42,
@@ -175,7 +175,7 @@
     "qa_population_zscore": {
      "columns": [
       "sample_id:String",
-      "country:Categorical",
+      "country:String",
       "n50:Float64",
       "n50_zscore:Float64"
      ],
@@ -185,7 +185,7 @@
     "qa_sequence_type_missing": {
      "columns": [
       "sample_id:String",
-      "ST:Categorical"
+      "ST:String"
      ],
      "rows": 42,
      "sha256": "02d6644e7bf1f897ce8cff30ab14dfa345cefd85463c129aeed621136e4869f6"
@@ -193,9 +193,9 @@
     "qa_year_label": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "year_label:String"
      ],
      "rows": 42,
@@ -211,11 +211,11 @@
       "total_length:Float64",
       "largest_contig:Float64",
       "L50:Float64",
-      "taxon_1:Categorical",
+      "taxon_1:String",
       "proportion_1:Float64",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical"
+      "country:String"
      ],
      "rows": 42,
      "sha256": "233348ea64a3c9e1323f0f9be5fe1972b8f797a8efc45ee29070ecbcec2d8b43"
@@ -223,16 +223,16 @@
     "virulence_bar": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "sequence_type:String",
-      "serotype:Categorical",
+      "serotype:String",
       "Selected_Virulence_Genes:String",
       "VF_protein:String",
-      "gene:Categorical",
+      "gene:String",
       "status:String",
-      "phenotype:Categorical",
+      "phenotype:String",
       "virulence_count:UInt32"
      ],
      "rows": 617,
@@ -241,16 +241,16 @@
     "virulence_variants": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "sequence_type:String",
-      "serotype:Categorical",
+      "serotype:String",
       "Selected_Virulence_Genes:String",
       "VF_protein:String",
-      "gene:Categorical",
+      "gene:String",
       "status:String",
-      "phenotype:Categorical",
+      "phenotype:String",
       "virulence_count:UInt32"
      ],
      "rows": 617,
@@ -259,11 +259,11 @@
     "year_distribution": {
      "columns": [
       "sample_id:String",
-      "scheme:Categorical",
+      "scheme:String",
       "sequence_type:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "era:String"
      ],
      "rows": 33,
@@ -274,11 +274,11 @@
     "AR1_MLST_Serotype_Virulence": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "sequence_type:String",
-      "serotype:Categorical",
+      "serotype:String",
       "selected_virulence_genes:String",
       "vf_protein:String"
      ],
@@ -288,11 +288,11 @@
     "Bracken_with_metadata": {
      "columns": [
       "sample_id:String",
-      "taxon_1:Categorical",
+      "taxon_1:String",
       "proportion_1:Float64",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical"
+      "country:String"
      ],
      "rows": 42,
      "sha256": "1df5cd8f9043fa9ce551f30d732149bc4298299cdbadfad4fe549f4a1663ca6e"
@@ -303,9 +303,9 @@
       "total_reads:Float64",
       "q30_rate:Float64",
       "gc_content:Float64",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical"
+      "country:String"
      ],
      "rows": 42,
      "sha256": "d6b1e0cd71d4883779fa95a438d31d59e76a21ef968b8ccb5bcccfa2f804853f"
@@ -313,11 +313,11 @@
     "MLST_with_metadata": {
      "columns": [
       "sample_id:String",
-      "scheme:Categorical",
+      "scheme:String",
       "sequence_type:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical"
+      "country:String"
      ],
      "rows": 42,
      "sha256": "bc765d50c6b1a7efacb8ca370e30babf3145013eff71da08343dcefd99b13cb7"
@@ -325,11 +325,11 @@
     "QA_AMR_per_sample": {
      "columns": [
       "sample_id:String",
-      "country:Categorical",
-      "source:Categorical",
+      "country:String",
+      "source:String",
       "year:Float64",
-      "gene:Categorical",
-      "predicted_phenotype:Categorical"
+      "gene:String",
+      "predicted_phenotype:String"
      ],
      "rows": 74,
      "sha256": "79048c15e9cd5d73aaa4e975715afa1230c02c722920fe99c1735c5c07fa2f62"
@@ -345,7 +345,7 @@
     "QA_ST_with_NA": {
      "columns": [
       "sample_id:String",
-      "ST:Categorical"
+      "ST:String"
      ],
      "rows": 42,
      "sha256": "02d6644e7bf1f897ce8cff30ab14dfa345cefd85463c129aeed621136e4869f6"
@@ -353,9 +353,9 @@
     "QA_aggregated_no_key": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "year_label:String"
      ],
      "rows": 42,
@@ -364,8 +364,8 @@
     "QA_fanout_exhibit": {
      "columns": [
       "sample_id:String",
-      "country:Categorical",
-      "gene:Categorical",
+      "country:String",
+      "gene:String",
       "VF_gene:String"
      ],
      "rows": 1731,
@@ -374,7 +374,7 @@
     "QA_population_zscore": {
      "columns": [
       "sample_id:String",
-      "country:Categorical",
+      "country:String",
       "n50:Float64"
      ],
      "rows": 42,
@@ -383,9 +383,9 @@
     "QA_year_types": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "year_label:String"
      ],
      "rows": 42,
@@ -401,11 +401,11 @@
       "total_length:Float64",
       "largest_contig:Float64",
       "L50:Float64",
-      "taxon_1:Categorical",
+      "taxon_1:String",
       "proportion_1:Float64",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical"
+      "country:String"
      ],
      "rows": 42,
      "sha256": "233348ea64a3c9e1323f0f9be5fe1972b8f797a8efc45ee29070ecbcec2d8b43"
@@ -413,8 +413,8 @@
     "Quast_with_metadata": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
-      "country:Categorical",
+      "source:String",
+      "country:String",
       "metric:String",
       "value:Float64"
      ],
@@ -424,8 +424,8 @@
     "ResFinder": {
      "columns": [
       "sample_id:String",
-      "gene:Categorical",
-      "predicted_phenotype:Categorical",
+      "gene:String",
+      "predicted_phenotype:String",
       "identity:Float64",
       "overlap:Float64",
       "status:String"
@@ -436,14 +436,14 @@
     "ResFinder_with_metadata": {
      "columns": [
       "sample_id:String",
-      "gene:Categorical",
-      "predicted_phenotype:Categorical",
+      "gene:String",
+      "predicted_phenotype:String",
       "identity:Float64",
       "overlap:Float64",
       "status:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical"
+      "country:String"
      ],
      "rows": 70,
      "sha256": "123daa9f084ba7885c6583b2de82c5fcf2e0edf70aad2b33789580288445efd6"
@@ -451,16 +451,16 @@
     "ST22_Anchor": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "sequence_type:String",
-      "serotype:Categorical",
+      "serotype:String",
       "Selected_Virulence_Genes:String",
       "VF_protein:String",
-      "gene:Categorical",
+      "gene:String",
       "status:String",
-      "phenotype:Categorical"
+      "phenotype:String"
      ],
      "rows": 617,
      "sha256": "4e69d962fc3626f21c6431260885ecb3803f5ddd547d910ff627922b281a3bda"
@@ -468,7 +468,7 @@
     "Summary_phenotype_length_fragmentation": {
      "columns": [
       "sample_id:String",
-      "ST:Categorical",
+      "ST:String",
       "phenotype_count:Int32",
       "quality_metric:String",
       "quality_value:Float64"
@@ -481,11 +481,11 @@
     "AR1_MLST_Serotype_Virulence": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "sequence_type:String",
-      "serotype:Categorical",
+      "serotype:String",
       "selected_virulence_genes:String",
       "vf_protein:String"
      ],
@@ -495,11 +495,11 @@
     "Bracken_with_metadata": {
      "columns": [
       "sample_id:String",
-      "taxon_1:Categorical",
+      "taxon_1:String",
       "proportion_1:Float64",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical"
+      "country:String"
      ],
      "rows": 42,
      "sha256": "1df5cd8f9043fa9ce551f30d732149bc4298299cdbadfad4fe549f4a1663ca6e"
@@ -510,9 +510,9 @@
       "total_reads:Float64",
       "q30_rate:Float64",
       "gc_content:Float64",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical"
+      "country:String"
      ],
      "rows": 42,
      "sha256": "d6b1e0cd71d4883779fa95a438d31d59e76a21ef968b8ccb5bcccfa2f804853f"
@@ -520,11 +520,11 @@
     "MLST_with_metadata": {
      "columns": [
       "sample_id:String",
-      "scheme:Categorical",
+      "scheme:String",
       "sequence_type:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "era:String"
      ],
      "rows": 33,
@@ -533,7 +533,7 @@
     "QA_AMR_per_sample": {
      "columns": [
       "sample_id:String",
-      "country:Categorical",
+      "country:String",
       "n_amr_genes:UInt32"
      ],
      "rows": 42,
@@ -550,14 +550,14 @@
     "QA_ST_with_NA": {
      "columns": [
       "sample_id:String",
-      "ST:Categorical"
+      "ST:String"
      ],
      "rows": 42,
      "sha256": "02d6644e7bf1f897ce8cff30ab14dfa345cefd85463c129aeed621136e4869f6"
     },
     "QA_aggregated_no_key": {
      "columns": [
-      "country:Categorical",
+      "country:String",
       "year_label:String",
       "n_samples:UInt32"
      ],
@@ -575,7 +575,7 @@
     "QA_population_zscore": {
      "columns": [
       "sample_id:String",
-      "country:Categorical",
+      "country:String",
       "n50:Float64",
       "n50_zscore:Float64"
      ],
@@ -585,9 +585,9 @@
     "QA_year_types": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "year_label:String"
      ],
      "rows": 42,
@@ -603,11 +603,11 @@
       "total_length:Float64",
       "largest_contig:Float64",
       "L50:Float64",
-      "taxon_1:Categorical",
+      "taxon_1:String",
       "proportion_1:Float64",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical"
+      "country:String"
      ],
      "rows": 42,
      "sha256": "233348ea64a3c9e1323f0f9be5fe1972b8f797a8efc45ee29070ecbcec2d8b43"
@@ -615,8 +615,8 @@
     "Quast_with_metadata": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
-      "country:Categorical",
+      "source:String",
+      "country:String",
       "metric:String",
       "value:Float64"
      ],
@@ -626,8 +626,8 @@
     "ResFinder": {
      "columns": [
       "sample_id:String",
-      "gene:Categorical",
-      "predicted_phenotype:Categorical",
+      "gene:String",
+      "predicted_phenotype:String",
       "identity:Float64",
       "overlap:Float64",
       "status:String",
@@ -639,14 +639,14 @@
     "ResFinder_with_metadata": {
      "columns": [
       "sample_id:String",
-      "gene:Categorical",
-      "predicted_phenotype:Categorical",
+      "gene:String",
+      "predicted_phenotype:String",
       "identity:Float64",
       "overlap:Float64",
       "status:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical"
+      "country:String"
      ],
      "rows": 70,
      "sha256": "123daa9f084ba7885c6583b2de82c5fcf2e0edf70aad2b33789580288445efd6"
@@ -654,16 +654,16 @@
     "ST22_Anchor": {
      "columns": [
       "sample_id:String",
-      "source:Categorical",
+      "source:String",
       "year:Float64",
-      "country:Categorical",
+      "country:String",
       "sequence_type:String",
-      "serotype:Categorical",
+      "serotype:String",
       "Selected_Virulence_Genes:String",
       "VF_protein:String",
-      "gene:Categorical",
+      "gene:String",
       "status:String",
-      "phenotype:Categorical",
+      "phenotype:String",
       "virulence_count:UInt32"
      ],
      "rows": 617,
@@ -672,7 +672,7 @@
     "Summary_phenotype_length_fragmentation": {
      "columns": [
       "sample_id:String",
-      "ST:Categorical",
+      "ST:String",
       "phenotype_count:Int32",
       "quality_metric:String",
       "quality_value:Float64"
@@ -687,12 +687,12 @@
     "multi_resistance_by_country": {
      "columns": [
       "Year:String",
-      "Source:Categorical",
-      "Country:Categorical",
-      "gene:Categorical",
+      "Source:String",
+      "Country:String",
+      "gene:String",
       "predicted_phenotype_clean:String",
       "sample_id:String",
-      "accession:Categorical",
+      "accession:String",
       "Multiresistant:String"
      ],
      "rows": 70,
@@ -701,12 +701,12 @@
     "multi_resistance_by_source": {
      "columns": [
       "Year:String",
-      "Source:Categorical",
-      "Country:Categorical",
-      "gene:Categorical",
+      "Source:String",
+      "Country:String",
+      "gene:String",
       "predicted_phenotype_clean:String",
       "sample_id:String",
-      "accession:Categorical",
+      "accession:String",
       "Multiresistant:String"
      ],
      "rows": 70,
@@ -715,11 +715,11 @@
     "plasmid_prevalence_by_country": {
      "columns": [
       "Year:String",
-      "Source:Categorical",
-      "Country:Categorical",
-      "plasmid_name:Categorical",
+      "Source:String",
+      "Country:String",
+      "plasmid_name:String",
       "sample_id:String",
-      "accession:Categorical"
+      "accession:String"
      ],
      "rows": 163,
      "sha256": "28489f30109b1d0ebf9e9171c2b93f7caa58866683db72b8a424e6489776b2e8"
@@ -729,12 +729,12 @@
     "AMR_Profile_Joint": {
      "columns": [
       "Year:String",
-      "Source:Categorical",
-      "Country:Categorical",
-      "gene:Categorical",
+      "Source:String",
+      "Country:String",
+      "gene:String",
       "predicted_phenotype_clean:String",
       "sample_id:String",
-      "accession:Categorical",
+      "accession:String",
       "Multiresistant:String"
      ],
      "rows": 70,
@@ -743,11 +743,11 @@
     "Plasmid_Profile_Joint": {
      "columns": [
       "Year:String",
-      "Source:Categorical",
-      "Country:Categorical",
-      "plasmid_name:Categorical",
+      "Source:String",
+      "Country:String",
+      "plasmid_name:String",
       "sample_id:String",
-      "accession:Categorical"
+      "accession:String"
      ],
      "rows": 163,
      "sha256": "28489f30109b1d0ebf9e9171c2b93f7caa58866683db72b8a424e6489776b2e8"
@@ -757,12 +757,12 @@
     "AMR_Profile_Joint": {
      "columns": [
       "Year:String",
-      "Source:Categorical",
-      "Country:Categorical",
-      "gene:Categorical",
+      "Source:String",
+      "Country:String",
+      "gene:String",
       "predicted_phenotype_clean:String",
       "sample_id:String",
-      "accession:Categorical",
+      "accession:String",
       "Multiresistant:String"
      ],
      "rows": 70,
@@ -771,11 +771,11 @@
     "Plasmid_Profile_Joint": {
      "columns": [
       "Year:String",
-      "Source:Categorical",
-      "Country:Categorical",
-      "plasmid_name:Categorical",
+      "Source:String",
+      "Country:String",
+      "plasmid_name:String",
       "sample_id:String",
-      "accession:Categorical"
+      "accession:String"
      ],
      "rows": 163,
      "sha256": "28489f30109b1d0ebf9e9171c2b93f7caa58866683db72b8a424e6489776b2e8"
@@ -787,7 +787,7 @@
     "sequence_type_counts": {
      "columns": [
       "sample_id:String",
-      "scheme:Categorical",
+      "scheme:String",
       "sequence_type:String"
      ],
      "rows": 42,
@@ -798,7 +798,7 @@
     "MLST": {
      "columns": [
       "sample_id:String",
-      "scheme:Categorical",
+      "scheme:String",
       "sequence_type:String"
      ],
      "rows": 42,
@@ -809,7 +809,7 @@
     "MLST": {
      "columns": [
       "sample_id:String",
-      "scheme:Categorical",
+      "scheme:String",
       "sequence_type:String"
      ],
      "rows": 42,
@@ -823,9 +823,9 @@
      "columns": [
       "sample_id:String",
       "sequence_type:String",
-      "source:Categorical",
+      "source:String",
       "year:String",
-      "country:Categorical"
+      "country:String"
      ],
      "rows": 28,
      "sha256": "f756e1549cd217799c42c87d774cb7cbca57b3101bb9ffcf59723f0fc3d3e1af"
@@ -836,9 +836,9 @@
      "columns": [
       "sample_id:String",
       "sequence_type:String",
-      "source:Categorical",
+      "source:String",
       "year:String",
-      "country:Categorical"
+      "country:String"
      ],
      "rows": 28,
      "sha256": "f756e1549cd217799c42c87d774cb7cbca57b3101bb9ffcf59723f0fc3d3e1af"
@@ -849,9 +849,9 @@
      "columns": [
       "sample_id:String",
       "sequence_type:String",
-      "source:Categorical",
+      "source:String",
       "year:String",
-      "country:Categorical"
+      "country:String"
      ],
      "rows": 28,
      "sha256": "f756e1549cd217799c42c87d774cb7cbca57b3101bb9ffcf59723f0fc3d3e1af"
@@ -863,19 +863,19 @@
     "plot_a_phenotype_bar": {
      "columns": [
       "sample_id:String",
-      "host_animal_species:Categorical",
-      "host_animal_common:Categorical",
-      "specimen_source_tissue:Categorical",
-      "final_diagnosis:Categorical",
-      "animal_infection_site_uti:Categorical",
-      "mic_id:Categorical",
+      "host_animal_species:String",
+      "host_animal_common:String",
+      "specimen_source_tissue:String",
+      "final_diagnosis:String",
+      "animal_infection_site_uti:String",
+      "mic_id:String",
       "breakpoint:Categorical",
       "predicted_phenotype:Categorical",
-      "gene:Categorical",
-      "gene_type:Categorical",
-      "gene_identifier:Categorical",
-      "gene_name_family:Categorical",
-      "resistance_class:Categorical"
+      "gene:String",
+      "gene_type:String",
+      "gene_identifier:String",
+      "gene_name_family:String",
+      "resistance_class:String"
      ],
      "rows": 203146,
      "sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
@@ -883,19 +883,19 @@
     "plot_b_genotype_bar": {
      "columns": [
       "sample_id:String",
-      "host_animal_species:Categorical",
-      "host_animal_common:Categorical",
-      "specimen_source_tissue:Categorical",
-      "final_diagnosis:Categorical",
-      "animal_infection_site_uti:Categorical",
-      "mic_id:Categorical",
+      "host_animal_species:String",
+      "host_animal_common:String",
+      "specimen_source_tissue:String",
+      "final_diagnosis:String",
+      "animal_infection_site_uti:String",
+      "mic_id:String",
       "breakpoint:Categorical",
       "predicted_phenotype:Categorical",
-      "gene:Categorical",
-      "gene_type:Categorical",
-      "gene_identifier:Categorical",
-      "gene_name_family:Categorical",
-      "resistance_class:Categorical"
+      "gene:String",
+      "gene_type:String",
+      "gene_identifier:String",
+      "gene_name_family:String",
+      "resistance_class:String"
      ],
      "rows": 203146,
      "sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
@@ -903,19 +903,19 @@
     "plot_c_resistance_class": {
      "columns": [
       "sample_id:String",
-      "host_animal_species:Categorical",
-      "host_animal_common:Categorical",
-      "specimen_source_tissue:Categorical",
-      "final_diagnosis:Categorical",
-      "animal_infection_site_uti:Categorical",
-      "mic_id:Categorical",
+      "host_animal_species:String",
+      "host_animal_common:String",
+      "specimen_source_tissue:String",
+      "final_diagnosis:String",
+      "animal_infection_site_uti:String",
+      "mic_id:String",
       "breakpoint:Categorical",
       "predicted_phenotype:Categorical",
-      "gene:Categorical",
-      "gene_type:Categorical",
-      "gene_identifier:Categorical",
-      "gene_name_family:Categorical",
-      "resistance_class:Categorical"
+      "gene:String",
+      "gene_type:String",
+      "gene_identifier:String",
+      "gene_name_family:String",
+      "resistance_class:String"
      ],
      "rows": 203146,
      "sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
@@ -925,19 +925,19 @@
     "figshare_triple_join": {
      "columns": [
       "sample_id:String",
-      "host_animal_species:Categorical",
-      "host_animal_common:Categorical",
-      "specimen_source_tissue:Categorical",
-      "final_diagnosis:Categorical",
-      "animal_infection_site_uti:Categorical",
-      "mic_id:Categorical",
+      "host_animal_species:String",
+      "host_animal_common:String",
+      "specimen_source_tissue:String",
+      "final_diagnosis:String",
+      "animal_infection_site_uti:String",
+      "mic_id:String",
       "breakpoint:Categorical",
-      "predicted_phenotype:Categorical",
-      "gene:Categorical",
-      "gene_type:Categorical",
-      "gene_identifier:Categorical",
-      "gene_name_family:Categorical",
-      "resistance_class:Categorical"
+      "predicted_phenotype:Enum(categories=['S', 'I', 'R', 'NI'])",
+      "gene:String",
+      "gene_type:String",
+      "gene_identifier:String",
+      "gene_name_family:String",
+      "resistance_class:String"
      ],
      "rows": 203146,
      "sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
@@ -947,19 +947,19 @@
     "figshare_triple_join": {
      "columns": [
       "sample_id:String",
-      "host_animal_species:Categorical",
-      "host_animal_common:Categorical",
-      "specimen_source_tissue:Categorical",
-      "final_diagnosis:Categorical",
-      "animal_infection_site_uti:Categorical",
-      "mic_id:Categorical",
+      "host_animal_species:String",
+      "host_animal_common:String",
+      "specimen_source_tissue:String",
+      "final_diagnosis:String",
+      "animal_infection_site_uti:String",
+      "mic_id:String",
       "breakpoint:Categorical",
-      "predicted_phenotype:Categorical",
-      "gene:Categorical",
-      "gene_type:Categorical",
-      "gene_identifier:Categorical",
-      "gene_name_family:Categorical",
-      "resistance_class:Categorical"
+      "predicted_phenotype:Enum(categories=['S', 'I', 'R', 'NI'])",
+      "gene:String",
+      "gene_type:String",
+      "gene_identifier:String",
+      "gene_name_family:String",
+      "resistance_class:String"
      ],
      "rows": 203146,
      "sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
@@ -970,11 +970,11 @@
    "plots": {
     "stress_species_amr": {
      "columns": [
-      "sample_id:Categorical",
-      "species:Categorical",
+      "sample_id:String",
+      "species:String",
       "collection_date:Categorical",
-      "amr_class:Categorical",
-      "value:Categorical"
+      "amr_class:String",
+      "value:Float64"
      ],
      "rows": 10000,
      "sha256": "a6715bab3f412803ba042bbc8a2bf3e7300138559849cb004b392dec4cddb398"
@@ -983,11 +983,11 @@
    "t1": {
     "Master_Collection": {
      "columns": [
-      "sample_id:Categorical",
-      "species:Categorical",
+      "sample_id:String",
+      "species:String",
       "collection_date:Categorical",
-      "amr_class:Categorical",
-      "value:Categorical"
+      "amr_class:String",
+      "value:Float64"
      ],
      "rows": 10000,
      "sha256": "a6715bab3f412803ba042bbc8a2bf3e7300138559849cb004b392dec4cddb398"
@@ -996,11 +996,11 @@
    "t2": {
     "Master_Collection": {
      "columns": [
-      "sample_id:Categorical",
-      "species:Categorical",
+      "sample_id:String",
+      "species:String",
       "collection_date:Categorical",
-      "amr_class:Categorical",
-      "value:Categorical"
+      "amr_class:String",
+      "value:Float64"
      ],
      "rows": 10000,
      "sha256": "a6715bab3f412803ba042bbc8a2bf3e7300138559849cb004b392dec4cddb398"

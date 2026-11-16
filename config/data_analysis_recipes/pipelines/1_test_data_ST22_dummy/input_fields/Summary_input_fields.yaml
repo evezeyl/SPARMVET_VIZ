@@ -8,7 +8,7 @@ sample_id:
   is_entity_key: true
 quality_module:
   original_name: "Quality Module"
-  type: Categorical
+  type: String
   label: "Quality Module" # IF YOU are sure you will not change the display it is ok to put in input field
 # NOTE: I can omit this column from the import BUT then it will be ingested as is
 # NOTE: This will prevent any standardization / renaming 
@@ -16,28 +16,28 @@ quality_module:
 # I want to drop this column from the output - I will omit it from the output_fields
 taxon:
   original_name: "Detected main taxon"
-  # NOTE : I can I omit type and label if my intent is to drop the column from the output
-  type: Categorical # if omitted its default to categorical
+  # NOTE: to drop the column from the output, omit it from output_fields (type stays required)
+  type: String # type is required on every field (no default)
   label: "Detected Main Taxon" # if omitted its default to origina_name. This is only of UI display
 # keep will require wrangling
 genotype:
   original_name: "Genotype"
-  type: Categorical
+  type: String
   null_values: ["None"]
   # label ommited - I know I will do something with this data, so I will define that when I have my output_fields defined
 # keep will require wrangling
 phenotype:
   original_name: "Predicted Phenotype"
-  type: Categorical
+  type: String
 # keep will require wrangling
 cge_phenotype:
   original_name: "CGE Predicted Phenotype"
-  type: Categorical
+  type: String
   null_values: ["-"]
 # keep will require wrangling
 plasmid:
   original_name: "Plasmid"
-  type: Categorical
+  type: String
   null_values: ["None"]
 # NOTE : I want to ignore this column from the output
 # NOTE I will omit it from both input and output output_fields
@@ -54,7 +54,7 @@ ST:
   # Including it in output_fields is ignored by the engine and can be confusing
   #  as the column has already been renamed to its logical slug (e.g., ST) 
   # by the time it reaches the output stage.
-  type: Categorical
+  type: String
   null_values: ["-"]
   label: "ST"
 # keep interesting for stats

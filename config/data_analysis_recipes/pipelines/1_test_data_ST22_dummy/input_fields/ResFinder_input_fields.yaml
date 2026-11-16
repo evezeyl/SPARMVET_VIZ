@@ -5,11 +5,11 @@ sample_id:
   is_entity_key: true
 gene:
   original_name: "Gene"
-  type: Categorical
+  type: String
   label: "AMR Gene"
 predicted_phenotype:
   original_name: "Predicted Phenotype"
-  type: Categorical
+  type: String
   label: "Predicted Phenotype"
 identity:
   original_name: "%Identity"

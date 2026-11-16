@@ -58,12 +58,12 @@ Every data schema also states `null_values` and `strip` (see the authoring guide
 
 | Type | What it is | When to use it |
 | :--- | :--- | :--- |
-| `String` | Text | Identifiers, free text |
-| `Categorical` | Text with repeated values | Gene names, species, countries used as plot categories |
+| `String` | Text | Identifiers, free text, and nominal fields (gene names, species, countries): the shipped recipes use `String` for them; a plot draws the levels in alphabetical (byte) order |
+| `Categorical` | Text with repeated values | A field you want stored as a Polars category; the shipped recipes keep one (`breakpoint` of the figshare recipe) as the documented example |
 | `Int64`, `Float64` (and the other integer and float types) | Whole and decimal numbers | Percentages, scores, measurements, counts |
 | `Date`, `Datetime`, `Time` | Calendar dates and times | Sampling dates, submission dates |
 | `Boolean` | True/False | Resistance flags, pass/fail status |
-| `Enum`, `Decimal` | Fixed list of levels; exact decimals | Ordered levels; money-like values |
+| `Enum`, `Decimal` | Fixed list of levels, written in `categories` (it is also the order of axis and legend); exact decimals | Ordered levels (the figshare `predicted_phenotype` is `Enum [S, I, R, NI]`; a value outside the list stops the load); money-like values |
 
 > **REMOVED (data analysis recipe format 1):** the old type words `categorical`, `numeric`, `utf8`, `string`, `character`,
 > `integer`, `float`, `date`, `bool` and `boolean` are refused; the message names the Polars type to write

@@ -3,11 +3,11 @@ sample_id:
   original_name: sample_id
   label: Sample ID
 gene:
-  type: Categorical
+  type: String
   original_name: Gene
   label: Gene name
 predicted_phenotype:
-  type: Categorical
+  type: String
   original_name: Predicted Phenotype
   label: Predicted Phenotype
 identity:
@@ -19,6 +19,6 @@ overlap:
   original_name: '%Overlap'
   label: Sequence Overlap
 accession:
-  type: Categorical
+  type: String
   original_name: Accession
   label: NCBI Accession

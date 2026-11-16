@@ -5,11 +5,11 @@ sample_id:
   is_entity_key: true
 quality_module:
   original_name: Quality_Module
-  type: Categorical
+  type: String
   label: Quality Module
 quality_feedback:
   original_name: Quality_Feedback
-  type: Categorical
+  type: String
   label: Quality Feedback
 total_reads_after:
   original_name: total_reads_after
@@ -21,7 +21,7 @@ ratio_reads_after:
   label: Ratio Reads After
 bracken_main_taxon:
   original_name: bracken_main_taxon
-  type: Categorical
+  type: String
   label: Bracken Main Taxon
 proportion_of_main_taxon:
   original_name: proportion_of_main_taxon

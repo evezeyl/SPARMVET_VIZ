@@ -106,7 +106,7 @@ def test_a_value_that_does_not_fit_the_declared_type_is_reported_with_the_column
     data_analysis_recipe = _make_data_analysis_recipe(tmp_path, reads_rows=("s1\tabc", "s2\t20"))
     [problem] = validate_data_analysis_recipe_data(data_analysis_recipe, tmp_path)
     assert problem.location == "data_schemas.B"
-    assert "column 'reads' (Float64)" in problem.problem and "'abc'" in problem.problem
+    assert "The column 'reads' is declared as Float64" in problem.problem and "'abc'" in problem.problem
 
 
 def test_a_missing_data_file_is_reported(tmp_path):

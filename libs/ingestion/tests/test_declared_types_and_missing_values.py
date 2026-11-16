@@ -178,7 +178,9 @@ def test_a_field_can_override_strip_only(tmp_path):
 def test_the_error_names_every_column_that_does_not_fit(tmp_path):
     with pytest.raises(IngestionError) as info:
         ingest(tmp_path, "id\ta\tb\ns1\tx\tq\n", {"id": {"type": "String"}, "a": {"type": "Int64"}, "b": {"type": "Float64"}}, **EXPLICIT)
-    assert "column 'a' (Int64): 'x'" in str(info.value) and "column 'b' (Float64): 'q'" in str(info.value)
+    message = str(info.value)
+    assert "The column 'a' is declared as Int64" in message and "'x'" in message
+    assert "The column 'b' is declared as Float64" in message and "'q'" in message
 
 
 def test_only_the_declared_columns_are_read_in_the_declared_path(tmp_path):
@@ -192,4 +194,33 @@ def test_columns_with_a_different_number_of_bad_values_are_all_reported(tmp_path
         ingest(tmp_path, "id\ta\tb\tc\ns1\tx\t1\t2022-01-01\ns2\ty\t2\tnot a date\ns3\t3\t4\t2022-01-03\n",
                {"id": {"type": "String"}, "a": {"type": "Int64"}, "b": {"type": "Int64"}, "c": {"type": "Date"}}, **EXPLICIT)
     message = str(info.value)
-    assert "column 'a' (Int64): 'x', 'y'" in message and "column 'c' (Date): 'not a date'" in message and "column 'b'" not in message
+    assert "The column 'a' is declared as Int64. The data holds the value(s) 'x', 'y'" in message
+    assert "The column 'c' is declared as Date. The data holds the value(s) 'not a date'" in message and "column 'b'" not in message
+
+
+LEVELS = {"id": {"type": "String"}, "phenotype": {"type": "Enum", "categories": ["S", "I", "R", "NI"]}}
+
+
+def test_the_enum_message_says_what_happened_and_gives_the_remedies(tmp_path):
+    with pytest.raises(IngestionError) as info:
+        ingest(tmp_path, "id\tphenotype\ns1\tr\ns2\tS\n", LEVELS, **EXPLICIT)
+    message, tip = str(info.value), info.value.tip
+    assert "The column 'phenotype' is declared as Enum with the values S, I, R, NI." in message
+    assert "The data holds the value(s) 'r', which are not in that list." in message
+    assert "Suggestion: add the value to `categories` of 'phenotype'" in tip
+    assert "Suggestion: correct the data if it is a typing error" in tip and "upper and lower case differ" in tip
+
+
+def test_an_enum_value_in_the_list_is_accepted_and_a_lower_case_one_is_not(tmp_path):
+    ok = ingest(tmp_path, "id\tphenotype\ns1\tR\n", LEVELS, **EXPLICIT)
+    assert ok["phenotype"].to_list() == ["R"]
+    with pytest.raises(IngestionError):
+        ingest(tmp_path, "id\tphenotype\ns1\tr\n", LEVELS, **EXPLICIT)
+
+
+def test_an_empty_cell_in_an_enum_is_a_missing_value_and_the_row_is_kept(tmp_path):
+    """Not refused: Polars reads an empty cell as null, as before the migration. The row stays; the value is missing."""
+    df = ingest(tmp_path, "id\tphenotype\ns1\tS\ns2\t\ns3\tR\n", LEVELS, **EXPLICIT)
+    assert df.height == 3
+    assert df["phenotype"].to_list() == ["S", None, "R"]
+    assert df["phenotype"].dtype == pl.Enum(["S", "I", "R", "NI"])

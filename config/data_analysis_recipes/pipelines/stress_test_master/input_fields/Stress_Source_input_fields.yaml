@@ -1,15 +1,15 @@
 id:
   original_name: "id"
-  type: "Categorical"
+  type: "String"
   is_entity_key: true
   label: "ID"
 species:
   original_name: "species"
-  type: "Categorical"
+  type: "String"
   label: "Species"
 amr_class:
   original_name: "amr_class"
-  type: "Categorical"
+  type: "String"
   label: "AMR Class"
 collection_date:
   original_name: "collection_date"
@@ -17,5 +17,5 @@ collection_date:
   label: "Collection Date"
 value:
   original_name: "value"
-  type: "Categorical"
+  type: "Float64"
   label: "Value"

@@ -110,9 +110,23 @@ def apply_declared(lf: pl.LazyFrame, dataset_name: str, schema: Dict[str, Any], 
         return lf
     # one pass finds every value that the declared type cannot read, so the error names the column and the values
     bad = lf.select([pl.col(slug).filter(flag).unique(maintain_order=True).head(EXAMPLES).implode().alias(slug) for slug, flag in checks.items()]).collect()
-    problems = [f"column '{slug}' ({fields[slug]['type']}): {', '.join(repr(v) for v in bad[slug][0].to_list())}"
-                for slug in checks if bad[slug][0].len()]
+    problems, tips = [], []
+    for slug in checks:
+        values = bad[slug][0].to_list()
+        if not values:
+            continue
+        shown = ", ".join(repr(v) for v in values)
+        if fields[slug]["type"] == "Enum":
+            levels = ", ".join(str(c) for c in fields[slug]["categories"])
+            problems.append(f"The column '{slug}' is declared as Enum with the values {levels}. The data holds the value(s) {shown}, "
+                            "which are not in that list.")
+            tips.append(f"Suggestion: add the value to `categories` of '{slug}' in the recipe if it is a real level. "
+                        "Suggestion: correct the data if it is a typing error (the values are compared exactly, upper and lower case differ).")
+        else:
+            problems.append(f"The column '{slug}' is declared as {fields[slug]['type']}. The data holds the value(s) {shown}, "
+                            "which cannot be read as that type.")
+            tips.append(f"Suggestion: correct the data, or declare the type that column '{slug}' really has (Float64 for decimals). "
+                        "Suggestion: list the word in null_values if it means missing.")
     if problems:
-        raise _fail(f"Data schema '{dataset_name}': values that do not fit the declared type: " + "; ".join(problems),
-                    "Correct the data, declare the type the data really has (Float64 for decimals), or list the word in null_values if it means missing.")
+        raise _fail(f"Data schema '{dataset_name}': values that do not fit the declared type. " + " ".join(problems), " ".join(dict.fromkeys(tips)))
     return lf.with_columns(parsed)
