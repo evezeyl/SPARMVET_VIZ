@@ -1,20 +1,22 @@
-"""EXPORT-FLAKE-1: the Export panel is re-mounted on every plot tab change, which unticks "Also include a reproducibility/reimport bundle".
+"""EXPORT-FLAKE-1: the Export panel is drawn again on every plot tab change, and the box "Also include a reproducibility/reimport
+bundle" (`#export_include_reproducibility`, with every other field of the panel) goes back to its default.
 
-Cause found by running the app (browser probes, 2026-11-16): `system_tools_ui` in `app/handlers/export_handlers.py` reads
-`active_home_subtab` (and `active_cfg()`), so Shiny draws the whole panel again each time the user changes the plot tab.
-The checkbox is drawn with `value=False`, so a tick made before that re-draw is lost, and the download is then made with
-`export_include_reproducibility` False: the zip holds `effective_run.yaml` but no `data_analysis_recipes_reproducibility/`
-folder, and nothing on the screen or in the zip says why. This is the failure of
-`test_export_download.py::test_the_export_records_the_seed_...` that appears about one run in three to five.
+Found by running the app (browser probes, 2026-11-16, diagnosis only): `system_tools_ui` in `app/handlers/export_handlers.py` reads
+`active_home_subtab` and `active_cfg()`, so Shiny draws the whole panel again each time the plot tab changes, and the checkbox is
+drawn with `value=False`. A user who ticks the box and then changes the plot tab finds it unticked; if they do not look, the download
+holds `effective_run.yaml` (which says "not attempted") and no `data_analysis_recipes_reproducibility/` folder.
 
-This test needs no browser: it reads the source of `system_tools_ui` and checks that the panel that holds the box does not
-depend on the active plot tab or the recipe (outside an `reactive.isolate()` block). It is `xfail(strict=True)`: when the
-cause is fixed (the box is mounted by a static element, or by an output that does not read these, or its value is kept), the
-test passes, `strict` turns that into a failure, and the mark must be removed.
+This is a defect a user can meet. It is NOT proven to be the cause of the intermittent failure of
+`test_export_download.py::test_the_export_records_the_seed_...`: in the failing run that was captured, the download was read by the
+server before the tick arrived (a race between the tick message and the download request), with no redraw after the tick. The
+two are separate; this file covers the first one only.
 
-Limit: the test checks the dependency, not the whole behaviour. The behaviour (tick, change the tab, the box stays ticked and
-the download holds the reproducibility folder) is what the probe `PROBE-C` of the diagnosis showed and what `test_export_download.py`
-runs with the browser.
+This test needs no browser: it reads the source of `system_tools_ui` and checks that the panel that holds the box does not depend
+on the active plot tab or the recipe (outside a `reactive.isolate()` block). It is `xfail(strict=True)`: when the cause is fixed
+(the box is mounted by a static element, or by an output that does not read these), the test passes, `strict` turns that into a
+failure, and the mark must be removed.
+
+Limit: it checks the dependency, not the behaviour (tick, change the tab, the box stays ticked).
 """
 import ast
 from pathlib import Path
@@ -77,7 +79,7 @@ def test_the_export_panel_exists_and_holds_the_reproducibility_box():
 @pytest.mark.xfail(
     strict=True,
     reason="EXPORT-FLAKE-1: system_tools_ui mounts the reproducibility box and reads active_home_subtab and active_cfg, so a "
-           "plot tab change draws the panel again with the box unticked; a tick made before it is lost without a message",
+           "plot tab change draws the panel again with the box unticked (a user can meet this; not the cause of the test flake)",
 )
 def test_the_panel_that_holds_the_reproducibility_box_does_not_depend_on_the_plot_tab():
     func = _function(ast.parse(HANDLER.read_text()), "system_tools_ui")
