@@ -16,6 +16,7 @@ info:
 
 metadata_schema:
   label: "metadata"
+  description: "One row per sample with its source, year and country of isolation."
   source:
     type: "local_tsv"
     path: "app/tests/equality/data/fractional_year/test_metadata_20260307_105756.tsv"
@@ -27,6 +28,7 @@ metadata_schema:
 data_schemas:
   amr_data:
     label: "amr data"
+    description: "One row per resistance gene hit reported by ResFinder (a sample can have several); only hits with identity of at least 90 and overlap of at least 60 percent are kept."
     source:
       type: "local_tsv"
       path: "app/tests/equality/data/fractional_year/test_data_ResFinder_20260307_105756.tsv"
@@ -36,6 +38,7 @@ data_schemas:
     wrangling: !include 2_test_data_ST22_dummy_fractional_year/wrangling/amr_data.yaml
   plasmid_data:
     label: "plasmid data"
+    description: "One row per plasmid hit reported by PlasmidFinder (a sample can have several); only hits with identity of at least 90 and overlap of at least 60 percent are kept."
     source:
       type: "local_tsv"
       path: "app/tests/equality/data/fractional_year/test_data_PlasmidFinder_20260307_105756.tsv"
@@ -47,12 +50,14 @@ data_schemas:
 joins:
   AMR_Profile_Joint:
     label: "AMR Profile Joint"
+    description: "One row per resistance gene hit with the sample's source, year and country (inner join: a sample with no hit, or not in the metadata, has no row), and the flag Multiresistant that is Yes when the hits of the sample name more than one distinct predicted phenotype (a drug, not a drug class; a missing phenotype is not counted)."
     ingredients:
       - dataset_id: amr_data
       - dataset_id: metadata_schema
     steps: !include 2_test_data_ST22_dummy_fractional_year/assembly/AMR_Profile_Joint.yaml
   Plasmid_Profile_Joint:
     label: "Plasmid Profile Joint"
+    description: "One row per plasmid hit with the sample's source, year and country (inner join: a sample with no plasmid hit, or not in the metadata, has no row), sorted by year, source and country."
     ingredients:
       - dataset_id: plasmid_data
       - dataset_id: metadata_schema
@@ -64,16 +69,21 @@ plot_defaults:
 analysis_groups:
   AMR_Insight:
     label: "AMR Profiling Insight"
+    description: "How many resistance gene hits come from multi-resistant samples, by year, country and source."
     plots:
       multi_resistance_by_country:
         label: "Multi-Resistance by Country"
+        description: "Bars count resistance gene hits (rows, not samples: a sample with more genes weighs more) per year, coloured by whether the sample is multi-resistant, one panel per country."
         spec: !include 2_test_data_ST22_dummy_fractional_year/plots/multi_resistance_by_country.yaml
       multi_resistance_by_source:
         label: "Multi-Resistance by Source"
+        description: "Bars count resistance gene hits (rows, not samples: a sample with more genes weighs more) per year, coloured by whether the sample is multi-resistant, one panel per source."
         spec: !include 2_test_data_ST22_dummy_fractional_year/plots/multi_resistance_by_source.yaml
   Plasmid_Insight:
     label: "Plasmid Dynamics"
+    description: "Which plasmid types are found, by year and country."
     plots:
       plasmid_prevalence_by_country:
         label: "Plasmid Prevalence by Country"
+        description: "Bars count plasmid hits (rows, not samples) per year, coloured by plasmid name, one panel per country."
         spec: !include 2_test_data_ST22_dummy_fractional_year/plots/plasmid_counts_by_year.yaml

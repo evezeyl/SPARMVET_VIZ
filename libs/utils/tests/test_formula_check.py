@@ -29,6 +29,7 @@ ALLOWED = [
     "pl.col('year').cast(pl.Int64).cast(pl.String)",
     "pl.col('predicted_phenotype').cast(pl.String).str.strip_chars().str.to_lowercase()",
     "pl.col('predicted_phenotype_clean').n_unique().over('sample_id') > 1",
+    "pl.col('predicted_phenotype_clean').drop_nulls().n_unique().over('sample_id') > 1",
     "pl.when(pl.col('is_multi_resistant_bool')).then(pl.lit('Yes')).otherwise(pl.lit('No'))",
     "pl.when(pl.col('year') < 2024).then(pl.lit('Early')).otherwise(pl.lit('Recent'))",
     "pl.col('a').is_in(['x', 'y'])",

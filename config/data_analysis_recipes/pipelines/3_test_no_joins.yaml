@@ -30,9 +30,11 @@ data_schemas:
 analysis_groups:
   no_join_group:
     label: No Joins
+    description: "One plot drawn straight from a data table with no join, to show that a recipe can do without joins."
     plots:
       sequence_type_counts:
         label: Sequence Type Counts
+        description: "Bars count samples (one row per sample) for each MLST sequence type."
         spec:
           target_dataset: MLST
           mapping:

@@ -233,6 +233,13 @@ class _Check:
         for key in ("description", "contact"):
             if not info.get(key):
                 self.add("I02", f"info.{key}", f"info.{key} is missing", "Suggestion: write it (spec section 13).", "A")
+        self.cut_description("info.description", info.get("description"))
+
+    def cut_description(self, path: str, text: Any) -> None:
+        """Advice D01: a description with an open bracket is probably cut where an unquoted ' #' started a YAML comment."""
+        if isinstance(text, str) and text.count("(") > text.count(")"):
+            self.add("D01", path, "The description seems cut. An unquoted ' #' starts a comment in YAML, so the text after it is lost.",
+                     "Suggestion: put the text in quotes.", "A")
 
     def entity(self, raw: dict) -> None:
         entity = raw.get("entity")
@@ -297,6 +304,7 @@ class _Check:
             self.add("S03", path, "the schema has no label", "add label")
         if not schema.get("description"):
             self.add("S04", f"{path}.description", "The schema has no description, so the grain (what one row is) is not stated.", "Suggestion: write the grain: what one row is (spec section 13).", "A")
+        self.cut_description(f"{path}.description", schema.get("description"))
         if "comment" in schema and not isinstance(schema["comment"], str):
             self.add("CM01", f"{path}.comment", "a comment is text", "write text")
         self.source(schema.get("source"), f"{path}.source", "source" in schema)
@@ -384,8 +392,10 @@ class _Check:
             self.add("FD02", f"{path}.type", "type is required", "write a Polars dtype: " + ", ".join(text_dtype_names()))
         elif not isinstance(type_, str) or type_ not in text_dtype_names():
             old = self.spec["renamed_types"].get(str(type_).lower()) if isinstance(type_, str) else None
-            fix = f"write {old}" if old else "write one of " + ", ".join(text_dtype_names())
-            self.add("FD02", f"{path}.type", f"{type_!r} is not a Polars dtype that a text file can hold", fix)
+            advice = self.spec.get("type_suggestions", {}).get(str(type_).lower()) if isinstance(type_, str) else None
+            fix = " ".join(advice) if advice else f"write {old}" if old else "write one of " + ", ".join(text_dtype_names())
+            self.add("FD02", f"{path}.type", f"{type_!r} is not a Polars dtype that a text file can hold (the old word is no longer read)" if advice
+                     else f"{type_!r} is not a Polars dtype that a text file can hold", fix)
         elif isinstance(type_, str):
             for key, users in PARAMETER_KEYS.items():
                 if key in definition and type_ not in users:
@@ -623,6 +633,7 @@ class _Check:
                 self.add("J02", path, "the join has no label", "add label")
             if not join.get("description"):
                 self.add("J03", f"{path}.description", "The join has no description, so its grain and its join type are not stated.", "Suggestion: write the grain and the join type (spec section 13).", "A")
+            self.cut_description(f"{path}.description", join.get("description"))
             if "comment" in join and not isinstance(join["comment"], str):
                 self.add("CM01", f"{path}.comment", "a comment is text", "write text")
             ingredient_ids = self.ingredients(join.get("ingredients"), f"{path}.ingredients")
@@ -852,6 +863,7 @@ class _Check:
                 self.add("G01", path, "the group has no label (the tab text)", "add label")
             if not group.get("description"):
                 self.add("G02", f"{path}.description", "The group has no description, so the question its plots answer is not stated.", "Suggestion: write the question its plots answer.", "A")
+            self.cut_description(f"{path}.description", group.get("description"))
             if "comment" in group and not isinstance(group["comment"], str):
                 self.add("CM01", f"{path}.comment", "a comment is text", "write text")
             plots = group.get("plots")
@@ -876,6 +888,7 @@ class _Check:
                 self.add("P01", path, f"{key} is required", f"add {key}")
         if not plot.get("description"):
             self.add("P02", f"{path}.description", "The plot has no description, so what is drawn and counted is not stated.", "Suggestion: write what is drawn and counted (spec section 13).", "A")
+        self.cut_description(f"{path}.description", plot.get("description"))
         if "comment" in plot and not isinstance(plot["comment"], str):
             self.add("CM01", f"{path}.comment", "a comment is text", "write text")
         if "steps" in plot:

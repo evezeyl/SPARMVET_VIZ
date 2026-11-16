@@ -75,6 +75,14 @@ def test_an_old_type_name_is_refused_and_named(tmp_path, old_name):
         ingest(tmp_path, "id\tx\ns1\t1\n", {"id": {"type": "String"}, "x": {"type": old_name}}, **EXPLICIT)
 
 
+def test_the_old_categorical_word_gets_the_three_suggestions(tmp_path):
+    with pytest.raises(IngestionError) as caught:
+        ingest(tmp_path, "id\tx\ns1\ta\n", {"id": {"type": "String"}, "x": {"type": "categorical"}}, **EXPLICIT)
+    text = str(caught.value)
+    assert "write `String` for a category with no order" in text and "write `Enum` with `categories:`" in text
+    assert "`Categorical` is also accepted" in text
+
+
 def test_a_field_without_a_type_fails_and_names_the_field(tmp_path):
     with pytest.raises(IngestionError, match="no_type_here"):
         ingest(tmp_path, "id\tno_type_here\ns1\t1\n", {"id": {"type": "String"}, "no_type_here": {}}, **EXPLICIT)
@@ -194,8 +202,8 @@ def test_columns_with_a_different_number_of_bad_values_are_all_reported(tmp_path
         ingest(tmp_path, "id\ta\tb\tc\ns1\tx\t1\t2022-01-01\ns2\ty\t2\tnot a date\ns3\t3\t4\t2022-01-03\n",
                {"id": {"type": "String"}, "a": {"type": "Int64"}, "b": {"type": "Int64"}, "c": {"type": "Date"}}, **EXPLICIT)
     message = str(info.value)
-    assert "The column 'a' is declared as Int64. The data holds the value(s) 'x', 'y'" in message
-    assert "The column 'c' is declared as Date. The data holds the value(s) 'not a date'" in message and "column 'b'" not in message
+    assert "The column 'a' is declared as Int64. The data holds the values 'x', 'y'" in message
+    assert "The column 'c' is declared as Date. The data holds the value 'not a date'" in message and "column 'b'" not in message
 
 
 LEVELS = {"id": {"type": "String"}, "phenotype": {"type": "Enum", "categories": ["S", "I", "R", "NI"]}}
@@ -206,7 +214,7 @@ def test_the_enum_message_says_what_happened_and_gives_the_remedies(tmp_path):
         ingest(tmp_path, "id\tphenotype\ns1\tr\ns2\tS\n", LEVELS, **EXPLICIT)
     message, tip = str(info.value), info.value.tip
     assert "The column 'phenotype' is declared as Enum with the values S, I, R, NI." in message
-    assert "The data holds the value(s) 'r', which are not in that list." in message
+    assert "The data holds the value 'r', which is not in that list." in message
     assert "Suggestion: add the value to `categories` of 'phenotype'" in tip
     assert "Suggestion: correct the data if it is a typing error" in tip and "upper and lower case differ" in tip
 
@@ -224,3 +232,35 @@ def test_an_empty_cell_in_an_enum_is_a_missing_value_and_the_row_is_kept(tmp_pat
     assert df.height == 3
     assert df["phenotype"].to_list() == ["S", None, "R"]
     assert df["phenotype"].dtype == pl.Enum(["S", "I", "R", "NI"])
+
+
+def test_several_values_outside_an_enum_say_which_are_not_in_the_list(tmp_path):
+    with pytest.raises(IngestionError) as info:
+        ingest(tmp_path, "id\tphenotype\ns1\tr\ns2\tx\n", LEVELS, **EXPLICIT)
+    assert "The data holds the values 'r', 'x', which are not in that list." in str(info.value)
+
+
+@pytest.mark.parametrize("type_name, good, bad, must_say, must_not_say", [
+    ("Float64", "1.5", "abc", "(String if it is text)", "Float64 for decimals"),
+    ("Int64", "1", "abc", "Float64 for decimals", "Suggestion: write `format`"),
+    ("Date", "2022-01-01", "not a date", "Suggestion: write `format` for 'v'", "Float64"),
+    ("Boolean", "true", "maybe", "reads the words true and false", "Float64"),
+    ("Decimal", "1.50", "abc", "(String if it is text)", "Float64 for decimals"),
+    ("Int32", "1", "abc", "Float64 for decimals", "Suggestion: write `format`"),
+    ("UInt16", "1", "abc", "Float64 for decimals", "Suggestion: write `format`"),
+    ("Datetime", "2022-01-01 10:00:00", "abc", "Suggestion: write `format` for 'v'", "Float64"),
+    ("Time", "10:30:00", "abc", "Suggestion: write `format` for 'v'", "Float64"),
+])
+def test_the_tip_for_a_value_that_does_not_fit_fits_the_type(tmp_path, type_name, good, bad, must_say, must_not_say):
+    field = {"type": type_name, **({"precision": 6, "scale": 2} if type_name == "Decimal" else {})}
+    with pytest.raises(IngestionError) as info:
+        ingest(tmp_path, f"id\tv\ns1\t{good}\ns2\t{bad}\n", {"id": {"type": "String"}, "v": field}, **EXPLICIT)
+    tip = info.value.tip
+    assert must_say in tip and must_not_say not in tip
+    assert "list the word in null_values if it means missing" in tip
+
+
+def test_the_boolean_tip_names_null_values_once(tmp_path):
+    with pytest.raises(IngestionError) as info:
+        ingest(tmp_path, "id\tv\ns1\ttrue\ns2\tmaybe\n", {"id": {"type": "String"}, "v": {"type": "Boolean"}}, **EXPLICIT)
+    assert info.value.tip.count("null_values") == 1
