@@ -8,6 +8,19 @@
 
 ---
 
+## Original recipe and audit recipe (confirmed by Eve, 2026-11-15)
+
+1. HOME opens the original recipe. It is the reference. HOME never changes it.
+2. Only Blueprint can edit a recipe.
+3. When you audit, HOME works on a copy of the original recipe. This copy is the audit recipe.
+4. The steps of the original recipe are in the copy. You cannot edit them or remove them.
+5. In the audit you can only add steps: remove rows, or remove a column. Each step has a reason.
+6. A step you added can be removed again. It leaves the audit recipe. The original recipe is not touched.
+7. The export is the audit recipe: the original steps plus the audit steps that are still in it.
+8. The original plot stays beside the audited plot, so you can see what the audit changed.
+
+---
+
 # Part A. For Eve (read this part alone)
 
 ## A1. What this is
@@ -61,7 +74,7 @@ A number from the agent channel is answered there once, not asked again.
 - **L18:** `column` or `columns` as the parameter name. Plan: `column`.
 
 **New, to answer here** (default = what is built if you say yes)
-- **S2-1.** One drop and one filter on the same column at one place: in the copy, filters are written before drops. *For you:* the table, the plot and the re-run give the same rows.
+- **S2-1.** DECIDED by Eve 2026-11-15 (built by PLOT-TABLE-ORDER-1; ADR-105 note of that date): steps run in the order they were recorded, in the table, the plot, the bundle and the exported recipe; a step whose column does not exist, or was removed by an earlier step, is an error that names the plot, the step, the column and the fix, never a skip; the filter dialog does not offer a column that an earlier step dropped. (This replaces the earlier default "filters are written before drops".) *For you:* the table, the plot and the re-run give the same rows, or the same plain error.
 - **S2-2.** A value that cannot be typed at one ticked place (for example text for a number column): that line shows the error and cannot be ticked; the other places can be written. *For you:* nothing is converted silently; you see where a step cannot go.
 - **S2-3.** The recipe or the data changes while an audit is open: the export is refused until you "re-base". Re-base writes your steps again into the new recipe and marks each: applied, not concerned, or broken. A broken step blocks the export. *For you:* nothing is exported from a mix of old and new.
 - **S2-4.** Build order: the left-overs of P1, then P3 and P4, then P5; the screen last. *For you:* you can try the first audit in the app only after P5 and P7.
@@ -107,7 +120,7 @@ Handlers (`home_theater.py` and others) only wire these; they hold no rule.
 - **Node id** [MINE, for information, A4]: `DS:<dataset>`, `T1:<table>`, `T2:<table>`, `T3:<plot>`; a node's `columns` come from the stored schema (parquet metadata) or a dry run on the column names, never from computing the data [CODE: Polars `collect_schema`]. A T1 node's columns are those of its last tier-1 `polars_select` (DEC23).
 - **User step** [DECIDED, 5a-1..3]: `{id, kind: filter|drop, field, op, value | values, nodes: [node id], reason, initials, created_at}`. ~~The value is converted to each node's column type (`FILTER-DTYPES-1`).~~ (superseded 2026-11-14 by ADR-104 point 7: the value is stored in the column's type, never converted silently; a wrong type is a plain error.) **Now [DECIDED]:** a filter step also carries `na: keep|remove` (ADR-103 points 2 and 8) and, for `between`, `closed` (ADR-104 point 4); the value is typed per node from the schema of the table at that node (ADR-104 point 7); a node where it cannot be typed is shown with the error and cannot be ticked [MINE, S2-2].
 - **Audit copy** [DECIDED, 5a-22]: the resolved single-file recipe (all `!include` merged, `plots` mirror removed, as `build_mode2_recipe` does today, `t3_translator.py:212` [CODE]) in the session folder `_sessions/<session key>/audit/<recipe id>.yaml` (path [MINE, for information, A4]); header: the original's file-set hash and the recipe format version (`spec_version`, DEC04); ~~each audit step carries the origin marker [RECIPE: name and shape to set]~~ (superseded 2026-11-13 by DEC18). **Now [DECIDED, DEC18]:** each audit step carries `id: audit_<8 hex>_<k>`; the copy passes `check_recipe` in profile `audit`; **invariant: the copy minus its marked steps equals the original; any difference blocks** (5a-22; AUDIT-VIEW-1, 2026-11-13).
-- **Insertion**: the end of a table's tier-1 list (T1), tier-2 list (T2) or the plot's T3 list; the action is a named, parameterised action, never formula text from user values [DECIDED, 5a-14]. **Now [DECIDED]:** a filter is `modif_filter` (`column`, `op`, `value`, `na`; DEC39), a drop is `polars_drop` (DEC37). T1: after the table's last step, so after its `polars_select` (DEC23). T2: a join's `steps.tier2`, or the `wrangling.tier2` of a table plotted directly (DEC16, built `eafc570c`). T3: the plot entry's `steps.tier3`, after the steps the maker wrote there (DEC17; note at ADR-100, 2026-11-15). At one place, filters before drops [MINE, S2-1].
+- **Insertion**: the end of a table's tier-1 list (T1), tier-2 list (T2) or the plot's T3 list; the action is a named, parameterised action, never formula text from user values [DECIDED, 5a-14]. **Now [DECIDED]:** a filter is `modif_filter` (`column`, `op`, `value`, `na`; DEC39), a drop is `polars_drop` (DEC37). T1: after the table's last step, so after its `polars_select` (DEC23). T2: a join's `steps.tier2`, or the `wrangling.tier2` of a table plotted directly (DEC16, built `eafc570c`). T3: the plot entry's `steps.tier3`, after the steps the maker wrote there (DEC17; note at ADR-100, 2026-11-15). At one place the steps run in the recorded order, a step that cannot run is an error [DECIDED 2026-11-15, S2-1; was: filters before drops, MINE].
 - **Series key** [DECIDED, ADR-101]: labelled parts in execution order, `E . rC . dC . [a1] . [s2] . [a2] . [s3] . [a3]`, 128 bits per part, an empty part omitted; the parts `a` come from the operations of the marked steps only (the `id` and `comment` of a step are not hashed, recipe spec 7.5). T1 per table with precise parts from the graph; a table whose inputs cannot be listed safely keeps a coarse part (fail-safe). **Today [CODE]:** one T1 key for the whole recipe (`cache_keys.py:90-91`): P4 changes it.
 - **Event** [MINE, for information, A4]: `{ts, initials, type: created|removed|reverted|ack_warning, step id, payload}`; replaying the log gives the copy's marked steps (a test). Exported (ADR-101 point 5, line 5242; ADR-105 point 6, line 5336; N7 point 2).
 

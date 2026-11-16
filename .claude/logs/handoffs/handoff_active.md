@@ -1123,3 +1123,40 @@ Records: `tasks.md` section 6 (three done lines, three open lines). No commit ma
 - `.claude/tasks/tasks.md`: new section 7 (Eve's decisions of 2026-11-15, evening, channel M101 to M129), the open tasks AGENT-PROBE-1, GATE-NOTICE-TESTS-1, DEP-INDEX-REGEN-1, RULE-LINKS-R1; GATE-GAP-FLAKY-1 marked done; AUDIT-RAWYAML-REMOVE-1 marked in work.
 - `.claude/knowledge/architecture_decisions.md`: dated notes in ADR-104 (S2-1) and ADR-106 (V1-B).
 - `.claude/design/decisions_2026-11-14/adr_proposals/audit_history_log.proposal.md`: the ADR wording for N7-2 (proposal, not in the ADR log).
+
+## Handoff 2026-11-16 00:15 (coordinator)
+
+**What you see first:** `origin/dev` is at `4f299025`, and it is pushed. The full checks passed on that exact tree.
+
+**Checks on `4f299025`:**
+- Headless tests: 7619 passed, 0 failed.
+- Golden tables: identical to the reference.
+- Gallery pictures: 34, identical.
+- Browser gate: 72 passed, 3 skipped. Nine other browser files passed.
+- Docs sync and the check of imports between libraries: pass.
+- Doc links: 7, all in rule files (known).
+
+**Merged since the handoff of 21:11:**
+- `af4c44aa`: the list of every rule-file change (`.claude/design/decisions_2026-11-14/rule_file_proposals/RULE_FILE_CHANGES.md`, 128 rows).
+- `653e70b1`: the seed build. Every seed that is used is written. HOME draws no seed per session. The seed in use is shown beside the plot. A refused seed names the plot, the layer and the fix. The whole-recipe seed and the audit pin stay PROVISIONAL.
+- `806dc852`: the advice texts. Each advice says what happens, then "Suggestion:". Also the `top_k` text and the note on whole-number sums.
+- `4f299025`: the recorded order. One function, `audited_frame` in `app/modules/t3_audit_engine.py`, serves the table, the plot, the bundle and the export check. A step that cannot be applied is refused. The step type `developer_raw_yaml` is removed. The filter dialog no longer offers a dropped column.
+
+**In work:**
+- `task/categorical`: the shipped `Categorical` fields (100 to `String`, 1 to `Enum`, 1 to `Float64`). In review.
+- `task/viz-audit`: the audit of the plot components against plotnine, and the impact document of the rename. Corrections after review. Nothing is renamed.
+
+**Stopped, to resume:** `task/filter-pickers`. Nothing committed.
+
+**Files for Eve, not in git:**
+- `tmpAI/panel/round7/questions_checked.md`: 33 questions checked against the records (6 decided, 15 to confirm by yes or no, 15 open). Section C is her list.
+- `tmpAI/panel/adr/ledger.md` (column "taken by") and `tmpAI/panel/adr/taken_by_report.md` (6 points).
+- `tmpAI/panel/round7/original_vs_audit_recipe.md`.
+- `tmpAI/panel/round7/categorical_migration_list.md`.
+- `tmpAI/panel/round7/advice_texts_before_after.md`.
+
+**Records changed, not committed (records agent, 2026-11-16 00:15; the coordinator commits by file name):**
+- `.claude/tasks/tasks.md`: section 7 (done lines), AGENT-PROBE-1 now a defect, eight new open tasks.
+- `.claude/design/home_stage2_mechanism_spec.md`: the paragraph "Original recipe and audit recipe" added at the top.
+- `docs/user_guide/audit_pipeline.qmd`: the same paragraph added.
+- `tmpAI/agent_channel.md`: partly trimmed (2 coordinator blocks deleted; 7 candidates kept, the rest of the trim was refused by the permission check). List: `tmpAI/coordinator/channel_trim_2026-11-16.md`.

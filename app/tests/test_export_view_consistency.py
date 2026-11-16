@@ -8,7 +8,9 @@ Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_export_view_consis
 """
 import pytest
 
-from app.handlers.export_handlers import blocked_export_notice, changed_since_view, audited_frame
+from app.handlers.export_handlers import blocked_export_notice, changed_since_view
+from app.modules.t3_audit_engine import AuditStepError, audited_frame
+from app.tests.audit_nodes import filter_nodes
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.tests.test_cache_chain import FILTER_A, FILTER_B
 from app.tests.test_tier2_store import Tier2World
@@ -86,56 +88,63 @@ def test_the_refusal_text_explains_what_it_means_and_what_to_do(world):
 def test_my_view_builds_on_tier2_when_there_are_tier2_steps(world):
     """T2 keeps A (s1, s2); a My view filter on top can only narrow T2, never bring s3 back."""
     rows = [{"column": "sample_id", "op": "ne", "value": "s1", "dtype": "Utf8"}]
-    assert ids(audited_frame(base(world), rows, [])) == ["s2"]
-    assert "s3" not in ids(audited_frame(base(world), [], []))
+    assert ids(audited_frame(base(world), filter_nodes(rows))) == ["s2"]
+    assert "s3" not in ids(audited_frame(base(world), []))
 
 
 def test_my_view_builds_on_tier1_when_there_are_no_tier2_steps(world):
     world.write_data_analysis_recipe(steps_tier2=[])
-    assert ids(audited_frame(base(world), [], [])) == ["s1", "s2", "s3"]
+    assert ids(audited_frame(base(world), [])) == ["s1", "s2", "s3"]
 
 
-def test_my_view_applies_column_drops_and_ignores_unknown_ones(world):
-    out = audited_frame(base(world), [], ["group", "no_such_column"]).collect()
+def test_my_view_applies_column_drops_and_refuses_unknown_ones(world):
+    """PLOT-TABLE-ORDER-1: a drop of a column that is not in the table is an error (the exported recipe's re-run stops on it too),
+    never ignored; the columns that are there are dropped."""
+    out = audited_frame(base(world), filter_nodes([], ["group"])).collect()
     assert out.columns == ["sample_id"]
+    with pytest.raises(AuditStepError, match="no_such_column"):
+        audited_frame(base(world), filter_nodes([], ["group", "no_such_column"]))
 
 
 def test_my_view_with_a_filter_that_removes_every_row_is_empty_not_an_error(world):
     rows = [{"column": "sample_id", "op": "eq", "value": "nope", "dtype": "Utf8"}]
-    assert ids(audited_frame(base(world), rows, [])) == []
+    assert ids(audited_frame(base(world), filter_nodes(rows))) == []
 
 
 def test_my_view_with_a_list_filter_uses_in(world):
     rows = [{"column": "sample_id", "op": "eq", "value": ["s1", "s3"], "dtype": "Utf8"}]
-    assert ids(audited_frame(base(world), rows, [])) == ["s1"]    # s3 is not in T2
+    assert ids(audited_frame(base(world), filter_nodes(rows))) == ["s1"]    # s3 is not in T2
 
 
 def test_my_view_without_changes_equals_the_result(world):
-    assert ids(audited_frame(base(world), [], [])) == ids(base(world))
+    assert ids(audited_frame(base(world), [])) == ids(base(world))
 
 
 # -- what goes into an exported plot: the audited steps, never the exploration -----------------
 
-from app.handlers.export_handlers import plot_content_rules
-
 AUDITED = [{"column": "sample_id", "op": "ne", "value": "s2", "dtype": "Utf8"}]
 
 
-def test_audited_rows_and_drops_are_exported():
-    assert plot_content_rules(AUDITED, ["group"]) == (AUDITED, ["group"])
-
-
-def test_nothing_audited_means_nothing_is_applied_to_the_export():
-    assert plot_content_rules([], []) == ([], [])
-
-
 def test_the_rule_has_no_way_to_let_exploration_in():
-    """The function takes only audited input: exploration filters are not an argument at all."""
+    """The function takes only the audit steps of the plot: exploration filters are not an argument at all."""
     import inspect
-    assert list(inspect.signature(plot_content_rules).parameters) == ["audited_rows", "audited_drops"]
+    assert list(inspect.signature(audited_frame).parameters) == ["lf", "nodes", "plot_id"]
 
 
 def test_the_audited_removal_really_removes_the_rows_from_the_data(world):
     """The user removed a poor quality sample with an audited step: it must not be in the export data."""
-    out = audited_frame(base(world), plot_content_rules(AUDITED, [])[0], [])
+    out = audited_frame(base(world), filter_nodes(AUDITED))
     assert "s2" not in ids(out) and ids(out) == ["s1"]
+
+
+def test_an_export_whose_audit_steps_cannot_run_is_refused_with_the_reason(world):
+    """PLOT-TABLE-ORDER-1: the text of EXPORT_NOT_CREATED.txt names the plot, the step, the column and the step that removed it."""
+    from app.handlers.export_handlers import blocked_audit_notice
+
+    nodes = filter_nodes([{"column": "sample_id", "op": "ne", "value": "s2", "dtype": "Utf8"}], ["group"])
+    nodes += filter_nodes([{"column": "group", "op": "eq", "value": "A", "dtype": "Utf8"}])
+    with pytest.raises(AuditStepError) as caught:
+        audited_frame(base(world), nodes)
+    text = blocked_audit_notice([("the_plot", caught.value)])
+    assert text.startswith("EXPORT NOT CREATED") and "'the_plot'" in text
+    assert "audit step 3" in text and "audit step 2" in text and "group" in text and "nothing was exported" in text

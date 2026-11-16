@@ -12,12 +12,12 @@ import polars as pl
 import pytest
 
 import transformer.actions  # noqa: F401
-from app.handlers.export_handlers import audited_frame
+from app.modules.t3_audit_engine import audited_frame
+from app.tests.audit_nodes import filter_nodes, home_plot_data
 from app.modules.t3_audit_engine import _apply_filter_rows, dialog_value, ops_for_column, value_choices
 from blueprint_arch.t3_translator import translate_t3_node
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
 from utils.filter_values import FilterValueError
-from viz_factory.viz_factory import VizFactory
 
 BASE = datetime.datetime(2020, 7, 1, 10, 30)
 
@@ -40,11 +40,10 @@ def views(f, rows):
             for step in translate_t3_node({"node_type": "filter_row", "params": r}):
                 lf = AVAILABLE_WRANGLING_ACTIONS[step["action"]](lf, {k: v for k, v in step.items() if k != "action"})
         return lf.collect()["s"].to_list()
-    recipe = {"plots": {"p": {"mapping": {"x": "s", "y": "n"}, "layers": [{"name": "geom_col", "params": {}}], "filters": rows}}}
     return {
         "table": _apply_filter_rows(f.lazy(), rows).collect()["s"].to_list(),
-        "bundle": audited_frame(f.lazy(), rows, []).collect()["s"].to_list(),
-        "plot": VizFactory().render(f.lazy(), recipe, "p").data["s"].to_list(),
+        "bundle": audited_frame(f.lazy(), filter_nodes(rows)).collect()["s"].to_list(),
+        "plot": home_plot_data(f.lazy(), rows, {"mapping": {"x": "s", "y": "n"}, "layers": [{"name": "geom_col", "params": {}}]})["s"].to_list(),
         "re-run": rerun(),
     }
 
@@ -153,9 +152,8 @@ def test_a_filter_on_a_time_or_duration_column_is_a_plain_error_in_every_view(va
     with pytest.raises(FilterValueError) as exc:
         _apply_filter_rows(f.lazy(), [row]).collect()
     assert "not offered" in str(exc.value) or "not available" in str(exc.value)
-    recipe = {"plots": {"p": {"mapping": {"x": "s", "y": "n"}, "layers": [{"name": "geom_col", "params": {}}], "filters": [row]}}}
     with pytest.raises(Exception) as plot:
-        VizFactory().render(f.lazy(), recipe, "p")
+        home_plot_data(f.lazy(), [row], {"mapping": {"x": "s", "y": "n"}, "layers": [{"name": "geom_col", "params": {}}]})
     assert "ComputeError" not in str(plot.value) and "InvalidOperation" not in str(plot.value)
     step = {"column": "t", "op": "in", "value": [str(value)], "na": "remove"}
     with pytest.raises(Exception) as rerun:

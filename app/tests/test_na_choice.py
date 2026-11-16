@@ -18,7 +18,6 @@ from app.tests.test_filter_defects import LABELS, RULE, _num
 from blueprint_arch.t3_translator import UntranslatableNode, translate_plot_steps, translate_t3_node
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
 from utils.missing_values import count_missing, dialog_missing_lines
-from viz_factory.viz_factory import VizFactory
 
 
 def by_home(lf, row):
@@ -26,8 +25,7 @@ def by_home(lf, row):
 
 
 def by_plot(lf, row):
-    recipe = {"plots": {"p": {"mapping": {"x": "s"}, "layers": [{"name": "geom_bar", "params": {}}], "filters": [row]}}}
-    return VizFactory().render(lf, recipe, "p").data["s"].to_list()
+    return home_plot_data(lf, [row], {"mapping": {"x": "s"}, "layers": [{"name": "geom_bar", "params": {}}]})["s"].to_list()
 
 
 def by_export(lf, row):
@@ -269,19 +267,20 @@ def test_the_table_in_home_and_the_rerun_of_the_exported_recipe_give_the_rows_wr
 
 # ── review fixes (part 2b): audited_frame, the staged row, the audit params, the session, `between` ─────────
 
-from app.handlers.export_handlers import audited_frame  # noqa: E402
+from app.modules.t3_audit_engine import audited_frame  # noqa: E402
+from app.tests.audit_nodes import filter_nodes, home_plot_data  # noqa: E402
 from app.modules.t3_audit_engine import audit_params_from_row, staged_filter_row  # noqa: E402
 
 
 @pytest.mark.parametrize("na, kept", [("keep", ["a", "c", "d", "e"]), ("remove", ["a", "c", "e"])])
 def test_the_results_bundle_frame_applies_na_keep_and_remove(na, kept):
     rows = [{"column": "x", "op": "ne", "value": 2.0, "na": na}]
-    assert audited_frame(_num(), rows, []).collect()["s"].to_list() == kept
+    assert audited_frame(_num(), filter_nodes(rows)).collect()["s"].to_list() == kept
 
 
 def test_the_results_bundle_frame_removes_the_dropped_column_after_a_keep_filter():
     rows = [{"column": "x", "op": "ne", "value": 2.0, "na": "keep"}]
-    out = audited_frame(_num(), rows, ["x"]).collect()
+    out = audited_frame(_num(), filter_nodes(rows, ["x"])).collect()
     assert out.columns == ["s"] and out["s"].to_list() == ["a", "c", "d", "e"]
 
 
@@ -385,7 +384,7 @@ def test_between_gives_the_same_rows_in_the_table_the_plot_the_bundle_and_the_ex
     (row,) = filter_rows_from_nodes([node])
     want = expected(BETWEEN[closed], na)
     got = {"home": by_home(_num(), row), "plot": by_plot(_num(), row),
-           "bundle": audited_frame(_num(), [row], []).collect()["s"].to_list(), "export": by_export(_num(), node["params"])}
+           "bundle": audited_frame(_num(), filter_nodes([row])).collect()["s"].to_list(), "export": by_export(_num(), node["params"])}
     assert {k: sorted(v) for k, v in got.items()} == {k: sorted(want) for k in got}, got
 
 

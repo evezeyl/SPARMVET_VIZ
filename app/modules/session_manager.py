@@ -49,12 +49,12 @@ _FILTER_NODE_TYPES = ("filter_row", "exclusion_row")
 # ---------------------------------------------------------------------------
 
 class AuditStep(TypedDict, total=False):
-    node_type: str              # filter_row | exclusion_row | drop_column | aesthetic_override | developer_raw_yaml
+    node_type: str              # filter_row | exclusion_row | drop_column | aesthetic_override
     id: str                     # hex UUID — propagated copies SHARE this id (linked deletion, ADR-049)
     created_at: str             # ISO timestamp
     plot_scope: str             # specific plot sub-tab id (per-plot stack key, ADR-049)
     params: dict                # node-type-specific payload
-    reason: str                 # mandatory for filter/exclusion/drop/developer nodes
+    reason: str                 # mandatory for filter/exclusion/drop nodes
     active: bool                # legacy soft-delete flag — Phase 22-I switched to hard delete
     primary_key_warning: bool   # True when authoring touched a join key (ADR-049, §12g.5)
     gallery_source: dict        # optional: {gallery_id, gallery_yaml_hash}
@@ -152,7 +152,7 @@ def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
 def node_blocks_apply(node: AuditStep) -> bool:
     """True if this node must have a non-empty reason before btn_apply."""
     return node.get("active", True) and node.get("node_type") in {
-        "filter_row", "exclusion_row", "drop_column", "developer_raw_yaml"
+        "filter_row", "exclusion_row", "drop_column"
     } and not node.get("reason", "").strip()
 
 
@@ -286,9 +286,9 @@ class SessionManager:
     @staticmethod
     def _read_current_json(path: Path, label: str) -> dict:
         """Read a stored session file; refuse one written before the rename, naming the fix."""
-        from app.modules.renamed_keys import legacy_session_problem
+        from app.modules.renamed_keys import legacy_session_problem, refused_audit_step_in_ghost
         data = json.loads(path.read_text())
-        problem = legacy_session_problem(data, f"{label} ({path.name})")
+        problem = legacy_session_problem(data, f"{label} ({path.name})") or refused_audit_step_in_ghost(data, f"{label} ({path.name})")
         if problem:
             raise LegacySessionError(problem)
         return data
@@ -530,9 +530,11 @@ class SessionManager:
             t3_files = [n for n in names if "/t3_" in n and n.endswith(".json")]
             if not assembly_files and not t3_files:
                 raise ValueError("ZIP does not contain a valid session (no assembly.json or t3_*.json found).")
-            from app.modules.renamed_keys import legacy_session_problem
+            from app.modules.renamed_keys import legacy_session_problem, refused_audit_step_in_ghost
             for name in assembly_files + t3_files:
-                problem = legacy_session_problem(json.loads(zf.read(name)), f"Imported session file {name}")
+                data = json.loads(zf.read(name))
+                problem = (legacy_session_problem(data, f"Imported session file {name}")
+                           or refused_audit_step_in_ghost(data, f"Imported session file {name}"))
                 if problem:
                     raise LegacySessionError(problem)
             zf.extractall(self.root)

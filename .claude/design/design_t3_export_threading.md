@@ -7,8 +7,8 @@
 ## What the export does with T3 today
 | Item | Behaviour | Where |
 |---|---|---|
-| Audited filters, exclusions and column drops (`filter_row`, `exclusion_row`, `drop_column`) | applied to the plot and to `T3_data_<plot>.tsv` of that plot, from any view; recorded in `t3_steps.yaml` and the T3 Audit Trail of `report.qmd` | `export_handlers.audited_frame`, the same steps and order as the HOME preview |
-| Exploration filters | never exported, from any view (ADR-098) | `export_handlers.plot_content_rules` |
+| Audited filters, exclusions and column drops (`filter_row`, `exclusion_row`, `drop_column`) | applied to the plot and to `T3_data_<plot>.tsv` of that plot, from any view; recorded in `t3_steps.yaml` and the T3 Audit Trail of `report.qmd` | `t3_audit_engine.audited_frame` (moved from `export_handlers` by PLOT-TABLE-ORDER-1), the same steps in the same recorded order as the HOME table and plot |
+| Exploration filters | never exported, from any view (ADR-098) | `audited_frame` takes only the audit steps of the plot (the old `export_handlers.plot_content_rules` is gone) |
 | `t3_plot_overrides` (aesthetics) | recorded in `t3_steps.yaml` under `t3_aesthetic_overrides` and in the Methods prose; **not applied to the rendered plot** (the Plot Style panel is not mounted, `UX-PLOTSTYLE-1`; the render wiring is `VIZFAC-T3-OVERRIDE-1`) | `export_handlers.py` |
 | New T3 node types (rename, derive, pivot) | none exist; the audit redesign allows two kinds of step only (filter rows by value, drop column) | `home_audit_steps.md` section 4 |
 

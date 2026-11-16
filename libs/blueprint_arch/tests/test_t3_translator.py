@@ -5,7 +5,7 @@ Verifies:
 - translate_t3_node: eq/ne/gt/ge/lt/le/in/not_in happy paths (all eight T3 filter ops —
   #52 closed the gap that used to leave ne/gt/lt/not_in untranslatable), the eq/ne+list
   auto-promotion mirroring viz_factory's own render-time rule, drop_column,
-  developer_raw_yaml (valid + invalid fragment), and that a genuinely unrecognised op
+  and that a genuinely unrecognised op
   still raises UntranslatableNode rather than approximate (defensive — every real T3 op
   is translatable today, `ui_implementation_contract.md §8`).
 - translate_plot_steps: ordering, aesthetic_override skipped, one bad node fails the
@@ -166,26 +166,12 @@ class TestTranslateNodeDropColumn:
             translate_t3_node(node("drop_column", {}))
 
 
-class TestTranslateNodeDeveloperRawYaml:
-    def test_valid_fragment_passes_through(self):
-        fragment = "- action: cast\n  columns: [Year]\n  dtype: String\n"
-        actions = translate_t3_node(node("developer_raw_yaml", {"yaml_fragment": fragment}))
-        assert actions == [{"action": "cast", "columns": ["Year"], "dtype": "String"}]
-
-    def test_invalid_yaml_raises(self):
-        with pytest.raises(UntranslatableNode):
-            translate_t3_node(node("developer_raw_yaml", {"yaml_fragment": "not: valid: : yaml: :"}))
-
-    def test_fragment_missing_action_key_raises(self):
-        """Shorthand-without-action-key is silently ignored by the real engine
-        (rules_data_analysis_recipe_structure.md §7) — the translator must refuse it
-        outright rather than pass through dead content."""
-        with pytest.raises(UntranslatableNode):
-            translate_t3_node(node("developer_raw_yaml", {"yaml_fragment": "- mutate: [col, expr]\n"}))
-
-    def test_fragment_not_a_list_raises(self):
-        with pytest.raises(UntranslatableNode):
-            translate_t3_node(node("developer_raw_yaml", {"yaml_fragment": "action: cast\n"}))
+class TestTranslateNodeRemovedType:
+    def test_a_removed_step_type_is_not_translatable_and_nothing_special_is_known_about_it(self):
+        """AUDIT-RAWYAML-REMOVE-1: the translator has no branch for the removed type; it is an unknown node type like any other."""
+        removed = "developer_" + "raw_yaml"
+        with pytest.raises(UntranslatableNode, match="not translatable"):
+            translate_t3_node(node(removed, {"yaml_fragment": "- action: cast\n  columns: [Year]\n  dtype: String\n"}))
 
 
 class TestTranslateNodeUnknownType:

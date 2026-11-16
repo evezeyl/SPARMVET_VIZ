@@ -18,6 +18,17 @@ your final figures are reproducible and defensible. Every change you commit is c
 **audit node** — a small record that says *what* you changed, *which plots* it applies to, and
 (mandatory) *why* you made the change. Together, the audit nodes form your audit trail.
 
+## Original recipe and audit recipe (confirmed by Eve, 2026-11-15)
+
+1. HOME opens the original recipe. It is the reference. HOME never changes it.
+2. Only Blueprint can edit a recipe.
+3. When you audit, HOME works on a copy of the original recipe. This copy is the audit recipe.
+4. The steps of the original recipe are in the copy. You cannot edit them or remove them.
+5. In the audit you can only add steps: remove rows, or remove a column. Each step has a reason.
+6. A step you added can be removed again. It leaves the audit recipe. The original recipe is not touched.
+7. The export is the audit recipe: the original steps plus the audit steps that are still in it.
+8. The original plot stays beside the audited plot, so you can see what the audit changed.
+
 ## Why this matters for publication
 
 When you submit a paper, a reviewer or editor may ask: "Why did you remove sample S2?" Without the audit pipeline, your answer is "I remember… I think it was the contamination." With the audit pipeline, the answer is in the exported report:

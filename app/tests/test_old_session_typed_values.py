@@ -15,11 +15,11 @@ import polars as pl
 import pytest
 
 import transformer.actions  # noqa: F401
-from app.handlers.export_handlers import audited_frame
+from app.modules.t3_audit_engine import audited_frame
+from app.tests.audit_nodes import filter_nodes, home_plot_data
 from app.modules.t3_audit_engine import _apply_filter_rows, filter_rows_from_nodes
 from blueprint_arch.t3_translator import build_mode2_recipe, translate_plot_steps
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
-from viz_factory.viz_factory import VizFactory
 
 GHOST = json.loads((Path(__file__).parent / "data" / "old_session_text_values.json").read_text(encoding="utf-8"))
 NODES = GHOST["t3_audit_steps_by_plot"]["subtab_samples_plot"]
@@ -37,11 +37,10 @@ def views(nodes):
     lf = FRAME.lazy()
     for step in translate_plot_steps(nodes):
         lf = AVAILABLE_WRANGLING_ACTIONS[step["action"]](lf, {k: v for k, v in step.items() if k != "action"})
-    recipe = {"plots": {"p": {"mapping": {"x": "s", "y": "n"}, "layers": [{"name": "geom_col", "params": {}}], "filters": rows}}}
     return {
         "home table": _apply_filter_rows(FRAME.lazy(), rows).collect()["s"].to_list(),
-        "bundle": audited_frame(FRAME.lazy(), rows, []).collect()["s"].to_list(),
-        "plot": VizFactory().render(FRAME.lazy(), recipe, "p").data["s"].to_list(),
+        "bundle": audited_frame(FRAME.lazy(), filter_nodes(rows)).collect()["s"].to_list(),
+        "plot": home_plot_data(FRAME.lazy(), rows, {"mapping": {"x": "s", "y": "n"}, "layers": [{"name": "geom_col", "params": {}}]})["s"].to_list(),
         "re-run": lf.collect()["s"].to_list(),
     }
 
