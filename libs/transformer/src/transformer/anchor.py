@@ -11,6 +11,7 @@ location (spec DEC42, section 15).
 # @end_deps
 """
 import os
+import tempfile
 from typing import Dict, Optional
 
 import polars as pl
@@ -26,30 +27,47 @@ def write_anchor(lf: pl.LazyFrame, path, decision_hash: Optional[str] = None, me
 
     With a `decision_hash` the file carries it (and any extra `metadata`, text to text) in its footer, written by
     Polars itself: a table converted to Arrow and written with pyarrow can hold categorical columns that Polars cannot
-    read back (issue #10, 2026-11-06).
+    read back (issue #10, 2026-11-06). The key and the table are one file, so they can never be seen apart.
+
+    The file is written under a temporary name in the same folder and renamed over the target in one step (STALE-KEY-STORE-1):
+    another session that reads the stored table sees the old file or the new one, never a half-written one (a reader of a
+    file rewritten in place was killed by the operating system, signal SIGBUS).
 
     `join_checks` (the assembler's `join_checks`) lets a refused `validate` of a join be explained in plain words after Polars raised it.
     """
     path = str(path)
-    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    folder = os.path.dirname(os.path.abspath(path))
+    os.makedirs(folder, exist_ok=True)
+    handle, temporary = tempfile.mkstemp(prefix=f".{os.path.basename(path)}.", suffix=".tmp", dir=folder)
+    os.close(handle)
     try:
-        if decision_hash:
-            lf.collect().write_parquet(path, metadata={"sparmvet_decision_hash": str(decision_hash),
-                                                       **{str(k): str(v) for k, v in (metadata or {}).items()}})
-        else:
-            lf.sink_parquet(path)
-    except pl.exceptions.ComputeError as exc:
-        explained = explain_validation_error(exc, join_checks)
-        if explained is None:
-            raise
-        raise explained from exc
-    except PanicException as exc:
-        # The plan of every step runs here, so this is where a Rust panic of Polars shows. A `PanicException` is a `BaseException`:
-        # it passes every `except Exception` of the engine and the app (ADR-104). Only this class is caught; KeyboardInterrupt and SystemExit pass.
-        raise TransformationError(
-            f"Polars stopped while it computed the table stored at {path}, on the input of one of the steps ({str(exc).strip()[:120]})",
-            tip="Check the durations and lists written in the steps of this join and the data they work on; the actions refuse the cases they know "
-                "before Polars runs, so this one is new: report it with the recipe") from exc
+        try:
+            if decision_hash:
+                lf.collect().write_parquet(temporary, metadata={"sparmvet_decision_hash": str(decision_hash),
+                                                         **{str(k): str(v) for k, v in (metadata or {}).items()}})
+            else:
+                lf.sink_parquet(temporary)
+        except pl.exceptions.ComputeError as exc:
+            explained = explain_validation_error(exc, join_checks)
+            if explained is None:
+                raise
+            raise explained from exc
+        except PanicException as exc:
+            # The plan of every step runs here, so this is where a Rust panic of Polars shows. A `PanicException` is a `BaseException`:
+            # it passes every `except Exception` of the engine and the app (ADR-104). Only this class is caught; KeyboardInterrupt and SystemExit pass.
+            raise TransformationError(
+                f"Polars stopped while it computed the table stored at {path}, on the input of one of the steps ({str(exc).strip()[:120]})",
+                tip="Check the durations and lists written in the steps of this join and the data they work on; the actions refuse the cases they know "
+                    "before Polars runs, so this one is new: report it with the recipe") from exc
+        # mkstemp makes the file private (0600); the stored table keeps the mode of the file it replaces (0644 for a new one).
+        os.chmod(temporary, os.stat(path).st_mode & 0o777 if os.path.exists(path) else 0o644)
+        with open(temporary, "rb") as written:
+            os.fsync(written.fileno())
+        os.replace(temporary, path)
+        temporary = None
+    finally:
+        if temporary is not None and os.path.exists(temporary):
+            os.unlink(temporary)
     return pl.scan_parquet(path)
 
 
