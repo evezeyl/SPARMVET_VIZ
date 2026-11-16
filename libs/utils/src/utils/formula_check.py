@@ -14,17 +14,23 @@ list kept by hand:
 Refused: any other name, `lambda`, comprehensions, f-strings, starred arguments, conditional expressions, a string or
 list multiplied (memory), an exponent that is not a small constant (processor time).
 
+`smoother_formula_problems` is a third grammar, for the `formula` of a smoother (`geom_smooth`, `stat_smooth`): plotnine hands
+that text to patsy, which runs it as Python (PLOT-TEXT-RUNS-CODE-1). It is read as syntax and never run before it passes:
+the variables `x` and `y`, numbers, the operators of a model formula, `I`, `C`, the patsy functions `bs`, `cr`, `cc`, `te`,
+`center`, `standardize`, `scale`, and the names of MATH_FUNCTIONS (bare or as `np.name`, `numpy.name`, `math.name`).
+
 `evaluate_formula` runs a checked formula with empty builtins as a second layer. A formula that is allowed can still be
 slow or large: nothing here stops heavy computation (spec section 15, known limit).
 
 # @deps
-# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:denied_methods, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, class:FormulaError
-# consumed_by: libs/utils/tests/test_formula_check.py
+# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, class:FormulaError
+# consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_plot_text_check.py, libs/utils/src/utils/plot_text_check.py
 # doc: .claude/design/recipe_format_spec.md (section 15; check ST06)
 # @end_deps
 """
 import ast
 import inspect
+import re
 from functools import lru_cache
 from typing import Dict, List, Set
 
@@ -397,3 +403,212 @@ def function_string_problems(text) -> List[str]:
     except RecursionError:
         return ["the plot function is nested too deeply." + _fix("simplify it")]
     return checker.problems
+
+
+# ---- the formula of a smoother (`geom_smooth`, `stat_smooth`, `*_quantile`) ------------------------------------------
+
+# patsy functions a smoother formula may call; `I` and `C` are patsy's own, the rest build a design matrix.
+SMOOTHER_FUNCTIONS = frozenset({"I", "C", "bs", "cr", "cc", "te", "center", "standardize", "scale"})
+SMOOTHER_VARIABLES = frozenset({"x", "y"})
+SMOOTHER_CONSTANTS = frozenset(MATH_CONSTANTS)
+_KEYWORD_VALUES = ("True", "False")
+_FORMULA_TOKEN = re.compile(
+    r"\s*(?:(?P<number>\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)"
+    r"|(?P<name>[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)"
+    r"|(?P<op>\*\*|==|!=|>=|<=|[-+*/:(),~=<>]))")
+_BINARY_OPERATORS = ("+", "-", "*", "/", ":", "**", "==", "!=", ">=", "<=", "<", ">")
+
+
+def _suggest(text: str) -> str:
+    return f" Suggestion: {text}"
+
+
+_SMOOTHER_HELP = "write a model formula over x and y, for example y ~ x + I(x**2) or y ~ np.log(x)"
+_FUNCTIONS_HELP = ("write one of the allowed functions: " + ", ".join(sorted(SMOOTHER_FUNCTIONS)) + ", or a math function ("
+                   + ", ".join(sorted(MATH_FUNCTIONS)) + ") alone or as np.<name>, for example y ~ np.log(x)")
+
+
+class _Stop(Exception):
+    """The shape of the formula is wrong: the rest cannot be read, so no further problem is listed."""
+
+
+class _FormulaParser:
+    """Recursive descent over the tokens of a smoother formula; collects every problem, never evaluates anything."""
+
+    def __init__(self, text: str) -> None:
+        self.problems: List[str] = []
+        self.tokens: List[tuple] = []
+        self.position = 0
+        self._tokenize(text)
+
+    def refuse(self, what: str, suggestion: str = _SMOOTHER_HELP, stop: bool = True) -> None:
+        message = what + "." + _suggest(suggestion)
+        if message not in self.problems:
+            self.problems.append(message)
+        if stop:
+            raise _Stop()
+
+    def _tokenize(self, text: str) -> None:
+        index = 0
+        text = text.rstrip()
+        while index < len(text):
+            match = _FORMULA_TOKEN.match(text, index)
+            if match is None:
+                start = index + (len(text[index:]) - len(text[index:].lstrip()))
+                bad = text[start:start + 1]
+                near = text[max(0, start - 20):start + 20].strip()
+                kind = "a text in quotes" if bad in "'\"" else f"the character {bad!r}"
+                self.refuse(f"{kind} is not allowed in a smoother formula (near {near!r})", stop=False)
+                self.tokens = []
+                return
+            kind = match.lastgroup
+            self.tokens.append((kind, match.group(kind)))
+            index = match.end()
+        if len(self.tokens) > MAX_NODES:
+            self.refuse(f"the formula has more than {MAX_NODES} parts", "split the model into a simpler formula", stop=False)
+            self.tokens = []
+
+    # -- token helpers
+    def peek(self):
+        return self.tokens[self.position] if self.position < len(self.tokens) else (None, None)
+
+    def take(self):
+        token = self.peek()
+        self.position += 1
+        return token
+
+    def at(self, value: str) -> bool:
+        return self.peek()[1] == value and self.peek()[0] == "op"
+
+    # -- grammar
+    def formula(self) -> None:
+        if not self.tokens:
+            return
+        if sum(1 for kind, value in self.tokens if kind == "op" and value == "~") != 1:
+            self.refuse("a smoother formula has exactly one ~, with y on the left and the model on the right, as in y ~ x")
+            return
+        self.expression()
+        if not self.at("~"):
+            self.refuse("the left side of ~ is not a valid expression" if self.position < len(self.tokens) else "the formula has no ~")
+            return
+        self.take()
+        if self.position >= len(self.tokens):
+            self.refuse("the model on the right of ~ is empty")
+            return
+        self.expression()
+        if self.position < len(self.tokens):
+            kind, value = self.peek()
+            self.refuse(f"the part {value!r} is not allowed here")
+
+    def expression(self) -> None:
+        self.unary()
+        while self.peek()[0] == "op" and self.peek()[1] in _BINARY_OPERATORS:
+            _, operator = self.take()
+            if operator == "**":
+                self.exponent()
+            else:
+                self.unary()
+
+    def exponent(self) -> None:
+        if self.at("-") or self.at("+"):
+            self.take()
+        kind, value = self.peek()
+        if kind != "number" or abs(float(value)) > MAX_EXPONENT:
+            self.refuse(f"an exponent must be a number up to {MAX_EXPONENT}, not {value if value is not None else 'nothing'!r}",
+                        "write the exponent as a number, for example I(x**2)")
+            return
+        self.take()
+        if self.at("**"):
+            self.refuse("a power of a power is not allowed", "write the exponent once, for example I(x**4)")
+
+    def unary(self) -> None:
+        if self.at("-") or self.at("+"):
+            self.take()
+            self.unary()
+            return
+        self.atom()
+
+    def atom(self) -> None:
+        kind, value = self.take()
+        if kind == "number":
+            return
+        if kind == "op" and value == "(":
+            self.expression()
+            if not self.at(")"):
+                self.refuse("a bracket is not closed")
+                return
+            self.take()
+            return
+        if kind == "name":
+            if self.at("("):
+                self.call(value)
+            else:
+                self.variable(value)
+            return
+        self.refuse(f"{value!r} is not allowed here" if value is not None else "the formula ends where a term is expected",
+                    "write a term such as x, a number, or a function of x")
+
+    def variable(self, name: str) -> None:
+        if name in SMOOTHER_VARIABLES or name in SMOOTHER_CONSTANTS:
+            return
+        if "." in name and name.split(".")[0] in _MATH_MODULES and name.split(".")[-1] in MATH_CONSTANTS:
+            return
+        self.refuse(f"the name {name!r} is not allowed in a smoother formula; only x and y are known",
+                    "write x or y (a smoother sees only the two plotted variables), for example y ~ x + I(x**2)", stop=False)
+
+    def function_allowed(self, name: str) -> bool:
+        if name in SMOOTHER_FUNCTIONS or name in MATH_FUNCTIONS:
+            return True
+        head, _, tail = name.partition(".")
+        return head in _MATH_MODULES and tail in MATH_FUNCTIONS
+
+    def call(self, name: str) -> None:
+        if not self.function_allowed(name):
+            self.refuse(f"the function {name!r} is not allowed in a smoother formula", _FUNCTIONS_HELP, stop=False)
+        self.take()  # "("
+        if self.at(")"):
+            self.take()
+            return
+        while True:
+            self.argument()
+            if self.at(","):
+                self.take()
+                continue
+            break
+        if not self.at(")"):
+            self.refuse(f"the call of {name!r} is not closed")
+            return
+        self.take()
+
+    def argument(self) -> None:
+        kind, value = self.peek()
+        following = self.tokens[self.position + 1] if self.position + 1 < len(self.tokens) else (None, None)
+        if kind == "name" and following == ("op", "="):
+            self.take()
+            self.take()
+            sign = self.at("-")
+            if sign:
+                self.take()
+            kind, value = self.peek()
+            if kind == "number" or (kind == "name" and value in _KEYWORD_VALUES and not sign):
+                self.take()
+                return
+            self.refuse(f"the value of an option must be a number or True or False, not {value!r}", "write a number, for example df=4")
+            return
+        self.expression()
+
+
+def smoother_formula_problems(text) -> List[str]:
+    """Reasons the `formula` of a smoother is refused, as 'what. Suggestion: what to write.'; an empty list means allowed."""
+    if not isinstance(text, str) or not text.strip():
+        return ["the formula is empty or is not text." + _suggest("write a model formula, for example y ~ x + I(x**2)")]
+    if len(text) > MAX_LENGTH:
+        return [f"the formula is longer than {MAX_LENGTH} characters." + _suggest("write a shorter model")]
+    parser = _FormulaParser(text)
+    try:
+        parser.formula()
+    except _Stop:
+        pass
+    except RecursionError:
+        return ["the formula is nested too deeply." + _suggest("write a simpler model")]
+    return parser.problems
