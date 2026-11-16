@@ -17,7 +17,7 @@ recipe, what is wrong and the fix, in the message style of spec P5.
 
 # @deps
 # provides: function:check_recipe, function:spec, class:Problem, class:Result
-# consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/engines.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/ui_schema.py, libs/utils/src/utils/formula_check.py, libs/utils/src/utils/recipe_paths.py, libs/utils/src/utils/polars_types.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/recipe_tiers.py
+# consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/engines.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/ui_schema.py, libs/utils/src/utils/formula_check.py, libs/utils/src/utils/plot_text_check.py, libs/utils/src/utils/recipe_paths.py, libs/utils/src/utils/polars_types.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/recipe_tiers.py
 # consumed_by: libs/utils/src/utils/recipe_loader.py, libs/utils/src/utils/recipe_factory.py, libs/utils/src/utils/recipe_migration.py, libs/utils/src/utils/strict_form_migration.py, libs/ingestion/src/ingestion/declared.py, libs/viz_gallery/src/viz_gallery/gallery_manager.py, libs/viz_gallery/src/viz_gallery/example_recipe.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, assets/scripts/convert_gallery_examples.py, assets/scripts/create_data_analysis_recipe.py, libs/utils/tests/test_recipe_check.py
 # doc: .claude/design/recipe_format_spec.md (sections 3 to 11, 14)
 # @end_deps
@@ -37,7 +37,9 @@ from utils.action_names import TIER1_ONLY
 from utils.random_layers import is_random_layer, is_seed_value
 from utils.engines import ENGINES
 from utils.filter_values import FilterValueError, check_filter
+from utils.fix_text import fix_label
 from utils.formula_check import formula_problems
+from utils.plot_text_check import facet_variable_problems, layer_text_problems
 from utils import join_keys
 from utils.polars_types import PARAMETER_KEYS, dtype_with_parameters, text_dtype_names
 from utils.recipe_paths import containment_problems, shape_problems
@@ -101,7 +103,7 @@ class Problem:
     def text(self, recipe: str = "") -> str:
         """`recipe : path : what is wrong. Fix: what to write.` (spec P5)."""
         head = " : ".join(part for part in (recipe, self.path) if part)
-        body = f"{self.message}. Fix: {self.fix}" if self.fix else self.message
+        body = f"{self.message}. {fix_label(self.fix)}" if self.fix else self.message
         return f"{head} : [{self.code}] {body}" if head else f"[{self.code}] {body}"
 
 
@@ -919,6 +921,11 @@ class _Check:
             self.layers(layers, f"{path}.layers")
         elif "layers" in spec_:
             self.add("PS03", f"{path}.layers", "layers is a list", "write layers: [{name: geom_point}]")
+        mapping = spec_.get("mapping")
+        if isinstance(mapping, dict) and "facet_by" in mapping and facet_variable_problems(mapping["facet_by"]):
+            shown = ", ".join(repr(r) for r in facet_variable_problems(mapping["facet_by"]))
+            self.add("PS06", f"{path}.mapping.facet_by", f"the facet variable {shown} is not a plain column name",
+                     "Suggestion: write a column of the data (letters, digits, underscore, space, dot or dash); to facet by a computed value, add a recipe step that makes the column first")
         theme = spec_.get("theme")
         themes = (self.catalogs or {}).get("themes")
         if theme is not None and themes is not None and theme not in themes:
@@ -941,6 +948,10 @@ class _Check:
                 self.add("CM01", f"{where}.comment", "a comment is text", "write text")
             name = layer["name"]
             has_geom = has_geom or (isinstance(name, str) and name.startswith(("geom_", "stat_")))
+            if isinstance(name, str):
+                # PS06: a text that plotnine evaluates as Python (smoother formula, facet variable, function string); needs no catalogue
+                for param, what, suggestion in layer_text_problems(name, layer.get("params"), None):
+                    self.add("PS06", f"{where}.params.{param}", what, suggestion)
             if components is None:
                 continue
             if name not in components:

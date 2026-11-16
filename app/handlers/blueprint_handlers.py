@@ -95,6 +95,7 @@ from blueprint_arch.new_recipe import new_recipe_draft
 from utils.recipe_factory import write_recipe
 from app.modules.data_change_notice import inputs_changed_during_build_notice
 from utils.errors import SPARMVET_Error
+from utils.fix_text import fix_prefix
 from utils.pipeline_error import PipelineError, make_render_payload
 from app.src.render.pipeline_error_renderers import render_blueprint_inline
 
@@ -2304,7 +2305,7 @@ def define_server(input, output, session, *,
             return ui.div(
                 ui.tags.strong("This join cannot be built."),
                 ui.div(verdict["problem"], style="font-size:0.72rem;margin-top:4px;"),
-                ui.div(ui.tags.strong("Fix: "), verdict["fix"], style="font-size:0.72rem;margin-top:4px;"),
+                ui.div(ui.tags.strong(fix_prefix(verdict["fix"])), verdict["fix"], style="font-size:0.72rem;margin-top:4px;"),
                 class_="ultra-small",
                 style=("background:#ffe0e0;color:#d62828;padding:8px 10px;"
                        "border-radius:4px;"))

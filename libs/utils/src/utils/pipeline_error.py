@@ -21,6 +21,8 @@ failure occurred and where in the UI it should appear.
 from __future__ import annotations
 
 import datetime
+
+from utils.fix_text import fix_label, fix_prefix
 from dataclasses import dataclass, field
 
 
@@ -131,7 +133,7 @@ class PipelineError:
             f"  Component:  {self.component}",
             f"  Category:   {self.category}",
             f"  Location:   {self.location}",
-            f"  Fix ({self.who}): {self.fix}",
+            f"  {fix_label(self.fix, self.who) if self.fix else f'Fix ({self.who}): '}",
             f"  Surface:    {self.surface}",
         ]
         if self.timestamp:
@@ -228,7 +230,7 @@ def make_render_payload(error: PipelineError) -> dict:
     if error.location:
         body_md += f"\n\n*Location:* `{error.location}`"
 
-    fix_md = f"> **Fix ({who_label}):** {error.fix}"
+    fix_md = f"> **{fix_prefix(error.fix, who_label).rstrip()}** {error.fix}" if fix_prefix(error.fix, who_label) else f"> {error.fix}"
     if error.reference:
         fix_md += f"\n> *See:* {error.reference}"
 

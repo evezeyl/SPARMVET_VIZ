@@ -47,6 +47,7 @@ from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_change_notice import inputs_changed_during_build_notice, notice_after_data_change
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.view_badge import has_tier2_steps, view_badge
+from utils.fix_text import fix_label
 from utils.pipeline_error import capture_entry
 from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
 from viz_factory.viz_factory import show_draw_errors
@@ -190,7 +191,7 @@ def define_server(input, output, session, *,
         _report_issue(capture_entry(exc, component, location), str(exc), "error")
 
     def _report_plot_warning(warning):
-        _report_issue(warning.with_timestamp().to_audit_row(), f"{warning.problem} Fix: {warning.fix}", "warning")
+        _report_issue(warning.with_timestamp().to_audit_row(), f"{warning.problem} {fix_label(warning.fix)}", "warning")
 
     # ── Phase 21-B: Dynamic plot handlers for analysis_groups ─────────────────
     # Enumerate all plot IDs at server init time so Shiny can register each
