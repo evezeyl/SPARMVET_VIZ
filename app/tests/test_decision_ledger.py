@@ -110,24 +110,137 @@ def test_cli_help_works():
     assert out.returncode == 0 and "--ledger" in out.stdout
 
 
+BASELINE_COMMIT = "77b663f1"
+BASELINE_LAST = 142
+LEDGER_REL = ".claude/knowledge/decision_ledger.md"
+STATUS_OF = {"EVE": "DECIDED", "AGENT": "PROVISIONAL", "NOT STATED": "NOT-STATED", "REVIEW SESSION": "RELAYED"}
+
+
+def check_numbering(path):
+    numbers = list(dl.read_ledger(path))
+    assert numbers == ["D-%04d" % i for i in range(1, len(numbers) + 1)], "numbers have a gap or are out of order"
+
+
+def check_statuses(path):
+    for number, e in dl.read_ledger(path).items():
+        assert e["status"] == STATUS_OF[e["taken_by"]], number
+
+
+def check_header_counts(path):
+    """The counts written in the ledger header equal the counts computed from its lines."""
+    entries = dl.read_ledger(path)
+    text = Path(path).read_text(encoding="utf-8")
+    m = re.search(r"\*\*Total (\d+): EVE (\d+), AGENT (\d+), NOT STATED (\d+), REVIEW SESSION (\d+)\.\*\*", text)
+    assert m, "the header has no total line"
+    written = tuple(int(x) for x in m.groups())
+    by = lambda k: sum(1 for e in entries.values() if e["taken_by"] == k)
+    computed = (len(entries), by("EVE"), by("AGENT"), by("NOT STATED"), by("REVIEW SESSION"))
+    assert written == computed, (written, computed)
+
+
+def check_relations(path):
+    entries = dl.read_ledger(path)
+    for number, e in entries.items():
+        for cited in dl.NUMBER.findall(e["relation"]):
+            assert cited in entries and cited != number, (number, e["relation"])
+
+
+def _first_words(e):
+    return " ".join(e["decision"].split()[:8])
+
+
+def baseline_entries(tmp_path):
+    out = subprocess.run(["git", "show", "%s:%s" % (BASELINE_COMMIT, LEDGER_REL)], cwd=ROOT, capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr
+    p = tmp_path / "baseline_ledger.md"
+    p.write_text(out.stdout, encoding="utf-8")
+    return dl.read_ledger(p)
+
+
+def check_old_lines_unchanged(path, baseline):
+    entries = dl.read_ledger(path)
+    for number, old in baseline.items():
+        assert number in entries, "%s was lost" % number
+        new = entries[number]
+        for field in dl.FIELDS:
+            assert new[field] == old[field], "%s changed its field %s" % (number, field)
+
+
 def test_real_ledger_parses_and_is_numbered_without_gaps():
-    entries = dl.read_ledger(REAL_LEDGER)
-    numbers = list(entries)
-    assert numbers == ["D-%04d" % i for i in range(1, len(numbers) + 1)]
-    assert len(numbers) >= 142
+    check_numbering(REAL_LEDGER)
+    assert len(dl.read_ledger(REAL_LEDGER)) >= BASELINE_LAST
 
 
-def test_real_ledger_holds_the_old_ledger_counts_and_the_new_decisions():
+def test_real_ledger_header_counts_equal_the_computed_counts():
+    check_header_counts(REAL_LEDGER)
+
+
+def test_real_ledger_status_follows_taken_by():
+    check_statuses(REAL_LEDGER)
     entries = dl.read_ledger(REAL_LEDGER)
-    old = [e for e in entries.values() if re.fullmatch(r"[LN]\d+[a-z]?", e["old_key"])]
-    assert len(old) == 107
-    by = {k: sum(1 for e in old if e["taken_by"] == k) for k in ("EVE", "AGENT", "NOT STATED")}
-    assert by == {"EVE": 104, "AGENT": 1, "NOT STATED": 2}
-    assert [e["status"] for e in entries.values() if e["taken_by"] == "AGENT"] == ["PROVISIONAL"]
-    new = [e for e in entries.values() if e["date"] == "2026-11-16" and e["taken_by"] == "EVE"]
-    assert len(new) == 22 and all(e["status"] == "DECIDED" for e in new)
-    for key in ("M150", "M153", "M154"):
-        assert any(e["old_key"] == key for e in new)
+    assert any(e["taken_by"] == "EVE" for e in entries.values())
+
+
+def test_real_ledger_earlier_lines_are_unchanged_in_every_field(tmp_path):
+    baseline = baseline_entries(tmp_path)
+    assert len(baseline) == BASELINE_LAST
+    check_old_lines_unchanged(REAL_LEDGER, baseline)
+
+
+def _mutated(tmp_path, fn):
+    text = REAL_LEDGER.read_text(encoding="utf-8")
+    p = tmp_path / "mut.md"
+    p.write_text(fn(text), encoding="utf-8")
+    return p
+
+
+def _has_failure(check, p, *args):
+    try:
+        check(p, *args)
+    except (AssertionError, ValueError):
+        return True
+    return False
+
+
+def test_mutations_of_a_copy_of_the_ledger_are_caught(tmp_path):
+    baseline = baseline_entries(tmp_path)
+
+    def dup(t):
+        return t.replace("\nD-0003 |", "\nD-0002 |", 1)
+
+    def gap(t):
+        return re.sub(r"\nD-0003 \|[^\n]*", "", t, count=1)
+
+    def wrong_status(t):
+        return re.sub(r"(\nD-0001 \|(?:[^|]*\|){5}) DECIDED", r"\1 PROVISIONAL", t, count=1)
+
+    def header_off(t):
+        return re.sub(r"\*\*Total (\d+):", lambda m: "**Total %d:" % (int(m.group(1)) + 1), t, count=1)
+
+    def renumbered(t):
+        return t.replace("\nD-0005 |", "\nD-0500 |", 1)
+
+    assert _has_failure(check_numbering, _mutated(tmp_path, dup))
+    assert _has_failure(check_numbering, _mutated(tmp_path, gap))
+    assert _has_failure(check_statuses, _mutated(tmp_path, wrong_status))
+    assert _has_failure(check_header_counts, _mutated(tmp_path, header_off))
+    assert _has_failure(check_old_lines_unchanged, _mutated(tmp_path, renumbered), baseline)
+
+    def late_word(t):
+        m = re.search(r"\nD-0003 \|(?:[^|]*\|){2} ([^|]*) \|", t)
+        assert len(m.group(1).split()) > 8
+        return t[:m.start(1)] + m.group(1) + " extra" + t[m.end(1):]
+
+    def evidence(t):
+        return re.sub(r"(\nD-0003 \|[^\n]*?) \| ([^|\n]*) \| ([^|\n]*)\n", r"\1 | \2 changed | \3\n", t, count=1)
+
+    assert _has_failure(check_old_lines_unchanged, _mutated(tmp_path, late_word), baseline)
+    assert _has_failure(check_old_lines_unchanged, _mutated(tmp_path, evidence), baseline)
+    # the unmutated copy passes every check
+    ok = _mutated(tmp_path, lambda t: t)
+    for check in (check_numbering, check_statuses, check_header_counts, check_relations):
+        check(ok)
+    check_old_lines_unchanged(ok, baseline)
 
 
 def test_a_decision_of_her_own_turns_names_the_transcript_line_and_was_compared():
@@ -142,7 +255,7 @@ def test_a_decision_of_her_own_turns_names_the_transcript_line_and_was_compared(
 def test_the_review_sessions_plan_is_on_its_own_lines_that_are_not_decided():
     entries = dl.read_ledger(REAL_LEDGER)
     relayed = [e for e in entries.values() if e["taken_by"] == "REVIEW SESSION"]
-    assert len(relayed) == 13
+    assert relayed
     for e in relayed:
         assert e["status"] == "RELAYED"
         assert e["date"] == "2026-11-16"
@@ -157,7 +270,4 @@ def test_a_line_keeps_the_colon_of_the_old_ledger_after_hedged():
 
 
 def test_real_ledger_relations_name_numbers_that_exist():
-    entries = dl.read_ledger(REAL_LEDGER)
-    for number, e in entries.items():
-        for cited in dl.NUMBER.findall(e["relation"]):
-            assert cited in entries and cited != number, (number, e["relation"])
+    check_relations(REAL_LEDGER)
