@@ -58,7 +58,7 @@ NONE_CHECKED = re.compile(r"^\s*(?:[-*]\s*)?NONE-CHECKED:\s*(\S+)", re.MULTILINE
 DECISION_TOKEN = re.compile(r"\bD-\d+\b")
 HOW_TO_WRITE = (
     "Write it in the brief: a line `Decisions`, then one line per decision, each with its number and her words, e.g. "
-    '`- D-0112: "Best hit = highest identity first; ..."` (numbers: ./.venv/bin/python assets/scripts/decision_ledger.py list; '
+    '`- D-0112: "yes - if same identity favor the one that has higest overlap/coverage."` (numbers: ./.venv/bin/python assets/scripts/decision_ledger.py list; '
     "file .claude/knowledge/decision_ledger.md). When a scout checked that no decision applies, write instead a line "
     "`NONE-CHECKED: <path of the saved scout report>` (a regular file inside the project folder; not the ledger). See .claude/workflows/decision_compliance.md section 6."
 )

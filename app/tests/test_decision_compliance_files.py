@@ -59,6 +59,16 @@ def test_every_agent_file_but_the_coordinator_reads_the_shared_files_and_quotes_
         assert body.startswith(READ_LINE), path.name
 
 
+def test_what_is_not_her_text_is_marked_and_listed():
+    assert "## 8. Added by the builder, 2026-11-16, not Eve's text: she accepts or removes it" in SHARED
+    # her sections carry no mark: the goal, the rules A-H, the workers
+    for title in ("## 1. The goal", "## 2. The rules", "## 3. The workers"):
+        assert "[ADDED]" not in SHARED.split(title, 1)[1].split("\n## ", 1)[0], title
+    for title in ("## 4. ", "## 5. ", "## 7. "):
+        assert "[ADDED]" in SHARED.split(title, 1)[1].split("\n## ", 1)[0], title
+    assert "[ADDED by the builder, 2026-11-16, not Eve's text" in COORDINATOR
+
+
 def test_the_claude_md_pointer_is_one_line_in_section_2_1():
     claude = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
     section = claude.split("## 2. Model & Effort", 1)[1].split("## 3. Path Initiation", 1)[0]
