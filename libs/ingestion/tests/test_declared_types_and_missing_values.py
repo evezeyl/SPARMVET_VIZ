@@ -246,6 +246,10 @@ def test_several_values_outside_an_enum_say_which_are_not_in_the_list(tmp_path):
     ("Date", "2022-01-01", "not a date", "Suggestion: write `format` for 'v'", "Float64"),
     ("Boolean", "true", "maybe", "reads the words true and false", "Float64"),
     ("Decimal", "1.50", "abc", "(String if it is text)", "Float64 for decimals"),
+    ("Int32", "1", "abc", "Float64 for decimals", "Suggestion: write `format`"),
+    ("UInt16", "1", "abc", "Float64 for decimals", "Suggestion: write `format`"),
+    ("Datetime", "2022-01-01 10:00:00", "abc", "Suggestion: write `format` for 'v'", "Float64"),
+    ("Time", "10:30:00", "abc", "Suggestion: write `format` for 'v'", "Float64"),
 ])
 def test_the_tip_for_a_value_that_does_not_fit_fits_the_type(tmp_path, type_name, good, bad, must_say, must_not_say):
     field = {"type": type_name, **({"precision": 6, "scale": 2} if type_name == "Decimal" else {})}
@@ -254,3 +258,9 @@ def test_the_tip_for_a_value_that_does_not_fit_fits_the_type(tmp_path, type_name
     tip = info.value.tip
     assert must_say in tip and must_not_say not in tip
     assert "list the word in null_values if it means missing" in tip
+
+
+def test_the_boolean_tip_names_null_values_once(tmp_path):
+    with pytest.raises(IngestionError) as info:
+        ingest(tmp_path, "id\tv\ns1\ttrue\ns2\tmaybe\n", {"id": {"type": "String"}, "v": {"type": "Boolean"}}, **EXPLICIT)
+    assert info.value.tip.count("null_values") == 1

@@ -95,7 +95,7 @@ def _type_hint(slug: str, type_name: str) -> str:
     if type_name in ("Date", "Datetime", "Time"):
         return f"{base} (String if it is text). Suggestion: write `format` for '{slug}' if the dates are written in a form other than year-month-day, for example %d/%m/%Y. "
     if type_name == "Boolean":
-        return f"{base} (String if it is text). Suggestion: a Boolean reads the words true and false (upper or lower case); change the data, or list another word in null_values if it means missing. "
+        return f"{base} (String if it is text). Suggestion: a Boolean reads the words true and false (upper or lower case); change the data. "
     return f"{base}. "
 
 
