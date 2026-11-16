@@ -18,6 +18,7 @@ info:
 data_schemas:
   MLST:
     label: "MLST"
+    description: "One row per sample: the MLST sequence type (the strain type given by the alleles of several genes) of each isolate."
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_MLST_results_20260307_105756.tsv
@@ -27,6 +28,7 @@ data_schemas:
     wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
 metadata_schema:
   label: "metadata"
+  description: "One row per sample with its source, year and country of isolation."
   source:
     type: local_tsv
     path: ./assets/test_data/1_test_data_ST22_dummy/test_metadata_20260307_105756.tsv
@@ -39,6 +41,7 @@ metadata_schema:
 additional_datasets_schemas:
   VirulenceFinder:
     label: "VirulenceFinder"
+    description: "One row per sample and virulence gene found by VirulenceFinder, with the serotype of the sample."
     source:
       type: local_tsv
       path: ./assets/test_data/2_VIGAS-P_ST22_dummy/test_data_VIGAS_VirulenceFinder_20260307_105756.tsv
@@ -48,6 +51,7 @@ additional_datasets_schemas:
     wrangling: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
   APEC_STEC_virulence_genes:
     label: "APEC STEC virulence genes"
+    description: "Reference list with one row per virulence gene of interest (APEC and STEC); used to keep only these genes from the VirulenceFinder hits."
     source:
       type: local_tsv
       path: ./assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC.tsv
@@ -60,7 +64,7 @@ additional_datasets_schemas:
 joins:
   AR1_MLST_Serotype_Virulence:
     label: "AR1 MLST Serotype Virulence"
-    description: Joins MLST results with metadata for the main distribution plot.
+    description: "One row per sample and selected virulence gene: MLST and metadata, joined to the VirulenceFinder genes that are in the APEC/STEC list (inner join, so a sample with none of these genes has no row)."
     ingredients:
     - dataset_id: MLST
     - dataset_id: metadata_schema
@@ -71,9 +75,11 @@ joins:
 analysis_groups:
   MLST_Overview:
     label: MLST Overview
+    description: "Which sequence types occur, and in which countries and sources."
     plots:
       abromics_st_by_country:
         label: Sequence Types by Country
+        description: "Bars count the rows of the table (one per sample and selected virulence gene, so a sample with more genes weighs more) for each sequence type, coloured by country."
         spec:
           target_dataset: AR1_MLST_Serotype_Virulence
           layers:
@@ -91,6 +97,7 @@ analysis_groups:
             fill: country
       abromics_st_by_source:
         label: Sequence Types by Source
+        description: "Bars count the rows of the table (one per sample and selected virulence gene, so a sample with more genes weighs more) for each sequence type, coloured by source."
         spec:
           target_dataset: AR1_MLST_Serotype_Virulence
           layers:

@@ -256,7 +256,6 @@ config/data_analysis_recipes/pipelines/
       ...
     assembly/
       Summary_phenotype_length_fragmentation_assembly.yaml
-      Summary_phenotype_length_fragmentation_assembly_output_fields.yaml
 ```
 
 #### Naming convention for fragment files

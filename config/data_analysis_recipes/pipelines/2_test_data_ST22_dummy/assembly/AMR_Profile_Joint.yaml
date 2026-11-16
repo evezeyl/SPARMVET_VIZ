@@ -30,10 +30,11 @@ tier1:
     columns: [Year]
     dtype: String
 
-  # Step 4: Compute multi-resistance boolean flag (sample carries >1 distinct resistance class)
+  # Step 4: Multi-resistance flag: true when the hits of the sample name more than one distinct predicted phenotype.
+  # A phenotype here is a drug, not a drug class; a missing phenotype is not counted as one.
   - action: polars_with_columns
     named_exprs:
-      is_multi_resistant_bool: pl.col('predicted_phenotype_clean').n_unique().over('sample_id') > 1
+      is_multi_resistant_bool: pl.col('predicted_phenotype_clean').drop_nulls().n_unique().over('sample_id') > 1
 
   # Step 5: Convert boolean flag to Yes/No string for display
   - action: polars_with_columns
