@@ -1,6 +1,6 @@
 """
 @deps
-provides: function:data_files_changed_notice
+provides: function:data_files_changed_notice, function:notice_after_data_change, function:inputs_changed_during_build_notice
 consumed_by: app/handlers/home_theater.py, app/tests/test_data_change_notice.py
 doc: .claude/knowledge/architecture_decisions.md#adr-089
 @end_deps
@@ -25,4 +25,25 @@ def data_files_changed_notice(view_follows_the_data: bool) -> str:
                 "Suggestion: check the new values in the data table.")
     return ("A source data file of this project changed after this page was loaded. The tables and plots on screen can "
             "still come from the earlier file, and the export is refused until the page is reloaded. "
+            "Suggestion: reload the page (F5) to read the current files.")
+
+
+def notice_after_data_change(view_data_batch_hash: str | None, new_data_batch_hash: str) -> str:
+    """The sentence for a data file that changed: does the view already follow the data on disk?
+
+    `view_data_batch_hash` is the data hash of the keys the view holds (None when they could not be read: then the view is
+    taken as behind, the careful answer). The view follows when its keys describe the files now on disk, which is the case
+    after a Data Import of this session.
+    """
+    return data_files_changed_notice(view_data_batch_hash is not None and view_data_batch_hash == new_data_batch_hash)
+
+
+def inputs_changed_during_build_notice(what_changed: str) -> str:
+    """The sentence for a table that was built while its inputs changed (STALE-KEY-STORE-1): what happened, then a Suggestion.
+
+    `what_changed` is the clause the orchestrator gives (`InputsChanged.text`), for example "the data files changed" or
+    "the data analysis recipe can no longer be read (...)". The table was returned but not stored: it can mix the files
+    from before and after the change. Nothing is re-read by itself and nothing is blocked.
+    """
+    return (f"While a table was being built, {what_changed}, so what is shown may not match the files on disk. "
             "Suggestion: reload the page (F5) to read the current files.")

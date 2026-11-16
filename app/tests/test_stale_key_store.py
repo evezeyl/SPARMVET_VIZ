@@ -101,3 +101,168 @@ def test_a_build_whose_inputs_changed_during_the_build_is_not_stored(tmp_path):
         rows = w.orch.materialize_tier1("tiny", "C", w.anchor, keys=keys)
     assert ids(rows)                          # the caller still gets a table
     assert not w.anchor.exists(), "a table built while its inputs changed must not be stored under any key"
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# A build that sees its inputs change says so (no silent mix) and the check of the inputs is itself checked.
+# ---------------------------------------------------------------------------------------------------------------------
+
+NEW_DATA = "sample_id\tgroup\ns1\tA\ns2\tA\ns3\tB\ns4\tA\n"
+
+
+def change_when_the_tier2_file_is_about_to_be_written(world, change):
+    """A `write_anchor` that runs `change()` just before it writes the Tier 2 table: the inputs change during that build."""
+    from app.modules import orchestrator as orchestrator_module
+    real = orchestrator_module.write_anchor
+
+    def spy(lf, path, **kwargs):
+        if TIER2_KEY_META in (kwargs.get("metadata") or {}):
+            change()
+        return real(lf, path, **kwargs)
+
+    return mock.patch.object(orchestrator_module, "write_anchor", side_effect=spy)
+
+
+def test_a_tier2_whose_tier1_was_built_just_now_is_not_stored_when_the_data_changes_during_the_tier2_build(tmp_path):
+    """M6: the check of the Tier 1 inputs is part of the Tier 2 check."""
+    w = World(tmp_path)
+    w.write_data_analysis_recipe(steps_tier2=[FILTER_A])
+    held = w.orch.compute_data_analysis_recipe_keys("tiny")
+    told = []
+    # Tier 1 is not stored yet, so it is built in this very call: its inputs are checked again before Tier 2 is stored
+    with change_when_the_tier2_file_is_about_to_be_written(w, lambda: w.write_data(NEW_DATA)):
+        w.orch.materialize_tier2("tiny", "C", w.anchor, keys=held, on_inputs_changed=told.append)
+    assert not tier2_path_for(w.anchor).exists(), "a Tier 2 built on data that changed meanwhile must not be stored"
+    assert [c.text for c in told] == ["the data files changed"]
+
+
+def test_a_tier2_is_not_stored_when_its_own_steps_change_during_its_build(tmp_path):
+    """M7: the tier-2 steps are compared after the build. The Tier 1 is served from the store, so only the steps can change."""
+    w = World(tmp_path)
+    w.write_data_analysis_recipe(steps_tier2=[FILTER_A])
+    first = w.orch.compute_data_analysis_recipe_keys("tiny")
+    w.orch.materialize_tier2("tiny", "C", w.anchor, keys=first)
+    tier2_path_for(w.anchor).unlink()                                     # only Tier 2 is missing
+    told = []
+    with change_when_the_tier2_file_is_about_to_be_written(w, lambda: w.write_data_analysis_recipe(steps_tier2=[FILTER_B])):
+        rows = ids(w.orch.materialize_tier2("tiny", "C", w.anchor, keys=first, on_inputs_changed=told.append))
+    assert not tier2_path_for(w.anchor).exists()
+    assert rows == ["s1", "s2"]                                           # the table is still returned
+    assert [c.text for c in told] == ["the tier-2 steps of this table changed"]
+
+
+def test_a_tier1_built_from_changed_inputs_makes_its_tier2_unstorable_too(tmp_path):
+    w = World(tmp_path)
+    w.write_data_analysis_recipe(steps_tier2=[FILTER_A])
+    held = w.orch.compute_data_analysis_recipe_keys("tiny")
+    real = w.orch.prepare_ingredient
+
+    def ingest_then_the_file_changes(*args, **kwargs):
+        lf = real(*args, **kwargs)
+        w.write_data(NEW_DATA)
+        return lf
+
+    told = []
+    with mock.patch.object(w.orch, "prepare_ingredient", side_effect=ingest_then_the_file_changes):
+        w.orch.materialize_tier2("tiny", "C", w.anchor, keys=held, on_inputs_changed=told.append)
+    assert not w.anchor.exists() and not tier2_path_for(w.anchor).exists()
+    assert len(told) == 1, "one notice, not one per tier"
+
+
+def test_a_build_tells_its_caller_that_the_inputs_changed_during_the_build(tmp_path):
+    w = World(tmp_path)
+    keys = w.orch.compute_data_analysis_recipe_keys("tiny")
+    real = w.orch.prepare_ingredient
+
+    def ingest_then_the_file_changes(*args, **kwargs):
+        lf = real(*args, **kwargs)
+        w.write_data(NEW_DATA)
+        return lf
+
+    told = []
+    with mock.patch.object(w.orch, "prepare_ingredient", side_effect=ingest_then_the_file_changes):
+        table = w.orch.materialize_tier1("tiny", "C", w.anchor, keys=keys, on_inputs_changed=told.append)
+    assert ids(table) and not w.anchor.exists()
+    assert [c.text for c in told] == ["the data files changed"]
+
+
+def test_a_build_whose_inputs_did_not_change_tells_nothing_and_stores(tmp_path):
+    w = World(tmp_path)
+    told = []
+    w.orch.materialize_tier1("tiny", "C", w.anchor, keys=w.orch.compute_data_analysis_recipe_keys("tiny"), on_inputs_changed=told.append)
+    assert told == [] and w.anchor.exists()
+
+
+def test_a_recipe_that_changed_during_the_build_is_named_as_the_recipe(tmp_path):
+    w = World(tmp_path)
+    built_from = w.orch.compute_data_analysis_recipe_keys("tiny")
+    assert w.orch.inputs_changed("tiny", built_from) is None
+    w.write_data_analysis_recipe(plot_label="another label")                   # the recipe text changes
+    assert w.orch.inputs_changed("tiny", built_from).text == "the data analysis recipe changed"
+
+
+def test_a_recipe_that_can_no_longer_be_read_is_a_change_named_as_such_not_silence(tmp_path):
+    """M9: an unreadable recipe or a missing file must never read as "nothing changed"."""
+    w = World(tmp_path)
+    built_from = w.orch.compute_data_analysis_recipe_keys("tiny")
+    (w.data_analysis_recipes_dir / "tiny.yaml").write_text("id: tiny\ndata_schemas: [unclosed\n")
+    change = w.orch.inputs_changed("tiny", built_from)
+    assert change is not None and change.text.startswith("the data analysis recipe can no longer be read")
+    (w.data_analysis_recipes_dir / "tiny.yaml").unlink()
+    assert w.orch.inputs_changed("tiny", built_from).text == "the data analysis recipe file is gone"
+
+
+def test_a_data_file_that_is_gone_is_a_change_of_the_data(tmp_path):
+    w = World(tmp_path)
+    built_from = w.orch.compute_data_analysis_recipe_keys("tiny")
+    w.data_file.unlink()
+    assert w.orch.inputs_changed("tiny", built_from).text == "the data files changed"
+
+
+def test_a_tier1_built_from_a_mix_makes_its_tier2_unstorable_even_if_the_data_is_back_by_then(tmp_path):
+    """The Tier 1 saw the data change; if the file is restored before Tier 2 is written, the Tier 2 check alone would pass."""
+    w = World(tmp_path)
+    w.write_data_analysis_recipe(steps_tier2=[FILTER_A])
+    held = w.orch.compute_data_analysis_recipe_keys("tiny")
+    original = w.data_file.read_text()
+    real = w.orch.prepare_ingredient
+
+    def ingest_then_the_file_changes(*args, **kwargs):
+        lf = real(*args, **kwargs)
+        w.write_data(NEW_DATA)
+        return lf
+
+    told = []
+    with mock.patch.object(w.orch, "prepare_ingredient", side_effect=ingest_then_the_file_changes), \
+            change_when_the_tier2_file_is_about_to_be_written(w, lambda: w.write_data(original)):
+        w.orch.materialize_tier2("tiny", "C", w.anchor, keys=held, on_inputs_changed=told.append)
+    assert not tier2_path_for(w.anchor).exists()
+    assert [c.text for c in told] == ["the data files changed"]
+
+
+def test_a_recipe_that_cannot_be_read_when_tier2_is_about_to_be_stored_is_told_and_nothing_is_stored(tmp_path):
+    w = World(tmp_path)
+    w.write_data_analysis_recipe(steps_tier2=[FILTER_A])
+    first = w.orch.compute_data_analysis_recipe_keys("tiny")
+    w.orch.materialize_tier2("tiny", "C", w.anchor, keys=first)
+    tier2_path_for(w.anchor).unlink()
+    told = []
+    breaker = lambda: (w.data_analysis_recipes_dir / "tiny.yaml").write_text("id: tiny\ndata_schemas: [unclosed\n")  # noqa: E731
+    with change_when_the_tier2_file_is_about_to_be_written(w, breaker):
+        w.orch.materialize_tier2("tiny", "C", w.anchor, keys=first, on_inputs_changed=told.append)
+    assert not tier2_path_for(w.anchor).exists()
+    assert len(told) == 1 and told[0].text.startswith("the data analysis recipe can no longer be read")
+
+
+def test_a_stored_table_is_served_through_the_one_read_that_pairs_its_key_with_its_content(tmp_path):
+    """Both tiers read the key and the content from the same open file (`read_anchor_if_key`), never key by name, then scan by name."""
+    from app.modules import orchestrator as orchestrator_module
+    w = World(tmp_path)
+    w.write_data_analysis_recipe(steps_tier2=[FILTER_A])
+    keys = w.orch.compute_data_analysis_recipe_keys("tiny")
+    w.orch.materialize_tier2("tiny", "C", w.anchor, keys=keys)
+    with mock.patch.object(orchestrator_module, "read_anchor_if_key", wraps=orchestrator_module.read_anchor_if_key) as read:
+        assert ids(w.orch.materialize_tier1("tiny", "C", w.anchor, keys=keys)) == ["s1", "s2", "s3"]
+        assert ids(w.orch.materialize_tier2("tiny", "C", w.anchor, keys=keys)) == ["s1", "s2"]
+    assert [c.args[1] for c in read.call_args_list] == [TIER1_KEY_META, TIER2_KEY_META]
+    assert all(c.args[2] for c in read.call_args_list)
