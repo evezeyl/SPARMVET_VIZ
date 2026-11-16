@@ -303,7 +303,7 @@ analysis_groups:
     description: 📊 Quality Control
     plots:
       qc_reads_horizontal_barplot:
-        label: "Qc Reads Horizontal Barplot"
+        label: "QC Reads Horizontal Barplot"
         taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Intermediate"}
         description: "Provides a distribution of total reads per sample by taxonomy proportion. Shows total reads (FastP) colored by the proportion of the top-ranking taxon (Bracken)."
         spec: !include '1_test_data_ST22_dummy/plots/FastP_reads_horizontal_barplot.yaml'
@@ -327,7 +327,7 @@ analysis_groups:
     description: 💊 AMR and ☠️ Virulence
     plots:
       amr_heatmap:
-        label: "Amr Heatmap"
+        label: "AMR Heatmap"
         taxonomy: {"family": "Correlation", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Intermediate"}
         description: "Heatmap showing AMR gene presence across samples."
         spec: !include '1_test_data_ST22_dummy/plots/ResFinder_genes_heatmap.yaml'
@@ -337,7 +337,7 @@ analysis_groups:
         description: "One bar per sample counting table rows, coloured by selected virulence gene; the table has one row per sample, virulence gene and AMR gene hit, so a sample with more AMR hits weighs more."
         spec: !include '1_test_data_ST22_dummy/plots/VirulenceFinder_counts_bar.yaml'
       mlst_bar:
-        label: "Mlst Bar"
+        label: "MLST Bar"
         taxonomy: {"family": "Ranking", "pattern": "2 Categorical", "difficulty": "Simple"}
         description: "Bar chart showing frequency of sequence types by territory. Bar chart showing the frequency of MLST sequence types, filled by the origin country."
         spec: !include '1_test_data_ST22_dummy/plots/MLST_counts_bar.yaml'
@@ -367,42 +367,42 @@ analysis_groups:
     description: "QA canaries (not for publication): each plot isolates one failure mode; the expected numbers are in its title."
     plots:
       qa_amr_genes_per_sample:
-        label: "Qa Amr Genes Per Sample"
+        label: "QA AMR Genes Per Sample"
         taxonomy: {"family": "Distribution", "pattern": "1 Numeric", "difficulty": "Simple"}
         description: "Samples without an AMR gene must stay (long T1, one row per sample in T2). Canary for samples that vanish from a long table. A sample without any AMR gene must appear at 0, not disappear. T1 is long (74 rows), T2 has one row per sample (42)."
         spec: !include '1_test_data_ST22_dummy/plots/qa_amr_genes_per_sample.yaml'
       qa_sequence_type_missing:
-        label: "Qa Sequence Type Missing"
+        label: "QA Sequence Type Missing"
         taxonomy: {"family": "Ranking", "pattern": "1 Categorical", "difficulty": "Simple"}
         description: "A missing sequence type must stay visible as missing. Canary for missing values. The 2 samples without a sequence type must be visible as missing, not dropped and not filled."
         spec: !include '1_test_data_ST22_dummy/plots/qa_sequence_type_missing.yaml'
       qa_year_label:
-        label: "Qa Year Label"
+        label: "QA Year Label"
         taxonomy: {"family": "Ranking", "pattern": "1 Categorical", "difficulty": "Simple"}
         description: "The year label has no \".0\"; the numeric year stays numeric. Canary for types. The text label of the year has no \".0\"; the numeric year column stays numeric for range filters."
         spec: !include '1_test_data_ST22_dummy/plots/qa_year_label.yaml'
       qa_l50_integer:
-        label: "Qa L50 Integer"
+        label: "QA L50 Integer"
         taxonomy: {"family": "Distribution", "pattern": "1 Numeric", "difficulty": "Simple"}
         description: "Integer column for threshold filters (L50 >= 8.5 must keep 9, not 8). Canary for thresholds on an integer column. A filter \"L50 >= 8.5\" must remove the bar at 8 and keep 9; \"L50 < 8.5\" must keep 8."
         spec: !include '1_test_data_ST22_dummy/plots/qa_l50_integer.yaml'
       qa_facet_by_mapping:
-        label: "Qa Facet By Mapping"
+        label: "QA Facet By Mapping"
         taxonomy: {"family": "Ranking", "pattern": "1 Categorical, 1 Categorical", "difficulty": "Simple"}
         description: "facet_by written in mapping must give 3 panels. Canary for the documented spelling of facets. The panels must exist; if the plot has a single panel, facet_by in mapping is being ignored (issue 65)."
         spec: !include '1_test_data_ST22_dummy/plots/qa_facet_by_mapping.yaml'
       qa_fanout_rows_per_sample:
-        label: "Qa Fanout Rows Per Sample"
+        label: "QA Fanout Rows Per Sample"
         taxonomy: {"family": "Ranking", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
         description: "EXHIBIT of a known defect (issue 68) - rows are inflated on purpose. Exhibit of a known defect. Each sample has as many rows as its AMR gene hits times its virulence gene rows (a sample with no AMR gene hit counts as one hit), so a sample with more hits weighs more. The defect is shown on purpose."
         spec: !include '1_test_data_ST22_dummy/plots/qa_fanout_rows_per_sample.yaml'
       qa_aggregated_no_key:
-        label: "Qa Aggregated No Key"
+        label: "QA Aggregated No Key"
         taxonomy: {"family": "Comparison", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Simple"}
         description: "Data of this plot is an aggregate with no sample_id column (issue 60). Canary for the audit reach. The data of this plot is an aggregate with no sample_id column, so removing a sample by its ID cannot change it."
         spec: !include '1_test_data_ST22_dummy/plots/qa_aggregated_no_key.yaml'
       qa_population_zscore:
-        label: "Qa Population Zscore"
+        label: "QA Population Zscore"
         taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
         description: "A z-score across all samples, the case where the place of a removal changes the numbers of the other samples. Canary for the audit placement rule. The z-score of each sample is computed across all 42 samples, so removing a sample before this step changes every other value."
         spec: !include '1_test_data_ST22_dummy/plots/qa_population_zscore.yaml'
