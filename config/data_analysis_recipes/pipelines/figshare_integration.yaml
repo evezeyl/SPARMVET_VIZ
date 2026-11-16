@@ -21,6 +21,7 @@ info:
 data_schemas:
   fg_metadata:
     label: "fg metadata"
+    description: "One row per animal sample with host species, specimen source, final diagnosis and infection site."
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_metadata.tsv
@@ -31,6 +32,7 @@ data_schemas:
 
   fg_phenotypes:
     label: "fg phenotypes"
+    description: "One row per sample and antibiotic test (MIC id) with the breakpoint and the predicted phenotype."
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_phenotypes.tsv
@@ -41,6 +43,7 @@ data_schemas:
 
   fg_genotypes:
     label: "fg genotypes"
+    description: "One row per resistance gene line reported for a sample, with the gene type, identifier, gene family and resistance class; the same gene can appear on more than one row of a sample."
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_genotypes.tsv

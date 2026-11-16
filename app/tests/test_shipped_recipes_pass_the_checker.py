@@ -45,3 +45,36 @@ def test_the_checker_can_fail_on_a_shipped_recipe(tmp_path):
     target.write_text("\n".join(lines[:first] + lines[first + 1:]))
     result = check_recipe_file(target, "run", catalogs=CATALOGS, base=ROOT)
     assert any("label" in p.message for p in result.errors)
+
+
+# -- no shipped pipeline step is without a description (advice S04 schema, J03 join, G02 group, P02 plot)
+
+PIPELINES = sorted((ROOT / "config/data_analysis_recipes/pipelines").glob("*.yaml"))
+DESCRIPTION_ADVICE = {"S04", "J03", "G02", "P02"}
+
+
+def _missing_descriptions(path, base=None):
+    result = check_recipe_file(path, "run", catalogs=CATALOGS, **({"base": base} if base else {}))
+    return [p.text(path.name) for p in result.problems if p.code in DESCRIPTION_ADVICE]
+
+
+def test_there_are_pipelines_to_check():
+    assert len(PIPELINES) == 7
+
+
+@pytest.mark.parametrize("path", PIPELINES, ids=[p.stem for p in PIPELINES])
+def test_no_shipped_pipeline_step_lacks_a_description(path):
+    assert _missing_descriptions(path) == []
+
+
+def test_the_description_check_can_fail(tmp_path):
+    """The same recipe without one description (the plot of 3_test_no_joins) is reported."""
+    import shutil
+    source = ROOT / "config/data_analysis_recipes/pipelines/3_test_no_joins.yaml"
+    work = tmp_path / "pipelines"
+    shutil.copytree(source.parent, work)
+    target = work / source.name
+    lines = target.read_text().split("\n")
+    first = next(i for i, line in enumerate(lines) if line.startswith("        description:"))
+    target.write_text("\n".join(lines[:first] + lines[first + 1:]))
+    assert _missing_descriptions(target, base=ROOT) != []

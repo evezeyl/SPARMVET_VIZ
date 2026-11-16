@@ -10,6 +10,7 @@ info:
 data_schemas:
   MLST:
     label: "MLST"
+    description: "One row per MLST result of a sample; in this demo file a sample can appear on more than one row."
     source:
       type: local_tsv
       path: ./assets/test_data/demo_high_integrity/test_data_test_data_MLST_results_20260307_105756.tsv
@@ -19,6 +20,7 @@ data_schemas:
     wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
 metadata_schema:
   label: "metadata"
+  description: "One row per metadata line (source, year, country); in this demo file some sample ids are repeated, empty or written as a dash."
   source:
     type: local_tsv
     path: ./assets/test_data/demo_high_integrity/test_data_test_metadata_20260307_105756.tsv
@@ -31,7 +33,7 @@ metadata_schema:
 joins:
   demo_join:
     label: "demo join"
-    description: One row per sample with its sequence type (MLST) and the source, year and country from the metadata.
+    description: One row per MLST result joined to a metadata line (inner join); a sample that is repeated in the data appears more than once, so there are more rows than samples.
     ingredients:
     - dataset_id: MLST
     - dataset_id: metadata_schema
@@ -56,9 +58,11 @@ joins:
 analysis_groups:
   MLST_Overview:
     label: MLST Overview
+    description: "Which sequence types occur in each source."
     plots:
       demo_st_by_source:
         label: Sequence Types by Source
+        description: "Bars count the rows of the joined table (a sample repeated in the data counts more than once) for each sequence type, coloured by source."
         spec:
           target_dataset: demo_join
           mapping:

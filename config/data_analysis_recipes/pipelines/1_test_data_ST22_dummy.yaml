@@ -27,6 +27,7 @@ data_schemas:
 
   Summary_quality:
     label: "Summary quality"
+    description: "The same file as Summary, read as one row per sample with its quality columns (quality module, main taxon, genotype, phenotypes, plasmid, ST, genome length, N50, contigs), so the phenotype counts can be joined to the quality values."
     source:
       type: local_tsv
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_Summary_20260307_105756.tsv
@@ -160,6 +161,7 @@ metadata_schema:
 joins:
   FastP_with_metadata:
     label: "FastP with metadata"
+    description: "One row per sample: the FastP read-quality values with the sample's source, year and country; a left join on the sample id, so every FastP sample stays."
     ingredients:
     - dataset_id: FastP
     - dataset_id: metadata_schema
@@ -167,6 +169,7 @@ joins:
 
   Quast_with_metadata:
     label: "Quast with metadata"
+    description: "One row per sample and assembly measure (N50, total length, largest contig): a left join with the metadata, then the three measure columns turned into rows so the plots can facet by measure."
     ingredients:
     - dataset_id: Quast
     - dataset_id: metadata_schema
@@ -174,6 +177,7 @@ joins:
 
   Bracken_with_metadata:
     label: "Bracken with metadata"
+    description: "One row per sample: the main taxon found by Bracken and its proportion, with the sample's source, year and country (left join)."
     ingredients:
     - dataset_id: Bracken
     - dataset_id: metadata_schema
@@ -181,6 +185,7 @@ joins:
 
   ResFinder_with_metadata:
     label: "ResFinder with metadata"
+    description: "One row per resistance gene hit in a sample, with the sample's source, year and country; a left join from the hits, so a sample with no hit has no row."
     ingredients:
     - dataset_id: ResFinder
     - dataset_id: metadata_schema
@@ -188,6 +193,7 @@ joins:
 
   MLST_with_metadata:
     label: "MLST with metadata"
+    description: "One row per sample: sequence type with source, year and country (left join); the second stage keeps only the years 2023 to 2025 and adds an era (Early before 2024, Recent from 2024)."
     ingredients:
     - dataset_id: MLST
     - dataset_id: metadata_schema
@@ -195,6 +201,7 @@ joins:
 
   QC_Reads_Anchor:
     label: "QC Reads Anchor"
+    description: "One row per sample with read quality (FastP), assembly quality (Quast), main taxon (Bracken) and source, year, country; three left joins on the sample id, so every FastP sample stays."
     ingredients:
     - dataset_id: FastP
     - dataset_id: Quast
@@ -387,7 +394,7 @@ analysis_groups:
       qa_fanout_rows_per_sample:
         label: "Qa Fanout Rows Per Sample"
         taxonomy: {"family": "Ranking", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
-        description: "EXHIBIT of a known defect (issue 68) - rows are inflated on purpose. Exhibit of a known defect. Each sample has as many rows as AMR genes times virulence genes. The many-to-many join check (issue"
+        description: "EXHIBIT of a known defect (issue 68) - rows are inflated on purpose. Exhibit of a known defect. Each sample has as many rows as its AMR gene hits times its virulence gene rows (a sample with no AMR gene hit counts as one hit), so a sample with more hits weighs more. The defect is shown on purpose."
         spec: !include '1_test_data_ST22_dummy/plots/qa_fanout_rows_per_sample.yaml'
       qa_aggregated_no_key:
         label: "Qa Aggregated No Key"

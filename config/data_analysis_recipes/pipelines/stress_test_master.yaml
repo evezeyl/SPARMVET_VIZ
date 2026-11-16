@@ -10,6 +10,7 @@ info:
 data_schemas:
   Stress_Source:
     label: "Stress Source"
+    description: "One row per synthetic record (species, collection date, antibiotic class, value); generated to test speed, not real isolates."
     source:
       type: local_tsv
       path: assets/test_data/STRESS/STRESS_data.tsv
@@ -20,6 +21,7 @@ data_schemas:
 joins:
   Master_Collection:
     label: "Master Collection"
+    description: "The stress table as it is (no join step), kept as the one collection the plot reads."
     ingredients:
     - dataset_id: Stress_Source
     steps: !include 'stress_test_master/wrangling/Master_Collection_steps.yaml'
@@ -28,9 +30,11 @@ plot_defaults:
 analysis_groups:
   Stress_Distribution:
     label: Distribution Analysis
+    description: "How the synthetic records spread over species and antibiotic classes, to test that a large plot stays responsive."
     plots:
       stress_species_amr:
         label: Species x AMR Distribution
+        description: "Bars count records for each species, coloured by antibiotic class."
         spec:
           target_dataset: Master_Collection
           layers:
