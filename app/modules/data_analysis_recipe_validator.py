@@ -41,7 +41,7 @@ from typing import Iterator, Optional, Union
 import polars as pl
 import yaml
 from transformer.data_wrangler import DataWrangler
-from utils.action_names import REMOVED_ACTIONS
+from utils.step_migration import old_action_hint, removed_action_catalog
 from utils.config_loader import ConfigManager
 from utils.recipe_loader import check_recipe_file
 
@@ -128,7 +128,7 @@ def checker_catalogs() -> dict:
         "component_arguments": {name: (None if arguments.get(name) is None else set(arguments[name])) for name in components},
         "component_kinds": {name: COMPONENT_SCHEMAS[name]["plotnine"] for name in components},
         "themes": {name for name in components if name.startswith("theme_")},
-        "old_action_names": dict(REMOVED_ACTIONS),
+        "old_action_names": removed_action_catalog(),
     }
 
 
@@ -153,7 +153,8 @@ def _fragment_report(raw) -> list[str]:
             continue
         name = step["action"]
         if name not in actions or not isinstance(actions[name], dict):
-            lines.append(f"[ST02] {where} ({name}): {name!r} is not a registered action")
+            hint = old_action_hint(name)
+            lines.append(f"[ST02] {where} ({name}): {name!r} is not a registered action" + (f". {hint}" if hint else ""))
             continue
         flat = {**{k: v for k, v in step.items() if k != "params"}, **(step.get("params") or {})}
         for p in step_problems(name, flat, actions[name]):

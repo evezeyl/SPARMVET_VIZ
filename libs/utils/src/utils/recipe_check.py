@@ -542,10 +542,13 @@ class _Check:
             if name not in actions:
                 legacy = (self.catalogs or {}).get("old_action_names", {}).get(name)
                 close = difflib.get_close_matches(str(name), list(actions), n=1, cutoff=0.6)
-                why = ""
-                if isinstance(legacy, dict):  # a removed name: the replacement and the reason
-                    why, legacy = f" (removed: {legacy['why']})", legacy["use"]
-                fix = f"write {legacy}" if legacy else f"write {close[0]}" if close else "choose a registered action"
+                why, use = "", None
+                if isinstance(legacy, dict):  # a removed name: the replacement (when one is known) and the reason
+                    why, use = (f" (removed: {legacy['why']})" if legacy.get("why") else ""), legacy.get("use")
+                elif legacy:
+                    use = legacy
+                fix = (f"Suggestion: use {use}." if use else f"Suggestion: write {close[0]}." if close
+                       else "Suggestion: choose a registered action.")
                 self.add("ST02", f"{where}.action", f"{name!r} is not a registered action{why}", fix)
                 continue
             schema = actions[name]

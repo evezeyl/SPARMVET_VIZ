@@ -14,6 +14,7 @@ from utils.action_names import CAST, JOIN, JOIN_ASOF
 from transformer.join_diagnosis import JoinCheck
 from utils.errors import TransformationError
 from utils import join_keys
+from utils.step_migration import removed_action_catalog
 from utils.pipeline_error import PipelineError
 
 
@@ -273,7 +274,7 @@ class DataAssembler:
                     component="DataAssembler",
                     problem=f"Unknown assembly action '{action_name}'.",
                     location=f"assembly step {i + 1}",
-                    fix=(
+                    fix=str(exc) if action_name in removed_action_catalog() else (
                         f"'{action_name}' is not registered. Check the action name in the data analysis recipe. "
                         "See rules_agent_role_bioscientist.md §8 for the authoritative action list."
                     ),

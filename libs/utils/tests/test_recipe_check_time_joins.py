@@ -113,4 +113,4 @@ def test_the_old_name_polars_join_where_is_refused_and_the_message_names_the_new
     result = check_recipe(raw, "run", catalogs={**CATALOG, "old_action_names": dict(REMOVED_ACTIONS)}, graph=Graph())
     problems = [p for p in result.problems if p.code == "ST02"]
     assert problems and problems[0].severity == "E"
-    assert problems[0].fix == "write modif_join_where" and "not exactly Polars" in problems[0].message
+    assert problems[0].fix == "Suggestion: use modif_join_where." and "not exactly Polars" in problems[0].message
