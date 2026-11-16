@@ -161,6 +161,50 @@ def test_the_same_step_on_a_text_column_has_no_problem(tmp_path):
     assert validate_data_analysis_recipe_data(recipe, tmp_path) == []
 
 
+def _recipe_with_a_cast_step(tmp_path: Path, expression: str) -> Path:
+    """Dataset B holds the texts 1/2 and 3/4 in `code`; tier 1 adds a column from `expression`."""
+    (tmp_path / "b.tsv").write_text("sample_id\tcode\ns1\t1/2\ns2\t3/4\n")
+    recipe = tmp_path / "castit.yaml"
+    recipe.write_text(dedent(f"""
+        id: castit
+        data_schemas:
+          B:
+            source: {{type: local_tsv, path: {tmp_path / 'b.tsv'}}}
+            null_values: []
+            strip: false
+            input_fields:
+              sample_id: {{type: Categorical}}
+              code: {{type: String}}
+            wrangling:
+              tier1:
+                - action: polars_with_columns
+                  named_exprs:
+                    x: "{expression}"
+        joins:
+          OnlyB:
+            ingredients:
+              - dataset_id: B
+            steps:
+              tier1: []
+        """) + _ANALYSIS.replace("target_dataset: A", "target_dataset: OnlyB"))
+    return recipe
+
+
+def test_a_step_that_fails_on_the_values_is_reported_not_passed_in_silence(tmp_path):
+    """D-0050: the check ran the step on one row and swallowed every Polars error that was not a schema or column error,
+    so a recipe whose step fails on its own data passed the check and failed when it was built."""
+    recipe = _recipe_with_a_cast_step(tmp_path, "pl.col('code').cast(pl.Int64)")
+    [problem] = validate_data_analysis_recipe_data(recipe, tmp_path)
+    assert problem.location == "data_schemas.B"
+    assert "wrangling cannot run" in problem.problem and "code" in problem.problem
+    assert problem.tip and problem.tip.startswith("Suggestion:")
+
+
+def test_the_same_step_on_values_that_fit_has_no_problem(tmp_path):
+    recipe = _recipe_with_a_cast_step(tmp_path, "pl.col('code').str.len_chars()")
+    assert validate_data_analysis_recipe_data(recipe, tmp_path) == []
+
+
 # --- the build ---------------------------------------------------------------------------------
 
 def _build(tmp_path: Path, collection: str):

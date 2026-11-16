@@ -388,16 +388,19 @@ def validate_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Uni
             problems.append(DataAnalysisRecipeProblem(name, location, f"dataset cannot be loaded: {exc}", getattr(exc, "tip", None)))
             continue
         # WHY: collect_schema() only plans the query. A step whose input type does not fit (a text step on a
-        # column declared categorical) fails when the plan runs, so run it on one row (issue #71). Value
-        # problems (a letter in a numeric column) are not reported here: they are checked at import (issue #11).
+        # column declared categorical) fails when the plan runs, so run it on one row (issue #71). Every Polars error
+        # of that run is a problem of the recipe or of its data and is reported (D-0050): a step that fails on the
+        # values (a text cast to a number) would otherwise pass this check and fail when the recipe is built.
         try:
             frame.head(1).collect()
         except (pl.exceptions.SchemaError, pl.exceptions.ColumnNotFoundError) as exc:
             problems.append(DataAnalysisRecipeProblem(
                 name, location, f"wrangling cannot run on this dataset: {exc}",
-                "Compare the declared type of the column with what the wrangling step expects (a text step needs a String column, not a Categorical one)."))
-        except pl.exceptions.PolarsError:
-            pass
+                "Suggestion: compare the declared type of the column with what the wrangling step expects (a text step needs a String column, not a Categorical one)."))
+        except pl.exceptions.PolarsError as exc:
+            problems.append(DataAnalysisRecipeProblem(
+                name, location, f"wrangling cannot run on this dataset: {exc}",
+                "Suggestion: look at the wrangling step that the message names and at the values of the column it reads, then change the step or correct the data."))
     return problems
 
 
