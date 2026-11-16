@@ -147,7 +147,7 @@ def test_none_checked_with_an_existing_file_is_allowed(project, kind):
 
 def test_none_checked_with_a_missing_file_is_refused_and_the_path_named(project):
     code, message = agent(project, "builder", "NONE-CHECKED: tmpAI/not_there.md")
-    assert code == 2 and "tmpAI/not_there.md" in message and "not a file that exists" in message
+    assert code == 2 and "tmpAI/not_there.md" in message and "not a regular file that exists" in message
 
 
 def test_none_checked_with_a_directory_is_refused(project):

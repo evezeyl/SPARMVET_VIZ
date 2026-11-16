@@ -23,7 +23,8 @@ subagent carries an agent_id and passes). Three rules:
 
 5. Agent that starts a builder, builder-opus or reviewer is refused when its brief has neither a
    "Decisions" block whose numbers all exist in the decision ledger nor a line "NONE-CHECKED: <path>"
-   whose path is a file that exists (Eve, 2026-11-16, M150 point 4; ledger D-0125). Only the form is
+   whose path is a regular file inside the project folder, not the ledger itself (Eve, 2026-11-16,
+   M150 point 4; ledger D-0125). Only the form is
    checked: the reviewer checks the content. Scouts, scribes and panel agents are not gated. A ledger
    that is missing or malformed refuses the call too (a check that cannot run must not pass). The ledger is read with
    assets/scripts/decision_ledger.py; the form of the block is in .claude/workflows/decision_compliance.md.
@@ -59,7 +60,7 @@ HOW_TO_WRITE = (
     "Write it in the brief: a line `Decisions`, then one line per decision, each with its number and her words, e.g. "
     '`- D-0112: "Best hit = highest identity first; ..."` (numbers: ./.venv/bin/python assets/scripts/decision_ledger.py list; '
     "file .claude/knowledge/decision_ledger.md). When a scout checked that no decision applies, write instead a line "
-    "`NONE-CHECKED: <path of the saved scout report>` (the file must exist). See .claude/workflows/decision_compliance.md section 6."
+    "`NONE-CHECKED: <path of the saved scout report>` (a regular file inside the project folder; not the ledger). See .claude/workflows/decision_compliance.md section 6."
 )
 # Work that belongs to a worker: suites, audits, the app, renders, scripts, installs.
 WORK_COMMAND = re.compile(
@@ -126,15 +127,34 @@ def _load_ledger_reader():
     return module
 
 
+def _none_checked_problem(written: str, project: Path) -> str:
+    """Return why a NONE-CHECKED path is not accepted, or an empty string.
+
+    Accepted: a regular file INSIDE the project folder (the saved scout report), other than the ledger itself.
+    Only surrounding quotes and trailing punctuation are removed from the written path: a leading dot is part of it.
+    """
+    text = written.strip("`'\"").rstrip("`'\".,;")
+    path = Path(text)
+    resolved = (path if path.is_absolute() else project / path).resolve()
+    try:
+        resolved.relative_to(project.resolve())
+    except ValueError:
+        return f"NONE-CHECKED names {text}, which is outside the project folder (it must be the saved scout report, inside the project)"
+    if resolved == (project / LEDGER_RELATIVE).resolve():
+        return "NONE-CHECKED names the ledger itself, which is not a scout report"
+    if not resolved.is_file():
+        return f"NONE-CHECKED names {text}, which is not a regular file that exists (a directory or a device does not count)"
+    return ""
+
+
 def brief_problem(brief: str, project: Path) -> str:
     """Return what is missing in the brief of a builder or reviewer (an empty string when the form is right)."""
     missing_file = ""
     found = NONE_CHECKED.search(brief)
     if found:
-        path = Path(found.group(1).strip("`'\".,;"))
-        if (path if path.is_absolute() else project / path).is_file():
+        missing_file = _none_checked_problem(found.group(1), project)
+        if not missing_file:
             return ""
-        missing_file = f"NONE-CHECKED names {path}, which is not a file that exists"
     ledger = project / LEDGER_RELATIVE
     try:
         reader = _load_ledger_reader()
