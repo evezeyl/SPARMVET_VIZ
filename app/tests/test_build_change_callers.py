@@ -38,15 +38,18 @@ def _fresh_cache():
     clear_data_analysis_recipe_cache()
 
 
-def _calls_without_the_callback():
+def _calls_without_the_callback(root=ROOT):
+    """Calls of a build under `root/app` (not in tests) with no `on_inputs_changed`, or with a literal None (which tells nobody)."""
     missing = []
-    for path in sorted((ROOT / "app").rglob("*.py")):
-        if "tests" in path.relative_to(ROOT).parts:
+    for path in sorted((root / "app").rglob("*.py")):
+        if "tests" in path.relative_to(root).parts:
             continue
         for node in ast.walk(ast.parse(path.read_text(), str(path))):
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr in BUILDS:
-                if "on_inputs_changed" not in {k.arg for k in node.keywords}:
-                    missing.append(f"{path.relative_to(ROOT)}:{node.lineno} {node.func.attr}")
+                given = {k.arg: k.value for k in node.keywords}
+                none = isinstance(given.get("on_inputs_changed"), ast.Constant) and given["on_inputs_changed"].value is None
+                if "on_inputs_changed" not in given or none:
+                    missing.append(f"{path.relative_to(root)}:{node.lineno} {node.func.attr}" + (" (None)" if none else ""))
     return missing
 
 
@@ -54,14 +57,15 @@ def test_no_caller_of_a_table_build_in_app_forgets_to_say_what_it_does_when_inpu
     assert _calls_without_the_callback() == [], "pass on_inputs_changed (tell the user, or refuse): a build that changed is never silent"
 
 
-def test_the_scan_sees_a_call_that_forgets_the_callback(tmp_path):
-    """The scan itself can fail: a planted caller without the argument is found."""
-    planted = ROOT / "app" / "modules" / "zz_planted_caller.py"
-    planted.write_text("def f(o):\n    return o.materialize_tier1('r', 'c', 'p', keys=None)\n")
-    try:
-        assert any("zz_planted_caller.py:2" in m for m in _calls_without_the_callback())
-    finally:
-        planted.unlink()
+def test_the_scan_sees_a_call_that_forgets_the_callback_or_passes_none(tmp_path):
+    """The scan itself can fail: planted callers (in a temporary copy of the tree, never in `app/`) are found."""
+    planted = tmp_path / "app" / "modules"
+    planted.mkdir(parents=True)
+    (planted / "forgets.py").write_text("def f(o):\n    return o.materialize_tier1('r', 'c', 'p', keys=None)\n")
+    (planted / "none.py").write_text("def f(o):\n    return o.materialize_tier2('r', 'c', 'p', keys=None, on_inputs_changed=None)\n")
+    (planted / "good.py").write_text("def f(o, tell):\n    return o.materialize_tier2('r', 'c', 'p', on_inputs_changed=tell)\n")
+    found = _calls_without_the_callback(tmp_path)
+    assert found == ["app/modules/forgets.py:2 materialize_tier1", "app/modules/none.py:2 materialize_tier2 (None)"]
 
 
 # ------------------------------------------------------------------ the export refuses
