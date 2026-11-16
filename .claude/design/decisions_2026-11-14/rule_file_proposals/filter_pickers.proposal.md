@@ -1,8 +1,12 @@
 # Proposal: `.claude/rules/ui_implementation_contract.md` section 8, the operators and controls by column type
 
-Status: PROPOSAL for Eve's double confirmation. No rule file was edited. Built in FILTER-PICKERS-1 (branch `task/filter-pickers`), decided by Eve on 2026-11-15 (D9: "every type must be usable with the picker that fits the column type").
+Status: PROPOSAL for Eve's double confirmation. No rule file was edited. Built in FILTER-PICKERS-1 (branch `task/filter-pickers`).
 
-## Change 1 (FACT: the text describes the app as built)
+**What Eve decided (2026-11-15; ledger line N06; channel block M84 point 9; `tasks.md` line of FILTER-PICKERS-1):** a date picker for a Date column; a two-choice control for a true/false column; greater and less are not offered on text; the control follows the type of the column; every type must be usable (so a time of day and a duration need a control).
+
+**What is PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve):** the seven points in `tmpAI/filter_pickers_points_for_eve.md` of the worktree: (1) true/false offers equal and not equal only; (2) the operators of a date (list, every comparison, between) and of a time or duration (comparisons and between, no list); (3) three number boxes for a time of day; (4) a number with a choice of 8 units for a duration; (5) a date picker plus three boxes for a date and time; (6) the boxes start at the smallest and the largest value of the column; (7) a value finer than the unit of the column is refused. Where the text below describes one of these, it is provisional; the rest of the text follows the decision.
+
+## Change 1 (FACT: the text describes the app as built; the per-type parts marked above are PROVISIONAL)
 
 Line 281 today, paragraph "Operators by column type (ADR-104 points 4 and 7 ...)", from "Every other column (text, true/false, date, category) offers `in`, `not_in`, `eq`, `ne` with a list. Comparisons on text, date and true/false columns are not decided and not offered." to the end of that sentence.
 
