@@ -466,11 +466,20 @@ def dialog_value(lf, column: str, dtype, discrete_axis: bool, op: str, *, picked
     return (op, text, "both") if text else None
 
 
-def inapplicable_filter_rows(lf, filter_rows: list) -> list:
-    """Filter rows whose column is absent from lf; they are skipped, not applied (issue #56)."""
+def inapplicable_filter_rows(lf, filter_rows: list, on_problem=None) -> list:
+    """Filter rows whose column is absent from lf; they are skipped, not applied (issue #56).
+
+    When the columns of `lf` cannot be read, no row can be judged and `[]` is still returned (what the function always did);
+    `on_problem(text)` is then called, so that the caller can say that nothing was checked (D-0050). What the function should
+    return in that case is a choice for Eve, not made here."""
     try:
         names = set(lf.collect_schema().names())
-    except Exception:
+    except Exception as exc:
+        if on_problem is not None:
+            from app.modules.error_notice import notice
+            on_problem(notice(
+                "The columns of the table could not be read, so nobody checked which filters name a column the table does not have",
+                "reload the page (F5); a filter on a column that is not in the table is skipped without a word until then", exc))
         return []
     return [f for f in filter_rows if f.get("column") is not None and f.get("column") not in names]
 

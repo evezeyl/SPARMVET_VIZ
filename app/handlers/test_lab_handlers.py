@@ -23,6 +23,9 @@ from pathlib import Path
 import polars as pl
 from shiny import render, reactive, ui
 from shiny import Inputs, Outputs, Session
+from shiny.types import SilentException
+
+from app.modules.error_notice import notice
 
 
 def define_server(
@@ -423,6 +426,7 @@ def define_server(
         # The ID transformation of the reconciliation above, and the uploaded file that takes its steps, if requested
         id_transformation = None
         id_file_name = None
+        notes: list[str] = []      # what the form did that the user did not choose; shown under the result (D-0050)
         try:
             use_recon = bool(input.tl_scaffold_use_recon())
         except Exception:
@@ -446,8 +450,14 @@ def define_server(
                 if filtered:
                     try:
                         id_file_name = input.tl_scaffold_recon_dataset()
-                    except Exception:
+                    except Exception as exc:
                         id_file_name = infos[0]["name"]
+                        notes.append(notice(
+                            "The choice of the file that takes the ID cleaning steps could not be read, so the first uploaded "
+                            f"file '{id_file_name}' was used",
+                            "choose the file in the box 'Write the ID cleaning steps into the recipe of this file' and "
+                            "scaffold again if it is not the right one",
+                            None if isinstance(exc, SilentException) else exc))
                     engine = IDReconciliationEngine()
                     id_transformation = engine.generate_transformation(filtered, ref_col, target_col)
 
@@ -469,6 +479,7 @@ def define_server(
             "with_meta": meta_info is not None,
             "id_steps_file": id_file_name,
             "n_id_steps": len(id_transformation.steps) if id_transformation is not None else 0,
+            "notes": notes,
         }
 
     @output
@@ -493,10 +504,13 @@ def define_server(
             recon_note = f" {result['n_id_steps']} ID cleaning step(s) written into the recipe of '{result['id_steps_file']}'."
         else:
             recon_note = " The ID reconciliation gave no cleaning step, so none was written."
-        return ui.p(
-            f"Scaffolded '{pid}' — {n} data schema(s){meta_note}.{recon_note} "
-            "Download the ZIP and open in BLUEPRINT to continue.",
-            class_="text-muted small mt-1",
+        return ui.TagList(
+            ui.p(
+                f"Scaffolded '{pid}' — {n} data schema(s){meta_note}.{recon_note} "
+                "Download the ZIP and open in BLUEPRINT to continue.",
+                class_="text-muted small mt-1",
+            ),
+            *[ui.p("⚠️ " + note, class_="text-warning small mt-1") for note in result.get("notes", [])],
         )
 
     @render.download(filename=lambda: _scaffold_download_filename())

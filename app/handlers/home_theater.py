@@ -41,6 +41,7 @@ import secrets
 from pathlib import Path
 
 import polars as pl
+from shiny.types import SilentException
 from shiny import reactive, render, ui
 from shiny.session import session_context
 from app.modules.error_notice import notice
@@ -670,7 +671,12 @@ def define_server(input, output, session, *,
                 return
             try:
                 clicks = getattr(input, _reshuffle_btn_id)()
-            except Exception:
+            except SilentException:
+                return          # the button is not drawn yet: nothing was clicked
+            except Exception as exc:
+                _notify("⚠️ " + notice(
+                    f"The Reshuffle click of the plot '{p_id}' could not be read, so the arrangement was not changed",
+                    "reload the page (F5) and click Reshuffle again", exc), type="error", duration=10)
                 return
             if not clicks:
                 return
@@ -708,7 +714,12 @@ def define_server(input, output, session, *,
                 return
             try:
                 clicks = getattr(input, _unpin_btn_id)()
-            except Exception:
+            except SilentException:
+                return          # the button is not drawn yet: nothing was clicked
+            except Exception as exc:
+                _notify("⚠️ " + notice(
+                    f"The click on 'Remove the pinned seed' of the plot '{p_id}' could not be read, so the seed stays pinned",
+                    "reload the page (F5) and click again", exc), type="error", duration=10)
                 return
             if not clicks:
                 return

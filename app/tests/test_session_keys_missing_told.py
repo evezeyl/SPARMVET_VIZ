@@ -43,7 +43,7 @@ def _fresh_cache():
 class Home:
     """`home_theater.define_server` with every part a fake except the one under test: the effect `_sync_session_provenance`."""
 
-    def __init__(self, tmp_path, monkeypatch, source_files=None):
+    def __init__(self, tmp_path, monkeypatch, source_files=None, input_object=None, discovered=None):
         self.functions, self.notes = {}, []
         monkeypatch.setattr(reactive, "Effect", lambda fn: self.functions.setdefault(fn.__name__, fn))
         monkeypatch.setattr(reactive, "event", lambda *a, **k: (lambda fn: fn))
@@ -59,11 +59,13 @@ class Home:
         self.bootloader.get_default_data_analysis_recipe_or_none.return_value = "tiny"
         self.bootloader.is_enabled.return_value = False
         self.orchestrator = self.world.orch
+        if discovered:
+            self.bootloader.discovered_data_analysis_recipes = {"tiny": self.world.data_analysis_recipes_dir / "tiny.yaml"}
         self.manager = SessionManager(tmp_path / "user")
         self.home_state = reactive.Value({})
         self.log = reactive.Value([])
         home_theater.define_server(
-            mock.MagicMock(), lambda *a, **k: (lambda fn: fn) if not (a and callable(a[0])) else a[0], mock.MagicMock(),
+            input_object or mock.MagicMock(), lambda *a, **k: (lambda fn: fn) if not (a and callable(a[0])) else a[0], mock.MagicMock(),
             bootloader=self.bootloader, wrangle_studio=mock.MagicMock(), dev_studio=mock.MagicMock(),
             orchestrator=self.orchestrator, viz_factory=mock.MagicMock(), gallery_viewer=mock.MagicMock(),
             current_app_features=mock.MagicMock(), anchor_path=mock.MagicMock(), tier1_anchor=mock.MagicMock(),
