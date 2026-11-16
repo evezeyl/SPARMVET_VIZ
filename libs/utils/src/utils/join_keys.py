@@ -6,7 +6,9 @@ in length, when a key column does not exist, or when the two columns of a pair h
 checker (utils.recipe_check, J11, J10, J09) all ask this module, so they cannot disagree; each one phrases the problem for
 its own reader and keeps what is its own (the build raises, the preview returns rows, the checker adds its code).
 
-Pure: column names and types in, a plain dictionary out. A type is whatever the caller compares with `==` (a Polars dtype, a
+A self-join (a join whose right table is, or is already held by, the table being joined) is never an error (D-0183): `self_join`
+finds it and `self_join_text` writes what it does, for the checker (J12, before any data is read) and for the build (with the
+row numbers). Pure: column names and types in, a plain dictionary out. A type is whatever the caller compares with `==` (a Polars dtype, a
 dtype name); `None` means "not known here" and a pair with an unknown type is never a difference (the checker, which reads
 declarations, does not always know a type). No import from another library of the repository.
 
@@ -21,7 +23,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 from utils import action_names
 
 # @deps
-# provides: function:join_key_problem, function:key_length_problem, function:anti_join_with_itself, function:anti_join_with_itself_text, constant:JOIN_KEEPS_COLUMNS
+# provides: function:join_key_problem, function:key_length_problem, function:self_join, function:self_join_text, function:key_columns, constant:JOIN_KEEPS_COLUMNS, constant:JOIN_ACTIONS
 # consumed_by: libs/transformer/src/transformer/data_assembler.py, libs/blueprint_arch/src/blueprint_arch/join_designer.py, libs/utils/src/utils/recipe_check.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-102
 # @end_deps
@@ -81,11 +83,18 @@ def join_key_problem(left_types: Mapping[str, Any], right_types: Mapping[str, An
     return None
 
 
+def _listed(value: Any) -> list:
+    """A key parameter as a list: a name becomes [name], nothing becomes [], a list is copied, anything else is kept as one item."""
+    if value is None:
+        return []
+    return [value] if isinstance(value, str) else list(value) if isinstance(value, (list, tuple)) else [value]
+
+
 def _keys_of(step: Mapping[str, Any]) -> tuple:
     """(left keys, right keys) of a join step as lists; an unquoted `on` (the key True) is read like the checker reads it."""
     on = step.get("on", step.get(True))
     left, right = (on, on) if on is not None else (step.get("left_on"), step.get("right_on"))
-    return ([left] if isinstance(left, str) else list(left or [])), ([right] if isinstance(right, str) else list(right or []))
+    return _listed(left), _listed(right)
 
 
 def _writes_a_key(step: Mapping[str, Any], keys: Sequence[str]) -> bool:
@@ -99,43 +108,183 @@ def _writes_a_key(step: Mapping[str, Any], keys: Sequence[str]) -> bool:
     return bool((set(mapping) | {v for v in mapping.values() if isinstance(v, str)}) & set(keys))
 
 
-def anti_join_with_itself(base_id: str, earlier_steps: Sequence[Any], step: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
-    """{"table", "keys"} when `step` is the anti-join of the base table with itself on the same key, else None (D-0078).
+def _left_is_base_itself(earlier_steps: Sequence[Any], left_keys: Sequence[str]) -> bool:
+    """True when the table at a step is still the base table itself, as far as the key columns go.
 
-    `how: anti` keeps the rows of the left table whose key is not found in the right table. When the right table is the
-    base table itself and the keys are the same on both sides, every row that has a key finds itself, so no such row
-    remains (a row whose key is empty is not found anywhere and stays). The left table is still "the base table itself"
-    when every step before only removes, reorders or picks rows (a filter, a sort, `polars_head`, `polars_remove` ...),
+    It is, when every step before only removes, reorders or picks rows (a filter, a sort, `polars_head`, `polars_remove` ...),
     writes OTHER columns (`polars_with_columns`, `polars_rename` of another column), or joins a table with a kind of join
     that keeps the left keys (left, inner, semi, anti; the default of `polars_join` is left). After a step that writes or
-    renames a key column, a full or right join, or a step this rule cannot read, the left table may hold other keys:
-    the rule says nothing and the case is "every other self-join" (the checker advises, J12). A non-step before returns None.
+    renames a key column, a full or right join, or a step this rule cannot read, the left table may hold other keys.
     """
-    if step.get("action") != action_names.JOIN or step.get("how") != "anti" or step.get("right_ingredient") != base_id:
-        return None
-    left_keys, right_keys = _keys_of(step)
-    if not left_keys or left_keys != right_keys:
-        return None
     for before in earlier_steps:
         if not isinstance(before, Mapping):
-            return None
+            return False
         action = before.get("action")
         if action == action_names.JOIN:
             if before.get("how", "left") not in _KEEPS_LEFT_KEYS:
-                return None
+                return False
         elif action in (action_names.WITH_COLUMNS, action_names.RENAME):
             if _writes_a_key(before, left_keys):
-                return None
+                return False
         elif action not in ROW_STEPS:
-            return None
-    return {"table": base_id, "keys": left_keys}
+            return False
+    return True
 
 
-def anti_join_with_itself_text(found: Mapping[str, Any]) -> tuple:
-    """(what happens, the suggestion) for the case that `anti_join_with_itself` returned; one text for the checker and the build."""
-    table, keys = found["table"], found["keys"]
-    what = (f"The join of {table!r} with itself on the same key {keys} with how 'anti' keeps the rows whose key is not found in {table!r}, "
-            f"and every row that has a key finds itself, so the result has no row that has a key")
-    fix = (f"Suggestion: remove the step if you did not mean this. "
-           f"Suggestion: to find the rows of {table!r} that have no partner in another table, write that other table as right_ingredient.")
+def _as_names(value: Any) -> Optional[List[str]]:
+    """A key parameter as a list of column names; None when it holds something that is not a name."""
+    names = _listed(value)
+    return names if all(isinstance(n, str) for n in names) else None
+
+
+def key_columns(step: Mapping[str, Any]) -> tuple:
+    """(left columns, right columns) of every key group of a join step: `on` or `left_on` / `right_on`, and the `by` groups of an as-of join.
+
+    A join on conditions has none. A column that is not a text (a step that cannot be read) gives ([], []).
+    """
+    left, right = _keys_of(step)
+    by = step.get("by")
+    by_left, by_right = (by, by) if by is not None else (step.get("by_left"), step.get("by_right"))
+    parts = [_as_names(x) for x in (left, right, by_left, by_right)]
+    if any(p is None for p in parts):
+        return [], []
+    return parts[0] + parts[2], parts[1] + parts[3]
+
+
+# Join steps that name a right table (the as-of join and the join on conditions are joins too).
+JOIN_ACTIONS = (action_names.JOIN, action_names.JOIN_ASOF, action_names.JOIN_WHERE)
+
+_LABEL = {action_names.JOIN: "a join", action_names.JOIN_ASOF: "an as-of join", action_names.JOIN_WHERE: "a join on conditions"}
+
+
+def self_join(base_id: str, earlier_steps: Sequence[Any], step: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
+    """The facts of a self-join, or None. One rule for the checker (J12) and the build (D-0183, Eve 2026-11-16).
+
+    A self-join is a join step (`polars_join`, `polars_join_asof`, `modif_join_where`) whose right table is, or is already
+    held by, the table being joined: the first table of the join (`base_id`) or a table joined by an earlier step. Polars
+    reports nothing for it and it is never an error; the user is told what it does.
+
+    Returns {"table", "is_base", "action", "how", "left_keys", "right_keys", "same_key", "nulls_equal", "suffix", "base_itself", "key_columns"}:
+      same_key     the key columns are the same, in the same order, on both sides (and there is at least one)
+      base_itself  the table is the first table, and the table at this step still has its keys (only rows removed, other
+                   columns written, or joined with a join that keeps the left keys): then the key columns are the keys of
+                   the table itself and `how: anti` on the same key has the one result `self_join_text` states
+      key_columns  (left, right): every key column, `by` of an as-of join included (for the count of missing keys)
+    """
+    action = step.get("action")
+    right_id = step.get("right_ingredient")
+    if action not in JOIN_ACTIONS or not isinstance(right_id, str):
+        return None
+    left_keys, right_keys = _keys_of(step)
+    if _as_names(left_keys) is None or _as_names(right_keys) is None:
+        return None
+    left_tables = [base_id]
+    for before in earlier_steps:
+        if isinstance(before, Mapping) and isinstance(before.get("right_ingredient"), str):
+            left_tables.append(before["right_ingredient"])
+    if right_id not in left_tables:
+        return None
+    same_key = bool(left_keys) and left_keys == right_keys
+    return {
+        "table": right_id, "action": action, "how": step.get("how", "left" if action == action_names.JOIN else None),
+        "left_keys": left_keys, "right_keys": right_keys, "same_key": same_key, "nulls_equal": bool(step.get("nulls_equal")),
+        "suffix": step.get("suffix") or "_right", "key_columns": key_columns(step), "is_base": right_id == base_id,
+        "base_itself": action == action_names.JOIN and right_id == base_id and same_key and _left_is_base_itself(earlier_steps, left_keys),
+    }
+
+
+def _times(table: str) -> str:
+    return (f"A key value that appears a times in the table at this step and b times in {table!r} gives a x b rows")
+
+
+def _left(table: str, nulls_equal: bool, suffix: str) -> str:
+    gone = ("a missing key matches a missing key like any other value" if nulls_equal
+            else "a row with a missing key is kept once, with empty copied columns")
+    return f"{_times(table)}, and {gone}; the columns are copied with the suffix `{suffix}`"
+
+
+def _inner(table: str, nulls_equal: bool, suffix: str) -> str:
+    gone = ("a missing key matches a missing key like any other value" if nulls_equal else "a row with a missing key is dropped")
+    return f"{_times(table)}, and {gone}; the columns are copied with the suffix `{suffix}`"
+
+
+def _right(table: str, nulls_equal: bool, suffix: str) -> str:
+    gone = ("a missing key matches a missing key like any other value" if nulls_equal
+            else f"a row of {table!r} with a missing key is kept once, with empty columns for the table at this step")
+    return f"{_times(table)}, and {gone}; the columns are copied with the suffix `{suffix}`"
+
+
+def _full(table: str, nulls_equal: bool, suffix: str) -> str:
+    gone = ("a missing key matches a missing key like any other value" if nulls_equal
+            else "a row with a missing key is kept once from each side, with empty columns for the other side")
+    return f"{_times(table)}, and {gone}; the columns are copied with the suffix `{suffix}`"
+
+
+def _semi(table: str, nulls_equal: bool, suffix: str) -> str:
+    gone = ("a missing key matches a missing key, so every row stays" if nulls_equal else "a row with a missing key is dropped")
+    return f"No column is copied; each row whose key is found in {table!r} stays once, and {gone}"
+
+
+def _anti(table: str, nulls_equal: bool, suffix: str) -> str:
+    kept = ("a missing key matches a missing key, so such a row is removed" if nulls_equal else "a row with a missing key is kept")
+    return f"No column is copied; it removes the rows whose key is found in {table!r}, and {kept}"
+
+
+# What a join on the same key does, by kind of join (checked against real runs: libs/transformer/tests/test_self_join_build.py)
+_SAME_KEY_RESULT = {"left": _left, "inner": _inner, "right": _right, "full": _full, "semi": _semi, "anti": _anti}
+
+
+def self_join_text(found: Mapping[str, Any], counts: Optional[Mapping[str, Any]] = None) -> tuple:
+    """(what happens, the suggestions) for a self-join that `self_join` found. One text for the checker and the build.
+
+    The message holds no remedy; every suggestion starts with "Suggestion:". How the two are joined into one sentence, with one
+    period, is `utils.fix_text.with_fix`, the same for every reader.
+    `counts` (the build only, where the data is known): {"before", "after", "missing_left", "missing_right"} - the number of
+    rows before and after the join and of rows with a missing key in the key columns, in the left table and in the right
+    table (None when the join has no key columns). They are added as a last sentence.
+    """
+    table, how, label = found["table"], found["how"], _LABEL[found["action"]]
+    keys, same, nulls_equal = found["left_keys"], found["same_key"], found["nulls_equal"]
+    remove = "Suggestion: remove the step if you did not mean this."
+    if found["base_itself"] and how == "anti":
+        if nulls_equal:
+            what = (f"The join of {table!r} with itself on the same key {keys} with how 'anti' keeps no row, "
+                    f"because every row finds itself, a missing key included (nulls_equal)")
+        else:
+            what = (f"The join of {table!r} with itself on the same key {keys} with how 'anti' keeps only the rows whose key is missing, "
+                    f"because a missing key never matches. If no row has a missing key, the result is empty")
+        fix = (f"{remove} Suggestion: to find the rows of {table!r} that have no partner in another table, write that other table as right_ingredient.")
+    elif same and found["action"] == action_names.JOIN and how in _SAME_KEY_RESULT:
+        head = (f"Join of {table!r} with itself on the same column ({', '.join(map(repr, keys))}) with how '{how}'" if found["is_base"]
+                else f"This step joins {table!r} to a table that already holds it, on the same key {keys}, with how '{how}'")
+        what = head + ". " + _SAME_KEY_RESULT[how](table, nulls_equal, found["suffix"])
+        fix = remove
+    else:
+        has_keys = bool(found["key_columns"][0])
+        if not has_keys:
+            on = ""
+        elif same:
+            on = f", on the same key {keys}"
+        else:
+            on = f", with the left key {found['left_keys']} and the right key {found['right_keys']}"
+        kind = f", with how {how!r}" if how else ""
+        missing = ("" if not has_keys else "; a row whose key is missing matches rows whose key is missing (nulls_equal)" if nulls_equal
+                   else "; a row whose key is missing never matches")
+        what = (f"This step is {label} of {table!r} with a table that already holds it{on}{kind}. "
+                f"Each row is matched with rows of the same table, which answers a real question (a parent and a child column, for example) "
+                f"and is a mistake if you meant another table{missing}")
+        fix = f"{remove} Suggestion: if you meant another table, write that table as right_ingredient."
+    if counts is not None:
+        what += ". " + _counts_sentence(found, counts, table)
     return what, fix
+
+
+def _counts_sentence(found: Mapping[str, Any], counts: Mapping[str, Any], table: str) -> str:
+    """The numbers of the build: rows before and after, and the rows whose key is missing (never matched)."""
+    sentence = f"Rows before the join: {counts['before']}; rows after: {counts['after']}"
+    if counts.get("missing_left") is not None:
+        columns = found["key_columns"][0]
+        sentence += (f"; rows with a missing key in {columns}: {counts['missing_left']} in the table at this step and "
+                     f"{counts['missing_right']} in {table!r}")
+        sentence += " (they find themselves a partner only with nulls_equal)" if found["nulls_equal"] else " (a missing key never matches)"
+    return sentence

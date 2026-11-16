@@ -205,28 +205,29 @@ def _j12_text(**extra):
     return problem.message + " | " + problem.fix
 
 
-def test_j12_text_for_a_plain_step_covers_a_unique_and_a_repeated_key():
+def test_j12_text_for_a_plain_step_says_what_a_repeated_key_and_a_missing_key_do():
+    """The default kind of join is left: a key value that appears a times and b times gives a x b rows; a missing key is kept once."""
     text = _j12_text()
-    assert "The result has the same rows if each value of the column appears once, and more rows if a value repeats; the columns are copied with the suffix `_right`." in text
+    assert text.startswith("Join of 'A' with itself on the same column ('id') with how 'left'.")
+    assert "gives a x b rows, and a row with a missing key is kept once, with empty copied columns; the columns are copied with the suffix `_right` | " in text
     assert "Suggestion: remove the step if you did not mean this." in text
-    assert text.startswith("Join of 'A' with itself on the same column")
-    assert len(text) < 330
+    assert len(text) < 450
 
 
 def test_j12_text_for_semi_says_no_column_is_copied():
-    """The anti-join of the base table with itself is no longer an advice: it is the error J15 (D-0078, test_anti_join_with_itself.py)."""
+    """The anti-join of the base table with itself is the advice J12 too (D-0183, test_self_join_rule.py)."""
     text = _j12_text(how="semi")
-    assert "No column is copied" in text and "semi" in text
-    assert "_right" not in text and "more rows" not in text
+    assert "No column is copied" in text and "semi" in text and "a row with a missing key is dropped" in text
+    assert "_right" not in text and "a x b" not in text
 
 
 def _j12_anti_text(*earlier):
-    """An anti-join that J15 does not catch: of a table joined before, or of the base table after a step that may change the key."""
+    """An anti-join that is not the base table itself: of a table joined before, or of the base table after a step that may change the key."""
     raw = valid()
     steps = raw["joins"]["AB"]["steps"]["tier1"]
     steps[:] = [*earlier, {"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "anti"}]
     problems = advices(raw, "J12")
-    assert len(problems) == 1 and advices(raw, "J15") == []
+    assert len(problems) == 1
     return problems[0].message + " | " + problems[0].fix
 
 
@@ -245,7 +246,7 @@ def test_j12_text_for_anti_of_the_base_table_after_a_step_that_writes_the_key():
     steps[:] = [{"action": "polars_with_columns", "named_exprs": {"id": "pl.col('id').str.to_uppercase()"}},
                 {"action": "polars_join", "right_ingredient": "A", "on": "id", "how": "anti"}]
     problem, = advices(raw, "J12")
-    assert "removes the rows whose key is found in 'A'" in problem.message and advices(raw, "J15") == []
+    assert "removes the rows whose key is found in 'A'" in problem.message
 
 
 def test_j12_text_names_the_suffix_of_the_step():
@@ -261,13 +262,14 @@ def test_the_same_key_pair_with_left_on_and_right_on_is_advised_too():
     assert len(advices(raw, "J12")) == 1
 
 
-def test_a_self_join_on_other_keys_is_not_advised():
+def test_a_self_join_on_other_keys_is_advised_too():
+    """D-0183: every self-join gets a message; before, this one got none."""
     raw = valid()
     raw["data_schemas"]["A"]["input_fields"]["parent"] = {"type": "String"}
     step = join_step(raw)
     step.pop("on")
     step.update(right_ingredient="A", left_on="parent", right_on="id")
-    assert advices(raw, "J12") == []
+    assert len(advices(raw, "J12")) == 1
 
 
 def test_a_join_with_another_table_is_not_advised():

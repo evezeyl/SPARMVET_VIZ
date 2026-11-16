@@ -77,5 +77,7 @@ def test_a_run_with_the_path_works(project):
 
 def test_the_hint_of_the_gallery_check_is_the_command_that_works():
     hint = CONVERT_HINT.format(name="old_one")
-    assert hint.startswith("PYTHONPATH=. ./.venv/bin/python assets/scripts/convert_gallery_examples.py --only old_one --apply")
+    # the command is the end of the line, so that pasting it into a shell works: the words about the folder come before it
+    assert hint == "From the project root run: PYTHONPATH=. ./.venv/bin/python assets/scripts/convert_gallery_examples.py --only old_one --apply"
+    assert hint.endswith("--apply") and "(" not in hint
     assert (ROOT / "assets" / "scripts" / "convert_gallery_examples.py").is_file()

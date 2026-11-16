@@ -77,11 +77,11 @@ def test_home_advice_entries_are_sorted_and_skip_empty():
     assert home_advice_entries({}) == []
 
 
-def test_validate_advice_entries_keep_heading_text_and_tip():
+def test_validate_advice_entries_keep_heading_and_one_sentence_of_text_and_tip():
     from app.modules.data_analysis_recipe_validator import validate_advice_entries
     rows = validate_advice_entries([{"location": "joins.AA", "problem": "p", "tip": "t"},
                                     {"location": "q", "problem": "p2", "tip": None}])
-    assert rows == [("Advice: joins.AA", "p", "t"), ("Advice: q", "p2", None)]
+    assert rows == [("Advice: joins.AA", "p. Fix: t"), ("Advice: q", "p2")]
     assert validate_advice_entries([]) == []
 
 

@@ -1,18 +1,17 @@
-"""No join of the base table with itself on the same key passes without a message (D-0078, D-0050).
+"""Every self-join builds and gets a message, and none is refused (D-0183, D-0050, D-0099).
 
-"Only the anti-join of a table with itself on the same key is an error; every other self-join is a warning" (Eve). Each case
-below is written once and run twice: through the recipe checker (the real catalogs) and through the build (`DataAssembler`).
-For each case the test states what the checker says (J15, the error; J12, the advice; or nothing, and why) and the rows
-that the join gives on a real table of five rows (key s1, s2, s2, s3 and a row with an empty key).
+Eve 2026-11-16 (replacing D-0078): "No error in Polars, then no error for us; a warning / caution is good." and "A self-join
+(a table joined with itself, the anti-join on the same key included) gives a warning, never an error." Polars reports nothing
+for it, and an anti-join of a table with itself is not always empty: it returns the rows whose key is missing, because Polars
+never matches a missing key.
 
-  - J15 cases: the build refuses; the rows it WOULD give are computed by running the actions without the check, so the claim
-    "no row that has a key remains" is shown, not assumed (the row with the empty key survives: it is found nowhere).
-  - J12 cases: the build runs as written; the rows are the real ones.
-  - not a self-join on the same key: the keys differ, so neither J15 nor J12 (a table joined with itself on other columns, for
-    example a parent and a child, is a real question). This is the one kind of self-join that gets no message; see the report.
-
-The row counts of the "warning with the row numbers" (second half of D-0078) are not built here: it needs the build to count
-rows before and after a join (a task of its own).
+Each case below is written once and run twice, on a real table of five rows (key s1, s2, s2, s3 and a row with an empty key):
+  - through the recipe checker with the real catalogs: exactly one advice J12 (severity A, a "Suggestion:" remedy), and no
+    error of any kind for the join (there is no code J15 any more);
+  - through the build (`DataAssembler`): it builds and gives the rows Polars gives, and a caution (a `PipelineError` of
+    severity "warning") with the real numbers: rows before the join, rows after it, rows with a missing key in the key
+    columns (left table, right table). The text of the caution starts with the text of the advice: one function writes both.
+A join with a table that is not already held (a normal join) gets nothing from either.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_every_self_join_gets_a_message.py -q
 """
@@ -26,8 +25,6 @@ import yaml
 import transformer.actions  # noqa: F401  (loads the registry)
 from app.modules.data_analysis_recipe_validator import checker_catalogs
 from transformer.data_assembler import DataAssembler
-from transformer.registry import get_action_function
-from utils.errors import TransformationError
 from utils.recipe_check import check_recipe
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -48,24 +45,25 @@ def join(right, how, **keys):
 
 ANTI = join(A, "anti")
 FILTER = {"action": "modif_filter", "column": "value", "op": "gt", "value": 1.0, "na": "remove"}
-# (name, steps, what the checker says, rows the join gives)
+# (name, steps, rows before the join, rows after it, rows with a missing key: left table, right table)
 CASES = [
-    ("1 plain", [ANTI], "J15", 1),
-    ("2 after a filter", [FILTER, ANTI], "J15", 1),
-    ("3 after a left join of B", [join(B, "left"), ANTI], "J15", 1),
-    ("4 left_on = right_on", [join(A, "anti", left_on=["sample_id"], right_on=["sample_id"])], "J15", 1),
-    ("5 composite key, same order", [join(A, "anti", on=["sample_id", "group"])], "J15", 1),
-    ("6 composite key, other order", [join(A, "anti", left_on=["sample_id", "group"], right_on=["group", "sample_id"])], None, 5),
-    ("7 rename of another column", [{"action": "polars_rename", "mapping": {"value": "measurement"}}, ANTI], "J15", 1),
-    ("8 polars_remove", [{"action": "polars_remove", "predicates": ["pl.col('value') < 2"]}, ANTI], "J15", 1),
-    ("9 polars_head", [{"action": "polars_head", "n": 3}, ANTI], "J15", 0),
-    ("10 with_columns on another column", [{"action": "polars_with_columns", "named_exprs": {"double": "pl.col('value') * 2"}}, ANTI], "J15", 1),
-    ("11 with_columns on the key", [{"action": "polars_with_columns", "named_exprs": {"sample_id": "pl.col('sample_id').str.to_uppercase()"}}, ANTI], "J12", 5),
-    ("12 anti after a full join of B", [join(B, "full"), ANTI], "J12", 2),
-    ("13a left self-join", [join(A, "left")], "J12", 7),
-    ("13b semi self-join", [join(A, "semi")], "J12", 4),
-    ("13c inner self-join", [join(A, "inner")], "J12", 6),
-    ("14 anti of B after a left join of B (a real question)", [join(B, "left"), join(B, "anti")], "J12", 3),
+    ("1 plain anti", [ANTI], 5, 1, 1, 1),
+    ("2 after a filter", [FILTER, ANTI], 4, 1, 1, 1),
+    ("3 after a left join of B", [join(B, "left"), ANTI], 5, 1, 1, 1),
+    ("4 left_on = right_on", [join(A, "anti", left_on=["sample_id"], right_on=["sample_id"])], 5, 1, 1, 1),
+    ("5 composite key, same order", [join(A, "anti", on=["sample_id", "group"])], 5, 1, 1, 1),
+    ("6 composite key, other order", [join(A, "anti", left_on=["sample_id", "group"], right_on=["group", "sample_id"])], 5, 5, 1, 1),
+    ("7 rename of another column", [{"action": "polars_rename", "mapping": {"value": "measurement"}}, ANTI], 5, 1, 1, 1),
+    ("8 polars_remove", [{"action": "polars_remove", "predicates": ["pl.col('value') < 2"]}, ANTI], 4, 1, 1, 1),
+    ("9 polars_head", [{"action": "polars_head", "n": 3}, ANTI], 3, 0, 0, 1),
+    ("10 with_columns on another column", [{"action": "polars_with_columns", "named_exprs": {"double": "pl.col('value') * 2"}}, ANTI], 5, 1, 1, 1),
+    ("11 with_columns on the key", [{"action": "polars_with_columns", "named_exprs": {"sample_id": "pl.col('sample_id').str.to_uppercase()"}}, ANTI], 5, 5, 1, 1),
+    ("12 anti after a full join of B", [join(B, "full"), ANTI], 6, 2, 2, 1),
+    ("13a left self-join", [join(A, "left")], 5, 7, 1, 1),
+    ("13b semi self-join", [join(A, "semi")], 5, 4, 1, 1),
+    ("13c inner self-join", [join(A, "inner")], 5, 6, 1, 1),
+    ("14 anti of B after a left join of B", [join(B, "left"), join(B, "anti")], 5, 3, 1, 0),
+    ("15 other key columns (group against sample_id)", [join(A, "left", left_on=["group"], right_on=["sample_id"])], 5, 5, 0, 1),
 ]
 IDS = [case[0] for case in CASES]
 
@@ -76,81 +74,90 @@ def recipe_with(steps):
     return raw
 
 
-def advices_and_errors(steps):
-    result = check_recipe(recipe_with(steps), "run", file_stem="simple_template", catalogs=CATALOGS)
-    return {p.code: p for p in result.problems if p.code in ("J12", "J15")}
+def checked(steps):
+    return check_recipe(recipe_with(steps), "run", file_stem="simple_template", catalogs=CATALOGS)
 
 
-def run_without_the_check(steps):
-    """What the steps give when nothing refuses them: each action applied in turn on the tables."""
-    frames = tables()
-    lf = frames[A]
-    for step in steps:
-        spec = {k: v for k, v in step.items() if k != "action"}
-        if "right_ingredient" in step:
-            spec["__right_df__"] = frames[step["right_ingredient"]]
-        lf = get_action_function(step["action"])(lf, spec)
-    return lf.collect()
+def build(steps, frames=None):
+    assembler = DataAssembler(frames or tables(), recipe_id="r", join_id="main_collection")
+    return assembler, assembler.assemble(copy.deepcopy(steps)).collect()
 
 
-def build(steps):
-    return DataAssembler(tables(), recipe_id="r", join_id="main_collection").assemble(copy.deepcopy(steps)).collect()
+@pytest.mark.parametrize("name,steps,before,after,missing_left,missing_right", CASES, ids=IDS)
+def test_the_checker_gives_one_advice_and_no_error(name, steps, before, after, missing_left, missing_right):
+    result = checked(steps)
+    found = [p for p in result.problems if p.code == "J12"]
+    assert len(found) == 1, (name, [p.code for p in result.problems])
+    assert found[0].severity == "A" and found[0].fix.startswith("Suggestion:") and "Fix: Suggestion" not in found[0].text()
+    assert not [p for p in result.problems if p.code == "J15" or (p.code.startswith("J") and p.severity == "E")], name
+    assert result.ok, [p.text() for p in result.errors]
 
 
-@pytest.mark.parametrize("name,steps,code,rows", CASES, ids=IDS)
-def test_the_checker_says_j15_j12_or_nothing_as_stated(name, steps, code, rows):
-    found = advices_and_errors(steps)
-    assert sorted(found) == ([code] if code else []), (name, sorted(found))
-    if code == "J15":
-        assert found["J15"].severity == "E"
-    if code == "J12":
-        assert found["J12"].severity == "A" and found["J12"].fix.startswith("Suggestion:")
+@pytest.mark.parametrize("name,steps,before,after,missing_left,missing_right", CASES, ids=IDS)
+def test_the_build_runs_the_join_as_written_and_cautions_with_the_numbers(name, steps, before, after, missing_left, missing_right):
+    assembler, result = build(steps)              # nothing is refused
+    assert len(assembler.cautions) == 1, name
+    caution = assembler.cautions[0]
+    assert caution.severity == "warning" and result.height == after
+    found = caution.evidence
+    assert (found["row_count_before"], found["row_count_after"], found["rows_with_missing_key_left"], found["rows_with_missing_key_right"]) \
+        == (before, after, missing_left, missing_right), name
+    assert f"Rows before the join: {before}; rows after: {after}" in caution.problem
+    assert caution.fix.startswith("Suggestion:")
 
 
-@pytest.mark.parametrize("name,steps,code,rows", CASES, ids=IDS)
-def test_the_build_follows_the_same_rule_and_the_rows_are_the_stated_ones(name, steps, code, rows):
-    if code == "J15":
-        with pytest.raises(TransformationError, match="with itself"):
-            build(steps)
-        shown = run_without_the_check(steps)  # the refusal is right: this is what it would have given
-        assert shown.height == rows
-        assert shown["sample_id"].drop_nulls().len() == 0 or name.startswith(("9", "6"))
-    else:
-        assert build(steps).height == rows
+@pytest.mark.parametrize("name,steps,before,after,missing_left,missing_right", CASES, ids=IDS)
+def test_the_caution_starts_with_the_text_of_the_advice(name, steps, before, after, missing_left, missing_right):
+    advice = next(p for p in checked(steps).problems if p.code == "J12")
+    caution = build(steps)[0].cautions[0]
+    assert caution.problem.startswith(advice.message) and caution.fix == advice.fix
 
 
-def test_in_every_j15_case_only_the_row_with_the_empty_key_survives():
-    """The text says 'no row that has a key': a row whose key is empty is found nowhere, so it stays."""
-    for name, steps, code, _ in CASES:
-        if code == "J15":
-            keys = run_without_the_check(steps)["sample_id"].to_list()
-            assert all(key is None for key in keys), (name, keys)
+def test_the_anti_self_join_gives_the_rows_with_a_missing_key_because_polars_never_matches_a_missing_key():
+    _, result = build([ANTI])
+    assert result["sample_id"].to_list() == [None] and result["value"].to_list() == [5.0]
 
 
-def test_the_j12_text_for_anti_is_true_for_a_table_joined_before():
-    """Left join of B, then anti of B on the key: 5 rows in, the 3 whose key is not in B are kept (the old text said 'removes every row')."""
-    steps = [join(B, "left"), join(B, "anti")]
-    text = advices_and_errors(steps)["J12"].message
-    assert "removes the rows whose key is found in 'metadata_schema'" in text and "matches itself" not in text
-    assert build(steps)["sample_id"].to_list() == ["s2", "s2", None]
+def test_two_rows_with_a_missing_key_show_the_count():
+    frames = {A: pl.LazyFrame({"sample_id": ["s1", None, "s2", None], "value": [1, 2, 3, 4]})}
+    assembler, result = build([ANTI], frames)
+    assert result.height == 2
+    found = assembler.cautions[0].evidence
+    assert found["rows_with_missing_key_left"] == 2 and found["rows_with_missing_key_right"] == 2
+    assert "rows with a missing key in ['sample_id']: 2 in the table at this step and 2 in 'primary_data'" in assembler.cautions[0].problem
 
 
-def test_the_j12_text_for_anti_is_true_after_a_full_join_of_the_other_table():
-    steps = [join(B, "full"), ANTI]
-    text = advices_and_errors(steps)["J12"].message
-    assert "removes the rows whose key is found in 'primary_data'" in text
-    # the row that only B has (s9) has an empty left key after a full join, so it stays with the row that had no key
-    assert build(steps)["sample_id"].to_list() == [None, None]
+def test_the_same_table_without_a_missing_key_gives_an_empty_result_and_the_numbers_say_so():
+    frames = {A: pl.LazyFrame({"sample_id": ["s1", "s2"], "value": [1, 2]})}
+    assembler, result = build([ANTI], frames)
+    assert result.height == 0
+    found = assembler.cautions[0].evidence
+    assert (found["row_count_before"], found["row_count_after"], found["rows_with_missing_key_left"]) == (2, 0, 0)
+    assert "If no row has a missing key, the result is empty" in next(p for p in checked([ANTI]).problems if p.code == "J12").message
 
 
-def test_the_j15_message_has_one_period_between_what_happens_and_the_suggestions():
-    problem = advices_and_errors([ANTI])["J15"]
-    assert not problem.message.endswith(".") and problem.fix.endswith(".")
-    text = problem.text()
-    assert ".." not in text and "Fix: Suggestion" not in text and text.count("Suggestion:") == 2
+def test_the_anti_text_is_the_true_sentence_and_not_the_one_of_the_old_error():
+    message = next(p for p in checked([ANTI]).problems if p.code == "J12").message
+    assert "keeps only the rows whose key is missing" in message and "a missing key never matches" in message
+    assert "no row that has a key" not in message
 
 
-def test_no_text_of_a_self_join_doubles_the_label():
-    for _, steps, code, _ in CASES:
-        if code:
-            assert "Fix: Suggestion" not in advices_and_errors(steps)[code].text()
+def test_the_as_of_join_and_the_join_on_conditions_get_their_advice():
+    asof = {"action": "polars_join_asof", "right_ingredient": A, "on": "value", "strategy": "backward"}
+    where = {"action": "modif_join_where", "right_ingredient": A, "predicates": ["pl.col('value') < pl.col('value_right')"]}
+    for step, label in ((asof, "as-of join"), (where, "join on conditions")):
+        found = [p for p in checked([step]).problems if p.code == "J12"]
+        assert len(found) == 1 and found[0].severity == "A" and label in found[0].message
+
+
+def test_a_join_with_a_table_that_is_not_held_gets_no_message_and_no_caution():
+    steps = [join(B, "left")]
+    assert [p for p in checked(steps).problems if p.code == "J12"] == []
+    assembler, result = build(steps)
+    assert assembler.cautions == [] and result.height == 5
+
+
+def test_no_case_raises_at_the_check_or_the_build():
+    for _, steps, *_ in CASES:
+        checked(steps)
+        build(steps)

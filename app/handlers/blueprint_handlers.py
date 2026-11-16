@@ -2906,10 +2906,9 @@ def define_server(input, output, session, *,
             ui.tags.div(
                 ui.tags.div(heading, style="font-size:0.72rem;font-weight:600;"),
                 ui.tags.div(text, style="font-size:0.72rem;"),
-                ui.tags.div(tip, style="font-size:0.72rem;color:#6c757d;") if tip else None,
                 style="margin:2px 0 6px 0;padding:4px 6px;background:#fff3cd;border-radius:3px;",
             )
-            for heading, text, tip in validate_advice_entries(result.get("advice_problems", []))
+            for heading, text in validate_advice_entries(result.get("advice_problems", []))
         ]
 
         return ui.div(

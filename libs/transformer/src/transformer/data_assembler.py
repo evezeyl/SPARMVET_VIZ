@@ -34,6 +34,7 @@ class DataAssembler:
         self.ingredients = ingredients
         self.recipe_id = recipe_id
         self.join_id = join_id
+        self.cautions: List[PipelineError] = []  # severity "warning": what a self-join did, with the row numbers (not an error; printed, not yet carried to the screen)
         self.join_checks: List[JoinCheck] = []  # the joins that write `validate`, for the plain message of a refusal (join_diagnosis)
 
     @staticmethod
@@ -117,16 +118,46 @@ class DataAssembler:
                 {"left_column": left_col, "right_column": right_col, "left_type": str(left_type), "right_type": str(right_type)},
             )
 
-    def _check_anti_join_with_itself(self, earlier: List[Dict[str, Any]], step: Dict[str, Any], index: int, base_id: str) -> None:
-        """Fail on the anti-join of the base table with itself on the same key (D-0078): it would return no row, silently.
+    def _self_join_caution(self, earlier: List[Dict[str, Any]], step: Dict[str, Any], index: int, before: pl.LazyFrame, after: pl.LazyFrame) -> None:
+        """Say what a self-join did, with the numbers (D-0183): a caution, never an error; the join has run as written.
 
-        The rule and the words are `utils.join_keys` (the checker says the same, J15). Every other self-join runs as written.
+        `utils.join_keys.self_join` decides and `self_join_text` writes the text (the checker says the same, J12, without the
+        numbers). The numbers are counted here, where the data is known: rows before and after the join, and the rows whose
+        key is missing in the key columns of the table at this step and of the right table (a missing key never matches).
+        The caution is printed (the way every message of the assembler and the ingestion reaches the console) and kept in
+        `self.cautions`; no carrier takes it to the screen yet (report SELF-JOIN-WARN-1).
         """
-        found = join_keys.anti_join_with_itself(base_id, earlier, step)
+        found = join_keys.self_join(list(self.ingredients)[0], earlier, step)
         if found is None:
             return
-        what, fix = join_keys.anti_join_with_itself_text(found)
-        self._fail_join(step, index, what, fix, {"table": found["table"], "keys": str(found["keys"])})
+        counts = None
+        try:
+            left_columns, right_columns = found["key_columns"]
+            right = self.ingredients[found["table"]]
+
+            def missing(lf: pl.LazyFrame, columns: List[str]):
+                if not columns:
+                    return None
+                return lf.select(pl.any_horizontal([pl.col(c).is_null() for c in columns]).sum()).collect().item()
+
+            counts = {"before": before.select(pl.len()).collect().item(), "after": after.select(pl.len()).collect().item(),
+                      "missing_left": missing(before, left_columns), "missing_right": missing(right, right_columns)}
+        except (Exception, PanicException) as exc:  # the join itself may fail when it runs; that error is reported where it is written (anchor.py)
+            note = f" (the row numbers could not be counted here: {type(exc).__name__})"
+        else:
+            note = ""
+        what, fix = join_keys.self_join_text(found, counts)
+        pe = PipelineError(
+            component="DataAssembler", problem=what + note,
+            location=f"data analysis recipe '{self.recipe_id}', join '{self.join_id}', assembly step {index}: action='{step['action']}', right_ingredient='{found['table']}'",
+            fix=fix, who="data_analysis_recipe_author", category="assembly", surface="notification", severity="warning",
+            evidence={**({"row_count_before": counts["before"], "row_count_after": counts["after"],
+                          "rows_with_missing_key_left": counts["missing_left"], "rows_with_missing_key_right": counts["missing_right"]} if counts else {}),
+                      "table": found["table"], "how": str(found["how"])},
+            reference="recipe_format_spec.md 7.5",
+        )
+        print(pe.format())
+        self.cautions.append(pe)
 
     @staticmethod
     def _canonical_steps(steps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -248,9 +279,6 @@ class DataAssembler:
                 consolidated_lf = self.ingredients[first_key]
                 plain_lf = consolidated_lf
 
-            if action_name == JOIN and right_id:
-                self._check_anti_join_with_itself(steps[:i], step, i + 1, list(self.ingredients)[0])
-
             if action_name in (JOIN, JOIN_ASOF) and right_id:
                 self._check_join_key_types(step, i + 1, consolidated_lf, self.ingredients[right_id])
 
@@ -288,6 +316,7 @@ class DataAssembler:
                 raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
 
             try:
+                before_lf = consolidated_lf
                 consolidated_lf = action_func(consolidated_lf, step)
                 if track_plain:
                     plain_lf = action_func(plain_lf, {k: v for k, v in step.items() if k != "validate"})
@@ -373,5 +402,8 @@ class DataAssembler:
                 )
                 print(pe.format())
                 raise TransformationError(pe.problem, tip=pe.fix, pipeline_error=pe) from exc
+
+            if right_id and action_name in join_keys.JOIN_ACTIONS:
+                self._self_join_caution(steps[:i], step, i + 1, before_lf, consolidated_lf)
 
         return consolidated_lf

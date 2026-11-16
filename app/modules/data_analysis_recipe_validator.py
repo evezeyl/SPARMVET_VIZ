@@ -43,7 +43,7 @@ import yaml
 from transformer.data_wrangler import DataWrangler
 from utils.step_migration import old_action_hint, removed_action_catalog
 from utils.config_loader import ConfigManager
-from utils.fix_text import fix_label
+from utils.fix_text import with_fix
 from utils.recipe_loader import check_recipe_file
 
 # What the recipe checker must have looked at before a recipe is accepted (its `coverage`): the form of the file, every
@@ -67,10 +67,11 @@ class DataAnalysisRecipeProblem:
     tip: Optional[str] = None
 
     def __str__(self) -> str:
-        text = f"{self.data_analysis_recipe}: {self.location}: {self.problem}"
-        if not self.tip:
-            return text
-        return f"{text} {self.tip}" if self.tip.startswith("Suggestion:") else f"{text} Tip: {self.tip}"
+        return with_fix(f"{self.data_analysis_recipe}: {self.location}: {self.problem}", self.tip or "", label="Tip")
+
+    def text(self) -> str:
+        """The problem and its tip as one sentence, the way HOME's gate notes show it (`utils.fix_text.with_fix`)."""
+        return with_fix(self.problem, self.tip or "")
 
 
 def find_data_analysis_recipes(directory: Union[str, Path]) -> list[Path]:
@@ -159,7 +160,7 @@ def _fragment_report(raw) -> list[str]:
             continue
         flat = {**{k: v for k, v in step.items() if k != "params"}, **(step.get("params") or {})}
         for p in step_problems(name, flat, actions[name]):
-            lines.append(f"[{p.code}] {where} ({name}): {p.message}" + (f" {fix_label(p.fix)}" if p.fix else ""))
+            lines.append(with_fix(f"[{p.code}] {where} ({name}): {p.message}", p.fix))
     return lines
 
 
@@ -213,8 +214,7 @@ def _load_fragment(path: Path) -> tuple[Optional[dict], list[str]]:
     except Exception as exc:
         return None, [f"[LOAD] the file cannot be read: {exc}"]
     if found:
-        return None, [f"[LOAD] [{p.code}] {p.path + ': ' if p.path else ''}{p.message}" + (f" {fix_label(p.fix)}" if p.fix else "")
-                      for p in found]
+        return None, [with_fix(f"[LOAD] [{p.code}] {p.path + ': ' if p.path else ''}{p.message}", p.fix) for p in found]
     return raw, []
 
 
@@ -247,8 +247,7 @@ def uploaded_recipe_report(raw, profile: str = "build") -> list[str]:
         result = check_recipe(raw, profile, catalogs=checker_catalogs())
     except Exception as exc:
         return [f"[CHECK] the recipe could not be checked: {exc}"]
-    return [f"[{p.code}] {p.path + ': ' if p.path else ''}{p.message}" + (f" {fix_label(p.fix)}" if p.fix else "")
-            for p in result.errors]
+    return [with_fix(f"[{p.code}] {p.path + ': ' if p.path else ''}{p.message}", p.fix) for p in result.errors]
 
 
 def checker_problems(path: Path, profile: str = "run") -> list[DataAnalysisRecipeProblem]:
@@ -285,9 +284,10 @@ def home_advice_entries(advices: dict) -> list[tuple[str, list[str]]]:
     return [(name, list(texts)) for name, texts in sorted(advices.items()) if texts]
 
 
-def validate_advice_entries(advice_problems: list[dict]) -> list[tuple[str, str, str | None]]:
-    """What Blueprint's Validate lists as advice: (heading, text, tip) per advice. Advice never changes PASS or FAIL."""
-    return [("Advice: " + p["location"], p["problem"], p.get("tip") or None) for p in advice_problems]
+def validate_advice_entries(advice_problems: list[dict]) -> list[tuple[str, str]]:
+    """What Blueprint's Validate lists as advice: (heading, text) per advice, the text being the problem and its tip as one
+    sentence (`utils.fix_text.with_fix`, the same as HOME and the command line). Advice never changes PASS or FAIL."""
+    return [("Advice: " + p["location"], with_fix(p["problem"], p.get("tip") or "")) for p in advice_problems]
 
 
 def validate_data_analysis_recipe(path: Union[str, Path], profile: str = "run") -> list[DataAnalysisRecipeProblem]:
