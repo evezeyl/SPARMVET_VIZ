@@ -3,6 +3,9 @@
 Before it said "re-assembling". The first test runs the situation the sentence describes and checks every claim of the
 words against the real behaviour; the others check the form Eve asked for (what happened, then "Suggestion: ...").
 
+Mutation index (grep "MUTATION"): M10 = the branch "the tables follow the data" of the notice is always true
+(`notice_after_data_change` returns the "follows" sentence whatever the keys) -> test_the_view_follows_the_data_only_when_...
+
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_data_change_notice.py -q
 """
 from pathlib import Path
@@ -60,7 +63,7 @@ def test_the_sentence_after_an_import_of_this_session_says_the_tables_are_rebuil
 
 
 def test_the_view_follows_the_data_only_when_its_keys_describe_the_files_on_disk():
-    """The decision HOME takes (home_theater.py, `_sync_session_provenance`) is this function."""
+    """MUTATION M10: the decision HOME takes (home_theater.py, `_sync_session_provenance`) is this function; always-true must fail here."""
     assert notice_after_data_change("hash-now", "hash-now") == data_files_changed_notice(True)       # after an import of this session
     assert notice_after_data_change("hash-before", "hash-now") == data_files_changed_notice(False)   # changed from outside
     assert notice_after_data_change(None, "hash-now") == data_files_changed_notice(False)            # keys unreadable: the careful answer

@@ -4,6 +4,15 @@ HOME computes its keys once and keeps them while the recipe or the data change o
 then built from the files of NOW. It must be stored under the key of those files, never under the key HOME holds: the next
 read with the held key (or after the author changed the recipe back) would serve the wrong table as valid.
 
+Mutation index (each is a change of the code that one named test must see fail; grep "MUTATION"):
+  M6   Tier 2 `unchanged` ignores the check of the Tier 1 inputs     -> test_a_tier2_whose_tier1_was_built_just_now_is_not_stored_...
+  M6b  Tier 2 `unchanged` ignores that the Tier 1 itself saw a change -> test_a_tier1_built_from_a_mix_makes_its_tier2_unstorable_...
+  M7   Tier 2 `unchanged` ignores the comparison of the tier-2 steps   -> test_a_tier2_is_not_stored_when_its_own_steps_change_...
+  M9   `inputs_changed` says "nothing changed" when the recipe can no longer be read or its file is gone
+                                                                       -> test_a_recipe_that_can_no_longer_be_read_is_a_change_...
+  M9c  the Tier 2 check ignores a recipe that cannot be read           -> test_a_recipe_that_cannot_be_read_when_tier2_is_about_to_be_stored_...
+  (M10, the notice branch "the tables follow", is in test_data_change_notice.py)
+
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_stale_key_store.py -q
 """
 from unittest import mock
@@ -124,7 +133,7 @@ def change_when_the_tier2_file_is_about_to_be_written(world, change):
 
 
 def test_a_tier2_whose_tier1_was_built_just_now_is_not_stored_when_the_data_changes_during_the_tier2_build(tmp_path):
-    """M6: the check of the Tier 1 inputs is part of the Tier 2 check."""
+    """MUTATION M6: the check of the Tier 1 inputs is part of the Tier 2 check."""
     w = World(tmp_path)
     w.write_data_analysis_recipe(steps_tier2=[FILTER_A])
     held = w.orch.compute_data_analysis_recipe_keys("tiny")
@@ -137,7 +146,7 @@ def test_a_tier2_whose_tier1_was_built_just_now_is_not_stored_when_the_data_chan
 
 
 def test_a_tier2_is_not_stored_when_its_own_steps_change_during_its_build(tmp_path):
-    """M7: the tier-2 steps are compared after the build. The Tier 1 is served from the store, so only the steps can change."""
+    """MUTATION M7: the tier-2 steps are compared after the build. The Tier 1 is served from the store, so only the steps can change."""
     w = World(tmp_path)
     w.write_data_analysis_recipe(steps_tier2=[FILTER_A])
     first = w.orch.compute_data_analysis_recipe_keys("tiny")
@@ -202,7 +211,7 @@ def test_a_recipe_that_changed_during_the_build_is_named_as_the_recipe(tmp_path)
 
 
 def test_a_recipe_that_can_no_longer_be_read_is_a_change_named_as_such_not_silence(tmp_path):
-    """M9: an unreadable recipe or a missing file must never read as "nothing changed"."""
+    """MUTATION M9: an unreadable recipe or a missing file must never read as "nothing changed"."""
     w = World(tmp_path)
     built_from = w.orch.compute_data_analysis_recipe_keys("tiny")
     (w.data_analysis_recipes_dir / "tiny.yaml").write_text("id: tiny\ndata_schemas: [unclosed\n")
@@ -220,7 +229,7 @@ def test_a_data_file_that_is_gone_is_a_change_of_the_data(tmp_path):
 
 
 def test_a_tier1_built_from_a_mix_makes_its_tier2_unstorable_even_if_the_data_is_back_by_then(tmp_path):
-    """The Tier 1 saw the data change; if the file is restored before Tier 2 is written, the Tier 2 check alone would pass."""
+    """MUTATION M6b: the Tier 1 saw the data change; if the file is restored before Tier 2 is written, the Tier 2 check alone would pass."""
     w = World(tmp_path)
     w.write_data_analysis_recipe(steps_tier2=[FILTER_A])
     held = w.orch.compute_data_analysis_recipe_keys("tiny")
@@ -241,6 +250,7 @@ def test_a_tier1_built_from_a_mix_makes_its_tier2_unstorable_even_if_the_data_is
 
 
 def test_a_recipe_that_cannot_be_read_when_tier2_is_about_to_be_stored_is_told_and_nothing_is_stored(tmp_path):
+    """MUTATION M9c: the Tier 2 check turns an unreadable recipe into "nothing changed"."""
     w = World(tmp_path)
     w.write_data_analysis_recipe(steps_tier2=[FILTER_A])
     first = w.orch.compute_data_analysis_recipe_keys("tiny")
