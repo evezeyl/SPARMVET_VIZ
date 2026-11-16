@@ -21,6 +21,7 @@ info:
 data_schemas:
   fg_metadata:
     label: "fg metadata"
+    description: "One row per animal sample with host species, specimen source, final diagnosis and infection site."
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_metadata.tsv
@@ -31,6 +32,7 @@ data_schemas:
 
   fg_phenotypes:
     label: "fg phenotypes"
+    description: "One row per sample and antibiotic test (MIC id) with the breakpoint and the predicted phenotype."
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_phenotypes.tsv
@@ -41,6 +43,7 @@ data_schemas:
 
   fg_genotypes:
     label: "fg genotypes"
+    description: "One row per resistance gene line reported for a sample, with the gene type, identifier, gene family and resistance class; the same gene can appear on more than one row of a sample."
     source:
       type: local_tsv
       path: ./libs/transformer/tests/data/fg_genotypes.tsv
@@ -72,15 +75,15 @@ analysis_groups:
       plot_a_phenotype_bar:
         label: "Plot A Phenotype Bar"
         taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
-        description: "Phenotypic resistance distribution per antibiotic. Count of phenotype (R/S/I) per antibiotic (mic_id)."
+        description: "Bars count the rows of the joined table for each antibiotic (mic_id), coloured by predicted phenotype; the joined table repeats every antibiotic test once per resistance gene row of its sample, so a sample with more genes weighs more."
         spec: !include 'figshare_integration/plots/plot_a_phenotype_bar.yaml'
       plot_b_genotype_bar:
         label: "Plot B Genotype Bar"
         taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
-        description: "Resistance gene families distribution by host animal. Count of gene_name_family per host species."
+        description: "Bars count the rows of the joined table for each host animal, coloured by gene family; the joined table repeats every gene row once per antibiotic test of its sample, so a sample with more tests weighs more."
         spec: !include 'figshare_integration/plots/plot_b_genotype_bar.yaml'
       plot_c_resistance_class:
         label: "Plot C Resistance Class"
         taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
-        description: "Resistance class distribution by host animal. Count of resistance_class faceted by host_animal_common."
+        description: "Bars count the rows of the joined table for each resistance class, coloured by host animal; the joined table repeats every gene row once per antibiotic test of its sample, so a sample with more tests weighs more."
         spec: !include 'figshare_integration/plots/plot_c_resistance_class.yaml'

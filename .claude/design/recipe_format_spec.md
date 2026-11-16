@@ -638,6 +638,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | J01 | E | unknown key in a join (`info`, `output_fields`, `final_contract`, ...) | replacement |
 | J02 | E | join without `label` | |
 | J03 | A | join without `description` | |
+| D01 | A | a `description` (info, schema, join, group or plot) with more `(` than `)`: probably cut where an unquoted ` #` started a YAML comment (RECIPE-FIXES-1, 2026-11-16) | put the text in quotes |
 | J04 | E | `ingredients` missing, empty, not `{dataset_id}` items, unknown id, repeated id | |
 | J05 | E | `right_ingredient` not in the join's ingredients; `on` and `left_on` both or neither | |
 | J06 | E | `labels` not a mapping of text to text | |

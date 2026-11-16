@@ -36,7 +36,7 @@ Discrete metadata (species, ST type, resistance class) is declared as `String` i
 
 ## 4. The "Clean-then-Cast" Workflow
 
-Data typing and cleaning have a fixed order: the declared type is applied when the file is read, then `strip` and `null_values`, then the wrangling steps work on typed columns.
+Data typing and cleaning have a fixed order: the file is read as text, then `strip` is applied, then `null_values`, then the declared type, and only then do the wrangling steps work on typed columns.
 
 ### Why text fields are `String`
 Polars `Categorical` and `Enum` columns are integer-encoded once materialized, and a text step (`str.*`) on an `Enum` column fails (it expects `String`). A `String` column can be used by any text step and by a join with any other `String` key.
@@ -45,7 +45,7 @@ Polars `Categorical` and `Enum` columns are integer-encoded once materialized, a
 Text-cleaning steps work on `String` columns. The engine does not cast to `Categorical` at the end of the pipeline; the type of a column is the one declared in `input_fields` (or the one a step gives it).
 
 **Order of Operations:**
-1.  **Ingestion**: the file is read as text; `strip` and `null_values` are applied; each column is parsed with its declared type. A value the type cannot read stops the load.
+1.  **Ingestion**: the file is read as text; `strip` is applied, then `null_values`, then each column is parsed with its declared type. A value the type cannot read stops the load.
 2.  **Wrangling**: the steps of `tier1` and `tier2`, on typed columns.
 3.  **Plot**: a `String` column is drawn in alphabetical order, an `Enum` column in its written order.
 

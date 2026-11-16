@@ -32,6 +32,11 @@ def without(raw, *path):
     return raw
 
 
+def set_description(raw, text):
+    raw["joins"]["AB"]["description"] = text
+    return raw
+
+
 def float_key():
     raw = valid()
     raw["data_schemas"]["A"]["input_fields"]["id"]["type"] = "Float64"
@@ -53,6 +58,7 @@ CASES = {
     "G02": (lambda: without(valid(), "analysis_groups", "g", "description"), CATALOGS),
     "P02": (lambda: without(valid(), "analysis_groups", "g", "plots", "p", "description"), CATALOGS),
     "J12": (self_join, CATALOGS),
+    "D01": (lambda: set_description(valid(), "The join ... (issue"), CATALOGS),
     "J13": (float_key, CATALOGS),
     "ST13": (lambda: order_recipe([order_step("polars_sort", maintain_order=False), order_step("polars_head")]), ORDER_CATALOG),
     "ST14": (lambda: ties_recipe([{"action": "polars_top_k"}]), TIES_CATALOG),

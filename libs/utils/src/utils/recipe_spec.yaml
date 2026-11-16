@@ -98,9 +98,9 @@ renamed:
     height: "removed"
     show_legend: "removed"
 
-# old field type names -> the replacement (spec 7.4; `categorical` was cast to Categorical after reading, so it stays Categorical)
+# old field type names -> the replacement (spec 7.4). The migration writes the first word; `categorical` was cast to Categorical after reading.
 renamed_types:
-  categorical: "Categorical (the old pipeline read it as text and cast it to Categorical; String would change the order of the levels in a plot)"
+  categorical: "Categorical"
   utf8: "String"
   string: "String"
   character: "String"
@@ -112,6 +112,13 @@ renamed_types:
   date: "Date"
   bool: "Boolean"
   boolean: "Boolean"
+
+# what the checker and the reader suggest for an old word that has more than one good replacement (Eve, 2026-11-15)
+type_suggestions:
+  categorical:
+    - "Suggestion: write `String` for a category with no order (the levels are then drawn in alphabetical order)."
+    - "Suggestion: write `Enum` with `categories:` in the order you want when the order has a meaning."
+    - "`Categorical` is also accepted (the levels then follow the order of the rows in the file)."
 
 # the vocabulary of the gallery taxonomy (spec section 9); open: a new term does not change format_version
 gallery:

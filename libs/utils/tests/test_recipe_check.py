@@ -187,6 +187,7 @@ CASES = [
     ("J01", "E", lambda r: r["joins"]["AB"].update(info="s"), "run"),
     ("J02", "E", lambda r: r["joins"]["AB"].pop("label"), "run"),
     ("J03", "A", lambda r: r["joins"]["AB"].pop("description"), "run"),
+    ("D01", "A", lambda r: r["joins"]["AB"].update(description="One row per sample (issue"), "run"),
     ("J04", "E", lambda r: r["joins"]["AB"].update(ingredients=["A", "B"]), "run"),
     ("J04", "E", lambda r: r["joins"]["AB"].update(ingredients=[]), "run"),
     ("J04", "E", lambda r: r["joins"]["AB"]["ingredients"].append({"dataset_id": "Ghost"}), "run"),
@@ -263,9 +264,17 @@ def test_a_problem_reads_as_recipe_path_what_and_fix():
     assert "Float64" in text and "Fix:" in text
 
 
-def test_categorical_is_refused_with_this_was_string():
-    result = check(mutated(lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(type="categorical")))
-    assert "String" in result.problems[0].fix
+def test_old_categorical_is_refused_with_the_three_suggestions():
+    """Eve 2026-11-15: String for a category with no order, Enum for an order, Categorical also accepted.
+
+    The order drawn for each was verified on a plot: String alphabetical, Enum as written, Categorical as the rows come.
+    """
+    problem = check(mutated(lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(type="categorical"))).problems[0]
+    assert "no longer read" in problem.message
+    assert "write `String` for a category with no order" in problem.fix and "alphabetical order" in problem.fix
+    assert "write `Enum` with `categories:`" in problem.fix
+    assert "`Categorical` is also accepted" in problem.fix and "order of the rows" in problem.fix
+    assert not problem.fix.startswith("write Categorical")
 
 
 def test_build_profile_accepts_placeholders_that_run_refuses():
@@ -554,3 +563,14 @@ def test_ps06_leaves_what_a_scientist_writes_alone(name, params):
 def test_ps06_facet_by_in_the_mapping_is_a_plain_column_name():
     ok = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["mapping"].update(facet_by="country"))
     assert "PS06" not in check(ok, file_stem="r").codes()
+
+
+def test_a_closed_bracket_description_gets_no_cut_advice_and_every_element_is_looked_at():
+    assert "D01" not in check(valid()).codes()
+    for where, change in {
+        "info": lambda r: r["info"].update(description="What it answers (issue"),
+        "schema": lambda r: r["data_schemas"]["A"].update(description="One row per sample (issue"),
+        "group": lambda r: r["analysis_groups"]["g"].update(description="Which (issue"),
+        "plot": lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(description="Bars (issue"),
+    }.items():
+        assert "D01" in check(mutated(change)).codes(), where
