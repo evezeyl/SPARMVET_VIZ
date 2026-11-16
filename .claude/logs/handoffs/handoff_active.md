@@ -1193,3 +1193,55 @@ Order after the reviews: merge both; one full control run on the merged tree (fi
 **How to resume after a usage-limit stop:** read the top block "LOG SINCE 18:03" of `tmpAI/coordinator/progress_2026-11-14_session3.md`. Continue each stopped agent by a message in its own worktree. Never two workers on one worktree. At most three workers at once.
 
 **Records changed, not committed (records agent, 2026-11-16 02:55; the coordinator commits by file name):** `.claude/tasks/tasks.md` (EXPORT-RECIPE-REFUSE-1 rewritten as TO CONFIRM WITH EVE; FILTER-PICKERS-1 line; section 7 done lines; five new open lines at the end of the list).
+
+## Handoff 2026-11-16 20:15 (coordinator)
+
+**What you see first:** the branch `feat/recipe-format-1` is at `be47a357`, NOT pushed. `dev` on the server is at `78c620bf`. Nothing is merged into `main`. The push waits for two things: the self-join warning (the main line still holds the error that Eve decided against, D-0183), and one full control run on the merged tree.
+
+**Merged on 2026-11-16 after `78c620bf`** (one line each, merge hash, what the user gets):
+- `a386422a`: filter controls by column type (FILTER-PICKERS-1). Merged before 02:55, still not pushed.
+- `dd6a9d2f`: see git log (the subject is not in the coordinator note).
+- `472c0ff2`: recipe fixes. 11 false step descriptions corrected, 3 cut sentences completed, a test that every description is whole, checker advice D01.
+- `f5f3618a`: see git log (the feature tip before the stale-keys fix was merged).
+- `77b663f1`: see git log (base of the ledger tests and of the verification).
+- `edfff765`: the intent document with Eve's correction of its first page; ledger lines D-0143 to D-0152.
+- `7632f963`: `smooth-formula`. Export report text is made safe (no code runs from a title, label or reason); facets are drawn on the exact column name; a tip that starts with "Suggestion:" is shown as it is.
+- `bb90db5c`: decision rules. The hook checks each brief for quoted decision lines; ledger lines D-0153 to D-0162.
+- `42d66368`: ledger lines D-0177 to D-0181 (exploration filter reset, stage and version model, gallery preview command).
+- `9a8e8917`: tests only. The nine hook tests follow the quote rule.
+- `7ef46987`: `verif-fix-1`. The validator reports the Polars errors of a one-row run; an old action name is refused with "Suggestion: use <new>". It also adds the self-join ERROR (J15) that SELF-JOIN-WARN-1 undoes.
+- `90971058`: ledger lines D-0182 to D-0186 (warning not error for self-joins; check when selected; check start at first load; changing data is not a failure, changing a recipe is).
+- `42118164`: `recipe-small`. Eve's reason beside the multi-resistance formula; labels checked; 12 capital labels in the plot titles (PROVISIONAL until she confirms).
+- `41071530`: `stale-keys`. A stored table is never served under an old key; a build tells the user, or refuses, when its inputs change during the build.
+- `36fc906c`: `flake`. One strict-xfail test file for the Export panel reset. Diagnosis only, no fix.
+- `be47a357`: `ledger-5`. Ledger lines D-0187 to D-0193 (the export logic of 2026-11-16).
+
+**Running now:**
+- SELF-JOIN-WARN-1: builder, worktree `.claude/worktrees/self-join-warn`, branch `task/self-join-warn`.
+- Impact report for "a recipe is checked when it is selected": read-only reviewer, `tmpAI/panel/check_on_select/impact_report.md`.
+- Parked: `.claude/worktrees/recipe-plots` (branch `task/recipe-plots`). Nothing written there.
+
+**Files for Eve written today** (paths only):
+- `tmpAI/panel/verification/SUMMARY_for_eve.md`: the verification batches 1 to 3 and their 17 questions.
+- `tmpAI/panel/verification/SUMMARY_two_periods.md`: the 65 verification findings, sorted by period (before and after the coordinator start).
+- `tmpAI/panel/verification/h1_filter_view_change.md`: the filter view check, with Eve's reset proposal against D-0019.
+- `tmpAI/panel/verification/rule_edits_and_action_names.md`: the 67 old action names and the 15 rule-file edits.
+- `tmpAI/panel/round7/FOR_EVE_still_open_2026-11-16.md`: every open point (191), blocks B1 to B13. B1 (the export) is now DECIDED in part.
+- `tmpAI/panel/export_modes/export_modes_compare.md`: the export as built, against Eve's statement of 2026-11-16.
+
+**The new rule for briefs** (since `bb90db5c`): every agent except scout, scribe and the panel agents needs a "Decisions" block. Each decision number must be followed by quoted words from its ledger line (D-0156, D-0159, D-0166). Only numbers taken by Eve and DECIDED count. A missing ledger refuses the call. Eve asked whether the hook must be so strict (M171 point D). No change to the hook until she answers.
+
+**Next, in Eve's order:**
+1. Merge the self-join warning (SELF-JOIN-WARN-1).
+2. One full control run on the merged tree, then the push of `dev` (no merge into `main`).
+3. The impact report, then the design for the check on selection (CHECK-ON-SELECT).
+4. The proposals for one recipe on many datasets and sessions (SESSIONS-MANY-DATASETS).
+5. The three viewpoint questions: audit steps between steps, the help button, the readable audit points file (VIEWPOINTS-O13-O14).
+6. The UML tasks (UML-TASKS).
+7. The demo recipe (DEMO-JOIN-1, D-0167).
+8. Blueprint keeps comments (BP-COMMENTS-1, D-0174; the library question first).
+9. The plain message for a missing column (MISSING-COLUMN-MESSAGE-1, D-0176).
+10. The Export panel that resets on a plot tab change (EXPORT-PANEL-RESET-1; waits for her answer).
+11. The swallowed errors in session, import and export (VERIF-FIX-2).
+
+**Open choices that wait for Eve:** see `tmpAI/panel/round7/FOR_EVE_still_open_2026-11-16.md` and the five points of channel message M153 in `tmpAI/agent_channel.md`. The points are not copied here.

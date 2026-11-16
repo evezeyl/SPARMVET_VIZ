@@ -458,6 +458,30 @@ Writing rule (Eve, channel M123, 2026-11-15): short plain sentences, one idea ea
 - [ ] **TEST-STAGING-1** `[sonnet/medium]` — A browser test stages a recipe inside the repository. A killed run left the file `zz_gate_gap_stage`, and 65 tests then failed in a reviewer's worktree (2026-11-16). OPEN.
 - To confirm with Eve: a filter of the kind "one of" with an empty list is accepted and gives zero rows.
 
+## 8. Tasks from 2026-11-16 (verification, decisions D-0143 to D-0193)
+
+Added 2026-11-16 by the records of the coordinator session. Each line: tag, state, decision number or "waits for Eve", evidence file. Tags marked "(tag set by the records, not decided)" were not in the brief and are a proposal.
+
+- [ ] **SELF-JOIN-WARN-1** `[sonnet/high]` — running (worktree `.claude/worktrees/self-join-warn`, branch `task/self-join-warn`). Every self-join gives a warning with the row numbers, never an error. Only the anti-join of a table with itself on the same key was an error, and that error is undone. D-0183 (replaces in part D-0078). Evidence: `.claude/knowledge/decision_ledger.md` D-0183.
+- [ ] **CHECK-ON-SELECT** `[sonnet/high]` — impact report running (reviewer; read-only). Then design and build: a recipe is checked when it is selected, not at start. D-0184 (replaces in part D-0009); D-0185 (measure the start at first load). Evidence: `tmpAI/panel/check_on_select/impact_report.md`.
+- [ ] **EXPORT-MODES** `[opus/high]` — not started. The export in two cases (only explored; audit used) and two modes, one source for the three renderings. D-0187, D-0188, D-0189, D-0190, D-0191, D-0192, D-0193. Five points wait for Eve. Evidence: `tmpAI/panel/export_modes/export_modes_compare.md`; channel message M153.
+- [ ] **EXPORT-PANEL-RESET-1** `[sonnet/medium]` — waits for Eve. The Export panel resets what the user set (box, name, format) when the plot tab changes. Test `app/tests/test_export_box_survives_plot_tab.py` is a strict xfail. Evidence: that test file; coordinator note entry 19:45 on 2026-11-16.
+- [ ] **FILTER-STALE-COLUMN-1** `[sonnet/low]` — not started. The filter panel shows "The counts could not be computed" for a moment after a plot change (a column read from the old table). No decision needed. Evidence: coordinator note entry 19:45 on 2026-11-16 (`KeyError` at `app/handlers/filter_and_audit_handlers.py` about line 459-470).
+- [ ] **FILTER-RESET-ON-STAGE** `[sonnet/medium]` — waits for the stage-2 screen. An exploration filter is reset when the view changes (D-0177, D-0178). Evidence: `tmpAI/panel/verification/h1_filter_view_change.md`.
+- [ ] **DEMO-JOIN-1** `[sonnet/high]` — not started. Demo recipe: a left join, the 12 samples without MLST stay "not determined", rows without a sample id go out with a warning and a count (D-0167, D-0168; refines D-0047).
+- [ ] **JOIN-ROW-COUNTS** `[sonnet/high]` — not started, except the self-join part, which is in SELF-JOIN-WARN-1. A count of the rows lost by any join, reported as a warning (D-0168, refines D-0050). Second half of D-0078 (row numbers) is not built.
+- [ ] **BP-COMMENTS-1** `[sonnet/high]` — not started. A Blueprint save keeps comments, also in `!include` fragments (D-0174). The library question for Eve comes first (a new library, ruamel.yaml, only with her yes).
+- [ ] **MISSING-COLUMN-MESSAGE-1** `[sonnet/high]` — not started. A plain message for a missing column: step, column, fix (D-0176). Where it is not possible, the Polars text with a plain line above.
+- [ ] **LABELS-IN-EXPORT** `[sonnet/medium]` — waits for Eve. The twelve capital labels are PROVISIONAL (commit `9942ab1f`, revert if she disagrees). `label:` decides what the user sees (D-0171). Open: label in the export and file names. Evidence: `tmpAI/coordinator/progress_2026-11-14_session3.md` entry 19:58 on 2026-11-16.
+- [ ] **VERIF-FIX-2** `[sonnet/high]` — not started. Swallowed errors in session, import and export (`safe_input` turns a read error into the default). D-0050. Evidence: `tmpAI/panel/verification/check_4b_export.md`.
+- [ ] **RULE-EDITS-15** — waits for Eve. The 15 rule-file edits of the verification: six "a" and nine "c" (D-0173; D-0172). Evidence: `tmpAI/panel/verification/rule_edits_and_action_names.md`. The 67 old action names: 7 are nowhere in the code (`derive_categories`, D-0038 PROVISIONAL, open for her).
+- [ ] **HOOK-SIMPLER** — waits for Eve. Her question on the hook strictness (M171 point D, a question, no decision). No hook change until she answers. Evidence: `.claude/knowledge/decision_ledger.md`, "Asked, not decided" (M171 point D).
+- [ ] **SESSIONS-MANY-DATASETS** `[opus/high]` — proposals not started. One recipe on many datasets, and sessions with a comment (D-0186, D-0191; M175). Proposals with pros and cons, no build. Evidence: `.claude/knowledge/decision_ledger.md`, "Asked, not decided" (M175).
+- [ ] **VIEWPOINTS-O13-O14** `[opus/high]` (tag set by the records, not decided) — panels not started. Three viewpoint questions: audit steps between steps (M155 point 9); the readable audit points file (M155 point 11); a small help button in the audit dialog (M155 point 13). Evidence: `.claude/knowledge/decision_ledger.md`, "Asked, not decided".
+- [ ] **UML-TASKS** `[sonnet/high]` (tag set by the records, not decided) — not started. The six arrows of PKG-TIERS (D-0071); the "two recipes" diagram; notes on three contradicted diagrams; the EXPORT-MODES text. Stray elements are removed only with her yes. Native StarUML API only.
+- [ ] **CHANNEL-CLEAN** `[sonnet/low]` (tag set by the records, not decided) — not started. Remove the channel messages that are fully recorded (rule `rules_agent_channel.md` section 3).
+- [ ] **REPO-AUDIT** `[opus/high]` (tag set by the records, not decided) — last. Step 8 of the repository audit (M137): logic and coherence of the whole; build nothing before she decides.
+
 ## Archive pointers
 
 - [tasks_archive_2026-11-13_done_since_nov.md](archives/tasks_archive_2026-11-13_done_since_nov.md) — 52 done items of the November work (HOME exploration, reproducible export and import, configuration vocabulary, manual-testing findings, clean-up recheck), moved out of this file on 2026-11-13
