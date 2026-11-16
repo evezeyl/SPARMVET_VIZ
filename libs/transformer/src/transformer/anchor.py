@@ -12,7 +12,7 @@ location (spec DEC42, section 15).
 """
 import os
 import tempfile
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional
 
 import polars as pl
 from polars.exceptions import PanicException
@@ -22,7 +22,7 @@ from utils.errors import TransformationError
 
 
 def write_anchor(lf: pl.LazyFrame, path, decision_hash: Optional[str] = None, metadata: Optional[Dict[str, str]] = None,
-                 join_checks: Optional[list] = None) -> pl.LazyFrame:
+                 join_checks: Optional[list] = None, still_valid: Optional[Callable[[], bool]] = None) -> pl.LazyFrame:
     """Write the table as Parquet and return a lazy scan of the written file.
 
     With a `decision_hash` the file carries it (and any extra `metadata`, text to text) in its footer, written by
@@ -33,6 +33,10 @@ def write_anchor(lf: pl.LazyFrame, path, decision_hash: Optional[str] = None, me
     another session that reads the stored table sees the old file or the new one, never a half-written one (a reader of a
     file rewritten in place was killed by the operating system, signal SIGBUS).
 
+    `still_valid` (with a `decision_hash`): called once the file is complete, just before the rename. When it returns False
+    the inputs the key was made from changed while the table was built; the table is NOT stored (the key would not say
+    what the file holds) and the caller gets the table in memory.
+
     `join_checks` (the assembler's `join_checks`) lets a refused `validate` of a join be explained in plain words after Polars raised it.
     """
     path = str(path)
@@ -41,9 +45,11 @@ def write_anchor(lf: pl.LazyFrame, path, decision_hash: Optional[str] = None, me
     handle, temporary = tempfile.mkstemp(prefix=f".{os.path.basename(path)}.", suffix=".tmp", dir=folder)
     os.close(handle)
     try:
+        frame = None
         try:
             if decision_hash:
-                lf.collect().write_parquet(temporary, metadata={"sparmvet_decision_hash": str(decision_hash),
+                frame = lf.collect()
+                frame.write_parquet(temporary, metadata={"sparmvet_decision_hash": str(decision_hash),
                                                          **{str(k): str(v) for k, v in (metadata or {}).items()}})
             else:
                 lf.sink_parquet(temporary)
@@ -59,6 +65,8 @@ def write_anchor(lf: pl.LazyFrame, path, decision_hash: Optional[str] = None, me
                 f"Polars stopped while it computed the table stored at {path}, on the input of one of the steps ({str(exc).strip()[:120]})",
                 tip="Check the durations and lists written in the steps of this join and the data they work on; the actions refuse the cases they know "
                     "before Polars runs, so this one is new: report it with the recipe") from exc
+        if still_valid is not None and not still_valid():
+            return frame.lazy() if frame is not None else pl.scan_parquet(temporary).collect().lazy()
         # mkstemp makes the file private (0600); the stored table keeps the mode of the file it replaces (0644 for a new one).
         os.chmod(temporary, os.stat(path).st_mode & 0o777 if os.path.exists(path) else 0o644)
         with open(temporary, "rb") as written:

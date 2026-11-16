@@ -102,3 +102,17 @@ def test_without_a_key_the_table_is_still_replaced_in_one_step(tmp_path):
     write_anchor(pl.DataFrame({"a": [9]}).lazy(), str(path))
     assert pl.read_parquet(str(path))["a"].to_list() == [9]
     assert [p.name for p in tmp_path.iterdir()] == ["C.parquet"]
+
+
+def test_a_table_whose_key_stopped_being_true_is_returned_but_not_stored(tmp_path):
+    """`still_valid` is asked once the table is complete: False means the inputs changed while it was built (STALE-KEY-STORE-1)."""
+    path = tmp_path / "C.parquet"
+    write_anchor(pl.DataFrame({"a": [1]}).lazy(), str(path), decision_hash="OLD", metadata={"sparmvet_tier1_key": "OLD"})
+    table = write_anchor(pl.DataFrame({"a": [7, 8]}).lazy(), str(path), decision_hash="NEW", metadata={"sparmvet_tier1_key": "NEW"},
+                         still_valid=lambda: False)
+    assert table.collect()["a"].to_list() == [7, 8]
+    assert pl.read_parquet_metadata(str(path))["sparmvet_tier1_key"] == "OLD"     # the stored table is untouched
+    assert [p.name for p in tmp_path.iterdir()] == ["C.parquet"]
+    write_anchor(pl.DataFrame({"a": [7, 8]}).lazy(), str(path), decision_hash="NEW", metadata={"sparmvet_tier1_key": "NEW"},
+                 still_valid=lambda: True)
+    assert pl.read_parquet_metadata(str(path))["sparmvet_tier1_key"] == "NEW"

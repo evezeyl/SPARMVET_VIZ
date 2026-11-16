@@ -9,13 +9,13 @@ import copy
 import polars as pl
 from pathlib import Path
 from typing import Any
-from utils.errors import DataAnalysisRecipeError, IngestionError
+from utils.errors import DataAnalysisRecipeError, IngestionError, RecipeLoadError
 from utils.hashing import get_parquet_metadata_hash
 from ingestion.ingestor import DataIngestor, find_dataset_file
 from transformer.data_wrangler import DataWrangler
 from transformer.data_assembler import DataAssembler
 from transformer.anchor import write_anchor
-from app.modules.cache_keys import DataAnalysisRecipeKeys, load_data_analysis_recipe, data_analysis_recipe_keys, tier2_key, tier2_steps
+from app.modules.cache_keys import DataAnalysisRecipeKeys, LoadedDataAnalysisRecipe, load_data_analysis_recipe, data_analysis_recipe_keys, tier2_key, tier2_steps
 
 # Parquet metadata key holding the chained Tier 1 key (ADR-089).
 TIER1_KEY_META = "sparmvet_tier1_key"
@@ -82,17 +82,19 @@ class DataOrchestrator:
             return declared if declared.exists() else None
         return find_dataset_file(self.raw_data_dir, ds_id)
 
-    def compute_data_analysis_recipe_keys(self, data_analysis_recipe_id: str) -> DataAnalysisRecipeKeys:
+    def compute_data_analysis_recipe_keys(self, data_analysis_recipe_id: str,
+                                          loaded: LoadedDataAnalysisRecipe | None = None) -> DataAnalysisRecipeKeys:
         """The keys every stored stage of this project depends on (ADR-089).
 
         Reads the data files to hash their content, so callers compute it once per session
-        and pass it to materialize_tier1().
+        and pass it to materialize_tier1(). `loaded` is the recipe a build reads: the key is then made from that very
+        object, not from a second reading of the files.
         """
         from app.modules.session_manager import SessionManager
         data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
         if not data_analysis_recipe_path.exists():
             raise FileNotFoundError(f"Data analysis recipe not found: {data_analysis_recipe_path}")
-        loaded = load_data_analysis_recipe(data_analysis_recipe_path)
+        loaded = loaded or load_data_analysis_recipe(data_analysis_recipe_path)
         source_files = self.get_source_files(data_analysis_recipe_id)
         data_hash = SessionManager.compute_data_batch_hash(source_files) if source_files else ""
         return data_analysis_recipe_keys(loaded, data_hash)
@@ -130,6 +132,17 @@ class DataOrchestrator:
         rules = DataWrangler._resolve_tier(ds_schema.get("wrangling", []), "tier1")
         return DataWrangler().run(lf, rules)
 
+    def inputs_unchanged(self, data_analysis_recipe_id: str, built_from: DataAnalysisRecipeKeys) -> bool:
+        """True when the recipe files and the data files are still those `built_from` was made from.
+
+        The last check of a build, before its table is stored (STALE-KEY-STORE-1): a table built while its inputs
+        changed holds rows of neither state, so no key could be true for it.
+        """
+        try:
+            return self.compute_data_analysis_recipe_keys(data_analysis_recipe_id) == built_from
+        except (RecipeLoadError, FileNotFoundError):
+            return False
+
     def materialize_tier1(self, data_analysis_recipe_id: str, collection_id: str, output_path: Path,
                           keys: DataAnalysisRecipeKeys | None = None) -> pl.LazyFrame:
         """
@@ -137,7 +150,17 @@ class DataOrchestrator:
 
         The anchor is reused only when the chained key stored in its metadata matches the
         current one (ADR-089); never by file name alone.
+
+        A table that is built is stored under the key of the files it was built from, never under `keys`: a view holds
+        its keys while the recipe or the data change on disk, and `keys` then describe files that are no longer there
+        (STALE-KEY-STORE-1). The built table is not stored at all when its inputs changed while it was built.
         """
+        return self._materialize_tier1(data_analysis_recipe_id, collection_id, output_path, keys)[0]
+
+    def _materialize_tier1(self, data_analysis_recipe_id: str, collection_id: str, output_path: Path,
+                           keys: DataAnalysisRecipeKeys | None, loaded: LoadedDataAnalysisRecipe | None = None
+                           ) -> tuple[pl.LazyFrame, str, DataAnalysisRecipeKeys | None]:
+        """(table, the Tier 1 key that table carries, the keys of the build or None when a stored table was served)."""
         import time
         _t_start = time.perf_counter()
         print(f"[Orchestrator] ▶ materialize_tier1 START — data_analysis_recipe='{data_analysis_recipe_id}', collection='{collection_id}'")
@@ -148,9 +171,11 @@ class DataOrchestrator:
                 f"Data analysis recipe not found: {data_analysis_recipe_path}")
 
         # 1. Load Data Analysis Recipe (kept in memory while none of its files changed on disk)
-        loaded = load_data_analysis_recipe(data_analysis_recipe_path)
+        loaded = loaded or load_data_analysis_recipe(data_analysis_recipe_path)
         data_analysis_recipe = loaded.raw
-        keys = keys or self.compute_data_analysis_recipe_keys(data_analysis_recipe_id)
+        built_from = None
+        if keys is None:
+            keys = built_from = self.compute_data_analysis_recipe_keys(data_analysis_recipe_id, loaded=loaded)
 
         # No tier2 steps: T2 equals T1, so a Tier 2 file left from an earlier data analysis recipe would be a
         # false T2. It could never be served (its key would not match), but it must not stay.
@@ -162,10 +187,16 @@ class DataOrchestrator:
         if Path(output_path).exists() and \
                 get_parquet_metadata_hash(str(output_path), TIER1_KEY_META) == keys.tier1_key:
             print(f"[Orchestrator] ✅ Tier 1 anchor '{collection_id}' is valid (key match) → {output_path}")
-            return pl.scan_parquet(output_path)
+            return pl.scan_parquet(output_path), keys.tier1_key, None
 
         # Tier 1 is rebuilt, so the Tier 2 stored on top of the old one is invalid by definition.
         t2_file.unlink(missing_ok=True)
+
+        # The key of what this build reads: the recipe object loaded above and the data files as they are now. `keys` may
+        # be older than both (a view computes them once).
+        built_from = built_from or self.compute_data_analysis_recipe_keys(data_analysis_recipe_id, loaded=loaded)
+        stored_key = {TIER1_KEY_META: built_from.tier1_key}
+        unchanged = lambda: self.inputs_unchanged(data_analysis_recipe_id, built_from)  # noqa: E731
 
         # 2. Ingest and Wrangle Ingredients
         ingredients = {}
@@ -210,9 +241,9 @@ class DataOrchestrator:
         if collection_spec is None and collection_id in ingredients:
             print(f"      └── 💾 Materializing data_schema '{collection_id}' to: {output_path}")
             lf = ingredients[collection_id]
-            write_anchor(lf, str(output_path), decision_hash=keys.tier1_key, metadata={TIER1_KEY_META: keys.tier1_key})
+            stored = write_anchor(lf, str(output_path), decision_hash=built_from.tier1_key, metadata=stored_key, still_valid=unchanged)
             print(f"[Orchestrator] ✅ materialize_tier1 DONE — '{collection_id}' (bare schema) in {time.perf_counter()-_t_start:.2f}s → {output_path}")
-            return pl.scan_parquet(output_path)
+            return stored, built_from.tier1_key, built_from
 
         # Path B: the id is neither a join nor a schema of this recipe. It fails: building another collection in its
         # place (the first join, as the code did before) gives a table that looks right and is something else.
@@ -246,11 +277,11 @@ class DataOrchestrator:
 
         # ADR-089: the chained Tier 1 key (the resolved recipe with every included file, the data content and the engine
         # version) is written into the anchor, so any upstream change rebuilds it.
-        lf = write_anchor(lf, str(output_path), decision_hash=keys.tier1_key, metadata={TIER1_KEY_META: keys.tier1_key},
-                          join_checks=assembler.join_checks)
+        lf = write_anchor(lf, str(output_path), decision_hash=built_from.tier1_key, metadata=stored_key,
+                          join_checks=assembler.join_checks, still_valid=unchanged)
 
         print(f"[Orchestrator] ✅ materialize_tier1 DONE — assembly '{collection_id}' in {time.perf_counter()-_t_start:.2f}s → {output_path}")
-        return lf
+        return lf, built_from.tier1_key, built_from
 
     def materialize_tier2(self, data_analysis_recipe_id: str, collection_id: str, tier1_path: Path,
                           keys: DataAnalysisRecipeKeys | None = None) -> pl.LazyFrame:
@@ -266,25 +297,35 @@ class DataOrchestrator:
         The key chains the Tier 1 key, so a change in a Tier 1 part invalidates Tier 2 as well,
         while a change in a Tier 2 step recomputes only Tier 2 (the Tier 1 file is only checked).
         """
-        keys = keys or self.compute_data_analysis_recipe_keys(data_analysis_recipe_id)
         data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
-        steps = tier2_steps(load_data_analysis_recipe(data_analysis_recipe_path).raw, collection_id)
+        loaded = load_data_analysis_recipe(data_analysis_recipe_path)
+        keys = keys or self.compute_data_analysis_recipe_keys(data_analysis_recipe_id, loaded=loaded)
+        steps = tier2_steps(loaded.raw, collection_id)
         t2_path = tier2_path_for(tier1_path)
 
         if not steps:
             # materialize_tier1 also removes a Tier 2 file left from an earlier data analysis recipe.
-            return self.materialize_tier1(data_analysis_recipe_id, collection_id, tier1_path, keys=keys)
+            return self._materialize_tier1(data_analysis_recipe_id, collection_id, tier1_path, keys, loaded=loaded)[0]
 
         key = tier2_key(keys.tier1_key, steps)
         if t2_path.exists() and get_parquet_metadata_hash(str(t2_path), TIER2_KEY_META) == key:
             print(f"[Orchestrator] ✅ Tier 2 '{collection_id}' is valid (key match) → {t2_path}")
             return pl.scan_parquet(t2_path)
 
-        lf_t1 = self.materialize_tier1(data_analysis_recipe_id, collection_id, tier1_path, keys=keys)
+        lf_t1, t1_key, t1_built_from = self._materialize_tier1(data_analysis_recipe_id, collection_id, tier1_path, keys, loaded=loaded)
+        # The chain is that of the Tier 1 table this one is computed from: a Tier 1 built just now carries the key of the
+        # files it was built from, which can differ from `keys` (STALE-KEY-STORE-1).
+        key = tier2_key(t1_key, steps)
+
+        def unchanged() -> bool:
+            if t1_built_from is not None and not self.inputs_unchanged(data_analysis_recipe_id, t1_built_from):
+                return False
+            return tier2_steps(load_data_analysis_recipe(data_analysis_recipe_path).raw, collection_id) == steps
+
         # A copy: the dicts belong to the data analysis recipe kept in memory and the key of the next read must match.
         lf_t2 = DataWrangler().run(lf_t1, copy.deepcopy(steps))
         print(f"[Orchestrator] ▶ Tier 2 '{collection_id}' recomputed from Tier 1 → {t2_path}")
-        return write_anchor(lf_t2, str(t2_path), decision_hash=key, metadata={TIER2_KEY_META: key})
+        return write_anchor(lf_t2, str(t2_path), decision_hash=key, metadata={TIER2_KEY_META: key}, still_valid=unchanged)
 
     def dataset_schemas(self, data_analysis_recipe_id: str) -> dict[str, Any]:
         """{dataset_id: schema} of every dataset a recipe names (data schemas, metadata, additional datasets)."""
