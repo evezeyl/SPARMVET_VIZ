@@ -13,7 +13,7 @@
 - implemented the multi-resistance annotation logic [DESCRIBE]
 - ResFinder Data was joined with metadata
     - filtered by biological thresholds (min 90% identity, min 60% overlap)
-    - annotated with an is_multi_resistant flag (isolates resistant to ≥ 2 antimicrobial classes).
+    - annotated with an is_multi_resistant flag (a sample whose hits name more than one distinct predicted phenotype; a missing phenotype is not counted, because missing here means that no resistance phenotype has been detected).
 
 
 ```bash
