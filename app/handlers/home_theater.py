@@ -43,6 +43,7 @@ from pathlib import Path
 import polars as pl
 from shiny import reactive, render, ui
 from app.modules.cache_keys import load_data_analysis_recipe
+from app.modules.data_change_notice import data_files_changed_notice
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.pipeline_error import capture_entry
@@ -1217,10 +1218,14 @@ def define_server(input, output, session, *,
             # different data_batch_hash — that's expected, not an alert.
             same_data_analysis_recipe = prev_msig and prev_msig == new_msig
             if same_data_analysis_recipe and prev_dbh and prev_dbh != new_dbh:
-                _notify(
-                    "⚠️ Source data files for this project have changed — re-assembling.",
-                    type="warning", duration=8,
-                )
+                # The keys of the view are computed once (`_data_analysis_recipe_keys`): unless an import of this
+                # session recomputed them, the tables on screen still come from the earlier files.
+                try:
+                    with reactive.isolate():
+                        follows = _data_analysis_recipe_keys().data_batch_hash == new_dbh
+                except Exception:
+                    follows = False
+                _notify("⚠️ " + data_files_changed_notice(follows), type="warning", duration=12)
             needs_update = (
                 cur.get("data_analysis_recipe_sha256") != new_msig
                 or cur.get("data_batch_hash") != new_dbh
