@@ -116,6 +116,17 @@ class DataAssembler:
                 {"left_column": left_col, "right_column": right_col, "left_type": str(left_type), "right_type": str(right_type)},
             )
 
+    def _check_anti_join_with_itself(self, earlier: List[Dict[str, Any]], step: Dict[str, Any], index: int, base_id: str) -> None:
+        """Fail on the anti-join of the base table with itself on the same key (D-0078): it would return no row, silently.
+
+        The rule and the words are `utils.join_keys` (the checker says the same, J15). Every other self-join runs as written.
+        """
+        found = join_keys.anti_join_with_itself(base_id, earlier, step)
+        if found is None:
+            return
+        what, fix = join_keys.anti_join_with_itself_text(found)
+        self._fail_join(step, index, what, fix, {"table": found["table"], "keys": str(found["keys"])})
+
     @staticmethod
     def _canonical_steps(steps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """A copy of the steps; every step must be written with its `action` key (no shorthand is guessed)."""
@@ -235,6 +246,9 @@ class DataAssembler:
                 first_key = list(self.ingredients.keys())[0]
                 consolidated_lf = self.ingredients[first_key]
                 plain_lf = consolidated_lf
+
+            if action_name == JOIN and right_id:
+                self._check_anti_join_with_itself(steps[:i], step, i + 1, list(self.ingredients)[0])
 
             if action_name in (JOIN, JOIN_ASOF) and right_id:
                 self._check_join_key_types(step, i + 1, consolidated_lf, self.ingredients[right_id])

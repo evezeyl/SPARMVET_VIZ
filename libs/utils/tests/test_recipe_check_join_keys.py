@@ -213,11 +213,11 @@ def test_j12_text_for_a_plain_step_covers_a_unique_and_a_repeated_key():
     assert len(text) < 330
 
 
-def test_j12_text_for_semi_and_anti_says_no_column_is_copied():
-    for how in ("semi", "anti"):
-        text = _j12_text(how=how)
-        assert "No column is copied" in text and how in text
-        assert "_right" not in text and "more rows" not in text
+def test_j12_text_for_semi_says_no_column_is_copied():
+    """The anti-join of the base table with itself is no longer an advice: it is the error J15 (D-0078, test_anti_join_with_itself.py)."""
+    text = _j12_text(how="semi")
+    assert "No column is copied" in text and "semi" in text
+    assert "_right" not in text and "more rows" not in text
 
 
 def test_j12_text_names_the_suffix_of_the_step():

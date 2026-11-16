@@ -47,7 +47,7 @@ from utils.ui_schema import STEP_KEYS, step_problems
 TIER3_READ_BY_ENGINE = False
 
 # Tier-1 actions that only remove or reorder rows: they cannot change the columns or their types (exact names).
-JOIN_KEEPS_COLUMNS = frozenset({action_names.FILTER, action_names.SORT, action_names.UNIQUE, action_names.DROP_NULLS, action_names.SAMPLE})
+JOIN_KEEPS_COLUMNS = join_keys.JOIN_KEEPS_COLUMNS
 
 # Steps whose `maintain_order` says whether the order of the rows is fixed (ST13).
 _ORDER_STEPS = frozenset({action_names.SORT, action_names.UNIQUE, action_names.GROUP_BY, action_names.JOIN})
@@ -695,7 +695,11 @@ class _Check:
                     self.add("T07", where, "an unquoted on became the key true", "quote it: 'on'")
 
     def join_advices(self, tier1: list, position: int, where: str, ingredient_ids: List[str]) -> None:
-        """J12, J13 (advice, never blocks): a join of a table with itself on the same key; a join key declared as a float.
+        """J15 (error), J12, J13 (advice, never block): the anti-join of a table with itself on the same key; any other join of a
+        table with itself on the same key; a join key declared as a float.
+
+        J15 (D-0078): `how: anti` of the base table with itself keeps no row that has a key; the rule is
+        `join_keys.anti_join_with_itself`, the same one the build asks. It replaces J12 for that step.
 
         J12: the right table is the base table or a table already joined, and the key columns are the same on both sides:
         it adds no row of information and copies the columns. J13: a key declared Float32 or Float64 turns identifiers
@@ -719,7 +723,11 @@ class _Check:
                 left_tables.append(before["right_ingredient"])
             elif before.get("action") not in JOIN_KEEPS_COLUMNS:
                 return
-        if right_id in left_tables and left_keys == right_keys:
+        anti = join_keys.anti_join_with_itself(ingredient_ids[0], tier1[:position], step)
+        if anti is not None:
+            what, fix = join_keys.anti_join_with_itself_text(anti)
+            self.add("J15", where, what, fix)
+        elif right_id in left_tables and left_keys == right_keys:
             how = step.get("how", "left")
             if how in ("semi", "anti"):
                 effect = (f"No column is copied; 'semi' keeps only the rows whose key is found in {right_id!r} itself."
