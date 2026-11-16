@@ -1245,3 +1245,45 @@ Order after the reviews: merge both; one full control run on the merged tree (fi
 11. The swallowed errors in session, import and export (VERIF-FIX-2).
 
 **Open choices that wait for Eve:** see `tmpAI/panel/round7/FOR_EVE_still_open_2026-11-16.md` and the five points of channel message M153 in `tmpAI/agent_channel.md`. The points are not copied here.
+
+## Handoff 2026-11-16 23:45 (coordinator)
+
+**What you see first:** `dev` on the server is at `93f39d24`. It was pushed at 23:36. That push was my error: I pushed before I read the review session's instruction "git local only tonight" (channel M193). I reported it in channel M161 (sent by the coordinator, sparmvet-viz-46). There will be no further push until Eve says so. Branch `feat/recipe-format-1` is at `93f39d24` plus local commits. Nothing is merged into `main`.
+
+**Merged since the handoff of 20:15** (one line each: merge hash, what the user gets):
+- `46fa84da`: ledger lines D-0194 to D-0197 for the audit dialog. Records only, no code.
+- `11c7ca5e`: ledger lines D-0198 to D-0203 for the audit dialog (the three cautions, the second use case, the sentence for the docs, the typed value, the one-to-one warning). Records only, no code.
+- `f3e5be86`: the branch `task/self-join-warn` brought up to date with `feat`. A branch merge; nothing new reaches the user until `93f39d24`.
+- `93f39d24`: `task/self-join-warn` (`698fcdb4`) merged into `feat` and pushed to `dev`. The user gets: every self-join gives a warning with the rows before and after and the rows with a missing key, never an error. One function now writes every advice sentence ("what happens. Suggestion: ...").
+
+**Running now (local only, no push):**
+- Swallowed errors in session, import and export (VERIF-FIX-2): worktree `.claude/worktrees/verif-fix-2`, branch `task/verif-fix-2`, from `93f39d24`.
+- Demo recipe that keeps every sample (DEMO-JOIN-1, D-0167): worktree `.claude/worktrees/demo-join`, branch `task/demo-join`.
+- Parked: `.claude/worktrees/recipe-plots`. Nothing is written there.
+- This section and section 8 of `tasks.md` were written by the records scribe RECORDS-1116-B. They are not committed yet; the coordinator commits them by file name.
+
+**Files for Eve written since 20:15** (path, one line each):
+- `tmpAI/panel/check_on_select/impact_report.md`: what checking a recipe when it is selected costs and changes; eight questions.
+- `tmpAI/panel/sessions/PROPOSALS_for_eve.md`: one recipe on many datasets, and sessions with a comment; four questions.
+- `tmpAI/panel/audit_model/scenarios_report.md`: round 1 of her audit scenarios, run on recipe 1 with the real engine.
+- `tmpAI/panel/audit_model/scenarios_report_round2.md`: round 2: the lineage of a column, names and types per place, the 2002.5 case.
+- `tmpAI/panel/audit_rules/PROPOSALS_for_eve.md`: three viewpoints on the audit rules, with options; six questions.
+- `tmpAI/panel/dialog_preview/PROPOSAL_for_eve.md`: what the audit dialog can show while it is open; one question.
+- `tmpAI/panel/audit_docs/intent_text_draft.md`: draft of the help text and the docs section for "the node you tick expresses the intent". Not in the docs yet.
+- `tmpAI/panel/steps_position_help/PROPOSAL_for_eve.md`: whether an audit step may sit between the recipe's steps, and the help button; three questions.
+- `tmpAI/panel/export_modes/export_modes_compare.md`: the export as built, against Eve's statement of 2026-11-16. This file is already named in the handoff of 20:15; it is not new since then.
+
+**The one list of questions that wait for Eve:** channel `tmpAI/agent_channel.md`. Three coordinator messages (sender: sparmvet-viz-46) hold it. The review session also has messages named M157 to M161 in the same file; the ones below are the coordinator's.
+- M157, points 1 to 15: 1 removal by condition or by sample ids; 2 "only the earliest ticked step writes it"; 3 the two intents at the top of the dialog; 4 the lineage of a column after a rename; 5 a decimal typed for a whole-number column; 6 rows with no value, one choice per place; 7 a removed sample shown as 0 in another table; 8 the numbers of the self-join warning do not reach the screen; 9 a recipe checked when it is selected (eight points); 10 one recipe, many datasets, sessions (four points); 11 the export (five points left); 12 the Export panel reset on a plot tab change; 13 the exploration filter on another table at the same stage; 14 the hook that checks the briefs; 15 small confirmations (the capital labels, the recipe in the export, nine rule-file edits).
+- M158, point 16: the other plots and tables while the dialog is open (the order of four items; the table of rows that would be removed; other plots on a click; "no draft").
+- M159, point 17: the help text (its length; "place" or "node"; "T1, T2, T3" or plain words).
+- M160, point 18: an audit step stays at the end of its stage; the checker refuses an audit step not at the end; the help with one sentence and a "?".
+- M161, point 19 (sent at 23:45): the self-join numbers; a cross join is refused for any table; two texts still describe the old self-join rule; the old-words check fails on every tree.
+
+**Tonight's allowances from the review session (channel M193, M194; for tonight only):** up to 5 agents at once, one worktree and one branch per writer. Git is local only: no push until Eve says so. CLAUDE.md is not changed. On an automatic resume: read the progress note, the channel from M192, `git status` and `git worktree list`; continue the interrupted worktrees with new agents in the same worktrees; do not wait for Eve.
+
+**Next, in order:**
+1. Review and local merge of the two running branches (`task/verif-fix-2`, `task/demo-join`), with the full controls.
+2. The new text for the export diagram and the UML tasks (UML-TASKS; EXPORT-MODES text).
+3. The channel clean-up (CHANNEL-CLEAN): remove the messages that are fully recorded.
+4. Then whatever her answers open.
