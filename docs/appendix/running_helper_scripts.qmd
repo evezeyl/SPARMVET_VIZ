@@ -26,7 +26,7 @@ PYTHON="./.venv/bin/python"
 Scaffolds a new pipeline data analysis recipe from a directory of TSV files. Inspects column headers and infers a starting Rich Dictionary `input_fields` block. The flags use underscores, not hyphens, and `--primary_key_data` is required — the engine needs at least one primary-key column name to generate PK hints.
 
 ```bash
-./.venv/bin/python assets/scripts/create_data_analysis_recipe.py \
+PYTHONPATH=. ./.venv/bin/python assets/scripts/create_data_analysis_recipe.py \
     --data_dir assets/test_data/my_data_analysis_recipe/ \
     --primary_key_data sample_id \
     --out_file config/data_analysis_recipes/pipelines/my_data_analysis_recipe.yaml

@@ -21,19 +21,21 @@ What it refuses, with a message, before anything is written: a file that is not 
 the project (the folder the script is run from: a recipe names its data by a path relative to the project root), two
 files that give the same table id, and a recipe file or an included file that already exists.
 
-The recipe is judged by the recipe checker (`utils.recipe_check`) before it is written.
+The recipe is judged by the recipe checker (`utils.recipe_check`) before it is written, with the same catalogs of
+actions and plot components as the app (`checker_catalogs()`), so a recipe with an unknown action name is refused here too.
+Run it with `PYTHONPATH=.` from the project root (the catalogs are read from the app layer).
 
 Examples (from the project root):
-  ./.venv/bin/python assets/scripts/create_data_analysis_recipe.py \\
+  PYTHONPATH=. ./.venv/bin/python assets/scripts/create_data_analysis_recipe.py \\
       --data_dir assets/test_data/my_data --primary_key_data sample_id \\
       --out_file config/data_analysis_recipes/pipelines/my_recipe.yaml
-  ./.venv/bin/python assets/scripts/create_data_analysis_recipe.py \\
+  PYTHONPATH=. ./.venv/bin/python assets/scripts/create_data_analysis_recipe.py \\
       --data_files assets/test_data/a.tsv assets/test_data/b.tsv --metadata_file assets/test_data/meta.tsv \\
       --primary_key_data sample_id --primary_key_metadata sample_id --out_file tmpAI/scaffold/my_recipe.yaml
 
 # @deps
 # provides: script:create_data_analysis_recipe
-# consumes: libs/utils/src/utils/recipe_factory.py (minimal_recipe, minimal_schema, minimal_plot, Include, write_recipe, write_fragment), libs/utils/src/utils/recipe_check.py (check_recipe), libs/utils/src/utils/polars_types.py (text_dtype_names)
+# consumes: app/modules/data_analysis_recipe_validator.py (checker_catalogs), libs/utils/src/utils/recipe_factory.py (minimal_recipe, minimal_schema, minimal_plot, Include, write_recipe, write_fragment), libs/utils/src/utils/recipe_check.py (check_recipe), libs/utils/src/utils/polars_types.py (text_dtype_names)
 # consumed_by: app/tests/test_writers_emit_format_one.py
 # doc: .claude/design/recipe_format_spec.md (sections 4, 7), .claude/rules/rules_asset_scripts.md, docs/appendix/running_helper_scripts.qmd
 # @end_deps
@@ -47,6 +49,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 import polars as pl
 
+from app.modules.data_analysis_recipe_validator import checker_catalogs
 from utils.polars_types import text_dtype_names
 from utils.recipe_check import check_recipe
 from utils.recipe_factory import Include, minimal_plot, minimal_recipe, minimal_schema, write_fragment, write_recipe
@@ -193,7 +196,7 @@ def create(out_file: Path, data_files: Sequence[Path], key_columns: Sequence[str
            metadata_file: Optional[Path] = None, metadata_key: Optional[str] = None) -> Path:
     """Build, judge and write the recipe; raises `Refused` (and writes nothing) when it cannot be valid."""
     recipe = build(out_file.stem, data_files, key_columns, metadata_file, metadata_key)
-    result = check_recipe(recipe, "run", file_stem=out_file.stem)
+    result = check_recipe(recipe, "run", file_stem=out_file.stem, catalogs=checker_catalogs())
     if result.errors:
         raise Refused("The recipe would not be valid in recipe format 1:\n" + "\n".join(
             "  " + problem.text(out_file.name) for problem in result.errors))
