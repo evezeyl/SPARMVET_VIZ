@@ -182,7 +182,6 @@ def test_edge_cases_unmapped_drug_empty_cell_two_drugs_one_class_order_kept(tmp_
 KNOWN_FRAGMENTS_INCLUDED_BY_NOTHING = {
     "pipelines/1_test_data_ST22_dummy/wrangling/ResFinder_Abromics_wrangling.yaml":
         "converted to format 1 (RECIPES-SMALL-1); no shipped recipe has the reference table as an ingredient",
-    "pipelines/1_test_data_ST22_dummy/assembly/Summary_phenotype_length_fragmentation_assembly_output_fields.yaml": "found 2026-11-15, not decided",
     "pipelines/1_test_data_ST22_dummy/plots/FastP_reads_boxplot.yaml": "found 2026-11-15, not decided",
     "pipelines/1_test_data_ST22_dummy/wrangling/Detailed_Summary_assembly_wrangling.yaml": "found 2026-11-15, not decided",
     "pipelines/1_test_data_ST22_dummy/wrangling/PlasmidFinder_wrangling.yaml": "found 2026-11-15, not decided",
@@ -212,3 +211,14 @@ def test_the_orphan_finder_can_fail(tmp_path):
     assert fragments_included_by_nothing(tmp_path) == set()
     (tmp_path / "pipelines" / "r" / "forgotten.yaml").write_text("x: 1\n")
     assert fragments_included_by_nothing(tmp_path) == {"pipelines/r/forgotten.yaml"}
+
+
+OLD_OUTPUT_FIELDS_LIST = "Summary_phenotype_length_fragmentation_assembly_output_fields"
+
+
+def test_the_old_output_fields_list_is_gone_and_no_recipe_file_names_it():
+    """Eve 2026-11-15 (N8): the old output-fields list of the phenotype view is deleted; nothing may include or mention it."""
+    folder = RECIPES / "pipelines" / "1_test_data_ST22_dummy" / "assembly"
+    assert not (folder / f"{OLD_OUTPUT_FIELDS_LIST}.yaml").exists()
+    named_in = [str(f.relative_to(RECIPES)) for f in RECIPES.rglob("*.yaml") if OLD_OUTPUT_FIELDS_LIST in f.read_text(encoding="utf-8")]
+    assert named_in == []
