@@ -27,6 +27,7 @@ from __future__ import annotations
 
 from shiny import reactive, render, ui
 
+from utils.fix_text import fix_label
 from utils.na_choice import na_of, no_value_text
 from utils.pipeline_error import PipelineError
 from app.modules.cache_keys import tier2_steps
@@ -921,7 +922,7 @@ def define_server(input, output, session, *,
                     # exception carried the library's real PipelineError (capture_entry()) —
                     # a plain exception's fallback entry has neither, so this stays empty.
                     ui.div(
-                        f"Fix ({who}): {fix}" if who else f"Fix: {fix}",
+                        fix_label(fix, who or ""),
                         class_="spv-text-xs text-muted",
                         style="margin-top:2px;",
                     ) if fix else ui.span(),

@@ -1,0 +1,378 @@
+"""The export report: a text of a recipe, an audit step, a session or a label can never run code (PLOT-TEXT-RUNS-CODE-1, fix round).
+
+`app/handlers/export_handlers.py` writes `report.qmd` and runs `quarto render` on it. Until 2026-11-16 a plot title, a label, the
+reason or the parameters of an audit step were inserted raw: a new line followed by a fenced `{python}` cell, or an inline
+`{python} expr`, ran with the app's rights when Quarto could execute Python (proved with a marker file; the reason typed in the audit
+panel also arrives in a session file and in an imported bundle). Closed two ways: every inserted text goes through
+`app/modules/qmd_text.py`, and the render command carries `--no-execute`.
+
+Tests that need Quarto skip with the reason when it is missing; the ones that execute a cell need an interpreter with Jupyter
+(`QUARTO_PYTHON`, default `/usr/bin/python3`). Markers are written only under `tmpAI/`.
+
+Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_export_report_texts.py -q
+"""
+import ast
+import html
+import os
+import re
+import shutil
+import subprocess
+import uuid
+from pathlib import Path
+
+import pytest
+
+from app.modules.qmd_text import code, mermaid_label, one_line, plain, yaml_string
+
+ROOT = Path(__file__).resolve().parents[2]
+HANDLER = ROOT / "app" / "handlers" / "export_handlers.py"
+WORK = ROOT / "tmpAI" / "report_text_probe"
+
+
+# ---- the text functions, without Quarto -----------------------------------------------------------------------------
+
+HOSTILE = [
+    "x\n\n```{python}\nopen('m','w').write('a')\n```\n",
+    "`{python} open('m','w').write('a')`",
+    "{{< include /etc/hostname >}}",
+    "{{< env HOME >}}",
+    "<script>alert(1)</script>",
+    "<div class='x'>raw html</div>",
+    "---\ntitle: broken\n---",
+    "# a heading\n## and another",
+    "| a | b |\n|---|---|",
+    "line1\r\nline2 line3\x00\x07",
+    "```",
+    "[link](http://x)",
+    "$$ x $$ and $5",
+    "@cite and [@key]",
+    "::: {.callout-note}\ninside\n:::",
+]
+
+
+@pytest.mark.parametrize("text", HOSTILE)
+def test_plain_text_is_one_line_with_nothing_that_markdown_or_quarto_reads(text):
+    out = plain(text)
+    assert "\n" not in out and "\r" not in out and "\x00" not in out
+    for token in ("`", "{", "<", "|", "$", "[", "*", "@"):
+        assert all(out[i - 1:i] == "\\" for i, c in enumerate(out) if c == token and i), (token, out)
+        assert not out.startswith(token)
+    assert not re.match(r"^\s*(#|>|:|-|\+|\d+[.)])", out)
+
+
+@pytest.mark.parametrize("text", HOSTILE)
+def test_a_code_span_is_one_line_and_cannot_be_closed_or_read_as_an_inline_expression(text):
+    out = code(text)
+    assert "\n" not in out
+    opening = re.match(r"^(`+)", out).group(1)
+    assert out.endswith(opening)
+    inner = out[len(opening):-len(opening)]
+    assert not re.search(r"`{%d,}" % len(opening), inner)           # nothing inside can close it
+    assert not inner.startswith("{") and "{{<" not in inner         # no inline `{python}`, no shortcode
+
+
+@pytest.mark.parametrize("text", ["a|b", "x | y | z"])
+def test_a_pipe_in_a_table_cell_is_written_as_plain_text_because_a_code_span_cannot_show_it(text):
+    assert "|" not in code(text, table=True).replace("\\|", "")
+    assert code(text, table=True).startswith(text.split("|")[0])
+
+
+def test_yaml_string_is_one_valid_double_quoted_scalar():
+    import yaml
+    for text in HOSTILE + ['a "quoted" title', "back\\slash", "unicode — dash"]:
+        value = yaml_string(text)
+        assert "\n" not in value and yaml.safe_load("t: " + value)["t"] == text
+
+
+def test_mermaid_label_has_no_quote_backtick_or_angle_bracket():
+    out = mermaid_label('a "b" `c` <d>\nnext')
+    assert '"' not in out and "`" not in out and "<" not in out and ">" not in out and "\n" not in out
+
+
+@pytest.mark.parametrize("text", ["multi_resistance_by_country", "Sample ID", "Year 2020 (QC)", "Results: 50% done", "a-b.c", "K. pneumoniae"])
+def test_an_ordinary_text_is_not_changed_by_plain(text):
+    assert plain(text) == text
+
+
+def test_the_pieces_of_a_report_for_ordinary_texts_hold_no_backslash():
+    from app.handlers.export_handlers import _build_methods_section, plot_report_lines
+    lines = plot_report_lines("amr_plot", "Multi-resistance by country", "Multi-resistance by country — dataset: `joined`", "fig-amr-plot", "png", None)
+    assert lines[0] == "### Multi-resistance by country"
+    assert lines[2] == "![Multi-resistance by country — dataset: `joined`](_render/amr_plot.png){#fig-amr-plot width=95%}"
+    methods = _build_methods_section(
+        all_plots=[("amr_plot", {"title": "Multi-resistance by country"})],
+        t3_by_plot={"amr_plot": [{"node_type": "exclusion_row", "params": {"column": "sample_id", "op": "in", "value": ["S2"], "na": "remove"},
+                                  "reason": "Failed QC (coverage below 30x)."}]},
+        ds_to_plots={}, tiers_exported=["T1"], t3_aesthetic_overrides=None)
+    joined = "\n".join(methods)
+    assert "\\" not in joined
+    assert 'where **sample_id** is one of "S2"' in joined and "*Reason: Failed QC (coverage below 30x).*" in joined
+
+
+# ---- reading the same, and not running, in a real Quarto render ------------------------------------------------------
+
+QUARTO = shutil.which("quarto")
+JUPYTER_PYTHON = os.environ.get("QUARTO_PYTHON", "/usr/bin/python3")
+
+
+def _has_jupyter() -> bool:
+    try:
+        return subprocess.run([JUPYTER_PYTHON, "-c", "import jupyter_core, nbformat, yaml, ipykernel"], capture_output=True, timeout=30).returncode == 0
+    except Exception:
+        return False
+
+
+needs_quarto = pytest.mark.skipif(QUARTO is None, reason="quarto is not installed")
+needs_jupyter = pytest.mark.skipif(QUARTO is None or not _has_jupyter(),
+                                   reason=f"no Quarto, or {JUPYTER_PYTHON} has no Jupyter, yaml and ipykernel: a cell cannot run here, so a marker cannot prove it")
+
+
+def _render(name: str, qmd: str, *, execute: bool, timeout: int = 120):
+    folder = WORK / f"{name}_{uuid.uuid4().hex[:8]}"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "report.qmd").write_text(qmd, encoding="utf-8")
+    command = ["quarto", "render", str(folder / "report.qmd"), "--to", "html"] + ([] if execute else ["--no-execute"])
+    result = subprocess.run(command, capture_output=True, text=True, cwd=folder, timeout=timeout,
+                            env={**os.environ, "QUARTO_PYTHON": JUPYTER_PYTHON})
+    return folder, result
+
+
+def _text_of(page: Path) -> str:
+    body = page.read_text(encoding="utf-8")
+    body = body[body.index("<main"):body.index("</main>")]
+    return html.unescape(re.sub(r"<[^>]+>", "\n", body))
+
+
+READ_SAME = ["multi_resistance_by_country", "_emph_ x", "a *star* b", "50% of $5", "a `tick` b", "a | pipe", "# not a heading", "1. not a list",
+             "[a](b) and @c", "x^2^ y~2~", "{braces} and <angle>", "back\\slash", "title: with colon", "---"]
+
+
+@needs_quarto
+def test_every_text_reads_the_same_in_the_rendered_report_in_a_paragraph_a_table_cell_a_heading_and_a_code_span():
+    lines = ["---", f"title: {yaml_string('T')}", "---", ""]
+    for i, t in enumerate(READ_SAME):
+        lines += [f"### H{i} {plain(t)}", "", f"P{i} {plain(t)}", "", "| k | v |", "|---|---|", f"| C{i} | {plain(t)} |", f"| K{i} | {code(t, True)} |", "", f"Q{i} {code(t)}", ""]
+    folder, result = _render("same", "\n".join(lines), execute=False)
+    assert result.returncode == 0, result.stderr[-500:]
+    text = _text_of(folder / "report.html")
+    flat = re.sub(r"\s+", " ", text)
+    for i, t in enumerate(READ_SAME):
+        shown = re.sub(r"\s+", " ", t)
+        assert re.search(rf"P{i} {re.escape(shown)}", flat), (i, t)
+        assert re.search(rf"C{i} {re.escape(shown)}", flat), (i, t)
+        assert re.search(rf"K{i} {re.escape(shown)}", flat), (i, t)
+        assert re.search(rf"Q{i} {re.escape(shown)}", flat), (i, t)
+        assert re.search(rf"H{i} {re.escape(shown)}", flat), (i, t)
+
+
+@needs_quarto
+def test_a_shortcode_a_script_and_a_front_matter_break_show_as_text_and_do_nothing():
+    texts = ["{{< meta title >}}", "{{< include /etc/hostname >}}", "<script>window.pwned=1</script>", "---\ntitle: broken\n---"]
+    lines = ["---", f"title: {yaml_string('Real title')}", "---", ""]
+    for i, t in enumerate(texts):
+        lines += [f"P{i} {plain(t)}", "", f"Q{i} {code(t)}", ""]
+    folder, result = _render("inert", "\n".join(lines), execute=False)
+    assert result.returncode == 0, result.stderr[-500:]
+    page = (folder / "report.html").read_text(encoding="utf-8")
+    assert "<script>window.pwned=1</script>" not in page
+    flat = re.sub(r"\s+", " ", _text_of(folder / "report.html"))
+    assert "{{< meta title >}}" in flat.replace("​", "") and "{{< include /etc/hostname >}}" in flat.replace("​", "")
+    assert "Real title" in page
+
+
+EXECUTING = {
+    "fence": "x\n\n```{{python}}\n#| echo: false\nopen({m!r}, 'w').write('fence')\n```\n",
+    "inline": "`{{python}} open({m!r}, 'w').write('inline')`",
+    "inline_in_text": "before `{{python}} open({m!r}, 'w').write('inline2')` after",
+}
+
+
+def _marker_report(kind: str, wrap, marker: Path) -> str:
+    text = EXECUTING[kind].format(m=str(marker))
+    # `jupyter: python3` puts the Python engine on, as an injected fenced cell elsewhere in a report would: an inline expression is only
+    # evaluated when the engine is on, so the control and the safe cases are judged in that worst case
+    return "\n".join(["---", f"title: {yaml_string('t')}", "jupyter: python3", "---", "", "| a | b |", "|---|---|", f"| row | {wrap(text)} |", "", f"Line: {wrap(text)}", ""])
+
+
+@needs_jupyter
+@pytest.mark.parametrize("kind", list(EXECUTING))
+def test_the_control_a_raw_text_runs_when_quarto_may_execute(kind):
+    """Without this the other tests prove nothing: the raw text DOES write the marker when Quarto executes."""
+    WORK.mkdir(parents=True, exist_ok=True)
+    marker = WORK / f"control_{kind}_{uuid.uuid4().hex[:8]}.txt"
+    _render("control", _marker_report(kind, lambda t: t, marker), execute=True, timeout=110)
+    assert marker.exists(), "the control did not run: this machine cannot prove anything about execution"
+    marker.unlink()
+
+
+@needs_jupyter
+@pytest.mark.parametrize("kind", list(EXECUTING))
+@pytest.mark.parametrize("how", ["plain", "code", "code_table"])
+def test_a_text_made_harmless_does_not_run_even_when_quarto_may_execute(kind, how):
+    WORK.mkdir(parents=True, exist_ok=True)
+    marker = WORK / f"safe_{kind}_{how}_{uuid.uuid4().hex[:8]}.txt"
+    wrap = {"plain": plain, "code": code, "code_table": lambda t: code(t, True)}[how]
+    _render("safe", _marker_report(kind, wrap, marker), execute=True, timeout=110)
+    assert not marker.exists(), "a text ran as code"
+
+
+@needs_jupyter
+@pytest.mark.parametrize("kind", list(EXECUTING))
+def test_even_a_raw_text_does_not_run_when_the_render_has_no_execute(kind):
+    WORK.mkdir(parents=True, exist_ok=True)
+    marker = WORK / f"noexec_{kind}_{uuid.uuid4().hex[:8]}.txt"
+    _render("noexec", _marker_report(kind, lambda t: t, marker), execute=False)
+    assert not marker.exists()
+
+
+@needs_quarto
+def test_the_lineage_diagram_is_still_drawn_when_nothing_is_executed():
+    """A `{mermaid}` cell is drawn by Quarto itself (a script in the page), not by an execution engine."""
+    qmd = "\n".join(["---", "title: t", "format:", "  html:", "    self-contained: true", "---", "", "## Data Lineage", "", "```{mermaid}", "flowchart LR",
+                     f'    a[("{mermaid_label("source one")} / source")] --> b["{mermaid_label("plot <one>")} / plot"]', "```", ""])
+    folder, result = _render("mermaid", qmd, execute=False)
+    assert result.returncode == 0, result.stderr[-500:]
+    page = (folder / "report.html").read_text(encoding="utf-8")
+    assert 'class="mermaid mermaid-js"' in page and "flowchart LR" in page   # the diagram source is in the page, for Quarto's own script
+    playwright = pytest.importorskip("playwright.sync_api", reason="no browser library: the drawn diagram cannot be looked at")
+    with playwright.sync_playwright() as pw:
+        try:
+            browser = pw.chromium.launch()
+        except Exception as exc:  # no browser installed
+            pytest.skip(f"no headless browser: {type(exc).__name__}")
+        try:
+            tab = browser.new_page()
+            tab.goto(f"file://{folder / 'report.html'}")
+            tab.wait_for_timeout(4000)
+            assert tab.locator("svg").count() >= 1, "the diagram was not drawn"
+            assert tab.locator("svg >> text=source one").count() >= 1 and tab.locator("svg >> text=plot #lt;one#gt;").count() + tab.locator("svg >> text=plot <one>").count() >= 1
+        finally:
+            browser.close()
+
+
+# ---- the handler: every insertion goes through the functions, and the command has --no-execute -----------------------
+
+SAFE_FUNCTIONS = {"_qp", "_qc", "_qm", "_qy", "_quote"}
+# names that may be interpolated as they are, with the reason (a new raw name fails the scan)
+TRUSTED = {
+    "plot_ext": "a file extension chosen by the code (png, svg, pdf)",
+    "fig_id": "built from the plot id with a regular expression that keeps only letters, digits and hyphens",
+    "caption": "built in the caller from _qp and _qc (checked there)",
+    "tier": "one of the tiers exported, constants of the code (T1, T2, T3)",
+    "tier_label": "a constant of a dictionary in the code",
+    "_i": "a counter",
+    "_open": "a constant of a dictionary in the code (Mermaid node shapes)",
+    "_close": "a constant of a dictionary in the code (Mermaid node shapes)",
+    "_tlbl": "a constant of a dictionary in the code (Mermaid type names)",
+    "verb": "a constant of a dictionary in the code",
+    "item": "a sentence of prose_items, every one built from checked pieces in the same function",
+}
+
+
+def _assignments(function: ast.AST, name: str):
+    for node in ast.walk(function):
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name for t in node.targets):
+            yield node.value
+        elif isinstance(node, ast.AugAssign) and isinstance(node.target, ast.Name) and node.target.id == name:
+            yield node.value
+        elif isinstance(node, ast.NamedExpr) and node.target.id == name:
+            yield node.value
+
+
+def _is_safe(expr: ast.AST, function: ast.AST, seen=()) -> bool:
+    if isinstance(expr, ast.Constant):
+        return True
+    if isinstance(expr, ast.Call):
+        func = expr.func
+        if isinstance(func, ast.Name) and func.id in SAFE_FUNCTIONS:
+            return True
+        # re.sub(<pattern>, <replacement>, x) with a pattern that keeps only safe characters (checked below), and ints
+        if isinstance(func, ast.Attribute) and func.attr == "sub" and ast.unparse(expr).startswith("_re.sub('[^A-Za-z0-9"):
+            return True
+        if isinstance(func, ast.Name) and func.id in ("len", "int", "str") and all(isinstance(a, (ast.Constant, ast.Call, ast.Attribute)) for a in expr.args):
+            return func.id in ("len", "int")
+        if isinstance(func, ast.Attribute) and func.attr == "join" and isinstance(func.value, ast.Constant):
+            arg = expr.args[0]
+            return _is_safe(arg.elt, function, seen) if isinstance(arg, (ast.GeneratorExp, ast.ListComp)) else False
+        if isinstance(func, ast.Name) and func.id == "_mmd_id":
+            return True   # keeps only letters, digits and underscores
+        if isinstance(func, ast.Attribute) and func.attr in ("strftime",):
+            return False
+        return False
+    if isinstance(expr, ast.JoinedStr):
+        return all(_is_safe(v.value, function, seen) for v in expr.values if isinstance(v, ast.FormattedValue))
+    if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Add):
+        return _is_safe(expr.left, function, seen) and _is_safe(expr.right, function, seen)
+    if isinstance(expr, ast.IfExp):
+        return _is_safe(expr.body, function, seen) and _is_safe(expr.orelse, function, seen)
+    if isinstance(expr, ast.Attribute) and ast.unparse(expr) == "df_preview.height":
+        return True
+    if isinstance(expr, ast.Name):
+        if expr.id in TRUSTED:
+            return True
+        if expr.id in seen:
+            return True
+        values = list(_assignments(function, expr.id))
+        return bool(values) and all(_is_safe(v, function, seen + (expr.id,)) for v in values)
+    return False
+
+
+def _walk_outside_safe_calls(node: ast.AST):
+    """Every node below `node`, except what is inside a call of one of the safe functions (that text is made harmless as a whole)."""
+    yield node
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in SAFE_FUNCTIONS:
+        return
+    for child in ast.iter_child_nodes(node):
+        yield from _walk_outside_safe_calls(child)
+
+
+def _unsafe_insertions(function: ast.FunctionDef, lo: int = 0, hi: int = 10 ** 9):
+    found = []
+    for node in _walk_outside_safe_calls(function):
+        if isinstance(node, ast.JoinedStr) and lo <= node.lineno <= hi:
+            for part in node.values:
+                if isinstance(part, ast.FormattedValue) and not _is_safe(part.value, function):
+                    found.append((node.lineno, ast.unparse(part.value)))
+    return found
+
+
+def _handler_tree():
+    tree = ast.parse(HANDLER.read_text(encoding="utf-8"))
+    functions = {n.name: n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
+    start = next(n.lineno for n in ast.walk(tree) if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "qmd_lines" for t in n.targets))
+    end = next(n.lineno for n in ast.walk(tree) if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "qmd_source" for t in n.targets))
+    return tree, functions, start, end
+
+
+def test_every_text_inserted_into_the_report_goes_through_the_functions():
+    """Scans the three places that write the report: a raw `{value}` in an f-string of the report fails here."""
+    _, functions, start, end = _handler_tree()
+    assert _unsafe_insertions(functions["plot_report_lines"]) == []
+    assert _unsafe_insertions(functions["_build_methods_section"]) == []
+    assert _unsafe_insertions(functions["define_export_server"], start, end) == []
+
+
+def test_the_scan_can_fail_a_raw_insertion_is_found():
+    source = ast.parse('def f(label, reason):\n    return [f"### {label}", f"| {_qp(reason)} |", f"{_qc(label)}"]\n')
+    function = source.body[0]
+    assert _unsafe_insertions(function) == [(2, "label")]
+
+
+def test_the_scan_covers_the_whole_report_region():
+    _, _, start, end = _handler_tree()
+    assert end - start > 200   # from the front matter to the join of the lines
+
+
+def test_the_render_command_has_no_execute():
+    tree, _, _, _ = _handler_tree()
+    commands = [n for n in ast.walk(tree) if isinstance(n, ast.List) and any(isinstance(e, ast.Constant) and e.value == "render" for e in n.elts)
+                and any(isinstance(e, ast.Constant) and e.value == "quarto" for e in n.elts)]
+    assert len(commands) == 1
+    assert any(isinstance(e, ast.Constant) and e.value == "--no-execute" for e in commands[0].elts)
+
+
+def test_the_handler_writes_no_code_cell_of_its_own():
+    """Why `--no-execute` changes nothing a user sees: the only fenced cell the handler writes is the Mermaid diagram."""
+    source = HANDLER.read_text(encoding="utf-8")
+    cells = set(re.findall(r"```\{(\w+)\}", source))
+    assert cells == {"mermaid"}, cells

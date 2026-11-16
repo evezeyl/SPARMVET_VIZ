@@ -83,7 +83,7 @@ def test_a_formula_that_would_write_a_file_is_refused_and_nothing_is_written(mar
 def test_the_refusal_names_the_plot_the_layer_and_the_offending_part(marker):
     text = refused(marker, [POINT, layer("geom_smooth", method="lm", formula="y ~ I(eval(x))")])
     assert text.startswith("Plot 'p', layer 2 (geom_smooth): the formula 'y ~ I(eval(x))' is refused: the function 'eval' is not allowed")
-    assert ". Fix: Suggestion: " in text   # what happened, then the suggestion, in the one error form
+    assert ". Suggestion: " in text and "Fix:" not in text   # what happened, then the suggestion, with no doubled label
 
 
 @pytest.mark.parametrize("formula, check", [

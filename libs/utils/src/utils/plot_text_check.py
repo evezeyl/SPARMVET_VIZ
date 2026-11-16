@@ -13,7 +13,7 @@ written as a plain column name); the plot factory calls it on every layer with t
 variable must then be a column, exactly).
 
 # @deps
-# provides: function:layer_text_problems, function:facet_variable_problems, constant:FACET_PARAMETERS
+# provides: function:layer_text_problems, function:facet_variable_problems, function:facet_variables, function:facet_sides, function:facet_wrap_spec, class:FacetTextError, constant:FACET_PARAMETERS
 # consumes: libs/utils/src/utils/formula_check.py
 # consumed_by: libs/utils/src/utils/recipe_check.py, libs/viz_factory/src/viz_factory/registry.py, libs/utils/tests/test_plot_text_check.py
 # doc: .claude/design/recipe_format_spec.md (section 15; check PS06)
@@ -39,27 +39,84 @@ def _split(message: str) -> Tuple[str, str]:
     return what, "Suggestion: " + suggestion.rstrip(".")
 
 
-def _pieces(value: Any) -> List[Any]:
-    """The variables named by a facet value: plotnine splits a text at `~` and `+`, a list is read item by item."""
+def _text_pieces(text: str, known: Optional[set]) -> List[str]:
+    """The variables a facet text names: the whole text when it is a column, else its parts around `~` and `+`.
+
+    This is our own reader of a facet formula (`a ~ b`, `~ a + b`). plotnine reads the same text with a pattern that
+    stops at the first character that is not a letter, digit or underscore, so `~Collection year` became the column
+    `Collection` (found 2026-11-16). The names it returns are exact; they are handed to plotnine as a list.
+    """
+    if known is not None and text in known:
+        return [text]
+    return [piece.strip() for side in text.split("~") for piece in side.split("+")]
+
+
+def _pieces(value: Any, known: Optional[set] = None) -> List[Any]:
+    """The variables named by a facet value: a text is read by `_text_pieces`, a list entry is one exact name."""
     if isinstance(value, str):
-        return [piece.strip() for side in value.split("~") for piece in side.split("+")]
+        return _text_pieces(value, known)
     if value is None:
         return []   # no variable on this side of a grid
     if isinstance(value, (list, tuple)):
         found: List[Any] = []
         for item in value:
-            found.extend(_pieces(item))
+            found.extend([item] if isinstance(item, str) else _pieces(item, known))
         return found
     return [value]
+
+
+def facet_variables(value: Any, columns: Optional[Iterable[str]] = None) -> List[str]:
+    """The exact column names a facet value names, in order; `.` and empty parts are no variable."""
+    known = None if columns is None else set(columns)
+    return [piece for piece in _pieces(value, known) if piece not in ("", ".")]
+
+
+def facet_sides(text: str, columns: Optional[Iterable[str]] = None) -> Tuple[List[str], List[str]]:
+    """(rows, columns) of a `facet_grid` formula text: `a + b ~ c` gives (['a', 'b'], ['c']); no `~` means rows only.
+
+    Raises ValueError when the text holds more than one `~`.
+    """
+    known = None if columns is None else set(columns)
+    if known is not None and text in known:
+        return [text], []
+    parts = text.split("~")
+    if len(parts) > 2:
+        raise ValueError("a facet formula has one ~, as in rows ~ columns")
+    sides = [[piece.strip() for piece in part.split("+") if piece.strip() not in ("", ".")] for part in parts]
+    return sides[0], (sides[1] if len(sides) == 2 else [])
+
+
+class FacetTextError(ValueError):
+    """A facet text that cannot be read; `what` says what happened, `suggestion` starts with `Suggestion:`."""
+
+    def __init__(self, what: str, suggestion: str):
+        super().__init__(what)
+        self.what = what
+        self.suggestion = suggestion
+
+
+def facet_wrap_spec(spec: dict, columns: Optional[Iterable[str]] = None) -> dict:
+    """A copy of the parameters of `facet_wrap` with `facets` as a list of exact column names (never as text).
+
+    plotnine cut a text such as `~Collection year` at the space and faceted by `Collection`. Raises `FacetTextError`
+    for a formula with a variable on the left of the `~` (facet_wrap takes `~ a + b`).
+    """
+    if spec.get("facets") is None:
+        return dict(spec)
+    text = spec["facets"]
+    known = None if columns is None else set(columns)
+    if isinstance(text, str) and "~" in text and not (known is not None and text in known):
+        if text.partition("~")[0].strip() not in ("", "."):
+            raise FacetTextError(f"facet_wrap reads `~ a + b`, with nothing on the left of the ~, and the text is {text!r}",
+                                 "Suggestion: write the variables on the right of the ~ (~ a + b), or use facet_grid for rows ~ columns")
+    return {**spec, "facets": facet_variables(text, columns)}
 
 
 def facet_variable_problems(value: Any, columns: Optional[Iterable[str]] = None) -> List[str]:
     """The parts of a facet value that are not allowed: each is the text of a variable that is not a column."""
     known = None if columns is None else set(columns)
-    if known is not None and isinstance(value, str) and value in known:
-        return []   # a column whose name holds a `+` or a `~`
     refused = []
-    for piece in _pieces(value):
+    for piece in _pieces(value, known):
         if not isinstance(piece, str):
             refused.append(repr(piece))
         elif piece in ("", "."):

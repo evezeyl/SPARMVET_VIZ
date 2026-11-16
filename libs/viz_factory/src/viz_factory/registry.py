@@ -2,7 +2,7 @@ import functools
 import logging
 from typing import Callable, Dict, Any, Optional
 
-from utils.plot_text_check import layer_text_problems
+from utils.plot_text_check import FacetTextError, facet_wrap_spec, layer_text_problems
 
 from viz_factory.parameters import ComponentParameterError, exact_parameters
 
@@ -84,6 +84,19 @@ def _read_exact_parameters(name: str, schema: Dict[str, Any]) -> None:
     schema["params"], schema["not_exposed"] = exact_parameters(name, schema)
 
 
+def _exact_facets(name: str, p: Any, spec: Any) -> Any:
+    """`facet_wrap` gets its variables as a list of exact column names (`facet_grid`, `facet_rows`, `facet_cols` do the same in their own handlers)."""
+    if name != "facet_wrap" or not isinstance(spec, dict):
+        return spec
+    from viz_factory.errors import CannotAct
+
+    data = getattr(p, "data", None)
+    try:
+        return facet_wrap_spec(spec, list(data.columns) if hasattr(data, "columns") else None)
+    except FacetTextError as exc:
+        raise CannotAct(exc.what, exc.suggestion) from exc
+
+
 # `get_component` hands out each component inside the text check; the registered function itself stays as written
 # (a test reads its code to prove it is `exact`, and the check must not change what it is).
 _CHECKED: Dict[str, Callable] = {}
@@ -101,7 +114,7 @@ def get_component(name: str) -> Callable:
         @functools.wraps(func)
         def checked(p, spec):
             refuse_unsafe_texts(name, p, spec)
-            return func(p, spec)
+            return func(p, _exact_facets(name, p, spec))
 
         _CHECKED[name] = checked
     return _CHECKED[name]
