@@ -2,7 +2,7 @@
 (reviewer 2026-11-15: ns digits were cut to microseconds and picked nothing; ms and time-zone columns gave raw Polars errors).
 
 What the dialog lists (`value_choices`) is what is stored; it carries the full precision and the offset of the column; the three
-views and the exported step read it back from the column's own unit and zone. Time and duration columns are not offered.
+views and the exported step read it back from the column's own unit and zone. Time and duration columns are offered with their own controls (test_filter_four_way_pickers.py).
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_filter_datetime_four_way.py -q
 """
@@ -66,7 +66,7 @@ CASES = [("ms", None), ("us", None), ("ns", None), ("us", "UTC"), ("ns", "Europe
 
 @pytest.mark.parametrize("unit, zone", CASES)
 @pytest.mark.parametrize("op, index, expected", [
-    ("in", 0, ["a"]), ("eq", 1, ["b"]), ("not_in", 1, ["a", "c"]), ("ne", 0, ["b", "c"]), ("in", 2, ["c"]),
+    ("in", 0, ["a"]), ("in", 1, ["b"]), ("not_in", 1, ["a", "c"]), ("not_in", 0, ["b", "c"]), ("in", 2, ["c"]),
 ])
 def test_what_the_dialog_lists_keeps_the_same_rows_in_every_view(unit, zone, op, index, expected):
     f = frame(unit, zone)
@@ -138,24 +138,24 @@ def test_an_unreadable_text_is_a_plain_error_in_the_table():
         _apply_filter_rows(f.lazy(), [row]).collect()
 
 
-# -- time and duration are not offered
+# -- time and duration are offered since FILTER-PICKERS-1; a column of another type is refused in plain words
 
-@pytest.mark.parametrize("dtype", [pl.Time, pl.Duration])
-def test_time_and_duration_columns_are_not_offered(dtype):
+@pytest.mark.parametrize("dtype", [pl.Binary, pl.List(pl.Int64)])
+def test_a_column_of_another_type_is_not_offered(dtype):
     assert ops_for_column(dtype, False) == []
 
 
-@pytest.mark.parametrize("value, dtype", [(datetime.time(10, 30), pl.Time), (datetime.timedelta(seconds=5), pl.Duration)])
-def test_a_filter_on_a_time_or_duration_column_is_a_plain_error_in_every_view(value, dtype):
-    f = pl.DataFrame({"s": ["a", "b"], "n": [1, 2], "t": pl.Series([value, value], dtype=dtype)})
-    row = {"column": "t", "op": "in", "value": [str(value)], "dtype": str(dtype), "na": "remove"}
+def test_a_filter_on_a_binary_column_is_a_plain_error_in_every_view():
+    f = pl.DataFrame({"s": ["a", "b"], "n": [1, 2], "t": pl.Series([b"x", b"y"], dtype=pl.Binary)})
+    row = {"column": "t", "op": "in", "value": ["x"], "dtype": "Binary", "na": "remove"}
     with pytest.raises(FilterValueError) as exc:
         _apply_filter_rows(f.lazy(), [row]).collect()
-    assert "not offered" in str(exc.value) or "not available" in str(exc.value)
+    assert "not offered" in str(exc.value)
+    recipe = {"plots": {"p": {"mapping": {"x": "s", "y": "n"}, "layers": [{"name": "geom_col", "params": {}}], "filters": [row]}}}
     with pytest.raises(Exception) as plot:
-        home_plot_data(f.lazy(), [row], {"mapping": {"x": "s", "y": "n"}, "layers": [{"name": "geom_col", "params": {}}]})
+        VizFactory().render(f.lazy(), recipe, "p")
     assert "ComputeError" not in str(plot.value) and "InvalidOperation" not in str(plot.value)
-    step = {"column": "t", "op": "in", "value": [str(value)], "na": "remove"}
+    step = {"column": "t", "op": "in", "value": ["x"], "na": "remove"}
     with pytest.raises(Exception) as rerun:
         AVAILABLE_WRANGLING_ACTIONS["modif_filter"](f.lazy(), step).collect()
     assert "InvalidOperation" not in str(rerun.value)

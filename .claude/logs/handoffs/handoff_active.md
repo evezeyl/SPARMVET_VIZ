@@ -1160,3 +1160,36 @@ Records: `tasks.md` section 6 (three done lines, three open lines). No commit ma
 - `.claude/design/home_stage2_mechanism_spec.md`: the paragraph "Original recipe and audit recipe" added at the top.
 - `docs/user_guide/audit_pipeline.qmd`: the same paragraph added.
 - `tmpAI/agent_channel.md`: partly trimmed (2 coordinator blocks deleted; 7 candidates kept, the rest of the trim was refused by the permission check). List: `tmpAI/coordinator/channel_trim_2026-11-16.md`.
+
+## Handoff 2026-11-16 02:55 (coordinator)
+
+**What you see first:** `origin/dev` is at `78c620bf`, pushed. It holds the migration of the `Categorical` fields and the audit of the plot components. The full checks passed on that exact tree.
+
+**Checks on `78c620bf`:**
+- Headless tests: 7976 passed, 0 failed. Golden tables: identical.
+- Gallery pictures: 34, identical.
+- Browser gate: 72 passed. Eight other browser files passed.
+
+**Pushed:** `78c620bf` (the `Categorical` migration, the plot components audit).
+
+**Merged, NOT pushed:** `a386422a`, the filter controls by type of column (FILTER-PICKERS-1). The next push needs one full control run on the merged tree. Eight provisional choices wait for Eve.
+
+**Branches in review,** each in its worktree under `.claude/worktrees/`:
+- `task/smooth-formula` (HEAD `3527855d`): the security fix, five places closed (PLOT-TEXT-RUNS-CODE-1). The reviewer attacks it and establishes the facts on the export report (REPORT-TEXT-RUNS-CODE-1).
+- `task/recipe-fixes` (HEAD `3805df49`): 37 step descriptions, false descriptions corrected, the first line of the multi-resistance formula with 16 of 38 samples before and after, one old file deleted, messages of declared types.
+
+Order after the reviews: merge both; one full control run on the merged tree (filter controls, security fix, recipe fixes); push `dev`. No merge into `main`.
+
+**For Eve, one file (not in git):** `tmpAI/panel/round7/FOR_EVE_one_list.md`. 34 points answered by yes or no; 41 points to choose, each with options and a default; 25 points that a record already answers are in its Appendix A with what is to build. Sources: `tmpAI/panel/round7/questions_checked.md`, `tmpAI/panel/adr/ledger.md` (column "taken by") and `taken_by_report.md`, `tmpAI/panel/round7/n7_4/result.md` and `points_checked.md`, `tmpAI/panel/round7/recipe_fixes/fix_list.md`, `tmpAI/panel/round7/old_words/replacements.md`, `tmpAI/panel/round7/s2_2/typing_at_reading.md` and `stat_summary.md`, `tmpAI/panel/round7/filter_pickers_points_for_eve.md`, `tmpAI/panel/round7/categorical_migration_list.md`, `tmpAI/panel/round7/original_vs_audit_recipe.md`. In git: `.claude/design/viz_rename_impact_2026-11-15.md`, `.claude/design/decisions_2026-11-14/rule_file_proposals/RULE_FILE_CHANGES.md`.
+
+**Not started, in this order:**
+1. The fix of the export report, if the facts confirm it.
+2. The reading errors (the decided parts; READING-ERRORS-1).
+3. The removal of all saved caches and sessions (CLEAN-SAVED-1; Eve's decision of 2026-11-15). It runs alone, when no test run uses the main tree.
+4. "A recipe changed while in use" (S2-3-Q, an investigation).
+5. The pictures of the recipe overview (three viewpoints; RECIPE-OVERVIEW-2).
+6. Last: the audit of the state of the repository Eve asked for.
+
+**How to resume after a usage-limit stop:** read the top block "LOG SINCE 18:03" of `tmpAI/coordinator/progress_2026-11-14_session3.md`. Continue each stopped agent by a message in its own worktree. Never two workers on one worktree. At most three workers at once.
+
+**Records changed, not committed (records agent, 2026-11-16 02:55; the coordinator commits by file name):** `.claude/tasks/tasks.md` (EXPORT-RECIPE-REFUSE-1 rewritten as TO CONFIRM WITH EVE; FILTER-PICKERS-1 line; section 7 done lines; five new open lines at the end of the list).
