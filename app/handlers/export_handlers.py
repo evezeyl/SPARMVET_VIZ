@@ -1075,6 +1075,7 @@ def define_export_server(input, output, session, *,
             # Parts of this export that are replaced by a `*_ERROR.txt` file inside the zip (D-0050: the user is told on
             # screen too, once, when the export is finished) and pictures that could not take the keys.
             _unwritten: list[tuple[str, str]] = []
+            _t3_written: set[tuple[str, str]] = set()      # (dataset key, plot) of every T3_data_<plot>.tsv that is in the zip
             _picture_failures: list[tuple[str, Exception]] = []
 
             def _lost(what: str, exc) -> None:
@@ -1298,6 +1299,7 @@ def define_export_server(input, output, session, *,
                                 lf_t3.collect().write_csv(str(tsv_path), separator="\t")
                                 with open(tsv_path, "rb") as f:
                                     zf.writestr(f"{bundle_dir}/{safe_ds}/T3_data_{_t3_pid}.tsv", f.read())
+                                _t3_written.add((ds_key, _t3_pid))
                             except Exception as e:
                                 _lost(f"the audited data of the plot '{_t3_pid}'", e)
                                 zf.writestr(
@@ -1722,14 +1724,18 @@ def define_export_server(input, output, session, *,
                 if shape_note:
                     qmd_lines.append(f"*{shape_note}*  ")
                 qmd_lines.append("")
-                for tier in tiers_exported:
-                    tier_label = {
-                        "T1": "Raw data (T1)",
-                        "T3": "Analyst-filtered data (T3)",
-                    }.get(tier, tier)
-                    qmd_lines.append(
-                        f"[{tier_label}]({_quote(safe_ds)}/{tier}_data.tsv)"
-                    )
+                # Only files that are in the bundle (VERIF-FIX-2, E4): T1 when it was written, T2 when the table has tier 2
+                # steps, and one T3 file per plot that has audited steps and whose file was written.
+                # (A plot with no target table has its plots in `__anchor__/` and its data under the key `__tier1_anchor__`.)
+                _data_key = "__tier1_anchor__" if ds_key == "__anchor__" else ds_key
+                _data_folder = _quote(_safe_ds_name(_data_key))
+                if _data_key in exported_dfs:
+                    qmd_lines.append(f"[Raw data (T1)]({_data_folder}/T1_data.tsv)")
+                if _data_key in exported_t2:
+                    qmd_lines.append(f"[Result data (T2)]({_data_folder}/T2_data.tsv)")
+                for _plot in plot_list:
+                    if (_data_key, _plot) in _t3_written:
+                        qmd_lines.append(f"[Analyst-filtered data (T3) of {_qp(_plot)}]({_data_folder}/T3_data_{_quote(_plot)}.tsv)")
                 qmd_lines.append("")
 
             # ── T3 Audit Trail section ────────────────────────────────────
