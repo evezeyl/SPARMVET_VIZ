@@ -13,7 +13,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:audit_failures, class:AuditStepError
-# consumes: app/modules/error_notice.py (notice, lazy — VERIF-FIX-2), polars, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
+# consumes: polars, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_step_order.py, app/tests/test_removed_audit_step_type.py, app/tests/test_audit_error_names_the_plot.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
@@ -466,20 +466,11 @@ def dialog_value(lf, column: str, dtype, discrete_axis: bool, op: str, *, picked
     return (op, text, "both") if text else None
 
 
-def inapplicable_filter_rows(lf, filter_rows: list, on_problem=None) -> list:
-    """Filter rows whose column is absent from lf; they are skipped, not applied (issue #56).
-
-    When the columns of `lf` cannot be read, no row can be judged and `[]` is still returned (what the function always did);
-    `on_problem(text)` is then called, so that the caller can say that nothing was checked (D-0050). What the function should
-    return in that case is a choice for Eve, not made here."""
+def inapplicable_filter_rows(lf, filter_rows: list) -> list:
+    """Filter rows whose column is absent from lf; they are skipped, not applied (issue #56)."""
     try:
         names = set(lf.collect_schema().names())
-    except Exception as exc:
-        if on_problem is not None:
-            from app.modules.error_notice import notice
-            on_problem(notice(
-                "The columns of the table could not be read, so nobody checked which filters name a column the table does not have",
-                "reload the page (F5); a filter on a column that is not in the table is skipped without a word until then", exc))
+    except Exception:
         return []
     return [f for f in filter_rows if f.get("column") is not None and f.get("column") not in names]
 

@@ -1,4 +1,4 @@
-"""A click or a choice that cannot be read is told, not swallowed (VERIF-FIX-2, the four places of check 8 F4;
+"""A click or a choice that cannot be read is told, not swallowed (VERIF-FIX-2, three of the four places of check 8 F4; the fourth, `inapplicable_filter_rows`, has no caller and waits for a decision;
 D-0050 "No silent error that is the rule.").
 
 1. HOME: the "Reshuffle arrangement" click and the "Remove the pinned seed" click were read inside `try ... except Exception: return`.
@@ -112,28 +112,3 @@ def test_a_dataset_choice_that_can_be_read_gets_no_note(tmp_path, monkeypatch):
     result, status = _scaffold(tmp_path, monkeypatch, choice="second.tsv")
     assert result["id_steps_file"] == "second.tsv" and result.get("notes", []) == [], result
 
-
-# -- the schema of the table (t3_audit_engine) --------------------------------------------------------------------------
-
-def test_a_table_whose_columns_cannot_be_read_says_nothing_was_checked():
-    """MUTATION C4 (the callback is not called) fails here. The return value is as before: `[]`, which is itself a choice for Eve."""
-    from app.modules.t3_audit_engine import inapplicable_filter_rows
-
-    class Broken:
-        def collect_schema(self):
-            raise RuntimeError("the table cannot be scanned")
-
-    told = []
-    assert inapplicable_filter_rows(Broken(), [{"column": "gone"}], on_problem=told.append) == []
-    assert len(told) == 1 and "the table cannot be scanned" in told[0] and ". Suggestion:" in told[0], told
-    assert inapplicable_filter_rows(Broken(), [{"column": "gone"}]) == [], "without a callback: as before"
-
-
-def test_a_table_whose_columns_can_be_read_reports_the_missing_column_and_nothing_else():
-    """The control."""
-    import polars as pl
-    from app.modules.t3_audit_engine import inapplicable_filter_rows
-    told = []
-    lf = pl.DataFrame({"a": [1]}).lazy()
-    assert [f["column"] for f in inapplicable_filter_rows(lf, [{"column": "a"}, {"column": "gone"}], on_problem=told.append)] == ["gone"]
-    assert told == []
