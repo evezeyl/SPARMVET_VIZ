@@ -15,6 +15,7 @@ list kept by hand:
   namespace `meta`, `Expr.inspect` (refused by name, `REFUSED_BY_NAME`) and any name that starts with `_` are refused. The list is read from the installed Polars at run
   time and `libs/utils/tests/test_formula_reads_no_outside_data.py` fails when a Polars upgrade adds a member that
   nobody has judged (a member allowed by name only, as before 2026-11-17, let `deserialize` read any file);
+- `pl.<dtype>` for the Polars dtypes, except `pl.Object` (REFUSED_DTYPES, parked by Eve 2026-11-17, D-0230);
 - constants, arithmetic, comparison and boolean operators, lists, tuples, dictionaries and subscripts.
 Refused: any other name, `lambda`, comprehensions, f-strings, starred arguments, conditional expressions, a string or
 list multiplied (memory), an exponent that is not a small constant (processor time).
@@ -28,8 +29,8 @@ the variables `x` and `y`, numbers, the operators of a model formula, `I`, `C`, 
 slow or large: nothing here stops heavy computation (spec section 15, known limit).
 
 # @deps
-# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, function:member_refusal, function:refused_members, constant:REFUSED_BY_NAME, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, class:FormulaError
-# consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_formula_reads_no_outside_data.py, libs/utils/tests/test_plot_text_check.py, libs/utils/src/utils/plot_text_check.py
+# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, function:member_refusal, function:refused_members, constant:REFUSED_BY_NAME, constant:REFUSED_DTYPES, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, class:FormulaError
+# consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_formula_refuses_object.py, libs/utils/tests/test_formula_reads_no_outside_data.py, libs/utils/tests/test_plot_text_check.py, libs/utils/src/utils/plot_text_check.py
 # doc: .claude/design/recipe_format_spec.md (section 15; check ST06)
 # @end_deps
 """
@@ -118,6 +119,20 @@ REFUSED_BY_NAME = {
     ("expr", "inspect"): PRINTS_OUTSIDE,
     ("expr", "meta"): META_OUTSIDE,
 }
+
+
+# Data types a formula may not name. PARKED by Eve, 2026-11-17 (D-0230): "park it and refuse. With a note of possibility
+# to re evaluate if request or necessity later on." `pl.Object` holds any Python object, which a normal table does not
+# (`str.json_decode(pl.Object)` passed the check and stopped the calculation with a Polars panic). Every way to name
+# the type goes through `pl.<name>`, so one refusal there covers `pl.Object`, `pl.Object()`, `pl.List(pl.Object)`,
+# `pl.Struct({'x': pl.Object})` and a keyword value; Polars does not accept a dtype written as a string (tested). Panics
+# are not caught: a type that panics is refused here. Re-evaluate if a request or a necessity comes.
+REFUSED_DTYPES = {
+    "Object": "pl.Object holds any Python object, which a table column does not; a recipe works on normal table columns",
+}
+
+REFUSED_DTYPE_SUGGESTION = ("Suggestion: use a type a table can hold, for example pl.String, pl.Int64, pl.Float64, pl.Boolean, "
+                            "pl.List(...) or pl.Struct({...}) of those")
 
 
 def member_refusal(cls: type, name: str) -> "str | None":
@@ -235,6 +250,9 @@ class _Checker:
         if kind == "module":
             if name in MODULE_FUNCTIONS:
                 return "function:" + name
+            if name in REFUSED_DTYPES:
+                self.refuse(REFUSED_DTYPES[name], REFUSED_DTYPE_SUGGESTION)
+                return "dtype"
             if name in _dtypes():
                 return "dtype"
             self.refuse(f"pl.{name} is not allowed", "use one of: " + ", ".join(sorted(MODULE_FUNCTIONS)))
