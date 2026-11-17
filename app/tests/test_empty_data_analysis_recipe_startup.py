@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 import yaml
 from playwright.sync_api import Page, expect
-from app.tests.subprocess_env import app_env
+from app.tests.subprocess_env import app_command, app_env
 
 REPO = Path(__file__).resolve().parents[2]
 SERVER_ERRORS = ("Unhandled error", "Traceback", "ReactiveWarning")
@@ -52,7 +52,7 @@ def test_zero_recipes_renders_empty_state_without_server_error(page: Page, tmp_p
     env = app_env(SPARMVET_APP_FEATURES="qa", SPARMVET_DEPLOYMENT=str(dep))
     with open(log, "w") as out:
         proc = subprocess.Popen(
-            [str(REPO / ".venv/bin/shiny"), "run", "app/src/main.py", "--port", str(port)],
+            app_command(port),
             cwd=REPO, env=env, stdout=out, stderr=subprocess.STDOUT,
         )
         try:

@@ -33,7 +33,7 @@ from PIL import Image, ImageChops
 from playwright.sync_api import Page, expect
 
 from app.tests.conftest import browser  # noqa: F401
-from app.tests.subprocess_env import app_env
+from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _navigate_to_phenotype_plot, _wait_shiny
 
 REPO = Path(__file__).resolve().parents[2]
@@ -80,7 +80,7 @@ def running_app(app_features: str, deployment: str, tmp_path):
     env = app_env(SPARMVET_APP_FEATURES=app_features, SPARMVET_DEPLOYMENT=deployment)
     Path(REPO / "tmpAI").mkdir(exist_ok=True)
     with open(REPO / "tmpAI" / f"seed_places_{app_features}.log", "w") as out:
-        proc = subprocess.Popen([str(REPO / ".venv/bin/shiny"), "run", "app/src/main.py", "--port", str(port)],
+        proc = subprocess.Popen(app_command(port),
                                 cwd=REPO, env=env, stdout=out, stderr=subprocess.STDOUT)
         try:
             url = f"http://127.0.0.1:{port}/"

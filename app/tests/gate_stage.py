@@ -11,7 +11,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-from app.tests.subprocess_env import app_env
+from app.tests.subprocess_env import app_command, app_env
 
 REPO = Path(__file__).resolve().parents[2]
 PIPELINES = REPO / "config" / "data_analysis_recipes" / "pipelines"
@@ -71,7 +71,7 @@ def running_app(tmp_path, features: str = "qa", recipe: str = STAGE):
     env = app_env(SPARMVET_APP_FEATURES=features, SPARMVET_DATA_ANALYSIS_RECIPE=recipe)
     try:
         with open(log, "w") as out:
-            proc = subprocess.Popen([str(REPO / ".venv/bin/shiny"), "run", "app/src/main.py", "--port", str(port)],
+            proc = subprocess.Popen(app_command(port),
                                     cwd=REPO, env=env, stdout=out, stderr=subprocess.STDOUT)
             try:
                 url = f"http://127.0.0.1:{port}/"

@@ -10,7 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from app.tests.subprocess_env import REPO, app_env, source_path
+from app.tests.subprocess_env import REPO, app_command, app_env, source_path
 
 
 def test_source_path_holds_the_root_and_every_lib_src_of_this_checkout():
@@ -34,3 +34,29 @@ def test_app_env_keeps_the_given_variables_and_a_caller_pythonpath():
     env = app_env(SPARMVET_APP_FEATURES="qa")
     assert env["SPARMVET_APP_FEATURES"] == "qa"
     assert source_path() in env["PYTHONPATH"]
+
+
+def test_app_command_is_the_running_interpreter_and_no_venv_path():
+    cmd = app_command(8123)
+    assert cmd[0] == sys.executable
+    assert cmd[1:4] == ["-m", "shiny", "run"]
+    assert cmd[-2:] == ["--port", "8123"]
+    assert ".venv" not in " ".join(cmd[1:])
+    assert (REPO / cmd[4]).is_file(), "the app file named by the command must exist in this checkout"
+
+
+def test_the_app_started_by_the_helper_imports_this_checkouts_code():
+    """What `shiny run app/src/main.py` imports, started the way the helper starts it (interpreter, cwd, env).
+
+    Not the whole server: the app has no endpoint that tells which code runs, and this task does not change the app.
+    This runs the same interpreter, working folder and environment and imports the app module and the libs it uses.
+    """
+    code = ("import importlib\n"
+            "for m in ('app.src.main', 'utils', 'transformer', 'viz_factory', 'blueprint_arch', 'ingestion'):\n"
+            "    print('FILE=' + importlib.import_module(m).__file__)\n")
+    cmd = app_command(8123)
+    out = subprocess.run([cmd[0], "-c", code], cwd=REPO, env=app_env(), capture_output=True, text=True, check=True)
+    files = [l[5:] for l in out.stdout.splitlines() if l.startswith('FILE=')]
+    assert len(files) == 6
+    for f in files:
+        assert Path(f).resolve().is_relative_to(REPO.resolve()), f"{f} is outside {REPO}"
