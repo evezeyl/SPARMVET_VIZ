@@ -953,7 +953,7 @@ class _Check:
         if "filters" in spec_ and TIER3_READ_BY_ENGINE:
             self.add("P06", f"{path}.filters", "filters in a plot spec moved to the plot's steps", "write the filters as steps.tier3")
 
-    def layers(self, layers: list, path: str) -> None:
+    def layers(self, layers: list, path: str, *, needs_geom: bool = True) -> None:
         components = (self.catalogs or {}).get("components")
         arguments = (self.catalogs or {}).get("component_arguments", {})
         kinds = (self.catalogs or {}).get("component_kinds", {})
@@ -996,7 +996,7 @@ class _Check:
                         close = difflib.get_close_matches(str(key), sorted(allowed), n=1, cutoff=0.6)
                         self.add("PS04", f"{where}.params.{key}", f"{key} is not an argument of {name}{_plotnine_note(name, kinds)}",
                                  f"write {close[0]}" if close else "remove it")
-        if not has_geom:
+        if needs_geom and not has_geom:
             self.add("PS03", path, "no geom or stat layer", "add a layer such as {name: geom_point}")
 
     def plot_defaults(self, raw: dict) -> None:
@@ -1013,6 +1013,13 @@ class _Check:
             if not is_seed_value(value):
                 self.add("PD01", "plot_defaults.random_state", f"random_state is {value!r}, but a seed is a whole number",
                          "write random_state: 0 (any whole number)")
+        # D-0050: the layers of plot_defaults are judged by the same function as a plot's layers (same codes);
+        # only the "needs a geom" rule does not apply, the defaults are added to every plot
+        if "layers" in defaults:
+            if isinstance(defaults["layers"], list):
+                self.layers(defaults["layers"], "plot_defaults.layers", needs_geom=False)
+            else:
+                self.add("PS03", "plot_defaults.layers", "layers is a list", "write layers: [{name: theme_bw}]")
 
     # -- gallery profile
     def gallery(self, raw: dict) -> None:

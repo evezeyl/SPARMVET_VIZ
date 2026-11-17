@@ -7,6 +7,7 @@ from viz_factory.registry import get_component
 from viz_factory.plot_config_resolver import (
     BATCHED_COMPONENTS, resolve_plot_config, spec_key_names, unknown_spec_keys)
 from utils.random_layers import is_random_layer, is_seed_value, position_of
+from viz_factory.font_check import font_problems, family_text, settings_text
 from viz_factory.checked_plot import (
     CheckedPlot, PlotContext, Step, draw_checked, explain_build_failure, plot_environment, plot_warnings, show_draw_errors)
 from viz_factory.errors import layer_label, plot_failure
@@ -21,7 +22,7 @@ import difflib
 
 # @deps
 # provides: class:VizFactory, function:VizFactory.render, constant:DEFAULT_RANDOM_STATE, function:draw_checked and function:show_draw_errors (re-exported from checked_plot.py)
-# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/viz_factory/src/viz_factory/checked_plot.py, libs/viz_factory/src/viz_factory/errors.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/engines.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
+# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/viz_factory/src/viz_factory/checked_plot.py, libs/viz_factory/src/viz_factory/font_check.py, libs/viz_factory/src/viz_factory/errors.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/engines.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/gallery_examples.py, app/tests/test_render_every_plot.py, libs/viz_factory/tests/
 # doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-081, ADR-090, ADR-094, ADR-106)
 # @end_deps
@@ -408,6 +409,22 @@ class VizFactory:
             p = apply(p, Step(
                 "palette", {}, lambda q, _params: self._apply_palette(q, palette_name, mapping_spec, has_fill_scale, has_color_scale, warn, df_pandas),
                 label=f"the palette '{palette_name}'"))
+
+        # 10. A font family that is not installed is replaced by another font when the picture is drawn, with a log line only:
+        # the user is told here (D-0050). The plot still draws, so it is a warning, not an error.
+        for settings, asked, used in font_problems(getattr(p, "theme", None)):
+            warn(PipelineError(
+                component="VizFactory",
+                problem=f"The font '{family_text(asked)}' (theme setting: {settings_text(settings)}) is not installed on this machine; '{used}' is used instead.",
+                location=f"VizFactory.render(plot_id='{plot_id}')",
+                fix=(f"Suggestion: write a font family that is installed (for example '{used}'), or install '{family_text(asked)}' on the machine "
+                     "that draws the plot. A picture drawn on another machine can show a different font."),
+                who="data_analysis_recipe_author",
+                category="visualization",
+                surface="notification",
+                severity="warning",
+                evidence={"font_asked": family_text(asked), "font_used": used, "theme_setting": list(settings)},
+            ))
 
         return p
 

@@ -575,3 +575,31 @@ def test_a_closed_bracket_description_gets_no_cut_advice_and_every_element_is_lo
         "plot": lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(description="Bars (issue"),
     }.items():
         assert "D01" in check(mutated(change)).codes(), where
+
+
+# -- the layers of plot_defaults go through the same layer checks as the layers of a plot (D-0050)
+def _with_defaults_layers(layers):
+    def put(raw):
+        raw["plot_defaults"] = {"layers": layers}
+    return mutated(put)
+
+
+def test_defaults_layers_unknown_component_is_reported():
+    result = check(_with_defaults_layers([{"name": "theme_bww"}]), file_stem="r")
+    found = [p for p in result.problems if p.code == "PS04" and p.path.startswith("plot_defaults.layers[1]")]
+    assert found and "theme_bww" in found[0].message and "theme_bw" in found[0].fix
+
+
+def test_defaults_layers_unknown_argument_is_reported():
+    result = check(_with_defaults_layers([{"name": "geom_col", "params": {"colr_": 1}}]), file_stem="r")
+    assert [p for p in result.problems if p.code == "PS04" and "colr_" in p.message and p.path.startswith("plot_defaults.layers")]
+
+
+def test_defaults_layers_valid_block_is_accepted_and_needs_no_geom():
+    result = check(_with_defaults_layers([{"name": "theme_bw"}]), file_stem="r")
+    assert result.problems == []
+
+
+def test_defaults_layers_that_is_not_a_list_is_reported():
+    result = check(_with_defaults_layers({"name": "theme_bw"}), file_stem="r")
+    assert [p for p in result.problems if p.path == "plot_defaults.layers"]

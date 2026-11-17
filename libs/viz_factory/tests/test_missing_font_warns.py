@@ -1,0 +1,122 @@
+"""A font family that is not installed is replaced by another font when the picture is drawn; the author is told (D-0050).
+
+# @deps
+# consumes: libs/viz_factory/src/viz_factory/font_check.py (missing_fonts), libs/viz_factory/src/viz_factory/viz_factory.py (VizFactory.render), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings)
+# @end_deps
+
+The check asks matplotlib's font manager directly (`findfont(..., fallback_to_default=False)`), it does not read a log text.
+The plot still draws: the warning is not an error. DejaVu Serif ships inside matplotlib, so it is installed on every machine.
+"""
+import matplotlib
+import polars as pl
+
+matplotlib.use("Agg")
+
+from viz_factory.checked_plot import plot_warnings
+from viz_factory.font_check import missing_fonts
+from viz_factory.viz_factory import VizFactory, draw_checked
+
+DF = pl.DataFrame({"x": [1.0, 2.0, 3.0], "y": [3.0, 1.0, 2.0]})
+MISSING = "NoSuchFontXyz"
+
+
+def render(*layers):
+    spec = {"target_dataset": "d", "mapping": {"x": "x", "y": "y"}, "layers": [{"name": "geom_point"}, *layers]}
+    return VizFactory().render(DF, {"plots": {"p": spec}, "plot_defaults": {}}, "p")
+
+
+def font_warnings(plot):
+    return [w for w in plot_warnings(plot) if "font" in w.problem]
+
+
+def test_a_missing_base_family_is_a_warning_with_the_font_asked_for_and_the_font_used():
+    plot = render({"name": "theme_bw", "params": {"base_family": MISSING}})
+    found = font_warnings(plot)
+    assert len(found) == 1 and found[0].severity == "warning"
+    assert MISSING in found[0].problem and "DejaVu Sans" in found[0].problem and found[0].problem.startswith("Plot 'p': ")
+    assert found[0].fix.startswith("Suggestion:")
+    draw_checked(plot)   # the plot still draws
+
+
+def test_a_missing_family_in_an_element_text_of_theme_custom_is_a_warning():
+    plot = render({"name": "theme_custom", "params": {"axis_text_x": {"name": "element_text", "params": {"family": MISSING}}}})
+    found = font_warnings(plot)
+    assert len(found) == 1 and MISSING in found[0].problem and "axis_text_x" in found[0].problem
+    draw_checked(plot)
+
+
+def test_an_installed_font_is_no_warning():
+    assert font_warnings(render({"name": "theme_bw", "params": {"base_family": "DejaVu Serif"}})) == []
+
+
+def test_no_theme_setting_is_no_warning():
+    assert font_warnings(render()) == []
+
+
+def test_the_same_missing_font_in_two_places_is_reported_once_per_place_and_not_for_installed_ones():
+    plot = render({"name": "theme_bw", "params": {"base_family": MISSING}},
+                  {"name": "theme_custom", "params": {"axis_text_x": {"name": "element_text", "params": {"family": "DejaVu Serif"}}}})
+    found = font_warnings(plot)
+    assert len(found) == 1 and MISSING in found[0].problem
+
+
+def test_a_list_of_families_with_one_installed_is_no_warning():
+    # matplotlib takes the first family it has, so the list is fine; only a list with none of them is told
+    assert missing_fonts(["NoSuchOne", "DejaVu Serif"]) is None
+    assert missing_fonts(["NoSuchOne", "NoSuchTwo"]) is not None
+
+
+def test_a_missing_font_is_found_without_reading_any_log():
+    requested, used = missing_fonts(MISSING)
+    assert requested == MISSING and used == "DejaVu Sans"
+
+
+def text_layer(family):
+    return {"name": "theme_custom", "params": {"text": {"name": "element_text", "params": {"family": family}}}}
+
+
+def test_a_missing_family_on_the_general_setting_text_is_told_once_not_once_per_setting():
+    found = font_warnings(render(text_layer(MISSING)))
+    assert len(found) == 1
+    assert MISSING in found[0].problem and "general setting 'text'" in found[0].problem and found[0].fix.startswith("Suggestion:")
+
+
+def test_two_different_missing_fonts_are_two_warnings():
+    plot = render(text_layer(MISSING), {"name": "theme_custom", "params": {"axis_text_x": {"name": "element_text", "params": {"family": "OtherGoneFont"}}}})
+    found = font_warnings(plot)
+    assert len(found) == 2
+    assert any(MISSING in w.problem for w in found) and any("OtherGoneFont" in w.problem for w in found)
+
+
+def test_a_list_of_two_missing_families_is_one_readable_warning():
+    found = font_warnings(render(text_layer(["GoneA", "GoneB"])))
+    assert len(found) == 1 and "'GoneA, GoneB'" in found[0].problem and "[" not in found[0].problem
+
+
+def test_settings_text_names_three_and_the_rest_without_text():
+    from viz_factory.font_check import settings_text
+    assert settings_text(["a", "b", "c", "d", "e"]) == "'a', 'b', 'c' and 2 more"
+    assert settings_text(["a", "b"]) == "'a', 'b'"
+
+
+def test_font_problems_never_raises_on_odd_family_values():
+    from viz_factory.font_check import font_problems
+
+    class T:
+        def __init__(self, family):
+            self.properties = {"family": family}
+
+    class Th:
+        def __init__(self, family):
+            self.themeables = {"text": T(family)}
+
+    for odd in (5, 3.5, {"a": 1}, None, "", [], [1, 2], ["ok", 3]):
+        assert font_problems(Th(odd)) == []
+
+
+def test_a_number_as_family_is_refused_by_the_app_in_plain_words_not_a_raw_error():
+    import pytest
+    from utils.errors import VisualizationError
+    with pytest.raises(VisualizationError) as e:
+        draw_checked(render(text_layer(5)))
+    assert "'text'" in str(e.value) and "5" in str(e.value)
