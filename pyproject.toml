@@ -26,6 +26,23 @@ test = [
     "pytest-playwright>=0.7.0",
 ]
 
+[tool.pytest.ini_options]
+# Pytest puts these folders first on the import path, so a run in a git worktree tests the worktree's own code and not
+# the main folder's (the shared .venv has editable installs that point at the main folder). Keep one entry per
+# libs/*/src; app/tests/test_imports_from_checkout.py fails when the list is incomplete or the code comes from elsewhere.
+pythonpath = [
+    ".",
+    "libs/blueprint_arch/src",
+    "libs/connector/src",
+    "libs/id_reconciliation/src",
+    "libs/ingestion/src",
+    "libs/test_lab/src",
+    "libs/transformer/src",
+    "libs/utils/src",
+    "libs/viz_factory/src",
+    "libs/viz_gallery/src",
+]
+
 # [tool.ruff]
 # line-length = 100
 # select = ["E", "F", "I", "N"]
