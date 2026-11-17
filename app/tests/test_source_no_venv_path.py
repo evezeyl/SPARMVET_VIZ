@@ -10,7 +10,6 @@ REPO = Path(__file__).resolve().parents[2]
 NEEDLE = ".venv/bin/python"
 ALLOWED = {
     # (file, text on the line): reason
-    ("app/src/main.py", 'print(f"Venv: ./.venv/bin/python")'): "start-up banner text, starts nothing",
     ("libs/viz_gallery/src/viz_gallery/gallery_manager.py", "CONVERT_HINT"): "command text shown to a person",
 }
 

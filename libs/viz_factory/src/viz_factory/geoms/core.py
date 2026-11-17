@@ -1320,15 +1320,16 @@ def _function_from_string(text: str):
     that passes the check exists when the string is drawn.
     """
     from utils.errors import VisualizationError
-    from utils.fix_text import with_fix
+    from utils.fix_text import split_fix, with_fix
     from utils.formula_check import function_string_problems
 
     problems = function_string_problems(text)
     if problems:
         sentences = []
         for problem in problems:
-            what, _, fix = problem.partition(". Fix: ")
-            sentences.append(with_fix(what, fix))
+            what, fix = split_fix(problem)
+            sentence = with_fix(what, fix)
+            sentences.append(sentence if sentence[-1:] in ".!?" else sentence + ".")
         raise VisualizationError(
             "stat_function: the function string is not allowed. " + " ".join(sentences),
             tip="Fix: write a lambda of one argument over numbers, for example lambda x: x * 2")
