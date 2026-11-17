@@ -495,6 +495,13 @@
 - **consumed_by:** `app/tests/test_demo_data_generator.py`
 - **doc:** `.claude/rules/rules_asset_scripts.md`
 
+## `assets/scripts/make_left_join_lesson_data.py`
+- **Role:** `info`
+- **provides:** `script:make_left_join_lesson_data`
+- **consumes:** `nothing (the values are invented; plain random.Random(seed))`
+- **consumed_by:** `app/tests/test_left_join_lesson.py`
+- **doc:** `.claude/rules/rules_asset_scripts.md`
+
 ## `assets/scripts/viz_rename_table.py`
 - **Role:** `info`
 - **consumes:** `libs/viz_factory/src/viz_factory/registry.py`
