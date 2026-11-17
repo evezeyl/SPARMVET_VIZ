@@ -146,3 +146,43 @@ def test_a_column_still_cannot_be_named_inside_list_eval_by_polars_but_the_check
     assert formula_problems(text) == []
     with pytest.raises(pl.exceptions.ComputeError):
         DATA.select(evaluate_formula(text))
+
+
+# ---- FORMULA-FIELD-PLAIN-ERROR and the one-label rule (night of 2026-11-17, review findings 3 and 4) ------------------
+
+import pytest as _pytest
+from utils.formula_check import FormulaError, evaluate_formula, formula_problems, function_string_problems
+
+
+@_pytest.mark.parametrize("text", ["pl.field(1)", "pl.field(pl.col('b'))", "pl.field('a', 'b')", "pl.field()", "pl.element(1)",
+                                   "pl.field(['a', 1])", "pl.field(name='a')"])
+def test_inner_value_calls_with_wrong_arguments_are_refused_by_the_check(text):
+    assert formula_problems(text)
+    with _pytest.raises(FormulaError):
+        evaluate_formula(text)
+
+
+@_pytest.mark.parametrize("text", ["pl.field('x')", "pl.field(['x', 'y'])", "pl.element()"])
+def test_valid_inner_value_calls_still_work(text):
+    assert formula_problems(text) == []
+    evaluate_formula(text)
+
+
+def test_a_build_error_becomes_the_formula_error_with_a_suggestion():
+    with _pytest.raises(FormulaError, match="Suggestion:"):
+        evaluate_formula("pl.col('a').round('x')")
+
+
+def test_one_label_and_a_separator_between_problems():
+    problems = function_string_problems("lambda x: np.load('a') + open('f')")
+    assert problems and not any("Fix: Suggestion:" in p for p in problems)
+    from viz_factory.geoms.core import function_string_namespace  # noqa: F401
+
+
+def test_two_problems_read_as_two_sentences():
+    from utils.formula_check import _sentence
+    assert _sentence("a. Suggestion: x") == "a. Suggestion: x."
+    assert _sentence("a.") == "a."
+    with _pytest.raises(FormulaError) as error:
+        evaluate_formula("pl.field(1) + pl.element(2)")
+    assert "Fix: write pl.field('x') or pl.field(['x', 'y']). pl.element()" in str(error.value) or str(error.value).count("Fix:") == 2

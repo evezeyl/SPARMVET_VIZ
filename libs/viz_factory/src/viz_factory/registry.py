@@ -38,7 +38,7 @@ def refuse_unsafe_texts(name: str, p: Any, spec: Any) -> None:
     problems = layer_text_problems(name, spec, columns)
     if problems:
         raise CannotAct("; ".join(what for _param, what, _suggestion in problems),
-                        " ".join(dict.fromkeys(suggestion for _param, _what, suggestion in problems)))
+                        " ".join(s if s[-1:] in ".!?" else s + "." for s in dict.fromkeys(suggestion for _param, _what, suggestion in problems)))
 
 
 def register_plot_component(name: str, ui_schema: Optional[Dict[str, Any]] = None):

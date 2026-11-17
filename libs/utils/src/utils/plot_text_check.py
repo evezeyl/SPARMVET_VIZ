@@ -22,6 +22,7 @@ variable must then be a column, exactly).
 import re
 from typing import Any, Iterable, List, Optional, Tuple
 
+from utils.fix_text import split_fix
 from utils.formula_check import function_string_problems, smoother_formula_problems
 
 # What a facet variable looks like when the columns are not known: a column name written with letters, digits,
@@ -159,7 +160,7 @@ def layer_text_problems(component: str, params: Any, columns: Optional[Iterable[
                 problems.append((key, what, suggestion))
     if component == "stat_function" and isinstance(params.get("fun"), str):
         for message in function_string_problems(params["fun"]):
-            what, _, fix = message.partition(". Fix: ")
+            what, fix = split_fix(message)
             problems.append(("fun", f"the function string is refused: {what}",
                              fix.rstrip(".") if fix.startswith("Suggestion:") else "Suggestion: " + fix.rstrip(".")))
     return problems

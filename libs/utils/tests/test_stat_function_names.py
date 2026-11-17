@@ -124,7 +124,7 @@ def test_check_and_table_agree_for_every_numpy_name_on_every_prefix():
 def test_other_names_are_refused_with_a_message_that_names_the_function(text):
     problems = function_string_problems(text)
     assert problems, text
-    assert all("Fix:" in p for p in problems)
+    assert all(("Fix:" in p) != ("Suggestion:" in p) for p in problems)  # one label, not both
 
 
 def test_a_function_that_is_not_called_is_refused():

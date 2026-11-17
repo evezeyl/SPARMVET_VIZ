@@ -6,7 +6,7 @@ fix is printed: the factory's error form, the checker's problem text, the load g
 panel of HOME. (`app/src/bootloader.py` and `DataAnalysisRecipeProblem.__str__` already follow the same rule for a tip.)
 
 # @deps
-# provides: function:fix_label, function:fix_prefix, function:with_fix, constant:SUGGESTION
+# provides: function:split_fix, function:fix_label, function:fix_prefix, function:with_fix, constant:SUGGESTION
 # consumed_by: libs/utils/src/utils/pipeline_error.py, app/src/bootloader.py, app/handlers/blueprint_handlers.py, libs/utils/src/utils/recipe_check.py, libs/viz_factory/src/viz_factory/errors.py, app/modules/data_analysis_recipe_validator.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/tests/test_suggestion_label.py
 # doc: .claude/design/recipe_format_spec.md (P5, section 15)
 # @end_deps
@@ -40,3 +40,12 @@ def with_fix(problem: str, fix: str, label: str = "Fix") -> str:
     if problem[-1:] not in (".", "!", "?"):
         problem += "."
     return f"{problem} {fix if fix.startswith(SUGGESTION) else f'{label}: {fix}'}"
+
+
+def split_fix(message: str) -> "tuple[str, str]":
+    """The inverse of `with_fix`: `(what, fix)` of `<what>. Fix: <fix>` or `<what>. Suggestion: <fix>` (the fix keeps `Suggestion:`)."""
+    what, sep, fix = message.partition(". Fix: ")
+    if sep:
+        return what, fix
+    what, sep, fix = message.partition(f". {SUGGESTION} ")
+    return (what, f"{SUGGESTION} {fix}") if sep else (message, "")

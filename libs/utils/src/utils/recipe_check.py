@@ -37,7 +37,7 @@ from utils.action_names import TIER1_ONLY
 from utils.random_layers import is_random_layer, is_seed_value
 from utils.engines import ENGINES
 from utils.filter_values import FilterValueError, check_filter
-from utils.fix_text import with_fix
+from utils.fix_text import split_fix, with_fix
 from utils.formula_check import formula_problems
 from utils.plot_text_check import facet_variable_problems, layer_text_problems
 from utils import join_keys
@@ -599,7 +599,7 @@ class _Check:
                 continue
             for text in values:
                 for message in formula_problems(text):
-                    what, _, fix = message.partition(". Fix: ")
+                    what, fix = split_fix(message)
                     self.add("ST06", f"{where}.{name}", what, fix)
 
     def filter_value_problems(self, steps: dict, path: str, tables: List[Tuple[str, Dict[str, Any]]], *, joins: bool) -> None:

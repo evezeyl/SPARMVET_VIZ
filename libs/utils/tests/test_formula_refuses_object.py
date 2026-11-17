@@ -6,6 +6,7 @@ refuse. With a note of possibility to re evaluate if request or necessity later 
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/utils/tests/test_formula_refuses_object.py -q
 """
+from utils.fix_text import split_fix
 import polars as pl
 import pytest
 
@@ -50,7 +51,8 @@ def test_a_refused_object_formula_never_reaches_polars(text):
 
 def test_the_message_says_what_why_and_a_suggestion():
     [message] = formula_problems("pl.col('a').str.json_decode(pl.Object)")
-    what, _, fix = message.partition(". Fix: ")
+    what, fix = split_fix(message)
+    assert "Fix:" not in message
     assert what.startswith("pl.Object holds any Python object")
     assert "normal table columns" in what
     assert fix.startswith("Suggestion: use a type a table can hold")

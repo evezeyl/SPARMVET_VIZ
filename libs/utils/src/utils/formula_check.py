@@ -45,6 +45,7 @@ from functools import lru_cache
 from typing import Dict, List, Set
 
 import polars as pl
+from utils.fix_text import SUGGESTION
 
 MAX_LENGTH = 2000
 MAX_NODES = 400
@@ -232,7 +233,14 @@ def _dtypes() -> Set[str]:
 
 
 def _fix(text: str) -> str:
-    return f" Fix: {text}"
+    """The fix after a problem, with ONE label: `Fix: ...`, or the text as it is when it starts with `Suggestion:`."""
+    return f" {text}" if text.startswith(SUGGESTION) else f" Fix: {text}"
+
+
+def _sentence(problem: str) -> str:
+    """A problem text that ends with a period, so that two problems read as two sentences."""
+    problem = problem.rstrip()
+    return problem if problem[-1:] in (".", "!", "?") else problem + "."
 
 
 def _node_count(tree: ast.AST) -> int:
@@ -327,6 +335,7 @@ class _Checker:
             elif keyword.arg.startswith("_"):
                 self.refuse(f"the argument name {keyword.arg!r} starts with an underscore")
             self.visit(keyword.value)
+        self._check_inner_value_call(kind, node)
         if kind == "dtype":
             return "dtype"
         if kind == "function:when" or kind == "method:when":
@@ -334,6 +343,18 @@ class _Checker:
         if kind == "method:then":
             return "then"
         return "expr"
+
+    def _check_inner_value_call(self, kind: str, node: ast.Call) -> None:
+        """`pl.element()` takes nothing and `pl.field` one name or a list of names (checked against the installed Polars)."""
+        if kind == "function:element" and (node.args or node.keywords):
+            self.refuse("pl.element() takes no argument", "write pl.element()")
+        elif kind == "function:field":
+            names = node.args[0] if len(node.args) == 1 else None
+            texts = isinstance(names, ast.Constant) and isinstance(names.value, str) or (
+                isinstance(names, ast.List) and all(isinstance(n, ast.Constant) and isinstance(n.value, str) for n in names.elts))
+            if node.keywords or not texts:
+                self.refuse("pl.field takes one field name as text, or a list of names as texts",
+                            "write pl.field('x') or pl.field(['x', 'y'])")
 
     def visit_Subscript(self, node: ast.Subscript) -> str:
         self.visit(node.value)
@@ -437,8 +458,13 @@ def evaluate_formula(text):
     """Check, then run a formula with empty builtins; raises FormulaError with every problem if it is refused."""
     problems = formula_problems(text)
     if problems:
-        raise FormulaError(" ".join(problems))
-    return eval(compile(ast.parse(text.strip(), mode="eval"), "<formula>", "eval"), dict(EVAL_GLOBALS))  # noqa: S307
+        raise FormulaError(" ".join(_sentence(p) for p in problems))
+    try:
+        return eval(compile(ast.parse(text.strip(), mode="eval"), "<formula>", "eval"), dict(EVAL_GLOBALS))  # noqa: S307
+    except (TypeError, ValueError) as error:
+        # Polars refused the arguments while the expression was being built; the check could not know it from the text.
+        raise FormulaError(f"the formula {text.strip()!r} could not be built: {error}. Suggestion: check the arguments of each call "
+                           "against the Polars documentation") from error
 
 
 # ---- the function string of a plot (`stat_function`) --------------------------------------------------------------
