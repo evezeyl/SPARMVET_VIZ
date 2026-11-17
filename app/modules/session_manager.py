@@ -160,6 +160,17 @@ def node_blocks_apply(node: AuditStep) -> bool:
 # SessionManager
 # ---------------------------------------------------------------------------
 
+class SessionDeleteError(Exception):
+    """`delete_all_sessions` stopped at a session it could not delete: what was done and what was not (D-0050).
+
+    `deleted`: keys removed before the failure; `failed_key`: the one that could not be removed; `not_attempted`: the keys
+    after it, still there; `cause`: the error of the operating system."""
+
+    def __init__(self, deleted: list[str], failed_key: str, not_attempted: list[str], cause: BaseException):
+        self.deleted, self.failed_key, self.not_attempted, self.cause = deleted, failed_key, not_attempted, cause
+        super().__init__(f"{len(deleted)} session(s) deleted; {failed_key} could not be deleted ({type(cause).__name__}: {cause})")
+
+
 class LegacySessionError(ValueError):
     """A stored session uses keys from before the configuration rename (ADR-091)."""
 
@@ -591,8 +602,13 @@ class SessionManager:
         root directly, so a legacy/malformed session entry can't abort the whole sweep.
         Returns the number of sessions deleted."""
         keys = [s["session_key"] for s in self.list_all_sessions()]
-        for sk in keys:
-            self.delete_session(sk)
+        deleted: list[str] = []
+        for i, sk in enumerate(keys):
+            try:
+                self.delete_session(sk)
+            except Exception as exc:
+                raise SessionDeleteError(deleted, sk, keys[i + 1:], exc) from exc
+            deleted.append(sk)
         return len(keys)
 
     # ------------------------------------------------------------------

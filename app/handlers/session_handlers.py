@@ -22,7 +22,7 @@ from shiny import reactive, render, ui
 from shiny.types import SilentException
 from app.modules.error_notice import issue_entry, notice
 from app.modules.plot_issue_reporter import make_issue_reporter
-from app.modules.session_manager import normalise_audit_steps
+from app.modules.session_manager import SessionDeleteError, normalise_audit_steps
 from app.src.bootloader import bootloader
 
 
@@ -54,15 +54,29 @@ def define_session_server(input, output, session, *,
     # error does (Processing issues table and Alerts panel, once, after the flush).
     _report_issue = make_issue_reporter(session, session_processing_issues, notification_log)
 
-    # What was told for which click, so that a failure is told once per click and not at every re-run of the effect below
-    # (the effect re-runs whenever any box of the screen changes, and a click count stays above zero).
+    # What was told for which box, so that a failure to read a box or to save a label is told once and not at every re-run of
+    # the effect below (the effect re-runs whenever any box of the screen changes). `_notify` reads and then sets the
+    # notification log, so it is only ever called under `reactive.isolate()`: an effect that called it in its own context would
+    # depend on the log it writes and run again at every notice (R1 to R3, ui_implementation_contract.md section 14).
     _told: dict[tuple, tuple] = {}
 
     def _tell_once(action: str, session_key: str, token, text: str) -> None:
         if _told.get((action, session_key)) == (token, text):
             return
         _told[(action, session_key)] = (token, text)
-        _notify(text, type="error", duration=10)
+        with reactive.isolate():
+            _notify(text, type="error", duration=10)
+
+    # The click count of every Restore and Delete button the effect below has already acted on. A click count only ever
+    # grows, so "the count is above zero" is true for ever after the first click: the effect acts when the count is HIGHER
+    # than the one it handled, the pattern of `audit_stack._last_delete_clicks`. A card that is drawn again sends 0 and starts over.
+    _handled_clicks: dict[tuple[str, str], int] = {}
+
+    def _is_new_click(kind: str, session_key: str, clicks) -> bool:
+        count = int(clicks or 0)
+        previous = _handled_clicks.get((kind, session_key), 0)
+        _handled_clicks[(kind, session_key)] = count
+        return count > previous
 
     # HOM-53 (Eve, 2026-11-08): session_management_ui had no reactive dependency on
     # anything that changes after a delete — list_all_sessions() was a plain filesystem
@@ -302,33 +316,37 @@ def define_session_server(input, output, session, *,
             sk = s["session_key"]
             safe_sk = sk.replace(":", "_")
 
-            # Restore
+            # Restore. The effect depends on the click box only: the restore itself runs isolated, because it reads and sets
+            # `home_state` and writes the notification log (an effect that depends on what it writes runs again for ever).
             restore_id = f"session_restore_{safe_sk}"
             clicks = _read_input(restore_id, "restore", sk)
-            if clicks is not _NOT_READ and clicks and clicks > 0:
-                try:
-                    _restore_session(sk, clicks)
-                except Exception as exc:
-                    _tell_once("restore", sk, clicks, notice(
-                        f"The session {sk[:24]} could not be restored",
-                        "check that the session folder can be read and try Restore again; if it keeps failing, "
-                        "delete the session and record the steps again", exc))
+            if clicks is not _NOT_READ and _is_new_click("restore", sk, clicks):
+                with reactive.isolate():
+                    try:
+                        _restore_session(sk)
+                    except Exception as exc:
+                        _notify(notice(
+                            f"The session {sk[:24]} could not be restored",
+                            "check that the session folder can be read and try Restore again; if it keeps failing, "
+                            "delete the session and record the steps again", exc), type="error", duration=10)
 
             # Delete
             delete_id = f"session_delete_{safe_sk}"
             clicks = _read_input(delete_id, "delete", sk)
-            if clicks is not _NOT_READ and clicks and clicks > 0:
-                try:
-                    session_manager.delete_session(sk)
-                    _session_list_version.set(_session_list_version.get() + 1)  # HOM-53
-                    _notify(
-                        f"🗑 Session deleted: {sk[:24]}…",
-                        type="message", duration=4,
-                    )
-                except Exception as exc:
-                    _tell_once("delete", sk, clicks, notice(
-                        f"The session {sk[:24]} could not be deleted",
-                        "close any program that uses the session folder, check that it can be written and try again", exc))
+            if clicks is not _NOT_READ and _is_new_click("delete", sk, clicks):
+                with reactive.isolate():
+                    try:
+                        session_manager.delete_session(sk)
+                        _session_list_version.set(_session_list_version.get() + 1)  # HOM-53
+                        _notify(
+                            f"🗑 Session deleted: {sk[:24]}…",
+                            type="message", duration=4,
+                        )
+                    except Exception as exc:
+                        _notify(notice(
+                            f"The session {sk[:24]} could not be deleted",
+                            "close any program that uses the session folder, check that it can be written and try again", exc),
+                            type="error", duration=10)
 
             # Label (REPRO-SESSION-LABELS-1, #50): saved on blur (ui.input_text's own
             # update_on="blur"), not a separate button. Idempotent guard (R3,
@@ -379,12 +397,27 @@ def define_session_server(input, output, session, *,
     def _handle_delete_all_confirmed():
         if session_manager is None:
             return
-        n = session_manager.delete_all_sessions()
+        try:
+            n = session_manager.delete_all_sessions()
+        except Exception as exc:
+            # what was and was not deleted, in plain words; the sessions that were deleted are gone from the list at once
+            _session_list_version.set(_session_list_version.get() + 1)
+            ui.modal_remove()
+            if isinstance(exc, SessionDeleteError):
+                what = (f"{len(exc.deleted)} session(s) were deleted; the session {exc.failed_key[:24]} could not be deleted and "
+                        f"{len(exc.not_attempted)} more were not tried, so {1 + len(exc.not_attempted)} session(s) are still there")
+                cause = exc.cause
+            else:
+                what = "The sessions could not be deleted; it is not known how many are still there"
+                cause = exc
+            _notify("❌ " + notice(what, "close any program that uses the session folders, check that they can be written and "
+                                         "click Delete All Sessions again", cause), type="error", duration=12)
+            return
         _session_list_version.set(_session_list_version.get() + 1)  # HOM-53
         ui.modal_remove()
         _notify(f"🗑 Deleted {n} session(s).", type="message", duration=4)
 
-    def _tell_skipped_saves(skipped_saves: list[dict], restored: dict | None, session_key: str = "", click=None) -> None:
+    def _tell_skipped_saves(skipped_saves: list[dict], restored: dict | None) -> None:
         """A save that cannot be read is still skipped; the user is told which one, why, and what was restored instead (D-0050).
 
         File names hold their time stamp, so a skipped name that sorts after the restored one is a NEWER save."""
@@ -400,18 +433,9 @@ def define_session_server(input, output, session, *,
             remedy = (("check the audit steps of this view before you go on; " if restored is None
                        else "check the restored audit steps before you go on; ")
                       + "the damaged file stays in the session folder, keep it or delete it by hand")
-            _note_once("skipped_save", session_key, click, "⚠️ " + notice(what, remedy, item["reason"]), "warning", 12)
+            _notify("⚠️ " + notice(what, remedy, item["reason"]), type="warning", duration=12)
 
-    def _note_once(kind: str, session_key: str, click, text: str, type_: str, duration: int) -> None:
-        """A notice of the Restore, told once per click: the effect re-runs while the click count stays above zero (the same
-        rule as the failures of the effect, `_tell_once`)."""
-        if click is not None:
-            if _told.get((f"note_{kind}", session_key, text)) == click:
-                return
-            _told[(f"note_{kind}", session_key, text)] = click
-        _notify(text, type=type_, duration=duration)
-
-    def _restore_session(session_key: str, click=None) -> None:
+    def _restore_session(session_key: str) -> None:
         """Run T1/T2 restore + open T3 ghost picker notification."""
         if session_manager is None or home_state is None:
             return
@@ -455,11 +479,11 @@ def define_session_server(input, output, session, *,
                          for name, current, saved in (("recipe", current_msig, saved_msig), ("data", current_dbh, saved_dbh))
                          for where, value in (("the open view", current), ("the saved session", saved)) if not value]
         if _not_compared:
-            _note_once("not_compared", session_key, click, "⚠️ " + notice(
+            _notify("⚠️ " + notice(
                 "The saved audit steps could not be compared with the open recipe and data, so nobody checked that they were "
                 "made on them (missing: " + ", ".join(_not_compared) + ")",
                 "load the recipe and its data in this view first, then restore again, or check the steps by hand before you go on"),
-                "warning", 10)
+                type="warning", duration=10)
 
         # Load T3 ghosts list for this session
         try:
@@ -467,7 +491,7 @@ def define_session_server(input, output, session, *,
         except LegacySessionError as exc:
             _notify(f"❌ {exc}", type="error", duration=12)
             return
-        _tell_skipped_saves(skipped_saves, t3_ghosts[0] if t3_ghosts else None, session_key, click)
+        _tell_skipped_saves(skipped_saves, t3_ghosts[0] if t3_ghosts else None)
         if t3_ghosts:
             # Restore most-recent T3 ghost into home_state.
             # Phase 22-J: list_t3_ghosts emits both flat t3_audit_steps (legacy) and
