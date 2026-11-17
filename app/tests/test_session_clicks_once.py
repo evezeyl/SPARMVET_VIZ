@@ -166,6 +166,7 @@ def test_one_delete_click_deletes_once(tmp_path, monkeypatch):
         real = live.manager.delete_session
         live.manager.delete_session = lambda key: calls.append(key) or real(key)
         await _flush()
+        live.input.set(f"session_label_input_{SAFE(KEY_B)}", "")     # the card is drawn: its label box exists
         live.input.set(f"session_delete_{SAFE(KEY_B)}", 1)
         await _flush(6)
         live.input.set(f"session_label_input_{SAFE(KEY_A)}", "other box changed")
@@ -173,6 +174,7 @@ def test_one_delete_click_deletes_once(tmp_path, monkeypatch):
         assert calls == [KEY_B], calls
         assert len(live.texts("Session deleted")) == 1, live.notes[:6]
         assert [s["session_key"] for s in live.manager.list_all_sessions()] == [KEY_A]
+        assert not (live.manager.root / KEY_B).exists(), "the label step re-created the folder of the session that was just deleted"
     asyncio.run(scenario())
 
 

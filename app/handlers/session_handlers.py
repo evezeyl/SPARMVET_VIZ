@@ -342,6 +342,7 @@ def define_session_server(input, output, session, *,
                             f"🗑 Session deleted: {sk[:24]}…",
                             type="message", duration=4,
                         )
+                        continue        # nothing more to read for a session that is gone (reading it would create its folder again)
                     except Exception as exc:
                         _notify(notice(
                             f"The session {sk[:24]} could not be deleted",
