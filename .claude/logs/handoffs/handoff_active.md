@@ -1435,3 +1435,69 @@ Sources: the progress block (entry "EVE'S ANSWERS TODAY", 12:10; not yet in the 
 4. Entity declaration: the brief asks Eve "refuse or warn" as an open point. Ledger D-0029 (EVE, DECIDED, 2026-11-12) says "fail instead of warn" for the `entity:` declaration. One of the two must be dissolved or narrowed.
 5. Demo MLST row: the builder report (choice 1) and the review (C1) list "which MLST row stays" as open. The progress block says Eve answered it ("does not matter"). No ledger line.
 6. `complex_template` exception: the builder report (choice 5) says the exception stays on `complex_template`. The merged test (`app/tests/test_recipe_data_one_set_of_ids.py` line 271) and commit `5b7624e7` put the exception on `left_join_lesson`. The merged state follows channel M201. The builder report is out of date.
+
+## 2026-11-17 16:30 (coordinator: state for the resume)
+
+Written by a records agent from the coordinator's brief of 16:30, the reports it names, and the channel blocks M170 to M172 of the coordinator. Text marked **[coordinator's wording]** is not Eve's own words. Everything else is her words or a file read.
+
+**State**
+- Local `dev` = `445c84f6`. It is 18 commits ahead of `origin/dev` (`36d1bd23`).
+- Eve pushes herself. The main folder is on `dev`.
+- No worktree of today is left. Nothing is running.
+
+**Merged since 13:30**
+- LEDGER-9 (`16fe7512`): ledger lines D-0207 to D-0217. Review: PASS.
+- EXPORT-CONTACT-1 (`445c84f6`, D-0208). What a user sees:
+  - The bundle README has one contact line. `effective_run.yaml` has two keys for it: the contact and where it came from.
+  - Three cases: the contact of the recipe; else the contact of the deployment; else neither (nothing is written).
+  - A blank contact counts as absent.
+  - A line break in a contact is written on one line.
+
+**Controls on `445c84f6`** (all pass; logs in `tmpAI/controls_445c84f6/`)
+- App import: OK.
+- Headless suite: 9844 passed, 5 skipped, 15 xfailed.
+- Golden baseline: identical.
+- Browser gate (qa): 72 passed, 3 skipped, 0 failed.
+- audit_cross_lib and audit_docs_sync: pass.
+- check_doc_links: the same 7 known problems, no new one.
+
+**Research done, nothing decided**
+- Engine report `tmpAI/panel/engines/REPORT_for_eve.md`. Short answer:
+  - A default theme for all plots exists and works (`theme_bw`; a recipe sets its own with `plot_defaults: theme:`; one plot overrides it).
+  - An engine per plot (R and ggplot2 draw from the stored table): sound to plan. All four viewpoints support it.
+  - An engine per tier or per table (dplyr): possible, large, risky for correctness. Three viewpoints say not now; one says only when a concrete use appears.
+  - An engine per step: all four say no.
+  - One sentence now in the recipe specification (engine names are an open list) avoids a format change later.
+  - Six questions for Eve (report section "What you are asked"):
+    1. The recipe format now: option 2 (write the principle, build nothing)?
+    2. Engine names as an open list?
+    3. Per plot only, no engine per step? The data side (dplyr) waits for a concrete use?
+    4. An R snippet in a recipe: confirmed no?
+    5. The four `plot_defaults` keys that do nothing: make them work, or refuse them?
+    6. Real numbers: install ggplot2, arrow and svglite in R on her machine (she installs, or says an agent may)?
+- Q6 facts `tmpAI/panel/viz_rename/q6_the_15_objects.md` (sections 6 and 7):
+  - The fact: none of the 15 objects can be added to a plot alone. Plotnine fails for each with an AttributeError. So D-0210 ("an exact component next to its original") cannot hold in that strict sense.
+  - Six silent differences from plotnine, D1 to D6 (section 6).
+  - Four options, A to D (section 7).
+  - **[coordinator's wording]** The coordinator's recommendation is C (only the value form). The file itself gives no recommendation: its section 7 says "no recommendation where D-0210 does not decide". C is not a decision.
+
+**Open with Eve** (through the review session only; channel M170, M171, M172 of the coordinator)
+1. Q6, the 15 objects: options A to D.
+2. Q7, Q9 (`stat_summary`) and Q10 of the rename.
+3. The six engine questions above.
+4. The 11 points of channel M170 (coordinator block, 12:55).
+5. New: the rule-file sentence for the contact in `.claude/rules/ui_implementation_contract.md` section 7.2.
+6. New: a blank contact in HOME. `resolve_contact` shows a blank instead of the deployment's contact (CONTACT-BLANK-HOME-1). Export treats a blank contact as absent; HOME does not.
+- The points 1 to 10 of the 13:30 list stay open as they were.
+- **[records note]** The ledger does not hold "questions go through the review session only". No words of Eve say it. A ledger test refuses a relayed line of today, so it is not written there.
+
+**Next**
+- Nothing of the rename before her answers (Q6, Q7, Q9, Q10).
+- Buildable without her: none known.
+
+**Contradictions found in the records (reported, not fixed)**
+1. Channel numbers: `tmpAI/agent_channel.md` has two blocks numbered M170 (line 1215 from the review session, line 1722 from the coordinator), and the same for M171 (1268 and 1739) and M172 (1274 and 1744). The rule says a number is not reused while the file exists.
+2. The brief calls option C "the coordinator's recommendation". `q6_the_15_objects.md` section 7 gives no recommendation (see above).
+3. Contact: EXPORT-CONTACT-1 treats a blank contact as absent. `resolve_contact` (`app/modules/data_analysis_recipe_validator.py:428-435`) does not, so HOME and export differ (CONTACT-BLANK-HOME-1).
+4. VIZ-PARITY-30-1 and VIZ-OWN-22-1 (`tasks.md` section 8) say "no ledger line yet" and "LEDGER-9 owed". LEDGER-9 is now merged. The records did not check whether D-0207 to D-0217 hold the Q2, Q3, Q4 and Q5 answers.
+5. The brief lists `test_shiny_gate_gap` among the browser files with a hard-coded `.venv/bin/shiny`. Grep finds no such path in `app/tests/test_shiny_gate_gap.py`. The other 11 files match.
