@@ -106,7 +106,7 @@ def test_no_row_without_a_sample_id(built):
     assert (built["t1"]["sample_id"] == "").sum() == 0
 
 
-def test_the_row_count_is_one_row_per_mlst_result_plus_one_per_sample_without_one(built):
+def test_the_row_count_is_one_row_per_sample(built):
     assert built["t1"].height == _expected()["rows"]
 
 
