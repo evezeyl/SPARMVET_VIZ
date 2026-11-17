@@ -9,7 +9,6 @@ the last row (after row 500, the rows the old dialog read). The dialog:
 
 Run: PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_filter_types.py -q
 """
-import os
 import socket
 import subprocess
 import time
@@ -20,6 +19,7 @@ import pytest
 import yaml
 from playwright.sync_api import Page, expect
 
+from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
 from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
 
@@ -60,10 +60,9 @@ def typed_app():
     deployment.write_text(yaml.safe_dump({"deployment_type": "filesystem", "deployment_name": "typed values", "locations": locations,
                                           "default_data_analysis_recipe": "years", "default_app_features": "qa"}), encoding="utf-8")
     port = _free_port()
-    pythonpath = os.pathsep.join(["."] + [p for p in [os.environ.get("PYTHONPATH")] if p])
-    env = {**os.environ, "PYTHONPATH": pythonpath, "SPARMVET_APP_FEATURES": "qa", "SPARMVET_DEPLOYMENT": str(deployment)}
+    env = app_env(SPARMVET_APP_FEATURES="qa", SPARMVET_DEPLOYMENT=str(deployment))
     with open(WORK / "server.log", "w") as out:
-        proc = subprocess.Popen([str(REPO / ".venv/bin/shiny"), "run", "app/src/main.py", "--port", str(port)],
+        proc = subprocess.Popen(app_command(port),
                                 cwd=REPO, env=env, stdout=out, stderr=subprocess.STDOUT)
         try:
             url = f"http://127.0.0.1:{port}/"

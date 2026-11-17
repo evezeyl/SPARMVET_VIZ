@@ -27,7 +27,7 @@ import yaml
 from PIL import Image
 from playwright.sync_api import Page, expect
 
-from app.tests.subprocess_env import app_env
+from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _wait_shiny
 from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
 
@@ -74,7 +74,7 @@ def staged_app():
     port = _free_port()
     env = app_env(SPARMVET_APP_FEATURES="qa", SPARMVET_DEPLOYMENT=str(deployment))
     with open(WORK / "server.log", "w") as out:
-        proc = subprocess.Popen([str(REPO / ".venv/bin/shiny"), "run", "app/src/main.py", "--port", str(port)],
+        proc = subprocess.Popen(app_command(port),
                                 cwd=REPO, env=env, stdout=out, stderr=subprocess.STDOUT)
         try:
             url = f"http://127.0.0.1:{port}/"

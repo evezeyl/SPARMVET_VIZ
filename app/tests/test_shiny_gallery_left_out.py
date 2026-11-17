@@ -13,7 +13,7 @@ import urllib.request
 from pathlib import Path
 
 import pytest
-from app.tests.subprocess_env import app_env
+from app.tests.subprocess_env import app_command, app_env
 from playwright.sync_api import Page, expect
 
 REPO = Path(__file__).resolve().parents[2]
@@ -50,7 +50,7 @@ def broken_gallery_app(tmp_path_factory):
     port = _free_port()
     env = app_env(SPARMVET_APP_FEATURES="qa", SPARMVET_DEPLOYMENT=str(dep_file))
     with open(work / "server.log", "w") as out:
-        proc = subprocess.Popen([str(REPO / ".venv/bin/shiny"), "run", "app/src/main.py", "--port", str(port)],
+        proc = subprocess.Popen(app_command(port),
                                 cwd=REPO, env=env, stdout=out, stderr=subprocess.STDOUT)
         try:
             url = f"http://127.0.0.1:{port}/"
