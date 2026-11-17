@@ -41,5 +41,8 @@ def test_returns_a_warning_with_the_fix_text_on_failure():
     assert "writable" in warning  # the fix text, not just the raw OSError
 
 
-def test_returns_none_when_keys_are_missing_without_attempting_a_write():
-    assert _write_t3_ghost({}, _BrokenSessionManager()) is None
+def test_keys_that_are_missing_give_a_warning_and_no_write_attempt():
+    """VERIF-FIX-2 (D-0050 "No silent error that is the rule."): it returned None here and the screen said 'audit steps applied'
+    although nothing was saved. It still makes no write attempt; it now says so (details: test_session_keys_missing_told.py)."""
+    warning = _write_t3_ghost({}, _BrokenSessionManager())
+    assert warning is not None and "not saved" in warning and "Suggestion:" in warning

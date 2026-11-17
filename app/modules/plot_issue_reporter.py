@@ -1,7 +1,7 @@
 # @deps
 # provides: make_issue_reporter() -> report(entry, message, kind)
 # consumes: shiny.reactive, datetime
-# consumed_by: app/handlers/home_theater.py
+# consumed_by: app/handlers/home_theater.py, app/handlers/session_handlers.py
 # doc: .claude/rules/ui_implementation_contract.md section 14 (reactive write discipline)
 # @end_deps
 """app/modules/plot_issue_reporter.py

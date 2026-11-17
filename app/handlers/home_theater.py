@@ -41,8 +41,10 @@ import secrets
 from pathlib import Path
 
 import polars as pl
+from shiny.types import SilentException
 from shiny import reactive, render, ui
 from shiny.session import session_context
+from app.modules.error_notice import notice
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_change_notice import inputs_changed_during_build_notice, notice_after_data_change
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
@@ -669,7 +671,12 @@ def define_server(input, output, session, *,
                 return
             try:
                 clicks = getattr(input, _reshuffle_btn_id)()
-            except Exception:
+            except SilentException:
+                return          # the button is not drawn yet: nothing was clicked
+            except Exception as exc:
+                _notify("⚠️ " + notice(
+                    f"The Reshuffle click of the plot '{p_id}' could not be read, so the arrangement was not changed",
+                    "reload the page (F5) and click Reshuffle again", exc), type="error", duration=10)
                 return
             if not clicks:
                 return
@@ -707,7 +714,12 @@ def define_server(input, output, session, *,
                 return
             try:
                 clicks = getattr(input, _unpin_btn_id)()
-            except Exception:
+            except SilentException:
+                return          # the button is not drawn yet: nothing was clicked
+            except Exception as exc:
+                _notify("⚠️ " + notice(
+                    f"The click on 'Remove the pinned seed' of the plot '{p_id}' could not be read, so the seed stays pinned",
+                    "reload the page (F5) and click again", exc), type="error", duration=10)
                 return
             if not clicks:
                 return
@@ -1207,6 +1219,20 @@ def define_server(input, output, session, *,
     # Reads data_analysis_recipe_id to react when the user switches data analysis recipes; computes source file
     # hashes, compares to stored data_batch_hash, warns if changed, and always writes
     # data_analysis_recipe_sha256 + data_batch_hash into home_state for session_manager.
+    # What the effect told the user and has not told again (D-0050): it re-runs whenever a box it reads changes, so a failure
+    # that lasts is told once; after a pass without it, the same failure is told again.
+    _provenance_told: dict[str, str | None] = {"keys": None, "record": None}
+
+    def _isolated_notify(text: str, type_: str, duration: int) -> None:
+        with reactive.isolate():
+            _notify(text, type=type_, duration=duration)
+
+    def _tell_provenance_failure(stage: str, text: str) -> None:
+        if _provenance_told[stage] != text:
+            _provenance_told[stage] = text
+            with reactive.isolate():      # `_notify` reads and sets the notification log: the effect must not depend on it
+                _notify(text, type="error", duration=12)
+
     @reactive.Effect
     def _sync_session_provenance():
         if home_state is None:
@@ -1241,7 +1267,8 @@ def define_server(input, output, session, *,
                         view_dbh = _data_analysis_recipe_keys().data_batch_hash
                 except Exception:
                     view_dbh = None
-                _notify("⚠️ " + notice_after_data_change(view_dbh, new_dbh), type="warning", duration=12)
+                with reactive.isolate():
+                    _notify("⚠️ " + notice_after_data_change(view_dbh, new_dbh), type="warning", duration=12)
             needs_update = (
                 cur.get("data_analysis_recipe_sha256") != new_msig
                 or cur.get("data_batch_hash") != new_dbh
@@ -1268,11 +1295,20 @@ def define_server(input, output, session, *,
                         data_batch_hash=new_dbh,
                         source_files={k: str(v) for k, v in source_files.items()},
                         parquet_paths={},
+                        on_problem=lambda text: _isolated_notify("⚠️ " + text, "warning", 10),
                     )
-                except Exception:
-                    pass
-        except Exception:
-            pass
+                    _provenance_told["record"] = None
+                except Exception as exc:
+                    _tell_provenance_failure("record", "⚠️ " + notice(
+                        "The record of this session could not be written, so the session cannot be exported or restored "
+                        "from the Session Management panel", "check that the user data folder can be written, then change "
+                        "the recipe or data box again (the record is written again at every change)", exc))
+            _provenance_told["keys"] = None
+        except Exception as exc:
+            _tell_provenance_failure("keys", "⚠️ " + notice(
+                "The recipe and data keys of this session could not be computed, so audit steps cannot be saved and a saved "
+                "session cannot be compared until they can", "check that the recipe file and the data files can be read, "
+                "then pick the recipe again", exc))
 
     # Phase 21-B/D: Track active plot sub-tab across all group navsets.
     # Polls subtabs_{safe_sub_id} for the active group first, then all others.
@@ -2205,6 +2241,7 @@ def define_server(input, output, session, *,
         home_state=home_state,
         safe_input=safe_input,
         notification_log=notification_log,
+        session_processing_issues=session_processing_issues,
     )
 
     # ── Phase 25-F: Data Import panel ────────────────────────────────────────

@@ -23,7 +23,7 @@ from __future__ import annotations
 
 # @deps
 # provides: class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps
-# consumes: libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)
+# consumes: app/modules/error_notice.py (notice — VERIF-FIX-2, lazy), libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py
 # doc: .claude/rules/ui_implementation_contract.md#12d, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
@@ -160,6 +160,17 @@ def node_blocks_apply(node: AuditStep) -> bool:
 # SessionManager
 # ---------------------------------------------------------------------------
 
+class SessionDeleteError(Exception):
+    """`delete_all_sessions` stopped at a session it could not delete: what was done and what was not (D-0050).
+
+    `deleted`: keys removed before the failure; `failed_key`: the one that could not be removed; `not_attempted`: the keys
+    after it, still there; `cause`: the error of the operating system."""
+
+    def __init__(self, deleted: list[str], failed_key: str, not_attempted: list[str], cause: BaseException):
+        self.deleted, self.failed_key, self.not_attempted, self.cause = deleted, failed_key, not_attempted, cause
+        super().__init__(f"{len(deleted)} session(s) deleted; {failed_key} could not be deleted ({type(cause).__name__}: {cause})")
+
+
 class LegacySessionError(ValueError):
     """A stored session uses keys from before the configuration rename (ADR-091)."""
 
@@ -243,6 +254,7 @@ class SessionManager:
         source_files: dict[str, str],   # {dataset_id: path_str}
         parquet_paths: dict[str, str],   # {"assembly": ..., "contracted": ...}
         label: str | None = None,
+        on_problem=None,
     ) -> Path:
         """Write assembly.json to the session directory.
 
@@ -254,6 +266,9 @@ class SessionManager:
         not silently erase a label the user already set: pass `label=None` (the
         default) to preserve whatever is already on disk; pass an explicit string
         (including "") to set or clear it.
+
+        `on_problem(text)` is called when the earlier record cannot be read: it is rewritten (as always) and its label is
+        lost; the text tells the user so (D-0050).
         """
         path = self.session_dir(session_key) / "assembly.json"
         if label is None:
@@ -261,8 +276,13 @@ class SessionManager:
             if path.exists():
                 try:
                     label = json.loads(path.read_text()).get("label", "")
-                except Exception:
+                except Exception as exc:
                     label = ""
+                    if on_problem is not None:
+                        from app.modules.error_notice import notice
+                        on_problem(notice(
+                            f"The earlier record of the session {session_key} could not be read, so it was written again and "
+                            "its label, if it had one, is lost", "type the label again in the Session Management panel", exc))
         ghost = {
             "session_key": session_key,
             "data_analysis_recipe_id": data_analysis_recipe_id,
@@ -427,7 +447,14 @@ class SessionManager:
     # ------------------------------------------------------------------
 
     def list_t3_ghosts(self, session_key: str) -> list[dict]:
-        """All t3_*.json for a session, sorted newest-first.
+        """All readable t3_*.json for a session, sorted newest-first (`scan_t3_ghosts` also says which files it skipped)."""
+        return self.scan_t3_ghosts(session_key)[0]
+
+    def scan_t3_ghosts(self, session_key: str) -> tuple[list[dict], list[dict]]:
+        """`(saves, skipped)`: the readable t3_*.json of a session, newest first, and the files that could not be read.
+
+        A skipped file is still skipped (nothing is restored from it); it is no longer skipped silently: each one is
+        `{"file", "name", "reason"}` so that the caller can tell the user which save was left out and why (D-0050).
 
         Phase 22-J: surfaces both `t3_audit_steps` (legacy flat) and
         `t3_audit_steps_by_plot` (per-plot stacks). For pre-22-J ghosts that have
@@ -436,12 +463,14 @@ class SessionManager:
         """
         d = self.session_dir(session_key)
         ghosts = []
+        skipped = []
         for f in sorted(d.glob("t3_*.json"), reverse=True):
             try:
                 data = self._read_current_json(f, f"Session {session_key}")
             except LegacySessionError:
                 raise
-            except Exception:
+            except Exception as exc:
+                skipped.append({"file": str(f), "name": f.name, "reason": _reason(exc)})
                 continue
             by_plot = data.get("t3_audit_steps_by_plot")
             flat = data.get("t3_audit_steps", [])
@@ -464,20 +493,32 @@ class SessionManager:
                 # session_handlers.py::_restore_session).
                 "t3_audit_steps_sha256": data.get("t3_audit_steps_sha256", ""),
             })
-        return ghosts
+        return ghosts, skipped
 
     # ------------------------------------------------------------------
     # 22-A-11: List all sessions
     # ------------------------------------------------------------------
 
     def list_all_sessions(self) -> list[dict]:
-        """All sessions, sorted by most-recent T3 ghost saved_at (newest first)."""
+        """All sessions, sorted by most-recent T3 ghost saved_at (newest first). `scan_sessions` also names what it left out."""
+        return self.scan_sessions()[0]
+
+    def scan_sessions(self) -> tuple[list[dict], list[dict]]:
+        """`(sessions, unreadable)`: the list `list_all_sessions` gives, and the files that were left out of it.
+
+        An unreadable `assembly.json` leaves its session out of the list, and an unreadable save is not counted in its
+        session; both are still the case, and each is named as `{"session_key", "name", "reason", "kind"}` (kind "session": the session is not listed; "save": it is listed) so that the screen can
+        tell the user (D-0050).
+        """
         sessions = []
+        unreadable = []
         for assembly_file in self.root.glob("*/assembly.json"):
             try:
                 ghost = self._read_current_json(assembly_file, f"Session {assembly_file.parent.name}")
                 session_key = ghost.get("session_key", assembly_file.parent.name)
-                t3_ghosts = self.list_t3_ghosts(session_key)
+                t3_ghosts, skipped = self.scan_t3_ghosts(session_key)
+                unreadable += [{"session_key": session_key, "name": item["name"], "reason": item["reason"], "kind": "save"}
+                               for item in skipped]
                 latest_t3 = t3_ghosts[0].get("saved_at", "") if t3_ghosts else ""
                 label = ghost.get("label", "") or (t3_ghosts[0].get("label", "") if t3_ghosts else "")
                 sessions.append({
@@ -496,10 +537,12 @@ class SessionManager:
                                  "data_analysis_recipe_id": "", "data_analysis_recipe_sha256": "",
                                  "data_batch_hash": "", "assembled_at": "", "latest_t3_saved_at": "",
                                  "t3_count": 0})
-            except Exception:
+            except Exception as exc:
+                unreadable.append({"session_key": assembly_file.parent.name, "name": assembly_file.name, "reason": _reason(exc),
+                                   "kind": "session"})
                 continue
         sessions.sort(key=lambda s: s["latest_t3_saved_at"] or s["assembled_at"], reverse=True)
-        return sessions
+        return sessions, unreadable
 
     # ------------------------------------------------------------------
     # 22-A-12: Export session as zip
@@ -559,8 +602,13 @@ class SessionManager:
         root directly, so a legacy/malformed session entry can't abort the whole sweep.
         Returns the number of sessions deleted."""
         keys = [s["session_key"] for s in self.list_all_sessions()]
-        for sk in keys:
-            self.delete_session(sk)
+        deleted: list[str] = []
+        for i, sk in enumerate(keys):
+            try:
+                self.delete_session(sk)
+            except Exception as exc:
+                raise SessionDeleteError(deleted, sk, keys[i + 1:], exc) from exc
+            deleted.append(sk)
         return len(keys)
 
     # ------------------------------------------------------------------
@@ -610,6 +658,11 @@ def gatekeeper_blocked(t3_audit_steps: list[dict]) -> list[str]:
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
+
+def _reason(exc: BaseException) -> str:
+    """The error as one line of plain text: `ErrorType: its own words`."""
+    return f"{type(exc).__name__}: {' '.join(str(exc).split()) or 'no message'}"
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
