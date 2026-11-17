@@ -10,7 +10,7 @@ two or more datasets that have a sample id:
 1. the common set is the ids of one table: `metadata_schema`, or the table named in COMMON_SET_TABLE;
 2. every id of every other table is in that set (the metadata's own lines without an id are the one allowed exception:
    the demo recipe has a visible step that removes them, D-0167); ALLOWED_OUTSIDE names, with a reason, ids that a recipe
-   keeps outside the set on purpose (the template that teaches a left join);
+   keeps outside the set on purpose (`left_join_lesson`, the recipe that teaches a left join);
 3. a table that is meant to have one row per sample, or per sample and scheme, has no repeat (UNIQUE_BY); the table of
    the common set has one row per sample. A long table (ResFinder, PlasmidFinder, VirulenceFinder) may repeat an id.
 
@@ -46,12 +46,6 @@ ALLOWED_OUTSIDE = {
         "the lesson recipe that teaches a left join: its two tables have ids that do not match on purpose "
         "(config/data_analysis_recipes/templates/left_join_lesson.yaml, app/tests/test_left_join_lesson.py); "
         "the id column is the one the recipe declares with is_entity_key (Accession and ID), not a name guess",
-    ),
-    ("complex_template", "genomics"): (
-        {"ACC0029", "ACC0030"},
-        "template data made on purpose with 'a sample without a metadata row' to teach what a left join does "
-        "(assets/scripts/make_complex_template_data.py, app/tests/test_complex_template_runs.py); "
-        "open for Eve: D-0205 says one set of ids for all datasets",
     ),
 }
 
@@ -273,9 +267,6 @@ def test_the_lesson_exception_is_narrow_and_read_from_the_declared_id_column():
         "without the declared exception the lesson fails: the exception is the only thing that lets it pass"
 
 
-def test_the_allowed_outside_ids_are_only_the_declared_ones():
-    """The template's two foreign ids are allowed; a third one is not (the exception is not a free pass)."""
-    tables = CHECKED["complex_template"]
-    assert problems_of("complex_template", tables, "metadata_schema") == []
-    found = problems_of("complex_template", tables, "metadata_schema", allowed_outside={("complex_template", "genomics"): ({"ACC0029"}, "x")})
-    assert any("ACC0030" in p for p in found), found
+def test_the_only_declared_exception_is_the_left_join_lesson():
+    assert set(ALLOWED_OUTSIDE) == {("left_join_lesson", "sequenced")}
+    assert problems_of("complex_template", CHECKED["complex_template"], "metadata_schema", allowed_outside={}) == []
