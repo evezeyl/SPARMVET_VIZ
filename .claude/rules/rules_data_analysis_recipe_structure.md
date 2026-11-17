@@ -211,7 +211,7 @@ Common primary geoms: `geom_bar`, `geom_col` (needs `y`), `geom_point`, `geom_ti
 > Migration: replace `type: string` with `type: categorical` (identifiers, repeating values) or `type: utf8` (high-cardinality free text).
 > **Tombstone expires:** Phase 36 (delete this block after two phases)
 
-**Primary key rule:** `sample_id` MUST be `type: categorical`. Using `numeric` for join keys causes type-parity mismatches in `action: join` steps.
+**Primary key rule:** the sample id is a string or a categorical, never a number: a number gives join and type problems (it loses leading zeros, and type-parity mismatches in `action: join` steps). The checker refuses a number type on a field marked `is_entity_key` (code E03; D-0225).
 
 ---
 

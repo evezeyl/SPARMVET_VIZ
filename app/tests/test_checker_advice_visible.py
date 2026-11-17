@@ -31,9 +31,12 @@ def _template_with_float_key(tmp_path) -> Path:
     return tmp_path / "complex_template.yaml"
 
 
-def test_the_shipped_template_with_a_float_key_is_advised_and_not_refused(tmp_path):
+def test_the_shipped_template_with_a_float_key_is_advised_j13_and_refused_only_by_e03(tmp_path):
+    """The key is the sample id (is_entity_key): a number there is refused by E03 (D-0225). J13 itself stays an advice and refuses nothing."""
     path = _template_with_float_key(tmp_path)
-    assert validate_data_analysis_recipe(path) == [], "an advice must not refuse the recipe"
+    problems = validate_data_analysis_recipe(path)
+    assert problems and all(p.problem.startswith("[E03]") for p in problems), "only E03 refuses; the advice J13 does not"
+    assert all("Float64" in p.problem and "Suggestion:" in p.tip for p in problems)
     advices = checker_advices(path)
     assert advices and all(a.problem.startswith("[J13]") for a in advices)
     assert "text type" in advices[0].tip and "001" in advices[0].problem

@@ -287,9 +287,11 @@ def test_a_table_joined_twice_on_the_same_key_is_advised_on_the_second_step():
 
 @pytest.mark.parametrize("dtype", ["Float32", "Float64"])
 def test_a_float_key_is_advised_j13_and_does_not_block(dtype):
+    # a join key that is not marked as the sample id: E03 (the entity key is never a number) does not apply to it
     raw = valid()
-    raw["data_schemas"]["A"]["input_fields"]["id"]["type"] = dtype
-    raw["data_schemas"]["B"]["input_fields"]["id"]["type"] = dtype
+    for table in ("A", "B"):
+        raw["data_schemas"][table]["input_fields"]["id"]["type"] = dtype
+        raw["data_schemas"][table]["input_fields"]["id"].pop("is_entity_key")
     problems = advices(raw, "J13")
     assert len(problems) == 2, "one advice per table that declares the key as a float"
     assert all(p.severity == "A" for p in problems)
@@ -298,9 +300,19 @@ def test_a_float_key_is_advised_j13_and_does_not_block(dtype):
     assert [p.code for p in check(raw).errors] == []
 
 
+@pytest.mark.parametrize("dtype", ["Float32", "Float64"])
+def test_a_float_sample_id_is_refused_e03_and_still_advised_j13(dtype):
+    raw = valid()
+    for table in ("A", "B"):
+        raw["data_schemas"][table]["input_fields"]["id"]["type"] = dtype
+    assert len(advices(raw, "J13")) == 2
+    assert [p.code for p in check(raw).problems].count("E03") == 2 and not check(raw).ok
+
+
 def test_a_float_key_declared_on_one_side_only_is_advised_once_with_j09_as_the_error():
     raw = valid()
     raw["data_schemas"]["B"]["input_fields"]["id"]["type"] = "Float64"
+    raw["data_schemas"]["B"]["input_fields"]["id"].pop("is_entity_key")
     assert len(advices(raw, "J13")) == 1 and codes(raw) == ["J09"]
 
 

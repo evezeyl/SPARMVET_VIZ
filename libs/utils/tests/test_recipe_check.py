@@ -131,6 +131,7 @@ CASES = [
     ("E01", "E", lambda r: r.update(entity={"noun": "s", "plural": "ss", "population": "A", "x": 1}), "run"),
     ("E01", "E", lambda r: r.update(entity={"noun": "s"}), "run"),
     ("E02", "E", lambda r: r.update(entity={"noun": "s", "plural": "ss", "population": "Nope"}), "run"),
+    ("E03", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["id"].update(type="Int64"), "run"),
     ("E02", "E", lambda r: (r.update(entity={"noun": "s", "plural": "ss", "population": "A"}),
                             r["data_schemas"]["A"]["input_fields"]["id"].pop("is_entity_key")), "run"),
     ("S01", "E", lambda r: r["data_schemas"]["A"].update(info={"x": 1}), "run"),
