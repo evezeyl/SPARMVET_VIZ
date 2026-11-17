@@ -152,8 +152,12 @@ def describe_failure(exc: BaseException, name: str, culprit: Optional[tuple], pa
                 and not _number(value) and arithmetic):
             example = 3 if default > 1 else 0.5
             return f"the value {value!r} for '{key}' is not a number", f"write a number, for example {key}: {example}"
-        return (f"the value {value!r} for '{key}' is refused by plotnine ({type(exc).__name__}: {_short(exc)})",
-                f"check the allowed values of '{key}' for {name} in the plotnine documentation, or remove '{key}' to use its default")
+        fix = f"check the allowed values of '{key}' for {name} in the plotnine documentation, or remove '{key}' to use its default"
+        if (name.startswith("theme_") and name != "theme_custom" and isinstance(value, dict)
+                and str(value.get("name", "")).startswith("element_")):
+            fix += (f". Suggestion: a named theme does not take an element; write the element in a theme_custom layer "
+                    f"(for axis text, an element_text layer with target: {key})")
+        return (f"the value {value!r} for '{key}' is refused by plotnine ({type(exc).__name__}: {_short(exc)})", fix)
     return (f"plotnine refused it ({type(exc).__name__}: {_short(exc)})",
             f"check the parameters of this layer against the plotnine documentation of {name}")
 
