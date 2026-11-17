@@ -24,6 +24,7 @@ from __future__ import annotations
 # provides: helpers:_draft_key/_write_bp_draft/_read_bp_draft, effect:_autosave_blueprint_draft, output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)
 # consumes: libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/utils/src/utils/action_names.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
 # consumes: app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe, validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result, never blocking; uploaded_recipe_report, load_uploaded_recipe, load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)
+# consumes: app/modules/validate_runner.py (run_structure_check, could_not_run_result, StructureCheckError — the child process of Validate uses sys.executable, D-0050)
 # consumes: function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
 # consumes: function:normalise_plot_spec, function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)
@@ -47,7 +48,6 @@ import io
 import json
 import logging
 import re
-import subprocess
 import uuid
 import zipfile
 from collections import deque
@@ -93,6 +93,7 @@ from blueprint_arch.agent_tools import call_tool, get_tool_definitions
 from blueprint_arch.agent_tool_parser import extract_tool_calls
 from blueprint_arch.new_recipe import new_recipe_draft
 from utils.recipe_factory import write_recipe
+from app.modules.validate_runner import StructureCheckError, could_not_run_result, run_structure_check
 from app.modules.data_change_notice import inputs_changed_during_build_notice
 from utils.errors import SPARMVET_Error
 from utils.fix_text import fix_prefix
@@ -2872,6 +2873,19 @@ def define_server(input, output, session, *,
         if result is None:
             return ui.div(btn, class_="p-2")
 
+        if result.get("could_not_run"):
+            return ui.div(
+                ui.div(
+                    ui.tags.strong("Validation could not run"),
+                    ui.tags.div(result["could_not_run"], style="font-size:0.72rem;margin-top:4px;"),
+                    style=("font-size:0.8rem;background:#fff3cd;color:#856404;border-radius:4px;"
+                           "padding:4px 8px;margin-bottom:6px;"),
+                ),
+                ui.tags.small(result.get("data_analysis_recipe_name", ""), class_="text-muted d-block mt-1 mb-2"),
+                btn,
+                class_="p-2",
+            )
+
         passed = result.get("pass", False)
         status_color = "#0b6358" if passed else "#d62828"
         status_bg    = "#d5efec" if passed else "#ffe0e0"
@@ -2970,18 +2984,13 @@ def define_server(input, output, session, *,
         else:
             recipe_rule_check_failed = False
 
-        # Check 2 — static structural checks the engine does not raise on.
+        # Check 2 — static structural checks the engine does not raise on (child process, D-0050: if it cannot
+        # run, the panel says so; it is not shown as a failed recipe).
         try:
-            proc = subprocess.run(
-                [".venv/bin/python", "scripts/audit_data_analysis_recipe_coherence.py",
-                 "--data-analysis-recipe", path, "--skip-tsv"],
-                capture_output=True, text=True, timeout=30,
-            )
-            stdout = proc.stdout or ""
-        except Exception as e:
-            _validate_result.set({"pass": False, "checks": [], "data_analysis_recipe_name": path,
-                                   "raw_text": str(e), "data_problems": []})
-            ui.notification_show(f"Validation error: {e}", type="error")
+            stdout = run_structure_check(path)
+        except StructureCheckError as e:
+            _validate_result.set(could_not_run_result(path, e))
+            ui.notification_show(str(e), type="error", duration=15)
             return
 
         # Parse pass/fail and violation counts from the markdown output
