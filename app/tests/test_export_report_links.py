@@ -107,3 +107,19 @@ def test_a_plot_with_no_target_table_links_the_data_where_it_is(tmp_path, monkey
     names = set(archive.namelist())
     assert [t for t in links if f"{folder}/{t}" not in names] == [], links
     assert any(t.endswith("T1_data.tsv") for t in links)
+
+
+def test_the_t1_file_is_linked_only_when_it_was_written(tmp_path, monkeypatch):
+    """MUTATION L4 fails here (`if _data_key in exported_dfs` always true): a T1 write that fails leaves `T1_data_ERROR.txt` and no
+    `T1_data.tsv`, so the report must not link it."""
+    from unittest import mock
+    world = World(tmp_path)
+    view = world.orch.compute_data_analysis_recipe_keys("tiny")
+    function = _download_function(world, view, [], monkeypatch)
+    monkeypatch.setattr(world.orch, "materialize_tier1", mock.Mock(side_effect=RuntimeError("the tier 1 table broke")))
+    archive = zipfile.ZipFile(io.BytesIO(_run(function)[0]))
+    names = set(archive.namelist())
+    assert any(n.endswith("T1_data_ERROR.txt") for n in names) and not any(n.endswith("/T1_data.tsv") for n in names)
+    folder, links = _data_links(archive)
+    assert not any(t.endswith("T1_data.tsv") for t in links), links
+    assert [t for t in links if f"{folder}/{t}" not in names] == []

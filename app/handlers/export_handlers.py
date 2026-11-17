@@ -301,6 +301,14 @@ def blocked_audit_notice(failing: list) -> str:
     return "\n".join(lines)
 
 
+# What is true for a user who has a bundle and wants the figures of its report (VERIF-FIX-2): the pictures are in the folders
+# `<table>/plots/`; report.qmd links its figures as `_render/<plot>.<ext>`, a folder that only exists while Quarto renders and is not
+# in the bundle. The layout is not changed here (a choice for Eve), the text says what is there.
+_NO_FIGURES_REMEDY = (
+    "look at the plots in the folders <table>/plots/ of the bundle: report.qmd links its figures to a _render/ folder that is "
+    "not in the bundle, so a report rendered by hand from the bundle shows no figures")
+
+
 def failed_plot_stub(exc: Exception) -> str:
     """The text of `plots/<id>_ERROR.txt`: the message once. The one error form (VIZ-STANDARD-1) already holds the fix, so the
     fix line is added only for an error whose message does not say it."""
@@ -1068,18 +1076,31 @@ def define_export_server(input, output, session, *,
                 t3_by_plot=_t3_listed,
                 t3_aesthetic_overrides=_t3_aesthetic_overrides,
             )
+            # The notices of the build are held and shown only when the bundle is handed over: an export that is refused
+            # (the files changed) hands over a zip with the refusal only, and a text about a bundle nobody receives would mislead.
+            _deferred: list[tuple[str, str, int]] = []
+
+            def _later(text: str, type_: str = "warning", duration: int = 12) -> None:
+                _deferred.append((text, type_, duration))
+
             for _prov_problem in prov.get("problems", []):
-                with reactive.isolate():
-                    _notify("⚠️ " + _prov_problem, type="warning", duration=12)
+                _later("⚠️ " + _prov_problem)
 
             # Parts of this export that are replaced by a `*_ERROR.txt` file inside the zip (D-0050: the user is told on
             # screen too, once, when the export is finished) and pictures that could not take the keys.
-            _unwritten: list[tuple[str, str]] = []
+            _unwritten: list[tuple[str, str, str]] = []
             _t3_written: set[tuple[str, str]] = set()      # (dataset key, plot) of every T3_data_<plot>.tsv that is in the zip
             _picture_failures: list[tuple[str, Exception]] = []
 
             def _lost(what: str, exc) -> None:
-                _unwritten.append((what, f"{type(exc).__name__}: {' '.join(str(exc).split()) or 'no message'}"))
+                """Remember a part that was replaced by a `*_ERROR.txt`. The library's own error carries its remedy apart from
+                its problem (`pipeline_error`): the reason is the problem only, the remedy is kept for the Suggestion: list."""
+                record = getattr(exc, "pipeline_error", None)
+                if record is not None and getattr(record, "problem", ""):
+                    reason, fix = f"{type(exc).__name__}: {' '.join(record.problem.split())}", (record.fix or "")
+                else:
+                    reason, fix = f"{type(exc).__name__}: {' '.join(str(exc).split()) or 'no message'}", ""
+                _unwritten.append((what, reason, fix))
 
             # ── Render and save plots ─────────────────────────────────────
             # plot_bytes  → zip's plots/   in the user's chosen format (always).
@@ -1195,13 +1216,11 @@ def define_export_server(input, output, session, *,
                 if _picture_failures:
                     _names = ", ".join(f"'{_p}'" for _p, _ in _picture_failures[:8]) + (
                         f" and {len(_picture_failures) - 8} more" if len(_picture_failures) > 8 else "")
-                    with reactive.isolate():
-                        _notify("⚠️ " + notice(
-                            f"The recipe and data keys could not be written into {len(_picture_failures)} picture(s) ({_names}), "
-                            "so those files carry no keys",
-                            "the keys of this export are in README.txt, report.qmd and effective_run.yaml of the bundle; export "
-                            "again if you need them inside the pictures", _picture_failures[0][1]),
-                            type="warning", duration=12)
+                    _later("⚠️ " + notice(
+                        f"The recipe and data keys could not be written into {len(_picture_failures)} picture(s) ({_names}), "
+                        "so those files carry no keys",
+                        "the keys of this export are in README.txt, report.qmd and effective_run.yaml of the bundle; export "
+                        "again if you need them inside the pictures", _picture_failures[0][1]))
 
                 # ── Export data by tier ───────────────────────────────────
                 # T1: always exported.
@@ -1410,13 +1429,11 @@ def define_export_server(input, output, session, *,
                         f"{bundle_dir}/data_analysis_recipes_reproducibility/ERROR.txt", str(e)
                     )
                     mode2_skipped = {"_error": str(e)}
-                    with reactive.isolate():
-                        _notify("⚠️ " + notice(
-                            "The reproducibility part of this export could not be built, so the bundle holds no recipe and no "
-                            "data files for a re-run (its reason is in data_analysis_recipes_reproducibility/ERROR.txt)",
-                            "the rest of the bundle is complete, but do not use it to re-run the analysis; fix the cause and "
-                            "export again with the reproducibility box ticked", e),
-                            type="warning", duration=15)
+                    _later("⚠️ " + notice(
+                        "The reproducibility part of this export could not be built, so the bundle holds no recipe and no "
+                        "data files for a re-run (its reason is in data_analysis_recipes_reproducibility/ERROR.txt)",
+                        "the rest of the bundle is complete, but do not use it to re-run the analysis; fix the cause and "
+                        "export again with the reproducibility box ticked", e), duration=15)
 
             # ── effective_run.yaml — written UNCONDITIONALLY, identical content either
             # way, bundle root (ADR-097, #45 corrected scope, Eve 2026-11-09): the single
@@ -1901,19 +1918,16 @@ def define_export_server(input, output, session, *,
                 zf.writestr(f"{bundle_dir}/report.{out_ext}", rendered_report_bytes)
             else:
                 _quarto_words = " ".join((render_stderr or "").split())[:240] or "it produced no output file"
-                with reactive.isolate():
-                    _notify("⚠️ " + notice(
-                        f"Quarto could not render report.{out_ext}, so the bundle holds the report source report.qmd and "
-                        f"no rendered report ({_quarto_words})",
-                        "install Quarto (quarto.org) if it is missing, or render report.qmd yourself with "
-                        f"`quarto render report.qmd --to {out_ext}`; the plots and data files are complete"),
-                        type="warning", duration=15)
+                _later("⚠️ " + notice(
+                    f"Quarto could not render report.{out_ext}, so the bundle holds the report source report.qmd and "
+                    f"no rendered report ({_quarto_words})",
+                    ["install Quarto (quarto.org) if it is missing", _NO_FIGURES_REMEDY]), duration=15)
                 zf.writestr(
                     f"{bundle_dir}/report_RENDER_FAILED.txt",
                     f"Quarto could not render report.{out_ext}.\n\n"
                     f"stderr:\n{render_stderr}\n\n"
-                    "The report.qmd source is still included — run:\n"
-                    f"  quarto render report.qmd --to {out_ext}\n",
+                    "The report.qmd source is still included. Install Quarto (quarto.org) if it is missing.\n"
+                    f"{_NO_FIGURES_REMEDY[0].upper()}{_NO_FIGURES_REMEDY[1:]}.\n",
                 )
 
             # ── README.txt ────────────────────────────────────────────────
@@ -2040,15 +2054,22 @@ def define_export_server(input, output, session, *,
             yield _build_refusal
             return
 
+        # The bundle is handed over: now the notices of its build are shown (D-0050).
+        with reactive.isolate():
+            for _text, _type, _duration in _deferred:
+                _notify(_text, type=_type, duration=_duration)
+
         if _unwritten:
-            _listed = "; ".join(f"{_what} ({_why})" for _what, _why in _unwritten[:6]) + (
+            _listed = "; ".join(f"{_what} ({_why})" for _what, _why, _ in _unwritten[:6]) + (
                 f"; and {len(_unwritten) - 6} more" if len(_unwritten) > 6 else "")
+            # what happened, with the reason only; then one Suggestion: per remedy (the libraries' own remedies first)
+            _remedies = list(dict.fromkeys(_fix for _, _, _fix in _unwritten if _fix)) + [
+                "open the *_ERROR.txt files of the bundle for the reason of each, fix the cause and export again; do not "
+                "publish this bundle as complete"]
             with reactive.isolate():
                 _notify("⚠️ " + notice(
                     f"{len(_unwritten)} part(s) of this export could not be written and are replaced by *_ERROR.txt files "
-                    f"inside the bundle: {_listed}",
-                    "open the *_ERROR.txt files of the bundle for the reason of each, fix the cause and export again; do not "
-                    "publish this bundle as complete"), type="error", duration=None)
+                    f"inside the bundle: {_listed}", _remedies), type="error", duration=None)
 
         buf.seek(0)
         yield buf.read()

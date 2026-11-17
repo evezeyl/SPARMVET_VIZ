@@ -198,3 +198,83 @@ def test_an_export_without_error_files_gets_no_summary(tmp_path, monkeypatch):
     notes = []
     _bundle(World(tmp_path), notes, monkeypatch)
     assert not [m for t, m in notes if "ERROR.txt" in m], notes
+
+
+# -- fix round 1: texts that are true, one form, notices held until the bundle is handed over ---------------------------------
+
+def test_the_quarto_suggestion_is_true_for_the_bundle_the_user_receives(tmp_path, monkeypatch):
+    """MUTATION Q1 fails here. Before: 'render report.qmd yourself with quarto render ...', which gives a report with no figures:
+    report.qmd links `_render/<plot>.png` and no `_render/` folder is in the zip. The text is read against the produced zip."""
+    notes = []
+    archive = _bundle(World(tmp_path), notes, monkeypatch)
+    names = archive.namelist()
+    qmd = next(n for n in names if n.endswith("/report.qmd"))
+    folder = qmd.rsplit("/", 1)[0]
+    assert not any("/_render/" in n or n.startswith("_render/") for n in names), "the premise: no _render/ folder in the zip"
+    assert "_render/p.png" in archive.read(qmd).decode(), "the premise: the report links its figures there"
+    assert f"{folder}/C/plots/p.png" in names, "the pictures are in <table>/plots/"
+    warnings = [m for m in _texts(notes, "warning") if "Quarto" in m]
+    assert len(warnings) == 1
+    text = warnings[0]
+    assert "quarto render report.qmd" not in text, text
+    assert "<table>/plots/" in text and "_render/" in text and "not in the bundle" in text and "shows no figures" in text, text
+    assert text.count("Suggestion:") == 2 and "Fix:" not in text, text
+    stub = archive.read(next(n for n in names if n.endswith("report_RENDER_FAILED.txt"))).decode()
+    assert "<table>/plots/" in stub and "not in the bundle" in stub and "run:" not in stub, stub
+
+
+def test_the_summary_has_the_reason_without_the_remedy_and_each_remedy_after_a_suggestion_label(tmp_path, monkeypatch):
+    """MUTATION Q2 fails here. Before: '(VisualizationError: Plot ..., layer 1 (geom_barr): ... Fix: write geom_bar.). Suggestion: ...'."""
+    world = World(tmp_path)
+    recipe = world.data_analysis_recipes_dir / "tiny.yaml"
+    recipe.write_text(recipe.read_text().replace("geom_bar", "geom_barr"))
+    clear_data_analysis_recipe_cache()
+    notes = []
+    _bundle(world, notes, monkeypatch)
+    summaries = [m for t, m in notes if "ERROR.txt" in m and t == "error"]
+    assert len(summaries) == 1, notes
+    text = summaries[0]
+    assert "geom_barr" in text and "is not a registered plot component" in text, text
+    assert "Fix:" not in text, text
+    assert text.count("Suggestion:") == 2, text
+    assert "Suggestion: write geom_bar" in text and "Suggestion: open the *_ERROR.txt files" in text, text
+    reason, _, remedies = text.partition(". Suggestion:")
+    assert "write geom_bar" not in reason, "the reason holds the problem only"
+
+
+def _refused_export(tmp_path, monkeypatch, extra_values=None, patch=None):
+    from app.tests.test_export_download_path import _change_the_data_during_the_first_build
+    world = World(tmp_path)
+    view = world.orch.compute_data_analysis_recipe_keys("tiny")
+    notes = []
+    function = _download_function(world, view, notes, monkeypatch, extra_values=extra_values)
+    _change_the_data_during_the_first_build(world, monkeypatch)
+    if patch:
+        patch()
+    yielded = _run(function)
+    return notes, zipfile.ZipFile(io.BytesIO(yielded[0])).namelist()
+
+
+def test_a_refused_export_shows_only_the_refusal_not_the_notices_of_a_zip_nobody_receives(tmp_path, monkeypatch):
+    """MUTATION Q3 fails here: Quarto fails in this harness, a picture gets no keys, the provenance has a problem; the export is
+    then refused because the data changed while a table was built. Only the refusal is shown."""
+    real = export_handlers.build_export_provenance
+    monkeypatch.setattr(export_handlers, "build_export_provenance",
+                        lambda **kw: real(**{**kw, "orchestrator": SimpleNamespace(get_source_files=mock.Mock(side_effect=OSError("no listing")))}))
+
+    def failing(raw, prov, plot_id, ds="", on_problem=None):
+        on_problem(RuntimeError("PIL is not installed"))
+        return raw
+    monkeypatch.setattr(export_handlers, "_embed_png_provenance", failing)
+    notes, names = _refused_export(tmp_path, monkeypatch)
+    assert names == ["EXPORT_NOT_CREATED.txt"]
+    assert [m for t, m in notes if t == "error" and "Export blocked" in m], notes
+    others = [m for t, m in notes if "Quarto" in m or "keys could not be written" in m or "no listing" in m or "ERROR.txt" in m]
+    assert others == [], others
+
+
+def test_the_same_export_that_is_handed_over_shows_those_notices(tmp_path, monkeypatch):
+    """The control of the test above: without the change of the data the same notices are shown."""
+    notes = []
+    _bundle(World(tmp_path), notes, monkeypatch)
+    assert [m for t, m in notes if "Quarto" in m], notes
