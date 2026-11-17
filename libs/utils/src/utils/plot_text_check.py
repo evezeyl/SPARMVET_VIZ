@@ -14,8 +14,8 @@ variable must then be a column, exactly).
 
 # @deps
 # provides: function:layer_text_problems, function:facet_variable_problems, function:facet_variables, function:facet_sides, function:facet_wrap_spec, class:FacetTextError, constant:FACET_PARAMETERS
-# consumes: libs/utils/src/utils/formula_check.py
-# consumed_by: libs/utils/src/utils/recipe_check.py, libs/viz_factory/src/viz_factory/registry.py, libs/utils/tests/test_plot_text_check.py
+# consumes: libs/utils/src/utils/formula_check.py, libs/utils/src/utils/fix_text.py (split_fix)
+# consumed_by: libs/utils/src/utils/recipe_check.py, libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/facets/core.py, libs/utils/tests/test_plot_text_check.py
 # doc: .claude/design/recipe_format_spec.md (section 15; check PS06)
 # @end_deps
 """

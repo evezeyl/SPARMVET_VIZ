@@ -7,7 +7,7 @@ panel of HOME. (`app/src/bootloader.py` and `DataAnalysisRecipeProblem.__str__` 
 
 # @deps
 # provides: function:split_fix, function:fix_label, function:fix_prefix, function:with_fix, constant:SUGGESTION
-# consumed_by: libs/utils/src/utils/pipeline_error.py, app/src/bootloader.py, app/handlers/blueprint_handlers.py, libs/utils/src/utils/recipe_check.py, libs/viz_factory/src/viz_factory/errors.py, app/modules/data_analysis_recipe_validator.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/tests/test_suggestion_label.py
+# consumed_by: libs/utils/src/utils/pipeline_error.py, app/src/bootloader.py, app/handlers/blueprint_handlers.py, libs/utils/src/utils/recipe_check.py, libs/utils/src/utils/plot_text_check.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/errors.py, app/modules/data_analysis_recipe_validator.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/tests/test_suggestion_label.py
 # doc: .claude/design/recipe_format_spec.md (P5, section 15)
 # @end_deps
 """

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 # @deps
 # provides: decorator:register_plot_component, function:refuse_unsafe_texts, registry:PLOT_COMPONENTS, registry:COMPONENT_SCHEMAS, function:get_component
-# consumes: libs/viz_factory/src/viz_factory/parameters.py (exact_parameters), libs/utils/src/utils/plot_text_check.py (layer_text_problems)
+# consumes: libs/viz_factory/src/viz_factory/parameters.py (exact_parameters), libs/utils/src/utils/plot_text_check.py (layer_text_problems, facet_wrap_spec, FacetTextError), libs/viz_factory/src/viz_factory/errors.py (CannotAct)
 # consumed_by: libs/viz_factory/tests/test_component_plotnine_field.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/themes/core.py, libs/viz_factory/src/viz_factory/scales/core.py, libs/viz_factory/src/viz_factory/positions/core.py, libs/viz_factory/src/viz_factory/guides/core.py, libs/viz_factory/src/viz_factory/facets/core.py, libs/viz_factory/src/viz_factory/coords/core.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/schema_registry.py
 # doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
