@@ -12,7 +12,7 @@ list kept by hand:
   returns an expression, takes no function (`Callable`), no file, no bytes and no library path, so it works on the
   column's own values and on nothing outside the recipe. Every constructor that builds an expression from outside
   data (`Expr.deserialize`, `Expr.from_json`: class methods), `Expr.register_plugin` (loads a native library), the
-  namespace `meta` and any name that starts with `_` are refused. The list is read from the installed Polars at run
+  namespace `meta`, `Expr.inspect` (refused by name, `REFUSED_BY_NAME`) and any name that starts with `_` are refused. The list is read from the installed Polars at run
   time and `libs/utils/tests/test_formula_reads_no_outside_data.py` fails when a Polars upgrade adds a member that
   nobody has judged (a member allowed by name only, as before 2026-11-17, let `deserialize` read any file);
 - constants, arithmetic, comparison and boolean operators, lists, tuples, dictionaries and subscripts.
@@ -28,7 +28,7 @@ the variables `x` and `y`, numbers, the operators of a model formula, `I`, `C`, 
 slow or large: nothing here stops heavy computation (spec section 15, known limit).
 
 # @deps
-# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, function:member_refusal, function:refused_members, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, class:FormulaError
+# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, function:member_refusal, function:refused_members, constant:REFUSED_BY_NAME, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, class:FormulaError
 # consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_formula_reads_no_outside_data.py, libs/utils/tests/test_plot_text_check.py, libs/utils/src/utils/plot_text_check.py
 # doc: .claude/design/recipe_format_spec.md (section 15; check ST06)
 # @end_deps
@@ -104,6 +104,20 @@ CALLS_A_FUNCTION = "runs a Python function and is not allowed"
 READS_OUTSIDE_DATA = "builds an expression from a file or from serialised data; a recipe formula may not read files"
 TAKES_OUTSIDE_DATA = "takes a file, a stream or bytes; a recipe formula may not read files"
 LOADS_OUTSIDE = "loads or reads something outside the expression (a file or a library); a recipe formula may not do that"
+PRINTS_OUTSIDE = ("prints the column to the server output with a text that can read outside the expression; "
+                  "a recipe formula may not do that")
+META_OUTSIDE = ("reads the structure of an expression and can write it to a file or to serialised data; "
+                "a recipe formula may not do that")
+
+# Members refused by NAME because their danger shows only in what they DO, not in their signature. A small, reviewed
+# set; every entry must still exist in Polars (a test fails on a stale entry).
+# PROVISIONAL (an agent's choice under D-0030, 2026-11-17, to be confirmed by the owner): `Expr.inspect` takes a text
+# that `str.format` runs on the column, so a recipe could write '{0.__init__.__globals__[...]}' and print objects of
+# the running program (including the process environment) to the server output. No shipped formula uses it.
+REFUSED_BY_NAME = {
+    ("expr", "inspect"): PRINTS_OUTSIDE,
+    ("expr", "meta"): META_OUTSIDE,
+}
 
 
 def member_refusal(cls: type, name: str) -> "str | None":
@@ -111,7 +125,17 @@ def member_refusal(cls: type, name: str) -> "str | None":
 
     Allowed: an instance method that returns an expression and takes no function, no file, no bytes and no library path.
     The reason, when there is one, is a sentence that follows the member name.
+
+    What this cannot see (read it before trusting it): the rule reads signatures, annotations and parameter names, and
+    the walk test reads the words of the documentation. A danger that shows in neither is invisible to both: a
+    parameter that names a file in unlisted words (`location: str`), a text that a member interprets (`inspect`), a
+    member that is dangerous only by its effect, and a danger written only in a part of the documentation the test
+    does not read. Those are caught only by a person reading each new member, which the walk forces for the words it
+    knows. `REFUSED_BY_NAME` holds the members found that way. This is a net with holes, not a proof.
     """
+    for label, owner in (("expr", pl.Expr),):
+        if cls is owner and (label, name) in REFUSED_BY_NAME:
+            return REFUSED_BY_NAME[(label, name)]
     static = inspect.getattr_static(cls, name)
     if isinstance(static, (classmethod, staticmethod)):
         return READS_OUTSIDE_DATA  # a constructor that builds an expression from data outside the recipe
@@ -234,10 +258,7 @@ class _Checker:
                 return name
             if name in allowed["expr"]:
                 return "method:" + name
-            if name == "meta":
-                self.refuse("meta is not allowed")
-            else:
-                self.refuse(f"{name} {refused_members()['expr'].get(name, NOT_A_METHOD)}")
+            self.refuse(f"{name} {refused_members()['expr'].get(name, NOT_A_METHOD)}")
             return "value"
         if kind in allowed:  # a namespace
             if name in allowed[kind]:

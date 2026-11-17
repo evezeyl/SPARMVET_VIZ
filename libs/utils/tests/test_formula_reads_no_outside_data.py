@@ -115,21 +115,36 @@ def test_a_column_named_like_a_member_still_runs():
 
 # ---- the rule is structural: a library upgrade cannot reopen the hole silently ---------------------------------
 
-# Members whose signature or first documentation paragraph mention a word that points outside the expression, reviewed
-# on 2026-11-17 and found to work on the column's own data. A member that is not here and is not refused by the rule
-# makes the walk below fail: someone must read it and decide (add it here with the reason, or extend the rule).
+# Members whose signature or documentation (the whole text above "Examples") mention a word that points outside the
+# expression, reviewed on 2026-11-17 and found to work on the column's own data. A member that is not here and is not
+# refused by the rule makes the walk below fail: someone must read it and decide (add it here with the reason, or extend
+# the rule). The walk is a net with holes: it reads words, not effects (see `member_refusal`).
+_OWN = "works on the column's own values"
 REVIEWED = {
     ("bin", "head"): "first bytes of a binary column's own values",
     ("bin", "tail"): "last bytes of a binary column's own values",
     ("bin", "reinterpret"): "reads the column's own bytes as numbers",
+    ("cat", "len_bytes"): "number of bytes of each category text in the column",
+    ("cat", "len_chars"): "counts characters; the doc says how it differs from bytes",
+    ("cat", "slice"): "cuts each category text; the doc says the offsets are in characters, not bytes",
+    ("expr", "search_sorted"): "'location' is the position found in the column's own values",
+    ("expr", "set_sorted"): "'paths' is polars' fast code paths for sorted data; it only sets a flag",
     ("str", "find"): "text search; the word 'bytes' is about the match",
+    ("str", "find_many"): "text search over the column's own values; 'bytes' is about the match",
+    ("str", "head"): "first characters; the doc says the offsets are in characters, not bytes",
+    ("str", "tail"): "last characters; the doc says the offsets are in characters, not bytes",
+    ("str", "slice"): "cuts each text; the doc says the offsets are in characters, not bytes",
+    ("str", "len_chars"): "counts characters; the doc says how it differs from bytes",
     ("str", "len_bytes"): "number of bytes of each text in the column",
     ("str", "json_decode"): "parses the JSON text held in the column's own values",
     ("str", "json_path_match"): "a JSONPath expression applied to the column's own text, no file",
     ("struct", "json_encode"): "writes a struct column to JSON text in the column",
 }
-RISK_WORDS = re.compile(r"\b(path|paths|file|files|bytes|pickle|json|IO|IOBase|BytesIO|url|uri|environ|environment|plugin|"
-                        r"serialize|deserialize|stream|source|buffer|lib|library|symbol)\b", re.I)
+RISK_WORDS = re.compile(
+    r"\b(path|paths|file|files|filename|bytes|pickle|pickled|json|IO|IOBase|BytesIO|url|uri|environ|environment|plugin|"
+    r"plugins|serialize|serialized|serialise|deserialize|deserializing|stream|source|buffer|lib|library|symbol|location|"
+    r"directory|folder|disk|network|socket|stdout|stderr|print|prints|write|writes|written|open|shell|subprocess|"
+    r"arbitrary|unsafe|untrusted|trusted)\b", re.I)
 
 
 def _classes():
@@ -168,7 +183,7 @@ def test_no_allowed_member_takes_a_function_a_file_or_bytes():
 
 
 def test_every_allowed_member_that_mentions_the_outside_has_been_reviewed():
-    """Fails when a Polars version adds an allowed member whose parameters or documentation point to a file, a library,
+    """Fails when a Polars version adds an allowed member whose parameters or whole documentation point to a file, a library,
     serialised data or bytes and nobody has decided it. Read the member, then refuse it (extend `member_refusal`) or
     add it to REVIEWED with the reason."""
     classes = _classes()
@@ -177,7 +192,7 @@ def test_every_allowed_member_that_mentions_the_outside_has_been_reviewed():
         member = getattr(classes[ns], name)
         signature = inspect.signature(member)
         text = " ".join(f"{p.name} {p.annotation}" for p in signature.parameters.values())
-        text += " " + (inspect.getdoc(member) or "").split("\n\n")[0]
+        text += " " + (inspect.getdoc(member) or "").split("Examples\n")[0]  # the whole text; the examples are code
         if RISK_WORDS.search(text) and (ns, name) not in REVIEWED:
             unreviewed.append((ns, name, sorted({m.group(0).lower() for m in RISK_WORDS.finditer(text)})))
     assert not unreviewed, unreviewed
@@ -259,3 +274,110 @@ def test_every_math_function_of_a_function_string_is_a_pure_elementwise_numpy_fu
     from utils.formula_check import MATH_FUNCTIONS
     not_ufunc = [name for name in MATH_FUNCTIONS if not isinstance(getattr(np, name, None), np.ufunc)]
     assert not not_ufunc, not_ufunc
+
+
+# ---- members refused by name: their danger shows only in what they DO --------------------------------------------
+# PROVISIONAL (an agent's choice under D-0030, 2026-11-17): the reviewer showed that `inspect` takes a text that
+# `str.format` runs on the column, so '{0.__init__.__globals__[...]}' reaches objects outside the expression and prints
+# them to the server output. To be confirmed by the owner. No shipped formula uses it (checked below).
+
+INSPECT_SPELLINGS = [
+    "pl.col('a').inspect()",
+    "pl.col('a').inspect('{}')",
+    "pl.col('a').inspect(fmt='{}')",
+    "pl.col('a').inspect('{0.__class__}')",
+    "pl.col('a').cast(pl.Int64).fill_null(0).inspect('{0.__class__}')",
+    "pl.col('a').str.strip_chars().inspect()",
+    "(pl.col('a') + 1).inspect('{}')",
+    "pl.lit(1).inspect('{}')",
+    "pl.when(pl.col('a')).then(1).otherwise(0).inspect('{}')",
+    "pl.col('a').inspect('{}') + 1",
+    "pl.sum_horizontal('a', pl.col('b').inspect())",
+]
+
+
+@pytest.mark.parametrize("text", INSPECT_SPELLINGS)
+def test_inspect_is_refused_with_a_plain_reason(text):
+    problems = formula_problems(text)
+    joined = " ".join(problems)
+    assert problems, f"allowed but must be refused: {text!r}"
+    assert "inspect prints the column to the server output with a text that can read outside the expression" in joined
+    assert "a recipe formula may not do that" in joined and "Fix:" in joined
+
+
+def test_inspect_never_prints(capsys):
+    with pytest.raises(FormulaError, match="inspect"):
+        evaluate_formula("pl.col('a').inspect('{0.__class__}')")
+    assert capsys.readouterr().out == ""
+
+
+def test_the_refused_by_name_members_are_still_polars_members_and_are_refused():
+    """A by-name entry that Polars no longer has is stale and must be removed; each entry must be refused."""
+    from utils.formula_check import REFUSED_BY_NAME, member_refusal
+    assert ("expr", "inspect") in {(label, name) for (label, name) in REFUSED_BY_NAME}
+    for (label, name), reason in REFUSED_BY_NAME.items():
+        cls = _classes()[label]
+        assert hasattr(cls, name), f"{label}.{name} no longer exists in Polars: remove it from REFUSED_BY_NAME"
+        assert reason and member_refusal(cls, name) == reason
+
+
+def test_no_shipped_formula_uses_a_member_that_is_refused_by_name():
+    """The by-name set must not break a shipped recipe: the shipped formulas are read from the YAML files."""
+    from pathlib import Path
+    repo = Path(__file__).resolve().parents[3]
+    from utils.formula_check import REFUSED_BY_NAME
+    names = {name for (_, name) in REFUSED_BY_NAME if name != "meta"}
+    hits = []
+    for root in ("config", "assets", "libs"):
+        for path in (repo / root).rglob("*.yaml"):
+            if ".venv" in path.parts or "outdated" in path.parts:
+                continue
+            text = path.read_text(errors="ignore")
+            hits += [(str(path.relative_to(repo)), n) for n in names if f".{n}(" in text]
+    assert not hits, hits
+
+
+def test_a_refused_property_says_why():
+    for text, word in (("pl.col('a').meta.serialize()", "meta"), ("pl.col('a').meta.write_json('/tmp/x')", "meta")):
+        joined = " ".join(formula_problems(text))
+        assert "meta reads the structure of an expression" in joined and "may not do that" in joined, joined
+
+
+# ---- the module-level functions are a closed, hand-kept list: each entry is reviewed ------------------------------
+
+MODULE_REVIEWED = {
+    "col": "names a column; takes names, a regex or dtypes, no file",
+    "lit": "a constant; bytes and complex constants are refused by the check",
+    "when": "starts when/then/otherwise",
+    "all": "all columns, or an aggregation over booleans", "any": "aggregation over booleans",
+    "len": "row count", "count": "non-null count", "first": "first value", "last": "last value", "nth": "column by position",
+    "exclude": "all columns but the named", "coalesce": "first non-null",
+    "concat_str": "joins texts", "concat_list": "joins into a list", "struct": "builds a struct from expressions",
+    "format": "fills {} in a text with expressions; no Python format fields",
+    "sum": "aggregation", "mean": "aggregation", "median": "aggregation", "min": "aggregation", "max": "aggregation",
+    "std": "aggregation", "var": "aggregation", "n_unique": "aggregation", "approx_n_unique": "aggregation",
+    "quantile": "aggregation", "corr": "aggregation over two columns", "cov": "aggregation over two columns",
+    "sum_horizontal": "row-wise", "min_horizontal": "row-wise", "max_horizontal": "row-wise", "mean_horizontal": "row-wise",
+    "all_horizontal": "row-wise", "any_horizontal": "row-wise",
+    "date": "builds a date from numbers", "datetime": "builds a datetime from numbers",
+    "duration": "builds a duration from numbers", "time": "builds a time from numbers",
+}
+
+
+def test_every_module_function_has_a_review_line_and_none_takes_a_file_or_a_function():
+    """`MODULE_FUNCTIONS` is a closed list kept by hand: an entry added without a line here fails, and so does a line
+    for an entry that is gone. Each entry must also be an Expr-building function with no file, bytes or function parameter."""
+    from utils.formula_check import MODULE_FUNCTIONS
+    assert set(MODULE_REVIEWED) == set(MODULE_FUNCTIONS), (
+        sorted(set(MODULE_FUNCTIONS) - set(MODULE_REVIEWED)), sorted(set(MODULE_REVIEWED) - set(MODULE_FUNCTIONS)))
+    outside_names = {"path", "file", "filepath", "source", "lib", "symbol", "url", "uri", "fname", "filename", "plugin_path",
+                     "function", "fun", "buffer"}
+    bad = []
+    for name in sorted(MODULE_FUNCTIONS):
+        target = getattr(pl, name)
+        target = getattr(target, "__call__", target) if not inspect.isfunction(target) else target
+        for p in inspect.signature(target).parameters.values():
+            if re.search(r"\b(Callable|Path|PathLike|IO|IOBase|BytesIO|bytes|bytearray|memoryview)\b", str(p.annotation)) \
+                    or p.name in outside_names:
+                bad.append((name, p.name, str(p.annotation)))
+    assert not bad, bad
