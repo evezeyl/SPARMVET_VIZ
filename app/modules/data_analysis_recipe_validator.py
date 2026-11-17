@@ -435,6 +435,26 @@ def resolve_contact(info: Optional[dict], deployment_contact: Optional[str]) -> 
     return deployment_contact or None
 
 
+def export_contact_record(info: Optional[dict], deployment_contact: Optional[str]) -> dict:
+    """Contact and its origin for the export bundle (D-0208): whose contact it is is stated, never guessed.
+
+    Uses resolve_contact(); when neither tier names a contact the value is None (never invented text).
+    """
+    contact = resolve_contact(info, deployment_contact)
+    if contact is None:
+        return {"contact": None, "contact_source": None}
+    recipe_contact = (info or {}).get("contact")
+    source = "recipe (info.contact)" if recipe_contact else "deployment (branding.contact)"
+    return {"contact": contact, "contact_source": source}
+
+
+def export_contact_readme_line(record: dict) -> str:
+    """The one plain README line for the contact record."""
+    if record.get("contact") is None:
+        return "Contact          : the recipe names no contact (info.contact is empty) and the deployment names none"
+    return f"Contact          : {record['contact']} (from the {record['contact_source']})"
+
+
 def rejected_recipe_text(name: str, record: dict) -> str:
     """What HOME says when the recipe it was showing no longer passes the gate (GATE-GAP-1): which one, why, who to ask.
 

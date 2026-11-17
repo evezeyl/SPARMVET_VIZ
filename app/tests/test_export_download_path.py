@@ -49,6 +49,9 @@ class _Bootloader:
     def get_location(self, key):
         return self.world.root / "user"
 
+    def get_contact(self):
+        return None
+
     def get_default_data_analysis_recipe(self):
         return "tiny"
 

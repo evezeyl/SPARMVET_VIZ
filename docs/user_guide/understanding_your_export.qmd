@@ -44,6 +44,12 @@ A SHA-256 fingerprint works the same way: it produces a unique 64-character stri
 
 ---
 
+## Who to ask: the contact
+
+`effective_run.yaml` has a `contact` entry and a `contact_source` entry, and `README.txt` has one `Contact` line. The contact is the `info.contact` of the data analysis recipe; if the recipe has none, it is the contact of the deployment (`branding.contact`), and `contact_source` says which of the two it is. If neither names a contact, `contact` is empty and the README says so in one sentence; nothing is invented.
+
+---
+
 ## The fingerprints in effective_run.yaml
 
 ### 1. data_analysis_recipe_sha256 — "Which configuration was used?"
