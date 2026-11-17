@@ -161,6 +161,16 @@ def test_one_click_on_restore_and_on_delete_acts_once(page: Page, shiny_app: Shi
         assert _toasts(page, "Session deleted") - before == 1, "the delete notice was not shown exactly once"
         assert not (sm.root / key_empty).exists()
         assert (sm.root / key_saved).exists(), "the other session was not touched"
+
+        # A second click on the same Restore is a second restore (the card was drawn again after the first: its count starts over)
+        before = _toasts(page, "Session restored")
+        _show_card(page, "restore_once_saved", f"#session_restore_{safe(key_saved)}")
+        page.locator(f"#session_restore_{safe(key_saved)}").click()
+        _free(page, "a second Restore of the same session")
+        assert _toasts(page, "Session restored") - before == 1, "a second click gave no restore, or more than one"
+        page.wait_for_timeout(3_000)
+        assert _toasts(page, "Session restored") - before == 1
+        assert _reasons(page) == [SAVED_REASON], "the second restore puts back the saved steps (and only them)"
     finally:
         for key in (key_saved, key_empty):
             sm.delete_session(key)
