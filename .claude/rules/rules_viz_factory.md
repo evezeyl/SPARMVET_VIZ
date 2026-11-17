@@ -18,10 +18,28 @@ To ensure the SPARMVET visualization layer remains a competitive alternative to 
 - **Maintenance**: Upon Plotnine library updates, the agent MUST perform an integrity audit to identify new visual components or parameter changes.
 - **Verification**: All new components MUST pass the 1:1:1 evidence loop (Data analysis recipe -> Data -> Plot) before being marked as [DONE].
 
+### 1a. Names of the plot components (DECIDED, not built yet)
+
+Status: the rule is DECIDED (D-0091, D-0210, D-0218). The rename is NOT built. Today the registered names have no prefix. The examples in this file and in the recipes still show the old names until the rename task is done.
+
+- `plotnine_<name>`: the component is exactly the plotnine object `<name>`, nothing changed (D-0091, D-0210).
+- `modif_<name>`: the plotnine object `<name>` with a documented change, for example other argument defaults (D-0091, D-0210).
+- The exact `plotnine_<name>` is always registered next to a `modif_<name>` (D-0091, D-0210).
+- `step_<name>`: a composite of several components (D-0091, D-0210).
+- Old names without a prefix are not accepted. An old name is refused with "did you mean" (D-0091).
+- The registering decorator keeps a field that says exact, modified or own. A test checks that the prefix and the field agree (D-0092).
+- Full parity: the 30 plotnine objects that need no extra package are registered (D-0212).
+- Both spellings of the 15 name pairs (`colour` and `color`, `theme_grey` and `theme_gray`, `geom_bin2d` and `geom_bin_2d`) are registered, each exact (D-0213).
+- A shortcut component that an exact plotnine component already does is deleted. A recipe writes the exact plotnine component with its arguments (D-0211). Exception, her words: "only functional modifications that are important could eventually be kept"; such a one is kept as a `modif_<name>` next to its exact original (D-0211, D-0210).
+- Names written as values stay plotnine's own names (`geom: geom_area`, `stat: stat_bin`, `position: position_identity`) (D-0214).
+- The same logic as the Polars actions (`polars_`, `modif_`, `step_`): `.claude/design/recipe_format_spec.md`, DEC31 (D-0091, D-0210).
+- Not decided yet: how arguments and nested objects (positions, theme elements, guides, functions as parameters) are passed. This will follow (D-0218).
+
 ## 2. The Law of Aesthetics (Data analysis recipe Mapping)
 
 - **Agnostic Mapping**: Component wrappers MUST NOT hardcode aesthetic defaults unless required for stability. Parameters must be passed through from the YAML `spec`.
 - **Typo Defense**: All component handlers MUST be registered via `@register_plot_component`. Invalid components requested in a data analysis recipe MUST trigger a `VisualizationError` with closest-match suggestions.
+- **Prefixed names**: the naming rule of section 1a applies to every component (D-0218). The old unprefixed names are refused with "did you mean" once the rename is built (D-0091).
 
 ## 3. The 1:1:1 Evidence Loop (Testing)
 
@@ -101,6 +119,8 @@ Plot configuration resolves through a **five-tier priority cascade** at one merg
 | **L3** | Optimisation layer (computed from data + spec) — **visual/aesthetic only** | None — emitted by VizFactory |
 | **L2** | Data analysis recipe `plot_defaults:` block | Data analysis recipe author |
 | **L1** | VizFactory built-in defaults | Developer |
+
+- **Names in the cascade (DECIDED, not built, D-0218)**: the `theme:` key of a plot spec and of `plot_defaults` changes, because it is a component call (D-0214). Names written as values stay plotnine's own (D-0214). It must be tested thoroughly; on an error, investigate and propose solutions (D-0214).
 
 **Resolution rule:** higher tier wins per key (winner-takes-all, no value merging). The `layers:` list is the exception — append-then-deduplicate by `(layer_kind, target)` keeping LAST occurrence (so L5 wins on theme/coord/facet/scale/element_text). `geom_*`/`stat_*` layers never deduplicated.
 
