@@ -25,6 +25,8 @@ from __future__ import annotations
 # doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen, processing_issues_ui shows fix/who)
 # @end_deps
 
+from collections import Counter
+
 from shiny import reactive, render, ui
 
 from utils.fix_text import fix_label
@@ -181,28 +183,33 @@ def define_server(input, output, session, *,
                 n["reason"] = reasons_by_id[nid]
 
         # Gatekeeper over EVERYTHING (committed + pending across all plots)
-        blocked = gatekeeper_blocked(all_committed + pending)
-        if blocked:
-            blocked_types = list({n.get("node_type", "unknown") for n in blocked})
+        blocked_ids = set(gatekeeper_blocked(all_committed + pending))     # ids (strings), one per copy: copies of a step share the id
+        if blocked_ids:
+            # one step is one id (a decision propagated to several plots has one copy per plot); its kind is the kind of its nodes
+            kind_of_step: dict[str, str] = {}
+            for n in all_committed + pending:
+                if n.get("id") in blocked_ids:
+                    kind_of_step.setdefault(n["id"], n.get("node_type", "unknown"))
+            kinds = Counter(kind_of_step.values())
+            kinds_text = ", ".join(f"{count} {_NODE_META.get(kind, ('', kind))[1].lower()}" for kind, count in kinds.items())
+            remedy = "write a reason for each step, then press Apply"
             pe = PipelineError(
                 component="AuditStack",
-                problem=f"{len(blocked)} T3 node(s) are missing required reason fields.",
+                problem=f"{len(kind_of_step)} T3 step(s) have no reason ({kinds_text}).",
                 location="handle_apply()",
-                fix="Fill in the 'Reason' text field for every highlighted node before pressing Apply.",
+                fix=f"Suggestion: {remedy}",
                 who="analyst",
                 category="t3_apply",
                 surface="audit_panel",
                 severity="warning",
-                evidence={"blocked_count": len(blocked), "node_types": blocked_types},
+                evidence={"blocked_count": len(kind_of_step), "node_types": sorted(kinds)},
             )
             print(pe.format())
-            # ADR-094/PIPELINE-ERROR-WIRE-2: the fix text was already built (above) and
-            # printed to console but never shown — detection without guidance. Now both
-            # reach the screen via the same toast + notification_log entry.
-            _notify(
-                f"⛔ {len(blocked)} node(s) require a reason before applying. {pe.fix}",
-                type="error", duration=8,
-            )
+            # ADR-094/PIPELINE-ERROR-WIRE-2: the text reaches the screen (toast and Alerts panel), not only the console.
+            # Apply is locked while a step has no reason, so a user gets here only when the click came before the button was
+            # drawn again (ui_implementation_contract.md sections 3 and 12a): nothing is applied, nothing is saved.
+            _notify("⛔ " + notice(f"Nothing was applied: {len(kind_of_step)} step(s) have no reason ({kinds_text})", remedy),
+                    type="error", duration=8)
             # Persist reason edits even on block so user keeps their typing.
             home_state.set({
                 **state,
