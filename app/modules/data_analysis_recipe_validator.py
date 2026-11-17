@@ -435,24 +435,35 @@ def resolve_contact(info: Optional[dict], deployment_contact: Optional[str]) -> 
     return deployment_contact or None
 
 
+def _clean_contact(value) -> Optional[str]:
+    """A contact that is empty after strip counts as absent."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
 def export_contact_record(info: Optional[dict], deployment_contact: Optional[str]) -> dict:
     """Contact and its origin for the export bundle (D-0208): whose contact it is is stated, never guessed.
 
-    Uses resolve_contact(); when neither tier names a contact the value is None (never invented text).
+    The values are cleaned first (a contact of only spaces is absent, the written text is stripped) and then given to
+    resolve_contact(), which keeps its own behaviour. When neither tier names a contact the value is None.
     """
-    contact = resolve_contact(info, deployment_contact)
+    recipe_contact = _clean_contact((info or {}).get("contact"))
+    cleaned_info = {"contact": recipe_contact} if recipe_contact else {}
+    contact = resolve_contact(cleaned_info, _clean_contact(deployment_contact))
     if contact is None:
         return {"contact": None, "contact_source": None}
-    recipe_contact = (info or {}).get("contact")
     source = "recipe (info.contact)" if recipe_contact else "deployment (branding.contact)"
     return {"contact": contact, "contact_source": source}
 
 
 def export_contact_readme_line(record: dict) -> str:
-    """The one plain README line for the contact record."""
+    """The one plain README line for the contact record (whitespace runs, newlines included, become one space)."""
     if record.get("contact") is None:
         return "Contact          : the recipe names no contact (info.contact is empty) and the deployment names none"
-    return f"Contact          : {record['contact']} (from the {record['contact_source']})"
+    text = " ".join(str(record["contact"]).split())
+    return f"Contact          : {text} (from the {record['contact_source']})"
 
 
 def rejected_recipe_text(name: str, record: dict) -> str:

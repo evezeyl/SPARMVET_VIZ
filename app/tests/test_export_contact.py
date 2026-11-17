@@ -27,9 +27,21 @@ def test_effective_run_yaml_keeps_the_empty_value_explicit():
     assert "contact" in out and out["contact"] is None
 
 
-def test_handler_writes_the_keys_and_the_line():
-    from pathlib import Path
-    src = Path("app/handlers/export_handlers.py").read_text()
-    assert '"contact": _contact["contact"]' in src
-    assert '"contact_source": _contact["contact_source"]' in src
-    assert "export_contact_readme_line(_contact)" in src
+def test_spaces_only_recipe_contact_is_absent_and_the_deployment_applies():
+    r = export_contact_record({"contact": "   "}, " dep@x.org ")
+    assert r == {"contact": "dep@x.org", "contact_source": "deployment (branding.contact)"}
+
+
+def test_spaces_only_everywhere_is_no_contact():
+    assert export_contact_record({"contact": "  "}, "  ") == {"contact": None, "contact_source": None}
+
+
+def test_written_value_is_stripped():
+    assert export_contact_record({"contact": "  a@lab.org\n"}, None)["contact"] == "a@lab.org"
+
+
+def test_a_newline_inside_the_contact_stays_one_readme_line_and_yaml_keeps_the_text():
+    r = export_contact_record({"contact": "Eve Z\n  eve@x.org"}, None)
+    assert r["contact"] == "Eve Z\n  eve@x.org"
+    line = export_contact_readme_line(r)
+    assert "\n" not in line and line == "Contact          : Eve Z eve@x.org (from the recipe (info.contact))"

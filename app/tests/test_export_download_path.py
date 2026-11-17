@@ -40,7 +40,8 @@ def _fresh_cache():
 class _Bootloader:
     """What the export reads of the Bootloader."""
 
-    def __init__(self, world, flags=()):
+    def __init__(self, world, flags=(), deployment_contact=None):
+        self.deployment_contact = deployment_contact
         self.world = world
         self.flags = set(flags)
         self.rejected_data_analysis_recipes = {}
@@ -50,7 +51,7 @@ class _Bootloader:
         return self.world.root / "user"
 
     def get_contact(self):
-        return None
+        return self.deployment_contact
 
     def get_default_data_analysis_recipe(self):
         return "tiny"
@@ -59,7 +60,7 @@ class _Bootloader:
         return flag in self.flags
 
 
-def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None, extra_values=None, flags=(), **handler_kwargs):
+def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None, extra_values=None, flags=(), info=None, deployment_contact=None, **handler_kwargs):
     """`define_export_server` with the smallest set of real and fake parts; returns the generator function of the download."""
     captured = {}
 
@@ -77,11 +78,13 @@ def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None, 
     monkeypatch.setattr(subprocess, "run", lambda args, *a, **k: subprocess.CompletedProcess(args, 1, "", "no render in this test")
                         if args and args[0] == "quarto" else real_run(args, *a, **k))
     cfg = load_data_analysis_recipe(world.data_analysis_recipes_dir / "tiny.yaml").config
+    if info is not None:
+        cfg.raw_config["info"] = info
     values = {"export_user_name": "test", "export_scope": "global", "export_preset": "web", "export_plot_format": "png",
               **(extra_values or {})}
     export_handlers.define_export_server(
         SimpleNamespace(import_bundle_upload=None), lambda fn: fn, None,
-        bootloader=_Bootloader(world, flags), orchestrator=world.orch, viz_factory=VizFactory(),
+        bootloader=_Bootloader(world, flags, deployment_contact), orchestrator=world.orch, viz_factory=VizFactory(),
         current_app_features=SimpleNamespace(get=lambda: "qa"), active_cfg=lambda: cfg,
         tier1_anchor=tier1_anchor or (lambda: pl.DataFrame().lazy()), tier_toggle=SimpleNamespace(get=lambda: "T2"),
         **{"home_state": None, **handler_kwargs},
@@ -157,3 +160,26 @@ def test_a_plot_with_no_target_table_reads_HOMES_stored_table_and_builds_nothing
     assert reads, "the plot without a target reads HOME's table through tier1_anchor()"
     assert builds == [], "and the export builds no table for it"
     assert len(yielded) == 1
+
+
+def _bundle_texts(tmp_path, monkeypatch, **kw):
+    import yaml
+    world = World(tmp_path)
+    view = world.orch.compute_data_analysis_recipe_keys("tiny")
+    yielded = _run(_download_function(world, view, [], monkeypatch, **kw))
+    z = zipfile.ZipFile(io.BytesIO(yielded[0]))
+    run = yaml.safe_load(z.read(next(n for n in z.namelist() if n.endswith("effective_run.yaml"))).decode())
+    readme = z.read(next(n for n in z.namelist() if n.endswith("/README.txt"))).decode()
+    return run, [ln for ln in readme.splitlines() if ln.startswith("Contact")]
+
+
+def test_the_written_bundle_carries_the_contact_of_the_recipe(tmp_path, monkeypatch):
+    run, lines = _bundle_texts(tmp_path, monkeypatch, info={"contact": " a@lab.org "}, deployment_contact="dep@x.org")
+    assert run["contact"] == "a@lab.org" and run["contact_source"] == "recipe (info.contact)"
+    assert lines == ["Contact          : a@lab.org (from the recipe (info.contact))"]
+
+
+def test_the_written_bundle_says_so_when_there_is_no_contact(tmp_path, monkeypatch):
+    run, lines = _bundle_texts(tmp_path, monkeypatch, info={"contact": "   "})
+    assert run["contact"] is None and run["contact_source"] is None
+    assert len(lines) == 1 and "names no contact" in lines[0]
