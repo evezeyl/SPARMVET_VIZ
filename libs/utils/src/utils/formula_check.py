@@ -111,9 +111,9 @@ META_OUTSIDE = ("reads the structure of an expression and can write it to a file
 
 # Members refused by NAME because their danger shows only in what they DO, not in their signature. A small, reviewed
 # set; every entry must still exist in Polars (a test fails on a stale entry).
-# PROVISIONAL (an agent's choice under D-0030, 2026-11-17, to be confirmed by the owner): `Expr.inspect` takes a text
-# that `str.format` runs on the column, so a recipe could write '{0.__init__.__globals__[...]}' and print objects of
-# the running program (including the process environment) to the server output. No shipped formula uses it.
+# `Expr.inspect` is refused by decision of Eve, 2026-11-17 (D-0229): it takes a text that `str.format` runs on the
+# column, so a recipe could write '{0.__init__.__globals__[...]}' and print objects of the running program (including
+# the process environment) to the server output. No shipped formula uses it.
 REFUSED_BY_NAME = {
     ("expr", "inspect"): PRINTS_OUTSIDE,
     ("expr", "meta"): META_OUTSIDE,

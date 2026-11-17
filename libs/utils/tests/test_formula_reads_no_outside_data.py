@@ -277,9 +277,9 @@ def test_every_math_function_of_a_function_string_is_a_pure_elementwise_numpy_fu
 
 
 # ---- members refused by name: their danger shows only in what they DO --------------------------------------------
-# PROVISIONAL (an agent's choice under D-0030, 2026-11-17): the reviewer showed that `inspect` takes a text that
-# `str.format` runs on the column, so '{0.__init__.__globals__[...]}' reaches objects outside the expression and prints
-# them to the server output. To be confirmed by the owner. No shipped formula uses it (checked below).
+# Decided by Eve, 2026-11-17 (D-0229): `inspect` takes a text that `str.format` runs on the column, so
+# '{0.__init__.__globals__[...]}' reaches objects outside the expression and prints them to the server output.
+# No shipped formula uses it (checked below).
 
 INSPECT_SPELLINGS = [
     "pl.col('a').inspect()",
