@@ -2,7 +2,7 @@ from typing import Dict, Any
 
 # @deps
 # provides: component:geom_boxplot, component:geom_violin, component:geom_point, component:geom_line, component:geom_bar, component:geom_col, component:geom_histogram, component:geom_smooth, component:geom_density, component:geom_errorbar, component:geom_pointrange, component:geom_tile, component:geom_raster, component:geom_text, component:geom_label, component:geom_jitter, component:geom_step, component:geom_segment, component:geom_abline, component:geom_area, component:geom_bin_2d, component:geom_blank, component:geom_count, component:geom_crossbar, component:geom_density_2d, component:geom_dotplot, component:geom_errorbarh, component:geom_freqpoly, component:geom_hline, component:geom_linerange, component:geom_path, component:geom_vline, component:stat_count, component:stat_bin, component:stat_summary, component:stat_boxplot, component:stat_smooth, component:stat_density, component:labs (geom), function:function_string_namespace
-# consumes: libs/utils/src/utils/formula_check.py (PLOT_FUNCTION_MODULES, PLOT_FUNCTION_NAMES, MATH_FUNCTIONS, MATH_CONSTANTS)
+# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/errors.py (CannotAct), libs/utils/src/utils/fix_text.py (split_fix, with_fix), libs/utils/src/utils/formula_check.py (PLOT_FUNCTION_MODULES, PLOT_FUNCTION_NAMES, MATH_FUNCTIONS, MATH_CONSTANTS)
 # consumed_by: any YAML plot spec using these component names, libs/viz_factory/src/viz_factory/viz_factory.py (via registry), libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via COMPONENT_SCHEMAS)
 # doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps

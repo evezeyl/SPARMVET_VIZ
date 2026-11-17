@@ -37,6 +37,7 @@ from __future__ import annotations
 # note: Apply handler supports multi-select enum (BP-ENUM-PREVIEW-1 — multi:true for date_extract.parts)
 # consumes: libs/utils/src/utils/pipeline_error.py (PipelineError, make_render_payload — DIAG-RUNTIME-BLUEPRINT-1, wired to screen 2026-11-08 ADR-094), app/src/render/pipeline_error_renderers.py (render_blueprint_inline)
 # provides: output:bp_import_error_ui (ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface for component/recipe import failures)
+# consumes: libs/utils/src/utils/fix_text.py (fix_prefix), libs/utils/src/utils/errors.py (SPARMVET_Error), app/modules/data_change_notice.py (inputs_changed_during_build_notice)
 # consumes: reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui"), ui.output_ui("bp_branch_ui"), ui.output_ui("bp_groups_inventory_ui"), ui.output_ui("bp_meta_form_ui"))
 # doc: .claude/knowledge/architecture_decisions.md#ADR-039, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-075, .claude/knowledge/architecture_decisions.md#ADR-076, .claude/knowledge/architecture_decisions.md#ADR-082

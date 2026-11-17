@@ -105,7 +105,7 @@
 ## `app/handlers/blueprint_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `output:bp_branch_ui`, `output:bp_branch_preview_ui`, `output:bp_groups_inventory_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`, `effect:_load_component_from_selection`, `effect:_handle_branch_preview`, `effect:_handle_branch_write (BP-BRANCH-NODE-1 — node-level lineage bifurcation`, `replaces Visual Fork)`, `effects:_handle_grp_action/_handle_create_group_btn/_handle_grp_submit/_handle_plt_submit/_handle_move_plt_submit (BP-GROUPS-1)`, `helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts data analysis recipe rebuild logic so CRUD Effects can call it after mutations)`, `output:bp_meta_form_ui`, `effect:_handle_meta_save (BP-META-1 — data analysis recipe info: block read/edit form)`, `effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)`, `function:_warn_on_upload`, `output:bp_validate_ui`, `effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path`, `issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))`, `helpers:_draft_key/_write_bp_draft/_read_bp_draft`, `effect:_autosave_blueprint_draft`, `output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)`, `outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui`, `effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)`, `function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit)`, `helper:_bundle_filename (full-data analysis recipe zip)`, `output:bp_import_error_ui (ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface for component/recipe import failures)`
-- **consumes:** `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/action_names.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result`, `never blocking; uploaded_recipe_report`, `load_uploaded_recipe`, `load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (check_join_keys`, `compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `libs/blueprint_arch/src/blueprint_arch/new_recipe.py (new_recipe_draft — BP-NEW-1`, `recipe format 1)`, `libs/utils/src/utils/recipe_factory.py (write_recipe)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError`, `make_render_payload — DIAG-RUNTIME-BLUEPRINT-1`, `wired to screen 2026-11-08 ADR-094)`, `app/src/render/pipeline_error_renderers.py (render_blueprint_inline)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
+- **consumes:** `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/action_names.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result`, `never blocking; uploaded_recipe_report`, `load_uploaded_recipe`, `load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)`, `app/modules/validate_runner.py (run_structure_check`, `could_not_run_result`, `StructureCheckError — the child process of Validate uses sys.executable`, `D-0050)`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (check_join_keys`, `compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `libs/blueprint_arch/src/blueprint_arch/new_recipe.py (new_recipe_draft — BP-NEW-1`, `recipe format 1)`, `libs/utils/src/utils/recipe_factory.py (write_recipe)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError`, `make_render_payload — DIAG-RUNTIME-BLUEPRINT-1`, `wired to screen 2026-11-08 ADR-094)`, `app/src/render/pipeline_error_renderers.py (render_blueprint_inline)`, `libs/utils/src/utils/fix_text.py (fix_prefix)`, `libs/utils/src/utils/errors.py (SPARMVET_Error)`, `app/modules/data_change_notice.py (inputs_changed_during_build_notice)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui")`, `ui.output_ui("bp_branch_ui")`, `ui.output_ui("bp_groups_inventory_ui")`, `ui.output_ui("bp_meta_form_ui"))`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-076`, `.claude/knowledge/architecture_decisions.md#ADR-082`
 
@@ -322,6 +322,13 @@
 - **consumes:** `shiny.ui`, `libs/test_lab/src/test_lab/scaffolder.py`
 - **consumed_by:** `app/handlers/home_theater.py`, `app/src/server.py`, `app/handlers/test_lab_handlers.py`
 - **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
+
+## `app/modules/validate_runner.py`
+- **Role:** `ref`
+- **provides:** `function:run_structure_check`, `function:could_not_run_result`, `class:StructureCheckError`
+- **consumes:** `app/modules/error_notice.py`, `scripts/audit_data_analysis_recipe_coherence.py`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0050 no silent error)`, `.claude/rules/rules_runtime_environment.md#5`
 
 ## `app/modules/view_badge.py`
 - **Role:** `ref`
@@ -884,14 +891,14 @@
 
 ## `libs/utils/src/utils/fix_text.py`
 - **Role:** `ref`
-- **provides:** `function:fix_label`, `function:fix_prefix`, `function:with_fix`, `constant:SUGGESTION`
-- **consumed_by:** `libs/utils/src/utils/pipeline_error.py`, `app/src/bootloader.py`, `app/handlers/blueprint_handlers.py`, `libs/utils/src/utils/recipe_check.py`, `libs/viz_factory/src/viz_factory/errors.py`, `app/modules/data_analysis_recipe_validator.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/tests/test_suggestion_label.py`
+- **provides:** `function:split_fix`, `function:fix_label`, `function:fix_prefix`, `function:with_fix`, `constant:SUGGESTION`
+- **consumed_by:** `libs/utils/src/utils/pipeline_error.py`, `app/src/bootloader.py`, `app/handlers/blueprint_handlers.py`, `libs/utils/src/utils/recipe_check.py`, `libs/utils/src/utils/plot_text_check.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/errors.py`, `app/modules/data_analysis_recipe_validator.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/tests/test_suggestion_label.py`
 - **doc:** `.claude/design/recipe_format_spec.md (P5`, `section 15)`
 
 ## `libs/utils/src/utils/formula_check.py`
 - **Role:** `ref`
-- **provides:** `function:formula_problems`, `function:evaluate_formula`, `function:function_string_problems`, `function:smoother_formula_problems`, `constant:SMOOTHER_FUNCTIONS`, `function:denied_methods`, `function:member_refusal`, `function:refused_members`, `constant:REFUSED_BY_NAME`, `constant:MODULE_FUNCTIONS`, `constant:MATH_FUNCTIONS`, `class:FormulaError`
-- **consumed_by:** `libs/utils/tests/test_formula_check.py`, `libs/utils/tests/test_formula_reads_no_outside_data.py`, `libs/utils/tests/test_plot_text_check.py`, `libs/utils/src/utils/plot_text_check.py`
+- **provides:** `function:formula_problems`, `function:evaluate_formula`, `function:function_string_problems`, `function:smoother_formula_problems`, `constant:SMOOTHER_FUNCTIONS`, `function:denied_methods`, `function:member_refusal`, `function:refused_members`, `constant:REFUSED_BY_NAME`, `constant:REFUSED_DTYPES`, `constant:MODULE_FUNCTIONS`, `constant:MATH_FUNCTIONS`, `constant:PLOT_FUNCTION_MODULES`, `constant:PLOT_FUNCTION_NAMES`, `constant:PYTHON_MATH_FUNCTIONS`, `constant:MATH_CONSTANTS`, `class:FormulaError`
+- **consumed_by:** `libs/utils/tests/test_formula_check.py`, `libs/utils/tests/test_formula_element_field.py`, `libs/utils/tests/test_formula_refuses_object.py`, `libs/utils/tests/test_formula_reads_no_outside_data.py`, `libs/utils/tests/test_plot_text_check.py`, `libs/utils/tests/test_stat_function_names.py`, `libs/utils/src/utils/plot_text_check.py`, `libs/utils/src/utils/recipe_check.py`, `libs/viz_factory/src/viz_factory/checked_plot.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/transformer/src/transformer/actions/polars_calls.py`, `libs/id_reconciliation/src/id_reconciliation/core.py`, `libs/viz_factory/tests/test_stat_function_names_drawn.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 15; check ST06)`
 
 ## `libs/utils/src/utils/hashing.py`
@@ -935,8 +942,8 @@
 ## `libs/utils/src/utils/plot_text_check.py`
 - **Role:** `ref`
 - **provides:** `function:layer_text_problems`, `function:facet_variable_problems`, `function:facet_variables`, `function:facet_sides`, `function:facet_wrap_spec`, `class:FacetTextError`, `constant:FACET_PARAMETERS`
-- **consumes:** `libs/utils/src/utils/formula_check.py`
-- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/viz_factory/src/viz_factory/registry.py`, `libs/utils/tests/test_plot_text_check.py`
+- **consumes:** `libs/utils/src/utils/formula_check.py`, `libs/utils/src/utils/fix_text.py (split_fix)`
+- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/facets/core.py`, `libs/utils/tests/test_plot_text_check.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 15; check PS06)`
 
 ## `libs/utils/src/utils/polars_types.py`
@@ -954,7 +961,7 @@
 ## `libs/utils/src/utils/recipe_check.py`
 - **Role:** `ref`
 - **provides:** `function:check_recipe`, `function:spec`, `class:Problem`, `class:Result`
-- **consumes:** `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/engines.py`, `libs/utils/src/utils/action_names.py`, `libs/utils/src/utils/ui_schema.py`, `libs/utils/src/utils/formula_check.py`, `libs/utils/src/utils/plot_text_check.py`, `libs/utils/src/utils/recipe_paths.py`, `libs/utils/src/utils/polars_types.py`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/recipe_tiers.py`
+- **consumes:** `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/engines.py`, `libs/utils/src/utils/action_names.py`, `libs/utils/src/utils/ui_schema.py`, `libs/utils/src/utils/formula_check.py`, `libs/utils/src/utils/plot_text_check.py`, `libs/utils/src/utils/recipe_paths.py`, `libs/utils/src/utils/polars_types.py`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/recipe_tiers.py`, `libs/utils/src/utils/fix_text.py (split_fix`, `with_fix)`
 - **consumed_by:** `libs/utils/src/utils/recipe_loader.py`, `libs/utils/src/utils/recipe_factory.py`, `libs/utils/src/utils/recipe_migration.py`, `libs/utils/src/utils/strict_form_migration.py`, `libs/ingestion/src/ingestion/declared.py`, `libs/viz_gallery/src/viz_gallery/gallery_manager.py`, `libs/viz_gallery/src/viz_gallery/example_recipe.py`, `libs/viz_gallery/src/viz_gallery/taxonomy.py`, `assets/scripts/convert_gallery_examples.py`, `assets/scripts/create_data_analysis_recipe.py`, `libs/utils/tests/test_recipe_check.py`
 - **doc:** `.claude/design/recipe_format_spec.md (sections 3 to 11`, `14)`
 
@@ -1035,8 +1042,8 @@
 
 ## `libs/viz_factory/src/viz_factory/checked_plot.py`
 - **Role:** `plot`
-- **provides:** `class:CheckedPlot`, `class:PlotContext`, `class:Step`, `function:plot_environment`, `function:draw_checked`, `function:show_draw_errors`, `function:plot_warnings`, `function:explain_build_failure`
-- **consumes:** `libs/viz_factory/src/viz_factory/errors.py`, `libs/viz_factory/src/viz_factory/arguments.py`, `libs/viz_factory/src/viz_factory/registry.py`, `plotnine`, `matplotlib`
+- **provides:** `class:CheckedPlot`, `class:PlotContext`, `class:Step`, `function:plot_environment`, `function:draw_checked`, `function:show_draw_errors`, `function:plot_warnings`, `function:explain_build_failure`, `function:describe_failure`, `function:error_figure`
+- **consumes:** `libs/viz_factory/src/viz_factory/errors.py`, `libs/viz_factory/src/viz_factory/arguments.py`, `libs/viz_factory/src/viz_factory/registry.py`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/formula_check.py (MATH_CONSTANTS`, `MATH_FUNCTIONS)`, `plotnine`, `matplotlib`
 - **consumed_by:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `app/handlers/home_theater.py`, `app/modules/wrangle_studio.py`, `app/modules/gallery_examples.py`
 - **doc:** `.claude/design/decisions_2026-11-14/viz_plan_for_eve.md (V7)`, `.claude/rules/rules_viz_factory.md`
 
@@ -1059,9 +1066,17 @@
 - **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
 - **doc:** `.claude/rules/rules_viz_factory.md`
 
+## `libs/viz_factory/src/viz_factory/font_check.py`
+- **Role:** `plot`
+- **provides:** `function:missing_fonts`, `function:font_problems`
+- **consumes:** `matplotlib.font_manager`
+- **consumed_by:** `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
 ## `libs/viz_factory/src/viz_factory/geoms/core.py`
 - **Role:** `plot`
-- **provides:** `component:geom_boxplot`, `component:geom_violin`, `component:geom_point`, `component:geom_line`, `component:geom_bar`, `component:geom_col`, `component:geom_histogram`, `component:geom_smooth`, `component:geom_density`, `component:geom_errorbar`, `component:geom_pointrange`, `component:geom_tile`, `component:geom_raster`, `component:geom_text`, `component:geom_label`, `component:geom_jitter`, `component:geom_step`, `component:geom_segment`, `component:geom_abline`, `component:geom_area`, `component:geom_bin_2d`, `component:geom_blank`, `component:geom_count`, `component:geom_crossbar`, `component:geom_density_2d`, `component:geom_dotplot`, `component:geom_errorbarh`, `component:geom_freqpoly`, `component:geom_hline`, `component:geom_linerange`, `component:geom_path`, `component:geom_vline`, `component:stat_count`, `component:stat_bin`, `component:stat_summary`, `component:stat_boxplot`, `component:stat_smooth`, `component:stat_density`, `component:labs (geom)`
+- **provides:** `component:geom_boxplot`, `component:geom_violin`, `component:geom_point`, `component:geom_line`, `component:geom_bar`, `component:geom_col`, `component:geom_histogram`, `component:geom_smooth`, `component:geom_density`, `component:geom_errorbar`, `component:geom_pointrange`, `component:geom_tile`, `component:geom_raster`, `component:geom_text`, `component:geom_label`, `component:geom_jitter`, `component:geom_step`, `component:geom_segment`, `component:geom_abline`, `component:geom_area`, `component:geom_bin_2d`, `component:geom_blank`, `component:geom_count`, `component:geom_crossbar`, `component:geom_density_2d`, `component:geom_dotplot`, `component:geom_errorbarh`, `component:geom_freqpoly`, `component:geom_hline`, `component:geom_linerange`, `component:geom_path`, `component:geom_vline`, `component:stat_count`, `component:stat_bin`, `component:stat_summary`, `component:stat_boxplot`, `component:stat_smooth`, `component:stat_density`, `component:labs (geom)`, `function:function_string_namespace`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/errors.py (CannotAct)`, `libs/utils/src/utils/fix_text.py (split_fix`, `with_fix)`, `libs/utils/src/utils/formula_check.py (PLOT_FUNCTION_MODULES`, `PLOT_FUNCTION_NAMES`, `MATH_FUNCTIONS`, `MATH_CONSTANTS)`
 - **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via COMPONENT_SCHEMAS)`
 - **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
@@ -1094,7 +1109,7 @@
 ## `libs/viz_factory/src/viz_factory/registry.py`
 - **Role:** `plot`
 - **provides:** `decorator:register_plot_component`, `function:refuse_unsafe_texts`, `registry:PLOT_COMPONENTS`, `registry:COMPONENT_SCHEMAS`, `function:get_component`
-- **consumes:** `libs/viz_factory/src/viz_factory/parameters.py (exact_parameters)`, `libs/utils/src/utils/plot_text_check.py (layer_text_problems)`
+- **consumes:** `libs/viz_factory/src/viz_factory/parameters.py (exact_parameters)`, `libs/utils/src/utils/plot_text_check.py (layer_text_problems`, `facet_wrap_spec`, `FacetTextError)`, `libs/viz_factory/src/viz_factory/errors.py (CannotAct)`
 - **consumed_by:** `libs/viz_factory/tests/test_component_plotnine_field.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/scales/core.py`, `libs/viz_factory/src/viz_factory/positions/core.py`, `libs/viz_factory/src/viz_factory/guides/core.py`, `libs/viz_factory/src/viz_factory/facets/core.py`, `libs/viz_factory/src/viz_factory/coords/core.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
 - **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
@@ -1107,13 +1122,14 @@
 ## `libs/viz_factory/src/viz_factory/themes/core.py`
 - **Role:** `plot`
 - **provides:** `component:theme_gray`, `component:theme_bw`, `component:theme_linedraw`, `component:theme_light`, `component:theme_minimal`, `component:theme_classic`, `component:theme_void`, `component:theme_dark`, `component:theme_538`, `component:theme_matplotlib`, `component:theme_seaborn`, `component:theme_tufte`, `component:theme_xkcd`, `component:theme_dashboard`, `component:theme_publication`, `component:theme_legend_position`, `component:theme_custom`, `component:element_text`, `component:element_line`, `component:element_rect`, `component:element_blank`, `component:xlab`, `component:ylab`, `component:ggtitle`, `component:annotate`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/errors.py (CannotAct)`
 - **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
 - **doc:** `.claude/rules/rules_viz_factory.md`
 
 ## `libs/viz_factory/src/viz_factory/viz_factory.py`
 - **Role:** `plot`
 - **provides:** `class:VizFactory`, `function:VizFactory.render`, `constant:DEFAULT_RANDOM_STATE`, `function:draw_checked and function:show_draw_errors (re-exported from checked_plot.py)`
-- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`, `libs/viz_factory/src/viz_factory/checked_plot.py`, `libs/viz_factory/src/viz_factory/errors.py`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/pipeline_error.py`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/engines.py`, `libs/utils/src/utils/missing_values.py`, `libs/utils/src/utils/na_choice.py`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`, `libs/viz_factory/src/viz_factory/checked_plot.py`, `libs/viz_factory/src/viz_factory/font_check.py`, `libs/viz_factory/src/viz_factory/errors.py`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/pipeline_error.py`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/engines.py`, `libs/utils/src/utils/missing_values.py`, `libs/utils/src/utils/na_choice.py`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/modules/gallery_examples.py`, `app/tests/test_render_every_plot.py`, `libs/viz_factory/tests/`
 - **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-081`, `ADR-090`, `ADR-094`, `ADR-106)`
 
@@ -1170,6 +1186,11 @@
 - **consumes:** `libs/viz_factory/src/viz_factory/registry.py (PLOT_COMPONENTS`, `COMPONENT_SCHEMAS)`
 - **doc:** `.claude/knowledge/architecture_decisions.md (ADR-106)`
 
+## `libs/viz_factory/tests/test_every_theme_draws.py`
+- **Role:** `plot`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py (COMPONENT_SCHEMAS)`, `libs/viz_factory/src/viz_factory/viz_factory.py (VizFactory.render)`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
 ## `libs/viz_factory/tests/test_every_yaml_example_renders.py`
 - **Role:** `plot`
 - **consumes:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/registry.py`
@@ -1178,6 +1199,10 @@
 - **Role:** `plot`
 - **consumes:** `libs/viz_factory/src/viz_factory/parameters.py`, `libs/viz_factory/src/viz_factory/registry.py`, `plotnine`
 - **doc:** `.claude/design/decisions_2026-11-14/viz_plan_for_eve.md (V3)`
+
+## `libs/viz_factory/tests/test_missing_font_warns.py`
+- **Role:** `plot`
+- **consumes:** `libs/viz_factory/src/viz_factory/font_check.py (missing_fonts)`, `libs/viz_factory/src/viz_factory/viz_factory.py (VizFactory.render)`, `libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings)`
 
 ## `libs/viz_factory/tests/test_no_silent_error.py`
 - **Role:** `plot`
@@ -1199,6 +1224,16 @@
 - **Role:** `plot`
 - **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/tests/test_every_yaml_example_renders.py`, `plotnine`
 - **doc:** `.claude/design/viz_rename_impact_2026-11-15.md`, `.claude/knowledge/architecture_decisions.md (ADR-106)`
+
+## `libs/viz_factory/tests/test_theme_custom_loud.py`
+- **Role:** `plot`
+- **consumes:** `libs/viz_factory/src/viz_factory/themes/core.py (theme_custom`, `theme_legend_position)`, `libs/viz_factory/src/viz_factory/checked_plot.py`
+- **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `libs/viz_factory/tests/test_theme_settings_reach_the_figure.py`
+- **Role:** `plot`
+- **consumes:** `libs/viz_factory/src/viz_factory/themes/core.py (theme_bw ... theme_custom)`, `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **doc:** `.claude/rules/rules_viz_factory.md`
 
 ## `libs/viz_factory/tests/test_theme_slots.py`
 - **Role:** `plot`
