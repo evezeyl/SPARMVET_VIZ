@@ -69,3 +69,54 @@ def test_a_list_of_families_with_one_installed_is_no_warning():
 def test_a_missing_font_is_found_without_reading_any_log():
     requested, used = missing_fonts(MISSING)
     assert requested == MISSING and used == "DejaVu Sans"
+
+
+def text_layer(family):
+    return {"name": "theme_custom", "params": {"text": {"name": "element_text", "params": {"family": family}}}}
+
+
+def test_a_missing_family_on_the_general_setting_text_is_told_once_not_once_per_setting():
+    found = font_warnings(render(text_layer(MISSING)))
+    assert len(found) == 1
+    assert MISSING in found[0].problem and "general setting 'text'" in found[0].problem and found[0].fix.startswith("Suggestion:")
+
+
+def test_two_different_missing_fonts_are_two_warnings():
+    plot = render(text_layer(MISSING), {"name": "theme_custom", "params": {"axis_text_x": {"name": "element_text", "params": {"family": "OtherGoneFont"}}}})
+    found = font_warnings(plot)
+    assert len(found) == 2
+    assert any(MISSING in w.problem for w in found) and any("OtherGoneFont" in w.problem for w in found)
+
+
+def test_a_list_of_two_missing_families_is_one_readable_warning():
+    found = font_warnings(render(text_layer(["GoneA", "GoneB"])))
+    assert len(found) == 1 and "'GoneA, GoneB'" in found[0].problem and "[" not in found[0].problem
+
+
+def test_settings_text_names_three_and_the_rest_without_text():
+    from viz_factory.font_check import settings_text
+    assert settings_text(["a", "b", "c", "d", "e"]) == "'a', 'b', 'c' and 2 more"
+    assert settings_text(["a", "b"]) == "'a', 'b'"
+
+
+def test_font_problems_never_raises_on_odd_family_values():
+    from viz_factory.font_check import font_problems
+
+    class T:
+        def __init__(self, family):
+            self.properties = {"family": family}
+
+    class Th:
+        def __init__(self, family):
+            self.themeables = {"text": T(family)}
+
+    for odd in (5, 3.5, {"a": 1}, None, "", [], [1, 2], ["ok", 3]):
+        assert font_problems(Th(odd)) == []
+
+
+def test_a_number_as_family_is_refused_by_the_app_in_plain_words_not_a_raw_error():
+    import pytest
+    from utils.errors import VisualizationError
+    with pytest.raises(VisualizationError) as e:
+        draw_checked(render(text_layer(5)))
+    assert "'text'" in str(e.value) and "5" in str(e.value)

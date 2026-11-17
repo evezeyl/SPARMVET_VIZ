@@ -7,7 +7,7 @@ from viz_factory.registry import get_component
 from viz_factory.plot_config_resolver import (
     BATCHED_COMPONENTS, resolve_plot_config, spec_key_names, unknown_spec_keys)
 from utils.random_layers import is_random_layer, is_seed_value, position_of
-from viz_factory.font_check import font_problems
+from viz_factory.font_check import font_problems, family_text, settings_text
 from viz_factory.checked_plot import (
     CheckedPlot, PlotContext, Step, draw_checked, explain_build_failure, plot_environment, plot_warnings, show_draw_errors)
 from viz_factory.errors import layer_label, plot_failure
@@ -412,18 +412,18 @@ class VizFactory:
 
         # 10. A font family that is not installed is replaced by another font when the picture is drawn, with a log line only:
         # the user is told here (D-0050). The plot still draws, so it is a warning, not an error.
-        for setting, asked, used in font_problems(getattr(p, "theme", None)):
+        for settings, asked, used in font_problems(getattr(p, "theme", None)):
             warn(PipelineError(
                 component="VizFactory",
-                problem=f"The font '{asked}' (theme setting '{setting}') is not installed on this machine; '{used}' is used instead.",
+                problem=f"The font '{family_text(asked)}' (theme setting: {settings_text(settings)}) is not installed on this machine; '{used}' is used instead.",
                 location=f"VizFactory.render(plot_id='{plot_id}')",
-                fix=(f"Suggestion: write a font family that is installed (for example '{used}'), or install '{asked}' on the machine "
+                fix=(f"Suggestion: write a font family that is installed (for example '{used}'), or install '{family_text(asked)}' on the machine "
                      "that draws the plot. A picture drawn on another machine can show a different font."),
                 who="data_analysis_recipe_author",
                 category="visualization",
                 surface="notification",
                 severity="warning",
-                evidence={"font_asked": str(asked), "font_used": used, "theme_setting": setting},
+                evidence={"font_asked": family_text(asked), "font_used": used, "theme_setting": list(settings)},
             ))
 
         return p

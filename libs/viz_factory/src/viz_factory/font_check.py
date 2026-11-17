@@ -33,15 +33,43 @@ def missing_fonts(family: Any) -> Optional[Tuple[Any, str]]:
     return family, used
 
 
+def _is_family(value: Any) -> bool:
+    """A text, or a non-empty list of texts: the only shapes this check can judge; anything else is left to plotnine."""
+    if isinstance(value, str):
+        return value != ""
+    return isinstance(value, (list, tuple)) and len(value) > 0 and all(isinstance(v, str) and v != "" for v in value)
+
+
+def family_text(family: Any) -> str:
+    """The family as a person reads it: 'Foo', or 'Foo, Bar' for a list."""
+    return family if isinstance(family, str) else ", ".join(family)
+
+
 def font_problems(theme: Any) -> list:
-    """For a plotnine theme: a list of (theme setting, asked-for family, font used instead) for every family not installed."""
-    found = []
+    """For a plotnine theme: one (theme settings, asked-for family, font used instead) per missing family, never raises.
+
+    Plotnine copies a family set on the general setting 'text' into many settings; they are grouped here so that the
+    user is told once per missing font. A value that is not a text or a list of texts is skipped (plotnine refuses it).
+    """
+    groups: dict = {}
     themeables = getattr(theme, "themeables", None) or {}
     for name, themeable in themeables.items():
-        family = (getattr(themeable, "properties", None) or {}).get("family")
-        if not family:
+        properties = getattr(themeable, "properties", None)
+        family = properties.get("family") if isinstance(properties, dict) else None
+        if not _is_family(family):
             continue
         result = missing_fonts(family)
         if result is not None:
-            found.append((name, result[0], result[1]))
-    return found
+            key = family_text(family)
+            groups.setdefault(key, (result[0], result[1], []))[2].append(name)
+    return [(names, asked, used) for asked, used, names in groups.values()]
+
+
+def settings_text(names: list) -> str:
+    """The settings as one short list. When the general setting 'text' is among them it is the origin (plotnine copies it
+    to the others): it is named, with the number of settings it reached. Else up to three, then 'and N more'."""
+    if "text" in names and len(names) > 1:
+        return f"the general setting 'text' (reaches {len(names) - 1} more settings)"
+    if len(names) <= 3:
+        return ", ".join(f"'{n}'" for n in names)
+    return ", ".join(f"'{n}'" for n in names[:3]) + f" and {len(names) - 3} more"
