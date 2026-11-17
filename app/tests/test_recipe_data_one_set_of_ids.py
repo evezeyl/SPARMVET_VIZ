@@ -41,6 +41,12 @@ COMMON_SET_TABLE = {"figshare_integration": "fg_metadata"}
 
 # Ids a recipe keeps outside the set on purpose: {(recipe, table): (ids, reason)}.
 ALLOWED_OUTSIDE = {
+    ("left_join_lesson", "sequenced"): (
+        {"ACC0001", "ACC0002"},
+        "the lesson recipe that teaches a left join: its two tables have ids that do not match on purpose "
+        "(config/data_analysis_recipes/templates/left_join_lesson.yaml, app/tests/test_left_join_lesson.py); "
+        "the id column is the one the recipe declares with is_entity_key (Accession and ID), not a name guess",
+    ),
     ("complex_template", "genomics"): (
         {"ACC0029", "ACC0030"},
         "template data made on purpose with 'a sample without a metadata row' to teach what a left join does "
@@ -63,7 +69,7 @@ UNIQUE_BY = {
 
 EXPECTED_CHECKED = {
     "demo_abromics", "1_test_data_ST22_dummy", "2_test_data_ST22_dummy", "1_Abromics_general_pipeline",
-    "figshare_integration", "complex_template",
+    "figshare_integration", "complex_template", "left_join_lesson",
 }
 
 
@@ -253,6 +259,18 @@ def test_a_repeated_id_in_the_metadata_is_named(tmp_path):
 def test_an_unreadable_set_table_is_reported_not_skipped():
     found = problems_of("x", {"MLST": (Path("a.tsv"), "sample_id")}, "metadata_schema")
     assert found and "COMMON_SET_TABLE" in found[0]
+
+
+def test_the_lesson_exception_is_narrow_and_read_from_the_declared_id_column():
+    """Exactly the two named ids are allowed in the lesson; a third foreign id fails, and the id column is the declared one."""
+    tables = CHECKED["left_join_lesson"]
+    assert problems_of("left_join_lesson", tables, "metadata_schema") == []
+    assert tables["sequenced"][1] == "Accession" and tables["metadata_schema"][1] == "ID", "the declared is_entity_key columns"
+    found = problems_of("left_join_lesson", tables, "metadata_schema",
+                        allowed_outside={("left_join_lesson", "sequenced"): ({"ACC0001"}, "x")})
+    assert any("ACC0002" in p and "ACC0001" not in p for p in found), found
+    assert any("ACC0001" in p for p in problems_of("left_join_lesson", tables, "metadata_schema", allowed_outside={})), \
+        "without the declared exception the lesson fails: the exception is the only thing that lets it pass"
 
 
 def test_the_allowed_outside_ids_are_only_the_declared_ones():
