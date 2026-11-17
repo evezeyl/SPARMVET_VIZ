@@ -49,29 +49,75 @@ def _seed(sm, tmp_path, label: str, with_step: bool):
     return key
 
 
-def _toasts(page: Page, word: str) -> int:
-    return page.evaluate("(w) => [...document.querySelectorAll('.shiny-notification')].filter(n => n.textContent.includes(w)).length", word)
+# A notice stays on the screen for a few seconds and then goes, so a read of "how many are on the screen now" depends on when it is
+# made: too early it finds none (the notice has not arrived), too late it finds none (it has gone). The page therefore keeps a
+# record of every notice that was ever added (a MutationObserver installed before the first click), and the test counts that record:
+# it waits until the expected number is there, then waits a short time and checks that no further one came.
+_RECORD_NOTICES = """() => {
+  if (window.__seenNotices) return;
+  window.__seenNotices = [];
+  const note = (node) => {
+    if (node.nodeType === 1 && node.classList && node.classList.contains('shiny-notification')) {
+      setTimeout(() => window.__seenNotices.push(node.textContent), 0);   // the text is filled in after the node is added
+    }
+  };
+  new MutationObserver((records) => records.forEach(r => r.addedNodes.forEach(note)))
+    .observe(document.body, {childList: true, subtree: true});
+}"""
+
+_SETTLE_MS = 2_000   # a pause that cannot be a wait for a state: it is the time in which a repeated click would show itself (the old
+                     # defect added a notice every second or less); the check that follows can fail on it
 
 
-def _free(page: Page, what: str, seconds: int = 15) -> None:
-    """The busy flag clears within `seconds`: a loop keeps the page busy for ever."""
+def _seen(page: Page, word: str) -> int:
+    return page.evaluate("(w) => (window.__seenNotices || []).filter(t => t.includes(w)).length", word)
+
+
+def _notices(page: Page, step: str, word: str, expected: int, already: int = 0, context: str = "") -> None:
+    """Wait until `expected` notices with `word` came (counted from `already`), then check that no further one comes."""
+    try:
+        page.wait_for_function("([w, n]) => (window.__seenNotices || []).filter(t => t.includes(w)).length >= n",
+                               arg=[word, already + expected], timeout=20_000)
+    except Exception as exc:  # noqa: BLE001
+        raise AssertionError(f"[{step}] no '{word}' notice reached the screen within 20 s (seen: {_seen(page, word)}, "
+                             f"expected {already + expected}){context}") from exc
+    page.wait_for_timeout(_SETTLE_MS)
+    got = _seen(page, word) - already
+    assert got == expected, f"[{step}] {got} '{word}' notices came after the click, expected {expected}: the click is repeated"
+
+
+def _free(page: Page, step: str, seconds: int = 20) -> None:
+    """The busy flag is clear (a loop keeps the page busy for ever). Called after the notice came, so that a flag that is not yet
+    set (the click has not reached the server) is not taken for a free page."""
     try:
         page.wait_for_function("() => !document.documentElement.classList.contains('shiny-busy')", timeout=seconds * 1000)
     except Exception as exc:  # noqa: BLE001
-        raise AssertionError(f"the page stayed busy for {seconds} s after {what}: the click is repeated without end") from exc
+        raise AssertionError(f"[{step}] the page stayed busy for {seconds} s: the click is repeated without end") from exc
 
 
 def _show_card(page: Page, label: str, button: str) -> None:
     """Open the session group of `label` if its button is not visible: the panel is drawn again after a restore (it reads the
     state the restore sets), and its accordion starts closed."""
+    group = page.locator("#session_groups_accordion").get_by_text(f"📁 {label}", exact=False).first
+    expect(group).to_be_visible(timeout=10_000)
     if not page.locator(button).is_visible():
-        page.locator("#session_groups_accordion").get_by_text(f"📁 {label}", exact=False).first.click()
+        group.click()
         _wait_shiny(page)
     expect(page.locator(button)).to_be_visible(timeout=10_000)
 
 
 def _reasons(page: Page) -> list[str]:
     return page.evaluate("() => [...document.querySelectorAll('input[id^=t3_reason_]')].map(e => e.value)")
+
+
+def _wait_reasons(page: Page, step: str, expected: list[str], timeout: int = 15_000) -> None:
+    """Wait until the audit panel holds exactly the reasons `expected` (as a set, in any order)."""
+    try:
+        page.wait_for_function(
+            "(want) => { const got = [...document.querySelectorAll('input[id^=t3_reason_]')].map(e => e.value).sort();"
+            " return JSON.stringify(got) === JSON.stringify(want.slice().sort()); }", arg=expected, timeout=timeout)
+    except Exception as exc:  # noqa: BLE001
+        raise AssertionError(f"[{step}] the audit panel holds {_reasons(page)}, expected {expected}") from exc
 
 
 @pytest.mark.skipif(_LAUNCH_APP_FEATURES not in _INTERACTIVE_APP_FEATURES,
@@ -85,6 +131,7 @@ def test_one_click_on_restore_and_on_delete_acts_once(page: Page, shiny_app: Shi
     safe = lambda key: key.replace(":", "_")   # noqa: E731
     try:
         _load_data_analysis_recipe(page, shiny_app.url)
+        page.evaluate(_RECORD_NOTICES)
         _open_filters_panel(page)
         _navigate_to_mlst_plot(page)
         page.locator("#tier_toggle input[value=T3]").check(force=True)
@@ -94,83 +141,83 @@ def test_one_click_on_restore_and_on_delete_acts_once(page: Page, shiny_app: Shi
         _wait_shiny(page)
         page.wait_for_selector("#session_groups_accordion", timeout=10_000)
         for label in ("restore_once_saved", "restore_once_empty"):
-            page.locator("#session_groups_accordion").get_by_text(f"📁 {label}", exact=False).first.click()
-            _wait_shiny(page)
+            _show_card(page, label, f"#session_restore_{safe(key_saved if label.endswith('saved') else key_empty)}")
 
-        # Restore the session that has a saved audit step
-        expect(page.locator(f"#session_restore_{safe(key_saved)}")).to_be_visible(timeout=10_000)
-        page.locator(f"#session_restore_{safe(key_saved)}").click()
-        _free(page, "Restore of the session with a saved step")
-        assert _toasts(page, "Session restored") == 1, f"{_toasts(page, 'Session restored')} notices after one click"
-        page.wait_for_timeout(3_000)
-        assert _toasts(page, "Session restored") <= 1, "the restore is repeated after the page was free"
-        expect(page.locator('input[id^="t3_reason_"]').first).to_be_visible(timeout=10_000)
-        assert SAVED_REASON in _reasons(page), f"the saved step is not in the audit panel: {_reasons(page)}"
+        # 1. Restore the session that has a saved audit step: one notice, the page becomes free, the saved step is in the view
+        saved_button = f"#session_restore_{safe(key_saved)}"
+        _show_card(page, "restore_once_saved", saved_button)
+        page.locator(saved_button).click()
+        _notices(page, "1 restore of the session with a saved step", "Session restored", 1)
+        _free(page, "1 restore of the session with a saved step")
+        _wait_reasons(page, "1 the saved step is in the audit panel", [SAVED_REASON])
 
-        # Restore the session that has no save: nothing to restore, one notice, the page is free
+        # 2. Restore the session that has no save: one notice, nothing restored, the steps of the view are unchanged
         _show_card(page, "restore_once_empty", f"#session_restore_{safe(key_empty)}")
         page.locator(f"#session_restore_{safe(key_empty)}").click()
-        _free(page, "Restore of the session with no save")
-        assert _toasts(page, "no saved audit steps") == 1, "one notice for one click on the session with no save"
-        page.wait_for_timeout(3_000)
-        assert _toasts(page, "no saved audit steps") <= 1
-        assert SAVED_REASON in _reasons(page), "the steps of the view are unchanged by a restore that has nothing to restore"
+        _notices(page, "2 restore of the session with no save", "no saved audit steps", 1)
+        _free(page, "2 restore of the session with no save")
+        _wait_reasons(page, "2 the steps of the view are unchanged by a restore with nothing to restore", [SAVED_REASON])
 
-        # A step added after the restore must still be there seconds later: a repeated restore would put the saved steps back
+        # 3. A step added after the restore must still be there seconds later: a repeated restore would put the saved steps back
         _wait_for_fb_col_option(page, "year")
         page.locator("#fb_col").select_option("year")
         _wait_shiny(page)
         page.locator("#fb_op").select_option("gt")
         _wait_shiny(page)
         page.locator("#fb_value").fill("2000")
-        page.wait_for_timeout(200)
+        page.wait_for_timeout(200)   # the number box is mounted again after the operator changes: a value typed in that moment is lost
         page.locator("#filter_add_row").click()
         _wait_shiny(page)
+        expect(page.locator("#filter_send_to_audit")).to_be_visible(timeout=10_000)
         page.locator("#filter_send_to_audit").click()
-        _wait_shiny(page)
+        expect(page.locator("#propagation_confirm")).to_be_visible(timeout=10_000)
         page.locator("#propagation_confirm").click()
         _wait_shiny(page)
         new_reason = "a step added after the restore"
-        deadline = time.time() + 20
         apply = page.locator("#btn_apply").first
-        while True:
-            boxes = page.locator('input[id^="t3_reason_"]')
-            for i in range(boxes.count()):
-                if not boxes.nth(i).input_value():
-                    boxes.nth(i).fill(new_reason)
-                    boxes.nth(i).press("Tab")
-            _wait_shiny(page)
-            if apply.is_enabled():
-                break
-            assert time.time() < deadline, "Apply was never enabled"
-            page.wait_for_timeout(250)
+        # Wait for each state in turn, never for the first sign of it: the audit panel and the Apply button are drawn one after the
+        # other, so "Apply is enabled" can still be the state from before the new step arrived (a click then found the step
+        # without its reason, or no step at all: seen in repeated runs). (a) the new step is in the panel (two reason boxes),
+        # (b) the server has closed the gate for it (the button says "Apply" with the stop sign and is disabled), (c) the reason is
+        # typed and read (the button says "Apply" and is enabled).
+        try:
+            expect(page.locator('input[id^="t3_reason_"]')).to_have_count(2, timeout=15_000)
+        except AssertionError as exc:
+            raise AssertionError(f"[3 add a step] the new step never reached the audit panel: {_reasons(page)}") from exc
+        expect(apply).to_have_text("Apply \u26d4", timeout=15_000)
+        expect(apply).to_be_disabled()
+        empty = page.locator('input[id^="t3_reason_"]').evaluate_all("(boxes) => boxes.findIndex(b => !b.value)")
+        assert empty >= 0, f"[3 add a step] no reason box is empty although the gate is closed: {_reasons(page)}"
+        box = page.locator('input[id^="t3_reason_"]').nth(empty)
+        box.fill(new_reason)
+        box.press("Tab")   # leaving the box sends the text; a click sent before it would be refused by the Apply gate
+        expect(apply).to_have_text("Apply", timeout=15_000)
+        expect(apply).to_be_enabled()
+        # the state at the click, kept for the message of a failure: what the button said and what every reason box held
+        at_click = f"; at the click the button said {apply.inner_text()!r} and the reason boxes held {_reasons(page)}"
         page.eval_on_selector("#btn_apply", "e => e.click()")
-        page.wait_for_function("() => document.body.textContent.includes('audit steps applied')", timeout=20_000)
-        _free(page, "Apply")
-        page.wait_for_timeout(5_000)
-        reasons = _reasons(page)
-        assert SAVED_REASON in reasons and new_reason in reasons, f"the step added after the restore is gone: {reasons}"
+        _notices(page, "3 Apply", "audit steps applied", 1, context=at_click)
+        _free(page, "3 Apply")
+        _wait_reasons(page, "3 the new step is in the audit panel after Apply", [SAVED_REASON, new_reason])
+        page.wait_for_timeout(5_000)   # the time in which a repeated restore would overwrite the step (a repeat came every second or less)
+        _wait_reasons(page, "3 the new step is still there 5 s after Apply", [SAVED_REASON, new_reason], timeout=3_000)
 
-        # Delete on the other card runs once and the card is gone
-        before = _toasts(page, "Session deleted")
+        # 4. Delete on the other card runs once and the card is gone
         _show_card(page, "restore_once_empty", f"#session_delete_{safe(key_empty)}")
         page.locator(f"#session_delete_{safe(key_empty)}").click()
-        _free(page, "Delete")
-        expect(page.locator(f"#session_delete_{safe(key_empty)}")).to_have_count(0, timeout=8_000)
-        page.wait_for_timeout(3_000)
-        assert _toasts(page, "Session deleted") - before == 1, "the delete notice was not shown exactly once"
-        assert not (sm.root / key_empty).exists()
-        assert (sm.root / key_saved).exists(), "the other session was not touched"
+        _notices(page, "4 delete of the other card", "Session deleted", 1)
+        _free(page, "4 delete of the other card")
+        expect(page.locator(f"#session_delete_{safe(key_empty)}")).to_have_count(0, timeout=10_000)
+        assert not (sm.root / key_empty).exists(), "[4 delete of the other card] the folder of the deleted session is still there"
+        assert (sm.root / key_saved).exists(), "[4 delete of the other card] the other session was touched"
 
-        # A second click on the same Restore is a second restore (the card was drawn again after the first: its count starts over)
-        before = _toasts(page, "Session restored")
-        _show_card(page, "restore_once_saved", f"#session_restore_{safe(key_saved)}")
-        page.locator(f"#session_restore_{safe(key_saved)}").click()
-        _free(page, "a second Restore of the same session")
-        assert _toasts(page, "Session restored") - before == 1, "a second click gave no restore, or more than one"
-        page.wait_for_timeout(3_000)
-        assert _toasts(page, "Session restored") - before == 1
-        assert _reasons(page) == [SAVED_REASON], "the second restore puts back the saved steps (and only them)"
+        # 5. A second click on the same Restore is a second restore (the card was drawn again after the first: its count starts over)
+        before = _seen(page, "Session restored")
+        _show_card(page, "restore_once_saved", saved_button)
+        page.locator(saved_button).click()
+        _notices(page, "5 second restore of the same session", "Session restored", 1, already=before)
+        _free(page, "5 second restore of the same session")
+        _wait_reasons(page, "5 the second restore puts back the saved steps (and only them)", [SAVED_REASON])
     finally:
         for key in (key_saved, key_empty):
             sm.delete_session(key)
