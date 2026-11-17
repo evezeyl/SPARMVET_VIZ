@@ -26,6 +26,7 @@ from shiny import reactive, render, ui
 
 from app.modules.error_notice import notice
 from app.modules.export_refusal import export_refusal
+from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
 from utils.fix_text import fix_label
 from app.modules.qmd_text import code as _qc, mermaid_label as _qm, plain as _qp, yaml_string as _qy
@@ -1445,6 +1446,10 @@ def define_export_server(input, output, session, *,
             # is per-field, not a single collapsed code and not eyeball-only — #48's
             # per-leg verify logic is the actual comparison tool.
             import yaml as _yaml
+            _contact = export_contact_record(
+                (cfg.raw_config.get("info") if isinstance(cfg.raw_config.get("info"), dict) else None),
+                bootloader.get_contact(),
+            )
             effective_run = {
                 "_about": (
                     "Retrospective provenance for this export (field names checked "
@@ -1464,6 +1469,8 @@ def define_export_server(input, output, session, *,
                 "uv_lock_sha256": prov["uv_lock_sha256"],
                 "git_commit": prov["git_commit"],
                 "release_version": prov["release_version"],
+                "contact": _contact["contact"],
+                "contact_source": _contact["contact_source"],
                 "software_versions": prov["software_versions"],
                 "data_source_paths": prov["data_source_paths"],
                 "seeds_per_plot": seeds_per_plot_record(_plot_seeds),
@@ -1986,6 +1993,7 @@ def define_export_server(input, output, session, *,
                 f"Versions         : {_sw_str}",
                 f"Git commit       : {prov['git_commit']}",
                 f"Release version  : {prov['release_version']}",
+                export_contact_readme_line(_contact),
                 "",
                 "Reproducibility",
                 "-" * 40,

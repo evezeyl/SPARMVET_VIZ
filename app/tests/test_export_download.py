@@ -70,6 +70,8 @@ def test_the_bundle_records_the_keys_and_has_the_data(loaded):
     assert len(run["data_batch_hash"]) == 64
     assert len(run["t3_audit_steps_sha256"]) == 64
     assert run["git_commit"]
+    assert "contact" in run and "contact_source" in run
+    assert len([ln for ln in readme.splitlines() if ln.startswith("Contact")]) == 1
     assert "not attempted" in run["t3_translation_skipped"]   # Mode 2 not requested here
 
     assert any(n.endswith("T1_data.tsv") for n in names)
