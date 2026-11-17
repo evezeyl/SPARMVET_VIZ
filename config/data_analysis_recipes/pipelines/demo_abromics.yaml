@@ -5,7 +5,7 @@ plot_engine: python-plotnine
 info:
   label: 'Demo: Abromics Pipeline (High Integrity)'
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
-  description: Synchronized test data for Phase 4/5 demonstration.
+  description: "Synchronized test data for Phase 4/5 demonstration. The table `demo join` starts from the 27 samples of the metadata and adds the MLST results: 12 samples have no MLST result and show the sequence type \"Non Determined\"; a sample with several MLST results has several rows (40 rows for 27 samples). Removed by this recipe, on purpose: the 3 metadata lines that have no sample id, and the 2 MLST rows of 2 samples that are not in the metadata."
   version: '1.2'
 data_schemas:
   MLST:
@@ -33,18 +33,27 @@ metadata_schema:
 joins:
   demo_join:
     label: "demo join"
-    description: One row per MLST result joined to a metadata line (inner join); a sample that is repeated in the data appears more than once, so there are more rows than samples.
+    description: "One row per MLST result of a sample, and one row for a sample that has no MLST result. The table starts from the metadata (27 samples with an id) and adds the MLST results to it (a left join), so no sample of the metadata is lost: in this demo data 12 of the 27 samples have no MLST result and show the sequence type \"Non Determined\" (an unknown result, not a missing value). A sample that is repeated in the MLST data appears more than once, so there are more rows than samples (40 rows for 27 samples). Removed by this recipe, on purpose: the 3 metadata lines that have no sample id (they cannot be linked to any result), and the 2 MLST rows of 2 samples (SYN_38282317 and SYN_67199832) that are not in the metadata."
     ingredients:
-    - dataset_id: MLST
+    # the metadata comes first: it is the list of the samples, and the left join keeps every one of them
     - dataset_id: metadata_schema
+    - dataset_id: MLST
     labels: {sequence_type: Sequence Type, source: Source, year: Year, country: Country}
     steps:
       tier1:
+      # a metadata line without a sample id cannot be linked to an MLST result: it is removed here (3 lines in this demo data)
+      - action: polars_drop_nulls
+        subset: [sample_id]
+      # a left join: every sample of the metadata stays, with or without an MLST result
       - action: polars_join
-        right_ingredient: metadata_schema
+        right_ingredient: MLST
         'on': [sample_id]
-        how: inner
+        how: left
         maintain_order: left_right
+      # a sample that has no MLST result is not a missing value: its result is not determined (same text as the MLST table of 1_test_data_ST22_dummy)
+      - action: polars_fill_null
+        columns: [sequence_type]
+        value: Non Determined
       # the year is read as a number; as a category on a plot axis it must be 2024, not 2024.0
       - action: polars_cast
         columns: [year]
@@ -62,7 +71,7 @@ analysis_groups:
     plots:
       demo_st_by_source:
         label: Sequence Types by Source
-        description: "Bars count the rows of the joined table (a sample repeated in the data counts more than once) for each sequence type, coloured by source."
+        description: "Bars count the rows of the joined table (a sample repeated in the MLST data counts more than once) for each sequence type, coloured by source. The bar \"Non Determined\" holds the samples that have no MLST result or an unknown one."
         spec:
           target_dataset: demo_join
           mapping:
