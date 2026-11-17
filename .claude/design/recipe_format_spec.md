@@ -605,6 +605,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | I03 | E | `info.display_name` | `label` |
 | E01 | E | unknown key in `entity`; `noun`/`plural`/`population` missing | |
 | E02 | E | `population` unknown, or its table has no entity key | |
+| E03 | E | a field marked `is_entity_key` (the sample id) has a number type (an integer, a float or a decimal); D-0225, D-0067 | declare it as `String` (or `Categorical`): a number as an id loses leading zeros, makes 001, 1 and 1.0 one sample, and gives join and type problems |
 | S01 | E | unknown key in a schema (`info`, `fields`, `id`, `output_fields`, ...) | replacement |
 | S02 | E | repeated schema id; use of the reserved id | |
 | S03 | E | schema without `label` | add it |

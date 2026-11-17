@@ -319,6 +319,7 @@ class _Check:
         else:
             for slug, definition in fields_.items():
                 self.field(definition, f"{path}.input_fields.{slug}")
+                self.entity_key_type(definition, f"{path}.input_fields.{slug}.type", path.rsplit(".", 1)[-1], slug)
         wrangling = schema.get("wrangling")
         if wrangling is None:
             self.add("S06", f"{path}.wrangling", "wrangling is required", "write wrangling: {tier1: []}")
@@ -358,6 +359,22 @@ class _Check:
             for message in containment_problems(value, self.roots, base=self.base or "."):
                 what, _, fix = message.partition(". Fix: ")
                 self.add("PA02", path, what, fix)
+
+    def entity_key_type(self, definition: Any, path: str, table: str, slug: str) -> None:
+        """E03 (D-0225, D-0067): the declared entity key (the sample id) is a String or a Categorical, never a number.
+
+        A number as an id loses leading zeros and makes 001, 1 and 1.0 one sample, and it gives join and type problems.
+        Only a column marked is_entity_key is judged: nothing is guessed from a column name. A type that cannot be read is
+        left to FD02 and FD05.
+        """
+        if not isinstance(definition, dict) or definition.get("is_entity_key") is not True:
+            return
+        declared = _declared_dtype(definition)
+        if declared is not None and declared.is_numeric():
+            self.add("E03", path,
+                     f"The sample id {slug!r} of the table {table!r} is declared {declared}, a number. A number as an id loses leading zeros, "
+                     "makes 001, 1 and 1.0 one sample, and gives join and type problems.",
+                     f"Suggestion: declare it as String (or Categorical) in input_fields of {table!r}.")
 
     def missing_values(self, mapping: dict, path: str, *, required: bool) -> None:
         for key, ok, fix in (
