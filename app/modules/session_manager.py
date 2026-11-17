@@ -496,7 +496,7 @@ class SessionManager:
         """`(sessions, unreadable)`: the list `list_all_sessions` gives, and the files that were left out of it.
 
         An unreadable `assembly.json` leaves its session out of the list, and an unreadable save is not counted in its
-        session; both are still the case, and each is named as `{"session_key", "name", "reason"}` so that the screen can
+        session; both are still the case, and each is named as `{"session_key", "name", "reason", "kind"}` (kind "session": the session is not listed; "save": it is listed) so that the screen can
         tell the user (D-0050).
         """
         sessions = []
@@ -506,7 +506,8 @@ class SessionManager:
                 ghost = self._read_current_json(assembly_file, f"Session {assembly_file.parent.name}")
                 session_key = ghost.get("session_key", assembly_file.parent.name)
                 t3_ghosts, skipped = self.scan_t3_ghosts(session_key)
-                unreadable += [{"session_key": session_key, "name": item["name"], "reason": item["reason"]} for item in skipped]
+                unreadable += [{"session_key": session_key, "name": item["name"], "reason": item["reason"], "kind": "save"}
+                               for item in skipped]
                 latest_t3 = t3_ghosts[0].get("saved_at", "") if t3_ghosts else ""
                 label = ghost.get("label", "") or (t3_ghosts[0].get("label", "") if t3_ghosts else "")
                 sessions.append({
@@ -526,7 +527,8 @@ class SessionManager:
                                  "data_batch_hash": "", "assembled_at": "", "latest_t3_saved_at": "",
                                  "t3_count": 0})
             except Exception as exc:
-                unreadable.append({"session_key": assembly_file.parent.name, "name": assembly_file.name, "reason": _reason(exc)})
+                unreadable.append({"session_key": assembly_file.parent.name, "name": assembly_file.name, "reason": _reason(exc),
+                                   "kind": "session"})
                 continue
         sessions.sort(key=lambda s: s["latest_t3_saved_at"] or s["assembled_at"], reverse=True)
         return sessions, unreadable

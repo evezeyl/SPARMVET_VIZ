@@ -100,14 +100,55 @@ def test_a_restore_that_skips_the_newest_save_says_which_was_skipped_and_which_w
     assert older.name not in text
 
 
-def test_a_restore_whose_every_save_is_damaged_says_so(tmp_path, monkeypatch):
+def test_a_restore_whose_every_save_is_damaged_says_so_and_leaves_the_view_unchanged(tmp_path, monkeypatch):
+    """MUTATION U6 fails here. Before the text said 'the audit steps start empty' and 'starting fresh T3': untrue, `_restore_session`
+    does not touch the state, so the steps already in the view STAY."""
     screen = Screen(tmp_path, monkeypatch, {RESTORE: 1})
     only = _save(screen.manager, "only save")
     only.write_text("{ not json")
+    in_view = {"subtab_q": [_step("a step already in this view")]}
+    with reactive.isolate():
+        screen.home_state.set({**screen.home_state.get(), "t3_audit_steps_by_plot": in_view})
     screen.run("_handle_session_actions")
+    with reactive.isolate():
+        assert screen.home_state.get()["t3_audit_steps_by_plot"] is in_view, "the state is not touched, as the text must say"
     warnings = screen.texts("warning")
     assert len(warnings) == 1 and only.name in warnings[0] and "Suggestion:" in warnings[0], screen.notes
-    assert [m for t, m in screen.notes if "No T3 saves" in m], "the fresh start is still said"
+    assert "nothing was restored" in warnings[0] and "unchanged" in warnings[0], warnings[0]
+    every_text = " ".join(m for _, m in screen.notes).lower()
+    assert "start empty" not in every_text and "fresh" not in every_text, every_text
+
+
+def test_a_session_with_no_saves_does_not_say_it_starts_fresh(tmp_path, monkeypatch):
+    """The other old sentence ('starting fresh T3') was untrue in the same way."""
+    screen = Screen(tmp_path, monkeypatch, {RESTORE: 1})
+    in_view = {"subtab_q": [_step("a step already in this view")]}
+    with reactive.isolate():
+        screen.home_state.set({**screen.home_state.get(), "t3_audit_steps_by_plot": in_view})
+    screen.run("_handle_session_actions")
+    with reactive.isolate():
+        assert screen.home_state.get()["t3_audit_steps_by_plot"] is in_view
+    texts = screen.texts("message")
+    assert len(texts) == 1 and "nothing was restored" in texts[0] and "unchanged" in texts[0] and "fresh" not in texts[0], texts
+
+
+def test_the_notices_of_a_restore_are_told_once_per_click(tmp_path, monkeypatch):
+    """MUTATION U7 fails here: the effect re-runs while the click count stays above zero; the same notice of the same click
+    is not told again, a new click tells it again."""
+    screen = Screen(tmp_path, monkeypatch, {RESTORE: 1})
+    older = _save(screen.manager, "older")
+    newest = _save(screen.manager, "newest")
+    newest.write_text("{ not json")
+    with reactive.isolate():
+        screen.home_state.set({})        # no keys: "could not be compared" too
+    screen.run("_handle_session_actions")
+    screen.run("_handle_session_actions")
+    warnings = screen.texts("warning")
+    assert len([m for m in warnings if "skipped" in m]) == 1 and len([m for m in warnings if "compared" in m]) == 1, screen.notes
+    screen.input.values[RESTORE] = 2
+    screen.run("_handle_session_actions")
+    warnings = screen.texts("warning")
+    assert len([m for m in warnings if "skipped" in m]) == 2 and len([m for m in warnings if "compared" in m]) == 2, screen.notes
 
 
 def test_a_restore_with_nothing_damaged_says_nothing_extra(tmp_path, monkeypatch):
@@ -133,6 +174,34 @@ def test_the_session_list_reports_an_unreadable_session(tmp_path, monkeypatch):
     screen.run("session_management_ui")   # a second drawing of the list does not add it again
     with reactive.isolate():
         assert len(screen.log.get()) == 1 and len(screen.issues.get()) == 1
+
+
+def test_the_report_of_an_unreadable_session_says_the_session_is_not_in_the_list(tmp_path, monkeypatch):
+    screen = Screen(tmp_path, monkeypatch, {})
+    other = "cccccccccccc:dddddddddddd"
+    screen.manager.write_assembly_ghost(other, "tiny", "c" * 64, "d" * 64, {}, {})
+    (screen.manager.root / other / "assembly.json").write_text("not json at all")
+    screen.run("session_management_ui")
+    with reactive.isolate():
+        text = screen.log.get()[0]["msg"]
+    assert "so the session is not in this list" in text and "delete the session folder" in text, text
+
+
+def test_the_report_of_a_damaged_save_says_the_session_is_listed_and_only_the_save_is_left_out(tmp_path, monkeypatch):
+    """MUTATION U8 fails here. Before: one text 'so it is not in this list' for a damaged save, which is untrue (the session IS listed)."""
+    screen = Screen(tmp_path, monkeypatch, {})
+    _save(screen.manager, "fine")
+    bad = _save(screen.manager, "bad")
+    bad.write_text("{ not json")
+    screen.run("session_management_ui")
+    with reactive.isolate():
+        alerts = screen.log.get()
+    assert len(alerts) == 1, alerts
+    text = alerts[0]["msg"]
+    assert bad.name in text and "not counted in the saves of this session" in text and "Restore skips it" in text, text
+    assert "not in this list" not in text and "delete the session folder" not in text, text
+    assert ". Suggestion:" in text and "other saves are not affected" in text, text
+    assert [s["session_key"] for s in screen.manager.list_all_sessions()] == [KEY], "the session IS listed"
 
 
 def test_a_label_lost_when_assembly_json_cannot_be_read_is_told(tmp_path):

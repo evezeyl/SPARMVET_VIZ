@@ -89,11 +89,16 @@ def define_session_server(input, output, session, *,
         _session_list_version.get()  # HOM-53: subscribe, re-render after delete/delete-all
         sessions, unreadable = session_manager.scan_sessions()
         for item in unreadable:
-            _report_issue(*issue_entry(
-                "SessionManager", f"{item['session_key']}/{item['name']}",
-                f"The file {item['name']} of the session {item['session_key']} could not be read, so it is not in this list",
-                "restore the file from a copy, or delete the session folder by hand and record the steps again", item["reason"]),
-                "error")
+            if item.get("kind") == "save":
+                # the session IS in the list; only this save is left out of its count and cannot be restored
+                what = (f"The save {item['name']} of the session {item['session_key']} could not be read, so it is not counted "
+                        "in the saves of this session and Restore skips it")
+                remedy = ("restore the file from a copy, or delete this file by hand; the session and its other saves are "
+                          "not affected")
+            else:
+                what = f"The file {item['name']} of the session {item['session_key']} could not be read, so the session is not in this list"
+                remedy = "restore the file from a copy, or delete the session folder by hand and record the steps again"
+            _report_issue(*issue_entry("SessionManager", f"{item['session_key']}/{item['name']}", what, remedy, item["reason"]), "error")
 
         active_key = ""
         if home_state is not None:
@@ -302,7 +307,7 @@ def define_session_server(input, output, session, *,
             clicks = _read_input(restore_id, "restore", sk)
             if clicks is not _NOT_READ and clicks and clicks > 0:
                 try:
-                    _restore_session(sk)
+                    _restore_session(sk, clicks)
                 except Exception as exc:
                     _tell_once("restore", sk, clicks, notice(
                         f"The session {sk[:24]} could not be restored",
@@ -379,23 +384,34 @@ def define_session_server(input, output, session, *,
         ui.modal_remove()
         _notify(f"🗑 Deleted {n} session(s).", type="message", duration=4)
 
-    def _tell_skipped_saves(skipped_saves: list[dict], restored: dict | None) -> None:
+    def _tell_skipped_saves(skipped_saves: list[dict], restored: dict | None, session_key: str = "", click=None) -> None:
         """A save that cannot be read is still skipped; the user is told which one, why, and what was restored instead (D-0050).
 
         File names hold their time stamp, so a skipped name that sorts after the restored one is a NEWER save."""
         for item in skipped_saves:
             if restored is None:
                 what = (f"The save {item['name']} of this session could not be read and was skipped; no readable save is left, "
-                        "so the audit steps start empty")
+                        "so nothing was restored and the audit steps in this view are unchanged")
             elif item["name"] > Path(restored["file"]).name:
                 what = (f"The newest save {item['name']} of this session could not be read and was skipped; the OLDER save of "
                         f"{restored.get('saved_at', '')[:16]} was restored instead")
             else:
                 what = f"The older save {item['name']} of this session could not be read and was skipped"
-            _notify("⚠️ " + notice(what, "check the restored audit steps before you go on; the damaged file stays in the session "
-                                    "folder, keep it or delete it by hand", item["reason"]), type="warning", duration=12)
+            remedy = (("check the audit steps of this view before you go on; " if restored is None
+                       else "check the restored audit steps before you go on; ")
+                      + "the damaged file stays in the session folder, keep it or delete it by hand")
+            _note_once("skipped_save", session_key, click, "⚠️ " + notice(what, remedy, item["reason"]), "warning", 12)
 
-    def _restore_session(session_key: str) -> None:
+    def _note_once(kind: str, session_key: str, click, text: str, type_: str, duration: int) -> None:
+        """A notice of the Restore, told once per click: the effect re-runs while the click count stays above zero (the same
+        rule as the failures of the effect, `_tell_once`)."""
+        if click is not None:
+            if _told.get((f"note_{kind}", session_key, text)) == click:
+                return
+            _told[(f"note_{kind}", session_key, text)] = click
+        _notify(text, type=type_, duration=duration)
+
+    def _restore_session(session_key: str, click=None) -> None:
         """Run T1/T2 restore + open T3 ghost picker notification."""
         if session_manager is None or home_state is None:
             return
@@ -439,11 +455,11 @@ def define_session_server(input, output, session, *,
                          for name, current, saved in (("recipe", current_msig, saved_msig), ("data", current_dbh, saved_dbh))
                          for where, value in (("the open view", current), ("the saved session", saved)) if not value]
         if _not_compared:
-            _notify("⚠️ " + notice(
+            _note_once("not_compared", session_key, click, "⚠️ " + notice(
                 "The saved audit steps could not be compared with the open recipe and data, so nobody checked that they were "
                 "made on them (missing: " + ", ".join(_not_compared) + ")",
                 "load the recipe and its data in this view first, then restore again, or check the steps by hand before you go on"),
-                type="warning", duration=10)
+                "warning", 10)
 
         # Load T3 ghosts list for this session
         try:
@@ -451,7 +467,7 @@ def define_session_server(input, output, session, *,
         except LegacySessionError as exc:
             _notify(f"❌ {exc}", type="error", duration=12)
             return
-        _tell_skipped_saves(skipped_saves, t3_ghosts[0] if t3_ghosts else None)
+        _tell_skipped_saves(skipped_saves, t3_ghosts[0] if t3_ghosts else None, session_key, click)
         if t3_ghosts:
             # Restore most-recent T3 ghost into home_state.
             # Phase 22-J: list_t3_ghosts emits both flat t3_audit_steps (legacy) and
@@ -510,6 +526,7 @@ def define_session_server(input, output, session, *,
             )
         else:
             _notify(
-                "✅ Assembly session found. No T3 saves — starting fresh T3.",
+                "✅ Assembly session found. It has no saved audit steps, so nothing was restored and the audit steps in this "
+                "view are unchanged.",
                 type="message", duration=5,
             )

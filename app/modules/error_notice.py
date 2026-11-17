@@ -32,9 +32,25 @@ def what_failed(what: str, exc: BaseException | str | None = None) -> str:
     return f"{what.rstrip('. ')} ({type(exc).__name__}: {detail})"
 
 
-def notice(what: str, suggestion: str, exc: BaseException | str | None = None) -> str:
-    """One text for the user: what happened, then `Suggestion: <suggestion>` (exactly one period between them)."""
-    return with_fix(what_failed(what, exc), f"{SUGGESTION} {suggestion}")
+def suggestions(*remedies: str) -> str:
+    """The remedies as one text, each starting with `Suggestion:` (D-0099): `Suggestion: a. Suggestion: b`. A remedy that already
+    starts with `Suggestion:` is not given a second label; an empty one is left out."""
+    parts = []
+    for remedy in remedies:
+        remedy = (remedy or "").strip()
+        if remedy.startswith(SUGGESTION):
+            remedy = remedy[len(SUGGESTION):].strip()
+        if remedy:
+            parts.append(f"{SUGGESTION} {remedy.rstrip('. ') if len(remedies) > 1 else remedy}")
+    return ". ".join(parts)
+
+
+def notice(what: str, suggestion: str | list | tuple, exc: BaseException | str | None = None) -> str:
+    """One text for the user: what happened, then `Suggestion: <suggestion>` (exactly one period between them).
+
+    Several remedies (a list) are each labelled: `what. Suggestion: a. Suggestion: b`."""
+    remedies = suggestion if isinstance(suggestion, (list, tuple)) else [suggestion]
+    return with_fix(what_failed(what, exc), suggestions(*remedies))
 
 
 def issue_entry(component: str, location: str, what: str, suggestion: str, exc: BaseException | str | None = None,
