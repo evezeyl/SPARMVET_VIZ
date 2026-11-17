@@ -1341,3 +1341,97 @@ Order after the reviews: merge both; one full control run on the merged tree (fi
 1. The result of the full controls on the merged tree.
 2. Then nothing more can be built without her answers.
 3. When she allows a push: read the channel first, then push `dev` only (the tree that passed the controls).
+
+## 2026-11-17 13:30 (coordinator: state for the resume)
+
+Written by a records agent from the progress block "RESTART HERE: UPDATE 12:10" (`tmpAI/coordinator/progress_2026-11-14_session3.md`), the reports named in it, and the channel blocks M200 to M207. Text marked **[coordinator's wording]** is not Eve's own words. Everything else is her words or a file read.
+
+**State**
+- Local `dev` = `8f951761`. It is 12 commits ahead of `origin/dev` (`36d1bd23`).
+- The main folder is checked out on `dev`. Eve switched it herself.
+- Eve pushes herself. The coordinator session cannot push (its permission check refused the push; channel M200). The review session pushed `36d1bd23` at Eve's instruction (channel M200).
+
+**Merged today**
+- LEDGER-8 (`5d3acf1d`): ledger lines D-0204 (pushes allowed), D-0205 (one common set of ids across the datasets of a recipe), D-0206 (remove the caches, re-run the odd results).
+- `bf4b169e`: the tasks commit with four tasks. **[coordinator's wording: the four task names are not in this section; read the commit.]**
+- DATA-IDS-FIX-1 (`8f951761`), decisions D-0205, D-0206, D-0167. What a user sees:
+  - The demo join table (`demo_abromics`) has 27 rows for 27 samples. Before the fix it had 40 rows.
+  - 12 samples have no MLST result. They stay in the table as "Non Determined" (D-0167).
+  - The 3 metadata lines with no sample id are removed by the recipe with a warning, as before.
+  - The MLST file has one row per sample and scheme (30 rows to 15). The ResFinder file (read by no recipe) holds only ids of the set.
+  - A new recipe `left_join_lesson` is in the templates folder. It teaches what a left join does when the ids do not match. Its 2 foreign ids are its one named exception in the id test (channel M201).
+  - `complex_template` holds one common set of ids (commit `5b7624e7`). Its left-join example moved to `left_join_lesson`.
+- The generator: `assets/scripts/generate_demo_data.py`, seed 20261117 written in the code. The same seed gives identical files; another seed gives other bytes. It writes to `tmp/demo_data_generated` by default and does not replace files without `--overwrite`.
+- The id test: `app/tests/test_recipe_data_one_set_of_ids.py` (14 tests). It fails, and names the file and the ids, when a table holds an id outside the set of the metadata, when the metadata repeats an id, or when a table with one row per sample repeats a (sample, scheme) pair.
+
+**Controls on `8f951761`** (report `tmpAI/controls_8f951761/REPORT.md`; logs in the same folder; no tracked file changed, `git status` clean after the runs)
+
+| Control | Result | Counts |
+|---|---|---|
+| 1 App import | OK | rc 0 |
+| 2 Headless suite | pass | 9834 passed, 5 skipped, 15 xfailed (28 min 38 s) |
+| 3 Golden baseline | pass | `result-identical` |
+| 4 Gallery previews (compare mode, no `--apply`) | pass | 34 identical, 0 size only, 0 differs, 0 new, 0 error |
+| 5 Browser gate (qa) | 1 failed in the full run | 71 passed, 3 skipped, 1 failed (10 min) |
+| 6a audit_cross_lib | PASS | no violations |
+| 6b check_doc_links | rc 1 | 7 problems, the same 7 as known, no new one |
+| 6c audit_docs_sync | PASS | 0 violations |
+| 6d audit_old_words --check | rc 1 | the same retired words and folders as the earlier log `79cdeab5`; "recipe" paths 92 to 93 (the new recipe) |
+
+- The one failure is a known timing race, not a new defect: `app/tests/test_export_download.py:327`, `StopIteration`, in `test_the_export_records_the_seed_the_recipe_writes_and_writes_it_into_the_reproducibility_recipe`. Run alone: pass, pass. The three runs gave fail, pass, pass. It is not fixed.
+- The 3 skips come from the skip conditions of the test files (for example "Blueprint requires developer or qa"). The report did not name them.
+
+**Caches** (D-0206)
+- 156 paths removed, 110,156,232 bytes (about 105 MB). All were untracked (under `tmp/` and `tmpAI/`). Details: `tmpAI/controls_8f951761/caches_removed.md`.
+- Kept as "not sure" (not removed): `tmp/UI_TEST/user/_blueprint_drafts/76964f0f81b1_1_test_data_ST22_dummy.json` (a user draft, not a cache); other `tmp/` evidence folders; `tmpAI/panel/**`; other `tmpAI/audit_*` folders; the golden copies `tmpAI/golden_*.json`.
+- Three left-over `shiny run` processes from old worktrees, still running, not stopped: pid 104136 (`recipe-small`, port 59197), pid 248767 (`self-join-warn`, port 59399), pid 1171940 (`verif-fix-2`, port 9819).
+
+**Odd results, re-run on the new data** (report parts 3 and 7; verdicts against the id fix only)
+- a. Demo join: 27 rows, 27 samples. Solved by the id fix. "Non Determined": 15 rows (12 without MLST, 3 with an unknown result). Consistent with the recipe text.
+- b. Join cautions: none for any shipped recipe. A caution exists only for self-joins.
+- c. Joins that lose samples: none. Samples before equal samples after, in every join.
+- c. Joins where rows grow (rows before, then after each join; samples stay the same):
+  - `1_Abromics_general_pipeline`, `AR1_MLST_Serotype_Virulence`: 42 to 984 (VirulenceFinder, left join), then 342 (APEC/STEC list, inner join).
+  - `1_test_data_ST22_dummy`, `ST22_Anchor`: 42 to 74 (ResFinder), 74 to 1731 (VirulenceFinder), 1731 to 617 (APEC/STEC list).
+  - `figshare_integration`, `figshare_triple_join`: 980 to 18,437 to 203,146.
+  - Flagged, not decided. No recipe warns about it.
+- d. Multiresistant count: the plot counts rows (46 of 70 rows; 16 of 38 samples). The recipe says it counts rows. Not a bug by the report's reading.
+- e. Duplicate rows: the ST22 VirulenceFinder file has 583 rows in exact-duplicate groups. The recipe removes them before the join, so they do not reach the joined tables. But `ST22_Anchor` holds 14 identical rows (ResFinder gene hits listed twice), `QA_fanout_exhibit` 256, `QA_AMR_per_sample` 2, `Plasmid_Profile_Joint` 4. Plot `virulence_bar` counts the 14.
+
+**Eve's answers today on the plot component rename**
+Sources: the progress block (entry "EVE'S ANSWERS TODAY", 12:10; not yet in the ledger, LEDGER-9 owed), and channel M201 to M204 (not in the ledger either). Her words are quoted where the channel has them.
+- Q1 (progress): (a) refuse an old bundle; no conversion. The message gives the commit, the choices and the contact. A helper that injects audit steps into a new recipe is deferred. The commit is the version for now.
+- Q2 (progress): classify each of the 22 own components. Real: `plotnine_<real name>`. Modified: `modif_<real name>`. Composite: `step_`. Every `modif_` has its `plotnine_` original next to it.
+- Q3 (progress and channel M201): "a) full parity": register the 30 plotnine objects.
+- Q2 and Q8 (channel M202, her words): "a) yes; only functional modifications that are important could eventually be kept; so yes the recipes need to be adapted and then the components matched to plotnine defaults. Good catch." Recorded in the channel as: remove the shortcut components that an exact plotnine component already does; a component stays only if it is a functional modification that matters; list each one kept, with its reason, to her before removing it.
+- Q4 (channel M203, her word "A"): register both spellings of the 15 pairs (for example `colour` and `color`), each exact and equal to plotnine; the picker shows one entry per pair; no silent conversion.
+- Q5 (channel M204, her words): "A). But it needs to be tested thoroughly to ensure that this does work; if errors: investigate and propose solutions." Names written as values stay plotnine's names (`geom: geom_area`, `stat: stat_bin`, `position: position_identity`). The `theme:` key changes, because it is a component call. Test conditions are in M204 (picture baseline first; a test per place that holds a name as a value).
+- Progress block: "Demo: which MLST row removed does not matter."
+- Progress block: `left_join_lesson` = new recipe for the lesson.
+- Channel M201: the id test's one named exception is `left_join_lesson` (`sequenced`); `complex_template` gets one common id set.
+
+**Open with Eve** (one numbered list; questions go to her through the review session only, channel M201)
+1. Collisions (Q2 in the progress block): remove the shortcut components or keep them under longer names. **[coordinator's wording: channel M202 records her answer "a)" to this; the coordinator must confirm before the build. See Contradictions 1.]**
+2. Two spellings (Q4 in the progress block). **[Channel M203 records "A". Same check as point 1.]**
+3. Q5 to Q10 of the rename: Q5 (channel M204, answered), Q6 (the 15 objects that cannot be added to a plot: an original must exist; what is technically possible, by running), Q7, Q9 (`stat_summary`), Q10. Q6, Q7, Q9 and Q10 stay open. Full list: `.claude/design/viz_rename_impact_2026-11-15.md` section 8.
+4. Entity declaration: refuse or warn when the `entity:` key is missing; and the rule-file sentence on the type of `sample_id`. **[Contradiction 4: D-0029 already says "fail instead of warn".]**
+5. Contact text of `left_join_lesson`: invented by the builder. Eve must check it.
+6. Reference tables in the id test (`ID-TEST-REFERENCE-TABLES-1`).
+7. A caution when rows grow after a join (JOIN-GROWTH-CAUTION-1). Options and the question are in tasks.md section 8.
+8. The 14 exact duplicate rows in `ST22_Anchor` (ST22-DUPLICATE-ROWS-1).
+9. No message at a join when the ids find no match (seen in `left_join_lesson`).
+10. Channel M205 to M207 (not a decision, not built): Eve asks for research on engines. A recipe-level default engine, overridable per data schema, per tier and per plot (R/ggplot2 as a second plot engine; `dplyr` as a second data engine). She wants a panel round before the recipe specification is completed. She said it is for planning. The review session asked for the panel round.
+
+**Next, in order** [coordinator's wording]
+1. The ledger lines for today's answers (LEDGER-9): the progress-block answers and channel M201 to M204, each with her words and the date.
+2. `EXPORT-CONTACT-1` (goes before the rename; Eve's answer recorded in tasks.md section 8).
+3. The rename (V1-B-RENAME and VIZ-OWN-22-1), once the open points 1 to 3 above are answered by Eve.
+4. VIZ-PARITY-30-1 after the rename (order decided by the coordinator, not by Eve).
+
+**Contradictions found in the records (reported, not fixed; rule H)**
+1. Rename Q2, Q4 and Q5: the progress block (12:10) and the brief list them as open. Channel M202, M203 and M204 record Eve's answers to them as decided. The ledger has no line for any of them yet.
+2. Label "Q1": the progress block (12:10) gives Q1 as the old-bundle question. The older progress entry (10:10) gives Q1 as the fingerprint question (`viz_rename_impact_2026-11-15.md` section 8). `tasks.md` section 8 (EXPORT-CONTACT-1 line) cites "Q1 of the plot component rename" for her contact answer. Three readings of one label.
+3. The migration command: `tasks.md` section 8 (IMPORT-OLD-BUNDLE-MESSAGE-1) says "No migration command in the message". Channel M201 says old bundles are refused "with the migration command". The two cannot both hold.
+4. Entity declaration: the brief asks Eve "refuse or warn" as an open point. Ledger D-0029 (EVE, DECIDED, 2026-11-12) says "fail instead of warn" for the `entity:` declaration. One of the two must be dissolved or narrowed.
+5. Demo MLST row: the builder report (choice 1) and the review (C1) list "which MLST row stays" as open. The progress block says Eve answered it ("does not matter"). No ledger line.
+6. `complex_template` exception: the builder report (choice 5) says the exception stays on `complex_template`. The merged test (`app/tests/test_recipe_data_one_set_of_ids.py` line 271) and commit `5b7624e7` put the exception on `left_join_lesson`. The merged state follows channel M201. The builder report is out of date.
