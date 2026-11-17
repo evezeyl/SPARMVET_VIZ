@@ -106,3 +106,40 @@ def test_a_later_complete_theme_gives_the_picture_of_that_theme_only(tmp_path):
     from plotnine import theme_light
     factory = plot_of({"name": "theme_minimal"}, {"name": "theme_light"})
     assert pixels(factory, tmp_path, "factory") == pixels(by_hand(theme_light()), tmp_path, "hand")
+
+
+# D-0244 (Eve, 2026-11-17): a complete theme replaces a complete theme, a partial one is added; a plot that writes its own
+# complete theme loses the default's font and legend. This matches plotnine. The default comes from the recipe (plot_defaults).
+RECIPE_DEFAULT_THEME = {"layers": [{"name": "theme_bw", "params": {"base_family": "DejaVu Serif", "legend_position": "bottom"}}]}
+
+
+def default_plot(*plot_layers):
+    spec = {"target_dataset": "d", "mapping": MAPPING, "layers": [{"name": "geom_point"}] + [dict(l) for l in plot_layers]}
+    return VizFactory().render(DF, {"plots": {"p": spec}, "plot_defaults": RECIPE_DEFAULT_THEME}, "p")
+
+
+def font_and_legend(plot):
+    return plot.theme.themeables["text"].properties["family"], plot.theme.getp("legend_position")
+
+
+def test_the_default_theme_of_the_recipe_gives_its_font_and_legend():
+    assert font_and_legend(default_plot()) == ("DejaVu Serif", "bottom")
+
+
+def test_a_plot_with_its_own_complete_theme_loses_the_font_and_legend_of_the_default():
+    family, legend = font_and_legend(default_plot({"name": "theme_minimal"}))
+    assert family != "DejaVu Serif", "the font of the default theme is gone: the complete theme of the plot replaced it"
+    assert legend == "right", "the legend of the default theme is gone too (plotnine's own default position)"
+
+
+def test_a_plot_with_a_partial_theme_keeps_the_default_and_the_partial_setting_is_added():
+    family, legend = font_and_legend(default_plot({"name": "theme_legend_position", "params": {"position": "top"}}))
+    assert family == "DejaVu Serif", "the font of the default theme stays"
+    assert legend == "top", "the partial setting of the plot wins over the legend of the default"
+
+
+def test_the_same_in_plotnine_a_complete_theme_added_after_another_replaces_it():
+    from plotnine import theme, theme_bw, theme_minimal
+    plot = by_hand(theme_bw(base_family="DejaVu Serif") + theme(legend_position="bottom"), theme_minimal())
+    assert plot.theme.themeables["text"].properties["family"] != "DejaVu Serif"
+    assert plot.theme.getp("legend_position") == "right"
