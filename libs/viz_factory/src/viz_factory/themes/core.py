@@ -1,3 +1,4 @@
+import difflib
 from typing import Dict, Any
 
 # @deps
@@ -308,6 +309,11 @@ def handle_theme_legend_position(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + theme(legend_position=pos)
 
 
+# The elements a theme_custom value {name: ..., params: ...} can be (D-0050: any other name is refused, never dropped).
+_ELEMENT_BUILDERS = {"element_text": element_text, "element_line": element_line,
+                     "element_rect": element_rect, "element_blank": element_blank}
+
+
 @register_plot_component("theme_custom", ui_schema={
     "label": "Custom theme (element dict)",
     "category": "theme",
@@ -326,14 +332,21 @@ def handle_theme_custom(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         if isinstance(val, dict) and "name" in val:
             elem_name = val["name"]
             elem_params = val.get("params", {})
-            if elem_name == "element_text":
-                theme_kwargs[key] = element_text(**elem_params)
-            elif elem_name == "element_line":
-                theme_kwargs[key] = element_line(**elem_params)
-            elif elem_name == "element_rect":
-                theme_kwargs[key] = element_rect(**elem_params)
-            elif elem_name == "element_blank":
+            if elem_name not in _ELEMENT_BUILDERS:
+                close = difflib.get_close_matches(str(elem_name), list(_ELEMENT_BUILDERS), n=1, cutoff=0.6)
+                raise CannotAct(
+                    f"theme_custom setting '{key}' names the element {elem_name!r}, which does not exist "
+                    f"(the elements are {', '.join(_ELEMENT_BUILDERS)})",
+                    f"write name: {close[0]}" if close else f"write name: one of {', '.join(_ELEMENT_BUILDERS)}")
+            if elem_name == "element_blank":
+                if elem_params:
+                    raise CannotAct(
+                        f"theme_custom setting '{key}' gives element_blank parameters ({', '.join(map(str, elem_params))}), "
+                        "and element_blank takes none: they would be ignored",
+                        "remove params, or use element_text, element_line or element_rect if the element must be drawn")
                 theme_kwargs[key] = element_blank()
+            else:
+                theme_kwargs[key] = _ELEMENT_BUILDERS[elem_name](**elem_params)
         else:
             theme_kwargs[key] = val
 
