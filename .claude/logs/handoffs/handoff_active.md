@@ -1287,3 +1287,57 @@ Order after the reviews: merge both; one full control run on the merged tree (fi
 2. The new text for the export diagram and the UML tasks (UML-TASKS; EXPORT-MODES text).
 3. The channel clean-up (CHANNEL-CLEAN): remove the messages that are fully recorded.
 4. Then whatever her answers open.
+
+## Handoff 2026-11-17 07:15 (coordinator)
+
+**What you see first:** the branch `feat/recipe-format-1` is at `79cdeab5`. It is LOCAL: 25 commits ahead of `dev` on the server (`93f39d24`). Nothing has been pushed since 23:36 on 2026-11-16 (channel M193: git is local only until Eve says so). Nothing is merged into `main`. The full controls of the merged tree are running; their logs are in `tmpAI/controls_79cdeab5/`.
+
+**Merged locally since the handoff of 23:45** (merge hash, what the user gets):
+- `5c212b02`: the demo recipe keeps every sample. A sample with no MLST result shows "Non Determined" (D-0167).
+- `79cdeab5`: errors that were swallowed in the session screen, the session files, the bundle import and the export are now told to the user (D-0050). A click on Restore restores once: before, it repeated without end, and the version on the server has the same defect. Apply pressed while a step has no reason no longer crashes and closes the connection.
+
+**Open worktrees:** only `.claude/worktrees/recipe-plots` (parked, nothing written).
+
+**Older defects found tonight, NOT fixed** (one line each):
+- The Export panel is redrawn on every change of plot tab and resets what the user set.
+- The report of an export links its figures to a folder that is not in the zip.
+- A plot with no target table: its data and its plots are in two differently named folders, and the README names one.
+- About 70 places where a failed read of a value the user set is silently replaced by the default (`safe_input`).
+- The reason box read at Apply falls back to the old reason (`audit_stack.py:167`).
+- Provenance fields of the export are dropped silently (`export_handlers.py:92-154`).
+- The delete icon of an audit step and the Revert button are run by no test.
+- After a failed "Delete all sessions", a locked session folder is half deleted.
+- `recipe_gate_handlers.py:186` writes a notice inside an effect (no loop found).
+
+**What waits for Eve:** the one list of 22 points. Channel blocks: M157 (points 1 to 15), M158 (16), M159 (17), M160 (18), M161 (19), M162 (20), M164 (21), M165 (22). The status block for her is M166.
+1. removal by a condition or by sample ids
+2. which ticked step writes a value (only the earliest one)
+3. the two intents at the top of the audit dialog
+4. the lineage of a column after a rename
+5. a decimal typed for a whole-number column
+6. rows with no value: one choice per place
+7. a removed sample shown as 0 in another table
+8. the self-join warning numbers do not reach the screen
+9. a recipe checked when it is selected
+10. one recipe on many datasets, and sessions
+11. the export (five points)
+12. the Export panel reset on a plot tab change
+13. an exploration filter on another table at the same stage
+14. the hook that checks the briefs
+15. small confirmations (capital labels, recipe in the export, nine rule-file edits)
+16. other plots and tables while the dialog is open
+17. the help text (length, words)
+18. an audit step at the end of its stage; the help with a "?"
+19. self-join numbers, cross join refused, two old texts, the old-words check
+20. the text of the export diagram
+21. the demo recipe: two MLST-only samples, the label "Non Determined", the warning
+22. when to push (default: wait)
+
+**Files for Eve written since 23:45:**
+- `tmpAI/panel/export_modes/EXP-MODES_new_text.md`: proposed text for the export diagram, with the points she must decide. No StarUML edit before her yes.
+- `tmpAI/panel/verification/review_verif_fix_2_and_restore_loop.md`: the review of the swallowed-error fix and of the Restore loop (confirmed in a real browser).
+
+**Next, in order:**
+1. The result of the full controls on the merged tree.
+2. Then nothing more can be built without her answers.
+3. When she allows a push: read the channel first, then push `dev` only (the tree that passed the controls).
