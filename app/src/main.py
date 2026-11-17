@@ -35,9 +35,10 @@ app = App(app_ui, server, static_assets=_static_assets)
 if __name__ == "__main__":
     # Internal execution hook
     import os
+    import sys
     print(f"--- SPARMVET DASHBOARD INITIALIZED ---")
     print(f"Mode: pipeline")
-    print(f"Venv: ./.venv/bin/python")
+    print(f"Python interpreter running the app: {sys.executable}")
     if docs_available:
         print(f"✅ Documentation available at /docs/")
     else:
