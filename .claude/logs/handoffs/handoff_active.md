@@ -4,6 +4,15 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
+## 2026-11-17 night (open state; coordinator's list M175 of the channel; decisions D-0229 to D-0249)
+
+- **Engine plan: fully decided.** Eve decided questions 1 to 14 of the engine plan (channel M245 to M256; ledger D-0236 to D-0249; M245 was replaced by M246). Her form of the keys is D-0237; the engine field is D-0238; open engine names D-0239; cache version 5 D-0240; the four dead `plot_defaults` keys removed D-0242; the engine entry files D-0247.
+- **Held, and why:** the engine-keys build (`ENGINE-KEYS` in `tasks.md` section 9) waits until Eve has seen the before/after files of one pipeline recipe, one plot file and one gallery bundle (M246, flag b). The Blueprint form theme fields wait for the snippet design note (`THEME-SNIPPETS-DESIGN`). The branch `task/worktree-imports` is NOT merged: Eve approved only its `pyproject.toml` block (D-0233); the test file, the `viz_gallery` init and the doc section wait as one set for her review (M240, M243).
+- **Not decided, waiting for Eve:** `set_sorted` / `search_sorted` (after a data-scientist table, M234); whether a Date or True/False entity key is refused (item 6a, M236); the wording pass of "sample id" (item 6d, M238); whether the no-path-hack rule allows a test-runner path setting (M239); named default themes beyond the copied block (open proposal); the research of safe formulas (M229).
+- **What the coordinator runs tonight (order of M175):** (1) records: the ledger lines of M230 to M256 (done by the scribe, `task/records-night`), the queue "Do when nothing more important is waiting", the deferred and proposal items, the two Blueprint form steps (`BP-FORM-FIX` first and alone, then `BP-FORM-THEME-FIELDS`), the open point on the path rule; (2) read-only: the data-scientist checks (M234, M236, M238), the count of the places the recipe shape touches (M246 flag b), the research on safe formulas (M229); (3) builds, each on its own branch, reviewed, full controls after each merge: `FORMULA-OBJECT-REFUSE`, `FORMULA-ELEMENT-FIELD` (with the gene-list run), `STAT-FUNCTION-AGREE`, `VIZ-GALLERY-INIT` and `DOC-WORKTREE-SECTION` (built, not merged), `THEMES-ALL-DRAW`; (4) for Eve to see before any build: the before/after files (M246), the theme snippet design note (M252, M253).
+- **Do not build:** the engine-keys change, the dead-key migration (same single amendment run, M246 flag c), the Blueprint form fields, the rename of the components (Q6, Q7 and Q9 of the argument research), items 6a and 6d, the merge of `task/worktree-imports`.
+- **Queue for when nothing more important waits:** `FONT-EXAMPLE-1` (`tasks.md` section 9, D-0241).
+
 ## Session Accomplishments (2026-05-10 afternoon)
 
 ### Completed Tasks
