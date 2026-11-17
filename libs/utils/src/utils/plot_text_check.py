@@ -160,5 +160,6 @@ def layer_text_problems(component: str, params: Any, columns: Optional[Iterable[
     if component == "stat_function" and isinstance(params.get("fun"), str):
         for message in function_string_problems(params["fun"]):
             what, _, fix = message.partition(". Fix: ")
-            problems.append(("fun", f"the function string is refused: {what}", "Suggestion: " + fix.rstrip(".")))
+            problems.append(("fun", f"the function string is refused: {what}",
+                             fix.rstrip(".") if fix.startswith("Suggestion:") else "Suggestion: " + fix.rstrip(".")))
     return problems
