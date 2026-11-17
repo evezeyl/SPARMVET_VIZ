@@ -11,7 +11,9 @@ This folder holds the final report for Eve of each exploration. It was agreed by
 
 | File | Date | Topic | Status |
 |---|---|---|---|
-| `2026-11-17_recipe_arguments_without_code.md` | 2026-11-17 | How a recipe can carry plotnine and Polars arguments and objects without running code | Report for your choice. Nothing decided, nothing built. |
+| `2026-11-17_recipe_arguments_without_code.md` | 2026-11-17 | How a recipe can carry plotnine and Polars arguments and objects without running code | Report for your choice. Nothing decided, nothing built. Chapter added 2026-11-17 (night): how others keep user-written formulas safe (last chapter). |
+| `2026-11-17_theme_snippets_design_note.md` | 2026-11-17 | Named themes: how a theme is added and copied into a recipe | Design note. Nothing decided, nothing built. |
+| `2026-11-17_data_scientist_checks_keys_and_formula_members.md` | 2026-11-17 | Which key types a join may use, and which formula members a data scientist needs | Two viewpoints. Nothing decided, nothing built. |
 | `2026-11-17_engine_fields_plan.md` | 2026-11-17 | Plan: the engine fields, overrides, keys, dead keys, named themes | Proposal. Nothing decided, nothing built. |
 | `2026-11-17_author_manifest.md` | 2026-11-17 | Author manifest: who made a recipe and who to ask | Research and proposal. Nothing decided, nothing built. |
 | `2026-11-17_engines_default_and_override.md` | 2026-11-17 | A default engine that a tier or a plot may override; ggplot2 and dplyr from R | Report for planning. Nothing decided, nothing built. |
