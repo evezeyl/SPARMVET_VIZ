@@ -1,6 +1,6 @@
 """The tick "keep the rows with no value" of the HOME filter dialog (NA-RULE-63 part 2, Eve 2026-11-14), in the browser.
 
-Recipe `demo_abromics`: its table has 40 rows (27 samples), 7 of them with no value in `year` (DEMO-JOIN-1, ledger D-0167: the samples without an MLST result stay).
+Recipe `demo_abromics`: its table has 27 rows (27 samples, one row each), 2 of them with no value in `year` (DEMO-JOIN-1, ledger D-0167: the samples without an MLST result stay).
 The tick is shown, preselected by operator (`!=` keeps, `=` removes), says what it does with the counts, and
 flipping it changes the rows the filter leaves in the table.
 
@@ -45,31 +45,31 @@ def test_the_tick_is_preselected_by_operator_and_flipping_it_changes_the_rows(pa
     _wait_for_fb_col_option(page, "year")
     page.locator("#fb_col").select_option("year")
     _wait_shiny(page)
-    assert _rows_in_grid(page) == 40
+    assert _rows_in_grid(page) == 27
 
     # the tick is shown, preselected by operator: `!=` keeps, `=` removes; the counts are on the table the filter acts on
     page.locator("#fb_op").select_option("ne")
     _wait_shiny(page)
     expect(page.locator("#fb_na")).to_be_checked(timeout=5_000)
-    expect(page.locator("#filter_na_text_ui")).to_contain_text("7 rows have no value in year: they are kept")
+    expect(page.locator("#filter_na_text_ui")).to_contain_text("2 rows have no value in year: they are kept")
     expect(page.locator("#filter_na_text_ui")).to_contain_text("kept because the box is ticked")   # the warning for != on a column with missing values
     page.locator("#fb_op").select_option("eq")
     _wait_shiny(page)
     expect(page.locator("#fb_na")).not_to_be_checked(timeout=5_000)
-    expect(page.locator("#filter_na_text_ui")).to_contain_text("7 rows have no value in year: they are removed")
+    expect(page.locator("#filter_na_text_ui")).to_contain_text("2 rows have no value in year: they are removed")
 
-    # `= 2024` with the preselected tick (remove): 33 rows; then the tick flipped (keep): 40 rows
+    # `= 2024` with the preselected tick (remove): 25 rows; then the tick flipped (keep): 27 rows
     _pick_value(page, "2024")
     page.locator("#filter_add_row").click()
     expect(page.locator("#filter_remove_0")).to_be_visible(timeout=5_000)
     expect(page.locator("#filter_rows_ui")).to_contain_text("rows with no value removed")
     page.locator("#filter_apply").click()
     _wait_shiny(page)
-    _wait_rows(page, 33)
+    _wait_rows(page, 25)
     expect(page.locator("#filter_inventory_ui")).to_contain_text("no value: removed")
     page.locator("#filter_remove_0").click()
     _wait_shiny(page)
-    _wait_rows(page, 40)
+    _wait_rows(page, 27)
 
     page.locator("#fb_na").check()
     _wait_shiny(page)
@@ -78,9 +78,9 @@ def test_the_tick_is_preselected_by_operator_and_flipping_it_changes_the_rows(pa
     expect(page.locator("#filter_rows_ui")).to_contain_text("rows with no value kept", timeout=5_000)
     page.locator("#filter_apply").click()
     _wait_shiny(page)
-    # 33 rows equal 2024, 7 have no value: keep adds those 7, so the filter leaves all 40 and the badge says a filter is on
+    # 25 rows equal 2024, 2 have no value: keep adds those 2, so the filter leaves all 27 and the badge says a filter is on
     expect(page.locator("#home_data_preview_badge .spv-view-note", has_text="preview filter")).to_be_visible(timeout=15_000)
-    assert _rows_in_grid(page) == 40
+    assert _rows_in_grid(page) == 27
     expect(page.locator("#filter_inventory_ui")).to_contain_text("no value: kept")
     page.locator("#filter_remove_0").click()
     _wait_shiny(page)

@@ -7,6 +7,11 @@ Raws without sample id must go. Must be a warning". So in `demo_abromics`:
 - the metadata lines without a sample id are removed by a visible step;
 - the description of the join says it in words, with the numbers (the recipe's own warning), and the numbers are true.
 
+Since DATA-IDS-FIX-1 (Eve 2026-11-17, ledger D-0205: "The same set of ids is used across all the datasets of the recipes")
+the MLST file holds one row per sample and scheme and no sample that is not in the metadata, so the table has one row
+per sample: 27 rows for 27 samples. The old test that a sample keeps 6 rows locked the data defect in; it is replaced by
+the tests of one row per sample and scheme.
+
 The expected numbers are read from the raw files with plain Polars, not from the engine.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_demo_join_keeps_every_sample.py -q
@@ -44,6 +49,7 @@ def _expected():
     mlst, meta = _raw_tables()
     meta_ids = [i for i in meta["sample_id"].to_list() if i is not None and i not in NO_ID]
     mlst_ids = set(mlst["sample_id"].to_list())
+    mlst_keys = list(zip(mlst["sample_id"].to_list(), mlst["Scheme"].to_list()))
     without_mlst = sorted(set(meta_ids) - mlst_ids)
     mlst_rows_kept = sum(1 for i in mlst["sample_id"].to_list() if i in set(meta_ids))
     return {
@@ -53,6 +59,7 @@ def _expected():
         "no_id_lines": meta.height - len(meta_ids),
         "mlst_only_samples": sorted(mlst_ids - set(meta_ids)),
         "mlst_only_rows": mlst.height - mlst_rows_kept,
+        "mlst_repeated_keys": sorted({k for k in mlst_keys if mlst_keys.count(k) > 1}),
     }
 
 
@@ -71,7 +78,7 @@ def built(tmp_path_factory):
 
 def test_the_expected_numbers_are_the_ones_of_the_decision():
     expected = _expected()
-    assert (len(expected["samples"]), len(expected["without_mlst"]), expected["rows"]) == (27, 12, 40)
+    assert (len(expected["samples"]), len(expected["without_mlst"]), expected["rows"]) == (27, 12, 27)
     assert expected["no_id_lines"] == 3
 
 
@@ -103,21 +110,21 @@ def test_the_row_count_is_one_row_per_mlst_result_plus_one_per_sample_without_on
     assert built["t1"].height == _expected()["rows"]
 
 
-def test_a_sample_with_several_mlst_results_keeps_all_its_rows(built):
-    mlst, _ = _raw_tables()
-    most = mlst.group_by("sample_id").len().sort("len", descending=True).row(0)
-    assert most[1] == 6
-    assert built["t1"].filter(pl.col("sample_id") == most[0]).height == 6
-
-
-def test_the_two_mlst_only_samples_are_not_in_the_table_the_description_says_so(built):
+def test_mlst_has_one_row_per_sample_and_scheme_and_the_table_one_row_per_sample(built):
+    """A sample has one sequence type per scheme: a repeated sample and scheme is a defect of the data (D-0205)."""
     expected = _expected()
-    assert len(expected["mlst_only_samples"]) == 2 and expected["mlst_only_rows"] == 2
-    present = set(built["t1"]["sample_id"].to_list())
-    assert not present & set(expected["mlst_only_samples"])
+    assert expected["mlst_repeated_keys"] == []
+    per_sample = built["t1"].group_by("sample_id").len()
+    assert per_sample["len"].max() == 1
+    assert built["t1"].height == len(expected["samples"])
+
+
+def test_no_mlst_sample_is_missing_from_the_metadata_and_the_description_does_not_talk_of_removed_mlst_rows(built):
+    """One common set of ids (D-0205): the MLST file holds no id that the metadata does not know."""
+    expected = _expected()
+    assert expected["mlst_only_samples"] == [] and expected["mlst_only_rows"] == 0
     description = built["raw"]["joins"]["demo_join"]["description"]
-    for sample in expected["mlst_only_samples"]:
-        assert sample in description
+    assert "MLST rows" not in description
 
 
 def test_the_year_is_still_text(built):
@@ -141,7 +148,8 @@ def test_the_description_numbers_are_true(built):
     assert f"{len(expected['without_mlst'])} of the {len(expected['samples'])} samples have no MLST result" in text
     assert f"{expected['rows']} rows for {len(expected['samples'])} samples" in text
     assert f"the {expected['no_id_lines']} metadata lines that have no sample id" in text
-    assert f"the {expected['mlst_only_rows']} MLST rows of {len(expected['mlst_only_samples'])} samples" in text
+    assert "can appear on more than one row" not in str(built["raw"]["data_schemas"]["MLST"]["description"])
+    assert "more than once" not in text
 
 
 def test_the_recipe_description_shown_in_home_says_the_same_numbers(built):
@@ -151,7 +159,7 @@ def test_the_recipe_description_shown_in_home_says_the_same_numbers(built):
     assert f"{len(expected['without_mlst'])} samples have no MLST result" in text
     assert f"{expected['rows']} rows for {len(expected['samples'])} samples" in text
     assert f"the {expected['no_id_lines']} metadata lines that have no sample id" in text
-    assert f"the {expected['mlst_only_rows']} MLST rows of {len(expected['mlst_only_samples'])} samples" in text
+    assert "several MLST results" not in text
 
 
 def test_the_recipe_says_why_in_a_comment_next_to_each_step():

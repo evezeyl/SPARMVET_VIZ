@@ -827,8 +827,8 @@
       "year:String",
       "country:String"
      ],
-     "rows": 40,
-     "sha256": "861adfae631a1ffc355643a1d648c4e38cdace1a6bceac9be98c7acc136e579e"
+     "rows": 27,
+     "sha256": "c3070a3dda40a9a37a41262149fe6c86a237586d92d30bfb9d6bae1e2449dcd5"
     }
    },
    "t1": {
@@ -840,8 +840,8 @@
       "year:String",
       "country:String"
      ],
-     "rows": 40,
-     "sha256": "861adfae631a1ffc355643a1d648c4e38cdace1a6bceac9be98c7acc136e579e"
+     "rows": 27,
+     "sha256": "c3070a3dda40a9a37a41262149fe6c86a237586d92d30bfb9d6bae1e2449dcd5"
     }
    },
    "t2": {
@@ -853,8 +853,8 @@
       "year:String",
       "country:String"
      ],
-     "rows": 40,
-     "sha256": "861adfae631a1ffc355643a1d648c4e38cdace1a6bceac9be98c7acc136e579e"
+     "rows": 27,
+     "sha256": "c3070a3dda40a9a37a41262149fe6c86a237586d92d30bfb9d6bae1e2449dcd5"
     }
    }
   },
