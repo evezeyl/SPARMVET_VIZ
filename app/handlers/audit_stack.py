@@ -610,11 +610,12 @@ def define_server(input, output, session, *,
             len(nodes) - len(new_by_plot[k])
             for k, nodes in by_plot.items()
         ) + (len(pending) - len(new_pending))
-        _notify(
-            f"🗑 {len(ids_to_delete)} audit decision(s) deleted "
-            f"({removed_count} copy/copies across plots).",
-            type="message", duration=3,
-        )
+        with reactive.isolate():      # `_notify` reads and sets the notification log: the effect must not depend on it
+            _notify(
+                f"🗑 {len(ids_to_delete)} audit decision(s) deleted "
+                f"({removed_count} copy/copies across plots).",
+                type="message", duration=3,
+            )
 
     # ------------------------------------------------------------------
     # audit_stack_tools_ui — gatekeeper-aware Apply button (right sidebar bottom)

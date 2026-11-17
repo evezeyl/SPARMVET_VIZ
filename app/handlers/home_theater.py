@@ -1223,10 +1223,15 @@ def define_server(input, output, session, *,
     # that lasts is told once; after a pass without it, the same failure is told again.
     _provenance_told: dict[str, str | None] = {"keys": None, "record": None}
 
+    def _isolated_notify(text: str, type_: str, duration: int) -> None:
+        with reactive.isolate():
+            _notify(text, type=type_, duration=duration)
+
     def _tell_provenance_failure(stage: str, text: str) -> None:
         if _provenance_told[stage] != text:
             _provenance_told[stage] = text
-            _notify(text, type="error", duration=12)
+            with reactive.isolate():      # `_notify` reads and sets the notification log: the effect must not depend on it
+                _notify(text, type="error", duration=12)
 
     @reactive.Effect
     def _sync_session_provenance():
@@ -1262,7 +1267,8 @@ def define_server(input, output, session, *,
                         view_dbh = _data_analysis_recipe_keys().data_batch_hash
                 except Exception:
                     view_dbh = None
-                _notify("⚠️ " + notice_after_data_change(view_dbh, new_dbh), type="warning", duration=12)
+                with reactive.isolate():
+                    _notify("⚠️ " + notice_after_data_change(view_dbh, new_dbh), type="warning", duration=12)
             needs_update = (
                 cur.get("data_analysis_recipe_sha256") != new_msig
                 or cur.get("data_batch_hash") != new_dbh
@@ -1289,7 +1295,7 @@ def define_server(input, output, session, *,
                         data_batch_hash=new_dbh,
                         source_files={k: str(v) for k, v in source_files.items()},
                         parquet_paths={},
-                        on_problem=lambda text: _notify("⚠️ " + text, type="warning", duration=10),
+                        on_problem=lambda text: _isolated_notify("⚠️ " + text, "warning", 10),
                     )
                     _provenance_told["record"] = None
                 except Exception as exc:
