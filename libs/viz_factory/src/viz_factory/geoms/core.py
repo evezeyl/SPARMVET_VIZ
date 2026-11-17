@@ -1,7 +1,8 @@
 from typing import Dict, Any
 
 # @deps
-# provides: component:geom_boxplot, component:geom_violin, component:geom_point, component:geom_line, component:geom_bar, component:geom_col, component:geom_histogram, component:geom_smooth, component:geom_density, component:geom_errorbar, component:geom_pointrange, component:geom_tile, component:geom_raster, component:geom_text, component:geom_label, component:geom_jitter, component:geom_step, component:geom_segment, component:geom_abline, component:geom_area, component:geom_bin_2d, component:geom_blank, component:geom_count, component:geom_crossbar, component:geom_density_2d, component:geom_dotplot, component:geom_errorbarh, component:geom_freqpoly, component:geom_hline, component:geom_linerange, component:geom_path, component:geom_vline, component:stat_count, component:stat_bin, component:stat_summary, component:stat_boxplot, component:stat_smooth, component:stat_density, component:labs (geom)
+# provides: component:geom_boxplot, component:geom_violin, component:geom_point, component:geom_line, component:geom_bar, component:geom_col, component:geom_histogram, component:geom_smooth, component:geom_density, component:geom_errorbar, component:geom_pointrange, component:geom_tile, component:geom_raster, component:geom_text, component:geom_label, component:geom_jitter, component:geom_step, component:geom_segment, component:geom_abline, component:geom_area, component:geom_bin_2d, component:geom_blank, component:geom_count, component:geom_crossbar, component:geom_density_2d, component:geom_dotplot, component:geom_errorbarh, component:geom_freqpoly, component:geom_hline, component:geom_linerange, component:geom_path, component:geom_vline, component:stat_count, component:stat_bin, component:stat_summary, component:stat_boxplot, component:stat_smooth, component:stat_density, component:labs (geom), function:function_string_namespace
+# consumes: libs/utils/src/utils/formula_check.py (PLOT_FUNCTION_MODULES, PLOT_FUNCTION_NAMES, MATH_FUNCTIONS, MATH_CONSTANTS)
 # consumed_by: any YAML plot spec using these component names, libs/viz_factory/src/viz_factory/viz_factory.py (via registry), libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via COMPONENT_SCHEMAS)
 # doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
@@ -1286,26 +1287,52 @@ def handle_stat_unique(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + stat_unique(**spec)
 
 
-def _function_from_string(text: str):
-    """A recipe's function string (a math function name or a lambda over numbers), checked, then evaluated with numpy maths only.
+def function_string_namespace() -> Dict[str, Any]:
+    """The names a `stat_function` string sees when it is drawn: built from the tables the check reads (D-0232).
 
-    Before, any string was passed to eval and an unknown name only printed a warning and left the layer out
-    (spec section 15; check ST06).
+    `utils.formula_check.PLOT_FUNCTION_MODULES` says which module each prefix is (`np` and `numpy` are numpy, `math` is
+    Python's `math`), `PLOT_FUNCTION_NAMES` which names of it a string may use. Bare names (`sin`, `arcsin`) are numpy's.
+    The check accepts a name only when it is in these tables, so the check and the drawing cannot disagree; a name of the
+    tables that a module lacks fails here, with the name, when the first string is drawn, and a test checks all of them.
     """
-    import math
+    import importlib
     import numpy as np
     from utils.errors import VisualizationError
-    from utils.formula_check import MATH_CONSTANTS, MATH_FUNCTIONS, function_string_problems
+    from utils.formula_check import MATH_CONSTANTS, MATH_FUNCTIONS, PLOT_FUNCTION_MODULES, PLOT_FUNCTION_NAMES
+
+    modules = {prefix: importlib.import_module(module) for prefix, module in PLOT_FUNCTION_MODULES.items()}
+    for prefix, module in PLOT_FUNCTION_MODULES.items():
+        missing = sorted(n for n in list(PLOT_FUNCTION_NAMES[module]) + list(MATH_CONSTANTS) if not hasattr(modules[prefix], n))
+        if missing:
+            raise VisualizationError(f"stat_function: {module} has no {', '.join(missing)}, which the list of allowed names has.",
+                                     tip="Suggestion: correct PLOT_FUNCTION_NAMES in utils.formula_check")
+    names = {name: getattr(np, name) for name in MATH_FUNCTIONS}
+    names.update(MATH_CONSTANTS)
+    names.update(modules)
+    return names
+
+
+def _function_from_string(text: str):
+    """A recipe's function string (a math function name or a lambda over numbers), checked, then evaluated with numpy and math only.
+
+    Before, any string was passed to eval and an unknown name only printed a warning and left the layer out
+    (spec section 15; check ST06). Since D-0232 the check reads the same tables as `function_string_namespace`, so a name
+    that passes the check exists when the string is drawn.
+    """
+    from utils.errors import VisualizationError
+    from utils.fix_text import with_fix
+    from utils.formula_check import function_string_problems
 
     problems = function_string_problems(text)
     if problems:
+        sentences = []
+        for problem in problems:
+            what, _, fix = problem.partition(". Fix: ")
+            sentences.append(with_fix(what, fix))
         raise VisualizationError(
-            "stat_function: the function string is not allowed. " + " ".join(problems),
+            "stat_function: the function string is not allowed. " + " ".join(sentences),
             tip="Fix: write a lambda of one argument over numbers, for example lambda x: x * 2")
-    names = {name: getattr(np, name) for name in MATH_FUNCTIONS}
-    names.update(MATH_CONSTANTS)
-    names.update({"np": np, "math": math})
-    return eval(compile(text.strip(), "<stat_function>", "eval"), {"__builtins__": {}, **names})  # noqa: S307
+    return eval(compile(text.strip(), "<stat_function>", "eval"), {"__builtins__": {}, **function_string_namespace()})  # noqa: S307
 
 
 @register_plot_component("stat_function", ui_schema={
