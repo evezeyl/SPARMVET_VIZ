@@ -20,7 +20,7 @@ python assets/scripts/<script>.py --help
 
 | Script | Purpose |
 |---|---|
-| `generate_demo_data.py` | Generate synthetic demo TSVs via `AquaSynthesizer` from ground-truth ST22 data. Output: `assets/test_data/demo_high_integrity/`. |
+| `generate_demo_data.py` | Generate synthetic demo TSVs (metadata, MLST, ResFinder) with ONE common set of sample ids and a written seed, values drawn from the ground-truth ST22 data. Output: `tmp/demo_data_generated/` by default. |
 | `figshare_triple_integration.py` | Integration smoke test: scan figshare.21737288 CSVs, write join TSVs to `tmp/integration/`. |
 | `figshare_plot_integration.py` | Downstream of `figshare_triple_integration.py` — render plots from the join output into `tmp/integration/`. |
 
