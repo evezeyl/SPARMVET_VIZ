@@ -15,9 +15,14 @@ list kept by hand:
   namespace `meta`, `Expr.inspect` (refused by name, `REFUSED_BY_NAME`) and any name that starts with `_` are refused. The list is read from the installed Polars at run
   time and `libs/utils/tests/test_formula_reads_no_outside_data.py` fails when a Polars upgrade adds a member that
   nobody has judged (a member allowed by name only, as before 2026-11-17, let `deserialize` read any file);
+- `pl.<dtype>` for the Polars dtypes, except `pl.Object` (REFUSED_DTYPES, parked by Eve 2026-11-17, D-0230);
 - constants, arithmetic, comparison and boolean operators, lists, tuples, dictionaries and subscripts.
 Refused: any other name, `lambda`, comprehensions, f-strings, starred arguments, conditional expressions, a string or
 list multiplied (memory), an exponent that is not a small constant (processor time).
+
+`function_string_problems` (the `stat_function` string) accepts a function only as a call of a name that the module of its prefix has
+(`PLOT_FUNCTION_MODULES`, `PLOT_FUNCTION_NAMES`: `np.` and `numpy.` are numpy, `math.` is Python's `math`); the drawing builds
+its namespace from the same tables, so a name that passes the check exists when the plot is drawn (D-0232).
 
 `smoother_formula_problems` is a third grammar, for the `formula` of a smoother (`geom_smooth`, `stat_smooth`): plotnine hands
 that text to patsy, which runs it as Python (PLOT-TEXT-RUNS-CODE-1). It is read as syntax and never run before it passes:
@@ -28,8 +33,8 @@ the variables `x` and `y`, numbers, the operators of a model formula, `I`, `C`, 
 slow or large: nothing here stops heavy computation (spec section 15, known limit).
 
 # @deps
-# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, function:member_refusal, function:refused_members, constant:REFUSED_BY_NAME, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, class:FormulaError
-# consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_formula_reads_no_outside_data.py, libs/utils/tests/test_plot_text_check.py, libs/utils/src/utils/plot_text_check.py
+# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, function:member_refusal, function:refused_members, constant:REFUSED_BY_NAME, constant:REFUSED_DTYPES, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, constant:PLOT_FUNCTION_MODULES, constant:PLOT_FUNCTION_NAMES, constant:PYTHON_MATH_FUNCTIONS, class:FormulaError
+# consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_formula_element_field.py, libs/utils/tests/test_formula_refuses_object.py, libs/utils/tests/test_formula_reads_no_outside_data.py, libs/utils/tests/test_plot_text_check.py, libs/utils/tests/test_stat_function_names.py, libs/utils/src/utils/plot_text_check.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/tests/test_stat_function_names_drawn.py
 # doc: .claude/design/recipe_format_spec.md (section 15; check ST06)
 # @end_deps
 """
@@ -49,6 +54,10 @@ MAX_EXPONENT = 100
 MODULE_FUNCTIONS = frozenset({
     "col", "lit", "when", "all", "any", "len", "count", "first", "last", "nth", "exclude", "coalesce",
     "concat_str", "concat_list", "struct", "format",
+    # D-0231 (Eve, 2026-11-17): the inner value of a list or struct cell. `element()` takes nothing and `field(name)` a
+    # field name; both are the same as `pl.col('')` (already allowed) inside `list.eval` / `struct.with_fields`, and the
+    # expression around them is walked like any other.
+    "element", "field",
     "sum", "mean", "median", "min", "max", "std", "var", "n_unique", "approx_n_unique", "quantile", "corr", "cov",
     "sum_horizontal", "min_horizontal", "max_horizontal", "mean_horizontal", "all_horizontal", "any_horizontal",
     "date", "datetime", "duration", "time",
@@ -60,7 +69,27 @@ MATH_FUNCTIONS = frozenset({
     "exp", "log", "log10", "log2", "sqrt", "abs", "floor", "ceil", "sign",
 })
 MATH_CONSTANTS = {"pi": 3.141592653589793, "e": 2.718281828459045}
+# The module prefixes of a smoother formula (`geom_smooth`); there `math` is numpy as well (`checked_plot.plot_environment`).
+# A `stat_function` string has its own table below.
 _MATH_MODULES = ("np", "math", "numpy")
+
+# `stat_function` (D-0232, Eve 2026-11-17: a name that passes the check must also work at drawing). ONE table that the check
+# and the drawing both read: which module each prefix is, and which names of it a string may use. The drawing namespace
+# (`viz_factory.geoms.core.function_string_namespace`) is built from these tables with `getattr`, so a name that is not in the
+# module fails when the plot library starts, never in a recipe; a test checks every entry against the real modules.
+# Bare names (`sin`, `arcsin`, ...) are numpy's: MATH_FUNCTIONS. `numpy.` is the same module as `np.` (option b of the
+# builder's choice: the spec already lists `numpy.name` for a smoother, one vocabulary for both places). `math` is Python's own
+# `math`, which has other names (`asin`, not `arcsin`; `fabs`, not `abs`; no `sign`) and takes one number at a time.
+PLOT_FUNCTION_MODULES = {"np": "numpy", "numpy": "numpy", "math": "math"}
+PYTHON_MATH_FUNCTIONS = frozenset({
+    "sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh",
+    "exp", "log", "log10", "log2", "sqrt", "fabs", "floor", "ceil",
+})
+PLOT_FUNCTION_NAMES = {"numpy": MATH_FUNCTIONS, "math": PYTHON_MATH_FUNCTIONS}
+# What a numpy name is called in `math` (for the message); a name that is not here has no equal in `math`.
+_PYTHON_MATH_NAME = {"arcsin": "asin", "arccos": "acos", "arctan": "atan", "abs": "fabs"}
+# How many numbers a call takes, per (module, name); every other function takes exactly one.
+_PLOT_FUNCTION_ARGUMENTS = {("math", "log"): (1, 2)}
 
 # Namespaces of an expression that a formula may use, by their name on `Expr`.
 _NAMESPACES = ("str", "dt", "list", "arr", "cat", "struct", "name", "bin")
@@ -111,13 +140,27 @@ META_OUTSIDE = ("reads the structure of an expression and can write it to a file
 
 # Members refused by NAME because their danger shows only in what they DO, not in their signature. A small, reviewed
 # set; every entry must still exist in Polars (a test fails on a stale entry).
-# PROVISIONAL (an agent's choice under D-0030, 2026-11-17, to be confirmed by the owner): `Expr.inspect` takes a text
-# that `str.format` runs on the column, so a recipe could write '{0.__init__.__globals__[...]}' and print objects of
-# the running program (including the process environment) to the server output. No shipped formula uses it.
+# `Expr.inspect` is refused by decision of Eve, 2026-11-17 (D-0229): it takes a text that `str.format` runs on the
+# column, so a recipe could write '{0.__init__.__globals__[...]}' and print objects of the running program (including
+# the process environment) to the server output. No shipped formula uses it.
 REFUSED_BY_NAME = {
     ("expr", "inspect"): PRINTS_OUTSIDE,
     ("expr", "meta"): META_OUTSIDE,
 }
+
+
+# Data types a formula may not name. PARKED by Eve, 2026-11-17 (D-0230): "park it and refuse. With a note of possibility
+# to re evaluate if request or necessity later on." `pl.Object` holds any Python object, which a normal table does not
+# (`str.json_decode(pl.Object)` passed the check and stopped the calculation with a Polars panic). Every way to name
+# the type goes through `pl.<name>`, so one refusal there covers `pl.Object`, `pl.Object()`, `pl.List(pl.Object)`,
+# `pl.Struct({'x': pl.Object})` and a keyword value; Polars does not accept a dtype written as a string (tested). Panics
+# are not caught: a type that panics is refused here. Re-evaluate if a request or a necessity comes.
+REFUSED_DTYPES = {
+    "Object": "pl.Object holds any Python object, which a table column does not; a recipe works on normal table columns",
+}
+
+REFUSED_DTYPE_SUGGESTION = ("Suggestion: use a type a table can hold, for example pl.String, pl.Int64, pl.Float64, pl.Boolean, "
+                            "pl.List(...) or pl.Struct({...}) of those")
 
 
 def member_refusal(cls: type, name: str) -> "str | None":
@@ -235,6 +278,9 @@ class _Checker:
         if kind == "module":
             if name in MODULE_FUNCTIONS:
                 return "function:" + name
+            if name in REFUSED_DTYPES:
+                self.refuse(REFUSED_DTYPES[name], REFUSED_DTYPE_SUGGESTION)
+                return "dtype"
             if name in _dtypes():
                 return "dtype"
             self.refuse(f"pl.{name} is not allowed", "use one of: " + ", ".join(sorted(MODULE_FUNCTIONS)))
@@ -398,15 +444,22 @@ def evaluate_formula(text):
 # ---- the function string of a plot (`stat_function`) --------------------------------------------------------------
 
 class _FunctionChecker(ast.NodeVisitor):
-    """`lambda x: <numbers, x, arithmetic, MATH_FUNCTIONS>` or a bare MATH_FUNCTIONS name."""
+    """`lambda x: <numbers, x, arithmetic, calls of the allowed functions>` or a bare math function name.
+
+    A function is allowed only as `name(...)` for a name of MATH_FUNCTIONS (numpy's, bare), or as `prefix.name(...)` when
+    `prefix` is a key of PLOT_FUNCTION_MODULES and `name` is in that module's list (PLOT_FUNCTION_NAMES): what is accepted
+    here is what the drawing namespace has, per module.
+    """
 
     def __init__(self, argument: str) -> None:
         self.argument = argument
         self.problems: List[str] = []
 
-    def refuse(self, what: str) -> None:
-        self.problems.append(what + "." + _fix("write a lambda of one argument over numbers, the argument and "
-                                               + ", ".join(sorted(MATH_FUNCTIONS)[:6]) + " and the like"))
+    def refuse(self, what: str, fix: "str | None" = None) -> None:
+        if fix is None:
+            fix = ("write a lambda of one argument over numbers, the argument and "
+                   + ", ".join(sorted(MATH_FUNCTIONS)[:6]) + " and the like")
+        self.problems.append(what + "." + _fix(fix))
 
     def generic_visit(self, node: ast.AST) -> None:
         self.refuse(f"{type(node).__name__} is not allowed in a plot function")
@@ -416,24 +469,75 @@ class _FunctionChecker(ast.NodeVisitor):
             self.refuse(f"the constant {node.value!r} is not a number")
 
     def visit_Name(self, node: ast.Name) -> None:
-        if node.id != self.argument and node.id not in MATH_CONSTANTS and node.id not in MATH_FUNCTIONS:
-            self.refuse(f"the name {node.id!r} is not allowed")
+        if node.id == self.argument or node.id in MATH_CONSTANTS:
+            return
+        if node.id in MATH_FUNCTIONS:
+            self.refuse(f"{node.id} is a function and is not called", f"Suggestion: write {node.id}({self.argument})")
+            return
+        self.refuse(f"the name {node.id!r} is not allowed")
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
-        ok = isinstance(node.value, ast.Name) and node.value.id in _MATH_MODULES \
-            and (node.attr in MATH_FUNCTIONS or node.attr in MATH_CONSTANTS)
-        if not ok:
+        """`np.pi`, `math.e`: a constant of a known module; a function must be called."""
+        module = node.value.id if isinstance(node.value, ast.Name) else None
+        if module not in PLOT_FUNCTION_MODULES:
             self.refuse(f"the attribute {node.attr!r} is not allowed")
+        elif node.attr in MATH_CONSTANTS:
+            return
+        elif node.attr in PLOT_FUNCTION_NAMES[PLOT_FUNCTION_MODULES[module]]:
+            self.refuse(f"{module}.{node.attr} is a function and is not called", f"Suggestion: write {module}.{node.attr}({self.argument})")
+        else:
+            self.refuse(f"the attribute {module}.{node.attr} is not allowed")
+
+    def _module_function(self, func: ast.Attribute) -> None:
+        """`prefix.name(...)`: say what exists when the name is not in the module of that prefix."""
+        module = func.value.id if isinstance(func.value, ast.Name) else None
+        name = func.attr
+        if module not in PLOT_FUNCTION_MODULES:
+            shown = ast.unparse(func)
+            self.refuse(f"the function {shown!r} is not allowed" if module is None else f"the module {module!r} is not allowed",
+                        "Suggestion: use " + ", ".join(sorted(PLOT_FUNCTION_MODULES)) + ", for example np.sqrt(x)")
+            return
+        real = PLOT_FUNCTION_MODULES[module]
+        allowed = PLOT_FUNCTION_NAMES[real]
+        if name in allowed:
+            return
+        if name in MATH_CONSTANTS:
+            self.refuse(f"{module}.{name} is a number, not a function", f"Suggestion: write {module}.{name} without brackets")
+        elif real == "math" and name in MATH_FUNCTIONS:
+            equal = _PYTHON_MATH_NAME.get(name)
+            if equal:
+                self.refuse(f"math.{name} does not exist: math has {equal}, not {name}",
+                            f"Suggestion: write math.{equal}, or np.{name}")
+            else:
+                self.refuse(f"math.{name} does not exist: math has no {name}", f"Suggestion: write np.{name}")
+        else:
+            self.refuse(f"the function {module}.{name} is not allowed",
+                        f"Suggestion: {module} may use " + ", ".join(sorted(allowed)))
 
     def visit_Call(self, node: ast.Call) -> None:
         if node.keywords:
             self.refuse("keyword arguments are not allowed")
         func = node.func
-        named = func.id if isinstance(func, ast.Name) else getattr(func, "attr", None)
-        if named not in MATH_FUNCTIONS:
-            self.refuse(f"the function {named!r} is not allowed")
+        if isinstance(func, ast.Name):
+            if func.id not in MATH_FUNCTIONS:
+                self.refuse(f"the function {func.id!r} is not allowed",
+                            "Suggestion: use one of " + ", ".join(sorted(MATH_FUNCTIONS)))
+            module, real = None, "numpy"
         elif isinstance(func, ast.Attribute):
-            self.visit_Attribute(func)
+            self._module_function(func)
+            module = func.value.id if isinstance(func.value, ast.Name) else None
+            real = PLOT_FUNCTION_MODULES.get(module)
+        else:
+            self.refuse("only a named math function can be called")
+            module, real = None, None
+        name = func.id if isinstance(func, ast.Name) else getattr(func, "attr", "")
+        if real is not None:
+            low, high = _PLOT_FUNCTION_ARGUMENTS.get((real, name), (1, 1))
+            if not low <= len(node.args) <= high:
+                shown = f"{module}.{name}" if module else name
+                count = f"{low}" if low == high else f"{low} or {high}"
+                self.refuse(f"{shown} takes {count} number{'s' if high > 1 else ''}, not {len(node.args)}",
+                            f"Suggestion: write {shown}({', '.join([self.argument] * low)})")
         for arg in node.args:
             self.visit(arg)
 

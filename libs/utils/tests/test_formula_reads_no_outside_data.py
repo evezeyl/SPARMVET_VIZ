@@ -277,9 +277,9 @@ def test_every_math_function_of_a_function_string_is_a_pure_elementwise_numpy_fu
 
 
 # ---- members refused by name: their danger shows only in what they DO --------------------------------------------
-# PROVISIONAL (an agent's choice under D-0030, 2026-11-17): the reviewer showed that `inspect` takes a text that
-# `str.format` runs on the column, so '{0.__init__.__globals__[...]}' reaches objects outside the expression and prints
-# them to the server output. To be confirmed by the owner. No shipped formula uses it (checked below).
+# Decided by Eve, 2026-11-17 (D-0229): `inspect` takes a text that `str.format` runs on the column, so
+# '{0.__init__.__globals__[...]}' reaches objects outside the expression and prints them to the server output.
+# No shipped formula uses it (checked below).
 
 INSPECT_SPELLINGS = [
     "pl.col('a').inspect()",
@@ -353,6 +353,8 @@ MODULE_REVIEWED = {
     "len": "row count", "count": "non-null count", "first": "first value", "last": "last value", "nth": "column by position",
     "exclude": "all columns but the named", "coalesce": "first non-null",
     "concat_str": "joins texts", "concat_list": "joins into a list", "struct": "builds a struct from expressions",
+    "element": "no parameter: names the inner value of a list cell inside list.eval (the same as pl.col('')); D-0231",
+    "field": "one parameter, a field name (text or list of texts): names a field of a struct cell inside struct.with_fields; D-0231",
     "format": "fills {} in a text with expressions; no Python format fields",
     "sum": "aggregation", "mean": "aggregation", "median": "aggregation", "min": "aggregation", "max": "aggregation",
     "std": "aggregation", "var": "aggregation", "n_unique": "aggregation", "approx_n_unique": "aggregation",
