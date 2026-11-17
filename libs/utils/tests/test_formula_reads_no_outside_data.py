@@ -353,6 +353,8 @@ MODULE_REVIEWED = {
     "len": "row count", "count": "non-null count", "first": "first value", "last": "last value", "nth": "column by position",
     "exclude": "all columns but the named", "coalesce": "first non-null",
     "concat_str": "joins texts", "concat_list": "joins into a list", "struct": "builds a struct from expressions",
+    "element": "no parameter: names the inner value of a list cell inside list.eval (the same as pl.col('')); D-0231",
+    "field": "one parameter, a field name (text or list of texts): names a field of a struct cell inside struct.with_fields; D-0231",
     "format": "fills {} in a text with expressions; no Python format fields",
     "sum": "aggregation", "mean": "aggregation", "median": "aggregation", "min": "aggregation", "max": "aggregation",
     "std": "aggregation", "var": "aggregation", "n_unique": "aggregation", "approx_n_unique": "aggregation",

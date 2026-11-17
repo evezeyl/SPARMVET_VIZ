@@ -30,7 +30,7 @@ slow or large: nothing here stops heavy computation (spec section 15, known limi
 
 # @deps
 # provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, function:member_refusal, function:refused_members, constant:REFUSED_BY_NAME, constant:REFUSED_DTYPES, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, class:FormulaError
-# consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_formula_refuses_object.py, libs/utils/tests/test_formula_reads_no_outside_data.py, libs/utils/tests/test_plot_text_check.py, libs/utils/src/utils/plot_text_check.py
+# consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_formula_element_field.py, libs/utils/tests/test_formula_refuses_object.py, libs/utils/tests/test_formula_reads_no_outside_data.py, libs/utils/tests/test_plot_text_check.py, libs/utils/src/utils/plot_text_check.py
 # doc: .claude/design/recipe_format_spec.md (section 15; check ST06)
 # @end_deps
 """
@@ -50,6 +50,10 @@ MAX_EXPONENT = 100
 MODULE_FUNCTIONS = frozenset({
     "col", "lit", "when", "all", "any", "len", "count", "first", "last", "nth", "exclude", "coalesce",
     "concat_str", "concat_list", "struct", "format",
+    # D-0231 (Eve, 2026-11-17): the inner value of a list or struct cell. `element()` takes nothing and `field(name)` a
+    # field name; both are the same as `pl.col('')` (already allowed) inside `list.eval` / `struct.with_fields`, and the
+    # expression around them is walked like any other.
+    "element", "field",
     "sum", "mean", "median", "min", "max", "std", "var", "n_unique", "approx_n_unique", "quantile", "corr", "cov",
     "sum_horizontal", "min_horizontal", "max_horizontal", "mean_horizontal", "all_horizontal", "any_horizontal",
     "date", "datetime", "duration", "time",
