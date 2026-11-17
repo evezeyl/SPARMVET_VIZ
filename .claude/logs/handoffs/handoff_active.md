@@ -1501,3 +1501,59 @@ Written by a records agent from the coordinator's brief of 16:30, the reports it
 3. Contact: EXPORT-CONTACT-1 treats a blank contact as absent. `resolve_contact` (`app/modules/data_analysis_recipe_validator.py:428-435`) does not, so HOME and export differ (CONTACT-BLANK-HOME-1).
 4. VIZ-PARITY-30-1 and VIZ-OWN-22-1 (`tasks.md` section 8) say "no ledger line yet" and "LEDGER-9 owed". LEDGER-9 is now merged. The records did not check whether D-0207 to D-0217 hold the Q2, Q3, Q4 and Q5 answers.
 5. The brief lists `test_shiny_gate_gap` among the browser files with a hard-coded `.venv/bin/shiny`. Grep finds no such path in `app/tests/test_shiny_gate_gap.py`. The other 11 files match.
+
+## 2026-11-17 18:40 (coordinator: state for the resume)
+
+Written by a records agent from the coordinator's brief of 18:40 and the channel block M173 (coordinator, 18:10). Text marked **[coordinator's wording]** is not Eve's own words. Everything else is her words or a file read.
+
+**What you see first:** local `dev` = `80cd4e94`. It is 25 commits ahead of `origin/dev`. Check with `git log origin/dev..dev`. Eve pushes herself. Nothing is pushed by an agent.
+
+**Merged on local `dev` since 16:30**
+- `2ccfc34f` BROWSER-TESTS-FIXED-PATH-1 (DONE): eleven browser test files start the app with `app_command(port)` from `app/tests/subprocess_env.py`; a guard test and a proof test. Reviewed MERGE. Full controls PASSED (`tmpAI/controls_2ccfc34f/REPORT.md`): headless 9775 passed, 0 failed; browser 136 passed, 3 skipped, 1 xfailed; 9 app-features starts; golden identical; audits as before (7 known doc links; old-words check rc 1, known). One unexplained flake: an extra rerun of the two smoke files failed one test once (not recorded which one); the next run passed.
+- `5e04e70c` LEDGER-10: ledger lines D-0218 to D-0228.
+- `86c63fe2` EXPLORATION-REPORTS-1 (D-0221): five final reports and an index in `.claude/design/exploration/`.
+- `1d09f9e8` VIZ-PREFIX-RULE-TEXT-1 (D-0218): section 1a of `rules_viz_factory.md`. The rename itself is not built.
+- `80cd4e94` SAMPLE-ID-TYPE-1 (D-0225) and the demo contact of `left_join_lesson` (D-0226): checker error E03 refuses a numeric declared entity key; advice J13 stays; rule sentence corrected at `rules_data_analysis_recipe_structure.md:214`. Reviewed MERGE; headless in the worktree 9865 passed, 0 failed; golden identical. **Full controls on `80cd4e94` in the main folder are OWED.**
+- EXPORT-CONTACT-1 (`445c84f6`) and LEDGER-9 (`16fe7512`) were merged before 16:30; `tasks.md` line 505 still said "open" and is now marked done.
+
+**Running**
+- Builder on `task/formula-deserialize` (worktree `.claude/worktrees/formula-deserialize`): FORMULA-ALLOWLIST-DESERIALIZE-1 `[sonnet/high]`. The formula check lets `Expr.deserialize` and `Expr.from_json` through; a recipe formula can read a file. Fix: a structural rule plus a test that walks all allowed members. Under D-0030.
+
+**Owed next**
+- Full controls on the next merge, and on `80cd4e94` (not yet run in the main folder).
+- The reports for Eve, all in `tmpAI/panel/` (they move to `.claude/design/exploration/` once she has them):
+  - `recipe_arguments/REPORT_for_eve.md`: 10 questions; question 4 (the plotnine original of the 15 objects is the typed value in its slot; the layer form is `modif_`) unblocks the rename and answers Q6. Q7 (`guide_label`) and Q9 (functions) can wait.
+  - `engines/PLAN_engine_fields_for_eve.md`: 14 questions; first: recipe format 2, or amend format 1 (122 recipe files are stamped format 1). The removal of dead keys waits for this answer.
+  - `author_manifest/REPORT_for_eve.md`: 9 questions; the same format question.
+  - `lookup_table/viewpoint_scientist.md`: no opposition; needs her yes on the field names.
+- Newer final reports to copy into `.claude/design/exploration/` when she has them: `tmpAI/panel/author_manifest/REPORT_for_eve.md`, `tmpAI/panel/engines/PLAN_engine_fields_for_eve.md`, `tmpAI/panel/recipe_arguments/REPORT_for_eve.md`. Also: add the folder to `CLAUDE.md` section 3.6 and `.claude/INDEX.md` (a worker; CLAUDE.md needs Eve's yes).
+- The rename waits for her answers on Q6, Q7 and Q9. They are now carried by question 4 of the arguments report (see above). Nothing of the rename before that.
+
+**Eve's goal (D-0228)**
+- A good FUNCTIONAL demo as soon as possible; she says at the end of the week when. Eve is away for the evening.
+- Order (coordinator's wording): what is decided and not built first (the demo must not break), then research. The demo recipe is not yet named by her; the developer assumed `demo_abromics`. Ask her.
+
+**Pitfall for every worktree (WORKTREE-TEST-IMPORTS-1)**
+- In a worktree, `PYTHONPATH=.` alone imports the libs of the MAIN folder, because the shared `.venv` has editable installs. Tests can silently test the wrong code. Until the fix, check the import path in a worktree run before trusting a result.
+
+**Open questions for Eve (one list, through the review session; none is a decision)**
+1. The three engine-plan defects: may they be fixed now (D-0050)? (ENGINE-PLOT-HANDOFF-1, PLOT-ENTRY-KEYS-LOST-1, BLUEPRINT-PLOT-DEFAULTS-FORM-1)
+2. Recipe format 2, or amend format 1 (ENGINE-FIELDS-PLAN-1, CONTACT-AUTHOR-MANIFEST-1, PLOT-DEFAULTS-DEAD-KEYS-1).
+3. Question 5 of the arguments report: fix the five silent defaults first (SILENT-DEFAULTS-2026-11-17).
+4. The security findings: one line each in `tasks.md` section 9, all wait for her.
+5. The field names of the lookup key and the five additions (LOOKUP-TABLE-1).
+6. Whether a Date or Boolean entity key is also refused; the old-vocabulary lines; fold J13 into E03 or keep both (SAMPLE-ID-FOLLOWUPS-ASK-EVE).
+7. The words for the ENTITY-DECL-SHIPPED-1 "yes" (M224 is the review session's reading; exempting lookup tables may conflict with D-0029).
+8. Which recipe is the demo recipe.
+9. The rename waits for Q6, Q7, Q9 (see above).
+
+**Records contradictions found and fixed here**
+- `tasks.md` line 505: EXPORT-CONTACT-1 was still "open" though merged `445c84f6`; marked done.
+- `tasks.md` line 510: ID-TEST-REFERENCE-TABLES-1 said "Eve chooses"; D-0222 decides option a. Note added.
+- `tasks.md` line 519: PLOT-DEFAULTS-DEAD-KEYS-1 said "waits for Eve's choice"; D-0220 decides the removal. Note added.
+- `tasks.md` line 511: ENTITY-DECL-SHIPPED-1 note added (M224 "yes" is not her words).
+- Task ids not given by the brief and chosen by the records agent: ENGINE-PLOT-HANDOFF-1, PLOT-ENTRY-KEYS-LOST-1, BLUEPRINT-PLOT-DEFAULTS-FORM-1, SAMPLE-ID-FOLLOWUPS-ASK-EVE. Tags marked [records] were not given by the brief (VIZ-SEED-DICT-POSITION-1, VIZ-PICTURE-EQUALITY-TEST-1, SECURITY-FINDINGS-2026-11-17, SILENT-DEFAULTS-2026-11-17, ENGINE-FIELDS-PLAN-1, CONTACT-AUTHOR-MANIFEST-1, LOOKUP-TABLE-1, AUDIT-LOGS-2026-11-17, and the defect lines). The coordinator should check them.
+
+**Still open from 16:30 (not changed)**
+- The 16:30 contradictions 1 to 4 (channel numbers M170 to M172 used twice; the brief's "option C recommendation" wording; HOME and export contact differ, CONTACT-BLANK-HOME-1; VIZ-PARITY-30-1 says "LEDGER-9 owed", now merged) stay as they were. Item 4 is not fixed: VIZ-PARITY-30-1 and VIZ-OWN-22-1 in `tasks.md` section 8 still say "LEDGER-9 owed"; the coordinator should say whether to edit them.
+- Item 5 above (`test_shiny_gate_gap`) stays open.
