@@ -556,6 +556,40 @@ Demo goal (D-0228, her words: "Id like to have something good as soon as possibl
 - [x] **AUDIT-LOGS-2026-11-17** `[sonnet/low]` [records] — eleven untracked `.claude/logs/audits/audit_*_2026-11-17.md` written by the controls run. Triage them per `.claude/workflows/audit_triage_protocol.md`; no decision needed. DONE 2026-11-17: eleven reports triaged and marked PROCESSED. Nine pass with no change from the previous report. `audit_task_drift` FAIL is a false positive: it reported a missing file only because this entry names a glob. `audit_changelog` and `audit_phase_order` pass with 0 phases checked: `.claude/plans/implementation_plan_master.md` has no "Phase" headers now (35 and 21 were checked on 2026-11-12), so both checks are empty (one new task below). `audit_deps` now lists 21 files (was 27): the transformer actions moved to `composite.py` and `modified.py`, all with a `@deps` block.
 - [ ] **AUDIT-PLAN-FORMAT-1** `[haiku/low]` [AUDIT] — `audit_changelog` and `audit_phase_order` check 0 phases because the plan file has no "Phase" headers; the two checks pass without checking anything. Decide with Eve whether to adapt the two scripts to the plan format or retire them from the registry — from audit_changelog_2026-11-17.md, audit_phase_order_2026-11-17.md
 
+### Do when nothing more important is waiting
+
+This queue is not "deferred": deferred means later, this queue means as soon as time allows. A coordinator with no more important task takes the first item of this queue (Eve, 2026-11-17, D-0241).
+
+- [ ] **FONT-EXAMPLE-1** `[sonnet/medium]` — an example recipe that shows how to set a font or a theme for a plot, with the font library included in the environment the app runs in (`.venv`, the Dockerfile, the Galaxy and Connect images), so that it draws the same on every machine. Check first how the font is found today; the plan did not check that `Liberation Sans` exists on every machine. Source: D-0241 (her words: "defer a task to make sure we have an example to modify (we need to include the library in the environment used, e.g. incl. docker)").
+
+### Deferred (condition stated)
+
+- [ ] **DEFERRED-SHORT-KEYS-1** `[sonnet/high]` — condition: "if needed". Option B of D-0242: the short keys (font, legend, spacing) built as real settings, not only through a theme layer. Her words: "set B eventually as deferred - if needed."
+
+### Open proposals (not decided, nothing built)
+
+- [ ] **PROPOSAL-NAMED-THEMES-BLUEPRINT** — no tag, not decided. "Named default themes" picked by name, written once and reused, with a form in Blueprint beyond the copied block of D-0243 (M251 point 4; ledger section "Asked, not decided"). Her words: "if we want we create default themes and add those to the recipes" (M215).
+
+### Blueprint plot-defaults form (D-0246, order stated there)
+
+- [ ] **BP-FORM-FIX** `[sonnet/medium]` — first and alone. Bug fix and removal of the dead keys from the plot-defaults form (`app/handlers/blueprint_handlers.py:1877-1901`): the form keeps palette and theme, shows the line "font, legend and spacing: set with a theme", writes nothing the user did not choose, keeps the seed and the layers. A test fails if the form changes a seed or a theme the user did not touch. Source: D-0246, D-0242 (her words: "B. It will need to be built anyway so ...").
+- [ ] **BP-FORM-THEME-FIELDS** `[sonnet/high]` — after BP-FORM-FIX, and only after Eve has seen the theme snippet design (D-0243, D-0244) and the argument research for nested values (D-0229 to D-0231 and the research of M229). Form fields built from the one list of common theme settings (the custom theme template). Source: D-0246.
+
+### Parked (condition stated)
+
+- [ ] **PARK-OBJECT-PANIC-1** — parked 2026-11-17, condition: "if a request or a necessity comes". Catching Polars panics, and `pl.Object` in formulas, re-evaluated then (D-0230; her words: "park it and refuse. With a note of possibility to re evaluate if request or necessity later on."). Nothing built.
+
+### Decided, ready or held (review session, 2026-11-17 night; model and effort per `CLAUDE.md` section 2)
+
+- [ ] **FORMULA-OBJECT-REFUSE** `[sonnet/low]` — decided, ready. Refuse `pl.Object` in formulas with a plain message; one test that fails without it. D-0230.
+- [ ] **FORMULA-ELEMENT-FIELD** `[sonnet/medium]` — decided, ready after the safety check. Allow `pl.element()` and `pl.field()` only if the one-rule check is safe; if a danger is found, stop and report, and park it with the reason (D-0231). Tests: a `list.eval(pl.element()...)` works; a struct `pl.field` works; hostile use in the inner expression is refused; the gene-list run (with and without spaces, an empty cell, a repeated gene). Report whether a new step is needed for the gene list (open item for her).
+- [ ] **STAT-FUNCTION-AGREE** `[sonnet/medium]` — decided, ready. The formula check and the drawing agree (one source of truth for the names per module, `libs/utils/src/utils/formula_check.py:58-63`); an early plain message naming the function and the module. One test per refused combination, and one that fails without the fix. HOW is the builder's choice, reported with one line of reason; if two ways are close, both go to her (D-0232; her words: "But it need to be fixed").
+- [ ] **VIZ-GALLERY-INIT** `[haiku/low]` — decided (D-0234), held for the merge set: built on its own branch, NOT merged until Eve has seen it with `task/worktree-imports` (M240, M243). Adds `libs/viz_gallery/src/viz_gallery/__init__.py` with the Tier A header; a test that every `libs/*/src/<package>` has an init; the namespace special case in `app/tests/test_imports_from_checkout.py` is removed in the same change.
+- [ ] **DOC-WORKTREE-SECTION** `[haiku/low]` — decided (D-0235), held for the merge set (M242, M243): section "Working in a git worktree" and the PYTHONPATH line `export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"` in `docs/appendix/python_environment.qmd`; list (not edit) of other copies of the old line.
+- [ ] **THEME-SNIPPETS-DESIGN** `[opus/high]` — design note first, nothing built. Snippet folder for named default themes (palette precedent `config/palettes.yaml`), file format, how Blueprint lists and copies, how a lab adds one without a release (her requirement, to confirm), the custom theme template, the settlement of `theme_dashboard` versus `theme_bw` size 11 (`plot_config_resolver.py:63`), the record in `effective_run.yaml`. Brought to Eve as one short note (D-0243, D-0244, D-0248).
+- [ ] **THEMES-ALL-DRAW** `[sonnet/medium]` — decided, ready. A test that draws one plot with each registered theme (the 13 plotnine themes in both spellings, `theme_dashboard`, `theme_publication`, `theme_custom`, `theme_legend_position`) and a theme-settings test: the common `theme()` settings through a named theme with extra parameters and through `theme_custom` with element dicts; a setting a recipe cannot write is a gap to report. Global `theme_get`, `theme_set`, `theme_update` are not registered (D-0245). Source: D-0242, D-0244, D-0245.
+- [ ] **ENGINE-KEYS** `[sonnet/high]` — decided (D-0236, D-0237, D-0238, D-0239, D-0240, D-0247, D-0248, D-0249). HELD until Eve has seen the before/after files of one pipeline recipe, one plot file and one gallery bundle (`tmpAI/`, M246 flag b). Content: removal of the four dead keys; registry `engine` field; cache version 4 to 5 (`cache_keys.py:47`); entry files `libs/transformer/src/transformer/engine_python_polars.py` and `libs/viz_factory/src/viz_factory/engine_python_plotnine.py`; `effective_run.yaml` record (`export_handlers.py:1453-1474`); one migration run, safe to run twice, printing every removed key with its old value; the `spec:` removal and the tier mapping; the spec sentences of 4.1 and DEC05.
+
 ## Archive pointers
 
 - [tasks_archive_2026-11-13_done_since_nov.md](archives/tasks_archive_2026-11-13_done_since_nov.md) — 52 done items of the November work (HOME exploration, reproducible export and import, configuration vocabulary, manual-testing findings, clean-up recheck), moved out of this file on 2026-11-13
