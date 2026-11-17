@@ -890,8 +890,8 @@
 
 ## `libs/utils/src/utils/formula_check.py`
 - **Role:** `ref`
-- **provides:** `function:formula_problems`, `function:evaluate_formula`, `function:function_string_problems`, `function:smoother_formula_problems`, `constant:SMOOTHER_FUNCTIONS`, `function:denied_methods`, `constant:MODULE_FUNCTIONS`, `constant:MATH_FUNCTIONS`, `class:FormulaError`
-- **consumed_by:** `libs/utils/tests/test_formula_check.py`, `libs/utils/tests/test_plot_text_check.py`, `libs/utils/src/utils/plot_text_check.py`
+- **provides:** `function:formula_problems`, `function:evaluate_formula`, `function:function_string_problems`, `function:smoother_formula_problems`, `constant:SMOOTHER_FUNCTIONS`, `function:denied_methods`, `function:member_refusal`, `function:refused_members`, `constant:REFUSED_BY_NAME`, `constant:MODULE_FUNCTIONS`, `constant:MATH_FUNCTIONS`, `class:FormulaError`
+- **consumed_by:** `libs/utils/tests/test_formula_check.py`, `libs/utils/tests/test_formula_reads_no_outside_data.py`, `libs/utils/tests/test_plot_text_check.py`, `libs/utils/src/utils/plot_text_check.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 15; check ST06)`
 
 ## `libs/utils/src/utils/hashing.py`

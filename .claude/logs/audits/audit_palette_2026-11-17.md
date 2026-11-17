@@ -1,0 +1,22 @@
+Status: PROCESSED 2026-11-17 — 0 tasks created, 0 false positive skipped, 0 acceptable debt noted
+# Audit: Palette Registry Format Validity
+Generated: 2026-11-17T18:48:13
+File checked: `config/palettes.yaml`
+Rule: `.claude/rules/rules_viz_factory.md §6` | ADR-081
+
+## ✅ PASS
+
+### Info
+- Loaded 3 palette(s) from config/palettes.yaml.
+-   'nvi_official': 5 color(s) — OK
+-   'nvi_sequential': 5 color(s) — OK
+-   'sparmvet_accent': 5 color(s) — OK
+
+## Summary
+- Violations: 0
+- Warnings: 0
+
+## References
+- `.claude/rules/rules_viz_factory.md §6` — Palette Injection (ADR-081)
+- `app/src/bootloader.py` — `get_palettes()` method (never returns empty)
+- `libs/viz_factory/src/viz_factory/viz_factory.py` — `_BUILTIN_PALETTES`, `_apply_palette()`
