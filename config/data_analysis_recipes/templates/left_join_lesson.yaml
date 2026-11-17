@@ -1,0 +1,89 @@
+# Left join lesson
+# A teaching recipe: two tables whose sample ids do NOT match on purpose, joined with a left join.
+# The data is made by assets/scripts/make_left_join_lesson_data.py (invented values, written seed).
+
+id: left_join_lesson
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
+info:
+  label: "Left join lesson"
+  description: "What a left join does when the sample ids of the two tables do not match. The sequenced table (the left table) has 10 samples, ACC0001 to ACC0010. The metadata table (the right table) has 10 samples, ACC0003 to ACC0012. 2 ids are only in the left table (ACC0001, ACC0002) and 2 ids are only in the right table (ACC0011, ACC0012). A left join keeps every row of the left table: the result has 10 rows before and 10 rows after the join. The 2 samples only in the left table stay and their country is left empty (2 rows with an empty country). The 2 samples only in the right table are not in the result. Each table names its sample id with another column (Accession and ID): the recipe declares which one it is with is_entity_key, it is never guessed from a name."
+  contact: "recipe author of the SPARMVET templates"
+  version: "1.0"
+
+entity:
+  noun: "sample"
+  plural: "samples"
+  population: "sequenced"
+
+data_schemas:
+  sequenced:
+    label: "sequenced samples (left table)"
+    description: "One row per sequenced sample, with its main resistance gene."
+    source:
+      type: "local_tsv"
+      path: "./assets/test_data/left_join_lesson/left_join_lesson_sequenced.tsv"
+    null_values: []
+    strip: true
+    input_fields:
+      sample_id:
+        original_name: "Accession"
+        type: "String"
+        is_entity_key: true
+      gene:
+        original_name: "Gene"
+        type: "String"
+    wrangling:
+      tier1: []
+
+metadata_schema:
+  label: "metadata (right table)"
+  description: "One row per sample with its country."
+  source:
+    type: "local_tsv"
+    path: "./assets/test_data/left_join_lesson/left_join_lesson_metadata.tsv"
+  null_values: []
+  strip: true
+  input_fields:
+    sample_id:
+      original_name: "ID"
+      type: "String"
+      is_entity_key: true
+    country:
+      original_name: "Country"
+      type: "String"
+  wrangling:
+    tier1: []
+
+joins:
+  lesson_assembly:
+    label: "lesson assembly"
+    description: "Left join of the sequenced samples with the metadata: every sequenced sample stays."
+    ingredients:
+      - dataset_id: "sequenced"
+      - dataset_id: "metadata_schema"
+    steps:
+      tier1:
+        - action: polars_join
+          right_ingredient: metadata_schema
+          'on': [sample_id]
+          how: left
+          maintain_order: left_right
+        - action: polars_select
+          exprs: ["sample_id", "gene", "country"]
+
+analysis_groups:
+  Overview:
+    label: "Overview"
+    plots:
+      samples_by_country:
+        label: "Samples by country"
+        spec:
+          target_dataset: lesson_assembly
+          mapping:
+            x: country
+            fill: gene
+          layers:
+            - name: geom_bar
+              params: {}

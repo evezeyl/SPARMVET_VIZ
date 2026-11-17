@@ -7,8 +7,9 @@ Writes the two small synthetic tables that `config/data_analysis_recipes/templat
 
 No real data. The values are invented but plausible, and the files hold the cases the template's steps act on:
 a gene list split on ";" with stray spaces and quotes (the strip step), a missing gene list (explode of a missing
-value), a genomics sample with no metadata row (left join gives a missing country), a metadata row with no genomics
-row, a missing country, and two countries with the same number of isolates (a tie).
+value), a missing country, and two countries with the same number of isolates (a tie). Both tables hold exactly the
+same sample ids (Eve, 2026-11-17, ledger D-0205: one set of ids for all the datasets of a recipe); the example of a left
+join whose ids do not match is the recipe `left_join_lesson` (assets/scripts/make_left_join_lesson_data.py).
 
 Same seed, same files: the seed is fixed by default.
 
@@ -42,11 +43,12 @@ def build(n_samples: int, seed: int) -> tuple[list[list[str]], list[list[str]]]:
     # countries: two of them get the same number of isolates (a tie), one value is missing
     pool = ["Norway"] * 9 + ["Sweden"] * 7 + ["Denmark"] * 7 + ["Finland"] * (n_samples - 24)
     rng.shuffle(pool)
+    # the pool holds one country fewer than there are samples (kept so that the committed countries of the first
+    # samples do not move: the change of 2026-11-17 touches only the last sample); the last sample gets one more draw
+    pool.append(rng.choice(COUNTRIES))
     for acc, country in zip(accessions, pool):
         metadata.append([acc, country])
     metadata[13][1] = ""                                # one sample with no country recorded
-    del metadata[-1]                                    # the last genomics sample has no metadata row
-    metadata.append(["ACC9999", "Norway"])              # a metadata row with no genomics row
     return genomics, metadata
 
 

@@ -178,7 +178,7 @@ Detailed technical guides are in the [docs/](./docs/) directory:
 | `create_data_analysis_recipe.py` | Scaffold a new pipeline data analysis recipe from a dataset |
 | `create_test_deployment.py` | Generate a dev deployment (ADR-048) |
 | `build_dep_graph.py` | Rebuild the `@deps` dependency graph |
-| `generate_demo_data.py` | Generate synthetic demo data via AquaSynthesizer |
+| `generate_demo_data.py` | Generate the synthetic demo data (three tables from one common set of sample ids, written seed) |
 | `bundle_connect.sh` | Build wheels for all local libs and optionally deploy to Posit Connect (DEPLOY-CONNECT-1) |
 
 > Note: `debug_viz_factory_audit.py` was relocated to `libs/viz_factory/tests/` (ADR-032 — library-internal debug runners belong in their own `libs/<x>/tests/`).

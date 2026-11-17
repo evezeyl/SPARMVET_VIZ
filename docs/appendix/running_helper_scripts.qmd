@@ -92,13 +92,13 @@ The deployment defines `deployment_type`, `locations` (raw data, data analysis r
 
 **Script:** `assets/scripts/generate_demo_data.py`
 
-Uses `AquaSynthesizer` (`libs/test_lab`) to produce 30 synthesized samples from the ground-truth ST22 test dataset. Useful for creating realistic demo data without exposing real sequences.
+Writes three synthetic tables (metadata, MLST, ResFinder) in which every id comes from ONE common set of sample ids, so the tables describe the same samples. The values are drawn from the ground-truth ST22 test data. MLST has one row per sample and scheme; ResFinder may have several rows per sample (one per gene). The draws use a written seed: the same command gives the same files, byte for byte.
 
 ```bash
-./.venv/bin/python assets/scripts/generate_demo_data.py
+./.venv/bin/python assets/scripts/generate_demo_data.py --seed 20261117 --out-dir tmp/demo_data_generated
 ```
 
-Output is written to `assets/test_data/demo_high_integrity/`. Verifies join integrity after generation.
+The output folder defaults to `tmp/demo_data_generated`; files that exist are not replaced unless `--overwrite` is given. The script checks that every id is in the common set and that MLST has no repeated sample and scheme, and stops if not. `--help` lists all options.
 
 ---
 

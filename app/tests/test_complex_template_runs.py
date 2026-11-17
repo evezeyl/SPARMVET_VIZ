@@ -3,7 +3,8 @@
 Found 2026-11-14 (D, proposals point 5): the template named `assets/test_data/genomics_data.tsv` and `metadata.tsv`, which did not
 exist, so a user who copied the template could not run it. The files are small synthetic data made by
 `assets/scripts/make_complex_template_data.py` (fixed seed; no real data). The tests also check the cases the files hold
-(a missing gene list, a sample without a metadata row, a missing country, a tie), so a regenerated file that loses them fails.
+(a missing gene list, a missing country, a tie) and that both tables hold exactly the same sample ids (Eve, 2026-11-17, D-0205: one set
+of ids for all the datasets of a recipe). The example of a left join whose ids do not match is the recipe `left_join_lesson`.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_complex_template_runs.py -q
 """
@@ -44,6 +45,13 @@ def test_the_two_data_files_exist_and_are_small():
         assert 20 <= len(lines) - 1 <= 100, f"{name} must stay a few tens of rows"
 
 
+def test_both_tables_hold_exactly_the_same_sample_ids():
+    """D-0205: the datasets reflect analyses on the same samples, so the left join finds a metadata row for every genomics sample."""
+    genomics = {line.split("\t")[0] for line in (TEST_DATA / "genomics_data.tsv").read_text(encoding="utf-8").splitlines()[1:]}
+    metadata = {line.split("\t")[0] for line in (TEST_DATA / "metadata.tsv").read_text(encoding="utf-8").splitlines()[1:]}
+    assert genomics == metadata and len(genomics) == 30, (sorted(genomics - metadata), sorted(metadata - genomics))
+
+
 def test_the_template_passes_the_checker_with_no_error():
     path = TEMPLATES / "complex_template.yaml"
     assert [p.text(path.name) for p in check_recipe_file(path, "run", catalogs=checker_catalogs()).errors] == []
@@ -58,9 +66,8 @@ def test_the_engine_builds_the_template_and_the_steps_act_on_the_data(tmp_path):
     assert genes and all(g == g.strip(' "') for g in genes)
     assert len(genes) == 9
     assert frame["gene_presence"].null_count() == 1, "the sample without a gene list stays as one row with a missing gene"
-    # the left join keeps a genomics sample that has no metadata row (a missing country), and one more country is missing in the file
-    assert frame["country"].null_count() >= 2
-    assert "ACC9999" not in frame["sample_id"].to_list(), "a metadata row without genomics data does not enter the left join"
+    # one country is missing in the file (a sample with no recorded country); every sample has a metadata row
+    assert frame["country"].null_count() == 1
     per_country = (frame.unique(subset=["sample_id"]).group_by("country").len().filter(pl.col("country").is_not_null()))
     assert per_country["len"].n_unique() < per_country.height, "two countries have the same number of isolates (a tie)"
 

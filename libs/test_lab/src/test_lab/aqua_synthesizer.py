@@ -3,7 +3,6 @@
 #           module helpers: clean_header, generate_fake_column, introduce_missing_values
 # consumes: polars, numpy, random, re, pathlib, datetime, argparse, yaml, typing (stdlib/third-party)
 # consumed_by: libs/test_lab/tests/test_synthesizer.py
-#              assets/scripts/generate_demo_data.py
 # @end_deps
 #!/usr/bin/env python3
 import argparse
