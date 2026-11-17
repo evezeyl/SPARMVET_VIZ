@@ -167,9 +167,9 @@ Every error of the factory, and every error of plotnine that appears while the f
 
 An error is raised by `draw_checked(plot)` (a file, an export). A screen calls `show_draw_errors(plot, on_error=..., on_warning=...)`: when drawing fails it draws the message in the place of the plot and calls `on_error`; a warning (the plot is still drawn: a palette that exists nowhere, a `plot_defaults` problem, a T3 `fill_color` and `fill_palette` together) is kept on the plot by `VizFactory.render` and `plot_warnings(plot)` returns the list; `show_draw_errors` calls `on_warning` once for each. In HOME both callbacks go to `make_issue_reporter` (`app/modules/plot_issue_reporter.py`): the render only queues the report, and after the flush it is written once to the Processing issues panel and to the Alerts panel (an error in the error colour, a warning in the warning colour).
 
-### Theme rule (to be confirmed by Eve)
+### Theme rule (decided by Eve, D-0244, 2026-11-17)
 
-A complete theme (`theme_bw`, `theme_minimal`, ...) replaces a complete theme: the one written last wins, whatever its tier. A partial theme setting (`theme_legend_position` and the other components that wrap plotnine's `theme`) is added to the theme and replaces nothing; when it is written before a complete theme, the complete theme is moved before it, because plotnine drops what was set before when a complete theme is added. This is how the code works today (`_dedupe_layers` in `plot_config_resolver.py`); it has not been confirmed as the intended rule.
+A complete theme (`theme_bw`, `theme_minimal`, ...) replaces a complete theme: the one written last wins, whatever its tier. A partial theme setting (`theme_legend_position` and the other components that wrap plotnine's `theme`) is added to the theme and replaces nothing; when it is written before a complete theme, the complete theme is moved before it, because plotnine drops what was set before when a complete theme is added. This is how the code works (`_dedupe_layers` in `plot_config_resolver.py`) and it is the decided rule (D-0244, 2026-11-17): a complete theme replaces a complete theme, a partial one is added. A plot that writes its own complete theme therefore loses the font and the legend that the recipe's default theme sets; this matches plotnine. Tests: `tests/test_theme_slots.py`.
 
 ## Documentation
 >
