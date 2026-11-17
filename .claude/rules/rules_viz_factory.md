@@ -30,7 +30,7 @@ Status: the rule is DECIDED (D-0091, D-0210, D-0218). The rename is NOT built. T
 - The registering decorator keeps a field that says exact, modified or own. A test checks that the prefix and the field agree (D-0092).
 - Full parity: the 30 plotnine objects that need no extra package are registered (D-0212).
 - Both spellings of the 15 name pairs (`colour` and `color`, `theme_grey` and `theme_gray`, `geom_bin2d` and `geom_bin_2d`) are registered, each exact (D-0213).
-- A shortcut component that an exact plotnine component already does is deleted. A recipe writes the exact plotnine component with its arguments (D-0211).
+- A shortcut component that an exact plotnine component already does is deleted. A recipe writes the exact plotnine component with its arguments (D-0211). Exception, her words: "only functional modifications that are important could eventually be kept"; such a one is kept as a `modif_<name>` next to its exact original (D-0211, D-0210).
 - Names written as values stay plotnine's own names (`geom: geom_area`, `stat: stat_bin`, `position: position_identity`) (D-0214).
 - The same logic as the Polars actions (`polars_`, `modif_`, `step_`): `.claude/design/recipe_format_spec.md`, DEC31 (D-0091, D-0210).
 - Not decided yet: how arguments and nested objects (positions, theme elements, guides, functions as parameters) are passed. This will follow (D-0218).
