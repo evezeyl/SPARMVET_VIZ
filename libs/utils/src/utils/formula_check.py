@@ -8,8 +8,13 @@ The check reads the formula as syntax and never runs it. What it allows is read 
 list kept by hand:
 - `pl.<name>` only for the names in MODULE_FUNCTIONS (a short explicit list) and the Polars dtypes; the module level is
   where file input and output live (`read_*`, `scan_*`, `write_*`, `sink_*`, `Config`), so it is a closed list;
-- any public `Expr` method or namespace method, except every method that takes a function (found by reading the
-  signatures: a parameter annotated `Callable`), the namespace `meta`, and any name that starts with `_`;
+- a public `Expr` method or namespace method that is allowed by what it is (`member_refusal`): an instance method that
+  returns an expression, takes no function (`Callable`), no file, no bytes and no library path, so it works on the
+  column's own values and on nothing outside the recipe. Every constructor that builds an expression from outside
+  data (`Expr.deserialize`, `Expr.from_json`: class methods), `Expr.register_plugin` (loads a native library), the
+  namespace `meta` and any name that starts with `_` are refused. The list is read from the installed Polars at run
+  time and `libs/utils/tests/test_formula_reads_no_outside_data.py` fails when a Polars upgrade adds a member that
+  nobody has judged (a member allowed by name only, as before 2026-11-17, let `deserialize` read any file);
 - constants, arithmetic, comparison and boolean operators, lists, tuples, dictionaries and subscripts.
 Refused: any other name, `lambda`, comprehensions, f-strings, starred arguments, conditional expressions, a string or
 list multiplied (memory), an exponent that is not a small constant (processor time).
@@ -23,8 +28,8 @@ the variables `x` and `y`, numbers, the operators of a model formula, `I`, `C`, 
 slow or large: nothing here stops heavy computation (spec section 15, known limit).
 
 # @deps
-# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, class:FormulaError
-# consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_plot_text_check.py, libs/utils/src/utils/plot_text_check.py
+# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, function:member_refusal, function:refused_members, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, class:FormulaError
+# consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_formula_reads_no_outside_data.py, libs/utils/tests/test_plot_text_check.py, libs/utils/src/utils/plot_text_check.py
 # doc: .claude/design/recipe_format_spec.md (section 15; check ST06)
 # @end_deps
 """
@@ -74,31 +79,83 @@ def _public(cls: type) -> Set[str]:
     return {n for n in dir(cls) if not n.startswith("_")}
 
 
-def _takes_a_function(member) -> bool:
+def _parameters(member):
     try:
-        parameters = inspect.signature(member).parameters.values()
+        return list(inspect.signature(member).parameters.values())
     except (TypeError, ValueError):
-        return False
+        return None
+
+
+def _takes_a_function(member) -> bool:
+    parameters = _parameters(member) or []
     return any("Callable" in str(p.annotation) or "Callable" in repr(p.annotation) for p in parameters)
 
 
+# A parameter typed as one of these hands the member a file, a stream or raw bytes.
+_OUTSIDE_TYPES = re.compile(r"\b(Path|PathLike|IO|IOBase|BytesIO|RawIOBase|BufferedIOBase|bytes|bytearray|memoryview)\b")
+# A parameter named like this points the member at something outside the expression (a file, a library to load).
+# Types cannot show it (`register_plugin(lib: str, symbol: str)` has only strings), so the names are listed, with the
+# test that reads every allowed member (`test_every_allowed_member_that_mentions_the_outside_has_been_reviewed`) as the net.
+_OUTSIDE_NAMES = frozenset({"lib", "symbol", "plugin_path", "path", "file", "filepath", "file_path", "source", "buffer",
+                            "url", "uri", "fname", "filename"})
+
+NOT_A_METHOD = "is not an expression method"
+CALLS_A_FUNCTION = "runs a Python function and is not allowed"
+READS_OUTSIDE_DATA = "builds an expression from a file or from serialised data; a recipe formula may not read files"
+TAKES_OUTSIDE_DATA = "takes a file, a stream or bytes; a recipe formula may not read files"
+LOADS_OUTSIDE = "loads or reads something outside the expression (a file or a library); a recipe formula may not do that"
+
+
+def member_refusal(cls: type, name: str) -> "str | None":
+    """Why a member of `cls` may not be called in a formula, or None when it is allowed (by what it is, not by its name).
+
+    Allowed: an instance method that returns an expression and takes no function, no file, no bytes and no library path.
+    The reason, when there is one, is a sentence that follows the member name.
+    """
+    static = inspect.getattr_static(cls, name)
+    if isinstance(static, (classmethod, staticmethod)):
+        return READS_OUTSIDE_DATA  # a constructor that builds an expression from data outside the recipe
+    if not inspect.isfunction(static):
+        return NOT_A_METHOD  # a property (the namespaces are read apart), a constant, a class
+    member = getattr(cls, name)
+    parameters = _parameters(member)
+    if parameters is None:
+        return NOT_A_METHOD  # a signature that cannot be read cannot be judged: refused
+    if _takes_a_function(member):
+        return CALLS_A_FUNCTION
+    if any(_OUTSIDE_TYPES.search(str(p.annotation)) for p in parameters):
+        return TAKES_OUTSIDE_DATA
+    if any(p.name in _OUTSIDE_NAMES for p in parameters):
+        return LOADS_OUTSIDE
+    if str(inspect.signature(member).return_annotation).strip("'\"") != "Expr":
+        return NOT_A_METHOD  # it does not return an expression
+    return None
+
+
 @lru_cache(maxsize=1)
-def denied_methods() -> Dict[str, Set[str]]:
-    """Per namespace ('expr' for Expr itself), the public methods that take a function, read from the signatures."""
-    result: Dict[str, Set[str]] = {}
+def refused_members() -> Dict[str, Dict[str, str]]:
+    """Per namespace ('expr' for Expr itself), every public member that is refused, with the reason."""
+    result: Dict[str, Dict[str, str]] = {}
     for label, cls in [("expr", pl.Expr)] + list(_namespace_classes().items()):
-        result[label] = {n for n in _public(cls) if callable(getattr(cls, n)) and _takes_a_function(getattr(cls, n))}
+        result[label] = {n: why for n in sorted(_public(cls)) if (why := member_refusal(cls, n))}
     return result
 
 
 @lru_cache(maxsize=1)
+def denied_methods() -> Dict[str, Set[str]]:
+    """Per namespace, the public methods that take a function, read from the signatures (a part of `refused_members`)."""
+    return {label: {n for n, why in refusals.items() if why == CALLS_A_FUNCTION} for label, refusals in refused_members().items()}
+
+
+@lru_cache(maxsize=1)
 def _allowed() -> Dict[str, Set[str]]:
-    denied = denied_methods()
-    allowed = {"expr": _public(pl.Expr) - denied["expr"]}
+    """Per namespace, the members a formula may call; the keys other than 'expr' are the namespaces a formula may enter."""
+    refused = refused_members()
+    allowed = {"expr": _public(pl.Expr) - set(refused["expr"])}
     for name, cls in _namespace_classes().items():
         if name == "meta":
             continue
-        allowed[name] = _public(cls) - denied[name]
+        allowed[name] = _public(cls) - set(refused[name])
     return allowed
 
 
@@ -177,20 +234,15 @@ class _Checker:
                 return name
             if name in allowed["expr"]:
                 return "method:" + name
-            if name in denied_methods()["expr"]:
-                self.refuse(f"{name} runs a Python function and is not allowed")
-            elif name == "meta":
+            if name == "meta":
                 self.refuse("meta is not allowed")
             else:
-                self.refuse(f"{name} is not an expression method")
+                self.refuse(f"{name} {refused_members()['expr'].get(name, NOT_A_METHOD)}")
             return "value"
         if kind in allowed:  # a namespace
             if name in allowed[kind]:
                 return "method:" + name
-            if name in denied_methods().get(kind, set()):
-                self.refuse(f"{kind}.{name} runs a Python function and is not allowed")
-            else:
-                self.refuse(f"{kind}.{name} is not an expression method")
+            self.refuse(f"{kind}.{name} {refused_members().get(kind, {}).get(name, NOT_A_METHOD)}")
             return "value"
         self.refuse(f"{name} cannot be used here")
         return "value"
