@@ -22,7 +22,7 @@ from __future__ import annotations
 # provides: effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)
 # provides: function:_warn_on_upload, output:bp_validate_ui, effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path, issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))
 # provides: helpers:_draft_key/_write_bp_draft/_read_bp_draft, effect:_autosave_blueprint_draft, output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)
-# consumes: libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/utils/src/utils/action_names.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
+# consumes: app/modules/plot_defaults_form.py (the plot_defaults form: what it shows and writes), libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/utils/src/utils/action_names.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
 # consumes: app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe, validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result, never blocking; uploaded_recipe_report, load_uploaded_recipe, load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)
 # consumes: app/modules/validate_runner.py (run_structure_check, could_not_run_result, StructureCheckError — the child process of Validate uses sys.executable, D-0050)
 # consumes: libs/utils/src/utils/recipe_check.py (plot_keys), libs/utils/src/utils/recipe_tiers.py (step_list) — tier keys and plot entry keys of recipe format 1 (D-0250, D-0252)
@@ -73,6 +73,7 @@ from blueprint_arch.blueprint_mapper import BlueprintMapper
 from utils.action_names import JOIN
 from utils.recipe_check import plot_keys
 from utils.recipe_tiers import step_list
+from app.modules.plot_defaults_form import form_values, merged_plot_defaults, theme_choices
 from app.modules.data_analysis_recipe_validator import (
     validate_data_analysis_recipe,
     checker_advices,
@@ -1712,13 +1713,6 @@ def define_server(input, output, session, *,
     # Shown when no sub-component is selected (active_viz_id empty / None).
     # ------------------------------------------------------------------
 
-    # Allowed plot_defaults keys per rules_data_analysis_recipe_structure.md §10.
-    _PLOT_DEFAULT_KEYS = ["palette", "theme", "default_font_family",
-                          "facet_panel_spacing", "legend_position"]
-    _THEME_CHOICES = ["theme_light", "theme_bw", "theme_minimal",
-                      "theme_classic", "theme_dashboard"]
-    _LEGEND_CHOICES = ["right", "top", "bottom", "left", "none"]
-
     @output
     @render.ui
     def bp_plot_defaults_form_ui():
@@ -1737,26 +1731,13 @@ def define_server(input, output, session, *,
         except Exception:
             return ui.div()
 
-        palette_val = defaults.get("palette", "")
-        theme_val = defaults.get("theme", "theme_light")
-        font_val = defaults.get("default_font_family", "")
-        spacing_val = str(defaults.get("facet_panel_spacing", "0.05"))
-        legend_val = defaults.get("legend_position", "right")
+        shown = form_values(defaults)
 
         return ui.div(
             ui.tags.small("Active data analysis recipe — plot_defaults", class_="text-muted d-block mb-2"),
-            ui.input_text("bp_pd_palette", "Palette", value=palette_val,
+            ui.input_text("bp_pd_palette", "Palette", value=shown["palette"],
                           placeholder="e.g. nvi_official or Blues"),
-            ui.input_select("bp_pd_theme", "Theme",
-                            choices={t: t for t in _THEME_CHOICES},
-                            selected=theme_val if theme_val in _THEME_CHOICES else "theme_light"),
-            ui.input_text("bp_pd_font", "Default font family", value=font_val,
-                          placeholder="e.g. Liberation Sans"),
-            ui.input_text("bp_pd_spacing", "Facet panel spacing", value=spacing_val,
-                          placeholder="0.05 – 1.0"),
-            ui.input_select("bp_pd_legend", "Legend position",
-                            choices={v: v for v in _LEGEND_CHOICES},
-                            selected=legend_val if legend_val in _LEGEND_CHOICES else "right"),
+            ui.input_select("bp_pd_theme", "Theme", choices=theme_choices(defaults), selected=shown["theme"]),
             ui.input_action_button("bp_pd_apply", "Apply to session",
                                    class_="btn-primary btn-sm w-100 mt-2"),
             ui.tags.small(
@@ -1777,32 +1758,17 @@ def define_server(input, output, session, *,
         except Exception:
             return
         try:
-            palette = (getattr(input, "bp_pd_palette")() or "").strip()
-            theme = (getattr(input, "bp_pd_theme")() or "theme_light").strip()
-            font = (getattr(input, "bp_pd_font")() or "").strip()
-            spacing_raw = (getattr(input, "bp_pd_spacing")() or "0.05").strip()
-            legend = (getattr(input, "bp_pd_legend")() or "right").strip()
+            palette = getattr(input, "bp_pd_palette")() or ""
+            theme = getattr(input, "bp_pd_theme")() or ""
         except Exception:
             return
 
-        try:
-            spacing = float(spacing_raw)
-        except (ValueError, TypeError):
-            spacing = 0.05
-
-        new_defaults: dict = {}
-        if palette:
-            new_defaults["palette"] = palette
-        if theme:
-            new_defaults["theme"] = theme
-        if font:
-            new_defaults["default_font_family"] = font
-        if spacing != 0.05 or "facet_panel_spacing" in (cfg.raw_config.get("plot_defaults") or {}):
-            new_defaults["facet_panel_spacing"] = spacing
-        if legend and legend != "right":
-            new_defaults["legend_position"] = legend
-
-        cfg.raw_config["plot_defaults"] = new_defaults
+        # WHY: the form shows two keys; every other part of the block (the seed, the layers) is kept as it was.
+        new_defaults = merged_plot_defaults(cfg.raw_config.get("plot_defaults"), palette, theme)
+        if new_defaults:
+            cfg.raw_config["plot_defaults"] = new_defaults
+        else:
+            cfg.raw_config.pop("plot_defaults", None)
         ui.notification_show("plot_defaults updated for this session.", type="message", duration=3)
 
     @output
