@@ -4,6 +4,28 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
+## 2026-11-18, 14:10, after the usage-limit stop and the restart (scribe; coordinator state in `tmpAI/coordinator/progress_2026-11-14_session3.md`)
+
+- **State of git:** `dev` = `32e09107`, clean, NOT pushed (Eve pushes herself). ONE full control run on dev is owed before Eve is told to push. It covers the formula refusals (`0bf944e6`), the worktree imports (`09b46d4f`), the recipe-switch fix (`69795f05`) and the packaging line (`32e09107`).
+- **Branches and where each resumes:**
+  - `task/engine-keys` (`bda106c6`, worktree `.claude/worktrees/engine-keys`): steps 0 to 4a done; THE PICTURE PROOF PASSED (41 pictures identical to dev of the morning, tables identical, 34 gallery previews identical). Next: step 4b (HOME, Export, audit, sessions: `home_theater.py:106,246,253,429,555`; `audit_stack.py:289`; `export_handlers.py:948` and `:1144`; `plot_seeds.py:167`; `session_manager.py:135`), then step 4c (Blueprint `wrangle_studio.py:572,685`, Test Lab writers, three scripts). The branch takes dev in again before 4b. Never merged before step 4 is complete.
+  - `task/export-ready` (`d443f445`, `4cbe9960`): built; review partial (`tmpAI/panel/export_ready/REVIEW.md`), to finish; report `tmpAI/panel/export_ready/builder_report.md`.
+  - `task/one-python` (`c6c4947f`): built; review partial (`tmpAI/panel/one_python/REVIEW.md`), to finish. Git commands on this branch: have a worker run them (the coordinator's Bash is refused when a command names the interpreter).
+  - `task/test-speed`: speed study stopped; partial report `tmpAI/panel/test_speed/REPORT.md`. A stray detached worktree at `69795f05` may remain: check `git worktree list`.
+  - `task/switch-fixes`: merged into dev `69795f05`.
+  - Trial branches kept, no worktree: `trial/stat-function-polars`, `trial/axis-text`.
+- **Confirmed defect (not fixed, reported to Eve, channel M288 of 78):** the join key `sample_id` can be dropped through the audit. No block, no notice; one plot then shows a render error. Cause read in `app/modules/session_manager.py:119-149`. Eve's word is awaited.
+- **Pages waiting for Eve (none is built before her word):** `tmpAI/panel/audit_redesign/SLICES_2026-11-18.md` (+ `STATE_2026-11-18.md`); `tmpAI/panel/axis_text/PANEL_for_eve_2026-11-18.md`; `tmpAI/panel/label_trace/LABELS.md`, `JOINS.md` (+ `INDEX.md`, `RUN_RESULTS.md`, partial); `tmpAI/panel/path_use_cases/FACTS.md`; `.claude/design/exploration/2026-11-18_date_keys_and_joins.md`, `2026-11-18_test_lab_review.md`; `tmpAI/panel/key_types/WORDING_options_primary_entity_key.md`. The midday block above lists the rest.
+- **Order of work (channel M310 of 62, ledger D-0286):**
+  1. HOME and GALLERY fixes first (D-0271): the Export button and the export warnings; the Gallery check in a browser; the review and merge of one-python and of the recipe-switch fix; stat_function as text blocked; the session zip fix and the size limit read from the deployment file; the private include loader; the silent defaults of the plot layers; the refusals of risky parameters.
+  2. The big build on `task/engine-keys` continues (step 4b next); the label question waits for LABEL-TRACE-1.
+  3. Reports for Eve, one page each, no builds.
+  4. HOLD: anything that concerns only My view or Compare; Blueprint and Test Lab beyond what the big build forces; the demo branch is cut after the big build and her test.
+- **Coordinator's channel blocks today:** M271 to M289 of 78.
+- **Clock note:** the times in the block named "Evening" (under the 2026-11-18 morning block, around line 54) are wrong; that block was written around midday.
+- **Limit of writers (Eve, channel M311 of 62, D-0287):** at least 5 agents may write at once (read-only: up to 8 unless measured). The safe number is found by measuring; the number reached is still open (start 5, then 6 and 8 only while the load is under 10, free memory above 6 GB and no test times out). `CLAUDE.md` 2.1 and `agent_dispatch_howto.md` change only after her yes.
+- **Running at 14:15:** step 4b of the big build (`task/engine-keys`); the review of the Export branch (`task/export-ready`) and of the one-interpreter branch (`task/one-python`); the block of a function curve written as text (`stat_function`, D-0274); the refusal of `shuffle` and `sample` in formulas (D-0278); the design note of the wide-split step; the Gallery check (GALLERY-CHECK-1); a load recorder is running (AGENTS-AT-ONCE-MEASURE-1).
+
 ## 2026-11-18 morning, Eve's answers to questions 1 to 7 (scribe; channel M262 to M269)
 
 - **Decided (ledger, DECIDED, taken by Eve):** D-0250 tier container B (`tier1:`, then optional `data_engine:`, then `steps:`; `!include` optional per tier). D-0251 the 34 gallery bundles take the new shape in the same pass. D-0252 a plot file holds the whole entry; no new engine now; the gallery is planned so that engines can be added later. D-0253 figure text only in the `labs` layer; `label` becomes `ui_label`; new `ui_title`; `title:` removed from the plot content (amends D-0237). D-0254 plotnine originals are written in the recipe; `modif_` only when it does more than change argument values (amends D-0210). D-0255 question 6 = yes: one change on a branch, one migration run over every recipe and every gallery bundle, merge only after the full controls; no special treatment of any file for the demo; presentation 30 min to 1 h, date set by readiness. D-0256 themes are code (replaces in part D-0243).
