@@ -436,7 +436,7 @@ def render_report(
         lines += [
             "`factory_id` was removed in ADR-083. Any data analysis recipe using it will receive a hard",
             "`VisualizationError` at runtime. Use explicit `geom_*` layers in `layers:` instead.",
-            "Migration tool: `assets/scripts/migrate_plot_specs.py --apply`",
+            "Rewrite it by hand: no script converts it (an old recipe shape is converted by `assets/scripts/migrate_recipe_engine_keys.py`).",
             "",
         ]
         for r in factory_id_fails:
@@ -499,9 +499,8 @@ def render_report(
         "**Input field slug mismatch:** Run `head -1 <source.tsv>` to see actual column names.",
         "Update the `input_fields` slug to match exactly (case-sensitive).",
         "",
-        "**Deprecated `factory_id` key (ADR-083):** Run the migration script:",
-        "`assets/scripts/migrate_plot_specs.py --apply`",
-        "Then verify with `debug_runner.py` that the plot still renders correctly.",
+        "**Deprecated `factory_id` key (ADR-083):** rewrite the plot by hand: an explicit `geom_*` layer in `layers:` and the aesthetics under `mapping:`.",
+        "No script converts it. Then check that the plot still renders correctly.",
         "",
         "## References",
         "- `rules_data_analysis_recipe_structure.md §7` — Canonical steps syntax, YAML boolean trap",

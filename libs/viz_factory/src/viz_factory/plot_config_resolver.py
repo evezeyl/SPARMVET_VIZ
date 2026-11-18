@@ -349,8 +349,8 @@ def normalise_plot_spec(raw_spec: dict) -> dict:
             "'layers:' and all aesthetics under 'mapping:'.",
             tip=(
                 f"Replace 'factory_id: {factory_id}' with the appropriate geom layer "
-                "in 'layers:'. Run 'assets/scripts/migrate_plot_specs.py --apply' "
-                "for automatic migration of all plot specs."
+                "in 'layers:' (for example '- name: geom_bar') and write the aesthetics "
+                "under 'mapping:'. This is written by hand: no script converts it."
             ),
         )
     flat_aes_found = sorted(_LEGACY_FLAT_AES & raw_spec.keys())
@@ -361,8 +361,7 @@ def normalise_plot_spec(raw_spec: dict) -> dict:
             "a 'mapping:' block.",
             tip=(
                 "Use 'mapping: {x: col_name, fill: col_name}' instead of top-level "
-                "'x: col_name, fill: col_name'. Run "
-                "'assets/scripts/migrate_plot_specs.py --apply' for automatic migration."
+                "'x: col_name, fill: col_name'. This is written by hand: no script converts it."
             ),
         )
 

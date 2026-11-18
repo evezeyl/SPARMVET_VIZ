@@ -275,8 +275,8 @@ so they cannot drift — BLUEPRINT serialises the very model the renderer normal
 layer, never as a stored key.
 
 Encountering a removed key is now a **loud, actionable failure**, not silent sugar:
-`normalise_plot_spec` raises `VisualizationError` with migration instructions pointing at
-`assets/scripts/migrate_plot_specs.py --apply`.
+`normalise_plot_spec` raises `VisualizationError` that says what to write instead: an
+explicit `geom_*` layer in `layers:` and the aesthetics under `mapping:`, by hand (no script converts it).
 
 ::: {.callout-note}
 ### The render cascade

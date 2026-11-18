@@ -44,13 +44,7 @@ layers:
 
 **The engine.** This library is the plot engine `python-plotnine`: every registered plot component carries the field `engine` (set by the decorator, default `python-plotnine`; an engine the app has no library for is refused at registration), and the entry file `engine_python_plotnine.py` names the engine and exposes `ENTRY` (`PlotEngineEntry`). The app chooses the library by the value of `plot_engine` (the plot entry's own, else the data analysis recipe's); the library does not import another engine library. The theme as applied (component names and values, or plotnine's own default) is reported per plot for the export record (`effective_run.yaml`).
 
-**Migration:** If you have data analysis recipes that still use `factory_id`, run:
-
-```bash
-./.venv/bin/python assets/scripts/migrate_plot_specs.py --apply
-```
-
-The script rewrites all `factory_id:` keys to their equivalent explicit `geom_*` layer in place.
+**Migration:** A plot that still uses `factory_id` (or flat aesthetics such as `x:` at the top of the plot) is rewritten by hand: write an explicit `geom_*` layer in `layers:` and the aesthetics under `mapping:`. No script converts it (`assets/scripts/migrate_plot_specs.py` refuses to run). A recipe in an older file shape is converted by `assets/scripts/migrate_recipe_engine_keys.py`.
 
 ---
 
