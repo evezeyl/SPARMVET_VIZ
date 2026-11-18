@@ -457,3 +457,10 @@ def test_no_code_of_the_app_or_of_the_scripts_builds_a_factory_a_wrangler_or_an_
 def test_the_server_gives_the_handlers_the_dispatcher_not_a_factory():
     source = (ROOT / "app/src/server.py").read_text(encoding="utf-8")
     assert "viz_factory = PlotEngines(" in source and "VizFactory" not in source
+
+
+def test_an_unknown_engine_at_the_top_gives_one_t06_and_no_en02_per_step():
+    # PROVISIONAL (plain-message rule): the one real message is not hidden among one line per step
+    raw = recipe()
+    raw["data_engine"] = "python-pandas"
+    assert len(found(raw, "T06")) == 1 and found(raw, "EN02") == []

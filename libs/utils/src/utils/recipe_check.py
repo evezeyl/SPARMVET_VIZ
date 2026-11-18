@@ -289,6 +289,12 @@ class _Check:
         table = (self.catalogs or {}).get(f"{kind}_engines")
         if table is None or wanted is None or not isinstance(name, str):
             return
+        # PROVISIONAL (no decision names it; it follows the plain-message rule): a block whose engine is not an engine of this
+        # app at all already has its one real message (T06). An EN02 per step or layer would compare with an engine that cannot
+        # run here, so there is nothing true to compare, and it hid the T06 among dozens of lines. A plot engine written in a
+        # data slot (or the reverse) is an engine of the app: it keeps its EN02.
+        if wanted not in {name for names in self.spec["engines"].values() for name in names}:
+            return
         registry = (self.catalogs or {}).get(f"{kind}s")
         if name not in table:
             if registry is not None and name in registry:

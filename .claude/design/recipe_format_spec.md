@@ -649,7 +649,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | T05 | E | `id` differs from the file name | |
 | V01-V04 | E | `spec_version` missing, older, newer, not an integer (4.1) | the migration tool, or update the app |
 | T06 | E | an engine value unknown to the app, at any level (the top of the recipe, a tier's `data_engine`, a plot entry's `plot_engine`, `tier3.data_engine`), or a plot engine in the data slot (D-0239) | "no library for this engine in this app" and the engines of the app |
-| EN02 | E | a step (or a layer) that belongs to another engine than the block it is written in: the registry field `engine` of the step against the block's engine (the tier's `data_engine`, else the recipe's; for a layer the entry's `plot_engine`, else the recipe's); needs the engine tables in the catalogues (DEC53) | names the step, the block's engine and the step's engine; move it to a block of its engine or write the engine of the block |
+| EN02 | E | a step (or a layer) that belongs to another engine than the block it is written in: the registry field `engine` of the step against the block's engine (the tier's `data_engine`, else the recipe's; for a layer the entry's `plot_engine`, else the recipe's); needs the engine tables in the catalogues (DEC53); PROVISIONAL: not said when the block's engine is no engine of the app at all (T06 says that once) | names the step, the block's engine and the step's engine; move it to a block of its engine or write the engine of the block |
 | EN03 | E | the registry gives no engine for a registered name (a fault of the app, not of the recipe) | says so |
 | T07 | E | unquoted `on` (a `True` key) anywhere | quote it |
 | T08 | E | root `plots:` | move into a group |

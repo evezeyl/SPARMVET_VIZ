@@ -529,3 +529,42 @@ def test_title_is_in_neither_list_of_a_plot_entry():
 def test_every_entry_key_is_a_key_the_checker_accepts_in_a_plot():
     plot = spec()["elements"]["plot"]
     assert set(plot["entry_keys"]) <= set(plot["required"]) | set(plot["optional"])
+
+
+# -- an engine the app has no library for gives one message, not one per step (PROVISIONAL, follows the plain-message rule) ----------
+
+def many_steps(raw):
+    """Several steps and layers under the blocks, so that one EN02 per step would show."""
+    raw["data_schemas"]["A"]["tier1"]["steps"] = [FILTER, FILTER, FILTER]
+    raw["data_schemas"]["B"]["tier1"]["steps"] = [FILTER, FILTER]
+    raw["analysis_groups"]["g"]["plots"]["p"]["layers"] = [{"name": "geom_col"}, {"name": "geom_point"}, {"name": "theme_bw"}]
+
+
+def counts(raw):
+    problems = check(raw, catalogs={**CATALOGS, **ENGINE_OF}).problems
+    return {code: len([p for p in problems if p.code == code]) for code in ("T06", "EN02", "EN03")}
+
+
+def test_an_unknown_engine_at_the_top_of_the_recipe_gives_one_t06_and_no_en02():
+    assert counts(mutated(lambda r: (many_steps(r), r.update(data_engine="python-pandas")))) == {"T06": 1, "EN02": 0, "EN03": 0}
+    assert counts(mutated(lambda r: (many_steps(r), r.update(plot_engine="r-ggplot2")))) == {"T06": 1, "EN02": 0, "EN03": 0}
+
+
+def test_an_unknown_engine_on_one_tier_gives_one_t06_and_no_en02_for_its_steps():
+    raw = mutated(lambda r: (many_steps(r), r["data_schemas"]["A"]["tier1"].update(data_engine="python-pandas")))
+    assert counts(raw) == {"T06": 1, "EN02": 0, "EN03": 0}
+
+
+def test_an_unknown_engine_on_a_plot_gives_one_t06_and_no_en02_for_its_layers():
+    raw = mutated(lambda r: (many_steps(r), r["analysis_groups"]["g"]["plots"]["p"].update(plot_engine="r-ggplot2")))
+    assert counts(raw) == {"T06": 1, "EN02": 0, "EN03": 0}
+
+
+def test_a_known_engine_and_steps_of_another_library_still_give_one_en02_per_step_and_layer():
+    # the real case: python-polars is an engine of the app, the steps belong to another library; the plot likewise
+    engines = {"action_engines": {"polars_filter_demo": "python-other", "polars_join": "python-polars"},
+               "component_engines": {"geom_col": "python-other", "geom_point": "python-other", "theme_bw": "python-plotnine"}}
+    raw = mutated(many_steps)
+    problems = check(raw, catalogs={**CATALOGS, **engines}).problems
+    assert len([p for p in problems if p.code == "EN02"]) == 5 + 2, "three steps of A, two of B, and the two layers of the other library"
+    assert [p for p in problems if p.code == "T06"] == []
