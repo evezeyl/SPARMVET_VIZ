@@ -21,6 +21,7 @@
 - **Running 16:40:** review and controls of step 4 of the big recipe change (`tmpAI/engine_keys/step4_REVIEW.md`); step 4c code is committed on `task/engine-keys`, its report is `tmpAI/engine_keys/step4c_report.md` (PARTIAL).
 - **Decided 16:46 (D-0289, D-0290):** one Export panel for the loaded recipe; the "Active plot" scope is disabled, with a plain reason, when no plot is active. Facts for the build of D-0288: `tmpAI/panel/export_fields_per_session/FACTS.md`; five points wait for Eve (channel M300 of 78).
 - **Decided 16:50 (D-0291 to D-0294):** the Export panel is simplified: no scope (always all plots), no reproducibility tick (always included), fields quality / plot format / report format / width / height, defaults SVG and HTML, fields kept in memory only. D-0290 is moot (line kept). Open with Eve: one download or two; the bundle label. `dev` = `0a1541c3`.
+- **Corrected 16:54 (D-0295):** the two export modes and the mode tick STAY (D-0293 was a misreading by the review session); removed are only the scope and any choice of individual plots. `dev` = `5496b9b1`.
 
 ## 2026-11-18, 14:10, after the usage-limit stop and the restart (scribe; coordinator state in `tmpAI/coordinator/progress_2026-11-14_session3.md`)
 
