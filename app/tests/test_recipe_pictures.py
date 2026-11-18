@@ -34,15 +34,15 @@ def _load_script():
 rp = _load_script()
 
 PLOT = """      {name}:
-        label: {name}
-        spec:
-          target_dataset: C
-          title: {title}
-          theme: {theme}
-          mapping: {{x: group}}
-          layers:
-            - name: geom_bar
-              params: {{}}
+        ui_label: {name}
+        target_dataset: C
+        theme: {theme}
+        mapping: {{x: group}}
+        layers:
+          - name: geom_bar
+            params: {{}}
+          - name: labs
+            params: {{title: {title}}}
 """
 
 
@@ -75,16 +75,17 @@ data_schemas:
     input_fields:
       sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}}
       group: {{original_name: group, type: Categorical, label: Group}}
-    wrangling: {{tier1: [], tier2: []}}
+    tier1: {{steps: []}}
 joins:
   C:
     label: C
     ingredients:
       - dataset_id: T
-    steps: {{tier1: [], tier2: []}}
+    tier1: {{steps: []}}
+    tier2: {{steps: []}}
 analysis_groups:
   g:
-    label: G
+    ui_label: G
     plots:
 {body}""")
 

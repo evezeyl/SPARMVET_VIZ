@@ -199,7 +199,7 @@ def plots_of(raw: dict) -> list:
     found = []
     for group_id, group in (raw.get("analysis_groups") or {}).items():
         for plot_id, entry in ((group or {}).get("plots") or {}).items():
-            found.append((str(group_id), str(plot_id), ((entry or {}).get("spec") or {}).get("target_dataset")))
+            found.append((str(group_id), str(plot_id), (entry or {}).get("target_dataset")))
     return found
 
 
