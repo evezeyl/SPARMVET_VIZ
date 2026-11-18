@@ -225,3 +225,15 @@ def test_a_plot_without_a_target_gets_the_warning_node():
     recipe = minimal_recipe("tiny", plots={"p": {"ui_label": "P", "mapping": {"x": "sample_id"}, "layers": []}})
     elems = json.loads(BlueprintMapper(recipe).generate_cy_elements())
     assert "INFO_p" in {e["data"]["id"] for e in elems if "source" not in e["data"]}
+
+
+def test_the_lineage_names_the_tier_one_of_a_table_never_its_tier_two_file(tmp_path):
+    """Tier 1 written in the recipe and tier 2 in a file: the file is the tier 2, so the lineage node of the table is its id."""
+    table = minimal_schema("data/t.tsv", {"sample_id": "String", "year": "Int64"}, entity_key="sample_id", label="T")
+    table["tier2"] = Include("tiny/t_t2.yaml")
+    write_fragment(tmp_path / "tiny" / "t_t2.yaml", {"steps": [dict(STEP)]})
+    recipe = minimal_recipe("tiny", schemas={"t": table}, plots={"p": minimal_plot("t", {"x": "year"}, label="P")})
+    master = write_recipe(tmp_path / "tiny.yaml", recipe)
+    steps = build_plot_lineage("p", str(master))
+    assert [(s["type"], s["rel"]) for s in steps if s["type"] == "wrangling"] == [("wrangling", "t")]
+    assert [s["label"] for s in steps if s["type"] == "wrangling"] == ["t / wrangling (tier 1; tier 2 only where t is plotted directly)"]

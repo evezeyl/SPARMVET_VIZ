@@ -843,8 +843,7 @@ def generate_branch_plan(
       }
 
     Role handling (the selected node's role decides what is shared vs divergent):
-      wrangling / input_fields / output_fields  → branch a data_schema
-      (`output_fields` is still a node role of the lineage; the key is not written):
+      wrangling / input_fields                   → branch a data_schema:
           SHARED  : source, null_values, strip (copied inline: the same file, read
                     in the same way; a key the source schema lacks is not invented),
                     input_fields (!include reused)
@@ -882,7 +881,7 @@ def generate_branch_plan(
     basename = mp.stem
 
     # ── data_schema branch ──────────────────────────────────────────────────
-    if role in ("wrangling", "input_fields", "output_fields"):
+    if role in ("wrangling", "input_fields"):
         section = None
         block = None
         for sec in ("data_schemas", "additional_datasets_schemas"):

@@ -208,3 +208,35 @@ def test_a_tier_file_and_a_plot_file_saved_by_blueprint_give_a_recipe_the_checke
 
     assert yaml.safe_load(tier_file.read_text()) == {"data_engine": "python-polars", "steps": [{**STEP, "comment": "keep the id"}]}
     assert check_recipe_file(master, "build").errors == []
+
+
+# -- the inventory of groups and plots (a plot in its own file is named by its file)
+
+class Val:
+    def __init__(self, value):
+        self.value = value
+
+    def get(self):
+        return self.value
+
+
+def inventory_html(master: Path) -> str:
+    ns = dict(vars(blueprint_handlers))
+    define = next(n for n in ast.parse(SOURCE.read_text()).body if isinstance(n, ast.FunctionDef) and n.name == "define_server")
+    fn = next(n for n in ast.walk(define) if isinstance(n, ast.FunctionDef) and n.name == "bp_groups_inventory_ui")
+    fn.decorator_list = []
+    ns.update(input={"stored_data_analysis_recipe_selector": str(master)}, safe_input=lambda i, k, d=None: i.get(k, d), _groups_refresh=Val(0))
+    exec(compile(ast.fix_missing_locations(ast.Module(body=[fn], type_ignores=[])), "bp_groups_inventory_ui", "exec"), ns)
+    return str(ns["bp_groups_inventory_ui"]())
+
+
+def test_the_inventory_names_the_groups_and_the_plots_by_their_ui_label_in_the_recipe_or_in_the_file(tmp_path):
+    samples = minimal_schema("data/samples.tsv", {"sample_id": "String", "year": "Int64"}, entity_key="sample_id", label="Samples")
+    plots = {"inline_plot": minimal_plot("samples", {"x": "year"}, label="Written in the recipe"),
+             "file_plot": Include("tiny/plots/file_plot.yaml"), "lost_plot": Include("tiny/plots/lost.yaml")}
+    recipe = minimal_recipe("tiny", schemas={"samples": samples}, plots=plots)
+    recipe["analysis_groups"]["main"]["ui_label"] = "The group name"
+    write_fragment(tmp_path / "tiny" / "plots" / "file_plot.yaml", minimal_plot("samples", {"x": "year"}, label="Written in its file"))
+    html = inventory_html(write_recipe(tmp_path / "tiny.yaml", recipe))
+    assert "The group name" in html and "Written in the recipe" in html and "Written in its file" in html
+    assert "lost_plot" in html          # a plot whose file is missing is listed by its id, not hidden

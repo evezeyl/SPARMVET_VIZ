@@ -11,7 +11,7 @@ recipe, the same format as every other recipe:
     data contract (`input_fields`) GENERATED from the file and printed here so that a person reviews it;
   - one group, one plot; the five taxonomy values go to `taxonomy` on the plot entry. `geom` is not written any more:
     it is read from the first geom_ or stat_ layer of the plot;
-  - steps: `tier1` and `tier2` go to the schema, `tier3` goes to `steps: {tier3: [...]}` on the plot entry.
+  - steps: `tier1` and `tier2` go to the schema, `tier3` goes to the plot entry; each is a mapping with its list under `steps` (D-0250).
 
 The result is checked with `check_recipe` (profile `gallery`) before it is written, with the same catalogs of actions
 and plot components as the app (`checker_catalogs()`), so an unknown action or layer name is refused here too. An example that the checker

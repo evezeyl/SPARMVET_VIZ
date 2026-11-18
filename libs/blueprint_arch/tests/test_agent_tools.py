@@ -36,3 +36,22 @@ def test_the_prompt_and_the_module_describe_what_the_tool_returns():
     line = next(l for l in prompt.splitlines() if "get_field_contract" in l)
     assert "output_fields" not in line and "input_fields" in line
     assert "output_fields" not in agent_tools.__doc__.split("Each tool function")[0].replace("recipe format 1 has no output_fields", "")
+
+
+def test_the_prompt_teaches_the_tiers_as_their_own_keys_with_steps():
+    """The agent writes recipe text through the example it reads: a tier is `tier1: {steps: [...]}`, never a `wrangling` key (D-0250)."""
+    from blueprint_arch.agent_context import build_system_prompt
+
+    prompt = build_system_prompt()
+    assert '"/data_schemas/amr_results/tier1/steps/-"' in prompt
+    assert "wrangling/tier1" not in prompt and '"wrangling:" key' in prompt          # named only to forbid it
+
+
+def test_the_summary_of_the_recipe_for_the_agent_names_a_group_by_its_ui_label(tmp_path):
+    from blueprint_arch.agent_context import _build_data_analysis_recipe_context
+    from utils.recipe_factory import minimal_plot, minimal_recipe, write_recipe
+
+    recipe = minimal_recipe("tiny", plots={"p": minimal_plot("table", {"x": "sample_id"}, label="P")})
+    recipe["analysis_groups"]["main"]["ui_label"] = "The only group"
+    text = _build_data_analysis_recipe_context(write_recipe(tmp_path / "tiny.yaml", recipe))
+    assert "main (The only group): 1 plot(s) — p" in text

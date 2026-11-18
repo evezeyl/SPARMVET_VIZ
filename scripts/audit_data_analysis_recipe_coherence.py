@@ -174,14 +174,14 @@ def _walk_join_steps(obj: object, depth: int = 0) -> list[dict]:
 
 
 def _collect_all_field_slugs(data_analysis_recipe: dict) -> set[str]:
-    """Return union of all input_fields and output_fields slugs across all schemas."""
+    """Return the union of all input_fields slugs across all schemas (recipe format 1 has no output_fields)."""
     slugs: set[str] = set()
     schemas = data_analysis_recipe.get("data_schemas", {})
     if isinstance(schemas, dict):
         for schema in schemas.values():
             if not isinstance(schema, dict):
                 continue
-            for fields_key in ("input_fields", "output_fields"):
+            for fields_key in ("input_fields",):
                 fields = schema.get(fields_key, {})
                 # Unnest !include wrapper (same pattern as Check 1)
                 if isinstance(fields, dict) and list(fields.keys()) == [fields_key]:
@@ -342,7 +342,7 @@ def analyse_data_analysis_recipe(
                         result["join_violations"].append({
                             "context": data_analysis_recipe_path.name,
                             "key": k,
-                            "message": f"Join key `{k}` not declared in any schema's input_fields or output_fields",
+                            "message": f"Join key `{k}` not declared in any schema's input_fields",
                         })
 
     return result

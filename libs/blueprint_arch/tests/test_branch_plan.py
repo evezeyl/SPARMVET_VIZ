@@ -76,9 +76,9 @@ def test_the_starting_recipe_is_valid(master):
 
 # -- a schema
 
-@pytest.mark.parametrize("role", ["wrangling", "input_fields", "output_fields"])
+@pytest.mark.parametrize("role", ["wrangling", "input_fields"])
 def test_a_schema_branch_gives_a_valid_recipe_that_loads(master, role):
-    """The node role `output_fields` still selects a schema; the KEY `output_fields` is not written any more."""
+    """Either node of a table selects the table; `output_fields` is neither a key nor a node role of format 1."""
     plan = generate_branch_plan(str(master), "samples", role, "samples_b")
     apply_plan(master, plan)
     assert check_recipe_file(master).errors == []
@@ -249,6 +249,7 @@ def test_a_label_with_a_quote_and_a_colon_stays_valid_text(tmp_path):
     ("samples", "wrangling", "not an id", "snake_case"),
     ("samples", "wrangling", "", "snake_case"),
     ("samples", "something_else", "x", "not branchable"),
+    ("samples", "output_fields", "x", "not branchable"),
 ])
 def test_a_refused_branch_writes_nothing(master, schema_id, role, new_id, word):
     plan = generate_branch_plan(str(master), schema_id, role, new_id)
