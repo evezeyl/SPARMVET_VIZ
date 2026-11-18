@@ -67,6 +67,19 @@ def _ready(page: Page, timeout: int = 60_000) -> None:
     expect(page.locator(BTN)).not_to_have_class(re.compile("export-not-ready"), timeout=timeout)
 
 
+_LOST = ".shiny-notification:has-text('may not have been received')"
+
+
+def _clear_notices(page: Page) -> None:
+    page.evaluate("() => document.querySelectorAll('.shiny-notification').forEach((n) => n.remove())")
+
+
+def _ready_by_confirmation(page: Page, why: str, timeout: int = 90_000) -> None:
+    """The button opens, and not by the 5 s fallback: that one shows the 'last change may not have been received' notice."""
+    _ready(page, timeout)
+    assert page.locator(_LOST).count() == 0, f"{why}: the button was opened by the fallback, not by the server's confirmation"
+
+
 def _which_recipe(z: zipfile.ZipFile) -> str:
     pictures = set(_pictures(z))
     for recipe in (P, Q):
@@ -134,11 +147,12 @@ def test_ten_switches_each_followed_by_a_press_never_make_a_mixed_bundle_and_nev
     refused = 0
     for i, delay in enumerate(delays):
         target = Q if i % 2 == 0 else P
+        _clear_notices(page)
         press = page.evaluate(_SWITCH_PRESS, {"recipes": [target], "gaps": [], "pressAfter": delay})
         refused += bool(press["prevented"])
-        # point 4: never stuck grey. The button must open by the confirmation, well before the existing 5 s fallback (that
-        # fallback would hide a confirmation that never comes).
-        expect(page.locator(BTN)).not_to_have_class(re.compile("export-not-ready"), timeout=4_000)
+        # point 4: never stuck grey, and opened by the server's confirmation (the 5 s fallback would hide a confirmation that
+        # never comes)
+        _ready_by_confirmation(page, f"switch {i}")
         assert page.locator("#data_analysis_recipe_id").input_value() == target
     page.wait_for_timeout(1_000)
     made = list(downloads)
@@ -195,6 +209,7 @@ def test_a_user_change_right_after_a_switch_is_the_same_on_the_screen_in_the_sto
     assert f"Plot format      : {on_screen}" in _readme(z)
     _choose_recipe(page, P)
     _choose_recipe(page, Q)
+    _ready(page)
     remembered = page.locator("input[name=export_plot_format]:checked").get_attribute("value")
     assert remembered == on_screen, f"the screen showed {on_screen}, the app remembers {remembered} for Q"
     # put Q back
@@ -228,5 +243,22 @@ def test_a_user_change_right_after_the_page_shows_the_new_sessions_fields_wins_a
     assert _which_recipe(z) == Q and set(_pictures(z).values()) == {"pdf"}, "the bundle does not hold the user's choice (pdf)"
     _choose_recipe(page, P)
     _choose_recipe(page, Q)
+    _ready(page)
     assert page.locator("input[name=export_plot_format]:checked").get_attribute("value") == "pdf", "the app does not remember the user's choice for Q"
     _set(page, **Q_SET)
+
+
+def test_a_switch_made_the_moment_the_panel_is_opened_is_confirmed_and_the_button_opens_by_the_confirmation(page: Page, shiny_app: ShinyAppProc):
+    """A user who opens the Export panel and switches the recipe at once: the panel's inputs are only now announced to the server.
+    The button opens by the server's confirmation, not by the 5 s fallback (which shows the 'last change may not have been
+    received' notice for nothing). Q is visited first so that its stored tables exist: a first load of a recipe can take longer
+    than the fallback and would then be the cause, not the thing under test."""
+    _open_app(page, shiny_app.url)
+    _choose_recipe(page, Q)
+    _open_app(page, shiny_app.url)
+    _open_export_panel(page)
+    _clear_notices(page)
+    page.locator("#data_analysis_recipe_id").select_option(Q)
+    _ready_by_confirmation(page, "first switch with the panel just opened")
+    _expect_fields(page, _shown({"preset": "web", "plot_format": "svg", "report_format": "html", "width": "8", "height": "5"}),
+                   "a first visit of Q shows the defaults")
