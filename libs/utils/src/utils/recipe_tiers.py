@@ -2,8 +2,8 @@
 
 Every table has T1, T2 and T3, with or without a join; T2 and T3 can be empty (Eve, 2026-11-12). A *collection* is a
 join, or a schema that a plot reads directly (`target_dataset`). Its Tier 2 is:
-- for a join: `joins.<id>.steps.tier2`;
-- for a schema plotted directly: its own `wrangling.tier2`.
+- for a join: `joins.<id>.tier2.steps`;
+- for a schema plotted directly: its own `tier2.steps`.
 A join reads the Tier 1 of its ingredients, so the tier-2 list of a schema applies only where that schema is plotted
 directly (spec line 357). A tier-2 list on a schema that no plot reads is run nowhere: the checker refuses it (S07). The same
 holds for a join: its tier-2 list runs only when a plot reads the join (J14).
@@ -26,11 +26,12 @@ SCHEMA_SECTIONS = ("data_schemas", "additional_datasets_schemas")
 METADATA_SCHEMA = "metadata_schema"
 
 
-def step_list(container: Any, tier: str) -> list:
-    """One tier of a step container (`wrangling` of a schema, `steps` of a join) as a new list; empty when absent.
+def step_list(body: Any, tier: str) -> list:
+    """The steps of one tier of a schema or a join (`body[tier]["steps"]`, D-0250) as a new list; empty when absent.
 
-    Only the mapping form is read: a flat list is not a step container and is refused by the checker (S06, J07)."""
-    steps = container.get(tier) if isinstance(container, dict) else None
+    Only the mapping form is read: a tier written as a list is refused by the checker (S06, J07)."""
+    held = body.get(tier) if isinstance(body, dict) else None
+    steps = held.get("steps") if isinstance(held, dict) else None
     return list(steps) if isinstance(steps, list) else []
 
 
@@ -53,22 +54,22 @@ def tier2_steps(raw: dict, collection_id: str) -> list:
     joins = raw.get("joins") if isinstance(raw, dict) else None
     if isinstance(joins, dict) and collection_id in joins:
         join = joins[collection_id]
-        return step_list(join.get("steps") if isinstance(join, dict) else None, "tier2")
+        return step_list(join, "tier2")
     schema = schema_bodies(raw).get(collection_id) if isinstance(raw, dict) else None
     if isinstance(schema, dict):
-        return step_list(schema.get("wrangling"), "tier2")
+        return step_list(schema, "tier2")
     return []
 
 
 def plot_targets(raw: dict) -> Set[str]:
-    """The collections the plots read (`target_dataset` of every plot spec)."""
+    """The collections the plots read (`target_dataset` of every plot entry)."""
     targets: Set[str] = set()
     groups = raw.get("analysis_groups") if isinstance(raw, dict) else None
     for group in (groups or {}).values() if isinstance(groups, dict) else []:
         plots = group.get("plots") if isinstance(group, dict) else None
         for plot in (plots or {}).values() if isinstance(plots, dict) else []:
-            if isinstance(plot, dict) and isinstance(plot.get("spec"), dict):
-                target = plot["spec"].get("target_dataset")
+            if isinstance(plot, dict):
+                target = plot.get("target_dataset")
                 if target is not None:
                     targets.add(target)
     return targets
@@ -78,7 +79,7 @@ def unapplied_schema_tier2(raw: dict) -> List[str]:
     """The schemas whose non-empty tier-2 list is run nowhere: no plot reads the schema directly (S07)."""
     targets = plot_targets(raw)
     return [sid for sid, schema in schema_bodies(raw).items()
-            if isinstance(schema, dict) and step_list(schema.get("wrangling"), "tier2") and sid not in targets]
+            if isinstance(schema, dict) and step_list(schema, "tier2") and sid not in targets]
 
 
 def unapplied_join_tier2(raw: dict) -> List[str]:
@@ -88,7 +89,7 @@ def unapplied_join_tier2(raw: dict) -> List[str]:
     if not isinstance(joins, dict):
         return []
     return [jid for jid, join in joins.items()
-            if isinstance(join, dict) and step_list(join.get("steps"), "tier2") and jid not in targets]
+            if isinstance(join, dict) and step_list(join, "tier2") and jid not in targets]
 
 
 def without_tier2(raw: dict) -> dict:
@@ -98,17 +99,16 @@ def without_tier2(raw: dict) -> dict:
     material = dict(raw)
     joins = material.get("joins")
     if isinstance(joins, dict):
-        material["joins"] = {jid: _drop_tier2(join, "steps") for jid, join in joins.items()}
+        material["joins"] = {jid: _drop_tier2(join) for jid, join in joins.items()}
     for section in SCHEMA_SECTIONS:
         if isinstance(material.get(section), dict):
-            material[section] = {sid: _drop_tier2(schema, "wrangling") for sid, schema in material[section].items()}
+            material[section] = {sid: _drop_tier2(schema) for sid, schema in material[section].items()}
     if METADATA_SCHEMA in material:
-        material[METADATA_SCHEMA] = _drop_tier2(material[METADATA_SCHEMA], "wrangling")
+        material[METADATA_SCHEMA] = _drop_tier2(material[METADATA_SCHEMA])
     return material
 
 
-def _drop_tier2(body: Any, container_key: str) -> Any:
-    container = body.get(container_key) if isinstance(body, dict) else None
-    if not (isinstance(container, dict) and "tier2" in container):
+def _drop_tier2(body: Any) -> Any:
+    if not (isinstance(body, dict) and "tier2" in body):
         return body
-    return {**body, container_key: {k: v for k, v in container.items() if k != "tier2"}}
+    return {k: v for k, v in body.items() if k != "tier2"}

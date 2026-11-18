@@ -116,8 +116,8 @@ class ConfigManager:
             # This is WHY data analysis recipes work even when fragment files have wrapper keys.
             # The ingestor, MetadataValidator, and DataWrangler all rely on this
             # behaviour — do NOT remove it without updating those layers.
-            redundant_keys = {"input_fields", "output_fields",
-                              "wrangling", "source", "steps", "spec"}
+            # `wrangling` and `spec` are not keys of a recipe any more (D-0250, D-0237): a fragment under them is no longer unwrapped.
+            redundant_keys = {"input_fields", "output_fields", "source", "steps"}
             if isinstance(content, dict) and len(content) == 1:
                 key = list(content.keys())[0]
                 if key in redundant_keys:
@@ -246,16 +246,9 @@ class ConfigManager:
         groups = self.raw_config.get('analysis_groups', {})
         for g_id, g_spec in groups.items():
             g_plots = g_spec.get('plots', {})
-            for p_id, p_spec in g_plots.items():
-                # Unnest 'spec' if found (Phase 11-D convention)
-                if isinstance(p_spec, dict) and "spec" in p_spec:
-                    p_body = p_spec["spec"].copy()
-                    if "info" in p_spec:
-                        p_body["info"] = p_spec["info"]
-                else:
-                    p_body = p_spec
-
-                self.raw_config['plots'][p_id] = p_body
+            for p_id, p_entry in g_plots.items():
+                # The plot entry holds its content directly (D-0237): the engine's plot config is the entry itself.
+                self.raw_config['plots'][p_id] = p_entry
 
         self.defaults = self.raw_config.get('plot_defaults', {})
 
@@ -271,18 +264,9 @@ class ConfigManager:
         if not plot_entry:
             return None
 
-        # 2. Handle nested spec (Phase 14-D refinement)
-        # If 'spec' is present, we treat it as the base and merge 'info' into it
-        if "spec" in plot_entry:
-            plot_spec = plot_entry["spec"].copy()
-            if "info" in plot_entry:
-                plot_spec["info"] = plot_entry["info"]
-        else:
-            plot_spec = plot_entry
-
-        # 3. Merge logic: start with defaults, update with specific specs
+        # 2. Merge logic: start with defaults, update with the entry (it holds the plot's content directly, D-0237)
         final_config = self.defaults.copy()
-        final_config.update(plot_spec)
+        final_config.update(plot_entry)
 
         return final_config
 

@@ -5,6 +5,11 @@ repairs an unquoted `on`, keeps the last of a repeated key). This reader refuses
 with its fix, and still returns what it could read so the checker can go on. It keeps nothing silently: the wrapper
 stays in the tree so the checker sees the wrong form.
 
+F01 is the one rule for every include that stands for the content of the key it sits under: a table's field list, a tier
+(`tier1: !include f.yaml`, the file holds the tier's own `data_engine` and `steps`, D-0250) and a whole plot entry
+(`<plot_id>: !include plots/<plot_id>.yaml`, the file holds the entry's own content, D-0237 and D-0252). A file whose root is
+the key it is included under is a wrapper, and is reported with where the line to remove is.
+
 # @deps
 # provides: function:load_recipe, function:check_recipe_file
 # consumes: libs/utils/src/utils/strict_yaml.py, libs/utils/src/utils/config_loader.py (project_root_of), libs/utils/src/utils/recipe_check.py
