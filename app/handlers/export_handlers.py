@@ -11,14 +11,15 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
-# consumes: app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), polars, shiny
+# provides: constant:EXPORT_READY_TEXTS, constant:EXPORT_PANEL_FIELDS, function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
+# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), polars, shiny
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text), .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/export_specification.md, .claude/design/reproducible_export_design.md
 # @end_deps
 
 import io
+import json
 import zipfile
 from pathlib import Path
 
@@ -515,6 +516,22 @@ def _build_methods_section(
 SCOPE_LABELS = {"global": "Global", "group": "Active group", "plot": "Active plot"}
 
 
+# D-0270: the Export button is ready only when the server holds the values on the screen.
+# Every text the user sees about this is here, in one place (PROVISIONAL until Eve has read them).
+EXPORT_READY_TEXTS = {
+    "waiting": "Getting ready ...",
+    "lost": "Your last change may not have been received. Check the box and the label, then press Export.",
+}
+# The fields of the Export panel the download reads. The page greys the button when one of them changes; the server
+# echoes the values it holds for exactly these ids (app/src/www/export_ready.js).
+EXPORT_PANEL_FIELDS = (
+    "export_user_name", "export_scope", "export_include_reproducibility", "export_preset",
+    "export_plot_format", "export_report_format", "export_plot_width", "export_plot_height",
+)
+# How long the button waits for the confirmation before it is active again with the notice above (milliseconds).
+EXPORT_READY_TIMEOUT_MS = 5000
+
+
 def export_scope_choices(groups: dict, active_subtab: str) -> dict:
     """The choices of the export Scope radio for the plot tab that is open now.
 
@@ -745,11 +762,40 @@ def define_export_server(input, output, session, *,
                     class_="btn-success btn-sm w-100 mt-1",
                 ),
                 class_="mb-2 px-2",
-                style="font-size:0.8em;"
+                style="font-size:0.8em;",
+                id="export_ready_panel",
+                **{
+                    "data-ready-fields": json.dumps(list(EXPORT_PANEL_FIELDS)),
+                    "data-text-waiting": EXPORT_READY_TEXTS["waiting"],
+                    "data-text-lost": EXPORT_READY_TEXTS["lost"],
+                    "data-timeout-ms": str(EXPORT_READY_TIMEOUT_MS),
+                },
             ),
             class_="px-2",
             style="font-size:0.8em;"
         )
+
+    @reactive.Effect
+    async def _confirm_export_inputs():
+        """Tell the page which values of the Export panel the server holds (D-0270).
+
+        Runs after every change of a field and after every ping of the page (`export_client_ping`, sent at each change,
+        so that a change that leaves the values as they were is confirmed too). It reads every field the download reads
+        and sends them back with the last ping it has seen; the page opens the Export button when they equal what is on
+        the screen. This effect runs after the input messages were applied, so a download pressed after the echo reads
+        the same values (the race of question 20: input messages are applied under the reactive lock, a download request
+        is handled without it).
+        """
+        if not bootloader.is_enabled("export_enabled"):
+            return
+        ping = safe_input(input, "export_client_ping", 0)
+        held = {}
+        for field in EXPORT_PANEL_FIELDS:
+            try:
+                held[field] = getattr(input, field)()
+            except Exception:
+                continue    # a field that is not on the page (Scope without a plot tab): the page skips it too
+        await session.send_custom_message("export_ready_echo", {"ping": ping, "values": held})
 
     @reactive.Effect
     def _sync_export_scope_choices():

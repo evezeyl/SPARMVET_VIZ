@@ -2,6 +2,7 @@
 # provides: app_ui (Shiny UI definition, page_fillable layout)
 # consumes: pathlib, shiny, app.src.bootloader, base64, mimetypes
 # consumes: app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1, included via ui.tags.script)
+# consumes: app/src/www/export_ready.js (D-0270, included via ui.tags.script)
 # consumed_by: app.src.main
 # doc: ADR-027, ADR-029a, ADR-030, ADR-039, ADR-052
 # @end_deps
@@ -81,6 +82,8 @@ app_ui = ui.page_fillable(
         # Cache-busted by mtime (issue #37) so an edit during development is always
         # picked up on reload, without needing "Disable cache" in DevTools.
         ui.tags.script(src=_versioned("/bp_expr_editor.js")),
+        # [D-0270] Export button is ready only when the server holds the values on the screen — vanilla JS, no CDN.
+        ui.tags.script(src=_versioned("/export_ready.js")),
         # [ADR-039] Cytoscape.js Tube-Map Integration (replaces Mermaid + svg-pan-zoom)
         # Cytoscape core + dagre layout plugin for ranked-LR hierarchical DAG.
         ui.tags.script(src=_versioned("/vendor/cytoscape.min.js")),

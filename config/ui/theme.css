@@ -184,6 +184,13 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 #export_single_graph:hover, #session_export_active:hover, #filter_add_row:hover {
     background-color: #0d8a7e !important; border-color: #0b7569 !important;
 }
+/* Export button while the server has not yet confirmed the panel values (D-0270): Type 5 disabled grey, set by
+   app/src/www/export_ready.js (aria-disabled, not the Bootstrap .disabled class, so it stays reachable by keyboard) */
+#export_bundle_download.export-not-ready,
+#export_bundle_download.export-not-ready:hover {
+    background-color: #b0b0b0 !important; border-color: #b0b0b0 !important;
+    color: #1a1a1a !important; cursor: not-allowed !important;
+}
 /* Reset button: Pending-badge style (amber — signals discard action) */
 #filter_reset {
     background-color: #ffc107 !important; border-color: #e0a800 !important;
