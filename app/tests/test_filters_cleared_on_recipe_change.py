@@ -38,33 +38,57 @@ class TestNoticeRule:
         assert "Audited steps are kept" in text
 
 
-def _stage_sample_filter(page: Page) -> str:
-    """Stage a `sample_id` in-list filter and return a value of it; the row is added to the staged list."""
+def _stage_sample_filter(page: Page, recipe: str | None = None) -> str:
+    """Stage a `sample_id` in-list filter and return the value chosen; the row is added to the staged list.
+
+    With `recipe`, first wait until the data preview shows that recipe's table (the form's columns follow it)."""
     _open_filters_panel(page)
-    _wait_for_fb_col_option(page, "sample_id")
-    page.locator("#fb_col").select_option("sample_id")
-    _wait_shiny(page)
-    page.locator("#fb_op").select_option("in")
-    _wait_shiny(page)
+    if recipe is not None:
+        _wait_for_table(page, recipe)
+    _choose_column_firmly(page, "sample_id")
+    _choose_operator(page, "in")
     page.wait_for_function("() => { const e = document.getElementById('fb_value'); return e && e.selectize && Object.keys(e.selectize.options).length > 0; }", timeout=10_000)
-    page.evaluate("() => { const s = document.getElementById('fb_value').selectize; s.addItem(Object.keys(s.options)[0]); }")
+    value = page.evaluate("() => { const s = document.getElementById('fb_value').selectize; const v = Object.keys(s.options)[0]; s.addItem(v); return v; }")
+    page.wait_for_function("(v) => document.getElementById('fb_value').selectize.items.includes(v)", arg=value, timeout=5_000)
     _wait_shiny(page)
     page.locator("#filter_add_row").click()
     _wait_shiny(page)
     expect(page.locator("#filter_remove_0")).to_be_visible(timeout=5_000)
+    return value
 
 
 def _choose_column_firmly(page: Page, column: str) -> None:
-    """Choose a filter column and check the box really holds it once Shiny is idle: the form can re-render late and put
-    the first column back (an app defect, reported). If that happens, choose again once and record it in the output."""
+    """Choose a filter column and wait until the form has really taken it: the box holds it AND the dialog text under the
+    tick names it (that text is computed from the table for the chosen column, so it is the form's own answer).
+
+    The form can re-render late and put the first column back (an app defect, reported: FORM RESET, seen in the 10-run
+    checks). The test then chooses again and prints the event, never hides it."""
     _wait_for_fb_col_option(page, column)
-    page.locator("#fb_col").select_option(column)
-    _wait_shiny(page)
-    if page.locator("#fb_col").input_value() != column:
-        print(f"FORM RESET: the filter form put the column box back to {page.locator('#fb_col').input_value()!r}; choosing {column!r} again")
+    for attempt in (1, 2):
         page.locator("#fb_col").select_option(column)
         _wait_shiny(page)
+        try:
+            page.wait_for_function(
+                """(c) => document.getElementById('fb_col').value === c
+                    && (document.getElementById('filter_na_text_ui') || {innerText: ''}).innerText.includes(' ' + c)""",
+                arg=column, timeout=8_000)
+            _wait_shiny(page)
+            if page.locator("#fb_col").input_value() == column:
+                return
+        except Exception:
+            pass
+        print(f"FORM RESET: the filter form put the column box back to {page.locator('#fb_col').input_value()!r}; choosing {column!r} again")
     expect(page.locator("#fb_col")).to_have_value(column)
+
+
+def _choose_operator(page: Page, op: str) -> None:
+    """Choose a filter operator once the box offers it (the operator list is rebuilt after a column change and follows the
+    column's type) and check the box holds it once Shiny is idle."""
+    page.wait_for_function(
+        "(op) => Array.from(document.querySelectorAll('#fb_op option')).some(o => o.value === op)", arg=op, timeout=15_000)
+    page.locator("#fb_op").select_option(op)
+    _wait_shiny(page)
+    expect(page.locator("#fb_op")).to_have_value(op)
 
 
 def _notices(page: Page):
@@ -78,19 +102,52 @@ def _fresh(page: Page, base_url: str, recipe: str = A):
     _wait_shiny(page)
 
 
-_PLOT_TABS = {A: ("AMR", "MLST Bar"), B: ("AMR Profiling Insight", "Multi-Resistance by Country")}
+# The group text must not also match the other recipe's group ("AMR Profiling Insight"): a stale tab would satisfy the wait.
+_PLOT_TABS = {A: ("AMR and", "MLST Bar"), B: ("AMR Profiling Insight", "Multi-Resistance by Country")}
+# A column that only this plot's table has (exact header text): the data preview shows the table of that plot.
+_TABLE_MARKER = {A: "scheme", B: "predicted_phenotype_clean"}
+
+
+def _wait_for_table(page: Page, recipe: str) -> None:
+    """Wait until the plot sub-tab of the recipe is the active one AND the data preview shows that plot's table.
+    Shiny's busy flag can be clear while the preview still shows the previous table, so it is not the condition."""
+    _, plot = _PLOT_TABS[recipe]
+    page.wait_for_function(
+        """([plot, marker]) => {
+            const active = Array.from(document.querySelectorAll('.nav-link.active')).some(t => t.innerText.includes(plot));
+            const heads = Array.from(document.querySelectorAll('#home_data_preview th')).map(t => t.innerText.trim());
+            return active && heads.includes(marker);
+        }""",
+        arg=[plot, _TABLE_MARKER[recipe]], timeout=30_000)
+
+
+def _open_plot(page: Page, recipe: str) -> None:
+    """Open the group tab and the plot sub-tab of the recipe; each click is followed by its real condition (that tab is the
+    active one), and the data preview must show that plot's table. A click right after a recipe switch can hit a tab strip
+    that is about to be rebuilt, so the group click is repeated until the group is active."""
+    group, plot = _PLOT_TABS[recipe]
+    group_link = page.locator(f".nav-link:has-text('{group}')").first
+    for _ in range(3):
+        group_link.click()
+        try:
+            page.wait_for_function(
+                "(g) => Array.from(document.querySelectorAll('.nav-link.active')).some(t => t.innerText.includes(g))",
+                arg=group, timeout=5_000)
+            break
+        except Exception:
+            continue
+    expect(page.locator(f".nav-link:has-text('{plot}')").first).to_be_visible(timeout=10_000)
+    page.locator(f".nav-link:has-text('{plot}')").first.click()
+    _wait_for_table(page, recipe)
 
 
 def _show_table(page: Page, recipe: str) -> None:
-    """Open a plot sub-tab of the recipe so that the data preview is mounted."""
-    group, plot = _PLOT_TABS[recipe]
-    page.locator(f".nav-link:has-text('{group}')").first.click()
-    _wait_shiny(page)
-    page.locator(f".nav-link:has-text('{plot}')").first.click()
-    _wait_shiny(page)
+    """Open a plot sub-tab of the recipe, in My view, and wait until the data preview shows that plot's table."""
+    _open_plot(page, recipe)
     _open_filters_panel(page)
     page.locator("#tier_toggle input[value=T3]").check(force=True)   # My view: the table shows the applied filters
     _wait_shiny(page)
+    _wait_for_table(page, recipe)
 
 
 def _row_count(page: Page) -> int:
@@ -109,7 +166,17 @@ def _count_settled(page: Page, expected: int) -> int:
     deadline = time.time() + 20
     count = _row_count(page)
     while count != expected and time.time() < deadline:
-        page.wait_for_timeout(250)
+        page.wait_for_timeout(250)   # poll interval of a retrying read
+        count = _row_count(page)
+    return count
+
+
+def _count_settled_below(page: Page, unfiltered: int) -> int:
+    """The preview drops below the unfiltered count after Apply (retrying read); returns the last count seen."""
+    deadline = time.time() + 20
+    count = _row_count(page)
+    while count >= unfiltered and time.time() < deadline:
+        page.wait_for_timeout(250)           # poll interval of a retrying read
         count = _row_count(page)
     return count
 
@@ -123,12 +190,16 @@ class TestRecipeSwitchClearsFilters:
         unfiltered_b = _row_count(page)
         _choose_recipe(page, A)
         _show_table(page, A)
-        unfiltered_a = _row_count(page)
-        _stage_sample_filter(page)
+        unfiltered_a = _row_count(page)          # read from the marked table of A (_show_table waited for it)
+        value = _stage_sample_filter(page, A)
         page.locator("#filter_apply").click()
         _wait_shiny(page)
-        filtered_a = _row_count(page)
-        assert filtered_a < unfiltered_a, "the filter did not change the table: the scenario proves nothing"
+        filtered_a = _count_settled_below(page, unfiltered_a)
+        assert 1 <= filtered_a < unfiltered_a, "the filter did not change the table: the scenario proves nothing"
+        # Every row shown carries the chosen value (no key uniqueness assumed: the count comes from the page).
+        col = page.evaluate("() => Array.from(document.querySelectorAll('#home_data_preview th')).map(t => t.innerText.trim()).indexOf('sample_id')")
+        shown = page.evaluate("(c) => Array.from(document.querySelectorAll('#home_data_preview tbody tr')).map(r => r.children[c].innerText.trim())", col)
+        assert shown and set(shown) == {value}
         _choose_recipe(page, B)
         _show_table(page, B)
         assert _count_settled(page, unfiltered_b) == unfiltered_b
@@ -160,10 +231,10 @@ class TestRecipeSwitchClearsFilters:
     def test_no_filters_no_notice(self, page: Page, shiny_app: ShinyAppProc):
         _fresh(page, shiny_app.url)
         _choose_recipe(page, B)
-        page.wait_for_timeout(1_000)
+        page.wait_for_timeout(1_000)   # stays: the absence of a notice needs a time window (a notice would come with the switch)
         expect(_notices(page)).to_have_count(0)
         _choose_recipe(page, A)
-        page.wait_for_timeout(1_000)
+        page.wait_for_timeout(1_000)   # stays, same reason
         expect(_notices(page)).to_have_count(0)
 
     def test_filter_form_is_usable_after_the_switch(self, page: Page, shiny_app: ShinyAppProc):
@@ -179,17 +250,13 @@ class TestRecipeSwitchClearsFilters:
     def test_audited_step_of_recipe_a_is_back_after_returning(self, page: Page, shiny_app: ShinyAppProc):
         _fresh(page, shiny_app.url)
         _open_filters_panel(page)
-        page.locator(".nav-link:has-text('AMR')").first.click()
-        _wait_shiny(page)
-        page.locator(".nav-link:has-text('MLST Bar')").first.click()
-        _wait_shiny(page)
+        _open_plot(page, A)
         page.locator("#tier_toggle input[value=T3]").check(force=True)
         _wait_shiny(page)
         _choose_column_firmly(page, "year")
-        page.locator("#fb_op").select_option("lt")
-        _wait_shiny(page)
+        _choose_operator(page, "lt")
         page.locator("#fb_value").fill("2050")
-        page.wait_for_timeout(200)
+        expect(page.locator("#fb_value")).to_have_value("2050")
         page.locator("#filter_add_row").click()
         _wait_shiny(page)
         page.locator("#filter_send_to_audit").click()
@@ -208,10 +275,7 @@ class TestRecipeSwitchClearsFilters:
         expect(_notices(page)).to_have_count(0)
         _choose_recipe(page, A)
         page.wait_for_selector(".nav-link:has-text('AMR')", timeout=20_000)
-        page.locator(".nav-link:has-text('AMR')").first.click()
-        _wait_shiny(page)
-        page.locator(".nav-link:has-text('MLST Bar')").first.click()
-        _wait_shiny(page)
+        _open_plot(page, A)
         expect(page.locator("body")).to_contain_text("year < 2050", timeout=20_000)
 
 
@@ -253,9 +317,8 @@ def test_recipe_switch_with_a_column_chosen_logs_no_counts_error(page: Page):
             page.locator("#fb_col").select_option("year")
             _wait_shiny(page)
             _choose_recipe(page, B)
-            page.wait_for_timeout(2_000)
+            expect(page.locator("#filter_na_text_ui")).to_contain_text("Year", timeout=20_000)
             expect(page.locator("#filter_na_text_ui")).not_to_contain_text("could not be computed")
-            expect(page.locator("#filter_na_text_ui")).to_contain_text("Year")
         finally:
             proc.terminate()
             proc.wait(timeout=20)
