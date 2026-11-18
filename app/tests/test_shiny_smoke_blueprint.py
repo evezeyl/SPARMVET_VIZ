@@ -435,3 +435,40 @@ class TestBlueprintRoundTrip:
         page.locator("#sidebar_nav").get_by_text("Home").first.click()
         _wait_shiny(page, timeout=15_000)
         _no_render_error(page)
+
+
+# ---------------------------------------------------------------------------
+# T5-BP — A click on a TubeMap join node and on a plot node (review of step 4, D-0250)
+# ---------------------------------------------------------------------------
+
+def _tap_first_node_of_role(page: Page, role: str) -> str:
+    """Fire the cytoscape `tap` (what the user's click fires) on the first TubeMap node of a role; returns its id."""
+    page.wait_for_function("() => window._cyInstance && window._cyInstance.nodes().length > 0", timeout=30_000)
+    node_id = page.evaluate(
+        "(role) => { var n = window._cyInstance.nodes().filter(function(x) { return x.data('role') === role; });"
+        " return n.length ? n[0].id() : null; }", role)
+    assert node_id, f"the TubeMap has no node of role {role!r} to click"
+    page.evaluate("(id) => window._cyInstance.getElementById(id).emit('tap')", node_id)
+    return node_id
+
+
+class TestBlueprintNodeClick:
+    """The click on a join node reads its steps through `DataWrangler.tier_steps` (wrangle_studio.py) and loads its data.
+
+    The plot preview of the Blueprint centre (`architect_active_plot`) is not mounted in the page today (no `output_plot` of it
+    exists, see `test_shiny_plot_errors.py`), so a drawn plot cannot be seen here: the preview dict is covered headless by
+    `test_blueprint_plot_preview_engine.py`. What the browser can show is the data status line above the Live Data Glimpse.
+    """
+
+    @pytest.mark.skipif(
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
+        reason="Blueprint requires developer or qa app features",
+    )
+    @pytest.mark.parametrize("role", ["branch", "plot"])
+    def test_clicking_a_join_or_a_plot_node_loads_its_data_and_shows_no_error(self, page: Page, shiny_app: ShinyAppProc, role: str):
+        _navigate_to_blueprint(page, shiny_app.url)
+        _tap_first_node_of_role(page, role)
+        _wait_shiny(page, timeout=60_000)
+        expect(page.locator("#architect_data_status_ui")).to_contain_text(re.compile(r"\d[\d,]* rows"), timeout=60_000)
+        _no_render_error(page)
+        expect(page.locator("body")).not_to_contain_text("Could not load node", timeout=3_000)
