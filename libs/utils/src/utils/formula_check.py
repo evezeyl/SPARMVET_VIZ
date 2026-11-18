@@ -15,7 +15,7 @@ list kept by hand:
   namespace `meta`, `Expr.inspect` (refused by name, `REFUSED_BY_NAME`) and any name that starts with `_` are refused. The list is read from the installed Polars at run
   time and `libs/utils/tests/test_formula_reads_no_outside_data.py` fails when a Polars upgrade adds a member that
   nobody has judged (a member allowed by name only, as before 2026-11-17, let `deserialize` read any file);
-- `pl.<dtype>` for the Polars dtypes, except `pl.Object` (REFUSED_DTYPES, parked by Eve 2026-11-17, D-0230);
+- `pl.<dtype>` for the Polars dtypes, except `pl.Object`, `pl.Unknown` and `pl.Binary` (REFUSED_DTYPES, D-0230, D-0259);
 - constants, arithmetic, comparison and boolean operators, lists, tuples, dictionaries and subscripts.
 Refused: any other name, `lambda`, comprehensions, f-strings, starred arguments, conditional expressions, a string or
 list multiplied (memory), an exponent that is not a small constant (processor time).
@@ -33,7 +33,7 @@ the variables `x` and `y`, numbers, the operators of a model formula, `I`, `C`, 
 slow or large: nothing here stops heavy computation (spec section 15, known limit).
 
 # @deps
-# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, function:member_refusal, function:refused_members, constant:REFUSED_BY_NAME, constant:REFUSED_DTYPES, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, constant:PLOT_FUNCTION_MODULES, constant:PLOT_FUNCTION_NAMES, constant:PYTHON_MATH_FUNCTIONS, constant:MATH_CONSTANTS, class:FormulaError
+# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, function:member_refusal, function:refused_members, constant:REFUSED_BY_NAME, constant:REFUSED_BY_NAME_SUGGESTION, constant:REFUSED_DTYPES, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, constant:PLOT_FUNCTION_MODULES, constant:PLOT_FUNCTION_NAMES, constant:PYTHON_MATH_FUNCTIONS, constant:MATH_CONSTANTS, class:FormulaError
 # consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_formula_element_field.py, libs/utils/tests/test_formula_refuses_object.py, libs/utils/tests/test_formula_reads_no_outside_data.py, libs/utils/tests/test_plot_text_check.py, libs/utils/tests/test_stat_function_names.py, libs/utils/src/utils/plot_text_check.py, libs/utils/src/utils/recipe_check.py, libs/viz_factory/src/viz_factory/checked_plot.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/transformer/src/transformer/actions/polars_calls.py, libs/id_reconciliation/src/id_reconciliation/core.py, libs/viz_factory/tests/test_stat_function_names_drawn.py
 # doc: .claude/design/recipe_format_spec.md (section 15; check ST06)
 # @end_deps
@@ -144,9 +144,23 @@ META_OUTSIDE = ("reads the structure of an expression and can write it to a file
 # `Expr.inspect` is refused by decision of Eve, 2026-11-17 (D-0229): it takes a text that `str.format` runs on the
 # column, so a recipe could write '{0.__init__.__globals__[...]}' and print objects of the running program (including
 # the process environment) to the server output. No shipped formula uses it.
+# `set_sorted` and `search_sorted` are refused by decision of Eve, 2026-11-18 (D-0257): each gives a wrong result with
+# no message when misused (a flag that says "sorted" for data that is not; a search that assumes sorted data). They can
+# be added later on a real need.
 REFUSED_BY_NAME = {
     ("expr", "inspect"): PRINTS_OUTSIDE,
     ("expr", "meta"): META_OUTSIDE,
+    ("expr", "set_sorted"): ("only sets a flag that says the column is sorted, without checking it; "
+                             "if the column is not sorted, later results are wrong with no message, so it is not allowed"),
+    ("expr", "search_sorted"): ("assumes the column is sorted and does not check it; "
+                                "if it is not sorted, the answer is wrong with no message, so it is not allowed"),
+}
+
+# A "Suggestion: ..." for a member of REFUSED_BY_NAME that has a correct alternative (the others keep the default fix).
+REFUSED_BY_NAME_SUGGESTION = {
+    ("expr", "set_sorted"): "Suggestion: sort the table with a sort step before the step that needs sorted data",
+    ("expr", "search_sorted"): ("Suggestion: there is no formula for this; use a join step on the key, "
+                                "or ask for the function to be added"),
 }
 
 
@@ -158,6 +172,11 @@ REFUSED_BY_NAME = {
 # are not caught: a type that panics is refused here. Re-evaluate if a request or a necessity comes.
 REFUSED_DTYPES = {
     "Object": "pl.Object holds any Python object, which a table column does not; a recipe works on normal table columns",
+    # D-0259 (Eve, 2026-11-18): the same rule. Each stops the calculation with a Polars panic in `str.json_decode`
+    # (checked 2026-11-18: pl.Unknown, pl.Array(pl.Unknown, n) and pl.Binary panic; pl.List(...) of them is a plain error).
+    # Refusing the name covers every spelling that goes through `pl.<name>`, also inside pl.List and pl.Array.
+    "Unknown": "pl.Unknown is a type that has no values a table can hold, and decoding to it (or to an array of it) stops the calculation",
+    "Binary": "pl.Binary holds raw bytes, which a recipe table does not; decoding to it stops the calculation",
 }
 
 REFUSED_DTYPE_SUGGESTION = ("Suggestion: use a type a table can hold, for example pl.String, pl.Int64, pl.Float64, pl.Boolean, "
@@ -312,7 +331,8 @@ class _Checker:
                 return name
             if name in allowed["expr"]:
                 return "method:" + name
-            self.refuse(f"{name} {refused_members()['expr'].get(name, NOT_A_METHOD)}")
+            suggestion = REFUSED_BY_NAME_SUGGESTION.get(("expr", name))
+            self.refuse(f"{name} {refused_members()['expr'].get(name, NOT_A_METHOD)}", *([suggestion] if suggestion else []))
             return "value"
         if kind in allowed:  # a namespace
             if name in allowed[kind]:
