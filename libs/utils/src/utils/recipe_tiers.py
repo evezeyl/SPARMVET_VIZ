@@ -14,7 +14,7 @@ keys, the export, HOME's badge, the checker and the Blueprint lineage all read t
 rule exists once.
 
 # @deps
-# provides: function:tier2_steps, function:step_list, function:plot_targets, function:unapplied_schema_tier2, function:unapplied_join_tier2, function:without_tier2, function:schema_bodies
+# provides: function:collection_body, function:tier2_steps, function:step_list, function:plot_targets, function:unapplied_schema_tier2, function:unapplied_join_tier2, function:without_tier2, function:schema_bodies
 # consumed_by: app/modules/cache_keys.py, app/modules/orchestrator.py (through cache_keys), libs/utils/src/utils/recipe_check.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/utils/tests/test_recipe_tiers.py, app/tests/test_schema_tier2.py
 # doc: .claude/design/recipe_format_spec.md (DEC16, line 357, S07, X4), .claude/knowledge/architecture_decisions.md#adr-089
 # @end_deps
@@ -44,6 +44,14 @@ def schema_bodies(raw: dict) -> Dict[str, Any]:
     if METADATA_SCHEMA in raw:
         found[METADATA_SCHEMA] = raw[METADATA_SCHEMA]
     return found
+
+
+def collection_body(raw: dict, collection_id: str) -> Any:
+    """The join or the schema a collection id names (a join first, the order the engine resolves it in), else None."""
+    joins = raw.get("joins") if isinstance(raw, dict) else None
+    if isinstance(joins, dict) and collection_id in joins:
+        return joins[collection_id]
+    return schema_bodies(raw).get(collection_id) if isinstance(raw, dict) else None
 
 
 def tier2_steps(raw: dict, collection_id: str) -> list:
