@@ -11,7 +11,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_session_server, output:session_management_ui, output:session_export_active
-# consumes: app.src.bootloader (get_session_import_limits — D-0283), shiny, app.modules.error_notice (notice, issue_entry — VERIF-FIX-2), app.modules.plot_issue_reporter (make_issue_reporter), pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps)
+# consumes: app.src.bootloader (get_session_import_limits — D-0283), shiny, app.modules.error_notice (notice, issue_entry — VERIF-FIX-2), app.modules.plot_issue_reporter (make_issue_reporter), pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps, session_input_id_part)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
@@ -22,7 +22,7 @@ from shiny import reactive, render, ui
 from shiny.types import SilentException
 from app.modules.error_notice import issue_entry, notice
 from app.modules.plot_issue_reporter import make_issue_reporter
-from app.modules.session_manager import SessionDeleteError, normalise_audit_steps
+from app.modules.session_manager import SessionDeleteError, normalise_audit_steps, session_input_id_part
 from app.src.bootloader import bootloader
 
 
@@ -172,7 +172,7 @@ def define_session_server(input, output, session, *,
                 t3_count = s.get("t3_count", 0)
                 last_saved = s.get("latest_t3_saved_at") or s.get("assembled_at", "")
                 label = s.get("label", "")
-                safe_sk = sk.replace(":", "_")
+                safe_sk = session_input_id_part(sk)
 
                 group_panels.append(
                     ui.div(
@@ -200,13 +200,13 @@ def define_session_server(input, output, session, *,
                         ),
                         ui.div(
                             ui.input_action_button(
-                                f"session_restore_{sk.replace(':', '_')}",
+                                f"session_restore_{safe_sk}",
                                 "Restore",
                                 class_="btn-primary btn-sm",
                                 style="font-size:0.72em; padding:1px 6px;",
                             ),
                             ui.input_action_button(
-                                f"session_delete_{sk.replace(':', '_')}",
+                                f"session_delete_{safe_sk}",
                                 "Delete Session",
                                 class_="btn-outline-danger btn-sm",
                                 style="font-size:0.72em; padding:1px 6px;",
@@ -370,7 +370,7 @@ def define_session_server(input, output, session, *,
         sessions = session_manager.list_all_sessions()
         for s in sessions:
             sk = s["session_key"]
-            safe_sk = sk.replace(":", "_")
+            safe_sk = session_input_id_part(sk)
 
             # Restore. The effect depends on the click box only: the restore itself runs isolated, because it reads and sets
             # `home_state` and writes the notification log (an effect that depends on what it writes runs again for ever).
