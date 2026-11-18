@@ -14,7 +14,7 @@ import pytest
 
 import viz_factory  # noqa: F401  (registers the components)
 from viz_factory.parameters import ComponentParameterError
-from viz_factory.registry import COMPONENT_SCHEMAS, PLOT_COMPONENTS, register_plot_component
+from viz_factory.registry import COMPONENT_ENGINES, COMPONENT_SCHEMAS, PLOT_COMPONENTS, register_plot_component
 
 NAME = "geom_point_registration_probe"
 
@@ -39,9 +39,14 @@ def register(schema):
 
 @pytest.fixture(autouse=True)
 def registries_untouched():
-    before = (set(PLOT_COMPONENTS), set(COMPONENT_SCHEMAS))
+    registries = (PLOT_COMPONENTS, COMPONENT_SCHEMAS, COMPONENT_ENGINES)
+    saved = [dict(r) for r in registries]
     yield
-    assert (set(PLOT_COMPONENTS), set(COMPONENT_SCHEMAS)) == before, "a refused schema left a trace in a registry"
+    left = [set(r) for r in registries] != [set(d) for d in saved]
+    for registry, before in zip(registries, saved):
+        registry.clear()
+        registry.update(before)
+    assert not left, "a refused schema left a trace in a registry"
 
 
 def test_a_good_exact_schema_registers_and_is_filled_in_from_plotnine():
@@ -51,6 +56,7 @@ def test_a_good_exact_schema_registers_and_is_filled_in_from_plotnine():
     finally:
         PLOT_COMPONENTS.pop(NAME, None)
         COMPONENT_SCHEMAS.pop(NAME, None)
+        COMPONENT_ENGINES.pop(NAME, None)
 
 
 def test_an_exact_component_with_a_hand_written_params_list_is_refused():
@@ -101,3 +107,4 @@ def test_a_modified_component_with_its_own_params_is_accepted():
     finally:
         PLOT_COMPONENTS.pop(NAME, None)
         COMPONENT_SCHEMAS.pop(NAME, None)
+        COMPONENT_ENGINES.pop(NAME, None)
