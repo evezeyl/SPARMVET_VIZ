@@ -1,5 +1,5 @@
 id: stat_function_test
-description: 'Test for stat_function: uses a string lambda evaluated at render time'
+description: 'stat_function written as text is blocked for now (D-0274): this recipe is refused at check and at drawing'
 input_fields: []
 wrangling:
   tier1: []

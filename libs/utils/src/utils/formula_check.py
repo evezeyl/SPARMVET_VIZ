@@ -34,7 +34,7 @@ slow or large: nothing here stops heavy computation (spec section 15, known limi
 
 # @deps
 # provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, function:member_refusal, function:refused_members, constant:REFUSED_BY_NAME, constant:REFUSED_BY_NAME_SUGGESTION, constant:REFUSED_DTYPES, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, constant:PLOT_FUNCTION_MODULES, constant:PLOT_FUNCTION_NAMES, constant:PYTHON_MATH_FUNCTIONS, constant:MATH_CONSTANTS, class:FormulaError
-# consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_formula_element_field.py, libs/utils/tests/test_formula_refuses_object.py, libs/utils/tests/test_formula_reads_no_outside_data.py, libs/utils/tests/test_plot_text_check.py, libs/utils/tests/test_stat_function_names.py, libs/utils/src/utils/plot_text_check.py, libs/utils/src/utils/recipe_check.py, libs/viz_factory/src/viz_factory/checked_plot.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/transformer/src/transformer/actions/polars_calls.py, libs/id_reconciliation/src/id_reconciliation/core.py, libs/viz_factory/tests/test_stat_function_names_drawn.py
+# consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_formula_element_field.py, libs/utils/tests/test_formula_refuses_object.py, libs/utils/tests/test_formula_reads_no_outside_data.py, libs/utils/tests/test_plot_text_check.py, libs/utils/tests/test_stat_function_names.py, libs/utils/src/utils/plot_text_check.py, libs/utils/src/utils/recipe_check.py, libs/viz_factory/src/viz_factory/checked_plot.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/transformer/src/transformer/actions/polars_calls.py, libs/id_reconciliation/src/id_reconciliation/core.py
 # doc: .claude/design/recipe_format_spec.md (section 15; check ST06)
 # @end_deps
 """
@@ -74,10 +74,9 @@ MATH_CONSTANTS = {"pi": 3.141592653589793, "e": 2.718281828459045}
 # A `stat_function` string has its own table below.
 _MATH_MODULES = ("np", "math", "numpy")
 
-# `stat_function` (D-0232, Eve 2026-11-17: a name that passes the check must also work at drawing). ONE table that the check
-# and the drawing both read: which module each prefix is, and which names of it a string may use. The drawing namespace
-# (`viz_factory.geoms.core.function_string_namespace`) is built from these tables with `getattr`, so a name that is not in the
-# module fails when the plot library starts, never in a recipe; a test checks every entry against the real modules.
+# `stat_function` (D-0232). NOTE (D-0274, 2026-11-18): a function written as text is BLOCKED FOR NOW; nothing evaluates it and
+# the plot check no longer reads these tables. They are kept, with `function_string_problems` and its tests, for the day the
+# question is reopened (D-0275). The tables once served both the check and the drawing: which module each prefix is, and which names of it a string may use. A test checks every entry against the real modules.
 # Bare names (`sin`, `arcsin`, ...) are numpy's: MATH_FUNCTIONS. `numpy.` is the same module as `np.` (option b of the
 # builder's choice: the spec already lists `numpy.name` for a smoother, one vocabulary for both places). `math` is Python's own
 # `math`, which has other names (`asin`, not `arcsin`; `fabs`, not `abs`; no `sign`) and takes one number at a time.

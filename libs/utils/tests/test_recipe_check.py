@@ -555,10 +555,15 @@ def test_ps06_is_found_without_any_catalogue_and_names_the_layer_and_the_text():
     ("facet_wrap", {"facets": "country"}),
     ("facet_grid", {"facets": "row_group ~ col_group"}),
     ("facet_grid", {"rows": "a", "cols": "b"}),
-    ("stat_function", {"fun": "lambda x: x ** 2"}),
 ])
 def test_ps06_leaves_what_a_scientist_writes_alone(name, params):
     assert _layer_problems(params, name) == []
+
+
+def test_ps06_refuses_a_function_text_of_stat_function_with_the_message_when_the_recipe_is_checked():
+    from utils.plot_text_check import STAT_FUNCTION_TEXT_BLOCKED
+    found = _layer_problems({"fun": "lambda x: x ** 2"}, "stat_function")
+    assert len(found) == 1 and STAT_FUNCTION_TEXT_BLOCKED in found[0].message
 
 
 def test_ps06_facet_by_in_the_mapping_is_a_plain_column_name():
