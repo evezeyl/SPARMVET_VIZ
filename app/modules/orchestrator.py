@@ -135,7 +135,7 @@ class DataOrchestrator:
         # fit its declared type fails there and names the column and the values.
         lf, _ = self.ingestor.ingest(ds_id, ds_schema)
 
-        rules = DataWrangler._resolve_tier(ds_schema.get("wrangling", []), "tier1")
+        rules = DataWrangler.tier_steps(ds_schema, "tier1")
         return DataWrangler().run(lf, rules)
 
     def inputs_changed(self, data_analysis_recipe_id: str, built_from: DataAnalysisRecipeKeys) -> InputsChanged | None:
@@ -293,8 +293,7 @@ class DataOrchestrator:
 
         # Path C: assembly — ordered ingredient dict so DataAssembler starts
         # from the correct base (first declared ingredient, not first dict key)
-        steps_raw = collection_spec.get("steps", [])
-        steps = DataWrangler._resolve_tier(steps_raw, "tier1")
+        steps = DataWrangler.tier_steps(collection_spec, "tier1")
 
         ingredient_ids = [
             item.get("dataset_id") if isinstance(item, dict) else item

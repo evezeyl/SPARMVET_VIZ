@@ -61,7 +61,7 @@ def example_taxonomy(recipe: dict) -> Dict[str, str]:
     typed = entry.get("taxonomy") or {}
     terms = {}
     for axis in (item["axis"] for item in display_axes()):
-        terms[axis] = first_geom(entry.get("spec")) if axis == DERIVED_AXIS else typed[axis]
+        terms[axis] = first_geom(entry) if axis == DERIVED_AXIS else typed[axis]
     return terms
 
 

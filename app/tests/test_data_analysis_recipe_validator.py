@@ -33,7 +33,7 @@ def test_data_analysis_recipe_has_no_step_problems(path):
 # action and plot component registries); a recipe it refuses is not handed to the engine. Each problem carries the
 # permanent code of the check, the place in the recipe and the fix.
 
-JOIN = {"label": "J", "ingredients": [{"dataset_id": "A"}], "steps": {"tier1": []}}
+JOIN = {"label": "J", "ingredients": [{"dataset_id": "A"}], "tier1": {"steps": []}}
 SORT = {"action": "polars_sort", "by": ["a"], "maintain_order": True}
 
 
@@ -48,36 +48,41 @@ def test_tiny_recipe_is_valid(tmp_path):
 
 
 def test_tiered_steps_are_valid(tmp_path):
-    assert _problems(tmp_path, lambda r: r.update(joins={"J": dict(JOIN, steps={"tier1": [SORT], "tier2": []})})) == []
+    assert _problems(tmp_path, lambda r: r.update(joins={"J": dict(JOIN, tier1={"steps": [SORT]}, tier2={"steps": []})})) == []
 
 
-def test_flat_join_steps_are_reported_once_with_the_place_the_code_and_the_fix(tmp_path):
-    problems = _problems(tmp_path, lambda r: r.update(joins={"J": dict(JOIN, steps=[SORT])}))
+def test_a_join_tier_written_as_a_list_is_reported_once_with_the_place_the_code_and_the_fix(tmp_path):
+    problems = _problems(tmp_path, lambda r: r.update(joins={"J": dict(JOIN, tier1=[SORT])}))
     assert len(problems) == 1
-    assert problems[0].location == "joins.J.steps" and "[J07]" in problems[0].problem and "tier1" in problems[0].tip
+    assert problems[0].location == "joins.J.tier1" and "[J07]" in problems[0].problem and "steps" in problems[0].tip
     assert problems[0].data_analysis_recipe == "m.yaml"
 
 
-def test_flat_wrangling_in_a_data_schema_is_reported(tmp_path):
-    problems = _problems(tmp_path, lambda r: r["data_schemas"]["A"].update(wrangling=[SORT]))
+def test_the_old_wrangling_key_of_a_data_schema_is_reported_with_the_tool(tmp_path):
+    problems = _problems(tmp_path, lambda r: r["data_schemas"]["A"].update(wrangling={"tier1": [SORT]}))
     assert [p.location for p in problems] == ["data_schemas.A.wrangling"] and "[S06]" in problems[0].problem
+    assert "migrate_recipe_engine_keys" in problems[0].tip
+
+
+def test_a_data_schema_tier_written_as_a_list_is_reported(tmp_path):
+    problems = _problems(tmp_path, lambda r: r["data_schemas"]["A"].update(tier1=[SORT]))
+    assert [p.location for p in problems] == ["data_schemas.A.tier1"] and "[S06]" in problems[0].problem
 
 
 def test_all_problems_are_reported_not_only_the_first(tmp_path):
     def change(recipe):
-        recipe["data_schemas"]["A"]["wrangling"] = [SORT]
-        recipe["joins"] = {"J": dict(JOIN, steps=[SORT])}
-        del recipe["analysis_groups"]["g"]["label"]
+        recipe["data_schemas"]["A"]["tier1"] = [SORT]
+        recipe["joins"] = {"J": dict(JOIN, tier1=[SORT])}
+        del recipe["analysis_groups"]["g"]["ui_label"]
     assert len(_problems(tmp_path, change)) == 3
 
 
 def test_a_join_step_in_tier2_is_reported(tmp_path):
     step = {"action": "polars_join", "right_ingredient": "A", "on": ["a"], "how": "left", "maintain_order": "left_right"}
     def change(r):
-        r.update(joins={"J": dict(JOIN, steps={"tier1": [], "tier2": [step]})})
+        r.update(joins={"J": dict(JOIN, tier1={"steps": []}, tier2={"steps": [step]})})
         # a plot reads the join, so its tier 2 is applied and J14 stays silent: only the step itself is wrong
-        r["analysis_groups"]["g"]["plots"]["p_j"] = dict(r["analysis_groups"]["g"]["plots"]["p"],
-                                                          spec=dict(r["analysis_groups"]["g"]["plots"]["p"]["spec"], target_dataset="J"))
+        r["analysis_groups"]["g"]["plots"]["p_j"] = dict(r["analysis_groups"]["g"]["plots"]["p"], target_dataset="J")
     problems = _problems(tmp_path, change)
     assert len(problems) == 1 and "only allowed in tier1" in problems[0].problem
 
@@ -93,29 +98,29 @@ def test_a_missing_label_is_refused(tmp_path):
 
 
 def test_an_action_that_is_not_registered_is_refused(tmp_path):
-    problems = _problems(tmp_path, lambda r: r["data_schemas"]["A"].update(wrangling={"tier1": [{"action": "sort", "columns": ["a"]}]}))
+    problems = _problems(tmp_path, lambda r: r["data_schemas"]["A"].update(tier1={"steps": [{"action": "sort", "columns": ["a"]}]}))
     assert len(problems) == 1 and "'sort' is not a registered action" in problems[0].problem
 
 
 def test_a_step_without_a_required_parameter_is_refused(tmp_path):
-    problems = _problems(tmp_path, lambda r: r["data_schemas"]["A"].update(wrangling={"tier1": [{"action": "polars_sort", "by": ["a"]}]}))
+    problems = _problems(tmp_path, lambda r: r["data_schemas"]["A"].update(tier1={"steps": [{"action": "polars_sort", "by": ["a"]}]}))
     assert len(problems) == 1 and "maintain_order is required" in problems[0].problem
 
 
 def test_a_plot_layer_that_is_not_registered_is_refused(tmp_path):
     def change(recipe):
-        recipe["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"] = [{"name": "geom_nope", "params": {}}]
+        recipe["analysis_groups"]["g"]["plots"]["p"]["layers"] = [{"name": "geom_nope", "params": {}}]
     problems = _problems(tmp_path, change)
     assert len(problems) == 1 and "geom_nope" in problems[0].problem
 
 
 def test_an_empty_tier1_is_valid(tmp_path):
-    assert _problems(tmp_path, lambda r: r["data_schemas"]["A"].update(wrangling={"tier1": []})) == []
+    assert _problems(tmp_path, lambda r: r["data_schemas"]["A"].update(tier1={"steps": []})) == []
 
 
 def test_missing_include_is_a_problem_not_a_crash(tmp_path):
     path = write_tiny(tmp_path)
-    path.write_text(path.read_text().replace("wrangling:\n      tier1: []", "wrangling: !include 'does_not_exist/w.yaml'"))
+    path.write_text(path.read_text().replace("tier1:\n      steps: []", "tier1: !include 'does_not_exist/w.yaml'"))
     problems = validate_data_analysis_recipe(path)
     assert problems and any("does_not_exist/w.yaml" in p.problem and "not found" in p.problem for p in problems)
 
@@ -195,7 +200,8 @@ def test_no_template_declares_a_float_join_key():
 # --- the same catalogues everywhere (DEC03, DEC09): the arguments and the themes are checked at HOME too -------------
 
 def _plot_spec(recipe):
-    return recipe["analysis_groups"]["g"]["plots"]["p"]["spec"]
+    """The content of the plot is written in the entry itself (D-0237)."""
+    return recipe["analysis_groups"]["g"]["plots"]["p"]
 
 
 def test_a_wrong_layer_parameter_is_refused_with_ps04(tmp_path):

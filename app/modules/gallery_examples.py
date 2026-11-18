@@ -89,7 +89,7 @@ def _build(example_dir: Path, work_dir: Path, project_root: Path) -> Tuple[dict,
     orchestrator = DataOrchestrator(work_dir, project_root)
     keys = orchestrator.compute_data_analysis_recipe_keys(example_id)
     anchor = work_dir / f"{example_id}.parquet"
-    target = entry["spec"]["target_dataset"]
+    target = entry["target_dataset"]
     orchestrator.materialize_tier1(example_id, target, anchor, keys=keys, on_inputs_changed=tell_inputs_changed)
     return raw, plot_id, orchestrator.materialize_tier2(example_id, target, anchor, keys=keys, on_inputs_changed=tell_inputs_changed)
 

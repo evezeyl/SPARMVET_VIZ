@@ -20,7 +20,7 @@ def tiny_recipe(recipe_id: str = "m", data_path: str = "./assets/test_data/tiny/
     recipe = minimal_recipe(recipe_id, label="Tiny", schemas={"A": schema}, plots={"p": plot})
     recipe["info"]["description"] = "A smallest recipe, for a test."
     group = recipe["analysis_groups"].pop("main")
-    group.update({"label": "G", "description": "The one group."})
+    group.update({"ui_label": "G", "description": "The one group."})
     recipe["analysis_groups"] = {"g": group}
     return recipe
 

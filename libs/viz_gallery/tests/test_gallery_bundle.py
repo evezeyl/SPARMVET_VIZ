@@ -130,6 +130,15 @@ def test_filter_panels_of_an_empty_index_have_no_choices():
 
 # ---- the example recipe and its data contract -----------------------------------------------------------------------
 
+def test_the_plot_of_an_example_holds_its_content_in_the_entry_with_the_ui_names_first():
+    recipe = _recipe()
+    entry = the_plot(recipe)[1]
+    assert "spec" not in entry and "label" not in entry and "title" not in entry
+    keys = list(entry)
+    assert keys[0] == "ui_label" and keys.index("taxonomy") < keys.index("target_dataset") < keys.index("mapping") < keys.index("layers")
+    assert next(iter(recipe["analysis_groups"].values()))["ui_label"] == "Example"
+
+
 def test_an_example_recipe_passes_the_gallery_check_and_reads_back_from_its_text():
     recipe = _recipe()
     assert check_recipe(recipe, "gallery", file_stem="my_plot").errors == []
@@ -143,9 +152,13 @@ def test_the_steps_of_an_example_go_where_the_format_puts_them():
     step = {"action": "polars_drop_nulls", "subset": ["value"]}
     recipe = _recipe(tier1=[step], tier2=[step], tier3=[step])
     schema = recipe["data_schemas"]["example"]
-    assert schema["wrangling"] == {"tier1": [step], "tier2": [step]}
-    assert the_plot(recipe)[1]["steps"] == {"tier3": [step]}
-    assert "steps" not in the_plot(_recipe())[1] and _recipe()["data_schemas"]["example"]["wrangling"] == {"tier1": []}
+    assert schema["tier1"] == {"steps": [step]} and schema["tier2"] == {"steps": [step]}
+    assert "wrangling" not in schema
+    assert the_plot(recipe)[1]["tier3"] == {"steps": [step]}
+    assert "steps" not in the_plot(recipe)[1] and "spec" not in the_plot(recipe)[1]
+    plain = _recipe()
+    assert "tier3" not in the_plot(plain)[1] and plain["data_schemas"]["example"]["tier1"] == {"steps": []}
+    assert "tier2" not in plain["data_schemas"]["example"]
     assert yaml.safe_load(dump_example(recipe)) == recipe
 
 

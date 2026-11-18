@@ -97,7 +97,7 @@ def example_recipe(*, example_id: str, label: str, data_path: str, fields: Dict[
     """The standard recipe of one gallery example (spec section 9): one schema, one group, one plot.
 
     `taxonomy` holds the five typed axes; `geom` is not written (it is read from the layers). The steps of the example
-    go where the format puts them: `tier1` and `tier2` in the schema, `tier3` on the plot entry.
+    go where the format puts them: `tier1` and `tier2` in the schema, `tier3` on the plot entry, each as a mapping with `steps`.
     """
     typed = spec()["gallery"]["axes"]
     info: Dict[str, Any] = {"label": label}
@@ -105,9 +105,6 @@ def example_recipe(*, example_id: str, label: str, data_path: str, fields: Dict[
         info["description"] = description
     if submission_date:
         info["submission_date"] = str(submission_date)
-    wrangling: Dict[str, Any] = {"tier1": list(tier1 or [])}
-    if tier2:
-        wrangling["tier2"] = list(tier2)
     schema: Dict[str, Any] = {"label": "Example data"}
     if data_description:
         schema["description"] = data_description
@@ -116,20 +113,23 @@ def example_recipe(*, example_id: str, label: str, data_path: str, fields: Dict[
         "null_values": [],
         "strip": True,
         "input_fields": {column: dict(definition) for column, definition in fields.items()},
-        "wrangling": wrangling,
+        "tier1": {"steps": list(tier1 or [])},
     })
-    plot: Dict[str, Any] = {"label": label}
+    if tier2:
+        schema["tier2"] = {"steps": list(tier2)}
+    # The plot entry holds the content of the plot directly (no `spec:`, D-0237); the app-side keys come first, then the
+    # content, then the tier-3 steps (D-0253, D-0250).
+    plot: Dict[str, Any] = {"ui_label": label}
     if plot_description:
         plot["description"] = plot_description
     plot["taxonomy"] = {axis: taxonomy[axis] for axis in typed if axis in taxonomy}
-    ordered_spec = {"target_dataset": SCHEMA_ID}
+    plot["target_dataset"] = SCHEMA_ID
     for key in ("mapping", "layers"):
         if key in plot_spec:
-            ordered_spec[key] = plot_spec[key]
-    ordered_spec.update({key: value for key, value in plot_spec.items() if key not in ordered_spec})
-    plot["spec"] = ordered_spec
+            plot[key] = plot_spec[key]
+    plot.update({key: value for key, value in plot_spec.items() if key not in plot})
     if tier3:
-        plot["steps"] = {"tier3": list(tier3)}
+        plot["tier3"] = {"steps": list(tier3)}
     return {
         "id": example_id,
         "spec_version": spec()["format_version"],
@@ -137,7 +137,7 @@ def example_recipe(*, example_id: str, label: str, data_path: str, fields: Dict[
         "plot_engine": spec()["engines"]["plot_engine"][0],
         "info": info,
         "data_schemas": {SCHEMA_ID: schema},
-        "analysis_groups": {GROUP_ID: {"label": "Example", "description": "The one plot of this example.",
+        "analysis_groups": {GROUP_ID: {"ui_label": "Example", "description": "The one plot of this example.",
                                        "plots": {plot_id: plot}}},
     }
 
@@ -174,8 +174,9 @@ def _layout(recipe: dict) -> dict:
             laid["description"] = _Folded(laid["description"])
         laid["source"] = _OneLine(laid["source"])
         laid["input_fields"] = {column: _OneLine(definition) for column, definition in laid["input_fields"].items()}
-        if all(not steps for steps in laid["wrangling"].values()):
-            laid["wrangling"] = _OneLine(laid["wrangling"])
+        for tier in ("tier1", "tier2"):
+            if tier in laid and not laid[tier]["steps"]:
+                laid[tier] = _OneLine(laid[tier])
         schemas[sid] = laid
     out["data_schemas"] = schemas
     groups = {}
@@ -186,12 +187,11 @@ def _layout(recipe: dict) -> dict:
             if "description" in laid:
                 laid["description"] = _Folded(laid["description"])
             laid["taxonomy"] = _OneLine(laid["taxonomy"])
-            plot_spec = dict(laid["spec"])
-            if isinstance(plot_spec.get("mapping"), dict):
-                plot_spec["mapping"] = _OneLine(plot_spec["mapping"])
-            if isinstance(plot_spec.get("layers"), list):
+            if isinstance(laid.get("mapping"), dict):
+                laid["mapping"] = _OneLine(laid["mapping"])
+            if isinstance(laid.get("layers"), list):
                 layers = []
-                for layer in plot_spec["layers"]:
+                for layer in laid["layers"]:
                     if not isinstance(layer, dict):
                         layers.append(layer)
                         continue
@@ -200,8 +200,7 @@ def _layout(recipe: dict) -> dict:
                     if isinstance(ordered.get("params"), dict) and _short(ordered["params"]):
                         ordered["params"] = _OneLine(ordered["params"])
                     layers.append(_OneLine(ordered) if _short(ordered) else ordered)
-                plot_spec["layers"] = layers
-            laid["spec"] = plot_spec
+                laid["layers"] = layers
             plots[pid] = laid
         groups[gid] = {**group, "plots": plots}
     out["analysis_groups"] = groups

@@ -80,7 +80,7 @@ def engine_fingerprint() -> str:
 def tier1_material(raw: dict) -> dict:
     """The resolved data analysis recipe without the downstream-only parts (fail-safe: unknown parts stay in).
 
-    The tier-2 list of every collection (a join's `steps.tier2`, a schema's `wrangling.tier2`) is downstream of
+    The tier-2 list of every collection (a join's `tier2.steps`, a schema's `tier2.steps`) is downstream of
     Tier 1: it goes into the chained `tier2_key` instead (`utils.recipe_tiers`, issue #77)."""
     return without_tier2({k: v for k, v in raw.items() if k not in _DOWNSTREAM_TOP_LEVEL})
 

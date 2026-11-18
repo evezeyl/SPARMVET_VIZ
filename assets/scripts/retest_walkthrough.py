@@ -41,8 +41,8 @@ ANCHORS = REPO / "tmp/RETEST/user/anchors"
 results = []
 
 # The lines of retest_tier2.yaml that the edits of RT-04 and RT-05 look for (they carry the EDIT HERE marks).
-TIER1_LINE = "      tier1: []            # EDIT HERE (RT-05): move the tier2 step below up to this list\n"
-TIER2_LINE = "      tier2:               # EDIT HERE (RT-04): change value: 10 to value: 20\n"
+TIER1_LINE = "      steps: []            # EDIT HERE (RT-05): move the tier2 step below up to this list\n"
+TIER2_LINE = "      steps:               # EDIT HERE (RT-04): change value: 10 to value: 20\n"
 THRESHOLD_LINE = "          value: 10\n"
 NEXT_JOIN_LINE = "  All_samples:\n"
 
@@ -67,8 +67,8 @@ def with_step_moved_to_tier1(text: str) -> str:
     start = text.index(TIER2_LINE)
     end = text.index(NEXT_JOIN_LINE)
     step = text[start + len(TIER2_LINE):end]
-    moved = text[:start] + "      tier2: []\n" + text[end:]
-    return _replace_once(moved, TIER1_LINE, "      tier1:\n" + step)
+    moved = text[:start] + "      steps: []\n" + text[end:]
+    return _replace_once(moved, TIER1_LINE, "      steps:\n" + step)
 
 
 def with_header_fixed(text: str) -> str:

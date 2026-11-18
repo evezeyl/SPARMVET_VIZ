@@ -54,7 +54,7 @@ def collections_of(raw: dict) -> list[str]:
     found = set((raw.get("joins") or {}).keys())
     for group in (raw.get("analysis_groups") or {}).values():
         for entry in (group.get("plots") or {}).values():
-            target = (entry.get("spec") or {}).get("target_dataset")
+            target = entry.get("target_dataset")
             if target:
                 found.add(target)
     return sorted(found)
@@ -65,7 +65,7 @@ def plots_of(raw: dict) -> list[tuple[str, str]]:
     found = []
     for group in (raw.get("analysis_groups") or {}).values():
         for plot_id, entry in (group.get("plots") or {}).items():
-            found.append((plot_id, (entry.get("spec") or {}).get("target_dataset")))
+            found.append((plot_id, entry.get("target_dataset")))
     return sorted(found)
 
 

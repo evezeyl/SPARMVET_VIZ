@@ -75,7 +75,7 @@ def server(input, output, session):
             return collections[0]
         for group_spec in cfg.raw_config.get("analysis_groups", {}).values():
             for plot_entry in group_spec.get("plots", {}).values():
-                target = (plot_entry.get("spec") or {}).get("target_dataset")
+                target = plot_entry.get("target_dataset")
                 if target:
                     return target
         return "Untitled_Collection"  # no joins and no plot has a target_dataset either
