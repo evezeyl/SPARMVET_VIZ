@@ -4,6 +4,19 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
+## State 2026-11-18 15:55 (coordinator session 3ce2c163)
+
+- **State of git:** `dev` = `4896670e`, NOT pushed. One full control run on `dev` is owed before Eve pushes.
+- **Merged today after the restart:** the function text block; the refusal of `shuffle`, `sample` and a random rank in formulas; the seed tests; the Gallery fixes.
+- **Ready on a branch, waiting for Eve's yes before the merge:** `task/export-ready` (head `83a0cf4e`: the three button texts and the 5 seconds); `task/one-python` (head `5bb9f719`: the wording of `rules_runtime_environment.md` section 5).
+- **In review:** `task/session-import` (head `e27d6228`; third review; one browser test failed twice and passed on re-runs).
+- **Done:** step 4b of the big recipe change on `task/engine-keys` (head `e0ed4655`, report `tmpAI/engine_keys/step4b_report.md`). **Running:** step 4c (Blueprint, Test Lab, scripts) in the same worktree (`.claude/worktrees/engine-keys`).
+- **Pages posted for Eve through the review session:** path check and file type (`tmpAI/panel/path_use_cases/PANEL_for_eve_2026-11-18.md`); formula study (`tmpAI/panel/formula_d/PANEL_for_eve_2026-11-18.md`); audit redesign slices (`tmpAI/panel/audit_redesign/SLICES_2026-11-18.md`).
+- **Trial branches never merged:** `trial/path-check`, `trial/formula-d`, `trial/stat-function-polars`, `trial/axis-text`.
+- **Restart note of the coordinator:** `tmpAI/coordinator/progress_2026-11-14_session3.md` (top block).
+- **New findings of the afternoon** (reviews and trials, each waits for Eve unless it says otherwise): `tasks.md`, section "Findings of 2026-11-18 afternoon".
+- The state block of 14:10 below is kept. Its `dev` hash `32e09107` is no longer current.
+
 ## 2026-11-18, 14:10, after the usage-limit stop and the restart (scribe; coordinator state in `tmpAI/coordinator/progress_2026-11-14_session3.md`)
 
 - **State of git:** `dev` = `32e09107`, clean, NOT pushed (Eve pushes herself). ONE full control run on dev is owed before Eve is told to push. It covers the formula refusals (`0bf944e6`), the worktree imports (`09b46d4f`), the recipe-switch fix (`69795f05`) and the packaging line (`32e09107`).
