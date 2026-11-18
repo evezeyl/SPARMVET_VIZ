@@ -10,8 +10,8 @@ This was a defect a user could meet. The wire log of the failing run of
 `test_export_download.py::test_the_export_records_the_seed_...` shows the same redraw (the page sent the box's default again four
 seconds after the tick).
 
-Fixed: `system_tools_ui` mounts every field of the panel once and reads the plot tab and the recipe only inside
-`reactive.isolate()`. (The Scope choice that used to follow the tab is removed, D-0292: every export holds all plots.)
+Fixed: `system_tools_ui` mounts every field of the panel once and reads the plot tab, the recipe and the session (home_state)
+only inside `reactive.isolate()`. (The Scope choice that used to follow the tab is removed, D-0292: every export holds all plots.)
 
 This test needs no browser: it reads the source of `system_tools_ui` and checks that the panel that holds the box does not depend
 on the active plot tab or the recipe (outside a `reactive.isolate()` block).
@@ -24,7 +24,7 @@ from pathlib import Path
 
 HANDLER = Path(__file__).resolve().parents[1] / "handlers" / "export_handlers.py"
 BOX_ID = "export_include_reproducibility"
-RERENDER_TRIGGERS = {"active_cfg"}
+RERENDER_TRIGGERS = {"active_cfg", "home_state", "_session_key"}
 
 
 def _function(tree: ast.AST, name: str) -> ast.FunctionDef:
@@ -70,6 +70,9 @@ def test_the_panel_that_holds_the_box_reads_what_it_is_not_allowed_to_read_is_fo
         "def c():\n    return 1\n"
         "def d():\n    return active_cfg is not None\n"
         "def e():\n    return active_cfg().raw_config\n"
+        "def f():\n    return _session_key()\n"
+        "def g():\n    with reactive.isolate():\n        return _session_key()\n"
+        "def h():\n    return home_state.get()\n"
     )
     tree = ast.parse(src)
     assert _reads_outside_isolate(_function(tree, "a")) == {"active_cfg"}
@@ -77,6 +80,9 @@ def test_the_panel_that_holds_the_box_reads_what_it_is_not_allowed_to_read_is_fo
     assert _reads_outside_isolate(_function(tree, "c")) == set()
     assert _reads_outside_isolate(_function(tree, "d")) == set()   # a comparison with None is not a reactive read
     assert _reads_outside_isolate(_function(tree, "e")) == {"active_cfg"}
+    assert _reads_outside_isolate(_function(tree, "f")) == {"_session_key"}    # the session key is a read of home_state
+    assert _reads_outside_isolate(_function(tree, "g")) == set()
+    assert _reads_outside_isolate(_function(tree, "h")) == {"home_state"}
 
 
 def test_the_export_panel_exists_and_holds_the_reproducibility_box():

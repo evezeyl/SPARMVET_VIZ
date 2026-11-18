@@ -12,7 +12,7 @@ from __future__ import annotations
 
 # @deps
 # provides: constant:EXPORT_READY_TEXTS, constant:EXPORT_PANEL_FIELDS, function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
-# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
+# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/export_fields_store.py (D-0288, D-0291, D-0296: the Export fields remembered per session, in memory only; defaults D-0294), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text), .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/export_specification.md, .claude/design/reproducible_export_design.md
@@ -26,7 +26,10 @@ from pathlib import Path
 from shiny import reactive, render, ui
 
 from app.modules.error_notice import notice, what_failed
-from app.modules.export_fields_store import EXPORT_FIELD_DEFAULTS as _FIELD_DEFAULTS
+from app.modules.export_fields_store import (
+    EXPORT_FIELD_DEFAULTS as _FIELD_DEFAULTS, EXPORT_LABEL_DEFAULT, EXPORT_LABEL_FIELD, REMEMBERED_EXPORT_FIELDS,
+    ExportFieldsStore,
+)
 from app.modules.plot_issue_reporter import plot_warning_text
 from viz_factory.checked_plot import plot_warnings
 from app.modules.export_refusal import export_refusal
@@ -557,13 +560,37 @@ def define_export_server(input, output, session, *,
       view_keys          : reactive.Calc[DataAnalysisRecipeKeys]  the keys the open view was built on
     """
     from app.modules.notification_utils import make_notifier
+    from app.modules.session_manager import SessionManager
     _notify = make_notifier(notification_log)
+
+    # D-0288, D-0291, D-0296: the Export fields belong to the loaded recipe and its session (recipe plus data batch). They are
+    # remembered here while the app runs, one set per session key, in memory only: nothing is written to disk, and a session
+    # Restore or import does not touch them. One store per page session, like home_state.
+    _fields_store = ExportFieldsStore()
+    _shown = {"key": None}      # the session key whose fields the panel was last set to show
+
+    def _session_key() -> str:
+        """The session key of the loaded recipe and data (the same rule as the session files); empty until both are known.
+        A reactive read of home_state: call it inside `reactive.isolate()` unless the caller wants to follow the session."""
+        state = home_state.get() if home_state is not None else {}
+        msig = state.get("data_analysis_recipe_sha256") or ""
+        dbh = state.get("data_batch_hash") or ""
+        return SessionManager.compute_session_key(msig, dbh) if msig and dbh else ""
 
     @output
     @render.ui
     def system_tools_ui():
         if not bootloader.is_enabled("export_enabled"):
             return ui.div()
+
+        # What the panel shows when it is drawn (first time, or again after a user-space switch): the remembered fields of the
+        # session that is loaded now. A switch of user space is the only thing that draws it again (the user space is read
+        # here on purpose: Shiny sends an output that is not drawn again as it was last drawn, which would bring back old
+        # values the fields were not holding any more). A recipe switch or a plot tab change never draws it again, the
+        # effects below set the fields in place (EXPORT-FLAKE-1). The label always starts empty (D-0296).
+        safe_input(input, "sidebar_nav", "Home")
+        with reactive.isolate():
+            remembered = _fields_store.fields_for(_session_key())
 
         # Reminder (Eve, 2026-11-06): only steps sent to audit are exported. Anything tried while
         # exploring (filters in T1/T2/My view) is a sandbox and is never part of the bundle.
@@ -584,7 +611,7 @@ def define_export_server(input, output, session, *,
             ui.input_checkbox(
                 "export_include_reproducibility",
                 "Also include a reproducibility/reimport bundle",
-                value=False,
+                value=remembered["export_include_reproducibility"],
             ),
             ui.tags.small(
                 "The verification record (effective_run.yaml — hashes, seeds, "
@@ -644,21 +671,21 @@ def define_export_server(input, output, session, *,
                 ui.input_text(
                     "export_user_name", label="Bundle label / name",
                     placeholder="label (no spaces, no special characters)…",
-                    value="",
+                    value=EXPORT_LABEL_DEFAULT,
                 ),
                 mode2_toggle,
                 ui.input_radio_buttons(
                     "export_preset",
                     label="Quality",
                     choices={"web": "Web / Presentation", "publication": "Publication (≥600 DPI)"},
-                    selected=_FIELD_DEFAULTS["export_preset"],
+                    selected=remembered["export_preset"],
                     inline=False,
                 ),
                 ui.input_radio_buttons(
                     "export_plot_format",
                     label="Plot format",
                     choices={"png": "PNG", "svg": "SVG", "pdf": "PDF"},
-                    selected=_FIELD_DEFAULTS["export_plot_format"],
+                    selected=remembered["export_plot_format"],
                     inline=True,
                 ),
                 ui.tags.small(
@@ -670,14 +697,14 @@ def define_export_server(input, output, session, *,
                     "export_report_format",
                     label="Report format",
                     choices={"html": "HTML", "pdf": "PDF", "docx": "DOCX"},
-                    selected=_FIELD_DEFAULTS["export_report_format"],
+                    selected=remembered["export_report_format"],
                     inline=True,
                 ),
                 ui.div(
                     ui.tags.label("Plot size (inches)", class_="d-block mb-1"),
                     ui.div(
-                        ui.input_numeric("export_plot_width",  "W", value=_FIELD_DEFAULTS["export_plot_width"],  min=2, max=30, step=0.5),
-                        ui.input_numeric("export_plot_height", "H", value=_FIELD_DEFAULTS["export_plot_height"], min=2, max=30, step=0.5),
+                        ui.input_numeric("export_plot_width",  "W", value=remembered["export_plot_width"],  min=2, max=30, step=0.5),
+                        ui.input_numeric("export_plot_height", "H", value=remembered["export_plot_height"], min=2, max=30, step=0.5),
                         class_="d-flex gap-2",
                     ),
                     class_="mb-1",
@@ -723,6 +750,63 @@ def define_export_server(input, output, session, *,
             except Exception:
                 continue    # a field that is not on the page: the page skips it too
         await session.send_custom_message("export_ready_echo", {"ping": ping, "values": held})
+
+    def _remember_one(field: str) -> None:
+        """One effect per field, so that each writes only its own value: while the server sets a whole set, the page applies the
+        fields one by one and a mixed state must never be stored under a session."""
+        @reactive.Effect
+        def _remember():
+            if not bootloader.is_enabled("export_enabled"):
+                return
+            try:
+                value = getattr(input, field)()
+            except Exception:
+                return          # the field is not on the page (another user space is open)
+            if value is None:
+                return          # a number box that is being retyped is empty for a moment: not a choice
+            with reactive.isolate():
+                key = _session_key()
+            if key and _fields_store.fields_for(key)[field] != value:     # equality guard: no write of what is held already
+                _fields_store.set_field(key, field, value)
+
+    for _field in REMEMBERED_EXPORT_FIELDS:
+        _remember_one(_field)
+
+    def _set_on_page(field: str, value) -> None:
+        if field == EXPORT_LABEL_FIELD:
+            ui.update_text(field, value=value)
+        elif field == "export_include_reproducibility":
+            ui.update_checkbox(field, value=value)
+        elif field in ("export_plot_width", "export_plot_height"):
+            ui.update_numeric(field, value=value)
+        else:
+            ui.update_radio_buttons(field, selected=value)
+
+    @reactive.Effect
+    def _show_the_fields_of_the_session():
+        """When the loaded session changes (another recipe, or the same recipe with other data), put that session's fields in
+        the panel in place: its remembered choices (the defaults on a first visit) and an empty label (D-0288, D-0296).
+
+        The panel is not drawn again for this (EXPORT-FLAKE-1); the values are sent to the fields that differ. The page
+        sees each of them change, greys the Export button and opens it when the server holds the shown values (D-0270,
+        `export_ready.js` listens to Shiny's own input events, so a value the server sets counts like one the user types)."""
+        if not bootloader.is_enabled("export_enabled"):
+            return
+        key = _session_key()
+        if key == _shown["key"]:
+            return
+        _shown["key"] = key
+        if not key:
+            return              # no usable recipe or data yet: the fields stay as they are
+        wanted = {**_fields_store.fields_for(key), EXPORT_LABEL_FIELD: EXPORT_LABEL_DEFAULT}
+        with reactive.isolate():
+            for field, value in wanted.items():
+                try:
+                    shown = getattr(input, field)()
+                except Exception:
+                    continue    # not on the page now: the panel reads the store when it is drawn
+                if shown != value:
+                    _set_on_page(field, value)
 
     # ── REPRO-IMPORT-1 (#48, ADR-097): import + per-leg verification ────────────
     _import_bundle_state = reactive.Value(None)   # ("error", str) | ("ok", ImportResult) | None

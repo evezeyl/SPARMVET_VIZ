@@ -10,7 +10,8 @@
 // Contract with app/handlers/export_handlers.py (system_tools_ui, _confirm_export_inputs):
 //   - the panel block has id "export_ready_panel" and the attributes data-ready-fields (JSON list of input ids),
 //     data-text-waiting, data-text-lost, data-timeout-ms. The texts live only in Python (EXPORT_READY_TEXTS).
-//   - the page sends the input "export_client_ping" (event priority) at each change.
+//   - the page sends the input "export_client_ping" (event priority) at each change, also at a change the server made
+//     (Shiny's "shiny:inputchanged" event).
 //   - the server answers with the custom message "export_ready_echo": {ping: last ping it has seen, values: {field id: value it holds}}.
 (function () {
   "use strict";
@@ -65,8 +66,10 @@
       if (!greyed) {
         if (readyHtml === null) readyHtml = b.innerHTML;
         b.classList.add("export-not-ready");
-        b.setAttribute("aria-disabled", "true");
       }
+      // Shiny removes aria-disabled from a download link when it has received the output's value, which can come after the
+      // page greyed the button (a change made at load); the mark must be there as long as the button is grey.
+      b.setAttribute("aria-disabled", "true");
       var waiting = attr("data-text-waiting", "");
       if (b.textContent.trim() !== waiting) b.textContent = waiting;
     } else if (greyed) {
@@ -108,13 +111,27 @@
   // between the mouse-down and the mouse-up would swallow the click.
   var lastSeen = {};
 
-  function onChange(event) {
-    var id = fieldOf(event.target);
-    if (id === null) return;
+  function noteValue(id) {
     var value = JSON.stringify(screenValue(id) === undefined ? null : screenValue(id));
     if (Object.prototype.hasOwnProperty.call(lastSeen, id) && lastSeen[id] === value) return;
     lastSeen[id] = value;
     startWaiting();
+  }
+
+  function onChange(event) {
+    var id = fieldOf(event.target);
+    if (id === null) return;
+    noteValue(id);
+  }
+
+  // A value the SERVER sets (a recipe switch puts the fields of that session in the panel) raises no native "input" or "change"
+  // event on the page, but Shiny announces every change of an input, whoever made it, with "shiny:inputchanged". The button is
+  // grey from that moment until the server confirms that it holds the shown values, as for a value the user typed. (A custom
+  // message from the server cannot do this: it is sent before the input messages and would arrive before the new values.)
+  function onShinyInput(event) {
+    var id = event && event.name;
+    if (!id || fields().indexOf(id) < 0 || !document.getElementById(id)) return;
+    noteValue(id);
   }
 
   // a press on a grey button does nothing: not a click, not Enter, not Space
@@ -152,8 +169,9 @@
   }
 
   function registerHandler() {
-    if (window.Shiny && window.Shiny.addCustomMessageHandler) {
+    if (window.Shiny && window.Shiny.addCustomMessageHandler && window.jQuery) {
       window.Shiny.addCustomMessageHandler("export_ready_echo", onEcho);
+      window.jQuery(document).on("shiny:inputchanged", onShinyInput);
       return true;
     }
     return false;
