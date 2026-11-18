@@ -11,5 +11,6 @@ One short list, read by every worker and panel agent at the start (they do not a
 7. **Keep it simple.** (`dasharch.md` section 6; Eve: documentation of a workflow beats a complex in-app handoff.) The simplest design that meets the requirement; a user must be able to understand it.
 8. **Findings are not decisions.** (`design_review_personas.md` rule 5.) You report, with the evidence, the options and a recommendation. Eve decides. Never implement an open choice. A verified bug is reported at once with its evidence.
 9. **Plain words for Eve.** Short, direct, no filler. Say what is uncertain. Vocabulary: "user space" for HOME / BLUEPRINT / TEST_LAB / GALLERY, "code module" for files; "data analysis recipe", "app features", "deployment" (ADR-091).
+10. **Study open options in detail before they reach Eve.** (Eve 2026-11-18, `D-0268`: "study in details in others when necessary - implementation time is not really an important factor as we can delay implementation".) An open option is studied with evidence (a prototype on a copy, tests, sources) before it goes to her. Effort and build time are never the argument for an option; they are shown as information.
 
 Method for review and viewpoints: `.claude/workflows/design_review_personas.md` (eight rules and a findings table).

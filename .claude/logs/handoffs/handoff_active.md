@@ -51,6 +51,13 @@
   - Trial branches kept, without worktrees: `trial/stat-function-polars`, `trial/axis-text`.
   - Ledger: D-0265 (amends D-0264: the wide split is a `step_` with an optional `fill`) and D-0266 (how a `step_` passes parameters, Variant 1). Open: the three fill questions and the long-form counts (question 17), for the design note.
   - The coordinator's messages to the review session today: M271 to M280 of 78.
+- **Evening (order of work changed by Eve; scribe; channel of 57 M282 to M286; ledger D-0267 to D-0271):**
+  - Order of work (D-0271): HOME and GALLERY first, settled so that Eve can test them for a few days. Blueprint and Test Lab only what the big recipe change forces, kept minimal; the rest after the demo. A demo branch is planned (plan page `tmpAI/panel/DEMO_BRANCH_PLAN_2026-11-18.md`). Demo before or after the big recipe change: OPEN.
+  - Decided and to build next: the Export button, question 20, option D (D-0270; replaces EXPORT-DOWNLOAD-RACE-1 as EXPORT-BUTTON-READY-1); the export collects the plot warnings, question 19, option A (D-0269; EXPORT-COLLECTS-WARNINGS-1).
+  - Branch `task/switch-fixes` waits for the cause of two flaky runs of its new test file; a reviewer runs that file 10 times.
+  - Branch `task/one-python`: built, review next (report `tmpAI/panel/one_python/builder_report.md`).
+  - Branch `task/engine-keys`: step 1 done, steps 2 and 3 running.
+  - `dev` = `df8b7993`, not pushed; one control run is still owed before Eve pushes.
 
 ## 2026-11-17 night (open state; coordinator's list M175 of the channel; decisions D-0229 to D-0249)
 
