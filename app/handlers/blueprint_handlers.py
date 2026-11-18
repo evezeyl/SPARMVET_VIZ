@@ -2247,7 +2247,7 @@ def define_server(input, output, session, *,
                                comment=comment)
         params = {k: v for k, v in step.items()
                   if k not in ("action", "comment")}
-        node = {"action": "join", "params": params, "comment": comment}
+        node = {"action": JOIN, "params": params, "comment": comment}
 
         _snapshot_state()
         stack = wrangle_studio.logic_stack.get().copy()
