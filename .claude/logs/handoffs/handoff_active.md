@@ -4,6 +4,16 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
+## State 2026-11-18 18:25 (coordinator session 3ce2c163)
+
+- Eve is away; she said to continue with everything that needs no new decision. Questions go through the review session, one at a time.
+- `dev` = `dd273696`, not pushed. One full control run on `dev` is owed before she pushes; it starts after the Export merge.
+- Running: step 5 of the big recipe change (engine field and engine check) on `task/engine-keys`; the review of the Export simplification on `task/export-ready` (head `73ba5390`: no scope, SVG default, fields per session in memory, label not remembered, the Export button fixes).
+- Next on `task/engine-keys`, one worker at a time: the join-key edge-case tests (D-0297), then steps 6 to 9, the review, the full controls, the merge.
+- Held for Eve: `task/one-python`; what the two export modes mean; the three export findings of the measurement; the path page; the formula page; the audit slices; the Gallery and Blueprint points; every message text.
+- Decided today and recorded: D-0250 to D-0297.
+- Restart note of the coordinator: `tmpAI/coordinator/progress_2026-11-14_session3.md` (top block, 18:22).
+
 ## State 2026-11-18 15:55 (coordinator session 3ce2c163)
 
 - **State of git:** `dev` = `4896670e`, NOT pushed. One full control run on `dev` is owed before Eve pushes.
