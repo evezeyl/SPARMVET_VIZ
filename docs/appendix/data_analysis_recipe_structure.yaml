@@ -9,14 +9,14 @@ basename_mirroring_mandate:
 directory_taxonomy:
   info: "The top-level metadata block (free-form; label is required). A gallery example classifies itself with the taxonomy key of the plot entry, not here."
   input_fields: "Defines the columns that are read (keys: type, original_name, label, is_entity_key, null_values, strip). type is a Polars type name and is required."
-  wrangling: "Defines Tier 1/Tier 2 transformations for individual data sources."
-  join: "Contains the steps file(s) (tier1, tier2) for joining multiple ingredients into a collection. The published columns are the last step of tier1 (polars_select or polars_drop). Top-level data analysis recipe key: joins:."
-  plots: "Contains visualization spec files for analysis_groups. Each file has a single 'spec:' root key."
+  tiers: "Each tier is a key of its table, join or plot entry (tier1, tier2; tier3 at the plot entry): a mapping with an optional data_engine as its first key and steps (the list). There is no wrangling key and no steps container. An included tier file is written `tier1: !include <file>`; the file holds data_engine and steps."
+  join: "A join is written under joins: with its ingredients and its tiers (tier1, tier2), each a mapping with steps. The published columns are the last step of tier1 (polars_select or polars_drop). Top-level data analysis recipe key: joins:."
+  plots: "Contains the plot entries of analysis_groups that are written in their own file. The file holds the WHOLE entry (ui_label, ui_title, description, comment, taxonomy, the plot content, tier3); there is no spec key. It is included as `<plot_id>: !include <file>`."
 
 constructor_standard:
   engine: "PyYAML with custom !include support via ConfigManager."
   relative_path: "Paths in !include must be relative to the data analysis recipe file."
-  auto_unnesting: "ConfigManager auto-unnests redundant wrapper keys (e.g., a file with root key 'spec:' included under 'spec:' is flattened automatically)."
+  wrapper_keys: "An included file holds the content of the key it is included under, never that key itself: a plot file included as `p: !include plots/p.yaml` starts with the entry's own keys, a tier file included as `tier1: !include f.yaml` starts with data_engine or steps. The checker refuses a file that repeats the key (F01)."
 
 yaml_resilience:
   reserved_words: "The keys 'on', 'yes', 'no', 'true', 'false' are YAML reserved words (boolean). Always quote them."
@@ -47,11 +47,16 @@ analysis_groups_structure:
   format: |
     analysis_groups:
       <group_id>:                         # snake_case, no spaces, no emoji
-        label: "Human-readable group name"
+        ui_label: "Short name of the tab"
         plots:
           <plot_id>:                      # snake_case; GLOBALLY UNIQUE across all data analysis recipes
-            label: "Human-readable plot name"
-            spec: !include <basename>/plots/<plot_id>.yaml
+            ui_label: "Short name of the plot"
+            ui_title: "Longer name used by the report (optional)"
+            description: "What the plot shows"
+            target_dataset: <join_id>     # the plot content is written in the entry, no spec: key
+            mapping: {x: <column>}
+            layers: [{name: geom_bar}]
+          <other_plot_id>: !include <basename>/plots/<other_plot_id>.yaml   # the WHOLE entry is in its own file
   plot_defaults_block: |
     # Optional data analysis recipe-level defaults applied to every plot (L2 in five-tier cascade).
     # Individual plot specs may override any key (L4 wins over L2).
@@ -68,34 +73,31 @@ analysis_groups_structure:
     plot_defaults:
       palette: nvi_official              # Named palette from config/palettes.yaml (or matplotlib)
       theme: theme_light                 # Registered theme component name (e.g. theme_bw)
-      default_font_family: "Liberation Sans"  # plotnine font family default
-      facet_panel_spacing: 0.1          # float 0–1; plotnine default 0.05
-      legend_position: "right"          # "right" | "top" | "bottom" | "left" | "none"
-      optimisation:                     # All default false except auto_axis_text
-        auto_axis_text: true
-        density_jitter: false
-        panel_spacing: false
-        legend_ncol: false
+      # default_font_family, facet_panel_spacing, legend_position and optimisation were removed (D-0242): they did nothing.
+      # Font, legend and panel spacing are set through a theme layer in `layers:`; the axis-text adjustment is overridden per axis
+      # with an element_text layer.
 
-  plot_spec_file_format: |
-    # Grammar-of-graphics format (ADR-083); factory_id is removed:
-    spec:
-      target_dataset: <assembly_id>      # Must match a joins key
-      mapping:
-        x: <column>
-        fill: <column>
-        facet_by: <column>               # Optional
-      palette: nvi_official              # Optional — overrides plot_defaults.palette for this plot
-      theme: theme_light                 # Optional (registered theme component name)
-      layers:
-        - name: geom_bar                 # Primary geom first (geom_bar, geom_point, geom_tile…)
-          params: {}
-        - name: position_dodge           # For side-by-side bars
-          params: {}
-        - name: labs
-          params:
-            title: "Plot Title"
-            fill: "Legend Label"
+  plot_entry_file_format: |
+    # A plot file holds the whole plot entry (grammar-of-graphics content, ADR-083; there is no spec: key and no title: key):
+    ui_label: "Short name"
+    ui_title: "Longer name used by the report"   # Optional
+    description: "What the plot shows"
+    target_dataset: <assembly_id>        # Must match a joins key
+    mapping:
+      x: <column>
+      fill: <column>
+      facet_by: <column>                 # Optional
+    palette: nvi_official                # Optional — overrides plot_defaults.palette for this plot
+    theme: theme_light                   # Optional (registered theme component name)
+    layers:
+      - name: geom_bar                   # Primary geom first (geom_bar, geom_point, geom_tile…)
+        params: {}
+      - name: position_dodge             # For side-by-side bars
+        params: {}
+      - name: labs                       # The text of the figure (its title too) is written only here
+        params:
+          title: "Plot Title"
+          fill: "Legend Label"
   forbidden_flat_keys:
     - "position: dodge  # FORBIDDEN — must be in layers:"
     - "labels:          # FORBIDDEN — must be in layers: as 'name: labs'"
@@ -135,9 +137,8 @@ example_structure: |
       │   ├── source_a_input_fields.yaml
       │   └── metadata_schema_input_fields.yaml
       ├── wrangling/
-      │   └── source_a_wrangling.yaml
-      ├── wrangling/
-      │   └── Main_Collection_wrangling.yaml   # the join steps (tier1)
+      │   ├── source_a_wrangling.yaml          # included as `tier1: !include ...`; holds steps
+      │   └── Main_Collection_wrangling.yaml   # the join steps (tier1), included the same way
       └── plots/
           ├── plot_one.yaml
           └── plot_two.yaml
