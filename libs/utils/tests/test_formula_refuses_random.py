@@ -81,3 +81,35 @@ def test_no_other_member_draws_at_random():
     with_seed = sorted(f"{lab}.{n}" for lab, ns in formula_check._allowed().items() for n in ns
                        if "seed" in inspect.signature(getattr(cls[lab], n)).parameters)
     assert with_seed == ["expr.hash", "expr.rank", "expr.rolling_rank", "expr.rolling_rank_by"], with_seed
+
+
+_BYPASS = ["'ran'+'dom'", "'random'[0:6]", "('ran','dom')[0]", "m", "'random' if True else 'min'", "str('random')"]
+_FORMS = [("pl.col('n').rank({v})", "pl.col('n').rank(method={v})"),
+          ("pl.col('n').rolling_rank(3, {v})", "pl.col('n').rolling_rank(3, method={v})"),
+          ("pl.col('n').rolling_rank_by(pl.col('d'), '2d', {v})", "pl.col('n').rolling_rank_by(pl.col('d'), '2d', method={v})")]
+
+
+@pytest.mark.parametrize("value", _BYPASS)
+@pytest.mark.parametrize("form", [f for pair in _FORMS for f in pair])
+def test_computed_rank_method_is_refused(form, value):
+    messages = [m for m in formula_problems(form.format(v=value)) if "computed text" in m]
+    assert len(messages) == 1
+    what, fix = split_fix(messages[0])
+    assert "plain text" in what and "computed text" in what
+    assert fix.startswith("Suggestion:") and "dense" in fix and "random" not in fix.split("one of")[1]
+
+
+@pytest.mark.parametrize("form", [f for pair in _FORMS for f in pair])
+@pytest.mark.parametrize("value", ["'average'", "'min'", "'max'", "'dense'", "'ordinal'"])
+def test_literal_rank_method_passes(form, value):
+    assert formula_problems(form.format(v=value)) == []
+
+
+@pytest.mark.parametrize("text", ["pl.col('n').rank()", "pl.col('n').rank(descending=True)", "pl.col('n').rolling_rank(3)",
+                                  "pl.col('n').rolling_rank_by(pl.col('d'), '2d')", "pl.col('n').hash(seed=1)"])
+def test_absent_method_and_seeded_hash_pass(text):
+    assert formula_problems(text) == []
+
+
+def test_member_names_cannot_be_computed():
+    assert formula_problems("getattr(pl.col('n'), 'shuf'+'fle')()") != []

@@ -385,10 +385,19 @@ class _Checker:
         """`rank(method='random')` breaks ties at random: refused like `shuffle` (D-0278, D-0279)."""
         if kind not in ("method:rank", "method:rolling_rank", "method:rolling_rank_by"):
             return
-        values = list(node.args) + [k.value for k in node.keywords if k.arg == "method"]
-        if any(isinstance(v, ast.Constant) and v.value == "random" for v in values):
-            self.refuse((f"{kind.split(':')[1]} with method 'random' breaks ties at random, so the result would differ at each run and the same recipe and data "
-                         "would not give the same table; it is refused for now, also with a seed, until a seed rule for formulas exists"), RANDOM_SUGGESTION)
+        position = {"method:rank": 0, "method:rolling_rank": 1, "method:rolling_rank_by": 2}[kind]
+        name = kind.split(":")[1]
+        given = [k.value for k in node.keywords if k.arg == "method"]
+        if len(node.args) > position:
+            given.append(node.args[position])
+        for value in given:
+            if not (isinstance(value, ast.Constant) and isinstance(value.value, str)):
+                self.refuse(f"the method of {name} must be written as a plain text, for example method=\"dense\"; a computed text is not accepted, "
+                            "because it could hide the random method",
+                            "Suggestion: write one of average, min, max, dense, ordinal")
+            elif value.value == "random":
+                self.refuse((f"{name} with method 'random' breaks ties at random, so the result would differ at each run and the same recipe and data "
+                             "would not give the same table; it is refused for now, also with a seed, until a seed rule for formulas exists"), RANDOM_SUGGESTION)
 
     def _check_inner_value_call(self, kind: str, node: ast.Call) -> None:
         """`pl.element()` takes nothing and `pl.field` one name or a list of names (checked against the installed Polars)."""
