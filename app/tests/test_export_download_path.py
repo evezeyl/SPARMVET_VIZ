@@ -80,6 +80,8 @@ def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None, 
     cfg = load_data_analysis_recipe(world.data_analysis_recipes_dir / "tiny.yaml").config
     if info is not None:
         cfg.raw_config["info"] = info
+    # the pictures are read as PNG by most tests, so the harness chooses png; a value of None is "not touched" (the real
+    # safe_input gives the default then), which is how the tests of the default plot format run
     values = {"export_user_name": "test", "export_preset": "web", "export_plot_format": "png",
               **(extra_values or {})}
     export_handlers.define_export_server(
@@ -88,7 +90,7 @@ def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None, 
         current_app_features=SimpleNamespace(get=lambda: "qa"), active_cfg=lambda: cfg,
         tier1_anchor=tier1_anchor or (lambda: pl.DataFrame().lazy()), tier_toggle=SimpleNamespace(get=lambda: "T2"),
         **{"home_state": None, **handler_kwargs},
-        safe_input=lambda _input, key, default: values.get(key, default), view_keys=lambda: view_keys)
+        safe_input=lambda _input, key, default: default if values.get(key) is None else values[key], view_keys=lambda: view_keys)
     return captured["fn"]
 
 

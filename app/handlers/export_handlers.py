@@ -26,6 +26,7 @@ from pathlib import Path
 from shiny import reactive, render, ui
 
 from app.modules.error_notice import notice, what_failed
+from app.modules.export_fields_store import EXPORT_FIELD_DEFAULTS as _FIELD_DEFAULTS
 from app.modules.plot_issue_reporter import plot_warning_text
 from viz_factory.checked_plot import plot_warnings
 from app.modules.export_refusal import export_refusal
@@ -650,14 +651,14 @@ def define_export_server(input, output, session, *,
                     "export_preset",
                     label="Quality",
                     choices={"web": "Web / Presentation", "publication": "Publication (≥600 DPI)"},
-                    selected="web",
+                    selected=_FIELD_DEFAULTS["export_preset"],
                     inline=False,
                 ),
                 ui.input_radio_buttons(
                     "export_plot_format",
                     label="Plot format",
                     choices={"png": "PNG", "svg": "SVG", "pdf": "PDF"},
-                    selected="png",
+                    selected=_FIELD_DEFAULTS["export_plot_format"],
                     inline=True,
                 ),
                 ui.tags.small(
@@ -669,14 +670,14 @@ def define_export_server(input, output, session, *,
                     "export_report_format",
                     label="Report format",
                     choices={"html": "HTML", "pdf": "PDF", "docx": "DOCX"},
-                    selected="html",
+                    selected=_FIELD_DEFAULTS["export_report_format"],
                     inline=True,
                 ),
                 ui.div(
                     ui.tags.label("Plot size (inches)", class_="d-block mb-1"),
                     ui.div(
-                        ui.input_numeric("export_plot_width",  "W", value=8,  min=2, max=30, step=0.5),
-                        ui.input_numeric("export_plot_height", "H", value=5,  min=2, max=30, step=0.5),
+                        ui.input_numeric("export_plot_width",  "W", value=_FIELD_DEFAULTS["export_plot_width"],  min=2, max=30, step=0.5),
+                        ui.input_numeric("export_plot_height", "H", value=_FIELD_DEFAULTS["export_plot_height"], min=2, max=30, step=0.5),
                         class_="d-flex gap-2",
                     ),
                     class_="mb-1",
@@ -814,7 +815,7 @@ def define_export_server(input, output, session, *,
         Produces a zip file containing (ADR-097, #45 — Publication content, never the
         recipe or raw data; see effective_run.yaml below for the shared verification
         record, and the optional Mode 2 add-on for the recipe/data themselves):
-        - plots/          SVG (web preset) or high-DPI PNG (publication preset) per plot
+        - plots/          one picture per plot, in the plot format of the panel (SVG by default, D-0294)
         - data/           T1 TSV for each dataset referenced by active plots
         - t3_steps.yaml   human-readable audit record backing the Methods prose (when T3 has steps)
         - effective_run.yaml   the four verification hashes, per-plot seeds, environment —
@@ -837,11 +838,11 @@ def define_export_server(input, output, session, *,
         # Sanitize: replace spaces/special chars with underscore, lowercase
         import re
         safe_name = re.sub(r"[^A-Za-z0-9_-]", "_", raw_name)[:40]
-        preset = safe_input(input, "export_preset", "web")
-        plot_fmt = safe_input(input, "export_plot_format", "png")
-        report_fmt = safe_input(input, "export_report_format", "html")
-        plot_width  = float(safe_input(input, "export_plot_width",  8))
-        plot_height = float(safe_input(input, "export_plot_height", 5))
+        preset = safe_input(input, "export_preset", _FIELD_DEFAULTS["export_preset"])
+        plot_fmt = safe_input(input, "export_plot_format", _FIELD_DEFAULTS["export_plot_format"])
+        report_fmt = safe_input(input, "export_report_format", _FIELD_DEFAULTS["export_report_format"])
+        plot_width  = float(safe_input(input, "export_plot_width",  _FIELD_DEFAULTS["export_plot_width"]))
+        plot_height = float(safe_input(input, "export_plot_height", _FIELD_DEFAULTS["export_plot_height"]))
         app_features = current_app_features.get()
         dpi = 300 if preset == "web" else 600
 

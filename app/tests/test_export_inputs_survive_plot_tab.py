@@ -59,7 +59,7 @@ def _wait_plot_tab_open(page: Page) -> None:
     expect(page.locator("#export_bundle_download")).to_be_visible(timeout=15_000)
 
 
-_DEFAULTS = {"label": "", "box": False, "preset": "web", "plot_format": "png", "report_format": "html",
+_DEFAULTS = {"label": "", "box": False, "preset": "web", "plot_format": "svg", "report_format": "html",
              "width": "8", "height": "5"}
 
 
@@ -68,7 +68,7 @@ def _set_defaults(page: Page) -> None:
     page.locator("#export_user_name").fill("")
     page.locator("#export_include_reproducibility").uncheck(force=True)
     page.locator("input[name=export_preset][value=web]").check(force=True)
-    page.locator("input[name=export_plot_format][value=png]").check(force=True)
+    page.locator("input[name=export_plot_format][value=svg]").check(force=True)
     page.locator("input[name=export_report_format][value=html]").check(force=True)
     page.locator("#export_plot_width").fill("8")
     page.locator("#export_plot_height").fill("5")
@@ -124,7 +124,7 @@ def test_the_fields_survive_a_filter_applied_to_the_data(clean_panel):
     _wait_plot_tab_open(page)
     page.locator("#export_user_name").fill("afterfilter")
     page.locator("#export_include_reproducibility").check(force=True)
-    page.locator("input[name=export_plot_format][value=svg]").check(force=True)
+    page.locator("input[name=export_plot_format][value=png]").check(force=True)
     _wait_shiny(page)
     _open_filters_panel(page)
     page.wait_for_function("() => Array.from(document.querySelectorAll('#fb_col option')).some(o => o.value === 'year')",
@@ -137,7 +137,7 @@ def test_the_fields_survive_a_filter_applied_to_the_data(clean_panel):
         page.locator("#filter_apply").click(); page.wait_for_timeout(2_000); _wait_shiny(page)
         _open_export_panel(page)
         got = _fields(page)
-        assert (got["label"], got["box"], got["plot_format"]) == ("afterfilter", True, "svg"), got
+        assert (got["label"], got["box"], got["plot_format"]) == ("afterfilter", True, "png"), got
     finally:
         _open_filters_panel(page)
         reset = page.locator("#filter_reset")
@@ -156,7 +156,7 @@ def test_a_ticked_box_after_a_tab_change_gives_the_reproducibility_part_and_the_
     unticked = _download(page)
     readme_off = next(unticked.read(n).decode() for n in unticked.namelist() if n.endswith("README.txt"))
     assert "Reproducibility  : not included" in readme_off
-    assert "Plot format      : png" in readme_off
+    assert "Plot format      : svg" in readme_off
     assert not any("data_analysis_recipes_reproducibility/" in n for n in unticked.namelist())
 
     page.locator("#export_include_reproducibility").check(force=True)
