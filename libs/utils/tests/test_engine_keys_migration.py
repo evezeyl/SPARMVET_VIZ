@@ -829,3 +829,23 @@ def test_a_container_that_holds_a_list_is_refused_with_a_plain_message(tmp_path)
     result = run([path])
     assert result.refused and "a list of steps was found" in result.refused[0].detail
     assert "wrangling:" in read(path)
+
+
+# old tier fragments that no recipe includes
+
+def test_an_orphan_tier_fragment_is_rewritten_on_its_own_only_when_asked(tmp_path):
+    write(tmp_path / "r.yaml", OLD)
+    orphan = write(tmp_path / "old" / "tiers.yaml", "# kept on purpose\ntier1:\n- {action: polars_sort, by: [id]}\n")
+    result = run([tmp_path], apply=False)
+    assert result.refused and orphan.resolve() not in result.texts                      # default: listed, left as it was
+    result = run([tmp_path], orphan_fragments=True)
+    assert read(orphan) == "# kept on purpose\nsteps:\n- {action: polars_sort, by: [id]}\n"
+    assert [e for e in result.events if e.kind == "note" and "no recipe in the given paths" in e.detail]
+    assert not [e for e in result.refused if e.file == orphan.resolve()]
+
+
+def test_an_orphan_fragment_with_two_tiers_is_split_when_asked_and_a_foreign_key_still_refuses(tmp_path):
+    write(tmp_path / "r.yaml", OLD)
+    two = write(tmp_path / "old" / "two.yaml", "tier1: []\ntier2: []\n")
+    run([tmp_path], orphan_fragments=True)
+    assert not two.exists() and (tmp_path / "old" / "two_tier1.yaml").exists() and (tmp_path / "old" / "two_tier2.yaml").exists()

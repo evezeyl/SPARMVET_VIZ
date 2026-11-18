@@ -120,3 +120,13 @@ def test_a_folder_is_searched_and_the_files_a_recipe_includes_are_rewritten_with
     assert tool.main(["--apply", str(tmp_path)]) == 0
     assert (tmp_path / "r" / "w.yaml").read_text() == "steps:\n- {action: polars_sort, by: [id]}\n"
     assert "tier1: !include r/w.yaml" in (tmp_path / "r.yaml").read_text()
+
+
+def test_an_old_fragment_that_no_recipe_includes_is_left_unless_the_flag_is_given(tmp_path, capsys):
+    (tmp_path / "r.yaml").write_text(OLD, encoding="utf-8")
+    orphan = tmp_path / "old.yaml"
+    orphan.write_text("tier1: []\n", encoding="utf-8")
+    assert tool.main(["--apply", str(tmp_path)]) == 2
+    assert orphan.read_text() == "tier1: []\n" and "no recipe in the given paths includes it" in capsys.readouterr().out
+    assert tool.main(["--apply", "--orphan-fragments", str(tmp_path)]) == 0
+    assert orphan.read_text() == "steps: []\n"

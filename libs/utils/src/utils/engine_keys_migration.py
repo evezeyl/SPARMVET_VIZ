@@ -908,11 +908,13 @@ def _walk_includes(path: Path, seen: Set[Path]) -> None:
 
 
 def migrate(paths: List[Path], partial_theme: Callable[[str], bool] = lambda name: False, *,
-            label_keys: Optional[Dict[str, str]] = None, theme_name: str = "theme_bw") -> Result:
+            label_keys: Optional[Dict[str, str]] = None, theme_name: str = "theme_bw", orphan_fragments: bool = False) -> Result:
     """Plan the rewrite of the recipes under `paths` (files or folders); nothing is written. The caller writes `Result.texts`.
 
     `partial_theme(name)` says whether a `theme_*` component only sets some properties of the theme (the plot library knows;
-    this library does not import it)."""
+    this library does not import it). An old tier fragment that no recipe in `paths` includes is listed and not rewritten, because
+    a recipe outside `paths` may include it; with `orphan_fragments` it is rewritten on its own (give every recipe that may
+    include it)."""
     unit = _Unit(partial_theme, label_keys=label_keys, theme_name=theme_name)
     files: List[Path] = []
     explicit: Set[Path] = set()
@@ -934,25 +936,26 @@ def migrate(paths: List[Path], partial_theme: Callable[[str], bool] = lambda nam
     reached: Set[Path] = set()
     for real, _ in masters:
         _walk_includes(real, reached)
+    names = {"tier_fragment": "an old tier fragment", "plot_content": "the content of a plot", "unknown": "a file of a kind that cannot be known"}
     for real, kind in others:
-        if real in reached:
-            continue
-        if kind == "input_fields":
+        if real in reached or kind == "input_fields":
             continue
         if real in explicit:
-            what = {"tier_fragment": "an old tier fragment", "plot_content": "the content of a plot", "unknown": "a file of a kind that cannot be known"}.get(kind, kind)
-            unit.event("refused", real, "", f"this is {what}: it is rewritten together with the recipe that includes it, give that recipe (or its folder); nothing changed" if kind != "unknown"
-                       else "the kind of this file cannot be known from its keys; nothing changed")
+            unit.event("refused", real, "", (f"this is {names[kind]}: it is rewritten together with the recipe that includes it, give that recipe (or its folder); nothing changed"
+                                              if kind != "unknown" else "the kind of this file cannot be known from its keys; nothing changed"))
+        elif kind == "tier_fragment" and orphan_fragments:
+            try:
+                unit.tier_fragment(real.parent, real.name, real, "", ("tier1", "tier2", "tier3"))
+                unit.event("note", real, "", "no recipe in the given paths includes this tier fragment: rewritten on its own (--orphan-fragments)")
+            except _Refuse as exc:
+                unit.event("refused", real, "", str(exc))
         else:
-            unit.event("refused", real, "", f"this is {'an old tier fragment' if kind == 'tier_fragment' else 'the content of a plot' if kind == 'plot_content' else 'a file of a kind that cannot be known'} that no recipe in the given paths includes: not rewritten")
+            unit.event("refused", real, "", f"this is {names[kind]} and no recipe in the given paths includes it: not rewritten")
     for real, _ in masters:
         unit.result.masters.append(real)
         unit.master(real)
-    # collect what changed
     result = unit.result
     for path, text in unit.texts.items():
-        if text is None:
-            continue
         if path in result.created:
             result.texts[path] = text
         elif text != unit.disk.get(path, text):

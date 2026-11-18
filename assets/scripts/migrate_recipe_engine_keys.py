@@ -48,8 +48,11 @@ def main(argv=None) -> int:
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true", help="say what would change and change nothing (default)")
     mode.add_argument("--apply", action="store_true", help="write the changes")
+    parser.add_argument("--orphan-fragments", action="store_true",
+                        help="also rewrite an old tier fragment that no recipe in the given paths includes (by default it is listed and left, because a "
+                             "recipe outside the given paths may include it; use this when you gave every recipe that could)")
     args = parser.parse_args(argv)
-    result = migrate([Path(p) for p in args.paths], partial_theme=partial_theme_function())
+    result = migrate([Path(p) for p in args.paths], partial_theme=partial_theme_function(), orphan_fragments=args.orphan_fragments)
     here = Path(os.path.realpath(os.getcwd()))
 
     def shown(path: Path) -> str:
