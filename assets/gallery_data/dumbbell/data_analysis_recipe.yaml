@@ -20,26 +20,28 @@ data_schemas:
       species: {type: String}
       year_label: {type: Int64}
       resistance_rate: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       dumbbell:
-        label: Dumbbell Chart
+        ui_label: Dumbbell Chart
         description: >-
           Drawn with geom_line; x is resistance_rate, y is species, group is species, color is year_label.
         taxonomy: {family: Comparison, pattern: '1 Numeric, 2 Categorical', difficulty: Intermediate, show: change,
           sample_size: any}
-        spec:
-          target_dataset: example
-          mapping: {x: resistance_rate, y: species, group: species, color: year_label}
-          layers:
-            - {name: geom_line, params: {color: '#b3b3b3', size: 1.5}}
-            - {name: geom_point, params: {size: 4}}
-            - name: labs
-              params:
-                title: Resistance Rate Change (2015 vs 2023)
-                x: Resistance Rate (%)
-                y: Species
+        target_dataset: example
+        mapping: {x: resistance_rate, y: species, group: species, color: year_label}
+        layers:
+          - {name: geom_line, params: {color: '#b3b3b3', size: 1.5}}
+          - {name: geom_point, params: {size: 4}}
+          - name: labs
+            params:
+              title: Resistance Rate Change (2015 vs 2023)
+              x: Resistance Rate (%)
+              y: Species

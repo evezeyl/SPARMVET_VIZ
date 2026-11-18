@@ -20,20 +20,22 @@ data_schemas:
       species: {type: String}
       amr_class: {type: String}
       growth_index: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       tile_simple:
-        label: Tile Simple
+        ui_label: Tile Simple
         description: >-
           Drawn with geom_tile; fill is growth_index, x is species, y is amr_class.
         taxonomy: {family: Correlation, pattern: '1 Numeric, 2 Categorical', difficulty: Simple, show: relationship,
           sample_size: any}
-        spec:
-          target_dataset: example
-          mapping: {fill: growth_index, x: species, y: amr_class}
-          layers:
-            - {name: geom_tile, params: {}}
+        target_dataset: example
+        mapping: {fill: growth_index, x: species, y: amr_class}
+        layers:
+          - {name: geom_tile, params: {}}

@@ -21,22 +21,21 @@ data_schemas:
       id: {type: String}
       species: {type: String}
       resistance_pct: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       jitter_strip:
-        label: Jitter Strip Plot
+        ui_label: Jitter Strip Plot
         description: >-
           Drawn with geom_jitter; x is species, y is resistance_pct, color is species.
         taxonomy: {family: Comparison, pattern: '1 Numeric, 1 Categorical', difficulty: Simple, show: distribution,
           sample_size: individual points}
-        spec:
-          target_dataset: example
-          mapping: {x: species, y: resistance_pct, color: species}
-          layers:
-            - {name: geom_jitter, params: {width: 0.2, alpha: 0.6, size: 2, random_state: 0}}
-            - {name: labs, params: {x: Species, y: Resistance (%), color: Species}}
-            - {name: theme_minimal, params: {}}
+        target_dataset: example
+        mapping: {x: species, y: resistance_pct, color: species}
+        layers:
+          - {name: geom_jitter, params: {width: 0.2, alpha: 0.6, size: 2, random_state: 0}}
+          - {name: labs, params: {x: Species, y: Resistance (%), color: Species}}
+          - {name: theme_minimal, params: {}}

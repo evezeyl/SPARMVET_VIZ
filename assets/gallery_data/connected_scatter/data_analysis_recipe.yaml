@@ -21,25 +21,27 @@ data_schemas:
       year: {type: Int64}
       resistance_rate: {type: Float64}
       consumption_ddd: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       connected_scatter:
-        label: Connected Scatter Plot
+        ui_label: Connected Scatter Plot
         description: >-
           Drawn with geom_path; x is resistance_rate, y is consumption_ddd, group is drug_class, color is drug_class.
         taxonomy: {family: Correlation, pattern: 2 Numeric, difficulty: Intermediate, show: trend, sample_size: any}
-        spec:
-          target_dataset: example
-          mapping: {x: resistance_rate, y: consumption_ddd, group: drug_class, color: drug_class}
-          layers:
-            - {name: geom_path, params: {size: 0.8, arrow: null}}
-            - {name: geom_point, params: {size: 3}}
-            - name: labs
-              params:
-                title: Antibiotic Consumption vs Resistance (Connected by Year)
-                x: Resistance Rate (%)
-                y: Consumption (DDD/1000 inhabitants/day)
+        target_dataset: example
+        mapping: {x: resistance_rate, y: consumption_ddd, group: drug_class, color: drug_class}
+        layers:
+          - {name: geom_path, params: {size: 0.8, arrow: null}}
+          - {name: geom_point, params: {size: 3}}
+          - name: labs
+            params:
+              title: Antibiotic Consumption vs Resistance (Connected by Year)
+              x: Resistance Rate (%)
+              y: Consumption (DDD/1000 inhabitants/day)

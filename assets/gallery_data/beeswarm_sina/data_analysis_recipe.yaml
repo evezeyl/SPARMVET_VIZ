@@ -19,25 +19,27 @@ data_schemas:
     input_fields:
       species: {type: String}
       mic_value: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       beeswarm_sina:
-        label: Beeswarm / Sina Plot
+        ui_label: Beeswarm / Sina Plot
         description: >-
           Drawn with geom_sina; x is species, y is mic_value, color is species.
         taxonomy: {family: Distribution, pattern: '1 Numeric, 1 Categorical', difficulty: Intermediate, show: distribution,
           sample_size: individual points}
-        spec:
-          target_dataset: example
-          mapping: {x: species, y: mic_value, color: species}
-          layers:
-            - {name: geom_sina, params: {alpha: 0.6, size: 2, random_state: 0}}
-            - name: labs
-              params:
-                title: MIC Distribution by Species (Sina Plot)
-                x: Species
-                y: MIC Value
+        target_dataset: example
+        mapping: {x: species, y: mic_value, color: species}
+        layers:
+          - {name: geom_sina, params: {alpha: 0.6, size: 2, random_state: 0}}
+          - name: labs
+            params:
+              title: MIC Distribution by Species (Sina Plot)
+              x: Species
+              y: MIC Value

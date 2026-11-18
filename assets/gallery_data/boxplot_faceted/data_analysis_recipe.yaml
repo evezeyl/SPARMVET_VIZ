@@ -20,21 +20,23 @@ data_schemas:
       amr_class: {type: String}
       mic_value: {type: Float64}
       species: {type: String}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       boxplot_faceted:
-        label: Boxplot Faceted
+        ui_label: Boxplot Faceted
         description: >-
           Drawn with geom_boxplot; fill is amr_class, x is amr_class, y is mic_value.
         taxonomy: {family: Comparison, pattern: '1 Numeric, 2 Categorical (Faceted)', difficulty: Intermediate,
           show: distribution, sample_size: medium+}
-        spec:
-          target_dataset: example
-          mapping: {fill: amr_class, x: amr_class, y: mic_value}
-          layers:
-            - {name: geom_boxplot, params: {}}
-            - {name: facet_wrap, params: {facets: species, ncol: 2}}
+        target_dataset: example
+        mapping: {fill: amr_class, x: amr_class, y: mic_value}
+        layers:
+          - {name: geom_boxplot, params: {}}
+          - {name: facet_wrap, params: {facets: species, ncol: 2}}

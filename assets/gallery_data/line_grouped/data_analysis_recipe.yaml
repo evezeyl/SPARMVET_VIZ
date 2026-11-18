@@ -20,23 +20,22 @@ data_schemas:
       year: {type: Int64}
       species: {type: String}
       mean_resistance: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       line_grouped:
-        label: Line Chart (Grouped)
+        ui_label: Line Chart (Grouped)
         description: >-
           Drawn with geom_line; x is year, y is mean_resistance, color is species.
         taxonomy: {family: Evolution, pattern: '1 Year, 1 Numeric, 1 Categorical', difficulty: Intermediate, show: trend,
           sample_size: medium+}
-        spec:
-          target_dataset: example
-          mapping: {x: year, y: mean_resistance, color: species}
-          layers:
-            - {name: geom_line, params: {size: 1.0}}
-            - {name: geom_point, params: {size: 2}}
-            - {name: labs, params: {x: Year, y: Mean Resistance (%), color: Species}}
-            - {name: theme_minimal, params: {}}
+        target_dataset: example
+        mapping: {x: year, y: mean_resistance, color: species}
+        layers:
+          - {name: geom_line, params: {size: 1.0}}
+          - {name: geom_point, params: {size: 2}}
+          - {name: labs, params: {x: Year, y: Mean Resistance (%), color: Species}}
+          - {name: theme_minimal, params: {}}

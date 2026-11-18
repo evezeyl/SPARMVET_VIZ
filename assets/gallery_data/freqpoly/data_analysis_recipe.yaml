@@ -19,22 +19,24 @@ data_schemas:
     input_fields:
       species: {type: String}
       mic_value: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       freqpoly:
-        label: Frequency Polygon
+        ui_label: Frequency Polygon
         description: >-
           Drawn with geom_freqpoly; x is mic_value, color is species.
         taxonomy: {family: Distribution, pattern: '1 Numeric, 1 Categorical', difficulty: Simple, show: frequency,
           sample_size: medium+}
-        spec:
-          target_dataset: example
-          mapping: {x: mic_value, color: species}
-          layers:
-            - {name: geom_freqpoly, params: {binwidth: 0.5, size: 1.0}}
-            - name: labs
-              params: {title: MIC Frequency Polygon by Species, x: MIC Value, y: Count}
+        target_dataset: example
+        mapping: {x: mic_value, color: species}
+        layers:
+          - {name: geom_freqpoly, params: {binwidth: 0.5, size: 1.0}}
+          - name: labs
+            params: {title: MIC Frequency Polygon by Species, x: MIC Value, y: Count}

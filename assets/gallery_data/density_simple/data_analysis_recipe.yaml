@@ -19,19 +19,21 @@ data_schemas:
       id: {type: String}
       growth_index: {type: Float64}
       species: {type: String}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       density_simple:
-        label: Density Simple
+        ui_label: Density Simple
         description: >-
           Drawn with geom_density; fill is species, x is growth_index.
         taxonomy: {family: Distribution, pattern: 1 Numeric, difficulty: Simple, show: distribution, sample_size: medium+}
-        spec:
-          target_dataset: example
-          mapping: {fill: species, x: growth_index}
-          layers:
-            - {name: geom_density, params: {}}
+        target_dataset: example
+        mapping: {fill: species, x: growth_index}
+        layers:
+          - {name: geom_density, params: {}}

@@ -19,20 +19,22 @@ data_schemas:
       id: {type: String}
       amr_class: {type: String}
       mic_value: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       violin_simple:
-        label: Violin Simple
+        ui_label: Violin Simple
         description: >-
           Drawn with geom_violin; fill is amr_class, x is amr_class, y is mic_value.
         taxonomy: {family: Distribution, pattern: '1 Numeric, 1 Categorical', difficulty: Simple, show: distribution,
           sample_size: medium+}
-        spec:
-          target_dataset: example
-          mapping: {fill: amr_class, x: amr_class, y: mic_value}
-          layers:
-            - {name: geom_violin, params: {}}
+        target_dataset: example
+        mapping: {fill: amr_class, x: amr_class, y: mic_value}
+        layers:
+          - {name: geom_violin, params: {}}

@@ -20,20 +20,22 @@ data_schemas:
       amr_class: {type: String}
       mic_value: {type: Float64}
       species: {type: String}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       boxplot_simple:
-        label: Boxplot Simple
+        ui_label: Boxplot Simple
         description: >-
           Drawn with geom_boxplot; fill is species, x is amr_class, y is mic_value.
         taxonomy: {family: Distribution, pattern: '1 Numeric, 1 Categorical', difficulty: Simple, show: distribution,
           sample_size: medium+}
-        spec:
-          target_dataset: example
-          mapping: {fill: species, x: amr_class, y: mic_value}
-          layers:
-            - {name: geom_boxplot, params: {}}
+        target_dataset: example
+        mapping: {fill: species, x: amr_class, y: mic_value}
+        layers:
+          - {name: geom_boxplot, params: {}}

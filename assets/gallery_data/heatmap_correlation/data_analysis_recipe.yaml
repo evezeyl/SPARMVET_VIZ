@@ -20,23 +20,22 @@ data_schemas:
       var1: {type: String}
       var2: {type: String}
       correlation: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       heatmap_correlation:
-        label: Heatmap Correlation
+        ui_label: Heatmap Correlation
         description: >-
           Drawn with geom_tile; fill is correlation, x is var1, y is var2, label is correlation.
         taxonomy: {family: Correlation, pattern: 3 Numeric (Matrix), difficulty: Advanced, show: relationship, sample_size: any}
-        spec:
-          target_dataset: example
-          mapping: {fill: correlation, x: var1, y: var2, label: correlation}
-          layers:
-            - {name: geom_tile, params: {}}
-            - {name: geom_text, params: {color: white, size: 3}}
-            - name: scale_fill_gradient2
-              params: {high: red, low: blue, mid: white, midpoint: 0}
-            - {name: theme_minimal, params: {}}
+        target_dataset: example
+        mapping: {fill: correlation, x: var1, y: var2, label: correlation}
+        layers:
+          - {name: geom_tile, params: {}}
+          - {name: geom_text, params: {color: white, size: 3}}
+          - name: scale_fill_gradient2
+            params: {high: red, low: blue, mid: white, midpoint: 0}
+          - {name: theme_minimal, params: {}}

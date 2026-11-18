@@ -20,23 +20,22 @@ data_schemas:
       year: {type: Int64}
       mean_resistance: {type: Float64}
       n_isolates: {type: Int64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       line_simple:
-        label: Line Chart (Simple)
+        ui_label: Line Chart (Simple)
         description: >-
           Drawn with geom_line; x is year, y is mean_resistance.
         taxonomy: {family: Evolution, pattern: '1 Year, 1 Numeric', difficulty: Simple, show: trend, sample_size: medium+}
-        spec:
-          target_dataset: example
-          mapping: {x: year, y: mean_resistance}
-          layers:
-            - {name: geom_line, params: {size: 1.2}}
-            - {name: geom_point, params: {size: 3}}
-            - name: labs
-              params: {x: Year, y: Mean Resistance (%), title: AMR Trend Over Time}
-            - {name: theme_minimal, params: {}}
+        target_dataset: example
+        mapping: {x: year, y: mean_resistance}
+        layers:
+          - {name: geom_line, params: {size: 1.2}}
+          - {name: geom_point, params: {size: 3}}
+          - name: labs
+            params: {x: Year, y: Mean Resistance (%), title: AMR Trend Over Time}
+          - {name: theme_minimal, params: {}}
