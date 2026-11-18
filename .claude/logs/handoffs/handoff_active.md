@@ -4,7 +4,16 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
-## State 2026-11-18 18:25 (coordinator session 3ce2c163)
+## OPEN STATE 2026-11-19 00:25 (coordinator session 3ce2c163; replaces the 18:25 block below)
+
+- `dev` = `4ed1c1ba`, NOT pushed. Controls PASSED: one full control run on dev (`tmpAI/coordinator/CONTROL_RUN_dev_2026-11-18.md`); its two failures were stale tests, fixed in `41a8068d` (`tmpAI/coordinator/dev_control_fixes_report.md`), reviewed MERGE, merged. Eve can push.
+- Big recipe change, branch `task/engine-keys` (head `5d9d5404`, dev `efd1cd5f` merged in): under final review and full controls (report `tmpAI/engine_keys/FINAL_REVIEW_and_CONTROLS.md`). It must take dev again for two test files (the stale tests above).
+- Gates before its merge: (a) Eve's choice on the tier-3 button, A build the reader, B honest text, C stay removed (`tmpAI/engine_keys/TIER3_facts_2026-11-18.md`); (b) the rule sentences of commit `724c83ce` (rule files: Eve's yes; `tmpAI/engine_keys/RULE_PASSAGES_for_eve.md`); (c) the review verdict. The Blueprint proof of tier 1 and tier 2 (`tmpAI/engine_keys/BLUEPRINT_T1_T2_PROOF.md`) is in Eve's hands (D-0307, progress note 21:17).
+- Held, not started: `task/one-python` (`5bb9f719`, rule wording); the upload flow; the audit slices (plan v3, D-0304); the config review (D-0303, just before Eve tests HOME and BLUEPRINT); Blueprint: design first (D-0309: gap report, global picture, evaluation, build plan), no build before that.
+- Not covered by the test setups (from the merge and the reviews): ghost save is off in `qa`, so the save at Apply and Blueprint's draft autosave are not run in the browser tests; the hidden-selector setups (pipeline-static, pipeline-exploration-simple, web-demo) are only started (the Export was checked by hand in two of them, `tmpAI/panel/export_simplify/REVIEW2.md` section 9); the AI agent with a working backend (`claude_cli`) is not run; `export_enabled` false and `interactivity_enabled` false are not run in the browser; Firefox and Safari are not run.
+- New tasks of this day: `.claude/tasks/tasks.md`, section "Control run of dev and open items from the 2026-11-18 reviews".
+
+## State 2026-11-18 18:25 (coordinator session 3ce2c163) — SUPERSEDED 2026-11-19 00:25 by the block above; kept for the record
 
 - Eve is away; she said to continue with everything that needs no new decision. Questions go through the review session, one at a time.
 - `dev` = `dd273696`, not pushed. One full control run on `dev` is owed before she pushes; it starts after the Export merge.
