@@ -127,8 +127,6 @@ REVIEWED = {
     ("cat", "len_bytes"): "number of bytes of each category text in the column",
     ("cat", "len_chars"): "counts characters; the doc says how it differs from bytes",
     ("cat", "slice"): "cuts each category text; the doc says the offsets are in characters, not bytes",
-    ("expr", "search_sorted"): "'location' is the position found in the column's own values",
-    ("expr", "set_sorted"): "'paths' is polars' fast code paths for sorted data; it only sets a flag",
     ("str", "find"): "text search; the word 'bytes' is about the match",
     ("str", "find_many"): "text search over the column's own values; 'bytes' is about the match",
     ("str", "head"): "first characters; the doc says the offsets are in characters, not bytes",

@@ -87,8 +87,8 @@ def test_the_other_types_are_still_allowed_and_run(text):
     DATA.select(evaluate_formula(text).alias("r"))
 
 
-def test_the_parked_list_holds_only_object_today():
+def test_the_parked_list_holds_the_decided_types_today():
     """A new entry is a decision of Eve: this test makes a silent addition visible."""
     from utils.formula_check import REFUSED_DTYPES
-    assert set(REFUSED_DTYPES) == {"Object"}
+    assert set(REFUSED_DTYPES) == {"Object", "Unknown", "Binary"}
     assert all(hasattr(pl, name) for name in REFUSED_DTYPES)

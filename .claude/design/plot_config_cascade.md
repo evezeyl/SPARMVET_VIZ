@@ -61,6 +61,8 @@ Resolution order (highest wins):
 | **L2** | Data analysis recipe `plot_defaults:` block | Cross-plot defaults (palette, theme, font_family) | Data analysis recipe author |
 | **L1** | VizFactory built-in defaults | Last-resort fallbacks (`theme_bw`, `coord_cartesian`, `facet_null`) | Developer |
 
+> **DECIDED 2026-11-18 (D-0258), not built yet:** without a theme in the recipe the figure uses plotnine's own default (`theme_gray`). The built-in `theme_bw` is removed in the big recipe change (branch `task/engine-keys`). Until that is merged, the code still injects `theme_bw`. Source: channel M270.
+
 **Conflict rule:** every key resolves to exactly one source. When two tiers compete for the same key (e.g. L5 sets `palette: foo`, L4 sets `palette: bar`), the higher tier wins silently — there is no merge-of-values, only winner-takes-all per key. The exception is the `layers:` list, which is **append-then-deduplicate** (see §4).
 
 **Why optimisation is L3 (between spec and defaults), not L0:**
@@ -129,6 +131,8 @@ final_layers = (
 Where `layer_kind` is the prefix family (`theme_*`, `coord_*`, `facet_*`, `scale_fill_*`, `scale_color_*`, `element_text` with same `target` param). This ensures L5 → L4 → L3 → L2 dedup order: a higher-tier layer of the same kind suppresses lower ones.
 
 `geom_*` and `stat_*` layers are **never deduplicated** — they accumulate. A spec adding `geom_text` on top of a `geom_bar` keeps both.
+
+> **DECIDED 2026-11-18 (D-0258), not built yet:** the L1 theme `theme_bw` named below is removed in the big recipe change (branch `task/engine-keys`); without a theme in the recipe the figure uses plotnine's own default (`theme_gray`). Until that is merged, the code still injects `theme_bw`. Source: channel M270.
 
 **Default injection** (currently inline at end of `render()`) is moved into L1: if no `theme_*` layer survives dedup, L1 contributes `theme_bw`; same for `coord_cartesian` and `facet_null`. The injection becomes part of resolution rather than a render-time afterthought.
 

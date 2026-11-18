@@ -12,6 +12,20 @@
 - **New tasks:** THEME-DOCS-DESCRIPTIONS-1 and THEME-DOC-HOW-TO-ADD-1 (sonnet/low); HOME-RECIPE-SWITCH-CHECK-1 (reviewer, Eve's request M262, not yet a ledger line); GALLERY-ENGINES-PLAN-1, DEMO-READINESS-LIST-1 (scout). Details in `tasks.md` section 9.
 - **Still held, not decided:** questions 8 to 20 of `tmpAI/panel/QUESTIONS_for_eve_2026-11-18.md` (20 questions in all); question 20, the download race (EXPORT-DOWNLOAD-RACE-1); the rule and ADR text these decisions touch (rule files, `plot_config_cascade.md`, `recipe_format_spec.md`): not edited, Eve's yes needed; the rename; the Blueprint form; wording 6a and 6d; `task/worktree-imports`.
 - **Open details, not decided (M266):** which `label` keys are renamed; what happens to the old `title:` text of the 18 plot files for the figure title; that export report names stay identical. Checked by LABEL-KEYS-CHECK-1.
+- **Question 8 and the default theme decided (channel M270, 2026-11-18):** D-0257 (formulas refuse `set_sorted` and `search_sorted`, task FORMULA-REFUSE-SORTED-1) and D-0258 (without a theme the figure uses plotnine's default; the built-in `theme_bw` is removed in the big build, and the migration writes `theme_bw` into every recipe and bundle without a theme; task L1-DEFAULTS-REPORT-1 lists the other app-choice defaults). Questions 9 to 20 still open.
+- **Records commit `15394ef5`** (ledger D-0250 to D-0256); this scribe pass adds D-0257 and D-0258 to the ledger, the cascade design note, `tasks.md` (ENGINE-KEYS sentence, two new tasks, LABEL-KEYS-CHECK-1 and GALLERY-ENGINES-PLAN-1 marked done) and this block. Not committed.
+- **Worktree `.claude/worktrees/engine-keys` on branch `task/engine-keys` exists** (no build yet). Step 0 (picture comparison tool and baseline in `tmpAI/engine_keys/picture_baseline_15394ef5/`) is being built by a builder.
+- **Running, none edits the records:** recipe-switch check (`tmpAI/switch_check/`, HOME-RECIPE-SWITCH-CHECK-1); the `modif_` list (`MODIF-LIST-1`, D-0254).
+- **Coordinator's open points for Eve** (label and title details, nothing answers them): channel M271.
+
+## 2026-11-18 midday (scribe; channel of 57 M271 to M274, coordinator M271 to M277 of 78)
+
+- **dev = `372e390e`** (records and two report files; no code change since the last controls).
+- **Branches:** `task/engine-keys` (step 0 done, step 1 running); `task/switch-fixes` (`fb2ed369`, in review with full controls; merge when they pass); `trial/stat-function-polars` (trial, never merged; its worktree still exists and can be removed).
+- **Decided today, to build:** D-0259 (formulas refuse `pl.Unknown`, `pl.Binary` and arrays of unknown; task FORMULA-REFUSE-UNKNOWN-BINARY-1); D-0261 (`stat_function`: infinite or missing values are a gap and a visible warning; task STAT-FUNCTION-NONFINITE-WARN-1). D-0260 is a goal only: the wider Polars catch; the plan (POLARS-CATCH-PLAN-1) comes first, the build waits for Eve's yes.
+- **Reports ready for Eve:** `.claude/design/exploration/2026-11-18_date_keys_and_joins.md` (question 9); `tmpAI/panel/stat_function_polars/REPORT.md` (question 10); `tmpAI/panel/viz_rename/MODIF_LIST_2026-11-18.md` (ten questions); `tmpAI/panel/plot_defaults/BUILTIN_DEFAULTS_2026-11-18.md` (four questions); `.claude/design/exploration/2026-11-18_test_lab_review.md` (15 fixes, 9 questions); `tmpAI/panel/key_types/WORDING_options_primary_entity_key.md`; `tmpAI/switch_check/REPORT.md`.
+- **Held, not decided:** questions 13 to 20; the rename until the ten answers; rule and ADR text.
+- **Open in `tasks.md` section 9 (new today):** TEMPLATES-NOT-LOADABLE-1, TEST-LOGIC-RECIPE-REJECT-1, JOIN-REPORT-PROPOSAL-1, NONFINITE-REACH-REPORT-1.
 
 ## 2026-11-18 (open state, morning; export box merged)
 
@@ -20,6 +34,30 @@
 - **Open, held for Eve:** the download race, EXPORT-DOWNLOAD-RACE-1 (question 20 of `tmpAI/panel/QUESTIONS_for_eve_2026-11-18.md`). Also open, to confirm with Eve: the builder's PROVISIONAL choices of the Export panel (scope reset to Global with a notice; a chosen scope stays selected and follows the open tab), and three smaller export findings (`tasks.md` section 9).
 - **Nothing running.**
 - **Held, unchanged:** the big recipe change (ENGINE-KEYS), the rename, the Blueprint form, the wording of 6a and 6d, `task/worktree-imports` (`ca1a2246`, `45697881`), theme snippets build.
+
+### 2026-11-18 afternoon (scribe; channel of 57 M275 to M279)
+
+- **`dev` = `09b46d4f`**, local, not pushed. Two merges since the last full controls: the formula refusals `0bf944e6` (FORMULA-REFUSE-SORTED-1, FORMULA-REFUSE-UNKNOWN-BINARY-1; D-0257, D-0259) and the rest of the worktree work `09b46d4f` (VIZ-GALLERY-INIT, DOC-WORKTREE-SECTION; D-0262; worktree and branch removed). **ONE headless run on dev is owed before Eve is told she can push.**
+- **Branches:** `task/engine-keys` (step 1 running); `task/switch-fixes` (in review with full controls); `trial/axis-text` and `trial/stat-function-polars` (trials, never merged).
+- **Decided today, still to build:** INTERPRETER-ONE-PYTHON-1 (D-0263; the line of `rules_runtime_environment.md` section 5 changes with it, her decision); the function gap and warning (D-0261, STAT-FUNCTION-NONFINITE-WARN-1); the wide-split design note (D-0264, WIDE-SPLIT-MODIF-DESIGN-1; no build before her yes on the design). Deferred by Eve: CONTAINER-RECIPE-UPDATE-1 (D-0263).
+- **Questions:** 13 open (AXIS-TEXT-PANEL-1, panel with evidence asked); 14 delayed until 13; 18 to 20 open. Decided today: 15 (D-0262), 16 (D-0263), 17 (D-0264).
+- **Pages ready for Eve:** `tmpAI/panel/polars_catch/PLAN_2026-11-18.md` (8 questions) and `tmpAI/panel/READINESS_for_demo_2026-11-18.md`; add both to the list of the pages above (`tmpAI/panel/QUESTIONS_for_eve_2026-11-18.md` and the reports named in the midday block).
+- **Later today (scribe; channel of 57 M280 and M281; channel of 78):**
+  - **dev = `1e796a7d`** (records: questions 15 to 17, D-0262 to D-0264). Still not pushed.
+  - `task/switch-fixes`: reviewed, verdict MERGE. Two tests are being strengthened, then the merge, then one control run on dev covering the merges, then Eve is told she can push.
+  - `task/one-python` (INTERPRETER-ONE-PYTHON-1, D-0263): in work.
+  - Question 13 (AXIS-TEXT-PANEL-1): panel page ready, `tmpAI/panel/axis_text/PANEL_for_eve_2026-11-18.md`; question 14 waits for it.
+  - Worktrees now: `engine-keys`, `switch-fixes`, `one-python`. The old `recipe-plots` worktree is not the coordinator's.
+  - Trial branches kept, without worktrees: `trial/stat-function-polars`, `trial/axis-text`.
+  - Ledger: D-0265 (amends D-0264: the wide split is a `step_` with an optional `fill`) and D-0266 (how a `step_` passes parameters, Variant 1). Open: the three fill questions and the long-form counts (question 17), for the design note.
+  - The coordinator's messages to the review session today: M271 to M280 of 78.
+- **Evening (order of work changed by Eve; scribe; channel of 57 M282 to M286; ledger D-0267 to D-0271):**
+  - Order of work (D-0271): HOME and GALLERY first, settled so that Eve can test them for a few days. Blueprint and Test Lab only what the big recipe change forces, kept minimal; the rest after the demo. A demo branch is planned (plan page `tmpAI/panel/DEMO_BRANCH_PLAN_2026-11-18.md`). Demo before or after the big recipe change: OPEN.
+  - Decided and to build next: the Export button, question 20, option D (D-0270; replaces EXPORT-DOWNLOAD-RACE-1 as EXPORT-BUTTON-READY-1); the export collects the plot warnings, question 19, option A (D-0269; EXPORT-COLLECTS-WARNINGS-1).
+  - Branch `task/switch-fixes` waits for the cause of two flaky runs of its new test file; a reviewer runs that file 10 times.
+  - Branch `task/one-python`: built, review next (report `tmpAI/panel/one_python/builder_report.md`).
+  - Branch `task/engine-keys`: step 1 done, steps 2 and 3 running.
+  - `dev` = `df8b7993`, not pushed; one control run is still owed before Eve pushes.
 
 ## 2026-11-17 night (open state; coordinator's list M175 of the channel; decisions D-0229 to D-0249)
 
