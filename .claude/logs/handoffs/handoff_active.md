@@ -4,6 +4,15 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
+## 2026-11-18 morning, Eve's answers to questions 1 to 7 (scribe; channel M262 to M269)
+
+- **Decided (ledger, DECIDED, taken by Eve):** D-0250 tier container B (`tier1:`, then optional `data_engine:`, then `steps:`; `!include` optional per tier). D-0251 the 34 gallery bundles take the new shape in the same pass. D-0252 a plot file holds the whole entry; no new engine now; the gallery is planned so that engines can be added later. D-0253 figure text only in the `labs` layer; `label` becomes `ui_label`; new `ui_title`; `title:` removed from the plot content (amends D-0237). D-0254 plotnine originals are written in the recipe; `modif_` only when it does more than change argument values (amends D-0210). D-0255 question 6 = yes: one change on a branch, one migration run over every recipe and every gallery bundle, merge only after the full controls; no special treatment of any file for the demo; presentation 30 min to 1 h, date set by readiness. D-0256 themes are code (replaces in part D-0243).
+- **Released:** ENGINE-KEYS (the big build) on branch `task/engine-keys`. Not started. Before it: LABEL-KEYS-CHECK-1 and MODIF-LIST-1 (scout).
+- **Dropped:** the theme files, folder and copy into a recipe (THEME-SNIPPETS-DESIGN, D-0256). A theme builder in Blueprint is a PROPOSAL only (THEME-BUILDER-PROPOSAL-1, queued).
+- **New tasks:** THEME-DOCS-DESCRIPTIONS-1 and THEME-DOC-HOW-TO-ADD-1 (sonnet/low); HOME-RECIPE-SWITCH-CHECK-1 (reviewer, Eve's request M262, not yet a ledger line); GALLERY-ENGINES-PLAN-1, DEMO-READINESS-LIST-1 (scout). Details in `tasks.md` section 9.
+- **Still held, not decided:** questions 8 to 20 of `tmpAI/panel/QUESTIONS_for_eve_2026-11-18.md` (20 questions in all); question 20, the download race (EXPORT-DOWNLOAD-RACE-1); the rule and ADR text these decisions touch (rule files, `plot_config_cascade.md`, `recipe_format_spec.md`): not edited, Eve's yes needed; the rename; the Blueprint form; wording 6a and 6d; `task/worktree-imports`.
+- **Open details, not decided (M266):** which `label` keys are renamed; what happens to the old `title:` text of the 18 plot files for the figure title; that export report names stay identical. Checked by LABEL-KEYS-CHECK-1.
+
 ## 2026-11-18 (open state, morning; export box merged)
 
 - **`dev` = `f288dae4`**, local, **not pushed** (Eve pushes herself). Controls passed on `4dec6348` (same tree as the merge): headless 10471 passed, 5 skipped, 32 xfailed; browser 140 passed, 3 skipped, 1 xfailed; 9 app starts; golden baseline identical; gallery previews 34 identical.
@@ -16,7 +25,7 @@
 
 - **Merged tonight (dev):** `44683952` (FORMULA-OBJECT-REFUSE D-0230, FORMULA-ELEMENT-FIELD D-0231, STAT-FUNCTION-AGREE D-0232); `a85c7103` THEMES-ALL-DRAW; `e7e4a0a6` worktree test setup, first part; `cbf2e4b8` THEME-CUSTOM-LOUD; `1224b19e` VALIDATE-INTERPRETER. Details in `tasks.md` section 9.
 - **Built, not merged:** branch `task/worktree-imports` (`ca1a2246`, `45697881`): VIZ-GALLERY-INIT and DOC-WORKTREE-SECTION. Controls on a trial copy passed. Waits for Eve's look (M240, M243).
-- **Waits for Eve:** (a) the page of 19 questions, `tmpAI/panel/QUESTIONS_for_eve_2026-11-18.md` (scratch); (b) the rest of the test-setup branch (WORKTREE-TEST-IMPORTS-1); (c) the theme snippet design note, seven questions (`.claude/design/exploration/2026-11-17_theme_snippets_design_note.md`), before THEME-SNIPPETS-DESIGN and BP-FORM-THEME-FIELDS go on.
+- **Waits for Eve:** (a) the page of 20 questions, `tmpAI/panel/QUESTIONS_for_eve_2026-11-18.md` (scratch; questions 1 to 7 answered, 8 to 20 open); (b) the rest of the test-setup branch (WORKTREE-TEST-IMPORTS-1); (c) the theme snippet design note, seven questions (`.claude/design/exploration/2026-11-17_theme_snippets_design_note.md`), before THEME-SNIPPETS-DESIGN and BP-FORM-THEME-FIELDS go on.
 - **Prepared, not built:** the brief draft of the big recipe change, `tmpAI/coordinator/briefs/ENGINE_KEYS_brief_draft.md`. ENGINE-KEYS stays held until Eve has seen the before/after files of one pipeline recipe, one plot file and one gallery bundle (M246, flag b).
 - **Running:** review and full controls on branch `task/defaults-layers-checked`: the checker reads the plot-default layers; a warning for a missing font.
 - **Trap learned:** a worktree created before `e7e4a0a6` must take a merge of `dev`. Otherwise its tests check the code of the main folder, not the code of the worktree.
@@ -1551,7 +1560,7 @@ Written by a records agent from the coordinator's brief of 18:40 and the channel
 - The rename waits for her answers on Q6, Q7 and Q9. They are now carried by question 4 of the arguments report (see above). Nothing of the rename before that.
 
 **Eve's goal (D-0228)**
-- A good FUNCTIONAL demo as soon as possible; she says at the end of the week when. Eve is away for the evening.
+- A good FUNCTIONAL demo as soon as possible; the date is set by how ready the app is (M268, D-0255; corrected 2026-11-18, Eve does not present at the end of the week). Eve is away for the evening.
 - Order (coordinator's wording): what is decided and not built first (the demo must not break), then research. The demo recipe is not yet named by her; the developer assumed `demo_abromics`. Ask her.
 
 **Pitfall for every worktree (WORKTREE-TEST-IMPORTS-1)**
