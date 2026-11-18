@@ -118,10 +118,6 @@ MISSING_DATA_ANALYSIS_RECIPES = {
         "mapping": {"x": "x"},
         "layers": [{"name": "geom_step", "params": {"stat": "stat_ecdf"}}],
     },
-    "stat_function": {
-        "mapping": {},
-        "layers": [{"name": "geom_line", "params": {"stat": "stat_function", "fun": "lambda x: x**2"}}],
-    },
 }
 
 

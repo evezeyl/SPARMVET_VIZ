@@ -2,7 +2,7 @@ from typing import Dict, Any
 
 # @deps
 # provides: component:geom_boxplot, component:geom_violin, component:geom_point, component:geom_line, component:geom_bar, component:geom_col, component:geom_histogram, component:geom_smooth, component:geom_density, component:geom_errorbar, component:geom_pointrange, component:geom_tile, component:geom_raster, component:geom_text, component:geom_label, component:geom_jitter, component:geom_step, component:geom_segment, component:geom_abline, component:geom_area, component:geom_bin_2d, component:geom_blank, component:geom_count, component:geom_crossbar, component:geom_density_2d, component:geom_dotplot, component:geom_errorbarh, component:geom_freqpoly, component:geom_hline, component:geom_linerange, component:geom_path, component:geom_vline, component:stat_count, component:stat_bin, component:stat_summary, component:stat_boxplot, component:stat_smooth, component:stat_density, component:labs (geom)
-# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/errors.py (CannotAct), libs/utils/src/utils/fix_text.py (split_fix, with_fix), libs/utils/src/utils/formula_check.py (PLOT_FUNCTION_MODULES, PLOT_FUNCTION_NAMES, MATH_FUNCTIONS, MATH_CONSTANTS)
+# consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/errors.py (CannotAct), libs/utils/src/utils/fix_text.py (split_fix, with_fix), libs/utils/src/utils/plot_text_check.py (STAT_FUNCTION_TEXT_BLOCKED, STAT_FUNCTION_TEXT_SUGGESTION)
 # consumed_by: any YAML plot spec using these component names, libs/viz_factory/src/viz_factory/viz_factory.py (via registry), libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via COMPONENT_SCHEMAS)
 # doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
@@ -1302,11 +1302,12 @@ def handle_stat_unique(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "xlim": {"widget": "string", "label": "X range for evaluation [min, max]", "required": False},
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
-    "description": "BLOCKED FOR NOW in recipes: a function curve written as text is refused, because it would run text from the recipe as code (Eve, D-0273, D-0274). Suggestion: compute the values in a step of the recipe and draw them with a line layer. Differs from plotnine: `fun` written as text is refused; the component stays registered and a real function handed in by Python code still draws.",
+    "description": "BLOCKED FOR NOW in recipes: a function curve written as text is refused, because it would run text from the recipe as code. Suggestion: compute the values in a step of the recipe and draw them with a line layer. Differs from plotnine: `fun` written as text is refused; the component stays registered and a real function handed in by Python code still draws.",
     "yaml_example": "# Blocked for now (a function written as text is refused). Instead, make a column in a recipe step and draw it:\nlayers:\n  - name: geom_line",
 })
 def handle_stat_function(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     """Statistical function layer. 'fun' is a callable handed in by Python code; a function written as text is refused (D-0274)."""
+    # Decided by Eve (D-0273, D-0274): text is blocked for now.
     from utils.plot_text_check import STAT_FUNCTION_TEXT_BLOCKED, STAT_FUNCTION_TEXT_SUGGESTION
     from viz_factory.errors import CannotAct
 

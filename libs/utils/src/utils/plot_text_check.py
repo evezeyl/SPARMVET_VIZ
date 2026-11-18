@@ -162,6 +162,9 @@ def layer_text_problems(component: str, params: Any, columns: Optional[Iterable[
                               if column_list is not None else " (letters, digits, underscore, space, dot or dash)")
                               + "; to facet by a computed value, add a recipe step that makes the column first")
                 problems.append((key, what, suggestion))
-    if component == "stat_function" and isinstance(params.get("fun"), str):
+    # The component itself, or any layer that names the stat (plotnine takes `stat_function` and `function`).
+    names_stat = component == "stat_function" or (isinstance(params.get("stat"), str)
+                                                  and params["stat"].strip() in ("stat_function", "function"))
+    if names_stat and isinstance(params.get("fun"), str):
         problems.append(("fun", STAT_FUNCTION_TEXT_BLOCKED, STAT_FUNCTION_TEXT_SUGGESTION))
     return problems

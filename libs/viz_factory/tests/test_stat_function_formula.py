@@ -84,3 +84,13 @@ def test_the_registered_help_says_it_is_blocked_for_now():
     schema = COMPONENT_SCHEMAS["stat_function"]
     assert "BLOCKED FOR NOW" in schema["description"] and "line layer" in schema["description"]
     assert "Blocked for now" in schema["yaml_example"]
+
+
+def test_a_geom_with_the_function_stat_and_a_text_fun_gives_the_plain_message_with_plot_and_layer():
+    recipe = {"plots": {"curve": {"mapping": {"x": "x", "y": "y"}, "layers": [
+        {"name": "geom_point"}, {"name": "geom_line", "params": {"stat": "stat_function", "fun": "lambda x: x**2"}}]}}}
+    with pytest.raises(VisualizationError) as error:
+        VizFactory().render(pl.DataFrame({"x": [1.0, 2.0], "y": [2.0, 4.0]}), recipe, "curve").draw(show=False)
+    text = str(error.value)
+    assert text.startswith("Plot 'curve', layer 2 (geom_line): " + STAT_FUNCTION_TEXT_BLOCKED)
+    assert STAT_FUNCTION_TEXT_SUGGESTION in text

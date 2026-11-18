@@ -222,3 +222,16 @@ def test_other_parameters_are_not_judged_here():
     assert layer_text_problems("geom_point", {"color": CODE, "size": 3}) == []
     assert layer_text_problems("scale_x_continuous", {"trans": CODE}) == []   # plotnine refuses it, nothing evaluates it
     assert layer_text_problems("geom_smooth", None) == []
+
+
+@pytest.mark.parametrize("component", ["geom_line", "geom_point", "geom_path"])
+@pytest.mark.parametrize("stat", ["stat_function", "function"])
+def test_a_geom_that_names_the_function_stat_with_a_text_fun_is_refused(component, stat):
+    [(param, what, suggestion)] = layer_text_problems(component, {"stat": stat, "fun": "lambda x: x**2"})
+    assert (param, what, suggestion) == ("fun", STAT_FUNCTION_TEXT_BLOCKED, STAT_FUNCTION_TEXT_SUGGESTION)
+
+
+def test_the_function_stat_without_fun_or_another_stat_is_not_caught_by_this_rule():
+    assert layer_text_problems("geom_line", {"stat": "stat_function"}) == []
+    assert layer_text_problems("geom_line", {"stat": "stat_smooth", "fun": "lambda x: x"}) == []
+    assert layer_text_problems("geom_line", {"fun": "lambda x: x"}) == []
