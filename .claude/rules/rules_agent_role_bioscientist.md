@@ -167,7 +167,7 @@ layers:
     params: {}
   - name: position_dodge
     params: {}
-  - name: labs                            # the text of the figure is written only here (there is no `title:` key)
+  - name: labs
     params:
       title: "Multi-Resistance by Country"
       fill: "Multiresistant"

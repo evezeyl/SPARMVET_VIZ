@@ -147,11 +147,11 @@ analysis_groups:
 
 The visible tab/group label in the UI comes from this resolution chain:
 
-1. `ui_label:` field if set (recommended — explicit and concise)
+1. `label:` field if set (recommended — explicit and concise)
 2. `description:` field if set
 3. The dict key (group_id / plot_id) as fallback
 
-All three preserve any unicode, including emoji and CJK. Data Analysis Recipe authors can use any icons in `ui_label:` to make the UI friendly. Example:
+All three preserve any unicode, including emoji and CJK. Data Analysis Recipe authors can use any icons in `label:` to make the UI friendly. Example:
 
 ```yaml
 analysis_groups:
@@ -162,7 +162,7 @@ analysis_groups:
       miaou: !include cat/miaou.yaml   # plot_id stays snake_case (unique-id contract); the file holds the whole entry, e.g. ui_label: "Miaou 🐱" (Tab shows "Miaou 🐱")
 ```
 
-Reserve `description:` for longer prose; use `ui_label:` for short emoji-rich tab text; `ui_title:` (optional) is a longer name that the report uses.
+Reserve `description:` for longer prose; use `label:` for short emoji-rich tab text.
 
 ### Plot spec file structure (`plots/<plot_id>.yaml`)
 
@@ -187,7 +187,7 @@ layers:
     params: {}
   - name: position_dodge         # For side-by-side bars
     params: {}
-  - name: labs                   # The text of the figure, its title too, is written only here (there is no `title:` key)
+  - name: labs
     params:
       title: "Plot Title"
       fill: "Legend Label"
@@ -218,7 +218,7 @@ Common primary geoms: `geom_bar`, `geom_col` (needs `y`), `geom_point`, `geom_ti
 
 ## 10. `plot_defaults` Block (ADR-081, BP-COLOR-3, VIZFAC-PLOT-CASCADE-1)
 
-The optional `plot_defaults:` top-level key in a data analysis recipe sets defaults applied to every plot in that data analysis recipe. Individual plot entries may override `palette` and `theme`. `plot_defaults` participates as **L2** in the five-tier resolution cascade (L5 T3 override > L4 plot entry > L3 optimisation > L2 plot_defaults > L1 built-ins). Full cascade spec: [.claude/design/plot_config_cascade.md §7a](../design/plot_config_cascade.md).
+The optional `plot_defaults:` top-level key in a data analysis recipe sets defaults applied to every plot in that data analysis recipe. Individual plot specs may override any key. `plot_defaults` participates as **L2** in the five-tier resolution cascade (L5 T3 override > L4 plot entry > L3 optimisation > L2 plot_defaults > L1 built-ins). Full cascade spec: [.claude/design/plot_config_cascade.md §7a](../design/plot_config_cascade.md).
 
 ### 10a. Allowed keys (authoritative — extend by ADR amendment only)
 
@@ -233,7 +233,7 @@ plot_defaults:
 
 **Removed keys (D-0220, D-0242, 2026-11-17):** `default_font_family`, `facet_panel_spacing`, `legend_position` and `optimisation` did nothing and are not keys of `plot_defaults`. Font, legend position and panel spacing are set through a theme layer in `layers:`; the automatic axis-text adjustment has no switch of its own: an `element_text` layer for an axis overrides it.
 
-**Unknown key:** a key not in the list above is refused by the data analysis recipe checker (PD01); each of the four removed keys is refused with a tombstone text (PD02).
+**Unknown key warning:** keys not in the list above emit `PipelineError(severity: warning, who: data_analysis_recipe_author, surface: notification)`. Non-fatal — experimental keys are allowed — but the warning prevents silent typos. Each of the four removed keys is refused with a tombstone text (PD02).
 
 ### 10b. `palette` key
 

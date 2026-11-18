@@ -91,7 +91,7 @@ palette: sparmvet_brand      # overrides plot_defaults.palette for this plot
 
 Resolution order: **plot-level `palette:` > `plot_defaults.palette` > none (matplotlib default)**.
 
-`palette` is one of several `plot_defaults` keys. The authoritative schema (palette, theme, layers, random_state) is documented at `rules_data_analysis_recipe_structure.md §10`. `default_font_family`, `facet_panel_spacing`, `legend_position` and `optimisation` were removed (D-0220, D-0242). An unknown key is refused by the data analysis recipe checker (PD01) and a removed key is refused with a tombstone text (PD02).
+`palette` is one of several `plot_defaults` keys. The authoritative schema (palette, theme, layers, random_state) is documented at `rules_data_analysis_recipe_structure.md §10`. `default_font_family`, `facet_panel_spacing`, `legend_position` and `optimisation` were removed (D-0220, D-0242). Unknown keys emit `PipelineError(severity: warning, who: data_analysis_recipe_author, surface: notification)`. A removed key is refused with a tombstone text (PD02).
 
 ### 6c. Scale injection rules
 
@@ -125,9 +125,9 @@ Plot configuration resolves through a **five-tier priority cascade** at one merg
 **Resolution rule:** higher tier wins per key (winner-takes-all, no value merging). The `layers:` list is the exception — append-then-deduplicate by `(layer_kind, target)` keeping LAST occurrence (so L5 wins on theme/coord/facet/scale/element_text). `geom_*`/`stat_*` layers never deduplicated.
 
 **Key constraints from the design:**
-- L3 (optimisation) is **purely visual/aesthetic** — MUST NOT change `mapping`, `layers`, `geom_*`, `filters`, or `palette`. Allowed: axis text rotation/size (built). Panel spacing and density-aware positions are designed, not built, and have no switch (the `optimisation` key was removed).
+- L3 (optimisation) is **purely visual/aesthetic** — MUST NOT change `mapping`, `layers`, `geom_*`, `filters`, or `palette`. Allowed: axis text rotation/size, panel spacing, density-aware positions.
 - L5 `aesthetic_override` has a **fixed schema** (design §6): `fill_color` ⊕ `fill_palette` (mutex with warning), `color`, `alpha`, `shape`, `size`, `theme`. `plot_scope` MUST be a single plot_id (never `__all__`).
-- Unknown keys in `plot_defaults` are refused by the data analysis recipe checker (PD01; the four removed keys with a tombstone text, PD02).
+- Unknown keys in `plot_defaults` emit `PipelineError(severity: warning, who: data_analysis_recipe_author, surface: notification)` per ADR-079. Non-fatal. The four removed keys are refused with a tombstone text (PD02).
 - **The engine (D-0238, D-0239):** the engine of a component is a field of its registry entry (`python-plotnine` for every component today); the plot library is chosen by the `plot_engine` of the plot entry, else of the data analysis recipe; an engine the app has no library for is refused with "no library for this engine in this app". The plot engine is in no table cache key (D-0240).
 - §6 above describes today's `_apply_palette` behaviour — under the cascade it remains the renderer for the resolved `palette:` key (now produced by the cascade resolver, not read directly from the data analysis recipe dict). Behaviour rules in §6c are unchanged.
 
