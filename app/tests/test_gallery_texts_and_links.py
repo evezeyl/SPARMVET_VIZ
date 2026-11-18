@@ -1,4 +1,5 @@
 """Gallery guidance links open in a new tab; the Gallery texts say only what is true (D-0008, D-0046)."""
+import re
 from pathlib import Path
 
 from shiny import ui
@@ -23,7 +24,14 @@ def test_internal_anchor_and_relative_link_untouched():
 def test_every_shipped_guidance_link_is_fixed():
     for md in sorted((ROOT / "assets/gallery_data").glob("*/example_meta.md")):
         html = external_links_new_tab(str(ui.markdown(md.read_text())))
-        assert html.count("<a ") == html.count('rel="noopener noreferrer"') or "href=\"#" in html, md
+        tags = re.findall(r"<a\b[^>]*>", html)
+        internal = [t for t in tags if re.search(r'href="#', t)]
+        external = [t for t in tags if t not in internal]
+        for t in external:
+            assert 'target="_blank"' in t and 'rel="noopener noreferrer"' in t, (md, t)
+        for t in internal:
+            assert "target=" not in t and "rel=" not in t, (md, t)
+        assert html.count('rel="noopener noreferrer"') == len(external), md
 
 
 def test_removed_promises_are_gone():
