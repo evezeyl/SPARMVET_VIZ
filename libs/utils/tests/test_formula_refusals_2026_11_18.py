@@ -88,3 +88,22 @@ def test_neighbouring_types_are_still_allowed(text):
 def test_the_parked_list_holds_exactly_these_today():
     from utils.formula_check import REFUSED_DTYPES
     assert set(REFUSED_DTYPES) == {"Object", "Unknown", "Binary"}
+
+
+def test_binary_message_is_true_for_every_spelling():
+    [message] = formula_problems("pl.col('n').cast(pl.Binary)")
+    assert "not allowed in formulas" in message
+    assert "decoding text to it stops the calculation" in message
+    assert "cast" not in message.split("Suggestion:")[0]
+
+
+def test_unknown_message_says_cast_gives_another_type():
+    [message] = formula_problems("pl.col('n').cast(pl.Unknown)")
+    assert "a cast to it silently gives another type" in message
+    assert "decoding text to it" in message and "not allowed in formulas" in message
+
+
+def test_search_sorted_suggestion_has_no_join_hint():
+    [message] = formula_problems("pl.col('n').search_sorted(2)")
+    assert message.endswith("Suggestion: there is no formula for this; ask for the function to be added")
+    assert "join" not in message

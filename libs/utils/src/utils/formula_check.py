@@ -159,8 +159,7 @@ REFUSED_BY_NAME = {
 # A "Suggestion: ..." for a member of REFUSED_BY_NAME that has a correct alternative (the others keep the default fix).
 REFUSED_BY_NAME_SUGGESTION = {
     ("expr", "set_sorted"): "Suggestion: sort the table with a sort step before the step that needs sorted data",
-    ("expr", "search_sorted"): ("Suggestion: there is no formula for this; use a join step on the key, "
-                                "or ask for the function to be added"),
+    ("expr", "search_sorted"): ("Suggestion: there is no formula for this; ask for the function to be added"),
 }
 
 
@@ -175,8 +174,10 @@ REFUSED_DTYPES = {
     # D-0259 (Eve, 2026-11-18): the same rule. Each stops the calculation with a Polars panic in `str.json_decode`
     # (checked 2026-11-18: pl.Unknown, pl.Array(pl.Unknown, n) and pl.Binary panic; pl.List(...) of them is a plain error).
     # Refusing the name covers every spelling that goes through `pl.<name>`, also inside pl.List and pl.Array.
-    "Unknown": "pl.Unknown is a type that has no values a table can hold, and decoding to it (or to an array of it) stops the calculation",
-    "Binary": "pl.Binary holds raw bytes, which a recipe table does not; decoding to it stops the calculation",
+    "Unknown": ("pl.Unknown is not a real type for a column: a cast to it silently gives another type, "
+                "and decoding text to it (or to an array of it) stops the calculation; it is not allowed in formulas"),
+    "Binary": ("pl.Binary holds raw bytes, which a recipe table does not hold; it is not allowed in formulas "
+               "(decoding text to it stops the calculation)"),
 }
 
 REFUSED_DTYPE_SUGGESTION = ("Suggestion: use a type a table can hold, for example pl.String, pl.Int64, pl.Float64, pl.Boolean, "
