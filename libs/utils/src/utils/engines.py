@@ -160,13 +160,13 @@ def prefix_problems(engine_of_name: Dict[str, str]) -> list:
     return problems
 
 
-def plot_engine_slot(entry: Any, recipe: Any) -> dict:
-    """The `plot_engine` slot to hand to the plot library for one plot: the entry's own value, else the recipe's (D-0237).
+def plot_engine_slot(recipe: Any) -> dict:
+    """The recipe's own `plot_engine`, as the slot of the small recipe dict a caller hands to the plot dispatcher (D-0237).
 
-    Returns {"plot_engine": value} or {} when neither names one (library use outside a recipe means the built engine).
-    The library reads the slot of the recipe dict it is given, so the caller puts this into that dict.
+    Returns {"plot_engine": value} or {} when the recipe writes none. WHY only the recipe's: the plot entry travels in the same
+    dict (`plots`), and `PlotEngines.render` alone decides between the entry's own engine and this default, so there is one
+    place that decides and the two cannot disagree.
     """
-    for level in (entry, recipe):
-        if isinstance(level, dict) and "plot_engine" in level:
-            return {"plot_engine": level["plot_engine"]}
+    if isinstance(recipe, dict) and "plot_engine" in recipe:
+        return {"plot_engine": recipe["plot_engine"]}
     return {}

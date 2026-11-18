@@ -42,17 +42,17 @@ def test_the_message_for_a_plot_engine_that_is_not_built_says_what_and_how_to_fi
     assert engines.engine_problem("plot_engine", None)
 
 
-def test_plot_engine_slot_entry_value_wins_over_the_recipe():
-    entry, recipe = {"plot_engine": "python-other"}, {"plot_engine": engines.PLOT_ENGINE}
-    assert engines.plot_engine_slot(entry, recipe) == {"plot_engine": "python-other"}
+def test_plot_engine_slot_carries_only_the_recipes_engine_never_the_entrys():
+    # the entry's own engine travels in the entry; the dispatcher alone chooses between it and this default
+    assert engines.plot_engine_slot({"plot_engine": engines.PLOT_ENGINE}) == {"plot_engine": engines.PLOT_ENGINE}
+    assert engines.plot_engine_slot({"plot_engine": "python-other", "plots": {"p": {"plot_engine": "x"}}}) == {"plot_engine": "python-other"}
 
 
-def test_plot_engine_slot_falls_back_to_the_recipe_then_to_nothing():
-    assert engines.plot_engine_slot({"ui_label": "P"}, {"plot_engine": engines.PLOT_ENGINE}) == {"plot_engine": engines.PLOT_ENGINE}
-    assert engines.plot_engine_slot({"ui_label": "P"}, {}) == {}
-    assert engines.plot_engine_slot(None, None) == {}
+def test_plot_engine_slot_is_empty_when_the_recipe_writes_none():
+    assert engines.plot_engine_slot({}) == {}
+    assert engines.plot_engine_slot(None) == {}
 
 
-def test_plot_engine_slot_keeps_an_empty_value_so_the_library_can_refuse_it():
-    # a key written with no value is not "absent": the library must see it and refuse it (no silent fall back to the recipe)
-    assert engines.plot_engine_slot({"plot_engine": None}, {"plot_engine": engines.PLOT_ENGINE}) == {"plot_engine": None}
+def test_plot_engine_slot_keeps_an_empty_value_so_the_dispatcher_can_refuse_it():
+    # a key written with no value is not "absent": the dispatcher must see it and refuse it (no silent fall back)
+    assert engines.plot_engine_slot({"plot_engine": None}) == {"plot_engine": None}

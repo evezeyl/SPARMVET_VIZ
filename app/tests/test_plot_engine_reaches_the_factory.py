@@ -2,8 +2,9 @@
 (ADR-106 V8). The plots of HOME and of Blueprint are rendered from a small dictionary built in the handler, not from the
 recipe itself, so a handler that forgets the key would draw with the implemented engine whatever the recipe says.
 
-The export (`app/handlers/export_handlers.py`) builds the same dictionary and is listed here too. The engine is the plot's own
-(`plot_engine` of the plot entry, D-0237), else the recipe's: `utils.engines.plot_engine_slot` gives the one to hand over.
+The export (`app/handlers/export_handlers.py`) builds the same dictionary and is listed here too. The dictionary carries the
+recipe's default engine (`utils.engines.plot_engine_slot`); the plot's own engine travels in its entry under `plots`, and
+`PlotEngines.render` alone chooses between the two (D-0237). `test_plot_own_engine_over_recipe.py` holds that choice.
 
 # @deps
 # consumes: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/wrangle_studio.py, libs/viz_factory/src/viz_factory/viz_factory.py

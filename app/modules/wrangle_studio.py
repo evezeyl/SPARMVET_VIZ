@@ -685,8 +685,8 @@ class WrangleStudio:
                         render_data_analysis_recipe = {
                             "plots": {viz_id: plot_entry},
                             "plot_defaults": full_cfg.get("plot_defaults", {}),
-                            # ADR-106 V8: the factory refuses an engine it does not implement (the plot's own, else the recipe's)
-                            **plot_engine_slot(plot_entry, full_cfg),
+                            # the recipe's default engine; the dispatcher reads the plot's own and refuses one the app has no library for (D-0237, D-0239)
+                            **plot_engine_slot(full_cfg),
                         }
                         break
 

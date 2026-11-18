@@ -1196,8 +1196,8 @@ def define_export_server(input, output, session, *,
                         synthetic_data_analysis_recipe = {
                             "plots": {p_id: plot_spec},
                             "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
-                            # the plot's own engine, else the recipe's (D-0237); the library refuses one it does not build
-                            **plot_engine_slot(spec, cfg.raw_config),
+                            # the recipe's default engine; the dispatcher reads the plot's own (D-0237)
+                            **plot_engine_slot(cfg.raw_config),
                         }
 
                         # Resolve dataset

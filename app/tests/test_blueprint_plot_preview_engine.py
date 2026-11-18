@@ -1,7 +1,7 @@
 """Blueprint plot preview: the dict handed to the plot library carries the plot engine (D-0237, ADR-106 V8).
 
-`_plot_outcome` (`app/modules/wrangle_studio.py`) builds `{"plots": {id: entry}, "plot_defaults": ..., **plot_engine_slot(entry, recipe)}`
-for `VizFactory.render`. The entry's own `plot_engine` wins over the recipe's. The closure is cut out by `ast` and run with
+`_plot_outcome` (`app/modules/wrangle_studio.py`) builds `{"plots": {id: entry}, "plot_defaults": ..., **plot_engine_slot(recipe)}`
+for `VizFactory.render`. The dict carries the recipe's default engine; the entry's own `plot_engine` travels in the entry and the dispatcher lets it win. The closure is cut out by `ast` and run with
 stand-ins for the session; the recipe is loaded by the real loader, the factory is the real one behind a recorder.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_blueprint_plot_preview_engine.py -q
@@ -14,7 +14,7 @@ import polars as pl
 
 from app.modules import wrangle_studio
 from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema, write_recipe
-from viz_factory import VizFactory
+from app.modules.engine_registry import PlotEngines
 
 SOURCE = Path(wrangle_studio.__file__)
 
@@ -28,10 +28,10 @@ class Val:
 
 
 class Recorder:
-    """The real factory; it keeps the recipe dictionary of each render."""
+    """The real dispatcher of the app; it keeps the recipe dictionary of each render."""
 
     def __init__(self):
-        self.factory = VizFactory()
+        self.factory = PlotEngines()
         self.seen = []
 
     def render(self, lf, recipe, plot_id, *a, **k):
@@ -73,12 +73,13 @@ def test_the_dict_for_the_factory_holds_the_plot_entry_the_defaults_and_the_reci
 
 def test_the_engine_written_on_the_plot_entry_wins_over_the_one_of_the_recipe(tmp_path):
     (figure, error), recorder = preview(tmp_path, entry_engine="python-plotnine", recipe_engine="some-other-engine")
-    assert error == "" and figure is not None
-    assert recorder.seen[0][0]["plot_engine"] == "python-plotnine"
+    assert error == "" and figure is not None, "the dispatcher draws it with the plot's own engine, not the recipe's unknown one"
+    assert recorder.seen[0][0]["plot_engine"] == "some-other-engine", "the dict carries only the recipe's default"
+    assert recorder.seen[0][0]["plots"]["p1"]["plot_engine"] == "python-plotnine"
 
 
 def test_an_engine_the_app_does_not_build_is_told_in_the_place_of_the_plot_not_drawn_with_another(tmp_path):
     (figure, error), recorder = preview(tmp_path, entry_engine="python-matplotlib-not-built")
     assert figure is None
     assert "plot_engine" in error and "python-matplotlib-not-built" in error
-    assert recorder.seen[0][0]["plot_engine"] == "python-matplotlib-not-built"
+    assert recorder.seen[0][0]["plots"]["p1"]["plot_engine"] == "python-matplotlib-not-built"
