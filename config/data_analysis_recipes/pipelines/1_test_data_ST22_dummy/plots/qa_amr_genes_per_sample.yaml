@@ -1,5 +1,8 @@
+ui_label: "QA AMR Genes Per Sample"
+ui_title: "QA: AMR genes per sample"
+description: "Samples without an AMR gene must stay (long T1, one row per sample in T2). Canary for samples that vanish from a long table. A sample without any AMR gene must appear at 0, not disappear. T1 is long (74 rows), T2 has one row per sample (42)."
+taxonomy: {"family": "Distribution", "pattern": "1 Numeric", "difficulty": "Simple"}
 target_dataset: QA_AMR_per_sample
-title: "QA: AMR genes per sample"
 mapping:
   x: n_amr_genes
   fill: country
@@ -8,6 +11,7 @@ layers:
   params: {}
 - name: labs
   params:
+    title: "QA: AMR genes per sample"
     subtitle: "Expect 42 samples: 4 with 0 genes, 70 genes in total"
     x: AMR genes in the sample
     y: Samples

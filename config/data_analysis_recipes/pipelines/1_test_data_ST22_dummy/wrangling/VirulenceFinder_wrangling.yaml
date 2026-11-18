@@ -1,4 +1,4 @@
-tier1:
+steps:
   - action: polars_select
     exprs: [sample_id, serotype, virulence_raw]
   - action: polars_with_columns

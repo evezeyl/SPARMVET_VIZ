@@ -13,7 +13,7 @@
 #    (it was so in the old fragment); it is probably not the intention: "sample_id" and "gene" together would keep one row per
 #    gene and sample.
 # 3. summarize: the number of rows with a class, per sample and class.
-tier1:
+steps:
   - action: polars_with_row_index
     name: fragment_row
   - action: polars_with_columns

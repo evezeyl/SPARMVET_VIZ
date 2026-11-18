@@ -1,5 +1,8 @@
+ui_label: "QA Year Label"
+ui_title: "QA: samples per year (text label)"
+description: "The year label has no \".0\"; the numeric year stays numeric. Canary for types. The text label of the year has no \".0\"; the numeric year column stays numeric for range filters."
+taxonomy: {"family": "Ranking", "pattern": "1 Categorical", "difficulty": "Simple"}
 target_dataset: QA_year_types
-title: "QA: samples per year (text label)"
 mapping:
   x: year_label
   fill: country
@@ -8,6 +11,7 @@ layers:
   params: {}
 - name: labs
   params:
+    title: "QA: samples per year (text label)"
     subtitle: "Expect 2022: 9, 2023: 8, 2024: 25 and never 2022.0"
     x: Year
     y: Samples

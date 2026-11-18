@@ -25,7 +25,7 @@ data_schemas:
     null_values: []
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
-    wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
+    tier1: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
 metadata_schema:
   label: "metadata"
   description: "One row per sample with its source, year and country of isolation."
@@ -35,9 +35,10 @@ metadata_schema:
   null_values: []
   strip: true
   input_fields: !include '1_test_data_ST22_dummy/input_fields/metadata_schema_input_fields.yaml'
-  wrangling:
-    tier1: []
-    tier2: []
+  tier1:
+    steps: []
+  tier2:
+    steps: []
 additional_datasets_schemas:
   VirulenceFinder:
     label: "VirulenceFinder"
@@ -48,7 +49,7 @@ additional_datasets_schemas:
     null_values: []
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/VirulenceFinder_input_fields.yaml'
-    wrangling: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
+    tier1: !include '1_test_data_ST22_dummy/wrangling/VirulenceFinder_wrangling.yaml'
   APEC_STEC_virulence_genes:
     label: "APEC STEC virulence genes"
     description: "Reference list with one row per virulence gene of interest (APEC and STEC); used to keep only these genes from the VirulenceFinder hits."
@@ -58,8 +59,8 @@ additional_datasets_schemas:
     null_values: []
     strip: true
     input_fields: !include '../../../assets/ref_data/Virulence_genes_APEC/Virulence_genes_APEC_input_fields.yaml'
-    wrangling:
-      tier1:
+    tier1:
+      steps: []
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
 joins:
   AR1_MLST_Serotype_Virulence:
@@ -70,46 +71,47 @@ joins:
     - dataset_id: metadata_schema
     - dataset_id: VirulenceFinder
     - dataset_id: APEC_STEC_virulence_genes
-    steps: !include '1_test_data_ST22_dummy/wrangling/AR1_MLST_Serotype_Virulence.yaml'
+    tier1: !include '1_test_data_ST22_dummy/wrangling/AR1_MLST_Serotype_Virulence.yaml'
     labels: {"sample_id": "Sample ID", "source": "Biological Source", "year": "Collection Year", "country": "Origin Country", "sequence_type": "MLST Sequence Type", "serotype": "Serotype", "selected_virulence_genes": "Gene (VirulenceFinder)", "vf_protein": "Protein (VirulenceFinder)"}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   MLST_Overview:
-    label: MLST Overview
+    ui_label: MLST Overview
     description: "Which sequence types occur, and in which countries and sources."
     plots:
       abromics_st_by_country:
-        label: Sequence Types by Country
+        ui_label: Sequence Types by Country
         description: "Bars count the rows of the table (one per sample and selected virulence gene, so a sample with more genes weighs more) for each sequence type, coloured by country."
-        spec:
-          target_dataset: AR1_MLST_Serotype_Virulence
-          layers:
-          - name: geom_bar
-            params: {}
-          - name: scale_x_discrete
-            params: {}
-          - name: labs
-            params:
-              title: Sequence Types by Country
-              x: Sequence Type
-              fill: Country
-          mapping:
-            x: sequence_type
-            fill: country
+        target_dataset: AR1_MLST_Serotype_Virulence
+        layers:
+        - name: geom_bar
+          params: {}
+        - name: scale_x_discrete
+          params: {}
+        - name: labs
+          params:
+            title: Sequence Types by Country
+            x: Sequence Type
+            fill: Country
+        mapping:
+          x: sequence_type
+          fill: country
       abromics_st_by_source:
-        label: Sequence Types by Source
+        ui_label: Sequence Types by Source
         description: "Bars count the rows of the table (one per sample and selected virulence gene, so a sample with more genes weighs more) for each sequence type, coloured by source."
-        spec:
-          target_dataset: AR1_MLST_Serotype_Virulence
-          layers:
-          - name: geom_bar
-            params: {}
-          - name: scale_x_discrete
-            params: {}
-          - name: labs
-            params:
-              title: Sequence Types by Source
-              x: Sequence Type
-              fill: Source
-          mapping:
-            x: sequence_type
-            fill: source
+        target_dataset: AR1_MLST_Serotype_Virulence
+        layers:
+        - name: geom_bar
+          params: {}
+        - name: scale_x_discrete
+          params: {}
+        - name: labs
+          params:
+            title: Sequence Types by Source
+            x: Sequence Type
+            fill: Source
+        mapping:
+          x: sequence_type
+          fill: source

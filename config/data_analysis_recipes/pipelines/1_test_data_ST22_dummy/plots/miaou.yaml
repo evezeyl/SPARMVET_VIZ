@@ -1,5 +1,8 @@
+ui_label: "Miaou 🐈"
+ui_title: 🐱 Miaou — Assembly Metric Distributions by Source
+description: "Miaou! Distribution of assembly metrics across sources — the boss's favourite shape. Violin plot showing the distribution of n50, total_length, and largest_contig per source, facetted by metric. Wide bellies = wide spread, narrow tails = consistent values."
+taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Intermediate"}
 target_dataset: Quast_with_metadata
-title: 🐱 Miaou — Assembly Metric Distributions by Source
 mapping:
   x: source
   y: value
@@ -11,3 +14,6 @@ layers:
   params:
     facets: ~metric
     scales: free_y
+- name: labs
+  params:
+    title: 🐱 Miaou — Assembly Metric Distributions by Source

@@ -1,8 +1,14 @@
+ui_label: "Plot C Resistance Class"
+ui_title: Resistance Class by Host Animal
+description: "Bars count the rows of the joined table for each resistance class, coloured by host animal; the joined table repeats every gene row once per antibiotic test of its sample, so a sample with more tests weighs more."
+taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
 target_dataset: figshare_triple_join
-title: Resistance Class by Host Animal
 mapping:
   x: resistance_class
   fill: host_animal_common
 layers:
 - name: geom_bar
   params: {}
+- name: labs
+  params:
+    title: Resistance Class by Host Animal

@@ -1,4 +1,4 @@
-tier1:
+steps:
   - action: polars_join
     right_ingredient: fg_phenotypes
     'on': [sample_id]

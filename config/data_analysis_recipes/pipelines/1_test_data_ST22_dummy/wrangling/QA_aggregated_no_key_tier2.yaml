@@ -1,0 +1,8 @@
+
+steps:
+  # count() counts the non-empty sample_id values of each group.
+  - action: polars_group_by
+    by: [country, year_label]
+    maintain_order: true
+    named_aggs:
+      n_samples: pl.col('sample_id').count()

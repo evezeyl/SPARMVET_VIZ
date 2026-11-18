@@ -21,7 +21,7 @@ data_schemas:
     null_values: []
     strip: true
     input_fields: !include 'complex_template/genomics_input.yaml'
-    wrangling: !include 'complex_template/genomics_wrangling.yaml'
+    tier1: !include 'complex_template/genomics_wrangling.yaml'
 
 metadata_schema:
   label: "Metadata"
@@ -33,7 +33,7 @@ metadata_schema:
   null_values: []
   strip: true
   input_fields: !include 'complex_template/metadata_input.yaml'
-  wrangling: {tier1: []}
+  tier1: {steps: []}
 
 joins:
   master_assembly:
@@ -42,19 +42,21 @@ joins:
     ingredients:
       - dataset_id: "genomics"
       - dataset_id: "metadata_schema"
-    steps: !include 'complex_template/master_steps.yaml'
+    tier1: !include 'complex_template/master_steps.yaml'
+
+plot_defaults:
+  theme: theme_bw
 
 analysis_groups:
   Overview:
-    label: "Overview"
+    ui_label: "Overview"
     plots:
       gene_presence_by_country:
-        label: "Gene presence by country"
-        spec:
-          target_dataset: master_assembly
-          mapping:
-            x: country
-            fill: gene_presence
-          layers:
-            - name: geom_bar
-              params: {}
+        ui_label: "Gene presence by country"
+        target_dataset: master_assembly
+        mapping:
+          x: country
+          fill: gene_presence
+        layers:
+          - name: geom_bar
+            params: {}

@@ -1,4 +1,4 @@
-tier1:
+steps:
   - action: polars_rename
     mapping:
       id: sample_id

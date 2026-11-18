@@ -30,8 +30,8 @@ data_schemas:
         original_name: Group
         type: String
         label: Sample Group
-    wrangling:
-      tier1:
+    tier1:
+      steps: []
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
 metadata_schema:
   label: "metadata"
@@ -51,8 +51,8 @@ metadata_schema:
       original_name: Category
       type: String
       label: Biological Category
-  wrangling:
-    tier1: []
+  tier1:
+    steps: []
 joins:
   main_collection:
     label: "main collection"
@@ -60,29 +60,34 @@ joins:
     ingredients:
     - dataset_id: primary_data
     - dataset_id: metadata_schema
-    steps:
-      tier1:
+    tier1:
+      steps:
       - action: polars_join
         right_ingredient: metadata_schema
         'on': [sample_id]
         how: left
         maintain_order: left_right
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   Overview:
-    label: "📊 Summary overview"
+    ui_label: "📊 Summary overview"
     description: 📊 Summary overview
     plots:
       value_by_group:
-        label: "Value By Group"
-        taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Beginner"}
+        ui_label: "Value By Group"
+        ui_title: Measurement Values by Group
         description: "Distribution of measurement values per group."
-        spec:
-          target_dataset: main_collection
-          title: Measurement Values by Group
-          mapping:
-            x: group
-            y: value
-            fill: category
-          layers:
-          - name: geom_col
-            params: {}
+        taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Beginner"}
+        target_dataset: main_collection
+        mapping:
+          x: group
+          y: value
+          fill: category
+        layers:
+        - name: geom_col
+          params: {}
+        - name: labs
+          params:
+            title: Measurement Values by Group

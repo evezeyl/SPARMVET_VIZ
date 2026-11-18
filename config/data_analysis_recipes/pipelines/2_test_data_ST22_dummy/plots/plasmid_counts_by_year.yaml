@@ -1,3 +1,5 @@
+ui_label: "Plasmid Prevalence by Country"
+description: "Bars count plasmid hits (rows, not samples) per year, coloured by plasmid name, one panel per country."
 target_dataset: Plasmid_Profile_Joint
 theme: theme_light
 layers:

@@ -28,7 +28,7 @@ metadata_schema:
   null_values: []
   strip: true
   input_fields: !include 2_test_data_ST22_dummy/input_fields/metadata_schema.yaml
-  wrangling: {tier1: []}
+  tier1: {steps: []}
 
 data_schemas:
   amr_data:
@@ -40,7 +40,7 @@ data_schemas:
     null_values: []
     strip: true
     input_fields: !include 2_test_data_ST22_dummy/input_fields/amr_data.yaml
-    wrangling: !include 2_test_data_ST22_dummy/wrangling/amr_data.yaml
+    tier1: !include 2_test_data_ST22_dummy/wrangling/amr_data.yaml
   plasmid_data:
     label: "plasmid data"
     description: "One row per plasmid hit reported by PlasmidFinder (a sample can have several); only hits with identity of at least 90 and overlap of at least 60 percent are kept."
@@ -50,7 +50,7 @@ data_schemas:
     null_values: []
     strip: true
     input_fields: !include 2_test_data_ST22_dummy/input_fields/plasmid_data.yaml
-    wrangling: !include 2_test_data_ST22_dummy/wrangling/plasmid_data.yaml
+    tier1: !include 2_test_data_ST22_dummy/wrangling/plasmid_data.yaml
 
 joins:
   AMR_Profile_Joint:
@@ -59,36 +59,24 @@ joins:
     ingredients:
       - dataset_id: amr_data
       - dataset_id: metadata_schema
-    steps: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
+    tier1: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
   Plasmid_Profile_Joint:
     label: "Plasmid Profile Joint"
     description: "One row per plasmid hit with the sample's source, year and country (inner join: a sample with no plasmid hit, or not in the metadata, has no row), sorted by year, source and country."
     ingredients:
       - dataset_id: plasmid_data
       - dataset_id: metadata_schema
-    steps: !include 2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml
-
-plot_defaults:
-  default_font_family: "Liberation Sans"
+    tier1: !include 2_test_data_ST22_dummy/assembly/Plasmid_Profile_Joint.yaml
 
 analysis_groups:
   AMR_Insight:
-    label: "AMR Profiling Insight"
+    ui_label: "AMR Profiling Insight"
     description: "How many resistance gene hits come from multi-resistant samples, by year, country and source."
     plots:
-      multi_resistance_by_country:
-        label: "Multi-Resistance by Country"
-        description: "Bars count resistance gene hits (rows, not samples: a sample with more genes weighs more) per year, coloured by whether the sample is multi-resistant, one panel per country."
-        spec: !include 2_test_data_ST22_dummy/plots/multi_resistance_by_country.yaml
-      multi_resistance_by_source:
-        label: "Multi-Resistance by Source"
-        description: "Bars count resistance gene hits (rows, not samples: a sample with more genes weighs more) per year, coloured by whether the sample is multi-resistant, one panel per source."
-        spec: !include 2_test_data_ST22_dummy/plots/multi_resistance_by_source.yaml
+      multi_resistance_by_country: !include 2_test_data_ST22_dummy/plots/multi_resistance_by_country.yaml
+      multi_resistance_by_source: !include 2_test_data_ST22_dummy/plots/multi_resistance_by_source.yaml
   Plasmid_Insight:
-    label: "Plasmid Dynamics"
+    ui_label: "Plasmid Dynamics"
     description: "Which plasmid types are found, by year and country."
     plots:
-      plasmid_prevalence_by_country:
-        label: "Plasmid Prevalence by Country"
-        description: "Bars count plasmid hits (rows, not samples) per year, coloured by plasmid name, one panel per country."
-        spec: !include 2_test_data_ST22_dummy/plots/plasmid_counts_by_year.yaml
+      plasmid_prevalence_by_country: !include 2_test_data_ST22_dummy/plots/plasmid_counts_by_year.yaml

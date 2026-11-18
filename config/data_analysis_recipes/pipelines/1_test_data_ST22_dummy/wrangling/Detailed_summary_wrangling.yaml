@@ -1,4 +1,4 @@
-tier1:
+steps:
   # Detailed_summary wrangling: split HSP/Total Length, compute ratio, filter per quality thresholds
   - action: polars_str_splitn
     columns: [hsp_lengthtotal_length]

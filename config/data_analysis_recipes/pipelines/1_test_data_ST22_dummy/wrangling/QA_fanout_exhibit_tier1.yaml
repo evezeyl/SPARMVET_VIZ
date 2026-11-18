@@ -1,6 +1,6 @@
 # QA canary, an EXHIBIT of a known defect (issue #68): two long tables joined on the same key multiply
 # the rows (each AMR gene row meets each virulence gene row of the sample). Do not copy this pattern.
-tier1:
+steps:
   - action: polars_join
     right_ingredient: ResFinder
     'on': [sample_id]
@@ -13,10 +13,3 @@ tier1:
     maintain_order: left_right
   - action: polars_select
     exprs: [sample_id, country, gene, VF_gene]
-
-tier2:
-  - action: polars_group_by
-    by: [sample_id]
-    maintain_order: true
-    named_aggs:
-      rows_per_sample: pl.col('VF_gene').count()

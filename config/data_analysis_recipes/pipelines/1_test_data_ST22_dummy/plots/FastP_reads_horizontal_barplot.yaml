@@ -1,5 +1,8 @@
+ui_label: "QC Reads Horizontal Barplot"
+ui_title: Reads Quality & Taxonomy Proportion
+description: "Provides a distribution of total reads per sample by taxonomy proportion. Shows total reads (FastP) colored by the proportion of the top-ranking taxon (Bracken)."
+taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Intermediate"}
 target_dataset: QC_Reads_Anchor
-title: Reads Quality & Taxonomy Proportion
 mapping:
   x: sample_id
   y: total_reads
@@ -9,3 +12,6 @@ layers:
   params: {}
 - name: coord_flip
   params: {}
+- name: labs
+  params:
+    title: Reads Quality & Taxonomy Proportion

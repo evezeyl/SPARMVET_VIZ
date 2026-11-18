@@ -1,4 +1,4 @@
-tier1:
+steps:
   # Assembly steps: Correlations & Specialization (Optimized Stage-Wise)
   # 1. Start with 'Summary' and filter to Phenotypes ONLY
   - action: modif_filter

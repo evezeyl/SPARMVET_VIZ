@@ -36,44 +36,48 @@ data_schemas:
         original_name: turnaround_time
         type: Float64
         label: TAT (Days)
-    wrangling:
-      tier1:
+    tier1:
+      steps: []
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
 plot_defaults:
   theme: theme_minimal
 analysis_groups:
   Performance:
-    label: "⏱️ Lab Speed and Efficiency"
+    ui_label: "⏱️ Lab Speed and Efficiency"
     description: ⏱️ Lab Speed and Efficiency
     plots:
       tat_distribution:
-        label: "Tat Distribution"
-        taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
+        ui_label: "Tat Distribution"
+        ui_title: Turnaround Time by Laboratory
         description: "Distribution of turnaround times per laboratory."
-        spec:
-          target_dataset: submission_logs
-          title: Turnaround Time by Laboratory
-          mapping:
-            x: lab_id
-            y: turnaround_time
-            fill: lab_id
-          layers:
-          - name: geom_boxplot
-            params: {}
+        taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
+        target_dataset: submission_logs
+        mapping:
+          x: lab_id
+          y: turnaround_time
+          fill: lab_id
+        layers:
+        - name: geom_boxplot
+          params: {}
+        - name: labs
+          params:
+            title: Turnaround Time by Laboratory
   Volumes:
-    label: "📦 Throughput and Backlogs"
+    ui_label: "📦 Throughput and Backlogs"
     description: 📦 Throughput and Backlogs
     plots:
       submission_status:
-        label: "Submission Status"
-        taxonomy: {"family": "Ranking", "pattern": "2 Categorical", "difficulty": "Beginner"}
+        ui_label: "Submission Status"
+        ui_title: Submissions by Current Status
         description: "Submissions by current processing status."
-        spec:
-          target_dataset: submission_logs
-          title: Submissions by Current Status
-          mapping:
-            x: status
-            fill: lab_id
-          layers:
-          - name: geom_bar
-            params: {}
+        taxonomy: {"family": "Ranking", "pattern": "2 Categorical", "difficulty": "Beginner"}
+        target_dataset: submission_logs
+        mapping:
+          x: status
+          fill: lab_id
+        layers:
+        - name: geom_bar
+          params: {}
+        - name: labs
+          params:
+            title: Submissions by Current Status

@@ -3,7 +3,7 @@
 # divide_columns: divide a column by another column
 # filter_range: filter rows based on a range of values
 # drop_columns: drop columns from the dataset
-tier1:
+steps:
   # NOTE : unpivot implicitly drops unselected columns
 
   # NOTE Creating a long format of all those columns

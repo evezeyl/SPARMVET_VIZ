@@ -1,0 +1,8 @@
+
+steps:
+  # count() counts non-empty values, so a sample without a gene gets 0, not 1.
+  - action: polars_group_by
+    by: [sample_id, country]
+    maintain_order: true
+    named_aggs:
+      n_amr_genes: pl.col('gene').count()

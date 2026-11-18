@@ -1,4 +1,4 @@
-tier1:
+steps:
   - action: polars_select
     exprs: [sample_id, scheme, sequence_type]
   # Ingestion already turns "-", "NA", "N/A", "None", "null", "NaN" and empty cells into real

@@ -1,0 +1,13 @@
+
+# tier2: aggregation / sorting for cross-dataset visualizations
+steps:
+  # 1. Provide virulence gene count for sorting
+  - action: polars_with_columns
+    named_exprs:
+      virulence_count: pl.len().over(['sample_id'])
+
+  # 2. Sort samples by virulence count (primary) to highlight high-risk isolates
+  - action: polars_sort
+    by: [virulence_count, sample_id]
+    maintain_order: true
+    descending: [true, false]

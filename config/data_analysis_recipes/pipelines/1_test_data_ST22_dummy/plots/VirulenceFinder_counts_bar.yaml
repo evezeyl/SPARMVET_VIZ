@@ -1,4 +1,7 @@
-title: Selected Virulence Genes Count
+ui_label: "Virulence Bar"
+ui_title: Selected Virulence Genes Count
+description: "One bar per sample counting table rows, coloured by selected virulence gene; the table has one row per sample, virulence gene and AMR gene hit, so a sample with more AMR hits weighs more."
+taxonomy: {"family": "Ranking", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Intermediate"}
 target_dataset: ST22_Anchor
 layers:
 - name: theme_minimal
@@ -9,6 +12,7 @@ layers:
     width: 0.7
 - name: labs
   params:
+    title: Selected Virulence Genes Count
     x: Sample Id
     y: Count
     fill: Selected Virulence Genes

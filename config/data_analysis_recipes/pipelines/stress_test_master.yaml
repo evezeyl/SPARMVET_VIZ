@@ -17,35 +17,34 @@ data_schemas:
     null_values: []
     strip: true
     input_fields: !include 'stress_test_master/input_fields/Stress_Source_input_fields.yaml'
-    wrangling: !include 'stress_test_master/wrangling/Stress_Source_wrangling.yaml'
+    tier1: !include 'stress_test_master/wrangling/Stress_Source_wrangling.yaml'
 joins:
   Master_Collection:
     label: "Master Collection"
     description: "The stress table as it is (no join step), kept as the one collection the plot reads."
     ingredients:
     - dataset_id: Stress_Source
-    steps: !include 'stress_test_master/wrangling/Master_Collection_steps.yaml'
+    tier1: !include 'stress_test_master/wrangling/Master_Collection_steps.yaml'
 plot_defaults:
-  default_font_family: Liberation Sans
+  theme: theme_bw
 analysis_groups:
   Stress_Distribution:
-    label: Distribution Analysis
+    ui_label: Distribution Analysis
     description: "How the synthetic records spread over species and antibiotic classes, to test that a large plot stays responsive."
     plots:
       stress_species_amr:
-        label: Species x AMR Distribution
+        ui_label: Species x AMR Distribution
         description: "Bars count records for each species, coloured by antibiotic class."
-        spec:
-          target_dataset: Master_Collection
-          layers:
-          - name: geom_bar
-            params: {}
-          - name: labs
-            params:
-              title: 'STRESS TEST: Species x AMR Distribution'
-              x: Species
-              y: Observed Count
-              fill: AMR Class
-          mapping:
-            x: species
-            fill: amr_class
+        target_dataset: Master_Collection
+        layers:
+        - name: geom_bar
+          params: {}
+        - name: labs
+          params:
+            title: 'STRESS TEST: Species x AMR Distribution'
+            x: Species
+            y: Observed Count
+            fill: AMR Class
+        mapping:
+          x: species
+          fill: amr_class

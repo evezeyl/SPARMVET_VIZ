@@ -1,8 +1,14 @@
+ui_label: "Plot B Genotype Bar"
+ui_title: Resistance Gene Families by Host
+description: "Bars count the rows of the joined table for each host animal, coloured by gene family; the joined table repeats every gene row once per antibiotic test of its sample, so a sample with more tests weighs more."
+taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
 target_dataset: figshare_triple_join
-title: Resistance Gene Families by Host
 mapping:
   x: host_animal_common
   fill: gene_name_family
 layers:
 - name: geom_bar
   params: {}
+- name: labs
+  params:
+    title: Resistance Gene Families by Host
