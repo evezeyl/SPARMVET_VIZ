@@ -24,7 +24,7 @@ from pathlib import Path
 
 from shiny import reactive, render, ui
 
-from app.modules.error_notice import notice
+from app.modules.error_notice import notice, what_failed
 from app.modules.export_refusal import export_refusal
 from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
@@ -511,6 +511,10 @@ def _build_methods_section(
     return lines
 
 
+# The words the Scope radio shows for each value; the radio, its choices and the notices all read them from here.
+SCOPE_LABELS = {"global": "Global", "group": "Active group", "plot": "Active plot"}
+
+
 def export_scope_choices(groups: dict, active_subtab: str) -> dict:
     """The choices of the export Scope radio for the plot tab that is open now.
 
@@ -527,20 +531,20 @@ def export_scope_choices(groups: dict, active_subtab: str) -> dict:
                 active_gid = gid
                 break
 
-    choices = {"global": {"label": "Global", "title": "Export everything in the active data analysis recipe",
+    choices = {"global": {"label": SCOPE_LABELS["global"], "title": "Export everything in the active data analysis recipe",
                           "dimmed": False}}
     if has_groups and active_gid is not None:
-        choices["group"] = {"label": f"Active group ({active_gid})",
+        choices["group"] = {"label": f"{SCOPE_LABELS['group']} ({active_gid})",
                             "title": "Export all plots in the current group (e.g. all Quality Control plots)",
                             "dimmed": False}
     elif has_groups and not active_pid:
-        choices["group"] = {"label": "Active group", "title": "Switch to a plot tab to enable scoped export.",
+        choices["group"] = {"label": SCOPE_LABELS["group"], "title": "Switch to a plot tab to enable scoped export.",
                             "dimmed": True}
     if active_pid:
-        choices["plot"] = {"label": f"Active plot ({active_pid})",
+        choices["plot"] = {"label": f"{SCOPE_LABELS['plot']} ({active_pid})",
                            "title": "Export only the plot you are currently viewing", "dimmed": False}
     else:
-        choices["plot"] = {"label": "Active plot", "title": "Switch to a plot tab to enable scoped export.",
+        choices["plot"] = {"label": SCOPE_LABELS["plot"], "title": "Switch to a plot tab to enable scoped export.",
                            "dimmed": True}
     return choices
 
@@ -747,7 +751,7 @@ def define_export_server(input, output, session, *,
             style="font-size:0.8em;"
         )
 
-    @reactive.effect
+    @reactive.Effect
     def _sync_export_scope_choices():
         """Follow the plot tab and the recipe with the choices of the Scope radio, and keep what the user chose.
 
@@ -762,16 +766,16 @@ def define_export_server(input, output, session, *,
                                            active_home_subtab.get() or "")
         except Exception as e:
             with reactive.isolate():
-                _notify(f"The Scope choices of the Export panel could not be brought up to date: {e}. "
-                        "They stay as they were; check the recipe in the Data analysis recipe selector.",
-                        type="warning", duration=10)
+                _notify(what_failed("The Scope choices of the Export panel could not be brought up to date; they stay as "
+                                           "they were", e), type="warning", duration=10)
             return
         with reactive.isolate():
             current = safe_input(input, "export_scope", "global")
             selected = current if current in choices else "global"
             ui.update_radio_buttons("export_scope", choices=_scope_choice_tags(choices), selected=selected)
             if selected != current:
-                _notify(f"The export scope '{current}' is not available on this plot tab, so the scope was set back "
+                _shown = SCOPE_LABELS.get(current, current)
+                _notify(f"The export scope '{_shown}' is not available on this plot tab, so the scope was set back "
                         "to Global.", type="warning", duration=10)
 
     # ── REPRO-IMPORT-1 (#48, ADR-097): import + per-leg verification ────────────
@@ -1406,6 +1410,10 @@ def define_export_server(input, output, session, *,
             # below, since both modes need the exact same file to be comparable
             # (Eve, 2026-11-09): "if they differ means mode 1 and mode 2 not equal".
             mode2_skipped: dict[str, str] | None = None
+            # What the README says about the reproducibility part (D-0050): "built", "failed" (ERROR.txt only) or
+            # "incomplete" (built, but data files that could not be copied are `*_ERROR.txt` files).
+            repro_status = "built"
+            repro_missing_files: list[str] = []
             if wants_mode2:
                 try:
                     from blueprint_arch.t3_translator import build_mode2_recipe
@@ -1432,6 +1440,7 @@ def define_export_server(input, output, session, *,
                                 )
                         except Exception as e:
                             _lost(f"the data file '{_ds_id}' of the reproducibility bundle", e)
+                            repro_missing_files.append(str(_ds_id))
                             zf.writestr(
                                 f"{bundle_dir}/data_reproducibility/{_ds_id}_ERROR.txt", str(e)
                             )
@@ -1440,9 +1449,18 @@ def define_export_server(input, output, session, *,
                     # attached to a paper submission or handed to a collaborator). Say so
                     # every time, non-blocking (the user may have already anonymised the
                     # data before loading it, in which case this is a no-op reminder).
+                    if repro_missing_files:
+                        repro_status = "incomplete"
+                        _repro_head = (
+                            "Reproducibility part: included, but INCOMPLETE (the recipe is there; the data file(s) "
+                            f"{', '.join(repro_missing_files)} could not be copied, see the *_ERROR.txt files in "
+                            "data_reproducibility/). "
+                        )
+                    else:
+                        _repro_head = "Reproducibility part: included (the full recipe and the data files). "
                     with reactive.isolate():
                         _notify(
-                            "Reproducibility part: included (the full recipe and the data files). "
+                            _repro_head +
                             "This reproducibility bundle includes your actual raw data "
                             "files, not just hashes — anyone who gets the bundle gets the "
                             "data. If it contains sensitive information, anonymise it "
@@ -1465,6 +1483,7 @@ def define_export_server(input, output, session, *,
                         f"{bundle_dir}/data_analysis_recipes_reproducibility/ERROR.txt", str(e)
                     )
                     mode2_skipped = {"_error": str(e)}
+                    repro_status = "failed"
                     _later("⚠️ " + notice(
                         "The reproducibility part of this export could not be built, so the bundle holds no recipe and no "
                         "data files for a re-run (its reason is in data_analysis_recipes_reproducibility/ERROR.txt)",
@@ -2023,7 +2042,14 @@ def define_export_server(input, output, session, *,
                 f"Plot format      : {plot_fmt}",
                 # D-0050: the choice that decides whether the recipe and the data files are in the bundle, as the server read
                 # it when Export was pressed (a box that went back to unticked would show here, not only as a missing folder).
-                ("Reproducibility  : included (the box 'Also include a reproducibility/reimport bundle' was ticked)"
+                (("Reproducibility  : requested (the box 'Also include a reproducibility/reimport bundle' was ticked) "
+                  "but NOT built; the reason is in data_analysis_recipes_reproducibility/ERROR.txt")
+                 if wants_mode2 and repro_status == "failed" else
+                 ("Reproducibility  : included but INCOMPLETE (the box 'Also include a reproducibility/reimport bundle' "
+                  "was ticked); the data file(s) that could not be copied are listed as *_ERROR.txt files in "
+                  "data_reproducibility/: " + ", ".join(repro_missing_files))
+                 if wants_mode2 and repro_status == "incomplete" else
+                 "Reproducibility  : included (the box 'Also include a reproducibility/reimport bundle' was ticked)"
                  if wants_mode2 else
                  "Reproducibility  : not included (the box 'Also include a reproducibility/reimport bundle' was not "
                  "ticked when Export was pressed)"),
