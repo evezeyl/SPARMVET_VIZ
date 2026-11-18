@@ -66,7 +66,7 @@ def test_every_data_schema_builds(recipe_id):
     failures = {}
     for dataset_id, spec in schemas:
         try:
-            orchestrator.prepare_ingredient(dataset_id, spec).collect()
+            orchestrator.prepare_ingredient(dataset_id, spec, recipe=raw).collect()
         except Exception as exc:  # noqa: BLE001 - report every schema that fails, with its reason
             failures[dataset_id] = f"{type(exc).__name__}: {str(exc)[:120]}"
     assert not failures, f"{recipe_id}: data schemas that cannot be built: {failures}"

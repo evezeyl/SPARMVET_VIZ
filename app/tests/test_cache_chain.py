@@ -58,6 +58,8 @@ class World:
         entry = self.data_analysis_recipes_dir / "tiny.yaml"
         entry.write_text(f"""id: tiny
 info: {{label: Tiny}}
+data_engine: python-polars
+plot_engine: python-plotnine
 data_schemas:
   T:
     source: {{type: local_tsv, path: {source_path or self.data_file}}}

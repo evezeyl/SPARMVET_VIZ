@@ -33,6 +33,8 @@ def _make_recipe(root: Path, recipe_id: str, data_path: Path) -> Path:
     entry = root / f"{recipe_id}.yaml"
     entry.write_text(f"""id: {recipe_id}
 info: {{display_name: Tiny}}
+data_engine: python-polars
+plot_engine: python-plotnine
 data_schemas:
   T:
     source: {{type: local_tsv, path: {data_path}}}

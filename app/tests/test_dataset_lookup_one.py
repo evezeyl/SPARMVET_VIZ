@@ -36,6 +36,8 @@ def _recipe(recipes_dir: Path, recipe_id: str = "tiny", source_path: Path | None
     entry = recipes_dir / f"{recipe_id}.yaml"
     entry.write_text(f"""id: {recipe_id}
 info: {{label: Tiny}}
+data_engine: python-polars
+plot_engine: python-plotnine
 data_schemas:
   T:
 {source}    null_values: []
@@ -67,8 +69,8 @@ analysis_groups:
 
 def _read(orch: DataOrchestrator, recipes_dir: Path, recipe_id: str = "tiny") -> str:
     """The marker of the file that the engine reads for dataset T of the recipe."""
-    schema = load_data_analysis_recipe(recipes_dir / f"{recipe_id}.yaml").raw["data_schemas"]["T"]
-    frame = orch.prepare_ingredient("T", schema, recipe_id=recipe_id)
+    raw = load_data_analysis_recipe(recipes_dir / f"{recipe_id}.yaml").raw
+    frame = orch.prepare_ingredient("T", raw["data_schemas"]["T"], recipe_id=recipe_id, recipe=raw)
     return frame.collect()["sample_id"].to_list()[0]
 
 

@@ -51,6 +51,8 @@ def _make_data_analysis_recipe(tmp_path: Path, *, reads_header="sample_id\treads
     data_analysis_recipe = tmp_path / "proj.yaml"
     data_analysis_recipe.write_text(dedent(f"""
         id: proj
+        data_engine: python-polars
+        plot_engine: python-plotnine
         data_schemas:
           A:
             source: {{type: local_tsv, path: {tmp_path / 'a.tsv'}}}
@@ -123,6 +125,8 @@ def _recipe_with_a_split_step(tmp_path: Path, code_type: str) -> Path:
     recipe = tmp_path / "split.yaml"
     recipe.write_text(dedent(f"""
         id: split
+        data_engine: python-polars
+        plot_engine: python-plotnine
         data_schemas:
           B:
             source: {{type: local_tsv, path: {tmp_path / 'b.tsv'}}}
@@ -166,6 +170,8 @@ def _recipe_with_a_cast_step(tmp_path: Path, expression: str) -> Path:
     recipe = tmp_path / "castit.yaml"
     recipe.write_text(dedent(f"""
         id: castit
+        data_engine: python-polars
+        plot_engine: python-plotnine
         data_schemas:
           B:
             source: {{type: local_tsv, path: {tmp_path / 'b.tsv'}}}

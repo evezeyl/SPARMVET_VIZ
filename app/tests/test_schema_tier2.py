@@ -64,6 +64,8 @@ class SchemaWorld:
         entry = self.recipes / "tiny.yaml"
         entry.write_text(f"""id: tiny
 info: {{label: Tiny}}
+data_engine: python-polars
+plot_engine: python-plotnine
 data_schemas:
   T:
     source: {{type: local_tsv, path: {self.data_file}}}

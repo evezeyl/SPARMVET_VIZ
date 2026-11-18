@@ -118,7 +118,7 @@ def test_fanout_exhibit_multiplies_rows_as_documented(stage, raw_config):
     the check is built, change this test on purpose."""
     res = _tsv("test_data_ResFinder_*.tsv").group_by("sample_id").len().rename({"len": "n_res"})
     spec = raw_config["additional_datasets_schemas"]["VirulenceFinder"]
-    with_stage = stage.orchestrator.prepare_ingredient("VirulenceFinder", spec).collect()
+    with_stage = stage.orchestrator.prepare_ingredient("VirulenceFinder", spec, recipe=raw_config).collect()
     vir = with_stage.group_by("sample_id").len().rename({"len": "n_vir"})
     both = (
         vir.with_columns(pl.col("sample_id").cast(pl.String))
