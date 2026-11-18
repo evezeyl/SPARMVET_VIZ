@@ -38,6 +38,7 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 from app.modules.cache_keys import canonical_hash
+from utils.join_keys import JOIN_ACTIONS, key_columns
 from utils.na_choice import with_na
 from utils.recipe_tiers import step_list
 
@@ -117,15 +118,11 @@ def normalise_audit_steps(by_plot: dict[str, list[dict]]) -> dict[str, list[dict
     return out
 
 
-# the join action of the engine (`polars_join`); the others that name `on` are not joins
-_JOIN_ACTIONS = ("polars_join",)
-
-
 def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
     """Return the union of join-key column names across all assembly steps.
 
-    A column is a primary key if it appears as `on`/`left_on`/`right_on` in a join step
-    of `joins.*.tier1.steps` or `joins.*.tier2.steps`. This includes both true PKs
+    A column is a primary key if it is a key column (`on`, `left_on`, `right_on`, and the `by` groups of an as-of join: the rule of
+    `utils.join_keys.key_columns`) of a join step of `joins.*.tier1.steps` or `joins.*.tier2.steps`. This includes both true PKs
     (sample_id) and secondary/accessory keys for long-format joins (gene_id).
 
     See ADR-049 / §12g.2.
@@ -140,16 +137,11 @@ def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
         # the steps of a join are its tier 1 and its tier 2 (`tier1: {steps: [...]}`, D-0250)
         for step in step_list(join_def, "tier1") + step_list(join_def, "tier2"):
             # only a join step names join keys: `on` of an unpivot or a group step names columns that are not keys
-            if not isinstance(step, dict) or step.get("action") not in _JOIN_ACTIONS:
+            if not isinstance(step, dict) or step.get("action") not in JOIN_ACTIONS:
                 continue
-            for field in ("on", "left_on", "right_on"):
-                v = step.get(field)
-                if isinstance(v, str):
-                    keys.add(v)
-                elif isinstance(v, list):
-                    for c in v:
-                        if isinstance(c, str):
-                            keys.add(c)
+            left, right = key_columns(step)
+            keys.update(left)
+            keys.update(right)
     return sorted(keys)
 
 

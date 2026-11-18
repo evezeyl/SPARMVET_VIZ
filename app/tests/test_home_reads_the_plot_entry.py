@@ -17,6 +17,7 @@ from app.handlers.audit_stack import plot_target_dataset
 from app.handlers.home_theater import _collect_all_group_plot_ids, group_tab_label, plot_list_label, plot_tab_label
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.session_manager import extract_primary_keys
+from utils import action_names
 
 ROOT = Path(__file__).resolve().parents[2]
 DEMO = ROOT / "config" / "data_analysis_recipes" / "pipelines" / "1_test_data_ST22_dummy.yaml"
@@ -64,13 +65,13 @@ def test_the_audit_panel_reads_the_target_dataset_from_the_entry():
 
 def test_the_join_keys_come_from_the_tier_steps_of_the_joins_and_only_from_join_steps():
     raw = {"joins": {
-        "J": {"tier1": {"steps": [{"action": "polars_join", "right_ingredient": "M", "on": ["sample_id"], "how": "left"},
+        "J": {"tier1": {"steps": [{"action": action_names.JOIN, "right_ingredient": "M", "on": ["sample_id"], "how": "left"},
                                    {"action": "polars_unpivot", "on": ["n50", "length"]}]},
-              "tier2": {"steps": [{"action": "polars_join", "left_on": "gene", "right_on": ["gene_id"]}]}},
+              "tier2": {"steps": [{"action": action_names.JOIN, "left_on": "gene", "right_on": ["gene_id"]}]}},
         "K": {"tier1": {"steps": []}},
     }}
     assert extract_primary_keys(raw) == ["gene", "gene_id", "sample_id"], "an unpivot's `on` names columns, not keys"
-    assert extract_primary_keys({"joins": {"J": {"steps": [{"action": "polars_join", "on": "x"}]}}}) == [], \
+    assert extract_primary_keys({"joins": {"J": {"steps": [{"action": action_names.JOIN, "on": "x"}]}}}) == [], \
         "a join written the old way (a `steps` container) is not read"
     assert extract_primary_keys({}) == [] and extract_primary_keys({"joins": None}) == []
 
