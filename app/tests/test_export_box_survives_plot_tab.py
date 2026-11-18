@@ -11,7 +11,7 @@ This was a defect a user could meet. The wire log of the failing run of
 seconds after the tick).
 
 Fixed: `system_tools_ui` mounts every field of the panel once and reads the plot tab and the recipe only inside
-`reactive.isolate()`; the Scope choices follow the tab through `_sync_export_scope_choices`, which updates the radio in place.
+`reactive.isolate()`. (The Scope choice that used to follow the tab is removed, D-0292: every export holds all plots.)
 
 This test needs no browser: it reads the source of `system_tools_ui` and checks that the panel that holds the box does not depend
 on the active plot tab or the recipe (outside a `reactive.isolate()` block).
@@ -24,7 +24,7 @@ from pathlib import Path
 
 HANDLER = Path(__file__).resolve().parents[1] / "handlers" / "export_handlers.py"
 BOX_ID = "export_include_reproducibility"
-RERENDER_TRIGGERS = {"active_home_subtab", "active_cfg"}
+RERENDER_TRIGGERS = {"active_cfg"}
 
 
 def _function(tree: ast.AST, name: str) -> ast.FunctionDef:
@@ -65,14 +65,14 @@ def _mounts_the_box(func: ast.FunctionDef) -> bool:
 def test_the_panel_that_holds_the_box_reads_what_it_is_not_allowed_to_read_is_found_by_the_check():
     """The check itself can fail: a function that reads the trigger outside isolate is found, inside isolate it is not."""
     src = (
-        "def a():\n    x = active_home_subtab.get()\n"
-        "def b():\n    with reactive.isolate():\n        x = active_home_subtab.get()\n"
+        "def a():\n    x = active_cfg().raw_config\n"
+        "def b():\n    with reactive.isolate():\n        x = active_cfg().raw_config\n"
         "def c():\n    return 1\n"
-        "def d():\n    return active_home_subtab is not None\n"
+        "def d():\n    return active_cfg is not None\n"
         "def e():\n    return active_cfg().raw_config\n"
     )
     tree = ast.parse(src)
-    assert _reads_outside_isolate(_function(tree, "a")) == {"active_home_subtab"}
+    assert _reads_outside_isolate(_function(tree, "a")) == {"active_cfg"}
     assert _reads_outside_isolate(_function(tree, "b")) == set()
     assert _reads_outside_isolate(_function(tree, "c")) == set()
     assert _reads_outside_isolate(_function(tree, "d")) == set()   # a comparison with None is not a reactive read

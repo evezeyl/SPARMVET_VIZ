@@ -80,7 +80,7 @@ def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None, 
     cfg = load_data_analysis_recipe(world.data_analysis_recipes_dir / "tiny.yaml").config
     if info is not None:
         cfg.raw_config["info"] = info
-    values = {"export_user_name": "test", "export_scope": "global", "export_preset": "web", "export_plot_format": "png",
+    values = {"export_user_name": "test", "export_preset": "web", "export_plot_format": "png",
               **(extra_values or {})}
     export_handlers.define_export_server(
         SimpleNamespace(import_bundle_upload=None), lambda fn: fn, None,

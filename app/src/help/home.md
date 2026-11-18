@@ -38,7 +38,7 @@ If a filter names a column the current view does not have (Raw is wide, Result m
 Shows up to the first 100 rows of the active plot's dataset at the selected "Data to show" tier. Toggle **All rows** to remove the cap. The column selector above the table hides columns from the preview only (view-only on Raw/Result); on My view, with the audit sandbox enabled, deselecting a column stages it to be permanently dropped via the audit trail.
 
 ### Export
-Set a bundle label, pick a **Scope** (Global / Active group / Active plot), a **Quality** preset (Web or Publication ≥600 DPI), a **Plot format** (PNG / SVG / PDF), a **Report format** (HTML / PDF / DOCX), and the plot size in inches, then click **Export Bundle**. The bundle contains the plots, the underlying data, the data analysis recipe YAML, and a report with your audit trail. Only filters sent to audit are exported — exploration-only filters never are.
+Set a bundle label, pick a **Quality** preset (Web or Publication ≥600 DPI), a **Plot format** (PNG / SVG / PDF), a **Report format** (HTML / PDF / DOCX), and the plot size in inches, then click **Export Bundle**. Every export holds all plots of the loaded recipe. The bundle contains the plots, the underlying data, the data analysis recipe YAML, and a report with your audit trail. Only filters sent to audit are exported — exploration-only filters never are.
 
 ### Sessions
 **Export Active Session (.zip)** downloads your current audit steps and filter state for archiving. Each saved session is listed with **Restore** (reload it) and **Delete Session**.
