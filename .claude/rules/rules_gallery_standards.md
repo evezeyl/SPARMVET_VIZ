@@ -68,22 +68,30 @@ Examples use the VizFactory data analysis recipe format. **Do NOT use `geom:` as
 
 Correct:
 ```yaml
-plots:
-  my_plot:
-    mapping:
-      x: column_a
-      y: column_b
-    layers:
-      - name: geom_point
+analysis_groups:
+  example:
+    ui_label: Example
+    plots:
+      my_plot:
+        ui_label: My plot      # the plot entry holds the content directly: there is no `spec:` key
+        mapping:
+          x: column_a
+          y: column_b
+        layers:
+          - name: geom_point
 ```
 
 Wrong (both errors):
 ```yaml
-plots:
-  my_plot:
-    layers:
-      - geom: geom_point        # ← wrong key
-        mapping: {x: column_a}  # ← mapping belongs at plot level
+analysis_groups:
+  example:
+    ui_label: Example
+    plots:
+      my_plot:
+        ui_label: My plot
+        layers:
+          - geom: geom_point        # ← wrong key
+            mapping: {x: column_a}  # ← mapping belongs at plot level
 ```
 
 ## 5. The Pivot-Index Integrity Gate

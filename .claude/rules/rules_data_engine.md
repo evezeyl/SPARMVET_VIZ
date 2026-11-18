@@ -18,13 +18,13 @@ To resolve 22-minute render bottlenecks and orchestrate Polars data hand-offs, t
 
 - **Definition:** Logic applied to a common data source (identified by ID or Path) that is shared by ALL plots dependent on that source. This guarantees the fully composed and joined dataset remains highly generic.
 - **Persistence:** Materialized to disk via `pl.sink_parquet("tmp/session_anchor.parquet")`.
-- **Cache key:** the Tier 1 parquet is valid only while its `tier1_key` matches (resolved data analysis recipe minus downstream-only parts, plus data hash and engine version; ADR-089). Never reuse an anchor by file name alone.
+- **Cache key:** the Tier 1 parquet is valid only while its `tier1_key` matches (resolved data analysis recipe minus downstream-only parts, plus data hash, engine version and the effective data engine of every table and join; ADR-089). A key contains the engine of what it stores and nothing else: the engine is an argument of the key function, and the plot engine is in no table key (D-0240). Never reuse an anchor by file name alone.
 - **Instruction:** To minimize recalculation, always suggest a wrangling sequence that prioritizes shared transformations as early as possible (Tier 1) based on the common data source ID/Path.
 
 ### Tier 2 (The Branch): Plot-Specific Anchor
 
 - **Definition:** Logic or pre-aggregation shared by a Functional Group of plots (e.g., all Heatmaps using the same filtered subset).
-- **Persistence:** Stored as one Parquet per join with a non-empty `tier2` (`<name>__T2.parquet`), keyed by the chained `tier2_key` (ADR-089); an empty `tier2` means T2 equals T1 and nothing is stored. Implemented 2026-11-06 (fork issue #10): `DataOrchestrator.materialize_tier2()` reads the stored file when its key matches, otherwise recomputes it from the valid Tier 1.
+- **Persistence:** Stored as one Parquet per join with a non-empty `tier2` (`<name>__T2.parquet`), keyed by the chained `tier2_key`, which takes the effective data engine of that tier 2 as an argument (ADR-089, D-0240); an empty `tier2` means T2 equals T1 and nothing is stored. Implemented 2026-11-06 (fork issue #10): `DataOrchestrator.materialize_tier2()` reads the stored file when its key matches, otherwise recomputes it from the valid Tier 1.
 - **The Bifurcation Point Rule:** If logic is shared globally by a data source, it lives in the Trunk (Tier 1). If it strictly serves a defined functional plotting group or a unique set of visuals, it branches here into Tier 2.
 
 ### Tier 3 (The Leaf): Interactive UI View
@@ -44,22 +44,24 @@ To resolve 22-minute render bottlenecks and orchestrate Polars data hand-offs, t
 
 ## 3. The Tiered Data Analysis Recipe Mandate (ADR-024)
 
-To ensure consistency across the 3-Tier Lifecycle, all `wrangling` blocks in YAML data analysis recipes MUST adopt the tiered nesting structure.
+To ensure consistency across the 3-Tier Lifecycle, the tiers of every table and join in YAML data analysis recipes MUST be written as keys of their own (`tier1`, `tier2`), each a mapping with an optional `data_engine` (first key) and `steps`.
 
 ### Structure Requirement
 
-- **`tier1`**: Required (even if empty). Contains relational foundations (cleaning, joining, column renaming). This is the shared "Trunk" of the data tree. MUST be a Sequential List of actions.
-- **`tier2`**: Optional. Contains plot-specific transformations (aggregations, reshaping to long format, specific subsetting). This is the "Branch". MUST be a Sequential List of actions.
+- **`tier1`**: Required (even if its `steps` are empty). Contains relational foundations (cleaning, joining, column renaming). This is the shared "Trunk" of the data tree. Its `steps` MUST be a Sequential List of actions.
+- **`tier2`**: Optional. Contains plot-specific transformations (aggregations, reshaping to long format, specific subsetting). This is the "Branch". Its `steps` MUST be a Sequential List of actions.
+- **`data_engine`**: Optional, the first key of a tier. The engine that runs the tier; without it the `data_engine` at the top of the data analysis recipe applies. The list of engine names is open: a new name ships with an app release, and an app without its library refuses the value with "no library for this engine in this app" (D-0239).
 
 ```yaml
-wrangling:
-  tier1: [ ...ordered actions... ]
-  tier2: [ ...ordered actions... ] # Optional: skipped via Identity Logic if omitted
+tier1:
+  steps: [ ...ordered actions... ]
+tier2:                               # Optional: skipped via Identity Logic if omitted
+  steps: [ ...ordered actions... ]
 ```
 
 ### Flat List Rejection (LEGACY-FLAT-WRANGLING-1, Phase 34)
 
-The engine rejects flat `wrangling:` lists with a `DataAnalysisRecipeError`. All data analysis recipes must use the tiered structure. If a legacy data analysis recipe is encountered with a flat list, migrate it before running.
+The engine rejects a tier written as a flat list, and the old container `wrangling:`, with a `DataAnalysisRecipeError`. All data analysis recipes must use the tiered structure. If a legacy data analysis recipe is encountered with a flat list, migrate it before running.
 
 ## 4. The Data analysis recipe Data Contract (ADR-013 & Identity Logic)
 

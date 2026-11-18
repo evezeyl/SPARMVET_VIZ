@@ -131,7 +131,7 @@ The Data analysis recipe Bootstrapper generates **boilerplate only**.
 | `data_schemas:` entries | Yes | One per uploaded file |
 | `source: type:` and `source: path:` | Yes | |
 | `input_fields:` with inferred types | Yes | From TSV headers + sampling |
-| `wrangling: tier1: []` / `tier2: []` stubs | Yes | Empty stubs only |
+| `tier1:` (an `!include` of a file that holds `steps`; a tier is its own key) | Yes | Empty `steps` stub only; no `tier2` (an absent tier 2 means T2 equals T1) |
 | `output_fields: {}` stub | Yes | Empty — user fills |
 | PK candidate hints as YAML comments | Yes | e.g. `# Candidate PK: sample_id (100% unique)` |
 | Single-key cleaning steps | Yes | Only if `id_cleaning_steps` param provided |

@@ -97,15 +97,16 @@ The agent MUST NOT generate YAML until the following parameters are clarified:
 Always tiered. `tier1:` is mandatory (even if empty):
 
 ```yaml
-wrangling:
-  tier1:
+tier1:
+  steps:
     - action: filter_range
       columns: [identity]
       min: 90
     - action: cast
       columns: [Year]
       dtype: String
-  tier2: []   # Optional; omit if empty
+tier2:
+  steps: []   # Optional; omit if empty
 ```
 
 **Silent Skip Warning**: If an `input_fields` slug does not match any column name in the source TSV, the engine silently skips it — no error, no warning. Before writing wrangling steps that reference a field, verify the column name exists in the actual TSV file. Use `head -1 <tsv_file>` to inspect the raw headers.
@@ -115,26 +116,27 @@ wrangling:
 One canonical step per action. Use `right_ingredient:` (not `dataset_id:`). Quote `'on'`. **Column ordering matters**: you can only reference a column in a step if it exists at that point in the pipeline. Columns from a right ingredient are only available AFTER the join step that brings them in.
 
 ```yaml
-steps:
-  - action: mutate
-    column: predicted_phenotype_clean
-    expression: "pl.col('predicted_phenotype').str.strip_chars().str.to_lowercase()"
-  - action: join
-    right_ingredient: metadata_schema
-    'on': sample_id
-    how: inner
-  # Year arrives from metadata_schema — cast AFTER the join, not before
-  - action: cast
-    columns: [Year]
-    dtype: Int64
-  - action: cast
-    columns: [Year]
-    dtype: String
-  - action: mutate
-    column: Multiresistant
-    expression: "pl.when(pl.col('is_multi_resistant_bool')).then(pl.lit('Yes')).otherwise(pl.lit('No'))"
-  - action: sort
-    columns: [Year, Source, Country]
+tier1:                                 # a join's tier is its own key: `steps` is the list (the file is included as `tier1: !include <file>`)
+  steps:
+    - action: mutate
+      column: predicted_phenotype_clean
+      expression: "pl.col('predicted_phenotype').str.strip_chars().str.to_lowercase()"
+    - action: join
+      right_ingredient: metadata_schema
+      'on': sample_id
+      how: inner
+    # Year arrives from metadata_schema — cast AFTER the join, not before
+    - action: cast
+      columns: [Year]
+      dtype: Int64
+    - action: cast
+      columns: [Year]
+      dtype: String
+    - action: mutate
+      column: Multiresistant
+      expression: "pl.when(pl.col('is_multi_resistant_bool')).then(pl.lit('Yes')).otherwise(pl.lit('No'))"
+    - action: sort
+      columns: [Year, Source, Country]
 ```
 
 **Never batch multiple columns into one `mutate` step.**
@@ -153,23 +155,23 @@ steps:
 Use grammar-of-graphics format (ADR-083): explicit `geom_*` layer first, all aesthetics under `mapping:`.
 
 ```yaml
-spec:
-  target_dataset: AMR_Profile_Joint
-  mapping:
-    x: Year
-    fill: Multiresistant
-    facet_by: Country
-  theme: theme_light
-  layers:
-    - name: geom_bar
-      params: {}
-    - name: position_dodge
-      params: {}
-    - name: labs
-      params:
-        title: "Multi-Resistance by Country"
-        fill: "Multiresistant"
-        x: "Year"
+ui_label: "Multi-Resistance by Country"   # the short name of the tab (there is no `spec:` key)
+target_dataset: AMR_Profile_Joint
+mapping:
+  x: Year
+  fill: Multiresistant
+  facet_by: Country
+theme: theme_light
+layers:
+  - name: geom_bar
+    params: {}
+  - name: position_dodge
+    params: {}
+  - name: labs                            # the text of the figure is written only here (there is no `title:` key)
+    params:
+      title: "Multi-Resistance by Country"
+      fill: "Multiresistant"
+      x: "Year"
 ```
 
 **`position` and `labels` as flat keys are NOT supported.** They must appear as named layers. See registered components in `libs/viz_factory/src/viz_factory/`.
@@ -181,11 +183,9 @@ spec:
 ```yaml
 analysis_groups:
   AMR_Insight:
-    label: "AMR Profiling Insight"
+    ui_label: "AMR Profiling Insight"
     plots:
-      multi_resistance_by_country:
-        label: "Multi-Resistance by Country"
-        spec: !include 2_test_data_ST22_dummy/plots/multi_resistance_by_country.yaml
+      multi_resistance_by_country: !include 2_test_data_ST22_dummy/plots/multi_resistance_by_country.yaml   # the file holds the whole plot entry
 ```
 
 - `group_id` and `plot_id`: snake_case only, no spaces, no emoji.
