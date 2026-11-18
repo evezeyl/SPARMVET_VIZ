@@ -44,7 +44,13 @@ def test_a_file_is_saved_from_the_checked_plot(path):
     calls = _calls(path)
     assert calls, f"{path} no longer draws a factory plot: update this test"
     for i, lines in calls:
-        assert ".save(" in " ".join(lines[i: i + 14]), f"{path}:{i + 1} renders a plot and does not save it with plot.save"
+        assigned = re.match(r"\s*(\w+)\s*=\s*" + CALL.pattern, lines[i])
+        assert assigned, f"{path}:{i + 1} does not keep the rendered plot in a variable"
+        name = assigned.group(1)
+        # WHY: other steps (the warnings of D-0269) may stand between render and save, so the window is 25 lines and the
+        # property is that the SAME variable is saved: `<name>.save(`
+        window = " ".join(lines[i: i + 25])
+        assert f"{name}.save(" in window, f"{path}:{i + 1} renders a plot and does not save it with {name}.save"
 
 
 def test_a_gallery_example_that_cannot_be_drawn_fails_in_the_one_form_and_leaves_no_picture(tmp_path, monkeypatch):
