@@ -66,23 +66,18 @@ def main():
         df = pl.scan_csv(abs_data_path, separator="\t", try_parse_dates=True)
 
     # --- Tiered Wrangling Logic (ADR-024) ---
-    wrangling_block = data_analysis_recipe.get("wrangling", {})
-    if wrangling_block:
-        # Resolve tier1 + tier2 for test execution
-        tier1_rules = DataWrangler._resolve_tier(wrangling_block, "tier1")
-        tier2_rules = DataWrangler._resolve_tier(wrangling_block, "tier2")
+    # tier_steps refuses an old `wrangling` key with a message; it never skips it
+    tier1_rules = DataWrangler.tier_steps(data_analysis_recipe, "tier1")
+    tier2_rules = DataWrangler.tier_steps(data_analysis_recipe, "tier2")
+    wrangler = DataWrangler()
 
-        wrangler = DataWrangler(data_analysis_recipe.get("input_fields", {}))
+    if tier1_rules:
+        print(f"  └── 🛠️  Wrangling [tier1]: Applying {len(tier1_rules)} actions...")
+        df = wrangler.run(df, tier1_rules)
 
-        if tier1_rules:
-            print(
-                f"  └── 🛠️  Wrangling [tier1]: Applying {len(tier1_rules)} actions...")
-            df = wrangler.run(df, tier1_rules)
-
-        if tier2_rules:
-            print(
-                f"  └── 🛠️  Wrangling [tier2]: Applying {len(tier2_rules)} actions...")
-            df = wrangler.run(df, tier2_rules)
+    if tier2_rules:
+        print(f"  └── 🛠️  Wrangling [tier2]: Applying {len(tier2_rules)} actions...")
+        df = wrangler.run(df, tier2_rules)
 
     print("=== DATA GLIMPSE (Post-Wrangling) ===")
     print(df.collect().glimpse(return_as_string=True))

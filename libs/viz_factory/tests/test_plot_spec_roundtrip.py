@@ -328,8 +328,12 @@ class TestCanonicalSpecKeys:
 
     def test_known_structural_keys_in_canonical(self):
         for k in ("target_dataset", "mapping", "layers", "theme", "facet_by",
-                  "palette", "labels", "guides", "filters", "title", "_meta"):
+                  "palette", "labels", "guides", "filters", "_meta"):
             assert k in _CANONICAL_SPEC_KEYS, f"{k!r} missing from _CANONICAL_SPEC_KEYS"
+
+    def test_title_is_not_a_plot_content_key(self):
+        """D-0253: the figure title is the title argument of a labs layer, not a key of the plot."""
+        assert "title" not in _CANONICAL_SPEC_KEYS
 
     def test_taxonomy_keys_not_canonical(self):
         for k in ("family", "pattern", "difficulty", "show", "sample_size"):

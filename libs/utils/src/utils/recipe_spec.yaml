@@ -52,6 +52,9 @@ elements:
     required: [ui_label]
     optional: [plot_engine, ui_title, description, comment, taxonomy, target_dataset, mapping, layers,
                theme, facet_by, palette, labels, guides, filters, tier3]
+    # The keys of the entry that belong to the app, not to the plot content: the plot library takes the other keys of the
+    # entry as the content of the plot and ignores these (it still refuses a key that is on neither list).
+    entry_keys: [plot_engine, ui_label, ui_title, description, comment, taxonomy, tier3]
   # one tier of a table, of a join, or tier3 of a plot entry: the key of the tier holds this mapping (D-0250)
   tier:
     required: [steps]

@@ -17,7 +17,7 @@ Every problem has a permanent code (the catalogue of spec section 11), a severit
 recipe, what is wrong and the fix, in the message style of spec P5.
 
 # @deps
-# provides: function:check_recipe, function:spec, class:Problem, class:Result
+# provides: function:check_recipe, function:spec, function:plot_keys, class:Problem, class:Result
 # consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/engines.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/ui_schema.py, libs/utils/src/utils/formula_check.py, libs/utils/src/utils/plot_text_check.py, libs/utils/src/utils/recipe_paths.py, libs/utils/src/utils/polars_types.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/fix_text.py (split_fix, with_fix)
 # consumed_by: libs/utils/src/utils/recipe_loader.py, libs/utils/src/utils/recipe_factory.py, libs/utils/src/utils/recipe_migration.py, libs/utils/src/utils/strict_form_migration.py, libs/ingestion/src/ingestion/declared.py, libs/viz_gallery/src/viz_gallery/gallery_manager.py, libs/viz_gallery/src/viz_gallery/example_recipe.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, assets/scripts/convert_gallery_examples.py, assets/scripts/create_data_analysis_recipe.py, libs/utils/tests/test_recipe_check.py
 # doc: .claude/design/recipe_format_spec.md (sections 3 to 11, 14)
@@ -82,6 +82,19 @@ def spec() -> dict:
     data = yaml.safe_load(resources.files("utils").joinpath("recipe_spec.yaml").read_text(encoding="utf-8"))
     data["engines"] = {key: list(names) for key, names in ENGINES.items()}  # one source: utils/engines.py (ADR-106 V8)
     return data
+
+
+def plot_keys() -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
+    """`(entry keys, content keys)` of a plot entry, read from the specification (`elements.plot`).
+
+    The entry keys (`ui_label`, `ui_title`, `description`, `comment`, `taxonomy`, `plot_engine`, `tier3`) belong to the app;
+    the content keys (`target_dataset`, `mapping`, `layers`, `theme`, ...) are what the plot library draws from. The plot
+    library reads the two lists from here, so the checker and the library cannot disagree on what an entry may hold.
+    """
+    plot = spec()["elements"]["plot"]
+    entry = tuple(plot["entry_keys"])
+    content = tuple(key for key in [*plot["required"], *plot["optional"]] if key not in entry)
+    return entry, content
 
 
 def _plotnine_note(name: str, kinds: dict) -> str:

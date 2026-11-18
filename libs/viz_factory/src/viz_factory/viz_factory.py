@@ -133,7 +133,7 @@ class VizFactory:
     Takes standardized Polars dataframes and applies declarative Plotnine layers.
 
     Default Injection Policy:
-    - Theme: theme_bw (if no theme_ layer defined)
+    - Theme: none is injected (D-0258): a plot with no theme written is drawn with plotnine's own default
     - Coord: coord_cartesian (if no coord_ layer defined)
     - Facet: facet_null (if no facet_ layer defined)
     - Position/Stat: These are ggplot2 geom-level defaults (identity); no injection needed.
@@ -211,7 +211,7 @@ class VizFactory:
         if not raw_spec:
             raise plot_failure(
                 plot_id, "it is not in the data analysis recipe",
-                "declare it under 'analysis_groups.<group>.plots' in the data analysis recipe and check that the `spec: !include` path resolves",
+                "declare it under 'analysis_groups.<group>.plots' in the data analysis recipe and check that its `!include` path resolves",
                 evidence={"plot_id": plot_id, "available_plots": list(data_analysis_recipe.get("plots", {}).keys())})
 
         # A key that is not part of the plot spec format used to be moved to `_meta` and ignored: `theem: theme_bw`
@@ -220,9 +220,13 @@ class VizFactory:
         if unknown:
             known = spec_key_names()
             close = difflib.get_close_matches(str(unknown[0]), known, n=1, cutoff=0.6)
+            if unknown[0] == "title":
+                fix = "remove it and write the figure title in a labs layer (its title argument); the name used by the report is ui_title (D-0253)"
+            else:
+                fix = f"write {close[0]}" if close else "remove it, or write one of " + ", ".join(known)
             raise plot_failure(
                 plot_id, "; ".join(f"{key!r} is not a key of a plot spec" for key in unknown),
-                f"write {close[0]}" if close else "remove it, or write one of " + ", ".join(known),
+                fix,
                 evidence={"unknown_keys": [str(k) for k in unknown]})
 
         plot_defaults = data_analysis_recipe.get('plot_defaults') or {}

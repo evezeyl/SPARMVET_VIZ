@@ -16,6 +16,8 @@ from viz_factory.plot_config_resolver import (
     _dedupe_layers,
     _layer_dedup_key,
     normalise_plot_spec,
+    serialise_plot_spec,
+    unknown_spec_keys,
     _BUILTIN_DEFAULTS,
     layers_have_random,
     recipe_pins_random_state,
@@ -215,11 +217,11 @@ class TestNormaliseSpec:
 class TestResolvePlotConfigThemeCascade:
     """Truth-table: theme provenance across tiers."""
 
-    def test_theme_only_l1(self):
-        """No L2/L4/L5 theme → L1 theme_bw."""
+    def test_no_theme_written_is_plotnines_own_default(self):
+        """No L2/L4/L5 theme: no theme layer; the resolved theme names plotnine's own default (D-0258)."""
         result = resolve_plot_config({}, {}, None)
-        assert result["theme"] == "theme_bw"
-        assert result["_provenance"]["theme"] == "L1"
+        assert result["theme"] == "theme_gray"
+        assert result["_provenance"]["theme"] == "plotnine"
 
     def test_theme_l2_overrides_l1(self):
         result = resolve_plot_config({}, {"theme": "theme_dashboard"}, None)
@@ -245,9 +247,51 @@ class TestResolvePlotConfigThemeCascade:
         assert result["theme"] == "theme_minimal"
         assert result["_provenance"]["theme"] == "L5"
 
-    def test_l1_theme_layer_present(self):
+    def test_no_theme_layer_is_injected_when_none_is_written(self):
         result = resolve_plot_config({}, {}, None)
-        assert any(l["name"] == "theme_bw" for l in result["layers"])
+        assert not any(l["name"].startswith("theme_") for l in result["layers"])
+        assert any(l["name"] == "coord_cartesian" for l in result["layers"]), "the other built-ins are not part of D-0258"
+
+
+class TestTitleIsNotSeededFromTheSpec:
+    """D-0253: the plot content has no `title`; the figure title is the `title` argument of a `labs` layer."""
+
+    def test_a_title_key_of_the_spec_is_refused_as_an_unknown_key(self):
+        assert unknown_spec_keys({"target_dataset": "d", "title": "T"}) == ["title"]
+
+    def test_the_labs_layer_keeps_its_title_and_the_flat_labels_stay_empty(self):
+        spec = {"mapping": {"x": "a"}, "layers": [{"name": "geom_bar"}, {"name": "labs", "params": {"title": "From labs"}}]}
+        result = resolve_plot_config(spec, {}, None)
+        assert result["labels"] == {}
+        assert [l["params"] for l in result["layers"] if l["name"] == "labs"] == [{"title": "From labs"}]
+
+
+class TestEntryKeysAreIgnoredNotRefused:
+    """The plot entry carries app-side keys next to the plot content (D-0237, D-0253); the factory ignores the decided ones
+    and still refuses a key that is not on the list. The list is the one of the recipe specification (recipe_spec.yaml)."""
+
+    def test_the_decided_entry_keys_are_not_unknown(self):
+        entry = {"plot_engine": "python-plotnine", "ui_label": "L", "ui_title": "T", "description": "d", "comment": "c",
+                 "taxonomy": {"family": "Ranking"}, "tier3": {"steps": []}, "target_dataset": "d", "mapping": {}, "layers": []}
+        assert unknown_spec_keys(entry) == []
+
+    def test_a_key_that_is_on_no_list_is_still_unknown(self):
+        assert unknown_spec_keys({"target_dataset": "d", "theem": "theme_bw"}) == ["theem"]
+
+    def test_the_entry_keys_are_read_from_the_specification_not_from_a_second_list(self):
+        from utils.recipe_check import spec
+        from utils.recipe_check import plot_keys
+        entry_keys, content_keys = plot_keys()
+        plot = spec()["elements"]["plot"]
+        assert set(entry_keys) | set(content_keys) == set(plot["required"]) | set(plot["optional"])
+        assert not set(entry_keys) & set(content_keys)
+        assert {"ui_label", "ui_title", "description", "comment", "taxonomy", "plot_engine", "tier3"} == set(entry_keys)
+        assert "title" not in entry_keys and "title" not in content_keys
+
+    def test_the_entry_keys_survive_a_round_trip_through_the_normaliser(self):
+        entry = {"ui_label": "L", "taxonomy": {"family": "Ranking"}, "target_dataset": "d", "mapping": {"x": "a"}, "layers": []}
+        assert serialise_plot_spec(normalise_plot_spec(entry))["ui_label"] == "L"
+        assert serialise_plot_spec(normalise_plot_spec(entry))["taxonomy"] == {"family": "Ranking"}
 
 
 class TestResolvePlotConfigPaletteCascade:
@@ -657,17 +701,23 @@ class TestResolvePlotConfigElementText:
 class TestResolvePlotConfigProvenanceCompleteness:
     def test_provenance_has_mandatory_keys(self):
         result = resolve_plot_config({}, {}, None)
-        for key in ("mapping", "palette", "facet_by", "title",
+        for key in ("mapping", "palette", "facet_by",
                     "labels", "guides", "filters", "theme"):
             assert key in result["_provenance"], f"missing provenance key: {key}"
 
     def test_default_provenance_all_l1(self):
         result = resolve_plot_config({}, {}, None)
-        for key in ("mapping", "palette", "facet_by", "title",
-                    "labels", "guides", "filters", "theme"):
+        for key in ("mapping", "palette", "facet_by",
+                    "labels", "guides", "filters"):
             assert result["_provenance"][key] == "L1", (
                 f"expected L1 for {key}, got {result['_provenance'][key]}"
             )
+        assert result["_provenance"]["theme"] == "plotnine", "the theme is not an app default (D-0258)"
+
+    def test_there_is_no_title_in_the_resolved_config(self):
+        """The figure title comes only from a labs layer (D-0253): the resolver keeps no title of its own."""
+        result = resolve_plot_config({}, {}, None)
+        assert "title" not in result and "title" not in result["_provenance"]
 
 
 # ---------------------------------------------------------------------------

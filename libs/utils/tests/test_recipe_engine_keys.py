@@ -14,7 +14,7 @@ import textwrap
 
 import pytest
 
-from utils.recipe_check import check_recipe, spec
+from utils.recipe_check import check_recipe, plot_keys, spec
 from utils.recipe_loader import check_recipe_file, load_recipe
 
 TOOL = "assets/scripts/migrate_recipe_engine_keys.py"
@@ -508,3 +508,24 @@ def test_an_old_fragment_included_at_wrangling_and_a_spec_include_are_refused_wi
     texts = [p.text("r.yaml") for p in result.errors]
     assert any("data_schemas.A.wrangling" in t and TOOL in t for t in texts)
     assert any("analysis_groups.g.plots.p.spec" in t and TOOL in t for t in texts)
+
+
+# ---- the keys of a plot entry: the app's and the plot content's, one list for the checker and the plot library ------
+
+def test_the_entry_keys_and_the_content_keys_split_the_keys_the_checker_accepts():
+    entry, content = plot_keys()
+    plot = spec()["elements"]["plot"]
+    assert set(entry) | set(content) == set(plot["required"]) | set(plot["optional"])
+    assert not set(entry) & set(content)
+    assert set(entry) == {"plot_engine", "ui_label", "ui_title", "description", "comment", "taxonomy", "tier3"}
+    assert {"target_dataset", "mapping", "layers", "theme", "palette", "facet_by", "labels", "guides", "filters"} == set(content)
+
+
+def test_title_is_in_neither_list_of_a_plot_entry():
+    entry, content = plot_keys()
+    assert "title" not in entry and "title" not in content
+
+
+def test_every_entry_key_is_a_key_the_checker_accepts_in_a_plot():
+    plot = spec()["elements"]["plot"]
+    assert set(plot["entry_keys"]) <= set(plot["required"]) | set(plot["optional"])

@@ -52,10 +52,10 @@ def test_a_partial_theme_is_added_to_the_complete_theme_not_instead_of_it():
     assert names == ["theme_minimal", "theme_legend_position"]
 
 
-def test_the_default_theme_stays_under_a_partial_theme_that_stands_alone():
+def test_a_partial_theme_that_stands_alone_is_added_to_plotnines_own_default_not_to_an_app_theme():
     names, resolved = themes_of("theme_legend_position")
-    assert names == ["theme_bw", "theme_legend_position"]
-    assert resolved["theme"] == "theme_bw", "the named theme of the plot is the complete one"
+    assert names == ["theme_legend_position"], "no complete theme is injected under it (D-0258)"
+    assert resolved["theme"] == "theme_gray", "the base of the plot is plotnine's own default"
 
 
 def test_a_complete_theme_replaces_a_complete_theme_and_the_later_wins():
@@ -70,7 +70,7 @@ def test_a_partial_theme_written_before_the_complete_one_is_not_lost():
 
 def test_two_partial_themes_are_both_kept():
     names, _ = themes_of("theme_legend_position", "theme_custom")
-    assert names == ["theme_bw", "theme_legend_position", "theme_custom"]
+    assert names == ["theme_legend_position", "theme_custom"]
 
 
 def pixels(plot, tmp_path, name):
@@ -85,6 +85,30 @@ def by_hand(*addables):
     for item in addables:
         plot = plot + item
     return plot
+
+
+# D-0258 (Eve, 2026-11-18): without a theme in the recipe the figure is drawn with plotnine's own default (theme_gray); the app
+# adds no theme of its own. A recipe that wants another look writes it (plot_defaults.theme or a theme layer).
+
+def test_a_plot_with_no_theme_written_is_drawn_with_plotnines_own_default(tmp_path):
+    from plotnine import theme_bw
+    factory = plot_of()
+    assert pixels(factory, tmp_path, "factory") == pixels(by_hand(), tmp_path, "plotnine_default")
+    assert pixels(factory, tmp_path, "factory") != pixels(by_hand(theme_bw()), tmp_path, "bw"), "theme_bw is no longer the app's default"
+
+
+def test_the_resolved_config_of_a_plot_with_no_theme_names_plotnines_default_and_holds_no_theme_layer():
+    resolved = resolve_plot_config({"mapping": MAPPING, "layers": [{"name": "geom_point"}]}, {}, None)
+    assert resolved["theme"] == "theme_gray"
+    assert resolved["_provenance"]["theme"] == "plotnine"
+    assert [layer["name"] for layer in resolved["layers"] if layer["name"].startswith("theme_")] == []
+
+
+def test_a_theme_in_plot_defaults_is_the_theme_of_a_plot_that_writes_none(tmp_path):
+    from plotnine import theme_light
+    plot = VizFactory().render(DF, {"plots": {"p": {"target_dataset": "d", "mapping": MAPPING, "layers": [{"name": "geom_point"}]}},
+                                    "plot_defaults": {"theme": "theme_light"}}, "p")
+    assert pixels(plot, tmp_path, "factory") == pixels(by_hand(theme_light()), tmp_path, "hand")
 
 
 def test_the_picture_is_the_complete_theme_with_the_partial_setting_added(tmp_path):
