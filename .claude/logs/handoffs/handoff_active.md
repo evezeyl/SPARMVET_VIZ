@@ -12,6 +12,11 @@
 - **New tasks:** THEME-DOCS-DESCRIPTIONS-1 and THEME-DOC-HOW-TO-ADD-1 (sonnet/low); HOME-RECIPE-SWITCH-CHECK-1 (reviewer, Eve's request M262, not yet a ledger line); GALLERY-ENGINES-PLAN-1, DEMO-READINESS-LIST-1 (scout). Details in `tasks.md` section 9.
 - **Still held, not decided:** questions 8 to 20 of `tmpAI/panel/QUESTIONS_for_eve_2026-11-18.md` (20 questions in all); question 20, the download race (EXPORT-DOWNLOAD-RACE-1); the rule and ADR text these decisions touch (rule files, `plot_config_cascade.md`, `recipe_format_spec.md`): not edited, Eve's yes needed; the rename; the Blueprint form; wording 6a and 6d; `task/worktree-imports`.
 - **Open details, not decided (M266):** which `label` keys are renamed; what happens to the old `title:` text of the 18 plot files for the figure title; that export report names stay identical. Checked by LABEL-KEYS-CHECK-1.
+- **Question 8 and the default theme decided (channel M270, 2026-11-18):** D-0257 (formulas refuse `set_sorted` and `search_sorted`, task FORMULA-REFUSE-SORTED-1) and D-0258 (without a theme the figure uses plotnine's default; the built-in `theme_bw` is removed in the big build, and the migration writes `theme_bw` into every recipe and bundle without a theme; task L1-DEFAULTS-REPORT-1 lists the other app-choice defaults). Questions 9 to 20 still open.
+- **Records commit `15394ef5`** (ledger D-0250 to D-0256); this scribe pass adds D-0257 and D-0258 to the ledger, the cascade design note, `tasks.md` (ENGINE-KEYS sentence, two new tasks, LABEL-KEYS-CHECK-1 and GALLERY-ENGINES-PLAN-1 marked done) and this block. Not committed.
+- **Worktree `.claude/worktrees/engine-keys` on branch `task/engine-keys` exists** (no build yet). Step 0 (picture comparison tool and baseline in `tmpAI/engine_keys/picture_baseline_15394ef5/`) is being built by a builder.
+- **Running, none edits the records:** recipe-switch check (`tmpAI/switch_check/`, HOME-RECIPE-SWITCH-CHECK-1); the `modif_` list (`MODIF-LIST-1`, D-0254).
+- **Coordinator's open points for Eve** (label and title details, nothing answers them): channel M271.
 
 ## 2026-11-18 (open state, morning; export box merged)
 
