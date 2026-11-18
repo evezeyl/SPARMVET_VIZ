@@ -11,7 +11,7 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: constant:EXPORT_READY_TEXTS, constant:EXPORT_PANEL_FIELDS, function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
+# provides: constant:EXPORT_READY_TEXTS, constant:EXPORT_PANEL_FIELDS, constant:EXPORT_WATCHED_FIELDS, function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
 # consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/export_fields_store.py (D-0288, D-0291, D-0296: the Export fields remembered per session, in memory only; defaults D-0294), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 # consumed_by: app/handlers/home_theater.py
@@ -528,6 +528,11 @@ EXPORT_PANEL_FIELDS = (
     "export_user_name", "export_include_reproducibility", "export_preset",
     "export_plot_format", "export_report_format", "export_plot_width", "export_plot_height",
 )
+# The recipe selector is watched with the Export fields: a change of recipe greys the button at once, and the button opens
+# only when the server holds the selector the page shows (F1 of the review: a press right after a switch exported the new
+# recipe with the old recipe's field values).
+EXPORT_RECIPE_SELECTOR = "data_analysis_recipe_id"
+EXPORT_WATCHED_FIELDS = EXPORT_PANEL_FIELDS + (EXPORT_RECIPE_SELECTOR,)
 # How long the button waits for the confirmation before it is active again with the notice above (milliseconds).
 EXPORT_READY_TIMEOUT_MS = 5000
 
@@ -719,7 +724,8 @@ def define_export_server(input, output, session, *,
                 style="font-size:0.8em;",
                 id="export_ready_panel",
                 **{
-                    "data-ready-fields": json.dumps(list(EXPORT_PANEL_FIELDS)),
+                    "data-ready-fields": json.dumps(list(EXPORT_WATCHED_FIELDS)),
+                    "data-remember-fields": json.dumps(list(REMEMBERED_EXPORT_FIELDS)),
                     "data-text-waiting": EXPORT_READY_TEXTS["waiting"],
                     "data-text-lost": EXPORT_READY_TEXTS["lost"],
                     "data-timeout-ms": str(EXPORT_READY_TIMEOUT_MS),
@@ -729,84 +735,90 @@ def define_export_server(input, output, session, *,
             style="font-size:0.8em;"
         )
 
+    # The session key as a value of its own, so that what follows it runs when the KEY changes and not at every other change of
+    # home_state (a filter, a tab): each run tells the page and greys the button.
+    _key_now = reactive.Value("")
+
     @reactive.Effect
+    def _follow_the_session_key():
+        key = _session_key()
+        with reactive.isolate():
+            if _key_now.get() != key:
+                _key_now.set(key)
+
+    @reactive.effect(priority=-50)
+    async def _tell_the_page_its_session():
+        """Tell the page which session its Export fields belong to, and with the fields when the session changed (D-0288, D-0296).
+
+        Runs when the session key changes, after every change of the recipe selector (after the work of that change, which has
+        priority 0, so the key it sets is final), and when the page asks (it missed the message at load). The message carries
+        the key and, when the session changed, the session's remembered fields with an empty label; the page puts them in the
+        panel and takes the key in one step, so the key and the values it shows never part. The panel is not drawn again for
+        this (EXPORT-FLAKE-1). Nothing here reads the Export inputs: the server's copy of them is whatever the page last sent,
+        which is what the echo below compares with the screen (D-0270)."""
+        if not bootloader.is_enabled("export_enabled"):
+            return
+        safe_input(input, EXPORT_RECIPE_SELECTOR, None)     # a dependency: the work of a recipe switch is done when this runs
+        safe_input(input, "export_page_ready", 0)           # a dependency: the page asks again after its handlers exist
+        key = _key_now.get()
+        with reactive.isolate():
+            changed = key != _shown["key"]
+            _shown["key"] = key
+            message = {"key": key}
+            if changed and key:
+                _fields_store.begin_session(key)
+                message["values"] = {**_fields_store.fields_for(key), EXPORT_LABEL_FIELD: EXPORT_LABEL_DEFAULT}
+        await session.send_custom_message("export_session", message)
+
+    @reactive.effect(priority=-100)
     async def _confirm_export_inputs():
-        """Tell the page which values of the Export panel the server holds (D-0270).
+        """Tell the page which values of the Export panel the server holds, and for which session (D-0270).
 
         Runs after every change of a field and after every ping of the page (`export_client_ping`, sent at each change,
-        so that a change that leaves the values as they were is confirmed too). It reads every field the download reads
-        and sends them back with the last ping it has seen; the page opens the Export button when they equal what is on
-        the screen. This effect runs after the input messages were applied, so a download pressed after the echo reads
-        the same values (the race of question 20: input messages are applied under the reactive lock, a download request
-        is handled without it).
-        """
+        so that a change that leaves the values as they were is confirmed too). It reads every field the download reads, and
+        the recipe selector, and sends them back with the last ping it has seen and the session the server shows; the page
+        opens the Export button when the key is the one the page was told last and the values equal what is on the screen.
+        Its priority is below the effect that tells the page its session, so in one round of work the page is told first.
+        This effect runs after the input messages were applied, so a download pressed after the echo reads the same values
+        (the race of question 20: input messages are applied under the reactive lock, a download request is handled without
+        it)."""
         if not bootloader.is_enabled("export_enabled"):
             return
         ping = safe_input(input, "export_client_ping", 0)
         held = {}
-        for field in EXPORT_PANEL_FIELDS:
+        for field in EXPORT_WATCHED_FIELDS:
             try:
                 held[field] = getattr(input, field)()
             except Exception:
                 continue    # a field that is not on the page: the page skips it too
-        await session.send_custom_message("export_ready_echo", {"ping": ping, "values": held})
-
-    def _remember_one(field: str) -> None:
-        """One effect per field, so that each writes only its own value: while the server sets a whole set, the page applies the
-        fields one by one and a mixed state must never be stored under a session."""
-        @reactive.Effect
-        def _remember():
-            if not bootloader.is_enabled("export_enabled"):
-                return
-            try:
-                value = getattr(input, field)()
-            except Exception:
-                return          # the field is not on the page (another user space is open)
-            if value is None:
-                return          # a number box that is being retyped is empty for a moment: not a choice
-            with reactive.isolate():
-                key = _session_key()
-            if key and _fields_store.fields_for(key)[field] != value:     # equality guard: no write of what is held already
-                _fields_store.set_field(key, field, value)
-
-    for _field in REMEMBERED_EXPORT_FIELDS:
-        _remember_one(_field)
-
-    def _set_on_page(field: str, value) -> None:
-        if field == EXPORT_LABEL_FIELD:
-            ui.update_text(field, value=value)
-        elif field == "export_include_reproducibility":
-            ui.update_checkbox(field, value=value)
-        elif field in ("export_plot_width", "export_plot_height"):
-            ui.update_numeric(field, value=value)
-        else:
-            ui.update_radio_buttons(field, selected=value)
+        with reactive.isolate():
+            key = _shown["key"] or ""
+        await session.send_custom_message("export_ready_echo", {"ping": ping, "key": key, "values": held})
 
     @reactive.Effect
-    def _show_the_fields_of_the_session():
-        """When the loaded session changes (another recipe, or the same recipe with other data), put that session's fields in
-        the panel in place: its remembered choices (the defaults on a first visit) and an empty label (D-0288, D-0296).
+    @reactive.event(input.export_field_change)
+    def _remember_what_the_page_shows():
+        """Remember a choice the user made, under the session the PAGE says it was showing when the user made it (D-0288).
 
-        The panel is not drawn again for this (EXPORT-FLAKE-1); the values are sent to the fields that differ. The page
-        sees each of them change, greys the Export button and opens it when the server holds the shown values (D-0270,
-        `export_ready.js` listens to Shiny's own input events, so a value the server sets counts like one the user types)."""
+        The page sends the key it was last told with each change. The key that is current when the report arrives may be another
+        one (two quick recipe switches), and writing the value there would store one session's choice under the other (F2 of the
+        review). A report for a key the server never announced is dropped; the page then gets the fields of the real session
+        from the message above, so the user sees what the server holds and nothing is lost unseen (D-0050)."""
         if not bootloader.is_enabled("export_enabled"):
             return
-        key = _session_key()
-        if key == _shown["key"]:
+        report = input.export_field_change() or {}
+        key = str(report.get("key") or "")
+        value = report.get("value")
+        if value is None:
+            return          # an empty number box is not a choice
+        try:
+            stored = _fields_store.remember(key, report.get("field"), value)
+        except ValueError as error:
+            _notify(f"An Export choice could not be remembered: {error}", type="error", duration=10)
             return
-        _shown["key"] = key
-        if not key:
-            return              # no usable recipe or data yet: the fields stay as they are
-        wanted = {**_fields_store.fields_for(key), EXPORT_LABEL_FIELD: EXPORT_LABEL_DEFAULT}
-        with reactive.isolate():
-            for field, value in wanted.items():
-                try:
-                    shown = getattr(input, field)()
-                except Exception:
-                    continue    # not on the page now: the panel reads the store when it is drawn
-                if shown != value:
-                    _set_on_page(field, value)
+        if not stored and key:
+            _notify("An Export choice was made for a session this app did not announce and was not remembered: check the Export "
+                    "fields before you export.", type="warning", duration=10)
 
     # ── REPRO-IMPORT-1 (#48, ADR-097): import + per-leg verification ────────────
     _import_bundle_state = reactive.Value(None)   # ("error", str) | ("ok", ImportResult) | None
@@ -1042,7 +1054,7 @@ def define_export_server(input, output, session, *,
 
         audited_plots = {p for p, _ in all_plots if _has_audited_steps(p)}
 
-        # PLOT-TABLE-ORDER-1: check before anything is written. If the audited steps of a plot in scope cannot run in their
+        # PLOT-TABLE-ORDER-1: check before anything is written. If the audited steps of a plot cannot run in their
         # recorded order, the table, the plot and the exported recipe would differ or fail: nothing is exported.
         def _base_frame(spec: dict):
             """The base of a plot's My view: the stored Tier 2 (Tier 1 without tier2 steps), as the data and plot sections read it."""

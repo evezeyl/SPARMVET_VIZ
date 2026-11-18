@@ -98,8 +98,9 @@ def test_the_panel_shows_svg_and_html_selected_and_no_scope_choice(tmp_path, mon
     from shiny import reactive
     monkeypatch.setattr(reactive, "Effect", lambda fn: fn)
     monkeypatch.setattr(reactive, "event", lambda *a, **k: (lambda fn: fn))
+    monkeypatch.setattr(reactive, "effect", lambda fn=None, **k: fn if fn is not None else (lambda f: f))   # the priority effects
     export_handlers.define_export_server(
-        SimpleNamespace(import_bundle_upload=None), lambda fn: fn, None,
+        SimpleNamespace(import_bundle_upload=None, export_field_change=None), lambda fn: fn, None,
         bootloader=_Bootloader(world, ("export_enabled",)), orchestrator=world.orch, viz_factory=None,
         current_app_features=SimpleNamespace(get=lambda: "qa"), active_cfg=lambda: None, tier1_anchor=None,
         tier_toggle=None, home_state=None, safe_input=lambda _i, key, default: default, view_keys=lambda: None)

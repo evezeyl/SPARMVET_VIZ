@@ -7,12 +7,20 @@
 // So the button is grey from each change of the Export panel until the server has echoed the values it holds and they
 // are equal to the values now on the screen. The echo is a real round trip, not a delay.
 //
-// Contract with app/handlers/export_handlers.py (system_tools_ui, _confirm_export_inputs):
-//   - the panel block has id "export_ready_panel" and the attributes data-ready-fields (JSON list of input ids),
-//     data-text-waiting, data-text-lost, data-timeout-ms. The texts live only in Python (EXPORT_READY_TEXTS).
+// Contract with app/handlers/export_handlers.py (system_tools_ui, _confirm_export_inputs, _tell_the_page_its_session):
+//   - the panel block has id "export_ready_panel" and the attributes data-ready-fields (JSON list of input ids: the Export
+//     fields and the recipe selector), data-remember-fields (the fields the app remembers per session), data-text-waiting,
+//     data-text-lost, data-timeout-ms. The texts live only in Python (EXPORT_READY_TEXTS).
 //   - the page sends the input "export_client_ping" (event priority) at each change, also at a change the server made
-//     (Shiny's "shiny:inputchanged" event).
-//   - the server answers with the custom message "export_ready_echo": {ping: last ping it has seen, values: {field id: value it holds}}.
+//     (Shiny's "shiny:inputchanged" event), and at each change of the recipe selector, so the button is grey from the switch.
+//   - the server tells the page which session is shown with the custom message "export_session": {key, values?}. With values
+//     (the session changed) the page puts them in the panel itself, in the same step in which it takes the key, so the key
+//     and the values it shows never part. The page keeps this key (pageKey).
+//   - the page reports each change the USER makes with the input "export_field_change": {key: pageKey, field, value, n}. The
+//     server remembers it under that key, never under the key that is current when the report arrives.
+//   - the server answers a ping with the custom message "export_ready_echo": {ping, key, values: {field id: value it holds}}.
+//     The button opens only when the key of the echo is pageKey and the values equal the screen (the recipe selector included).
+//   - the page sends "export_page_ready" once its handlers exist, so that the server tells it the session it missed at load.
 (function () {
   "use strict";
 
@@ -23,6 +31,8 @@
   var timer = null;
   var readyHtml = null;     // what the button shows when it is ready (its own text, set by the server)
   var observer = null;
+  var pageKey = "";         // the session key the server last told this page (empty until it has told one)
+  var changeCount = 0;
 
   function panel() { return document.getElementById(PANEL_ID); }
   function button() { return document.getElementById(BUTTON_ID); }
@@ -35,6 +45,10 @@
 
   function fields() {
     try { return JSON.parse(attr("data-ready-fields", "[]")); } catch (e) { return []; }
+  }
+
+  function rememberFields() {
+    try { return JSON.parse(attr("data-remember-fields", "[]")); } catch (e) { return []; }
   }
 
   // the id of the Export field an event came from (a radio's element has the name of its field)
@@ -110,18 +124,30 @@
   // focus, which happens at the mouse-down on the Export button itself: that is not a new value, and greying the button
   // between the mouse-down and the mouse-up would swallow the click.
   var lastSeen = {};
+  var applying = false;     // the page is putting the server's values in the panel: those are not the user's changes
 
-  function noteValue(id) {
+  // A value the user typed is also reported to the server with the key of the session this page was showing at that moment.
+  // An empty number box is not a choice (the user is retyping it).
+  function reportChange(id) {
+    if (rememberFields().indexOf(id) < 0 || !window.Shiny || !window.Shiny.setInputValue) return;
+    var value = screenValue(id);
+    if (value === undefined || value === null || (typeof value === "number" && isNaN(value))) return;
+    changeCount += 1;
+    window.Shiny.setInputValue("export_field_change", { key: pageKey, field: id, value: value, n: changeCount }, { priority: "event" });
+  }
+
+  function noteValue(id, byUser) {
     var value = JSON.stringify(screenValue(id) === undefined ? null : screenValue(id));
     if (Object.prototype.hasOwnProperty.call(lastSeen, id) && lastSeen[id] === value) return;
     lastSeen[id] = value;
+    if (byUser) reportChange(id);
     startWaiting();
   }
 
   function onChange(event) {
     var id = fieldOf(event.target);
-    if (id === null) return;
-    noteValue(id);
+    if (id === null || applying) return;
+    noteValue(id, true);
   }
 
   // A value the SERVER sets (a recipe switch puts the fields of that session in the panel) raises no native "input" or "change"
@@ -131,7 +157,7 @@
   function onShinyInput(event) {
     var id = event && event.name;
     if (!id || fields().indexOf(id) < 0 || !document.getElementById(id)) return;
-    noteValue(id);
+    noteValue(id, false);
   }
 
   // a press on a grey button does nothing: not a click, not Enter, not Space
@@ -148,11 +174,39 @@
     if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") blockIfGrey(event);
   }
 
+  // Put the values of a session in the panel the way a server-side update does (the input's own binding), here, in the same
+  // step as taking the key. A field that is not on the page now (another user space is open) is skipped: the panel is drawn
+  // from the server's store when it comes back.
+  function applyValues(values) {
+    applying = true;
+    try {
+      Object.keys(values).forEach(function (id) {
+        var el = document.getElementById(id);
+        var binding = el && window.jQuery ? window.jQuery(el).data("shiny-input-binding") : null;
+        if (!binding || !binding.receiveMessage || same(screenValue(id), values[id])) return;
+        binding.receiveMessage(el, { value: values[id] });
+      });
+    } finally {
+      applying = false;
+    }
+  }
+
+  function onSession(message) {
+    pageKey = (message && message.key) || "";
+    var present = !!(panel() && button());
+    if (message && message.values && present) applyValues(message.values);
+    lastSeen = {};
+    // the key changed: nothing the page showed before is confirmed for this session until the server echoes it
+    if (present) startWaiting();
+  }
+
   function onEcho(message) {
     if (!pending) return;
     var held = (message && message.values) || {};
     // the server must have seen the last ping: every input message sent before it was applied (the websocket is ordered)
     if (!message || typeof message.ping !== "number" || message.ping < pingCount) return;
+    // the server must be showing the session the page was told about last: another key means a newer message is on its way
+    if ((message.key || "") !== pageKey) return;
     var list = fields();
     for (var i = 0; i < list.length; i++) {
       var id = list[i];
@@ -168,10 +222,21 @@
     settle();
   }
 
+  // Tell the server that the handlers exist, so that it sends the session it may have announced before they did (at load).
+  function announceReady(tries) {
+    try {
+      window.Shiny.setInputValue("export_page_ready", Date.now(), { priority: "event" });
+    } catch (e) {
+      if (tries < 100) setTimeout(function () { announceReady(tries + 1); }, 50);   // Shiny is not connected yet
+    }
+  }
+
   function registerHandler() {
     if (window.Shiny && window.Shiny.addCustomMessageHandler && window.jQuery) {
       window.Shiny.addCustomMessageHandler("export_ready_echo", onEcho);
+      window.Shiny.addCustomMessageHandler("export_session", onSession);
       window.jQuery(document).on("shiny:inputchanged", onShinyInput);
+      announceReady(0);
       return true;
     }
     return false;

@@ -73,6 +73,7 @@ def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None, 
     monkeypatch.setattr(render, "download", download)
     monkeypatch.setattr(reactive, "Effect", lambda fn: fn)
     monkeypatch.setattr(reactive, "event", lambda *a, **k: (lambda fn: fn))
+    monkeypatch.setattr(reactive, "effect", lambda fn=None, **k: fn if fn is not None else (lambda f: f))   # the priority effects
     monkeypatch.setattr(ui, "notification_show", lambda message, **kw: notes.append((kw.get("type"), str(message))))
     real_run = subprocess.run
     monkeypatch.setattr(subprocess, "run", lambda args, *a, **k: subprocess.CompletedProcess(args, 1, "", "no render in this test")
@@ -85,7 +86,7 @@ def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None, 
     values = {"export_user_name": "test", "export_preset": "web", "export_plot_format": "png",
               **(extra_values or {})}
     export_handlers.define_export_server(
-        SimpleNamespace(import_bundle_upload=None), lambda fn: fn, None,
+        SimpleNamespace(import_bundle_upload=None, export_field_change=None), lambda fn: fn, None,
         bootloader=_Bootloader(world, flags, deployment_contact), orchestrator=world.orch, viz_factory=VizFactory(),
         current_app_features=SimpleNamespace(get=lambda: "qa"), active_cfg=lambda: cfg,
         tier1_anchor=tier1_anchor or (lambda: pl.DataFrame().lazy()), tier_toggle=SimpleNamespace(get=lambda: "T2"),

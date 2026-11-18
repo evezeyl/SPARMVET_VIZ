@@ -34,21 +34,36 @@ REMEMBERED_EXPORT_FIELDS = tuple(EXPORT_FIELD_DEFAULTS)
 
 
 class ExportFieldsStore:
-    """One set of remembered Export fields per session key, in memory only."""
+    """One set of remembered Export fields per session key, in memory only.
+
+    A key is known to the store only after `begin_session(key)`: the server calls it when it tells the page that this session is
+    now the one shown. A value is remembered under the key the PAGE reports it was showing when the user set it, and only if
+    the store knows that key; it is never written under "the key that is current now" (two quick recipe switches would
+    otherwise store one session's choices under the other)."""
 
     def __init__(self) -> None:
         self._by_session: dict[str, dict] = {}
+        self._issued: set[str] = set()
+
+    def begin_session(self, session_key: str) -> None:
+        """The server tells the page that this session is shown from now on; values the page reports for it may be remembered."""
+        if not session_key:
+            raise ValueError("a session key is needed to begin an Export session")
+        self._issued.add(session_key)
 
     def fields_for(self, session_key: str) -> dict:
         """The fields to show for a session: what it remembers over the defaults (a copy; the first visit gets the defaults)."""
         return {**EXPORT_FIELD_DEFAULTS, **self._by_session.get(session_key, {})}
 
-    def set_field(self, session_key: str, field: str, value) -> None:
-        """Remember one field of one session. A field that is not remembered (the label) or a missing key is a programming
-        error, so it raises instead of being ignored (D-0050)."""
-        if not session_key:
-            raise ValueError("a session key is needed to remember an Export field")
+    def remember(self, session_key: str, field: str, value) -> bool:
+        """Remember one field under the key the page reported. Returns True when it was stored, False when it was dropped
+        because the key is empty (the page had no session yet) or was never begun here; the caller shows the user the screen
+        the server then sets, so a dropped value is not lost unseen (D-0050). A field that is not remembered (the label, an
+        unknown name) is a programming error and raises."""
         if field not in EXPORT_FIELD_DEFAULTS:
             raise ValueError(f"'{field}' is not an Export field that is remembered per session "
                              f"(remembered: {', '.join(REMEMBERED_EXPORT_FIELDS)}; the bundle label is never remembered)")
+        if not session_key or session_key not in self._issued:
+            return False
         self._by_session.setdefault(session_key, {})[field] = value
+        return True
