@@ -787,12 +787,12 @@ class _Unit:
 
     def plot_defaults(self, path: Path) -> None:
         path = Path(os.path.realpath(path))
-        recipe_id = path.stem
         try:
             data = self.load(path)
         except (OSError, yaml.YAMLError) as exc:
             self.event("refused", path, "plot_defaults", f"the recipe cannot be read with its includes ({exc}); the theme and the dead keys were not looked at")
             return
+        recipe_id = data.get("id") or path.stem                 # a gallery bundle is named data_analysis_recipe.yaml: its id is the name
         plots = []
         for gid, group in (data.get("analysis_groups") or {}).items():
             for pid, entry in ((group or {}).get("plots") or {}).items():
