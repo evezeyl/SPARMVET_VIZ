@@ -79,6 +79,13 @@ def test_the_bundle_records_the_keys_and_has_the_data(loaded):
     assert record["plots"] and all(p["plot_engine"] == "python-plotnine" and p["drawn"] for p in record["plots"].values())
     assert set(record["library_versions"]) == {"python-polars", "python-plotnine"}
 
+    # D-0292, D-0294: no scope choice, every plot is exported, as SVG when the user did not choose a format
+    pictures = {m.group(1): m.group(2) for n in names if (m := re.search(r"/plots/([^/]+)\.(png|svg|pdf)$", n))}
+    assert set(pictures) == set(record["plots"]) and len(pictures) > 1, "the bundle holds every plot of the recipe"
+    assert set(pictures.values()) == {"svg"}, pictures
+    assert "export_scope" not in readme and "export_scope" not in run
+    print(f"EXPORT_PLOTS={len(pictures)} FORMATS={sorted(set(pictures.values()))}")
+
     assert any(n.endswith("T1_data.tsv") for n in names)
     assert any("/plots/" in n and not n.endswith("_ERROR.txt") for n in names)
     errors = {n: z.read(n).decode() for n in names if n.endswith("_ERROR.txt")}
