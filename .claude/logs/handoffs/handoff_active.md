@@ -23,6 +23,7 @@
 - **Decided 16:50 (D-0291 to D-0294):** the Export panel is simplified: no scope (always all plots), no reproducibility tick (always included), fields quality / plot format / report format / width / height, defaults SVG and HTML, fields kept in memory only. D-0290 is moot (line kept). Open with Eve: one download or two; the bundle label. `dev` = `0a1541c3`.
 - **Corrected 16:54 (D-0295):** the two export modes and the mode tick STAY (D-0293 was a misreading by the review session); removed are only the scope and any choice of individual plots. `dev` = `5496b9b1`.
 - **Decided 17:00 (D-0296):** the bundle label stays but is not remembered; the other Export fields and the mode are remembered while the app runs, per recipe and session, nothing on disk. Open with Eve: what the two modes mean exactly (page `tmpAI/panel/export_simplify/MODES_for_eve_2026-11-18.md`). `dev` = `743156f0`.
+- **Decided 17:46 (D-0297):** the join-key defect is repaired now. Built on `task/engine-keys` (head `ba7b60a6`, step 4 reviewed and its fixes done; step 5 running); edge-case tests to add after step 5. `dev` = `81980e0c` (UML sync committed). Running 17:50: step 5 of the big change; the Export simplification on `task/export-ready`; the export measurement report.
 
 ## 2026-11-18, 14:10, after the usage-limit stop and the restart (scribe; coordinator state in `tmpAI/coordinator/progress_2026-11-14_session3.md`)
 
