@@ -84,6 +84,16 @@ def spec() -> dict:
     return data
 
 
+def plot_defaults_keys() -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
+    """`(allowed keys, removed keys)` of `plot_defaults`, read from the specification.
+
+    The plot library reads its list from here, so the checker and the library cannot disagree on what `plot_defaults` may
+    hold (D-0220, D-0242).
+    """
+    data = spec()
+    return tuple(data["elements"]["plot_defaults"]["optional"]), tuple(data["removed"]["plot_defaults"])
+
+
 def plot_keys() -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
     """`(entry keys, content keys)` of a plot entry, read from the specification (`elements.plot`).
 

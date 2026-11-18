@@ -5,7 +5,7 @@ from typing import Dict, Any, List
 # Explicit imports to ensure registration occurs
 from viz_factory.registry import get_component
 from viz_factory.plot_config_resolver import (
-    BATCHED_COMPONENTS, resolve_plot_config, spec_key_names, unknown_spec_keys)
+    _VALID_PLOT_DEFAULTS_KEYS, BATCHED_COMPONENTS, resolve_plot_config, spec_key_names, unknown_spec_keys)
 from utils.random_layers import is_random_layer, is_seed_value, position_of
 from viz_factory.font_check import font_problems, family_text, settings_text
 from viz_factory.checked_plot import (
@@ -281,8 +281,8 @@ class VizFactory:
                 location="recipe plot_defaults",
                 fix=(
                     f"Remove or correct the key '{key}' in the data analysis recipe 'plot_defaults:' block. "
-                    "Valid keys: palette, theme, default_font_family, facet_panel_spacing, "
-                    "legend_position, optimisation. See rules_data_analysis_recipe_structure.md §10."
+                    f"Valid keys: {', '.join(sorted(_VALID_PLOT_DEFAULTS_KEYS))}. "
+                    "See rules_data_analysis_recipe_structure.md §10."
                 ),
                 who="data_analysis_recipe_author",
                 category="visualization",

@@ -4,7 +4,7 @@
 #           function:normalise_plot_spec, function:serialise_plot_spec, function:unknown_spec_keys, function:spec_key_names,
 #           function:layers_have_random (REPRO-SEED-2), function:recipe_pins_random_state (REPRO-RESHUFFLE-1),
 #           function:resolve_layer_seeds, function:apply_pin_to_layers, function:fixed_seed_of, class:LayerSeed (SEED-HOLDS-1)
-# consumes: libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys), libs/utils/src/utils/recipe_check.py (plot_keys: the entry keys and the content keys of a plot entry)
+# consumes: libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys), libs/utils/src/utils/recipe_check.py (plot_keys: the entry keys and the content keys of a plot entry; plot_defaults_keys: the allowed and the removed keys of plot_defaults)
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py,
 #              libs/viz_factory/tests/test_plot_config_resolver.py,
 #              libs/viz_factory/tests/test_plot_spec_roundtrip.py
@@ -37,7 +37,7 @@ from typing import Any, NamedTuple
 
 from utils.errors import VisualizationError
 from utils.random_layers import ALWAYS_RANDOM, is_random_layer
-from utils.recipe_check import plot_keys
+from utils.recipe_check import plot_defaults_keys, plot_keys
 
 # ---------------------------------------------------------------------------
 # L1 — Built-in defaults (constants)
@@ -67,11 +67,10 @@ _BUILTIN_DEFAULTS: dict = {
     "theme":          PLOTNINE_DEFAULT_THEME,  # derived from resolved layers after dedup
 }
 
-# Allowed keys in plot_defaults: (unknown keys emit a PipelineError warning)
-_VALID_PLOT_DEFAULTS_KEYS: frozenset = frozenset({
-    "palette", "theme", "default_font_family",
-    "facet_panel_spacing", "legend_position", "optimisation", "layers", "random_state",
-})
+# Allowed keys in plot_defaults: the list of the recipe specification, the same one the recipe checker reads (D-0220).
+# An unknown key emits a PipelineError warning; a key REMOVED from the format is refused (see resolve_plot_config).
+_VALID_PLOT_DEFAULTS_KEYS: frozenset = frozenset(plot_defaults_keys()[0])
+_REMOVED_PLOT_DEFAULTS_KEYS: frozenset = frozenset(plot_defaults_keys()[1])
 
 # The keys of a plot entry come from the recipe specification (`utils.recipe_check.plot_keys`), the list the recipe checker
 # reads: the CONTENT keys are what this library draws from; the ENTRY keys (ui_label, ui_title, description, comment,
@@ -580,6 +579,14 @@ def resolve_plot_config(
 
     # ── L2: plot_defaults ────────────────────────────────────────────────────
     for key, val in (plot_defaults or {}).items():
+        if key in _REMOVED_PLOT_DEFAULTS_KEYS:
+            # WHY: the checker refuses these keys, so HOME never gets here; a script or Blueprint's preview can. They did
+            # nothing for the picture, and ignoring one would let a recipe look as if it set a font or a legend.
+            raise VisualizationError(
+                f"plot_defaults.{key} was removed from the recipe format: the key did nothing (D-0242).",
+                tip=("Remove the key. Set the font, the legend and the panel spacing with a theme layer, for example "
+                     "layers: [{name: theme_bw, params: {legend_position: bottom}}]; the axis text of the app is changed "
+                     "per axis with an element_text layer."))
         if key == "layers":
             for number, layer in enumerate(val or [], start=1):
                 all_layers.append({**layer, "_tier": "L2", "_layer_no": number})
