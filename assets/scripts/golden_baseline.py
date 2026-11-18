@@ -74,7 +74,7 @@ def build_recipe(recipe_id: str, recipes_dir: Path, raw_data: Path, with_plots: 
     from app.modules.cache_keys import clear_data_analysis_recipe_cache
     from app.modules.orchestrator import DataOrchestrator
     from utils.config_loader import ConfigManager
-    from viz_factory.viz_factory import VizFactory
+    from app.modules.engine_registry import PlotEngines
 
     record: dict = {"t1": {}, "t2": {}, "plots": {}}
     clear_data_analysis_recipe_cache()
@@ -114,7 +114,7 @@ def build_recipe(recipe_id: str, recipes_dir: Path, raw_data: Path, with_plots: 
                 continue
             try:
                 with contextlib.redirect_stdout(io.StringIO()):
-                    plot = VizFactory().render(frames[target], raw, plot_id)
+                    plot = PlotEngines().render(frames[target], raw, plot_id)
                     plotted = pl.from_pandas(plot.data)
                 record["plots"][plot_id] = table_record(plotted)
             except BaseException as exc:  # noqa: BLE001

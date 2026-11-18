@@ -25,7 +25,7 @@ from shiny import reactive, render, ui
 from app.handlers import export_handlers
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe
 from app.tests.test_cache_chain import World
-from viz_factory.viz_factory import VizFactory
+from app.modules.engine_registry import PlotEngines
 
 NEW_DATA = "sample_id\tgroup\ns1\tA\ns2\tA\ns3\tB\ns4\tA\n"
 
@@ -84,7 +84,7 @@ def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None, 
               **(extra_values or {})}
     export_handlers.define_export_server(
         SimpleNamespace(import_bundle_upload=None), lambda fn: fn, None,
-        bootloader=_Bootloader(world, flags, deployment_contact), orchestrator=world.orch, viz_factory=VizFactory(),
+        bootloader=_Bootloader(world, flags, deployment_contact), orchestrator=world.orch, viz_factory=PlotEngines(),
         current_app_features=SimpleNamespace(get=lambda: "qa"), active_cfg=lambda: cfg,
         tier1_anchor=tier1_anchor or (lambda: pl.DataFrame().lazy()), tier_toggle=SimpleNamespace(get=lambda: "T2"),
         **{"home_state": None, **handler_kwargs},

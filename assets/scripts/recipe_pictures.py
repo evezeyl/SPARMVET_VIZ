@@ -9,7 +9,7 @@ Which recipes: every `*.yaml` directly inside each recipe folder, the way the ap
 plot files, they are not recipes; each is listed as skipped). A recipe that the load gate rejects (structure check, then data
 against its contract: the two checks of HOME's gate) is not drawn, and is listed with its reason, never dropped silently.
 A plot that cannot be drawn is recorded with its error text. Each plot is drawn as HOME draws the Result plot: the
-orchestrator builds the tier 1 and tier 2 table of the plot's target, and `VizFactory.render` draws it. Every picture has
+orchestrator builds the tier 1 and tier 2 table of the plot's target, and the plot engine the recipe names (`PlotEngines.render`) draws it. Every picture has
 the same fixed size and dpi (default 8 x 5 inches at 120 dpi, 960 x 600 pixels).
 
 A plot is identified by recipe id + analysis group id + plot id (never by a file shape or a file hash), so the same check
@@ -52,7 +52,7 @@ Examples (the prefix is the same for every mode):
 
 # @deps
 # provides: script:recipe_pictures
-# consumes: app/modules/orchestrator.py, app/modules/cache_keys.py, app/modules/data_analysis_recipe_validator.py, libs/utils/src/utils/config_loader.py, libs/viz_factory/src/viz_factory/viz_factory.py
+# consumes: app/modules/orchestrator.py, app/modules/cache_keys.py, app/modules/data_analysis_recipe_validator.py, libs/utils/src/utils/config_loader.py, app/modules/engine_registry.py
 # consumed_by: app/tests/test_recipe_pictures.py
 # doc: .claude/rules/rules_asset_scripts.md
 # @end_deps
@@ -240,7 +240,7 @@ def draw_recipe(recipe_id: str, path: Path, data_root: Path, palettes: Optional[
     from app.modules.cache_keys import clear_data_analysis_recipe_cache
     from app.modules.orchestrator import DataOrchestrator
     from utils.config_loader import ConfigManager
-    from viz_factory.viz_factory import VizFactory
+    from app.modules.engine_registry import PlotEngines
 
     def failure(group: str, plot: str, status: str, error: str) -> dict:
         return {"key": plot_key(recipe_id, group, plot), "recipe": recipe_id, "group": group, "plot": plot, "status": status, "error": error}
@@ -279,7 +279,7 @@ def draw_recipe(recipe_id: str, path: Path, data_root: Path, palettes: Optional[
                 for attempt in range(repeat):
                     target_file = out / file_name if attempt == 0 else work / f"again_{attempt}.png"
                     with contextlib.redirect_stdout(io.StringIO()):
-                        ggplot = VizFactory(palette_registry=palettes).render(tables[target], raw, plot)
+                        ggplot = PlotEngines(palette_registry=palettes).render(tables[target], raw, plot)
                         ggplot.save(target_file, verbose=False, **size)
                     arrays.append(pixels(target_file))
                     hashes.append(pixel_hash(arrays[-1]))

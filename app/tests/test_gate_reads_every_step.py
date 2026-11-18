@@ -124,5 +124,9 @@ def test_the_validator_uses_the_one_reader_of_the_engine():
     """The count is held against `DataWrangler.tier_steps`, the reader the orchestrator calls (`prepare_ingredient`)."""
     import inspect
     from app.modules import orchestrator
-    assert "DataWrangler.tier_steps(ds_schema" in inspect.getsource(orchestrator.DataOrchestrator.prepare_ingredient)
+    from app.modules.engine_registry import REGISTRY
+    from transformer import DataWrangler
+    # the orchestrator reaches the reader through the entry of the data engine (D-0219); the entry's class is the validator's
+    assert "wrangler.tier_steps(ds_schema" in inspect.getsource(orchestrator.DataOrchestrator.prepare_ingredient)
+    assert REGISTRY["python-polars"].wrangler is DataWrangler
     assert "DataWrangler.tier_steps" in inspect.getsource(validator.validate_data_analysis_recipe_data)

@@ -1,6 +1,6 @@
 # @deps
 # provides: server (Shiny server function)
-# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.orchestrator_helpers, app.modules.session_manager, utils.config_loader, viz_factory.viz_factory, app.modules.wrangle_studio (gated: blueprint_enabled or t3_sandbox_enabled), app.modules.test_lab_studio (gated: test_lab_enabled), app.modules.gallery_viewer, app.modules.app_features_validator, app.modules.sidebar_validator, app.modules.deployment_error, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
+# consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.orchestrator_helpers, app.modules.session_manager, utils.config_loader, app.modules.engine_registry (PlotEngines: the plot engine chosen per plot), app.modules.wrangle_studio (gated: blueprint_enabled or t3_sandbox_enabled), app.modules.test_lab_studio (gated: test_lab_enabled), app.modules.gallery_viewer, app.modules.app_features_validator, app.modules.sidebar_validator, app.modules.deployment_error, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers
 # provides: reactive.Value:_selected_lineage_rel (shared between wrangle_studio and blueprint_handlers — BP-LINEAGE-NAV-1)
 # consumed_by: app.src.main
 # doc: ADR-045, ADR-003, ADR-094 §6 closure (issue #38 — active_cfg() empty-state stand-in)
@@ -19,7 +19,7 @@ from app.modules.orchestrator import DataOrchestrator
 from app.modules.session_manager import SessionManager
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.handlers.recipe_gate_handlers import usable_config, define_server as _define_recipe_gate_server
-from viz_factory.viz_factory import VizFactory
+from app.modules.engine_registry import PlotEngines
 from app.modules.wrangle_studio import WrangleStudio
 from app.modules.test_lab_studio import TestLabStudio
 from app.modules.gallery_viewer import gallery_viewer
@@ -101,8 +101,9 @@ def server(input, output, session):
         imports_dir=bootloader.get_imports_dir(),
     )
     # BP-COLOR-3: inject deployment palettes from deployment registry.
-    # VizFactory works with built-ins alone when no registry is passed (library independence).
-    viz_factory = VizFactory(palette_registry=bootloader.get_palettes())
+    # A factory works with built-ins alone when no registry is passed (library independence). `viz_factory` draws each plot with the
+    # plot engine its entry or its recipe names (D-0219); today that is the plotnine factory.
+    viz_factory = PlotEngines(palette_registry=bootloader.get_palettes())
 
     # Module Initialization (Phase 11-F / ADR-039 / ADR-071 positive inclusion)
     # WrangleStudio holds the Blueprint Architect state (logic stack, active component) that the

@@ -21,7 +21,7 @@ from app.modules.gallery_examples import render_example
 from utils.errors import VisualizationError
 
 ROOT = Path(__file__).resolve().parents[2]
-CALL = re.compile(r"(viz_factory|VizFactory\(\))\.render\(")
+CALL = re.compile(r"(viz_factory|VizFactory\(\)|PlotEngines\([^)]*\))\.render\(")
 SCREENS = ["app/handlers/home_theater.py", "app/modules/wrangle_studio.py"]
 FILES = ["app/handlers/export_handlers.py", "app/modules/gallery_examples.py"]
 

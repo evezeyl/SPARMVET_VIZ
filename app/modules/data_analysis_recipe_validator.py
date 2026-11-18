@@ -1,7 +1,7 @@
 """
 @deps
 provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:checker_advices, const:SHOWN_ADVICES, function:home_advice_entries, function:validate_advice_entries, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, function:rejected_recipe_text (GATE-GAP-1), class:DataAnalysisRecipeProblem
-consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (load_recipe), libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/orchestrator.py
+consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (load_recipe), libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/engine_registry.py (engine_tables: the `engine` field of every action and component, D-0238), app/modules/orchestrator.py
 consumed_by: app/tests/test_upload_load_never_exits.py, app/tests/test_upload_recipe_check.py, app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
 @end_deps
@@ -42,13 +42,14 @@ import polars as pl
 import yaml
 from transformer.data_wrangler import DataWrangler
 from utils.step_migration import old_action_hint, removed_action_catalog
+from app.modules.engine_registry import engine_tables
 from utils.config_loader import ConfigManager
 from utils.fix_text import with_fix
 from utils.recipe_loader import check_recipe_file
 
 # What the recipe checker must have looked at before a recipe is accepted (its `coverage`): the form of the file, every
-# step against the action registry, every plot layer against the component registry.
-REQUIRED_COVERAGE = frozenset({"structure", "actions", "components"})
+# step against the action registry, every plot layer against the component registry, every step and layer against the engine of its block.
+REQUIRED_COVERAGE = frozenset({"structure", "actions", "components", "engines"})
 # Advices that tell the author what a choice does to the result (a float join key, a join of a table with itself, a position step after an unfixed row order).
 # The other advices (missing descriptions and the like) are for the author's own review and stay out of HOME's panel.
 SHOWN_ADVICES = frozenset({"J12", "J13", "ST13", "ST14", "ST15"})
@@ -153,6 +154,7 @@ def checker_catalogs() -> dict:
         "component_kinds": {name: COMPONENT_SCHEMAS[name]["plotnine"] for name in components},
         "themes": {name for name in components if name.startswith("theme_")},
         "old_action_names": removed_action_catalog(),
+        **engine_tables(),
     }
 
 
@@ -447,7 +449,7 @@ def validate_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Uni
     problems: list[DataAnalysisRecipeProblem] = []
     for location, ds_id, spec in schemas:
         try:
-            frame = orchestrator.prepare_ingredient(ds_id, spec, recipe_id=path.stem)
+            frame = orchestrator.prepare_ingredient(ds_id, spec, recipe_id=path.stem, recipe=raw)
             columns = frame.collect_schema().names()
         except Exception as exc:
             problems.append(DataAnalysisRecipeProblem(name, location, f"dataset cannot be loaded: {exc}", getattr(exc, "tip", None)))
