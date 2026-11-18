@@ -702,6 +702,7 @@ def test_comments_and_blank_lines_are_kept_everywhere(tmp_path):
 def test_the_kind_of_a_file_comes_from_its_keys_never_from_a_guess():
     assert classify("id: r\ndata_schemas: {}\n") == "recipe"
     assert classify("tier1: []\ntier2: []\n") == "tier_fragment"
+    assert classify("steps: []\n") == "tier" and classify("data_engine: python-polars\nsteps: []\n") == "tier"
     assert classify("target_dataset: A\nmapping: {}\nlayers: []\n") == "plot_content"
     assert classify("id: {type: String}\nv: {type: Float64}\n") == "input_fields"
     assert classify("hello: world\n") == "unknown" and classify("- a\n- b\n") == "unknown" and classify("a: [\n") == "unknown"
@@ -849,3 +850,11 @@ def test_an_orphan_fragment_with_two_tiers_is_split_when_asked_and_a_foreign_key
     two = write(tmp_path / "old" / "two.yaml", "tier1: []\ntier2: []\n")
     run([tmp_path], orphan_fragments=True)
     assert not two.exists() and (tmp_path / "old" / "two_tier1.yaml").exists() and (tmp_path / "old" / "two_tier2.yaml").exists()
+
+
+def test_a_tier_file_of_the_new_shape_that_nothing_includes_is_not_reported(tmp_path):
+    write(tmp_path / "r.yaml", OLD)
+    write(tmp_path / "old" / "tier.yaml", "steps: []\n")
+    result = run([tmp_path])
+    migrated = run([tmp_path])
+    assert migrated.refused == [] and not migrated.would_change

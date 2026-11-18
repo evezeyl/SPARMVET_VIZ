@@ -215,7 +215,7 @@ def _nl(text: str) -> str:
 # -- classification ----------------------------------------------------------------------------------------------------
 
 def classify(text: str) -> str:
-    """What a file is, from its root keys: recipe, tier_fragment, plot_content, input_fields or unknown (never a guess)."""
+    """What a file is, from its root keys: recipe, tier_fragment (old), tier (new), plot_content, input_fields or unknown (never a guess)."""
     try:
         root = _compose(text)
     except yaml.YAMLError:
@@ -227,6 +227,8 @@ def classify(text: str) -> str:
         return "recipe"
     if set(keys) <= {"tier1", "tier2", "tier3"}:
         return "tier_fragment"
+    if "steps" in keys and set(keys) <= {"steps", "data_engine"}:
+        return "tier"                                            # a tier file of the new shape: nothing to change
     if {"target_dataset", "mapping", "layers"} & set(keys):
         return "plot_content"
     if all(isinstance(v, yaml.MappingNode) and _find(v, "type") for _, v in root.value):
@@ -938,7 +940,7 @@ def migrate(paths: List[Path], partial_theme: Callable[[str], bool] = lambda nam
         _walk_includes(real, reached)
     names = {"tier_fragment": "an old tier fragment", "plot_content": "the content of a plot", "unknown": "a file of a kind that cannot be known"}
     for real, kind in others:
-        if real in reached or kind == "input_fields":
+        if real in reached or kind in ("input_fields", "tier"):
             continue
         if real in explicit:
             unit.event("refused", real, "", (f"this is {names[kind]}: it is rewritten together with the recipe that includes it, give that recipe (or its folder); nothing changed"
