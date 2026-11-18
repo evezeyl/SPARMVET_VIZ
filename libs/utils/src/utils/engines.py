@@ -20,6 +20,7 @@ If deleted: no recipe can name an engine and the checker refuses every recipe.
 # consumes: libs/utils/src/utils/errors.py (DataAnalysisRecipeError: the refusal of an engine the app has no library for)
 # consumed_by: libs/utils/src/utils/recipe_check.py, libs/utils/src/utils/recipe_migration.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/registry.py,
 #              libs/transformer/src/transformer/actions/base.py, app/modules/engine_registry.py, app/modules/engine_record.py (tier_engine, effective_engine, engine_versions), app/modules/cache_keys.py (tier_engine),
+#              app/handlers/export_handlers.py, app/handlers/home_theater.py, app/modules/wrangle_studio.py (plot_engine_slot: the recipe's default engine in the small recipe dict),
 #              libs/test_lab/src/test_lab/bootstrapper.py, libs/test_lab/src/test_lab/scaffolder.py, libs/utils/tests/test_engines.py, libs/utils/tests/test_engine_table.py
 # doc: .claude/knowledge/architecture_decisions.md (ADR-106 V8, ADR-100), .claude/knowledge/decision_ledger.md (D-0219, D-0238, D-0239, D-0247)
 # @end_deps
