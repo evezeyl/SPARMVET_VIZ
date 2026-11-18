@@ -356,7 +356,9 @@ After ID reconciliation is complete and user has verified matches, the scaffoldi
 ### Example Boilerplate Data Analysis Recipe (with id transformations baked in)
 
 The boilerplate is downloaded as a **ZIP** containing a master data analysis recipe + fragment files.
-All paths follow the basename mirroring standard (`rules_data_analysis_recipe_structure.md §1`).
+The files below are the real output of `DataAnalysisRecipeScaffolder.scaffold` for two small tables (`metadata.tsv`, `amr_results.tsv`)
+with the ID cleaning steps of a matching session (`id_reconciliation.recipe_steps`), checked with the recipe checker.
+The paths of the files follow the mirrored folder of the master (`rules_data_analysis_recipe_structure.md §1`).
 
 ```yaml
 # ── FILE: sample_amr_pipeline.yaml  (master data analysis recipe) ──────────────────────────
@@ -366,130 +368,146 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: "Sample AMR Pipeline"
-  description: "Sample metadata + AMR results"
-
-# ── Data Schemas ────────────────────────────────────────────────────────────────
+  label: Sample Amr Pipeline
+  version: '1.0'
+  description: Auto-scaffolded pipeline for sample_amr_pipeline
 data_schemas:
-  metadata_schema:
+  metadata:
+    label: Metadata
     source:
       type: local_tsv
-      path: ./data/metadata.tsv  # placeholder — user updates path
-    input_fields: !include 'sample_amr_pipeline/input_fields/metadata_schema_input_fields.yaml'
-    tier1: !include 'sample_amr_pipeline/wrangling/metadata_schema_wrangling.yaml'   # the file holds `steps` (D-0250)
-
-  amr_schema:
+      path: data/metadata.tsv   # the path of the file given to the scaffolder; the user updates it
+    null_values: []
+    strip: false
+    input_fields: !include 'sample_amr_pipeline/metadata_input_fields.yaml'
+    tier1: !include 'sample_amr_pipeline/metadata_wrangling.yaml'
+  amr_results:
+    label: Amr results
     source:
       type: local_tsv
-      path: ./data/amr_results.tsv  # placeholder — user updates path
-    input_fields: !include 'sample_amr_pipeline/input_fields/amr_schema_input_fields.yaml'
-    tier1: !include 'sample_amr_pipeline/wrangling/amr_schema_wrangling.yaml'
-
-# ── Join Data Analysis Recipes ──────────────────────────────────────────────────────────────
+      path: data/amr_results.tsv
+    null_values: []
+    strip: false
+    input_fields: !include 'sample_amr_pipeline/amr_results_input_fields.yaml'
+    tier1: !include 'sample_amr_pipeline/amr_results_wrangling.yaml'
 joins:
-  sample_amr_joint:
-    description: "Metadata + AMR results — join key: sample_id (verified by TEST_LAB)"
+  sample_amr_pipeline_joint:
+    label: Sample amr pipeline joint
     ingredients:
-      - dataset_id: metadata_schema
-      - dataset_id: amr_schema
-    tier1: !include 'sample_amr_pipeline/wrangling/sample_amr_joint_wrangling.yaml'
-
-# ── Analysis Groups — stub, define in BLUEPRINT ─────────────────────────────────
+    - dataset_id: metadata
+    - dataset_id: amr_results
+    tier1: !include 'sample_amr_pipeline/assembly/sample_amr_pipeline_joint.yaml'
 analysis_groups: {}
 ```
 
 ```yaml
-# ── FILE: sample_amr_pipeline/input_fields/metadata_schema_input_fields.yaml ───
+# ── FILE: sample_amr_pipeline/metadata_input_fields.yaml ───────────────────────
 
 sample_id:
-  type: categorical
-  description: "Sample identifier (join key — cleaned in tier1)"
+  type: Categorical
+  label: Sample Id
+  original_name: sample_id
+  is_entity_key: true
 collection_date:
-  type: string
-  description: "Collection date"
+  type: Categorical
+  label: Collection Date
+  original_name: collection_date
 site:
-  type: categorical
+  type: Categorical
+  label: Site
+  original_name: site
 age:
-  type: string
+  type: Int64
+  label: Age
+  original_name: age
 ```
 
 ```yaml
-# ── FILE: sample_amr_pipeline/wrangling/metadata_schema_wrangling.yaml ─────────
-# id transformation baked in from TEST_LAB matching session
+# ── FILE: sample_amr_pipeline/metadata_wrangling.yaml ──────────────────────────
+# id transformation baked in from the TEST_LAB matching session (remove_prefix, then the join key integrity)
 
-tier1:
-  # Step 1: Remove 'sample_' prefix (id transformation: remove_prefix)
-  - action: regex_replace
-    column: sample_id
-    pattern: "^sample_"
-    replacement: ""
-
-  # Step 2: Cast other fields
-  - action: cast
-    columns: [collection_date]
-    dtype: String
-
-  # Step 3: Join key integrity — drop duplicates and nulls
-  - action: drop_duplicates
-    columns: [sample_id]
-  - action: null_if
-    column: sample_id
-    value: ""
-  - action: drop_nulls
-    columns: [sample_id]
+# Candidate PK: sample_id, collection_date, site, age (100% unique)
+steps:
+- action: polars_str_replace_all
+  columns:
+  - sample_id
+  pattern: ^sample_
+  value: ''
+  literal: false
+- action: polars_unique
+  subset:
+  - sample_id
+  keep: first
+  maintain_order: true
+- action: polars_with_columns
+  named_exprs:
+    sample_id: pl.when(pl.col('sample_id') == '').then(None).otherwise(pl.col('sample_id'))
+- action: polars_drop_nulls
+  subset:
+  - sample_id
 ```
 
 ```yaml
-# ── FILE: sample_amr_pipeline/input_fields/amr_schema_input_fields.yaml ────────
+# ── FILE: sample_amr_pipeline/amr_results_input_fields.yaml ────────────────────
 
 sample_id:
-  type: categorical
-  description: "Sample ID (join key — cleaned in tier1)"
+  type: Categorical
+  label: Sample Id
+  original_name: sample_id
+  is_entity_key: true
 amr_gene:
-  type: categorical
+  type: Categorical
+  label: Amr Gene
+  original_name: amr_gene
 phenotype:
-  type: categorical
+  type: Categorical
+  label: Phenotype
+  original_name: phenotype
 ```
 
 ```yaml
-# ── FILE: sample_amr_pipeline/wrangling/amr_schema_wrangling.yaml ───────────────
-# id transformation baked in from TEST_LAB matching session
+# ── FILE: sample_amr_pipeline/amr_results_wrangling.yaml ───────────────────────
+# id transformation baked in from the TEST_LAB matching session (extract_delimiter, then the join key integrity)
 
-tier1:
-  # Step 1: Extract first field before '_' delimiter (id transformation: extract_delimiter)
-  - action: mutate
-    column: sample_id
-    expression: "pl.col('sample_id').str.split('_').list.first()"
-
-  # Step 2: Join key integrity — drop duplicates and nulls
-  - action: drop_duplicates
-    columns: [sample_id]
-  - action: null_if
-    column: sample_id
-    value: ""
-  - action: drop_nulls
-    columns: [sample_id]
+# Candidate PK: sample_id, amr_gene, phenotype (100% unique)
+steps:
+- action: polars_with_columns
+  named_exprs:
+    sample_id: pl.col('sample_id').str.split('_').list.first()
+- action: polars_unique
+  subset:
+  - sample_id
+  keep: first
+  maintain_order: true
+- action: polars_with_columns
+  named_exprs:
+    sample_id: pl.when(pl.col('sample_id') == '').then(None).otherwise(pl.col('sample_id'))
+- action: polars_drop_nulls
+  subset:
+  - sample_id
 ```
 
 ```yaml
-# ── FILE: sample_amr_pipeline/wrangling/sample_amr_joint_wrangling.yaml ────────
-# Pre-filled with verified join key from ID reconciliation
+# ── FILE: sample_amr_pipeline/assembly/sample_amr_pipeline_joint.yaml ──────────
+# Pre-filled with the verified join key from ID reconciliation; `how` is a placeholder to choose in BLUEPRINT
 
-tier1:
-  - action: join
-    right_ingredient: amr_schema
-    'on': ["sample_id"]   # Both sides cleaned; join key verified in TEST_LAB
-    how: left             # placeholder — choose inner / left / outer in BLUEPRINT
+steps:
+- action: polars_join
+  right_ingredient: amr_results
+  'on':
+  - sample_id
+  how: inner
+  maintain_order: left_right
 ```
 
 **Key points:**
 - `data_schemas:` is the correct top-level key (not `input_schemas:`)
 - `source:` block is required per schema (user updates path before loading in BLUEPRINT)
-- Join defined via `ingredients:` list + `tier1: !include` — never inline in the master
-- ID cleaning in `tier1` uses registered transformer actions (`regex_replace`, `mutate`, `drop_duplicates`, `null_if`, `drop_nulls`)
-- There is no `output_fields` (data analysis recipe format 1): the published columns of a join are the last step of its `tier1`; the bootstrapper writes `tier1` as an `!include` of a file that holds `steps`, and no `tier2` (an absent tier 2 means tier 2 equals tier 1)
-- The example above is a sketch: the real output also writes, for each table, the keys of data analysis recipe format 1 that it leaves out (`label`, `null_values`, `strip`)
-- `analysis_groups: {}` = stub — user fills in BLUEPRINT with plots and groups
+- Join defined via `ingredients:` list + `tier1: !include` (the file holds `steps`) — never inline in the master
+- ID cleaning in `tier1` uses registered transformer actions with the `polars_` prefix (`polars_str_replace_all`, `polars_with_columns`, `polars_unique`, `polars_drop_nulls`), written by `id_reconciliation.recipe_steps`
+- Field types are Polars dtype names (`Categorical`, `Int64`, ...); a field has no `description:`
+- There is no `output_fields` (data analysis recipe format 1): the published columns of a join are the last step of its `tier1`; no `tier2` is written (an absent tier 2 means tier 2 equals tier 1)
+- `analysis_groups: {}` = stub — user fills in BLUEPRINT with plots and groups. The recipe checker accepts the files above as written; the engine's own load refuses a recipe with no analysis group ("missing the required 'analysis_groups:' block") until the first plot is added
 
 ---
 
