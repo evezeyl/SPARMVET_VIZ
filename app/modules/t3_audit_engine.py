@@ -12,7 +12,7 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:audit_failures, class:AuditStepError
+# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:audit_failures, function:filters_cleared_notice, function:column_is_in_frame, class:AuditStepError
 # consumes: polars, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_step_order.py, app/tests/test_removed_audit_step_type.py, app/tests/test_audit_error_names_the_plot.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
@@ -34,6 +34,33 @@ from utils.filter_values import (
 )
 from utils.missing_values import keep_missing
 from utils.na_choice import default_na, na_of
+
+
+def column_is_in_frame(frame, column: str) -> bool:
+    """True when `column` is a column of `frame`; a frame that is None counts as "cannot say" and gives True.
+
+    WHY: the filter form's column box (`fb_col`) is rebuilt from the table only after the table changed (another recipe or
+    plot), so for a moment the dialog texts are asked about the previous table's column. That column is absent from the new
+    table by construction, the box is then rebuilt and asks again: the moment is not an error and must not be logged as one.
+    A None frame (the table could not be built) stays an error the caller reports.
+    """
+    if frame is None:
+        return True
+    return column in frame.lazy().collect_schema().names()
+
+
+def filters_cleared_notice(n_pending: int, n_applied: int) -> str | None:
+    """The one plain notice shown when the open recipe changed and exploration filters were emptied; None when nothing was cleared.
+
+    WHY: a filter is built against one recipe's columns, names and types (ADR-099 point 1, home_preview_filters.md section on
+    clearing). Kept on the next recipe it would silently filter a column of the same name, or do nothing for another name.
+    """
+    if n_pending <= 0 and n_applied <= 0:
+        return None
+    return (
+        "The filters of the previous recipe were removed because the recipe changed "
+        "(a filter is built on one recipe's columns). Audited steps are kept."
+    )
 
 
 def _op_label(op: str) -> str:
