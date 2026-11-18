@@ -12,7 +12,7 @@ from __future__ import annotations
 
 # @deps
 # provides: constant:EXPORT_READY_TEXTS, constant:EXPORT_PANEL_FIELDS, function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
-# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), polars, shiny
+# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text), .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/export_specification.md, .claude/design/reproducible_export_design.md
@@ -26,6 +26,8 @@ from pathlib import Path
 from shiny import reactive, render, ui
 
 from app.modules.error_notice import notice, what_failed
+from app.modules.plot_issue_reporter import plot_warning_text
+from viz_factory.checked_plot import plot_warnings
 from app.modules.export_refusal import export_refusal
 from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
@@ -1215,6 +1217,9 @@ def define_export_server(input, output, session, *,
             qmd_plot_fmt = plot_fmt if plot_fmt in _native else _fallback
             plot_bytes: dict[str, bytes] = {}      # p_id → bytes (user format)
             qmd_plot_bytes: dict[str, bytes] = {}  # p_id → bytes for Quarto (_render/)
+            # D-0269: the warnings of every picture this export draws (a missing font ...), per plot, whether or not the plot
+            # was shown in HOME. The same words as HOME's Alerts panel (plot_warning_text).
+            _plot_warning_rows: dict[str, list[dict]] = {}
             failed_plots: dict[str, str] = {}      # p_id → why it was not drawn (the report says so, no figure link)
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmpdir_path = Path(tmpdir)
@@ -1255,6 +1260,11 @@ def define_export_server(input, output, session, *,
                         _plot_override = _t3_aesthetic_overrides.get(p_id)
                         fig = viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
                                                  **render_seed_args(_plot_seeds[p_id], _plot_override))
+                        _found = plot_warnings(fig)
+                        if _found:
+                            _plot_warning_rows[p_id] = [
+                                {"text": plot_warning_text(w), "problem": w.problem, "fix": w.fix,
+                                 "component": w.component, "location": w.location} for w in _found]
 
                         # Save user-chosen format → zip under {dataset}/plots/
                         plot_path = tmpdir_path / f"{p_id}.{plot_fmt}"
@@ -1577,6 +1587,7 @@ def define_export_server(input, output, session, *,
                 "seed_source_per_plot": seed_sources_per_plot(_plot_seeds),
                 "seeds_per_layer": seeds_per_layer_record(_plot_seeds),
                 "seeds_added_to_recipe": seeds_added_to_recipe(_plot_seeds, dict(all_plots)),
+                "plot_warnings": _plot_warning_rows,
                 "t3_translation_skipped": (
                     mode2_skipped if wants_mode2 else
                     "not attempted — check 'Also include a reproducibility/reimport "
@@ -2100,6 +2111,8 @@ def define_export_server(input, output, session, *,
                  "Reproducibility  : not included (the box 'Also include a reproducibility/reimport bundle' was not "
                  "ticked when Export was pressed)"),
                 f"Plots            : {prov['plot_count']}",
+                (f"Plot warnings    : {sum(len(v) for v in _plot_warning_rows.values())} (listed under 'Plot warnings' below)"
+                 if _plot_warning_rows else "Plot warnings    : none"),
                 f"Tiers            : {', '.join(prov['tiers_exported'])}",
                 "",
                 "Software",
@@ -2118,6 +2131,9 @@ def define_export_server(input, output, session, *,
                 "exported bundle against this one, field by field, to confirm they are the",
                 "same analysis (ADR-097).",
                 "",
+                *(["Plot warnings (these plots were drawn; read each warning before you rely on the plot):",
+                   *[f"  {_pid}: {_row['text']}" for _pid, _rows in _plot_warning_rows.items() for _row in _rows],
+                   ""] if _plot_warning_rows else []),
                 "Stage keys (per dataset; Tier 1 and Tier 2 chained keys):",
                 *_dh_lines,
                 "",
