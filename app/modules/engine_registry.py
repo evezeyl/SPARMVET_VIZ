@@ -18,7 +18,7 @@ If deleted: no tier is run and no plot is drawn by the app.
 # @deps
 # provides: constant:REGISTRY, function:data_entry, function:plot_entry, function:engine_tables, class:PlotEngines (render, record_of: what the export records of a drawn plot)
 # consumes: libs/utils/src/utils/engines.py, libs/utils/src/utils/errors.py, libs/transformer/src/transformer/engine_python_polars.py, libs/viz_factory/src/viz_factory/engine_python_plotnine.py, libs/transformer/src/transformer/actions/base.py (ACTION_ENGINES), libs/viz_factory/src/viz_factory/registry.py (COMPONENT_ENGINES)
-# consumed_by: app/modules/orchestrator.py, app/modules/data_analysis_recipe_validator.py, app/modules/gallery_examples.py, app/src/server.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/tests/test_engine_registry.py
+# consumed_by: app/modules/orchestrator.py, app/handlers/export_handlers.py (PlotEngines.record_of, passed in), app/modules/data_analysis_recipe_validator.py, app/modules/gallery_examples.py, app/src/server.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/tests/test_engine_registry.py
 # doc: .claude/knowledge/decision_ledger.md (D-0219, D-0238, D-0239, D-0247, D-0050)
 # @end_deps
 """

@@ -2,7 +2,7 @@
 
 # @deps
 # provides: class:CheckedPlot, class:PlotContext, class:Step, function:plot_environment, function:draw_checked, function:show_draw_errors, function:plot_warnings, function:applied_theme, function:explain_build_failure, function:describe_failure, function:error_figure
-# consumes: libs/viz_factory/src/viz_factory/errors.py, libs/viz_factory/src/viz_factory/arguments.py, libs/viz_factory/src/viz_factory/registry.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/formula_check.py (MATH_CONSTANTS, MATH_FUNCTIONS), plotnine, matplotlib
+# consumes: libs/viz_factory/src/viz_factory/errors.py, libs/viz_factory/src/viz_factory/arguments.py, libs/viz_factory/src/viz_factory/registry.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/formula_check.py (MATH_CONSTANTS, MATH_FUNCTIONS), libs/viz_factory/src/viz_factory/plot_config_resolver.py (is_partial_theme, for applied_theme), plotnine, matplotlib
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py, app/handlers/home_theater.py, app/modules/wrangle_studio.py, app/modules/gallery_examples.py
 # doc: .claude/design/decisions_2026-11-14/viz_plan_for_eve.md (V7), .claude/rules/rules_viz_factory.md
 # @end_deps

@@ -9,7 +9,7 @@ Consumed by: `app/modules/engine_registry.py`. If deleted: the app has no plot e
 
 # @deps
 # provides: constant:ENTRY, constant:ENGINE
-# consumes: libs/utils/src/utils/engines.py (PLOT_ENGINE, PlotEngineEntry), libs/viz_factory/src/viz_factory/viz_factory.py
+# consumes: libs/utils/src/utils/engines.py (PLOT_ENGINE, PlotEngineEntry), libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/checked_plot.py (applied_theme: the theme as applied, recorded per plot, D-0248)
 # consumed_by: app/modules/engine_registry.py, libs/viz_factory/tests/test_component_engine_field.py
 # doc: .claude/knowledge/decision_ledger.md (D-0247)
 # @end_deps
