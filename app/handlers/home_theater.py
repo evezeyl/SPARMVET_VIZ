@@ -101,10 +101,11 @@ def plot_list_label(p_id: str, entry: dict | None) -> str:
 
 
 def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
-    """Enumerate all (plot_id, spec_dict) pairs from analysis_groups AND top-level plots.
+    """Enumerate all (plot_id, plot entry) pairs from analysis_groups AND top-level plots.
 
+    The entry is the plot content (D-0237): `target_dataset`, `mapping`, `layers` are written in it, with the app-side keys beside them.
     Called once at server init to register dynamic @render.plot handlers.
-    Returns list of (p_id, spec) tuples (spec may be None for unresolved entries).
+    Returns list of (p_id, entry) tuples.
     """
     seen = set()
     results = []
