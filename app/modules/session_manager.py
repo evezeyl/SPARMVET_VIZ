@@ -22,17 +22,19 @@ Ghost slots (per session_key, under {location_4}/_sessions/{session_key}/)
 from __future__ import annotations
 
 # @deps
-# provides: class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps
-# consumes: app/modules/error_notice.py (notice — VERIF-FIX-2, lazy), libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)
-# consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py
+# provides: class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, class:SessionImportLimits, function:session_import_limits_from (D-0283), function:session_input_id_part, function:session_input_id_parts (two listed sessions never share a button), exception:SessionImportRefused, exception:SessionKeyExists (D-0281)
+# consumes: app/modules/error_notice.py (notice — VERIF-FIX-2, lazy), libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, re, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)
+# consumed_by: app/src/bootloader.py (limits), app/tests/test_session_import_safety.py, app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py
 # doc: .claude/rules/ui_implementation_contract.md#12d, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
 
 import hashlib
 import json
+import re
 import shutil
 import uuid
 import zipfile
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypedDict
@@ -563,12 +565,39 @@ class SessionManager:
     # 22-A-13: Import session zip
     # ------------------------------------------------------------------
 
-    def import_session_zip(self, zip_bytes: bytes) -> str:
-        """Unpack a session zip into _sessions/. Returns the restored session_key."""
+    def import_session_zip(self, zip_bytes: bytes, *, limits: "SessionImportLimits | None" = None,
+                           on_exists: str | None = None) -> str:
+        """Unpack a session zip into _sessions/. Returns the session_key it is stored under.
+
+        Order (D-0281, D-0283): the file size, then every member name, then the declared unpacked size, then the
+        content, are checked BEFORE anything is written. A key that already exists is never written over silently:
+        with `on_exists=None` this raises `SessionKeyExists` and writes nothing; the caller asks the user and calls again
+        with "replace" (the stored session is replaced) or "keep_both" (the zip is stored under
+        `<key>_imported_<time>`, PROVISIONAL naming, its own session_key and a label that says it was imported).
+        A zip that is refused, or an import that fails, leaves no file behind.
+        """
         import io
-        buf = io.BytesIO(zip_bytes)
-        with zipfile.ZipFile(buf, "r") as zf:
-            names = zf.namelist()
+        limits = limits or SessionImportLimits.default()
+        if on_exists not in (None, "replace", "keep_both"):
+            raise ValueError(f"on_exists must be None, 'replace' or 'keep_both', not {on_exists!r}")
+        if len(zip_bytes) > limits.max_zip_bytes:
+            raise SessionImportRefused(
+                f"The file is {_human_bytes(len(zip_bytes))} and the limit for an imported session zip is "
+                f"{_human_bytes(limits.max_zip_bytes)}. The limit is set by {limits.where}.")
+        try:
+            zf = zipfile.ZipFile(io.BytesIO(zip_bytes), "r")
+        except zipfile.BadZipFile as exc:
+            raise SessionImportRefused(f"The file is not a readable zip ({exc}).") from exc
+        with zf:
+            infos = zf.infolist()
+            session_key = _checked_member_names(infos)
+            declared = sum(i.file_size for i in infos)
+            if declared > limits.max_unpacked_bytes:
+                raise SessionImportRefused(
+                    f"The zip is {_human_bytes(len(zip_bytes))} but would unpack to {_human_bytes(declared)} and the "
+                    f"limit for the unpacked size is {_human_bytes(limits.max_unpacked_bytes)}. The limit is set by "
+                    f"{limits.where}.")
+            names = [i.filename for i in infos if not i.is_dir()]
             assembly_files = [n for n in names if n.endswith("assembly.json")]
             t3_files = [n for n in names if "/t3_" in n and n.endswith(".json")]
             if not assembly_files and not t3_files:
@@ -580,11 +609,60 @@ class SessionManager:
                            or refused_audit_step_in_ghost(data, f"Imported session file {name}"))
                 if problem:
                     raise LegacySessionError(problem)
-            zf.extractall(self.root)
-            # Derive session_key from assembly.json if present, otherwise from T3 ghost.
-            anchor = assembly_files[0] if assembly_files else t3_files[0]
-            session_key = Path(anchor).parts[0]
-        return session_key
+            for name in assembly_files:
+                inner = json.loads(zf.read(name)).get("session_key")
+                if inner is not None and inner != session_key:
+                    raise SessionImportRefused(
+                        f"The zip was refused and nothing was written: the session folder is named '{_shown(session_key)}' "
+                        f"but the session_key inside {_shown(name)} is '{_shown(str(inner))}'. The two must be the same.")
+            for name in t3_files:
+                inner = json.loads(zf.read(name)).get("session_key")
+                if inner is not None and inner != session_key:
+                    raise SessionImportRefused(
+                        f"The zip was refused and nothing was written: the session folder is named '{_shown(session_key)}' "
+                        f"but the session_key inside {_shown(name)} is '{_shown(str(inner))}'. The two must be the same.")
+            if self.root.exists():
+                for other in self.root.iterdir():
+                    if other.name != session_key and not other.name.startswith(".") \
+                            and session_input_id_part(other.name) == session_input_id_part(session_key):
+                        raise SessionImportRefused(
+                            f"The zip was refused and nothing was written: the session folder '{_shown(session_key)}' "
+                            f"would look the same on the screen as the stored session '{_shown(other.name)}'. "
+                            "Rename the folder inside the zip.")
+            target = self.root / session_key
+            if target.exists() and on_exists is None:
+                raise SessionKeyExists(session_key)
+            stamp = _timestamp()
+            work = self.root / f".import_{uuid.uuid4().hex}"
+            try:
+                staged = work / session_key
+                for info in infos:
+                    dest = work / info.filename
+                    if info.is_dir():
+                        dest.mkdir(parents=True, exist_ok=True)
+                        continue
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    with zf.open(info) as src, open(dest, "wb") as out:
+                        shutil.copyfileobj(src, out)
+                if on_exists == "keep_both" and target.exists():
+                    stored_key = f"{session_key}_imported_{stamp}"
+                    _mark_as_imported_copy(staged, stored_key, session_key)
+                    staged.rename(self.root / stored_key)
+                    return stored_key
+                if target.exists():
+                    backup = self.root / f".replaced_{uuid.uuid4().hex}"
+                    target.rename(backup)
+                    try:
+                        staged.rename(target)
+                    except Exception:
+                        backup.rename(target)
+                        raise
+                    shutil.rmtree(backup, ignore_errors=True)
+                else:
+                    staged.rename(target)
+                return session_key
+            finally:
+                shutil.rmtree(work, ignore_errors=True)
 
     # ------------------------------------------------------------------
     # 22-A-14: Delete session
@@ -658,6 +736,203 @@ def gatekeeper_blocked(t3_audit_steps: list[dict]) -> list[str]:
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Session import: limits, refusals, member-name check (D-0281, D-0283)
+# ---------------------------------------------------------------------------
+
+# PROVISIONAL (Eve fixes the numbers, D-0283): measured on 2026-11-18, a full session of 1_test_data_ST22_dummy with two
+# audited filters is a zip of about 2 KB (about 1 KB more per audit save); 3 times that is about 6 KB, which is below what
+# one real session of ten saves needs, so the defaults are round numbers well above it.
+DEFAULT_SESSION_IMPORT_MAX_ZIP_MB = 1
+DEFAULT_SESSION_IMPORT_MAX_UNPACKED_MB = 10
+_MB = 1024 * 1024
+_SESSION_IMPORT_KEYS = ("max_zip_mb", "max_unpacked_mb")
+
+
+class SessionImportRefused(ValueError):
+    """The zip was refused before anything was written; the text is for the user (D-0050)."""
+
+
+class SessionKeyExists(Exception):
+    """A session with this key is already stored; nothing was written. The caller asks the user (D-0281)."""
+
+    def __init__(self, session_key: str):
+        super().__init__(f"A session with the key {session_key} already exists.")
+        self.session_key = session_key
+
+
+@dataclass(frozen=True)
+class SessionImportLimits:
+    max_zip_bytes: int
+    max_unpacked_bytes: int
+    where: str      # in words: which keys of which file set the limits
+
+    @classmethod
+    def default(cls) -> "SessionImportLimits":
+        return session_import_limits_from({}, "")
+
+
+def session_import_limits_from(deployment_config: dict, deployment_path: str) -> SessionImportLimits:
+    """Read `session_import.max_zip_mb` and `session_import.max_unpacked_mb` of the deployment file (D-0283).
+
+    A key that is absent takes the default; a wrong value or an unknown key under `session_import` raises ValueError
+    naming the key and the file (the operator mistake is told, not guessed).
+    """
+    block = (deployment_config or {}).get("session_import")
+    where_file = f"the deployment file {deployment_path}" if deployment_path else "the deployment file"
+    if block is None:
+        block = {}
+    if not isinstance(block, dict):
+        raise ValueError(f"session_import in {where_file} must be a block with {' and '.join(_SESSION_IMPORT_KEYS)}.")
+    unknown = sorted(set(block) - set(_SESSION_IMPORT_KEYS))
+    if unknown:
+        raise ValueError(f"session_import.{unknown[0]} in {where_file} is not a known key; the keys are "
+                         f"{' and '.join('session_import.' + k for k in _SESSION_IMPORT_KEYS)}.")
+    values = {}
+    for key, default in (("max_zip_mb", DEFAULT_SESSION_IMPORT_MAX_ZIP_MB),
+                         ("max_unpacked_mb", DEFAULT_SESSION_IMPORT_MAX_UNPACKED_MB)):
+        value = block.get(key, default) if key in block else default
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+            raise ValueError(f"session_import.{key} in {where_file} must be a number of megabytes above 0, not {value!r}.")
+        values[key] = int(value * _MB)
+    if block:
+        where = f"session_import.max_zip_mb and session_import.max_unpacked_mb in {where_file} (a key that is absent uses its default)"
+    else:
+        where = (f"the default, because session_import.max_zip_mb and session_import.max_unpacked_mb are not in "
+                 f"{where_file}; set them there to change the limit")
+    return SessionImportLimits(values["max_zip_mb"], values["max_unpacked_mb"], where)
+
+
+def _human_bytes(n: int) -> str:
+    if n >= _MB:
+        return f"{n / _MB:.1f} MB ({n} bytes)"
+    if n >= 1024:
+        return f"{n / 1024:.1f} KB ({n} bytes)"
+    return f"{n} bytes"
+
+
+_S_IFMT, _S_IFLNK, _S_IFREG, _S_IFDIR = 0o170000, 0o120000, 0o100000, 0o040000
+
+
+_KEY_CHARS = re.compile(r"[A-Za-z0-9_:]+")
+
+
+def session_input_id_part(session_key: str) -> str:
+    """The part of a Shiny input id that stands for a session key (letters, digits, underscore only).
+
+    WHY: Shiny refuses any other character in an id, and one refused id breaks the whole Session Management panel.
+    The panel looks the key up from the list of sessions, never from the id text, so two keys that give one id are
+    refused when a zip is imported (`import_session_zip`).
+    """
+    return re.sub(r"[^A-Za-z0-9_]", "_", session_key)
+
+
+def session_input_id_parts(listed_keys) -> dict[str, str]:
+    """Key -> input id part for the sessions that are LISTED, unique by construction.
+
+    WHY: two folders put in the store by hand, by a copy or by older code can give one safe form (`a:b` and `a_b`). They
+    would share one button, so one Delete click would delete both. A key whose safe form is shared in the list gets the
+    safe form plus `_` plus the first 8 hex characters of the sha256 of its exact key; the other keys keep the plain
+    safe form. The panel and its effects look the key up in this mapping from the same listing, never from id text.
+    """
+    import hashlib
+    keys = list(dict.fromkeys(listed_keys))
+    count: dict[str, int] = {}
+    for key in keys:
+        part = session_input_id_part(key)
+        count[part] = count.get(part, 0) + 1
+    return {key: (session_input_id_part(key) if count[session_input_id_part(key)] == 1
+                  else f"{session_input_id_part(key)}_{hashlib.sha256(key.encode('utf-8')).hexdigest()[:8]}")
+            for key in keys}
+
+
+def session_id_collisions(listed_keys) -> list[list[str]]:
+    """Groups of listed keys whose plain safe forms are the same (two or more), in listing order."""
+    groups: dict[str, list[str]] = {}
+    for key in dict.fromkeys(listed_keys):
+        groups.setdefault(session_input_id_part(key), []).append(key)
+    return [g for g in groups.values() if len(g) > 1]
+
+
+def _shown(text: str, limit: int = 60) -> str:
+    """A name shortened for a message (a hostile zip may hold a very long one)."""
+    return text if len(text) <= limit else text[:limit] + "... (shortened)"
+
+
+def _checked_member_names(infos: list) -> str:
+    """Refuse the whole zip at the first member that is not a plain file or folder inside ONE session folder.
+
+    Returns the session key (the one top folder). Nothing has been written when this runs.
+    """
+    top = None
+    seen: set[str] = set()
+    for info in infos:
+        name = info.filename
+        parts = name.replace("\\", "/").split("/")
+        problem = None
+        if not name:
+            problem = "an empty name"
+        elif name.startswith(("/", "\\")) or (len(name) > 1 and name[1] == ":" and name[0].isalpha() and (len(name) == 2 or name[2] in "/\\")):
+            problem = "an absolute path or a drive"
+        elif ".." in parts:
+            problem = "a path with a '..' part that goes up"
+        elif "\\" in name:
+            problem = "a name with a backslash"
+        elif len(name) > 500 or any(len(p.encode("utf-8", "replace")) > 200 for p in parts):
+            problem = "a name that is too long"
+        elif name in seen:
+            problem = "a name that appears twice in the zip"
+        elif "\x00" in name:
+            problem = "a name with a null character"
+        else:
+            kind = (info.external_attr >> 16) & _S_IFMT
+            if kind not in (0, _S_IFREG, _S_IFDIR):
+                problem = "a link or a special file"
+            elif len(parts) < 2 and not info.is_dir():
+                problem = "a file outside a session folder"
+            else:
+                first = parts[0]
+                if not first or first.startswith("."):
+                    problem = "a session folder name that is empty or starts with a dot"
+                elif not _KEY_CHARS.fullmatch(first):
+                    problem = (f"in a session folder named '{_shown(first)}'; a session folder name may hold only letters, "
+                               "digits, '_' and ':'")
+                elif top is None:
+                    top = first
+                elif first != top:
+                    problem = f"a path outside the session folder {top}"
+        seen.add(name)
+        if problem:
+            raise SessionImportRefused(
+                f"The zip was refused and nothing was written: the member '{_shown(name)}' is {problem}. A session zip holds "
+                "only plain files inside one session folder.")
+    if top is None:
+        raise ValueError("ZIP does not contain a valid session (no assembly.json or t3_*.json found).")
+    return top
+
+
+def _mark_as_imported_copy(folder: Path, new_key: str, original_key: str) -> None:
+    """Make the unpacked copy a session of its own: its files carry the new key and the label says it was imported.
+
+    PROVISIONAL (D-0281 "keep both"): the list, Restore and Delete find a session by the key inside assembly.json.
+    """
+    when = _now_iso()
+    for path in folder.glob("*.json"):
+        try:
+            data = json.loads(path.read_text())
+        except Exception:
+            continue
+        if not isinstance(data, dict) or "session_key" not in data:
+            continue
+        data["session_key"] = new_key
+        if path.name == "assembly.json":
+            old = data.get("label", "")
+            data["label"] = f"Imported {when} UTC (copy of {original_key})" + (f": {old}" if old else "")
+            data["imported_at"] = when
+            data["imported_from_key"] = original_key
+        path.write_text(json.dumps(data, indent=2))
+
 
 def _reason(exc: BaseException) -> str:
     """The error as one line of plain text: `ErrorType: its own words`."""

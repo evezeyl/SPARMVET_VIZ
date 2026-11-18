@@ -11,7 +11,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_session_server, output:session_management_ui, output:session_export_active
-# consumes: shiny, app.modules.error_notice (notice, issue_entry — VERIF-FIX-2), app.modules.plot_issue_reporter (make_issue_reporter), pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps)
+# consumes: app.src.bootloader (get_session_import_limits — D-0283), shiny, app.modules.error_notice (notice, issue_entry — VERIF-FIX-2), app.modules.plot_issue_reporter (make_issue_reporter), pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps, session_id_collisions, session_input_id_parts)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
@@ -22,7 +22,7 @@ from shiny import reactive, render, ui
 from shiny.types import SilentException
 from app.modules.error_notice import issue_entry, notice
 from app.modules.plot_issue_reporter import make_issue_reporter
-from app.modules.session_manager import SessionDeleteError, normalise_audit_steps
+from app.modules.session_manager import SessionDeleteError, normalise_audit_steps, session_id_collisions, session_input_id_parts
 from app.src.bootloader import bootloader
 
 
@@ -158,6 +158,17 @@ def define_session_server(input, output, session, *,
             grp = s.get("data_analysis_recipe_sha256", "")[:12] or "unknown"
             groups.setdefault(grp, []).append(s)
 
+        id_parts = session_input_id_parts([s["session_key"] for s in sessions])
+        collisions = session_id_collisions([s["session_key"] for s in sessions])
+        clashing = {k for g in collisions for k in g}
+        notice_box = ui.div()
+        if collisions:
+            # PROVISIONAL wording. Nothing silent (D-0050): the user is told why two cards look alike.
+            names = "; ".join(" and ".join(f"'{k}'" for k in g) for g in collisions)
+            notice_box = ui.div(ui.tags.small(
+                f"Some stored session folders have names that differ only in a character the screen cannot tell apart: {names}. "
+                "Each of their cards shows the exact folder name; a button acts only on the folder named on its own card.",
+                class_="text-danger d-block"), class_="mb-1")
         cards = []
         for grp_key, grp_sessions in groups.items():
             data_analysis_recipe_id = grp_sessions[0].get("data_analysis_recipe_id", grp_key)
@@ -172,11 +183,13 @@ def define_session_server(input, output, session, *,
                 t3_count = s.get("t3_count", 0)
                 last_saved = s.get("latest_t3_saved_at") or s.get("assembled_at", "")
                 label = s.get("label", "")
-                safe_sk = sk.replace(":", "_")
+                safe_sk = id_parts[sk]
 
                 group_panels.append(
                     ui.div(
                         ui.div(
+                            ui.tags.small(f"Folder: {sk}", class_="text-danger d-block", style="font-size:0.7em;")
+                            if sk in clashing else ui.div(),
                             ui.tags.small(
                                 f"Batch: {batch_short} · {t3_count} save(s)",
                                 class_="text-muted d-block",
@@ -200,13 +213,13 @@ def define_session_server(input, output, session, *,
                         ),
                         ui.div(
                             ui.input_action_button(
-                                f"session_restore_{sk.replace(':', '_')}",
+                                f"session_restore_{safe_sk}",
                                 "Restore",
                                 class_="btn-primary btn-sm",
                                 style="font-size:0.72em; padding:1px 6px;",
                             ),
                             ui.input_action_button(
-                                f"session_delete_{sk.replace(':', '_')}",
+                                f"session_delete_{safe_sk}",
                                 "Delete Session",
                                 class_="btn-outline-danger btn-sm",
                                 style="font-size:0.72em; padding:1px 6px;",
@@ -227,6 +240,7 @@ def define_session_server(input, output, session, *,
 
         return ui.div(
             header,
+            notice_box,
             ui.accordion(*cards, id="session_groups_accordion", multiple=True),
             # HOM-54: unlike the per-session Delete, this is confirm-gated (a modal) since
             # it removes every session at once — matches the ui.modal/modal_button pattern
@@ -239,7 +253,39 @@ def define_session_server(input, output, session, *,
             ),
         )
 
-    # Session import handler
+    # Session import (D-0281, D-0283): the zip is checked and, when its key exists, the user is asked BEFORE anything is
+    # written. The waiting zip is kept in memory only (a cancelled import leaves no file behind); it is plain handler
+    # state, written only from the effects below and never read by a render (ui_implementation_contract.md section 14).
+    _waiting_import: dict = {}
+
+    def _finish_import(on_exists: str | None, zip_bytes: bytes) -> None:
+        from app.modules.session_manager import SessionKeyExists
+        try:
+            restored_key = session_manager.import_session_zip(
+                zip_bytes, limits=bootloader.get_session_import_limits(), on_exists=on_exists)
+        except SessionKeyExists as exc:
+            _waiting_import["zip"] = zip_bytes
+            ui.modal_show(ui.modal(
+                ui.p("A session with this key already exists. Replace it, keep both, or cancel?"),
+                ui.p(f"Key: {exc.session_key}"),
+                ui.p("Replace: the stored session is replaced by the imported one. Keep both: the imported one is stored "
+                     "next to it and listed as imported. Cancel: nothing is written."),
+                title="This session already exists",
+                easy_close=False,
+                footer=ui.TagList(
+                    ui.input_action_button("session_import_cancel", "Cancel", class_="btn btn-outline-secondary btn-sm"),
+                    ui.input_action_button("session_import_keep", "Keep both", class_="btn btn-outline-primary btn-sm"),
+                    ui.input_action_button("session_import_replace", "Replace", class_="btn btn-outline-danger btn-sm"),
+                ),
+            ))
+            return
+        except Exception as e:
+            _notify(f"❌ Import failed: {e}", type="error", duration=12)
+            return
+        _session_list_version.set(_session_list_version.get() + 1)
+        what = {"replace": "replaced the stored session", "keep_both": "stored next to the existing one, listed as imported"}.get(on_exists)
+        _notify(f"✅ Session imported: {restored_key}" + (f" ({what})" if what else ""), type="message", duration=6)
+
     @reactive.Effect
     @reactive.event(input.session_import_upload)
     def _handle_session_import():
@@ -248,14 +294,38 @@ def define_session_server(input, output, session, *,
         file_info = input.session_import_upload()
         if not file_info:
             return
+        _waiting_import.clear()
         try:
             zip_bytes = Path(file_info[0]["datapath"]).read_bytes()
-            restored_key = session_manager.import_session_zip(zip_bytes)
-            _notify(
-                f"✅ Session imported: {restored_key}", type="message", duration=5
-            )
         except Exception as e:
-            _notify(f"❌ Import failed: {e}", type="error", duration=8)
+            _notify(f"❌ Import failed: {e}", type="error", duration=12)
+            return
+        _finish_import(None, zip_bytes)
+
+    def _answer_import(on_exists: str | None) -> None:
+        zip_bytes = _waiting_import.pop("zip", None)
+        ui.modal_remove()
+        if on_exists is None:
+            return
+        if zip_bytes is None:
+            _notify("No imported zip is waiting; nothing was written. Suggestion: upload the zip again.", type="warning", duration=8)
+            return
+        _finish_import(on_exists, zip_bytes)
+
+    @reactive.Effect
+    @reactive.event(input.session_import_replace)
+    def _handle_import_replace():
+        _answer_import("replace")
+
+    @reactive.Effect
+    @reactive.event(input.session_import_keep)
+    def _handle_import_keep():
+        _answer_import("keep_both")
+
+    @reactive.Effect
+    @reactive.event(input.session_import_cancel)
+    def _handle_import_cancel():
+        _answer_import(None)
 
     # ── Phase 25-G: Active-session export (.zip) ─────────────────────────────
     @render.download(filename=lambda: _active_session_export_filename())
@@ -312,9 +382,10 @@ def define_session_server(input, output, session, *,
         if session_manager is None or home_state is None:
             return
         sessions = session_manager.list_all_sessions()
+        id_parts = session_input_id_parts([s["session_key"] for s in sessions])
         for s in sessions:
             sk = s["session_key"]
-            safe_sk = sk.replace(":", "_")
+            safe_sk = id_parts[sk]
 
             # Restore. The effect depends on the click box only: the restore itself runs isolated, because it reads and sets
             # `home_state` and writes the notification log (an effect that depends on what it writes runs again for ever).
