@@ -26,7 +26,6 @@ from __future__ import annotations
 # doc: .claude/knowledge/architecture_decisions.md#ADR-076
 # @end_deps
 
-import re
 from pathlib import Path
 from typing import Any
 
@@ -260,6 +259,7 @@ def _tool_get_field_contract(args: dict) -> dict:
         from blueprint_arch.data_analysis_recipe_navigator import (
             build_schema_registry,
             build_sibling_map,
+            include_paths,
             load_fields_file,
             resolve_fields_for_schema,
         )
@@ -271,7 +271,7 @@ def _tool_get_field_contract(args: dict) -> dict:
         raw_text = data_analysis_recipe_path.read_text(encoding="utf-8")
         data_analysis_recipe_dir = data_analysis_recipe_path.parent
         inc_map: dict[str, str] = {}
-        for rel_path in re.findall(r"!include\s+['\"]([^'\"]+)['\"]", raw_text):
+        for rel_path in include_paths(raw_text):
             abs_path = (data_analysis_recipe_dir / rel_path).resolve()
             if abs_path.exists():
                 inc_map[rel_path] = str(abs_path)

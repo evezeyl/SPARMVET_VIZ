@@ -472,3 +472,96 @@ class TestBlueprintNodeClick:
         expect(page.locator("#architect_data_status_ui")).to_contain_text(re.compile(r"\d[\d,]* rows"), timeout=60_000)
         _no_render_error(page)
         expect(page.locator("body")).not_to_contain_text("Could not load node", timeout=3_000)
+
+
+# ---------------------------------------------------------------------------
+# T6-BP — A click on a plot node opens the plot (recipe format 1, D-0252)
+# ---------------------------------------------------------------------------
+
+_DEMO_RECIPE = "1_test_data_ST22_dummy"
+
+
+def _demo_plots() -> list[tuple[str, dict]]:
+    """(plot id, entry read from its own file) of every plot of the demo recipe, read straight from the files on disk."""
+    import yaml
+    from pathlib import Path
+
+    class _Loader(yaml.SafeLoader):
+        pass
+
+    _Loader.add_constructor("!include", lambda loader, node: loader.construct_scalar(node))
+    pipelines = Path("config/data_analysis_recipes/pipelines")
+    recipe = yaml.load((pipelines / f"{_DEMO_RECIPE}.yaml").read_text(encoding="utf-8"), Loader=_Loader)
+    plots = []
+    for group in recipe["analysis_groups"].values():
+        for plot_id, include in group["plots"].items():
+            plots.append((plot_id, include, yaml.safe_load((pipelines / include).read_text(encoding="utf-8"))))
+    return plots
+
+
+def _select_recipe(page: Page, stem: str) -> None:
+    """Select a recipe of Blueprint by its name (the first recipe of the list is not always the one a test is about)."""
+    page.evaluate(
+        "(stem) => { var sel = document.querySelector('#stored_data_analysis_recipe_selector');"
+        " for (var i = 0; i < sel.options.length; i++) { if (sel.options[i].text.trim() === stem) { sel.selectedIndex = i;"
+        " sel.dispatchEvent(new Event('change', {bubbles: true})); return; } }"
+        " throw new Error('recipe not in the list: ' + stem); }", stem)
+    _wait_shiny(page, timeout=60_000)
+    page.wait_for_function("() => window._cyInstance && window._cyInstance.nodes().length > 0", timeout=30_000)
+
+
+class TestBlueprintPlotOpen:
+    """A click on a plot node shows the plot: its mapping, its layers and the glimpse of its table (run under the `qa` app features).
+
+    The earlier node-click test asserted only that a data status line with a row count appeared and that no error text showed:
+    it passed while the stack of the plot was empty ("Imported 0 steps"). Here the stack, the opened file and the form are
+    asserted. A node is selected through the page's own event on its id (nodes overlap at the default zoom, a mouse click can
+    land on a neighbour), and the opened component is checked to be the one asked for.
+    """
+
+    @pytest.mark.skipif(
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
+        reason="Blueprint requires developer or qa app features",
+    )
+    def test_every_plot_of_the_demo_recipe_opens_with_its_mapping_its_layers_and_its_data(self, page: Page, shiny_app: ShinyAppProc):
+        _navigate_to_blueprint(page, shiny_app.url)
+        _select_recipe(page, _DEMO_RECIPE)
+        plots = _demo_plots()
+        assert len(plots) == 17
+
+        for plot_id, include, entry in plots:
+            page.evaluate("(id) => window._cyInstance.getElementById(id).emit('tap')", plot_id)
+            _wait_shiny(page, timeout=60_000)
+            wanted = [layer["name"] for layer in entry["layers"]]
+            stack = page.locator("#logic_stack_ui")
+            expect(stack).to_contain_text("mapping (aes)", timeout=30_000)
+            text = stack.inner_text()
+            assert f"{len(wanted) + 1}. {wanted[-1]}" in text, f"{plot_id}: the layers {wanted} are not all in the stack: {text!r}"
+            for layer in wanted:
+                assert layer in text, f"{plot_id}: layer {layer} missing from the stack"
+            for aesthetic, column in entry["mapping"].items():
+                assert column in text, f"{plot_id}: mapping {aesthetic}={column} missing from the stack"
+            assert page.locator("#dataset_pipeline_selector").input_value() == include, f"{plot_id}: another component was opened"
+            expect(page.locator("#architect_data_status_ui")).to_contain_text(re.compile(r"\d[\d,]* rows"), timeout=60_000)
+            expect(page.locator("body")).not_to_contain_text("Imported 0 steps", timeout=1_000)
+            _no_render_error(page)
+
+    @pytest.mark.skipif(
+        _LAUNCH_APP_FEATURES not in _BLUEPRINT_APP_FEATURES_REQUIRED,
+        reason="Blueprint requires developer or qa app features",
+    )
+    def test_the_mapping_form_of_a_plot_shows_its_columns_and_the_glimpse_has_rows(self, page: Page, shiny_app: ShinyAppProc):
+        _navigate_to_blueprint(page, shiny_app.url)
+        _select_recipe(page, _DEMO_RECIPE)
+        page.evaluate("(id) => window._cyInstance.getElementById(id).emit('tap')", "mlst_bar")
+        _wait_shiny(page, timeout=60_000)
+        expect(page.locator("#logic_stack_ui")).to_contain_text("mapping (aes)", timeout=30_000)
+        expect(page.locator("#architect_data_status_ui")).to_contain_text(re.compile(r"\d[\d,]* rows"), timeout=60_000)
+
+        page.locator("#logic_stack_ui .bp-node-card").first.click()      # the mapping is the first node of the stack
+        _wait_shiny(page, timeout=20_000)
+
+        expect(page.locator("#bp_map_x")).to_have_value("sequence_type", timeout=10_000)
+        expect(page.locator("#bp_map_fill")).to_have_value("country", timeout=10_000)
+        entry = next(e for pid, _inc, e in _demo_plots() if pid == "mlst_bar")
+        expect(page.locator("#logic_stack_ui .bp-node-card")).to_have_count(1 + len(entry["layers"]))    # the mapping and each layer

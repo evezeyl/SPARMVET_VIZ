@@ -22,7 +22,7 @@ from __future__ import annotations
 # provides: effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)
 # provides: function:_warn_on_upload, output:bp_validate_ui, effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path, issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))
 # provides: helpers:_draft_key/_write_bp_draft/_read_bp_draft, effect:_autosave_blueprint_draft, output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)
-# consumes: app/modules/plot_defaults_form.py (the plot_defaults form: what it shows and writes), libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/utils/src/utils/action_names.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
+# consumes: app/modules/blueprint_plot_view.py (plot_view: the mapping and layers of a plot node), app/modules/plot_defaults_form.py (the plot_defaults form: what it shows and writes), libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/utils/src/utils/action_names.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
 # consumes: app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe, validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result, never blocking; uploaded_recipe_report, load_uploaded_recipe, load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)
 # consumes: app/modules/validate_runner.py (run_structure_check, could_not_run_result, StructureCheckError — the child process of Validate uses sys.executable, D-0050)
 # consumes: libs/utils/src/utils/recipe_check.py (plot_keys), libs/utils/src/utils/recipe_tiers.py (step_list) — tier keys and plot entry keys of recipe format 1 (D-0250, D-0252)
@@ -66,6 +66,7 @@ from blueprint_arch.data_analysis_recipe_navigator import (
     build_schema_registry,
     build_sibling_map,
     generate_branch_plan,
+    include_paths,
     load_fields_file,
     resolve_fields_for_schema,
 )
@@ -73,6 +74,7 @@ from blueprint_arch.blueprint_mapper import BlueprintMapper
 from utils.action_names import JOIN
 from utils.recipe_check import plot_keys
 from utils.recipe_tiers import step_list
+from app.modules.blueprint_plot_view import plot_view
 from app.modules.plot_defaults_form import form_values, merged_plot_defaults, theme_choices
 from app.modules.data_analysis_recipe_validator import (
     validate_data_analysis_recipe,
@@ -417,7 +419,7 @@ def define_server(input, output, session, *,
             data_analysis_recipe_dir = data_analysis_recipe_path.parent
             raw_text = data_analysis_recipe_path.read_text(encoding="utf-8")
 
-            rel_paths = re.findall(r"!include\s+['\"]([^'\"]+)['\"]", raw_text)
+            rel_paths = include_paths(raw_text)
             inc_map: dict = {}
             groups: dict = {}
             seen: set = set()
@@ -704,8 +706,7 @@ def define_server(input, output, session, *,
                         print(f"[Architect] Join materialization failed: {e}")
 
                 elif role == "plot_spec":
-                    target_ds = file_content.get("target_dataset") \
-                        if isinstance(file_content, dict) else None
+                    target_ds, plot_nodes = plot_view(file_content)
 
                     ctx_map_now = component_ctx_map.get()
                     upstream_fields: list = []
@@ -720,25 +721,9 @@ def define_server(input, output, session, *,
                     wrangle_studio.active_downstream.set([])
                     wrangle_studio.active_viz_id.set(schema_id)
 
-                    # Populate logic_stack with plot spec nodes (read-only; BP-PLOT-LOAD-1)
+                    # BP-PLOT-LOAD-1: the stack holds the mapping and the layers of the entry in the file.
                     # BP-PLOT-COMMIT-1 handles writing back. component nodes use {"component":...}
-                    if isinstance(file_content, dict):
-                        canonical = normalise_plot_spec(file_content)
-                        plot_nodes: list = []
-                        mapping = canonical.get("mapping", {})
-                        if mapping:
-                            plot_nodes.append(
-                                {"component": "__mapping__", "params": mapping, "comment": ""}
-                            )
-                        for layer in canonical.get("layers", []):
-                            plot_nodes.append({
-                                "component": layer.get("name", ""),
-                                "params": layer.get("params", {}),
-                                "comment": "",
-                            })
-                        wrangle_studio.logic_stack.set(plot_nodes)
-                    else:
-                        wrangle_studio.logic_stack.set([])
+                    wrangle_studio.logic_stack.set(plot_nodes)
 
                     if target_ds:
                         try:
@@ -868,6 +853,9 @@ def define_server(input, output, session, *,
                 except Exception as e:
                     print(f"[Architect Mode B] Join materialization failed: {e}")
             elif role_b == "plot_spec":
+                # a plot written inline in the recipe: the same mapping and layers as a plot in its own file (D-0252)
+                _target_b, nodes = plot_view(target)
+                wrangle_studio.logic_stack.set(nodes)
                 upstream_b: dict = {}
                 if plot_target_ds:
                     upstream_b = resolve_fields_for_schema(plot_target_ds, ctx_map_b, inc_map)
@@ -1047,7 +1035,7 @@ def define_server(input, output, session, *,
             if not ctx_map:
                 inc_map = {}
                 raw_text = Path(master_path).read_text(encoding="utf-8")
-                for rel in re.findall(r"!include\s+['\"]([^'\"]+)['\"]", raw_text):
+                for rel in include_paths(raw_text):
                     abs_p = (Path(master_path).parent / rel).resolve()
                     if abs_p.exists():
                         inc_map[rel] = str(abs_p)

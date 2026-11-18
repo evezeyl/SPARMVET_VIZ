@@ -3,6 +3,9 @@ Pure data analysis recipe introspection engine (ADR-045).
 
 Public API
 ----------
+include_paths(raw_text)
+    Every `!include` target of a recipe text, quoted or not, each once, in the order of the file.
+
 build_sibling_map(data_analysis_recipe_path_str)
     Parse a master data analysis recipe WITHOUT resolving !include, then build:
     rel_path → {role, tier, schema_id, schema_type, siblings, ingredients}
@@ -46,7 +49,7 @@ Constraints (Two-Category Law — ADR-045)
 from __future__ import annotations
 
 # @deps
-# provides: function:build_sibling_map (entry keys: role; tier = tier1 or tier2 for a tier file (new); schema_id; schema_type; siblings = input_fields/tier1/tier2 with no wrangling and no output_fields; ingredients; a plot entry is the plot itself, D-0250 D-0252), function:build_lineage_chain, function:build_schema_registry, function:load_fields_file, function:resolve_fields_for_schema, function:build_plot_lineage, function:get_plot_ids_in_group, function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml)
+# provides: function:include_paths (every !include target of a recipe text, quoted or not), function:build_sibling_map (entry keys: role; tier = tier1 or tier2 for a tier file (new); schema_id; schema_type; siblings = input_fields/tier1/tier2 with no wrangling and no output_fields; ingredients; a plot entry is the plot itself, D-0250 D-0252), function:build_lineage_chain, function:build_schema_registry, function:load_fields_file, function:resolve_fields_for_schema, function:build_plot_lineage, function:get_plot_ids_in_group, function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml)
 # consumes: libs/utils/src/utils/recipe_tiers.py
 # consumed_by: app/handlers/blueprint_handlers.py, app/handlers/home_theater.py, app/handlers/export_handlers.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-074
@@ -61,6 +64,23 @@ from utils.recipe_tiers import step_list
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
+
+def include_paths(raw_text: str) -> list[str]:
+    """Every `!include` target of a recipe text, each once, in the order of the file.
+
+    WHY it reads the YAML and does not scan the text: the recipe writer leaves a plain path unquoted (`mlst_bar: !include
+    d/plots/MLST_counts_bar.yaml`) and the author may quote it; a scan for quotes found the quoted ones only, so a plot node
+    found no file and Blueprint opened it as "0 steps". Raises yaml.YAMLError for a text that is not YAML.
+    """
+    found: list[str] = []
+
+    class _Loader(yaml.SafeLoader):
+        pass
+
+    _Loader.add_constructor("!include", lambda loader, node: found.append(loader.construct_scalar(node)) or "")
+    yaml.load(raw_text, Loader=_Loader)  # noqa: S506 - the loader is the safe loader with one tag that only records the path
+    return list(dict.fromkeys(found))
+
 
 def build_sibling_map(data_analysis_recipe_path_str: str) -> dict:
     """Parse a master data analysis recipe WITHOUT resolving !include, then build a map:
