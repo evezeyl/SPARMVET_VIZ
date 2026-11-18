@@ -14,6 +14,7 @@
 - Decided today and recorded: D-0250 to D-0297.
 - Restart note of the coordinator: `tmpAI/coordinator/progress_2026-11-14_session3.md` (top block, 18:22).
 - **Decided 20:50 (D-0298, D-0299):** the export mode is chosen with two ticks (Publication, Reproducibility) and one Export button; new data with the same recipe is a new session and the Export fields go back to the defaults. A scout checks how a multi-file upload is applied. **State 20:45:** all nine steps of the big recipe change are built on `task/engine-keys` (head `b8d173ed`); its second half is reviewed (`tmpAI/engine_keys/step5_9_REVIEW.md`: fix first, small; a builder is on it); the Export simplification is reviewed (a race right after a recipe switch; the fix is committed on `task/export-ready`, repeat runs in progress). `dev` = `c7b817ce`.
+- **Decided 21:00 to 21:15 (D-0301 to D-0303):** the raw-data warning is a line beside the Reproducibility tick; audited steps are saved only when applied with a reason (the rule sentences on a save when leaving Home are corrected after she has seen the diff: `tmpAI/panel/audit_save_rule/DIFF_for_eve_2026-11-18.md`); the configuration review waits until the HOME refactoring and the recipes are good enough, just before Eve starts testing HOME and BLUEPRINT, and until then every test run states and checks the flags it depends on. `dev` = `fdeb9742`.
 
 ## State 2026-11-18 15:55 (coordinator session 3ce2c163)
 
