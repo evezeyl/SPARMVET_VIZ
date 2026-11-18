@@ -75,6 +75,15 @@ locations:
   #   Read-only from app perspective unless gallery indexing is run.
   gallery: "gallery/"
 
+# ─── Session import limits (D-0283) ───────────────────────────────────────────
+# session_import.max_zip_mb: largest session zip (megabytes, file size) the Session Management panel accepts.
+# session_import.max_unpacked_mb: largest total size of the files inside that zip once unpacked; a small zip can
+#   expand, so both are checked before anything is written. A refusal tells the user the sizes, the limit and
+#   that it is set here. Each key may be left out: the default (1 and 10) is then used. PROVISIONAL numbers.
+session_import:
+  max_zip_mb: 1
+  max_unpacked_mb: 10
+
 # ─── IRIDA block (required only when deployment_type: irida) ──────────────────
 # NEVER put the OAuth2 token here — inject it via SPARMVET_IRIDA_TOKEN env var.
 # irida:

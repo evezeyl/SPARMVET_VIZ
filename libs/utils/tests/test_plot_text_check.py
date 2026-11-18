@@ -9,7 +9,7 @@ Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/utils/tests/test_plot_text_c
 import pytest
 
 from utils.formula_check import smoother_formula_problems
-from utils.plot_text_check import layer_text_problems
+from utils.plot_text_check import STAT_FUNCTION_TEXT_BLOCKED, STAT_FUNCTION_TEXT_SUGGESTION, layer_text_problems
 
 CODE = "__import__('os').system('echo hacked')"
 
@@ -205,13 +205,33 @@ def test_the_message_for_a_facet_names_the_part_and_lists_the_columns():
     assert suggestion.startswith("Suggestion:") and "country" in suggestion
 
 
-def test_a_function_string_of_stat_function_is_checked_at_the_checker_too():
-    assert parameters_with_problems("stat_function", {"fun": "lambda x: x ** 2"}) == []
-    assert parameters_with_problems("stat_function", {"fun": "sin"}) == []
-    assert parameters_with_problems("stat_function", {"fun": "__import__('os').getcwd()"}) == ["fun"]
+@pytest.mark.parametrize("fun", ["lambda x: x ** 2", "sin", "__import__('os').getcwd()", "", "lambda x: 2 * x"])
+def test_any_function_text_of_stat_function_is_refused_with_the_one_message(fun):
+    assert parameters_with_problems("stat_function", {"fun": fun}) == ["fun"]
+    [(param, what, suggestion)] = layer_text_problems("stat_function", {"fun": fun})
+    assert what == STAT_FUNCTION_TEXT_BLOCKED and suggestion == STAT_FUNCTION_TEXT_SUGGESTION
+    assert "blocked for now" in what and suggestion.startswith("Suggestion: compute the values in a step")
+
+
+def test_a_stat_function_without_a_text_is_not_judged_here():
+    assert parameters_with_problems("stat_function", {"n": 50}) == []
+    assert parameters_with_problems("stat_function", {"fun": abs}) == []
 
 
 def test_other_parameters_are_not_judged_here():
     assert layer_text_problems("geom_point", {"color": CODE, "size": 3}) == []
     assert layer_text_problems("scale_x_continuous", {"trans": CODE}) == []   # plotnine refuses it, nothing evaluates it
     assert layer_text_problems("geom_smooth", None) == []
+
+
+@pytest.mark.parametrize("component", ["geom_line", "geom_point", "geom_path"])
+@pytest.mark.parametrize("stat", ["stat_function", "function"])
+def test_a_geom_that_names_the_function_stat_with_a_text_fun_is_refused(component, stat):
+    [(param, what, suggestion)] = layer_text_problems(component, {"stat": stat, "fun": "lambda x: x**2"})
+    assert (param, what, suggestion) == ("fun", STAT_FUNCTION_TEXT_BLOCKED, STAT_FUNCTION_TEXT_SUGGESTION)
+
+
+def test_the_function_stat_without_fun_or_another_stat_is_not_caught_by_this_rule():
+    assert layer_text_problems("geom_line", {"stat": "stat_function"}) == []
+    assert layer_text_problems("geom_line", {"stat": "stat_smooth", "fun": "lambda x: x"}) == []
+    assert layer_text_problems("geom_line", {"fun": "lambda x: x"}) == []

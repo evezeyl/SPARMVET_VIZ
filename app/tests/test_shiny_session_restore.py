@@ -20,7 +20,7 @@ from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
-from app.tests.test_shiny_smoke import (_INTERACTIVE_APP_FEATURES, _load_data_analysis_recipe, _navigate_to_mlst_plot,
+from app.tests.test_shiny_smoke import (_INTERACTIVE_APP_FEATURES, _wait_session_groups_open, _load_data_analysis_recipe, _navigate_to_mlst_plot,
                                         _open_filters_panel, _wait_for_fb_col_option, _wait_shiny)
 
 _LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_APP_FEATURES", "developer")
@@ -103,6 +103,7 @@ def _show_card(page: Page, label: str, button: str) -> None:
     if not page.locator(button).is_visible():
         group.click()
         _wait_shiny(page)
+    _wait_session_groups_open(page, label)
     expect(page.locator(button)).to_be_visible(timeout=10_000)
 
 

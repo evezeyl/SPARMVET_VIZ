@@ -1941,7 +1941,7 @@ def define_server(input, output, session, *,
                 ui.card_header(ui.h5("Gallery Explorer", class_="mb-0 text-center")),
                 ui.div(
                     ui.p("📚 Browse visual examples.", class_="text-muted small p-2"),
-                    ui.p("Select an example to copy its YAML into the Architect sandbox.",
+                    ui.p("Select an example to see its picture, its recipe and its guidance. To reuse it, copy the recipe text by hand.",
                          class_="text-muted small px-2"),
                     class_="p-1"
                 ),

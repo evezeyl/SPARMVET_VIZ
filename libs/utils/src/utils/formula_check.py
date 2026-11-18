@@ -33,7 +33,7 @@ the variables `x` and `y`, numbers, the operators of a model formula, `I`, `C`, 
 slow or large: nothing here stops heavy computation (spec section 15, known limit).
 
 # @deps
-# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, function:member_refusal, function:refused_members, constant:REFUSED_BY_NAME, constant:REFUSED_BY_NAME_SUGGESTION, constant:REFUSED_DTYPES, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, constant:PLOT_FUNCTION_MODULES, constant:PLOT_FUNCTION_NAMES, constant:PYTHON_MATH_FUNCTIONS, constant:MATH_CONSTANTS, class:FormulaError
+# provides: function:formula_problems, function:evaluate_formula, function:function_string_problems, function:smoother_formula_problems, constant:SMOOTHER_FUNCTIONS, function:denied_methods, function:member_refusal, function:refused_members, constant:REFUSED_BY_NAME, constant:REFUSED_BY_NAME_SUGGESTION, constant:RANDOM_REFUSAL, constant:REFUSED_DTYPES, constant:MODULE_FUNCTIONS, constant:MATH_FUNCTIONS, constant:PLOT_FUNCTION_MODULES, constant:PLOT_FUNCTION_NAMES, constant:PYTHON_MATH_FUNCTIONS, constant:MATH_CONSTANTS, class:FormulaError
 # consumed_by: libs/utils/tests/test_formula_check.py, libs/utils/tests/test_formula_element_field.py, libs/utils/tests/test_formula_refuses_object.py, libs/utils/tests/test_formula_reads_no_outside_data.py, libs/utils/tests/test_plot_text_check.py, libs/utils/tests/test_stat_function_names.py, libs/utils/src/utils/plot_text_check.py, libs/utils/src/utils/recipe_check.py, libs/viz_factory/src/viz_factory/checked_plot.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/transformer/src/transformer/actions/polars_calls.py, libs/id_reconciliation/src/id_reconciliation/core.py, libs/viz_factory/tests/test_stat_function_names_drawn.py
 # doc: .claude/design/recipe_format_spec.md (section 15; check ST06)
 # @end_deps
@@ -74,10 +74,9 @@ MATH_CONSTANTS = {"pi": 3.141592653589793, "e": 2.718281828459045}
 # A `stat_function` string has its own table below.
 _MATH_MODULES = ("np", "math", "numpy")
 
-# `stat_function` (D-0232, Eve 2026-11-17: a name that passes the check must also work at drawing). ONE table that the check
-# and the drawing both read: which module each prefix is, and which names of it a string may use. The drawing namespace
-# (`viz_factory.geoms.core.function_string_namespace`) is built from these tables with `getattr`, so a name that is not in the
-# module fails when the plot library starts, never in a recipe; a test checks every entry against the real modules.
+# `stat_function` (D-0232). NOTE (D-0274, 2026-11-18): a function written as text is BLOCKED FOR NOW; nothing evaluates it and
+# the plot check no longer reads these tables. They are kept, with `function_string_problems` and its tests, for the day the
+# question is reopened (D-0275). The tables once served both the check and the drawing: which module each prefix is, and which names of it a string may use. A test checks every entry against the real modules.
 # Bare names (`sin`, `arcsin`, ...) are numpy's: MATH_FUNCTIONS. `numpy.` is the same module as `np.` (option b of the
 # builder's choice: the spec already lists `numpy.name` for a smoother, one vocabulary for both places). `math` is Python's own
 # `math`, which has other names (`asin`, not `arcsin`; `fabs`, not `abs`; no `sign`) and takes one number at a time.
@@ -147,6 +146,10 @@ META_OUTSIDE = ("reads the structure of an expression and can write it to a file
 # `set_sorted` and `search_sorted` are refused by decision of Eve, 2026-11-18 (D-0257): each gives a wrong result with
 # no message when misused (a flag that says "sorted" for data that is not; a search that assumes sorted data). They can
 # be added later on a real need.
+RANDOM_REFUSAL = ("draws at random, so the result would differ at each run and the same recipe and data would not give the same "
+                  "table; it is refused for now, also with a seed, until a seed rule for formulas exists")
+RANDOM_SUGGESTION = ("Suggestion: to take a random sample of rows use the step polars_sample with a seed written in the step "
+                     "(for example `fraction: 0.1`, `seed: 1`); for any other random use there is no formula, ask for it to be added")
 REFUSED_BY_NAME = {
     ("expr", "inspect"): PRINTS_OUTSIDE,
     ("expr", "meta"): META_OUTSIDE,
@@ -154,12 +157,22 @@ REFUSED_BY_NAME = {
                              "if the column is not sorted, later results are wrong with no message, so it is not allowed"),
     ("expr", "search_sorted"): ("assumes the column is sorted and does not check it; "
                                 "if it is not sorted, the answer is wrong with no message, so it is not allowed"),
+    # `shuffle` and `sample` are refused by decision of Eve, 2026-11-18 (D-0278, D-0279): the result differs at each run, and
+    # a seed rule for formulas does not exist yet; a member with a `seed` argument is refused too. They come back when a
+    # recipe needs one and a seed rule for formulas exists. `rank`, `rolling_rank` and `rolling_rank_by` with method "random" are the same and are refused in
+    # `_check_random_rank`.
+    ("expr", "shuffle"): RANDOM_REFUSAL,
+    ("expr", "sample"): RANDOM_REFUSAL,
+    ("list", "sample"): RANDOM_REFUSAL,
 }
 
 # A "Suggestion: ..." for a member of REFUSED_BY_NAME that has a correct alternative (the others keep the default fix).
 REFUSED_BY_NAME_SUGGESTION = {
     ("expr", "set_sorted"): "Suggestion: sort the table with a sort step before the step that needs sorted data",
     ("expr", "search_sorted"): ("Suggestion: there is no formula for this; ask for the function to be added"),
+    ("expr", "shuffle"): RANDOM_SUGGESTION,
+    ("expr", "sample"): RANDOM_SUGGESTION,
+    ("list", "sample"): RANDOM_SUGGESTION,
 }
 
 
@@ -197,7 +210,7 @@ def member_refusal(cls: type, name: str) -> "str | None":
     does not read. Those are caught only by a person reading each new member, which the walk forces for the words it
     knows. `REFUSED_BY_NAME` holds the members found that way. This is a net with holes, not a proof.
     """
-    for label, owner in (("expr", pl.Expr),):
+    for label, owner in [("expr", pl.Expr)] + list(_namespace_classes().items()):
         if cls is owner and (label, name) in REFUSED_BY_NAME:
             return REFUSED_BY_NAME[(label, name)]
     static = inspect.getattr_static(cls, name)
@@ -338,7 +351,8 @@ class _Checker:
         if kind in allowed:  # a namespace
             if name in allowed[kind]:
                 return "method:" + name
-            self.refuse(f"{kind}.{name} {refused_members().get(kind, {}).get(name, NOT_A_METHOD)}")
+            suggestion = REFUSED_BY_NAME_SUGGESTION.get((kind, name))
+            self.refuse(f"{kind}.{name} {refused_members().get(kind, {}).get(name, NOT_A_METHOD)}", *([suggestion] if suggestion else []))
             return "value"
         self.refuse(f"{name} cannot be used here")
         return "value"
@@ -357,6 +371,7 @@ class _Checker:
                 self.refuse(f"the argument name {keyword.arg!r} starts with an underscore")
             self.visit(keyword.value)
         self._check_inner_value_call(kind, node)
+        self._check_random_rank(kind, node)
         if kind == "dtype":
             return "dtype"
         if kind == "function:when" or kind == "method:when":
@@ -364,6 +379,24 @@ class _Checker:
         if kind == "method:then":
             return "then"
         return "expr"
+
+    def _check_random_rank(self, kind: str, node: ast.Call) -> None:
+        """`rank(method='random')` breaks ties at random: refused like `shuffle` (D-0278, D-0279)."""
+        if kind not in ("method:rank", "method:rolling_rank", "method:rolling_rank_by"):
+            return
+        position = {"method:rank": 0, "method:rolling_rank": 1, "method:rolling_rank_by": 2}[kind]
+        name = kind.split(":")[1]
+        given = [k.value for k in node.keywords if k.arg == "method"]
+        if len(node.args) > position:
+            given.append(node.args[position])
+        for value in given:
+            if not (isinstance(value, ast.Constant) and isinstance(value.value, str)):
+                self.refuse(f"the method of {name} must be written as a plain text, for example method=\"dense\"; a computed text is not accepted, "
+                            "because it could hide the random method",
+                            "Suggestion: write one of average, min, max, dense, ordinal")
+            elif value.value == "random":
+                self.refuse((f"{name} with method 'random' breaks ties at random, so the result would differ at each run and the same recipe and data "
+                             "would not give the same table; it is refused for now, also with a seed, until a seed rule for formulas exists"), RANDOM_SUGGESTION)
 
     def _check_inner_value_call(self, kind: str, node: ast.Call) -> None:
         """`pl.element()` takes nothing and `pl.field` one name or a list of names (checked against the installed Polars)."""

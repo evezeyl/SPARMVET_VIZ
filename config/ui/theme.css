@@ -222,12 +222,6 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
     display: flex !important; align-items: center !important; justify-content: center !important;
     border-radius: 6px !important;
 }
-/* Gallery submission modal: autofill → blue (action), confirm → already btn-primary */
-#btn_autofill_meta {
-    background-color: #345beb !important; border-color: #2a4bc4 !important;
-    color: white !important; font-weight: 600 !important;
-    border-radius: 6px !important;
-}
 /* Test Lab generate + Gallery apply: primary action → canonical blue, standard height */
 #btn_generate_data, #btn_apply_gallery_filters {
     background-color: #345beb !important; border-color: #2a4bc4 !important;

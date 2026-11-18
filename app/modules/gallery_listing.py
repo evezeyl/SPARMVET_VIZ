@@ -10,13 +10,14 @@ Consumed by: app/handlers/gallery_handlers.py. App features gate: none here; the
 If deleted: the viewer would list whatever the stored index lists, failed examples included.
 
 # @deps
-# provides: function:build_listing, function:read_listing, class:GalleryListing, constant:READ_ONLY_LINE, constant:FAILED_LINE, constant:NOTE_LINES
+# provides: function:external_links_new_tab, function:build_listing, function:read_listing, class:GalleryListing, constant:READ_ONLY_LINE, constant:FAILED_LINE, constant:NOTE_LINES
 # consumes: app/src/bootloader.py (rejected_gallery_examples, gallery_index_status, as data given by the caller)
 # consumed_by: app/handlers/gallery_handlers.py, app/tests/test_gallery_listing.py
 # doc: .claude/design/recipe_format_spec.md (section 9: D4, DEC48), .claude/design/decisions_2026-11-14/proposals_for_eve.md (G-a, G-b)
 # @end_deps
 """
 import json
+import re
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -66,3 +67,24 @@ def read_listing(gallery_dir: Union[str, Path], rejected: dict, status: str) -> 
     except (OSError, ValueError):
         index = {}
     return build_listing(index if isinstance(index, dict) else {}, rejected, status)
+
+
+_A_OPEN = re.compile(r"<a\b([^>]*)>", re.IGNORECASE)
+_HREF = re.compile(r"""\bhref\s*=\s*["']?\s*https?://""", re.IGNORECASE)
+
+
+def external_links_new_tab(html: str) -> str:
+    """Make every external (http/https) link of a guidance text open in a new tab, so the user keeps the app page.
+
+    An internal anchor (``#section``) or a relative link is left as it is. Any target or rel the
+    text already had on an external link is replaced by ``_blank`` and ``noopener noreferrer``.
+    """
+
+    def _fix(m: "re.Match[str]") -> str:
+        attrs = m.group(1)
+        if not _HREF.search(attrs):
+            return m.group(0)
+        attrs = re.sub(r"""\s(target|rel)\s*=\s*("[^"]*"|'[^']*'|\S+)""", "", attrs, flags=re.IGNORECASE)
+        return f'<a{attrs} target="_blank" rel="noopener noreferrer">'
+
+    return _A_OPEN.sub(_fix, html)

@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (filters_cleared_notice, column_is_in_frame, describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -31,7 +31,7 @@ from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
     dialog_value, not_offered_line, value_choices, value_widget_for, AuditStepError, dialog_frame,
-    column_bounds, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
+    column_bounds, column_is_in_frame, filters_cleared_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
 from utils.filter_values import UNIT_NS, FilterValueError, kind_of
 from utils.missing_values import dialog_lines, na_choice_texts
@@ -151,6 +151,39 @@ def define_filter_audit_server(input, output, session, *,
 
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
+
+    def _clear_exploration_filters() -> tuple[int, int]:
+        """The one reset of the exploration filters: empties the staged and the applied list, returns how many rows each held.
+
+        Used by Send to Audit, the Reset button, the T3 apply and the recipe change. Audited steps live elsewhere
+        (home_state) and are never touched here.
+        """
+        n_pending = len(_pending_filters.get())
+        n_applied = len(applied_filters.get())
+        _pending_filters.set([])
+        applied_filters.set([])
+        return n_pending, n_applied
+
+    # WHY: ADR-099 point 1 - exploration filters are cleared on a recipe change; a filter built on recipe A would
+    # silently filter recipe B when it has a column of the same name (found 2026-11-18, switch check).
+    # Idempotent guard: only a real change of the id clears; the selector input is re-created when the user returns to
+    # HOME from another space and then reports the same id again, which must not clear anything or notify.
+    _seen_recipe = {"id": None}
+
+    @reactive.Effect
+    def _clear_filters_on_recipe_change():
+        rid = safe_input(input, "data_analysis_recipe_id", None)
+        if rid is None:
+            return
+        with reactive.isolate():
+            previous = _seen_recipe["id"]
+            _seen_recipe["id"] = rid
+            if previous is None or previous == rid:
+                return
+            n_pending, n_applied = _clear_exploration_filters()
+            text = filters_cleared_notice(n_pending, n_applied)
+            if text:
+                _notify(text, type="warning", duration=10)
 
     @output
     @render.ui
@@ -466,7 +499,13 @@ def define_filter_audit_server(input, output, session, *,
         na = "keep" if safe_input(input, "fb_na", default_na(op) == "keep") else "remove"
         if not col:
             return ui.div()
-        text = dialog_lines(_active_frame(), col, op, na)
+        frame = _active_frame()
+        if not column_is_in_frame(frame, col):
+            # Found 2026-11-18 (switch check, finding 5): after a recipe or plot change `fb_col` still holds the previous table's
+            # column for one round; the box is rebuilt from the new table and this output runs again with the right column.
+            # Asking the counts now logged a KeyError and showed "The counts could not be computed." for that moment.
+            return ui.div()
+        text = dialog_lines(frame, col, op, na)
         return ui.div(
             *[ui.tags.small(line, class_="d-block spv-text-meta " + ("text-warning" if line == text.warning else "text-muted"))
               for line in text.lines],
@@ -687,15 +726,13 @@ def define_filter_audit_server(input, output, session, *,
         _open_propagation_modal(scratch_nodes, active_subtab, kind="filter")
 
         # Clear staged rows and the exploration view — they're now in the audit pipeline.
-        _pending_filters.set([])
-        applied_filters.set([])
+        _clear_exploration_filters()
 
     @reactive.Effect
     @reactive.event(input.filter_reset)
     def _filter_reset():
         """Clear all pending and applied filters, and reset the value widget."""
-        _pending_filters.set([])
-        applied_filters.set([])
+        _clear_exploration_filters()
         ui.update_selectize("fb_value", selected=[])
         ui.update_text("fb_value", value="")
 
@@ -1074,8 +1111,7 @@ def define_filter_audit_server(input, output, session, *,
         cnt = int(home_state.get().get("t3_apply_count", 0))
         if cnt > _last_apply_count.get():
             _last_apply_count.set(cnt)
-            _pending_filters.set([])
-            applied_filters.set([])
+            _clear_exploration_filters()
 
     # Dynamic remove buttons — one effect per row index up to a generous cap
     def _make_remove_handler(idx: int):
