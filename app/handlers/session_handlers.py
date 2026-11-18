@@ -11,7 +11,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_session_server, output:session_management_ui, output:session_export_active
-# consumes: app.src.bootloader (get_session_import_limits — D-0283), shiny, app.modules.error_notice (notice, issue_entry — VERIF-FIX-2), app.modules.plot_issue_reporter (make_issue_reporter), pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps, session_input_id_part)
+# consumes: app.src.bootloader (get_session_import_limits — D-0283), shiny, app.modules.error_notice (notice, issue_entry — VERIF-FIX-2), app.modules.plot_issue_reporter (make_issue_reporter), pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps, session_id_collisions, session_input_id_parts)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
@@ -22,7 +22,7 @@ from shiny import reactive, render, ui
 from shiny.types import SilentException
 from app.modules.error_notice import issue_entry, notice
 from app.modules.plot_issue_reporter import make_issue_reporter
-from app.modules.session_manager import SessionDeleteError, normalise_audit_steps, session_input_id_part
+from app.modules.session_manager import SessionDeleteError, normalise_audit_steps, session_id_collisions, session_input_id_parts
 from app.src.bootloader import bootloader
 
 
@@ -158,6 +158,17 @@ def define_session_server(input, output, session, *,
             grp = s.get("data_analysis_recipe_sha256", "")[:12] or "unknown"
             groups.setdefault(grp, []).append(s)
 
+        id_parts = session_input_id_parts([s["session_key"] for s in sessions])
+        collisions = session_id_collisions([s["session_key"] for s in sessions])
+        clashing = {k for g in collisions for k in g}
+        notice_box = ui.div()
+        if collisions:
+            # PROVISIONAL wording. Nothing silent (D-0050): the user is told why two cards look alike.
+            names = "; ".join(" and ".join(f"'{k}'" for k in g) for g in collisions)
+            notice_box = ui.div(ui.tags.small(
+                f"Some stored session folders have names that differ only in a character the screen cannot tell apart: {names}. "
+                "Each of their cards shows the exact folder name; a button acts only on the folder named on its own card.",
+                class_="text-danger d-block"), class_="mb-1")
         cards = []
         for grp_key, grp_sessions in groups.items():
             data_analysis_recipe_id = grp_sessions[0].get("data_analysis_recipe_id", grp_key)
@@ -172,11 +183,13 @@ def define_session_server(input, output, session, *,
                 t3_count = s.get("t3_count", 0)
                 last_saved = s.get("latest_t3_saved_at") or s.get("assembled_at", "")
                 label = s.get("label", "")
-                safe_sk = session_input_id_part(sk)
+                safe_sk = id_parts[sk]
 
                 group_panels.append(
                     ui.div(
                         ui.div(
+                            ui.tags.small(f"Folder: {sk}", class_="text-danger d-block", style="font-size:0.7em;")
+                            if sk in clashing else ui.div(),
                             ui.tags.small(
                                 f"Batch: {batch_short} · {t3_count} save(s)",
                                 class_="text-muted d-block",
@@ -227,6 +240,7 @@ def define_session_server(input, output, session, *,
 
         return ui.div(
             header,
+            notice_box,
             ui.accordion(*cards, id="session_groups_accordion", multiple=True),
             # HOM-54: unlike the per-session Delete, this is confirm-gated (a modal) since
             # it removes every session at once — matches the ui.modal/modal_button pattern
@@ -368,9 +382,10 @@ def define_session_server(input, output, session, *,
         if session_manager is None or home_state is None:
             return
         sessions = session_manager.list_all_sessions()
+        id_parts = session_input_id_parts([s["session_key"] for s in sessions])
         for s in sessions:
             sk = s["session_key"]
-            safe_sk = session_input_id_part(sk)
+            safe_sk = id_parts[sk]
 
             # Restore. The effect depends on the click box only: the restore itself runs isolated, because it reads and sets
             # `home_state` and writes the notification log (an effect that depends on what it writes runs again for ever).

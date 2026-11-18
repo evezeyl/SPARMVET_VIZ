@@ -80,3 +80,39 @@ def test_keep_both_leaves_a_working_panel_and_the_copy_can_be_restored_and_delet
         for k in (key, copy_key):
             if k:
                 sm.delete_session(k)
+
+
+@pytest.mark.skipif(_LAUNCH_APP_FEATURES not in _INTERACTIVE_APP_FEATURES,
+                    reason="Session Management panel only present for interactive app features files")
+def test_deleting_one_of_two_folders_that_look_alike_leaves_the_other(page: Page, shiny_app: ShinyAppProc):
+    """Two folders whose names differ only in `:` and `_` used to share one Delete button: one click deleted both."""
+    from app.modules.session_manager import SessionManager, session_input_id_parts
+    from app.src.bootloader import bootloader
+    sm = SessionManager(bootloader.get_location("user_data"))
+    first, second = "cafe00000001:beef00000001", "cafe00000001_beef00000001"
+    for key in (first, second):
+        sm.write_assembly_ghost(key, "collide_pair", "c" * 64, "d" * 64, {}, {})
+    parts = session_input_id_parts([first, second])
+    try:
+        if page.url.startswith("http"):
+            page.reload()   # the page is shared by the module: a fresh session draws the list with the two folders just written
+        _load_data_analysis_recipe(page, shiny_app.url)
+        page.evaluate(_RECORD_NOTICES)
+        if not page.locator("#session_groups_accordion").count():
+            page.locator("#nav_accordion").get_by_text("Session Management").first.click()
+            _wait_shiny(page)
+        page.wait_for_selector("#session_groups_accordion", state="attached", timeout=10_000)
+        assert parts[first] != parts[second]
+        _show_card(page, "collide_pair", f"#session_delete_{parts[first]}")
+        expect(page.locator(f"#session_delete_{parts[second]}")).to_be_visible()
+        assert "cannot tell apart" in page.locator("#session_management_ui").inner_text()
+        page.locator(f"#session_delete_{parts[first]}").click()
+        _notices(page, "delete of one of two look-alike folders", "Session deleted", 1)
+        # the panel is drawn again with its groups closed: the deleted card is gone, the group is still listed
+        expect(page.locator(f"#session_delete_{parts[first]}")).to_have_count(0, timeout=10_000)
+        expect(page.locator("#session_groups_accordion").get_by_text("collide_pair")).to_have_count(1, timeout=10_000)
+        assert not (sm.root / first).exists()
+        assert (sm.root / second).exists(), "the other folder was deleted by the same click"
+    finally:
+        for key in (first, second):
+            sm.delete_session(key)

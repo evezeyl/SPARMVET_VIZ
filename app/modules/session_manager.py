@@ -22,7 +22,7 @@ Ghost slots (per session_key, under {location_4}/_sessions/{session_key}/)
 from __future__ import annotations
 
 # @deps
-# provides: class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, class:SessionImportLimits, function:session_import_limits_from (D-0283), function:session_input_id_part, exception:SessionImportRefused, exception:SessionKeyExists (D-0281)
+# provides: class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, class:SessionImportLimits, function:session_import_limits_from (D-0283), function:session_input_id_part, function:session_input_id_parts (two listed sessions never share a button), exception:SessionImportRefused, exception:SessionKeyExists (D-0281)
 # consumes: app/modules/error_notice.py (notice — VERIF-FIX-2, lazy), libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, re, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)
 # consumed_by: app/src/bootloader.py (limits), app/tests/test_session_import_safety.py, app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py
 # doc: .claude/rules/ui_implementation_contract.md#12d, .claude/knowledge/architecture_decisions.md#ADR-097
@@ -615,6 +615,12 @@ class SessionManager:
                     raise SessionImportRefused(
                         f"The zip was refused and nothing was written: the session folder is named '{_shown(session_key)}' "
                         f"but the session_key inside {_shown(name)} is '{_shown(str(inner))}'. The two must be the same.")
+            for name in t3_files:
+                inner = json.loads(zf.read(name)).get("session_key")
+                if inner is not None and inner != session_key:
+                    raise SessionImportRefused(
+                        f"The zip was refused and nothing was written: the session folder is named '{_shown(session_key)}' "
+                        f"but the session_key inside {_shown(name)} is '{_shown(str(inner))}'. The two must be the same.")
             if self.root.exists():
                 for other in self.root.iterdir():
                     if other.name != session_key and not other.name.startswith(".") \
@@ -820,6 +826,33 @@ def session_input_id_part(session_key: str) -> str:
     refused when a zip is imported (`import_session_zip`).
     """
     return re.sub(r"[^A-Za-z0-9_]", "_", session_key)
+
+
+def session_input_id_parts(listed_keys) -> dict[str, str]:
+    """Key -> input id part for the sessions that are LISTED, unique by construction.
+
+    WHY: two folders put in the store by hand, by a copy or by older code can give one safe form (`a:b` and `a_b`). They
+    would share one button, so one Delete click would delete both. A key whose safe form is shared in the list gets the
+    safe form plus `_` plus the first 8 hex characters of the sha256 of its exact key; the other keys keep the plain
+    safe form. The panel and its effects look the key up in this mapping from the same listing, never from id text.
+    """
+    import hashlib
+    keys = list(dict.fromkeys(listed_keys))
+    count: dict[str, int] = {}
+    for key in keys:
+        part = session_input_id_part(key)
+        count[part] = count.get(part, 0) + 1
+    return {key: (session_input_id_part(key) if count[session_input_id_part(key)] == 1
+                  else f"{session_input_id_part(key)}_{hashlib.sha256(key.encode('utf-8')).hexdigest()[:8]}")
+            for key in keys}
+
+
+def session_id_collisions(listed_keys) -> list[list[str]]:
+    """Groups of listed keys whose plain safe forms are the same (two or more), in listing order."""
+    groups: dict[str, list[str]] = {}
+    for key in dict.fromkeys(listed_keys):
+        groups.setdefault(session_input_id_part(key), []).append(key)
+    return [g for g in groups.values() if len(g) > 1]
 
 
 def _shown(text: str, limit: int = 60) -> str:
