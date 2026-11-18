@@ -63,6 +63,9 @@
   - An evidence report on the demo recipe's formulas is owed before any change (DEMO-FORMULAS-SAFE-EVIDENCE-1, D-0274). No change of the demo formula code without Eve's yes.
   - Branch `task/switch-fixes`: the flaky runs were a defect of the test (it read the table before the page had followed the tab). A builder corrects the test; merge after 10 clean runs.
   - Branch `task/export-ready`: the Export button (EXPORT-BUTTON-READY-1) and the export warnings (EXPORT-COLLECTS-WARNINGS-1) are in work.
+  - Channel of 57, M290 to M292 (scribe, 2026-11-18): the `stat_function` function curve is DEFERRED (D-0275, her words in the ledger); its block stays to build (STAT-FUNCTION-BLOCK-1). A typed value is written `{name, params}` (D-0277, her word "A"); it is built with the rename, after it (TYPED-VALUE-FORM-1). Recipe arguments: a recipe may pass plain data and name a library object from a registry; no user-written function (D-0276).
+  - `dev` = `d322e4b5` (not pushed).
+  - Big build, branch `task/engine-keys` (`b55fc55c`): steps 2 and 3 are done on the branch (every recipe and bundle rewritten); the pictures are not proven yet. Step 4a is running: it takes `dev` into the branch, then the readers of the engine path, then the picture proof.
 
 ## 2026-11-17 night (open state; coordinator's list M175 of the channel; decisions D-0229 to D-0249)
 
