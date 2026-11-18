@@ -15,7 +15,7 @@ CODE = "__import__('os').getcwd()"
 
 
 def spec_of(recipe):
-    return recipe["analysis_groups"]["g"]["plots"]["p"]["spec"]
+    return recipe["analysis_groups"]["g"]["plots"]["p"]
 
 
 def problems(tmp_path, layers=None, mapping=None):

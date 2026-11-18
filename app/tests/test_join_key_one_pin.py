@@ -102,7 +102,7 @@ def _checker_says(left_cols, right_cols, left_keys, right_keys, form, self_join)
 
     def schema(label, cols):
         return {"label": label, "description": "One row per sample.", "source": {"type": "local_tsv", "path": f"assets/test_data/{label.lower()}.tsv"},
-                "null_values": [], "strip": True, "input_fields": fields(cols), "wrangling": {"tier1": []}}
+                "null_values": [], "strip": True, "input_fields": fields(cols), "tier1": {"steps": []}}
 
     step = {"action": "polars_join", "right_ingredient": right_id, "how": "left"}
     if form == "on":
@@ -117,9 +117,9 @@ def _checker_says(left_cols, right_cols, left_keys, right_keys, form, self_join)
     raw = {"id": "r", "spec_version": 1, "data_engine": "python-polars", "plot_engine": "python-plotnine",
            "info": {"label": "R", "description": "What it answers", "contact": "me"},
            "data_schemas": schemas,
-           "joins": {"AB": {"label": "AB", "description": "d", "ingredients": ingredients, "steps": {"tier1": [step]}, "labels": {}}},
-           "analysis_groups": {"g": {"label": "G", "description": "Q.", "plots": {"p": {"label": "P", "description": "D.", "spec": {
-               "target_dataset": "AB", "mapping": {"x": "id"}, "layers": [{"name": "geom_col"}]}}}}}}
+           "joins": {"AB": {"label": "AB", "description": "d", "ingredients": ingredients, "tier1": {"steps": [step]}, "labels": {}}},
+           "analysis_groups": {"g": {"ui_label": "G", "description": "Q.", "plots": {"p": {"ui_label": "P", "description": "D.",
+               "target_dataset": "AB", "mapping": {"x": "id"}, "layers": [{"name": "geom_col"}]}}}}}
     problems = check_recipe(raw, "run").problems
     return [{"code": p.code, "message": p.message, "fix": p.fix} for p in problems if p.code in {"J09", "J10", "J11"}]
 

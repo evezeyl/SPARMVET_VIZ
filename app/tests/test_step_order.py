@@ -125,11 +125,11 @@ def variant(raw_config: dict, collection: str, *, tier1_extra=None, tier2=None) 
     """
     cfg = copy.deepcopy(raw_config)
     cfg.pop("plots", None)
-    steps = cfg["joins"][collection]["steps"]
+    join = cfg["joins"][collection]
     if tier1_extra:
-        steps["tier1"] = list(steps["tier1"]) + list(tier1_extra)
+        join["tier1"]["steps"] = list(join["tier1"]["steps"]) + list(tier1_extra)
     if tier2 is not None:
-        steps["tier2"] = list(tier2)
+        join["tier2"] = {**join.get("tier2", {}), "steps": list(tier2)}
     return cfg
 
 
@@ -187,7 +187,7 @@ def test_a_removal_at_tier1_runs_before_the_zscore_of_tier2(run, raw_config, rem
 
 def test_a_removal_at_the_end_of_tier2_runs_after_the_zscore(run, raw_config, original, removed, oracle_after):
     # Seen failing: putting the removal first in tier2 instead of last.
-    own_tier2 = raw_config["joins"][ZSCORE]["steps"]["tier2"]
+    own_tier2 = raw_config["joins"][ZSCORE]["tier2"]["steps"]
     _, tier2, _ = run(variant(raw_config, ZSCORE, tier2=list(own_tier2) + [remove_samples([removed])]), ZSCORE)
     assert_z_equals(tier2, oracle_after, "the recipe's tier-2 z-score, then the removal")
 
@@ -198,7 +198,7 @@ def test_within_one_list_the_recorded_order_is_the_run_order(run, raw_config, re
 
     Seen failing: reversing the list in `variant` (the oracles then swap).
     """
-    own_tier2 = list(raw_config["joins"][ZSCORE]["steps"]["tier2"])
+    own_tier2 = list(raw_config["joins"][ZSCORE]["tier2"]["steps"])
     assert len(own_tier2) == 1, "the canary's tier-2 is the z-score step alone (QA_population_zscore.yaml)"
     steps = [remove_samples([removed])] + own_tier2 if removal_first else own_tier2 + [remove_samples([removed])]
     _, tier2, _ = run(variant(raw_config, ZSCORE, tier2=steps), ZSCORE)
@@ -238,7 +238,7 @@ def test_row_local_steps_at_one_node_commute(run, raw_config, raw_samples, remov
     oracle check fails).
     """
     first, second = ROW_LOCAL_PAIRS[pair](removed, threshold)
-    own_tier2 = list(raw_config["joins"][ZSCORE]["steps"]["tier2"])
+    own_tier2 = list(raw_config["joins"][ZSCORE]["tier2"]["steps"])
 
     def build(a, b):
         if node == "tier1":
@@ -264,7 +264,7 @@ def test_a_row_filter_and_a_population_step_at_one_node_do_not_commute(run, raw_
 
     Seen failing: replacing the z-score by a row-local step (the two orders then agree).
     """
-    zscore_step = raw_config["joins"][ZSCORE]["steps"]["tier2"][0]
+    zscore_step = raw_config["joins"][ZSCORE]["tier2"]["steps"][0]
     _, ab, _ = run(variant(raw_config, ZSCORE, tier2=[remove_samples([removed]), zscore_step]), ZSCORE)
     _, ba, _ = run(variant(raw_config, ZSCORE, tier2=[zscore_step, remove_samples([removed])]), ZSCORE)
     assert ab["sample_id"].to_list() == ba["sample_id"].to_list(), "both orders keep the same samples"
@@ -292,7 +292,7 @@ def test_a_different_order_gives_a_different_key_even_when_the_data_is_equal(run
 
     Seen failing: hashing the step list as a set (sorted) in a copy of `tier2_key`: the keys then agree.
     """
-    own_tier2 = list(raw_config["joins"][ZSCORE]["steps"]["tier2"])
+    own_tier2 = list(raw_config["joins"][ZSCORE]["tier2"]["steps"])
     a, b = remove_samples([removed]), n50_at_least(threshold)
     _, t2_ab, keys_ab = run(variant(raw_config, ZSCORE, tier2=own_tier2 + [a, b]), ZSCORE)
     _, t2_ba, keys_ba = run(variant(raw_config, ZSCORE, tier2=own_tier2 + [b, a]), ZSCORE)
@@ -345,12 +345,12 @@ def test_the_export_writes_the_audit_steps_after_the_recipe_tier2_in_recorded_or
     exported, skipped = build_mode2_recipe(raw_config, {ZPLOT: nodes})
     assert not skipped
     fork = f"{ZSCORE}__t3_{ZPLOT}"
-    own_tier2 = raw_config["joins"][ZSCORE]["steps"]["tier2"]
-    fork_tier2 = exported["joins"][fork]["steps"]["tier2"]
+    own_tier2 = raw_config["joins"][ZSCORE]["tier2"]["steps"]
+    fork_tier2 = exported["joins"][fork]["tier2"]["steps"]
     assert fork_tier2[: len(own_tier2)] == own_tier2, "the recipe's own tier-2 steps must come first, unchanged"
     added = fork_tier2[len(own_tier2):]
     assert [(s["column"], s["op"]) for s in added] == [("sample_id", "not_in"), ("n50", "ge")], "not the recorded order"
-    assert exported["joins"][fork]["steps"]["tier1"] == raw_config["joins"][ZSCORE]["steps"]["tier1"]
+    assert exported["joins"][fork]["tier1"]["steps"] == raw_config["joins"][ZSCORE]["tier1"]["steps"]
 
 
 CONCORDANCE_CASES = {
@@ -383,7 +383,7 @@ def test_the_exported_recipe_rerun_equals_the_audit_data(run, raw_config, origin
 
     exported, skipped = build_mode2_recipe(raw_config, {ZPLOT: nodes})
     assert not skipped, skipped
-    target = exported["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]["spec"]["target_dataset"]
+    target = exported["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]["target_dataset"]
     assert (target == ZSCORE) == (not nodes), "a plot with audit steps reads its fork, one without reads the join"
     _, rerun, _ = run(exported, target)
     rerun = plain(rerun)
@@ -427,7 +427,7 @@ def test_rerun_equals_audit_data_for_a_threshold_on_an_integer_column(run, raw_c
     home = audited_frame(tier2.lazy(), nodes).collect()
     exported, skipped = build_mode2_recipe(raw_config, {L50PLOT: nodes})
     assert not skipped, skipped
-    target = exported["analysis_groups"]["QA Canaries"]["plots"][L50PLOT]["spec"]["target_dataset"]
+    target = exported["analysis_groups"]["QA Canaries"]["plots"][L50PLOT]["target_dataset"]
     _, rerun, _ = run(exported, target)
 
     quast = _tsv("test_data_Quast_*.tsv")
@@ -448,7 +448,7 @@ def _home_plot_data(t2: pl.DataFrame, raw_config: dict, nodes: list) -> pl.DataF
     twice, and not in a second order, inside the factory."""
     from viz_factory import VizFactory
 
-    spec = copy.deepcopy(raw_config["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]["spec"])
+    spec = copy.deepcopy(raw_config["analysis_groups"]["QA Canaries"]["plots"][ZPLOT])
     assert "filters" not in spec
     figure = VizFactory().render(audited_frame(t2.lazy(), nodes), {"plots": {ZPLOT: spec}, "plot_defaults": {}}, ZPLOT)
     return pl.from_pandas(figure.data)
@@ -486,7 +486,7 @@ def _four_ways(original, raw_config, run, nodes):
     def rerun():
         exported, skipped = build_mode2_recipe(raw_config, {ZPLOT: nodes})
         assert not skipped, skipped
-        target = exported["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]["spec"]["target_dataset"]
+        target = exported["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]["target_dataset"]
         return run(exported, target)[1]
     way("rerun", rerun)
     return out

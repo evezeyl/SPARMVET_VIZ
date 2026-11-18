@@ -70,7 +70,7 @@ IDS = [case[0] for case in CASES]
 
 def recipe_with(steps):
     raw = copy.deepcopy(TEMPLATE)
-    raw["joins"]["main_collection"]["steps"]["tier1"] = copy.deepcopy(steps)
+    raw["joins"]["main_collection"]["tier1"]["steps"] = copy.deepcopy(steps)
     return raw
 
 

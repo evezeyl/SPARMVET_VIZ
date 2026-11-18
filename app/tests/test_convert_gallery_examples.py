@@ -87,13 +87,15 @@ def test_apply_writes_a_standard_recipe_that_passes_the_gallery_check(tmp_path):
                               "description": "Shows change between two states. The second line of the paragraph."}
     schema = recipe["data_schemas"]["example"]
     assert schema["source"] == {"type": "local_tsv", "path": "./assets/gallery_data/dumbbell/example_data.tsv"}
-    assert schema["null_values"] == [] and schema["strip"] is True and schema["wrangling"] == {"tier1": []}
+    assert schema["null_values"] == [] and schema["strip"] is True and schema["tier1"] == {"steps": []}
     assert schema["input_fields"] == {"species": {"type": "String"}, "year": {"type": "Int64"}, "rate": {"type": "Float64"}}
     plot = recipe["analysis_groups"]["example"]["plots"]["dumbbell"]
     assert plot["taxonomy"] == {"family": "Comparison", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Intermediate",
                                 "show": "change", "sample_size": "any"}
-    assert plot["spec"] == {"target_dataset": "example", "mapping": {"x": "rate", "y": "species"},
-                            "layers": [{"name": "geom_line", "params": {"color": "#b3b3b3"}}, {"name": "geom_point", "params": {"size": 4}}]}
+    content = {key: plot[key] for key in ("target_dataset", "mapping", "layers")}
+    assert content == {"target_dataset": "example", "mapping": {"x": "rate", "y": "species"},
+                       "layers": [{"name": "geom_line", "params": {"color": "#b3b3b3"}}, {"name": "geom_point", "params": {"size": 4}}]}
+    assert plot["ui_label"] == "Dumbbell Chart" and "spec" not in plot, "the plot content is written in the entry (D-0237)"
     assert "steps" not in plot and "plots" not in recipe and "data_path" not in recipe
 
 

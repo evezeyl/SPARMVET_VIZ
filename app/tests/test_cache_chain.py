@@ -51,8 +51,10 @@ class World:
         steps_tier1 = list(steps_tier1) + ([{"action": "polars_select", "exprs": list(select)}] if select else [])
         frag = self.data_analysis_recipes_dir / "tiny" / "wrangling"
         frag.mkdir(parents=True, exist_ok=True)
-        (frag / "T_wrangling.yaml").write_text(json.dumps({"tier1": list(wrangling_tier1), "tier2": []}))
-        (frag / "C_steps.yaml").write_text(json.dumps({"tier1": list(steps_tier1), "tier2": list(steps_tier2)}))
+        # a tier is its own key; an include holds the content of the tier, `steps` (D-0250)
+        (frag / "T_tier1.yaml").write_text(json.dumps({"steps": list(wrangling_tier1)}))
+        (frag / "C_tier1.yaml").write_text(json.dumps({"steps": list(steps_tier1)}))
+        (frag / "C_tier2.yaml").write_text(json.dumps({"steps": list(steps_tier2)}))
         entry = self.data_analysis_recipes_dir / "tiny.yaml"
         entry.write_text(f"""id: tiny
 info: {{label: Tiny}}
@@ -64,26 +66,26 @@ data_schemas:
     input_fields:
       sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}}
       group: {{original_name: group, type: {group_type}, label: Group}}
-    wrangling: !include 'tiny/wrangling/T_wrangling.yaml'
+    tier1: !include 'tiny/wrangling/T_tier1.yaml'
 joins:
   C:
     ingredients:
       - dataset_id: T
-    steps: !include 'tiny/wrangling/C_steps.yaml'
+    tier1: !include 'tiny/wrangling/C_tier1.yaml'
+    tier2: !include 'tiny/wrangling/C_tier2.yaml'
 analysis_groups:
   g:
-    label: G
+    ui_label: G
     plots:
       p:
-        label: {plot_label}
-        spec:
-          target_dataset: C
-          mapping: {{x: group}}
-          layers:
-            - name: geom_bar
-              params: {{}}
+        ui_label: {plot_label}
+        target_dataset: C
+        mapping: {{x: group}}
+        layers:
+          - name: geom_bar
+            params: {{}}
 """)
-        for f in (entry, frag / "T_wrangling.yaml", frag / "C_steps.yaml"):
+        for f in (entry, frag / "T_tier1.yaml", frag / "C_tier1.yaml", frag / "C_tier2.yaml"):
             bump(f)
 
     # -- what a session does ---------------------------------------------------------------

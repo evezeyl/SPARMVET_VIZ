@@ -329,7 +329,7 @@ def test_the_export_records_the_seed_the_recipe_writes_and_writes_it_into_the_re
     recipe_name = next(n for n in z.namelist() if "/data_analysis_recipes_reproducibility/" in n
                        and n.endswith(".yaml") and not n.endswith("effective_run.yaml"))
     recipe = _yaml.safe_load(z.read(recipe_name).decode())
-    spec = next(g["plots"][pid]["spec"] for g in recipe["analysis_groups"].values() if pid in g["plots"])
+    spec = next(g["plots"][pid] for g in recipe["analysis_groups"].values() if pid in g["plots"])
     assert {l["params"].get("random_state") for l in spec["layers"]
             if (l.get("params") or {}).get("position") == "jitter"} == {0}
 

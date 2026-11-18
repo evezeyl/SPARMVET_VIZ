@@ -59,7 +59,7 @@ def test_an_ordinary_plot_error_keeps_its_fix_label():
 
 def test_the_load_gate_and_blueprint_read_one_label(tmp_path):
     recipe = tiny_recipe()
-    recipe["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"] = [
+    recipe["analysis_groups"]["g"]["plots"]["p"]["layers"] = [
         {"name": "geom_point"}, {"name": "geom_smooth", "params": {"formula": "y ~ " + CODE}}]
     path = write_tiny(tmp_path, recipe)
     problems = [p for p in validate_data_analysis_recipe(path) if "[PS06]" in p.problem]

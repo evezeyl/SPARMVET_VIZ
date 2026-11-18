@@ -14,14 +14,13 @@ import pytest
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.modules.orchestrator import DataOrchestrator
 from utils.config_loader import ConfigManager
-from viz_factory.plot_config_resolver import _CANONICAL_SPEC_KEYS, _VALID_PLOT_DEFAULTS_KEYS
+from viz_factory.plot_config_resolver import _VALID_PLOT_DEFAULTS_KEYS, unknown_spec_keys
 
 ROOT = Path(__file__).resolve().parents[2]
 RECIPES_DIR = ROOT / "config" / "data_analysis_recipes" / "pipelines"
 RECIPE_IDS = sorted(p.stem for p in RECIPES_DIR.glob("*.yaml"))
-# Descriptive keys of a plot spec that the engine keeps as passthrough metadata on purpose (gallery taxonomy,
-# author notes). Any other key outside the canonical spec keys is dropped by the engine without a message.
-PASSTHROUGH_SPEC_KEYS = {"family", "pattern", "difficulty", "description", "info"}
+# A plot entry holds the content of the plot and the app-side keys (ui_label, ui_title, description, comment, taxonomy,
+# plot_engine, tier3), both lists from the recipe specification. Any other key is dropped by the engine without a message.
 
 
 def _raw(recipe_id):
@@ -31,7 +30,7 @@ def _raw(recipe_id):
 def _plot_specs(raw):
     for group in (raw.get("analysis_groups") or {}).values():
         for plot_id, entry in (group.get("plots") or {}).items():
-            yield plot_id, entry.get("spec") or {}
+            yield plot_id, entry or {}
 
 
 @pytest.mark.parametrize("recipe_id", RECIPE_IDS)
@@ -44,7 +43,7 @@ def test_plot_defaults_has_only_known_keys(recipe_id):
 def test_plot_specs_have_no_silently_ignored_keys(recipe_id):
     problems = {}
     for plot_id, spec in _plot_specs(_raw(recipe_id)):
-        ignored = sorted(set(spec) - _CANONICAL_SPEC_KEYS - PASSTHROUGH_SPEC_KEYS)
+        ignored = sorted(unknown_spec_keys(spec))
         if ignored:
             problems[plot_id] = ignored
     assert not problems, (

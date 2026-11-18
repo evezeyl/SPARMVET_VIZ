@@ -32,15 +32,14 @@ def test_shipped_data_analysis_recipes_declare_only_columns_their_datasets_have(
 _ANALYSIS = """
 analysis_groups:
   g:
-    label: G
+    ui_label: G
     plots:
       p:
-        label: P
-        spec:
-          target_dataset: A
-          mapping: {x: a}
-          layers:
-            - name: geom_bar
+        ui_label: P
+        target_dataset: A
+        mapping: {x: a}
+        layers:
+          - name: geom_bar
 """
 
 
@@ -72,8 +71,8 @@ def _make_data_analysis_recipe(tmp_path: Path, *, reads_header="sample_id\treads
             ingredients:
               - dataset_id: A
               - dataset_id: B
-            steps:
-              tier1:
+            tier1:
+              steps:
                 - action: polars_join
                   right_ingredient: B
                   'on': [sample_id]
@@ -82,8 +81,8 @@ def _make_data_analysis_recipe(tmp_path: Path, *, reads_header="sample_id\treads
           OnlyA:
             ingredients:
               - dataset_id: A
-            steps:
-              tier1: []
+            tier1:
+              steps: []
         """) + _ANALYSIS)
     return data_analysis_recipe
 
@@ -132,8 +131,8 @@ def _recipe_with_a_split_step(tmp_path: Path, code_type: str) -> Path:
             input_fields:
               sample_id: {{type: Categorical}}
               code: {{type: {code_type}}}
-            wrangling:
-              tier1:
+            tier1:
+              steps:
                 - action: polars_str_split
                   columns: [code]
                   by: "/"
@@ -141,8 +140,8 @@ def _recipe_with_a_split_step(tmp_path: Path, code_type: str) -> Path:
           OnlyB:
             ingredients:
               - dataset_id: B
-            steps:
-              tier1: []
+            tier1:
+              steps: []
         """) + _ANALYSIS.replace("target_dataset: A", "target_dataset: OnlyB"))
     return recipe
 
@@ -175,8 +174,8 @@ def _recipe_with_a_cast_step(tmp_path: Path, expression: str) -> Path:
             input_fields:
               sample_id: {{type: Categorical}}
               code: {{type: String}}
-            wrangling:
-              tier1:
+            tier1:
+              steps:
                 - action: polars_with_columns
                   named_exprs:
                     x: "{expression}"
@@ -184,8 +183,8 @@ def _recipe_with_a_cast_step(tmp_path: Path, expression: str) -> Path:
           OnlyB:
             ingredients:
               - dataset_id: B
-            steps:
-              tier1: []
+            tier1:
+              steps: []
         """) + _ANALYSIS.replace("target_dataset: A", "target_dataset: OnlyB"))
     return recipe
 

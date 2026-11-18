@@ -29,7 +29,7 @@ def _plots():
         raw = ConfigManager(str(DATA_ANALYSIS_RECIPES_DIR / f"{data_analysis_recipe}.yaml")).raw_config
         for group in raw.get("analysis_groups", {}).values():
             for plot_id, entry in group.get("plots", {}).items():
-                yield pytest.param(data_analysis_recipe, plot_id, entry["spec"]["target_dataset"], id=f"{data_analysis_recipe}-{plot_id}")
+                yield pytest.param(data_analysis_recipe, plot_id, entry["target_dataset"], id=f"{data_analysis_recipe}-{plot_id}")
 
 
 @pytest.fixture(scope="module")
@@ -53,7 +53,7 @@ def test_plot_renders(anchors, data_analysis_recipe, plot_id, target):
     plot = VizFactory().render(lf, raw, plot_id)
     plot.draw()
     # A plot that asks for panels must have them (issue #65: facet_by in mapping used to be ignored without a message).
-    spec = next(g["plots"][plot_id]["spec"] for g in raw["analysis_groups"].values() if plot_id in g["plots"])
+    spec = next(g["plots"][plot_id] for g in raw["analysis_groups"].values() if plot_id in g["plots"])
     asks_for_panels = (
         spec.get("facet_by")
         or (spec.get("mapping") or {}).get("facet_by")

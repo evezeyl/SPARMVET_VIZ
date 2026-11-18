@@ -23,7 +23,7 @@ RAW = ROOT / "assets/test_data/1_test_data_ST22_dummy"
 
 
 def _steps():
-    return yaml.safe_load(FRAGMENT.read_text())["tier1"]
+    return yaml.safe_load(FRAGMENT.read_text())["steps"]
 
 
 def _flags(hits):

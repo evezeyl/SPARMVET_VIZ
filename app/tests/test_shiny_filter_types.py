@@ -47,7 +47,7 @@ def typed_app():
     recipe = minimal_recipe("years", label="Years", schemas={"years": schema}, plots={"years_plot": plot})
     recipe["info"]["description"] = "A table with an integer year, for a browser test."
     group = recipe["analysis_groups"].pop("main")
-    group.update({"label": "Years", "description": "The one group."})
+    group.update({"ui_label": "Years", "description": "The one group."})
     recipe["analysis_groups"] = {"years_group": group}
     recipes = WORK / "recipes"
     recipes.mkdir(exist_ok=True)

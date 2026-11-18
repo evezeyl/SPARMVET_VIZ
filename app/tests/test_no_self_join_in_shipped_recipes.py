@@ -29,9 +29,8 @@ def _self_joins(raw):
     found = []
     for join_id, join in raw["joins"].items():
         ingredients = (join or {}).get("ingredients") or []
-        steps = (join or {}).get("steps") or {}
         for tier in ("tier1", "tier2"):
-            for index, step in enumerate(steps.get(tier) or [], start=1):
+            for index, step in enumerate(((join or {}).get(tier) or {}).get("steps") or [], start=1):
                 if isinstance(step, dict) and ingredients and step.get("right_ingredient") == ingredients[0].get("dataset_id"):
                     found.append(f"{join_id}.{tier}[{index}]")
     return found

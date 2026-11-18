@@ -50,17 +50,17 @@ class SchemaWorld:
     def write(self, *, tier2, plot_t=True) -> None:
         frag = self.recipes / "tiny" / "wrangling"
         frag.mkdir(parents=True, exist_ok=True)
-        wrangling = frag / "T_wrangling.yaml"
-        wrangling.write_text(json.dumps({"tier1": [], "tier2": list(tier2)}))
+        # a tier is its own key; an include holds the content of the tier, `steps` (D-0250)
+        tier2_file = frag / "T_tier2.yaml"
+        tier2_file.write_text(json.dumps({"steps": list(tier2)}))
         plot_t_text = """
       p_t:
-        label: T directly
-        spec:
-          target_dataset: T
-          mapping: {x: group}
-          layers:
-            - name: geom_bar
-              params: {}""" if plot_t else ""
+        ui_label: T directly
+        target_dataset: T
+        mapping: {x: group}
+        layers:
+          - name: geom_bar
+            params: {}""" if plot_t else ""
         entry = self.recipes / "tiny.yaml"
         entry.write_text(f"""id: tiny
 info: {{label: Tiny}}
@@ -72,26 +72,26 @@ data_schemas:
     input_fields:
       sample_id: {{original_name: sample_id, type: String, label: Sample, is_entity_key: true}}
       group: {{original_name: group, type: String, label: Group}}
-    wrangling: !include 'tiny/wrangling/T_wrangling.yaml'
+    tier1: {{steps: []}}
+    tier2: !include 'tiny/wrangling/T_tier2.yaml'
 joins:
   C:
     ingredients:
       - dataset_id: T
-    steps: {{tier1: []}}
+    tier1: {{steps: []}}
 analysis_groups:
   g:
-    label: G
+    ui_label: G
     plots:{plot_t_text}
       p_c:
-        label: C
-        spec:
-          target_dataset: C
-          mapping: {{x: group}}
-          layers:
-            - name: geom_bar
-              params: {{}}
+        ui_label: C
+        target_dataset: C
+        mapping: {{x: group}}
+        layers:
+          - name: geom_bar
+            params: {{}}
 """)
-        for f in (entry, wrangling):
+        for f in (entry, tier2_file):
             st = os.stat(f)
             os.utime(f, ns=(st.st_atime_ns, st.st_mtime_ns + 10**9))
         clear_data_analysis_recipe_cache()
@@ -197,7 +197,7 @@ def test_the_shared_reading_and_the_badge_see_the_schema_tier2(world):
 
 def test_the_tier1_material_holds_no_schema_tier2(world):
     material = tier1_material(world.raw())
-    assert "tier2" not in material["data_schemas"]["T"]["wrangling"]
+    assert "tier2" not in material["data_schemas"]["T"]
 
 
 # -- the load gate: a tier-2 list that is run nowhere is an error ----------------------------------
@@ -230,7 +230,7 @@ def test_home_refuses_a_join_tier2_that_no_plot_reads(tmp_path):
     schema["description"] = "one row per sample"
     join = minimal_join(["T"], [])
     join["description"] = "the samples"
-    join["steps"]["tier2"] = [KEEP_A]
+    join["tier2"] = {"steps": [KEEP_A]}
     recipe = minimal_recipe("gate_join", schemas={"T": schema}, joins={"C": join},
                             plots={"p_t": minimal_plot("T", {"x": "group"})})
     problems = validate_data_analysis_recipe(write_recipe(tmp_path / "gate_join.yaml", recipe))

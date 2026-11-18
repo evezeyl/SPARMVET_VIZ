@@ -14,10 +14,10 @@ def _recipe(layer):
         "info": {"label": "R", "description": "d", "contact": "c"},
         "data_schemas": {"A": {"label": "A", "description": "d", "source": {"type": "local_tsv", "path": "assets/test_data/a.tsv"},
                                "null_values": [], "strip": True,
-                               "input_fields": {"v": {"type": "Float64"}}, "wrangling": {"tier1": []}}},
-        "analysis_groups": {"g": {"label": "G", "description": "d", "plots": {"p": {
-            "label": "P", "description": "d",
-            "spec": {"target_dataset": "A", "mapping": {"x": "v"}, "layers": [{"name": "geom_point"}, layer]}}}}},
+                               "input_fields": {"v": {"type": "Float64"}}, "tier1": {"steps": []}}},
+        "analysis_groups": {"g": {"ui_label": "G", "description": "d", "plots": {"p": {
+            "ui_label": "P", "description": "d",
+            "target_dataset": "A", "mapping": {"x": "v"}, "layers": [{"name": "geom_point"}, layer]}}}},
     }
 
 

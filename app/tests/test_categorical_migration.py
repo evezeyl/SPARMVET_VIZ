@@ -190,7 +190,7 @@ def _join_pairs():
         types = _declared_types(raw)
         for join_name, join in (raw.get("joins") or {}).items():
             ingredients = [i.get("dataset_id") for i in join.get("ingredients") or []]
-            steps = [s for tier in (join.get("steps") or {}).values() for s in tier or []]
+            steps = [s for key in ("tier1", "tier2") for s in ((join.get(key) or {}).get("steps") or [])]
             for step in steps:
                 if step.get("action") != "polars_join":
                     continue

@@ -42,24 +42,25 @@ data_schemas:
     strip: false
     input_fields:
       sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}}
-    wrangling: {{tier1: [], tier2: []}}
+    tier1: {{steps: []}}
+    tier2: {{steps: []}}
 joins:
   C:
     ingredients:
       - dataset_id: T
-    steps: {{tier1: [], tier2: []}}
+    tier1: {{steps: []}}
+    tier2: {{steps: []}}
 analysis_groups:
   g:
-    label: G
+    ui_label: G
     plots:
       p:
-        label: P
-        spec:
-          target_dataset: C
-          mapping: {{x: sample_id}}
-          layers:
-            - name: geom_bar
-              params: {{}}
+        ui_label: P
+        target_dataset: C
+        mapping: {{x: sample_id}}
+        layers:
+          - name: geom_bar
+            params: {{}}
 """)
     return entry
 

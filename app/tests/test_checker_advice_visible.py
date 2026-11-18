@@ -50,7 +50,7 @@ def test_a_recipe_with_an_advice_stays_available_and_its_advice_is_listed_for_ho
     dep, root = _deployment(tmp_path)
     recipe = tiny_recipe("selfjoin")
     recipe["joins"] = {"AA": {"label": "AA", "description": "A with itself.", "ingredients": [{"dataset_id": "A"}],
-                              "steps": {"tier1": [{"action": "polars_join", "right_ingredient": "A", "on": ["a"], "how": "left", "maintain_order": "left_right"}]}}}
+                              "tier1": {"steps": [{"action": "polars_join", "right_ingredient": "A", "on": ["a"], "how": "left", "maintain_order": "left_right"}]}}}
     write_tiny(root / "data_analysis_recipes", recipe)
     write_tiny(root / "data_analysis_recipes", tiny_recipe("plain"))
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))

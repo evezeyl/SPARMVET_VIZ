@@ -146,7 +146,7 @@ def recipe_seeds(z: zipfile.ZipFile) -> set:
     """The `random_state` written on the jitter layers of the plot in the bundle's reproducibility recipe."""
     name = next(n for n in z.namelist() if "/data_analysis_recipes_reproducibility/" in n and n.endswith("1_test_data_ST22_dummy.yaml"))
     recipe = yaml.safe_load(z.read(name).decode())
-    spec = next(g["plots"][PID]["spec"] for g in recipe["analysis_groups"].values() if PID in g["plots"])
+    spec = next(g["plots"][PID] for g in recipe["analysis_groups"].values() if PID in g["plots"])
     return {l["params"].get("random_state") for l in spec["layers"] if (l.get("params") or {}).get("position") == "jitter"}
 
 

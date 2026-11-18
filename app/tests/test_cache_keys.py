@@ -43,17 +43,22 @@ def make_data_analysis_recipe(root: Path, *, split=True, comment="", wrangling_t
                  steps_tier2=(), plot_label="P", extra_section=None) -> Path:
     """Write tiny.yaml (and, when split, its included fragments) under root; return the entry path."""
     root.mkdir(parents=True, exist_ok=True)
-    wrangling = {"tier1": list(wrangling_tier1), "tier2": []}
-    steps = {"tier1": list(steps_tier1), "tier2": list(steps_tier2)}
+    # a tier is its own key; an include holds the content of the tier, `steps` (D-0250)
+    t_tier1 = {"steps": list(wrangling_tier1)}
+    c_tier1 = {"steps": list(steps_tier1)}
+    c_tier2 = {"steps": list(steps_tier2)}
     if split:
         (root / "tiny" / "wrangling").mkdir(parents=True, exist_ok=True)
-        (root / "tiny" / "wrangling" / "T_wrangling.yaml").write_text(_yaml_value(wrangling))
-        (root / "tiny" / "wrangling" / "C_steps.yaml").write_text(_yaml_value(steps))
-        wrangling_text = "!include 'tiny/wrangling/T_wrangling.yaml'"
-        steps_text = "!include 'tiny/wrangling/C_steps.yaml'"
+        (root / "tiny" / "wrangling" / "T_tier1.yaml").write_text(_yaml_value(t_tier1))
+        (root / "tiny" / "wrangling" / "C_tier1.yaml").write_text(_yaml_value(c_tier1))
+        (root / "tiny" / "wrangling" / "C_tier2.yaml").write_text(_yaml_value(c_tier2))
+        t_tier1_text = "!include 'tiny/wrangling/T_tier1.yaml'"
+        c_tier1_text = "!include 'tiny/wrangling/C_tier1.yaml'"
+        c_tier2_text = "!include 'tiny/wrangling/C_tier2.yaml'"
     else:
-        wrangling_text = _yaml_value(wrangling)
-        steps_text = _yaml_value(steps)
+        t_tier1_text = _yaml_value(t_tier1)
+        c_tier1_text = _yaml_value(c_tier1)
+        c_tier2_text = _yaml_value(c_tier2)
     extra = f"{extra_section}\n" if extra_section else ""
     entry = root / "tiny.yaml"
     entry.write_text(f"""{comment}id: tiny
@@ -64,24 +69,24 @@ data_schemas:
     input_fields:
       sample_id: {{original_name: sample_id, type: categorical, label: Sample, is_primary_key: true}}
       group: {{original_name: group, type: categorical, label: Group}}
-    wrangling: {wrangling_text}
+    tier1: {t_tier1_text}
 joins:
   C:
     ingredients:
       - dataset_id: T
-    steps: {steps_text}
+    tier1: {c_tier1_text}
+    tier2: {c_tier2_text}
 {extra}analysis_groups:
   g:
-    label: G
+    ui_label: G
     plots:
       p:
-        label: {plot_label}
-        spec:
-          target_dataset: C
-          mapping: {{x: group}}
-          layers:
-            - name: geom_bar
-              params: {{}}
+        ui_label: {plot_label}
+        target_dataset: C
+        mapping: {{x: group}}
+        layers:
+          - name: geom_bar
+            params: {{}}
 """)
     return entry
 
@@ -121,7 +126,7 @@ def test_change_in_an_included_tier1_file_moves_tier1_and_tier2(tmp_path):
     entry = make_data_analysis_recipe(tmp_path)
     loaded_a, t1a, t2a = keys_of(entry)
     make_data_analysis_recipe(tmp_path, wrangling_tier1=[FILTER_A])
-    bump(tmp_path / "tiny" / "wrangling" / "T_wrangling.yaml")
+    bump(tmp_path / "tiny" / "wrangling" / "T_tier1.yaml")
     loaded_b, t1b, t2b = keys_of(entry)
     assert t1a != t1b and t2a != t2b
     assert loaded_a.data_analysis_recipe_sha256 != loaded_b.data_analysis_recipe_sha256
@@ -141,7 +146,7 @@ def test_tier2_only_change_keeps_tier1_and_moves_tier2(tmp_path):
     entry = make_data_analysis_recipe(tmp_path)
     loaded_a, t1a, t2a = keys_of(entry)
     make_data_analysis_recipe(tmp_path, steps_tier2=[FILTER_A])
-    bump(tmp_path / "tiny" / "wrangling" / "C_steps.yaml")
+    bump(tmp_path / "tiny" / "wrangling" / "C_tier2.yaml")
     loaded_b, t1b, t2b = keys_of(entry)
     assert t1a == t1b, "a Tier 2 step must not force a Tier 1 rebuild"
     assert t2a != t2b
@@ -152,7 +157,7 @@ def test_tier1_change_moves_tier2_even_when_tier2_steps_are_the_same(tmp_path):
     entry = make_data_analysis_recipe(tmp_path, steps_tier2=[FILTER_A])
     _, t1a, t2a = keys_of(entry)
     make_data_analysis_recipe(tmp_path, steps_tier1=[FILTER_B], steps_tier2=[FILTER_A])
-    bump(tmp_path / "tiny" / "wrangling" / "C_steps.yaml")
+    bump(tmp_path / "tiny" / "wrangling" / "C_tier1.yaml")
     _, t1b, t2b = keys_of(entry)
     assert t1a != t1b and t2a != t2b
 
@@ -212,7 +217,7 @@ def test_loaded_files_lists_the_entry_and_every_include(tmp_path):
     entry = make_data_analysis_recipe(tmp_path)
     loaded = load_data_analysis_recipe(entry)
     names = sorted(Path(f).name for f in loaded.files)
-    assert names == ["C_steps.yaml", "T_wrangling.yaml", "tiny.yaml"]
+    assert names == ["C_tier1.yaml", "C_tier2.yaml", "T_tier1.yaml", "tiny.yaml"]
 
 
 def test_file_set_hash_does_not_depend_on_where_the_folder_is(tmp_path):
@@ -237,7 +242,7 @@ def test_data_analysis_recipe_in_memory_is_reloaded_when_an_included_file_change
     entry = make_data_analysis_recipe(tmp_path)
     before = load_data_analysis_recipe(entry)
     make_data_analysis_recipe(tmp_path, steps_tier2=[FILTER_A])
-    bump(tmp_path / "tiny" / "wrangling" / "C_steps.yaml")
+    bump(tmp_path / "tiny" / "wrangling" / "C_tier2.yaml")
     after = load_data_analysis_recipe(entry)
     assert after is not before
     assert tier2_steps(after.raw, "C") == [FILTER_A]

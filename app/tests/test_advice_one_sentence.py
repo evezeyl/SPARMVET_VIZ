@@ -26,13 +26,13 @@ from utils.recipe_loader import check_recipe_file
 
 ROOT = Path(__file__).resolve().parents[2]
 JOIN_ANTI = {"AA": {"label": "AA", "description": "A with itself.", "ingredients": [{"dataset_id": "A"}],
-                    "steps": {"tier1": [{"action": "polars_join", "right_ingredient": "A", "on": ["a"], "how": "anti", "maintain_order": "left_right"}]}}}
+                    "tier1": {"steps": [{"action": "polars_join", "right_ingredient": "A", "on": ["a"], "how": "anti", "maintain_order": "left_right"}]}}}
 
 
 def tiny(steps=None, fields=None, joins=None, float_key=False, recipe_id="t"):
     recipe = tiny_recipe(recipe_id)
     if steps is not None:
-        recipe["data_schemas"]["A"]["wrangling"] = {"tier1": steps}
+        recipe["data_schemas"]["A"]["tier1"] = {"steps": steps}
     recipe["data_schemas"]["A"]["input_fields"].update(fields or {})
     if float_key:
         recipe["data_schemas"]["A"]["input_fields"]["a"]["type"] = "Float64"
@@ -131,9 +131,9 @@ def test_the_anti_case_word_for_word_on_the_three_readers(tmp_path, monkeypatch)
     home = Bootloader._gate_one(_Gate(), str(path))[1]
     assert home == [what + fix]
     result = check_recipe_file(path, "run", catalogs=checker_catalogs())
-    assert [p.text() for p in result.advices if p.code == "J12"] == ["joins.AA.steps.tier1[1] : " + what + fix]
+    assert [p.text() for p in result.advices if p.code == "J12"] == ["joins.AA.tier1.steps[1] : " + what + fix]
     entries = validate_advice_entries([{"location": a.location, "problem": a.problem, "tip": a.tip} for a in checker_advices(path)])
-    assert [(heading, text) for heading, text in entries if text.startswith("[J12]")] == [("Advice: joins.AA.steps.tier1[1]", what + fix)]
+    assert [(heading, text) for heading, text in entries if text.startswith("[J12]")] == [("Advice: joins.AA.tier1.steps[1]", what + fix)]
 
 
 def test_no_reader_builds_the_sentence_itself():

@@ -56,17 +56,17 @@ def build(tmp_path: pathlib.Path, *, schema_t1=(), join_t1=(), join_t2=()):
         '      sample_id: {original_name: "Sample ID", type: String, is_entity_key: true}',
         "      group: {type: String}",
         "      score: {type: Int64}",
-        f"    wrangling: {{tier1: {json.dumps(list(schema_t1))}}}",
+        f"    tier1: {{steps: {json.dumps(list(schema_t1))}}}",
         "  M:", f"    source: {{type: local_tsv, path: {data / 'M.tsv'}}}",
         "    null_values: []", "    strip: false", "    input_fields:",
         "      sample_id: {type: String, is_entity_key: true}",
         "      year: {type: String}",
-        "    wrangling: {tier1: []}",
+        "    tier1: {steps: []}",
         "joins:", "  C:", "    ingredients:", "      - dataset_id: S", "      - dataset_id: M",
-        f"    steps: {{tier1: {json.dumps(list(join_t1))}, tier2: {json.dumps(list(join_t2))}}}",
-        "analysis_groups:", "  g:", "    label: G", "    plots:", "      p:", "        label: P", "        spec:",
-        "          target_dataset: C", "          mapping: {x: group}", "          layers:",
-        "            - name: geom_bar", "              params: {}",
+        f"    tier1: {{steps: {json.dumps(list(join_t1))}}}", f"    tier2: {{steps: {json.dumps(list(join_t2))}}}",
+        "analysis_groups:", "  g:", "    ui_label: G", "    plots:", "      p:", "        ui_label: P",
+        "        target_dataset: C", "        mapping: {x: group}", "        layers:",
+        "          - name: geom_bar", "            params: {}",
     ]
     (recipes / "p.yaml").write_text("\n".join(lines) + "\n")
     orchestrator = DataOrchestrator(recipes, data, data_lookup="data_analysis_recipe_paths")

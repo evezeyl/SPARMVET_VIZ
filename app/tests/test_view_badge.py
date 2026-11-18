@@ -8,10 +8,10 @@ from app.modules.view_badge import has_tier2_steps, view_badge
 
 RAW = {
     "joins": {
-        "WithT2": {"steps": {"tier1": [{"action": "sort", "columns": ["a"]}],
-                              "tier2": [{"action": "filter_eq", "column": "a", "value": 1}]}},
-        "WithoutT2": {"steps": {"tier1": [{"action": "sort", "columns": ["a"]}], "tier2": []}},
-        "TierOnly": {"steps": {"tier1": []}},
+        "WithT2": {"tier1": {"steps": [{"action": "sort", "columns": ["a"]}]},
+                   "tier2": {"steps": [{"action": "filter_eq", "column": "a", "value": 1}]}},
+        "WithoutT2": {"tier1": {"steps": [{"action": "sort", "columns": ["a"]}]}, "tier2": {"steps": []}},
+        "TierOnly": {"tier1": {"steps": []}},
     }
 }
 

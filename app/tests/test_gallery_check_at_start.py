@@ -35,7 +35,7 @@ def _add_broken(work: Path) -> None:
 def test_the_start_check_refuses_a_wrong_argument_and_a_wrong_theme(tmp_path):
     work = _gallery(tmp_path, "bar_simple")
     for name, old, new in (("bar_colr", "{name: geom_bar, params: {}}", "{name: geom_bar, params: {colr: red}}"),
-                           ("bar_theme", "          layers:", "          theme: theme_nope\n          layers:")):
+                           ("bar_theme", "        layers:", "        theme: theme_nope\n        layers:")):
         shutil.copytree(work / "bar_simple", work / name)
         text = (work / name / RECIPE).read_text().replace("bar_simple", name)
         assert old in text

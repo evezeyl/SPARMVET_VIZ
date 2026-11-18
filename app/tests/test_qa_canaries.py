@@ -193,7 +193,7 @@ def test_every_canary_plot_states_what_to_expect(raw_config):
     assert plots, "the QA group is empty"
     for plot_id, entry in plots.items():
         assert plot_id.startswith("qa_"), plot_id
-        labs = [layer for layer in entry["spec"]["layers"] if layer["name"] == "labs"]
+        labs = [layer for layer in entry["layers"] if layer["name"] == "labs"]
         subtitle = (labs[0]["params"].get("subtitle", "") if labs else "")
         assert subtitle.startswith(("Expect", "Inflated")), f"{plot_id}: the expected numbers must be in the plot subtitle"
 

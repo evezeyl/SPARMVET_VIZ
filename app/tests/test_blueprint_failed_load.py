@@ -144,8 +144,8 @@ def harness(monkeypatch):
 
 def _recipe_with_include(folder: Path, name: str, fragment_exists: bool) -> Path:
     recipe = tiny_recipe(name)
-    spec = recipe["analysis_groups"]["g"]["plots"]["p"]["spec"]
-    recipe["analysis_groups"]["g"]["plots"]["p"]["spec"] = "__INC__"
+    spec = recipe["analysis_groups"]["g"]["plots"]["p"]  # the whole plot entry is the included file (D-0252)
+    recipe["analysis_groups"]["g"]["plots"]["p"] = "__INC__"
     text = yaml.safe_dump(recipe, sort_keys=False).replace("__INC__", f"!include '{name}/spec_p.yaml'")
     path = folder / f"{name}.yaml"
     path.write_text(text)

@@ -36,7 +36,7 @@ STEPS_OF_DERIVE_CATEGORIES = 8
 
 
 def _recipe(folder: Path, steps: dict, resfinder: str = RESFINDER) -> Path:
-    """A recipe with the two tables the fragment needs and one join with the given steps (written as its own fragment file)."""
+    """A recipe with the two tables the fragment needs and one join whose tier1 is the given tier (a mapping with `steps`, written as its own file)."""
     (folder / "frag.yaml").write_text(yaml.safe_dump(steps, sort_keys=False), encoding="utf-8")
     text = f"""id: recipe
 spec_version: 1
@@ -54,7 +54,7 @@ data_schemas:
       sample_id: {{original_name: sample_id, type: String, is_entity_key: true}}
       gene: {{original_name: Gene, type: String}}
       cge_predicted_phenotype: {{original_name: CGE Predicted Phenotype, type: String}}
-    wrangling: {{tier1: []}}
+    tier1: {{steps: []}}
   AMR_phenotype_reference:
     label: reference
     description: "r"
@@ -64,7 +64,7 @@ data_schemas:
     input_fields:
       phenotype_name: {{original_name: Predicted Phenotype, type: String}}
       amr_class: {{original_name: AMR Category (Class), type: String}}
-    wrangling: {{tier1: []}}
+    tier1: {{steps: []}}
 joins:
   classes:
     label: classes
@@ -72,19 +72,18 @@ joins:
     ingredients:
       - dataset_id: ResFinder
       - dataset_id: AMR_phenotype_reference
-    steps: !include 'frag.yaml'
+    tier1: !include 'frag.yaml'
 analysis_groups:
   g:
-    label: G
+    ui_label: G
     description: "d"
     plots:
       p:
-        label: P
+        ui_label: P
         description: "d"
-        spec:
-          target_dataset: classes
-          mapping: {{x: sample_id}}
-          layers: [{{name: geom_bar, params: {{}}}}]
+        target_dataset: classes
+        mapping: {{x: sample_id}}
+        layers: [{{name: geom_bar, params: {{}}}}]
 """
     path = folder / "recipe.yaml"
     path.write_text(text, encoding="utf-8")
@@ -121,12 +120,12 @@ def test_the_converted_fragment_passes_the_checker(tmp_path):
 def test_the_fragment_uses_no_removed_action():
     text = FRAGMENT.read_text(encoding="utf-8")
     assert not re.search(r"action:\s*['\"]?(derive_categories|drop_duplicates|summarize)['\"]?\s*$", text, re.M)
-    assert all(step["action"].startswith(("polars_", "modif_", "step_")) for step in _fragment_steps()["tier1"])
+    assert all(step["action"].startswith(("polars_", "modif_", "step_")) for step in _fragment_steps()["steps"])
 
 
 def test_the_steps_that_replace_derive_categories_give_the_old_table(tmp_path):
     steps = _fragment_steps()
-    steps["tier1"] = steps["tier1"][:STEPS_OF_DERIVE_CATEGORIES]
+    steps["steps"] = steps["steps"][:STEPS_OF_DERIVE_CATEGORIES]
     _recipe(tmp_path, steps)
     new = _run(tmp_path)
     old = _old("old_after_derive_categories.tsv")
@@ -168,7 +167,7 @@ def test_edge_cases_unmapped_drug_empty_cell_two_drugs_one_class_order_kept(tmp_
     data.write_text("sample_id\tGene\tCGE Predicted Phenotype\n" + "\n".join("\t".join(c) for c in
                     [r[:3] for r in EDGE_CASES]) + "\n", encoding="utf-8")
     steps = _fragment_steps()
-    steps["tier1"] = steps["tier1"][:STEPS_OF_DERIVE_CATEGORIES]
+    steps["steps"] = steps["steps"][:STEPS_OF_DERIVE_CATEGORIES]
     _recipe(tmp_path, steps, resfinder=str(data))
     new = _run(tmp_path)
     assert [r[1] for r in new.select("sample_id", "AMR_Categories_Summary").rows()] == [e[3] for e in EDGE_CASES]
