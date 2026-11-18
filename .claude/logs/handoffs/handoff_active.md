@@ -42,6 +42,15 @@
 - **Decided today, still to build:** INTERPRETER-ONE-PYTHON-1 (D-0263; the line of `rules_runtime_environment.md` section 5 changes with it, her decision); the function gap and warning (D-0261, STAT-FUNCTION-NONFINITE-WARN-1); the wide-split design note (D-0264, WIDE-SPLIT-MODIF-DESIGN-1; no build before her yes on the design). Deferred by Eve: CONTAINER-RECIPE-UPDATE-1 (D-0263).
 - **Questions:** 13 open (AXIS-TEXT-PANEL-1, panel with evidence asked); 14 delayed until 13; 18 to 20 open. Decided today: 15 (D-0262), 16 (D-0263), 17 (D-0264).
 - **Pages ready for Eve:** `tmpAI/panel/polars_catch/PLAN_2026-11-18.md` (8 questions) and `tmpAI/panel/READINESS_for_demo_2026-11-18.md`; add both to the list of the pages above (`tmpAI/panel/QUESTIONS_for_eve_2026-11-18.md` and the reports named in the midday block).
+- **Later today (scribe; channel of 57 M280 and M281; channel of 78):**
+  - **dev = `1e796a7d`** (records: questions 15 to 17, D-0262 to D-0264). Still not pushed.
+  - `task/switch-fixes`: reviewed, verdict MERGE. Two tests are being strengthened, then the merge, then one control run on dev covering the merges, then Eve is told she can push.
+  - `task/one-python` (INTERPRETER-ONE-PYTHON-1, D-0263): in work.
+  - Question 13 (AXIS-TEXT-PANEL-1): panel page ready, `tmpAI/panel/axis_text/PANEL_for_eve_2026-11-18.md`; question 14 waits for it.
+  - Worktrees now: `engine-keys`, `switch-fixes`, `one-python`. The old `recipe-plots` worktree is not the coordinator's.
+  - Trial branches kept, without worktrees: `trial/stat-function-polars`, `trial/axis-text`.
+  - Ledger: D-0265 (amends D-0264: the wide split is a `step_` with an optional `fill`) and D-0266 (how a `step_` passes parameters, Variant 1). Open: the three fill questions and the long-form counts (question 17), for the design note.
+  - The coordinator's messages to the review session today: M271 to M280 of 78.
 
 ## 2026-11-17 night (open state; coordinator's list M175 of the channel; decisions D-0229 to D-0249)
 
