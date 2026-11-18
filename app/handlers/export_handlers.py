@@ -13,7 +13,7 @@ from __future__ import annotations
 # @deps
 # provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
 # consumes: app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), polars, shiny
-# consumes: libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237)
+# consumes: libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237), app/modules/engine_record.py (engine_record, failed_plot_record: the `engines` part of effective_run.yaml, D-0248)
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text), .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/export_specification.md, .claude/design/reproducible_export_design.md
@@ -30,6 +30,7 @@ from app.modules.export_refusal import export_refusal
 from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
 from utils.engines import plot_engine_slot
+from app.modules.engine_record import engine_record, failed_plot_record
 from utils.fix_text import fix_label
 from app.modules.qmd_text import code as _qc, mermaid_label as _qm, plain as _qp, yaml_string as _qy
 from app.modules.plot_seeds import (
@@ -1182,6 +1183,7 @@ def define_export_server(input, output, session, *,
             plot_bytes: dict[str, bytes] = {}      # p_id → bytes (user format)
             qmd_plot_bytes: dict[str, bytes] = {}  # p_id → bytes for Quarto (_render/)
             failed_plots: dict[str, str] = {}      # p_id → why it was not drawn (the report says so, no figure link)
+            drawn_records: dict[str, dict] = {}    # p_id → the engine and the theme of the plot as it was drawn (effective_run.yaml, D-0248)
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmpdir_path = Path(tmpdir)
 
@@ -1223,6 +1225,8 @@ def define_export_server(input, output, session, *,
                         _plot_override = _t3_aesthetic_overrides.get(p_id)
                         fig = viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
                                                  **render_seed_args(_plot_seeds[p_id], _plot_override))
+                        # the record comes from the plot that was just drawn, by the dispatcher that drew it (D-0248)
+                        drawn_records[p_id] = viz_factory.record_of(fig, synthetic_data_analysis_recipe, p_id)
 
                         # Save user-chosen format → zip under {dataset}/plots/
                         plot_path = tmpdir_path / f"{p_id}.{plot_fmt}"
@@ -1260,6 +1264,7 @@ def define_export_server(input, output, session, *,
                         # detection without guidance in a file nobody can ask a follow-up
                         # question about is worse than in a live UI.
                         failed_plots[p_id] = str(e)
+                        drawn_records[p_id] = failed_plot_record(cfg.raw_config, spec, e)
                         _lost(f"the plot '{p_id}'", e)
                         zf.writestr(
                             f"{bundle_dir}/{_safe_ds}/plots/{p_id}_ERROR.txt",
@@ -1541,6 +1546,9 @@ def define_export_server(input, output, session, *,
                 "contact_source": _contact["contact_source"],
                 "software_versions": prov["software_versions"],
                 "data_source_paths": prov["data_source_paths"],
+                # the engine of each tier and plot, the theme as applied, the versions of the libraries behind them (D-0248):
+                # the Publication export carries no recipe, so this is the only place the engine of the export is written
+                "engines": engine_record(cfg.raw_config, all_plots, drawn_records),
                 "seeds_per_plot": seeds_per_plot_record(_plot_seeds),
                 "seed_source_per_plot": seed_sources_per_plot(_plot_seeds),
                 "seeds_per_layer": seeds_per_layer_record(_plot_seeds),
@@ -2105,7 +2113,8 @@ def define_export_server(input, output, session, *,
                 "                     are no tier2 steps) plus that plot's filters and column drops",
                 "  t3_steps.yaml     — human-readable audit record (when T3 has steps)",
                 "  effective_run.yaml — the full verification record: recipe/data/T3-steps/engine",
-                "                     hashes, per-plot seeds. Written the same way either way (ADR-097).",
+                "                     hashes, per-plot seeds, the engine of each tier and plot, the theme as",
+                "                     applied and the library versions (`engines`). Written the same way either way (ADR-097).",
                 "  lineage/          — lineage_graph.json (shared-node DAG, ADR-074)",
                 "  report.qmd        — Quarto source (re-render: quarto render report.qmd)",
                 rendered_note,

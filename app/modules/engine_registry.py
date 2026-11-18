@@ -16,7 +16,7 @@ Consumed by: `app/modules/orchestrator.py`, `app/modules/data_analysis_recipe_va
 If deleted: no tier is run and no plot is drawn by the app.
 
 # @deps
-# provides: constant:REGISTRY, function:data_entry, function:plot_entry, function:engine_tables, class:PlotEngines
+# provides: constant:REGISTRY, function:data_entry, function:plot_entry, function:engine_tables, class:PlotEngines (render, record_of: what the export records of a drawn plot)
 # consumes: libs/utils/src/utils/engines.py, libs/utils/src/utils/errors.py, libs/transformer/src/transformer/engine_python_polars.py, libs/viz_factory/src/viz_factory/engine_python_plotnine.py, libs/transformer/src/transformer/actions/base.py (ACTION_ENGINES), libs/viz_factory/src/viz_factory/registry.py (COMPONENT_ENGINES)
 # consumed_by: app/modules/orchestrator.py, app/modules/data_analysis_recipe_validator.py, app/modules/gallery_examples.py, app/src/server.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/tests/test_engine_registry.py
 # doc: .claude/knowledge/decision_ledger.md (D-0219, D-0238, D-0239, D-0247, D-0050)
@@ -97,6 +97,21 @@ class PlotEngines:
         own = plots.get(plot_id) if isinstance(plots, dict) else None
         found = plot_entry(own, recipe, plot_id)
         return self.factory_of(found).render(df, {**recipe, "plot_engine": found.engine}, plot_id, **render_arguments)
+
+    def record_of(self, plot: Any, recipe: Dict[str, Any], plot_id: str) -> Dict[str, Any]:
+        """What the export records of a plot this dispatcher drew (D-0248): the engine that drew it (`plot_entry`, the function
+        `render` chose with, so the record and the drawing cannot differ), that it was drawn, and the theme as the engine says it
+        applied it, read from the plot itself. An engine that does not say which theme it applied is recorded as such."""
+        plots = recipe.get("plots") if isinstance(recipe, dict) else None
+        found = plot_entry(plots.get(plot_id) if isinstance(plots, dict) else None, recipe, plot_id)
+        if found.applied_theme is None:
+            theme = {"recorded": False, "reason": f"the engine {found.engine} does not say which theme it applied"}
+        else:
+            try:
+                theme = found.applied_theme(plot) or {"recorded": False, "reason": "the plot does not carry what it was drawn with"}
+            except Exception as exc:   # a theme that cannot be read must not turn a drawn plot into a failed one (D-0050: it is told)
+                theme = {"recorded": False, "reason": f"the theme could not be read from the plot ({type(exc).__name__}: {str(exc)[:120]})"}
+        return {"plot_engine": found.engine, "drawn": True, "theme": theme}
 
     @property
     def default_random_state(self) -> Any:

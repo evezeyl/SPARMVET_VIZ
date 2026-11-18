@@ -73,6 +73,11 @@ def test_the_bundle_records_the_keys_and_has_the_data(loaded):
     assert "contact" in run and "contact_source" in run
     assert len([ln for ln in readme.splitlines() if ln.startswith("Contact")]) == 1
     assert "not attempted" in run["t3_translation_skipped"]   # Mode 2 not requested here
+    # D-0248: the engine of each tier and plot, the theme as applied and the library versions are in the record
+    record = run["engines"]
+    assert record["tables"] and all(t["tier1"] == "python-polars" for t in record["tables"].values())
+    assert record["plots"] and all(p["plot_engine"] == "python-plotnine" and p["drawn"] for p in record["plots"].values())
+    assert set(record["library_versions"]) == {"python-polars", "python-plotnine"}
 
     assert any(n.endswith("T1_data.tsv") for n in names)
     assert any("/plots/" in n and not n.endswith("_ERROR.txt") for n in names)

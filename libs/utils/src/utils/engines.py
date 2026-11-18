@@ -16,7 +16,7 @@ Consumed by: `utils.recipe_check` (through `spec()["engines"]`), `utils.recipe_f
 If deleted: no recipe can name an engine and the checker refuses every recipe.
 
 # @deps
-# provides: constant:DATA_ENGINE, constant:PLOT_ENGINE, constant:ENGINE_TABLE, constant:ENGINES, class:EngineRow, class:DataEngineEntry, class:PlotEngineEntry, function:engines_of, function:entry_module_name, function:effective_engine, function:tier_engine, function:engine_known, function:engine_problem, function:engine_error, function:prefix_problems, function:plot_engine_slot
+# provides: constant:DATA_ENGINE, constant:PLOT_ENGINE, constant:ENGINE_TABLE, constant:ENGINES, class:EngineRow, class:DataEngineEntry, class:PlotEngineEntry, function:engines_of, function:entry_module_name, function:effective_engine, function:engine_versions, function:tier_engine, function:engine_known, function:engine_problem, function:engine_error, function:prefix_problems, function:plot_engine_slot
 # consumed_by: libs/utils/src/utils/recipe_check.py, libs/utils/src/utils/recipe_migration.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/registry.py,
 #              libs/transformer/src/transformer/actions/base.py, app/modules/engine_registry.py,
 #              libs/test_lab/src/test_lab/bootstrapper.py, libs/test_lab/src/test_lab/scaffolder.py, libs/utils/tests/test_engines.py, libs/utils/tests/test_engine_table.py
@@ -37,11 +37,12 @@ class EngineRow:
     key: str       # "data_engine" or "plot_engine"
     library: str   # the package under libs/ that holds it; its module `engine_<value>` is the entry file (D-0247)
     prefix: str    # the prefix of the names its own entries carry (`polars_`, `plotnine_`); `modif_` and `step_` carry none (D-0238)
+    packages: Tuple[str, ...] = ()   # the installed libraries behind the engine; their versions are read when the export record is written (D-0248)
 
 
 ENGINE_TABLE: Tuple[EngineRow, ...] = (
-    EngineRow(DATA_ENGINE, "data_engine", "transformer", "polars_"),
-    EngineRow(PLOT_ENGINE, "plot_engine", "viz_factory", "plotnine_"),
+    EngineRow(DATA_ENGINE, "data_engine", "transformer", "polars_", ("polars", "transformer")),
+    EngineRow(PLOT_ENGINE, "plot_engine", "viz_factory", "plotnine_", ("plotnine", "matplotlib", "viz_factory")),
 )
 
 
@@ -52,6 +53,22 @@ def engines_of(key: str) -> Tuple[str, ...]:
 
 # key of a recipe -> the engines built for it (derived: the table is the one list)
 ENGINES = {key: engines_of(key) for key in ("data_engine", "plot_engine")}
+
+
+def engine_versions(engine: str) -> Optional[Dict[str, str]]:
+    """{library: installed version} of the libraries behind an engine, read from the installed packages at the moment it is asked
+    (never typed in); a library that is not installed says "unknown". None for an engine the app has no row for (D-0248)."""
+    from importlib import metadata
+    for row in ENGINE_TABLE:
+        if row.engine == engine:
+            found = {}
+            for package in row.packages:
+                try:
+                    found[package] = metadata.version(package)
+                except metadata.PackageNotFoundError:
+                    found[package] = "unknown"
+            return found
+    return None
 
 
 def entry_module_name(engine: str) -> str:
@@ -70,9 +87,12 @@ class DataEngineEntry:
 
 @dataclass(frozen=True)
 class PlotEngineEntry:
-    """What the app needs to draw a plot with one plot engine: its factory class (built once per app with the app's settings)."""
+    """What the app needs to draw a plot with one plot engine: its factory class (built once per app with the app's settings) and
+    how it says which theme a plot it drew was drawn with (`applied_theme(plot)`, for the export record, D-0248). An engine with no
+    `applied_theme` records no theme, and the record says so."""
     engine: str
     factory: Callable[..., Any]
+    applied_theme: Optional[Callable[[Any], Optional[dict]]] = None
 
 
 def effective_engine(key: str, *levels: Any) -> Any:

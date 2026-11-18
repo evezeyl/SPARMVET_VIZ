@@ -104,3 +104,25 @@ def test_a_name_with_the_prefix_of_one_engine_and_the_field_of_another_is_report
 
 def test_a_name_without_any_engine_prefix_is_not_judged_by_its_name():
     assert engines.prefix_problems({"modif_x": "python-polars", "step_y": "python-plotnine", "geom_point": "python-plotnine"}) == []
+
+
+# -- the libraries behind an engine, and their versions read when the record is written (D-0248) ------------------------------------
+
+def test_every_engine_of_the_table_names_the_libraries_behind_it_and_they_are_installed():
+    from importlib import metadata
+    for row in engines.ENGINE_TABLE:
+        assert row.packages, f"{row.engine}: no library named behind the engine"
+        for package in row.packages:
+            metadata.version(package)       # raises when it is not installed: the record would hold "unknown" for it
+
+
+def test_the_versions_of_an_engine_are_read_from_the_installed_libraries_not_typed_in():
+    from importlib import metadata
+    versions = engines.engine_versions("python-polars")
+    assert versions == {package: metadata.version(package) for package in ("polars", "transformer")}
+
+
+def test_an_engine_the_app_has_no_library_for_has_no_versions_and_a_library_that_is_not_installed_says_unknown(monkeypatch):
+    assert engines.engine_versions("r-ggplot2") is None
+    monkeypatch.setattr(engines, "ENGINE_TABLE", (engines.EngineRow("python-ghost", "data_engine", "ghost", "ghost_", ("no-such-package-installed",)),))
+    assert engines.engine_versions("python-ghost") == {"no-such-package-installed": "unknown"}
