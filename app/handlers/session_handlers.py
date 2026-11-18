@@ -11,7 +11,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_session_server, output:session_management_ui, output:session_export_active
-# consumes: shiny, app.modules.error_notice (notice, issue_entry — VERIF-FIX-2), app.modules.plot_issue_reporter (make_issue_reporter), pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps)
+# consumes: app.src.bootloader (get_session_import_limits — D-0283), shiny, app.modules.error_notice (notice, issue_entry — VERIF-FIX-2), app.modules.plot_issue_reporter (make_issue_reporter), pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
@@ -239,7 +239,39 @@ def define_session_server(input, output, session, *,
             ),
         )
 
-    # Session import handler
+    # Session import (D-0281, D-0283): the zip is checked and, when its key exists, the user is asked BEFORE anything is
+    # written. The waiting zip is kept in memory only (a cancelled import leaves no file behind); it is plain handler
+    # state, written only from the effects below and never read by a render (ui_implementation_contract.md section 14).
+    _waiting_import: dict = {}
+
+    def _finish_import(on_exists: str | None, zip_bytes: bytes) -> None:
+        from app.modules.session_manager import SessionKeyExists
+        try:
+            restored_key = session_manager.import_session_zip(
+                zip_bytes, limits=bootloader.get_session_import_limits(), on_exists=on_exists)
+        except SessionKeyExists as exc:
+            _waiting_import["zip"] = zip_bytes
+            ui.modal_show(ui.modal(
+                ui.p("A session with this key already exists. Replace it, keep both, or cancel?"),
+                ui.p(f"Key: {exc.session_key}"),
+                ui.p("Replace: the stored session is replaced by the imported one. Keep both: the imported one is stored "
+                     "next to it and listed as imported. Cancel: nothing is written."),
+                title="This session already exists",
+                easy_close=False,
+                footer=ui.TagList(
+                    ui.input_action_button("session_import_cancel", "Cancel", class_="btn btn-outline-secondary btn-sm"),
+                    ui.input_action_button("session_import_keep", "Keep both", class_="btn btn-outline-primary btn-sm"),
+                    ui.input_action_button("session_import_replace", "Replace", class_="btn btn-outline-danger btn-sm"),
+                ),
+            ))
+            return
+        except Exception as e:
+            _notify(f"❌ Import failed: {e}", type="error", duration=12)
+            return
+        _session_list_version.set(_session_list_version.get() + 1)
+        what = {"replace": "replaced the stored session", "keep_both": "stored next to the existing one, listed as imported"}.get(on_exists)
+        _notify(f"✅ Session imported: {restored_key}" + (f" ({what})" if what else ""), type="message", duration=6)
+
     @reactive.Effect
     @reactive.event(input.session_import_upload)
     def _handle_session_import():
@@ -248,14 +280,38 @@ def define_session_server(input, output, session, *,
         file_info = input.session_import_upload()
         if not file_info:
             return
+        _waiting_import.clear()
         try:
             zip_bytes = Path(file_info[0]["datapath"]).read_bytes()
-            restored_key = session_manager.import_session_zip(zip_bytes)
-            _notify(
-                f"✅ Session imported: {restored_key}", type="message", duration=5
-            )
         except Exception as e:
-            _notify(f"❌ Import failed: {e}", type="error", duration=8)
+            _notify(f"❌ Import failed: {e}", type="error", duration=12)
+            return
+        _finish_import(None, zip_bytes)
+
+    def _answer_import(on_exists: str | None) -> None:
+        zip_bytes = _waiting_import.pop("zip", None)
+        ui.modal_remove()
+        if on_exists is None:
+            return
+        if zip_bytes is None:
+            _notify("No imported zip is waiting; nothing was written. Suggestion: upload the zip again.", type="warning", duration=8)
+            return
+        _finish_import(on_exists, zip_bytes)
+
+    @reactive.Effect
+    @reactive.event(input.session_import_replace)
+    def _handle_import_replace():
+        _answer_import("replace")
+
+    @reactive.Effect
+    @reactive.event(input.session_import_keep)
+    def _handle_import_keep():
+        _answer_import("keep_both")
+
+    @reactive.Effect
+    @reactive.event(input.session_import_cancel)
+    def _handle_import_cancel():
+        _answer_import(None)
 
     # ── Phase 25-G: Active-session export (.zip) ─────────────────────────────
     @render.download(filename=lambda: _active_session_export_filename())
