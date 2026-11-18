@@ -67,7 +67,7 @@ def jitter_layers(**params):
 
 def recipe_with(layers):
     """A recipe with one plot, in the shape the engine carries (analysis_groups)."""
-    return {"analysis_groups": {"grp": {"plots": {"p": {"spec": {"mapping": {"x": "g", "y": "v"}, "layers": layers}}}}}}
+    return {"analysis_groups": {"grp": {"plots": {"p": {"ui_label": "P", "mapping": {"x": "g", "y": "v"}, "layers": layers}}}}}
 
 
 def positions(df, layers, plot_defaults=None, **render_kwargs):
@@ -125,7 +125,7 @@ def all_places(df, layers, pin):
     bundle = positions(df, layers, **render_seed_args(plan["p"], override))
     from_record = positions(df, render_layers(layers, [r["seed"] for r in seeds_per_layer_record(plan)["p"]]))
     baked = bake_plot_seeds(recipe_with(layers), plan)
-    rerun = positions(df, baked["analysis_groups"]["grp"]["plots"]["p"]["spec"]["layers"])
+    rerun = positions(df, baked["analysis_groups"]["grp"]["plots"]["p"]["layers"])
     direct = positions(df, layers)                                     # gallery, Blueprint: nothing offered
     return {"HOME": home, "reference pane": reference, "bundle": bundle, "record": from_record, "re-run": rerun,
             "gallery / Blueprint": direct}, plan
@@ -233,7 +233,7 @@ def test_the_record_per_layer_names_each_layer_its_seed_and_its_source():
 # ---------------------------------------------------------------------------
 
 def baked_layers(layers, plan):
-    return bake_plot_seeds(recipe_with(layers), plan)["analysis_groups"]["grp"]["plots"]["p"]["spec"]["layers"]
+    return bake_plot_seeds(recipe_with(layers), plan)["analysis_groups"]["grp"]["plots"]["p"]["layers"]
 
 
 def test_baking_does_not_change_the_recipe_it_is_given():
@@ -368,7 +368,7 @@ def test_the_seed_step_is_added_after_the_audited_steps_and_the_input_is_not_cha
 def test_the_methods_text_names_the_pinned_seed():
     from app.handlers.export_handlers import _build_methods_section
     plan = export_plot_seeds({"p": {"layers": jitter_layers()}}, {"p": 777}, default=DEFAULT)
-    lines = _build_methods_section(all_plots=[("p", {"title": "My plot"})], t3_by_plot=with_seed_steps({}, plan),
+    lines = _build_methods_section(all_plots=[("p", {"ui_label": "My plot"})], t3_by_plot=with_seed_steps({}, plan),
                                    ds_to_plots={}, tiers_exported=["T1"])
     text = "\n".join(lines)
     assert "777" in text and "My plot" in text and "random" in text.lower()
@@ -398,8 +398,8 @@ def test_the_rerun_of_a_recipe_with_a_recipe_default_draws_the_exported_picture(
     recipe["plot_defaults"] = {"random_state": 7}
     baked = bake_plot_seeds(recipe, plan)
     assert baked["plot_defaults"] == {"random_state": 7}
-    assert baked["analysis_groups"]["grp"]["plots"]["p"]["spec"]["layers"] == layers, "the layers stay as written"
-    assert np.array_equal(positions(df, baked["analysis_groups"]["grp"]["plots"]["p"]["spec"]["layers"], plot_defaults=baked["plot_defaults"]),
+    assert baked["analysis_groups"]["grp"]["plots"]["p"]["layers"] == layers, "the layers stay as written"
+    assert np.array_equal(positions(df, baked["analysis_groups"]["grp"]["plots"]["p"]["layers"], plot_defaults=baked["plot_defaults"]),
                           positions(df, layers, plot_defaults={"random_state": 7}, **render_seed_args(plan["p"], None)))
 
 

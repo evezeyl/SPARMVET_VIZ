@@ -137,7 +137,7 @@ def test_the_forked_recipe_gives_the_audited_table_when_it_is_run(project, catal
     path = export_fork(project, T3_OF_THE_PLOT)
     raw, problems = load_recipe(path)
     assert problems == []
-    fork_id = raw["analysis_groups"]["main"]["plots"]["tiny_plot"]["spec"]["target_dataset"]
+    fork_id = raw["analysis_groups"]["main"]["plots"]["tiny_plot"]["target_dataset"]
     assert fork_id == "C__t3_tiny_plot"
     orchestrator = DataOrchestrator(path.parent, project / "data")
     anchor = project / "anchors" / "fork.parquet"

@@ -172,15 +172,16 @@ def translate_plot_steps(nodes: list[dict]) -> list[dict]:
 
 
 def _find_plot_spec(raw_config: dict, plot_id: str) -> dict | None:
-    """The `spec` of a plot, looked up in `analysis_groups` (the only place of a plot in
-    recipe format 1). Returns the actual nested dict reference inside `raw_config`, so a
-    caller mutating it (e.g. repointing target_dataset) mutates `raw_config` itself, not
+    """The plot entry of a plot, looked up in `analysis_groups` (the only place of a plot in
+    the recipe format). The entry IS the plot content (D-0237): `target_dataset`, `mapping`,
+    `layers` are written in it. Returns the actual nested dict reference inside `raw_config`,
+    so a caller mutating it (e.g. repointing target_dataset) mutates `raw_config` itself, not
     a copy.
     """
     for group in (raw_config.get("analysis_groups") or {}).values():
         plot_entry = (group.get("plots") or {}).get(plot_id)
         if plot_entry is not None:
-            return plot_entry.get("spec")
+            return plot_entry
     return None
 
 
@@ -271,10 +272,9 @@ def build_mode2_recipe(
         if fork_id is None:
             fork_id = f"{target_dataset}__t3_{plot_id}"
             forked_join = copy.deepcopy(original_join)
-            steps = forked_join.setdefault("steps", {})
-            tier2 = list(steps.get("tier2") or [])
-            tier2.extend(translated)
-            steps["tier2"] = tier2
+            # a tier is its own key with its steps (D-0250): the audit steps go after the steps of the join's tier 2
+            held = forked_join.get("tier2") if isinstance(forked_join.get("tier2"), dict) else {}
+            forked_join["tier2"] = {**held, "steps": list(held.get("steps") or []) + translated}
             joins[fork_id] = forked_join
             fork_cache[fork_key] = fork_id
             fork_origin[fork_id] = (target_dataset, [], [])

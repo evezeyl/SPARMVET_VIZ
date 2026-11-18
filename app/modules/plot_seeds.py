@@ -163,8 +163,9 @@ def bake_plot_seeds(recipe_cfg: dict, seeds: dict[str, Seeds]) -> dict:
     silently (ADR-104).
     """
     baked = copy.deepcopy(recipe_cfg)
+    # the plot entry is the plot content (D-0237): its layers are in the entry itself
     specs = {
-        pid: entry.get("spec")
+        pid: entry
         for group in (baked.get("analysis_groups") or {}).values()
         for pid, entry in (group.get("plots") or {}).items()
     }

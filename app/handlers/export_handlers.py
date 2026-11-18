@@ -28,6 +28,7 @@ from app.modules.error_notice import notice, what_failed
 from app.modules.export_refusal import export_refusal
 from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
+from utils.engines import plot_engine_slot
 from utils.fix_text import fix_label
 from app.modules.qmd_text import code as _qc, mermaid_label as _qm, plain as _qp, yaml_string as _qy
 from app.modules.plot_seeds import (
@@ -326,6 +327,27 @@ def _quote(name) -> str:
     return quote(str(name), safe="")
 
 
+def export_plot_entries(raw_config: dict) -> list[tuple[str, dict]]:
+    """[(plot_id, plot entry)] of the recipe, in the order of its groups: the plots an export draws.
+
+    The entry IS the plot content (D-0237): `target_dataset`, `mapping` and `layers` are written in it, with the app-side keys
+    (`ui_label`, `ui_title`, `plot_engine`, ...) beside them. An empty entry is not a plot. A recipe with no group falls back to a
+    root `plots` mirror (the loader's)."""
+    found = [(p_id, entry)
+             for gspec in (raw_config.get("analysis_groups") or {}).values()
+             for p_id, entry in (gspec.get("plots") or {}).items() if entry]
+    return found or list((raw_config.get("plots") or {}).items())
+
+
+def plot_report_name(entry, p_id: str) -> str:
+    """The name of a plot in the report (headings, captions, audit prose): `ui_title`, else `ui_label` (D-0253), else the plot id in
+    title case (a recipe the checker refused has no `ui_label`; the report is never left without a name).
+
+    The text of the figure is not read here: it is written only in the `labs` layer of the plot."""
+    entry = entry if isinstance(entry, dict) else {}
+    return entry.get("ui_title") or entry.get("ui_label") or p_id.replace("_", " ").title()
+
+
 def plot_report_lines(p_id: str, label: str, caption: str, fig_id: str, plot_ext: str, failure: str | None) -> list:
     """The lines of one plot in `report.qmd`: the figure, or, when the plot was not drawn, a note that says so and why.
 
@@ -434,8 +456,7 @@ def _build_methods_section(
     # T3 node prose
     for p_id, nodes in (t3_by_plot or {}).items():
         plot_label = _qp(next(
-            (s.get("title") or p_id.replace("_", " ").title()
-             for pid, s in all_plots if pid == p_id),
+            (plot_report_name(s, p_id) for pid, s in all_plots if pid == p_id),
             p_id.replace("_", " ").title(),
         ))
         for n in nodes:
@@ -484,8 +505,7 @@ def _build_methods_section(
     # Aesthetic overrides prose (from t3_plot_overrides — stored separately per §12c)
     for p_id, overrides in (t3_aesthetic_overrides or {}).items():
         plot_label = _qp(next(
-            (s.get("title") or p_id.replace("_", " ").title()
-             for pid, s in all_plots if pid == p_id),
+            (plot_report_name(s, p_id) for pid, s in all_plots if pid == p_id),
             p_id.replace("_", " ").title(),
         ))
         if overrides:
@@ -939,18 +959,9 @@ def define_export_server(input, output, session, *,
                 _build_changes.append(change.text)
 
         groups = cfg.raw_config.get("analysis_groups", {})
-        top_plots = cfg.raw_config.get("plots", {})
 
-        # Collect all (plot_id, spec) pairs for this export
-        all_plots: list[tuple[str, dict]] = []
-        for _gid, gspec in groups.items():
-            for p_id, pentry in gspec.get("plots", {}).items():
-                spec = pentry.get("spec")
-                if spec:
-                    all_plots.append((p_id, spec))
-        if not all_plots:
-            for p_id, spec in top_plots.items():
-                all_plots.append((p_id, spec))
+        # Collect all (plot_id, entry) pairs for this export
+        all_plots = export_plot_entries(cfg.raw_config)
 
         # ── Mode 2 add-on (ADR-097 decision 1, #45): Publication content (plots,
         # report, T3 justification) is always built, unchanged — this is additive, not
@@ -1182,6 +1193,8 @@ def define_export_server(input, output, session, *,
                         synthetic_data_analysis_recipe = {
                             "plots": {p_id: plot_spec},
                             "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
+                            # the plot's own engine, else the recipe's (D-0237); the library refuses one it does not build
+                            **plot_engine_slot(spec, cfg.raw_config),
                         }
 
                         # Resolve dataset
@@ -1776,7 +1789,7 @@ def define_export_server(input, output, session, *,
             # The user-facing plots/ folder in the zip keeps the chosen format.
             qmd_lines += ["## Plots", ""]
             for p_id, spec in all_plots:
-                label = spec.get("title") or p_id.replace("_", " ").title()
+                label = plot_report_name(spec, p_id)
                 ds_note = spec.get("target_dataset") or "—"
                 fig_id = f"fig-{_re.sub(r'[^A-Za-z0-9]', '-', p_id)}"
                 caption = f"{_qp(label)} — dataset: {_qc(ds_note)}"
@@ -1820,10 +1833,9 @@ def define_export_server(input, output, session, *,
             if _t3_listed:
                 qmd_lines += ["## T3 Audit Trail", ""]
                 for _pid, _nodes in _t3_listed.items():
-                    _spec_title = next(
-                        (s.get("title") for p, s in all_plots if p == _pid), None
-                    )
-                    _section_label = _qp(_spec_title or _pid.replace("_", " ").title())
+                    _section_label = _qp(next(
+                        (plot_report_name(s, _pid) for p, s in all_plots if p == _pid), _pid.replace("_", " ").title()
+                    ))
                     qmd_lines += [
                         f"### {_section_label}",
                         "",

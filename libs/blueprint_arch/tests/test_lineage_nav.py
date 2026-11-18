@@ -137,6 +137,21 @@ class TestBuildPlotLineage:
                     f"Wrangling rel path not a YAML file: {step['rel']}"
                 )
 
+    def test_the_plot_step_carries_the_ui_label_of_the_plot_entry(self):
+        """The entry is the plot (D-0237) and its short name is `ui_label` (D-0253): the lineage names the plot by it."""
+        assert build_plot_lineage(KNOWN_PLOT, DATA_ANALYSIS_RECIPE)[-1]["label"] == "QC Reads Horizontal Barplot"
+
+    def test_a_plot_whose_whole_entry_is_in_its_own_file_still_finds_its_table(self):
+        """`p: !include plots/p.yaml`: the entry (with `target_dataset`) is read from that file; without it the lineage is one step."""
+        steps = build_plot_lineage(KNOWN_PLOT, DATA_ANALYSIS_RECIPE)
+        assert [s["type"] for s in steps].count("data_source") == len(KNOWN_INGREDIENTS) and len(steps) > 3
+
+    def test_the_rel_of_a_wrangling_or_join_step_is_the_file_that_holds_its_tier1(self):
+        base = Path(DATA_ANALYSIS_RECIPE).parent
+        for step in build_plot_lineage(KNOWN_PLOT, DATA_ANALYSIS_RECIPE):
+            if step["type"] in ("wrangling", "join") and step["rel"] != step["schema_id"]:
+                assert (base / step["rel"]).is_file(), f"{step['schema_id']}: {step['rel']} is not a file"
+
     def test_ordering_data_before_join_before_plot(self):
         """Pipeline ordering: all data_source steps precede join, join precedes plot_spec."""
         steps = build_plot_lineage(KNOWN_PLOT, DATA_ANALYSIS_RECIPE)

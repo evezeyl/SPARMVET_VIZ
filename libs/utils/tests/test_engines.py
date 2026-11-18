@@ -40,3 +40,19 @@ def test_the_message_for_a_plot_engine_that_is_not_built_says_what_and_how_to_fi
     assert engines.engine_problem("plot_engine", engines.PLOT_ENGINE) is None
     assert engines.engine_problem("data_engine", "python-pandas")
     assert engines.engine_problem("plot_engine", None)
+
+
+def test_plot_engine_slot_entry_value_wins_over_the_recipe():
+    entry, recipe = {"plot_engine": "python-other"}, {"plot_engine": engines.PLOT_ENGINE}
+    assert engines.plot_engine_slot(entry, recipe) == {"plot_engine": "python-other"}
+
+
+def test_plot_engine_slot_falls_back_to_the_recipe_then_to_nothing():
+    assert engines.plot_engine_slot({"ui_label": "P"}, {"plot_engine": engines.PLOT_ENGINE}) == {"plot_engine": engines.PLOT_ENGINE}
+    assert engines.plot_engine_slot({"ui_label": "P"}, {}) == {}
+    assert engines.plot_engine_slot(None, None) == {}
+
+
+def test_plot_engine_slot_keeps_an_empty_value_so_the_library_can_refuse_it():
+    # a key written with no value is not "absent": the library must see it and refuse it (no silent fall back to the recipe)
+    assert engines.plot_engine_slot({"plot_engine": None}, {"plot_engine": engines.PLOT_ENGINE}) == {"plot_engine": None}

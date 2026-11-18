@@ -6,11 +6,11 @@ the names from here, so a second engine is added in one place and a library that
 asks for refuses it with a message instead of drawing with another engine.
 
 Consumed by: `utils.recipe_check` (through `spec()["engines"]`), `utils.recipe_factory`, `utils.recipe_migration`,
-`viz_factory.viz_factory` (the refusal), `test_lab` (the recipes it writes).
+`viz_factory.viz_factory` (the refusal), `app/handlers/home_theater.py` and `export_handlers.py` (the plot's engine), `test_lab` (the recipes it writes).
 If deleted: no recipe can name an engine and the checker refuses every recipe.
 
 # @deps
-# provides: constant:DATA_ENGINE, constant:PLOT_ENGINE, constant:ENGINES, function:engine_problem
+# provides: constant:DATA_ENGINE, constant:PLOT_ENGINE, constant:ENGINES, function:engine_problem, function:plot_engine_slot
 # consumed_by: libs/utils/src/utils/recipe_check.py, libs/utils/src/utils/recipe_migration.py, libs/viz_factory/src/viz_factory/viz_factory.py,
 #              libs/test_lab/src/test_lab/bootstrapper.py, libs/test_lab/src/test_lab/scaffolder.py, libs/utils/tests/test_engines.py
 # doc: .claude/knowledge/architecture_decisions.md (ADR-106 V8, ADR-100)
@@ -32,3 +32,15 @@ def engine_problem(key: str, value: Any) -> Optional[Tuple[str, str]]:
         return None
     return (f"the recipe key {key} is {value!r}, which this app does not build",
             f"write {key}: {allowed[0]}" + (f" (one of {', '.join(allowed)})" if len(allowed) > 1 else ""))
+
+
+def plot_engine_slot(entry: Any, recipe: Any) -> dict:
+    """The `plot_engine` slot to hand to the plot library for one plot: the entry's own value, else the recipe's (D-0237).
+
+    Returns {"plot_engine": value} or {} when neither names one (library use outside a recipe means the built engine).
+    The library reads the slot of the recipe dict it is given, so the caller puts this into that dict.
+    """
+    for level in (entry, recipe):
+        if isinstance(level, dict) and "plot_engine" in level:
+            return {"plot_engine": level["plot_engine"]}
+    return {}

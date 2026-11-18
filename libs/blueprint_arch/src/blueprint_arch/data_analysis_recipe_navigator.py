@@ -685,26 +685,18 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
             continue
         found = True
         plot_entry = plots[plot_id]
+        # The entry is the plot's content (D-0237): inline, or the whole entry in its own file (`p: !include plots/p.yaml`)
+        entry_rel = _rel_path(plot_entry)
+        if entry_rel:
+            try:
+                plot_entry = yaml.load((data_analysis_recipe_dir / entry_rel).read_text(encoding="utf-8"),
+                                       Loader=_CapLoader)  # noqa: S506
+            except Exception:
+                plot_entry = None
         if not isinstance(plot_entry, dict):
             break
-        plot_label = plot_entry.get("label", plot_id)
-
-        spec_val = plot_entry.get("spec")
-        spec_rel = _rel_path(spec_val)
-        if spec_rel:
-            spec_abs = data_analysis_recipe_dir / spec_rel
-            try:
-                spec_content = yaml.safe_load(
-                    spec_abs.read_text(encoding="utf-8")) or {}
-                # ConfigManager auto-unnests a single "spec:" wrapper key
-                if isinstance(spec_content, dict) and "spec" in spec_content:
-                    spec_content = spec_content["spec"]
-                if isinstance(spec_content, dict):
-                    target_dataset = spec_content.get("target_dataset")
-            except Exception:
-                pass
-        elif isinstance(spec_val, dict):
-            target_dataset = spec_val.get("target_dataset")
+        plot_label = plot_entry.get("ui_label", plot_id)
+        target_dataset = plot_entry.get("target_dataset")
         break
 
     if not found:
@@ -723,11 +715,8 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
             "rel": rel,
         }
 
-    def _wrangling_label(sid: str) -> str:
-        """`<id> / wrangling`, with a note when the schema has a tier-2 list (issue #77).
-
-        A schema's tier 2 runs only where a plot reads the schema directly; a join reads its tier 1. The note says so in
-        both places, so a node shared by both kinds of plot (the export deduplicates by id) is true for both."""
+    def _block_of(sid: str):
+        """The schema (or the metadata schema) with this id, as the recipe file has it; None when there is none."""
         block = None
         for section in ("data_schemas", "additional_datasets_schemas"):
             found = (tree.get(section) or {}).get(sid)
@@ -735,14 +724,29 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
                 block = found
         if sid == "metadata_schema" and isinstance(tree.get("metadata_schema"), dict):
             block = tree["metadata_schema"]
-        wrangling = block.get("wrangling") if isinstance(block, dict) else None
-        rel = _rel_path(wrangling)
+        return block
+
+    def _tier1_rel(sid: str, fallback: str) -> str:
+        """Where the tier 1 of a schema or a join is written: its include file, else `fallback` (the id: written inline)."""
+        block = _block_of(sid)
+        if block is None and isinstance((tree.get("joins") or {}).get(sid), dict):
+            block = tree["joins"][sid]
+        return (_rel_path(block.get("tier1")) if isinstance(block, dict) else None) or fallback
+
+    def _wrangling_label(sid: str) -> str:
+        """`<id> / wrangling`, with a note when the schema has a tier-2 list (issue #77).
+
+        A schema's tier 2 runs only where a plot reads the schema directly; a join reads its tier 1. The note says so in
+        both places, so a node shared by both kinds of plot (the export deduplicates by id) is true for both."""
+        block = _block_of(sid)
+        tier2 = block.get("tier2") if isinstance(block, dict) else None
+        rel = _rel_path(tier2)
         if rel:
             try:
-                wrangling = yaml.load((data_analysis_recipe_dir / rel).read_text(encoding="utf-8"), Loader=_CapLoader)  # noqa: S506
+                tier2 = yaml.load((data_analysis_recipe_dir / rel).read_text(encoding="utf-8"), Loader=_CapLoader)  # noqa: S506
             except Exception:
-                wrangling = None
-        if step_list(wrangling, "tier2"):
+                tier2 = None
+        if step_list({"tier2": tier2}, "tier2"):
             return f"{sid} / wrangling (tier 1; tier 2 only where {sid} is plotted directly)"
         return f"{sid} / wrangling"
 
@@ -780,8 +784,8 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
                 )
                 if wrn_rel:
                     steps.append(_step("wrangling", ing_id,
-                                       _wrangling_label(ing_id), wrn_rel))
-            steps.append(_step("join", target_dataset, target_dataset, join_rel))
+                                       _wrangling_label(ing_id), _tier1_rel(ing_id, wrn_rel)))
+            steps.append(_step("join", target_dataset, target_dataset, _tier1_rel(target_dataset, join_rel)))
 
         else:
             # Direct data schema, no assembly layer: its wrangling node holds its T1 and its T2 (issue #77)
@@ -795,7 +799,7 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
             )
             if wrn_rel:
                 steps.append(_step("wrangling", target_dataset,
-                                   _wrangling_label(target_dataset), wrn_rel))
+                                   _wrangling_label(target_dataset), _tier1_rel(target_dataset, wrn_rel)))
 
     steps.append(_step("plot_spec", plot_id, plot_label))
     return steps

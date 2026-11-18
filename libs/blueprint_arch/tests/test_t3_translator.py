@@ -227,11 +227,11 @@ class TestTranslatePlotSteps:
 def _recipe_with_one_join():
     return {
         "analysis_groups": {
-            "g1": {"plots": {"p1": {"spec": {"target_dataset": "J1"}},
-                              "p2": {"spec": {"target_dataset": "J1"}}}}
+            "g1": {"plots": {"p1": {"ui_label": "P1", "target_dataset": "J1"},
+                              "p2": {"ui_label": "P2", "target_dataset": "J1"}}}
         },
         "joins": {
-            "J1": {"steps": {"tier1": [{"action": "join", "right_ingredient": "x", "on": "id"}]}},
+            "J1": {"tier1": {"steps": [{"action": "join", "right_ingredient": "x", "on": "id"}]}},
         },
     }
 
@@ -242,32 +242,42 @@ class TestBuildMode2RecipeForking:
         t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
         new_cfg, skipped = build_mode2_recipe(raw, t3)
         assert skipped == {}
-        fork_id = new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"]
+        fork_id = new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["target_dataset"]
         assert fork_id == "J1__t3_p1"
         assert fork_id in new_cfg["joins"]
         # p2 (no T3 steps) keeps the original join untouched
-        assert new_cfg["analysis_groups"]["g1"]["plots"]["p2"]["spec"]["target_dataset"] == "J1"
+        assert new_cfg["analysis_groups"]["g1"]["plots"]["p2"]["target_dataset"] == "J1"
 
     def test_t2_then_t3_ordering_appended_after_existing_tier2(self):
         raw = _recipe_with_one_join()
-        raw["joins"]["J1"]["steps"]["tier2"] = [{"action": "sort", "columns": ["id"]}]
+        raw["joins"]["J1"]["tier2"] = {"steps": [{"action": "sort", "columns": ["id"]}]}
         t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
         new_cfg, _ = build_mode2_recipe(raw, t3)
-        fork_tier2 = new_cfg["joins"]["J1__t3_p1"]["steps"]["tier2"]
+        fork_tier2 = new_cfg["joins"]["J1__t3_p1"]["tier2"]["steps"]
         assert fork_tier2 == [
             {"action": "sort", "columns": ["id"]},
             {"action": "modif_filter", "column": "year", "op": "eq", "value": 2024, "na": "remove"},
         ]
 
+    def test_the_engine_written_in_the_tier2_of_the_join_is_kept_in_the_fork(self):
+        raw = _recipe_with_one_join()
+        raw["joins"]["J1"]["tier2"] = {"data_engine": "python-polars", "steps": [{"action": "sort", "columns": ["id"]}]}
+        t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
+        new_cfg, _ = build_mode2_recipe(raw, t3)
+        fork_tier2 = new_cfg["joins"]["J1__t3_p1"]["tier2"]
+        assert list(fork_tier2) == ["data_engine", "steps"] and fork_tier2["data_engine"] == "python-polars"
+        assert [s["action"] for s in fork_tier2["steps"]] == ["sort", "modif_filter"]
+        assert raw["joins"]["J1"]["tier2"]["steps"] == [{"action": "sort", "columns": ["id"]}], "the original is not changed"
+
     def test_empty_original_tier2_fork_is_just_the_translated_actions(self):
         raw = _recipe_with_one_join()   # no tier2 at all on J1
         t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
         new_cfg, _ = build_mode2_recipe(raw, t3)
-        assert new_cfg["joins"]["J1__t3_p1"]["steps"]["tier2"] == [
+        assert new_cfg["joins"]["J1__t3_p1"]["tier2"]["steps"] == [
             {"action": "modif_filter", "column": "year", "op": "eq", "value": 2024, "na": "remove"}
         ]
         # tier1 (the shared trunk) is untouched, byte-identical to the original
-        assert new_cfg["joins"]["J1__t3_p1"]["steps"]["tier1"] == raw["joins"]["J1"]["steps"]["tier1"]
+        assert new_cfg["joins"]["J1__t3_p1"]["tier1"]["steps"] == raw["joins"]["J1"]["tier1"]["steps"]
 
     def test_the_fork_says_where_it_comes_from_in_its_comment(self):
         raw = _recipe_with_one_join()
@@ -317,7 +327,7 @@ class TestBuildMode2RecipeForking:
         t3 = {"p1": [node("aesthetic_override", {"fill_color": "#ff0000"})]}
         new_cfg, skipped = build_mode2_recipe(raw, t3)
         assert skipped == {}
-        assert new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"] == "J1"
+        assert new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["target_dataset"] == "J1"
         assert "J1__t3_p1" not in new_cfg["joins"]
 
 
@@ -331,8 +341,8 @@ class TestBuildMode2RecipeMultiPlotPropagation:
         t3 = {"p1": [dict(shared_node)], "p2": [dict(shared_node)]}
         new_cfg, skipped = build_mode2_recipe(raw, t3)
         assert skipped == {}
-        fork_p1 = new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"]
-        fork_p2 = new_cfg["analysis_groups"]["g1"]["plots"]["p2"]["spec"]["target_dataset"]
+        fork_p1 = new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["target_dataset"]
+        fork_p2 = new_cfg["analysis_groups"]["g1"]["plots"]["p2"]["target_dataset"]
         assert fork_p1 == fork_p2
         assert len(new_cfg["joins"]) == 2   # original J1 + exactly one fork, not two
 
@@ -345,8 +355,8 @@ class TestBuildMode2RecipeMultiPlotPropagation:
         t3 = {"p1": [dict(shared_node)], "p2": [dict(shared_node), extra_node]}
         new_cfg, skipped = build_mode2_recipe(raw, t3)
         assert skipped == {}
-        fork_p1 = new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"]
-        fork_p2 = new_cfg["analysis_groups"]["g1"]["plots"]["p2"]["spec"]["target_dataset"]
+        fork_p1 = new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["target_dataset"]
+        fork_p2 = new_cfg["analysis_groups"]["g1"]["plots"]["p2"]["target_dataset"]
         assert fork_p1 != fork_p2
         assert len(new_cfg["joins"]) == 3   # original J1 + two distinct forks
 
@@ -354,14 +364,14 @@ class TestBuildMode2RecipeMultiPlotPropagation:
         """A node propagated to 'all plots' spanning different joins must become
         translated actions in multiple different forks, one per join it touches."""
         raw = _recipe_with_one_join()
-        raw["joins"]["J2"] = {"steps": {"tier1": [{"action": "join", "right_ingredient": "y", "on": "id"}]}}
-        raw["analysis_groups"]["g1"]["plots"]["p2"]["spec"]["target_dataset"] = "J2"
+        raw["joins"]["J2"] = {"tier1": {"steps": [{"action": "join", "right_ingredient": "y", "on": "id"}]}}
+        raw["analysis_groups"]["g1"]["plots"]["p2"]["target_dataset"] = "J2"
         shared_node = node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="shared")
         t3 = {"p1": [dict(shared_node)], "p2": [dict(shared_node)]}
         new_cfg, skipped = build_mode2_recipe(raw, t3)
         assert skipped == {}
-        fork_p1 = new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"]
-        fork_p2 = new_cfg["analysis_groups"]["g1"]["plots"]["p2"]["spec"]["target_dataset"]
+        fork_p1 = new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["target_dataset"]
+        fork_p2 = new_cfg["analysis_groups"]["g1"]["plots"]["p2"]["target_dataset"]
         assert fork_p1 == "J1__t3_p1" and fork_p2 == "J2__t3_p2"
         assert fork_p1 != fork_p2
 
@@ -373,12 +383,12 @@ class TestBuildMode2RecipeSkipped:
         new_cfg, skipped = build_mode2_recipe(raw, t3)
         assert "p1" in skipped
         # Original target_dataset is left completely untouched — never partially forked.
-        assert new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"] == "J1"
+        assert new_cfg["analysis_groups"]["g1"]["plots"]["p1"]["target_dataset"] == "J1"
         assert "J1__t3_p1" not in new_cfg["joins"]
 
     def test_bare_schema_plot_is_skipped(self):
         raw = _recipe_with_one_join()
-        raw["analysis_groups"]["g1"]["plots"]["p1"]["spec"] = {}  # no target_dataset
+        raw["analysis_groups"]["g1"]["plots"]["p1"].pop("target_dataset")  # no target_dataset
         t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
         _, skipped = build_mode2_recipe(raw, t3)
         assert "p1" in skipped
@@ -392,7 +402,7 @@ class TestBuildMode2RecipeSkipped:
 
     def test_target_dataset_pointing_at_a_bare_schema_not_a_join_is_skipped(self):
         raw = _recipe_with_one_join()
-        raw["analysis_groups"]["g1"]["plots"]["p1"]["spec"]["target_dataset"] = "some_bare_schema"
+        raw["analysis_groups"]["g1"]["plots"]["p1"]["target_dataset"] = "some_bare_schema"
         t3 = {"p1": [node("filter_row", {"column": "year", "op": "eq", "value": 2024}, node_id="n1")]}
         _, skipped = build_mode2_recipe(raw, t3)
         assert "p1" in skipped
@@ -487,6 +497,6 @@ class TestTheForkedRecipeIsFormatOne:
     def test_the_mirror_of_the_loader_does_not_reach_the_forked_recipe(self):
         """ConfigManager adds a root-level `plots` to what it loaded; the format refuses that key (T08)."""
         loaded = _format_one_recipe()
-        loaded["plots"] = {"per_year": dict(loaded["analysis_groups"]["main"]["plots"]["per_year"]["spec"])}
+        loaded["plots"] = {"per_year": dict(loaded["analysis_groups"]["main"]["plots"]["per_year"])}
         new_cfg, _ = build_mode2_recipe(loaded, self.T3)
         assert check_recipe(new_cfg, "run", file_stem="tiny", catalogs={"actions": _ACTIONS}).errors == []

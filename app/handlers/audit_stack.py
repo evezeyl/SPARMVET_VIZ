@@ -112,6 +112,16 @@ def _condition_summary(node: dict) -> str:
     return str(p)[:40]
 
 
+def plot_target_dataset(raw_config: dict, p_id: str) -> str | None:
+    """The `target_dataset` of one plot: the plot entry holds it directly (D-0237); None when the plot or the key is absent."""
+    for gspec in (raw_config.get("analysis_groups") or {}).values():
+        plot_entry = (gspec.get("plots") or {}).get(p_id)
+        if plot_entry is not None:
+            return plot_entry.get("target_dataset")
+    top_plot = (raw_config.get("plots") or {}).get(p_id)
+    return top_plot.get("target_dataset") if top_plot else None
+
+
 def define_server(input, output, session, *,
                   wrangle_studio, audit_pending, snapshot_steps,
                   active_cfg, active_collection_id,
@@ -282,18 +292,9 @@ def define_server(input, output, session, *,
             subtab = state.get("active_plot_subtab") or ""
             p_id = subtab.removeprefix("subtab_") if subtab else None
             if p_id:
-                cfg = active_cfg()
-                for gspec in cfg.raw_config.get("analysis_groups", {}).values():
-                    plot_entry = gspec.get("plots", {}).get(p_id)
-                    if plot_entry is not None:
-                        ds = (plot_entry.get("spec") or {}).get("target_dataset")
-                        if ds:
-                            return ds
-                top_plot = cfg.raw_config.get("plots", {}).get(p_id)
-                if top_plot:
-                    ds = top_plot.get("target_dataset")
-                    if ds:
-                        return ds
+                ds = plot_target_dataset(active_cfg().raw_config, p_id)
+                if ds:
+                    return ds
         return active_collection_id()
 
     # ------------------------------------------------------------------
