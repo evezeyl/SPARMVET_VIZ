@@ -35,6 +35,14 @@
 - **Nothing running.**
 - **Held, unchanged:** the big recipe change (ENGINE-KEYS), the rename, the Blueprint form, the wording of 6a and 6d, `task/worktree-imports` (`ca1a2246`, `45697881`), theme snippets build.
 
+### 2026-11-18 afternoon (scribe; channel of 57 M275 to M279)
+
+- **`dev` = `09b46d4f`**, local, not pushed. Two merges since the last full controls: the formula refusals `0bf944e6` (FORMULA-REFUSE-SORTED-1, FORMULA-REFUSE-UNKNOWN-BINARY-1; D-0257, D-0259) and the rest of the worktree work `09b46d4f` (VIZ-GALLERY-INIT, DOC-WORKTREE-SECTION; D-0262; worktree and branch removed). **ONE headless run on dev is owed before Eve is told she can push.**
+- **Branches:** `task/engine-keys` (step 1 running); `task/switch-fixes` (in review with full controls); `trial/axis-text` and `trial/stat-function-polars` (trials, never merged).
+- **Decided today, still to build:** INTERPRETER-ONE-PYTHON-1 (D-0263; the line of `rules_runtime_environment.md` section 5 changes with it, her decision); the function gap and warning (D-0261, STAT-FUNCTION-NONFINITE-WARN-1); the wide-split design note (D-0264, WIDE-SPLIT-MODIF-DESIGN-1; no build before her yes on the design). Deferred by Eve: CONTAINER-RECIPE-UPDATE-1 (D-0263).
+- **Questions:** 13 open (AXIS-TEXT-PANEL-1, panel with evidence asked); 14 delayed until 13; 18 to 20 open. Decided today: 15 (D-0262), 16 (D-0263), 17 (D-0264).
+- **Pages ready for Eve:** `tmpAI/panel/polars_catch/PLAN_2026-11-18.md` (8 questions) and `tmpAI/panel/READINESS_for_demo_2026-11-18.md`; add both to the list of the pages above (`tmpAI/panel/QUESTIONS_for_eve_2026-11-18.md` and the reports named in the midday block).
+
 ## 2026-11-17 night (open state; coordinator's list M175 of the channel; decisions D-0229 to D-0249)
 
 - **Merged tonight (dev):** `44683952` (FORMULA-OBJECT-REFUSE D-0230, FORMULA-ELEMENT-FIELD D-0231, STAT-FUNCTION-AGREE D-0232); `a85c7103` THEMES-ALL-DRAW; `e7e4a0a6` worktree test setup, first part; `cbf2e4b8` THEME-CUSTOM-LOUD; `1224b19e` VALIDATE-INTERPRETER. Details in `tasks.md` section 9.
