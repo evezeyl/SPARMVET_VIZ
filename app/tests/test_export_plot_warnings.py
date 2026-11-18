@@ -116,10 +116,10 @@ def test_the_real_missing_font_warning_of_the_library_reaches_the_bundle(tmp_pat
     def ask_for_a_missing_font(world):
         recipe = world.data_analysis_recipes_dir / "tiny.yaml"
         text = recipe.read_text()
-        assert "              params: {}\n" in text
+        assert "            params: {}\n" in text
         recipe.write_text(text.replace(
-            "              params: {}\n",
-            "              params: {}\n            - name: theme_bw\n              params: {base_family: NoSuchFontFamilyXyz}\n", 1))
+            "            params: {}\n",
+            "            params: {}\n          - name: theme_bw\n            params: {base_family: NoSuchFontFamilyXyz}\n", 1))
         clear_data_analysis_recipe_cache()
     _z, run, readme = _export(tmp_path, monkeypatch, {}, recipe_edit=ask_for_a_missing_font)
     rows = run["plot_warnings"].get("p")
