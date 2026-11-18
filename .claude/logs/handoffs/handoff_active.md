@@ -18,6 +18,15 @@
 - **Running, none edits the records:** recipe-switch check (`tmpAI/switch_check/`, HOME-RECIPE-SWITCH-CHECK-1); the `modif_` list (`MODIF-LIST-1`, D-0254).
 - **Coordinator's open points for Eve** (label and title details, nothing answers them): channel M271.
 
+## 2026-11-18 midday (scribe; channel of 57 M271 to M274, coordinator M271 to M277 of 78)
+
+- **dev = `372e390e`** (records and two report files; no code change since the last controls).
+- **Branches:** `task/engine-keys` (step 0 done, step 1 running); `task/switch-fixes` (`fb2ed369`, in review with full controls; merge when they pass); `trial/stat-function-polars` (trial, never merged; its worktree still exists and can be removed).
+- **Decided today, to build:** D-0259 (formulas refuse `pl.Unknown`, `pl.Binary` and arrays of unknown; task FORMULA-REFUSE-UNKNOWN-BINARY-1); D-0261 (`stat_function`: infinite or missing values are a gap and a visible warning; task STAT-FUNCTION-NONFINITE-WARN-1). D-0260 is a goal only: the wider Polars catch; the plan (POLARS-CATCH-PLAN-1) comes first, the build waits for Eve's yes.
+- **Reports ready for Eve:** `.claude/design/exploration/2026-11-18_date_keys_and_joins.md` (question 9); `tmpAI/panel/stat_function_polars/REPORT.md` (question 10); `tmpAI/panel/viz_rename/MODIF_LIST_2026-11-18.md` (ten questions); `tmpAI/panel/plot_defaults/BUILTIN_DEFAULTS_2026-11-18.md` (four questions); `.claude/design/exploration/2026-11-18_test_lab_review.md` (15 fixes, 9 questions); `tmpAI/panel/key_types/WORDING_options_primary_entity_key.md`; `tmpAI/switch_check/REPORT.md`.
+- **Held, not decided:** questions 13 to 20; the rename until the ten answers; rule and ADR text.
+- **Open in `tasks.md` section 9 (new today):** TEMPLATES-NOT-LOADABLE-1, TEST-LOGIC-RECIPE-REJECT-1, JOIN-REPORT-PROPOSAL-1, NONFINITE-REACH-REPORT-1.
+
 ## 2026-11-18 (open state, morning; export box merged)
 
 - **`dev` = `f288dae4`**, local, **not pushed** (Eve pushes herself). Controls passed on `4dec6348` (same tree as the merge): headless 10471 passed, 5 skipped, 32 xfailed; browser 140 passed, 3 skipped, 1 xfailed; 9 app starts; golden baseline identical; gallery previews 34 identical.
