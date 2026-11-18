@@ -62,15 +62,17 @@ class TestBootstrapperBugFixes:
         raw = master.read_text()
         assert "joins" in raw
 
-    def test_wrangling_fragment_is_tiered(self, minimal_tsv, tmp_path):
+    def test_the_tier_file_holds_the_steps_of_tier_1(self, minimal_tsv, tmp_path):
+        """A tier is written as its own key of the table, `tier1: !include <file>`; the file holds `steps` (D-0250)."""
         from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
         bs = DataAnalysisRecipeBootstrapper()
-        bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
+        master = bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
         frag = tmp_path / "test_proj" / "test_proj" / "samples_wrangling.yaml"
-        assert frag.exists(), f"Wrangling fragment not found at {frag}"
-        content = frag.read_text()
-        assert "tier1" in content, "wrangling fragment must have 'tier1' key"
-        assert "tier2" in content, "wrangling fragment must have 'tier2' key"
+        assert frag.exists(), f"Tier file not found at {frag}"
+        assert yaml.safe_load(frag.read_text()) == {"steps": []}
+        text = master.read_text()
+        assert "tier1: !include 'test_proj/samples_wrangling.yaml'" in text
+        assert "wrangling:" not in text and "tier2" not in text
 
 
 class TestIdCleaningSteps:
@@ -83,7 +85,7 @@ class TestIdCleaningSteps:
         bs = DataAnalysisRecipeBootstrapper()
         bs.bootstrap([minimal_tsv], "test_proj", tmp_path, id_cleaning_steps=steps)
         frag = tmp_path / "test_proj" / "test_proj" / "samples_wrangling.yaml"
-        assert yaml.safe_load(frag.read_text())["tier1"] == steps["samples"]
+        assert yaml.safe_load(frag.read_text()) == {"steps": steps["samples"]}
 
     def test_cleaning_steps_for_a_dataset_that_is_not_bootstrapped_are_refused(self, minimal_tsv, tmp_path):
         """Steps keyed by a name that matches no file were dropped without a word: the recipe lacked them."""
@@ -94,14 +96,14 @@ class TestIdCleaningSteps:
         assert "samples" in str(error.value), "the message names the datasets that exist"
         assert not (tmp_path / "test_proj").exists(), "nothing is written for a call that is refused"
 
-    def test_no_cleaning_steps_produces_empty_tier1(self, minimal_tsv, tmp_path):
+    def test_no_cleaning_steps_produces_an_empty_tier_file(self, minimal_tsv, tmp_path):
         from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
         bs = DataAnalysisRecipeBootstrapper()
         bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
         frag = tmp_path / "test_proj" / "test_proj" / "samples_wrangling.yaml"
         yaml_lines = [l for l in frag.read_text().splitlines() if not l.startswith("#")]
         data = yaml.safe_load("\n".join(yaml_lines))
-        assert data["tier1"] == [] or data["tier1"] is None
+        assert data == {"steps": []}
 
 
 class TestOutputStructure:
@@ -156,3 +158,55 @@ class TestWritersEmitFormatOne:
         fields = yaml.safe_load((tmp_path / "test_proj" / "test_proj" / "samples_input_fields.yaml").read_text())
         from utils.polars_types import text_dtype_names
         assert {f["type"] for f in fields.values()} <= set(text_dtype_names())
+
+
+def judged(master: Path, profile: str = "build"):
+    """The errors of the recipe checker for a written recipe, the included files read from disk."""
+    from utils.recipe_loader import check_recipe_file
+    return [problem.text() for problem in check_recipe_file(master, profile).errors]
+
+
+class TestWhatTheBootstrapperWritesPassesTheChecker:
+    """A recipe made by the Test Lab is a draft (it has no plot yet, so profile build): it must be accepted as it is written."""
+
+    @pytest.fixture(autouse=True)
+    def _the_data_is_inside_the_project(self, tmp_path, monkeypatch):
+        """A recipe names its data by a path relative to the project (the working folder): the checker refuses an absolute path."""
+        monkeypatch.chdir(tmp_path)
+
+    def test_a_bootstrapped_recipe_passes_the_checker(self, tmp_path, minimal_tsv):
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        master = DataAnalysisRecipeBootstrapper().bootstrap([minimal_tsv], "test_proj", tmp_path)
+        assert judged(master) == []
+
+    def test_a_recipe_with_a_metadata_file_passes_and_its_files_exist(self, tmp_path, minimal_tsv, meta_tsv):
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        master = DataAnalysisRecipeBootstrapper().bootstrap([minimal_tsv], "test_proj", tmp_path, metadata_path=meta_tsv)
+        assert judged(master) == []
+        frags = tmp_path / "test_proj" / "test_proj"
+        assert (frags / "metadata_input_fields.yaml").exists() and (frags / "metadata_wrangling.yaml").exists()
+
+    def test_a_recipe_with_cleaning_steps_passes_the_checker_and_keeps_the_steps(self, tmp_path, minimal_tsv):
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        from utils import action_names
+        steps = {"samples": [{"action": action_names.STR_STRIP_CHARS, "columns": ["sample_id"]}]}
+        master = DataAnalysisRecipeBootstrapper().bootstrap([minimal_tsv], "test_proj", tmp_path, id_cleaning_steps=steps)
+        from utils.recipe_loader import load_recipe
+        raw, problems = load_recipe(master)
+        assert problems == []
+        assert raw["data_schemas"]["samples"]["tier1"] == {"steps": steps["samples"]}
+
+    def test_every_table_has_a_label_a_tier_1_and_no_old_key(self, tmp_path, minimal_tsv, meta_tsv):
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        master = DataAnalysisRecipeBootstrapper().bootstrap([minimal_tsv], "test_proj", tmp_path, metadata_path=meta_tsv)
+        from utils.recipe_loader import load_recipe
+        raw, _ = load_recipe(master)
+        for table in (raw["data_schemas"]["samples"], raw["metadata_schema"]):
+            assert table["label"] and "tier1" in table
+            assert not {"wrangling", "output_fields", "tier2"} & set(table)
+
+    def test_the_tier_file_keeps_the_candidate_key_hint_as_a_comment(self, tmp_path, minimal_tsv):
+        from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper
+        DataAnalysisRecipeBootstrapper().bootstrap([minimal_tsv], "test_proj", tmp_path)
+        text = (tmp_path / "test_proj" / "test_proj" / "samples_wrangling.yaml").read_text()
+        assert text.startswith("# Candidate PK: ") and yaml.safe_load(text) == {"steps": []}

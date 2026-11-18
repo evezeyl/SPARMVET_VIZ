@@ -45,9 +45,9 @@ def _load_master(zip_bytes: bytes, data_analysis_recipe_id: str) -> dict:
 
 
 def _tier1(zip_bytes: bytes, name: str) -> list:
-    """The tier1 list of one wrangling fragment of the ZIP (the candidate-key comment line is not YAML content)."""
+    """The steps of the tier 1 file of the ZIP (the candidate-key comment line is not YAML content)."""
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
-        return yaml.safe_load(zf.read(name).decode())["tier1"]
+        return yaml.safe_load(zf.read(name).decode())["steps"]
 
 
 def _zip_names(zip_bytes: bytes):
@@ -160,23 +160,26 @@ class TestAssemblyStubQuoting:
             assembly_files = [n for n in zf.namelist() if "assembly/" in n]
             raw = zf.read(assembly_files[0]).decode()
         data = yaml.safe_load(raw)
-        assert "steps" in data
-        assert "tier1" in data["steps"]
-        assert "tier2" in data["steps"]
+        assert list(data) == ["steps"] and isinstance(data["steps"], list)       # a tier file (D-0250)
+        assert [step["action"] for step in data["steps"]] and all("right_ingredient" in step for step in data["steps"])
+        master = _load_master(zb, "proj")
+        assert master["joins"]["proj_joint"]["tier1"].endswith("assembly/proj_joint.yaml")
+        assert "steps" not in master["joins"]["proj_joint"] and "tier2" not in master["joins"]["proj_joint"]
 
 
 class TestWranglingFragments:
     """Verify wrangling fragments are tiered and accept IdTransformation steps."""
 
-    def test_wrangling_is_tiered(self, samples_tsv):
+    def test_the_tier_file_holds_steps_and_the_table_includes_it_as_tier1(self, samples_tsv):
         from test_lab.scaffolder import DataAnalysisRecipeScaffolder
         zb = DataAnalysisRecipeScaffolder().scaffold([samples_tsv], "proj")
         with zipfile.ZipFile(io.BytesIO(zb)) as zf:
             raw = zf.read("proj/proj/samples_wrangling.yaml").decode()
         yaml_lines = [l for l in raw.splitlines() if not l.startswith("#")]
         data = yaml.safe_load("\n".join(yaml_lines))
-        assert "tier1" in data
-        assert "tier2" in data
+        assert data == {"steps": []}
+        schema = _load_master(zb, "proj")["data_schemas"]["samples"]
+        assert schema["tier1"] == "proj/samples_wrangling.yaml" and not {"wrangling", "tier2"} & set(schema)
 
     def test_transformation_steps_injected_into_tier1(self, samples_tsv):
         from test_lab.scaffolder import DataAnalysisRecipeScaffolder
@@ -235,3 +238,50 @@ class TestNames:
         with zipfile.ZipFile(io.BytesIO(scaffolder.scaffold([tsv], "proj"))) as zf:
             fields = yaml.safe_load(zf.read("proj/proj/samples_input_fields.yaml").decode())
         assert list(fields) == scaffolder.field_slugs(tsv)
+
+
+class TestWhatTheScaffolderWritesPassesTheChecker:
+    """The ZIP is extracted as the Test Lab user does; the recipe is a draft (no plot yet, profile build) and is accepted as written."""
+
+    @pytest.fixture(autouse=True)
+    def _the_data_is_inside_the_project(self, tmp_path, monkeypatch):
+        """A recipe names its data by a path relative to the project (the working folder): the checker refuses an absolute path."""
+        monkeypatch.chdir(tmp_path)
+
+    @staticmethod
+    def extracted(zip_bytes: bytes, folder: Path, recipe_id: str) -> Path:
+        with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+            zf.extractall(folder)
+        return folder / recipe_id / f"{recipe_id}.yaml"
+
+    @staticmethod
+    def judged(master: Path):
+        from utils.recipe_loader import check_recipe_file
+        return [problem.text() for problem in check_recipe_file(master, "build").errors]
+
+    def test_one_table_passes(self, samples_tsv, tmp_path):
+        from test_lab.scaffolder import DataAnalysisRecipeScaffolder
+        master = self.extracted(DataAnalysisRecipeScaffolder().scaffold([samples_tsv], "proj"), tmp_path / "out", "proj")
+        assert self.judged(master) == []
+
+    def test_two_tables_a_join_and_a_metadata_file_pass(self, samples_tsv, amr_tsv, meta_tsv, tmp_path):
+        from test_lab.scaffolder import DataAnalysisRecipeScaffolder
+        zb = DataAnalysisRecipeScaffolder().scaffold([samples_tsv, amr_tsv], "proj", metadata_path=meta_tsv)
+        master = self.extracted(zb, tmp_path / "out", "proj")
+        assert self.judged(master) == []
+        from utils.recipe_loader import load_recipe
+        raw, _ = load_recipe(master)
+        assert list(raw["joins"]["proj_joint"]) == ["label", "ingredients", "tier1"]
+        assert [s["right_ingredient"] for s in raw["joins"]["proj_joint"]["tier1"]["steps"]] == ["amr_results", "metadata_schema"]
+        assert [i["dataset_id"] for i in raw["joins"]["proj_joint"]["ingredients"]] == ["samples", "amr_results", "metadata_schema"]
+
+    def test_a_table_has_a_label_and_the_steps_given_end_up_in_its_tier_1(self, samples_tsv, tmp_path):
+        from test_lab.scaffolder import DataAnalysisRecipeScaffolder
+        from utils import action_names
+        steps = [{"action": action_names.STR_STRIP_CHARS, "columns": ["sample_id"]}]
+        zb = DataAnalysisRecipeScaffolder().scaffold([samples_tsv], "proj", steps={"samples": steps})
+        master = self.extracted(zb, tmp_path / "out", "proj")
+        assert self.judged(master) == []
+        from utils.recipe_loader import load_recipe
+        table = load_recipe(master)[0]["data_schemas"]["samples"]
+        assert table["label"] and table["tier1"] == {"steps": steps}
