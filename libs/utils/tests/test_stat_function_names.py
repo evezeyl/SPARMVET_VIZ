@@ -6,8 +6,8 @@ a NameError (the drawing namespace had `np` and `math` only), and `math.abs`, `m
 A function written as a value (`lambda x: sin`), or called with the wrong number of numbers, passed and failed late too.
 Eve (D-0232): "I mean that was an idea for a fix - it might not be the fix... But it need to be fixed".
 
-The drawing side of the same rule (every accepted name really evaluates) is in
-`libs/viz_factory/tests/test_stat_function_names_drawn.py`.
+The drawing side no longer exists: a function written as text is blocked (D-0274); see
+`libs/viz_factory/tests/test_stat_function_formula.py`.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/utils/tests/test_stat_function_names.py -q
 """
@@ -150,11 +150,10 @@ def test_the_message_for_an_unknown_module_lists_the_modules():
 
 # ---- what the user reads at the checker --------------------------------------------------------------------------
 
-def test_the_checker_shows_one_suggestion_label_and_the_function_and_module():
+def test_the_plot_check_shows_the_one_blocked_message_whatever_the_text():
+    from utils.plot_text_check import STAT_FUNCTION_TEXT_BLOCKED, STAT_FUNCTION_TEXT_SUGGESTION
     [(key, what, suggestion)] = layer_text_problems("stat_function", {"fun": "lambda x: math.arcsin(x)"})
-    assert key == "fun"
-    assert "math.arcsin does not exist: math has asin, not arcsin" in what
-    assert suggestion == "Suggestion: write math.asin, or np.arcsin"
+    assert (key, what, suggestion) == ("fun", STAT_FUNCTION_TEXT_BLOCKED, STAT_FUNCTION_TEXT_SUGGESTION)
 
 
 def test_old_generic_refusals_still_show_a_fix():

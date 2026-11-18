@@ -176,7 +176,6 @@ def test_a_build_error_becomes_the_formula_error_with_a_suggestion():
 def test_one_label_and_a_separator_between_problems():
     problems = function_string_problems("lambda x: np.load('a') + open('f')")
     assert problems and not any("Fix: Suggestion:" in p for p in problems)
-    from viz_factory.geoms.core import function_string_namespace  # noqa: F401
 
 
 def test_two_problems_read_as_two_sentences():

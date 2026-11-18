@@ -88,7 +88,7 @@ implemented elements:
 ### Statistical Layers (geoms/core.py)
 - `stat_count`, `stat_bin`, `stat_summary`, `stat_boxplot`, `stat_ydensity`
 - `stat_smooth`, `stat_density`, `stat_qq`, `stat_ecdf`, `stat_unique`
-- `stat_function`: Renders a callable function over a range.
+- `stat_function`: BLOCKED FOR NOW when the function is written as text in a recipe (it would run recipe text as code, D-0274); the component stays registered. Suggestion: compute the values in a recipe step and draw them with `geom_line`.
 
 ### Registered Scales (scales/core.py)
 - **Continuous Color/Fill**: `scale_color_gradient`, `scale_color_gradient2`, `scale_color_gradientn`, `scale_color_distiller`, `scale_color_viridis_c`, `scale_color_continuous`, `scale_fill_continuous`, `scale_color_cmap`, `scale_color_cmap_d` (+ all `_fill_*` variants).
