@@ -21,25 +21,10 @@ from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
-from app.tests.test_shiny_session_restore import (_RECORD_NOTICES, _free, _notices, _seed, _show_card as _open_card)
+from app.tests.test_shiny_session_restore import (_RECORD_NOTICES, _free, _notices, _seed, _show_card)
 from app.tests.test_shiny_smoke import _INTERACTIVE_APP_FEATURES, _load_data_analysis_recipe, _wait_shiny
 
 _LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_APP_FEATURES", "developer")
-
-
-def _show_card(page: Page, label: str, button: str) -> None:
-    """Open the group of `label` and wait until its opening animation is over, so that the button can be clicked.
-
-    A group opens with a height animation of about 350 ms (class `collapsing`). While it runs the button is already visible, and
-    a click on it can land on the card behind it: the page then never sends the click and no notice comes (measured: 4 of 26
-    runs without this wait, the click hit `div.spv-panel` inside `.accordion-collapse.collapsing`). The wait is for the end of the
-    animation, not a pause."""
-    _open_card(page, label, button)
-    try:
-        page.wait_for_function("() => !document.querySelector('#session_groups_accordion .accordion-collapse.collapsing')",
-                               timeout=10_000)
-    except Exception as exc:  # noqa: BLE001
-        raise AssertionError(f"[{label}] a group of the session panel was still opening after 10 s") from exc
 
 
 def _wait_for_copies(sm, before: set, timeout_s: float = 15.0) -> list:
