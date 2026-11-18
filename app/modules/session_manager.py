@@ -22,7 +22,7 @@ Ghost slots (per session_key, under {location_4}/_sessions/{session_key}/)
 from __future__ import annotations
 
 # @deps
-# provides: class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps
+# provides: class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, function:extract_primary_keys, function:split_key_drops, function:key_drop_notice
 # consumes: app/modules/error_notice.py (notice — VERIF-FIX-2, lazy), libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)
 # consumes: libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/recipe_tiers.py (step_list) — extract_primary_keys reads joins.*.tier1.steps and tier2.steps (D-0250)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py
@@ -144,6 +144,52 @@ def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
             keys.update(left)
             keys.update(right)
     return sorted(keys)
+
+
+def split_key_drops(by_plot: dict[str, list[dict]], primary_keys) -> tuple[dict[str, list[dict]], list[dict]]:
+    """Separate the stored `drop_column` steps that name a join key from the rest of the per-plot audit stacks.
+
+    WHY: the audit refuses to drop a join key (D-0297) but a session saved before that rule, or written by hand, can hold such a
+    step, and Restore puts stored steps straight into the view. Returns `(kept, refused)`: `kept` is a copy of `by_plot` without those
+    steps (every other step, in its order, plots that become empty stay as empty lists); `refused` lists them, one entry per step
+    copy as `{"plot", "id", "column", "reason"}`. With no known join keys nothing is refused. The argument is not changed.
+    """
+    keys = set(primary_keys or [])
+    kept: dict[str, list[dict]] = {}
+    refused: list[dict] = []
+    for plot, nodes in (by_plot or {}).items():
+        kept[plot] = []
+        for node in nodes or []:
+            column = (node.get("params") or {}).get("column") if isinstance(node, dict) else None
+            if isinstance(node, dict) and node.get("node_type") == "drop_column" and column in keys:
+                refused.append({"plot": plot, "id": node.get("id", ""), "column": column, "reason": node.get("reason", "")})
+            else:
+                kept[plot].append(node)
+    return kept, refused
+
+
+def key_drop_notice(refused: list[dict], restored_ids: int) -> str:
+    """The sentence that tells the user which stored steps were not restored because they drop a join key, and why.
+
+    PROVISIONAL wording (D-0297 asks for plain words and the text of `ui_implementation_contract.md` 12g.3 goes to Eve with the other
+    texts). One entry per decision (a decision propagated to several plots has one copy per plot and one id): its column, the plots, the
+    reason the user wrote. `restored_ids` is how many other decisions were restored.
+    """
+    from app.modules.error_notice import notice
+    by_decision: dict[tuple, dict] = {}
+    for item in refused:
+        entry = by_decision.setdefault((item["id"] or f"{item['plot']}/{item['column']}", item["column"]),
+                                       {"column": item["column"], "plots": [], "reason": item["reason"]})
+        entry["plots"].append(item["plot"])
+        entry["reason"] = entry["reason"] or item["reason"]
+    parts = []
+    for entry in by_decision.values():
+        why = f", your reason was: \"{entry['reason']}\"" if entry["reason"] else ""
+        parts.append(f"dropping the column {entry['column']} (plot {', '.join(entry['plots'])}{why})")
+    n = len(by_decision)
+    what = (f"{n} step(s) of the saved session were not restored: {'; '.join(parts)}. A join key column cannot be dropped through the audit, "
+            f"because the tables are joined on it. The other {restored_ids} step(s) were restored")
+    return notice(what, "use a row filter or row exclusion instead; the saved file is not changed")
 
 
 def node_blocks_apply(node: AuditStep) -> bool:
