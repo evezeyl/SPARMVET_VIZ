@@ -49,17 +49,16 @@ def test_flat_plots_at_root_raises(tmp_path):
                 params: {}
         analysis_groups:
           group_a:
-            label: Group A
+            ui_label: Group A
             plots:
               plot_a:
-                label: Plot A
-                spec:
-                  target_dataset: my_schema
-                  mapping:
-                    x: col_a
-                  layers:
-                    - name: geom_bar
-                      params: {}
+                ui_label: Plot A
+                target_dataset: my_schema
+                mapping:
+                  x: col_a
+                layers:
+                  - name: geom_bar
+                    params: {}
     """)
     with pytest.raises(SystemExit) as exc_info:
         ConfigManager(str(data_analysis_recipe))
@@ -78,18 +77,48 @@ def test_valid_analysis_groups_no_flat_plots(tmp_path):
         joins: {}
         analysis_groups:
           group_a:
-            label: Group A
+            ui_label: Group A
             plots:
               plot_a:
-                label: Plot A
-                spec:
-                  target_dataset: my_schema
-                  mapping:
-                    x: col_a
-                  layers:
-                    - name: geom_bar
-                      params: {}
+                ui_label: Plot A
+                target_dataset: my_schema
+                mapping:
+                  x: col_a
+                layers:
+                  - name: geom_bar
+                    params: {}
     """)
     cm = ConfigManager(str(data_analysis_recipe))
     assert "plot_a" in cm.raw_config["plots"]
     assert "group_a" in cm.raw_config["analysis_groups"]
+
+
+def test_the_plot_entry_is_the_plot_config_and_a_spec_key_is_not_unnested(tmp_path):
+    """D-0237: a plot entry holds its content directly. The engine's loader no longer reads a `spec:` key (no shim);
+    the strict checker refuses it (P01)."""
+    path = _write_yaml(tmp_path, "entry_recipe.yaml", """
+        id: entry
+        data_schemas:
+          my_schema:
+            source: {type: local_tsv, path: fake.tsv}
+        joins: {}
+        plot_defaults: {theme: theme_bw}
+        analysis_groups:
+          group_a:
+            ui_label: Group A
+            plots:
+              plot_a:
+                ui_label: Plot A
+                target_dataset: my_schema
+                mapping: {x: col_a}
+                layers: [{name: geom_bar, params: {}}]
+              plot_old:
+                ui_label: Plot old
+                spec: {target_dataset: my_schema, mapping: {x: col_a}, layers: []}
+    """)
+    cm = ConfigManager(str(path))
+    assert cm.raw_config["plots"]["plot_a"]["target_dataset"] == "my_schema"
+    assert cm.raw_config["plots"]["plot_a"]["ui_label"] == "Plot A"
+    assert "target_dataset" not in cm.raw_config["plots"]["plot_old"]  # not unnested
+    assert cm.get_plot_config("group_a", "plot_a")["theme"] == "theme_bw"  # the defaults are merged under the entry
+    assert cm.get_plot_config("group_a", "plot_a")["mapping"] == {"x": "col_a"}

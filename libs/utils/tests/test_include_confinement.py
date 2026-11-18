@@ -16,11 +16,13 @@ RECIPE = """
 id: main
 analysis_groups:
   g:
-    label: G
+    ui_label: G
     plots:
       p:
-        label: P
-        spec: {target_dataset: s, mapping: {x: a}, layers: [{name: geom_point}]}
+        ui_label: P
+        target_dataset: s
+        mapping: {x: a}
+        layers: [{name: geom_point}]
 data_schemas:
   s:
     source: {type: local_tsv, path: a.tsv}

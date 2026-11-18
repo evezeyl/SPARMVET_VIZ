@@ -23,23 +23,23 @@ def codes(raw):
 
 def test_a_join_with_validate_in_tier2_of_a_join_is_refused():
     raw = copy.deepcopy(valid())
-    raw["joins"]["AB"]["steps"]["tier2"] = [dict(JOIN)]
+    raw["joins"]["AB"]["tier2"] = {"steps": [dict(JOIN)]}
     assert "ST05" in codes(raw)
 
 
 def test_a_join_with_validate_in_tier2_of_a_schema_is_refused():
     raw = copy.deepcopy(valid())
-    raw["data_schemas"]["A"]["wrangling"]["tier2"] = [dict(JOIN)]
+    raw["data_schemas"]["A"]["tier2"] = {"steps": [dict(JOIN)]}
     assert "ST05" in codes(raw)
 
 
 def test_a_join_with_validate_in_tier3_of_a_plot_is_refused():
     raw = copy.deepcopy(valid())
-    raw["analysis_groups"]["g"]["plots"]["p"]["steps"] = {"tier3": [dict(JOIN)]}
+    raw["analysis_groups"]["g"]["plots"]["p"]["tier3"] = {"steps": [dict(JOIN)]}
     assert "ST05" in codes(raw)
 
 
 def test_the_same_join_in_tier1_is_not_refused_for_its_tier():
     raw = copy.deepcopy(valid())
-    raw["joins"]["AB"]["steps"]["tier1"] = [dict(JOIN)]
+    raw["joins"]["AB"]["tier1"]["steps"] = [dict(JOIN)]
     assert "ST05" not in codes(raw)

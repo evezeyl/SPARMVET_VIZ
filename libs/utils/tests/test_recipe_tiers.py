@@ -14,13 +14,13 @@ STEP_B = {"action": "polars_sort", "by": ["group"], "descending": [False], "main
 def _recipe(*, t_tier2=None, j_tier2=None, targets=("T",), extra=None):
     raw = {
         "data_schemas": {
-            "T": {"wrangling": {"tier1": [], **({"tier2": t_tier2} if t_tier2 is not None else {})}},
-            "U": {"wrangling": {"tier1": []}},
+            "T": {"tier1": {"steps": []}, **({"tier2": {"steps": t_tier2}} if t_tier2 is not None else {})},
+            "U": {"tier1": {"steps": []}},
         },
         "joins": {"J": {"ingredients": [{"dataset_id": "T"}, {"dataset_id": "U"}],
-                        "steps": {"tier1": [], **({"tier2": j_tier2} if j_tier2 is not None else {})}}},
-        "analysis_groups": {"g": {"label": "G", "plots": {
-            f"p_{t}": {"spec": {"target_dataset": t}} for t in targets}}},
+                        "tier1": {"steps": []}, **({"tier2": {"steps": j_tier2}} if j_tier2 is not None else {})}},
+        "analysis_groups": {"g": {"ui_label": "G", "plots": {
+            f"p_{t}": {"target_dataset": t} for t in targets}}},
     }
     raw.update(extra or {})
     return raw
@@ -53,8 +53,8 @@ def test_an_unknown_collection_has_no_tier2():
 
 
 def test_metadata_and_additional_schemas_are_collections_too():
-    raw = {"metadata_schema": {"wrangling": {"tier1": [], "tier2": [STEP_A]}},
-           "additional_datasets_schemas": {"X": {"wrangling": {"tier1": [], "tier2": [STEP_B]}}}}
+    raw = {"metadata_schema": {"tier1": {"steps": []}, "tier2": {"steps": [STEP_A]}},
+           "additional_datasets_schemas": {"X": {"tier1": {"steps": []}, "tier2": {"steps": [STEP_B]}}}}
     assert tier2_steps(raw, "metadata_schema") == [STEP_A]
     assert tier2_steps(raw, "X") == [STEP_B]
 
@@ -65,11 +65,13 @@ def test_the_list_returned_is_a_new_list():
     assert tier2_steps(raw, "T") == [STEP_A]
 
 
-def test_step_list_reads_one_tier_of_a_container():
-    assert step_list({"tier1": [STEP_A], "tier2": [STEP_B]}, "tier2") == [STEP_B]
-    assert step_list({"tier1": [STEP_A]}, "tier2") == []
+def test_step_list_reads_the_steps_of_one_tier_of_a_table_or_a_join():
+    assert step_list({"tier1": {"steps": [STEP_A]}, "tier2": {"steps": [STEP_B]}}, "tier2") == [STEP_B]
+    assert step_list({"tier1": {"steps": [STEP_A]}}, "tier2") == []
+    assert step_list({"tier2": {"data_engine": "python-polars"}}, "tier2") == []  # no steps key: nothing to run
     assert step_list(None, "tier1") == []
-    assert step_list([STEP_A], "tier1") == []  # a flat list is not a step container (refused by the checker, S06/J07)
+    assert step_list({"tier1": [STEP_A]}, "tier1") == []  # a tier written as a list is the old shape (refused by the checker, S06/J07)
+    assert step_list([STEP_A], "tier1") == []
 
 
 # -- which tier-2 lists are run nowhere ---------------------------------------------------------
@@ -110,13 +112,13 @@ def test_an_empty_or_absent_join_tier2_is_never_unapplied():
 def test_without_tier2_removes_every_collection_tier2_and_nothing_else():
     raw = _recipe(t_tier2=[STEP_A], j_tier2=[STEP_B])
     stripped = without_tier2(raw)
-    assert "tier2" not in stripped["data_schemas"]["T"]["wrangling"]
-    assert "tier2" not in stripped["joins"]["J"]["steps"]
-    assert stripped["data_schemas"]["T"]["wrangling"]["tier1"] == []
+    assert "tier2" not in stripped["data_schemas"]["T"]
+    assert "tier2" not in stripped["joins"]["J"]
+    assert stripped["data_schemas"]["T"]["tier1"] == {"steps": []}
     assert stripped["analysis_groups"] == raw["analysis_groups"]
     # the recipe itself is not changed
-    assert raw["data_schemas"]["T"]["wrangling"]["tier2"] == [STEP_A]
-    assert raw["joins"]["J"]["steps"]["tier2"] == [STEP_B]
+    assert raw["data_schemas"]["T"]["tier2"] == {"steps": [STEP_A]}
+    assert raw["joins"]["J"]["tier2"] == {"steps": [STEP_B]}
 
 
 def test_without_tier2_gives_the_same_material_whatever_the_tier2_lists_hold():

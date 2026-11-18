@@ -23,8 +23,8 @@ CATALOG = {**CATALOGS, "actions": {**CATALOGS["actions"], **{name: {"context": [
 
 def recipe(steps, tier="tier1"):
     raw = copy.deepcopy(valid())
-    raw["data_schemas"]["A"]["wrangling"] = {"tier1": []}
-    raw["data_schemas"]["A"]["wrangling"][tier] = steps
+    raw["data_schemas"]["A"]["tier1"] = {"steps": []}
+    raw["data_schemas"]["A"][tier] = {"steps": steps}
     return raw
 
 
@@ -72,7 +72,7 @@ def test_a_later_step_that_fixes_the_order_silences_the_advice_and_a_later_one_t
 
 def test_the_advice_follows_into_tier_2_and_a_step_that_is_not_a_position_action_gets_none():
     raw = recipe([step("polars_unique", maintain_order=False)])
-    raw["data_schemas"]["A"]["wrangling"]["tier2"] = [step("polars_head")]
+    raw["data_schemas"]["A"]["tier2"] = {"steps": [step("polars_head")]}
     assert "ST13" in advice_codes(raw)
     assert "ST13" not in advice_codes(recipe([step("polars_unique", maintain_order=False), step("polars_select")]))
 
@@ -80,8 +80,8 @@ def test_the_advice_follows_into_tier_2_and_a_step_that_is_not_a_position_action
 def test_a_join_that_does_not_keep_an_order_gets_the_advice_and_one_that_does_not():
     def with_join(order):
         raw = copy.deepcopy(valid())
-        raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "left", "maintain_order": order}]
-        raw["joins"]["AB"]["steps"]["tier2"] = [step("polars_head")]
+        raw["joins"]["AB"]["tier1"]["steps"] = [{"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "left", "maintain_order": order}]
+        raw["joins"]["AB"]["tier2"] = {"steps": [step("polars_head")]}
         return advice_codes(raw)
     assert "ST13" in with_join("none")
     assert "ST13" not in with_join("left_right") and "ST13" not in with_join("left")

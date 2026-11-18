@@ -20,16 +20,18 @@ data_schemas:
     null_values: []
     strip: true
     input_fields: %s
-    wrangling: {tier1: []}
+    tier1: {steps: []}
 analysis_groups:
   g:
-    label: G
+    ui_label: G
     description: d
     plots:
       p:
-        label: P
+        ui_label: P
         description: d
-        spec: {target_dataset: A, mapping: {x: id}, layers: [{name: geom_col}]}
+        target_dataset: A
+        mapping: {x: id}
+        layers: [{name: geom_col}]
 """
 FIELDS_INLINE = "{id: {type: String, is_entity_key: true}}"
 
@@ -116,7 +118,7 @@ def test_the_wrapper_is_not_removed_silently(tmp_path):
 
 
 def test_an_unquoted_on_is_t07_with_the_path(tmp_path):
-    text = MINIMAL % FIELDS_INLINE + "joins:\n  J:\n    steps:\n      tier1:\n        - {action: polars_join, on: id}\n"
+    text = MINIMAL % FIELDS_INLINE + "joins:\n  J:\n    tier1:\n      steps:\n        - {action: polars_join, on: id}\n"
     raw, problems = load_recipe(write(tmp_path / "r.yaml", text))
     assert codes(problems) == ["T07"]
     assert "'on'" in problems[0].fix

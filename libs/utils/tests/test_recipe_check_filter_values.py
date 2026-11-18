@@ -22,7 +22,7 @@ def st12(raw):
 def with_schema_step(step, column_type="Int64"):
     raw = valid()
     raw["data_schemas"]["A"]["input_fields"]["n"] = {"type": column_type}
-    raw["data_schemas"]["A"]["wrangling"]["tier1"] = [step]
+    raw["data_schemas"]["A"]["tier1"]["steps"] = [step]
     return raw
 
 
@@ -31,7 +31,7 @@ def test_text_on_a_number_column_is_refused_in_a_schema(op, value):
     problems = st12(with_schema_step(filter_step("n", op, value)))
     assert len(problems) == 1
     p = problems[0]
-    assert p.severity == "E" and p.path == "data_schemas.A.wrangling.tier1[1].value"
+    assert p.severity == "E" and p.path == "data_schemas.A.tier1.steps[1].value"
     assert "'n'" in p.message and "whole numbers" in p.message and "Int64" in p.message and "text" in p.message
     assert p.fix
 
@@ -43,7 +43,7 @@ def test_a_number_on_a_number_column_is_accepted(op, value):
 
 def test_a_number_on_a_text_column_is_refused():
     raw = valid()
-    raw["data_schemas"]["A"]["wrangling"]["tier1"] = [filter_step("id", "eq", 5)]
+    raw["data_schemas"]["A"]["tier1"]["steps"] = [filter_step("id", "eq", 5)]
     p = st12(raw)
     assert len(p) == 1 and "text" in p[0].message and "'id'" in p[0].message
 
