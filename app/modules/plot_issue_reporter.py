@@ -1,7 +1,7 @@
 # @deps
-# provides: make_issue_reporter() -> report(entry, message, kind)
+# provides: make_issue_reporter() -> report(entry, message, kind), plot_warning_text(warning)
 # consumes: shiny.reactive, datetime
-# consumed_by: app/handlers/home_theater.py, app/handlers/session_handlers.py
+# consumed_by: app/handlers/home_theater.py, app/handlers/export_handlers.py (D-0269), app/handlers/session_handlers.py
 # doc: .claude/rules/ui_implementation_contract.md section 14 (reactive write discipline)
 # @end_deps
 """app/modules/plot_issue_reporter.py
@@ -25,6 +25,13 @@ from __future__ import annotations
 from datetime import datetime
 
 from shiny import reactive
+
+from utils.fix_text import fix_label
+
+def plot_warning_text(warning) -> str:
+    """The words of one plot warning, the same in HOME's Alerts panel and in the export bundle (D-0269)."""
+    return f"{warning.problem} {fix_label(warning.fix)}"
+
 
 ISSUE_CAP = 50   # entries kept in session_processing_issues
 ALERT_CAP = 20   # entries kept in the Alerts panel, as make_notifier keeps them

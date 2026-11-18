@@ -88,11 +88,12 @@ def test_the_handler_shows_the_problem_texts_of_the_import(tmp_path, monkeypatch
     notes, functions = [], {}
     monkeypatch.setattr(reactive, "Effect", lambda fn: functions.setdefault(fn.__name__, fn))
     monkeypatch.setattr(reactive, "event", lambda *a, **k: (lambda fn: fn))
+    monkeypatch.setattr(reactive, "effect", lambda fn=None, **k: fn if fn is not None else (lambda f: f))   # the priority effects
     monkeypatch.setattr(render, "ui", lambda fn=None, **k: fn if fn else (lambda f: f))
     monkeypatch.setattr(render, "download", lambda *a, **k: (lambda fn: fn))
     monkeypatch.setattr(ui, "notification_show", lambda message, **kw: notes.append((kw.get("type"), str(message))))
     export_handlers.define_export_server(
-        SimpleNamespace(import_bundle_upload=lambda: [{"datapath": str(upload)}]), lambda fn: fn, None,
+        SimpleNamespace(import_bundle_upload=lambda: [{"datapath": str(upload)}], export_field_change=None), lambda fn: fn, None,
         bootloader=bl, orchestrator=None, viz_factory=None, current_app_features=None, active_cfg=None,
         tier1_anchor=None, tier_toggle=None, home_state=None, safe_input=lambda i, k, d: d)
     with reactive.isolate():

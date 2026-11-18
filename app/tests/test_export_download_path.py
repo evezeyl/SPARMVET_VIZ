@@ -73,6 +73,7 @@ def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None, 
     monkeypatch.setattr(render, "download", download)
     monkeypatch.setattr(reactive, "Effect", lambda fn: fn)
     monkeypatch.setattr(reactive, "event", lambda *a, **k: (lambda fn: fn))
+    monkeypatch.setattr(reactive, "effect", lambda fn=None, **k: fn if fn is not None else (lambda f: f))   # the priority effects
     monkeypatch.setattr(ui, "notification_show", lambda message, **kw: notes.append((kw.get("type"), str(message))))
     real_run = subprocess.run
     monkeypatch.setattr(subprocess, "run", lambda args, *a, **k: subprocess.CompletedProcess(args, 1, "", "no render in this test")
@@ -80,15 +81,17 @@ def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None, 
     cfg = load_data_analysis_recipe(world.data_analysis_recipes_dir / "tiny.yaml").config
     if info is not None:
         cfg.raw_config["info"] = info
-    values = {"export_user_name": "test", "export_scope": "global", "export_preset": "web", "export_plot_format": "png",
+    # the pictures are read as PNG by most tests, so the harness chooses png; a value of None is "not touched" (the real
+    # safe_input gives the default then), which is how the tests of the default plot format run
+    values = {"export_user_name": "test", "export_preset": "web", "export_plot_format": "png",
               **(extra_values or {})}
     export_handlers.define_export_server(
-        SimpleNamespace(import_bundle_upload=None), lambda fn: fn, None,
+        SimpleNamespace(import_bundle_upload=None, export_field_change=None), lambda fn: fn, None,
         bootloader=_Bootloader(world, flags, deployment_contact), orchestrator=world.orch, viz_factory=VizFactory(),
         current_app_features=SimpleNamespace(get=lambda: "qa"), active_cfg=lambda: cfg,
         tier1_anchor=tier1_anchor or (lambda: pl.DataFrame().lazy()), tier_toggle=SimpleNamespace(get=lambda: "T2"),
         **{"home_state": None, **handler_kwargs},
-        safe_input=lambda _input, key, default: values.get(key, default), view_keys=lambda: view_keys)
+        safe_input=lambda _input, key, default: default if values.get(key) is None else values[key], view_keys=lambda: view_keys)
     return captured["fn"]
 
 

@@ -7,7 +7,7 @@ change the plot tab, apply an exploration filter, wait, and read the fields back
 reads what it records.
 
 The static check of the same defect is `test_export_box_survives_plot_tab.py` (it reads the source and cannot see the
-behaviour); `test_export_scope_choices.py` tests the Scope choices without a browser.
+behaviour). The Export panel has no scope choice (D-0292): every export holds all plots.
 
 Run: PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_export_inputs_survive_plot_tab.py -v
 """
@@ -50,22 +50,17 @@ def _fields(page: Page) -> dict:
         "report_format": page.locator("input[name=export_report_format]:checked").get_attribute("value"),
         "width": page.locator("#export_plot_width").input_value(),
         "height": page.locator("#export_plot_height").input_value(),
-        "scope": page.locator("input[name=export_scope]:checked").get_attribute("value"),
     }
 
 
-def _scope_label(page: Page, value: str) -> str:
-    return page.locator(f"input[name=export_scope][value={value}]").locator("xpath=..").inner_text().strip()
-
-
-def _wait_scope_follows(page: Page, plot_id: str) -> None:
-    """Wait until the Scope choices name the open plot: the update of the radio is over and the fields can be used."""
-    expect(page.locator("#export_scope")).to_contain_text(f"Active plot ({plot_id})", timeout=15_000)
+def _wait_plot_tab_open(page: Page) -> None:
+    """The plot tab change is over: the page is idle and the Export panel is on screen."""
     _wait_shiny(page)
+    expect(page.locator("#export_bundle_download")).to_be_visible(timeout=15_000)
 
 
-_DEFAULTS = {"label": "", "box": False, "preset": "web", "plot_format": "png", "report_format": "html",
-             "width": "8", "height": "5", "scope": "global"}
+_DEFAULTS = {"label": "", "box": False, "preset": "web", "plot_format": "svg", "report_format": "html",
+             "width": "8", "height": "5"}
 
 
 def _set_defaults(page: Page) -> None:
@@ -73,11 +68,10 @@ def _set_defaults(page: Page) -> None:
     page.locator("#export_user_name").fill("")
     page.locator("#export_include_reproducibility").uncheck(force=True)
     page.locator("input[name=export_preset][value=web]").check(force=True)
-    page.locator("input[name=export_plot_format][value=png]").check(force=True)
+    page.locator("input[name=export_plot_format][value=svg]").check(force=True)
     page.locator("input[name=export_report_format][value=html]").check(force=True)
     page.locator("#export_plot_width").fill("8")
     page.locator("#export_plot_height").fill("5")
-    page.locator("input[name=export_scope][value=global]").check(force=True)
     _wait_shiny(page)
 
 
@@ -102,45 +96,24 @@ def test_every_field_of_the_panel_survives_a_plot_tab_change(clean_panel):
     page = clean_panel
     _navigate_to_mlst_plot(page)
     _open_export_panel(page)
-    _wait_scope_follows(page, MLST_PLOT)
+    _wait_plot_tab_open(page)
     page.locator("#export_user_name").fill("keepme")
     page.locator("#export_include_reproducibility").check(force=True)
     page.locator("input[name=export_preset][value=publication]").check(force=True)
-    page.locator("input[name=export_plot_format][value=svg]").check(force=True)
+    page.locator("input[name=export_plot_format][value=pdf]").check(force=True)
     page.locator("input[name=export_report_format][value=pdf]").check(force=True)
     page.locator("#export_plot_width").fill("9")
     page.locator("#export_plot_height").fill("6")
-    page.locator("input[name=export_scope][value=plot]").check(force=True)
     _wait_shiny(page)
-    chosen = {"label": "keepme", "box": True, "preset": "publication", "plot_format": "svg", "report_format": "pdf",
-              "width": "9", "height": "6", "scope": "plot"}
+    chosen = {"label": "keepme", "box": True, "preset": "publication", "plot_format": "pdf", "report_format": "pdf",
+              "width": "9", "height": "6"}
     assert _fields(page) == chosen
-    assert MLST_PLOT in _scope_label(page, "plot")
 
     _navigate_to_phenotype_plot(page)          # another plot tab, in another group
-    _wait_scope_follows(page, PHENOTYPE_PLOT)
+    _wait_plot_tab_open(page)
     page.wait_for_timeout(3_000)               # a late reactive update would come in this time
     _wait_shiny(page)
     assert _fields(page) == chosen, "the Export panel lost what the user set when the plot tab changed"
-    # the choice of the Scope follows the open tab, the user's selection stays
-    assert PHENOTYPE_PLOT in _scope_label(page, "plot") and MLST_PLOT not in _scope_label(page, "plot")
-
-
-def test_a_chosen_group_scope_follows_the_group_of_the_open_tab(clean_panel):
-    page = clean_panel
-    _navigate_to_mlst_plot(page)
-    _open_export_panel(page)
-    _wait_scope_follows(page, MLST_PLOT)
-    page.locator("input[name=export_scope][value=group]").check(force=True)
-    _wait_shiny(page)
-    first = _scope_label(page, "group")
-    assert first.startswith("Active group (")
-    _navigate_to_phenotype_plot(page)
-    _wait_scope_follows(page, PHENOTYPE_PLOT)
-    page.wait_for_timeout(2_000)
-    second = _scope_label(page, "group")
-    assert second.startswith("Active group (") and second != first, (first, second)
-    assert _fields(page)["scope"] == "group"
 
 
 def test_the_fields_survive_a_filter_applied_to_the_data(clean_panel):
@@ -148,10 +121,10 @@ def test_the_fields_survive_a_filter_applied_to_the_data(clean_panel):
     page = clean_panel
     _navigate_to_mlst_plot(page)
     _open_export_panel(page)
-    _wait_scope_follows(page, MLST_PLOT)
+    _wait_plot_tab_open(page)
     page.locator("#export_user_name").fill("afterfilter")
     page.locator("#export_include_reproducibility").check(force=True)
-    page.locator("input[name=export_plot_format][value=svg]").check(force=True)
+    page.locator("input[name=export_plot_format][value=png]").check(force=True)
     _wait_shiny(page)
     _open_filters_panel(page)
     page.wait_for_function("() => Array.from(document.querySelectorAll('#fb_col option')).some(o => o.value === 'year')",
@@ -164,7 +137,7 @@ def test_the_fields_survive_a_filter_applied_to_the_data(clean_panel):
         page.locator("#filter_apply").click(); page.wait_for_timeout(2_000); _wait_shiny(page)
         _open_export_panel(page)
         got = _fields(page)
-        assert (got["label"], got["box"], got["plot_format"]) == ("afterfilter", True, "svg"), got
+        assert (got["label"], got["box"], got["plot_format"]) == ("afterfilter", True, "png"), got
     finally:
         _open_filters_panel(page)
         reset = page.locator("#filter_reset")
@@ -178,18 +151,18 @@ def test_a_ticked_box_after_a_tab_change_gives_the_reproducibility_part_and_the_
     page = clean_panel
     _navigate_to_mlst_plot(page)
     _open_export_panel(page)
-    _wait_scope_follows(page, MLST_PLOT)
+    _wait_plot_tab_open(page)
     page.locator("#export_user_name").fill("recorded")
     unticked = _download(page)
     readme_off = next(unticked.read(n).decode() for n in unticked.namelist() if n.endswith("README.txt"))
     assert "Reproducibility  : not included" in readme_off
-    assert "Plot format      : png" in readme_off
+    assert "Plot format      : svg" in readme_off
     assert not any("data_analysis_recipes_reproducibility/" in n for n in unticked.namelist())
 
     page.locator("#export_include_reproducibility").check(force=True)
     _wait_shiny(page)
     _navigate_to_phenotype_plot(page)
-    _wait_scope_follows(page, PHENOTYPE_PLOT)
+    _wait_plot_tab_open(page)
     page.wait_for_timeout(2_000)
     expect(page.locator("#export_include_reproducibility")).to_be_checked()
     ticked = _download(page)
