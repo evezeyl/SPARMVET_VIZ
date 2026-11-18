@@ -65,7 +65,7 @@ The `VizFactory (viz_factory.py)` now supports **partial data analysis recipes**
 
 | Layer Category | Default | Injection Condition |
 | :--- | :--- | :--- |
-| **Theme** | `theme_bw` | Injected if no `theme_*` or `element_*` layer present |
+| **Theme** | *(none)* | **No theme is injected** (D-0258): a plot with no theme written is drawn with plotnine's own default (`theme_gray`). Write `theme: theme_bw` (or another) in the plot entry or in `plot_defaults` |
 | **Coord** | `coord_cartesian` | Injected if no `coord_*` layer present |
 | **Facet** | `facet_null` | Injected if no `facet_*` layer present |
 | **Position** | `position_identity` | ggplot2 geom-level default; no VizFactory injection needed |
@@ -77,20 +77,19 @@ The `VizFactory (viz_factory.py)` now supports **partial data analysis recipes**
 ```yaml
 analysis_groups:
   quick_look:
-    label: "Quick Look"
+    ui_label: "Quick Look"
     plots:
       minimal_scatter:
-        label: "Minimal Scatter"
-        spec:
-          target_dataset: my_dataset
-          mapping:
-            x: column_a
-            y: column_b
-          layers:
-            - name: geom_point
-              params: {}
+        ui_label: "Minimal Scatter"
+        target_dataset: my_dataset
+        mapping:
+          x: column_a
+          y: column_b
+        layers:
+          - name: geom_point
+            params: {}
 ```
-The factory will automatically apply `theme_bw`, `coord_cartesian`, and `facet_null`.
+The factory will automatically apply `coord_cartesian` and `facet_null`; with no theme written the plot is drawn with plotnine's own default theme.
 
 ## 8. Components Deferred: Feature Not Yet Implemented in Plotnine
 The following components are confirmed absent from the installed Plotnine source build (pinned
@@ -112,7 +111,7 @@ This philosophy data analysis recipes in three ways:
 
 1. **Declarative Data analysis recipes are the Brush**: A user does not write Python code to produce a plot. They write a YAML step list that describes *what* they want to see. The factory translates intent into pixels.
 
-2. **Sensible Defaults Reduce Friction**: The Default Layer Injection Policy (Section 7 / ADR-024) ensures that minimal data analysis recipes produce coherent plots. A single `geom_point` layer is sufficient to get a professional `theme_bw` scatter plot by default.
+2. **Sensible Defaults Reduce Friction**: The Default Layer Injection Policy (Section 7 / ADR-024) ensures that minimal data analysis recipes produce coherent plots. A single `geom_point` layer is sufficient to get a scatter plot; with no theme written it is drawn in plotnine's own default theme (`theme_gray`).
 
 3. **Copy-Modify-Render Workflow**: The planned **Gallery & Example Pattern** (ADR-025) will provide a Visual Cookbook where each registered component is shown with its exact data analysis recipe and resulting image — enabling self-service plot customization.
 

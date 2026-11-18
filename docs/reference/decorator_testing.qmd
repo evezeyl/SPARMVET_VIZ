@@ -56,11 +56,12 @@ input_fields:
   value:
     type: Float64
     label: value
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_new_action
     columns: [value]
-  tier2: []
+tier2:
+  steps: []
 ```
 
 ### Step C: Add the case to the equality test

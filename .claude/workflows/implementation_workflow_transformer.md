@@ -28,7 +28,7 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
 Every transformation component MUST consist of a triplet in `libs/transformer/tests/data/`:
 
 1. **Data (`{action}_test.tsv`)**: The raw data (Tab-Separated).
-2. **Data analysis recipe (`{action}_test.yaml`)**: The data analysis recipe defining the `wrangling` block and `output_fields` contract.
+2. **Data analysis recipe (`{action}_test.yaml`)**: The data analysis recipe defining the `input_fields` and the `tier1` (and `tier2`) steps (there is no `output_fields`).
 3. **Artifact Generation**: Run the **Universal Wrangler Runner** (for Layer 1) or **Assembly Debugger** (for Layer 2):
 
     ```bash

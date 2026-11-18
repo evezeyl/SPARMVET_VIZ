@@ -71,33 +71,40 @@ Every data schema also states `null_values` and `strip` (see the authoring guide
 
 ---
 
-## 2. Wrangling Block Rules (Tiered Structure)
+## 2. Tier Rules (Tiered Structure)
 
-All wrangling logic must use the **tiered structure** (ADR-041). Every step is a registered action with the parameters its schema declares.
+All wrangling logic uses the **tiered structure** (ADR-041). A tier is a key of its own table, join or plot entry: the key (`tier1`), then the optional `data_engine`, then `steps` with the list. There is no `wrangling` key and no outer `steps` key. Every step is a registered action with the parameters its schema declares.
 
 ```yaml
-wrangling:
-  tier1:    # Relational foundations: runs once, shared across all plots
-    - action: polars_str_strip_chars
-      columns: [gene]
-    - action: polars_rename
-      mapping:
-        old_column: new_column
-  tier2:    # Reshaping: only on a schema that is plotted directly
-    - action: polars_unpivot
-      index: [sample_id]
-      variable_name: category
-      value_name: value
+data_schemas:
+  amr_data:
+    # ... label, source, null_values, strip, input_fields ...
+    tier1:      # Relational foundations: runs once, shared across all plots
+      data_engine: python-polars     # optional, first key; without it the data analysis recipe's data_engine applies
+      steps:
+        - action: polars_str_strip_chars
+          columns: [gene]
+        - action: polars_rename
+          mapping:
+            old_column: new_column
+    tier2:      # Reshaping: only on a schema that is plotted directly
+      steps:
+        - action: polars_unpivot
+          index: [sample_id]
+          variable_name: category
+          value_name: value
 ```
 
-- `tier1` is required (it may be `[]`).
+- `tier1` is required (its `steps` may be `[]`).
 - `tier2` is optional. On a schema that is only an ingredient of a join, `tier2` is an error (the join has its own tiers).
-- Both tiers contain **ordered lists** of action dicts. Order is deterministic.
+- A plot entry may have a `tier3` written the same way (the steps of the audit; the app does not read it yet).
+- `steps` is an **ordered list** of action dicts. Order is deterministic.
+- `data_engine` names the engine that runs the tier. The only data engine built is `python-polars`; any other value is refused with "no library for this engine in this app".
 
 **Identity Mode** (no wrangling needed):
 ```yaml
-wrangling:
-  tier1: []
+tier1:
+  steps: []
 ```
 
 ---
@@ -228,13 +235,13 @@ joins:
     ingredients:
       - dataset_id: amr_data
       - dataset_id: sample_metadata
-    steps: !include 2_test_data_ST22_dummy/wrangling/AMR_Profile_Joint.yaml
+    tier1: !include 2_test_data_ST22_dummy/assembly/AMR_Profile_Joint.yaml
     labels:
       Year: "Year of sampling"
 ```
 
 - `ingredients` is a **list of dicts** with `dataset_id` keys (not a flat list of strings).
-- `steps` holds the tier lists (`tier1`, optional `tier2`) and may be inline or `!include`-ed.
+- `tier1` (required) and `tier2` (optional) are written in the join, as in a table: a mapping with `steps` (and an optional `data_engine`). Each tier may be inline or `!include`-ed on its own.
 - The published columns are the last step of `tier1` (a plain `polars_select` or `polars_drop`). There is no `final_contract`.
 - `labels` is a `{column: text}` mapping of display names (display only).
 
@@ -252,21 +259,19 @@ data_schemas:
       type: local_tsv
       path: assets/test_data/amr_results.tsv
     input_fields: !include fragments/amr_input_fields.yaml
-    wrangling: !include fragments/amr_wrangling.yaml
+    tier1: !include fragments/amr_tier1.yaml     # the file holds data_engine (optional) and steps
 ```
 
-Fragment files **may optionally include their wrapper key** at the top level; the engine automatically unwraps it:
+A fragment file holds the content of the key it is included under and does not repeat the key. The data analysis recipe check refuses a file that repeats it (F01), so HOME does not accept such a data analysis recipe:
 
 ```yaml
-# amr_input_fields.yaml: both formats are valid:
-
-# Option A (flat, no wrapper):
+# amr_input_fields.yaml: the form to write:
 sample_id:
   original_name: sample_id
   type: String
   label: Sample ID
 
-# Option B (wrapped, engine strips the key automatically):
+# NOT this (the wrapper key repeats the include key; refused by the data analysis recipe check, F01):
 input_fields:
   sample_id:
     original_name: sample_id

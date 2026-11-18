@@ -13,6 +13,8 @@ directory_taxonomy:
   join: "A join is written under joins: with its ingredients and its tiers (tier1, tier2), each a mapping with steps. The published columns are the last step of tier1 (polars_select or polars_drop). Top-level data analysis recipe key: joins:."
   plots: "Contains the plot entries of analysis_groups that are written in their own file. The file holds the WHOLE entry (ui_label, ui_title, description, comment, taxonomy, the plot content, tier3); there is no spec key. It is included as `<plot_id>: !include <file>`."
 
+engines: "data_engine and plot_engine at the top of the data analysis recipe are the defaults of the whole data analysis recipe (required). A tier may name its own data_engine (first key of the tier) and a plot entry its own plot_engine (first key of the entry); without a key the data analysis recipe's value applies. The code runs the engine named. The list of engine names is open: the engines built today are python-polars (data) and python-plotnine (plots); any other value is refused with 'no library for this engine in this app' and the engines of the app. Every registered action and plot component carries the engine it belongs to; a step written in a block of another engine is refused (EN02)."
+
 constructor_standard:
   engine: "PyYAML with custom !include support via ConfigManager."
   relative_path: "Paths in !include must be relative to the data analysis recipe file."
@@ -72,7 +74,7 @@ analysis_groups_structure:
     #
     plot_defaults:
       palette: nvi_official              # Named palette from config/palettes.yaml (or matplotlib)
-      theme: theme_light                 # Registered theme component name (e.g. theme_bw)
+      theme: theme_light                 # Registered theme component name (e.g. theme_bw). With no theme anywhere, the plot is drawn with plotnine's own default (theme_gray): the app adds none.
       # default_font_family, facet_panel_spacing, legend_position and optimisation were removed (D-0242): they did nothing.
       # Font, legend and panel spacing are set through a theme layer in `layers:`; the axis-text adjustment is overridden per axis
       # with an element_text layer.

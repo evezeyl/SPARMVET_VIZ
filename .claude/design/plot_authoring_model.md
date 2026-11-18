@@ -141,7 +141,7 @@ the canonical model via the seam.
 | **Add a layer** | Component picker filtered by `context: ["plot"]` → `add_node` appends a layer node `{name, params:{}, comment:""}` and opens its form (Add==Edit, ADR-082 §5.1). |
 | **Mapping form** | A small dedicated form (NOT the component picker): column pickers for `x`, `y`, `fill`, `color`, `facet_by`. Mapping is `aes()`, not a component — it needs its own widget set. |
 | **Reorder** | Layer order is the plotnine `+` order. Drag/reorder updates `canonical["layers"]` order. |
-| **Commit** | `serialise_plot_spec(canonical)` → write the plot spec file's `spec:` block (its `mapping:` + `layers:`). **Never `wrangling.tier3`** (that legacy dump is the bug fixed here — see §8). |
+| **Commit** | `serialise_plot_spec(canonical)` → write the plot entry's content keys (its `mapping:` + `layers:` and the others; the entry has no `spec:` key since 2026-11-17). **Never `tier3`** (that legacy dump is the bug fixed here — see §8). |
 
 **Starter templates (replaces `factory_id` UX).** "Pick a chart type to begin" survives as a BLUEPRINT
 *template*, not a stored data analysis recipe key: choosing "Bar chart" seeds `layers=[{name: geom_col}]` + empty

@@ -362,9 +362,11 @@ All paths follow the basename mirroring standard (`rules_data_analysis_recipe_st
 # ── FILE: sample_amr_pipeline.yaml  (master data analysis recipe) ──────────────────────────
 
 id: sample_amr_pipeline
-type: sample
+spec_version: 1
+data_engine: python-polars
+plot_engine: python-plotnine
 info:
-  display_name: "Sample AMR Pipeline"
+  label: "Sample AMR Pipeline"
   description: "Sample metadata + AMR results"
 
 # ── Data Schemas ────────────────────────────────────────────────────────────────
@@ -374,16 +376,14 @@ data_schemas:
       type: local_tsv
       path: ./data/metadata.tsv  # placeholder — user updates path
     input_fields: !include 'sample_amr_pipeline/input_fields/metadata_schema_input_fields.yaml'
-    wrangling: !include 'sample_amr_pipeline/wrangling/metadata_schema_wrangling.yaml'
-    output_fields: {}  # identity passthrough — define in BLUEPRINT if needed
+    tier1: !include 'sample_amr_pipeline/wrangling/metadata_schema_wrangling.yaml'   # the file holds `steps` (D-0250)
 
   amr_schema:
     source:
       type: local_tsv
       path: ./data/amr_results.tsv  # placeholder — user updates path
     input_fields: !include 'sample_amr_pipeline/input_fields/amr_schema_input_fields.yaml'
-    wrangling: !include 'sample_amr_pipeline/wrangling/amr_schema_wrangling.yaml'
-    output_fields: {}
+    tier1: !include 'sample_amr_pipeline/wrangling/amr_schema_wrangling.yaml'
 
 # ── Join Data Analysis Recipes ──────────────────────────────────────────────────────────────
 joins:
@@ -392,7 +392,7 @@ joins:
     ingredients:
       - dataset_id: metadata_schema
       - dataset_id: amr_schema
-    steps: !include 'sample_amr_pipeline/wrangling/sample_amr_joint_wrangling.yaml'
+    tier1: !include 'sample_amr_pipeline/wrangling/sample_amr_joint_wrangling.yaml'
 
 # ── Analysis Groups — stub, define in BLUEPRINT ─────────────────────────────────
 analysis_groups: {}
@@ -485,9 +485,10 @@ tier1:
 **Key points:**
 - `data_schemas:` is the correct top-level key (not `input_schemas:`)
 - `source:` block is required per schema (user updates path before loading in BLUEPRINT)
-- Join defined via `ingredients:` list + `steps: !include` — never inline in the master
+- Join defined via `ingredients:` list + `tier1: !include` — never inline in the master
 - ID cleaning in `tier1` uses registered transformer actions (`regex_replace`, `mutate`, `drop_duplicates`, `null_if`, `drop_nulls`)
-- `output_fields: {}` = identity passthrough (ADR-014) — user adds contracts in BLUEPRINT
+- There is no `output_fields` (data analysis recipe format 1): the published columns of a join are the last step of its `tier1`; the bootstrapper writes `tier1` as an `!include` of a file that holds `steps`, and no `tier2` (an absent tier 2 means tier 2 equals tier 1)
+- The example above is a sketch: the real output also writes, for each table, the keys of data analysis recipe format 1 that it leaves out (`label`, `null_values`, `strip`)
 - `analysis_groups: {}` = stub — user fills in BLUEPRINT with plots and groups
 
 ---

@@ -23,34 +23,38 @@ The central engine for data wrangling and Phase 4 relational assembly. It enforc
 - **Reactive State (Tier 3)**: Transient views generated via Predicate Pushdown. Supports **Gated Reactivity** via the `btn_apply` trigger, allowing for side-by-side inspection in **Comparison Mode** (T2 reference vs T3 active).
 - **Path Authority**: Persistence locations (Tiers 1-3) are determined by `config/connectors`, decoupling hardware from the UI.
 
-## Data analysis recipe Syntax (Tiered Wrangling Mandate)
+## Data analysis recipe Syntax (Tiered Mandate)
 
-Following **ADR-024**, every `wrangling` entry in a data analysis recipe MUST use a nested key structure. This formalizes the separation between generic data cleaning and plot-specific preparation.
+Following **ADR-024**, every table and every join in a data analysis recipe MUST write its tiers as keys of its own. This formalizes the separation between generic data cleaning and plot-specific preparation. A tier is the key (`tier1`), then the optional `data_engine` (first key), then `steps` with the list; there is no `wrangling` key (removed 2026-11-17).
 
 ```yaml
-wrangling:
-  tier1: # THE TRUNK: Tidy, Clean, Wide Data (Shared foundation)
+tier1: # THE TRUNK: Tidy, Clean, Wide Data (Shared foundation)
+  data_engine: python-polars   # optional; without it the data analysis recipe's data_engine applies
+  steps:
     - action: polars_rename
       mapping: { Sample_ID: sample_id }
     - action: polars_str_strip_chars
       columns: [gene_slug]
 
-  tier2: # THE BRANCH: Plot-Ready, Long Data (Optional; only on a schema plotted directly)
+tier2: # THE BRANCH: Plot-Ready, Long Data (Optional; only on a schema plotted directly)
+  steps:
     - action: polars_unpivot
       index: [sample_id, country]
       'on': [n50, total_length]
       variable_name: metric
 ```
 
-Joins are written in the `joins` block, where `steps` has its own `tier1` list:
+**The engine.** The library is the data engine `python-polars`. Every registered action carries the field `engine` (set by the decorator, default `python-polars`; an engine the app has no library for is refused at registration), and `engine_python_polars.py` names the engine and exposes `ENTRY` (`DataEngineEntry`: the wrangler and the assembler). `app/modules/engine_registry.py` joins the entry files; the orchestrator chooses the entry by the tier's `data_engine`, else the data analysis recipe's. `DataWrangler.tier_steps(body, "tier1")` reads the written shape of a tier and refuses an older one (`wrangling`, a list) with a message.
+
+Joins are written in the `joins` block, where `tier1` (and `tier2`) are written the same way:
 
 ```yaml
 joins:
   Combined:
     label: Combined table
     ingredients: [{dataset_id: Anchor}, {dataset_id: metadata}]
-    steps:
-      tier1:
+    tier1:
+      steps:
         - action: polars_join
           right_ingredient: metadata
           'on': [sample_id]
@@ -64,7 +68,7 @@ joins:
 
 - **The Boolean Shield**: To prevent the YAML parser from misinterpreting `on:` as `True`, always write `'on':` with quotes; the data analysis recipe checker refuses an unquoted `on`.
 - **Relational Strategy**: When joining multiple 'Long' format datasets (e.g., AMR + Virulence), prefer a semi or anti `polars_join` (`how: semi` / `how: anti`) or a tier-2 aggregation to keep the row count manageable. A non-key column carried by both tables of a join is refused (Polars would silently rename one).
-- **Flat-list rejection (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** A `wrangling:` value that is a flat list (e.g. `wrangling: [{action: ...}]`) is refused by the data analysis recipe checker (and by `_resolve_tier()` with a `DataAnalysisRecipeError`). Migrate to the tiered structure above.
+- **Flat-list rejection (LEGACY-FLAT-WRANGLING-1, Phase 34, 2026-05-22):** A tier written as a list (e.g. `tier1: [{action: ...}]`) and the old container `wrangling:` are refused by the data analysis recipe checker (and by `DataWrangler.tier_steps()` with a `DataAnalysisRecipeError`; before 2026-11-17 `_resolve_tier()`). Migrate to the tiered structure above.
 
 ### Identity Logic (ADR-014)
 
@@ -76,7 +80,7 @@ joins:
 To maximize performance when iterating on complex pipelines, the `DataAssembler (data_assembler.py)` implements a **Short-Circuit Execution** pattern backed by **Decision Metadata Hashing**.
 
 - **The Logic**: The orchestrator (`app/modules/orchestrator.py`) compares the chained key stored in the Parquet file's metadata (`sparmvet_tier1_key`, `sparmvet_tier2_key`, ADR-089) with the current key, before any ingestion.
-- **Automated Freshness Check**: The key covers the resolved data analysis recipe (every included file), the data content and the engine version. If it matches, joins and wrangling are skipped. If it differs, the stage is recomputed. A Tier 2 change recomputes only Tier 2. The file is written with Polars, the key inside the file metadata.
+- **Automated Freshness Check**: The key covers the resolved data analysis recipe (every included file), the data content, the engine version (cache version 5) and the engine of the tier (an argument of the key of that tier; the plot engine is in no table key, D-0240). If it matches, joins and wrangling are skipped. If it differs, the stage is recomputed. A Tier 2 change recomputes only Tier 2. The file is written with Polars, the key inside the file metadata.
 
 ## I/O Summary
 

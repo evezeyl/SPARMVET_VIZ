@@ -118,23 +118,28 @@ def handle_mygeom(p, spec):
 
 ## 1. Anatomy of a Plot Data Analysis Recipe
 
-Every plot spec in the dashboard follows this exact skeleton (ADR-083 grammar-of-graphics format;
-canonical reference: `.claude/rules/rules_data_analysis_recipe_structure.md §8`). Aesthetics live under
-`mapping:`; visual layers live in an ordered `layers:` list, each a `{name, params}` pair:
+Every plot entry in the dashboard follows this exact skeleton (ADR-083 grammar-of-graphics format;
+canonical reference: `.claude/rules/rules_data_analysis_recipe_structure.md §8`). The content of the plot is
+written in the entry itself (there is no `spec:` key). Aesthetics live under `mapping:`; visual layers live in
+an ordered `layers:` list, each a `{name, params}` pair. The text of the figure (its title too) is written only in
+a `labs` layer; `ui_label` is the short name of the plot's tab and `ui_title` (optional) the longer name used by the report:
 
 ```yaml
-spec:
-  target_dataset: AMR_Profile_Joint
-  mapping:
-    x: collection_year
-    y: resistance_score
-    color: species
-  layers:
-    - name: geom_point
-      params:
-        alpha: 0.7
-    - name: theme_minimal
-      params: {}
+ui_label: Resistance by year
+target_dataset: AMR_Profile_Joint
+mapping:
+  x: collection_year
+  y: resistance_score
+  color: species
+layers:
+  - name: geom_point
+    params:
+      alpha: 0.7
+  - name: labs
+    params:
+      title: "Resistance score by year"
+  - name: theme_minimal
+    params: {}
 ```
 
 The `layers` list acts as a painter's canvas. Layers are painted exactly in the order they are listed.

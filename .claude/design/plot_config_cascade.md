@@ -42,7 +42,7 @@ Sole use across data analysis recipes and gallery data analysis recipes (grep co
 
 ```yaml
 plot_defaults:
-  default_font_family: "Liberation Sans"
+  default_font_family: "Liberation Sans"    # (HISTORICAL: removed 2026-11-17, D-0242: nothing applied it)
 ```
 
 The `palette:` key was specified in `rules_viz_factory.md §6b` and `rules_data_analysis_recipe_structure.md §10` as a supported `plot_defaults` key but is not currently used in any committed data analysis recipe. The block is essentially undocumented and unenforced — data analysis recipe authors guess.
@@ -56,12 +56,12 @@ Resolution order (highest wins):
 | Tier | Source | Authority over | Modifiable by |
 |---|---|---|---|
 | **L5** | T3 `aesthetic_override` for the active plot | All visual aesthetics (fill, colour, alpha, shape, size, palette) | Analyst (T3 sandbox) |
-| **L4** | Plot `spec:` — `analysis_groups.<grp>.plots.<id>.spec` | Aesthetics, mapping, layers, scales, theme, facet | Data analysis recipe author |
+| **L4** | The plot entry — `analysis_groups.<grp>.plots.<id>` (its content keys; the entry has no `spec:` since 2026-11-17) | Aesthetics, mapping, layers, scales, theme, facet | Data analysis recipe author |
 | **L3** | Optimisation layer (computed from data + spec at render time) | Visual-only (axis text rotation, font sizing, density-aware layout) | None — emitted by VizFactory |
 | **L2** | Data analysis recipe `plot_defaults:` block | Cross-plot defaults (palette, theme, font_family) | Data analysis recipe author |
-| **L1** | VizFactory built-in defaults | Last-resort fallbacks (`theme_bw`, `coord_cartesian`, `facet_null`) | Developer |
+| **L1** | VizFactory built-in defaults | Last-resort fallbacks (`coord_cartesian`, `facet_null`; no theme) | Developer |
 
-> **DECIDED 2026-11-18 (D-0258), not built yet:** without a theme in the recipe the figure uses plotnine's own default (`theme_gray`). The built-in `theme_bw` is removed in the big recipe change (branch `task/engine-keys`). Until that is merged, the code still injects `theme_bw`. Source: channel M270.
+> **DECIDED 2026-11-18 (D-0258), BUILT on branch `task/engine-keys`:** without a theme in the data analysis recipe the figure uses plotnine's own default (`theme_gray`). The built-in `theme_bw` is removed (`_L1_LAYERS` in `plot_config_resolver.py` holds `coord_cartesian` and `facet_null` only; the resolved theme name of a plot with no theme is `PLOTNINE_DEFAULT_THEME`). The migration wrote `theme_bw` once in the `plot_defaults` of every data analysis recipe and bundle that had a plot with no theme, so the pictures are identical. Source: channel M270.
 
 **Conflict rule:** every key resolves to exactly one source. When two tiers compete for the same key (e.g. L5 sets `palette: foo`, L4 sets `palette: bar`), the higher tier wins silently — there is no merge-of-values, only winner-takes-all per key. The exception is the `layers:` list, which is **append-then-deduplicate** (see §4).
 
@@ -132,9 +132,9 @@ Where `layer_kind` is the prefix family (`theme_*`, `coord_*`, `facet_*`, `scale
 
 `geom_*` and `stat_*` layers are **never deduplicated** — they accumulate. A spec adding `geom_text` on top of a `geom_bar` keeps both.
 
-> **DECIDED 2026-11-18 (D-0258), not built yet:** the L1 theme `theme_bw` named below is removed in the big recipe change (branch `task/engine-keys`); without a theme in the recipe the figure uses plotnine's own default (`theme_gray`). Until that is merged, the code still injects `theme_bw`. Source: channel M270.
+> **DECIDED 2026-11-18 (D-0258), BUILT:** the L1 theme `theme_bw` named below is removed; without a theme in the data analysis recipe the figure uses plotnine's own default (`theme_gray`). Source: channel M270.
 
-**Default injection** (currently inline at end of `render()`) is moved into L1: if no `theme_*` layer survives dedup, L1 contributes `theme_bw`; same for `coord_cartesian` and `facet_null`. The injection becomes part of resolution rather than a render-time afterthought.
+**Default injection** (currently inline at end of `render()`) is moved into L1: if no `theme_*` layer survives dedup, L1 contributes no theme (see the note above; it contributed `theme_bw` before 2026-11-18); `coord_cartesian` and `facet_null` are contributed when none is written. The injection becomes part of resolution rather than a render-time afterthought.
 
 ---
 
@@ -171,7 +171,7 @@ Reserved hooks for future optimisation work, **not implemented in the initial ca
 | Facet panel spacing | `facet_wrap` with `n_facets > 6` | `theme(panel_spacing=0.4)` |
 | Legend ncol auto | discrete fill/color with `n_levels > 8` | `guides(fill=guide_legend(ncol=2))` |
 
-Each is opt-in via a future `optimisation:` block in `plot_defaults` (e.g. `optimisation: {density_jitter: true}`) — disabled-by-default to keep current visual behaviour stable. The cascade design accommodates this; the heuristics themselves are out of scope for VIZFAC-PLOT-CASCADE-1.
+Each would be opt-in, disabled by default to keep current visual behaviour stable. The `optimisation:` block of `plot_defaults` that this paragraph used to name was removed on 2026-11-17 (D-0242: it did nothing); a switch would need a new decision and a new key. The cascade design accommodates this; the heuristics themselves are out of scope for VIZFAC-PLOT-CASCADE-1.
 
 ### 5d. Path B (two-pass render) — accepted long-term direction
 
@@ -223,25 +223,20 @@ plot_defaults:
   # Visual style
   palette:             string        # name from palette registry; default for fill+color
   theme:               string        # registered theme component name (e.g. theme_bw)
-  default_font_family: string        # plotnine default font (e.g. "Liberation Sans")
+  layers:              list          # layers added to every plot (a theme_custom layer sets font, legend, spacing)
+  random_state:        integer       # the one seed of the data analysis recipe's random layers
 
-  # Layout
-  facet_panel_spacing: number        # 0–1, plotnine default 0.05; bumps for dense facets
-  legend_position:     string        # "right" | "top" | "bottom" | "left" | "none"
-
-  # Optimisation toggles (reserved — see §5c; default off)
-  optimisation:
-    auto_axis_text:    bool          # default true (current behaviour)
-    density_jitter:    bool          # default false
-    panel_spacing:     bool          # default false
-    legend_ncol:       bool          # default false
+  # REMOVED 2026-11-17 (D-0220, D-0242), refused by the checker (PD02): default_font_family, facet_panel_spacing,
+  # legend_position, optimisation. They did nothing. Font, legend position and panel spacing are set through a theme layer;
+  # the automatic axis-text adjustment (§5) has no switch of its own: an `element_text` layer for an axis overrides it.
+  # The optimisation toggles below (§5c) stay reserved hooks and are not data analysis recipe keys.
 ```
 
 Unknown keys in `plot_defaults` emit a `PipelineError` (`severity: warning`, `who: data_analysis_recipe_author`, `surface: notification`). They do not crash — data analysis recipe authors can layer experimental keys without breakage — but the warning prevents typos from going silent.
 
 ### 7b. Per-plot override
 
-The `spec:` block accepts the same keys as `plot_defaults`. A plot that wants a different palette, theme, or optimisation toggle declares it locally; resolution rules from §2 apply.
+The plot entry accepts the keys of `plot_defaults` that apply to one plot (`palette`, `theme`). A plot that wants a different palette or theme declares it locally; resolution rules from §2 apply.
 
 ---
 
@@ -316,10 +311,10 @@ Each tier-conflict combination is asserted in `libs/viz_factory/tests/test_plot_
 
 | Test | L5 | L4 | L3 | L2 | L1 | Expected |
 |---|---|---|---|---|---|---|
-| `theme_only_l1` | — | — | — | — | `theme_bw` | `theme_bw`, provenance L1 |
-| `theme_l2_overrides_l1` | — | — | — | `theme_dashboard` | `theme_bw` | `theme_dashboard`, L2 |
-| `theme_l4_overrides_l2` | — | `theme_void` | — | `theme_dashboard` | `theme_bw` | `theme_void`, L4 |
-| `theme_l5_overrides_l4` | `theme_minimal` | `theme_void` | — | `theme_dashboard` | `theme_bw` | `theme_minimal`, L5 |
+| `theme_only_l1` | — | — | — | — | (no theme) | none written: plotnine's own default (`theme_gray`), provenance `plotnine` |
+| `theme_l2_overrides_l1` | — | — | — | `theme_dashboard` | — | `theme_dashboard`, L2 |
+| `theme_l4_overrides_l2` | — | `theme_void` | — | `theme_dashboard` | — | `theme_void`, L4 |
+| `theme_l5_overrides_l4` | `theme_minimal` | `theme_void` | — | `theme_dashboard` | — | `theme_minimal`, L5 |
 | `axis_text_l3_when_no_l4` | — | mapping only | rotation 45 | — | — | rotation 45, L3 |
 | `axis_text_l4_suppresses_l3` | — | `element_text(rotation=0)` | rotation 45 | — | — | rotation 0, L4 |
 | `palette_l5_mutex_warns` | `fill_color="#ff0", fill_palette="viridis"` | — | — | — | — | palette `viridis`, warning emitted |

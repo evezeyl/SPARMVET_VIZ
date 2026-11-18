@@ -73,8 +73,8 @@ data_schemas:
       predicted_phenotype:
         type: String
         label: "Predicted resistance phenotype"
-    wrangling:
-      tier1: []
+    tier1:
+      steps: []
 ```
 
 ### Key fields
@@ -86,7 +86,7 @@ data_schemas:
 | `null_values` | Yes | Texts that mean "missing" (`[]` for none); there is no default, see below |
 | `strip` | Yes | `true` or `false`: strip spaces around the text before the missing texts are applied |
 | `input_fields` | Yes | Columns to ingest: the slug must match the exact TSV header; each has a `type` that is a Polars name (`String`, `Int64`, `Float64`, `Categorical`) |
-| `wrangling.tier1` | Yes | Cleaning steps (can be empty `[]`) |
+| `tier1` | Yes | The first tier: `steps` is the list of cleaning steps (can be empty `[]`). An optional `data_engine` is its first key; without it the data analysis recipe's `data_engine` applies |
 
 ::: {.callout-warning}
 **Column names must match exactly.** If your TSV has a header `Sample_ID` but your data analysis recipe says `sample_id`, the column will be silently skipped. Use `head -1 yourfile.tsv` to inspect the exact headers before writing `input_fields`.
@@ -127,30 +127,32 @@ input_fields:
     null_values: ['', 'NA']
 ```
 
-### Cleaning with tier1 wrangling
+### Cleaning with tier1 steps
 
-The `tier1` list is a sequence of cleaning actions. Common ones:
+The `steps` of `tier1` are a sequence of cleaning actions. Common ones (the examples show the list under `steps:`):
 
 **Filter rows by numeric threshold.** `na` is required: `remove` drops the rows where the value is missing, `keep` keeps them. Nothing is decided for you.
 
 ```yaml
 tier1:
-  - action: modif_filter
-    column: identity
-    op: ge
-    value: 90
-    na: remove
+  steps:
+    - action: modif_filter
+      column: identity
+      op: ge
+      value: 90
+      na: remove
 ```
 
 **What `na` does, and what empty, NaN and "NA" mean.** A filter follows Polars: every operator removes a row whose value is missing, `!=` and "not in" included. So `na: remove` is what Polars does, and `na: keep` is our named choice that adds the missing rows back (Polars `ne_missing` and `is_in(..., nulls_equal=True)` do the same for equality filters; Polars has no switch for `>`, `>=`, `<`, `<=` and between). `na` keeps or removes only rows with **no value**: an empty cell, read as null. A **NaN** is a number (a failed calculation), larger than every number, so `> 1` keeps it and `< 1` removes it; `na` never touches it, and it is counted apart ("N rows have a failed calculation"). The text **`NA`** is a plain value, not missing, unless the data schema lists it in `null_values`. Read the count ("N rows have no value in the column: they are kept / removed") before you choose.
 
 ```yaml
 tier1:
-  - action: modif_filter
-    column: country
-    op: ne
-    value: SE
-    na: keep
+  steps:
+    - action: modif_filter
+      column: country
+      op: ne
+      value: SE
+      na: keep
 ```
 
 With `na: keep` the rows with no country stay; with `na: remove` (Polars) they go, although they are not Sweden.
@@ -201,8 +203,8 @@ joins:
     ingredients:
       - dataset_id: Summary
       - dataset_id: Metadata
-    steps:
-      tier1:
+    tier1:
+      steps:
         - action: polars_join
           right_ingredient: Metadata
           'on': [sample_id]
@@ -212,7 +214,7 @@ joins:
           exprs: [sample_id, Year, Country]
 ```
 
-The `steps` of a join are written in `tier1`. The last step is a `polars_select` (or `polars_drop`) that publishes the columns of the joined table, in the order of its list. `how` and `maintain_order` are required: the order of the rows is part of your data analysis recipe.
+The steps of a join are written in its `tier1` (and `tier2`), the same way as in a table. The last step is a `polars_select` (or `polars_drop`) that publishes the columns of the joined table, in the order of its list. `how` and `maintain_order` are required: the order of the rows is part of your data analysis recipe.
 
 ::: {.callout-warning}
 **`'on'` must be quoted.** In YAML, `on` without quotes is read as `True` (a boolean). Always write it as `'on': [sample_id]` with single quotes; `on` takes a list.
@@ -283,20 +285,21 @@ Plots live inside `analysis_groups`. Each plot references the joined table produ
 ```yaml
 analysis_groups:
   AMR_Insight:
-    label: "AMR Profiling"
+    ui_label: "AMR Profiling"
     plots:
       resistance_by_year:
-        label: "Resistance by Year"
-        spec:
-          target_dataset: AMR_Profile_Joint
-          mapping:
-            x: Year
-            fill: Multiresistant
-          layers:
-            - name: geom_bar
-              params: {}
-          theme: theme_light
+        ui_label: "Resistance by Year"
+        target_dataset: AMR_Profile_Joint
+        mapping:
+          x: Year
+          fill: Multiresistant
+        layers:
+          - name: geom_bar
+            params: {}
+        theme: theme_light
 ```
+
+The content of the plot is written in the plot entry itself: there is no `spec:` key. `ui_label` is the short name of the tab; the optional `ui_title` is a longer name that the report uses. A plot that is long can be put in its own file, which then holds the whole entry, and is included as `resistance_by_year: !include my_recipe/plots/resistance_by_year.yaml`.
 
 ### Key fields
 
@@ -308,7 +311,7 @@ analysis_groups:
 | `mapping.fill` | Column for bar/area fill color |
 | `mapping.facet_by` | Column to split into faceted panels |
 | `layers[0].name` | Primary plot type — e.g. `geom_bar`, `geom_boxplot`, `geom_point` |
-| `theme` | Visual theme — e.g. `theme_light`, `theme_bw`, `theme_minimal` |
+| `theme` | Visual theme — e.g. `theme_light`, `theme_bw`, `theme_minimal`. With no theme written the plot is drawn with plotnine's own default (`theme_gray`) |
 
 ### Common plot types
 
@@ -322,6 +325,8 @@ analysis_groups:
 | `geom_tile` | Heatmap (requires `x`, `y`, and `fill`) |
 
 ### Adding labels
+
+The text of the figure (its title, the axis names, the legend names) is written only in a `labs` layer; there is no `title:` key in the plot.
 
 ```yaml
 layers:

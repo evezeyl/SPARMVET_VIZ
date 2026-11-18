@@ -29,12 +29,13 @@ Think of your data as a tree:
 Use this when you need to reshape data (e.g., splitting multiple gene hits) before plotting. `tier2` is applied to a schema that is plotted directly (the plot's `target_dataset` names the schema).
 
 ```yaml
-wrangling:
-  tier1: # Relational Anchor (The Trunk)
+tier1: # Relational Anchor (The Trunk): a key of the schema, then `steps`
+  steps:
     - action: polars_rename
       mapping: { raw_id: Sample_ID }
 
-  tier2: # Plot Preparation (The Branch)
+tier2: # Plot Preparation (The Branch)
+  steps:
     - action: polars_str_split
       columns: [virulence_raw]
       by: ","
@@ -48,15 +49,15 @@ wrangling:
 ```
 
 ### Template B: Tier 1 Only, a join (Simple Table/Plot)
-Use this when the data is already in the correct format after the join. The join steps belong to the `joins` entry (`steps:`), and the last step publishes the columns.
+Use this when the data is already in the correct format after the join. The join steps belong to the `tier1` of the `joins` entry (a mapping with `steps`), and the last step publishes the columns.
 
 ```yaml
 joins:
   Combined:
     label: Combined table
     ingredients: [{dataset_id: amr_data}, {dataset_id: sample_metadata}]
-    steps:
-      tier1:
+    tier1:
+      steps:
         - action: polars_join
           right_ingredient: sample_metadata
           'on': [sample_id]
@@ -64,7 +65,7 @@ joins:
           maintain_order: left_right
         - action: polars_select
           exprs: [sample_id, gene, Country]
-      # tier2: omitted (Identity Logic)
+    # tier2: omitted (Identity Logic)
 ```
 
 ## Why this matters

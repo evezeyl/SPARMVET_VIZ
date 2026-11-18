@@ -21,24 +21,28 @@ The `VizFactory (viz_factory.py)` is agnostic to the analytical depth of the inc
 
 - **Visual Cookbook Integration (ADR-033)**: Supports educational split-pane documentation, pairing technical data analysis recipes with structured Markdown guidance for enhanced visual literacy.
 
-## Canonical Plot Spec Format (ADR-083)
+## Canonical Plot Format (ADR-083)
 
-As of ADR-083, all plot specs must use the grammar-of-graphics format: explicit `geom_*` layers in `layers:`, aesthetics in `mapping:`. The `factory_id` shorthand key is **removed** — any spec containing it receives a hard `VisualizationError` at normalisation time.
+As of ADR-083, all plots use the grammar-of-graphics format: explicit `geom_*` layers in `layers:`, aesthetics in `mapping:`. The `factory_id` shorthand key is **removed** — any plot containing it receives a hard `VisualizationError` at normalisation time.
+
+Since 2026-11-17 the content of a plot is written in the plot entry itself (`analysis_groups.<group>.plots.<id>`): there is no `spec:` key. The keys that belong to the app and not to the plot content (`plot_engine`, `ui_label`, `ui_title`, `description`, `comment`, `taxonomy`, `tier3`) are listed as `entry_keys` of `libs/utils/src/utils/recipe_spec.yaml`; the factory takes the other keys of the entry as the content of the plot and refuses a key that is on neither list. The text of the figure, its title too, is written only in the `labs` layer (there is no `title:` key).
 
 ```yaml
-spec:
-  target_dataset: AMR_Profile_Joint
-  mapping:
-    x: Year
-    fill: Multiresistant
-  theme: theme_light
-  layers:
-    - name: geom_bar
-      params: {}
-    - name: labs
-      params:
-        title: "Resistance by Year"
+ui_label: Resistance by Year        # the short name of the tab (not read by the factory)
+target_dataset: AMR_Profile_Joint
+mapping:
+  x: Year
+  fill: Multiresistant
+theme: theme_light
+layers:
+  - name: geom_bar
+    params: {}
+  - name: labs
+    params:
+      title: "Resistance by Year"
 ```
+
+**The engine.** This library is the plot engine `python-plotnine`: every registered plot component carries the field `engine` (set by the decorator, default `python-plotnine`; an engine the app has no library for is refused at registration), and the entry file `engine_python_plotnine.py` names the engine and exposes `ENTRY` (`PlotEngineEntry`). The app chooses the library by the value of `plot_engine` (the plot entry's own, else the data analysis recipe's); the library does not import another engine library. The theme as applied (component names and values, or plotnine's own default) is reported per plot for the export record (`effective_run.yaml`).
 
 **Migration:** If you have data analysis recipes that still use `factory_id`, run:
 
@@ -59,10 +63,10 @@ The resolver is the single merge point for all configuration tiers. It implement
 | Tier | Source | Who controls |
 |---|---|---|
 | **L5** | T3 `aesthetic_override` for the active plot | Analyst (T3 sandbox) |
-| **L4** | Plot `spec:` in `analysis_groups` | Data analysis recipe author |
+| **L4** | The plot entry in `analysis_groups` (its content keys) | Data analysis recipe author |
 | **L3** | Optimisation layer (axis text, panel spacing — visual only) | VizFactory |
 | **L2** | Data analysis recipe `plot_defaults:` block | Data analysis recipe author |
-| **L1** | VizFactory built-in defaults (`theme_bw`, `coord_cartesian`, `facet_null`) | Developer |
+| **L1** | VizFactory built-in defaults (`coord_cartesian`, `facet_null`; no theme: a plot with no theme written is drawn with plotnine's own default, `theme_gray`, D-0258) | Developer |
 
 `layers:` lists are deduplicated by `(layer_kind, target)` — highest tier wins for the same kind. `geom_*`/`stat_*` layers are never deduplicated (stack in order).
 
@@ -106,7 +110,7 @@ The `VizFactory (viz_factory.py)` implements a tiered default injection policy t
 
 1. **Plot-Level Specs**: Explicit layers defined in the plot's `layers` block take absolute priority.
 2. **Data analysis recipe-Level Defaults**: The factory automatically merges the top-level `plot_defaults` block from the active data analysis recipe into each plot's configuration. This allows you to define a global theme or color scheme once for an entire pipeline.
-3. **Library-Hardcoded Fallbacks**: If no theme or coordinate system is specified at either data analysis recipe level, the factory silently injects industry-standard defaults (e.g., `theme_bw`, `coord_cartesian`).
+3. **Library-Hardcoded Fallbacks**: If no coordinate system or facet is specified at either data analysis recipe level, the factory injects `coord_cartesian` and `facet_null`. It injects no theme: with none written the plot is drawn with plotnine's own default (`theme_gray`).
 
 ## Tier 3 Predicate Pushdown (UI Filters)
 
@@ -157,7 +161,7 @@ Every error of the factory, and every error of plotnine that appears while the f
 
     Plot 'p', layer 2 (geom_point): the value 'big' for 'size' is not a number. Fix: write a number, for example size: 3.
 
-- `layer N` is the position of the layer in the author's `layers:` list; a default or automatic layer is named by where it came from (`built-in layer (theme_bw)`).
+- `layer N` is the position of the layer in the author's `layers:` list; a default or automatic layer is named by where it came from (`built-in layer (coord_cartesian)`).
 - The structured record (`pipeline_error`: who fixes it, where it is shown) and the fix alone (`tip`) travel with the error.
 - A component that cannot act fails: `element_*` without `target`, `guide_*` without `mapping` (and without its value for `guide_nrow`, `guide_ncol`, `guide_title`), `position_*` with no layer before it, `annotate` without `geom`, and a plot spec key that is not part of the format (`theem: theme_bw`). A component raises `CannotAct(what, fix)`; the factory adds the plot and the layer. The two filter paths (an unknown column is skipped, an unknown operator is ignored) are not covered yet: they wait for FILTER-UNIFY-1.
 - plotnine builds a plot lazily, so a wrong value is found when the plot is drawn. `VizFactory.render` therefore returns a `CheckedPlot` (a `ggplot`); when drawing fails it draws the plot again layer by layer, finds the layer and the parameter, and raises the form above. A plot that draws is drawn once.

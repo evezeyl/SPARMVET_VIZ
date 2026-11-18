@@ -4,7 +4,7 @@ This directory contains standalone tests for investigating and verifying the log
 
 ## Tiered Data Analysis Recipe Structure (ADR-024)
 
-All data analysis recipes in this directory follow the **Tiered Wrangling Structure**. When contributing new tests, ensure the wrangling block uses `tier1` and/or `tier2`:
+All data analysis recipes in this directory follow the **tiered structure**: a tier is its own key of the table (the key, an optional `data_engine`, then `steps`). When contributing new tests, write `tier1` and/or `tier2` that way (an outline; the real pairs in `data/` write every required key):
 
 ```yaml
 id: "example_test"
@@ -13,15 +13,15 @@ data_schemas:
     source:
       type: "local_tsv"
       path: "libs/transformer/tests/data/example_test.tsv"
-    wrangling:
-      tier1:
-        - action: "rename"
+    # null_values, strip and input_fields are written as in the pairs of data/
+    tier1:
+      steps:
+        - action: "polars_rename"
           mapping: { "old": "new" }
-      tier2:
-        - action: "summarize"
+    tier2:
+      steps:
+        - action: "polars_group_by"
           # Aggregations go here
-    output_fields:
-      new: {}
 ```
 
 ## Test Runners

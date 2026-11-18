@@ -55,7 +55,7 @@ T3 filter/drop application (`app/modules/t3_audit_engine.py`'s `_apply_filter_ro
 per-plot audit application in `home_theater.py`) runs *inside the running Shiny session*,
 reading `home_state`. `ConfigManager`/`DataAssembler` (the headless engine `debug_assembler.py`
 runs) has never heard of a T3 node — it only understands registered wrangling actions
-(`filter_range`, `filter_eq`, `drop_columns`, ...) declared in a recipe's `wrangling:` block.
+(`filter_range`, `filter_eq`, `drop_columns`, ...) declared in the `steps` of a recipe's tiers (`tier1`, `tier2`).
 **There is no path today from "a recipe file + a T3 step list" to "the T3-adjusted data"
 without a live Shiny session.** This is the gap chunk D (§4D) closes.
 
