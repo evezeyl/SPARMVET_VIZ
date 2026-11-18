@@ -5,7 +5,6 @@ command would test the main folder's code and report on it as if it were the wor
 The fix is the `pythonpath` setting of pytest in `pyproject.toml`; the last test keeps its list complete.
 """
 import importlib
-import importlib.util
 import tomllib
 from pathlib import Path
 
@@ -17,20 +16,8 @@ LIB_PACKAGES = sorted(p.name for src in (REPO / "libs").glob("*/src") for p in s
 
 
 def _locations(module) -> list[Path]:
-    """Where the package was loaded from.
-
-    A namespace package (no __init__.py, today viz_gallery) has no __file__ and its __path__ also lists the
-    main folder's copy through the editable install. Python looks in order, so what matters is the first folder and
-    where each module of the checkout's folder resolves; that is what is returned for it.
-    """
-    if getattr(module, "__file__", None):
-        return [Path(module.__file__).resolve()]
-    first = Path(list(module.__path__)[0]).resolve()
-    found = [first]
-    for py in sorted(first.glob("*.py")):
-        spec = importlib.util.find_spec(f"{module.__name__}.{py.stem}")
-        found.append(Path(spec.origin).resolve())
-    return found
+    """Where the package was loaded from: its __init__.py (every library package has one, see the last test)."""
+    return [Path(module.__file__).resolve()]
 
 
 def wrong_origin_message(name: str, found: list[Path]) -> str:
@@ -56,3 +43,11 @@ def test_pythonpath_setting_lists_every_lib_source_folder():
     listed = set(cfg["tool"]["pytest"]["ini_options"]["pythonpath"])
     expected = {f"libs/{p.parent.name}/src" for p in (REPO / "libs").glob("*/src")} | {"."}
     assert listed == expected, f"pythonpath differs: missing {expected - listed}, extra {listed - expected}"
+
+
+def test_every_library_package_has_an_init_file():
+    """A package without __init__.py is a namespace package: no __file__, and the main folder's copy can join its path."""
+    missing = [f"libs/{src.parent.name}/src/{p.name}" for src in (REPO / "libs").glob("*/src") for p in src.iterdir()
+               if p.is_dir() and not p.name.startswith((".", "_")) and not p.name.endswith(".egg-info")
+               and not (p / "__init__.py").is_file()]
+    assert not missing, f"No __init__.py in: {', '.join(sorted(missing))}. Add one with a module docstring."
