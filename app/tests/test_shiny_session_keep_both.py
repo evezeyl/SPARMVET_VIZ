@@ -14,16 +14,43 @@ Run: PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/test
 # @end_deps
 """
 import os
+import time
 
 import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
-from app.tests.test_shiny_session_restore import (_RECORD_NOTICES, _free, _notices, _seed, _show_card)
+from app.tests.test_shiny_session_restore import (_RECORD_NOTICES, _free, _notices, _seed, _show_card as _open_card)
 from app.tests.test_shiny_smoke import _INTERACTIVE_APP_FEATURES, _load_data_analysis_recipe, _wait_shiny
 
 _LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_APP_FEATURES", "developer")
+
+
+def _show_card(page: Page, label: str, button: str) -> None:
+    """Open the group of `label` and wait until its opening animation is over, so that the button can be clicked.
+
+    A group opens with a height animation of about 350 ms (class `collapsing`). While it runs the button is already visible, and
+    a click on it can land on the card behind it: the page then never sends the click and no notice comes (measured: 4 of 26
+    runs without this wait, the click hit `div.spv-panel` inside `.accordion-collapse.collapsing`). The wait is for the end of the
+    animation, not a pause."""
+    _open_card(page, label, button)
+    try:
+        page.wait_for_function("() => !document.querySelector('#session_groups_accordion .accordion-collapse.collapsing')",
+                               timeout=10_000)
+    except Exception as exc:  # noqa: BLE001
+        raise AssertionError(f"[{label}] a group of the session panel was still opening after 10 s") from exc
+
+
+def _wait_for_copies(sm, before: set, timeout_s: float = 15.0) -> list:
+    """The sessions stored since `before`, once there is at least one: the server writes the copy after the click arrives, and the
+    page can be idle (`_wait_shiny`) before it did, so the store is polled until the copy is there (or the time is up)."""
+    deadline = time.monotonic() + timeout_s
+    while True:
+        copies = sorted({s["session_key"] for s in sm.list_all_sessions()} - before)
+        if copies or time.monotonic() >= deadline:
+            return copies
+        time.sleep(0.1)
 
 
 @pytest.mark.skipif(_LAUNCH_APP_FEATURES not in _INTERACTIVE_APP_FEATURES,
@@ -48,8 +75,8 @@ def test_keep_both_leaves_a_working_panel_and_the_copy_can_be_restored_and_delet
         before = {s["session_key"] for s in sm.list_all_sessions()}
         page.locator("#session_import_keep").click()
         _wait_shiny(page)
-        copies = [k for k in {s["session_key"] for s in sm.list_all_sessions()} - before]
-        assert len(copies) == 1, f"Keep both stored {copies}"
+        copies = _wait_for_copies(sm, before)
+        assert len(copies) == 1, f"Keep both stored {copies} 15 s after the click (expected one new session)"
         copy_key = copies[0]
 
         # the panel still works: both sessions have Restore and Delete, the Import control is there, and no id error is shown
