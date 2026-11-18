@@ -153,7 +153,7 @@ def _build_data_analysis_recipe_context(data_analysis_recipe_path: Path) -> str:
     if groups:
         lines.append(f"\nAnalysis groups ({len(groups)}):")
         for gid, gdata in groups.items():
-            label = gdata.get("label", gid)
+            label = gdata.get("ui_label", gid)
             plots = list(gdata.get("plots", {}).keys())
             lines.append(f"  {gid} ({label}): {len(plots)} plot(s) — {', '.join(plots)}")
 
@@ -199,7 +199,7 @@ _TOOL_CALL_PROTOCOL = textwrap.dedent("""\
       "arguments": {
         "target": "config/data_analysis_recipes/pipelines/my_pipeline.yaml",
         "operations": [
-          {"op": "add", "path": "/data_schemas/amr_results/wrangling/tier1/-",
+          {"op": "add", "path": "/data_schemas/amr_results/tier1/steps/-",
            "value": {"action": "modif_filter", "column": "identity", "op": "ge", "value": 90, "na": "remove"}}
         ]
       }
@@ -211,7 +211,8 @@ _TOOL_CALL_PROTOCOL = textwrap.dedent("""\
     - Quote "on" in joins: "'on':" (bare `on` is YAML boolean True)
     - One column per mutate step: separate action block for each column
     - Two-step cast for Float64→String: cast to Int64 first, then to String
-    - tier1: is mandatory in wrangling blocks (even if empty)
+    - tier1: is mandatory in a table (even if empty); a tier is written as its own key, a mapping with the list under "steps:"
+      (tier1: {steps: [...]}), never as a list and never under a "wrangling:" key
 """)
 
 

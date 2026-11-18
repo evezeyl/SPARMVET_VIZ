@@ -10,7 +10,7 @@ is a purely additive affordance over the same functions, with no refactor.
 """
 
 # @deps
-# provides: func:list_groups_plots, func:create_group, func:delete_group,
+# provides: func:list_groups_plots, func:plot_ui_label, func:create_group, func:delete_group,
 #           func:create_plot, func:delete_plot, func:assign_plot,
 #           class:_IncludeTag (re-exported for tests)
 # consumes: yaml, pathlib, re
@@ -86,10 +86,23 @@ def _save(data_analysis_recipe_path: str, raw: dict) -> None:
 def list_groups_plots(data_analysis_recipe_path: str) -> dict:
     """Return the analysis_groups dict from the data analysis recipe.
 
-    spec values are _IncludeTag objects when declared via !include, or dicts
-    when inline. Callers handle both forms.
+    A plot entry is the plot itself (D-0252): an _IncludeTag object when the whole entry is in its own file,
+    or a dict when it is written in the recipe. Callers handle both forms (`plot_ui_label` reads the short name of either).
     """
     return _load(data_analysis_recipe_path).get("analysis_groups", {})
+
+
+def plot_ui_label(data_analysis_recipe_path: str, plot_entry, plot_id: str) -> str:
+    """The short name of a plot (`ui_label`, D-0253) as `list_groups_plots` returns it: from the dict, or from the plot's own
+    file when the entry is an !include. The plot id when the name cannot be read (no file, no `ui_label`)."""
+    if isinstance(plot_entry, _IncludeTag):
+        try:
+            with open(Path(data_analysis_recipe_path).parent / plot_entry.path, encoding="utf-8") as f:
+                plot_entry = yaml.load(f, Loader=_IncludeLoader)
+        except (OSError, yaml.YAMLError):
+            return plot_id
+    label = plot_entry.get("ui_label") if isinstance(plot_entry, dict) else None
+    return label if isinstance(label, str) and label else plot_id
 
 
 def create_group(data_analysis_recipe_path: str, group_id: str, label: str) -> tuple[bool, str]:
@@ -101,7 +114,7 @@ def create_group(data_analysis_recipe_path: str, group_id: str, label: str) -> t
     ag = raw.setdefault("analysis_groups", {})
     if group_id in ag:
         return False, f"Group '{group_id}' already exists."
-    ag[group_id] = {"label": label.strip() or group_id, "plots": {}}
+    ag[group_id] = {"ui_label": label.strip() or group_id, "plots": {}}
     _save(data_analysis_recipe_path, raw)
     return True, f"Group '{group_id}' created."
 
@@ -125,10 +138,11 @@ def delete_group(data_analysis_recipe_path: str, group_id: str) -> tuple[bool, s
 
 def create_plot(data_analysis_recipe_path: str, group_id: str,
                 plot_id: str, label: str) -> tuple[bool, str]:
-    """Add a plot stub to a group and create its spec file.
+    """Add a plot stub to a group and create its file.
 
-    Writes a minimal spec stub to {data_analysis_recipe_dir}/{data_analysis_recipe_stem}/plots/{plot_id}.yaml
-    and registers a !include reference in the master data analysis recipe.
+    Writes the plot entry (its `ui_label` and an empty content to fill) to
+    {data_analysis_recipe_dir}/{data_analysis_recipe_stem}/plots/{plot_id}.yaml and registers a !include reference in the
+    master data analysis recipe (`<plot_id>: !include ...`, the whole entry is in the file, D-0252).
     Returns (success, message).
     """
     err = _validate_id(plot_id)
@@ -142,24 +156,24 @@ def create_plot(data_analysis_recipe_path: str, group_id: str,
     if plot_id in grp_plots:
         return False, f"Plot '{plot_id}' already exists in group '{group_id}'."
 
-    # Create stub spec file (only if absent — never overwrite existing work).
+    # Create the stub file (only if absent — never overwrite existing work).
     stem = Path(data_analysis_recipe_path).stem
-    spec_dir = Path(data_analysis_recipe_path).parent / stem / "plots"
-    spec_dir.mkdir(parents=True, exist_ok=True)
-    spec_file = spec_dir / f"{plot_id}.yaml"
-    if not spec_file.exists():
-        stub = {"spec": {"target_dataset": "", "mapping": {}, "layers": []}}
-        with open(spec_file, "w", encoding="utf-8") as f:
-            yaml.safe_dump(stub, f, default_flow_style=False, sort_keys=False)
+    plot_dir = Path(data_analysis_recipe_path).parent / stem / "plots"
+    plot_dir.mkdir(parents=True, exist_ok=True)
+    plot_file = plot_dir / f"{plot_id}.yaml"
+    if not plot_file.exists():
+        stub = {"ui_label": label.strip() or plot_id, "target_dataset": "", "mapping": {}, "layers": []}
+        with open(plot_file, "w", encoding="utf-8") as f:
+            yaml.safe_dump(stub, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
     rel = f"{stem}/plots/{plot_id}.yaml"
-    grp_plots[plot_id] = {"label": label.strip() or plot_id, "spec": _IncludeTag(rel)}
+    grp_plots[plot_id] = _IncludeTag(rel)
     _save(data_analysis_recipe_path, raw)
     return True, f"Plot '{plot_id}' created in group '{group_id}'."
 
 
 def delete_plot(data_analysis_recipe_path: str, group_id: str, plot_id: str) -> tuple[bool, str]:
-    """Remove a plot entry from a group. Does NOT delete the spec file.
+    """Remove a plot entry from a group. Does NOT delete the plot's own file.
 
     Returns (success, message).
     """

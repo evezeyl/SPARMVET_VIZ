@@ -13,6 +13,7 @@ from blueprint_arch.group_plot_manager import (
     delete_group,
     delete_plot,
     list_groups_plots,
+    plot_ui_label,
 )
 
 # ── Fixtures ──────────────────────────────────────────────────────────────
@@ -24,11 +25,14 @@ data_schemas:
       path: data.tsv
 analysis_groups:
   GroupA:
-    label: "Group A"
+    ui_label: "Group A"
     plots:
-      plot_one:
-        label: "Plot One"
-        spec: !include test_data_analysis_recipe/plots/plot_one.yaml
+      plot_one: !include test_data_analysis_recipe/plots/plot_one.yaml
+      plot_inline:
+        ui_label: "Inline plot"
+        target_dataset: sample
+        mapping: {x: a}
+        layers: [{name: geom_bar}]
 """
 
 
@@ -39,7 +43,7 @@ def tmp_data_analysis_recipe(tmp_path):
     spec_dir = tmp_path / "test_data_analysis_recipe" / "plots"
     spec_dir.mkdir(parents=True)
     (spec_dir / "plot_one.yaml").write_text(
-        "spec:\n  target_dataset: ''\n  mapping: {}\n  layers: []\n"
+        "ui_label: Plot One\ntarget_dataset: ''\nmapping: {}\nlayers: []\n"
     )
     return str(m)
 
@@ -51,11 +55,30 @@ class TestListGroupsPlots:
         groups = list_groups_plots(tmp_data_analysis_recipe)
         assert "GroupA" in groups
 
-    def test_spec_is_include_tag(self, tmp_data_analysis_recipe):
-        groups = list_groups_plots(tmp_data_analysis_recipe)
-        spec = groups["GroupA"]["plots"]["plot_one"]["spec"]
-        assert isinstance(spec, _IncludeTag)
-        assert "plot_one.yaml" in spec.path
+    def test_a_plot_in_its_own_file_is_an_include_tag_and_an_inline_plot_is_a_dict(self, tmp_data_analysis_recipe):
+        plots = list_groups_plots(tmp_data_analysis_recipe)["GroupA"]["plots"]
+        assert isinstance(plots["plot_one"], _IncludeTag)
+        assert "plot_one.yaml" in plots["plot_one"].path
+        assert isinstance(plots["plot_inline"], dict)
+
+
+class TestPlotUiLabel:
+    def test_reads_the_name_of_an_inline_plot(self, tmp_data_analysis_recipe):
+        plots = list_groups_plots(tmp_data_analysis_recipe)["GroupA"]["plots"]
+        assert plot_ui_label(tmp_data_analysis_recipe, plots["plot_inline"], "plot_inline") == "Inline plot"
+
+    def test_reads_the_name_from_the_file_of_the_plot(self, tmp_data_analysis_recipe):
+        plots = list_groups_plots(tmp_data_analysis_recipe)["GroupA"]["plots"]
+        assert plot_ui_label(tmp_data_analysis_recipe, plots["plot_one"], "plot_one") == "Plot One"
+
+    def test_the_id_when_the_file_is_missing_or_has_no_name(self, tmp_data_analysis_recipe):
+        plots = list_groups_plots(tmp_data_analysis_recipe)["GroupA"]["plots"]
+        plot_file = Path(tmp_data_analysis_recipe).parent / "test_data_analysis_recipe" / "plots" / "plot_one.yaml"
+        plot_file.write_text("target_dataset: sample\n", encoding="utf-8")
+        assert plot_ui_label(tmp_data_analysis_recipe, plots["plot_one"], "plot_one") == "plot_one"
+        plot_file.unlink()
+        assert plot_ui_label(tmp_data_analysis_recipe, plots["plot_one"], "plot_one") == "plot_one"
+        assert plot_ui_label(tmp_data_analysis_recipe, None, "plot_one") == "plot_one"
 
 
 # ── create_group ──────────────────────────────────────────────────────────
@@ -66,12 +89,13 @@ class TestCreateGroup:
         assert ok
         groups = list_groups_plots(tmp_data_analysis_recipe)
         assert "NewGroup" in groups
-        assert groups["NewGroup"]["label"] == "New Group Label"
+        assert groups["NewGroup"]["ui_label"] == "New Group Label"
+        assert "label" not in groups["NewGroup"]
 
     def test_label_defaults_to_id(self, tmp_data_analysis_recipe):
         ok, _ = create_group(tmp_data_analysis_recipe, "EmptyLabel", "")
         assert ok
-        assert list_groups_plots(tmp_data_analysis_recipe)["EmptyLabel"]["label"] == "EmptyLabel"
+        assert list_groups_plots(tmp_data_analysis_recipe)["EmptyLabel"]["ui_label"] == "EmptyLabel"
 
     def test_rejects_invalid_id(self, tmp_data_analysis_recipe):
         ok, msg = create_group(tmp_data_analysis_recipe, "has space", "label")
@@ -89,7 +113,7 @@ class TestDeleteGroup:
     def test_blocks_non_empty(self, tmp_data_analysis_recipe):
         ok, msg = delete_group(tmp_data_analysis_recipe, "GroupA")
         assert not ok
-        assert "1 plot" in msg
+        assert "2 plot" in msg
 
     def test_deletes_empty_group(self, tmp_data_analysis_recipe):
         create_group(tmp_data_analysis_recipe, "Empty", "Empty")
@@ -111,25 +135,32 @@ class TestCreatePlot:
         groups = list_groups_plots(tmp_data_analysis_recipe)
         assert "plot_two" in groups["GroupA"]["plots"]
 
-    def test_creates_spec_file(self, tmp_data_analysis_recipe):
+    def test_creates_the_file_of_the_plot_that_holds_the_whole_entry(self, tmp_data_analysis_recipe):
         create_plot(tmp_data_analysis_recipe, "GroupA", "plot_two", "Plot Two")
-        spec_file = (Path(tmp_data_analysis_recipe).parent / "test_data_analysis_recipe" / "plots"
+        plot_file = (Path(tmp_data_analysis_recipe).parent / "test_data_analysis_recipe" / "plots"
                      / "plot_two.yaml")
-        assert spec_file.exists()
-        content = yaml.safe_load(spec_file.read_text())
-        assert "spec" in content
+        assert plot_file.exists()
+        content = yaml.safe_load(plot_file.read_text())
+        assert content == {"ui_label": "Plot Two", "target_dataset": "", "mapping": {}, "layers": []}
+        assert not {"spec", "label", "title"} & set(content)
 
-    def test_include_tag_written(self, tmp_data_analysis_recipe):
+    def test_the_label_defaults_to_the_id(self, tmp_data_analysis_recipe):
+        create_plot(tmp_data_analysis_recipe, "GroupA", "plot_two", "  ")
+        plots = list_groups_plots(tmp_data_analysis_recipe)["GroupA"]["plots"]
+        assert plot_ui_label(tmp_data_analysis_recipe, plots["plot_two"], "plot_two") == "plot_two"
+
+    def test_include_tag_written_as_the_entry_itself(self, tmp_data_analysis_recipe):
         create_plot(tmp_data_analysis_recipe, "GroupA", "plot_two", "Plot Two")
         groups = list_groups_plots(tmp_data_analysis_recipe)
-        spec = groups["GroupA"]["plots"]["plot_two"]["spec"]
-        assert isinstance(spec, _IncludeTag)
-        assert "plot_two.yaml" in spec.path
+        entry = groups["GroupA"]["plots"]["plot_two"]
+        assert isinstance(entry, _IncludeTag)
+        assert "plot_two.yaml" in entry.path
+        assert "plot_two: !include" in Path(tmp_data_analysis_recipe).read_text()
 
     def test_round_trip_preserves_existing_include(self, tmp_data_analysis_recipe):
         create_plot(tmp_data_analysis_recipe, "GroupA", "plot_two", "Plot Two")
         groups = list_groups_plots(tmp_data_analysis_recipe)
-        assert isinstance(groups["GroupA"]["plots"]["plot_one"]["spec"], _IncludeTag)
+        assert isinstance(groups["GroupA"]["plots"]["plot_one"], _IncludeTag)
 
     def test_rejects_duplicate_plot(self, tmp_data_analysis_recipe):
         ok, _ = create_plot(tmp_data_analysis_recipe, "GroupA", "plot_one", "dup")
@@ -186,8 +217,7 @@ class TestAssignPlot:
         create_group(tmp_data_analysis_recipe, "GroupB", "Group B")
         assign_plot(tmp_data_analysis_recipe, "plot_one", "GroupA", "GroupB")
         groups = list_groups_plots(tmp_data_analysis_recipe)
-        spec = groups["GroupB"]["plots"]["plot_one"]["spec"]
-        assert isinstance(spec, _IncludeTag)
+        assert isinstance(groups["GroupB"]["plots"]["plot_one"], _IncludeTag)
 
     def test_rejects_same_group(self, tmp_data_analysis_recipe):
         ok, _ = assign_plot(tmp_data_analysis_recipe, "plot_one", "GroupA", "GroupA")

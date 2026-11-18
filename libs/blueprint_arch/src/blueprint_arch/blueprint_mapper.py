@@ -35,19 +35,24 @@ _TIER_RANK = {
 }
 
 
+def _has_tier(body) -> bool:
+    """True when a table or a join writes a tier (`tier1` or `tier2`, each a mapping with its steps, D-0250): the map then
+    shows its wrangling node, as it did for a written `wrangling` block."""
+    return isinstance(body, dict) and any(bool(body.get(tier)) and isinstance(body.get(tier), dict)
+                                          for tier in ("tier1", "tier2"))
+
+
 class BlueprintMapper:
     """
     [ADR-039] Generates a DAG-based 'TubeMap' visualization for SPARMVET data analysis recipes.
 
     Parses the full data analysis recipe structure (data_schemas, additional_datasets_schemas,
-    metadata_schema, joins, and plots flattened by ConfigManager from
-    analysis_groups) and outputs:
+    metadata_schema, joins, and the plot entries of analysis_groups) and outputs:
       - generate_mermaid()      → Mermaid LR DAG string (legacy, kept for reference)
       - generate_cy_elements()  → Cytoscape.js elements JSON (primary, tube-map UI)
 
-    IMPORTANT: Pass raw_config from ConfigManager (not yaml.safe_load) so that:
-      - !include tags are resolved
-      - analysis_groups plots are flattened into raw_config['plots'] with target_dataset
+    IMPORTANT: Pass raw_config from ConfigManager (not yaml.safe_load) so that
+    !include tags are resolved (a plot entry in its own file is read as the entry).
 
     Node types:
       trunk    (blue)   — raw data source (data_schemas)
@@ -64,18 +69,6 @@ class BlueprintMapper:
         self.edges: List[str] = []
         self.style_classes: List[str] = []
         self.active_node = active_node
-
-    def _get_label(self, node_id: str, details) -> str:
-        """Safely extracts a short display label from node details."""
-        if not isinstance(details, dict):
-            return node_id
-        info = details.get("info", {})
-        if isinstance(info, str):
-            return info[:35] if len(info) > 35 else info
-        elif isinstance(info, dict):
-            return info.get("display_name", info.get("sub_category", info.get("title", node_id)))
-        return details.get("description", node_id)[:35] if isinstance(
-            details.get("description"), str) else node_id
 
     def _safe_node_id(self, raw_id: str) -> str:
         """Sanitize node IDs for Mermaid compatibility."""
@@ -113,12 +106,11 @@ class BlueprintMapper:
         schemas = self.cfg.get("data_schemas", {})
         for sid, details in schemas.items():
             safe = self._safe_node_id(sid)
-            label = self._get_label(sid, details)
+            label = sid
             # Source node
             _add_node(safe, f'{safe}(["{label}\\nSource"])', "trunk", sid)
             # Wrangling node (always present — may be inline or file)
-            has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("steps"))
+            has_wrn = _has_tier(details)
             wrn_id = self._n(sid, "wrn")
             if has_wrn:
                 _add_node(wrn_id, f'{wrn_id}["{sid}\\nWrangling"]', "wrangle", sid)
@@ -131,10 +123,9 @@ class BlueprintMapper:
         add_schemas = self.cfg.get("additional_datasets_schemas", {})
         for aid, details in add_schemas.items():
             safe = self._safe_node_id(aid)
-            label = self._get_label(aid, details)
+            label = aid
             _add_node(safe, f'{safe}(["{label}\\nAdd Data"])', "add", aid)
-            has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("steps"))
+            has_wrn = _has_tier(details)
             wrn_id = self._n(aid, "wrn")
             if has_wrn:
                 _add_node(wrn_id, f'{wrn_id}["{aid}\\nWrangling"]', "wrangle", aid)
@@ -145,8 +136,7 @@ class BlueprintMapper:
         if meta:
             _add_node("metadata_schema",
                       'metadata_schema(["Metadata\\nSchema"])', "meta", "metadata_schema")
-            has_wrn = isinstance(meta, dict) and bool(
-                meta.get("wrangling") or meta.get("steps"))
+            has_wrn = _has_tier(meta)
             if has_wrn:
                 wrn_id = self._n("metadata_schema", "wrn")
                 _add_node(wrn_id, f'{wrn_id}["metadata_schema\\nWrangling"]',
@@ -182,8 +172,7 @@ class BlueprintMapper:
                 _add_edge(up, safe)
 
             # Assembly wrangling/audit step
-            has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("steps"))
+            has_wrn = _has_tier(details)
             if has_wrn:
                 wrn_id = self._n(asid, "wrn")
                 _add_node(wrn_id, f'{wrn_id}["{asid}\\nJoin Wrangling"]',
@@ -192,7 +181,6 @@ class BlueprintMapper:
 
         # ── 5. Plots ───────────────────────────────────────────────────────────
         analysis_groups = self.cfg.get("analysis_groups", {})
-        plots_flat = self.cfg.get("plots", {})
 
         plot_to_group: dict = {}
         for group_name, group_spec in analysis_groups.items():
@@ -200,16 +188,12 @@ class BlueprintMapper:
                 for pid in group_spec.get("plots", {}).keys():
                     plot_to_group[pid] = group_name
 
-        # Also pick up target_dataset from analysis_groups directly (inline data analysis recipes
-        # don't go through ConfigManager flattening so plots_flat may be empty)
-        inline_plots: dict = {}
+        # a plot entry is the plot itself (D-0252): its `target_dataset` is read from the entry
+        all_plots: dict = {}
         for group_name, group_spec in analysis_groups.items():
             if isinstance(group_spec, dict):
                 for pid, pspec in group_spec.get("plots", {}).items():
-                    if pid not in plots_flat:
-                        inline_plots[pid] = pspec if isinstance(pspec, dict) else {}
-
-        all_plots = {**plots_flat, **inline_plots}
+                    all_plots[pid] = pspec if isinstance(pspec, dict) else {}
 
         subgraphs: dict = {}
         for pid, pspec in all_plots.items():
@@ -338,12 +322,11 @@ class BlueprintMapper:
         schemas = self.cfg.get("data_schemas", {})
         for sid, details in schemas.items():
             safe = _safe(sid)
-            label = self._get_label(sid, details)
+            label = sid
             elements.append(_node(safe, label, "trunk", sid, 0))
             all_known.add(safe)
 
-            has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("steps"))
+            has_wrn = _has_tier(details)
             if has_wrn:
                 wid = _wrn_id(sid)
                 elements.append(_node(wid, f"{sid}\nWrangle", "wrangle", sid, 1))
@@ -354,12 +337,11 @@ class BlueprintMapper:
         add_schemas = self.cfg.get("additional_datasets_schemas", {})
         for aid, details in add_schemas.items():
             safe = _safe(aid)
-            label = self._get_label(aid, details)
+            label = aid
             elements.append(_node(safe, label, "add", aid, 0))
             all_known.add(safe)
 
-            has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("steps"))
+            has_wrn = _has_tier(details)
             if has_wrn:
                 wid = _wrn_id(aid)
                 elements.append(_node(wid, f"{aid}\nWrangle", "wrangle", aid, 1))
@@ -372,8 +354,7 @@ class BlueprintMapper:
             elements.append(_node("metadata_schema", "Metadata", "meta",
                                   "metadata_schema", 0))
             all_known.add("metadata_schema")
-            has_wrn = isinstance(meta, dict) and bool(
-                meta.get("wrangling") or meta.get("steps"))
+            has_wrn = _has_tier(meta)
             if has_wrn:
                 wid = _wrn_id("metadata_schema")
                 elements.append(_node(wid, "Metadata\nWrangle", "wrangle",
@@ -407,8 +388,7 @@ class BlueprintMapper:
             for parent_raw in ingredients:
                 elements.append(_edge(_upstream(parent_raw), safe))
 
-            has_wrn = isinstance(details, dict) and bool(
-                details.get("wrangling") or details.get("steps"))
+            has_wrn = _has_tier(details)
             if has_wrn:
                 wid = _wrn_id(asid)
                 # Assembly wrangling is still tier 2 — it follows the join
@@ -418,7 +398,6 @@ class BlueprintMapper:
 
         # ── 5. Plots (tier 3) ──────────────────────────────────────────────────
         analysis_groups = self.cfg.get("analysis_groups", {})
-        plots_flat = self.cfg.get("plots", {})
 
         plot_to_group: dict = {}
         for group_name, group_spec in analysis_groups.items():
@@ -426,14 +405,12 @@ class BlueprintMapper:
                 for pid in group_spec.get("plots", {}).keys():
                     plot_to_group[pid] = group_name
 
-        inline_plots: dict = {}
+        # a plot entry is the plot itself (D-0252): its `target_dataset` is read from the entry
+        all_plots: dict = {}
         for group_name, group_spec in analysis_groups.items():
             if isinstance(group_spec, dict):
                 for pid, pspec in group_spec.get("plots", {}).items():
-                    if pid not in plots_flat:
-                        inline_plots[pid] = pspec if isinstance(pspec, dict) else {}
-
-        all_plots = {**plots_flat, **inline_plots}
+                    all_plots[pid] = pspec if isinstance(pspec, dict) else {}
 
         for pid, pspec in all_plots.items():
             safe_pid = _safe(pid)

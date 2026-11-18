@@ -5,11 +5,12 @@ Public API
 ----------
 build_sibling_map(data_analysis_recipe_path_str)
     Parse a master data analysis recipe WITHOUT resolving !include, then build:
-    rel_path → {role, schema_id, schema_type, siblings, ingredients}
+    rel_path → {role, tier, schema_id, schema_type, siblings, ingredients}
+    (`tier` is "tier1" or "tier2" for the file of one tier of a table or a join)
 
 build_schema_registry(data_analysis_recipe_path_str, includes_map)
     Build a complete schema-level structural index:
-    schema_id → {schema_type, input_fields, wrangling, output_fields, ...}
+    schema_id → {schema_type, input_fields, tier1, tier2, ...}
 
 build_lineage_chain(selected_rel, ctx_map, target_ds_override=None)
     Construct an ordered list of components for the Lineage Rail.
@@ -21,7 +22,7 @@ resolve_fields_for_schema(schema_id, ctx_map, inc_map, _stack=None)
     Walk ctx_map to find the output fields for schema_id (cycle-safe).
 
 build_plot_lineage(plot_id, data_analysis_recipe_path)
-    Backward trace: data sources → T1/T2 wrangling → join → plot spec.
+    Backward trace: data sources → T1/T2 wrangling → join → plot.
     Used by export bundle lineage graph (ADR-074).
 
 get_plot_ids_in_group(group_id, data_analysis_recipe_path)
@@ -63,7 +64,11 @@ from utils.recipe_tiers import step_list
 
 def build_sibling_map(data_analysis_recipe_path_str: str) -> dict:
     """Parse a master data analysis recipe WITHOUT resolving !include, then build a map:
-      rel_path → {role, schema_id, schema_type, siblings: {input_fields, output_fields, wrangling}}
+      rel_path → {role, tier, schema_id, schema_type, siblings: {input_fields, tier1, tier2}, ingredients}
+
+    A table or a join writes each tier as its own key (`tier1`, `tier2`, D-0250); a tier that is an !include has its file
+    registered (role "wrangling" for a table, "join" for a join, `tier` says which). A plot entry is the plot itself (D-0252):
+    written inline it is registered by its id, written as `!include` its file is registered too.
 
     Uses a non-resolving subclass of SafeLoader so !include tags are captured
     as plain strings instead of being followed to disk.
@@ -131,29 +136,26 @@ def build_sibling_map(data_analysis_recipe_path_str: str) -> dict:
         if not isinstance(block, dict):
             return
         inp = _slot(block, "input_fields")
-        out = _slot(block, "output_fields")
-        wrn = _slot(block, "wrangling")
-        rec = _slot(block, "steps")
-
-        effective_out = out
-        effective_wrn = wrn or rec
-        sib = {"input_fields": inp, "output_fields": effective_out,
-               "wrangling": effective_wrn}
+        tier1 = _slot(block, "tier1")
+        tier2 = _slot(block, "tier2")
+        sib = {"input_fields": inp, "tier1": tier1, "tier2": tier2}
         ings = ingredients or []
 
         is_join_step = section_type == "joins"
         wrn_role = "join" if is_join_step else "wrangling"
 
-        def _reg_if_file(slot_val, role):
+        def _reg_if_file(slot_val, role, tier=None):
             if isinstance(slot_val, str):
-                ctx[slot_val] = {"role": role, "schema_id": schema_id,
-                                 "schema_type": section_type, "siblings": sib,
-                                 "ingredients": ings}
+                entry = {"role": role, "schema_id": schema_id,
+                         "schema_type": section_type, "siblings": sib,
+                         "ingredients": ings}
+                if tier:
+                    entry["tier"] = tier
+                ctx[slot_val] = entry
 
         _reg_if_file(inp, "input_fields")
-        _reg_if_file(out, "output_fields")
-        _reg_if_file(wrn, wrn_role)
-        _reg_if_file(rec, wrn_role)
+        _reg_if_file(tier1, wrn_role, "tier1")
+        _reg_if_file(tier2, wrn_role, "tier2")
 
         # For inline data analysis recipes (no !include files) register the schema_id itself as
         # a navigable key so TubeMap clicks can find this entry via ctx_map lookup.
@@ -175,43 +177,27 @@ def build_sibling_map(data_analysis_recipe_path_str: str) -> dict:
         ings = _extract_ingredients(adict) if isinstance(adict, dict) else []
         _register("joins", aid, adict, ingredients=ings)
 
-    # analysis_groups → plots: register each plot spec and optional pre_plot_wrangling
+    # analysis_groups → plots: each plot entry is the plot (inline, or the whole entry in its own file)
     for group_id, group_spec in (tree.get("analysis_groups") or {}).items():
         if not isinstance(group_spec, dict):
             continue
-        for plot_id, plot_spec in (group_spec.get("plots") or {}).items():
-            if not isinstance(plot_spec, dict):
+        for plot_id, plot_entry in (group_spec.get("plots") or {}).items():
+            entry_rel = _inc(plot_entry)
+            if entry_rel is None and not isinstance(plot_entry, dict):
                 continue
-            spec_rel = _inc(plot_spec.get("spec"))
-            pre_wrn_rel = _inc(plot_spec.get("pre_plot_wrangling"))
-
-            plot_entry = {
+            plot_ctx = {
                 "role": "plot_spec",
                 "schema_id": plot_id,
                 "schema_type": "plots",
                 "group_id": group_id,
-                "siblings": {"input_fields": None, "output_fields": None,
-                             "wrangling": pre_wrn_rel},
+                "siblings": {"input_fields": None, "tier1": None, "tier2": None},
                 "ingredients": [],
             }
-            if spec_rel:
-                ctx[spec_rel] = plot_entry
+            if entry_rel:
+                ctx[entry_rel] = plot_ctx
             # Always register by plot_id so inline plots are navigable from TubeMap
             if plot_id not in ctx:
-                ctx[plot_id] = plot_entry
-
-            # Register the pre_plot_wrangling file as its own navigable node
-            if pre_wrn_rel:
-                ctx[pre_wrn_rel] = {
-                    "role": "plot_wrangling",
-                    "schema_id": plot_id,
-                    "schema_type": "plots",
-                    "group_id": group_id,
-                    # plot_spec sibling stored so the chain can continue forward
-                    "siblings": {"input_fields": None, "output_fields": None,
-                                 "wrangling": spec_rel},
-                    "ingredients": [],
-                }
+                ctx[plot_id] = plot_ctx
 
     return ctx
 
@@ -223,6 +209,9 @@ def build_lineage_chain(selected_rel: str, ctx_map: dict, target_ds_override: st
     1. From the selected node, walk *backward* to the earliest ancestor.
     2. Then walk *forward*.
     target_ds_override: optional ID to trigger plot ancestry lookup.
+
+    A join reads the tier 1 of its ingredients (a table's tier 2 runs only where a plot reads the table directly), so the
+    chain of a join lists the tier 1 of its ingredients, never their tier 2.
     """
     if selected_rel not in ctx_map:
         return []
@@ -244,19 +233,15 @@ def build_lineage_chain(selected_rel: str, ctx_map: dict, target_ds_override: st
         sid = e.get("schema_id", "")
         by_schema.setdefault(sid, []).append(rel)
 
-    # assembly schema_id → its assembly wrangling rel
+    # the join of each schema id (the last one registered: the id itself when the join is written inline or has files)
     join_rels: dict[str, str] = {
         e["schema_id"]: rel
         for rel, e in ctx_map.items()
         if e.get("role") == "join"
     }
 
-    # For each assembly schema_id, which plot specs reference it (via target_dataset)?
-    # We can't read the plot spec files here (no inc_map), so we note plot_spec rels
-    # and their group context — linking happens by schema_id match at display time.
-    # Instead, walk forward from assembly via schema_id equality to plot_spec siblings.
-    # plot_spec entries don't store target_dataset in ctx_map (it's inside the file).
-    # So the chain stops at the assembly level unless we have the target_dataset.
+    # The plot entries of ctx_map do not carry `target_dataset` (it is inside the entry), so the chain of a plot
+    # needs `target_ds_override` and stops at the plot without it.
 
     entry = ctx_map[selected_rel]
     role = entry.get("role", "unknown")
@@ -265,24 +250,17 @@ def build_lineage_chain(selected_rel: str, ctx_map: dict, target_ds_override: st
 
     chain: list[dict] = []
 
-    if role == "plot_wrangling":
-        # Chain: [plot_wrangling, plot_spec]
-        # siblings["wrangling"] stores the associated plot_spec rel_path
-        spec_rel = sib.get("wrangling")
-        chain = [_node(selected_rel, True)]
-        if isinstance(spec_rel, str) and spec_rel in ctx_map:
-            chain.append(_node(spec_rel, False))
-
-    elif role == "plot_spec":
-        # Chain: [Ancestors..., (pre_plot_wrangling)?, plot_spec(active)]
+    if role == "plot_spec":
+        # Chain: [Ancestors..., plot(active)]
         target_ds = target_ds_override or entry.get("target_dataset")
         if target_ds:
             # Recursively find the "best" anchor/assembly node for this target
             origin_rels = by_schema.get(target_ds, [])
-            priority = ["join", "output_fields", "wrangling", "input_fields"]
+            priority = ["join", "wrangling", "input_fields"]
             best_origin = None
             for p in priority:
-                match = [r for r in origin_rels if ctx_map[r]["role"] == p]
+                match = [r for r in origin_rels
+                         if ctx_map[r]["role"] == p and ctx_map[r].get("tier") != "tier2"]
                 if match:
                     best_origin = match[0]
                     break
@@ -293,70 +271,45 @@ def build_lineage_chain(selected_rel: str, ctx_map: dict, target_ds_override: st
                     node["is_active"] = False
                     chain.append(node)
 
-        pre_wrn_rel = sib.get("wrangling")
-        if isinstance(pre_wrn_rel, str) and pre_wrn_rel in ctx_map:
-            chain.append(_node(pre_wrn_rel, False))
         chain.append(_node(selected_rel, True))
 
     elif role == "join":
-        # Chain: [ingredient_wranglings..., assembly, ?plots]
+        # Chain: [ingredient_wranglings..., join tier 1, join tier 2]
         for ing_id in entry.get("ingredients", []):
             ing_rels = by_schema.get(ing_id, [])
-            # Prefer the wrangling file for each ingredient
-            wrn_rels = [r for r in ing_rels if ctx_map[r]
-                        ["role"] == "wrangling"]
+            # Prefer the wrangling file for each ingredient: its tier 1 (a join never reads an ingredient's tier 2)
+            wrn_rels = [r for r in ing_rels if ctx_map[r]["role"] == "wrangling"
+                        and ctx_map[r].get("tier") != "tier2"]
             for r in (wrn_rels or ing_rels[:1]):
                 chain.append(_node(r, r == selected_rel))
-        chain.append(_node(selected_rel, True))
-        # Add downstream output_fields node if present
-        out_rel = sib.get("output_fields")
-        if isinstance(out_rel, str) and out_rel in ctx_map:
-            chain.append(_node(out_rel, False))
-
-    elif role == "output_fields":
-        # Walk backward: find the wrangling/assembly sibling for the same schema_id
-        # then build that chain with output_fields appended
-        wrn_rels = [r for r in by_schema.get(schema_id, [])
-                    if ctx_map[r]["role"] in ("wrangling", "join")]
-        if wrn_rels:
-            # Recurse on the wrangling node, then replace its is_active with False
-            sub = build_lineage_chain(wrn_rels[0], ctx_map)
-            for node in sub:
-                node["is_active"] = False
-            chain = sub
-            chain.append(_node(selected_rel, True))
+        own = [r for r in (sib.get("tier1"), sib.get("tier2")) if isinstance(r, str) and r in ctx_map]
+        if selected_rel in own:
+            for r in own:
+                chain.append(_node(r, r == selected_rel))
         else:
-            chain = [_node(selected_rel, True)]
+            chain.append(_node(selected_rel, True))
 
     else:
-        # input_fields or wrangling (Tier-1)
-        # Chain: [input_fields, wrangling, ?assembly, ?output_fields]
+        # input_fields or wrangling
+        # Chain: [input_fields, tier 1, tier 2, ?join]
         inp_rel = sib.get("input_fields")
-        wrn_rel = sib.get("wrangling")
-        out_rel = sib.get("output_fields")
+        wrn_rels = [r for r in (sib.get("tier1"), sib.get("tier2")) if isinstance(r, str) and r in ctx_map]
 
         if isinstance(inp_rel, str) and inp_rel in ctx_map:
             chain.append(_node(inp_rel, inp_rel == selected_rel))
-        if isinstance(wrn_rel, str) and wrn_rel in ctx_map:
+        for wrn_rel in wrn_rels:
             chain.append(_node(wrn_rel, wrn_rel == selected_rel))
 
-        # Check if this schema_id is an ingredient in any assembly
+        # Check if this schema_id is an ingredient in any join
         for join_sid, join_rel in join_rels.items():
             asm_entry = ctx_map[join_rel]
             if schema_id in asm_entry.get("ingredients", []):
                 chain.append(_node(join_rel, False))
-                asm_out = asm_entry["siblings"].get("output_fields")
-                if isinstance(asm_out, str) and asm_out in ctx_map:
-                    chain.append(_node(asm_out, False))
-                # show first assembly only (branching handled by Rail UI)
+                # show first join only (branching handled by Rail UI)
                 break
 
         if not chain:
             chain = [_node(selected_rel, True)]
-
-        if isinstance(out_rel, str) and out_rel in ctx_map and not any(
-                n["role"] in ("join", "output_fields") for n in chain):
-            chain.append(_node(out_rel, False))
 
     # Deduplicate while preserving order
     seen: set[str] = set()
@@ -377,13 +330,12 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
       schema_id → {
         "schema_type": str,
         "input_fields":  str | {"inline": val} | None,
-        "wrangling":     str | {"inline": val} | None,
-        "output_fields": str | {"inline": val} | None,
-        "ingredients":   list[str],        # assembly only
-        "target_dataset": str | None,      # plot only (resolved from spec file)
+        "tier1":         str | {"inline": val} | None,
+        "tier2":         str | {"inline": val} | None,
+        "ingredients":   list[str],        # join only
+        "target_dataset": str | None,      # plot only (inline, or read from the plot's own file)
         "group_id":      str | None,       # plot only
         "source":        dict | None,      # raw data source block
-        "info":          dict | str | None,
       }
 
     Both !include references (stored as rel_path strings) and inline content
@@ -431,19 +383,20 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
                 ids.append(item)
         return ids
 
-    def _resolve_target_dataset(spec_slot):
-        """If spec_slot is a rel_path, read the file and extract target_dataset."""
-        if spec_slot is None or isinstance(spec_slot, dict):
-            return None
-        abs_path = Path(includes_map.get(spec_slot, ""))
-        if not abs_path.exists():
-            return None
-        try:
-            content = yaml.safe_load(
-                abs_path.read_text(encoding="utf-8")) or {}
+    def _target_dataset_of(plot_entry):
+        """`target_dataset` of a plot entry: written inline, or read from the entry's own file (None when it cannot be read)."""
+        if isinstance(plot_entry, dict):
+            return plot_entry.get("target_dataset")
+        if isinstance(plot_entry, str) and plot_entry.startswith(_MARK):
+            abs_path = Path(includes_map.get(plot_entry[len(_MARK):], ""))
+            if not abs_path.is_file():
+                return None
+            try:
+                content = yaml.safe_load(abs_path.read_text(encoding="utf-8")) or {}
+            except Exception:
+                return None
             return content.get("target_dataset") if isinstance(content, dict) else None
-        except Exception:
-            return None
+        return None
 
     reg: dict = {}
 
@@ -453,15 +406,13 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
         entry = {
             "schema_type":   schema_type,
             "input_fields":  _slot(block.get("input_fields")),
-            "wrangling":     _slot(block.get("wrangling")),
-            "output_fields": _slot(block.get("output_fields")),
-            "steps":        _slot(block.get("steps")),
+            "tier1":         _slot(block.get("tier1")),
+            "tier2":         _slot(block.get("tier2")),
             "ingredients":   _extract_ingredients(block),
             "target_dataset": None,
             "group_id":      group_id,
             "source":        block.get("source") if not isinstance(
                 block.get("source"), str) else None,
-            "info":          block.get("info"),
         }
         reg[schema_id] = entry
 
@@ -479,23 +430,18 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
     for group_id, group_spec in (tree.get("analysis_groups") or {}).items():
         if not isinstance(group_spec, dict):
             continue
-        for plot_id, plot_spec in (group_spec.get("plots") or {}).items():
-            if not isinstance(plot_spec, dict):
+        for plot_id, plot_entry in (group_spec.get("plots") or {}).items():
+            if not (isinstance(plot_entry, dict) or _slot(plot_entry) is not None):
                 continue
-            spec_slot = _slot(plot_spec.get("spec"))
-            pre_wrn = _slot(plot_spec.get("pre_plot_wrangling"))
-            target_ds = _resolve_target_dataset(spec_slot)
             reg[plot_id] = {
                 "schema_type":    "plots",
                 "input_fields":   None,   # resolved from target_dataset at display time
-                "wrangling":      pre_wrn,
-                "output_fields":  None,   # plots are terminals
-                "steps":         spec_slot,
+                "tier1":          None,
+                "tier2":          None,
                 "ingredients":    [],
-                "target_dataset": target_ds,
+                "target_dataset": _target_dataset_of(plot_entry),
                 "group_id":       group_id,
                 "source":         None,
-                "info":           plot_spec.get("info"),
             }
 
     return reg
@@ -503,8 +449,8 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
 
 def load_fields_file(abs_path: Path) -> dict | list:
     """Read a standalone fields YAML file.
-    Unwraps a single redundant wrapper key (input_fields / output_fields)
-    to mirror ConfigManager's ADR-014 auto-unnesting behaviour.
+    Unwraps a single redundant `input_fields` wrapper key to mirror ConfigManager's
+    ADR-014 auto-unnesting behaviour. `output_fields` is not a key of a recipe any more.
     """
     try:
         content = yaml.safe_load(abs_path.read_text(encoding="utf-8")) or {}
@@ -512,21 +458,22 @@ def load_fields_file(abs_path: Path) -> dict | list:
         return {}
     if isinstance(content, dict) and len(content) == 1:
         key = next(iter(content))
-        if key in ("input_fields", "output_fields"):
+        if key == "input_fields":
             return content[key]
     return content
 
 
 def resolve_fields_for_schema(schema_id: str, ctx_map: dict, inc_map: dict,
                                _stack: set | None = None) -> dict:
-    """Walk ctx_map to find the output fields for schema_id.
+    """Walk ctx_map to find the fields of schema_id.
 
     Priority:
-      1. output_fields file (file-linked via !include)
-      2. inline output_fields from siblings sentinel {"inline": {...}}
-      3. input_fields file (fallback for raw source schemas)
-      4. transparent assembly — merge ingredient output fields
-      5. inline input_fields from siblings sentinel
+      1. input_fields file (file-linked via !include)
+      2. transparent join — merge the fields of the ingredients
+      3. inline input_fields from siblings sentinel
+
+    Recipe format 1 has no `output_fields`: what a join publishes is its last step, so the fields of a join are those
+    of its ingredients here (the columns the steps add or drop are not computed).
 
     Returns an ADR-041 Rich Dict: {slug: {type, ...}} or empty dict.
     Cycle guard via _stack prevents infinite recursion.
@@ -539,26 +486,7 @@ def resolve_fields_for_schema(schema_id: str, ctx_map: dict, inc_map: dict,
 
     rels = [r for r, e in ctx_map.items() if e.get("schema_id") == schema_id]
 
-    # Pass 1: explicit output_fields file
-    for r in rels:
-        if ctx_map[r].get("role") == "output_fields":
-            ap = inc_map.get(r)
-            if ap:
-                f = load_fields_file(Path(ap))
-                if f:
-                    return f if isinstance(f, dict) else {}
-            break
-
-    # Pass 2: inline output_fields from siblings sentinel
-    for r in rels:
-        sib = ctx_map[r].get("siblings", {})
-        out_slot = sib.get("output_fields")
-        if isinstance(out_slot, dict) and "inline" in out_slot:
-            inline_val = out_slot["inline"]
-            if isinstance(inline_val, dict) and inline_val:
-                return inline_val
-
-    # Pass 3: input_fields file fallback
+    # Pass 1: input_fields file
     for r in rels:
         if ctx_map[r].get("role") == "input_fields":
             ap = inc_map.get(r)
@@ -568,7 +496,7 @@ def resolve_fields_for_schema(schema_id: str, ctx_map: dict, inc_map: dict,
                     return f if isinstance(f, dict) else {}
             break
 
-    # Pass 4: transparent assembly — merge ingredients' output fields
+    # Pass 2: transparent join — merge ingredients' fields
     for r in rels:
         if ctx_map[r].get("role") == "join":
             combined: dict = {}
@@ -578,7 +506,7 @@ def resolve_fields_for_schema(schema_id: str, ctx_map: dict, inc_map: dict,
             if combined:
                 return combined
 
-    # Pass 5: inline input_fields from siblings sentinel
+    # Pass 3: inline input_fields from siblings sentinel
     for r in rels:
         sib = ctx_map[r].get("siblings", {})
         in_slot = sib.get("input_fields")
@@ -726,13 +654,6 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
             block = tree["metadata_schema"]
         return block
 
-    def _tier1_rel(sid: str, fallback: str) -> str:
-        """Where the tier 1 of a schema or a join is written: its include file, else `fallback` (the id: written inline)."""
-        block = _block_of(sid)
-        if block is None and isinstance((tree.get("joins") or {}).get(sid), dict):
-            block = tree["joins"][sid]
-        return (_rel_path(block.get("tier1")) if isinstance(block, dict) else None) or fallback
-
     def _wrangling_label(sid: str) -> str:
         """`<id> / wrangling`, with a note when the schema has a tier-2 list (issue #77).
 
@@ -765,41 +686,37 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
                     return src.get("path") or ""
         return ""
 
-    if target_dataset:
-        # Prefer a join entry (the engine's order); fall back to a direct data schema
-        join_rel = next(
+    def _tier1_node(sid: str, role: str):
+        """The node of the tier 1 of a table (role "wrangling") or a join (role "join"): its include file, else the id
+        (written inline). Never the node of the tier 2: a join reads the tier 1 of its ingredients."""
+        return next(
             (r for r, e in ctx_map.items()
-             if e.get("schema_id") == target_dataset and e.get("role") == "join"),
+             if e.get("schema_id") == sid and e.get("role") == role and e.get("tier") != "tier2"),
             None,
         )
+
+    if target_dataset:
+        # Prefer a join entry (the engine's order); fall back to a direct data schema
+        join_rel = _tier1_node(target_dataset, "join")
 
         if join_rel:
             for ing_id in ctx_map[join_rel].get("ingredients", []):
                 steps.append(_step("data_source", ing_id, ing_id,
                                    _source_path_for(ing_id)))
-                wrn_rel = next(
-                    (r for r, e in ctx_map.items()
-                     if e.get("schema_id") == ing_id and e.get("role") == "wrangling"),
-                    None,
-                )
+                wrn_rel = _tier1_node(ing_id, "wrangling")
                 if wrn_rel:
                     steps.append(_step("wrangling", ing_id,
-                                       _wrangling_label(ing_id), _tier1_rel(ing_id, wrn_rel)))
-            steps.append(_step("join", target_dataset, target_dataset, _tier1_rel(target_dataset, join_rel)))
+                                       _wrangling_label(ing_id), wrn_rel))
+            steps.append(_step("join", target_dataset, target_dataset, join_rel))
 
         else:
             # Direct data schema, no assembly layer: its wrangling node holds its T1 and its T2 (issue #77)
             steps.append(_step("data_source", target_dataset, target_dataset,
                                _source_path_for(target_dataset)))
-            wrn_rel = next(
-                (r for r, e in ctx_map.items()
-                 if e.get("schema_id") == target_dataset
-                 and e.get("role") == "wrangling"),
-                None,
-            )
+            wrn_rel = _tier1_node(target_dataset, "wrangling")
             if wrn_rel:
                 steps.append(_step("wrangling", target_dataset,
-                                   _wrangling_label(target_dataset), _tier1_rel(target_dataset, wrn_rel)))
+                                   _wrangling_label(target_dataset), wrn_rel))
 
     steps.append(_step("plot_spec", plot_id, plot_label))
     return steps
@@ -872,13 +789,19 @@ def _insert_into_group_plots(raw: str, group_id: str, block_text: str) -> str | 
     return None
 
 
-# The new, empty step file of a branch: tiered (a flat list is refused by the format and by the engine).
-_EMPTY_TIERS = "tier1: []\ntier2: []\n"
+# The new, empty tier file of a branch: a tier is a mapping with its steps (D-0250); a flat list is refused by the format and by
+# the engine. Tier 2 is not written: an absent tier 2 means the table of tier 2 equals the table of tier 1.
+_EMPTY_TIER = "steps: []\n"
 
 
 def _branch_label(source: dict, new_id: str) -> str:
     """The label of a branch: the label of what it branches from, else the new id in words, marked "(branch)"."""
     return f"{source.get('label') or new_id.replace('_', ' ').title()} (branch)"
+
+
+def _plot_branch_label(entry: dict, new_id: str) -> str:
+    """The `ui_label` of a branched plot: the label of the plot it branches from, marked "(branch)"."""
+    return f"{entry.get('ui_label') or new_id.replace('_', ' ').title()} (branch)"
 
 
 def _branch_error(msg: str) -> dict:
@@ -903,8 +826,9 @@ def generate_branch_plan(
     divergent wrangling).
 
     What is written is recipe format 1: no `output_fields` key (the published
-    columns are the last step of a join's tier 1), a `label` on the new schema,
-    join or plot, and tiered step lists (`tier1`, `tier2`), never a flat list.
+    columns are the last step of a join's tier 1), a `label` on the new schema
+    or join, a `ui_label` on the new plot, and a tier as its own key, a mapping
+    with `steps` (D-0250), never a flat list.
 
     Returns:
       {
@@ -923,14 +847,15 @@ def generate_branch_plan(
           SHARED  : source, null_values, strip (copied inline: the same file, read
                     in the same way; a key the source schema lacks is not invented),
                     input_fields (!include reused)
-          DIVERGE : new wrangling fragment (tier1: []/tier2: [])
+          DIVERGE : new tier 1 file (steps: [])
       join                                       → branch an assembly:
           SHARED  : ingredients (copied inline)
-          DIVERGE : new steps fragment (tier1: []/tier2: [])
+          DIVERGE : new tier 1 file (steps: [])
       plot_spec                                  → branch a plot (leaf node):
-          SHARED  : target_dataset (carried inside the copied spec)
-          SEED    : a COPY of the original spec under new_id — a plot is a leaf,
-                    the whole spec is the branch unit, and an empty plot cannot
+          SHARED  : target_dataset (carried inside the copied entry)
+          SEED    : a COPY of the original entry under new_id, in its own file,
+                    with the branch label as `ui_label` — a plot is a leaf, the
+                    whole entry is the branch unit, and an empty plot cannot
                     render. (Distinct from the empty-seed rule for data_schemas.)
 
     Pure (no Shiny). Reads master_path with a non-resolving loader so !include
@@ -989,7 +914,7 @@ def generate_branch_plan(
         else:
             lines.append("    input_fields: {}")
 
-        lines.append(f"    wrangling: !include '{wrn_rel}'")
+        lines.append(f"    tier1: !include '{wrn_rel}'")
         block_text = "\n".join(lines)
 
         new_master = _insert_after_top_level_anchor(raw, f"{section}:", block_text)
@@ -999,11 +924,11 @@ def generate_branch_plan(
         return {
             "ok": True, "error": "",
             "summary": (f"Branched {schema_id} -> {new_id}: shares source + "
-                        "input_fields; new empty wrangling."),
+                        "input_fields; new empty tier 1."),
             "new_master_text": new_master,
             "fragments": [
                 {"abs_path": str(master_dir / wrn_rel), "rel_include": wrn_rel,
-                 "content": _EMPTY_TIERS},
+                 "content": _EMPTY_TIER},
             ],
         }
 
@@ -1021,7 +946,7 @@ def generate_branch_plan(
         ingredients = join_def.get("ingredients")
         if ingredients not in (None, {}, []):
             lines.append(_render_block_key("ingredients", ingredients, indent=4))
-        lines.append(f"    steps: !include '{rec_rel}'")
+        lines.append(f"    tier1: !include '{rec_rel}'")
         block_text = "\n".join(lines)
 
         new_master = _insert_after_top_level_anchor(raw, "joins:", block_text)
@@ -1031,11 +956,11 @@ def generate_branch_plan(
         return {
             "ok": True, "error": "",
             "summary": (f"Branched assembly {schema_id} -> {new_id}: shares "
-                        "ingredients; new empty steps."),
+                        "ingredients; new empty tier 1."),
             "new_master_text": new_master,
             "fragments": [
                 {"abs_path": str(master_dir / rec_rel), "rel_include": rec_rel,
-                 "content": _EMPTY_TIERS},
+                 "content": _EMPTY_TIER},
             ],
         }
 
@@ -1047,7 +972,7 @@ def generate_branch_plan(
             if not isinstance(gval, dict):
                 continue
             plots = gval.get("plots") or {}
-            if schema_id in plots and isinstance(plots[schema_id], dict):
+            if schema_id in plots and (isinstance(plots[schema_id], dict) or _inc_path(plots[schema_id])):
                 group_id, plot_def = gid, plots[schema_id]
                 break
         if plot_def is None:
@@ -1055,29 +980,36 @@ def generate_branch_plan(
         if new_id in (((tree.get("analysis_groups") or {}).get(group_id) or {}).get("plots") or {}):
             return _branch_error(f"Plot ID '{new_id}' already exists in group '{group_id}'.")
 
-        spec_rel = f"{basename}/plots/{new_id}.yaml"
+        entry_rel = f"{basename}/plots/{new_id}.yaml"
 
-        # Seed the new plot fragment with a COPY of the original spec content.
-        spec_raw = plot_def.get("spec")
-        spec_inc = _inc_path(spec_raw)
-        if spec_inc:
+        # Seed the new plot with a COPY of the original entry (the whole entry is the plot, D-0252), in its own file.
+        entry_inc = _inc_path(plot_def)
+        if entry_inc:
             try:
-                src_spec_text = (master_dir / spec_inc).read_text(encoding="utf-8")
+                src_entry_text = (master_dir / entry_inc).read_text(encoding="utf-8")
+                src_entry = _load_captured(src_entry_text)
             except Exception as exc:
-                return _branch_error(f"Cannot read source plot spec '{spec_inc}': {exc}")
-        elif isinstance(spec_raw, dict) and spec_raw:
-            # the new file holds the spec itself: an included file has no wrapper key (spec 6.1, check F01)
-            src_spec_text = yaml.safe_dump(
-                spec_raw, default_flow_style=False, sort_keys=False,
-                allow_unicode=True)
+                return _branch_error(f"Cannot read source plot '{entry_inc}': {exc}")
+            if not isinstance(src_entry, dict) or not src_entry:
+                return _branch_error(f"Plot '{schema_id}' has no usable content to branch.")
+            # the file keeps its comments; only the line of the short name changes, so that the two plots can be told apart
+            entry_text, changed = re.subn(
+                r"(?m)^ui_label:.*$", lambda _m: _render_block_key("ui_label", _plot_branch_label(src_entry, new_id), indent=0),
+                src_entry_text, count=1)
+            if not changed:
+                return _branch_error(f"Plot '{schema_id}': the file '{entry_inc}' has no `ui_label:` line at its root, "
+                                     "so the branch cannot name itself. Write the short name of the plot there first.")
+        elif isinstance(plot_def, dict) and plot_def:
+            if "ui_label" not in plot_def:
+                return _branch_error(f"Plot '{schema_id}' has no `ui_label`, so the branch cannot name itself.")
+            # the new file holds the entry itself: an included file has no wrapper key (spec 6.1, check F01)
+            entry_text = yaml.safe_dump(
+                {**plot_def, "ui_label": _plot_branch_label(plot_def, new_id)},
+                default_flow_style=False, sort_keys=False, allow_unicode=True)
         else:
-            return _branch_error(f"Plot '{schema_id}' has no usable spec to branch.")
+            return _branch_error(f"Plot '{schema_id}' has no usable content to branch.")
 
-        block_text = "\n".join([
-            f"      {new_id}:",
-            _render_block_key("label", _branch_label(plot_def, new_id), indent=8),
-            f"        spec: !include '{spec_rel}'",
-        ])
+        block_text = f"      {new_id}: !include '{entry_rel}'"
 
         new_master = _insert_into_group_plots(raw, group_id, block_text)
         if new_master is None:
@@ -1087,11 +1019,11 @@ def generate_branch_plan(
         return {
             "ok": True, "error": "",
             "summary": (f"Branched plot {schema_id} -> {new_id} in group "
-                        f"'{group_id}': shares target_dataset (spec copied)."),
+                        f"'{group_id}': shares target_dataset (entry copied)."),
             "new_master_text": new_master,
             "fragments": [
-                {"abs_path": str(master_dir / spec_rel), "rel_include": spec_rel,
-                 "content": src_spec_text},
+                {"abs_path": str(master_dir / entry_rel), "rel_include": entry_rel,
+                 "content": entry_text},
             ],
         }
 

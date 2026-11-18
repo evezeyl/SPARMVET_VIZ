@@ -327,7 +327,7 @@ def _tool_get_field_contract(args: dict) -> dict:
             "schema_type": entry.get("schema_type", ""),
             "input_fields": _format_fields(input_fields),
             "resolved_fields": _format_fields(resolved),
-            "wrangling_tiers": list(_load_field_entry(entry.get("wrangling")).keys()),
+            "wrangling_tiers": [tier for tier in ("tier1", "tier2") if entry.get(tier)],
         },
     }
 
