@@ -148,3 +148,27 @@ def test_a_tier_file_that_holds_only_steps_is_not_unnested_into_a_bare_list(tmp_
     schema = ConfigManager(str(path)).raw_config["data_schemas"]["my_schema"]
     assert schema["tier1"] == {"steps": [{"action": "polars_sort", "by": ["id"]}]}
     assert schema["input_fields"] == {"id": {"type": "String"}}
+
+
+def test_a_file_that_holds_only_output_fields_is_not_unwrapped_and_the_strict_loader_refuses_it(tmp_path):
+    """`output_fields` is not a key of a recipe any more (FD01). The tolerant loader used to remove a wrapper `output_fields`
+    from an included file and load it as if it were right; now the wrapper stays (a double nesting nobody reads) and the strict
+    loader, which HOME's gate uses, refuses the file with F01 and its fix."""
+    from utils.recipe_loader import load_recipe
+    (tmp_path / "o.yaml").write_text("output_fields:\n  id: {type: String}\n")
+    path = _write_yaml(tmp_path, "old_recipe.yaml", """
+        id: old_recipe
+        data_schemas:
+          A:
+            source: {type: local_tsv, path: fake.tsv}
+            output_fields: !include o.yaml
+        joins: {}
+        analysis_groups:
+          group_a:
+            ui_label: Group A
+            plots:
+              plot_a: {ui_label: Plot A, target_dataset: A, mapping: {x: id}, layers: [{name: geom_bar}]}
+    """)
+    assert ConfigManager(str(path)).raw_config["data_schemas"]["A"]["output_fields"] == {"output_fields": {"id": {"type": "String"}}}
+    _, problems = load_recipe(path)
+    assert [p.code for p in problems] == ["F01"]

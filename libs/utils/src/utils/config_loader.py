@@ -118,7 +118,9 @@ class ConfigManager:
             # behaviour — do NOT remove it without updating those layers.
             # `wrangling` and `spec` are not keys of a recipe any more (D-0250, D-0237): a fragment under them is no longer unwrapped.
             # `steps` is not in the list: a tier file `steps: [...]` included under `tier1` holds the content of the tier (D-0250).
-            redundant_keys = {"input_fields", "output_fields", "source"}
+            # `output_fields` is not a key of a recipe any more (the checker refuses it, FD01): a file that holds only that key is
+            # no longer unwrapped, so the wrapper stays where it is and is refused instead of being read as if it were right.
+            redundant_keys = {"input_fields", "source"}
             if isinstance(content, dict) and len(content) == 1:
                 key = list(content.keys())[0]
                 if key in redundant_keys:
