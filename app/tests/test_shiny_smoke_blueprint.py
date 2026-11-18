@@ -510,6 +510,19 @@ def _select_recipe(page: Page, stem: str) -> None:
     page.wait_for_function("() => window._cyInstance && window._cyInstance.nodes().length > 0", timeout=30_000)
 
 
+def _tap_node(page: Page, node_id: str) -> None:
+    """Fire the cytoscape `tap` on the node with this id, when the map on the page holds exactly that node and is attached.
+
+    WHY a wait and not a plain evaluate: a click on a node makes the server redraw the map (to highlight the node), which replaces
+    `window._cyInstance`; a plain `page.evaluate` made right after could meet the map that was being replaced and never returned.
+    Here a map that is not ready makes the wait try again, and a map that never gets ready is a timeout with a message.
+    """
+    page.wait_for_function(
+        "(id) => { var cy = window._cyInstance; if (!cy || !document.body.contains(cy.container())) return false;"
+        " var n = cy.getElementById(id); if (n.length !== 1) return false; n.emit('tap'); return true; }",
+        arg=node_id, timeout=60_000)
+
+
 class TestBlueprintPlotOpen:
     """A click on a plot node shows the plot: its mapping, its layers and the glimpse of its table (run under the `qa` app features).
 
@@ -530,7 +543,7 @@ class TestBlueprintPlotOpen:
         assert len(plots) == 17
 
         for plot_id, include, entry in plots:
-            page.evaluate("(id) => window._cyInstance.getElementById(id).emit('tap')", plot_id)
+            _tap_node(page, plot_id)
             _wait_shiny(page, timeout=60_000)
             wanted = [layer["name"] for layer in entry["layers"]]
             stack = page.locator("#logic_stack_ui")
@@ -553,7 +566,7 @@ class TestBlueprintPlotOpen:
     def test_the_mapping_form_of_a_plot_shows_its_columns_and_the_glimpse_has_rows(self, page: Page, shiny_app: ShinyAppProc):
         _navigate_to_blueprint(page, shiny_app.url)
         _select_recipe(page, _DEMO_RECIPE)
-        page.evaluate("(id) => window._cyInstance.getElementById(id).emit('tap')", "mlst_bar")
+        _tap_node(page, "mlst_bar")
         _wait_shiny(page, timeout=60_000)
         expect(page.locator("#logic_stack_ui")).to_contain_text("mapping (aes)", timeout=30_000)
         expect(page.locator("#architect_data_status_ui")).to_contain_text(re.compile(r"\d[\d,]* rows"), timeout=60_000)
