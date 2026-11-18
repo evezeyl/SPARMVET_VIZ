@@ -99,25 +99,45 @@
     render();
   }
 
+  // PROVISIONAL (no decision names it): "the server is busy" is the page's own signal, the class "shiny-busy" that Shiny sets on
+  // the document while it works for this page, with the events "shiny:busy" and "shiny:idle". The other option, for Eve: a check
+  // at download time that the values the download reads are the remembered values of the session it exports.
+  function serverBusy() { return document.documentElement.classList.contains("shiny-busy"); }
+
+  function giveUp() {
+    timer = null;
+    // the confirmation did not come: the button must not stay grey for ever
+    if (!pending) return;
+    lastSeen = {};   // the server's values are not known any more
+    settle();
+    var text = attr("data-text-lost", "");
+    if (text && window.Shiny && window.Shiny.notifications) {
+      window.Shiny.notifications.show({ html: text, type: "warning", duration: 15000 });
+    }
+  }
+
+  // The wait of the fallback counts only time in which the server is NOT busy. While the server works (a long recipe switch) its
+  // confirmation is late, not lost, and opening the button then would show the old fields beside the new recipe. The wait starts
+  // again when the server becomes idle without having confirmed.
+  function armTimer() {
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (!pending || serverBusy()) return;
+    var ms = parseInt(attr("data-timeout-ms", "5000"), 10) || 5000;
+    timer = setTimeout(giveUp, ms);
+  }
+
+  function onBusy() { if (timer) { clearTimeout(timer); timer = null; } }
+
+  function onIdle() { if (pending) armTimer(); }
+
   function startWaiting() {
     pending = true;
     render();
-    if (timer) clearTimeout(timer);
-    var ms = parseInt(attr("data-timeout-ms", "5000"), 10) || 5000;
-    timer = setTimeout(function () {
-      // the confirmation did not come: the button must not stay grey for ever
-      if (!pending) return;
-      lastSeen = {};   // the server's values are not known any more
-      settle();
-      var text = attr("data-text-lost", "");
-      if (text && window.Shiny && window.Shiny.notifications) {
-        window.Shiny.notifications.show({ html: text, type: "warning", duration: 15000 });
-      }
-    }, ms);
     if (window.Shiny && window.Shiny.setInputValue) {
       pingCount += 1;
       window.Shiny.setInputValue("export_client_ping", pingCount, { priority: "event" });
     }
+    armTimer();
   }
 
   // The value of each field the last time this script saw it change. The browser fires "change" when a text field loses
@@ -236,6 +256,8 @@
       window.Shiny.addCustomMessageHandler("export_ready_echo", onEcho);
       window.Shiny.addCustomMessageHandler("export_session", onSession);
       window.jQuery(document).on("shiny:inputchanged", onShinyInput);
+      window.jQuery(document).on("shiny:busy", onBusy);
+      window.jQuery(document).on("shiny:idle", onIdle);
       announceReady(0);
       return true;
     }
