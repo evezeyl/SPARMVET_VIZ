@@ -11,8 +11,8 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
-# consumes: app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table, the same function the orchestrator uses, D-0240), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), polars, shiny
+# provides: constant:EXPORT_READY_TEXTS, constant:EXPORT_PANEL_FIELDS, constant:EXPORT_WATCHED_FIELDS, function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
+# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/export_fields_store.py (D-0288, D-0291, D-0296: the Export fields remembered per session, in memory only; defaults D-0294), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table, the same function the orchestrator uses, D-0240), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
 # consumes: libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237), app/modules/engine_record.py (engine_record, failed_plot_record: the `engines` part of effective_run.yaml, D-0248)
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 # consumed_by: app/handlers/home_theater.py
@@ -20,12 +20,19 @@ from __future__ import annotations
 # @end_deps
 
 import io
+import json
 import zipfile
 from pathlib import Path
 
 from shiny import reactive, render, ui
 
 from app.modules.error_notice import notice, what_failed
+from app.modules.export_fields_store import (
+    EXPORT_FIELD_DEFAULTS as _FIELD_DEFAULTS, EXPORT_LABEL_DEFAULT, EXPORT_LABEL_FIELD, REMEMBERED_EXPORT_FIELDS,
+    ExportFieldsStore,
+)
+from app.modules.plot_issue_reporter import plot_warning_text
+from viz_factory.checked_plot import plot_warnings
 from app.modules.export_refusal import export_refusal
 from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
@@ -54,7 +61,6 @@ def build_export_provenance(
     plot_width: float = 8.0,
     plot_height: float = 5.0,
     active_tier: str,
-    scope_label: str,
     all_plots: list,
     tiers_exported: list,
     data_analysis_recipe_sha: str,
@@ -190,7 +196,6 @@ def build_export_provenance(
         "data_analysis_recipe_path": data_analysis_recipe_path_str,
         "app_features": app_features,
         "active_tier": active_tier,
-        "export_scope": scope_label,
         "bundle_label": safe_name,
         "preset": preset,
         "dpi": dpi,
@@ -533,51 +538,25 @@ def _build_methods_section(
     return lines
 
 
-# The words the Scope radio shows for each value; the radio, its choices and the notices all read them from here.
-SCOPE_LABELS = {"global": "Global", "group": "Active group", "plot": "Active plot"}
-
-
-def export_scope_choices(groups: dict, active_subtab: str) -> dict:
-    """The choices of the export Scope radio for the plot tab that is open now.
-
-    Returns {value: {"label": str, "title": str, "dimmed": bool}} with the keys "global", "group" (when the recipe has
-    groups) and "plot". A choice that needs an open plot tab is shown dimmed when none is open. Pure: no Shiny state.
-    """
-    has_groups = bool(groups)
-    active_pid = active_subtab.removeprefix("subtab_") if active_subtab.startswith("subtab_") else ""
-
-    active_gid = None
-    if active_pid and has_groups:
-        for gid, gspec in groups.items():
-            if active_pid in gspec.get("plots", {}):
-                active_gid = gid
-                break
-
-    choices = {"global": {"label": SCOPE_LABELS["global"], "title": "Export everything in the active data analysis recipe",
-                          "dimmed": False}}
-    if has_groups and active_gid is not None:
-        choices["group"] = {"label": f"{SCOPE_LABELS['group']} ({active_gid})",
-                            "title": "Export all plots in the current group (e.g. all Quality Control plots)",
-                            "dimmed": False}
-    elif has_groups and not active_pid:
-        choices["group"] = {"label": SCOPE_LABELS["group"], "title": "Switch to a plot tab to enable scoped export.",
-                            "dimmed": True}
-    if active_pid:
-        choices["plot"] = {"label": f"{SCOPE_LABELS['plot']} ({active_pid})",
-                           "title": "Export only the plot you are currently viewing", "dimmed": False}
-    else:
-        choices["plot"] = {"label": SCOPE_LABELS["plot"], "title": "Switch to a plot tab to enable scoped export.",
-                           "dimmed": True}
-    return choices
-
-
-def _scope_choice_tags(choices: dict) -> dict:
-    """The radio choices of `export_scope_choices` as the labels the panel shows."""
-    return {
-        value: ui.span(c["label"], title=c["title"],
-                       **({"style": "opacity:0.45; cursor:not-allowed;"} if c["dimmed"] else {}))
-        for value, c in choices.items()
-    }
+# D-0270: the Export button is ready only when the server holds the values on the screen.
+# Every text the user sees about this is here, in one place (PROVISIONAL until Eve has read them).
+EXPORT_READY_TEXTS = {
+    "waiting": "Getting ready ...",
+    "lost": "Your last change may not have been received. Check the box and the label, then press Export.",
+}
+# The fields of the Export panel the download reads. The page greys the button when one of them changes; the server
+# echoes the values it holds for exactly these ids (app/src/www/export_ready.js).
+EXPORT_PANEL_FIELDS = (
+    "export_user_name", "export_include_reproducibility", "export_preset",
+    "export_plot_format", "export_report_format", "export_plot_width", "export_plot_height",
+)
+# The recipe selector is watched with the Export fields: a change of recipe greys the button at once, and the button opens
+# only when the server holds the selector the page shows (F1 of the review: a press right after a switch exported the new
+# recipe with the old recipe's field values).
+EXPORT_RECIPE_SELECTOR = "data_analysis_recipe_id"
+EXPORT_WATCHED_FIELDS = EXPORT_PANEL_FIELDS + (EXPORT_RECIPE_SELECTOR,)
+# How long the button waits for the confirmation before it is active again with the notice above (milliseconds).
+EXPORT_READY_TIMEOUT_MS = 5000
 
 
 def define_export_server(input, output, session, *,
@@ -586,7 +565,6 @@ def define_export_server(input, output, session, *,
                          tier1_anchor,
                          tier_toggle,
                          home_state, safe_input,
-                         active_home_subtab=None,
                          notification_log=None,
                          session_processing_issues=None,
                          t3_filter_rows=None,
@@ -604,19 +582,42 @@ def define_export_server(input, output, session, *,
       tier_toggle        : reactive.Value[str]   ("T1"|"T2"|"T3")
       home_state         : reactive.Value[dict] | None
       safe_input         : helper (input, key, default) → value
-      active_home_subtab : reactive.Value[str] | None  — current plot subtab id
       t3_filter_rows     : callable(subtab_id) -> list[dict]  audited filter/exclusion rows (HOME's)
       t3_drop_columns    : callable(subtab_id) -> list[str]   audited column drops (HOME's)
       view_keys          : reactive.Calc[DataAnalysisRecipeKeys]  the keys the open view was built on
     """
     from app.modules.notification_utils import make_notifier
+    from app.modules.session_manager import SessionManager
     _notify = make_notifier(notification_log)
+
+    # D-0288, D-0291, D-0296: the Export fields belong to the loaded recipe and its session (recipe plus data batch). They are
+    # remembered here while the app runs, one set per session key, in memory only: nothing is written to disk, and a session
+    # Restore or import does not touch them. One store per page session, like home_state.
+    _fields_store = ExportFieldsStore()
+    _shown = {"key": None}      # the session key whose fields the panel was last set to show
+
+    def _session_key() -> str:
+        """The session key of the loaded recipe and data (the same rule as the session files); empty until both are known.
+        A reactive read of home_state: call it inside `reactive.isolate()` unless the caller wants to follow the session."""
+        state = home_state.get() if home_state is not None else {}
+        msig = state.get("data_analysis_recipe_sha256") or ""
+        dbh = state.get("data_batch_hash") or ""
+        return SessionManager.compute_session_key(msig, dbh) if msig and dbh else ""
 
     @output
     @render.ui
     def system_tools_ui():
         if not bootloader.is_enabled("export_enabled"):
             return ui.div()
+
+        # What the panel shows when it is drawn (first time, or again after a user-space switch): the remembered fields of the
+        # session that is loaded now. A switch of user space is the only thing that draws it again (the user space is read
+        # here on purpose: Shiny sends an output that is not drawn again as it was last drawn, which would bring back old
+        # values the fields were not holding any more). A recipe switch or a plot tab change never draws it again, the
+        # effects below set the fields in place (EXPORT-FLAKE-1). The label always starts empty (D-0296).
+        safe_input(input, "sidebar_nav", "Home")
+        with reactive.isolate():
+            remembered = _fields_store.fields_for(_session_key())
 
         # Reminder (Eve, 2026-11-06): only steps sent to audit are exported. Anything tried while
         # exploring (filters in T1/T2/My view) is a sandbox and is never part of the bundle.
@@ -628,47 +629,23 @@ def define_export_server(input, output, session, *,
                 style="font-size:0.7em;",
             )
 
-        # 3-way scope toggle. The radio is mounted here once, with the choices of this moment; when the active plot
-        # tab or the recipe changes, `_sync_export_scope_choices` below updates its choices and keeps the user's
-        # selection. This output never reads the plot tab or the recipe outside `isolate`: a redraw of the whole
-        # panel would put every field back to its default (EXPORT-FLAKE-1, rule R4 of ui_implementation_contract.md
-        # section 14, "shell stability pattern" of rules_app_structure.md section 8).
-        scope_toggle = ui.div()
-        if active_home_subtab is not None:
-            with reactive.isolate():
-                try:
-                    _first_choices = _scope_choice_tags(export_scope_choices(
-                        active_cfg().raw_config.get("analysis_groups", {}), active_home_subtab.get() or ""))
-                except Exception:
-                    # the choices are brought up to date by the effect below, which tells the user why it cannot
-                    _first_choices = _scope_choice_tags(export_scope_choices({}, ""))
-            scope_toggle = ui.div(
-                ui.input_radio_buttons(
-                    "export_scope",
-                    label="Scope",
-                    choices=_first_choices,
-                    selected="global",
-                    inline=True,
-                ),
-                class_="mb-1",
-            )
-
-        # Mode 2 add-on (ADR-097 decision 1/#45): opt-in, forces global scope when
-        # checked — the scope radio above still renders but is overridden server-side
-        # (safe_input(input, "export_include_reproducibility", ...)), so the note below
-        # explains the override rather than disabling the radio itself.
+        # Mode 2 add-on (ADR-097 decision 1/#45): opt-in. Every export holds all plots of the recipe (D-0292, D-0295), so
+        # the tick changes only what is added to the bundle, never which plots.
+        # This output never reads the recipe or the plot tab outside `isolate`: a redraw of the whole panel would put every
+        # field back to its default (EXPORT-FLAKE-1, rule R4 of ui_implementation_contract.md section 14, "shell stability
+        # pattern" of rules_app_structure.md section 8).
         mode2_toggle = ui.div(
             ui.input_checkbox(
                 "export_include_reproducibility",
                 "Also include a reproducibility/reimport bundle",
-                value=False,
+                value=remembered["export_include_reproducibility"],
             ),
             ui.tags.small(
                 "The verification record (effective_run.yaml — hashes, seeds, "
                 "environment) is always included. Checking this also adds the full "
                 "recipe (your audited steps baked in as real wrangling actions) and "
                 "the actual data files, so someone can re-run this, not just verify "
-                "it. Forces Scope to Global — you can't partially reconstruct a recipe. "
+                "it. "
                 "Check this now if you'll want to Import this bundle later — a bundle "
                 "exported without this box checked cannot be imported, only verified "
                 "against its effective_run.yaml.",
@@ -721,22 +698,21 @@ def define_export_server(input, output, session, *,
                 ui.input_text(
                     "export_user_name", label="Bundle label / name",
                     placeholder="label (no spaces, no special characters)…",
-                    value="",
+                    value=EXPORT_LABEL_DEFAULT,
                 ),
-                scope_toggle,
                 mode2_toggle,
                 ui.input_radio_buttons(
                     "export_preset",
                     label="Quality",
                     choices={"web": "Web / Presentation", "publication": "Publication (≥600 DPI)"},
-                    selected="web",
+                    selected=remembered["export_preset"],
                     inline=False,
                 ),
                 ui.input_radio_buttons(
                     "export_plot_format",
                     label="Plot format",
                     choices={"png": "PNG", "svg": "SVG", "pdf": "PDF"},
-                    selected="png",
+                    selected=remembered["export_plot_format"],
                     inline=True,
                 ),
                 ui.tags.small(
@@ -748,14 +724,14 @@ def define_export_server(input, output, session, *,
                     "export_report_format",
                     label="Report format",
                     choices={"html": "HTML", "pdf": "PDF", "docx": "DOCX"},
-                    selected="html",
+                    selected=remembered["export_report_format"],
                     inline=True,
                 ),
                 ui.div(
                     ui.tags.label("Plot size (inches)", class_="d-block mb-1"),
                     ui.div(
-                        ui.input_numeric("export_plot_width",  "W", value=8,  min=2, max=30, step=0.5),
-                        ui.input_numeric("export_plot_height", "H", value=5,  min=2, max=30, step=0.5),
+                        ui.input_numeric("export_plot_width",  "W", value=remembered["export_plot_width"],  min=2, max=30, step=0.5),
+                        ui.input_numeric("export_plot_height", "H", value=remembered["export_plot_height"], min=2, max=30, step=0.5),
                         class_="d-flex gap-2",
                     ),
                     class_="mb-1",
@@ -767,38 +743,104 @@ def define_export_server(input, output, session, *,
                     class_="btn-success btn-sm w-100 mt-1",
                 ),
                 class_="mb-2 px-2",
-                style="font-size:0.8em;"
+                style="font-size:0.8em;",
+                id="export_ready_panel",
+                **{
+                    "data-ready-fields": json.dumps(list(EXPORT_WATCHED_FIELDS)),
+                    "data-remember-fields": json.dumps(list(REMEMBERED_EXPORT_FIELDS)),
+                    "data-text-waiting": EXPORT_READY_TEXTS["waiting"],
+                    "data-text-lost": EXPORT_READY_TEXTS["lost"],
+                    "data-timeout-ms": str(EXPORT_READY_TIMEOUT_MS),
+                },
             ),
             class_="px-2",
             style="font-size:0.8em;"
         )
 
-    @reactive.Effect
-    def _sync_export_scope_choices():
-        """Follow the plot tab and the recipe with the choices of the Scope radio, and keep what the user chose.
+    # The session key as a value of its own, so that what follows it runs when the KEY changes and not at every other change of
+    # home_state (a filter, a tab): each run tells the page and greys the button.
+    _key_now = reactive.Value("")
 
-        Updates the radio in place (`update_radio_buttons`) instead of drawing the panel again, so no other field of the
-        panel goes back to its default (EXPORT-FLAKE-1). When the chosen scope is no longer offered the scope goes back
-        to Global and the user is told.
-        """
-        if not bootloader.is_enabled("export_enabled") or active_home_subtab is None:
-            return
-        try:
-            choices = export_scope_choices(active_cfg().raw_config.get("analysis_groups", {}),
-                                           active_home_subtab.get() or "")
-        except Exception as e:
-            with reactive.isolate():
-                _notify(what_failed("The Scope choices of the Export panel could not be brought up to date; they stay as "
-                                           "they were", e), type="warning", duration=10)
-            return
+    @reactive.Effect
+    def _follow_the_session_key():
+        key = _session_key()
         with reactive.isolate():
-            current = safe_input(input, "export_scope", "global")
-            selected = current if current in choices else "global"
-            ui.update_radio_buttons("export_scope", choices=_scope_choice_tags(choices), selected=selected)
-            if selected != current:
-                _shown = SCOPE_LABELS.get(current, current)
-                _notify(f"The export scope '{_shown}' is not available on this plot tab, so the scope was set back "
-                        "to Global.", type="warning", duration=10)
+            if _key_now.get() != key:
+                _key_now.set(key)
+
+    @reactive.effect(priority=-50)
+    async def _tell_the_page_its_session():
+        """Tell the page which session its Export fields belong to, and with the fields when the session changed (D-0288, D-0296).
+
+        Runs when the session key changes, after every change of the recipe selector (after the work of that change, which has
+        priority 0, so the key it sets is final), and when the page asks (it missed the message at load). The message carries
+        the key and, when the session changed, the session's remembered fields with an empty label; the page puts them in the
+        panel and takes the key in one step, so the key and the values it shows never part. The panel is not drawn again for
+        this (EXPORT-FLAKE-1). Nothing here reads the Export inputs: the server's copy of them is whatever the page last sent,
+        which is what the echo below compares with the screen (D-0270)."""
+        if not bootloader.is_enabled("export_enabled"):
+            return
+        safe_input(input, EXPORT_RECIPE_SELECTOR, None)     # a dependency: the work of a recipe switch is done when this runs
+        safe_input(input, "export_page_ready", 0)           # a dependency: the page asks again after its handlers exist
+        key = _key_now.get()
+        with reactive.isolate():
+            changed = key != _shown["key"]
+            _shown["key"] = key
+            message = {"key": key}
+            if changed and key:
+                _fields_store.begin_session(key)
+                message["values"] = {**_fields_store.fields_for(key), EXPORT_LABEL_FIELD: EXPORT_LABEL_DEFAULT}
+        await session.send_custom_message("export_session", message)
+
+    @reactive.effect(priority=-100)
+    async def _confirm_export_inputs():
+        """Tell the page which values of the Export panel the server holds, and for which session (D-0270).
+
+        Runs after every change of a field and after every ping of the page (`export_client_ping`, sent at each change,
+        so that a change that leaves the values as they were is confirmed too). It reads every field the download reads, and
+        the recipe selector, and sends them back with the last ping it has seen and the session the server shows; the page
+        opens the Export button when the key is the one the page was told last and the values equal what is on the screen.
+        Its priority is below the effect that tells the page its session, so in one round of work the page is told first.
+        This effect runs after the input messages were applied, so a download pressed after the echo reads the same values
+        (the race of question 20: input messages are applied under the reactive lock, a download request is handled without
+        it)."""
+        if not bootloader.is_enabled("export_enabled"):
+            return
+        ping = safe_input(input, "export_client_ping", 0)
+        held = {}
+        for field in EXPORT_WATCHED_FIELDS:
+            try:
+                held[field] = getattr(input, field)()
+            except Exception:
+                continue    # a field that is not on the page: the page skips it too
+        with reactive.isolate():
+            key = _shown["key"] or ""
+        await session.send_custom_message("export_ready_echo", {"ping": ping, "key": key, "values": held})
+
+    @reactive.Effect
+    @reactive.event(input.export_field_change)
+    def _remember_what_the_page_shows():
+        """Remember a choice the user made, under the session the PAGE says it was showing when the user made it (D-0288).
+
+        The page sends the key it was last told with each change. The key that is current when the report arrives may be another
+        one (two quick recipe switches), and writing the value there would store one session's choice under the other (F2 of the
+        review). A report for a key the server never announced is dropped; the page then gets the fields of the real session
+        from the message above, so the user sees what the server holds and nothing is lost unseen (D-0050)."""
+        if not bootloader.is_enabled("export_enabled"):
+            return
+        report = input.export_field_change() or {}
+        key = str(report.get("key") or "")
+        value = report.get("value")
+        if value is None:
+            return          # an empty number box is not a choice
+        try:
+            stored = _fields_store.remember(key, report.get("field"), value)
+        except ValueError as error:
+            _notify(f"An Export choice could not be remembered: {error}", type="error", duration=10)
+            return
+        if not stored and key:
+            _notify("An Export choice was made for a session this app did not announce and was not remembered: check the Export "
+                    "fields before you export.", type="warning", duration=10)
 
     # ── REPRO-IMPORT-1 (#48, ADR-097): import + per-leg verification ────────────
     _import_bundle_state = reactive.Value(None)   # ("error", str) | ("ok", ImportResult) | None
@@ -891,7 +933,7 @@ def define_export_server(input, output, session, *,
         Produces a zip file containing (ADR-097, #45 — Publication content, never the
         recipe or raw data; see effective_run.yaml below for the shared verification
         record, and the optional Mode 2 add-on for the recipe/data themselves):
-        - plots/          SVG (web preset) or high-DPI PNG (publication preset) per plot
+        - plots/          one picture per plot, in the plot format of the panel (SVG by default, D-0294)
         - data/           T1 TSV for each dataset referenced by active plots
         - t3_steps.yaml   human-readable audit record backing the Methods prose (when T3 has steps)
         - effective_run.yaml   the four verification hashes, per-plot seeds, environment —
@@ -914,11 +956,11 @@ def define_export_server(input, output, session, *,
         # Sanitize: replace spaces/special chars with underscore, lowercase
         import re
         safe_name = re.sub(r"[^A-Za-z0-9_-]", "_", raw_name)[:40]
-        preset = safe_input(input, "export_preset", "web")
-        plot_fmt = safe_input(input, "export_plot_format", "png")
-        report_fmt = safe_input(input, "export_report_format", "html")
-        plot_width  = float(safe_input(input, "export_plot_width",  8))
-        plot_height = float(safe_input(input, "export_plot_height", 5))
+        preset = safe_input(input, "export_preset", _FIELD_DEFAULTS["export_preset"])
+        plot_fmt = safe_input(input, "export_plot_format", _FIELD_DEFAULTS["export_plot_format"])
+        report_fmt = safe_input(input, "export_report_format", _FIELD_DEFAULTS["export_report_format"])
+        plot_width  = float(safe_input(input, "export_plot_width",  _FIELD_DEFAULTS["export_plot_width"]))
+        plot_height = float(safe_input(input, "export_plot_height", _FIELD_DEFAULTS["export_plot_height"]))
         app_features = current_app_features.get()
         dpi = 300 if preset == "web" else 600
 
@@ -969,34 +1011,9 @@ def define_export_server(input, output, session, *,
         # report, T3 justification) is always built, unchanged — this is additive, not
         # a second, separate "reproducibility-only" bundle that suppresses it. That
         # stricter split (and whether Mode 1 keeps its current full recipe copy once
-        # this exists) stays an open question, not resolved here. Checking the box
-        # forces global scope — you cannot partially reconstruct a recipe from one
-        # plot's data alone — regardless of the scope radio's current value.
+        # this exists) stays an open question, not resolved here. Every export holds
+        # ALL plots of the recipe, with or without the box (D-0292, D-0295).
         wants_mode2 = bool(safe_input(input, "export_include_reproducibility", False))
-
-        # ── Apply export scope (Global / Active group / Active plot) ──────
-        export_scope = "global" if wants_mode2 else safe_input(input, "export_scope", "global")
-        scope_label = "global"
-        _subtab = (active_home_subtab.get() or "") if active_home_subtab is not None else ""
-        active_pid = _subtab.removeprefix("subtab_") if _subtab.startswith("subtab_") else ""
-
-        if export_scope == "plot" and active_pid:
-            _filtered = [(p, s) for p, s in all_plots if p == active_pid]
-            if _filtered:
-                all_plots = _filtered
-                scope_label = active_pid
-        elif export_scope == "group" and active_pid and groups:
-            _active_gid = None
-            for _gid, _gspec in groups.items():
-                if active_pid in _gspec.get("plots", {}):
-                    _active_gid = _gid
-                    break
-            if _active_gid:
-                _gplot_ids = set(groups[_active_gid].get("plots", {}).keys())
-                _filtered = [(p, s) for p, s in all_plots if p in _gplot_ids]
-                if _filtered:
-                    all_plots = _filtered
-                    scope_label = _active_gid
 
         # ── SEED-HOLDS-1 (ADR-104 point 3, ADR-097 decision 2): one seed per random layer of each plot ──
         # audit pin > the number the recipe writes on that layer > the factory's seed (0) when it writes none.
@@ -1050,8 +1067,8 @@ def define_export_server(input, output, session, *,
 
         audited_plots = {p for p, _ in all_plots if _has_audited_steps(p)}
 
-        # PLOT-TABLE-ORDER-1: check before anything is written. If the audited steps of a plot in scope cannot run in their
-        # recorded order, the table, the plot and the exported recipe would differ or fail: nothing is exported for this scope.
+        # PLOT-TABLE-ORDER-1: check before anything is written. If the audited steps of a plot cannot run in their
+        # recorded order, the table, the plot and the exported recipe would differ or fail: nothing is exported.
         def _base_frame(spec: dict):
             """The base of a plot's My view: the stored Tier 2 (Tier 1 without tier2 steps), as the data and plot sections read it."""
             target = spec.get("target_dataset")
@@ -1116,7 +1133,6 @@ def define_export_server(input, output, session, *,
                 plot_width=plot_width,
                 plot_height=plot_height,
                 active_tier=active_tier,
-                scope_label=scope_label,
                 all_plots=all_plots,
                 tiers_exported=tiers_exported,
                 data_analysis_recipe_sha=data_analysis_recipe_sha,
@@ -1182,6 +1198,10 @@ def define_export_server(input, output, session, *,
             qmd_plot_fmt = plot_fmt if plot_fmt in _native else _fallback
             plot_bytes: dict[str, bytes] = {}      # p_id → bytes (user format)
             qmd_plot_bytes: dict[str, bytes] = {}  # p_id → bytes for Quarto (_render/)
+            # D-0269: the warnings of every picture this export draws (a missing font ...), per plot, whether or not the plot
+            # was shown in HOME. The same words as HOME's Alerts panel (plot_warning_text).
+            _plot_warning_rows: dict[str, list[dict]] = {}
+            _warnings_unreadable: list[str] = []
             failed_plots: dict[str, str] = {}      # p_id → why it was not drawn (the report says so, no figure link)
             drawn_records: dict[str, dict] = {}    # p_id → the engine and the theme of the plot as it was drawn (effective_run.yaml, D-0248)
             with tempfile.TemporaryDirectory() as tmpdir:
@@ -1227,6 +1247,16 @@ def define_export_server(input, output, session, *,
                                                  **render_seed_args(_plot_seeds[p_id], _plot_override))
                         # the record comes from the plot that was just drawn, by the dispatcher that drew it (D-0248)
                         drawn_records[p_id] = viz_factory.record_of(fig, synthetic_data_analysis_recipe, p_id)
+                        # WHY: a failure to read the warnings must not lose the picture; it is named in the bundle
+                        try:
+                            _found = plot_warnings(fig)
+                        except Exception:
+                            _found = []
+                            _warnings_unreadable.append(p_id)
+                        if _found:
+                            _plot_warning_rows[p_id] = [
+                                {"text": plot_warning_text(w), "problem": w.problem, "fix": w.fix,
+                                 "component": w.component, "location": w.location} for w in _found]
 
                         # Save user-chosen format → zip under {dataset}/plots/
                         plot_path = tmpdir_path / f"{p_id}.{plot_fmt}"
@@ -1391,7 +1421,6 @@ def define_export_server(input, output, session, *,
                         import yaml as _yaml
                         t3_steps_data = {
                             "generated": now.isoformat(),
-                            "export_scope": scope_label,
                             "t3_steps": {
                                 _pid: [
                                     {
@@ -1553,6 +1582,8 @@ def define_export_server(input, output, session, *,
                 "seed_source_per_plot": seed_sources_per_plot(_plot_seeds),
                 "seeds_per_layer": seeds_per_layer_record(_plot_seeds),
                 "seeds_added_to_recipe": seeds_added_to_recipe(_plot_seeds, dict(all_plots)),
+                "plot_warnings": _plot_warning_rows,
+                "plot_warnings_unreadable": list(_warnings_unreadable),
                 "t3_translation_skipped": (
                     mode2_skipped if wants_mode2 else
                     "not attempted — check 'Also include a reproducibility/reimport "
@@ -1567,7 +1598,7 @@ def define_export_server(input, output, session, *,
             # data_analysis_recipe_sha, data_sha, tiers_exported, prov — all computed before tmpdir block.
 
             # ── Lineage graph (ADR-074) ───────────────────────────────────
-            # Shared-node DAG: one lineage_graph.json per export scope.
+            # Shared-node DAG: one lineage_graph.json per export.
             # Nodes are deduplicated by schema_id+type so datasets shared
             # across multiple plots appear only once.
             _lineage_nodes: dict[str, dict] = {}
@@ -1644,7 +1675,6 @@ def define_export_server(input, output, session, *,
                         import json as _json
                         _graph_payload = {
                             "generated": now.isoformat(),
-                            "export_scope": scope_label,
                             "nodes": list(_lineage_nodes.values()),
                             "edges": [
                                 {"from": _f, "to": _t}
@@ -1654,7 +1684,7 @@ def define_export_server(input, output, session, *,
                             "lineage_per_plot": _lineage_per_plot,
                             "description": (
                                 "Shared-node directed acyclic graph (DAG) of the data "
-                                "lineage for this export scope. "
+                                "lineage for this export. "
                                 "Nodes are deduplicated by schema_id+type — a dataset "
                                 "shared by multiple plots appears only once. "
                                 "Edge direction: upstream → downstream "
@@ -2059,7 +2089,6 @@ def define_export_server(input, output, session, *,
                 f"App features     : {prov['app_features']}",
                 f"Preset           : {prov['preset']} (DPI={prov['dpi']}, {prov['plot_width']}×{prov['plot_height']} in)",
                 f"Active tier      : {prov['active_tier']}",
-                f"Export scope     : {prov['export_scope']}",
                 f"Plot format      : {plot_fmt}",
                 # D-0050: the choice that decides whether the recipe and the data files are in the bundle, as the server read
                 # it when Export was pressed (a box that went back to unticked would show here, not only as a missing folder).
@@ -2074,7 +2103,9 @@ def define_export_server(input, output, session, *,
                  if wants_mode2 else
                  "Reproducibility  : not included (the box 'Also include a reproducibility/reimport bundle' was not "
                  "ticked when Export was pressed)"),
-                f"Plots            : {prov['plot_count']}",
+                f"Plots            : {prov['plot_count']} (all plots of the recipe are exported)",
+                (f"Plot warnings    : {sum(len(v) for v in _plot_warning_rows.values())} (listed under 'Plot warnings' below)"
+                 if _plot_warning_rows else "Plot warnings    : none"),
                 f"Tiers            : {', '.join(prov['tiers_exported'])}",
                 "",
                 "Software",
@@ -2093,6 +2124,11 @@ def define_export_server(input, output, session, *,
                 "exported bundle against this one, field by field, to confirm they are the",
                 "same analysis (ADR-097).",
                 "",
+                *([f"Plot warnings could not be read for: {', '.join(_warnings_unreadable)}", ""]
+                  if _warnings_unreadable else []),
+                *(["Plot warnings (these plots were drawn; read each warning before you rely on the plot):",
+                   *[f"  {_pid}: {_row['text']}" for _pid, _rows in _plot_warning_rows.items() for _row in _rows],
+                   ""] if _plot_warning_rows else []),
                 "Stage keys (per dataset; Tier 1 and Tier 2 chained keys):",
                 *_dh_lines,
                 "",

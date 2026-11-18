@@ -51,7 +51,6 @@ from app.modules.data_change_notice import inputs_changed_during_build_notice, n
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.engines import plot_engine_slot
-from utils.fix_text import fix_label
 from utils.pipeline_error import capture_entry
 from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
 from viz_factory.viz_factory import show_draw_errors
@@ -204,14 +203,14 @@ def define_server(input, output, session, *,
 
     # A plot's error or warning goes to the Processing issues table and to the Alerts panel, once, after the flush and under
     # reactive.isolate() (a render may not write a reactive value; app/modules/plot_issue_reporter.py). VIZ-STANDARD-1, V7.
-    from app.modules.plot_issue_reporter import make_issue_reporter
+    from app.modules.plot_issue_reporter import make_issue_reporter, plot_warning_text
     _report_issue = make_issue_reporter(session, session_processing_issues, notification_log)
 
     def _report_plot_exception(exc, component, location):
         _report_issue(capture_entry(exc, component, location), str(exc), "error")
 
     def _report_plot_warning(warning):
-        _report_issue(warning.with_timestamp().to_audit_row(), f"{warning.problem} {fix_label(warning.fix)}", "warning")
+        _report_issue(warning.with_timestamp().to_audit_row(), plot_warning_text(warning), "warning")
 
     # ── Phase 21-B: Dynamic plot handlers for analysis_groups ─────────────────
     # Enumerate all plot IDs at server init time so Shiny can register each
@@ -1957,7 +1956,7 @@ def define_server(input, output, session, *,
                 ui.card_header(ui.h5("Gallery Explorer", class_="mb-0 text-center")),
                 ui.div(
                     ui.p("📚 Browse visual examples.", class_="text-muted small p-2"),
-                    ui.p("Select an example to copy its YAML into the Architect sandbox.",
+                    ui.p("Select an example to see its picture, its recipe and its guidance. To reuse it, copy the recipe text by hand.",
                          class_="text-muted small px-2"),
                     class_="p-1"
                 ),
@@ -2237,7 +2236,6 @@ def define_server(input, output, session, *,
         tier_toggle=tier_toggle,
         home_state=home_state,
         safe_input=safe_input,
-        active_home_subtab=active_home_subtab,
         notification_log=notification_log,
         session_processing_issues=session_processing_issues,
         t3_filter_rows=_t3_filter_rows,

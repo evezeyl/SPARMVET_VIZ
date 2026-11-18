@@ -45,7 +45,7 @@ Still open:
 | No Docker release yet; the Dockerfile pins Python 3.12 while development is on 3.14 | `assets/containers/Dockerfile:32` | `DOCKER-RELEASE-1` |
 | `help_registry.py` is imported by nothing; `exporter.py` is imported only by tests (the real export report is built in `export_handlers.py`) | import scan of `app/` | `HELP-FROM-DOCS-1` |
 | `libs/ingestion` has no `test_*.py`; only debug scripts, so `pytest libs` runs nothing there | `libs/ingestion/tests/` | F-11, `TEST-INGESTION-1` |
-| `GalleryViewer.submission_modal_ui()` is defined but called nowhere | `app/modules/gallery_viewer.py:22` | F-18, not yet scheduled |
+| `GalleryViewer.submission_modal_ui()` was removed on 2026-11-18 (merge `4896670e`); `SubmissionExporter` (`app/modules/exporter.py`) was removed on 2026-11-14; still present and untouched: `GalleryManager.submit_example` | `libs/viz_gallery/src/viz_gallery/gallery_manager.py` | F-18, form removed |
 
 **Resolved 2026-11-07:** F-18's premise (the app never imports `viz_gallery`, so gallery logic
 might be duplicated) checked and found not to be a duplication — `viz_gallery.GalleryManager`

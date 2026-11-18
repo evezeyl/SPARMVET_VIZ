@@ -43,7 +43,7 @@ def _fresh_cache():
 def _prov(orchestrator):
     return build_export_provenance(
         now=datetime.datetime(2026, 11, 16, 12, 0, 0), data_analysis_recipe_id="tiny", safe_name="eve", app_features="qa",
-        preset="web", dpi=300, active_tier="T2", scope_label="global", all_plots=[],
+        preset="web", dpi=300, active_tier="T2", all_plots=[],
         tiers_exported=["T1"], data_analysis_recipe_sha="m" * 64, data_sha="d" * 64,
         bootloader=SimpleNamespace(available_data_analysis_recipes={}), orchestrator=orchestrator)
 

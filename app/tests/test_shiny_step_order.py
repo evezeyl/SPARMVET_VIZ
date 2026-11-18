@@ -252,6 +252,7 @@ def _export_bundle(page: Page) -> zipfile.ZipFile:
         page.locator("#nav_accordion .accordion-button:has-text('Export')").first.click()
         _wait_shiny(page)
     expect(page.locator("#export_bundle_download")).to_be_visible(timeout=10_000)
+    page.locator("input[name=export_plot_format][value=png]").check(force=True)   # the picture is compared as a PNG
     page.locator("#export_user_name").fill("autotest")
     with page.expect_download(timeout=240_000) as info:
         page.locator("#export_bundle_download").click()

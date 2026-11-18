@@ -160,6 +160,9 @@ def test_exploration_filters_are_never_exported(loaded):
     The filter removes every row of the plot's dataset (year < 1900). If it leaked into the export, the
     plot of that dataset would be empty and differ from the export made without the filter.
     """
+    # the pictures are compared as images: PNG (the default plot format is SVG, D-0294)
+    loaded.locator("input[name=export_plot_format][value=png]").check(force=True)
+    _wait_shiny(loaded)
     before = _download(loaded)
     _open_filters_panel(loaded)
     _navigate_to_mlst_plot(loaded)

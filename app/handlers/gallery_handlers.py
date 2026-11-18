@@ -32,7 +32,7 @@ from pathlib import Path
 import polars as pl
 from shiny import reactive, render, ui
 
-from app.modules.gallery_listing import NOTE_LINES, GalleryListing, read_listing
+from app.modules.gallery_listing import NOTE_LINES, GalleryListing, external_links_new_tab, read_listing
 from viz_gallery.taxonomy import display_axes, filter_panels
 
 
@@ -164,7 +164,7 @@ def define_server(input, output, session, *,
         md_path = Path(path_str).parent / "example_meta.md"
         if md_path.exists():
             with open(md_path, "r") as f:
-                return ui.div(ui.markdown(f.read()), class_="gallery-guidance-styled")
+                return ui.div(ui.HTML(external_links_new_tab(str(ui.markdown(f.read())))), class_="gallery-guidance-styled")
         return ui.div("Educational metadata (example_meta.md) missing.", class_="alert alert-warning")
 
     @reactive.Effect

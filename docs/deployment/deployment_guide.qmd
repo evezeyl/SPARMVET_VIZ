@@ -249,6 +249,8 @@ These two settings are **orthogonal**: a `pipeline-static` app features can poin
 
 **Branding and operator locks** also belong to the deployment: `branding:` (a stylesheet layered over the default one, and a banner) and `app_features_override:` (flags that are set whatever the app features file says). **Folders** accept `~` and `${VAR}`.
 
+**Session import limits** (`session_import:`) are set in the deployment file: `session_import.max_zip_mb` is the largest session zip, as a file, that the Session Management panel accepts, and `session_import.max_unpacked_mb` is the largest total size of what is inside it once unpacked (a small zip can expand, so both are checked before anything is written). Both are numbers of megabytes above 0; a key that is absent uses the default (1 and 10; the numbers are provisional). A zip over a limit is refused with its size, the limit and the place where the limit is set. A wrong value stops the app at start with a message that names the key. A session zip whose session key already exists is never written over silently: the user chooses to replace it, keep both or cancel.
+
 # 7. What Admins Need to Set Up
 
 For any deployment context, an admin must:

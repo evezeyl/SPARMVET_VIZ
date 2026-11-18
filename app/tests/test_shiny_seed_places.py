@@ -130,6 +130,7 @@ def export_run_and_png(page: Page, with_recipe: bool = False):
     if with_recipe:
         box.check(force=True)
     _wait_shiny(page)
+    page.locator("input[name=export_plot_format][value=png]").check(force=True)   # the picture is compared as a PNG
     page.locator("#export_user_name").fill("autotest")
     with page.expect_download(timeout=120_000) as info:
         page.locator("#export_bundle_download").click()

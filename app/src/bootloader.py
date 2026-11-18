@@ -1,6 +1,6 @@
 # @deps
-# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_imports_dir (IMPORT-PATH-1), method:get_agent_adapter, method:get_palettes, method:get_contact, attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), attr:data_analysis_recipe_advices (J12/J13, never reject), method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate), attr:rejected_gallery_examples, attr:gallery_index_status (gallery check at start, DEC48), method:take_stored_tables_notice (the one notice of the cache version sweep)
-# consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.cache_keys (CACHE_VERSION_META, ENGINE_CACHE_VERSION, STORED_TABLES_REBUILT_NOTICE: the sweep of stored tables of another cache version at start, D-0240), libs/transformer/src/transformer/anchor.py (remove_tables_of_other_version, deferred import), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import), app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe, validate_data_analysis_recipe_data, checker_advices, read_data_analysis_recipe_header, resolve_contact — ADR-094), app.modules.gallery_examples (check_gallery_at_start, deferred import), app.modules.renamed_keys, utils.path_expansion
+# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_imports_dir (IMPORT-PATH-1), method:get_agent_adapter, method:get_palettes, method:get_contact, method:get_session_import_limits (D-0283), attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), attr:data_analysis_recipe_advices (J12/J13, never reject), method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate), attr:rejected_gallery_examples, attr:gallery_index_status (gallery check at start, DEC48), method:take_stored_tables_notice (the one notice of the cache version sweep)
+# consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.cache_keys (CACHE_VERSION_META, ENGINE_CACHE_VERSION, STORED_TABLES_REBUILT_NOTICE: the sweep of stored tables of another cache version at start, D-0240), libs/transformer/src/transformer/anchor.py (remove_tables_of_other_version, deferred import), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import), app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe, validate_data_analysis_recipe_data, checker_advices, read_data_analysis_recipe_header, resolve_contact — ADR-094), app.modules.gallery_examples (check_gallery_at_start, deferred import), app.modules.renamed_keys, app.modules.session_manager (session_import_limits_from, deferred import), utils.path_expansion
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
 # doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, ADR-087, ADR-094 (issue #38 closure note), project_conventions.md §"Deployment Resolution"
 # @end_deps
@@ -325,6 +325,17 @@ class Bootloader:
                 who="operator",
                 reference=_BOOT_REF,
             ))
+        try:
+            self.get_session_import_limits()
+        except ValueError as exc:
+            errors.append(DeploymentError(
+                component="Bootloader",
+                problem=str(exc),
+                location=f"session_import in {self.deployment_path}",
+                fix="Write session_import.max_zip_mb and session_import.max_unpacked_mb as numbers above 0 (megabytes), or remove the block to use the defaults.",
+                who="operator",
+                reference=_BOOT_REF,
+            ))
         exit_if_errors(errors)
         required = {"raw_data", "data_analysis_recipes", "cache", "user_data", "gallery"}
         missing = required - set(self._resolved_locations.keys())
@@ -512,6 +523,11 @@ class Bootloader:
             self.data_analysis_recipe_advices = advices
             self.data_analysis_recipe_gate_version += 1
             return changed
+
+    def get_session_import_limits(self):
+        """The size limits of an imported session zip, from `session_import:` of the deployment file (D-0283)."""
+        from app.modules.session_manager import session_import_limits_from
+        return session_import_limits_from(self.deployment_config, str(self.deployment_path))
 
     def get_contact(self) -> str | None:
         """The deployment's own contact (ADR-094 fallback tier), or None if not configured."""

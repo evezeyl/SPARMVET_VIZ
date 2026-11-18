@@ -543,3 +543,25 @@ def test_a_recipe_default_of_zero_is_a_seed_in_every_place(df):
 
     assert np.array_equal(shown({"random_state": 0}), positions(df, render_layers(layers, [0])))
     assert not np.array_equal(shown({}), positions(df, render_layers(layers, [0])))
+
+
+# --- the bootstrapped summary layer is seeded and recorded like jitter (D-0278 point 1, D-0279 point 1) ---------------
+
+@pytest.mark.parametrize("layer", [
+    {"name": "stat_summary"},                                          # plotnine's default function is the bootstrap
+    {"name": "stat_summary", "params": {"fun_data": "mean_cl_boot"}},
+    {"name": "geom_pointrange", "params": {"stat": "summary"}},
+])
+def test_a_bootstrapped_summary_layer_is_recorded_with_its_seed_and_baked_into_the_rerun_recipe(layer):
+    layers = [copy.deepcopy(layer)]
+    plan = export_plot_seeds({"p": {"layers": layers}}, {}, default=DEFAULT)
+    record = seeds_per_layer_record(plan)
+    assert record["p"][0]["seed"] == DEFAULT and record["p"][0]["source"] == "default"
+    baked = bake_plot_seeds(recipe_with(layers), plan)
+    spec = next(iter(next(iter(baked["analysis_groups"].values()))["plots"].values()))["spec"]
+    assert spec["layers"][0]["params"]["random_state"] == DEFAULT
+
+
+def test_a_non_random_summary_layer_has_no_seed_in_the_record():
+    layers = [{"name": "stat_summary", "params": {"fun_data": "mean_se"}}]
+    assert seeds_per_layer_record(export_plot_seeds({"p": {"layers": layers}}, {}, default=DEFAULT)) == {}
