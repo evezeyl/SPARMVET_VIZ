@@ -117,7 +117,8 @@ class ConfigManager:
             # The ingestor, MetadataValidator, and DataWrangler all rely on this
             # behaviour — do NOT remove it without updating those layers.
             # `wrangling` and `spec` are not keys of a recipe any more (D-0250, D-0237): a fragment under them is no longer unwrapped.
-            redundant_keys = {"input_fields", "output_fields", "source", "steps"}
+            # `steps` is not in the list: a tier file `steps: [...]` included under `tier1` holds the content of the tier (D-0250).
+            redundant_keys = {"input_fields", "output_fields", "source"}
             if isinstance(content, dict) and len(content) == 1:
                 key = list(content.keys())[0]
                 if key in redundant_keys:

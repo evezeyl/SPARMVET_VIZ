@@ -122,3 +122,29 @@ def test_the_plot_entry_is_the_plot_config_and_a_spec_key_is_not_unnested(tmp_pa
     assert "target_dataset" not in cm.raw_config["plots"]["plot_old"]  # not unnested
     assert cm.get_plot_config("group_a", "plot_a")["theme"] == "theme_bw"  # the defaults are merged under the entry
     assert cm.get_plot_config("group_a", "plot_a")["mapping"] == {"x": "col_a"}
+
+
+def test_a_tier_file_that_holds_only_steps_is_not_unnested_into_a_bare_list(tmp_path):
+    """D-0250: `tier1: !include f.yaml` where f.yaml is `steps: [...]`. The wrapper-key rule of the tolerant loader used to remove a
+    root key `steps` (the old join fragment wrapper); now `steps` is the content of the tier, so the tier must keep it (the old
+    behaviour gave `tier1: [...]` and the assembler said "No step list and no ingredients"). A fragment of `input_fields` is
+    still unwrapped (the strict loader refuses it, F01)."""
+    (tmp_path / "t1.yaml").write_text("steps:\n- {action: polars_sort, by: [id]}\n")
+    (tmp_path / "fields.yaml").write_text("input_fields:\n  id: {type: String}\n")
+    path = _write_yaml(tmp_path, "tier_recipe.yaml", """
+        id: tier
+        data_schemas:
+          my_schema:
+            source: {type: local_tsv, path: fake.tsv}
+            input_fields: !include fields.yaml
+            tier1: !include t1.yaml
+        joins: {}
+        analysis_groups:
+          group_a:
+            ui_label: Group A
+            plots:
+              plot_a: {ui_label: Plot A, target_dataset: my_schema, mapping: {x: id}, layers: [{name: geom_bar}]}
+    """)
+    schema = ConfigManager(str(path)).raw_config["data_schemas"]["my_schema"]
+    assert schema["tier1"] == {"steps": [{"action": "polars_sort", "by": ["id"]}]}
+    assert schema["input_fields"] == {"id": {"type": "String"}}
