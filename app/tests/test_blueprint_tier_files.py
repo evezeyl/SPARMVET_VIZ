@@ -141,7 +141,7 @@ def test_a_tier_file_with_no_step_left_is_saved_as_an_empty_list(fn):
 
 def test_a_step_of_another_tier_is_refused_and_named(fn):
     nodes = fn["_parse_logic_to_nodes"]({"tier1": [dict(STEP)], "tier2": [dict(FILTER)]}, "x")
-    with pytest.raises(ValueError, match="modif_filter.*tier2.*this file is tier1"):
+    with pytest.raises(ValueError, match="modif_filter.*made for tier 2.*is tier 1.*nothing was saved"):
         fn["_serialise_component_for_save"]("wrangling", nodes, "steps: []\n", "tier1")
 
 

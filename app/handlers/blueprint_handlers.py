@@ -22,7 +22,7 @@ from __future__ import annotations
 # provides: effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)
 # provides: function:_warn_on_upload, output:bp_validate_ui, effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path, issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))
 # provides: helpers:_draft_key/_write_bp_draft/_read_bp_draft, effect:_autosave_blueprint_draft, output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)
-# consumes: app/modules/blueprint_plot_view.py (plot_view: the mapping and layers of a plot node), app/modules/plot_defaults_form.py (the plot_defaults form: what it shows and writes), libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/utils/src/utils/action_names.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
+# consumes: app/modules/blueprint_plot_view.py (plot_view: the mapping and layers of a plot node), app/modules/blueprint_tier_refusal.py (other_tier_refusal: the text of the Save refusal, PROVISIONAL), app/modules/plot_defaults_form.py (the plot_defaults form: what it shows and writes), libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/utils/src/utils/action_names.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
 # consumes: app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe, validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result, never blocking; uploaded_recipe_report, load_uploaded_recipe, load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)
 # consumes: app/modules/validate_runner.py (run_structure_check, could_not_run_result, StructureCheckError — the child process of Validate uses sys.executable, D-0050)
 # consumes: libs/utils/src/utils/recipe_check.py (plot_keys), libs/utils/src/utils/recipe_tiers.py (step_list) — tier keys and plot entry keys of recipe format 1 (D-0250, D-0252)
@@ -75,6 +75,7 @@ from utils.action_names import JOIN
 from utils.recipe_check import plot_keys
 from utils.recipe_tiers import step_list
 from app.modules.blueprint_plot_view import plot_view
+from app.modules.blueprint_tier_refusal import other_tier_refusal
 from app.modules.plot_defaults_form import form_values, merged_plot_defaults, theme_choices
 from app.modules.data_analysis_recipe_validator import (
     validate_data_analysis_recipe,
@@ -524,7 +525,7 @@ def define_server(input, output, session, *,
             tiers["tier1"] = tiers.get("tier1", []) + found["steps"]
         return tiers
 
-    def _serialise_component_for_save(role, nodes, raw_text, tier=None):
+    def _serialise_component_for_save(role, nodes, raw_text, tier=None, siblings=None, file_name=""):
         """Pure: serialise the live logic_stack back to the component file's dict shape.
 
         BP-PLOT-COMMIT-1 (ADR-083 §8). Routes by component role:
@@ -535,7 +536,8 @@ def define_server(input, output, session, *,
                               A file holds ONE tier, `tier` (from the lineage map). A step of another tier is refused:
                               it would be written into the wrong tier, which changes the result silently.
                               T3 is never written (ADR-082 §4). The file of a join is not saved from here (as before:
-                              joins are authored in the Joint Designer).
+                              joins are authored in the Joint Designer). `siblings` (the tier files of the table, from the lineage
+                              map) and `file_name` only make the refusal message true: they name the file the step belongs in.
 
         Raises ValueError for roles that cannot be saved from the logic stack.
         """
@@ -584,9 +586,8 @@ def define_server(input, output, session, *,
                     continue  # ignore stray component nodes
                 node_tier = node.get("_tier", "tier1")
                 if node_tier != tier:
-                    raise ValueError(
-                        f"The step '{node['action']}' belongs to {node_tier}, but this file is {tier}: "
-                        f"nothing was saved. Open the {node_tier} file of the table to save it there, or remove the step.")
+                    # PROVISIONAL wording (D-0308): the refusal and its text go to the owner to be approved
+                    raise ValueError(other_tier_refusal(node["action"], node_tier, tier, file_name, siblings))
                 step = {"action": node["action"]}
                 step.update(node.get("params", {}))
                 comment = node.get("comment", "")
@@ -1166,7 +1167,9 @@ def define_server(input, output, session, *,
         raw_text = wrangle_studio.active_raw_yaml.get()
 
         try:
-            content = _serialise_component_for_save(role, nodes, raw_text, info.get("tier"))
+            content = _serialise_component_for_save(
+                role, nodes, raw_text, info.get("tier"),
+                siblings={"tier1": info.get("tier1"), "tier2": info.get("tier2")}, file_name=Path(comp_path).name)
         except ValueError as ve:
             ui.notification_show(f"⚠️ {ve}", type="warning")
             return
