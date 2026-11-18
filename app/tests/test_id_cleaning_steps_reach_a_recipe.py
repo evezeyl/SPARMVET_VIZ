@@ -148,7 +148,7 @@ def uploads(tmp_path):
 
 
 def _wrangling(zip_bytes: bytes) -> dict:
-    """The wrangling fragments of a scaffold ZIP: file name in the ZIP -> its content."""
+    """The tier 1 files of a scaffold ZIP (a tier file is `{steps: [...]}`, D-0250): file name in the ZIP -> its content."""
     out = {}
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
         for name in zf.namelist():
@@ -175,9 +175,9 @@ def test_the_steps_are_written_into_the_file_the_user_chose_and_only_there(uploa
     zb = scaffold_from_uploads(uploads, "proj", "sample_id",
                                id_transformation=_prefix_transformation(), id_file_name="isolates.tsv")
     chosen = _fragment_of(zb, uploads[0])
-    assert len(chosen["tier1"]) == 1
-    assert _fragment_of(zb, uploads[1])["tier1"] == [], "the other file takes no step"
-    for step in chosen["tier1"]:
+    assert len(chosen["steps"]) == 1
+    assert _fragment_of(zb, uploads[1])["steps"] == [], "the other file takes no step"
+    for step in chosen["steps"]:
         assert _problems(step) == []
 
 
@@ -185,7 +185,7 @@ def test_the_written_steps_clean_the_column_of_the_file_under_its_recipe_name(up
     """The recipe names a column by its slug (`Sample ID` -> `sample_id`); the steps must name the same column."""
     zb = scaffold_from_uploads(uploads, "proj", "sample_id",
                                id_transformation=_prefix_transformation(), id_file_name="isolates.tsv")
-    steps = _fragment_of(zb, uploads[0])["tier1"]
+    steps = _fragment_of(zb, uploads[0])["steps"]
     as_read_by_the_recipe = pl.read_csv(uploads[0]["datapath"], separator="\t").rename({"Sample ID": "sample_id"})
     cleaned = _run(steps, as_read_by_the_recipe)
     assert cleaned["sample_id"].to_list() == pl.read_csv(uploads[1]["datapath"], separator="\t",
@@ -199,20 +199,20 @@ def test_choosing_the_other_file_moves_the_steps(uploads):
         engine.reconcile([f"{i:03d}_R1" for i in range(1, 6)], [f"{i:03d}" for i in range(1, 6)]), "ID", "Sample ID")
     zb = scaffold_from_uploads(uploads, "proj", "sample_id",
                                id_transformation=transformation, id_file_name="amr_results.tsv")
-    assert _fragment_of(zb, uploads[0])["tier1"] == []
-    assert [s["columns"] for s in _fragment_of(zb, uploads[1])["tier1"]] == [["id"]]
+    assert _fragment_of(zb, uploads[0])["steps"] == []
+    assert [s["columns"] for s in _fragment_of(zb, uploads[1])["steps"]] == [["id"]]
 
 
 def test_without_a_reconciliation_no_step_is_written(uploads):
     zb = scaffold_from_uploads(uploads, "proj", "sample_id")
-    assert [content["tier1"] for content in _wrangling(zb).values()] == [[], []]
+    assert [content["steps"] for content in _wrangling(zb).values()] == [[], []]
 
 
 def test_a_reconciliation_that_needs_no_cleaning_writes_no_step(uploads):
     nothing_to_do = IdTransformation("Sample ID", "ID", [])
     zb = scaffold_from_uploads(uploads, "proj", "sample_id",
                                id_transformation=nothing_to_do, id_file_name="isolates.tsv")
-    assert [content["tier1"] for content in _wrangling(zb).values()] == [[], []]
+    assert [content["steps"] for content in _wrangling(zb).values()] == [[], []]
 
 
 def test_a_file_without_the_id_column_is_refused_and_named(uploads):
