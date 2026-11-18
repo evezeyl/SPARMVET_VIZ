@@ -241,6 +241,15 @@ def test_a_formula_that_could_run_code_or_read_files_is_refused(formula):
         _run("polars_with_columns", {"named_exprs": {"x": formula}})
 
 
+@pytest.mark.parametrize("formula", ["pl.col('n').shuffle()", "pl.col('n').sample(n=1, seed=1)", "pl.col('n').rank(method='random')"])
+def test_a_random_formula_is_refused_and_the_message_names_polars_sample(formula):
+    """D-0278, D-0279: a formula that draws at random is refused, with a seed too."""
+    from utils.errors import TransformationError
+    with pytest.raises(TransformationError, match="differ at each run") as refused:
+        _run("polars_with_columns", {"named_exprs": {"x": formula}}, pl.DataFrame({"n": [1, 2, 3]}))
+    assert "polars_sample" in str(refused.value)
+
+
 # -- Eve, 2026-11-13 (Q1): a cast never truncates silently; a truncation is written in the recipe ----------
 
 def test_a_cast_to_integer_that_would_drop_decimals_fails_and_names_the_value():

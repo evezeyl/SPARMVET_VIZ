@@ -27,3 +27,9 @@ def test_a_polars_formula_works():
 def test_an_attack_is_refused_before_it_runs(expression):
     with pytest.raises(ValueError):
         run({"action": "mutate", "expression": expression})
+
+
+@pytest.mark.parametrize("expression", ["pl.col('id').shuffle()", "pl.col('id').sample(n=1, seed=1)", "pl.col('id').rank(method='random')"])
+def test_a_random_formula_is_refused(expression):
+    with pytest.raises(ValueError, match="differ at each run"):
+        run({"action": "mutate", "expression": expression})

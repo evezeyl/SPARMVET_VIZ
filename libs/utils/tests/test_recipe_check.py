@@ -178,6 +178,7 @@ CASES = [
     ("ST05", "E", lambda r: (r["data_schemas"]["A"]["wrangling"].update(tier2=[{"action": "polars_join", "right_ingredient": "B", "how": "left", "on": "id"}]),
                              r["analysis_groups"]["g"]["plots"]["p"]["spec"].update(target_dataset="A")), "run"),
     ("ST06", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"action": "polars_with_columns", "exprs": {"x": "__import__('os')"}}), "run"),
+    ("ST06", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"action": "polars_with_columns", "exprs": {"x": "pl.col('v').shuffle(seed=1)"}}), "run"),
     ("ST07", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"action": "polars_filter_demo", "columns": "v", "na": "keep"}), "run"),
     ("ST08", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"id": "mine", "action": "polars_filter_demo", "columns": ["v"], "na": "keep"}), "run"),
     ("ST08", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"id": "audit_1a2b3c4d_1", "action": "polars_filter_demo", "columns": ["v"], "na": "keep"}), "build"),
