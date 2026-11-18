@@ -33,6 +33,19 @@ _LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_APP_FEATURES", "developer")
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _wait_session_groups_open(page: Page, label: str) -> None:
+    """Wait until no group of the session panel is still opening, so that a click on a card button reaches the button.
+
+    A group opens with a height animation of about 350 ms (class `collapsing`). While it runs the button is already visible, and
+    a click on it can land on the card behind it: the page then never sends the click and no notice comes. The wait is for the
+    end of the animation, not a pause."""
+    try:
+        page.wait_for_function("() => !document.querySelector('#session_groups_accordion .accordion-collapse.collapsing')",
+                               timeout=10_000)
+    except Exception as exc:  # noqa: BLE001
+        raise AssertionError(f"[{label}] a group of the session panel was still opening after 10 s") from exc
+
+
 def _wait_shiny(page: Page, timeout: int = 10_000) -> None:
     """Wait for Shiny to finish all reactive computations (busy indicator clears)."""
     page.wait_for_function(
@@ -682,6 +695,7 @@ class TestSessionListRefresh:
         group_header = page.locator("#session_groups_accordion").get_by_text(f"📁 {label}", exact=False).first
         group_header.click()
         _wait_shiny(page)
+        _wait_session_groups_open(page, label)
 
     def test_delete_one_session_refreshes_without_reload(self, page: Page, shiny_app: ShinyAppProc, tmp_path):
         sm = self._make_session_manager()
