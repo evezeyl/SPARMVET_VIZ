@@ -17,9 +17,10 @@ input_fields:
   d:
     type: Date
     label: d
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_dt_truncate
     columns: [d]
     every: 1mo
-  tier2: []
+tier2:
+  steps: []

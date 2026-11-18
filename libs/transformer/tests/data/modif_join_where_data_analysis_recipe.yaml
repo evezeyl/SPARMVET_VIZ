@@ -25,9 +25,10 @@ data_schemas:
       hi:
         type: Int64
         label: hi
-    wrangling:
-      tier1: []
-      tier2: []
+    tier1:
+      steps: []
+    tier2:
+      steps: []
   modif_join_where_right:
     source:
       type: local_tsv
@@ -41,19 +42,21 @@ data_schemas:
       v:
         type: Int64
         label: v
-    wrangling:
-      tier1: []
-      tier2: []
+    tier1:
+      steps: []
+    tier2:
+      steps: []
 joins:
   modif_join_where:
     ingredients:
     - dataset_id: modif_join_where
     - dataset_id: modif_join_where_right
-    steps:
-      tier1:
+    tier1:
+      steps:
       - action: modif_join_where
         right_ingredient: modif_join_where_right
         predicates:
         - pl.col('v') >= pl.col('lo')
         - pl.col('v') <= pl.col('hi')
-      tier2: []
+    tier2:
+      steps: []

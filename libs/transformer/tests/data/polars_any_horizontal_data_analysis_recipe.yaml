@@ -20,9 +20,10 @@ input_fields:
   b:
     type: Boolean
     label: b
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_any_horizontal
     exprs: [a, b]
     target_column: t
-  tier2: []
+tier2:
+  steps: []

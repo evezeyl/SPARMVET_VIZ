@@ -1,5 +1,5 @@
 # @deps
-# provides: class:DataWrangler, method:_resolve_tier, method:run
+# provides: class:DataWrangler, method:tier_steps, method:run
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-WRANGLER-1)
 # consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py, libs/transformer/tests/debug_wrangler.py
@@ -25,62 +25,64 @@ class DataWrangler:
     """
 
     @staticmethod
-    def _resolve_tier(wrangling_block: Any, tier: str) -> List[Dict[str, Any]]:
+    def tier_steps(body: Any, tier: str) -> List[Dict[str, Any]]:
         """
-        Resolves the action list for a specific tier from a wrangling block.
+        The step list of one tier of a table or a join (D-0250): `body[tier]["steps"]`.
 
-        Supported shapes:
-          - dict with 'tier1'/'tier2' keys → returns that tier's list.
-          - empty / None → returns [].
+        `body` is the table (or join) mapping itself. A tier is written as its own key, a mapping with the
+        list under `steps` and an optional `data_engine`; a tier that is not written gives no steps. The old shapes
+        are refused with a message that names the key and the rewrite tool; none is read (no shim): a recipe in
+        another shape is not run with fewer steps and no word.
 
         Args:
-            wrangling_block: The raw value under the 'wrangling' YAML key.
-            tier: 'tier1', 'tier2', or 'all'.
+            body: the table or join mapping (empty or None gives no steps).
+            tier: 'tier1' or 'tier2'.
         """
-        if not wrangling_block:
+        if tier not in ("tier1", "tier2"):
+            raise ValueError(f"tier must be 'tier1' or 'tier2', not {tier!r}")
+        if not body:
             return []
-
-        if isinstance(wrangling_block, dict):
-            # ADR-034: Heuristic check for tiered keys
-            if "tier1" not in wrangling_block and "tier2" not in wrangling_block:
+        tool = "assets/scripts/migrate_recipe_engine_keys.py"
+        if not isinstance(body, dict):
+            raise DataAnalysisRecipeError(
+                f"A table or a join is a mapping, not {type(body).__name__}.",
+                tip="Write the table or the join as a mapping with its tiers (tier1: {steps: [...]}, tier2: {steps: [...]}).")
+        for old, what in (("wrangling", "the tiers are written directly in the table, each as a mapping with steps"),
+                          ("steps", "the tiers are written directly in the join, each as a mapping with steps")):
+            if old in body:
                 raise DataAnalysisRecipeError(
-                    f"Wrangling block uses dict format but is missing tiered keys ('tier1', 'tier2').",
-                    tip="If using the nested structure, please wrap your actions under 'tier1:' or 'tier2:' keys. If you prefer a simple list, remove the dictionary wrapping."
-                )
-
-            # Performance Heuristic: Global joins should be in Tier 1
-            if tier == "tier2" or tier == "all":
-                t2_actions = wrangling_block.get("tier2", [])
-                for act in t2_actions:
-                    if act.get("action") == JOIN:
-                        raise DataAnalysisRecipeError(
-                            f"Performance Alert: Action '{act.get('action')}' found in Tier 2.",
-                            tip="Relational joins are foundational. Please move this step to 'tier1' (The Trunk) to ensure it is only computed once and shared across all dependent plots."
-                        )
-
-            if tier == "all":
-                return wrangling_block.get("tier1", []) + wrangling_block.get("tier2", [])
-            return wrangling_block.get(tier, [])
-
-        # Flat list is no longer accepted — raise an actionable error.
-        raise DataAnalysisRecipeError(
-            "Flat 'wrangling:' list is no longer accepted. Use the tiered structure with 'tier1:' and 'tier2:' keys.",
-            tip=(
-                "Replace 'wrangling: [...]' with:\n"
-                "  wrangling:\n"
-                "    tier1:\n"
-                "      - action: your_action\n"
-                "        ...\n"
-                "    tier2: []\n"
-                "See rules_data_engine.md §3 for the full tiered data analysis recipe standard."
-            )
-        )
+                    f"'{old}' is not a key of a table or a join any more: {what}.",
+                    tip=f"Rewrite the recipe with {tool}; it moves the steps to tier1 and tier2.")
+        if tier not in body:
+            return []
+        held = body[tier]
+        if not isinstance(held, dict):
+            raise DataAnalysisRecipeError(
+                f"{tier} is written as {'a list' if isinstance(held, list) else repr(held)}, not as a mapping with steps.",
+                tip=f"Write {tier}: {{steps: [...]}} (the list under steps). Rewrite tool: {tool}.")
+        extra = sorted(k for k in held if k not in ("data_engine", "steps"))
+        if extra:
+            raise DataAnalysisRecipeError(
+                f"{tier} has the key(s) {', '.join(map(str, extra))}; a tier holds data_engine and steps only.",
+                tip=f"Write the steps under {tier}.steps. Rewrite tool: {tool}.")
+        steps = held.get("steps")
+        if not isinstance(steps, list):
+            raise DataAnalysisRecipeError(
+                f"{tier} has no list of steps.", tip=f"Write {tier}: {{steps: []}} when the tier is empty.")
+        # Performance heuristic: relational joins belong in Tier 1 (computed once and shared by every plot)
+        if tier == "tier2":
+            for act in steps:
+                if isinstance(act, dict) and act.get("action") == JOIN:
+                    raise DataAnalysisRecipeError(
+                        f"Performance Alert: Action '{act.get('action')}' found in Tier 2.",
+                        tip="Relational joins are foundational. Please move this step to 'tier1' (The Trunk) to ensure it is only computed once and shared across all dependent plots.")
+        return steps
 
     def run(self, lf: pl.LazyFrame, wrangling_rules: List[Dict[str, Any]]) -> pl.LazyFrame:
         """
         Applies a list of declarative wrangling rules sequentially to the LazyFrame.
         Each rule is a dictionary containing an 'action' and parameters.
-        Pass the output of _resolve_tier() for tiered execution.
+        Pass the output of tier_steps() for tiered execution.
         """
         if not wrangling_rules:
             return lf

@@ -200,7 +200,7 @@ class DataAssembler:
                 component="DataAssembler",
                 problem="No step list and no ingredients — cannot assemble.",
                 location="assemble() entry",
-                fix="Verify that the data analysis recipe declares at least one data_schema and a joins step list.",
+                fix="Verify that the data analysis recipe declares at least one data_schema and that its join has steps under tier1.",
                 who="data_analysis_recipe_author",
                 category="assembly",
                 surface="plot_overlay",

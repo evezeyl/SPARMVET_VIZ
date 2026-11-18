@@ -8,7 +8,7 @@
 # @end_deps
 """Run the wrangling steps of one format 1 recipe on its data and write the result as a TSV (the @verify evidence).
 
-The recipe is a standalone data schema (keys `source`, `null_values`, `strip`, `input_fields`, `wrangling` at the top
+The recipe is a standalone data schema (keys `source`, `null_values`, `strip`, `input_fields`, `tier1` at the top
 level, like the test pairs in libs/transformer/tests/data/) or a pipeline recipe whose `data_schemas` hold them.
 The data is read exactly as the app reads it (declared types, `null_values`, `strip`); nothing is cast or selected
 afterwards, because the recipe states what it wants as steps.
@@ -31,7 +31,7 @@ SCHEMA_GROUPS = ("data_schemas", "metadata_schema", "additional_datasets_schemas
 
 def dataset_blocks(recipe: dict, fallback_id: str) -> dict:
     """The data schemas of a recipe by dataset id: the recipe itself when it is standalone."""
-    if "input_fields" in recipe or "wrangling" in recipe:
+    if "input_fields" in recipe or "tier1" in recipe:
         return {recipe.get("id") or fallback_id: recipe}
     blocks = {}
     for key in SCHEMA_GROUPS:
@@ -48,7 +48,7 @@ def wrangle(dataset_id: str, schema: dict, tier: str, data_dir: str, data_overri
     if data_override:
         schema = {**schema, "source": {"type": "local_tsv", "path": data_override}}
     lf, _ = DataIngestor(data_dir).ingest(dataset_id, schema)
-    steps = DataWrangler._resolve_tier(schema.get("wrangling"), tier)
+    steps = (DataWrangler.tier_steps(schema, "tier1") + DataWrangler.tier_steps(schema, "tier2")) if tier == "all" else DataWrangler.tier_steps(schema, tier)
     return (DataWrangler().run(lf, steps) if steps else lf).collect()
 
 

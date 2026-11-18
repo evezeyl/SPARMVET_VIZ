@@ -29,11 +29,12 @@ input_fields:
   s:
     type: String
     label: s
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_sample
     fraction: 0.5
     with_replacement: false
     shuffle: false
     seed: 1
-  tier2: []
+tier2:
+  steps: []

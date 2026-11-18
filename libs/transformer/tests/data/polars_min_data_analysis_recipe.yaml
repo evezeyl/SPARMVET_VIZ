@@ -29,7 +29,8 @@ input_fields:
   s:
     type: String
     label: s
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_min
-  tier2: []
+tier2:
+  steps: []

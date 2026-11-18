@@ -29,11 +29,12 @@ input_fields:
   s:
     type: String
     label: s
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_str_splitn
     columns: [s]
     by: ' '
     n: 2
     target_column: parts
-  tier2: []
+tier2:
+  steps: []

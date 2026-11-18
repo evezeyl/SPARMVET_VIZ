@@ -20,8 +20,8 @@ input_fields:
   st:
     type: String
     label: st
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_str_splitn
     columns: [st]
     by: '|'
@@ -29,4 +29,5 @@ wrangling:
     target_column: st
   - action: polars_unnest
     columns: [st]
-  tier2: []
+tier2:
+  steps: []

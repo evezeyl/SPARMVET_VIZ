@@ -29,12 +29,13 @@ input_fields:
   s:
     type: String
     label: s
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_group_by
     by: [g]
     maintain_order: true
     named_aggs:
       n: pl.col('id').count()
       total: pl.col('n').sum()
-  tier2: []
+tier2:
+  steps: []

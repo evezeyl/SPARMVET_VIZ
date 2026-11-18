@@ -29,11 +29,12 @@ input_fields:
   s:
     type: String
     label: s
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_unpivot
     'on': [n, f]
     index: [id]
     variable_name: var
     value_name: val
-  tier2: []
+tier2:
+  steps: []
