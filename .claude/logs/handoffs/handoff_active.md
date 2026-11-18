@@ -13,6 +13,7 @@
 - Held for Eve: `task/one-python`; what the two export modes mean; the three export findings of the measurement; the path page; the formula page; the audit slices; the Gallery and Blueprint points; every message text.
 - Decided today and recorded: D-0250 to D-0297.
 - Restart note of the coordinator: `tmpAI/coordinator/progress_2026-11-14_session3.md` (top block, 18:22).
+- **Decided 20:50 (D-0298, D-0299):** the export mode is chosen with two ticks (Publication, Reproducibility) and one Export button; new data with the same recipe is a new session and the Export fields go back to the defaults. A scout checks how a multi-file upload is applied. **State 20:45:** all nine steps of the big recipe change are built on `task/engine-keys` (head `b8d173ed`); its second half is reviewed (`tmpAI/engine_keys/step5_9_REVIEW.md`: fix first, small; a builder is on it); the Export simplification is reviewed (a race right after a recipe switch; the fix is committed on `task/export-ready`, repeat runs in progress). `dev` = `c7b817ce`.
 
 ## State 2026-11-18 15:55 (coordinator session 3ce2c163)
 
