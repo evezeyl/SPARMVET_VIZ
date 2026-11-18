@@ -222,7 +222,8 @@ def build_lineage_chain(selected_rel: str, ctx_map: dict, target_ds_override: st
             "rel": rel,
             "schema_id": e.get("schema_id", rel),
             "role": e.get("role", "unknown"),
-            "label": e.get("schema_id", rel),
+            # the tier 2 file of a table or a join has the id of its table: the rail tells the two files apart
+            "label": e.get("schema_id", rel) + (" (tier 2)" if e.get("tier") == "tier2" else ""),
             "is_active": is_active,
         }
 

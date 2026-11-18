@@ -138,6 +138,8 @@ def test_the_chain_of_a_tier_file_shows_the_fields_both_tiers_and_the_join(recip
     assert [n["is_active"] for n in chain] == [False, True, False, False]
     again = build_lineage_chain("tiny/wrangling/samples_t2.yaml", ctx)
     assert [n["is_active"] for n in again] == [False, False, True, False]
+    # the two files of one table have one id: the rail says which is the tier 2
+    assert [n["label"] for n in chain] == ["samples", "samples", "samples (tier 2)", "C"]
 
 
 def test_the_chain_of_a_join_starts_with_the_tier_one_of_its_ingredients(recipe_path):
