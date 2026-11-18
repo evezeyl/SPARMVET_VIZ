@@ -24,6 +24,13 @@ Examples:
   PYTHONPATH=. .venv/bin/python assets/scripts/migrate_recipe_engine_keys.py --check config/data_analysis_recipes assets/gallery_data
   PYTHONPATH=. .venv/bin/python assets/scripts/migrate_recipe_engine_keys.py --apply config/data_analysis_recipes/templates/e_coli.yaml
 """
+
+# @deps
+# provides: script:migrate_recipe_engine_keys
+# consumes: libs/utils/src/utils/engine_keys_migration.py (migrate, format_events, summary), libs/viz_factory/src/viz_factory/plot_config_resolver.py (is_partial_theme: which theme components set only some properties)
+# consumed_by: app/tests/test_migrate_recipe_engine_keys.py
+# doc: .claude/design/recipe_format_spec.md (section 12, the amendment of 2026-11-17), .claude/knowledge/decision_ledger.md (D-0236, D-0250, D-0255, D-0258)
+# @end_deps
 import argparse
 import os
 import sys

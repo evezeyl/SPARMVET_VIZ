@@ -1,7 +1,7 @@
 # @deps
 # provides: pipeline:materialize_tier1, pipeline:materialize_tier2, method:prepare_ingredient, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
 # mirrors: libs/transformer/tests/debug_assembler.py
-# consumes: libs/ingestion/src/ingestion/ingestor.py, app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table)
+# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps

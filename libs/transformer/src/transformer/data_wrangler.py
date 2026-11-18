@@ -2,7 +2,7 @@
 # provides: class:DataWrangler, method:tier_steps, method:run
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-WRANGLER-1)
-# consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py, libs/transformer/tests/debug_wrangler.py
+# consumed_by: libs/transformer/src/transformer/engine_python_polars.py (the entry that app/modules/engine_registry.py hands to app/modules/orchestrator.py), app/modules/data_analysis_recipe_validator.py (tier_steps), app/modules/wrangle_studio.py (tier_steps), app/handlers/blueprint_handlers.py, libs/transformer/tests/debug_assembler.py, libs/transformer/tests/debug_wrangler.py
 # doc: .claude/rules/rules_data_engine.md, .claude/knowledge/architecture_decisions.md#ADR-094
 # @end_deps
 import polars as pl

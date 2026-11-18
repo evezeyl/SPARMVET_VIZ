@@ -2,7 +2,7 @@
 trigger: always_on
 deps:
   provides: [rule:artist_pillar, rule:plotnine_parity, rule:core_geoms_standard]
-  documents: [libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/themes/core.py, libs/viz_factory/src/viz_factory/registry.py]
+  documents: [libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/themes/core.py, libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/engine_python_plotnine.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py]
   consumed_by: [.claude/rules/rules_agent_role_bioscientist.md, .claude/knowledge/dependency_index.md]
 ---
 

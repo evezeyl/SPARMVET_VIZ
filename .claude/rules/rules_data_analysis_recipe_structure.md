@@ -2,7 +2,7 @@
 trigger: always_on
 deps:
   provides: [rule:canonical_steps_syntax, rule:directory_taxonomy, rule:analysis_groups_structure, rule:final_contract]
-  documents: [libs/transformer/src/transformer/data_assembler.py, app/handlers/home_theater.py]
+  documents: [libs/transformer/src/transformer/data_assembler.py, app/handlers/home_theater.py, libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/recipe_check.py]
   consumed_by: [.claude/rules/rules_agent_role_bioscientist.md, docs/appendix/data_analysis_recipe_structure.yaml, .claude/knowledge/dependency_index.md]
 ---
 

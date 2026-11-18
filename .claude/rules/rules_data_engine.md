@@ -2,7 +2,7 @@
 trigger: always_on
 deps:
   provides: [rule:3tier_lifecycle, rule:wrangling_block_structure, rule:decorator_standards, rule:polars_parity]
-  documents: [libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/actions/]
+  documents: [libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/actions/, libs/transformer/src/transformer/engine_python_polars.py, app/modules/cache_keys.py, app/modules/engine_registry.py]
   consumed_by: [.claude/rules/rules_agent_role_bioscientist.md, .claude/knowledge/dependency_index.md]
 ---
 

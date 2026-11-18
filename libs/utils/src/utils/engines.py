@@ -17,6 +17,7 @@ If deleted: no recipe can name an engine and the checker refuses every recipe.
 
 # @deps
 # provides: constant:DATA_ENGINE, constant:PLOT_ENGINE, constant:ENGINE_TABLE, constant:ENGINES, class:EngineRow, class:DataEngineEntry, class:PlotEngineEntry, function:engines_of, function:entry_module_name, function:effective_engine, function:engine_versions, function:tier_engine, function:engine_known, function:engine_problem, function:engine_error, function:prefix_problems, function:plot_engine_slot
+# consumes: libs/utils/src/utils/errors.py (DataAnalysisRecipeError: the refusal of an engine the app has no library for)
 # consumed_by: libs/utils/src/utils/recipe_check.py, libs/utils/src/utils/recipe_migration.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/registry.py,
 #              libs/transformer/src/transformer/actions/base.py, app/modules/engine_registry.py, app/modules/engine_record.py (tier_engine, effective_engine, engine_versions), app/modules/cache_keys.py (tier_engine),
 #              libs/test_lab/src/test_lab/bootstrapper.py, libs/test_lab/src/test_lab/scaffolder.py, libs/utils/tests/test_engines.py, libs/utils/tests/test_engine_table.py

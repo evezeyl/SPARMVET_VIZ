@@ -45,13 +45,13 @@
 ## `.claude/rules/rules_data_analysis_recipe_structure.md`
 - **Role:** `meta`
 - **provides:** `rule:canonical_steps_syntax`, `rule:directory_taxonomy`, `rule:analysis_groups_structure`, `rule:final_contract`
-- **documents:** `libs/transformer/src/transformer/data_assembler.py`, `app/handlers/home_theater.py`
+- **documents:** `libs/transformer/src/transformer/data_assembler.py`, `app/handlers/home_theater.py`, `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/recipe_check.py`
 - **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `docs/appendix/data_analysis_recipe_structure.yaml`, `.claude/knowledge/dependency_index.md`
 
 ## `.claude/rules/rules_data_engine.md`
 - **Role:** `meta`
 - **provides:** `rule:3tier_lifecycle`, `rule:wrangling_block_structure`, `rule:decorator_standards`, `rule:polars_parity`
-- **documents:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/actions/`
+- **documents:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/actions/`, `libs/transformer/src/transformer/engine_python_polars.py`, `app/modules/cache_keys.py`, `app/modules/engine_registry.py`
 - **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
 
 ## `.claude/rules/rules_documentation_aesthetics.md`
@@ -86,7 +86,7 @@
 ## `.claude/rules/rules_viz_factory.md`
 - **Role:** `meta`
 - **provides:** `rule:artist_pillar`, `rule:plotnine_parity`, `rule:core_geoms_standard`
-- **documents:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/registry.py`
+- **documents:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/engine_python_plotnine.py`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`
 - **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
 
 ## `app/handlers/__init__.py`
@@ -270,7 +270,7 @@
 ## `app/modules/orchestrator.py`
 - **Role:** `ref`
 - **provides:** `pipeline:materialize_tier1`, `pipeline:materialize_tier2`, `method:prepare_ingredient`, `method:locate_dataset_file`, `method:get_source_files`, `function:compute_data_analysis_recipe_keys`
-- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `app/modules/engine_registry.py (data_entry: the engine that runs a tier`, `D-0219)`, `libs/transformer/src/transformer/anchor.py`, `app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table)`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/utils/src/utils/recipe_tiers.py (collection_body)`, `app/modules/engine_registry.py (data_entry: the engine that runs a tier`, `D-0219)`, `libs/transformer/src/transformer/anchor.py`, `app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table)`
 - **mirrors:** `libs/transformer/tests/debug_assembler.py`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`, `app/modules/bundle_importer.py`, `app/modules/data_analysis_recipe_validator.py`
 - **doc:** `.claude/knowledge/dependency_index.md`
@@ -541,6 +541,13 @@
 - **consumes:** `nothing (the values are invented; plain random.Random(seed))`
 - **consumed_by:** `app/tests/test_left_join_lesson.py`
 - **doc:** `.claude/rules/rules_asset_scripts.md`
+
+## `assets/scripts/migrate_recipe_engine_keys.py`
+- **Role:** `info`
+- **provides:** `script:migrate_recipe_engine_keys`
+- **consumes:** `libs/utils/src/utils/engine_keys_migration.py (migrate`, `format_events`, `summary)`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py (is_partial_theme: which theme components set only some properties)`
+- **consumed_by:** `app/tests/test_migrate_recipe_engine_keys.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 12`, `the amendment of 2026-11-17)`, `.claude/knowledge/decision_ledger.md (D-0236`, `D-0250`, `D-0255`, `D-0258)`
 
 ## `assets/scripts/recipe_pictures.py`
 - **Role:** `info`
@@ -839,14 +846,14 @@
 - **Role:** `wrangle`
 - **provides:** `class:DataAssembler`, `method:assemble`
 - **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
-- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **consumed_by:** `libs/transformer/src/transformer/engine_python_polars.py (the entry that app/modules/engine_registry.py hands to app/modules/orchestrator.py)`, `libs/transformer/tests/debug_assembler.py`
 - **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`, `.claude/knowledge/architecture_decisions.md#ADR-094`
 
 ## `libs/transformer/src/transformer/data_wrangler.py`
 - **Role:** `wrangle`
 - **provides:** `class:DataWrangler`, `method:tier_steps`, `method:run`
 - **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
-- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`, `libs/transformer/tests/debug_wrangler.py`
+- **consumed_by:** `libs/transformer/src/transformer/engine_python_polars.py (the entry that app/modules/engine_registry.py hands to app/modules/orchestrator.py)`, `app/modules/data_analysis_recipe_validator.py (tier_steps)`, `app/modules/wrangle_studio.py (tier_steps)`, `app/handlers/blueprint_handlers.py`, `libs/transformer/tests/debug_assembler.py`, `libs/transformer/tests/debug_wrangler.py`
 - **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md#ADR-094`
 
 ## `libs/transformer/src/transformer/engine_python_polars.py`
@@ -932,6 +939,7 @@
 ## `libs/utils/src/utils/engines.py`
 - **Role:** `ref`
 - **provides:** `constant:DATA_ENGINE`, `constant:PLOT_ENGINE`, `constant:ENGINE_TABLE`, `constant:ENGINES`, `class:EngineRow`, `class:DataEngineEntry`, `class:PlotEngineEntry`, `function:engines_of`, `function:entry_module_name`, `function:effective_engine`, `function:engine_versions`, `function:tier_engine`, `function:engine_known`, `function:engine_problem`, `function:engine_error`, `function:prefix_problems`, `function:plot_engine_slot`
+- **consumes:** `libs/utils/src/utils/errors.py (DataAnalysisRecipeError: the refusal of an engine the app has no library for)`
 - **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/utils/src/utils/recipe_migration.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/registry.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md (ADR-106 V8`, `ADR-100)`, `.claude/knowledge/decision_ledger.md (D-0219`, `D-0238`, `D-0239`, `D-0247)`
 
@@ -1202,7 +1210,7 @@
 - **Role:** `plot`
 - **provides:** `class:VizFactory`, `function:VizFactory.render`, `constant:DEFAULT_RANDOM_STATE`, `function:draw_checked and function:show_draw_errors (re-exported from checked_plot.py)`
 - **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`, `libs/viz_factory/src/viz_factory/checked_plot.py`, `libs/viz_factory/src/viz_factory/font_check.py`, `libs/viz_factory/src/viz_factory/errors.py`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/pipeline_error.py`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/engines.py`, `libs/utils/src/utils/missing_values.py`, `libs/utils/src/utils/na_choice.py`
-- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/modules/gallery_examples.py`, `app/tests/test_render_every_plot.py`, `libs/viz_factory/tests/`
+- **consumed_by:** `libs/viz_factory/src/viz_factory/engine_python_plotnine.py (the entry that app/modules/engine_registry.py hands to app/src/server.py`, `HOME`, `the export`, `Blueprint and the gallery through PlotEngines)`, `app/handlers/home_theater.py (show_draw_errors)`, `app/modules/wrangle_studio.py (show_draw_errors)`, `app/tests/test_render_every_plot.py`, `libs/viz_factory/tests/`
 - **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-081`, `ADR-090`, `ADR-094`, `ADR-106)`
 
 ## `libs/viz_factory/tests/debug_audit.py`

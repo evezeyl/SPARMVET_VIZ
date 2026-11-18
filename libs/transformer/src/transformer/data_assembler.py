@@ -2,7 +2,7 @@
 # provides: class:DataAssembler, method:assemble
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-ASSEMBLER-1)
-# consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
+# consumed_by: libs/transformer/src/transformer/engine_python_polars.py (the entry that app/modules/engine_registry.py hands to app/modules/orchestrator.py), libs/transformer/tests/debug_assembler.py
 # doc: .claude/rules/rules_data_analysis_recipe_structure.md#7, .claude/knowledge/architecture_decisions.md#ADR-094
 # @end_deps
 import os
