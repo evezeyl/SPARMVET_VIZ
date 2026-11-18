@@ -25,13 +25,30 @@ Modes:
                 the other way, or another error text). Exit code 0 only when everything is identical and the set of plots
                 is the same. A plot stored as unstable is reported "unstable, not compared" and does not fail the check.
 
-Run from the project root (the data path of a recipe is relative to it). Defaults: recipe folders are the four folders of
-`config/data_analysis_recipes` and `app/tests/equality/recipes`; data root `assets/test_data`.
+Run from the root of the checkout that holds this script (the data path of a recipe is relative to it). Defaults: recipe
+folders are the four folders of `config/data_analysis_recipes` and `app/tests/equality/recipes`; data root `assets/test_data`.
 
-Examples:
-  PYTHONPATH=. .venv/bin/python assets/scripts/recipe_pictures.py --write tmpAI/pictures_before
-  PYTHONPATH=. .venv/bin/python assets/scripts/recipe_pictures.py --check tmpAI/pictures_before --out tmpAI/pictures_check
-  PYTHONPATH=. .venv/bin/python assets/scripts/recipe_pictures.py --write /tmp/p --recipe-dir config/data_analysis_recipes/retest
+Which code draws: the shared `.venv` has editable installs of the libraries that point at the MAIN folder. With a plain
+`PYTHONPATH=.` only `app/` and `assets/` come from this checkout and `libs/` comes from the main folder, so after a change in
+`libs/` the check would compare pictures drawn by the OLD library code and prove nothing. The tool therefore looks, before it
+draws, where `app` and every package of `libs/*/src` would be imported from. If one comes from outside the checkout this script
+lives in, it STOPS with a plain message (exit code 2), unless `--allow-outside-checkout` is given. The folder of every library is
+printed and written to the manifest under "libraries". Put the checkout's libraries first with this command (`$PY` is the
+python of the shared `.venv`, here the one of the main folder):
+
+  PYTHONHASHSEED=0 PYTHONPATH=".:$(ls -d libs/*/src | paste -sd:)" $PY assets/scripts/recipe_pictures.py --check DIR
+
+Why `PYTHONHASHSEED=0` (a known defect, found 2026-11-18): the plot `complex_template::Overview::gene_presence_by_country`
+(a stacked bar with a missing-value group) is drawn with the missing-value group at the bottom of a stack or at the top
+depending on Python's hash seed (the table and the data frame given to the plot are identical; verified: seed 4 differs, seeds
+0, 1, 2, 3, 5 are the same). It is in the drawing step, not in this tool. Until it is decided what to do, the documented command
+fixes the seed so that a check is repeatable; the seed used is printed and written to the manifest ("python_hash_seed"), and
+a check made with another seed says so. A random seed (variable not set) gives a failing check for that plot on some runs.
+
+Examples (the prefix is the same for every mode):
+  PYTHONHASHSEED=0 PYTHONPATH=".:$(ls -d libs/*/src | paste -sd:)" $PY assets/scripts/recipe_pictures.py --write tmpAI/pictures_before
+  PYTHONHASHSEED=0 PYTHONPATH=".:$(ls -d libs/*/src | paste -sd:)" $PY assets/scripts/recipe_pictures.py --check tmpAI/pictures_before --out tmpAI/pictures_check
+  PYTHONHASHSEED=0 PYTHONPATH=".:$(ls -d libs/*/src | paste -sd:)" $PY assets/scripts/recipe_pictures.py --write /tmp/p --recipe-dir config/data_analysis_recipes/retest
 
 # @deps
 # provides: script:recipe_pictures
@@ -43,8 +60,10 @@ Examples:
 import argparse
 import contextlib
 import hashlib
+import importlib.util
 import io
 import json
+import os
 import shutil
 import sys
 import tempfile
@@ -67,6 +86,7 @@ DEFAULT_PALETTES = "config/palettes.yaml"
 DEFAULT_SIZE = {"width": 8, "height": 5, "dpi": 120}
 MANIFEST = "manifest.json"
 SEP = "::"
+CHECKOUT = Path(__file__).resolve().parents[2]
 
 
 def plot_key(recipe: str, group: str, plot: str) -> str:
@@ -76,6 +96,68 @@ def plot_key(recipe: str, group: str, plot: str) -> str:
 
 def short(error: BaseException) -> str:
     return f"{type(error).__name__}: {' '.join(str(error).split())[:400]}"
+
+
+def checkout_packages(checkout: Path = CHECKOUT) -> List[str]:
+    """`app` and every package of the libraries of this checkout (`libs/*/src/<package>`)."""
+    found = {p.name for src in (checkout / "libs").glob("*/src") for p in src.iterdir()
+             if p.is_dir() and not p.name.startswith((".", "_")) and not p.name.endswith(".egg-info")}
+    return ["app"] + sorted(found)
+
+
+def origin_of(name: str) -> str:
+    """The folder a package is (or would be) imported from; "not found" when Python cannot find it.
+
+    A package that is already imported answers from the module itself. Otherwise the import system is asked without importing
+    (`find_spec`): the first entry of the search path wins, as for a namespace package (today `viz_gallery`), whose search path
+    also lists other copies behind the first one.
+    """
+    module = sys.modules.get(name)
+    if module is not None and getattr(module, "__file__", None):
+        return str(Path(module.__file__).resolve().parent)
+    if module is not None and getattr(module, "__path__", None):
+        return str(Path(list(module.__path__)[0]).resolve())
+    spec = importlib.util.find_spec(name)
+    if spec is None:
+        return "not found"
+    if spec.origin and spec.origin != "namespace" and spec.has_location:
+        return str(Path(spec.origin).resolve().parent)
+    return str(Path(list(spec.submodule_search_locations)[0]).resolve())
+
+
+def library_origins(checkout: Path = CHECKOUT) -> dict:
+    """{package: folder it is imported from} for every package of this checkout."""
+    return {name: origin_of(name) for name in checkout_packages(checkout)}
+
+
+def outside_checkout(origins: dict, checkout: Path = CHECKOUT) -> dict:
+    """The packages whose folder is not inside `checkout` (a package that cannot be found counts as outside)."""
+    return {name: where for name, where in origins.items() if where == "not found" or checkout.resolve() not in Path(where).parents}
+
+
+def outside_message(outside: dict, checkout: Path = CHECKOUT) -> str:
+    """Plain message: which packages, where they come from, what to do (D-0050: never draw with another copy of the code)."""
+    lines = [f"  {name}: {where}" for name, where in sorted(outside.items())]
+    return ("STOPPED: these packages are imported from outside this checkout (" + str(checkout) + "):\n" + "\n".join(lines) +
+            "\nThe pictures would be drawn by another copy of the code, so the check would prove nothing about this checkout."
+            "\nSuggestion: put the libraries of this checkout first, from its root:"
+            "\n  PYTHONPATH=\".:$(ls -d libs/*/src | paste -sd:)\" <venv python> assets/scripts/recipe_pictures.py ..."
+            "\nOnly if you know the other copy is the one you mean, add --allow-outside-checkout.")
+
+
+def hash_seed() -> str:
+    """The value of PYTHONHASHSEED, or "random" when it is not set (Python then takes a new seed at every start)."""
+    return os.environ.get("PYTHONHASHSEED") or "random"
+
+
+def seed_note(stored_seed: Optional[str], now_seed: str) -> str:
+    """One plain line about the hash seed of this run and of the stored set (a known plot depends on it, see --help)."""
+    if stored_seed is None:
+        return f"hash seed of this run: {now_seed}; the stored manifest does not record its seed"
+    if stored_seed == now_seed:
+        return f"hash seed of this run: {now_seed} (same as the stored set)"
+    return (f"hash seed of this run: {now_seed}; the stored set was drawn with: {stored_seed}. A plot with a missing-value group "
+            f"is known to change with the seed (see --help); if only it differs, rerun with PYTHONHASHSEED={stored_seed if stored_seed != 'random' else 0}")
 
 
 def discover(recipe_dirs: List[Path]) -> tuple[list, list]:
@@ -226,7 +308,7 @@ def draw_all(recipe_dirs: List[Path], data_root: Path, palettes: Optional[dict],
             continue
         records += draw_recipe(recipe_id, path, data_root, palettes, out, size, repeat)
     return {"size": size, "repeat": repeat, "recipe_dirs": [str(d) for d in recipe_dirs], "skipped": skipped,
-            "plots": sorted(records, key=lambda r: r["key"])}
+            "libraries": library_origins(), "python_hash_seed": hash_seed(), "plots": sorted(records, key=lambda r: r["key"])}
 
 
 def side_by_side(old: Path, new: Path, target: Path) -> None:
@@ -311,7 +393,20 @@ def main(argv=None) -> int:
     parser.add_argument("--only", nargs="+", metavar="ID", help="only these recipe ids")
     parser.add_argument("--repeat", type=int, default=2, help="draws per plot in --write; two draws that differ mark the plot unstable (default: 2)")
     parser.add_argument("--out", default="tmpAI/recipe_pictures_check", help="--check: where the new pictures and the difference pictures go (default: tmpAI/recipe_pictures_check)")
+    parser.add_argument("--allow-outside-checkout", action="store_true",
+                        help="draw even when a package is imported from outside this checkout (the default is to stop, D-0050)")
     args = parser.parse_args(argv)
+    origins = library_origins()
+    print("libraries imported from:")
+    for name, where in origins.items():
+        print(f"  {name}: {where}")
+    print(f"python hash seed: {hash_seed()}")
+    outside = outside_checkout(origins)
+    if outside:
+        if not args.allow_outside_checkout:
+            print(outside_message(outside))
+            return 2
+        print("WARNING: " + ", ".join(sorted(outside)) + " come from outside this checkout (allowed by --allow-outside-checkout); the manifest records it.")
     recipe_dirs = [Path(d) for d in (args.recipe_dir or DEFAULT_RECIPE_DIRS)]
     palettes = load_palettes(Path(args.palettes))
     size = dict(DEFAULT_SIZE)
@@ -332,6 +427,13 @@ def main(argv=None) -> int:
         print(f"No {MANIFEST} in {stored_dir}. Suggestion: run --write {stored_dir} first.")
         return 2
     stored = json.loads((stored_dir / MANIFEST).read_text(encoding="utf-8"))
+    if stored.get("libraries"):
+        moved = {n: (w, origins.get(n)) for n, w in stored["libraries"].items() if origins.get(n) != w}
+        print("libraries of the stored set differ from now (information, not a failure): " + ", ".join(sorted(moved)) if moved
+              else "libraries of the stored set: same folders as now")
+    else:
+        print("the stored manifest has no record of the folders of its libraries")
+    print(seed_note(stored.get("python_hash_seed"), hash_seed()))
     out = Path(args.out)
     now_dir = out / "now"
     now = draw_all(recipe_dirs, Path(args.data_root), palettes, now_dir, stored.get("size", size), 1, args.only)

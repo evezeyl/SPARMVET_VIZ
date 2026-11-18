@@ -212,3 +212,85 @@ def test_the_comparison_can_fail(tmp_path):
     Image.fromarray(dot).save(tmp_path / "b.png")
     assert rp.differing_pixels(rp.pixels(tmp_path / "a.png"), rp.pixels(tmp_path / "a.png")) == 0
     assert rp.differing_pixels(rp.pixels(tmp_path / "a.png"), rp.pixels(tmp_path / "b.png")) == 1
+
+
+# ---- which code draws (Part A of task ENGINE-KEYS): the check must use the libraries of THIS checkout, never another copy ----
+
+def test_under_pytest_every_package_comes_from_this_checkout():
+    origins = rp.library_origins()
+    assert "app" in origins and "utils" in origins and "viz_gallery" in origins
+    assert rp.outside_checkout(origins) == {}
+
+
+def test_a_package_from_another_folder_is_named_with_its_folder_and_the_remedy():
+    outside = rp.outside_checkout({"utils": "/elsewhere/libs/utils/src/utils", "app": str(ROOT / "app"), "gone": "not found"})
+    assert set(outside) == {"utils", "gone"}
+    message = rp.outside_message(outside)
+    assert "utils: /elsewhere/libs/utils/src/utils" in message and "gone: not found" in message
+    assert "libs/*/src" in message and "--allow-outside-checkout" in message
+
+
+def test_the_manifest_records_where_each_library_was_imported_from(project):
+    project.write()
+    libraries = project.manifest()["libraries"]
+    assert set(libraries) == set(rp.checkout_packages())
+    assert all(Path(where).resolve().is_relative_to(ROOT) for where in libraries.values())
+
+
+def test_the_tool_stops_before_drawing_when_a_package_comes_from_outside(project, capsys, monkeypatch):
+    monkeypatch.setattr(rp, "library_origins", lambda *a, **k: {"utils": "/elsewhere/utils", "app": str(ROOT / "app")})
+    monkeypatch.setattr(rp, "draw_all", lambda *a, **k: pytest.fail("drew with another copy of the code"))
+    assert project.write() == 2
+    assert not (project.stored / "manifest.json").exists()
+    out = capsys.readouterr().out
+    assert "STOPPED" in out and "utils: /elsewhere/utils" in out
+    assert project.check() == 2
+
+
+def test_the_flag_allows_it_and_says_so(project, capsys, monkeypatch):
+    monkeypatch.setattr(rp, "library_origins", lambda *a, **k: {"utils": "/elsewhere/utils", "app": str(ROOT / "app")})
+    assert rp.main(project.args("--write", project.stored, "--allow-outside-checkout")) == 0
+    out = capsys.readouterr().out
+    assert "WARNING" in out and "utils" in out
+    assert project.manifest()["libraries"]["utils"] == "/elsewhere/utils"
+
+
+def test_a_real_run_from_a_checkout_whose_libraries_are_elsewhere_stops(tmp_path):
+    """End to end: a script copy in a folder that has no libraries of its own imports them from somewhere else, and stops."""
+    import subprocess, sys
+    fake = tmp_path / "checkout"
+    (fake / "assets" / "scripts").mkdir(parents=True)
+    (fake / "libs" / "utils" / "src" / "utils").mkdir(parents=True)  # a package this checkout claims; Python finds another copy first
+    script = fake / "assets" / "scripts" / "recipe_pictures.py"
+    script.write_text((ROOT / "assets" / "scripts" / "recipe_pictures.py").read_text())
+    import os
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join(sys.path)}
+    done = subprocess.run([sys.executable, str(script), "--write", str(tmp_path / "o"), "--recipe-dir", str(tmp_path / "none")],
+                          cwd=fake, env=env, capture_output=True, text=True)
+    assert done.returncode == 2, done.stdout + done.stderr
+    assert "STOPPED" in done.stdout and "utils" in done.stdout
+    allowed = subprocess.run([sys.executable, str(script), "--write", str(tmp_path / "o2"), "--recipe-dir", str(tmp_path / "none"),
+                              "--allow-outside-checkout"], cwd=fake, env=env, capture_output=True, text=True)
+    assert allowed.returncode == 0, allowed.stdout + allowed.stderr
+    assert "libraries" in json.loads((tmp_path / "o2" / "manifest.json").read_text())
+
+
+def test_help_gives_the_command_that_puts_the_checkout_first():
+    text = (ROOT / "assets" / "scripts" / "recipe_pictures.py").read_text()
+    assert 'PYTHONPATH=".:$(ls -d libs/*/src | paste -sd:)"' in text and "--allow-outside-checkout" in text
+
+
+def test_the_manifest_records_the_hash_seed_and_a_check_names_a_different_one(project, capsys, monkeypatch):
+    monkeypatch.setenv("PYTHONHASHSEED", "0")
+    assert project.write() == 0
+    assert project.manifest()["python_hash_seed"] == "0"
+    monkeypatch.setenv("PYTHONHASHSEED", "4")
+    project.check()
+    out = capsys.readouterr().out
+    assert "the stored set was drawn with: 0" in out and "PYTHONHASHSEED=0" in out
+
+
+def test_the_seed_note_covers_the_three_cases():
+    assert "does not record" in rp.seed_note(None, "random")
+    assert "same as the stored set" in rp.seed_note("0", "0")
+    assert "PYTHONHASHSEED=0" in rp.seed_note("random", "3")  # a stored random seed: suggests 0 (rerun, not a proof)
