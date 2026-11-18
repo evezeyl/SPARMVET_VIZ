@@ -25,6 +25,7 @@ import polars as pl
 import yaml
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
 from utils.action_names import JOIN
+from utils.engines import plot_engine_slot
 from blueprint_arch.join_designer import JOIN_HOW_OPTIONS
 
 
@@ -566,20 +567,12 @@ class WrangleStudio:
             # --- Logic Discovery ---
             found_logic = []
 
-            # 1. Check Assemblies (Tier 2 Junctions)
+            # 1. Check joins: the steps of their tier 1 (D-0250)
             join_defs = full_cfg.get("joins", {})
             if node_id in join_defs:
-                steps = join_defs[node_id].get("steps", [])
                 from transformer.data_wrangler import DataWrangler
-                found_logic = DataWrangler._resolve_tier(steps, "tier1")
+                found_logic = DataWrangler.tier_steps(join_defs[node_id], "tier1")
                 self.active_viz_id.set(None)  # Not a plot
-
-            # 2. Check Plots (Terminals)
-            elif node_id in full_cfg.get("plots", {}):
-                found_logic = []  # Logic is in the parent assembly
-                self.active_viz_id.set(node_id)
-                # Find parent assembly and load its logic too?
-                # For now, we just focus on the plot aesthetics
 
             # Update the surgical stack
             ui_nodes = []
@@ -608,8 +601,8 @@ class WrangleStudio:
             when real data is available.
 
             Logic application rules:
-            - wrangling / plot_wrangling: apply logic_stack (transform raw ingredient)
-            - assembly / output_fields / input_fields / plot_spec: serve parquet as-is
+            - wrangling: apply logic_stack (transform raw ingredient)
+            - join / input_fields / plot_spec: serve parquet as-is
               (parquet IS the final product — re-applying step list would double-transform)
             """
             anchor_path_str = self.active_anchor_path.get()
@@ -622,7 +615,7 @@ class WrangleStudio:
                 lf = pl.scan_parquet(anchor_p)
                 # Only apply in-memory logic for roles that represent a wrangling step
                 role = self.active_component_info.get().get("role", "")
-                if role in ("wrangling", "plot_wrangling"):
+                if role == "wrangling":
                     lf = self.apply_logic(lf)
                 return lf.collect()
             except Exception as e:
@@ -671,29 +664,23 @@ class WrangleStudio:
                     return None, f"Data analysis recipe cannot be loaded: {'; '.join(load_problems[:3])}"
                 full_cfg = loaded_cfg.raw_config
 
-                # Resolve the plot spec from flat `plots:` (gallery bundles)
-                # or modern `analysis_groups:` (pipeline data analysis recipes, ADR-043).
+                # Resolve the plot from `analysis_groups:` (ADR-043): the entry is the plot itself (D-0237).
                 render_data_analysis_recipe = None
-                if viz_id in full_cfg.get("plots", {}):
-                    render_data_analysis_recipe = full_cfg
-                else:
-                    for grp_spec in full_cfg.get("analysis_groups", {}).values():
-                        if not isinstance(grp_spec, dict):
-                            continue
-                        plot_entry = grp_spec.get("plots", {}).get(viz_id)
-                        if plot_entry is not None:
-                            spec = (plot_entry.get("spec", plot_entry)
-                                    if isinstance(plot_entry, dict) else plot_entry)
-                            render_data_analysis_recipe = {
-                                "plots": {viz_id: spec},
-                                "plot_defaults": full_cfg.get("plot_defaults", {}),
-                                # ADR-106 V8: the factory refuses an engine it does not implement
-                                **({"plot_engine": full_cfg["plot_engine"]} if "plot_engine" in full_cfg else {}),
-                            }
-                            break
+                for grp_spec in full_cfg.get("analysis_groups", {}).values():
+                    if not isinstance(grp_spec, dict):
+                        continue
+                    plot_entry = grp_spec.get("plots", {}).get(viz_id)
+                    if plot_entry is not None:
+                        render_data_analysis_recipe = {
+                            "plots": {viz_id: plot_entry},
+                            "plot_defaults": full_cfg.get("plot_defaults", {}),
+                            # ADR-106 V8: the factory refuses an engine it does not implement (the plot's own, else the recipe's)
+                            **plot_engine_slot(plot_entry, full_cfg),
+                        }
+                        break
 
                 if render_data_analysis_recipe is None:
-                    available = list(full_cfg.get("plots", {}).keys())
+                    available = []
                     for grp in full_cfg.get("analysis_groups", {}).values():
                         if isinstance(grp, dict):
                             available.extend(grp.get("plots", {}).keys())
@@ -1441,9 +1428,9 @@ class WrangleStudio:
                 role = info.get("role", "unknown")
                 schema_id = info.get("schema_id", "")
                 role_colors = {
-                    "input_fields": "primary", "output_fields": "success",
+                    "input_fields": "primary",
                     "wrangling": "warning", "join": "info",
-                    "plot_wrangling": "warning", "plot_spec": "secondary",
+                    "plot_spec": "secondary",
                 }
                 return ui.div(
                     ui.span("Lineage Rail", class_="fw-bold me-2 small text-muted"),
@@ -1453,14 +1440,14 @@ class WrangleStudio:
                 )
 
             role_colors = {
-                "input_fields": "#345beb", "output_fields": "#10a395",
+                "input_fields": "#345beb",
                 "wrangling": "#ffc107", "join": "#0dcaf0",
-                "plot_wrangling": "#fd7e14", "plot_spec": "#6c757d",
+                "plot_spec": "#6c757d",
             }
             role_icons = {
-                "input_fields": "📥", "output_fields": "📤",
+                "input_fields": "📥",
                 "wrangling": "⚙️", "join": "🔗",
-                "plot_wrangling": "🔧", "plot_spec": "📊",
+                "plot_spec": "📊",
             }
             nodes_ui = []
             for i, node in enumerate(chain):
@@ -1517,8 +1504,6 @@ class WrangleStudio:
             role = info.get("role", "") if info else ""
             if role == "join":
                 label = "Ingredients"
-            elif role == "plot_wrangling":
-                label = "Join Output (Input)"
             else:
                 label = "Upstream Contract"
             return ui.span(label)
@@ -1588,8 +1573,8 @@ class WrangleStudio:
                     )
                 )
 
-            # Inline wrangling indicator
-            wrangling_slot = info.get("wrangling")
+            # Inline wrangling indicator: the tier 1 of the table or join is written in the recipe, not in a file
+            wrangling_slot = info.get("tier1")
             if isinstance(wrangling_slot, dict) and "inline" in wrangling_slot:
                 parts.append(
                     ui.div(
@@ -1597,29 +1582,6 @@ class WrangleStudio:
                         class_="mt-1"
                     )
                 )
-
-            # Plot spec: show pre_plot_wrangling status
-            if role == "plot_spec":
-                has_pre_wrn = isinstance(wrangling_slot, str)  # str = rel_path = file exists
-                if has_pre_wrn:
-                    parts.append(
-                        ui.div(
-                            ui.span("🔧 Pre-plot wrangling linked",
-                                    class_="small text-success"),
-                            class_="mt-1"
-                        )
-                    )
-                else:
-                    parts.append(
-                        ui.div(
-                            ui.input_action_button(
-                                "btn_add_plot_wrangling",
-                                "➕ Add plot wrangling",
-                                class_="btn btn-sm btn-outline-warning mt-1"
-                            ),
-                            class_="mt-1"
-                        )
-                    )
 
             return ui.div(*parts, class_="p-2")
 
@@ -1630,8 +1592,6 @@ class WrangleStudio:
             role = info.get("role", "") if info else ""
             if role in ("input_fields", "wrangling", "join"):
                 label = "Output Fields"
-            elif role == "plot_wrangling":
-                label = "→ Plot Spec (Terminal)"
             else:
                 label = "Downstream Contract"
             return ui.span(label)
@@ -1725,95 +1685,7 @@ class WrangleStudio:
                             )
                         )
 
-            # BP-FWD-HINT-1: Forward propagation hint — which downstream contracts
-            # would drop this field if it were added/renamed at the current tier?
-            data_analysis_recipe_path = self.active_data_analysis_recipe_path.get()
-            if (up_found or down_found) and data_analysis_recipe_path and chain:
-                try:
-                    from blueprint_arch.data_analysis_recipe_navigator import build_sibling_map as _bsm
-                    ctx = _bsm(data_analysis_recipe_path)
-                    active_idx = next(
-                        (i for i, n in enumerate(chain) if n.get("is_active")), None
-                    )
-                    fwd_warnings = []
-                    if active_idx is not None:
-                        for node in chain[active_idx + 1:]:
-                            node_rel = node.get("rel", "")
-                            entry = ctx.get(node_rel, {})
-                            sib = entry.get("siblings", {})
-                            if not isinstance(sib, dict):
-                                continue
-                            out_slot = sib.get("output_fields")
-                            if not out_slot:
-                                continue
-                            # Check inline output_fields
-                            if isinstance(out_slot, dict) and "inline" in out_slot:
-                                contract_fields = {
-                                    k.lower() for k in out_slot["inline"]
-                                }
-                                if query not in contract_fields:
-                                    fwd_warnings.append(
-                                        f"{node.get('label', node_rel)} — inline contract does not include '{query}'"
-                                    )
-                            elif isinstance(out_slot, str):
-                                # Explicit file — can't load here without inc_map, flag as "check manually"
-                                fwd_warnings.append(
-                                    f"{node.get('label', node_rel)} — has explicit output_fields file (verify '{query}' is listed)"
-                                )
-
-                    if fwd_warnings:
-                        rows.append(
-                            ui.div(
-                                ui.tags.hr(),
-                                ui.div(
-                                    ui.tags.span("Forward impact", class_="badge bg-danger me-2"),
-                                    "These downstream contracts will drop this field unless updated:",
-                                    class_="small fw-bold mb-1"
-                                ),
-                                *[
-                                    ui.div(
-                                        ui.tags.span("Update needed", class_="badge bg-warning text-dark me-2"),
-                                        w,
-                                        class_="small mb-1"
-                                    )
-                                    for w in fwd_warnings
-                                ],
-                                class_="mt-2"
-                            )
-                        )
-                    else:
-                        rows.append(
-                            ui.div(
-                                ui.tags.hr(),
-                                ui.div(
-                                    ui.tags.span("Forward clear", class_="badge bg-success me-2"),
-                                    f"No downstream contract explicitly excludes '{query}'.",
-                                    class_="small"
-                                ),
-                                class_="mt-2"
-                            )
-                        )
-                except Exception:
-                    pass
-
             return ui.div(*rows, class_="mt-2 p-1")
-
-        @reactive.Effect
-        @reactive.event(input.btn_add_plot_wrangling)
-        def handle_add_plot_wrangling():
-            """Inform the user how to scaffold a pre_plot_wrangling file.
-            Full scaffolding (Phase 18-D complete) will auto-create the file and
-            insert the pre_plot_wrangling: !include key into the data analysis recipe plot block.
-            """
-            info = self.active_component_info.get()
-            schema_id = info.get("schema_id", "this plot") if info else "this plot"
-            ui.notification_show(
-                f"To add plot wrangling for '{schema_id}': create a wrangling YAML "
-                f"and add 'pre_plot_wrangling: !include <path>' to its plot block in "
-                f"the master data analysis recipe. Then reload the data analysis recipe.",
-                type="message",
-                duration=8
-            )
 
         @reactive.Effect
         @reactive.event(input.lineage_node_rel)

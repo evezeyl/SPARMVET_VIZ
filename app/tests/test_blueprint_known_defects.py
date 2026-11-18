@@ -46,8 +46,8 @@ def test_a_multi_select_parameter_is_saved_as_a_plain_list(monkeypatch):
 
     ns["_bp_apply_node_handler"]()
     nodes = ws.logic_stack.get()
-    content = ns["_serialise_component_for_save"]("wrangling", nodes, "")
+    content = ns["_serialise_component_for_save"]("wrangling", nodes, "", "tier1")
     written = yaml.dump(content, default_flow_style=False, sort_keys=False)   # what the save handler does
 
     loaded = yaml.safe_load(written)                                          # what HOME's loader does
-    assert loaded["wrangling"]["tier1"][0]["columns"] == ["sequence_type"]
+    assert loaded["steps"][0]["columns"] == ["sequence_type"]       # a tier file holds `steps` (D-0250)

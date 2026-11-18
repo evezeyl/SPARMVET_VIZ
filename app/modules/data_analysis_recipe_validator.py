@@ -156,18 +156,51 @@ def checker_catalogs() -> dict:
     }
 
 
+FRAGMENT_TOOL = "assets/scripts/migrate_recipe_engine_keys.py"
+FRAGMENT_TIERS = ("tier1", "tier2")   # tier3 is a plot's: Blueprint never authors it (ADR-082 section 4)
+
+
+def fragment_tiers(raw) -> dict[str, list]:
+    """The steps of an uploaded fragment, by place (D-0250): `{"steps": [...]}` for a tier file (`steps:` and an optional
+    `data_engine:`), or `{"tier1": [...], "tier2": [...]}` for the tiers of a table written as their own keys
+    (`tier1: {steps: [...]}`). Empty when the file holds neither.
+
+    Only these shapes are read. A `wrangling` key, a tier written as a list or a `steps` that is not a list are old shapes and
+    are not read (no shim): `fragment_old_shape` names what is wrong, so the user is told instead of getting fewer steps."""
+    if not isinstance(raw, dict):
+        return {}
+    found: dict[str, list] = {}
+    if isinstance(raw.get("steps"), list):
+        found["steps"] = raw["steps"]
+    for tier in FRAGMENT_TIERS:
+        held = raw.get(tier)
+        if isinstance(held, dict) and isinstance(held.get("steps"), list):
+            found[tier] = held["steps"]
+    return found
+
+
+def fragment_old_shape(raw) -> Optional[str]:
+    """Why an uploaded fragment is in an old shape (it holds a `wrangling` key, or a tier as a list), or None."""
+    if not isinstance(raw, dict):
+        return None
+    if "wrangling" in raw:
+        return "'wrangling' is not a key any more: a tier file is `steps: [...]`, the tiers of a table are `tier1: {steps: [...]}`"
+    listed = [t for t in FRAGMENT_TIERS if isinstance(raw.get(t), list)]
+    if listed:
+        return f"{', '.join(listed)} written as a list: a tier is a mapping with its steps (`{listed[0]}: {{steps: [...]}}`)"
+    return None
+
+
 def _fragment_report(raw) -> list[str]:
-    """One line per problem of the steps of a wrangling-only upload, each step against its action schema."""
+    """One line per problem of the steps of an upload that is a fragment (a tier file, or the tiers of a table), each step
+    against its action schema."""
     from utils.ui_schema import step_problems
-    wrangling = raw.get("wrangling") if isinstance(raw, dict) else None
-    if isinstance(wrangling, list):
-        located = [("steps", i, s) for i, s in enumerate(wrangling, start=1)]
-    elif isinstance(wrangling, dict):
-        located = [(t, i, s) for t in ("tier1", "tier2", "tier3") for i, s in enumerate(wrangling.get(t) or [], start=1)]
-    else:
-        located = []
+    located = [(place, i, s) for place, steps in fragment_tiers(raw).items() for i, s in enumerate(steps, start=1)]
     if not located:
-        return ["[UP01] the file has no wrangling steps and no data_schemas: nothing to import"]
+        old = fragment_old_shape(raw)
+        if old:
+            return [f"[UP02] {old}. Rewrite the file with {FRAGMENT_TOOL}"]
+        return ["[UP01] the file has no steps and no data_schemas: nothing to import"]
     actions = checker_catalogs()["actions"]
     lines = []
     for tier, i, step in located:
