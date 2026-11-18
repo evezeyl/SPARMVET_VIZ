@@ -33,7 +33,7 @@ from app.modules.data_analysis_recipe_validator import (
     validate_data_analysis_recipe,
     validate_data_analysis_recipe_data,
 )
-from app.modules.cache_keys import files_signature
+from app.modules.cache_keys import CACHE_VERSION_META, ENGINE_CACHE_VERSION, STORED_TABLES_REBUILT_NOTICE, files_signature
 from utils.path_expansion import expand_deployment_paths
 from app.modules.renamed_keys import (
     renamed_app_features_key_errors,
@@ -198,9 +198,28 @@ class Bootloader:
 
         # 5. Stored tables: a writer killed in the middle leaves a hidden temporary file the size of a table (STALE-KEY-STORE-1).
         # Leftovers older than a short age are removed; a recent file may be a write in progress by another process.
-        from transformer.anchor import remove_orphan_temporaries
-        for removed in remove_orphan_temporaries(self.get_location("user_data") / "anchors"):
+        from transformer.anchor import remove_orphan_temporaries, remove_tables_of_other_version
+        anchors = self.get_location("user_data") / "anchors"
+        for removed in remove_orphan_temporaries(anchors):
             print(f"[Bootloader] Removed the leftover temporary file of a killed writer: anchors/{removed}")
+
+        # 6. Stored tables of another cache version (D-0240): removed here, once, and the user is told in one sentence. A second
+        # start finds none (they are gone), and a folder with nothing stored, or only tables of this version, says nothing.
+        self._stored_tables_notice_lock = threading.Lock()
+        self._stored_tables_notice: str | None = None
+        old_tables = remove_tables_of_other_version(anchors, CACHE_VERSION_META, ENGINE_CACHE_VERSION)
+        if old_tables:
+            print(f"[Bootloader] Removed {len(old_tables)} stored table(s) of another cache version (they are rebuilt when a recipe "
+                  f"is opened): {', '.join('anchors/' + name for name in old_tables)}")
+            self._stored_tables_notice = STORED_TABLES_REBUILT_NOTICE
+
+    def take_stored_tables_notice(self) -> str | None:
+        """The one sentence that tells the user that the stored tables are rebuilt, the first time it is asked for after a start
+        that removed tables of another cache version; None every time after, and at a start that removed nothing. PROVISIONAL
+        wording (`cache_keys.STORED_TABLES_REBUILT_NOTICE`)."""
+        with self._stored_tables_notice_lock:
+            text, self._stored_tables_notice = self._stored_tables_notice, None
+            return text
 
     def _check_gallery_if_enabled(self) -> None:
         """ADR-071: the gallery is touched only when `gallery_enabled` is on."""

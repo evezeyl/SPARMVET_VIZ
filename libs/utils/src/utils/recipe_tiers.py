@@ -14,7 +14,7 @@ keys, the export, HOME's badge, the checker and the Blueprint lineage all read t
 rule exists once.
 
 # @deps
-# provides: function:collection_body, function:tier2_steps, function:step_list, function:plot_targets, function:unapplied_schema_tier2, function:unapplied_join_tier2, function:without_tier2, function:schema_bodies
+# provides: function:collection_body, function:tier2_steps, function:step_list, function:plot_targets, function:unapplied_schema_tier2, function:unapplied_join_tier2, function:without_tier2, function:without_data_engines, function:collection_bodies, function:schema_bodies
 # consumed_by: app/modules/cache_keys.py, app/modules/orchestrator.py (through cache_keys), libs/utils/src/utils/recipe_check.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/utils/tests/test_recipe_tiers.py, app/tests/test_schema_tier2.py
 # doc: .claude/design/recipe_format_spec.md (DEC16, line 357, S07, X4), .claude/knowledge/architecture_decisions.md#adr-089
 # @end_deps
@@ -120,3 +120,38 @@ def _drop_tier2(body: Any) -> Any:
     if not (isinstance(body, dict) and "tier2" in body):
         return body
     return {k: v for k, v in body.items() if k != "tier2"}
+
+
+def collection_bodies(raw: dict) -> Dict[str, Any]:
+    """{id: body} of every join and every schema of the recipe: the blocks that have a tier 1 (and may have a tier 2)."""
+    found: Dict[str, Any] = dict(schema_bodies(raw)) if isinstance(raw, dict) else {}
+    joins = raw.get("joins") if isinstance(raw, dict) else None
+    if isinstance(joins, dict):
+        found.update(joins)   # a join first, the order `collection_body` resolves an id in
+    return found
+
+
+def without_data_engines(raw: dict) -> dict:
+    """A shallow copy of the recipe without the written data engines of Tier 1: the recipe's `data_engine` and the
+    `data_engine` of the tier 1 of every table and join.
+
+    The cache key holds the EFFECTIVE tier-1 engine of each table as its own argument (`cache_keys.tier1_engines`, D-0240), so the
+    text is left out of the material: a table whose tier 1 writes the engine it would inherit anyway has the same key as one
+    that writes nothing. The `data_engine` of a tier 2 leaves with the tier-2 list (`without_tier2`). The recipe itself is not changed."""
+    material = {k: v for k, v in raw.items() if k != "data_engine"}
+    joins = material.get("joins")
+    if isinstance(joins, dict):
+        material["joins"] = {jid: _drop_tier1_engine(join) for jid, join in joins.items()}
+    for section in SCHEMA_SECTIONS:
+        if isinstance(material.get(section), dict):
+            material[section] = {sid: _drop_tier1_engine(schema) for sid, schema in material[section].items()}
+    if METADATA_SCHEMA in material:
+        material[METADATA_SCHEMA] = _drop_tier1_engine(material[METADATA_SCHEMA])
+    return material
+
+
+def _drop_tier1_engine(body: Any) -> Any:
+    tier1 = body.get("tier1") if isinstance(body, dict) else None
+    if not (isinstance(tier1, dict) and "data_engine" in tier1):
+        return body
+    return {**body, "tier1": {k: v for k, v in tier1.items() if k != "data_engine"}}

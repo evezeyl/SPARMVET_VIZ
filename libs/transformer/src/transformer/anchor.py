@@ -5,8 +5,8 @@ overwrite any file, so they are engine functions now: the orchestrator calls the
 location (spec DEC42, section 15).
 
 # @deps
-# provides: function:write_anchor, function:read_anchor, function:read_anchor_if_key, function:open_anchor, function:remove_orphan_temporaries
-# consumed_by: app/modules/orchestrator.py
+# provides: function:write_anchor, function:read_anchor, function:read_anchor_if_key, function:open_anchor, function:remove_orphan_temporaries, function:remove_tables_of_other_version
+# consumed_by: app/modules/orchestrator.py, app/src/bootloader.py
 # doc: .claude/design/recipe_format_spec.md (DEC42), .claude/knowledge/architecture_decisions.md (ADR-024, ADR-031, ADR-089)
 # @end_deps
 """
@@ -53,6 +53,38 @@ def remove_orphan_temporaries(folder, table_file_name: Optional[str] = None, max
             continue
         except OSError as exc:
             print(f"[anchor] could not remove the leftover temporary file {full}: {exc}")
+    return removed
+
+
+def remove_tables_of_other_version(folder, version_meta_key: str, version: str) -> List[str]:
+    """Delete every stored table of `folder` whose footer does not carry `version` under `version_meta_key`; returns the names removed.
+
+    A stored table is a Parquet file that carries a key written by `write_anchor` (the footer holds `sparmvet_decision_hash`).
+    A table written before the version mark existed carries none and is removed too: it was made with another cache version and
+    its key can never match again, so it could only take space and, one day, be served by a bug (D-0240, remove what a change made
+    invalid when the change is detected). Left alone: a Parquet file with no such key (not one of ours), a file that cannot be
+    read (named on the console, the user may want it), a hidden temporary file of a writer, and anything that is not `*.parquet`.
+    """
+    removed: List[str] = []
+    if not os.path.isdir(folder):
+        return removed
+    for name in sorted(os.listdir(folder)):
+        full = os.path.join(folder, name)
+        if name.startswith(".") or not name.endswith(".parquet") or not os.path.isfile(full):
+            continue
+        try:
+            footer = pl.read_parquet_metadata(full)
+        except (OSError, pl.exceptions.PolarsError) as exc:
+            print(f"[anchor] {full} cannot be read and was left in place: {exc}")
+            continue
+        if "sparmvet_decision_hash" in footer and footer.get(version_meta_key) != version:
+            try:
+                os.unlink(full)
+                removed.append(name)
+            except FileNotFoundError:
+                continue
+            except OSError as exc:
+                print(f"[anchor] could not remove the stored table {full} of another cache version: {exc}")
     return removed
 
 

@@ -15,7 +15,8 @@ from ingestion.ingestor import DataIngestor, find_dataset_file
 from transformer.anchor import read_anchor_if_key, write_anchor
 from app.modules.engine_registry import data_entry
 from utils.recipe_tiers import collection_body
-from app.modules.cache_keys import DataAnalysisRecipeKeys, LoadedDataAnalysisRecipe, load_data_analysis_recipe, data_analysis_recipe_keys, tier2_key, tier2_steps
+from app.modules.cache_keys import (CACHE_VERSION_META, DataAnalysisRecipeKeys, ENGINE_CACHE_VERSION, LoadedDataAnalysisRecipe, collection_tier2_key,
+                                    data_analysis_recipe_keys, load_data_analysis_recipe, tier2_engine, tier2_steps)
 
 # Parquet metadata key holding the chained Tier 1 key (ADR-089).
 TIER1_KEY_META = "sparmvet_tier1_key"
@@ -223,13 +224,16 @@ class DataOrchestrator:
             print(f"[Orchestrator] ✅ Tier 1 anchor '{collection_id}' is valid (key match) → {output_path}")
             return stored, keys.tier1_key, None, None
 
-        # Tier 1 is rebuilt, so the Tier 2 stored on top of the old one is invalid by definition.
+        # Tier 1 is rebuilt, so the Tier 2 stored on top of the old one is invalid by definition. The table that did not match
+        # (another key, another cache version, an unreadable file) is removed now, at the moment it is found: a build that
+        # then fails must not leave a table that a later change could serve (rules_verification_testing.md section 9).
         t2_file.unlink(missing_ok=True)
+        output_path.unlink(missing_ok=True)
 
         # The key of what this build reads: the recipe object loaded above and the data files as they are now. `keys` may
         # be older than both (a view computes them once).
         built_from = built_from or self.compute_data_analysis_recipe_keys(data_analysis_recipe_id, loaded=loaded)
-        stored_key = {TIER1_KEY_META: built_from.tier1_key}
+        stored_key = {TIER1_KEY_META: built_from.tier1_key, CACHE_VERSION_META: ENGINE_CACHE_VERSION}
         verdict: list[InputsChanged] = []
 
         def unchanged() -> bool:
@@ -357,18 +361,20 @@ class DataOrchestrator:
                 self.tell_inputs_changed(change, on_inputs_changed)
             return lf
 
-        key = tier2_key(keys.tier1_key, steps)
+        key = collection_tier2_key(loaded.raw, collection_id, keys.tier1_key)
         stored = read_anchor_if_key(t2_path, TIER2_KEY_META, key)
         if stored is not None:
             print(f"[Orchestrator] ✅ Tier 2 '{collection_id}' is valid (key match) → {t2_path}")
             return stored
+        t2_path.unlink(missing_ok=True)   # not the table of this key: removed when found, as Tier 1 (see `_materialize_tier1`)
 
         lf_t1, t1_key, t1_built_from, t1_change = self._materialize_tier1(
             data_analysis_recipe_id, collection_id, tier1_path, keys, loaded=loaded)
         verdict: list[InputsChanged] = [t1_change] if t1_change is not None else []
         # The chain is that of the Tier 1 table this one is computed from: a Tier 1 built just now carries the key of the
         # files it was built from, which can differ from `keys` (STALE-KEY-STORE-1).
-        key = tier2_key(t1_key, steps)
+        key = collection_tier2_key(loaded.raw, collection_id, t1_key)
+        engine_now = tier2_engine(loaded.raw, collection_id)
 
         def unchanged() -> bool:
             # A Tier 1 that was itself built from changed inputs makes this table a mix too: nothing to store.
@@ -380,14 +386,16 @@ class DataOrchestrator:
                     verdict.append(change)
                     return False
             try:
-                steps_now = tier2_steps(load_data_analysis_recipe(data_analysis_recipe_path).raw, collection_id)
+                raw_now = load_data_analysis_recipe(data_analysis_recipe_path).raw
+                steps_now = tier2_steps(raw_now, collection_id)
+                engine_then = tier2_engine(raw_now, collection_id)
             except RecipeLoadError as exc:
                 verdict.append(InputsChanged(f"the data analysis recipe can no longer be read ({str(exc).strip()[:200]})"))
                 return False
             except FileNotFoundError:
                 verdict.append(InputsChanged("the data analysis recipe file is gone"))
                 return False
-            if steps_now != steps:
+            if steps_now != steps or engine_then != engine_now:
                 verdict.append(InputsChanged("the tier-2 steps of this table changed"))
                 return False
             return True
@@ -395,7 +403,8 @@ class DataOrchestrator:
         # A copy: the dicts belong to the data analysis recipe kept in memory and the key of the next read must match.
         lf_t2 = engine.wrangler().run(lf_t1, copy.deepcopy(steps))
         print(f"[Orchestrator] ▶ Tier 2 '{collection_id}' recomputed from Tier 1 → {t2_path}")
-        table = write_anchor(lf_t2, str(t2_path), decision_hash=key, metadata={TIER2_KEY_META: key}, still_valid=unchanged)
+        table = write_anchor(lf_t2, str(t2_path), decision_hash=key,
+                              metadata={TIER2_KEY_META: key, CACHE_VERSION_META: ENGINE_CACHE_VERSION}, still_valid=unchanged)
         if verdict:
             self.tell_inputs_changed(verdict[0], on_inputs_changed)
         return table

@@ -1,7 +1,7 @@
 """
 @deps
-provides: function:define_server (HOME's load gate follower, GATE-GAP-1), function:follow_gate, function:gate_notes
-consumes: app/src/bootloader.py (recheck_changed_data_analysis_recipes, data_analysis_recipe_gate_version, available/rejected recipes), app/modules/data_analysis_recipe_validator.py (home_advice_entries)
+provides: function:define_server (HOME's load gate follower, GATE-GAP-1), function:tell_tables_rebuilt, function:follow_gate, function:gate_notes
+consumes: app/src/bootloader.py (take_stored_tables_notice: the one-time notice of the cache version, recheck_changed_data_analysis_recipes, data_analysis_recipe_gate_version, available/rejected recipes), app/modules/data_analysis_recipe_validator.py (home_advice_entries)
 consumed_by: app/src/server.py
 doc: .claude/rules/rules_data_analysis_recipe_structure.md#11, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/rules/ui_implementation_contract.md#14
 @end_deps
@@ -130,6 +130,18 @@ def usable_config(bootloader, recipe_id, load):
         return SimpleNamespace(raw_config={})
 
 
+def tell_tables_rebuilt(bootloader, notify) -> bool:
+    """Tell the user, once, that the stored tables are rebuilt (D-0240); True when it was told.
+
+    The bootloader gives the sentence to the first session that asks after a start that removed stored tables of another cache
+    version, and to nobody after or when nothing was removed. The wording is PROVISIONAL (`cache_keys.STORED_TABLES_REBUILT_NOTICE`).
+    """
+    text = bootloader.take_stored_tables_notice()
+    if text:
+        notify(text, type="message", duration=20)
+    return bool(text)
+
+
 def define_server(input, output, session, *, bootloader, safe_input, recipe_gate_version, notification_log=None):
     """Registers the poll of the gate, the selector follower and the notes output. `recipe_gate_version` is a reactive.Value
     created by server.py (shared state read by `active_cfg`); `notification_log` is the Alerts log."""
@@ -139,6 +151,11 @@ def define_server(input, output, session, *, bootloader, safe_input, recipe_gate
                             bootloader.data_analysis_recipe_gate_version)[1], POLL_SECONDS)
     def _version():
         return bootloader.data_analysis_recipe_gate_version
+
+    @reactive.Effect
+    def _tell_tables_rebuilt():
+        """Runs once when the session starts: it reads no input."""
+        tell_tables_rebuilt(bootloader, _notify)
 
     _remembered = reactive.Value(None)   # the last recipe the selector had (it is off the page while Blueprint is open)
     _switched = reactive.Value(None)     # (recipe that was open, recipe shown instead) after the gate dropped the open one

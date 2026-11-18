@@ -20,7 +20,7 @@ import pytest
 from app.modules import cache_keys
 from app.modules.cache_keys import (
     clear_data_analysis_recipe_cache, load_data_analysis_recipe, data_analysis_recipe_fileset_hash,
-    tier1_key, tier2_key, tier2_steps,
+    tier1_key, tier1_engines, tier2_engine, tier2_key, tier2_steps,
 )
 
 DATA_PATH = "/nonexistent/tiny.tsv"  # the data analysis recipe is only parsed here, the data is never read
@@ -99,8 +99,8 @@ def bump(path: Path) -> None:
 
 def keys_of(entry: Path, data_hash="d1", join_id="C"):
     loaded = load_data_analysis_recipe(entry)
-    t1 = tier1_key(loaded.material_hash, data_hash)
-    t2 = tier2_key(t1, tier2_steps(loaded.raw, join_id))
+    t1 = tier1_key(loaded.material_hash, data_hash, tier1_engines(loaded.raw))
+    t2 = tier2_key(t1, tier2_steps(loaded.raw, join_id), tier2_engine(loaded.raw, join_id))
     return loaded, t1, t2
 
 

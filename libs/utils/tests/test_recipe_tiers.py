@@ -5,7 +5,8 @@ T2. Before issue #77 the tier-2 list of a schema plotted directly was ignored by
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/utils/tests/test_recipe_tiers.py -q
 """
-from utils.recipe_tiers import plot_targets, step_list, tier2_steps, unapplied_join_tier2, unapplied_schema_tier2, without_tier2
+from utils.recipe_tiers import (collection_bodies, plot_targets, step_list, tier2_steps, unapplied_join_tier2, unapplied_schema_tier2,
+                               without_data_engines, without_tier2)
 
 STEP_A = {"action": "modif_filter", "column": "group", "op": "eq", "value": "A", "na": "remove"}
 STEP_B = {"action": "polars_sort", "by": ["group"], "descending": [False], "maintain_order": True}
@@ -123,3 +124,45 @@ def test_without_tier2_removes_every_collection_tier2_and_nothing_else():
 
 def test_without_tier2_gives_the_same_material_whatever_the_tier2_lists_hold():
     assert without_tier2(_recipe(t_tier2=[STEP_A])) == without_tier2(_recipe(t_tier2=[STEP_B])) == without_tier2(_recipe())
+
+
+# --- the written data engines leave the Tier 1 material; the effective engine is a key argument (D-0240) ---------------------
+
+def _engines_recipe():
+    return {
+        "data_engine": "python-polars",
+        "plot_engine": "python-plotnine",
+        "data_schemas": {"A": {"tier1": {"data_engine": "python-polars", "steps": [1]}, "tier2": {"data_engine": "x", "steps": [2]}}},
+        "metadata_schema": {"tier1": {"data_engine": "python-polars", "steps": []}},
+        "joins": {"J": {"tier1": {"data_engine": "python-polars", "steps": [3]}, "tier2": {"steps": [4]}}},
+    }
+
+
+def test_without_data_engines_drops_the_recipes_engine_and_the_engine_of_every_tier1_and_nothing_else():
+    material = without_data_engines(_engines_recipe())
+    assert "data_engine" not in material
+    assert material["plot_engine"] == "python-plotnine"           # the plot engine is not this function's business
+    assert material["data_schemas"]["A"]["tier1"] == {"steps": [1]}
+    assert material["metadata_schema"]["tier1"] == {"steps": []}
+    assert material["joins"]["J"]["tier1"] == {"steps": [3]}
+    assert material["data_schemas"]["A"]["tier2"] == {"data_engine": "x", "steps": [2]}   # a tier 2 leaves with `without_tier2`
+
+
+def test_without_data_engines_does_not_change_the_recipe_it_is_given():
+    raw = _engines_recipe()
+    without_data_engines(raw)
+    assert raw == _engines_recipe()
+
+
+def test_without_data_engines_leaves_a_tier_that_is_not_a_mapping_or_names_no_engine_as_it_is():
+    raw = {"data_schemas": {"A": {"tier1": [1, 2]}, "B": {}, "C": {"tier1": {"steps": []}}}, "joins": {"J": "not a mapping"}}
+    assert without_data_engines(raw) == raw
+
+
+def test_collection_bodies_lists_every_table_and_join_and_a_join_wins_a_shared_id():
+    raw = {"data_schemas": {"A": {"k": 1}, "S": {"k": "schema"}}, "additional_datasets_schemas": {"B": {"k": 2}},
+           "metadata_schema": {"k": 3}, "joins": {"J": {"k": 4}, "S": {"k": "join"}}}
+    found = collection_bodies(raw)
+    assert set(found) == {"A", "S", "B", "metadata_schema", "J"}
+    assert found["S"] == {"k": "join"}        # the order `collection_body` resolves an id in
+    assert collection_bodies({}) == {}

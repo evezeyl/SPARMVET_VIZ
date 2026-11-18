@@ -2,7 +2,7 @@
 
 Decided by Eve 2026-11-12: every table has T1, T2 and T3, with or without a join; T2 and T3 can be empty. A schema
 plotted directly is a collection and its tier-2 list is its T2: stored as `<name>__T2.parquet` with the chained key
-`tier2_key(tier1_key, steps)` exactly as for a join (ADR-089 point 6); an empty list means T2 equals T1 and nothing is
+`tier2_key(tier1_key, steps, engine)` exactly as for a join (ADR-089 point 6); an empty list means T2 equals T1 and nothing is
 stored. Before the fix the engine ran the tier 1 only (`prepare_ingredient`) and read tier-2 steps of joins only, so
 the steps were silently ignored (verified on `ResFinder` of `1_test_data_ST22_dummy`).
 
@@ -139,7 +139,7 @@ def test_the_tier2_of_a_schema_is_stored_with_the_chained_key(world):
     world.t2("T")
     stored = tier2_path_for(world.anchor("T"))
     assert stored.name == "T__T2.parquet" and stored.exists()
-    assert get_parquet_metadata_hash(str(stored), TIER2_KEY_META) == tier2_key(world.keys().tier1_key, [KEEP_A])
+    assert get_parquet_metadata_hash(str(stored), TIER2_KEY_META) == tier2_key(world.keys().tier1_key, [KEEP_A], "python-polars")
 
 
 def test_a_second_read_uses_the_stored_tier2(world):

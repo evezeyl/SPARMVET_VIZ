@@ -298,7 +298,7 @@ def test_a_different_order_gives_a_different_key_even_when_the_data_is_equal(run
     _, t2_ba, keys_ba = run(variant(raw_config, ZSCORE, tier2=own_tier2 + [b, a]), ZSCORE)
     assert plain(t2_ab).equals(plain(t2_ba))
     assert keys_ab.tier1_key == keys_ba.tier1_key, "only tier-2 differs, so the tier-1 key must not move"
-    assert tier2_key(keys_ab.tier1_key, own_tier2 + [a, b]) != tier2_key(keys_ba.tier1_key, own_tier2 + [b, a])
+    assert tier2_key(keys_ab.tier1_key, own_tier2 + [a, b], "python-polars") != tier2_key(keys_ba.tier1_key, own_tier2 + [b, a], "python-polars")
 
     _, _, t1_ab = run(variant(raw_config, ZSCORE, tier1_extra=[a, b]), ZSCORE)
     _, _, t1_ba = run(variant(raw_config, ZSCORE, tier1_extra=[b, a]), ZSCORE)

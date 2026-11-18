@@ -1089,17 +1089,17 @@ def define_export_server(input, output, session, *,
             # ── Hashes + Provenance (before tmpdir so image embedding can use it) ──
             # The keys of this export (ADR-089): the file-set hash of the data analysis recipe, the content
             # hash of the data, and the chained key of every stored stage the export reads.
-            from app.modules.cache_keys import tier2_key as _tier2_key, tier2_steps as _tier2_steps
+            from app.modules.cache_keys import collection_tier2_key as _collection_tier2_key
             data_analysis_recipe_sha = export_keys.data_analysis_recipe_sha256
             data_sha = export_keys.data_batch_hash
             stage_keys: dict[str, dict[str, str]] = {}
             for _p, _spec in all_plots:
                 _ds = _spec.get("target_dataset")
                 if _ds and _ds not in stage_keys:
-                    _steps = _tier2_steps(cfg.raw_config, _ds)
                     stage_keys[_ds] = {
                         "tier1_key": export_keys.tier1_key,
-                        "tier2_key": _tier2_key(export_keys.tier1_key, _steps) if _steps else "",
+                        # the one function that makes a tier-2 key from a recipe (steps and engine); empty when T2 equals T1
+                        "tier2_key": _collection_tier2_key(cfg.raw_config, _ds, export_keys.tier1_key),
                     }
 
             tiers_exported = ["T1"] + (["T3"] if audited_plots else [])
