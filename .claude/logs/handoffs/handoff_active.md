@@ -19,6 +19,7 @@
 - **16:40:** `dev` = `144047af` (session import merged: asks before replacing, member names and size checked, two stored sessions never share a button; then a test-only wait fix). Not pushed; the full control run is still owed.
 - **Decided 16:38 (D-0288):** the Export fields belong to the active session; a scout checks where they and the audited steps are kept before the build.
 - **Running 16:40:** review and controls of step 4 of the big recipe change (`tmpAI/engine_keys/step4_REVIEW.md`); step 4c code is committed on `task/engine-keys`, its report is `tmpAI/engine_keys/step4c_report.md` (PARTIAL).
+- **Decided 16:46 (D-0289, D-0290):** one Export panel for the loaded recipe; the "Active plot" scope is disabled, with a plain reason, when no plot is active. Facts for the build of D-0288: `tmpAI/panel/export_fields_per_session/FACTS.md`; five points wait for Eve (channel M300 of 78).
 
 ## 2026-11-18, 14:10, after the usage-limit stop and the restart (scribe; coordinator state in `tmpAI/coordinator/progress_2026-11-14_session3.md`)
 
