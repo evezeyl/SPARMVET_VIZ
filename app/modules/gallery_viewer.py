@@ -15,53 +15,11 @@ from viz_gallery.taxonomy import filter_panels
 class GalleryViewer:
     """
     GalleryViewer (gallery_viewer.py)
-    Architectural context: ADR-033 Split-Pane Gallery and Submission Gate.
+    Architectural context: ADR-033 Split-Pane Gallery (the submission modal was removed, D-0046).
     """
 
     def __init__(self):
         pass
-
-    def submission_modal_ui(self):
-        """
-        Renders the Submission Gate Modal with mandatory checklist.
-        ADR-033: Enforce MD file presence before submission.
-        """
-        return ui.modal(
-            ui.h4("Public Gallery: Quality Submission Gate"),
-            ui.div(
-                ui.p(
-                    "Your analysis is ready for sharing. Please verify the documentation triplet:"),
-                ui.div(
-                    ui.input_checkbox(
-                        "check_yaml", "✅ Example Logic (.yaml)", value=True),
-                    ui.input_checkbox(
-                        "check_tsv", "✅ Reference Data (.tsv)", value=True),
-                    ui.input_checkbox(
-                        "check_png", "✅ Plot Evidence (.png)", value=True),
-                    ui.input_checkbox(
-                        "check_md", "📄 Educational Metadata (.md)", value=False),
-                    ui.input_checkbox(
-                        "check_supp", "🖼️ Supplemental Illustrations (optional)", value=False),
-                    class_="p-3 border rounded bg-light mb-3"
-                ),
-                ui.div(
-                    ui.p("Educational metadata is MANDATORY for all Gallery submissions.",
-                         class_="text-warning small"),
-                    ui.input_action_button(
-                        "btn_autofill_meta", "📝 Autofill template from Audit Stack", class_="btn-sm btn-outline-info w-100"),
-                    class_="mb-3"
-                )
-            ),
-            ui.div(
-                ui.input_action_button(
-                    "btn_confirm_submission", "🚀 Confirm & Upload", class_="btn-primary"),
-                ui.modal_button("Cancel"),
-                class_="d-flex justify-content-end gap-2"
-            ),
-            title="Gallery Submission",
-            size="l",
-            easy_close=True
-        )
 
     def split_viewer_layout(self, example_id="active"):
         """
@@ -193,7 +151,7 @@ class GalleryViewer:
                 ui.span("📚 Gallery Inspiration", class_="banner-title"),
                 ui.span(
                     "Browse visual examples for inspiration. "
-                    "Did you see a nice figure? Send us a request for example implementation.",
+                    "Missing an example? Open an issue with the GitHub button under the workspace tabs on the left.",
                     class_="banner-subtitle"
                 ),
                 class_="view-title-banner"
@@ -202,49 +160,6 @@ class GalleryViewer:
             self.split_viewer_layout(),
             class_="d-flex flex-column"
         )
-
-    def autofill_meta_from_audit(self, audit_stack, app_features="Standard User"):
-        """
-        Helper to generate the mandatory Markdown headers from session audit data.
-        ADR-033/035: Axis-Based Taxonomy (Purpose/Pattern/Difficulty).
-        """
-        headers = [
-            "![Final Visualization](preview_plot.png)",
-            "",
-            "# Example Meta: Autofilled from Session Audit",
-            "## Family (Purpose): [Distribution | Correlation | Comparison | Ranking]",
-            "## Data Pattern: [1 Numeric | 2 Numeric | 1 Numeric, 1 Categorical]",
-            "## Difficulty: [Simple | Intermediate | Advanced]",
-            "",
-            "## Author & License",
-            f"- **Author**: {app_features}",
-            f"- **License**: Creative Commons Attribution 4.0 International (CC-BY 4.0)",
-            "",
-            "## 1. Suitability (When to Use)",
-            "- [x] Derived from specific session transformations.",
-            "",
-            "## 2. Data Schema (Tier 1 Requirements)",
-            "- Columns required for visualization mappings.",
-            "",
-            "## 3. Transformation Logic (Tier 2 Logic)",
-            "The following logic nodes were utilized in this example:"
-        ]
-
-        for i, node in enumerate(audit_stack):
-            action = node.get("action", "unknown")
-            comment = node.get("comment", "No justification provided.")
-            headers.append(f"- **Step {i+1} ({action})**: {comment}")
-
-        headers.extend([
-            "",
-            "## 4. Interpretations & Assumptions",
-            "- Standard SPARMVET interpretation applies.",
-            "",
-            "## 5. Inspiration & Resources",
-            "- [Link to community resource or R Graph Gallery](https://r-graph-gallery.com/)"
-        ])
-
-        return "\n".join(headers)
 
 
 # Singleton for import
