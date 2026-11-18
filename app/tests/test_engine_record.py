@@ -31,7 +31,7 @@ OLD_KEYS = {
     "_about", "generated", "data_analysis_recipe_sha256", "data_batch_hash", "t3_audit_steps_sha256", "engine_fingerprint",
     "containerized", "image_ref", "uv_lock_sha256", "git_commit", "release_version", "contact", "contact_source",
     "software_versions", "data_source_paths", "seeds_per_plot", "seed_source_per_plot", "seeds_per_layer",
-    "seeds_added_to_recipe", "t3_translation_skipped",
+    "seeds_added_to_recipe", "t3_translation_skipped", "plot_warnings", "plot_warnings_unreadable",   # the last two: D-0269, dev
 }
 
 
