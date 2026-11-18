@@ -4,6 +4,14 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
+## 2026-11-18 (open state, morning; export box merged)
+
+- **`dev` = `f288dae4`**, local, **not pushed** (Eve pushes herself). Controls passed on `4dec6348` (same tree as the merge): headless 10471 passed, 5 skipped, 32 xfailed; browser 140 passed, 3 skipped, 1 xfailed; 9 app starts; golden baseline identical; gallery previews 34 identical.
+- **Merged today:** `f288dae4` (branch `task/export-box`, commits `2e8a033c` and `4dec6348`; worktree removed). The Export panel keeps its fields when the plot tab changes; each bundle's README.txt gets plot format and reproducibility lines. Details in `tasks.md` section 9 (EXPORT-PANEL-KEEPS-FIELDS-1). Evidence: `tmpAI/panel/export_box/` (incl. `worktree_evidence/`).
+- **Open, held for Eve:** the download race, EXPORT-DOWNLOAD-RACE-1 (question 20 of `tmpAI/panel/QUESTIONS_for_eve_2026-11-18.md`). Also open, to confirm with Eve: the builder's PROVISIONAL choices of the Export panel (scope reset to Global with a notice; a chosen scope stays selected and follows the open tab), and three smaller export findings (`tasks.md` section 9).
+- **Nothing running.**
+- **Held, unchanged:** the big recipe change (ENGINE-KEYS), the rename, the Blueprint form, the wording of 6a and 6d, `task/worktree-imports` (`ca1a2246`, `45697881`), theme snippets build.
+
 ## 2026-11-17 night (open state; coordinator's list M175 of the channel; decisions D-0229 to D-0249)
 
 - **Merged tonight (dev):** `44683952` (FORMULA-OBJECT-REFUSE D-0230, FORMULA-ELEMENT-FIELD D-0231, STAT-FUNCTION-AGREE D-0232); `a85c7103` THEMES-ALL-DRAW; `e7e4a0a6` worktree test setup, first part; `cbf2e4b8` THEME-CUSTOM-LOUD; `1224b19e` VALIDATE-INTERPRETER. Details in `tasks.md` section 9.
