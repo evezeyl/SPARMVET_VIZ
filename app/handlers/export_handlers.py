@@ -511,6 +511,49 @@ def _build_methods_section(
     return lines
 
 
+def export_scope_choices(groups: dict, active_subtab: str) -> dict:
+    """The choices of the export Scope radio for the plot tab that is open now.
+
+    Returns {value: {"label": str, "title": str, "dimmed": bool}} with the keys "global", "group" (when the recipe has
+    groups) and "plot". A choice that needs an open plot tab is shown dimmed when none is open. Pure: no Shiny state.
+    """
+    has_groups = bool(groups)
+    active_pid = active_subtab.removeprefix("subtab_") if active_subtab.startswith("subtab_") else ""
+
+    active_gid = None
+    if active_pid and has_groups:
+        for gid, gspec in groups.items():
+            if active_pid in gspec.get("plots", {}):
+                active_gid = gid
+                break
+
+    choices = {"global": {"label": "Global", "title": "Export everything in the active data analysis recipe",
+                          "dimmed": False}}
+    if has_groups and active_gid is not None:
+        choices["group"] = {"label": f"Active group ({active_gid})",
+                            "title": "Export all plots in the current group (e.g. all Quality Control plots)",
+                            "dimmed": False}
+    elif has_groups and not active_pid:
+        choices["group"] = {"label": "Active group", "title": "Switch to a plot tab to enable scoped export.",
+                            "dimmed": True}
+    if active_pid:
+        choices["plot"] = {"label": f"Active plot ({active_pid})",
+                           "title": "Export only the plot you are currently viewing", "dimmed": False}
+    else:
+        choices["plot"] = {"label": "Active plot", "title": "Switch to a plot tab to enable scoped export.",
+                           "dimmed": True}
+    return choices
+
+
+def _scope_choice_tags(choices: dict) -> dict:
+    """The radio choices of `export_scope_choices` as the labels the panel shows."""
+    return {
+        value: ui.span(c["label"], title=c["title"],
+                       **({"style": "opacity:0.45; cursor:not-allowed;"} if c["dimmed"] else {}))
+        for value, c in choices.items()
+    }
+
+
 def define_export_server(input, output, session, *,
                          bootloader, orchestrator, viz_factory,
                          current_app_features, active_cfg,
@@ -559,61 +602,25 @@ def define_export_server(input, output, session, *,
                 style="font-size:0.7em;",
             )
 
-        # 3-way scope toggle — only when app features has BOTH export_bundle + export_graph
+        # 3-way scope toggle. The radio is mounted here once, with the choices of this moment; when the active plot
+        # tab or the recipe changes, `_sync_export_scope_choices` below updates its choices and keeps the user's
+        # selection. This output never reads the plot tab or the recipe outside `isolate`: a redraw of the whole
+        # panel would put every field back to its default (EXPORT-FLAKE-1, rule R4 of ui_implementation_contract.md
+        # section 14, "shell stability pattern" of rules_app_structure.md section 8).
         scope_toggle = ui.div()
-        if bootloader.is_enabled("export_enabled") and active_home_subtab is not None:
-            cfg = active_cfg()
-            groups = cfg.raw_config.get("analysis_groups", {})
-            has_groups = bool(groups)
-
-            subtab = active_home_subtab.get() or ""
-            active_pid = subtab.removeprefix("subtab_") if subtab.startswith("subtab_") else ""
-
-            # Determine which group the active plot belongs to
-            active_gid = None
-            if active_pid and has_groups:
-                for gid, gspec in groups.items():
-                    if active_pid in gspec.get("plots", {}):
-                        active_gid = gid
-                        break
-
-            scope_choices: dict = {
-                "global": ui.span(
-                    "Global",
-                    title="Export everything in the active data analysis recipe",
-                )
-            }
-            # Active group: only shown when data analysis recipe has groups AND active plot has a group
-            if has_groups and active_gid is not None:
-                scope_choices["group"] = ui.span(
-                    f"Active group ({active_gid})",
-                    title="Export all plots in the current group (e.g. all Quality Control plots)",
-                )
-            elif has_groups and not active_pid:
-                # Groups exist but no plot tab open — show disabled-looking label
-                scope_choices["group"] = ui.span(
-                    "Active group",
-                    title="Switch to a plot tab to enable scoped export.",
-                    style="opacity:0.45; cursor:not-allowed;",
-                )
-            # Active plot
-            if active_pid:
-                scope_choices["plot"] = ui.span(
-                    f"Active plot ({active_pid})",
-                    title="Export only the plot you are currently viewing",
-                )
-            else:
-                scope_choices["plot"] = ui.span(
-                    "Active plot",
-                    title="Switch to a plot tab to enable scoped export.",
-                    style="opacity:0.45; cursor:not-allowed;",
-                )
-
+        if active_home_subtab is not None:
+            with reactive.isolate():
+                try:
+                    _first_choices = _scope_choice_tags(export_scope_choices(
+                        active_cfg().raw_config.get("analysis_groups", {}), active_home_subtab.get() or ""))
+                except Exception:
+                    # the choices are brought up to date by the effect below, which tells the user why it cannot
+                    _first_choices = _scope_choice_tags(export_scope_choices({}, ""))
             scope_toggle = ui.div(
                 ui.input_radio_buttons(
                     "export_scope",
                     label="Scope",
-                    choices=scope_choices,
+                    choices=_first_choices,
                     selected="global",
                     inline=True,
                 ),
@@ -739,6 +746,33 @@ def define_export_server(input, output, session, *,
             class_="px-2",
             style="font-size:0.8em;"
         )
+
+    @reactive.effect
+    def _sync_export_scope_choices():
+        """Follow the plot tab and the recipe with the choices of the Scope radio, and keep what the user chose.
+
+        Updates the radio in place (`update_radio_buttons`) instead of drawing the panel again, so no other field of the
+        panel goes back to its default (EXPORT-FLAKE-1). When the chosen scope is no longer offered the scope goes back
+        to Global and the user is told.
+        """
+        if not bootloader.is_enabled("export_enabled") or active_home_subtab is None:
+            return
+        try:
+            choices = export_scope_choices(active_cfg().raw_config.get("analysis_groups", {}),
+                                           active_home_subtab.get() or "")
+        except Exception as e:
+            with reactive.isolate():
+                _notify(f"The Scope choices of the Export panel could not be brought up to date: {e}. "
+                        "They stay as they were; check the recipe in the Data analysis recipe selector.",
+                        type="warning", duration=10)
+            return
+        with reactive.isolate():
+            current = safe_input(input, "export_scope", "global")
+            selected = current if current in choices else "global"
+            ui.update_radio_buttons("export_scope", choices=_scope_choice_tags(choices), selected=selected)
+            if selected != current:
+                _notify(f"The export scope '{current}' is not available on this plot tab, so the scope was set back "
+                        "to Global.", type="warning", duration=10)
 
     # ── REPRO-IMPORT-1 (#48, ADR-097): import + per-leg verification ────────────
     _import_bundle_state = reactive.Value(None)   # ("error", str) | ("ok", ImportResult) | None
@@ -1408,6 +1442,7 @@ def define_export_server(input, output, session, *,
                     # data before loading it, in which case this is a no-op reminder).
                     with reactive.isolate():
                         _notify(
+                            "Reproducibility part: included (the full recipe and the data files). "
                             "This reproducibility bundle includes your actual raw data "
                             "files, not just hashes — anyone who gets the bundle gets the "
                             "data. If it contains sensitive information, anonymise it "
@@ -1985,6 +2020,13 @@ def define_export_server(input, output, session, *,
                 f"Preset           : {prov['preset']} (DPI={prov['dpi']}, {prov['plot_width']}×{prov['plot_height']} in)",
                 f"Active tier      : {prov['active_tier']}",
                 f"Export scope     : {prov['export_scope']}",
+                f"Plot format      : {plot_fmt}",
+                # D-0050: the choice that decides whether the recipe and the data files are in the bundle, as the server read
+                # it when Export was pressed (a box that went back to unticked would show here, not only as a missing folder).
+                ("Reproducibility  : included (the box 'Also include a reproducibility/reimport bundle' was ticked)"
+                 if wants_mode2 else
+                 "Reproducibility  : not included (the box 'Also include a reproducibility/reimport bundle' was not "
+                 "ticked when Export was pressed)"),
                 f"Plots            : {prov['plot_count']}",
                 f"Tiers            : {', '.join(prov['tiers_exported'])}",
                 "",
