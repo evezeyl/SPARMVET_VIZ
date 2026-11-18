@@ -162,11 +162,20 @@
   document.addEventListener("input", onChange, true);
   document.addEventListener("change", onChange, true);
   document.addEventListener("click", blockIfGrey, true);
+  // a middle click does not fire "click" but "auxclick", and it also starts the download of a link
+  document.addEventListener("auxclick", blockIfGrey, true);
   document.addEventListener("keydown", onKey, true);
   document.addEventListener("keyup", onKey, true);
 
   // the button may be drawn again by the server: show the waiting state on the new one
-  observer = new MutationObserver(function () { if (pending || (button() && button().classList.contains("export-not-ready"))) render(); });
+  // The server redraws the panel after a user-space switch: the new element is not the one whose values were remembered,
+  // so a later change to the same value must count as a change again.
+  var lastPanel = null;
+  observer = new MutationObserver(function () {
+    var p = panel();
+    if (p !== lastPanel) { lastPanel = p; lastSeen = {}; }
+    if (pending || (button() && button().classList.contains("export-not-ready"))) render();
+  });
   function observe() {
     if (document.body) observer.observe(document.body, { childList: true, subtree: true });
     else document.addEventListener("DOMContentLoaded", observe);

@@ -125,3 +125,23 @@ def test_the_real_missing_font_warning_of_the_library_reaches_the_bundle(tmp_pat
     rows = run["plot_warnings"].get("p")
     assert rows and "NoSuchFontFamilyXyz" in rows[0]["text"], run["plot_warnings"]
     assert "NoSuchFontFamilyXyz" in readme
+
+
+def test_a_failure_to_read_the_plot_warnings_keeps_the_picture_and_is_named(tmp_path, monkeypatch):
+    """The picture stays in the bundle; README and the record say that its warnings could not be read."""
+    import app.handlers.export_handlers as eh
+
+    def broken(_fig):
+        raise RuntimeError("cannot read")
+
+    monkeypatch.setattr(eh, "plot_warnings", broken)
+    z, run, readme = _export(tmp_path, monkeypatch, {})
+    assert any(n.endswith("/plots/p.png") for n in z.namelist()), z.namelist()
+    assert "Plot warnings could not be read for: p" in readme
+    assert run["plot_warnings_unreadable"] == ["p"]
+
+
+def test_when_the_warnings_are_readable_nothing_is_said_about_unreadable_ones(tmp_path, monkeypatch):
+    _z, run, readme = _export(tmp_path, monkeypatch, {})
+    assert "could not be read" not in readme
+    assert run["plot_warnings_unreadable"] == []

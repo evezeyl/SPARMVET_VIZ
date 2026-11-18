@@ -10,6 +10,7 @@ Run: PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/test
 """
 import io
 import json
+import re
 import zipfile
 from pathlib import Path
 
@@ -238,3 +239,32 @@ def test_a_button_drawn_again_during_the_wait_is_grey_again_and_comes_back(block
     assert page.locator(BTN).inner_text().strip() == EXPORT_READY_TEXTS["waiting"]
     expect(page.locator(BTN)).not_to_have_attribute("aria-disabled", "true", timeout=6_000)
     assert "Export" in page.locator(BTN).inner_text()
+
+
+def test_a_middle_click_on_the_grey_button_starts_no_download(blocked):
+    """A middle click fires auxclick, not click, and a link would start its download: the grey button must refuse it."""
+    page = blocked
+    page.locator("#export_user_name").fill("middle")
+    assert _is_grey(page)
+    with pytest.raises(Exception):
+        with page.expect_download(timeout=3000):
+            page.locator(BTN).click(button="middle", force=True, no_wait_after=True)
+
+
+def test_the_same_value_set_again_after_a_user_space_switch_greys_the_button_again(clean):
+    """The server redraws the Export panel after a switch to Blueprint and back; the remembered values must not
+    make the first change to the same value invisible to the button. Fails with a script that keeps lastSeen."""
+    page = clean
+    page.locator("#export_user_name").fill("again")
+    expect(page.locator(BTN)).not_to_have_class(re.compile("export-not-ready"), timeout=15_000)
+    page.locator("#sidebar_nav").get_by_text("Blueprint Architect").first.click()
+    _wait_shiny(page)
+    page.get_by_text("Home", exact=True).first.click()
+    _wait_shiny(page)
+    _open_export_panel(page)
+    expect(page.locator(BTN)).not_to_have_class(re.compile("export-not-ready"), timeout=15_000)
+    grey = page.evaluate("""() => { const f = document.querySelector('#export_user_name');
+        f.value = 'again'; f.dispatchEvent(new Event('input', {bubbles: true}));
+        return document.querySelector('#export_bundle_download').classList.contains('export-not-ready'); }""")
+    assert grey
+    expect(page.locator(BTN)).not_to_have_class(re.compile("export-not-ready"), timeout=15_000)

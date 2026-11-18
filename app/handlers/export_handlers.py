@@ -1220,6 +1220,7 @@ def define_export_server(input, output, session, *,
             # D-0269: the warnings of every picture this export draws (a missing font ...), per plot, whether or not the plot
             # was shown in HOME. The same words as HOME's Alerts panel (plot_warning_text).
             _plot_warning_rows: dict[str, list[dict]] = {}
+            _warnings_unreadable: list[str] = []
             failed_plots: dict[str, str] = {}      # p_id → why it was not drawn (the report says so, no figure link)
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmpdir_path = Path(tmpdir)
@@ -1260,7 +1261,12 @@ def define_export_server(input, output, session, *,
                         _plot_override = _t3_aesthetic_overrides.get(p_id)
                         fig = viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
                                                  **render_seed_args(_plot_seeds[p_id], _plot_override))
-                        _found = plot_warnings(fig)
+                        # WHY: a failure to read the warnings must not lose the picture; it is named in the bundle
+                        try:
+                            _found = plot_warnings(fig)
+                        except Exception:
+                            _found = []
+                            _warnings_unreadable.append(p_id)
                         if _found:
                             _plot_warning_rows[p_id] = [
                                 {"text": plot_warning_text(w), "problem": w.problem, "fix": w.fix,
@@ -1588,6 +1594,7 @@ def define_export_server(input, output, session, *,
                 "seeds_per_layer": seeds_per_layer_record(_plot_seeds),
                 "seeds_added_to_recipe": seeds_added_to_recipe(_plot_seeds, dict(all_plots)),
                 "plot_warnings": _plot_warning_rows,
+                "plot_warnings_unreadable": list(_warnings_unreadable),
                 "t3_translation_skipped": (
                     mode2_skipped if wants_mode2 else
                     "not attempted — check 'Also include a reproducibility/reimport "
@@ -2131,6 +2138,8 @@ def define_export_server(input, output, session, *,
                 "exported bundle against this one, field by field, to confirm they are the",
                 "same analysis (ADR-097).",
                 "",
+                *([f"Plot warnings could not be read for: {', '.join(_warnings_unreadable)}", ""]
+                  if _warnings_unreadable else []),
                 *(["Plot warnings (these plots were drawn; read each warning before you rely on the plot):",
                    *[f"  {_pid}: {_row['text']}" for _pid, _rows in _plot_warning_rows.items() for _row in _rows],
                    ""] if _plot_warning_rows else []),
