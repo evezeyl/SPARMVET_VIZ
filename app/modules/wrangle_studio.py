@@ -571,8 +571,18 @@ class WrangleStudio:
             join_defs = full_cfg.get("joins", {})
             if node_id in join_defs:
                 from transformer.data_wrangler import DataWrangler
-                found_logic = DataWrangler.tier_steps(join_defs[node_id], "tier1")
+                from utils.errors import DataAnalysisRecipeError
                 self.active_viz_id.set(None)  # Not a plot
+                try:
+                    found_logic = DataWrangler.tier_steps(join_defs[node_id], "tier1")
+                except DataAnalysisRecipeError as exc:
+                    # a join in an old shape is not read (no shim): tell the user and show no steps, instead of an effect that
+                    # raises and leaves the screen as it was
+                    ui.notification_show(
+                        f"The steps of the join '{node_id}' cannot be shown: {exc.message} {exc.tip}",
+                        type="error", duration=12)
+                    self.logic_stack.set([])
+                    return
 
             # Update the surgical stack
             ui_nodes = []
