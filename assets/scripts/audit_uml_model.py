@@ -58,7 +58,7 @@ def find_project_root(start: Path) -> Path:
 
 
 def walk_tagged_elements(node, out, seen=None):
-    """Yield (element_name, element_type, {tag_name: value}) for every element with tags."""
+    """Yield (element_name, element_type, {tag_name: [values]}) for every element with tags."""
     if seen is None:
         seen = set()
     if isinstance(node, dict):
@@ -67,7 +67,11 @@ def walk_tagged_elements(node, out, seen=None):
             pass
         tags = node.get("tags")
         if tags and isinstance(tags, list) and eid not in seen:
-            tag_map = {t.get("name"): t.get("value") for t in tags if isinstance(t, dict) and t.get("name")}
+            # A list per name: an element may carry several code or test tags and every one must resolve.
+            tag_map = {}
+            for t in tags:
+                if isinstance(t, dict) and t.get("name"):
+                    tag_map.setdefault(t.get("name"), []).append(t.get("value"))
             if tag_map:
                 out.append((node.get("name") or "(unnamed)", node.get("_type") or "?", tag_map))
                 if eid:
@@ -299,62 +303,62 @@ def run_checks(project_root: Path):
     seen_refs: dict[str, str] = {}  # dedupe identical checks across elements
 
     for name, etype, tags in elements:
-        status = tags.get("status")
-        if status is not None:
-            counts["status"] += 1
-            if status not in VALID_STATUS:
-                violations.append({
-                    "check": "STATUS_INVALID", "element": name, "type": etype,
-                    "detail": f"status '{status}' is not one of {sorted(VALID_STATUS)}",
-                })
+        for status in tags.get("status", []):
+            if status is not None:
+                counts["status"] += 1
+                if status not in VALID_STATUS:
+                    violations.append({
+                        "check": "STATUS_INVALID", "element": name, "type": etype,
+                        "detail": f"status '{status}' is not one of {sorted(VALID_STATUS)}",
+                    })
 
         for key in ("code", "test"):
-            ref = tags.get(key)
-            if ref is None:
-                continue
-            counts[key] += 1
-            cache_key = f"{key}:{ref}"
-            if cache_key in seen_refs:
-                err = seen_refs[cache_key]
-            else:
-                err = check_code_ref(project_root, ref)
-                seen_refs[cache_key] = err
-            if err:
-                violations.append({
-                    "check": f"{key.upper()}_BROKEN", "element": name, "type": etype,
-                    "detail": f"{key}='{ref}': {err}",
-                })
+            for ref in tags.get(key, []):
+                if ref is None:
+                    continue
+                counts[key] += 1
+                cache_key = f"{key}:{ref}"
+                if cache_key in seen_refs:
+                    err = seen_refs[cache_key]
+                else:
+                    err = check_code_ref(project_root, ref)
+                    seen_refs[cache_key] = err
+                if err:
+                    violations.append({
+                        "check": f"{key.upper()}_BROKEN", "element": name, "type": etype,
+                        "detail": f"{key}='{ref}': {err}",
+                    })
 
-        adr = tags.get("adr")
-        if adr:
-            counts["adr"] += 1
-            cache_key = f"adr:{adr}"
-            if cache_key in seen_refs:
-                err = seen_refs[cache_key]
-            else:
-                err = adr_errors(project_root, adr)
-                seen_refs[cache_key] = err
-            if err:
-                violations.append({"check": "ADR_BROKEN", "element": name, "type": etype, "detail": err})
+        for adr in tags.get("adr", []):
+            if adr:
+                counts["adr"] += 1
+                cache_key = f"adr:{adr}"
+                if cache_key in seen_refs:
+                    err = seen_refs[cache_key]
+                else:
+                    err = adr_errors(project_root, adr)
+                    seen_refs[cache_key] = err
+                if err:
+                    violations.append({"check": "ADR_BROKEN", "element": name, "type": etype, "detail": err})
 
-        rule = tags.get("rule")
-        if rule:
-            counts["rule"] += 1
-            cache_key = f"rule:{rule}"
-            if cache_key in seen_refs:
-                err = seen_refs[cache_key]
-            else:
-                err = rule_error(project_root, rule)
-                seen_refs[cache_key] = err
-            if err:
-                violations.append({"check": "RULE_BROKEN", "element": name, "type": etype, "detail": err})
+        for rule in tags.get("rule", []):
+            if rule:
+                counts["rule"] += 1
+                cache_key = f"rule:{rule}"
+                if cache_key in seen_refs:
+                    err = seen_refs[cache_key]
+                else:
+                    err = rule_error(project_root, rule)
+                    seen_refs[cache_key] = err
+                if err:
+                    violations.append({"check": "RULE_BROKEN", "element": name, "type": etype, "detail": err})
 
-        flag = tags.get("flag")
-        if flag:
-            counts["flag"] += 1
-            err = flag_error(flag, af_flags, af_fields)
-            if err:
-                violations.append({"check": "FLAG_BROKEN", "element": name, "type": etype, "detail": err})
+        for flag in tags.get("flag", []):
+            if flag:
+                counts["flag"] += 1
+                err = flag_error(flag, af_flags, af_fields)
+                if err:
+                    violations.append({"check": "FLAG_BROKEN", "element": name, "type": etype, "detail": err})
 
     pkg_violations, pkg_counts = check_pkg_tiers(project_root)
     violations.extend(pkg_violations)
