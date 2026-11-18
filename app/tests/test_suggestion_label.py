@@ -79,11 +79,26 @@ def test_the_checker_problem_text_has_one_label():
 
 
 def test_home_prints_its_alerts_and_warnings_through_the_same_function():
-    """The Alerts panel (audit_stack.py) and the warning line of HOME (home_theater.py) call `fix_label`."""
+    """The Alerts panel (audit_stack.py) calls `fix_label`; the warning line of HOME (home_theater.py) and of the export
+    both take their text from `plot_warning_text` (plot_issue_reporter.py), which calls `fix_label` (D-0269, D-0099)."""
     audit = (ROOT / "app/handlers/audit_stack.py").read_text()
     home = (ROOT / "app/handlers/home_theater.py").read_text()
+    export = (ROOT / "app/handlers/export_handlers.py").read_text()
+    reporter = (ROOT / "app/modules/plot_issue_reporter.py").read_text()
     assert "fix_label(fix, who or" in audit and "Fix ({who}): {fix}" not in audit
-    assert "{fix_label(warning.fix)}" in home and "Fix: {warning.fix}" not in home
+    assert "plot_warning_text(warning)" in home and "Fix: {warning.fix}" not in home
+    assert "plot_warning_text(w)" in export
+    assert "{fix_label(warning.fix)}" in reporter and "Fix: {warning.fix}" not in reporter
+
+
+def test_the_text_of_a_plot_warning_carries_the_suggestion_label_once():
+    from types import SimpleNamespace
+
+    from app.modules.plot_issue_reporter import plot_warning_text
+
+    text = plot_warning_text(SimpleNamespace(problem="Layer 1 is odd.", fix="Suggestion: write a column"))
+    assert text == "Layer 1 is odd. Suggestion: write a column"
+    assert plot_warning_text(SimpleNamespace(problem="Layer 1 is odd.", fix="write a column")) == "Layer 1 is odd. Fix: write a column"
 
 
 # ---- the other places a fix is printed (third fix round) --------------------------------------------------------------
