@@ -1,4 +1,4 @@
-tier1:
+steps:
   # Step 1: Join metadata (Source, Year, Country) on sample_id
   - action: polars_join
     right_ingredient: metadata_schema
