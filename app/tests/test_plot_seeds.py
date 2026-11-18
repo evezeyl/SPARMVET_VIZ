@@ -558,7 +558,7 @@ def test_a_bootstrapped_summary_layer_is_recorded_with_its_seed_and_baked_into_t
     record = seeds_per_layer_record(plan)
     assert record["p"][0]["seed"] == DEFAULT and record["p"][0]["source"] == "default"
     baked = bake_plot_seeds(recipe_with(layers), plan)
-    spec = next(iter(next(iter(baked["analysis_groups"].values()))["plots"].values()))["spec"]
+    spec = next(iter(next(iter(baked["analysis_groups"].values()))["plots"].values()))   # the plot entry is the plot (D-0237)
     assert spec["layers"][0]["params"]["random_state"] == DEFAULT
 
 
