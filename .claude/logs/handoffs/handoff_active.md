@@ -16,6 +16,9 @@
 - **Restart note of the coordinator:** `tmpAI/coordinator/progress_2026-11-14_session3.md` (top block).
 - **New findings of the afternoon** (reviews and trials, each waits for Eve unless it says otherwise): `tasks.md`, section "Findings of 2026-11-18 afternoon".
 - The state block of 14:10 below is kept. Its `dev` hash `32e09107` is no longer current.
+- **16:40:** `dev` = `144047af` (session import merged: asks before replacing, member names and size checked, two stored sessions never share a button; then a test-only wait fix). Not pushed; the full control run is still owed.
+- **Decided 16:38 (D-0288):** the Export fields belong to the active session; a scout checks where they and the audited steps are kept before the build.
+- **Running 16:40:** review and controls of step 4 of the big recipe change (`tmpAI/engine_keys/step4_REVIEW.md`); step 4c code is committed on `task/engine-keys`, its report is `tmpAI/engine_keys/step4c_report.md` (PARTIAL).
 
 ## 2026-11-18, 14:10, after the usage-limit stop and the restart (scribe; coordinator state in `tmpAI/coordinator/progress_2026-11-14_session3.md`)
 
