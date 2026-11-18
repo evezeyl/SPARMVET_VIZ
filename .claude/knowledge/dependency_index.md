@@ -160,7 +160,7 @@
 ## `app/handlers/session_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_session_server`, `output:session_management_ui`, `output:session_export_active`
-- **consumes:** `shiny`, `app.modules.error_notice (notice`, `issue_entry — VERIF-FIX-2)`, `app.modules.plot_issue_reporter (make_issue_reporter)`, `pathlib`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`, `app.modules.session_manager (normalise_audit_steps`, `split_key_drops)`
+- **consumes:** `shiny`, `app.modules.error_notice (notice`, `issue_entry — VERIF-FIX-2)`, `app.modules.plot_issue_reporter (make_issue_reporter)`, `pathlib`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`, `app.modules.session_manager (normalise_audit_steps`, `split_key_drops`, `key_drop_notice)`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-097`
 
@@ -304,7 +304,7 @@
 
 ## `app/modules/session_manager.py`
 - **Role:** `ref`
-- **provides:** `class:SessionManager`, `typedef:AuditStep`, `function:make_audit_step`, `function:normalise_audit_steps`, `function:extract_primary_keys`, `function:split_key_drops`
+- **provides:** `class:SessionManager`, `typedef:AuditStep`, `function:make_audit_step`, `function:normalise_audit_steps`, `function:extract_primary_keys`, `function:split_key_drops`, `function:key_drop_notice`
 - **consumes:** `app/modules/error_notice.py (notice — VERIF-FIX-2`, `lazy)`, `libs/utils/src/utils/na_choice.py`, `stdlib (hashlib`, `json`, `shutil`, `zipfile`, `pathlib`, `datetime`, `uuid)`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`, `libs/utils/src/utils/join_keys.py (JOIN_ACTIONS`, `key_columns)`, `libs/utils/src/utils/recipe_tiers.py (step_list) — extract_primary_keys reads joins.*.tier1.steps and tier2.steps (D-0250)`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/session_handlers.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/knowledge/architecture_decisions.md#ADR-097`
