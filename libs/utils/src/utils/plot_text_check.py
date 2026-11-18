@@ -4,7 +4,7 @@ plotnine evaluates three kinds of text that a recipe can write in a layer:
 - the `formula` of a smoother or a quantile line (patsy runs it as Python);
 - a facet variable (`facets`, `rows`, `cols`) that is not a column: plotnine evaluates it as an expression in its own
   environment (`facet_wrap(facets="len(open('/x').read())")` ran the call);
-- the function string of `stat_function` (already turned into a function by `formula_check.function_string_problems`).
+- the function string of `stat_function`: BLOCKED FOR NOW, any text is refused and nothing evaluates it (D-0274).
 Every other text of a layer was tried (a marker file written from inside the text, evidence
 `.claude/design/decisions_2026-11-14/evidence/plot_text_code_execution_2026-11-16.md`) and is not evaluated.
 
@@ -13,8 +13,8 @@ written as a plain column name); the plot factory calls it on every layer with t
 variable must then be a column, exactly).
 
 # @deps
-# provides: function:layer_text_problems, function:facet_variable_problems, function:facet_variables, function:facet_sides, function:facet_wrap_spec, class:FacetTextError, constant:FACET_PARAMETERS
-# consumes: libs/utils/src/utils/formula_check.py, libs/utils/src/utils/fix_text.py (split_fix)
+# provides: constant:STAT_FUNCTION_TEXT_BLOCKED, constant:STAT_FUNCTION_TEXT_SUGGESTION, function:layer_text_problems, function:facet_variable_problems, function:facet_variables, function:facet_sides, function:facet_wrap_spec, class:FacetTextError, constant:FACET_PARAMETERS
+# consumes: libs/utils/src/utils/formula_check.py (smoother_formula_problems)
 # consumed_by: libs/utils/src/utils/recipe_check.py, libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/facets/core.py, libs/utils/tests/test_plot_text_check.py
 # doc: .claude/design/recipe_format_spec.md (section 15; check PS06)
 # @end_deps
@@ -22,8 +22,12 @@ variable must then be a column, exactly).
 import re
 from typing import Any, Iterable, List, Optional, Tuple
 
-from utils.fix_text import split_fix
-from utils.formula_check import function_string_problems, smoother_formula_problems
+from utils.formula_check import smoother_formula_problems
+
+# One source of the refusal of a function curve written as text (D-0273, D-0274; PROVISIONAL wording, Eve may reword).
+# The check and the drawing both read these two names.
+STAT_FUNCTION_TEXT_BLOCKED = "A function curve written as text is blocked for now, because it would run text from the recipe as code"
+STAT_FUNCTION_TEXT_SUGGESTION = "Suggestion: compute the values in a step of the recipe and draw them with a line layer"
 
 # What a facet variable looks like when the columns are not known: a column name written with letters, digits,
 # underscore, space, dot or dash. No bracket, quote or operator: nothing in it can call anything.
@@ -159,8 +163,5 @@ def layer_text_problems(component: str, params: Any, columns: Optional[Iterable[
                               + "; to facet by a computed value, add a recipe step that makes the column first")
                 problems.append((key, what, suggestion))
     if component == "stat_function" and isinstance(params.get("fun"), str):
-        for message in function_string_problems(params["fun"]):
-            what, fix = split_fix(message)
-            problems.append(("fun", f"the function string is refused: {what}",
-                             fix.rstrip(".") if fix.startswith("Suggestion:") else "Suggestion: " + fix.rstrip(".")))
+        problems.append(("fun", STAT_FUNCTION_TEXT_BLOCKED, STAT_FUNCTION_TEXT_SUGGESTION))
     return problems

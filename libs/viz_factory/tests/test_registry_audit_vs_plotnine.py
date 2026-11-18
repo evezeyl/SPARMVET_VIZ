@@ -335,11 +335,13 @@ SAME_WHEN_UNUSED = ["annotate", "facet_grid", "geom_jitter", "geom_sina", "ggtit
                     "scale_size", "scale_size_area", "scale_x_continuous", "scale_y_continuous", "stat_sina", "theme_538", "theme_bw",
                     "theme_classic", "theme_dark", "theme_gray", "theme_light", "theme_linedraw", "theme_matplotlib", "theme_minimal",
                     "theme_seaborn", "theme_tufte", "theme_void", "theme_xkcd", "xlab", "ylab"]
-DIFFERENT = ["stat_function", "stat_identity"]
+DIFFERENT = ["stat_identity"]
+# a recipe text for `fun` is blocked for now (D-0274): no recipe example of it exists, so it is pinned by its own test below
+BLOCKED_TEXT = ["stat_function"]
 
 
 def test_the_three_groups_are_the_modified_components():
-    assert sorted(NOT_ADDABLE + SAME_WHEN_UNUSED + DIFFERENT) == sorted(n for n, s in COMPONENT_SCHEMAS.items() if s["plotnine"] == "modified")
+    assert sorted(NOT_ADDABLE + SAME_WHEN_UNUSED + DIFFERENT + BLOCKED_TEXT) == sorted(n for n, s in COMPONENT_SCHEMAS.items() if s["plotnine"] == "modified")
 
 
 @pytest.mark.parametrize("name", NOT_ADDABLE)
@@ -362,6 +364,13 @@ def test_these_modified_components_give_another_plot_than_plotnine(name):
     through, direct = attempt(lambda: build(name, example_params(name), False)), attempt(lambda: build(name, example_params(name), True))
     assert through[0] == "ok"
     assert direct[0] == "error" or snapshot(through[1]) != snapshot(direct[1])
+
+
+def test_stat_function_refuses_a_text_where_plotnine_takes_a_function():
+    p = ggplot(DF, aes(**shape_of("stat_function", layers_of("stat_function"))[1]))
+    through = attempt(lambda: PLOT_COMPONENTS["stat_function"](p, {"fun": "lambda x: x"}))
+    assert through[0] == "error" and "blocked for now" in str(through[1])
+    assert attempt(lambda: PLOT_COMPONENTS["stat_function"](p, {"fun": lambda x: x}))[0] == "ok"
 
 
 def test_no_exact_plotnine_object_is_registered_next_to_a_modified_one_today():

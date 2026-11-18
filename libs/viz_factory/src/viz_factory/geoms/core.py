@@ -1,7 +1,7 @@
 from typing import Dict, Any
 
 # @deps
-# provides: component:geom_boxplot, component:geom_violin, component:geom_point, component:geom_line, component:geom_bar, component:geom_col, component:geom_histogram, component:geom_smooth, component:geom_density, component:geom_errorbar, component:geom_pointrange, component:geom_tile, component:geom_raster, component:geom_text, component:geom_label, component:geom_jitter, component:geom_step, component:geom_segment, component:geom_abline, component:geom_area, component:geom_bin_2d, component:geom_blank, component:geom_count, component:geom_crossbar, component:geom_density_2d, component:geom_dotplot, component:geom_errorbarh, component:geom_freqpoly, component:geom_hline, component:geom_linerange, component:geom_path, component:geom_vline, component:stat_count, component:stat_bin, component:stat_summary, component:stat_boxplot, component:stat_smooth, component:stat_density, component:labs (geom), function:function_string_namespace
+# provides: component:geom_boxplot, component:geom_violin, component:geom_point, component:geom_line, component:geom_bar, component:geom_col, component:geom_histogram, component:geom_smooth, component:geom_density, component:geom_errorbar, component:geom_pointrange, component:geom_tile, component:geom_raster, component:geom_text, component:geom_label, component:geom_jitter, component:geom_step, component:geom_segment, component:geom_abline, component:geom_area, component:geom_bin_2d, component:geom_blank, component:geom_count, component:geom_crossbar, component:geom_density_2d, component:geom_dotplot, component:geom_errorbarh, component:geom_freqpoly, component:geom_hline, component:geom_linerange, component:geom_path, component:geom_vline, component:stat_count, component:stat_bin, component:stat_summary, component:stat_boxplot, component:stat_smooth, component:stat_density, component:labs (geom)
 # consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/errors.py (CannotAct), libs/utils/src/utils/fix_text.py (split_fix, with_fix), libs/utils/src/utils/formula_check.py (PLOT_FUNCTION_MODULES, PLOT_FUNCTION_NAMES, MATH_FUNCTIONS, MATH_CONSTANTS)
 # consumed_by: any YAML plot spec using these component names, libs/viz_factory/src/viz_factory/viz_factory.py (via registry), libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via COMPONENT_SCHEMAS)
 # doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-075)
@@ -1287,55 +1287,6 @@ def handle_stat_unique(p: ggplot, spec: Dict[str, Any]) -> ggplot:
     return p + stat_unique(**spec)
 
 
-def function_string_namespace() -> Dict[str, Any]:
-    """The names a `stat_function` string sees when it is drawn: built from the tables the check reads (D-0232).
-
-    `utils.formula_check.PLOT_FUNCTION_MODULES` says which module each prefix is (`np` and `numpy` are numpy, `math` is
-    Python's `math`), `PLOT_FUNCTION_NAMES` which names of it a string may use. Bare names (`sin`, `arcsin`) are numpy's.
-    The check accepts a name only when it is in these tables, so the check and the drawing cannot disagree; a name of the
-    tables that a module lacks fails here, with the name, when the first string is drawn, and a test checks all of them.
-    """
-    import importlib
-    import numpy as np
-    from utils.errors import VisualizationError
-    from utils.formula_check import MATH_CONSTANTS, MATH_FUNCTIONS, PLOT_FUNCTION_MODULES, PLOT_FUNCTION_NAMES
-
-    modules = {prefix: importlib.import_module(module) for prefix, module in PLOT_FUNCTION_MODULES.items()}
-    for prefix, module in PLOT_FUNCTION_MODULES.items():
-        missing = sorted(n for n in list(PLOT_FUNCTION_NAMES[module]) + list(MATH_CONSTANTS) if not hasattr(modules[prefix], n))
-        if missing:
-            raise VisualizationError(f"stat_function: {module} has no {', '.join(missing)}, which the list of allowed names has.",
-                                     tip="Suggestion: correct PLOT_FUNCTION_NAMES in utils.formula_check")
-    names = {name: getattr(np, name) for name in MATH_FUNCTIONS}
-    names.update(MATH_CONSTANTS)
-    names.update(modules)
-    return names
-
-
-def _function_from_string(text: str):
-    """A recipe's function string (a math function name or a lambda over numbers), checked, then evaluated with numpy and math only.
-
-    Before, any string was passed to eval and an unknown name only printed a warning and left the layer out
-    (spec section 15; check ST06). Since D-0232 the check reads the same tables as `function_string_namespace`, so a name
-    that passes the check exists when the string is drawn.
-    """
-    from utils.errors import VisualizationError
-    from utils.fix_text import split_fix, with_fix
-    from utils.formula_check import function_string_problems
-
-    problems = function_string_problems(text)
-    if problems:
-        sentences = []
-        for problem in problems:
-            what, fix = split_fix(problem)
-            sentence = with_fix(what, fix)
-            sentences.append(sentence if sentence[-1:] in ".!?" else sentence + ".")
-        raise VisualizationError(
-            "stat_function: the function string is not allowed. " + " ".join(sentences),
-            tip="Fix: write a lambda of one argument over numbers, for example lambda x: x * 2")
-    return eval(compile(text.strip(), "<stat_function>", "eval"), {"__builtins__": {}, **function_string_namespace()})  # noqa: S307
-
-
 @register_plot_component("stat_function", ui_schema={
     "label": "Stat: function (plot a math function)",
     "category": "annotation",
@@ -1351,15 +1302,16 @@ def _function_from_string(text: str):
         "xlim": {"widget": "string", "label": "X range for evaluation [min, max]", "required": False},
         "na_rm": {"widget": "bool", "label": "Silently remove NA rows", "required": False, "default": False},
     },
-    "description": "Evaluate an arbitrary function over the x range; use to overlay a theoretical curve (e.g. normal distribution, growth model) on data. Differs from plotnine: `fun` may be written as text (a math function name or a lambda over numbers); the text is checked and turned into a function with numpy maths only, where plotnine takes a function.",
-    "yaml_example": "layers:\n  - name: stat_function\n    params:\n      fun: \"lambda x: 2 * x\"",
+    "description": "BLOCKED FOR NOW in recipes: a function curve written as text is refused, because it would run text from the recipe as code (Eve, D-0273, D-0274). Suggestion: compute the values in a step of the recipe and draw them with a line layer. Differs from plotnine: `fun` written as text is refused; the component stays registered and a real function handed in by Python code still draws.",
+    "yaml_example": "# Blocked for now (a function written as text is refused). Instead, make a column in a recipe step and draw it:\nlayers:\n  - name: geom_line",
 })
 def handle_stat_function(p: ggplot, spec: Dict[str, Any]) -> ggplot:
-    """Statistical function layer. 'fun' is a callable, or a string from a recipe that is checked before it is evaluated."""
-    spec = dict(spec)
-    fun = spec.get("fun")
-    if isinstance(fun, str):
-        spec["fun"] = _function_from_string(fun)
+    """Statistical function layer. 'fun' is a callable handed in by Python code; a function written as text is refused (D-0274)."""
+    from utils.plot_text_check import STAT_FUNCTION_TEXT_BLOCKED, STAT_FUNCTION_TEXT_SUGGESTION
+    from viz_factory.errors import CannotAct
+
+    if isinstance(spec.get("fun"), str):
+        raise CannotAct(STAT_FUNCTION_TEXT_BLOCKED, STAT_FUNCTION_TEXT_SUGGESTION)
     return p + stat_function(**spec)
 
 
