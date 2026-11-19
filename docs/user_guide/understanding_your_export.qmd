@@ -91,7 +91,7 @@ This is the fingerprint of your full T3 audit trail — every filter, exclusion,
 
 These keys are written in the README and the report, in the image metadata of each plot (`sparmvet:tier1_key`, `sparmvet:tier2_key`), and inside the stored data files (file metadata keys `sparmvet_tier1_key` and `sparmvet_tier2_key`).
 
-The **Tier 1 key** is built from the processing rules of the data analysis recipe, the data content, the engine version and the engine that runs the tier. The **Tier 2 key** is built from the Tier 1 key, the Tier 2 steps of the dataset and the engine that runs that tier, so a change upstream always changes it. The engine that draws a plot is in no table key: a plot is drawn from a stored table. A dataset without Tier 2 steps shows "none (T2 equals T1)".
+The **Tier 1 key** is made for each table. It is built from the processing rules of that table and of the tables it reads, the content of the data files that table reads, the engine version and the engine that runs the tier. A change in one table changes its key and that of the tables built from it, not the keys of the others. The **Tier 2 key** is built from the Tier 1 key, the Tier 2 steps of the dataset and the engine that runs that tier, so a change upstream always changes it. The engine that draws a plot is in no table key: a plot is drawn from a stored table. A dataset without Tier 2 steps shows "none (T2 equals T1)".
 
 **What it guarantees:** The system uses these keys to check that its stored data still matches the data analysis recipe and the data. If you edit a wrangling step and reload, the keys differ and the data is recomputed automatically — you never see stored data presented as if it were current.
 
