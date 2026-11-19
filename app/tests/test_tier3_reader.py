@@ -441,3 +441,33 @@ def test_an_export_of_a_plot_whose_tier3_cannot_be_applied_loses_nothing_silentl
     assert "p_steps" not in drawn and drawn["p_plain"][1] == ["s1", "s2", "s3", "s4", "s5"]
     assert not any(n.endswith("/plots/p_steps.png") for n in names)
     assert [m for t, m in notes if t in ("error", "warning") and "p_steps" in m], notes
+
+
+def test_a_failure_that_depends_on_a_value_shows_at_the_read_and_the_consumer_names_the_plot(tmp_path):
+    """M3: a cast of a value that does not fit cannot be seen from the schema: the table is returned lazy and the engine's own error
+    comes at the read. It names neither the plot nor the step; `plot_read_error_text` adds the plot, for a plot with tier-3 steps only."""
+    from app.modules.orchestrator import plot_read_error_text
+    world = Tier3World(tmp_path, tier3=({"action": "polars_cast", "columns": ["group"], "dtype": "Int64"},))
+    lazy = world.orch.materialize_tier3("tiny", "p_steps", world.anchors, keys=world.keys())   # no error here: only values fail
+    with pytest.raises(Exception) as error:
+        lazy.collect()
+    raw_message = str(error.value)
+    assert "p_steps" not in raw_message, "the engine's own message does not name the plot (what the docstring says)"
+    named = plot_read_error_text(world.raw(), "p_steps", error.value)
+    assert raw_message in named and "'p_steps'" in named and "tier-3 steps" in named
+    assert plot_read_error_text(world.raw(), "p_plain", error.value) == raw_message, "a plot without tier-3 steps: the error as it is"
+
+
+def test_the_propagation_dialogs_column_check_reads_each_plot_own_table_not_the_first_plots_of_the_same_target(tmp_path):
+    """L1: two plots on one table with different tier-3 steps (one drops `group`) must not share a schema in the dialog's check."""
+    from types import SimpleNamespace
+    from app.tests.test_audit_join_key_drops import closure
+    world = Tier3World(tmp_path)                      # p_steps drops `group`; p_plain keeps it
+    subtabs = ["subtab_p_steps", "subtab_p_plain"]
+    check = closure(
+        "_column_presence_per_plot",
+        _resolve_active_spec=lambda p_id: {"target_dataset": "C", "plot": p_id},
+        _resolve_active_lf=lambda spec: world.orch.materialize_tier3("tiny", spec["plot"], world.anchors, keys=world.keys()))
+    node = {"params": {"column": "group"}}
+    assert check([node], subtabs) == {"subtab_p_steps": "absent", "subtab_p_plain": "present"}
+    assert check([node], subtabs[::-1]) == {"subtab_p_steps": "absent", "subtab_p_plain": "present"}, "the order of the plots does not matter"

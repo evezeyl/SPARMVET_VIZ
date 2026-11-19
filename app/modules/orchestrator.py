@@ -1,8 +1,8 @@
 # @deps
-# provides: pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3, method:prepare_ingredient, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
+# provides: pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3, function:plot_read_error_text, method:prepare_ingredient, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
 # mirrors: libs/transformer/tests/debug_assembler.py
 # consumes: libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
-# consumed_by: app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and My view base), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py
+# consumed_by: app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and My view base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps
 import copy
@@ -42,6 +42,17 @@ IMPORT_DATA_FOLDER = "data"
 class InputsChanged:
     """What changed while a table was being built (a clause, for example "the data files changed")."""
     text: str
+
+
+def plot_read_error_text(raw_recipe: dict, plot_id: str, error: BaseException) -> str:
+    """The text a consumer shows when reading the table of a plot failed: the error, and for a plot with tier-3 steps in the recipe
+    a line that names the plot and says the table carries those steps. A failure that depends on values (a cast of a value that does
+    not fit) shows only when the table is read, so `materialize_tier3` cannot name it; the engine's own message does not name the plot,
+    and it does not name the step. A plot without tier-3 steps: the error as it is."""
+    if not tier3_steps(raw_recipe, plot_id):
+        return str(error)
+    return (f"{error}\nThe plot '{plot_id}' has tier-3 steps in the data analysis recipe, applied to the table it reads; "
+            f"if this error is about a value, check them.")
 
 
 class DataOrchestrator:
@@ -428,7 +439,9 @@ class DataOrchestrator:
           design files leave "stored or derived on demand" open, `home_audit_steps.md` point 15), so the key names the table but no
           file carries it. Every step is checked as it is added (the column names and types it needs): a step that cannot be applied
           raises, naming the plot and the step. A failure that depends on the values (a cast of a value that does not fit) can only
-          show when the table is read; it is then the engine's own error and names the step too.
+          show when the table is read, and then it is the engine's own error: it names neither the step nor the plot. The consumers
+          that read the table and already catch errors (HOME's plot and data preview) add the plot's name with `plot_read_error_text`;
+          the step is not named there (the engine's message names the column and the values, not the number of the step).
 
         `anchors_dir` is the folder of the stored tables: the target is stored as `<anchors_dir>/<target>.parquet`.
         """

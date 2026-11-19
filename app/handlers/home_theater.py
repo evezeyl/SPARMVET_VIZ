@@ -30,7 +30,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui
-# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, AuditStepError), app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# consumes: app/modules/orchestrator.py (plot_read_error_text), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, AuditStepError), app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumes: libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237)
 # consumed_by: app/src/server.py
@@ -49,6 +49,7 @@ from app.modules.error_notice import notice
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_change_notice import inputs_changed_during_build_notice, notice_after_data_change
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
+from app.modules.orchestrator import plot_read_error_text
 from app.modules.view_badge import has_tier2_steps, view_badge
 from utils.engines import plot_engine_slot
 from utils.pipeline_error import capture_entry
@@ -579,7 +580,7 @@ def define_server(input, output, session, *,
                 _report_draw_error(e)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
-                ax.text(0.5, 0.5, f"Render error:\n{e}", ha="center", va="center",
+                ax.text(0.5, 0.5, f"Render error:\n{plot_read_error_text(cfg.raw_config, p_id, e)}", ha="center", va="center",
                         transform=ax.transAxes, color="red", fontsize=9,
                         wrap=True)
                 ax.axis("off")
@@ -651,7 +652,7 @@ def define_server(input, output, session, *,
                 _report_cmp_error(e)
                 import matplotlib.pyplot as plt
                 fig, ax = plt.subplots()
-                ax.text(0.5, 0.5, f"Render error:\n{e}", ha="center", va="center",
+                ax.text(0.5, 0.5, f"Render error:\n{plot_read_error_text(cfg.raw_config, p_id, e)}", ha="center", va="center",
                         transform=ax.transAxes, color="red", fontsize=9, wrap=True)
                 ax.axis("off")
                 return fig
@@ -1462,7 +1463,7 @@ def define_server(input, output, session, *,
             if isinstance(e, AuditStepError):
                 _report_plot_exception(e, "T3Audit", "audit steps of the data preview")
             return render.DataGrid(
-                pl.DataFrame({"Error": [str(e)]}),
+                pl.DataFrame({"Error": [plot_read_error_text(active_cfg().raw_config, p_id, e) if p_id else str(e)]}),
                 filters=False
             )
 
