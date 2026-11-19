@@ -273,9 +273,16 @@ def test_a_missing_plot_file_is_one_plot_without_a_table_and_not_an_error(tmp_pa
 def test_the_navigator_and_the_mapper_do_not_read_the_ingredients_or_the_target_of_a_plot_themselves(module):
     """`dataset_id` (the ingredient key) and `target_dataset` / `join_id` (the plot's table) are read by the graph only.
 
-    (`_places` of the navigator reads the lists of a recipe to find what the graph's own error names; it decides nothing about the structure.)"""
+    (`_places` of the navigator reads the lists of a recipe to find what the graph's own error names, and `generate_branch_plan` edits a recipe's text; neither decides anything about the structure, so both are left out of the check.)"""
     source = Path(module.__file__).read_text(encoding="utf-8")
     code = "\n".join(line for line in source.splitlines() if not line.lstrip().startswith("#"))
     code = re.sub(r'""".*?"""', "", code, flags=re.S)
-    for word in ("dataset_id", '"join_id"', 'get("target_dataset")'):
+    for word in ("dataset_id", '"join_id"', "'join_id'"):
         assert word not in code, f"{module.__name__} reads {word} itself: ask the recipe graph"
+    for allowed in ("_places", "generate_branch_plan"):   # the two places that read the lists of a recipe to edit it, not to learn its structure
+        code = re.sub(r"^def %s\(.*?(?=^(?:def|class|@) |\Z)" % allowed, "", code, flags=re.S | re.M)
+    # the sibling map is an answer of the graph: reading its own `ingredients` entry (build_lineage_chain has no graph) is not reading the recipe
+    code = re.sub(r"""(?:\bentry|\basm_entry|\bctx_map\[[^\]]*\])\.get\(\s*["']ingredients["']""", "", code)
+    for key in ("target_dataset", "ingredients", "right_ingredient"):
+        reading = re.search(r"""\[\s*["']%s["']\s*\]|\.get\(\s*["']%s["']""" % (key, key), code)
+        assert reading is None, f"{module.__name__} reads {reading.group(0)} itself: ask the recipe graph"

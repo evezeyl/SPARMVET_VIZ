@@ -329,12 +329,26 @@ def _check_file(path: Path, profile: str):
     return check_recipe_file(path, profile, catalogs=checker_catalogs(), graph=_graph_of(raw))
 
 
+def _check_failed_problem(path: Path, exc: BaseException) -> DataAnalysisRecipeProblem:
+    """The one problem for a recipe that the check itself failed on: the recipe is refused, never accepted on an exception.
+
+    The same form as `uploaded_recipe_report` ("[CHECK] ..."); it names the recipe, says the check (not the recipe's author) hit
+    the shape, and gives the exception, so that the recipe can be corrected or the fault reported."""
+    return DataAnalysisRecipeProblem(
+        path.name, "check",
+        f"[CHECK] the recipe {path.name} could not be checked: the check itself failed on the shape of this recipe ({type(exc).__name__}: {exc}); the recipe is not accepted",
+        "Look for a value of the wrong kind (a list where text is expected, a mapping where a list is expected). If the recipe looks right, this is a fault of the app: report it.")
+
+
 def checker_problems(path: Path, profile: str = "run") -> list[DataAnalysisRecipeProblem]:
     """The errors of the strict recipe checker (format 1) for the file, as problems of this module.
 
     An advice of the checker is not a problem here: it does not stop a recipe. When the checker could not look at the
     actions or the plot components, that is a problem of its own: a recipe is never accepted on a partial check."""
-    result = _check_file(path, profile)
+    try:
+        result = _check_file(path, profile)
+    except Exception as exc:
+        return [_check_failed_problem(path, exc)]
     problems = [DataAnalysisRecipeProblem(path.name, p.path or "recipe", f"[{p.code}] {p.message}", p.fix or None)
                 for p in result.errors]
     missing = REQUIRED_COVERAGE - result.coverage
@@ -353,7 +367,10 @@ def checker_advices(path: Path, profile: str = "run") -> list[DataAnalysisRecipe
     path = Path(path)
     if not path.is_file():
         return []
-    result = _check_file(path, profile)
+    try:
+        result = _check_file(path, profile)
+    except Exception as exc:
+        return [_check_failed_problem(path, exc)]
     return [DataAnalysisRecipeProblem(path.name, p.path or "recipe", f"[{p.code}] {p.message}", p.fix or None)
             for p in result.advices if p.code in SHOWN_ADVICES]
 
@@ -378,7 +395,10 @@ def validate_data_analysis_recipe(path: Union[str, Path], profile: str = "run") 
     path = Path(path)
     if not path.is_file():
         return [DataAnalysisRecipeProblem(path.name, "file", f"data analysis recipe file not found: {path}")]
-    return checker_problems(path, profile) or engine_load_problems(path)
+    try:
+        return checker_problems(path, profile) or engine_load_problems(path)
+    except Exception as exc:  # the one guard of the gate: a check that raises refuses the recipe, never accepts it
+        return [_check_failed_problem(path, exc)]
 
 
 def engine_load_problems(path: Union[str, Path]) -> list[DataAnalysisRecipeProblem]:
