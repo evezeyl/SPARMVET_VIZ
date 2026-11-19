@@ -118,15 +118,15 @@
 
 ## `app/handlers/export_handlers.py`
 - **Role:** `ref`
-- **provides:** `constant:EXPORT_READY_TEXTS`, `constant:EXPORT_PANEL_FIELDS`, `constant:EXPORT_WATCHED_FIELDS`, `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `output:import_bundle_report`, `function:_build_methods_section`
-- **consumes:** `app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen)`, `app/modules/export_fields_store.py (D-0288`, `D-0291`, `D-0296: the Export fields remembered per session`, `in memory only; defaults D-0294)`, `app/modules/error_notice.py (notice — VERIF-FIX-2)`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1)`, `app/modules/cache_keys.py (canonical_hash`, `engine_fingerprint — REPRO-PROV-1)`, `app/modules/bundle_importer.py (import_bundle`, `BundleImportError — REPRO-IMPORT-1)`, `app/modules/plot_seeds.py (SEED-HOLDS-1)`, `app/modules/plot_issue_reporter.py (plot_warning_text — D-0269)`, `libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269)`, `polars`, `shiny`
+- **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `output:import_bundle_report`, `function:_build_methods_section`
+- **consumes:** `app/modules/error_notice.py (notice — VERIF-FIX-2)`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1)`, `app/modules/cache_keys.py (canonical_hash`, `engine_fingerprint — REPRO-PROV-1)`, `app/modules/bundle_importer.py (import_bundle`, `BundleImportError — REPRO-IMPORT-1)`, `app/modules/plot_seeds.py (SEED-HOLDS-1)`, `polars`, `shiny`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text)`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/export_specification.md`, `.claude/design/reproducible_export_design.md`
 
 ## `app/handlers/filter_and_audit_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_filter_audit_server`, `output:sidebar_filters`, `output:filter_rows_ui`, `output:filter_form_ui`, `output:filter_type_ui`, `output:filter_op_ui`, `output:filter_value_ui`, `output:filter_closed_text_ui`, `output:filter_na_ui`, `output:filter_na_text_ui`, `output:filter_controls_ui`, `input:fb_na`, `input:filter_apply`, `input:filter_send_to_audit`
-- **consumes:** `app/modules/session_manager.py (make_audit_step)`, `app/modules/t3_audit_engine.py (filters_cleared_notice`, `column_is_in_frame`, `describe_filter`, `op_choice_label`, `dialog_value`, `value_choices`, `column_types`, `ops_for_column`, `value_widget_for`, `number_range`, `column_type_line`, `closed_phrase`, `CLOSED_CHOICES`, `dialog_frame`, `dialog_schema_signature`, `dialog_rows_signature`, `AuditStepError`, `column_bounds`, `compose_date`, `compose_time`, `compose_datetime`, `compose_duration`, `control_hint`, `LIST_ON_DEMAND_FROM`, `list_note)`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/missing_values.py`, `libs/utils/src/utils/na_choice.py`, `app/src/bootloader.py (is_enabled)`, `shiny`
+- **consumes:** `app/modules/session_manager.py (make_audit_step)`, `app/modules/t3_audit_engine.py (describe_filter`, `op_choice_label`, `dialog_value`, `value_choices`, `column_types`, `ops_for_column`, `value_widget_for`, `number_range`, `column_type_line`, `closed_phrase`, `CLOSED_CHOICES`, `dialog_frame`, `AuditStepError`, `column_bounds`, `compose_date`, `compose_time`, `compose_datetime`, `compose_duration`, `control_hint`, `LIST_ON_DEMAND_FROM`, `list_note)`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/missing_values.py`, `libs/utils/src/utils/na_choice.py`, `app/src/bootloader.py (is_enabled)`, `shiny`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-049`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/rules/ui_implementation_contract.md#8`
 
@@ -160,7 +160,7 @@
 ## `app/handlers/session_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_session_server`, `output:session_management_ui`, `output:session_export_active`
-- **consumes:** `app.src.bootloader (get_session_import_limits — D-0283)`, `shiny`, `app.modules.error_notice (notice`, `issue_entry — VERIF-FIX-2)`, `app.modules.plot_issue_reporter (make_issue_reporter)`, `pathlib`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`, `app.modules.session_manager (normalise_audit_steps`, `session_id_collisions`, `session_input_id_parts)`
+- **consumes:** `shiny`, `app.modules.error_notice (notice`, `issue_entry — VERIF-FIX-2)`, `app.modules.plot_issue_reporter (make_issue_reporter)`, `pathlib`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`, `app.modules.session_manager (normalise_audit_steps)`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-097`
 
@@ -212,13 +212,6 @@
 - **consumed_by:** `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/test_lab_handlers.py`, `app/modules/session_manager.py`, `app/modules/bundle_importer.py`
 - **doc:** `.claude/knowledge/decision_ledger.md (D-0050 no silent error`, `D-0099 advice text form)`
 
-## `app/modules/export_fields_store.py`
-- **Role:** `ref`
-- **provides:** `ExportFieldsStore`, `EXPORT_FIELD_DEFAULTS`, `EXPORT_LABEL_FIELD`, `EXPORT_LABEL_DEFAULT`, `REMEMBERED_EXPORT_FIELDS`
-- **consumes:** `—`
-- **consumed_by:** `app/handlers/export_handlers.py (the Export panel remembers its fields per session)`
-- **doc:** `.claude/knowledge/decision_ledger.md (D-0288`, `D-0291`, `D-0294`, `D-0296)`
-
 ## `app/modules/export_refusal.py`
 - **Role:** `ref`
 - **provides:** `function:export_refusal`, `function:unavailable_export_text (GATE-GAP-1)`
@@ -235,7 +228,7 @@
 
 ## `app/modules/gallery_listing.py`
 - **Role:** `ref`
-- **provides:** `function:external_links_new_tab`, `function:build_listing`, `function:read_listing`, `class:GalleryListing`, `constant:READ_ONLY_LINE`, `constant:FAILED_LINE`, `constant:NOTE_LINES`
+- **provides:** `function:build_listing`, `function:read_listing`, `class:GalleryListing`, `constant:READ_ONLY_LINE`, `constant:FAILED_LINE`, `constant:NOTE_LINES`
 - **consumes:** `app/src/bootloader.py (rejected_gallery_examples`, `gallery_index_status`, `as data given by the caller)`
 - **consumed_by:** `app/handlers/gallery_handlers.py`, `app/tests/test_gallery_listing.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 9: D4`, `DEC48)`, `.claude/design/decisions_2026-11-14/proposals_for_eve.md (G-a`, `G-b)`
@@ -277,9 +270,9 @@
 
 ## `app/modules/plot_issue_reporter.py`
 - **Role:** `ref`
-- **provides:** `make_issue_reporter() -> report(entry`, `message`, `kind)`, `plot_warning_text(warning)`
+- **provides:** `make_issue_reporter() -> report(entry`, `message`, `kind)`
 - **consumes:** `shiny.reactive`, `datetime`
-- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/export_handlers.py (D-0269)`, `app/handlers/session_handlers.py`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/session_handlers.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md section 14 (reactive write discipline)`
 
 ## `app/modules/plot_seeds.py`
@@ -297,9 +290,9 @@
 
 ## `app/modules/session_manager.py`
 - **Role:** `ref`
-- **provides:** `class:SessionManager`, `typedef:AuditStep`, `function:make_audit_step`, `function:normalise_audit_steps`, `class:SessionImportLimits`, `function:session_import_limits_from (D-0283)`, `function:session_input_id_part`, `function:session_input_id_parts (two listed sessions never share a button)`, `exception:SessionImportRefused`, `exception:SessionKeyExists (D-0281)`
-- **consumes:** `app/modules/error_notice.py (notice — VERIF-FIX-2`, `lazy)`, `libs/utils/src/utils/na_choice.py`, `stdlib (hashlib`, `json`, `re`, `shutil`, `zipfile`, `pathlib`, `datetime`, `uuid)`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`
-- **consumed_by:** `app/src/bootloader.py (limits)`, `app/tests/test_session_import_safety.py`, `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/session_handlers.py`
+- **provides:** `class:SessionManager`, `typedef:AuditStep`, `function:make_audit_step`, `function:normalise_audit_steps`
+- **consumes:** `app/modules/error_notice.py (notice — VERIF-FIX-2`, `lazy)`, `libs/utils/src/utils/na_choice.py`, `stdlib (hashlib`, `json`, `shutil`, `zipfile`, `pathlib`, `datetime`, `uuid)`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`
+- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/session_handlers.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/knowledge/architecture_decisions.md#ADR-097`
 
 ## `app/modules/sidebar_registry.py`
@@ -318,9 +311,9 @@
 
 ## `app/modules/t3_audit_engine.py`
 - **Role:** `ref`
-- **provides:** `function:dialog_value`, `function:not_offered_line`, `function:column_types`, `function:value_choices`, `function:pick_values`, `function:number_range`, `function:typed_operand`, `function:compose_date`, `function:compose_time`, `function:compose_datetime`, `function:compose_duration`, `function:column_bounds`, `function:control_hint`, `function:readable_duration`, `function:list_note`, `constant:LIST_ON_DEMAND_FROM`, `function:ops_for_column`, `function:value_widget_for`, `function:column_type_line`, `function:closed_phrase`, `function:between_prose`, `constant:CLOSED_CHOICES`, `function:_apply_filter_rows`, `function:filter_rows_from_nodes`, `function:staged_filter_row`, `function:audit_params_from_row`, `function:inapplicable_filter_rows`, `function:describe_filter`, `function:op_choice_label`, `function:audited_frame`, `function:audit_steps_in_order`, `function:dialog_frame`, `function:dialog_schema_signature`, `function:dialog_rows_signature`, `function:audit_failures`, `function:filters_cleared_notice`, `function:column_is_in_frame`, `class:AuditStepError`
+- **provides:** `function:dialog_value`, `function:not_offered_line`, `function:column_types`, `function:value_choices`, `function:pick_values`, `function:number_range`, `function:typed_operand`, `function:compose_date`, `function:compose_time`, `function:compose_datetime`, `function:compose_duration`, `function:column_bounds`, `function:control_hint`, `function:readable_duration`, `function:list_note`, `constant:LIST_ON_DEMAND_FROM`, `function:ops_for_column`, `function:value_widget_for`, `function:column_type_line`, `function:closed_phrase`, `function:between_prose`, `constant:CLOSED_CHOICES`, `function:_apply_filter_rows`, `function:filter_rows_from_nodes`, `function:staged_filter_row`, `function:audit_params_from_row`, `function:inapplicable_filter_rows`, `function:describe_filter`, `function:op_choice_label`, `function:audited_frame`, `function:audit_steps_in_order`, `function:dialog_frame`, `function:audit_failures`, `class:AuditStepError`
 - **consumes:** `polars`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/pipeline_error.py`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/missing_values.py`, `libs/utils/src/utils/na_choice.py`
-- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/export_handlers.py`, `app/tests/test_filter_dialog_values.py`, `app/tests/test_filter_four_way_pickers.py`, `app/tests/test_step_order.py`, `app/tests/test_removed_audit_step_type.py`, `app/tests/test_audit_error_names_the_plot.py`, `app/tests/test_filters_cleared_on_recipe_change.py`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/export_handlers.py`, `app/tests/test_filter_dialog_values.py`, `app/tests/test_filter_four_way_pickers.py`, `app/tests/test_step_order.py`, `app/tests/test_removed_audit_step_type.py`, `app/tests/test_audit_error_names_the_plot.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-051`
 
 ## `app/modules/test_lab_studio.py`
@@ -353,8 +346,8 @@
 
 ## `app/src/bootloader.py`
 - **Role:** `ref`
-- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_imports_dir (IMPORT-PATH-1)`, `method:get_agent_adapter`, `method:get_palettes`, `method:get_contact`, `method:get_session_import_limits (D-0283)`, `attr:available_data_analysis_recipes`, `attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)`, `attr:data_analysis_recipe_advices (J12/J13`, `never reject)`, `method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1)`, `method:get_default_data_analysis_recipe_or_none`, `attr:has_usable_data_analysis_recipe (issue #38 empty-state gate)`, `attr:rejected_gallery_examples`, `attr:gallery_index_status (gallery check at start`, `DEC48)`
-- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`, `app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data`, `checker_advices`, `read_data_analysis_recipe_header`, `resolve_contact — ADR-094)`, `app.modules.gallery_examples (check_gallery_at_start`, `deferred import)`, `app.modules.renamed_keys`, `app.modules.session_manager (session_import_limits_from`, `deferred import)`, `utils.path_expansion`
+- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_imports_dir (IMPORT-PATH-1)`, `method:get_agent_adapter`, `method:get_palettes`, `method:get_contact`, `attr:available_data_analysis_recipes`, `attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)`, `attr:data_analysis_recipe_advices (J12/J13`, `never reject)`, `method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1)`, `method:get_default_data_analysis_recipe_or_none`, `attr:has_usable_data_analysis_recipe (issue #38 empty-state gate)`, `attr:rejected_gallery_examples`, `attr:gallery_index_status (gallery check at start`, `DEC48)`
+- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`, `app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data`, `checker_advices`, `read_data_analysis_recipe_header`, `resolve_contact — ADR-094)`, `app.modules.gallery_examples (check_gallery_at_start`, `deferred import)`, `app.modules.renamed_keys`, `utils.path_expansion`
 - **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`
 - **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `ADR-087`, `ADR-094 (issue #38 closure note)`, `project_conventions.md §"Deployment Resolution`
 
@@ -381,7 +374,7 @@
 ## `app/src/ui.py`
 - **Role:** `ref`
 - **provides:** `app_ui (Shiny UI definition`, `page_fillable layout)`
-- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `included via ui.tags.script)`, `app/src/www/export_ready.js (D-0270`, `included via ui.tags.script)`
+- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `included via ui.tags.script)`
 - **consumed_by:** `app.src.main`
 - **doc:** `ADR-027`, `ADR-029a`, `ADR-030`, `ADR-039`, `ADR-052`
 
@@ -439,26 +432,6 @@
 - **Role:** `info`
 - **consumes:** `app/modules/renamed_keys.py`, `app/modules/t3_audit_engine.py`, `app/modules/session_manager.py`, `app/modules/bundle_importer.py`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py`
 
-## `app/tests/test_session_id_collisions.py`
-- **Role:** `info`
-- **provides:** `test:session_id_collisions`
-- **consumes:** `app/handlers/session_handlers.py`, `app/modules/session_manager.py`, `app/tests/test_session_clicks_once.py`, `app/tests/test_session_import_safety.py`
-- **consumed_by:** `CI`
-
-## `app/tests/test_session_import_copy_panel.py`
-- **Role:** `info`
-- **provides:** `test:session_import_copy_panel`
-- **consumes:** `app/modules/session_manager.py`, `app/handlers/session_handlers.py`, `app/tests/test_session_import_safety.py`
-- **consumed_by:** `CI`
-- **doc:** `.claude/rules/ui_implementation_contract.md#12d`
-
-## `app/tests/test_session_import_safety.py`
-- **Role:** `info`
-- **provides:** `test:session_import_safety`
-- **consumes:** `app/modules/session_manager.py`, `app/handlers/session_handlers.py`, `app/src/bootloader.py`
-- **consumed_by:** `CI`
-- **doc:** `.claude/rules/ui_implementation_contract.md#12d`
-
 ## `app/tests/test_session_manager.py`
 - **Role:** `info`
 - **provides:** `test:session_manager`
@@ -473,13 +446,6 @@
 ## `app/tests/test_shiny_plot_warnings.py`
 - **Role:** `info`
 - **consumes:** `app/handlers/home_theater.py`, `app/modules/plot_issue_reporter.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`
-
-## `app/tests/test_shiny_session_keep_both.py`
-- **Role:** `info`
-- **provides:** `test:shiny_session_keep_both`
-- **consumes:** `app/handlers/session_handlers.py`, `app/modules/session_manager.py`, `app/tests/test_shiny_session_restore.py`
-- **consumed_by:** `CI`
-- **doc:** `.claude/rules/ui_implementation_contract.md#12d`
 
 ## `app/tests/test_shiny_step_order.py`
 - **Role:** `info`
@@ -931,7 +897,7 @@
 
 ## `libs/utils/src/utils/formula_check.py`
 - **Role:** `ref`
-- **provides:** `function:formula_problems`, `function:evaluate_formula`, `function:function_string_problems`, `function:smoother_formula_problems`, `constant:SMOOTHER_FUNCTIONS`, `function:denied_methods`, `function:member_refusal`, `function:refused_members`, `constant:REFUSED_BY_NAME`, `constant:REFUSED_BY_NAME_SUGGESTION`, `constant:RANDOM_REFUSAL`, `constant:REFUSED_DTYPES`, `constant:MODULE_FUNCTIONS`, `constant:MATH_FUNCTIONS`, `constant:PLOT_FUNCTION_MODULES`, `constant:PLOT_FUNCTION_NAMES`, `constant:PYTHON_MATH_FUNCTIONS`, `constant:MATH_CONSTANTS`, `class:FormulaError`
+- **provides:** `function:formula_problems`, `function:evaluate_formula`, `function:function_string_problems`, `function:smoother_formula_problems`, `constant:SMOOTHER_FUNCTIONS`, `function:denied_methods`, `function:member_refusal`, `function:refused_members`, `constant:REFUSED_BY_NAME`, `constant:REFUSED_DTYPES`, `constant:MODULE_FUNCTIONS`, `constant:MATH_FUNCTIONS`, `constant:PLOT_FUNCTION_MODULES`, `constant:PLOT_FUNCTION_NAMES`, `constant:PYTHON_MATH_FUNCTIONS`, `constant:MATH_CONSTANTS`, `class:FormulaError`
 - **consumed_by:** `libs/utils/tests/test_formula_check.py`, `libs/utils/tests/test_formula_element_field.py`, `libs/utils/tests/test_formula_refuses_object.py`, `libs/utils/tests/test_formula_reads_no_outside_data.py`, `libs/utils/tests/test_plot_text_check.py`, `libs/utils/tests/test_stat_function_names.py`, `libs/utils/src/utils/plot_text_check.py`, `libs/utils/src/utils/recipe_check.py`, `libs/viz_factory/src/viz_factory/checked_plot.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/transformer/src/transformer/actions/polars_calls.py`, `libs/id_reconciliation/src/id_reconciliation/core.py`, `libs/viz_factory/tests/test_stat_function_names_drawn.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 15; check ST06)`
 
@@ -975,8 +941,8 @@
 
 ## `libs/utils/src/utils/plot_text_check.py`
 - **Role:** `ref`
-- **provides:** `constant:STAT_FUNCTION_TEXT_BLOCKED`, `constant:STAT_FUNCTION_TEXT_SUGGESTION`, `function:layer_text_problems`, `function:facet_variable_problems`, `function:facet_variables`, `function:facet_sides`, `function:facet_wrap_spec`, `class:FacetTextError`, `constant:FACET_PARAMETERS`
-- **consumes:** `libs/utils/src/utils/formula_check.py (smoother_formula_problems)`
+- **provides:** `function:layer_text_problems`, `function:facet_variable_problems`, `function:facet_variables`, `function:facet_sides`, `function:facet_wrap_spec`, `class:FacetTextError`, `constant:FACET_PARAMETERS`
+- **consumes:** `libs/utils/src/utils/formula_check.py`, `libs/utils/src/utils/fix_text.py (split_fix)`
 - **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/facets/core.py`, `libs/utils/tests/test_plot_text_check.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 15; check PS06)`
 
@@ -1109,8 +1075,8 @@
 
 ## `libs/viz_factory/src/viz_factory/geoms/core.py`
 - **Role:** `plot`
-- **provides:** `component:geom_boxplot`, `component:geom_violin`, `component:geom_point`, `component:geom_line`, `component:geom_bar`, `component:geom_col`, `component:geom_histogram`, `component:geom_smooth`, `component:geom_density`, `component:geom_errorbar`, `component:geom_pointrange`, `component:geom_tile`, `component:geom_raster`, `component:geom_text`, `component:geom_label`, `component:geom_jitter`, `component:geom_step`, `component:geom_segment`, `component:geom_abline`, `component:geom_area`, `component:geom_bin_2d`, `component:geom_blank`, `component:geom_count`, `component:geom_crossbar`, `component:geom_density_2d`, `component:geom_dotplot`, `component:geom_errorbarh`, `component:geom_freqpoly`, `component:geom_hline`, `component:geom_linerange`, `component:geom_path`, `component:geom_vline`, `component:stat_count`, `component:stat_bin`, `component:stat_summary`, `component:stat_boxplot`, `component:stat_smooth`, `component:stat_density`, `component:labs (geom)`
-- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/errors.py (CannotAct)`, `libs/utils/src/utils/fix_text.py (split_fix`, `with_fix)`, `libs/utils/src/utils/plot_text_check.py (STAT_FUNCTION_TEXT_BLOCKED`, `STAT_FUNCTION_TEXT_SUGGESTION)`
+- **provides:** `component:geom_boxplot`, `component:geom_violin`, `component:geom_point`, `component:geom_line`, `component:geom_bar`, `component:geom_col`, `component:geom_histogram`, `component:geom_smooth`, `component:geom_density`, `component:geom_errorbar`, `component:geom_pointrange`, `component:geom_tile`, `component:geom_raster`, `component:geom_text`, `component:geom_label`, `component:geom_jitter`, `component:geom_step`, `component:geom_segment`, `component:geom_abline`, `component:geom_area`, `component:geom_bin_2d`, `component:geom_blank`, `component:geom_count`, `component:geom_crossbar`, `component:geom_density_2d`, `component:geom_dotplot`, `component:geom_errorbarh`, `component:geom_freqpoly`, `component:geom_hline`, `component:geom_linerange`, `component:geom_path`, `component:geom_vline`, `component:stat_count`, `component:stat_bin`, `component:stat_summary`, `component:stat_boxplot`, `component:stat_smooth`, `component:stat_density`, `component:labs (geom)`, `function:function_string_namespace`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/errors.py (CannotAct)`, `libs/utils/src/utils/fix_text.py (split_fix`, `with_fix)`, `libs/utils/src/utils/formula_check.py (PLOT_FUNCTION_MODULES`, `PLOT_FUNCTION_NAMES`, `MATH_FUNCTIONS`, `MATH_CONSTANTS)`
 - **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via COMPONENT_SCHEMAS)`
 - **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
