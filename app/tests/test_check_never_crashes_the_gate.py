@@ -96,3 +96,25 @@ def test_the_gate_rejects_a_recipe_with_a_bad_join_key(tmp_path):
     gate.data_lookup = None
     problems, _, _ = gate._gate_one(str(path))
     assert any("[J05]" in str(p) for p in problems)
+
+
+@pytest.mark.parametrize("exc", [TypeError("t"), KeyError("k"), AttributeError("a"), ValueError("v"), IndexError("i")])
+def test_a_shape_exception_says_the_check_failed_on_the_shape_of_the_recipe(tmp_path, monkeypatch, exc):
+    monkeypatch.setattr(validator, "_check_file", lambda path, profile: (_ for _ in ()).throw(exc))
+    path = write_recipe(tmp_path / "r.yaml", two_tables(shared_column=False))
+    problems = checker_problems(path)
+    assert len(problems) == 1
+    assert "failed on the shape of this recipe" in problems[0].problem and type(exc).__name__ in problems[0].problem
+    assert "not accepted" in problems[0].problem
+
+
+@pytest.mark.parametrize("exc", [ImportError("no module x"), OSError("disk gone"), RuntimeError("boom")])
+def test_any_other_exception_says_the_check_could_not_run_and_never_blames_the_recipe(tmp_path, monkeypatch, exc):
+    monkeypatch.setattr(validator, "_check_file", lambda path, profile: (_ for _ in ()).throw(exc))
+    path = write_recipe(tmp_path / "r.yaml", two_tables(shared_column=False))
+    for problems in (checker_problems(path), validate_data_analysis_recipe(path), checker_advices(path)):
+        assert len(problems) == 1, "the recipe must still be refused"
+        text = problems[0].problem
+        assert "the check could not run" in text and type(exc).__name__ in text and str(exc) in text and "not accepted" in text
+        assert "shape of this recipe" not in text
+        assert "fault of the app or of its installation" in problems[0].tip

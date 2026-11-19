@@ -1,7 +1,7 @@
 """
 @deps
 provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:checker_advices, const:SHOWN_ADVICES, function:home_advice_entries, function:validate_advice_entries, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, function:rejected_recipe_text (GATE-GAP-1), class:DataAnalysisRecipeProblem
-consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (load_recipe), libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/utils/src/utils/recipe_graph.py (build_graph: the graph the checker's column checks need, J08), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/engine_registry.py (engine_tables: the `engine` field of every action and component, D-0238), app/modules/orchestrator.py
+consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (load_recipe), libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/utils/src/utils/recipe_tiers.py (tier3_steps: the lookup `materialize_tier3` uses; the tier-3 steps count as read), libs/utils/src/utils/recipe_graph.py (build_graph: the graph the checker's column checks need, J08), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/engine_registry.py (engine_tables: the `engine` field of every action and component, D-0238), app/modules/orchestrator.py
 consumed_by: app/tests/test_upload_load_never_exits.py, app/tests/test_upload_recipe_check.py, app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
 @end_deps
@@ -47,6 +47,7 @@ from utils.config_loader import ConfigManager
 from utils.fix_text import with_fix
 from utils.recipe_graph import RecipeGraph, RecipeGraphError, build_graph
 from utils.recipe_loader import check_recipe_file, load_recipe
+from utils.recipe_tiers import tier3_steps
 
 # What the recipe checker must have looked at before a recipe is accepted (its `coverage`): the form of the file, every
 # step against the action registry, every plot layer against the component registry, every step and layer against the engine of its block,
@@ -329,15 +330,26 @@ def _check_file(path: Path, profile: str):
     return check_recipe_file(path, profile, catalogs=checker_catalogs(), graph=_graph_of(raw))
 
 
+# The exceptions that a recipe of a wrong shape can make the check raise (a value of the wrong kind where it reads text, a mapping or a list).
+# Any other exception is not a fact about the recipe.
+_SHAPE_EXCEPTIONS = (TypeError, KeyError, AttributeError, ValueError, IndexError)
+
+
 def _check_failed_problem(path: Path, exc: BaseException) -> DataAnalysisRecipeProblem:
     """The one problem for a recipe that the check itself failed on: the recipe is refused, never accepted on an exception.
 
-    The same form as `uploaded_recipe_report` ("[CHECK] ..."); it names the recipe, says the check (not the recipe's author) hit
-    the shape, and gives the exception, so that the recipe can be corrected or the fault reported."""
+    The same form as `uploaded_recipe_report` ("[CHECK] ..."); it names the recipe and gives the exception. Only an exception that a
+    recipe of a wrong shape can cause says that the shape of the recipe is the cause; any other (an import that failed, a file the
+    check could not read) says that the check could not run, which is a fault of the app or of its installation."""
+    if isinstance(exc, _SHAPE_EXCEPTIONS):
+        return DataAnalysisRecipeProblem(
+            path.name, "check",
+            f"[CHECK] the recipe {path.name} could not be checked: the check itself failed on the shape of this recipe ({type(exc).__name__}: {exc}); the recipe is not accepted",
+            "Look for a value of the wrong kind (a list where text is expected, a mapping where a list is expected). If the recipe looks right, this is a fault of the app: report it.")
     return DataAnalysisRecipeProblem(
         path.name, "check",
-        f"[CHECK] the recipe {path.name} could not be checked: the check itself failed on the shape of this recipe ({type(exc).__name__}: {exc}); the recipe is not accepted",
-        "Look for a value of the wrong kind (a list where text is expected, a mapping where a list is expected). If the recipe looks right, this is a fault of the app: report it.")
+        f"[CHECK] the recipe {path.name} could not be checked: the check could not run ({type(exc).__name__}: {exc}); the recipe is not accepted",
+        "This is a fault of the app or of its installation, not of the recipe: report it.")
 
 
 def checker_problems(path: Path, profile: str = "run") -> list[DataAnalysisRecipeProblem]:
@@ -443,9 +455,21 @@ def engine_load_problems(path: Union[str, Path]) -> list[DataAnalysisRecipeProbl
                     continue
                 seen.add(message)
                 problems.append(DataAnalysisRecipeProblem(name, f"{location}.{tier}", message, getattr(exc, "tip", None)))
+    # The tier-3 steps of the plots: read by the one lookup `DataOrchestrator.materialize_tier3` uses (`utils.recipe_tiers.tier3_steps`),
+    # per plot entry as the groups write them (a plot id written twice is then counted twice as written and once as read: refused).
+    plot_written = 0
+    for group in (raw.get("analysis_groups") or {}).values() if isinstance(raw.get("analysis_groups"), dict) else []:
+        plots = group.get("plots") if isinstance(group, dict) else None
+        for plot_id, entry in (plots or {}).items() if isinstance(plots, dict) else []:
+            if not isinstance(entry, dict):
+                continue
+            plot_written += count_steps_written(entry)
+            read += len(tier3_steps(raw, plot_id))
     if not block_problems:
-        # the steps of the plots (tier3) are not run by the engine and are refused by the checker (P05): only the tables and joins count here
-        written = count_steps_written({key: value for key, value in raw.items() if key != "analysis_groups"})
+        # Written: everything in the recipe except `analysis_groups` and `plots` (ConfigManager keeps a flat copy of the plot entries
+        # under `plots`: counting it would count every plot step twice) plus the whole of each plot entry, so that a step list the
+        # engine does not read in a plot (anywhere but `tier3.steps`) is written and never read, and the count refuses it.
+        written = count_steps_written({key: value for key, value in raw.items() if key not in ("analysis_groups", "plots")}) + plot_written
         unread = unread_steps_problem(name, "recipe", written, read)
         if unread is not None:
             problems.append(unread)
