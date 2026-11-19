@@ -370,7 +370,7 @@ def define_server(input, output, session, *,
         return stored_table_identity(
             tier, target_ds, data_analysis_recipe_id, keys.tier1_key_of(target_ds),
             bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet", _unstored_builds[0],
-            keys.plot_key_of(plot_id) if tier == "T3" and plot_id is not None else None)
+            keys.plot_key_of(plot_id) if tier == "T3" and plot_id is not None else None, keys.tier2_key_of(target_ds))
 
     def _active_plot_t3_nodes(plot_id: str | None = None) -> list[dict]:
         """Return the committed T3 AuditSteps for the active plot subtab.
