@@ -1,7 +1,7 @@
 """
 @deps
 provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:checker_advices, const:SHOWN_ADVICES, function:home_advice_entries, function:validate_advice_entries, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, function:rejected_recipe_text (GATE-GAP-1), class:DataAnalysisRecipeProblem
-consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (load_recipe), libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/engine_registry.py (engine_tables: the `engine` field of every action and component, D-0238), app/modules/orchestrator.py
+consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (load_recipe), libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/utils/src/utils/recipe_graph.py (build_graph: the graph the checker's column checks need, J08), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/engine_registry.py (engine_tables: the `engine` field of every action and component, D-0238), app/modules/orchestrator.py
 consumed_by: app/tests/test_upload_load_never_exits.py, app/tests/test_upload_recipe_check.py, app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
 @end_deps
@@ -45,11 +45,13 @@ from utils.step_migration import old_action_hint, removed_action_catalog
 from app.modules.engine_registry import engine_tables
 from utils.config_loader import ConfigManager
 from utils.fix_text import with_fix
-from utils.recipe_loader import check_recipe_file
+from utils.recipe_graph import RecipeGraph, RecipeGraphError, build_graph
+from utils.recipe_loader import check_recipe_file, load_recipe
 
 # What the recipe checker must have looked at before a recipe is accepted (its `coverage`): the form of the file, every
-# step against the action registry, every plot layer against the component registry, every step and layer against the engine of its block.
-REQUIRED_COVERAGE = frozenset({"structure", "actions", "components", "engines"})
+# step against the action registry, every plot layer against the component registry, every step and layer against the engine of its block,
+# and the columns of every table (the checks that need the recipe graph, J08).
+REQUIRED_COVERAGE = frozenset({"structure", "actions", "components", "engines", "columns"})
 # Advices that tell the author what a choice does to the result (a float join key, a join of a table with itself, a position step after an unfixed row order).
 # The other advices (missing descriptions and the like) are for the author's own review and stay out of HOME's panel.
 SHOWN_ADVICES = frozenset({"J12", "J13", "ST13", "ST14", "ST15"})
@@ -301,10 +303,30 @@ def uploaded_recipe_report(raw, profile: str = "build") -> list[str]:
         if not (isinstance(raw, dict) and "data_schemas" in raw):
             if isinstance(raw, dict) or raw is None:
                 return _fragment_report(raw)
-        result = check_recipe(raw, profile, catalogs=checker_catalogs())
+        result = check_recipe(raw, profile, catalogs=checker_catalogs(), graph=_graph_of(raw))
     except Exception as exc:
         return [f"[CHECK] the recipe could not be checked: {exc}"]
     return [with_fix(f"[{p.code}] {p.path + ': ' if p.path else ''}{p.message}", p.fix) for p in result.errors]
+
+
+def _graph_of(raw) -> Optional[RecipeGraph]:
+    """The recipe graph the checker's column checks need (J08), or None when the recipe cannot be drawn as a graph.
+
+    None is not a silent skip: a recipe the graph refuses (an unknown ingredient, a plot with no table, a cycle, a repeated id) also
+    carries an error of the checker itself (J04, PS02, X1, S01, J05 ...), and a recipe checked without the columns is never accepted
+    (`REQUIRED_COVERAGE`)."""
+    if not isinstance(raw, dict):
+        return None
+    try:
+        return build_graph(raw)
+    except RecipeGraphError:
+        return None
+
+
+def _check_file(path: Path, profile: str):
+    """`check_recipe_file` with the recipe graph, so that the column checks run in the app as they do in the tests."""
+    raw, _ = load_recipe(path)
+    return check_recipe_file(path, profile, catalogs=checker_catalogs(), graph=_graph_of(raw))
 
 
 def checker_problems(path: Path, profile: str = "run") -> list[DataAnalysisRecipeProblem]:
@@ -312,7 +334,7 @@ def checker_problems(path: Path, profile: str = "run") -> list[DataAnalysisRecip
 
     An advice of the checker is not a problem here: it does not stop a recipe. When the checker could not look at the
     actions or the plot components, that is a problem of its own: a recipe is never accepted on a partial check."""
-    result = check_recipe_file(path, profile, catalogs=checker_catalogs())
+    result = _check_file(path, profile)
     problems = [DataAnalysisRecipeProblem(path.name, p.path or "recipe", f"[{p.code}] {p.message}", p.fix or None)
                 for p in result.errors]
     missing = REQUIRED_COVERAGE - result.coverage
@@ -331,7 +353,7 @@ def checker_advices(path: Path, profile: str = "run") -> list[DataAnalysisRecipe
     path = Path(path)
     if not path.is_file():
         return []
-    result = check_recipe_file(path, profile, catalogs=checker_catalogs())
+    result = _check_file(path, profile)
     return [DataAnalysisRecipeProblem(path.name, p.path or "recipe", f"[{p.code}] {p.message}", p.fix or None)
             for p in result.advices if p.code in SHOWN_ADVICES]
 
