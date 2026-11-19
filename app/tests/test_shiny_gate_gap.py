@@ -28,7 +28,7 @@ def _open_home(page: Page, url: str):
 
 
 def test_a_step_saved_in_blueprint_that_fails_the_gate_is_not_used_by_home(page: Page, tmp_path):
-    with g.running_app(tmp_path) as (url, log):
+    with g.running_app(tmp_path, blueprint=True) as (url, log):
         _open_home(page, url)
         page.wait_for_function("() => document.querySelector('#data_analysis_recipe_id') !== null", timeout=30_000)
         assert g.STAGE in g.selector_options(page)
