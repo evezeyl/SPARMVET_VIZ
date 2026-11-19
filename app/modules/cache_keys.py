@@ -1,8 +1,8 @@
 """
 @deps
-provides: function:load_data_analysis_recipe, function:tier1_material, function:tier1_engines, function:tier2_engine, function:collection_tier2_key, function:plot_tier3_key, function:tier3_key, function:tier3_engine, function:tier2_steps (from utils.recipe_tiers), function:tier3_steps (from utils.recipe_tiers), function:tier1_key, function:tier2_key, function:table_key_parts, function:table_definition_for_key, function:dataset_file_hashes, function:batch_hash_of, constant:ENGINE_CACHE_VERSION, constant:CACHE_VERSION_META, constant:STORED_TABLES_REBUILT_NOTICE, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys, class:TableKeyParts
-consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/engines.py (tier_engine: the one reading of the engine of a tier), libs/utils/src/utils/recipe_graph.py (build_graph: lineage_back, source_tables, parents: which definitions and which data files a table depends on, ADR-101)
-consumed_by: app/modules/orchestrator.py, app/modules/session_manager.py, app/src/server.py, app/src/bootloader.py, app/handlers/export_handlers.py, app/tests/test_cache_keys.py, app/tests/test_engine_keys.py, app/tests/test_table_keys.py, app/tests/test_tier3_reader.py
+provides: function:load_data_analysis_recipe, function:tier1_material, function:tier1_engines, function:tier2_engine, function:collection_tier2_key, function:plot_tier3_key, function:tier3_key, function:tier3_engine, function:tier2_steps (from utils.recipe_tiers), function:tier3_steps (from utils.recipe_tiers), function:tier1_key, function:tier2_key, function:table_key_parts, function:table_definition_for_key, function:dataset_file_hashes, function:batch_hash_of, constant:ENGINE_CACHE_VERSION, constant:CACHE_VERSION_META, constant:STORED_TABLES_REBUILT_NOTICE, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys, class:TableKeyParts, class:ResolvedRecipe, function:loaded_from_resolved, function:tier1_audit_part, function:audit_part
+consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/engines.py (tier_engine: the one reading of the engine of a tier), libs/utils/src/utils/recipe_graph.py (build_graph: lineage_back, source_tables, parents: which definitions and which data files a table depends on, ADR-101), libs/utils/src/utils/audit_copy.py (split_marked, audit_operation, strip_marked: the marked audit steps of a copy are the audit parts of a key, not its definition)
+consumed_by: app/modules/orchestrator.py, app/modules/session_manager.py, app/src/server.py, app/src/bootloader.py, app/handlers/export_handlers.py, app/tests/test_cache_keys.py, app/tests/test_engine_keys.py, app/tests/test_table_keys.py, app/tests/test_tier3_reader.py, app/tests/test_audit_keys.py, app/modules/audit_run.py
 doc: .claude/knowledge/architecture_decisions.md#adr-089, .claude/knowledge/architecture_decisions.md#adr-101, docs/foundations/reproducibility_hash_schema.qmd
 @end_deps
 
@@ -11,20 +11,24 @@ Cache keys of the stored tables (ADR-089 as amended by ADR-101), headless, no Sh
 The key of a stored table is a SERIES OF LABELLED PARTS joined with dots in execution order, never hashed again (ADR-101 point 2).
 Each part is 128 bits (32 hex characters); a part that is empty is left out:
 
-    T1 key = E-<32> . rC-<32> . dC-<32>
-    T2 key = <the T1 key it is computed from> . s2-<32>            (no s2 part when the table has no tier-2 steps: the key of T2 IS the T1 key)
-    T3 key = <the T2 key of the plot's table> . s3-<32>            (no s3 part when the plot has no tier-3 steps: the key of the plot IS the key of its table)
+    T1 key = E-<32> . rC-<32> . dC-<32> . [a1-<32>]
+    T2 key = <the T1 key it is computed from> . [s2-<32>] . [a2-<32>]    (no s2 part when the table has no tier-2 steps: the key of T2 IS the T1 key)
+    T3 key = <the T2 key of the plot's table> . [s3-<32>] . [a3-<32>]    (no s3 part when the plot has no tier-3 steps: the key of the plot IS the key of its table)
 
     E   the data engine(s) that build THIS table, with the versions of the engine libraries and the cache version
     rC  the definition of THIS table: its own and that of everything upstream of it (a join: its ingredients), from the recipe graph
     dC  the content of the data files THIS table reads (the source tables of the graph), not those of the whole recipe
     s2  the tier-2 steps of the table and the data engine that runs them
     s3  the tier-3 steps of a plot entry and the data engine that runs them (PROVISIONAL name of the label `s3`: ADR-101 names the part, not the spelling)
+    a1 a2 a3  the AUDIT steps of a copy of the recipe (`utils.audit_copy`): the steps that carry the marker `id: audit_<8 hex>_<k>`, at the end of the
+        tier-1 list of the table and of everything upstream of it (a1), of the tier-2 list of the table (a2) and of the tier-3 list of the plot (a3), as
+        the operations without their `id` and `comment` ("without reasons, dates or initials"), in list order; a2 and a3 also hold the engine that runs
+        the tier. The marked steps are NOT part of rC, s2 and s3, so a copy with no audit step has exactly the keys of its original, and an audit step
+        reaches the keys downstream of it the way an upstream definition does (a1 is the audit part of the whole lineage, like rC is its definition).
+        The part is left out when there is no audit step. PROVISIONAL: the spelling of the labels a1 a2 a3 is ADR-101's.
 
 A change in one table therefore moves the key of that table and of the tables built from it, and no other (the fail-safe is below).
-The first part that differs between two keys says where two builds diverge. Part to come (ADR-101): the audit parts `a1 a2 a3`, written
-after `s2` and `s3` of the tier they belong to (the place is left: `plot_tier3_key` and `collection_tier2_key` are the two places that
-build the end of a key); they are further parts of the same series and do not change these.
+The first part that differs between two keys says where two builds diverge.
 
 The engine rule (D-0240): a key holds the engine of what it stores, and nothing else. The ENGINE of a tier is its own
 `data_engine`, else the recipe's (`utils.engines.tier_engine`, the value the orchestrator runs). It is an argument of the key,
@@ -58,13 +62,14 @@ from importlib import metadata
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Union
 
+from utils.audit_copy import audit_operation, split_marked, strip_marked
 from utils.errors import RecipeLoadError
 from utils.config_loader import ConfigManager
 from utils.engines import tier_engine
 from utils.recipe_graph import RecipeGraphError, build_graph
 # The one reading of a collection's tier-2 list (issue #77); `tier2_steps` is used from here by the app.
 from utils.recipe_tiers import (  # noqa: F401 - tier2_steps and tier3_steps are part of this module's interface
-    METADATA_SCHEMA, SCHEMA_SECTIONS, collection_bodies, collection_body, plot_entries, plot_entry, tier2_steps, tier3_steps,
+    METADATA_SCHEMA, SCHEMA_SECTIONS, collection_bodies, collection_body, plot_entries, plot_entry, step_list, tier2_steps, tier3_steps,
     without_data_engines, without_tier2)
 
 # Bump when an action's behaviour or these key rules change: it invalidates every stored stage.
@@ -150,8 +155,9 @@ def tier1_material(raw: dict) -> dict:
     This is the COARSE definition of a table (the fallback when the graph cannot say what a table depends on).
     The tier-2 list of every collection (a join's `tier2.steps`, a schema's `tier2.steps`) is downstream of
     Tier 1: it goes into the `s2` part instead (`utils.recipe_tiers`, issue #77). The written data engines are
-    left out too: their effect on Tier 1 is `tier1_engines`, an argument of the key (D-0240)."""
-    return without_data_engines(without_tier2({k: v for k, v in raw.items() if k not in _DOWNSTREAM_TOP_LEVEL}))
+    left out too: their effect on Tier 1 is `tier1_engines`, an argument of the key (D-0240). The marked audit steps of a copy are left out as well:
+    they are the audit part `a1` (`tier1_audit_part`), never the definition."""
+    return without_data_engines(without_tier2(strip_marked({k: v for k, v in raw.items() if k not in _DOWNSTREAM_TOP_LEVEL})))
 
 
 def tier1_engines(raw: dict) -> dict:
@@ -176,7 +182,8 @@ def table_definition_for_key(body: Any) -> Any:
     """What of the definition of one table or join enters the key of every table that is built from it.
 
     Today: everything written under it, except its tier-2 list (it is the `s2` part of the T2 key, never of T1) and the data
-    engine written on its tier 1 (the effective engine is an argument of the key, D-0240). The `labels` and descriptions of a table
+    engine written on its tier 1 (the effective engine is an argument of the key, D-0240), and the marked audit steps at the end of its tier 1
+    (the audit part `a1`, never the definition: a copy with no audit step has the keys of its original). The `labels` and descriptions of a table
     or join stay IN: this is the owner's open point (a label change rebuilds the table, which is safe and wasteful). To take labels
     out, remove them HERE and nowhere else; the property test of `app/tests/test_table_keys.py` then has to learn that they are
     not an input. It waits for the owner's decision."""
@@ -184,8 +191,8 @@ def table_definition_for_key(body: Any) -> Any:
         return body
     kept = {k: v for k, v in body.items() if k != "tier2"}
     tier1 = kept.get("tier1")
-    if isinstance(tier1, dict) and "data_engine" in tier1:
-        kept["tier1"] = {k: v for k, v in tier1.items() if k != "data_engine"}
+    if isinstance(tier1, dict):
+        kept["tier1"] = {k: (split_marked(v)[0] if k == "steps" and isinstance(v, list) else v) for k, v in tier1.items() if k != "data_engine"}
     return kept
 
 
@@ -195,16 +202,35 @@ class TableKeyParts:
 
     engines: canonical hash of {table: effective tier-1 data engine} of the table and everything upstream of it.
     definition: the finished `rC` part. datasets: the source tables whose files the table reads (empty when `coarse`).
-    coarse: the fail-safe form: the definition is the whole recipe and the data is every file."""
+    coarse: the fail-safe form: the definition is the whole recipe and the data is every file.
+    audit: the finished `a1` part (the marked audit steps at tier 1 of the table and of everything upstream of it), or "" when there is none."""
     table: str
     engines: str
     definition: str
     datasets: tuple = ()
     coarse: bool = False
+    audit: str = ""
+
+
+def tier1_audit_part(bodies: dict, names) -> str:
+    """The finished `a1` part of the tables `names` (a table and everything upstream of it; the whole recipe when coarse), or "" when none of them has a
+    marked audit step at the end of its tier 1. The steps are the operations without `id` and `comment`, in list order, per table."""
+    held = {name: [audit_operation(step) for step in split_marked(step_list(bodies[name], "tier1"))[1]] for name in names}
+    held = {name: operations for name, operations in held.items() if operations}
+    return key_part("a1", canonical_hash(held)) if held else ""
+
+
+def audit_part(label: str, marked_steps: list, engine) -> str:
+    """The finished `a2` or `a3` part of a list of marked audit steps (`label` says which), with the data engine that runs the tier, or "" when the list is empty."""
+    if not marked_steps:
+        return ""
+    return key_part(label, canonical_hash([audit_operation(step) for step in marked_steps]), canonical_hash(engine))
 
 
 def _coarse_parts(raw: dict, table: str = "") -> TableKeyParts:
-    return TableKeyParts(table, canonical_hash(tier1_engines(raw)), key_part("rC", canonical_hash(tier1_material(raw))), (), True)
+    bodies = collection_bodies(raw)
+    return TableKeyParts(table, canonical_hash(tier1_engines(raw)), key_part("rC", canonical_hash(tier1_material(raw))), (), True,
+                         tier1_audit_part(bodies, bodies))
 
 
 def table_key_parts(raw: dict) -> tuple[dict[str, TableKeyParts], TableKeyParts]:
@@ -233,7 +259,8 @@ def table_key_parts(raw: dict) -> tuple[dict[str, TableKeyParts], TableKeyParts]
                              "reads": [graph.node(p).name for p in graph.parents(f"T1:{name}")],
                              "definition": table_definition_for_key(bodies[name])} for name in upstream}
         engines = {name: tier_engine(raw, bodies[name], "tier1") for name in upstream}
-        parts[table] = TableKeyParts(table, canonical_hash(engines), key_part("rC", shared, canonical_hash(definition)), datasets)
+        parts[table] = TableKeyParts(table, canonical_hash(engines), key_part("rC", shared, canonical_hash(definition)), datasets,
+                                     audit=tier1_audit_part(bodies, upstream))
     return parts, coarse
 
 
@@ -243,10 +270,11 @@ def table_key_parts(raw: dict) -> tuple[dict[str, TableKeyParts], TableKeyParts]
 
 
 def tier1_key(parts: TableKeyParts, file_hashes: Mapping[str, str]) -> str:
-    """The key of the stored Tier 1 table: `E . rC . dC`. `file_hashes` is `dataset_file_hashes(...)`; a source table with no
-    file is part of the key as "no file", so the key moves when the file appears."""
+    """The key of the stored Tier 1 table: `E . rC . dC`, then `a1` when the table or something upstream of it has a marked audit step. `file_hashes`
+    is `dataset_file_hashes(...)`; a source table with no file is part of the key as "no file", so the key moves when the file appears."""
     wanted = dict(file_hashes) if parts.coarse else {ds: file_hashes.get(ds, "NOFILE") for ds in parts.datasets}
-    return ".".join([key_part("E", engine_fingerprint(), parts.engines), parts.definition, key_part("dC", canonical_hash(wanted))])
+    held = [key_part("E", engine_fingerprint(), parts.engines), parts.definition, key_part("dC", canonical_hash(wanted))]
+    return ".".join(held + [parts.audit] if parts.audit else held)
 
 
 def tier2_key(tier1_key_value: str, steps: list, engine) -> str:
@@ -260,23 +288,33 @@ def collection_tier2_key(raw: dict, collection_id: str, tier1_key_value: str) ->
 
     A collection with tier-2 steps: the Tier 1 key and the `s2` part. A collection with none: T2 IS T1, the empty part is left out and
     the key is the Tier 1 key itself (ADR-101 point 2). Nothing is stored for it. (Before the tier-3 reader this returned an empty
-    string for that case and each caller read "" as "no key"; a caller that needs to know whether T2 has steps asks `tier2_steps`.)"""
-    steps = tier2_steps(raw, collection_id)
-    return tier2_key(tier1_key_value, steps, tier2_engine(raw, collection_id)) if steps else tier1_key_value
+    string for that case and each caller read "" as "no key"; a caller that needs to know whether T2 has steps asks `tier2_steps`.)
+    The marked audit steps at the end of the list are not in `s2`: they are the part `a2`, after it (and alone when the original has no tier-2 step)."""
+    plain, marked = split_marked(tier2_steps(raw, collection_id))
+    if not (plain or marked):
+        return tier1_key_value
+    engine = tier2_engine(raw, collection_id)
+    key = tier2_key(tier1_key_value, plain, engine) if plain else tier1_key_value
+    return f"{key}.{audit_part('a2', marked, engine)}" if marked else key
 
 
 def tier3_key(tier2_key_value: str, steps: list, engine) -> str:
     """The key of a plot's T3 table: the key of the Tier 2 table it is computed from, then the `s3` part (its steps and the data
-    engine that runs them). A series of labelled parts like the other tiers (ADR-101 point 2); a place is left after `s3` for the audit part."""
+    engine that runs them). A series of labelled parts like the other tiers (ADR-101 point 2); the audit part `a3` follows it (`plot_tier3_key`)."""
     return f"{tier2_key_value}.{key_part('s3', canonical_hash(steps), canonical_hash(engine))}"
 
 
 def plot_tier3_key(raw: dict, plot_id: str, tier2_key_value: str) -> str:
     """The key of the table one plot reads, under the key of the Tier 2 table of its target. A plot with tier-3 steps: that key and
     the `s3` part. A plot with none reads its table as it is: the empty part is left out, the key IS the key of its table, and
-    nothing is built or stored twice. The one place that makes a tier-3 key from a recipe."""
-    steps = tier3_steps(raw, plot_id)
-    return tier3_key(tier2_key_value, steps, tier3_engine(raw, plot_id)) if steps else tier2_key_value
+    nothing is built or stored twice. The marked audit steps at the end of the list are not in `s3`: they are the part `a3`, after it (and alone when the
+    plot has no tier-3 step of its own). The one place that makes a tier-3 key from a recipe."""
+    plain, marked = split_marked(tier3_steps(raw, plot_id))
+    if not (plain or marked):
+        return tier2_key_value
+    engine = tier3_engine(raw, plot_id)
+    key = tier3_key(tier2_key_value, plain, engine) if plain else tier2_key_value
+    return f"{key}.{audit_part('a3', marked, engine)}" if marked else key
 
 
 def data_analysis_recipe_fileset_hash(files: Iterable[Union[str, Path]], base_dir: Union[str, Path]) -> str:
@@ -328,6 +366,26 @@ class LoadedDataAnalysisRecipe:
     @property
     def raw(self) -> dict:
         return self.config.raw_config
+
+
+@dataclass(frozen=True)
+class ResolvedRecipe:
+    """What the engine reads of a recipe that is not a file: the resolved dictionary (`raw_config`) and no file (`loaded_files`). It stands where
+    the `ConfigManager` of a loaded file stands, for an audit copy (`loaded_from_resolved`)."""
+    raw_config: dict
+    loaded_files: tuple = ()
+
+
+def loaded_from_resolved(original: LoadedDataAnalysisRecipe, raw: dict) -> LoadedDataAnalysisRecipe:
+    """The recipe `raw` (an audit copy of the original, `utils.audit_copy`) in the form the engine reads, with the key parts of that very dictionary.
+
+    The path, the files and their signature are the original's: the copy has no file of its own, the original's names it (its id, its data
+    location). `data_analysis_recipe_sha256` is the hash of the resolved dictionary, NOT of a file set (there is none): PROVISIONAL, the identity of
+    an audit copy that is written to a file is not decided. The original is not changed."""
+    table_parts, coarse_parts = table_key_parts(raw)
+    return LoadedDataAnalysisRecipe(
+        path=original.path, config=ResolvedRecipe(raw), files=original.files, signature=original.signature,
+        data_analysis_recipe_sha256=canonical_hash(raw), table_parts=table_parts, coarse_parts=coarse_parts)
 
 
 @dataclass(frozen=True)
