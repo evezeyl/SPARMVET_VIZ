@@ -31,7 +31,7 @@ Each question requires a separate hash. No single hash can answer all three.
 
 *Replaces the former `decision_hash` (a hash of the assembly steps only), see ADR-089.*
 
-**What they hash:** the `tier1_key` covers the engine version (the cache version, 5 since 2026-11-18), the **resolved data analysis recipe** (every included file merged, without the downstream-only parts and without the written engine lines), the data content and the **effective data engine of every table and join** (the tier's own `data_engine`, else the data analysis recipe's). The `tier2_key` covers the `tier1_key`, the `tier2` steps of the collection and the effective data engine of its tier 2. Each key contains the one before it, so a change upstream changes every key after it. The engine is an argument of the key function and not a part of the data analysis recipe text: the same engine written on a tier or inherited from the top gives the same key. **The plot engine is in no table key**: a plot is drawn from a stored table and a picture has no stored key. When the cache version changed (4 to 5), every table stored under an older version is removed at the start of the app and rebuilt once; the results do not change (D-0240).
+**What they hash:** the `tier1_key` is a key per table, a series of labelled parts (ADR-101): the engine version (the cache version, 6 since the key per table) and the **effective data engine** (the tier's own `data_engine`, else the data analysis recipe's) of the table and of everything upstream of it, the **resolved data analysis recipe** as far as the table depends on it (every included file merged, without the downstream-only parts and without the written engine lines), and the content of the **data files that table reads**. The `tier2_key` covers the `tier1_key`, the `tier2` steps of the collection and the effective data engine of its tier 2. Each key contains the one before it, so a change upstream changes every key after it. The engine is an argument of the key function and not a part of the data analysis recipe text: the same engine written on a tier or inherited from the top gives the same key. **The plot engine is in no table key**: a plot is drawn from a stored table and a picture has no stored key. When the cache version changed (5 to 6), every table stored under an older version is removed at the start of the app and rebuilt once; the results do not change (D-0240).
 
 **Where they live:** in the Parquet file metadata of each stored stage: `sparmvet_tier1_key` (Tier 1 file) and `sparmvet_tier2_key` (`<name>__T2.parquet`). The older key `sparmvet_decision_hash` is still written, with the same value, for readers of older bundles. Readable without scanning data rows.
 
@@ -108,15 +108,15 @@ flowchart LR
 
 | Key | Inputs | Stored as |
 |---|---|---|
-| `tier1_key` | engine cache version (and the installed `polars` and `transformer` versions); the **resolved data analysis recipe** without the downstream-only parts; `data_batch_hash` | Tier 1 parquet, key in the file metadata (`sparmvet_decision_hash`) |
-| `tier2_key` | `tier1_key`; the `tier2` steps of that join's step list | Tier 2 parquet `<name>__T2.parquet` (nothing when `tier2` is empty: T2 equals T1) |
+| `tier1_key` of a table or join | three labelled parts, `E-<32>.rC-<32>.dC-<32>` (128 bits each): `E` the engine cache version, the installed `polars` and `transformer` versions and the data engine of the table and of everything upstream of it; `rC` the definition of the table and of everything upstream of it, from the recipe graph, together with the parts of the recipe that belong to no table; `dC` the content of the data files the table reads. One key per table: a change in one table moves its key and that of the tables built from it, and no other | Tier 1 parquet of that table, key in the file metadata (`sparmvet_decision_hash`) |
+| `tier2_key` | the `tier1_key` of the table, then one part `s2-<32>`: the `tier2` steps of that table and the data engine that runs them | Tier 2 parquet `<name>__T2.parquet` (nothing when `tier2` is empty: T2 equals T1) |
 | plot input | `tier2_key`; the plot spec; `plot_defaults`; the palette registry | not stored |
 
 The **resolved data analysis recipe** is what `ConfigManager` returns after every `!include` is merged, as if all the fragments were concatenated into one file. It is written in a canonical form (sorted keys), so comments, spacing and how the data analysis recipe is split into files do not change the key.
 
 ### The fail-safe rule
 
-The Tier 1 key covers **everything in the resolved data analysis recipe except a short list of known downstream parts**: `info`, `analysis_groups`, `plot_defaults`, plots, and the `tier2` steps of the join steps. A new or unknown section is part of Tier 1 automatically. A wrong guess can therefore only cause an extra recompute, never a stale result.
+The key of a table is narrow only where the recipe graph can say what the table depends on. Where it cannot (the recipe is not a graph: an unknown ingredient, a cycle), or a table reads no source table, the key is **coarse**: it covers everything in the resolved data analysis recipe except a short list of known downstream parts (`info`, `analysis_groups`, `plot_defaults`, plots, and the `tier2` steps of the join steps) and every data file. A part of the recipe that belongs to no table, a new or unknown section, is part of the key of every table. A wrong guess can therefore only cause an extra recompute, never a stale result.
 
 ### Detecting changes in the running app
 

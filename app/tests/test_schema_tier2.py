@@ -139,7 +139,7 @@ def test_the_tier2_of_a_schema_is_stored_with_the_chained_key(world):
     world.t2("T")
     stored = tier2_path_for(world.anchor("T"))
     assert stored.name == "T__T2.parquet" and stored.exists()
-    assert get_parquet_metadata_hash(str(stored), TIER2_KEY_META) == tier2_key(world.keys().tier1_key, [KEEP_A], "python-polars")
+    assert get_parquet_metadata_hash(str(stored), TIER2_KEY_META) == tier2_key(world.keys().tier1_key_of("T"), [KEEP_A], "python-polars")
 
 
 def test_a_second_read_uses_the_stored_tier2(world):
@@ -151,11 +151,11 @@ def test_a_second_read_uses_the_stored_tier2(world):
 
 
 def test_a_changed_schema_tier2_changes_only_the_tier2(world):
-    t1_key_before = world.keys().tier1_key
+    t1_key_before = world.keys().tier1_key_of("T")
     world.t2("T")
     os.utime(world.anchor("T"), ns=(OLD_MTIME_NS, OLD_MTIME_NS))
     world.write(tier2=[KEEP_B])
-    assert world.keys().tier1_key == t1_key_before, "a schema's tier 2 is downstream of Tier 1 (ADR-089 point 3)"
+    assert world.keys().tier1_key_of("T") == t1_key_before, "a schema's tier 2 is downstream of Tier 1 (ADR-089 point 3)"
     assert world.t2("T") == ["s3"]
     assert os.stat(world.anchor("T")).st_mtime_ns == OLD_MTIME_NS, "the Tier 1 file is only checked, not rebuilt"
 

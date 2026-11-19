@@ -297,12 +297,12 @@ def test_a_different_order_gives_a_different_key_even_when_the_data_is_equal(run
     _, t2_ab, keys_ab = run(variant(raw_config, ZSCORE, tier2=own_tier2 + [a, b]), ZSCORE)
     _, t2_ba, keys_ba = run(variant(raw_config, ZSCORE, tier2=own_tier2 + [b, a]), ZSCORE)
     assert plain(t2_ab).equals(plain(t2_ba))
-    assert keys_ab.tier1_key == keys_ba.tier1_key, "only tier-2 differs, so the tier-1 key must not move"
-    assert tier2_key(keys_ab.tier1_key, own_tier2 + [a, b], "python-polars") != tier2_key(keys_ba.tier1_key, own_tier2 + [b, a], "python-polars")
+    assert keys_ab.tier1_key_of(ZSCORE) == keys_ba.tier1_key_of(ZSCORE), "only tier-2 differs, so the tier-1 key must not move"
+    assert tier2_key(keys_ab.tier1_key_of(ZSCORE), own_tier2 + [a, b], "python-polars") != tier2_key(keys_ba.tier1_key_of(ZSCORE), own_tier2 + [b, a], "python-polars")
 
     _, _, t1_ab = run(variant(raw_config, ZSCORE, tier1_extra=[a, b]), ZSCORE)
     _, _, t1_ba = run(variant(raw_config, ZSCORE, tier1_extra=[b, a]), ZSCORE)
-    assert t1_ab.tier1_key != t1_ba.tier1_key, "swapping two tier-1 steps must change the tier-1 key"
+    assert t1_ab.tier1_key_of(ZSCORE) != t1_ba.tier1_key_of(ZSCORE), "swapping two tier-1 steps must change the tier-1 key"
 
 
 # ── (3) and (4): HOME's audit step (T3) runs after the recipe; the export re-run equals the audit data ──

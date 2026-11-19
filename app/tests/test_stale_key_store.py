@@ -48,7 +48,7 @@ def test_a_table_built_after_a_recipe_change_is_stored_under_the_key_of_the_new_
     rows = ids(w.orch.materialize_tier1("tiny", "C", other, keys=held))
     now = w.orch.compute_data_analysis_recipe_keys("tiny")
     assert rows == ["s3"]
-    assert stored(other, TIER1_KEY_META) == now.tier1_key != held.tier1_key
+    assert stored(other, TIER1_KEY_META) == now.tier1_key_of("C") != held.tier1_key_of("C")
 
 
 def test_the_author_changes_the_recipe_back_and_the_table_of_the_other_recipe_is_not_served(tmp_path):
@@ -59,7 +59,7 @@ def test_the_author_changes_the_recipe_back_and_the_table_of_the_other_recipe_is
     w.orch.materialize_tier1("tiny", "C", other, keys=held)           # built from the new recipe
     w.write_data_analysis_recipe()                                     # back to the first text
     back = w.orch.compute_data_analysis_recipe_keys("tiny")
-    assert back.tier1_key == held.tier1_key
+    assert back.tier1_key_of("C") == held.tier1_key_of("C")
     assert ids(w.orch.materialize_tier1("tiny", "C", other, keys=back)) == ["s1", "s2", "s3"]
 
 
@@ -70,7 +70,7 @@ def test_a_table_built_after_a_data_change_is_stored_under_the_key_of_the_new_da
     rows = ids(w.orch.materialize_tier1("tiny", "C", w.anchor, keys=held))
     now = w.orch.compute_data_analysis_recipe_keys("tiny")
     assert rows == ["s1", "s2", "s3", "s4"]
-    assert stored(w.anchor, TIER1_KEY_META) == now.tier1_key != held.tier1_key
+    assert stored(w.anchor, TIER1_KEY_META) == now.tier1_key_of("C") != held.tier1_key_of("C")
 
 
 def test_tier2_built_on_a_new_tier1_is_stored_under_the_chain_of_the_new_tier1(tmp_path):
@@ -82,8 +82,8 @@ def test_tier2_built_on_a_new_tier1_is_stored_under_the_chain_of_the_new_tier1(t
     now = w.orch.compute_data_analysis_recipe_keys("tiny")
     assert rows == []                                                   # B rows then kept A only: nothing
     t2 = tier2_path_for(w.anchor)
-    assert stored(w.anchor, TIER1_KEY_META) == now.tier1_key
-    assert stored(t2, TIER2_KEY_META) == tier2_key(now.tier1_key, [FILTER_A], "python-polars")
+    assert stored(w.anchor, TIER1_KEY_META) == now.tier1_key_of("C")
+    assert stored(t2, TIER2_KEY_META) == tier2_key(now.tier1_key_of("C"), [FILTER_A], "python-polars")
 
 
 def test_matching_keys_still_reuse_the_stored_table(tmp_path):
@@ -205,9 +205,19 @@ def test_a_build_whose_inputs_did_not_change_tells_nothing_and_stores(tmp_path):
 def test_a_recipe_that_changed_during_the_build_is_named_as_the_recipe(tmp_path):
     w = World(tmp_path)
     built_from = w.orch.compute_data_analysis_recipe_keys("tiny")
-    assert w.orch.inputs_changed("tiny", built_from) is None
-    w.write_data_analysis_recipe(plot_label="another label")                   # the recipe text changes
-    assert w.orch.inputs_changed("tiny", built_from).text == "the data analysis recipe changed"
+    assert w.orch.inputs_changed("tiny", built_from, "C") is None
+    w.write_data_analysis_recipe(steps_tier1=[FILTER_B])                       # a step of the table changes
+    assert w.orch.inputs_changed("tiny", built_from, "C").text == "the data analysis recipe changed"
+
+
+def test_a_change_that_is_not_an_input_of_the_table_is_not_a_change_of_the_table(tmp_path):
+    """ADR-101: the inputs of a table are what its key says. A plot label (downstream) and a file that another table reads change
+    the recipe or the data files, not this table: its build is stored."""
+    w = World(tmp_path)
+    built_from = w.orch.compute_data_analysis_recipe_keys("tiny")
+    w.write_data_analysis_recipe(plot_label="another label")
+    assert w.orch.inputs_changed("tiny", built_from, "C") is None
+    assert w.orch.compute_data_analysis_recipe_keys("tiny").data_analysis_recipe_sha256 != built_from.data_analysis_recipe_sha256
 
 
 def test_a_recipe_that_can_no_longer_be_read_is_a_change_named_as_such_not_silence(tmp_path):
@@ -215,17 +225,17 @@ def test_a_recipe_that_can_no_longer_be_read_is_a_change_named_as_such_not_silen
     w = World(tmp_path)
     built_from = w.orch.compute_data_analysis_recipe_keys("tiny")
     (w.data_analysis_recipes_dir / "tiny.yaml").write_text("id: tiny\ndata_schemas: [unclosed\n")
-    change = w.orch.inputs_changed("tiny", built_from)
+    change = w.orch.inputs_changed("tiny", built_from, "C")
     assert change is not None and change.text.startswith("the data analysis recipe can no longer be read")
     (w.data_analysis_recipes_dir / "tiny.yaml").unlink()
-    assert w.orch.inputs_changed("tiny", built_from).text == "the data analysis recipe file is gone"
+    assert w.orch.inputs_changed("tiny", built_from, "C").text == "the data analysis recipe file is gone"
 
 
 def test_a_data_file_that_is_gone_is_a_change_of_the_data(tmp_path):
     w = World(tmp_path)
     built_from = w.orch.compute_data_analysis_recipe_keys("tiny")
     w.data_file.unlink()
-    assert w.orch.inputs_changed("tiny", built_from).text == "the data files changed"
+    assert w.orch.inputs_changed("tiny", built_from, "C").text == "the data files changed"
 
 
 def test_a_tier1_built_from_a_mix_makes_its_tier2_unstorable_even_if_the_data_is_back_by_then(tmp_path):

@@ -1,40 +1,46 @@
 """
 @deps
-provides: function:load_data_analysis_recipe, function:tier1_material, function:tier1_engines, function:tier2_engine, function:collection_tier2_key, function:tier2_steps (from utils.recipe_tiers), function:tier1_key, function:tier2_key, constant:ENGINE_CACHE_VERSION, constant:CACHE_VERSION_META, constant:STORED_TABLES_REBUILT_NOTICE, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys
-consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/engines.py (tier_engine: the one reading of the engine of a tier)
-consumed_by: app/modules/orchestrator.py, app/modules/session_manager.py, app/src/server.py, app/src/bootloader.py, app/handlers/export_handlers.py, app/tests/test_cache_keys.py, app/tests/test_engine_keys.py
-doc: .claude/knowledge/architecture_decisions.md#adr-089, docs/foundations/reproducibility_hash_schema.qmd
+provides: function:load_data_analysis_recipe, function:tier1_material, function:tier1_engines, function:tier2_engine, function:collection_tier2_key, function:tier2_steps (from utils.recipe_tiers), function:tier1_key, function:tier2_key, function:table_key_parts, function:table_definition_for_key, function:dataset_file_hashes, function:batch_hash_of, constant:ENGINE_CACHE_VERSION, constant:CACHE_VERSION_META, constant:STORED_TABLES_REBUILT_NOTICE, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys, class:TableKeyParts
+consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/engines.py (tier_engine: the one reading of the engine of a tier), libs/utils/src/utils/recipe_graph.py (build_graph: lineage_back, source_tables, parents: which definitions and which data files a table depends on, ADR-101)
+consumed_by: app/modules/orchestrator.py, app/modules/session_manager.py, app/src/server.py, app/src/bootloader.py, app/handlers/export_handlers.py, app/tests/test_cache_keys.py, app/tests/test_engine_keys.py, app/tests/test_table_keys.py
+doc: .claude/knowledge/architecture_decisions.md#adr-089, .claude/knowledge/architecture_decisions.md#adr-101, docs/foundations/reproducibility_hash_schema.qmd
 @end_deps
 
-Cache chain keys (ADR-089), headless, no Shiny.
+Cache keys of the stored tables (ADR-089 as amended by ADR-101), headless, no Shiny.
 
-Every stored stage has a key made from its own inputs and the key of the stage before it:
+The key of a stored table is a SERIES OF LABELLED PARTS joined with dots in execution order, never hashed again (ADR-101 point 2).
+Each part is 128 bits (32 hex characters); a part that is empty is left out:
 
-    tier1_key = hash(engine version, resolved recipe minus downstream-only parts and minus the written engines, data_batch_hash,
-                     the effective tier-1 data engine of every table and join)
-    tier2_key = hash(tier1_key, the collection's tier2 steps: a join's, or a schema plotted directly,
-                     the effective tier-2 data engine of that collection)
+    T1 key = E-<32> . rC-<32> . dC-<32>
+    T2 key = <the T1 key it is computed from> . s2-<32>            (no s2 part when the table has no tier-2 steps)
 
-so a change anywhere upstream reaches every stage after it, and nothing is missed.
+    E   the data engine(s) that build THIS table, with the versions of the engine libraries and the cache version
+    rC  the definition of THIS table: its own and that of everything upstream of it (a join: its ingredients), from the recipe graph
+    dC  the content of the data files THIS table reads (the source tables of the graph), not those of the whole recipe
+    s2  the tier-2 steps of the table and the data engine that runs them
+
+A change in one table therefore moves the key of that table and of the tables built from it, and no other (the fail-safe is below).
+The first part that differs between two keys says where two builds diverge. Parts to come (ADR-101): the audit parts `a1 a2 a3` and
+the tier-3 part `s3`; they are further parts of the same series and do not change these.
 
 The engine rule (D-0240): a key holds the engine of what it stores, and nothing else. The ENGINE of a tier is its own
-`data_engine`, else the recipe's (`utils.engines.tier_engine`, the value the orchestrator runs). It is an argument of the key
-function, not a part of the recipe text, so the same engine written on the tier or inherited gives the same key, and no text
-change can forget it. A later stage's engine never moves an earlier key. The PLOT engine is in no table key: it is
-downstream (the plots), a picture has no stored key.
+`data_engine`, else the recipe's (`utils.engines.tier_engine`, the value the orchestrator runs). It is an argument of the key,
+not a part of the recipe text, so the same engine written on the tier or inherited gives the same key, and no text change can
+forget it. A later stage's engine never moves an earlier key. The PLOT engine is in no table key: it is downstream (the plots),
+a picture has no stored key.
 
-Known limit, not changed here: the tier-1 key is ONE key per recipe (ADR-089 as built), so the engine of one table moves the key
-that the other tables are stored under too. A key per table is ADR-101, not built.
+Fail-safe rule (ADR-101 point 3): a part is NARROW only when the recipe graph (`utils.recipe_graph`) can say what the table depends
+on. When it cannot (the recipe is not a graph: an unknown ingredient, a cycle, ...), or a table reads no source table, the parts of
+that table are COARSE: the definition is the whole resolved recipe minus the downstream-only parts and the data is every data file.
+A wrong guess can then only cause an extra rebuild, never a stale result. A part of the recipe that belongs to no table (an unknown
+or shared top-level section) enters the definition of every table.
 
-Fail-safe rule: the Tier 1 material is the resolved data analysis recipe WITHOUT a short list of known
-downstream parts. A new or unknown section is therefore part of Tier 1 automatically, so a
-wrong guess can only cause an extra rebuild, never a stale result.
-
-Two data analysis recipe hashes, two purposes:
-  - data_analysis_recipe_sha256 (provenance, session key, export): hash of the FILE SET (entry file and
+Two identity hashes, two purposes; they say "is this the same project state" and NEVER decide what to rebuild:
+  - data_analysis_recipe_sha256 (provenance, session key, export key check): hash of the FILE SET (entry file and
     every included file). Independently verifiable with sha256sum.
-  - the cache keys use the RESOLVED content, so comments, spacing and how the data analysis recipe is
-    split into files do not force a rebuild.
+  - data_batch_hash (session key, export key check): hash of the content of ALL data files.
+The keys of the tables use the RESOLVED content of the recipe, so comments, spacing and how the data analysis recipe is
+split into files do not force a rebuild.
 
 The loaded data analysis recipe is kept in memory and revalidated against the content of its files.
 """
@@ -44,25 +50,32 @@ import io
 import json
 import os
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from importlib import metadata
 from pathlib import Path
-from typing import Any, Iterable, Union
+from typing import Any, Iterable, Mapping, Union
 
 from utils.errors import RecipeLoadError
 from utils.config_loader import ConfigManager
 from utils.engines import tier_engine
+from utils.recipe_graph import RecipeGraphError, build_graph
 # The one reading of a collection's tier-2 list (issue #77); `tier2_steps` is used from here by the app.
 from utils.recipe_tiers import (  # noqa: F401 - tier2_steps is part of this module's interface
-    collection_bodies, collection_body, tier2_steps, without_data_engines, without_tier2)
+    METADATA_SCHEMA, SCHEMA_SECTIONS, collection_bodies, collection_body, tier2_steps, without_data_engines, without_tier2)
 
 # Bump when an action's behaviour or these key rules change: it invalidates every stored stage.
-ENGINE_CACHE_VERSION = "5"   # 5: the engine of a tier is an argument of the key of that tier, the plot engine is in no table key (D-0240); 4: recipe format 1 (the published columns are a polars_select step, no final_contract; new actions and ingestion); 3: the key order of final_contract (issue #86); 2: deterministic row order (ADR-090)
+ENGINE_CACHE_VERSION = "6"   # 6: a key per stored table, a series of labelled parts (ADR-101); 5: the engine of a tier is an argument of the key of that tier, the plot engine is in no table key (D-0240); 4: recipe format 1 (the published columns are a polars_select step, no final_contract; new actions and ingestion); 3: the key order of final_contract (issue #86); 2: deterministic row order (ADR-090)
+
+# Length of one part of a key, in hex characters (128 bits, ADR-101 point 2).
+KEY_PART_LENGTH = 32
 
 # Top-level data analysis recipe sections that only matter after Tier 2 (the plots). Everything else,
 # including sections this code has never heard of, belongs to Tier 1 (fail-safe rule). The recipe's `plot_engine` is one of
 # them: it draws, it builds no table (D-0240); the `plot_engine` of a plot entry is inside `analysis_groups`.
 _DOWNSTREAM_TOP_LEVEL = ("info", "analysis_groups", "plot_defaults", "plots", "plot_engine")
+
+# The top-level sections that hold the tables: each table is read on its own, from the graph. Every other top-level part is shared.
+_TABLE_SECTIONS = (*SCHEMA_SECTIONS, METADATA_SCHEMA, "joins")
 
 # Parquet metadata key holding the cache version that wrote a stored table: the start of the app removes every stored table that
 # does not carry the current one (`transformer.anchor.remove_tables_of_other_version`). The version is also in the key, so a table
@@ -84,6 +97,11 @@ def canonical_hash(obj: Any) -> str:
     return hash_text(json.dumps(obj, sort_keys=True, default=str, separators=(",", ":")))
 
 
+def key_part(label: str, *material: str) -> str:
+    """One labelled part of a key: `label-` and 128 bits (32 hex characters) of the material."""
+    return f"{label}-{hash_text(chr(10).join(material))[:KEY_PART_LENGTH]}"
+
+
 def _package_version(name: str) -> str:
     try:
         return metadata.version(name)
@@ -97,6 +115,27 @@ def engine_fingerprint() -> str:
 
 
 # ---------------------------------------------------------------------------
+# The data files: content hashes, once per session
+# ---------------------------------------------------------------------------
+
+
+def dataset_file_hashes(source_files: Mapping[str, Union[str, Path]]) -> dict[str, str]:
+    """{dataset id: sha256 of its file content}, in sorted order; `MISSING:<id>` for a path that does not exist.
+
+    The one reading of the data files for the keys: the batch hash and the `dC` part of every table are made from these."""
+    hashes: dict[str, str] = {}
+    for dataset_id in sorted(source_files):
+        path = Path(source_files[dataset_id])
+        hashes[dataset_id] = hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else f"MISSING:{dataset_id}"
+    return hashes
+
+
+def batch_hash_of(file_hashes: Mapping[str, str]) -> str:
+    """The hash of ALL data files (the identity hash `data_batch_hash`): the `id:hash` lines in sorted id order, hashed once more."""
+    return hash_text("\n".join(f"{dataset_id}:{file_hashes[dataset_id]}" for dataset_id in sorted(file_hashes)))
+
+
+# ---------------------------------------------------------------------------
 # Which parts of the resolved data analysis recipe belong to which stage
 # ---------------------------------------------------------------------------
 
@@ -104,9 +143,10 @@ def engine_fingerprint() -> str:
 def tier1_material(raw: dict) -> dict:
     """The resolved data analysis recipe without the downstream-only parts (fail-safe: unknown parts stay in).
 
+    This is the COARSE definition of a table (the fallback when the graph cannot say what a table depends on).
     The tier-2 list of every collection (a join's `tier2.steps`, a schema's `tier2.steps`) is downstream of
-    Tier 1: it goes into the chained `tier2_key` instead (`utils.recipe_tiers`, issue #77). The written data engines are
-    left out too: their effect on Tier 1 is `tier1_engines`, an argument of `tier1_key` (D-0240)."""
+    Tier 1: it goes into the `s2` part instead (`utils.recipe_tiers`, issue #77). The written data engines are
+    left out too: their effect on Tier 1 is `tier1_engines`, an argument of the key (D-0240)."""
     return without_data_engines(without_tier2({k: v for k, v in raw.items() if k not in _DOWNSTREAM_TOP_LEVEL}))
 
 
@@ -123,24 +163,92 @@ def tier2_engine(raw: dict, collection_id: str):
     return tier_engine(raw, collection_body(raw, collection_id), "tier2")
 
 
+def table_definition_for_key(body: Any) -> Any:
+    """What of the definition of one table or join enters the key of every table that is built from it.
+
+    Today: everything written under it, except its tier-2 list (it is the `s2` part of the T2 key, never of T1) and the data
+    engine written on its tier 1 (the effective engine is an argument of the key, D-0240). The `labels` and descriptions of a table
+    or join stay IN: this is the owner's open point (a label change rebuilds the table, which is safe and wasteful). To take labels
+    out, remove them HERE and nowhere else; the property test of `app/tests/test_table_keys.py` then has to learn that they are
+    not an input. It waits for the owner's decision."""
+    if not isinstance(body, dict):
+        return body
+    kept = {k: v for k, v in body.items() if k != "tier2"}
+    tier1 = kept.get("tier1")
+    if isinstance(tier1, dict) and "data_engine" in tier1:
+        kept["tier1"] = {k: v for k, v in tier1.items() if k != "data_engine"}
+    return kept
+
+
+@dataclass(frozen=True)
+class TableKeyParts:
+    """What a table's tier-1 key is made of, except the content of the data files and the engine versions (no disk, no version).
+
+    engines: canonical hash of {table: effective tier-1 data engine} of the table and everything upstream of it.
+    definition: the finished `rC` part. datasets: the source tables whose files the table reads (empty when `coarse`).
+    coarse: the fail-safe form: the definition is the whole recipe and the data is every file."""
+    table: str
+    engines: str
+    definition: str
+    datasets: tuple = ()
+    coarse: bool = False
+
+
+def _coarse_parts(raw: dict, table: str = "") -> TableKeyParts:
+    return TableKeyParts(table, canonical_hash(tier1_engines(raw)), key_part("rC", canonical_hash(tier1_material(raw))), (), True)
+
+
+def table_key_parts(raw: dict) -> tuple[dict[str, TableKeyParts], TableKeyParts]:
+    """({table: its parts}, the coarse parts of the whole recipe).
+
+    The recipe graph says, for each table, which definitions (its own and everything upstream) and which source tables it depends
+    on. When the graph cannot be drawn every table is coarse; so is a table that reads no source table (fail-safe, ADR-101 point 3).
+    The coarse parts of the whole recipe also serve a table id the recipe does not name (nothing is stored under it)."""
+    coarse = _coarse_parts(raw)
+    try:
+        graph = build_graph(raw)
+    except RecipeGraphError:
+        return {table: _coarse_parts(raw, table) for table in collection_bodies(raw)}, coarse
+    bodies = collection_bodies(raw)
+    shared = canonical_hash({k: v for k, v in raw.items()
+                             if k not in _TABLE_SECTIONS and k not in _DOWNSTREAM_TOP_LEVEL and k != "data_engine"})
+    parts: dict[str, TableKeyParts] = {}
+    for table in graph.collections():
+        node = f"T1:{table}"
+        upstream = [graph.node(n).name for n in graph.lineage_back(node) if graph.node(n).kind == "T1"] + [table]
+        datasets = tuple(sorted({graph.node(n).name for n in graph.source_tables(node)}))
+        if not datasets:
+            parts[table] = _coarse_parts(raw, table)
+            continue
+        definition = {name: {"path": graph.node(f"T1:{name}").path,
+                             "reads": [graph.node(p).name for p in graph.parents(f"T1:{name}")],
+                             "definition": table_definition_for_key(bodies[name])} for name in upstream}
+        engines = {name: tier_engine(raw, bodies[name], "tier1") for name in upstream}
+        parts[table] = TableKeyParts(table, canonical_hash(engines), key_part("rC", shared, canonical_hash(definition)), datasets)
+    return parts, coarse
+
+
 # ---------------------------------------------------------------------------
 # Keys
 # ---------------------------------------------------------------------------
 
 
-def tier1_key(material_hash: str, data_batch_hash: str, engines: dict) -> str:
-    """The key of the Tier 1 tables. `engines` is `tier1_engines(raw)`: required, so that no caller can forget it (D-0240)."""
-    return hash_text("\n".join(["tier1", engine_fingerprint(), material_hash, data_batch_hash, canonical_hash(engines)]))
+def tier1_key(parts: TableKeyParts, file_hashes: Mapping[str, str]) -> str:
+    """The key of the stored Tier 1 table: `E . rC . dC`. `file_hashes` is `dataset_file_hashes(...)`; a source table with no
+    file is part of the key as "no file", so the key moves when the file appears."""
+    wanted = dict(file_hashes) if parts.coarse else {ds: file_hashes.get(ds, "NOFILE") for ds in parts.datasets}
+    return ".".join([key_part("E", engine_fingerprint(), parts.engines), parts.definition, key_part("dC", canonical_hash(wanted))])
 
 
 def tier2_key(tier1_key_value: str, steps: list, engine) -> str:
-    """The key of a Tier 2 table: the Tier 1 key it is computed from, its steps, and the data engine that runs them (D-0240)."""
-    return hash_text("\n".join(["tier2", tier1_key_value, canonical_hash(steps), canonical_hash(engine)]))
+    """The key of a Tier 2 table: the Tier 1 key it is computed from, then the `s2` part (its steps and the data engine that runs them, D-0240)."""
+    return f"{tier1_key_value}.{key_part('s2', canonical_hash(steps), canonical_hash(engine))}"
 
 
 def collection_tier2_key(raw: dict, collection_id: str, tier1_key_value: str) -> str:
     """The Tier 2 key of one collection under the Tier 1 key given; an empty string when it has no tier-2 steps (T2 equals T1,
-    nothing is stored). The one place that makes a tier-2 key from a recipe, for the orchestrator and the export record."""
+    nothing is stored: the `s2` part is left out and the key would be the Tier 1 key). The one place that makes a tier-2 key from a
+    recipe, for the orchestrator and the export record."""
     steps = tier2_steps(raw, collection_id)
     return tier2_key(tier1_key_value, steps, tier2_engine(raw, collection_id)) if steps else ""
 
@@ -188,8 +296,8 @@ class LoadedDataAnalysisRecipe:
     files: tuple
     signature: tuple
     data_analysis_recipe_sha256: str  # file-set hash (provenance)
-    material_hash: str    # canonical hash of the Tier 1 material (cache keys)
-    tier1_engines: dict   # the effective data engine of the tier 1 of every table and join (an argument of the tier-1 key)
+    table_parts: dict     # {table: TableKeyParts}: what the tier-1 key of each table is made of, apart from the data files (ADR-101)
+    coarse_parts: TableKeyParts   # the fail-safe parts of the whole recipe, for a table id the recipe does not name
 
     @property
     def raw(self) -> dict:
@@ -198,18 +306,28 @@ class LoadedDataAnalysisRecipe:
 
 @dataclass(frozen=True)
 class DataAnalysisRecipeKeys:
-    """Everything the stored stages of one data analysis recipe depend on, computed once per session."""
+    """Everything the stored tables of one data analysis recipe depend on, computed once per session.
+
+    The two identity hashes say whether the project state is the same (session, export key check); the key of each table decides
+    what to rebuild. `tier1_keys` holds the Tier 1 key of every table and join of the recipe (ADR-101)."""
 
     data_analysis_recipe_sha256: str   # file-set hash (provenance, session key)
-    data_batch_hash: str   # content hash of the source data files
-    tier1_key: str         # chained key of the Tier 1 parquet
+    data_batch_hash: str   # content hash of ALL the source data files (identity)
+    tier1_keys: dict = field(hash=False)   # {table or join id: the key of its Tier 1 table}
+    coarse_tier1_key: str = ""   # the key of a table id the recipe does not name: the whole recipe and every file (fail-safe)
+
+    def tier1_key_of(self, table: str) -> str:
+        """The Tier 1 key of one table. A table the recipe does not name gets the coarse key (nothing is ever stored under it)."""
+        return self.tier1_keys.get(table, self.coarse_tier1_key)
 
 
-def data_analysis_recipe_keys(loaded: "LoadedDataAnalysisRecipe", data_batch_hash: str) -> DataAnalysisRecipeKeys:
+def data_analysis_recipe_keys(loaded: "LoadedDataAnalysisRecipe", file_hashes: Mapping[str, str]) -> DataAnalysisRecipeKeys:
+    """The keys of a loaded recipe over the content hashes of its data files (`dataset_file_hashes`); no file gives an empty batch hash."""
     return DataAnalysisRecipeKeys(
         data_analysis_recipe_sha256=loaded.data_analysis_recipe_sha256,
-        data_batch_hash=data_batch_hash,
-        tier1_key=tier1_key(loaded.material_hash, data_batch_hash, loaded.tier1_engines),
+        data_batch_hash=batch_hash_of(file_hashes) if file_hashes else "",
+        tier1_keys={table: tier1_key(parts, file_hashes) for table, parts in loaded.table_parts.items()},
+        coarse_tier1_key=tier1_key(loaded.coarse_parts, file_hashes),
     )
 
 
@@ -237,14 +355,15 @@ def load_data_analysis_recipe(path: Union[str, Path]) -> LoadedDataAnalysisRecip
             from app.modules.data_analysis_recipe_validator import _load_error_text
             raise RecipeLoadError(f"{_load_error_text(printed.getvalue(), stop)}; the data analysis recipe cannot be loaded ({key})") from None
         files = tuple(os.path.abspath(f) for f in config.loaded_files)
+        table_parts, coarse_parts = table_key_parts(config.raw_config)
         loaded = LoadedDataAnalysisRecipe(
             path=key,
             config=config,
             files=files,
             signature=files_signature(files),
             data_analysis_recipe_sha256=data_analysis_recipe_fileset_hash(files, os.path.dirname(key)),
-            material_hash=canonical_hash(tier1_material(config.raw_config)),
-            tier1_engines=tier1_engines(config.raw_config),
+            table_parts=table_parts,
+            coarse_parts=coarse_parts,
         )
         _CACHE[key] = loaded
         return loaded

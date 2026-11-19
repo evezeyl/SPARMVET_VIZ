@@ -349,7 +349,7 @@ def define_server(input, output, session, *,
             return None
         data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
         return stored_table_identity(
-            tier, target_ds, data_analysis_recipe_id, _data_analysis_recipe_keys().tier1_key,
+            tier, target_ds, data_analysis_recipe_id, _data_analysis_recipe_keys().tier1_key_of(target_ds),
             bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet", _unstored_builds[0])
 
     def _active_plot_t3_nodes(plot_id: str | None = None) -> list[dict]:

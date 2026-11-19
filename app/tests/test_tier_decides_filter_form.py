@@ -28,6 +28,7 @@ import yaml
 from playwright.sync_api import Page, expect
 
 from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, tier2_path_for
+from app.modules.data_analysis_recipe_validator import validate_data_analysis_recipe
 from app.modules.session_manager import make_audit_step
 from app.modules.t3_audit_engine import dialog_frame, dialog_rows_signature, stored_table_identity, value_choices
 from app.tests.subprocess_env import app_command, app_env
@@ -139,11 +140,13 @@ def staged_app():
     recipe = minimal_recipe("t", label="T", schemas={"t": schema}, plots={PLOT: plot})
     recipe["info"]["description"] = "A table of 30 samples and one plot, for a browser check that the viewed tier decides the filter list."
     group = recipe["analysis_groups"].pop("main")
-    group.update({"label": "TG", "description": "The one group."})
+    group.update({"ui_label": "TG", "description": "The one group."})
     recipe["analysis_groups"] = {"tg": group}
     recipes = WORK / "recipes"
     recipes.mkdir(exist_ok=True)
     (recipes / "t.yaml").write_text(yaml.safe_dump(recipe, sort_keys=False), encoding="utf-8")
+    problems = validate_data_analysis_recipe(recipes / "t.yaml")
+    assert not problems, f"the staged recipe is refused by the load gate: {problems}"
     locations = {"raw_data": str(WORK), "data_analysis_recipes": str(recipes), "cache": str(WORK / "cache"),
                  "user_data": str(WORK / "user"), "gallery": str(REPO / "assets" / "gallery_data")}
     for key in ("cache", "user_data"):

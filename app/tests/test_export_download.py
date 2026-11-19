@@ -61,8 +61,8 @@ def test_the_bundle_records_the_keys_and_has_the_data(loaded):
     assert not any("data_analysis_recipes_reproducibility/" in n for n in names)
     assert not any("/audit_steps/" in n or "/steps/" in n for n in names)
     assert "effective_run.yaml" in readme
-    assert re.search(r"tier1_key=[0-9a-f]{64}", readme)
-    assert re.search(r"tier2_key=([0-9a-f]{64}|none)", readme)
+    assert re.search(r"tier1_key=E-[0-9a-f]{32}\.rC-[0-9a-f]{32}\.dC-[0-9a-f]{32}", readme)
+    assert re.search(r"tier2_key=(E-[0-9a-f]{32}\.rC-[0-9a-f]{32}\.dC-[0-9a-f]{32}\.s2-[0-9a-f]{32}|none)", readme)
 
     run_entry = next(n for n in names if n.endswith("effective_run.yaml"))
     run = _yaml.safe_load(z.read(run_entry).decode())
@@ -99,9 +99,9 @@ def test_a_table_plotted_directly_has_its_t2_table_and_a_real_tier2_key(loaded):
     names = z.namelist()
     assert any(n.endswith("/ResFinder/T2_data.tsv") for n in names), names
     readme = next(z.read(n).decode() for n in names if n.endswith("README.txt"))
-    assert re.search(r"ResFinder: tier2_key=[0-9a-f]{64}\n", readme), readme
+    assert re.search(r"ResFinder: tier2_key=E-[0-9a-f]{32}\.rC-[0-9a-f]{32}\.dC-[0-9a-f]{32}\.s2-[0-9a-f]{32}\n", readme), readme
     qmd = next(z.read(n).decode() for n in names if n.endswith("report.qmd"))
-    assert re.search(r"Tier 2 key \(ResFinder\) \| `[0-9a-f]{64}`", qmd)
+    assert re.search(r"Tier 2 key \(ResFinder\) \| `E-[0-9a-f]{32}\.rC-[0-9a-f]{32}\.dC-[0-9a-f]{32}\.s2-[0-9a-f]{32}`", qmd)
 
 
 def test_the_rerun_of_a_directly_plotted_table_equals_the_result_table_of_home(loaded):

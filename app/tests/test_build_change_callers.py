@@ -22,7 +22,7 @@ import pytest
 from app.handlers.blueprint_handlers import tell_inputs_changed as blueprint_tell
 from app.handlers.export_handlers import blocked_export_notice, refusal_for_build_changes
 from app.modules import gallery_examples
-from app.modules.cache_keys import clear_data_analysis_recipe_cache
+from app.modules.cache_keys import DataAnalysisRecipeKeys, clear_data_analysis_recipe_cache
 from app.modules.orchestrator import InputsChanged
 from app.tests.test_cache_chain import FILTER_A, World
 
@@ -102,7 +102,7 @@ def test_an_export_whose_builds_saw_no_change_is_not_refused():
 
 
 def test_the_refusal_has_the_same_file_and_form_as_the_refusal_for_a_change_since_the_view():
-    keys = mock.Mock(data_analysis_recipe_sha256="r", data_batch_hash="d", tier1_key="t")
+    keys = DataAnalysisRecipeKeys("r", "d", {"T": "t"})
     since_view = blocked_export_notice(["the data files"], keys, keys)
     during_build = blocked_export_notice(["the data files changed"], keys, keys, during_build=True)
     assert since_view.splitlines()[0] == during_build.splitlines()[0] == "EXPORT NOT CREATED"
