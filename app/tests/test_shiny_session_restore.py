@@ -21,7 +21,7 @@ from shiny.run import ShinyAppProc
 
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
 from app.tests.test_shiny_smoke import (_INTERACTIVE_APP_FEATURES, _wait_session_groups_open, _load_data_analysis_recipe, _navigate_to_mlst_plot,
-                                        _open_filters_panel, _wait_for_fb_col_option, _wait_shiny)
+                                        _open_filters_panel, _wait_for_fb_col_option, _choose_fb_op, _wait_shiny)
 
 _LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_APP_FEATURES", "developer")
 SAVED_REASON = "seeded step of the saved session"
@@ -163,7 +163,7 @@ def test_one_click_on_restore_and_on_delete_acts_once(page: Page, shiny_app: Shi
         _wait_for_fb_col_option(page, "year")
         page.locator("#fb_col").select_option("year")
         _wait_shiny(page)
-        page.locator("#fb_op").select_option("gt")
+        _choose_fb_op(page, "gt")
         _wait_shiny(page)
         page.locator("#fb_value").fill("2000")
         page.wait_for_timeout(200)   # the number box is mounted again after the operator changes: a value typed in that moment is lost
