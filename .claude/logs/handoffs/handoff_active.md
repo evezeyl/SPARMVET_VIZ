@@ -4,9 +4,10 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
-## OPEN STATE 2026-11-19 afternoon (after the power cut)
+## OPEN STATE 2026-11-19 afternoon (after the power cut; updated 2026-11-19 late afternoon)
 
-- dev = `75e52b2c`, NOT pushed by an agent. The review session was told that the owner can push (channel M338 of the coordinator).
+- dev = `ecd09fbd`, NOT pushed by an agent. The review session was told in channel M339 of the coordinator that the owner can push. (Earlier head `75e52b2c`, channel M338.)
+- Controls on `ecd09fbd` (slice A1, A2 and A3 merged): headless 11703 passed, 0 failed; all browser files 360 passed, 4 failed under parallel running and each passed alone (FLAKY-BROWSER-UNDER-PARALLEL-1); all eight setups start.
 - The big recipe change is MERGED (`2c6cc1d2`) and CONTROLLED on `a538eca2`: headless 11246 passed, 5 skipped, 31 xfailed, 0 failed; 27 browser files 240 passed (3 skipped, 1 xfailed, 1 flaky failure, see below); all eight setups start; pictures 50 identical plus the one known row (the empty orphan `experimental/test_logic.yaml`); golden passed.
 - The one file that failed for good was `app/tests/test_tier_decides_filter_form.py` (9 setup errors): written before the merge, it staged its recipe with the old group key `label`, which the merged format refuses. Repaired TEST ONLY in `75e52b2c`; its 17 tests pass on the merged head.
 - Evidence: `tmpAI/coordinator/CONTROLS_merged_recipe_change_2026-11-19.md` (outputs in `tmpAI/coordinator/controls_merged_2026-11-19/`).
@@ -14,9 +15,9 @@
 - The owner's order (2026-11-19): build now, bring questions when the work stops; rebuild HOME and GALLERY, retest, then decide on the gaps.
 - Slice A of the HOME audit redesign is being built (plan `tmpAI/coordinator/SLICE_A_plan.md`; slice plan `tmpAI/panel/audit_redesign/SLICES_v3_2026-11-18.md`); slices B to E wait for her answers. Questions for the stop: `tmpAI/coordinator/QUESTIONS_FOR_THE_STOP.md`.
   - A1 `libs/utils/src/utils/recipe_graph.py` (the recipe map): DONE and merged (`b9d9b325`).
-  - A3 a key per stored table: IN PROGRESS, worktree `.claude/worktrees/table-keys`, branch `task/table-keys`.
-  - A2 Blueprint's navigator, the tube map and the checker's join check on the map: IN PROGRESS, worktree `.claude/worktrees/navigator-on-graph`, branch `task/navigator-on-graph`.
-  - A4 the engine reads tier 3 at the plot entry: NEXT (after A3).
+  - A2 Blueprint's navigator, the tube map and the checker's join check on the map: DONE and merged (`ecd09fbd`).
+  - A3 a key per stored table: DONE and merged (`711bb40f`; cache version 6).
+  - A4 the engine reads tier 3 at the plot entry: IN PROGRESS, worktree `.claude/worktrees/tier3-reader`, branch `task/tier3-reader` (head `4eb9032a`): built; the review repairs of the filter form and of the load gate are being made on the branch; then a review, then the merge.
   - A5 the audit recipe copy and a headless build: after A4.
   - Each worker keeps `tmpAI/progress.md` in its worktree.
 - The rule sentences stay out of date by decision (owner, 2026-11-19): list in `tmpAI/engine_keys/RULE_SENTENCES_OUT_OF_DATE_after_merge.md`.
