@@ -2270,6 +2270,7 @@ def define_server(input, output, session, *,
         _t3_drop_columns=_t3_drop_columns,
         _all_plot_subtab_ids=_all_plot_subtab_ids,
         _plot_label=_plot_label,
+        _table_key=lambda: _data_analysis_recipe_keys().tier1_key,
         notification_log=notification_log,
     )
 

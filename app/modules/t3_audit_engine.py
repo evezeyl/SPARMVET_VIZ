@@ -12,7 +12,7 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:audit_failures, function:filters_cleared_notice, function:column_is_in_frame, class:AuditStepError
+# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:column_is_in_frame, class:AuditStepError
 # consumes: polars, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_step_order.py, app/tests/test_removed_audit_step_type.py, app/tests/test_audit_error_names_the_plot.py, app/tests/test_filters_cleared_on_recipe_change.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
@@ -706,6 +706,31 @@ def dialog_frame(lf, nodes: list, in_my_view: bool, plot_id: str | None = None):
     step dropped is not offered, a value list holds the rows that are still there); in T1 and T2 the table as it is. DECIDED
     2026-11-15 (Eve, S2-1 (a))."""
     return audited_frame(lf, nodes, plot_id) if in_my_view else lf
+
+
+def dialog_schema_signature(types: dict, discrete: set) -> tuple:
+    """What the add-row form's column select, type line and operator list are made of: the columns with their types, and the
+    columns the plot uses as a discrete axis (it changes the operator list of a number column).
+
+    Two tables with the same signature give the same form, whatever their rows. The form is mounted again only when this
+    changes, so a choice the user has just made is not put back by a recompute that changed nothing in it."""
+    return (tuple((name, str(dtype)) for name, dtype in types.items()), tuple(sorted(discrete)))
+
+
+def dialog_rows_signature(lf, table_key) -> tuple:
+    """Which rows the dialog's table holds: the plan of the table (which stored table, which audited steps) and the content key
+    of the stored tables of the open recipe (ADR-089: it changes when the recipe's tier 1 material or its data change).
+
+    The value widget (list of values, range, bounds) is built from the rows, so it is mounted again when this changes and not
+    when a recompute rebuilt the same table. A plan that cannot be read gives a signature that is never equal to another, so a
+    doubt means one more render, never a stale list. `lf` is None when no table can be built."""
+    if lf is None:
+        return (None, table_key)
+    try:
+        plan = lf.explain(optimized=False)
+    except Exception:
+        return (object(), table_key)
+    return (plan, table_key)
 
 
 def audit_failures(plots: list) -> list[tuple[str, AuditStepError]]:
