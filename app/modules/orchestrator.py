@@ -1,7 +1,7 @@
 # @deps
-# provides: pipeline:materialize_tier1, pipeline:materialize_tier2, method:prepare_ingredient, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
+# provides: pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3, method:prepare_ingredient, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
 # mirrors: libs/transformer/tests/debug_assembler.py
-# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
+# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps
@@ -10,13 +10,13 @@ import polars as pl
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
-from utils.errors import DataAnalysisRecipeError, IngestionError, RecipeLoadError
+from utils.errors import DataAnalysisRecipeError, IngestionError, RecipeLoadError, SPARMVET_Error, TransformationError
 from ingestion.ingestor import DataIngestor, find_dataset_file
 from transformer.anchor import read_anchor_if_key, write_anchor
 from app.modules.engine_registry import data_entry
-from utils.recipe_tiers import collection_body
+from utils.recipe_tiers import collection_body, plot_entry
 from app.modules.cache_keys import (CACHE_VERSION_META, DataAnalysisRecipeKeys, ENGINE_CACHE_VERSION, LoadedDataAnalysisRecipe, collection_tier2_key,
-                                    data_analysis_recipe_keys, dataset_file_hashes, load_data_analysis_recipe, tier2_engine, tier2_steps)
+                                    data_analysis_recipe_keys, dataset_file_hashes, load_data_analysis_recipe, tier2_engine, tier2_steps, tier3_steps)
 
 # Parquet metadata key holding the Tier 1 key of the table (ADR-089, ADR-101: a key per table).
 TIER1_KEY_META = "sparmvet_tier1_key"
@@ -410,6 +410,58 @@ class DataOrchestrator:
         if verdict:
             self.tell_inputs_changed(verdict[0], on_inputs_changed)
         return table
+
+    def materialize_tier3(self, data_analysis_recipe_id: str, plot_id: str, anchors_dir: Path,
+                          keys: DataAnalysisRecipeKeys | None = None,
+                          on_inputs_changed: Callable[[InputsChanged], None] | None = None) -> pl.LazyFrame:
+        """The table one plot reads: the Tier 2 of its target (Tier 1 when the target has no tier-2 steps) with the plot's own
+        `tier3` steps applied (DEC17, ADR-101). PROVISIONAL name: the specification leaves the name and place of the reader open
+        (`recipe_format_spec.md`, "Who reads tier3").
+
+        The one reader of a plot's data: HOME's plot and its My view table, the export, the pictures and the baselines read this table, so
+        a plot equals its table. The key of the table is `DataAnalysisRecipeKeys.plot_key_of(plot_id)`.
+
+        - no tier-3 steps: the plot reads its table as it is: the frame of `materialize_tier2` is returned (same key, nothing built or
+          stored twice);
+        - tier-3 steps: applied, in order, by the data engine of the tier (`data_engine` of the `tier3`, else the recipe's) through
+          the same step runner as the other tiers, on a LAZY frame over the stored table. PROVISIONAL: nothing is stored for it (the
+          design files leave "stored or derived on demand" open, `home_audit_steps.md` point 15), so the key names the table but no
+          file carries it. Every step is checked as it is added (the column names and types it needs): a step that cannot be applied
+          raises, naming the plot and the step. A failure that depends on the values (a cast of a value that does not fit) can only
+          show when the table is read; it is then the engine's own error and names the step too.
+
+        `anchors_dir` is the folder of the stored tables: the target is stored as `<anchors_dir>/<target>.parquet`.
+        """
+        data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
+        loaded = load_data_analysis_recipe(data_analysis_recipe_path)
+        entry = plot_entry(loaded.raw, plot_id)
+        if entry is None:
+            raise DataAnalysisRecipeError(f"The data analysis recipe '{data_analysis_recipe_id}' has no plot '{plot_id}'.")
+        target = entry.get("target_dataset")
+        if not target:
+            raise DataAnalysisRecipeError(f"The plot '{plot_id}' of '{data_analysis_recipe_id}' names no target_dataset, so it has no table.")
+        # The engine of the tier is chosen before anything is built, also when it has no steps: an engine this app has no library for
+        # is refused, never skipped (D-0050), as for the other tiers.
+        engine = data_entry(loaded.raw, entry, "tier3", where=f"The tier3 of the plot '{plot_id}'")
+        steps = tier3_steps(loaded.raw, plot_id)
+        lf = self.materialize_tier2(data_analysis_recipe_id, target, Path(anchors_dir) / f"{target}.parquet",
+                                    keys=keys, on_inputs_changed=on_inputs_changed)
+        if not steps:
+            return lf
+        runner = engine.wrangler()
+        for number, step in enumerate(steps, start=1):
+            action = step.get("action") if isinstance(step, dict) else None
+            try:
+                # A copy: the dicts belong to the recipe kept in memory. One step at a time through the same runner, then the
+                # schema is read so that a missing column or a wrong type shows here and not at the first read of the table.
+                lf = runner.run(lf, [copy.deepcopy(step)])
+                lf.collect_schema()
+            except Exception as exc:
+                why = (f"{exc}" + (f" ({exc.tip})" if isinstance(exc, SPARMVET_Error) and getattr(exc, 'tip', None) else "")).strip()
+                raise TransformationError(
+                    f"The tier 3 of the plot '{plot_id}' cannot be applied: step {number} ('{action}') failed: {why}",
+                    tip=f"Correct or remove step {number} of the tier3 of the plot '{plot_id}' in the data analysis recipe '{data_analysis_recipe_id}'.") from exc
+        return lf
 
     def dataset_schemas(self, data_analysis_recipe_id: str) -> dict[str, Any]:
         """{dataset_id: schema} of every dataset a recipe names (data schemas, metadata, additional datasets)."""

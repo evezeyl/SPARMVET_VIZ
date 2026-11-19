@@ -220,7 +220,8 @@ CASES = [
     ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(tier1={"steps": []}), "run"),
     ("P04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(tier3=[]), "run"),
     ("P04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(steps={"tier3": {"steps": []}}), "run"),
-    ("P05", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(tier3={"steps": [{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]}), "run"),
+    ("P06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(filters=[{"column": "v"}]), "run"),
+    ("ST04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(tier3={"steps": [{"action": "polars_filter_demo", "columns": ["v"]}]}), "run"),
     ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(family="Ranking"), "run"),
     ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(labs={}), "run"),
     ("PS02", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(target_dataset="Ghost"), "run"),
@@ -325,14 +326,16 @@ def test_the_formula_of_a_mapping_step_is_checked():
     assert check(ok).problems == []
 
 
-def test_a_tier3_step_list_is_refused_until_the_engine_reads_it_and_an_empty_one_is_fine():
+def test_an_empty_tier3_step_list_is_fine():
     raw = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(tier3={"steps": []}))
     assert check(raw).problems == []
 
 
-def test_a_tier3_step_is_judged_like_any_step_once_the_engine_reads_it(monkeypatch):
-    import utils.recipe_check as module
-    monkeypatch.setattr(module, "TIER3_READ_BY_ENGINE", True)
+def test_a_tier3_step_is_judged_like_any_step_because_the_engine_reads_it():
+    """The engine reads `tier3` (DataOrchestrator.materialize_tier3): a non-empty list is no longer refused (P05 is retired), its steps
+    are judged like the steps of any tier, and `filters` of a plot entry are refused (P06): they are written as tier3 steps."""
+    assert "P05" not in {p.code for p in check(mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(
+        tier3={"steps": [{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]}))).problems}
     good = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(
         tier3={"steps": [{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]}))
     assert check(good).problems == []

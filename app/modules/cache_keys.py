@@ -1,6 +1,6 @@
 """
 @deps
-provides: function:load_data_analysis_recipe, function:tier1_material, function:tier1_engines, function:tier2_engine, function:collection_tier2_key, function:tier2_steps (from utils.recipe_tiers), function:tier1_key, function:tier2_key, function:table_key_parts, function:table_definition_for_key, function:dataset_file_hashes, function:batch_hash_of, constant:ENGINE_CACHE_VERSION, constant:CACHE_VERSION_META, constant:STORED_TABLES_REBUILT_NOTICE, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys, class:TableKeyParts
+provides: function:load_data_analysis_recipe, function:tier1_material, function:tier1_engines, function:tier2_engine, function:collection_tier2_key, function:plot_tier3_key, function:tier3_key, function:tier3_engine, function:tier2_steps (from utils.recipe_tiers), function:tier3_steps (from utils.recipe_tiers), function:tier1_key, function:tier2_key, function:table_key_parts, function:table_definition_for_key, function:dataset_file_hashes, function:batch_hash_of, constant:ENGINE_CACHE_VERSION, constant:CACHE_VERSION_META, constant:STORED_TABLES_REBUILT_NOTICE, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys, class:TableKeyParts
 consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/engines.py (tier_engine: the one reading of the engine of a tier), libs/utils/src/utils/recipe_graph.py (build_graph: lineage_back, source_tables, parents: which definitions and which data files a table depends on, ADR-101)
 consumed_by: app/modules/orchestrator.py, app/modules/session_manager.py, app/src/server.py, app/src/bootloader.py, app/handlers/export_handlers.py, app/tests/test_cache_keys.py, app/tests/test_engine_keys.py, app/tests/test_table_keys.py
 doc: .claude/knowledge/architecture_decisions.md#adr-089, .claude/knowledge/architecture_decisions.md#adr-101, docs/foundations/reproducibility_hash_schema.qmd
@@ -12,22 +12,25 @@ The key of a stored table is a SERIES OF LABELLED PARTS joined with dots in exec
 Each part is 128 bits (32 hex characters); a part that is empty is left out:
 
     T1 key = E-<32> . rC-<32> . dC-<32>
-    T2 key = <the T1 key it is computed from> . s2-<32>            (no s2 part when the table has no tier-2 steps)
+    T2 key = <the T1 key it is computed from> . s2-<32>            (no s2 part when the table has no tier-2 steps: the key of T2 IS the T1 key)
+    T3 key = <the T2 key of the plot's table> . s3-<32>            (no s3 part when the plot has no tier-3 steps: the key of the plot IS the key of its table)
 
     E   the data engine(s) that build THIS table, with the versions of the engine libraries and the cache version
     rC  the definition of THIS table: its own and that of everything upstream of it (a join: its ingredients), from the recipe graph
     dC  the content of the data files THIS table reads (the source tables of the graph), not those of the whole recipe
     s2  the tier-2 steps of the table and the data engine that runs them
+    s3  the tier-3 steps of a plot entry and the data engine that runs them (PROVISIONAL name of the label `s3`: ADR-101 names the part, not the spelling)
 
 A change in one table therefore moves the key of that table and of the tables built from it, and no other (the fail-safe is below).
-The first part that differs between two keys says where two builds diverge. Parts to come (ADR-101): the audit parts `a1 a2 a3` and
-the tier-3 part `s3`; they are further parts of the same series and do not change these.
+The first part that differs between two keys says where two builds diverge. Part to come (ADR-101): the audit parts `a1 a2 a3`, written
+after `s2` and `s3` of the tier they belong to (the place is left: `plot_tier3_key` and `collection_tier2_key` are the two places that
+build the end of a key); they are further parts of the same series and do not change these.
 
 The engine rule (D-0240): a key holds the engine of what it stores, and nothing else. The ENGINE of a tier is its own
 `data_engine`, else the recipe's (`utils.engines.tier_engine`, the value the orchestrator runs). It is an argument of the key,
 not a part of the recipe text, so the same engine written on the tier or inherited gives the same key, and no text change can
 forget it. A later stage's engine never moves an earlier key. The PLOT engine is in no table key: it is downstream (the plots),
-a picture has no stored key.
+a picture has no stored key. The tier-3 engine of a plot entry is an argument of its `s3` part and of no other key.
 
 Fail-safe rule (ADR-101 point 3): a part is NARROW only when the recipe graph (`utils.recipe_graph`) can say what the table depends
 on. When it cannot (the recipe is not a graph: an unknown ingredient, a cycle, ...), or a table reads no source table, the parts of
@@ -60,8 +63,9 @@ from utils.config_loader import ConfigManager
 from utils.engines import tier_engine
 from utils.recipe_graph import RecipeGraphError, build_graph
 # The one reading of a collection's tier-2 list (issue #77); `tier2_steps` is used from here by the app.
-from utils.recipe_tiers import (  # noqa: F401 - tier2_steps is part of this module's interface
-    METADATA_SCHEMA, SCHEMA_SECTIONS, collection_bodies, collection_body, tier2_steps, without_data_engines, without_tier2)
+from utils.recipe_tiers import (  # noqa: F401 - tier2_steps and tier3_steps are part of this module's interface
+    METADATA_SCHEMA, SCHEMA_SECTIONS, collection_bodies, collection_body, plot_entries, plot_entry, tier2_steps, tier3_steps,
+    without_data_engines, without_tier2)
 
 # Bump when an action's behaviour or these key rules change: it invalidates every stored stage.
 ENGINE_CACHE_VERSION = "6"   # 6: a key per stored table, a series of labelled parts (ADR-101); 5: the engine of a tier is an argument of the key of that tier, the plot engine is in no table key (D-0240); 4: recipe format 1 (the published columns are a polars_select step, no final_contract; new actions and ingestion); 3: the key order of final_contract (issue #86); 2: deterministic row order (ADR-090)
@@ -163,6 +167,11 @@ def tier2_engine(raw: dict, collection_id: str):
     return tier_engine(raw, collection_body(raw, collection_id), "tier2")
 
 
+def tier3_engine(raw: dict, plot_id: str):
+    """The effective data engine of the tier 3 of one plot entry: its own `data_engine`, else the recipe's."""
+    return tier_engine(raw, plot_entry(raw, plot_id), "tier3")
+
+
 def table_definition_for_key(body: Any) -> Any:
     """What of the definition of one table or join enters the key of every table that is built from it.
 
@@ -246,11 +255,28 @@ def tier2_key(tier1_key_value: str, steps: list, engine) -> str:
 
 
 def collection_tier2_key(raw: dict, collection_id: str, tier1_key_value: str) -> str:
-    """The Tier 2 key of one collection under the Tier 1 key given; an empty string when it has no tier-2 steps (T2 equals T1,
-    nothing is stored: the `s2` part is left out and the key would be the Tier 1 key). The one place that makes a tier-2 key from a
-    recipe, for the orchestrator and the export record."""
+    """The key of the Tier 2 table of one collection under the Tier 1 key given. The one place that makes a tier-2 key from a recipe,
+    for the orchestrator, the keys object and the export record.
+
+    A collection with tier-2 steps: the Tier 1 key and the `s2` part. A collection with none: T2 IS T1, the empty part is left out and
+    the key is the Tier 1 key itself (ADR-101 point 2). Nothing is stored for it. (Before the tier-3 reader this returned an empty
+    string for that case and each caller read "" as "no key"; a caller that needs to know whether T2 has steps asks `tier2_steps`.)"""
     steps = tier2_steps(raw, collection_id)
-    return tier2_key(tier1_key_value, steps, tier2_engine(raw, collection_id)) if steps else ""
+    return tier2_key(tier1_key_value, steps, tier2_engine(raw, collection_id)) if steps else tier1_key_value
+
+
+def tier3_key(tier2_key_value: str, steps: list, engine) -> str:
+    """The key of a plot's T3 table: the key of the Tier 2 table it is computed from, then the `s3` part (its steps and the data
+    engine that runs them). A series of labelled parts like the other tiers (ADR-101 point 2); a place is left after `s3` for the audit part."""
+    return f"{tier2_key_value}.{key_part('s3', canonical_hash(steps), canonical_hash(engine))}"
+
+
+def plot_tier3_key(raw: dict, plot_id: str, tier2_key_value: str) -> str:
+    """The key of the table one plot reads, under the key of the Tier 2 table of its target. A plot with tier-3 steps: that key and
+    the `s3` part. A plot with none reads its table as it is: the empty part is left out, the key IS the key of its table, and
+    nothing is built or stored twice. The one place that makes a tier-3 key from a recipe."""
+    steps = tier3_steps(raw, plot_id)
+    return tier3_key(tier2_key_value, steps, tier3_engine(raw, plot_id)) if steps else tier2_key_value
 
 
 def data_analysis_recipe_fileset_hash(files: Iterable[Union[str, Path]], base_dir: Union[str, Path]) -> str:
@@ -315,19 +341,43 @@ class DataAnalysisRecipeKeys:
     data_batch_hash: str   # content hash of ALL the source data files (identity)
     tier1_keys: dict = field(hash=False)   # {table or join id: the key of its Tier 1 table}
     coarse_tier1_key: str = ""   # the key of a table id the recipe does not name: the whole recipe and every file (fail-safe)
+    tier2_keys: dict = field(default_factory=dict, hash=False)   # {table or join id: the key of its Tier 2 table; the Tier 1 key when it has no tier-2 steps}
+    plot_keys: dict = field(default_factory=dict, hash=False)   # {plot id: the key of the table the plot reads; the Tier 2 key of its target when it has no tier-3 steps}
 
     def tier1_key_of(self, table: str) -> str:
         """The Tier 1 key of one table. A table the recipe does not name gets the coarse key (nothing is ever stored under it)."""
         return self.tier1_keys.get(table, self.coarse_tier1_key)
 
+    def tier2_key_of(self, table: str) -> str:
+        """The key of the Tier 2 table of one table: its Tier 1 key when it has no tier-2 steps (ADR-101 point 2). A table the recipe
+        does not name gets the coarse Tier 1 key."""
+        return self.tier2_keys.get(table, self.coarse_tier1_key)
+
+    def plot_key_of(self, plot_id: str) -> str:
+        """The key of the table a plot reads: the one way to ask. The key of the Tier 2 table of its target when the plot has no
+        tier-3 steps (the plot reads its table as it is), else that key and the `s3` part (ADR-101 point 2). A plot the recipe
+        does not name has no key: the answer is an error, never another plot's key."""
+        try:
+            return self.plot_keys[plot_id]
+        except KeyError:
+            raise KeyError(f"The recipe has no plot '{plot_id}', so there is no key of the table it reads.") from None
+
 
 def data_analysis_recipe_keys(loaded: "LoadedDataAnalysisRecipe", file_hashes: Mapping[str, str]) -> DataAnalysisRecipeKeys:
     """The keys of a loaded recipe over the content hashes of its data files (`dataset_file_hashes`); no file gives an empty batch hash."""
+    tier1_keys = {table: tier1_key(parts, file_hashes) for table, parts in loaded.table_parts.items()}
+    tier2_keys = {table: collection_tier2_key(loaded.raw, table, key) for table, key in tier1_keys.items()}
+    coarse = tier1_key(loaded.coarse_parts, file_hashes)
+    # a plot whose target the recipe does not name (or names none) is left out: its table has no key, and `plot_key_of` says so
+    plot_keys = {plot_id: plot_tier3_key(loaded.raw, plot_id, tier2_keys[entry["target_dataset"]])
+                 for plot_id, entry in plot_entries(loaded.raw).items() if entry.get("target_dataset") in tier2_keys}
     return DataAnalysisRecipeKeys(
         data_analysis_recipe_sha256=loaded.data_analysis_recipe_sha256,
         data_batch_hash=batch_hash_of(file_hashes) if file_hashes else "",
-        tier1_keys={table: tier1_key(parts, file_hashes) for table, parts in loaded.table_parts.items()},
-        coarse_tier1_key=tier1_key(loaded.coarse_parts, file_hashes),
+        tier1_keys=tier1_keys,
+        coarse_tier1_key=coarse,
+        tier2_keys=tier2_keys,
+        plot_keys=plot_keys,
     )
 
 

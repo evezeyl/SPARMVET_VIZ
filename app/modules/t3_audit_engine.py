@@ -730,7 +730,7 @@ def stored_key(path, meta_key: str) -> str | None:
 
 
 def stored_table_identity(tier: str, collection: str | None, recipe_id: str, view_key: str, tier1_path,
-                          unstored_builds: int) -> tuple | None:
+                          unstored_builds: int, plot_key: str | None = None) -> tuple | None:
     """Which stored table the dialog reads, as a value that is equal for two reads of the same table and different when the
     table can have other rows; None when nothing says which rows the table holds (the signature is then never equal).
 
@@ -743,6 +743,10 @@ def stored_table_identity(tier: str, collection: str | None, recipe_id: str, vie
     rows are in memory and no file carries a key for them). A collection that is not named, or a Tier 1 file with no key, gives None.
     The Tier 2 file is read when the view is T2 or T3 and the file exists: without tier-2 steps it does not exist (the orchestrator
     removes it), and the rows are those of the Tier 1 file.
+
+    In My view ("T3") the base is the table the plot reads: the stored Tier 2 plus the plot's own tier-3 steps of the recipe. That table
+    is not stored (nothing carries its key in a file), so the caller gives its key (`plot_key`, `DataAnalysisRecipeKeys.plot_key_of`); it
+    is part of the identity in "T3" and left out of it in "T1" and "T2", which read stored files.
     """
     if not collection:
         return None
@@ -750,7 +754,7 @@ def stored_table_identity(tier: str, collection: str | None, recipe_id: str, vie
     if t1 is None:
         return None
     t2 = stored_key(tier2_path_for(tier1_path), TIER2_KEY_META) if tier in ("T2", "T3") else None
-    return (collection, recipe_id, view_key, t1, t2, unstored_builds)
+    return (collection, recipe_id, view_key, t1, t2, unstored_builds, plot_key if tier == "T3" else None)
 
 
 def dialog_rows_signature(table_identity, audit_nodes) -> tuple:

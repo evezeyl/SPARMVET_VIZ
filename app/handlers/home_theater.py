@@ -318,27 +318,44 @@ def define_server(input, output, session, *,
             )
         return tier1_anchor()
 
+    def _plot_id_of(spec: dict | None) -> str | None:
+        """The id of the plot entry `spec` is (the very entry of the open recipe), or None when it is no entry of it."""
+        for gspec in active_cfg().raw_config.get("analysis_groups", {}).values():
+            for pid, entry in (gspec.get("plots") or {}).items():
+                if entry is spec:
+                    return pid
+        return None
+
     def _resolve_active_lf(spec: dict | None, tier: str | None = None):
         """Return a LazyFrame for the dataset referenced by spec (or tier1_anchor).
 
-        T2 and T3 both read the assembly's stored Tier 2 parquet (issue #10; equal to T1
-        when the table has no tier2 steps). T3 adds per-plot audit nodes (filters, drops)
-        on top of this base.
+        "T2" reads the assembly's stored Tier 2 parquet (issue #10; equal to T1 when the table has no tier2 steps): the Result
+        data view. "T3" reads the table the plot reads (`materialize_tier3`: that Tier 2 plus the plot's own `tier3` steps of
+        the recipe; the same table when the plot has none). The audit nodes of My view (filters, drops) go on top of the T3 table,
+        applied by the callers with `audited_frame`.
 
-        `tier` defaults to the data view (tier_toggle). Plot handlers pass "T2"
-        explicitly: plots never show T1 and follow plot_view, not tier_toggle (ADR-086).
+        `tier` defaults to the data view (tier_toggle). Plot handlers pass "T3" explicitly: plots never show T1 and follow
+        plot_view, not tier_toggle (ADR-086); the plot is drawn from the table it reads, in the Result view as in My view.
         """
-        if (tier or tier_toggle.get()) in ("T2", "T3") and (spec or {}).get("target_dataset"):
+        chosen = tier or tier_toggle.get()
+        if chosen in ("T2", "T3") and (spec or {}).get("target_dataset"):
             target_ds = spec["target_dataset"]
             if data_refresh_trigger is not None:
                 data_refresh_trigger.get()
-            out_path = bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet"
+            anchor_dir = bootloader.get_location("user_data") / "anchors"
             data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
+            if chosen == "T3":
+                plot_id = _plot_id_of(spec)
+                if plot_id is None:
+                    raise RuntimeError(f"The plot of the dataset '{target_ds}' is not a plot of the open data analysis recipe, so the table it reads cannot be built.")
+                return orchestrator.materialize_tier3(
+                    data_analysis_recipe_id=data_analysis_recipe_id, plot_id=plot_id, anchors_dir=anchor_dir,
+                    keys=_data_analysis_recipe_keys(), on_inputs_changed=_tell_inputs_changed)
             # Issue #10 / ADR-089: T2 is read from its stored parquet (key-checked). An error is
             # not caught here: showing Tier 1 in place of a failed Tier 2 would be a false result.
             return orchestrator.materialize_tier2(
                 data_analysis_recipe_id=data_analysis_recipe_id, collection_id=target_ds,
-                tier1_path=out_path, keys=_data_analysis_recipe_keys(), on_inputs_changed=_tell_inputs_changed)
+                tier1_path=anchor_dir / f"{target_ds}.parquet", keys=_data_analysis_recipe_keys(), on_inputs_changed=_tell_inputs_changed)
         return _resolve_t1_lf(spec)
 
     def _dialog_table_identity(spec: dict | None, tier: str):
@@ -348,9 +365,12 @@ def define_server(input, output, session, *,
         if not target_ds:
             return None
         data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
+        keys = _data_analysis_recipe_keys()
+        plot_id = _plot_id_of(spec)
         return stored_table_identity(
-            tier, target_ds, data_analysis_recipe_id, _data_analysis_recipe_keys().tier1_key_of(target_ds),
-            bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet", _unstored_builds[0])
+            tier, target_ds, data_analysis_recipe_id, keys.tier1_key_of(target_ds),
+            bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet", _unstored_builds[0],
+            keys.plot_key_of(plot_id) if tier == "T3" and plot_id is not None else None)
 
     def _active_plot_t3_nodes(plot_id: str | None = None) -> list[dict]:
         """Return the committed T3 AuditSteps for the active plot subtab.
@@ -501,7 +521,7 @@ def define_server(input, output, session, *,
             }
 
             try:
-                lf = _resolve_active_lf(spec, tier="T2")
+                lf = _resolve_active_lf(spec, tier="T3")   # the table the plot reads, in every view (ADR-086)
             except Exception as e:
                 # ADR-094: data materialization (ingestion/assembly) failures get the same
                 # session_processing_issues capture the VizFactory render path already has
@@ -605,7 +625,7 @@ def define_server(input, output, session, *,
                 **plot_engine_slot(cfg.raw_config),
             }
             try:
-                lf = _resolve_active_lf(spec, tier="T2")  # reference = T2 (ADR-086)
+                lf = _resolve_active_lf(spec, tier="T3")  # reference = the Result plot (ADR-086): the table the plot reads, no exploration, no audit nodes
             except Exception as e:
                 # ADR-094/PIPELINE-ERROR-WIRE-2: was silent (no session_processing_issues
                 # capture at all) — the comparison-mode twin of _group_plot_handler's

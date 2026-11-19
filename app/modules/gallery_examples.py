@@ -88,10 +88,10 @@ def _build(example_dir: Path, work_dir: Path, project_root: Path) -> Tuple[dict,
     plot_id, entry = plot
     orchestrator = DataOrchestrator(work_dir, project_root)
     keys = orchestrator.compute_data_analysis_recipe_keys(example_id)
-    anchor = work_dir / f"{example_id}.parquet"
     target = entry["target_dataset"]
-    orchestrator.materialize_tier1(example_id, target, anchor, keys=keys, on_inputs_changed=tell_inputs_changed)
-    return raw, plot_id, orchestrator.materialize_tier2(example_id, target, anchor, keys=keys, on_inputs_changed=tell_inputs_changed)
+    orchestrator.materialize_tier1(example_id, target, work_dir / f"{target}.parquet", keys=keys, on_inputs_changed=tell_inputs_changed)
+    # the table the plot reads: the Tier 2 of its target plus the plot's own tier-3 steps of the recipe (one reader for the app, the export and the previews)
+    return raw, plot_id, orchestrator.materialize_tier3(example_id, plot_id, work_dir, keys=keys, on_inputs_changed=tell_inputs_changed)
 
 
 def example_table(example_dir: Union[str, Path], work_dir: Union[str, Path]) -> pl.DataFrame:

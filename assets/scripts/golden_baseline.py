@@ -114,7 +114,9 @@ def build_recipe(recipe_id: str, recipes_dir: Path, raw_data: Path, with_plots: 
                 continue
             try:
                 with contextlib.redirect_stdout(io.StringIO()):
-                    plot = PlotEngines().render(frames[target], raw, plot_id)
+                    # the table the plot reads: the Tier 2 of its target plus the plot's own tier-3 steps (the one reader)
+                    plot_table = orchestrator.materialize_tier3(recipe_id, plot_id, work, keys=keys)
+                    plot = PlotEngines().render(plot_table, raw, plot_id)
                     plotted = pl.from_pandas(plot.data)
                 record["plots"][plot_id] = table_record(plotted)
             except BaseException as exc:  # noqa: BLE001

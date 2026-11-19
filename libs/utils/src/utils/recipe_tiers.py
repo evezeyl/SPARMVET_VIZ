@@ -14,7 +14,7 @@ keys, the export, HOME's badge, the checker and the Blueprint lineage all read t
 rule exists once.
 
 # @deps
-# provides: function:collection_body, function:tier2_steps, function:step_list, function:plot_targets, function:unapplied_schema_tier2, function:unapplied_join_tier2, function:without_tier2, function:without_data_engines, function:collection_bodies, function:schema_bodies
+# provides: function:collection_body, function:tier2_steps, function:step_list, function:plot_entries, function:plot_entry, function:tier3_steps, function:plot_targets, function:unapplied_schema_tier2, function:unapplied_join_tier2, function:without_tier2, function:without_data_engines, function:collection_bodies, function:schema_bodies
 # consumed_by: app/modules/cache_keys.py, app/modules/engine_record.py (collection_body, step_list), app/modules/orchestrator.py (through cache_keys), libs/utils/src/utils/recipe_check.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/utils/tests/test_recipe_tiers.py, app/tests/test_schema_tier2.py
 # doc: .claude/design/recipe_format_spec.md (DEC16, line 357, S07, X4), .claude/knowledge/architecture_decisions.md#adr-089
 # @end_deps
@@ -67,6 +67,30 @@ def tier2_steps(raw: dict, collection_id: str) -> list:
     if isinstance(schema, dict):
         return step_list(schema, "tier2")
     return []
+
+
+def plot_entries(raw: dict) -> Dict[str, dict]:
+    """{plot id: plot entry} of every plot of the recipe, in the order of the groups and of the plots in each group."""
+    found: Dict[str, dict] = {}
+    groups = raw.get("analysis_groups") if isinstance(raw, dict) else None
+    for group in (groups or {}).values() if isinstance(groups, dict) else []:
+        plots = group.get("plots") if isinstance(group, dict) else None
+        for plot_id, plot in (plots or {}).items() if isinstance(plots, dict) else []:
+            if isinstance(plot, dict):
+                found[plot_id] = plot
+    return found
+
+
+def plot_entry(raw: dict, plot_id: str) -> Any:
+    """The entry of one plot, or None when the recipe has no such plot."""
+    return plot_entries(raw).get(plot_id)
+
+
+def tier3_steps(raw: dict, plot_id: str) -> list:
+    """The tier-3 steps of one plot entry (`tier3.steps`, DEC17, D-0250); an empty list means the plot reads its table as it is.
+
+    The same reading as the other tiers (`step_list`): only the mapping form is read, the checker refuses any other (P04)."""
+    return step_list(plot_entry(raw, plot_id), "tier3")
 
 
 def plot_targets(raw: dict) -> Set[str]:

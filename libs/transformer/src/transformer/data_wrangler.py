@@ -27,19 +27,19 @@ class DataWrangler:
     @staticmethod
     def tier_steps(body: Any, tier: str) -> List[Dict[str, Any]]:
         """
-        The step list of one tier of a table or a join (D-0250): `body[tier]["steps"]`.
+        The step list of one tier of a table, a join or a plot entry (D-0250): `body[tier]["steps"]`.
 
-        `body` is the table (or join) mapping itself. A tier is written as its own key, a mapping with the
+        `body` is the table (or join, or for tier3 the plot entry) mapping itself. A tier is written as its own key, a mapping with the
         list under `steps` and an optional `data_engine`; a tier that is not written gives no steps. The old shapes
         are refused with a message that names the key and the rewrite tool; none is read (no shim): a recipe in
         another shape is not run with fewer steps and no word.
 
         Args:
             body: the table or join mapping (empty or None gives no steps).
-            tier: 'tier1' or 'tier2'.
+            tier: 'tier1' or 'tier2' of a table or a join; 'tier3' of a plot entry.
         """
-        if tier not in ("tier1", "tier2"):
-            raise ValueError(f"tier must be 'tier1' or 'tier2', not {tier!r}")
+        if tier not in ("tier1", "tier2", "tier3"):
+            raise ValueError(f"tier must be 'tier1', 'tier2' or 'tier3', not {tier!r}")
         if not body:
             return []
         tool = "assets/scripts/migrate_recipe_engine_keys.py"
