@@ -62,7 +62,7 @@ recipe and no graph), so their structure comes in through the `ingredients` of t
 from __future__ import annotations
 
 # @deps
-# provides: function:include_paths (every !include target of a recipe text, quoted or not), function:build_sibling_map (entry keys: role; tier = tier1 or tier2 for a tier file (new); schema_id; schema_type; siblings = input_fields/tier1/tier2 with no wrangling and no output_fields; ingredients; a plot entry is the plot itself, D-0250 D-0252), function:build_lineage_chain, function:build_schema_registry, function:load_fields_file, function:resolve_fields_for_schema, function:build_plot_lineage, function:get_plot_ids_in_group, function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml), function:recipe_structure and function:recipe_structure_of_file (the structure of a recipe from the recipe graph) and class:RecipeStructure (with what the graph left out)
+# provides: function:include_paths (every !include target of a recipe text, quoted or not), function:build_sibling_map (optional structure argument: the caller loads the recipe once for several calls; entry keys: role; tier = tier1 or tier2 for a tier file (new); schema_id; schema_type; siblings = input_fields/tier1/tier2 with no wrangling and no output_fields; ingredients; a plot entry is the plot itself, D-0250 D-0252), function:build_lineage_chain, function:build_schema_registry, function:load_fields_file, function:resolve_fields_for_schema, function:build_plot_lineage, function:get_plot_ids_in_group, function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml), function:recipe_structure and function:recipe_structure_of_file (the structure of a recipe from the recipe graph) and class:RecipeStructure (with what the graph left out)
 # consumes: libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/recipe_loader.py
 # consumed_by: app/handlers/blueprint_handlers.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-074
@@ -222,9 +222,14 @@ def include_paths(raw_text: str) -> list[str]:
     return list(dict.fromkeys(found))
 
 
-def build_sibling_map(data_analysis_recipe_path_str: str) -> dict:
-    """The sibling map of a recipe file (see `_sibling_map`); the structure it holds (the ingredients of a join) is the recipe graph's."""
-    return _sibling_map(data_analysis_recipe_path_str, recipe_structure_of_file(data_analysis_recipe_path_str))
+def build_sibling_map(data_analysis_recipe_path_str: str, structure: Optional[RecipeStructure] = None) -> dict:
+    """The sibling map of a recipe file (see `_sibling_map`); the structure it holds (the ingredients of a join) is the recipe graph's.
+
+    `structure`: the `recipe_structure_of_file` of the SAME file, built by the caller once when several calls read the same recipe
+    (the file is then loaded once). Not given: it is built here. Never cached by name: the caller owns the object and its freshness."""
+    if structure is None:
+        structure = recipe_structure_of_file(data_analysis_recipe_path_str)
+    return _sibling_map(data_analysis_recipe_path_str, structure)
 
 
 def _sibling_map(data_analysis_recipe_path_str: str, structure: RecipeStructure) -> dict:
@@ -474,7 +479,7 @@ def build_lineage_chain(selected_rel: str, ctx_map: dict, target_ds_override: st
 
 
 def build_schema_registry(data_analysis_recipe_path_str: str,
-                           includes_map: dict) -> dict:
+                           includes_map: dict, structure: Optional[RecipeStructure] = None) -> dict:
     """Build a complete schema-level structural index of a data analysis recipe.
 
     Unlike build_sibling_map (which indexes *file paths*), this maps:
@@ -497,6 +502,8 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
     written in its own file included). `includes_map` is no longer read: it was how this function found the file of a plot to read its
     target; the callers still pass it (the handlers are not changed by this step). A plot with no valid table (its file is missing, it
     names no table or an unknown one) has `target_dataset` None and is listed in the structure's `left_out`, never an error.
+
+    `structure`: the `recipe_structure_of_file` of the same file when the caller already built it (one load for several calls); else built here.
     """
     class _CapLoader(yaml.SafeLoader):
         pass
@@ -517,7 +524,8 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
     if not isinstance(tree, dict):
         return {}
 
-    structure = recipe_structure_of_file(data_analysis_recipe_path_str)
+    if structure is None:
+        structure = recipe_structure_of_file(data_analysis_recipe_path_str)
 
     def _slot(val):
         """Convert a raw block value to either a rel_path, {"inline":<v>}, or None."""
@@ -683,7 +691,7 @@ def get_plot_ids_in_group(group_id: str, data_analysis_recipe_path: str) -> list
     return list(plots.keys()) if isinstance(plots, dict) else []
 
 
-def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dict]:
+def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str, structure: Optional[RecipeStructure] = None) -> list[dict]:
     """Backward trace from a plot spec to its T1 data roots.
 
     str, str → list[dict]
@@ -703,6 +711,7 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
         }
 
     Returns [] if plot_id is not found in any analysis_group.
+    `structure`: the `recipe_structure_of_file` of the same file, built once by a caller that traces many plots; else built here.
     ADR-074.
     """
     data_analysis_recipe_dir = Path(data_analysis_recipe_path).parent
@@ -760,7 +769,8 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
         return []
 
     # ── Trace backward: the tables come from the recipe graph, the files from the sibling map ──────────────────
-    structure = recipe_structure_of_file(data_analysis_recipe_path)
+    if structure is None:
+        structure = recipe_structure_of_file(data_analysis_recipe_path)
     target_dataset = structure.target_of(plot_id)
     ctx_map = _sibling_map(data_analysis_recipe_path, structure)
     steps: list[dict] = []

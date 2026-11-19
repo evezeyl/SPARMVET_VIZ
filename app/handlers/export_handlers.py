@@ -1631,12 +1631,14 @@ def define_export_server(input, output, session, *,
             try:
                 from blueprint_arch.data_analysis_recipe_navigator import (
                     build_plot_lineage as _bpl,
+                    recipe_structure_of_file as _rsf,
                 )
                 _mnf_path_obj = bootloader.available_data_analysis_recipes.get(data_analysis_recipe_id)
                 if _mnf_path_obj:
                     _mnf_str = str(_mnf_path_obj)
+                    _mnf_structure = _rsf(_mnf_str)  # the recipe is loaded once for all plots
                     for _pid, _pspec in all_plots:
-                        _steps = _bpl(_pid, _mnf_str)
+                        _steps = _bpl(_pid, _mnf_str, _mnf_structure)
                         if not _steps:
                             continue
                         _plot_nids: list[str] = []
