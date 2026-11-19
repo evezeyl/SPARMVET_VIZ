@@ -284,8 +284,8 @@ class _Check:
         `engines`), when the name is not registered (ST02 and PS04 report that), or when the block names no engine (T04 reports it).
         """
         table = (self.catalogs or {}).get(f"{kind}_engines")
-        if table is None or wanted is None or not isinstance(name, str):
-            return
+        if table is None or not isinstance(wanted, str) or not isinstance(name, str):
+            return  # a block engine that is not text has its one message (T06)
         # PROVISIONAL (no decision names it; it follows the plain-message rule): a block whose engine is not an engine of this
         # app at all already has its one real message (T06). An EN02 per step or layer would compare with an engine that cannot
         # run here, so there is nothing true to compare, and it hid the T06 among dozens of lines. A plot engine written in a
@@ -576,13 +576,15 @@ class _Check:
                 if not isinstance(columns, list) or not isinstance(dtype, str):
                     return
                 for column in columns:
+                    if not isinstance(column, str):
+                        return  # ST03/ST10 report the shape of the parameter
                     types[column] = dtype
                 continue
             wide = []
             if name == action_names.SUM:
                 wide = list(types)
             elif name == action_names.CUM_SUM and isinstance(step.get("columns"), list):
-                wide = step["columns"]
+                wide = [c for c in step["columns"] if isinstance(c, str)]
             elif name == action_names.GROUP_BY and isinstance(step.get("named_aggs"), dict):
                 wide = [m for text in step["named_aggs"].values() if isinstance(text, str) for m in _SUM_OF_COLUMN.findall(text)]
             for column in dict.fromkeys(wide):
@@ -593,7 +595,7 @@ class _Check:
                              "(the checker does not see a sum inside a formula, in a join result, or on a column made 32-bit by an earlier step).",
                              f"Suggestion: write a polars_cast step to Int64 (whole numbers) or Float64 (decimal numbers; it holds about 15 to 16 exact digits, so very large whole numbers lose their last digits) for {column!r} before this step.",
                              "A")
-            if name not in JOIN_KEEPS_COLUMNS and name not in (action_names.SUM, action_names.CUM_SUM):
+            if not isinstance(name, str) or name not in JOIN_KEEPS_COLUMNS and name not in (action_names.SUM, action_names.CUM_SUM):
                 return  # the columns after this step are not known from the declarations
 
     def tie_advices(self, lists: Dict[str, list], path: str) -> None:
@@ -658,14 +660,14 @@ class _Check:
                     audit_ids.add(step["id"])
             if "comment" in step and not isinstance(step["comment"], str):
                 self.add("CM01", f"{where}.comment", "a comment is text", "write text")
-            if tier in ("tier2", "tier3") and step.get("action") in tier1_only:
+            if tier in ("tier2", "tier3") and isinstance(step.get("action"), str) and step.get("action") in tier1_only:
                 self.add("ST05", where, f"{step['action']} is only allowed in tier1", "move it to tier1")
             self.check_engine_of("action", step.get("action"), engine, where, "step")
-            if actions is None:
-                continue
             name = step["action"]
             if not isinstance(name, str):
-                self.add("ST01", f"{where}.action", "the action of a step is a name (text)", "write - {action: <name>, ...}")
+                self.add("ST01", f"{where}.action", f"the action of a step is a name (text); it is {name!r}", "write - {action: <name>, ...}")
+                continue
+            if actions is None:
                 continue
             if name not in actions:
                 legacy = (self.catalogs or {}).get("old_action_names", {}).get(name)
@@ -796,6 +798,9 @@ class _Check:
                 self.add("J04", f"{path}[{index}]", "an ingredient is {dataset_id: <schema id>}", "write - {dataset_id: Table}")
                 continue
             dataset = item["dataset_id"]
+            if not isinstance(dataset, str):
+                self.add("J04", f"{path}[{index}]", f"dataset_id of an ingredient is the id of a schema (text); it is {dataset!r}", "write - {dataset_id: Table}")
+                continue
             if dataset not in self.schema_ids:
                 self.add("J04", f"{path}[{index}]", f"{dataset!r} is not a schema of this recipe", "name a schema")
             elif dataset in ids:
@@ -809,10 +814,14 @@ class _Check:
                 if not isinstance(step, dict) or "right_ingredient" not in step:
                     continue
                 where = f"{path}.{tier}.steps[{index}]"
-                if tier == "tier1":
+                right_is_text = isinstance(step["right_ingredient"], str)
+                if tier == "tier1" and right_is_text:  # the key checks compare tables by id: they need a text id
                     self.join_key_problems(steps["tier1"], index - 1, where, ingredient_ids)
                     self.join_advices(steps["tier1"], index - 1, where, ingredient_ids)
-                if step["right_ingredient"] not in ingredient_ids:
+                if not right_is_text:
+                    self.add("J05", f"{where}.right_ingredient", f"right_ingredient of a join step is the id of an ingredient (text); it is {step['right_ingredient']!r}",
+                             "write right_ingredient: Table")
+                elif step["right_ingredient"] not in ingredient_ids:
                     self.add("J05", where, f"right_ingredient {step['right_ingredient']!r} is not an ingredient of this join", "list it in ingredients")
                 # a join on conditions has no key columns: its predicates say which rows match
                 if step.get("action") != action_names.JOIN_WHERE and ("on" in step or True in step) == ("left_on" in step or "right_on" in step):
@@ -838,7 +847,11 @@ class _Check:
         declares; the advice says what it means.
         """
         step = tier1[position]
-        if ingredient_ids:
+        if not isinstance(step.get("action"), str):
+            return  # ST01 reports it
+        if any(isinstance(b, dict) and "right_ingredient" in b and not isinstance(b["right_ingredient"], str) for b in tier1[:position]):
+            return  # an earlier join step has no text id for its right table: J05 reports it, and the tables joined so far are not known
+        if ingredient_ids and isinstance(step.get("how"), (str, type(None))):  # a `how` of another shape is refused by the parameter check (ST10)
             found = join_keys.self_join(ingredient_ids[0], tier1[:position], step)
             if found is not None:
                 what, fix = join_keys.self_join_text(found)
@@ -856,6 +869,8 @@ class _Check:
             if not isinstance(before, dict):
                 return
             if "right_ingredient" in before:
+                if not isinstance(before["right_ingredient"], str):
+                    return  # J05 reports it
                 left_tables.append(before["right_ingredient"])
         fields_by_table = {table: self.declared_fields(table) for table in set(left_tables) | {right_id}}
         for table, columns in ((None, left_keys), (right_id, right_keys)):
@@ -880,7 +895,7 @@ class _Check:
         when tier 1 has no step, or only steps that remove rows (JOIN_KEEPS_COLUMNS). Any other step may create, rename,
         drop or cast a column: then nothing is known here and the build check stays the judge.
         """
-        schema = self.schema_bodies.get(dataset_id)
+        schema = self.schema_bodies.get(dataset_id) if isinstance(dataset_id, str) else None
         if not isinstance(schema, dict) or not isinstance(schema.get("input_fields"), dict) or not schema["input_fields"]:
             return None  # an empty input_fields makes the ingestion keep every column of the file
         tier1 = schema.get("tier1")
@@ -888,7 +903,7 @@ class _Check:
             if not isinstance(tier1, dict) or not isinstance(tier1.get("steps") or [], list):
                 return None
             for step in tier1.get("steps") or []:
-                if not isinstance(step, dict) or step.get("action") not in JOIN_KEEPS_COLUMNS:
+                if not isinstance(step, dict) or not isinstance(step.get("action"), str) or step.get("action") not in JOIN_KEEPS_COLUMNS:
                     return None
         return schema["input_fields"]
 
@@ -918,8 +933,10 @@ class _Check:
             if not isinstance(before, dict):
                 return
             if "right_ingredient" in before:
+                if not isinstance(before["right_ingredient"], str):
+                    return  # J05 reports it
                 left_tables.append(before["right_ingredient"])
-            elif before.get("action") not in JOIN_KEEPS_COLUMNS:
+            elif not isinstance(before.get("action"), str) or before.get("action") not in JOIN_KEEPS_COLUMNS:
                 return
         left_fields = [(table, self.declared_fields(table)) for table in left_tables]
         right_fields = self.declared_fields(right_id)
@@ -952,6 +969,19 @@ class _Check:
                      f"(the table at this step); the type of {right_id} is changed in its own input_fields or in its own wrangling. "
                      "The engine does not change the type of a join key for you")
 
+    def every_action_is_text(self) -> bool:
+        """True when every step of every tier-1 list of the schemas and the joins names its action in text (or is not a mapping)."""
+        bodies = list(self.schema_bodies.values())
+        joins = self.raw.get("joins") if isinstance(self.raw, dict) else None
+        bodies += list(joins.values()) if isinstance(joins, dict) else []
+        for body in bodies:
+            tier1 = body.get("tier1") if isinstance(body, dict) else None
+            steps = tier1.get("steps") if isinstance(tier1, dict) else None
+            for step in steps if isinstance(steps, list) else []:
+                if isinstance(step, dict) and not isinstance(step.get("action"), str):
+                    return False
+        return True
+
     def join_columns(self, join: dict, path: str, ingredient_ids: List[str]) -> None:
         """J08 needs the recipe graph: a column in both ingredients that is not a join key is renamed silently by Polars."""
         if self.graph is None or len(ingredient_ids) < 2:
@@ -960,9 +990,11 @@ class _Check:
         steps = tier1.get("steps") if isinstance(tier1, dict) else None
         if not isinstance(steps, list):
             return
+        if not self.every_action_is_text():
+            return  # the graph reads the columns through the action names; ST01 reports a step whose action is not text
         base_columns = self.graph.columns_of(ingredient_ids[0])
         for index, step in enumerate(steps, start=1):
-            if not isinstance(step, dict) or "right_ingredient" not in step:
+            if not isinstance(step, dict) or "right_ingredient" not in step or not isinstance(step["right_ingredient"], str):
                 continue
             right = self.graph.columns_of(step["right_ingredient"])
             if base_columns is None or right is None:
@@ -1039,7 +1071,7 @@ class _Check:
     def plot_content(self, plot: dict, path: str) -> None:
         """The content of a plot (target, mapping, layers, theme, ...): the checks PS02 to PS06, read from the entry (PS01, unknown key of a spec, is retired: an unknown key of the entry is P01)."""
         target = plot.get("target_dataset")
-        if not target or (target not in self.schema_ids and target not in self.join_ids):
+        if not isinstance(target, str) or not target or (target not in self.schema_ids and target not in self.join_ids):
             self.add("PS02", f"{path}.target_dataset", f"target_dataset {target!r} is not a schema or a join of this recipe", "name one")
         if "mapping" not in plot or "layers" not in plot:
             self.add("PS03", path, "mapping and layers are required", "add mapping and layers")
@@ -1055,8 +1087,9 @@ class _Check:
                      "Suggestion: write a column of the data (letters, digits, underscore, space, dot or dash); to facet by a computed value, add a recipe step that makes the column first")
         theme = plot.get("theme")
         themes = (self.catalogs or {}).get("themes")
-        if theme is not None and themes is not None and theme not in themes:
-            self.add("PS05", f"{path}.theme", f"{theme!r} is not a registered theme", "write one of " + ", ".join(sorted(themes)))
+        if theme is not None and themes is not None and (not isinstance(theme, str) or theme not in themes):
+            self.add("PS05", f"{path}.theme", f"{theme!r} is not a registered theme" + ("" if isinstance(theme, str) else " (the theme is a name, text)"),
+                     "write one of " + ", ".join(sorted(themes)))
         if "filters" in plot:
             self.add("P06", f"{path}.filters", "filters in a plot moved to the plot's tier3", "write the filters as tier3 steps")
 

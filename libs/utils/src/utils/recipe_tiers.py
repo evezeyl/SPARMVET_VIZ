@@ -102,7 +102,7 @@ def plot_targets(raw: dict) -> Set[str]:
         for plot in (plots or {}).values() if isinstance(plots, dict) else []:
             if isinstance(plot, dict):
                 target = plot.get("target_dataset")
-                if target is not None:
+                if isinstance(target, str):  # a target that is not text is refused by the checker (PS02)
                     targets.add(target)
     return targets
 
