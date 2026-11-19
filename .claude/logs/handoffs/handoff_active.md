@@ -4,6 +4,17 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
+## PARKED 2026-11-19 about 09:00 (power cut announced)
+
+- No worker runs; no merge or push in progress; working tree clean.
+- dev = `2c6cc1d2`: the big recipe change (`task/engine-keys`, head `9566c863`) IS MERGED into dev, WITHOUT the rule sentences (rule files keep dev's text). Saved diff: `tmpAI/engine_keys/RULE_FILES_branch_vs_dev_FINAL.diff`. List of out-of-date rule sentences: `tmpAI/engine_keys/RULE_SENTENCES_OUT_OF_DATE_after_merge.md`. Do not follow those sentences blindly. NOT pushed.
+- Controls before the merge, on the branch head: headless 11412 passed, 5 skipped, 32 xfailed, 0 failed; pictures 50 identical plus the one known row; golden passed.
+- NEXT, first thing: a reviewer runs the full controls on the merged head `2c6cc1d2` (headless once; all browser files, including `app/tests/test_tier_decides_filter_form.py`, whose browser part has not been run by a reviewer; pictures; every setup starts; print the resolved qa flags). Only after they pass is the review session told the head, and the owner may push.
+- Then: remove the worktree `engine-keys` and its branch; records; check the dependency index.
+- Also on dev since the morning: the test that the viewed tier decides the filter form (`d27bdc6d`; PASSED on the real app; evidence `tmpAI/coordinator/tier_filter_check_report.md`).
+- Standing order of the owner (2026-11-19): rebuild HOME and GALLERY to her vision; retest; then bring her the problems and gaps as questions; questions that depend on unfinished steps stay parked. Sorted list of waiting questions: `tmpAI/panel/QUESTIONS_SORTED_2026-11-19.md` (a scout's proposal, not checked by a second agent).
+- Restart note of the coordinator: top of `tmpAI/coordinator/progress_2026-11-14_session3.md`.
+
 ## OPEN STATE 2026-11-19 morning (coordinator session 3ce2c163; read at 2026-11-19 morning; corrects the 03:40 block below on the keep question and on the push)
 
 - The keep question is DECIDED (owner, 2026-11-19, channel M335 of 62, option B of three: keep, with a note and a check). The filter form repair `8f8474a9` stays on dev and on the recipe-change branch; nothing is reverted. It is a STOPGAP, not the tier rule. The hold of M302 is lifted for this one repair only.
