@@ -28,7 +28,7 @@ Consumed by: app/modules/cache_keys.py (the audit parts of the keys), app/module
 If deleted: no audit copy can be made, checked or keyed.
 
 # @deps
-# provides: function:audit_recipe_of, function:add_step, function:remove_step, function:marked_steps, function:strip_marked, function:integrity_errors, function:is_marked, function:split_marked, function:audit_operation, function:parse_place, class:MarkedStep, class:AuditCopyError, constant:AUDIT_ID
+# provides: function:audit_recipe_of, function:add_step, function:remove_step, function:marked_steps, function:strip_marked, function:integrity_errors, function:is_marked, function:split_marked, function:positioned_marked, function:audit_operation, function:parse_place, class:MarkedStep, class:AuditCopyError, constant:AUDIT_ID
 # consumes: libs/utils/src/utils/recipe_tiers.py (collection_bodies, collection_body, plot_entries, plot_entry, plot_targets: where the tiers are)
 # consumed_by: app/modules/cache_keys.py, app/modules/audit_run.py, libs/utils/tests/test_audit_copy.py, app/tests/test_audit_keys.py, app/tests/test_audit_run.py
 # doc: .claude/knowledge/architecture_decisions.md#adr-101, .claude/knowledge/architecture_decisions.md#adr-105, .claude/design/home_audit_steps.md, .claude/design/recipe_format_spec.md (DEC18)
@@ -74,6 +74,24 @@ def split_marked(steps: Any) -> Tuple[list, list]:
     if not isinstance(steps, list):
         return [], []
     return [s for s in steps if not is_marked(s)], [s for s in steps if is_marked(s)]
+
+
+def positioned_marked(steps: Any) -> List[Tuple[int, dict]]:
+    """[(the number of unmarked steps before it, the marked step)], in list order: where each marked step stands among the original steps of its list.
+
+    The audit parts of a key (`a1`, `a2`, `a3`) hold this position with the operation, so that two lists that would run in a different order never
+    give the same key. `add_step` writes only at the end of a list, where every marked step has the same position (the number of original steps);
+    the position is in the key all the same, so that the key does not rely on the caller having checked the copy with `integrity_errors`."""
+    if not isinstance(steps, list):
+        return []
+    found: List[Tuple[int, dict]] = []
+    before = 0
+    for step in steps:
+        if is_marked(step):
+            found.append((before, step))
+        else:
+            before += 1
+    return found
 
 
 def audit_operation(step: dict) -> dict:
