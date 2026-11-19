@@ -552,15 +552,17 @@ class TestBlueprintPlotOpen:
             # where "3. labs" was wanted). The condition is the plot's own numbered layers and mapping columns.
             numbered = [f"{i + 2}. {layer}" for i, layer in enumerate(wanted)]
             columns = list(entry["mapping"].values())
-            # a numbered layer matches with a boundary: "2. geom_x" must not be found inside "12. geom_x" or "2. geom_xy"
-            patterns = [r"(?<![0-9])" + re.escape(n) + r"(?![A-Za-z0-9_])" for n in numbered]
-            beyond = r"(?<![0-9])" + str(len(numbered) + 2) + r"\. "
+            # each node card has its label ("2. geom_x") in its own bold span: compare whole labels, so "2. geom_x" is never
+            # found inside "12. geom_x" or "2. geom_xy"
+            beyond = f"{len(numbered) + 2}. "
             try:
                 page.wait_for_function(
-                    "([patterns, columns, beyond]) => { const t = (document.querySelector('#logic_stack_ui') || {}).innerText || '';"
-                    " return t.includes('mapping (aes)') && patterns.every(p => new RegExp(p).test(t)) && columns.every(c => t.includes(c))"
-                    " && !new RegExp(beyond).test(t); }",
-                    arg=[patterns, columns, beyond], timeout=30_000)
+                    "([numbered, columns, beyond]) => { const root = document.querySelector('#logic_stack_ui');"
+                    " if (!root) return false; const t = root.innerText || '';"
+                    " const labels = Array.from(root.querySelectorAll('.fw-bold')).map(e => e.textContent.trim());"
+                    " return t.includes('mapping (aes)') && numbered.every(n => labels.includes(n)) && columns.every(c => t.includes(c))"
+                    " && !labels.some(l => l.startsWith(beyond)); }",
+                    arg=[numbered, columns, beyond], timeout=30_000)
             except Exception as error:
                 seen = stack.inner_text()
                 raise AssertionError(f"{plot_id}: the stack of this plot did not appear (wanted {numbered}, columns {columns}); "
