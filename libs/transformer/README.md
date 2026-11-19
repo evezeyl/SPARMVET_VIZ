@@ -79,8 +79,8 @@ joins:
 
 To maximize performance when iterating on complex pipelines, the `DataAssembler (data_assembler.py)` implements a **Short-Circuit Execution** pattern backed by **Decision Metadata Hashing**.
 
-- **The Logic**: The orchestrator (`app/modules/orchestrator.py`) compares the chained key stored in the Parquet file's metadata (`sparmvet_tier1_key`, `sparmvet_tier2_key`, ADR-089) with the current key, before any ingestion.
-- **Automated Freshness Check**: The key covers the resolved data analysis recipe (every included file), the data content, the engine version (cache version 5) and the engine of the tier (an argument of the key of that tier; the plot engine is in no table key, D-0240). If it matches, joins and wrangling are skipped. If it differs, the stage is recomputed. A Tier 2 change recomputes only Tier 2. The file is written with Polars, the key inside the file metadata.
+- **The Logic**: The orchestrator (`app/modules/orchestrator.py`) compares the key stored in the Parquet file's metadata (`sparmvet_tier1_key`, `sparmvet_tier2_key`) with the current key of that same table, before any ingestion. Each stored table has its own key (ADR-089, ADR-101).
+- **Automated Freshness Check**: The key of a table is a series of labelled parts: the engine (the engine version, cache version 6, and the data engine of the table and of what it builds on), the definition of the table and of what it reads from the recipe graph, the content of the data files it reads, then the tier-2 steps for Tier 2. A plot with its own tier-3 steps adds one more part. The plot engine is in no table key (D-0240). If it matches, joins and wrangling are skipped. If it differs, the stage is recomputed. A Tier 2 change recomputes only Tier 2. The file is written with Polars, the key inside the file metadata.
 
 ## I/O Summary
 
