@@ -14,7 +14,7 @@ What is proved:
 - a filter that removes nothing moves a key and no row: its plots are not affected; a step that changes the table affects its plots and no other;
 - removing the step gives the original back: the audit folder is emptied, the result is all reused;
 - a second run of the same copy builds nothing; a step that cannot be applied is refused naming its id and its place (never skipped), also when the list
-  holds several audit steps; a copy that is not the original plus audit steps does not run; the two folders must differ;
+  holds several audit steps; a copy that is not the original plus audit steps does not run; the two folders must differ and neither lies inside the other (symlinks followed);
 - the orchestrator takes a recipe that is not its file only when it is handed one: existing callers read the file as before.
 
 Mutation index (each seen failing, see the report): MUTATION R1 the run always reads the original's table (it never builds); MUTATION K1 (in
@@ -377,6 +377,33 @@ def test_a_copy_that_is_not_the_original_plus_audit_steps_does_not_run(world):
 def test_the_two_folders_must_differ(world):
     with pytest.raises(AuditRunError, match="folder of their own"):
         run_audit(world.orch, "staged", world.copy_with(), world.anchors, world.anchors)
+
+
+def _tree(folder: Path) -> dict:
+    return {str(p.relative_to(folder)): hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else "dir" for p in sorted(folder.rglob("*"))}
+
+
+@pytest.mark.parametrize("how", ["audit_inside_original", "original_inside_audit", "audit_inside_original_by_symlink", "original_inside_audit_by_symlink"])
+def test_nested_folders_are_refused_before_anything_is_built(world, tmp_path, how):
+    """MUTATION N1: with only the equal-folder check, a refused run of an audit folder that holds the original's folder rolls the original's tables back."""
+    inner_audit = world.anchors / "inside_the_original"
+    if how == "audit_inside_original":
+        original, audit = world.anchors, inner_audit
+    elif how == "original_inside_audit":
+        original, audit = world.anchors, world.anchors.parent
+    elif how == "audit_inside_original_by_symlink":
+        (tmp_path / "alias").symlink_to(world.anchors, target_is_directory=True)
+        original, audit = world.anchors, tmp_path / "alias" / "inside_the_original"
+    else:
+        (tmp_path / "alias").symlink_to(world.anchors.parent, target_is_directory=True)
+        original, audit = world.anchors, tmp_path / "alias"
+    outer = world.anchors.parent
+    before_original, before_outer = _tree(world.anchors), _tree(outer)
+    with pytest.raises(AuditRunError, match="one inside the other"):
+        run_audit(world.orch, "staged", world.copy_with(("T1:A", KEEP_S2, ID1), ("T3:pj", BAD, ID2)), original, audit)
+    assert _tree(world.anchors) == before_original, "the original's folder is byte-identical"
+    assert _tree(outer) == before_outer, "nothing was created anywhere"
+    assert not inner_audit.exists()
 
 
 def test_the_run_changes_neither_the_original_recipe_nor_the_copy_it_was_given(world):
