@@ -125,14 +125,67 @@ def test_a_block_engine_that_is_not_text_is_T06(raw, catalogs):
         assert "T06" in result.codes() and not result.ok
 
 
-def test_a_cast_or_cumulative_sum_with_columns_that_are_not_text_ends_with_a_result(raw, catalogs):
-    """MUTATION W4: the 32-bit sum advice read the column names as dictionary keys. (That the parameter check itself refuses a nested list in `columns`
-    is not asserted here: it does not today, see the report.)"""
-    for step in ({"action": "polars_cast", "columns": [["identity"]], "dtype": "Int32"},
-                 {"action": "polars_cum_sum", "columns": [{"a": 1}]}):
-        mutated = copy.deepcopy(raw)
-        mutated["data_schemas"]["amr_data"]["tier1"]["steps"].insert(0, step)
-        check(mutated, catalogs)
+NAME_SHAPES = [[["identity"]], [{"a": 1}], ["identity", ["x"]], [5], [None], [True]]
+CAST = {"action": "polars_cast", "columns": None, "dtype": "Int32"}
+CUM = {"action": "polars_cum_sum", "columns": None}
+
+
+def put_step(raw, place, step):
+    out = copy.deepcopy(raw)
+    if place == "table_tier1":
+        out["data_schemas"]["amr_data"]["tier1"]["steps"].insert(0, step)
+    elif place == "join_tier1":
+        out["joins"]["AMR_Profile_Joint"]["tier1"]["steps"].insert(0, step)
+    elif place == "tier2":
+        out["data_schemas"]["amr_data"]["tier2"] = {"steps": [step]}
+    elif place == "metadata_tier1":
+        out["metadata_schema"]["tier1"]["steps"].insert(0, step)
+    else:
+        plot = out
+        for key in first_plot_path(out):
+            plot = plot[key]
+        plot.setdefault("tier3", {"steps": []})["steps"].insert(0, step)
+    return out
+
+
+@pytest.mark.parametrize("place", ["table_tier1", "join_tier1", "tier2", "plot_tier3", "metadata_tier1"])
+@pytest.mark.parametrize("shape", NAME_SHAPES, ids=repr)
+@pytest.mark.parametrize("template", [CAST, CUM], ids=["cast", "cum_sum"])
+def test_a_cast_or_cumulative_sum_with_columns_that_are_not_text_is_refused(raw, catalogs, template, shape, place):
+    """MUTATION W7: the element check of a list of names is removed from `step_problems`."""
+    step = dict(template, columns=copy.deepcopy(shape))
+    result = check(put_step(raw, place, step), catalogs, graph=place == "join_tier1")
+    assert not result.ok
+    assert any(p.code == "ST10" and "column name" in p.text() for p in result.problems), result.problems
+
+
+def _name_list_parameters(catalogs):
+    return [(action, name) for action, schema in sorted(catalogs["actions"].items())
+            for name, definition in schema.get("params", {}).items()
+            if definition.get("widget") == "column_selector" and definition.get("multi")]
+
+
+def test_every_list_of_names_parameter_of_every_action_refuses_a_non_text_element(catalogs):
+    """Every registered action, every parameter declared as a list of column names: the five wrong elements are ST10, a list of text is sound."""
+    from utils.ui_schema import step_problems
+    found = _name_list_parameters(catalogs)
+    assert len(found) >= 40
+    for action, name in found:
+        schema = catalogs["actions"][action]
+        for bad in ([["x"]], [{"a": 1}], [5], [None], [True], ["a", ["b"]]):
+            problems = step_problems(action, {"action": action, name: bad}, schema)
+            assert any(p.code == "ST10" and p.param == name and "column name" in p.text() for p in problems), (action, name, bad)
+        good = step_problems(action, {"action": action, name: ["a", "b"]}, schema)
+        assert not [p for p in good if p.param == name], (action, name, good)
+
+
+@pytest.mark.parametrize("value", [[1, 2], ["a"], [1.5, True]])
+def test_the_values_of_a_filter_stay_a_list_of_any_kind(catalogs, value):
+    """`value` of modif_filter is not a list of names: numbers and text stay accepted."""
+    from utils.ui_schema import step_problems
+    step = {"action": "modif_filter", "column": "x", "op": "in", "value": value, "na": "remove"}
+    problems = step_problems("modif_filter", step, catalogs["actions"]["modif_filter"])
+    assert not [p for p in problems if p.param == "value"], problems
 
 
 def test_a_plot_target_that_is_not_text_does_not_count_as_a_read_table(raw, catalogs):

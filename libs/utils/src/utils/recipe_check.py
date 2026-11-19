@@ -577,7 +577,7 @@ class _Check:
                     return
                 for column in columns:
                     if not isinstance(column, str):
-                        return  # ST03/ST10 report the shape of the parameter
+                        return  # the parameter check (ST10, names must be text) refuses this step; no type is known for it here
                     types[column] = dtype
                 continue
             wide = []
