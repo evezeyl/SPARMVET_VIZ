@@ -547,7 +547,19 @@ class TestBlueprintPlotOpen:
             _wait_shiny(page, timeout=60_000)
             wanted = [layer["name"] for layer in entry["layers"]]
             stack = page.locator("#logic_stack_ui")
-            expect(stack).to_contain_text("mapping (aes)", timeout=30_000)
+            # Wait for THIS plot's stack, not for any stack: the stack of the previous plot also holds "mapping (aes)" and stays
+            # on the page until Blueprint has switched (seen under parallel load: "3. coord_flip" of the previous plot read
+            # where "3. labs" was wanted). The condition is the plot's own numbered layers and mapping columns.
+            numbered = [f"{i + 2}. {layer}" for i, layer in enumerate(wanted)]
+            columns = list(entry["mapping"].values())
+            try:
+                page.wait_for_function(
+                    "([numbered, columns]) => { const t = (document.querySelector('#logic_stack_ui') || {}).innerText || '';"
+                    " return t.includes('mapping (aes)') && numbered.every(n => t.includes(n)) && columns.every(c => t.includes(c))"
+                    " && !t.includes((numbered.length + 2) + '. '); }",
+                    arg=[numbered, columns], timeout=30_000)
+            except Exception:
+                pass   # the assertions below report what the stack held
             text = stack.inner_text()
             assert f"{len(wanted) + 1}. {wanted[-1]}" in text, f"{plot_id}: the layers {wanted} are not all in the stack: {text!r}"
             for layer in wanted:
