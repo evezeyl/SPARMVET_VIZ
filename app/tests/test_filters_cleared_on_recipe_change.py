@@ -58,26 +58,25 @@ def _stage_sample_filter(page: Page, recipe: str | None = None) -> str:
 
 
 def _choose_column_firmly(page: Page, column: str) -> None:
-    """Choose a filter column and wait until the form has really taken it: the box holds it AND the dialog text under the
+    """Choose a filter column and check that the form has really taken it: the box holds it AND the dialog text under the
     tick names it (that text is computed from the table for the chosen column, so it is the form's own answer).
 
-    The form can re-render late and put the first column back (an app defect, reported: FORM RESET, seen in the 10-run
-    checks). The test then chooses again and prints the event, never hides it."""
+    One attempt, no recovery. If the form puts another column back, that is the defect "FORM RESET" (the form was mounted again
+    while the server had not yet received the new column; `app/tests/test_filter_form_survives_rerender.py`) and this
+    test FAILS with its name; it is not chosen again behind the user's back."""
     _wait_for_fb_col_option(page, column)
-    for attempt in (1, 2):
-        page.locator("#fb_col").select_option(column)
-        _wait_shiny(page)
-        try:
-            page.wait_for_function(
-                """(c) => document.getElementById('fb_col').value === c
-                    && (document.getElementById('filter_na_text_ui') || {innerText: ''}).innerText.includes(' ' + c)""",
-                arg=column, timeout=8_000)
-            _wait_shiny(page)
-            if page.locator("#fb_col").input_value() == column:
-                return
-        except Exception:
-            pass
-        print(f"FORM RESET: the filter form put the column box back to {page.locator('#fb_col').input_value()!r}; choosing {column!r} again")
+    page.locator("#fb_col").select_option(column)
+    _wait_shiny(page)
+    try:
+        page.wait_for_function(
+            """(c) => document.getElementById('fb_col').value === c
+                && (document.getElementById('filter_na_text_ui') || {innerText: ''}).innerText.includes(' ' + c)""",
+            arg=column, timeout=8_000)
+    except Exception as exc:
+        raise AssertionError(
+            f"FORM RESET: the filter form put the column box back to {page.locator('#fb_col').input_value()!r} after {column!r} was chosen "
+            f"(the column is in the table, so this is the defect, not a different table)") from exc
+    _wait_shiny(page)
     expect(page.locator("#fb_col")).to_have_value(column)
 
 

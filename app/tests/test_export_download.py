@@ -176,6 +176,7 @@ def test_exploration_filters_are_never_exported(loaded):
     loaded.wait_for_function("() => Array.from(document.querySelectorAll('#fb_col option')).some(o => o.value === 'year')",
                              timeout=30_000)
     loaded.locator("#fb_col").select_option("year"); _wait_shiny(loaded)
+    loaded.wait_for_function("() => Array.from(document.querySelectorAll('#fb_op option')).some(o => o.value === 'lt')", timeout=20_000)
     loaded.locator("#fb_op").select_option("lt"); _wait_shiny(loaded)
     loaded.locator("#fb_value").fill("1900"); loaded.wait_for_timeout(200)
     loaded.locator("#filter_add_row").click(); _wait_shiny(loaded)

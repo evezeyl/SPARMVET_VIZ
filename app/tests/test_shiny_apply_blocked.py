@@ -15,9 +15,10 @@ from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
+from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly
 from app.tests.test_shiny_session_restore import _RECORD_NOTICES, _free, _notices, _reasons, _seen
 from app.tests.test_shiny_smoke import (_INTERACTIVE_APP_FEATURES, _load_data_analysis_recipe, _navigate_to_mlst_plot,
-                                        _open_filters_panel, _wait_for_fb_col_option, _wait_shiny)
+                                        _open_filters_panel, _choose_fb_op, _wait_shiny)
 
 _LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_APP_FEATURES", "developer")
 
@@ -30,10 +31,8 @@ def test_a_forced_apply_on_a_step_without_a_reason_keeps_the_page_alive_and_appl
     _navigate_to_mlst_plot(page)
     page.locator("#tier_toggle input[value=T3]").check(force=True)
     _wait_shiny(page)
-    _wait_for_fb_col_option(page, "year")
-    page.locator("#fb_col").select_option("year")
-    _wait_shiny(page)
-    page.locator("#fb_op").select_option("gt")
+    _choose_column_firmly(page, "year")
+    _choose_fb_op(page, "gt")
     _wait_shiny(page)
     page.locator("#fb_value").fill("2000")
     page.wait_for_timeout(200)   # the number box is mounted again after the operator changes: a value typed in that moment is lost
