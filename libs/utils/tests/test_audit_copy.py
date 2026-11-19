@@ -21,7 +21,7 @@ import pytest
 from utils import audit_copy, recipe_check
 from utils.audit_copy import (
     AUDIT_ID, AuditCopyError, MarkedStep, add_step, audit_operation, audit_recipe_of, integrity_errors, is_marked, marked_steps, parse_place,
-    remove_step, split_marked, strip_marked)
+    remove_step, split_marked, strip_marked, _holders)
 from utils.recipe_check import check_recipe
 
 ACTIONS = {
@@ -236,8 +236,8 @@ def test_removing_the_only_step_of_a_created_tier_gives_the_original_back_exactl
     add_step(audit, "T3:p", FILTER_V, ID1)
     add_step(audit, "T2:A", FILTER_V, ID2)
     assert audit != base
-    remove_step(audit, ID1)
-    remove_step(audit, ID2)
+    remove_step(audit, ID1, base)
+    remove_step(audit, ID2, base)
     assert audit == base
 
 
@@ -245,14 +245,14 @@ def test_removing_one_of_two_steps_keeps_the_other_and_the_tier(base):
     audit = audit_recipe_of(base)
     add_step(audit, "T1:B", FILTER_V, ID1)
     add_step(audit, "T1:B", DROP_V, ID2)
-    remove_step(audit, ID1)
+    remove_step(audit, ID1, base)
     assert steps_of(audit, "B", "tier1") == [{**DROP_V, "id": ID2}]
 
 
 def test_the_tier_1_of_a_table_is_never_removed_even_when_the_copy_made_its_only_step(base):
     audit = audit_recipe_of(base)
     add_step(audit, "T1:B", FILTER_V, ID1)
-    remove_step(audit, ID1)
+    remove_step(audit, ID1, base)
     assert audit["data_schemas"]["B"]["tier1"] == {"steps": []}
 
 
@@ -263,7 +263,7 @@ def test_an_original_step_cannot_be_removed(base, snapshot):
     keep = copy.deepcopy(audit)
     for refused in ("polars_drop", "modif_filter", "T1:A", "0", "1", "", None, "audit_1", ID4):
         with pytest.raises(AuditCopyError):
-            remove_step(audit, refused)
+            remove_step(audit, refused, base)
     assert audit == keep and steps_of(audit, "A", "tier1")[0] == {"action": "polars_drop", "columns": ["nothing_here"]}
     assert base == snapshot
 
@@ -271,21 +271,71 @@ def test_an_original_step_cannot_be_removed(base, snapshot):
 def test_removing_an_id_that_no_step_has_says_so(base):
     audit = audit_recipe_of(base)
     with pytest.raises(AuditCopyError, match="No audit step of the copy has the id"):
-        remove_step(audit, ID1)
+        remove_step(audit, ID1, base)
 
 
-def test_an_empty_tier_that_the_original_wrote_is_not_a_difference_after_an_add_and_a_remove():
-    """The original wrote `tier2: {steps: []}`; the copy adds a step and takes it out: the tier is gone, which the engine reads as the same, and
-    `integrity_errors` agrees. A tier with an engine written is never removed."""
+def test_an_empty_tier_that_the_original_wrote_stays_after_an_add_and_a_remove():
+    """The original wrote `tier2: {steps: []}`; the copy adds a step and takes it out: the tier is still there, exactly as before the add (F3). A tier the add
+    created goes. A tier with an engine written is never removed."""
     raw = original()
     raw["data_schemas"]["A"]["tier2"] = {"steps": []}
     raw["data_schemas"]["B"]["tier2"] = {"data_engine": "python-polars", "steps": []}
     audit = audit_recipe_of(raw)
+    before = copy.deepcopy(audit)
     add_step(audit, "T2:A", FILTER_V, ID1)
-    remove_step(audit, ID1)
-    assert "tier2" not in audit["data_schemas"]["A"]
-    assert integrity_errors(audit, raw) == []
+    remove_step(audit, ID1, raw)
+    assert audit["data_schemas"]["A"]["tier2"] == {"steps": []}
+    assert audit == before and integrity_errors(audit, raw) == []
     assert audit["data_schemas"]["B"]["tier2"] == {"data_engine": "python-polars", "steps": []}
+
+
+def _every_place(raw: dict) -> list:
+    """Every place of the recipe where `add_step` accepts a step (found by trying on a copy)."""
+    found = []
+    for place, _, _, _ in _holders(raw):
+        try:
+            add_step(audit_recipe_of(raw), place, FILTER_V, ID1)
+        except AuditCopyError:
+            continue
+        found.append(place)
+    return found
+
+
+def _written_empty_tiers(raw: dict) -> dict:
+    """The recipe with an empty `{steps: []}` written for every tier2 and tier3 that is absent."""
+    out = copy.deepcopy(raw)
+    for _, tier, _, body in _holders(out):
+        if tier in ("tier2", "tier3") and tier not in body:
+            body[tier] = {"steps": []}
+    return out
+
+
+@pytest.mark.parametrize("variant", ["as written", "every empty tier written"])
+def test_add_then_remove_gives_back_exactly_the_copy_for_every_place(variant):
+    """MUTATION F3: a remove that deletes every empty tier2 or tier3 fails the variant in which the original wrote them."""
+    raw = original() if variant == "as written" else _written_empty_tiers(original())
+    places = _every_place(raw)
+    assert {"T1:A", "T2:A", "T3:p", "T1:AB"} <= set(places) and len(places) >= 6
+    for place in places:
+        audit = audit_recipe_of(raw)
+        before = copy.deepcopy(audit)
+        add_step(audit, place, FILTER_V, ID1)
+        assert audit != before, place
+        remove_step(audit, ID1, raw)
+        assert audit == before, place
+        assert integrity_errors(audit, raw) == [], place
+
+
+def test_strip_marked_after_an_add_at_a_place_whose_tier_did_not_exist_keeps_an_empty_tier_and_integrity_errors_reads_it_as_absent():
+    raw = original()
+    place = next(p for p in _every_place(raw) if p.startswith("T2:") and "tier2" not in dict((pl, b) for pl, _, _, b in _holders(raw))[p])
+    audit = audit_recipe_of(raw)
+    add_step(audit, place, FILTER_V, ID1)
+    stripped = strip_marked(audit)
+    assert marked_steps(stripped) == [] and stripped != raw, "an empty created tier stays"
+    _, name = place.split(":")
+    assert stripped["data_schemas"].get(name, stripped.get("joins", {}).get(name))["tier2"] == {"steps": []}
+    assert integrity_errors(audit, raw) == []
 
 
 # =====================================================================================================================

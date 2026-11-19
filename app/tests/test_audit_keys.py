@@ -272,7 +272,7 @@ def test_removing_the_step_gives_the_original_keys_back(place):
     raw = staged_recipe()
     audit = with_step(raw, place)
     assert all_keys(audit) != all_keys(raw)
-    remove_step(audit, ID1)
+    remove_step(audit, ID1, raw)
     assert all_keys(audit) == all_keys(raw)
 
 
@@ -309,5 +309,102 @@ def test_on_every_shipped_recipe_a_step_moves_the_keys_after_it_and_no_other(pat
         audit = with_step(raw, place)
         expected = {n for n in downstream(raw, place) if n in base}
         assert moved(base, all_keys(audit, files)) == expected, place
-        remove_step(audit, ID1)
+        remove_step(audit, ID1, raw)
         assert all_keys(audit, files) == base, f"{place}: removing the step gives the original keys back"
+
+
+# =====================================================================================================================
+# The position of a marked step among the original steps is in the audit part (F1)
+# =====================================================================================================================
+
+
+def _tier_steps(audit: dict, place: str) -> list:
+    kind, name = place.split(":")
+    body = plot_entries(audit)[name] if kind == "T3" else collection_bodies(audit)[name]
+    return body[f"tier{kind[1]}"]["steps"]
+
+
+def _with_marked_at(raw: dict, place: str, index: int, step_id=ID1) -> dict:
+    """A copy that was NOT built with `add_step` (a later caller that did not check it): the marked step is written at `index` of its list."""
+    audit = audit_recipe_of(raw)
+    _tier_steps(audit, place).insert(index, {**FILTER_B, "id": step_id})
+    return audit
+
+
+def _staged_with_original_steps() -> dict:
+    raw = staged_recipe()
+    raw["data_schemas"]["A"]["tier1"]["steps"] = [DROP]
+    raw["joins"]["J"]["tier1"] = {"steps": [DROP]}
+    return raw
+
+
+@pytest.mark.parametrize("place", ["T1:A", "T1:J", "T2:J", "T3:pa"])
+def test_a_marked_step_before_an_original_step_and_the_same_step_after_it_give_different_keys(place):
+    """MUTATION F1: with the position left out of the audit part the two copies have one key. Tier 1, tier 2 and tier 3 are all covered."""
+    raw = _staged_with_original_steps()
+    assert len(_tier_steps(raw, place)) >= 1, "the list has an original step to stand before or after"
+    before = all_keys(_with_marked_at(raw, place, 0))
+    after = all_keys(_with_marked_at(raw, place, len(_tier_steps(raw, place))))
+    assert before[place] != after[place]
+    assert moved(before, after) >= {place}
+
+
+def test_a_marked_step_in_the_middle_of_an_upstream_table_moves_the_downstream_keys_too():
+    raw = _staged_with_original_steps()
+    before = all_keys(_with_marked_at(raw, "T1:A", 0))
+    after = all_keys(_with_marked_at(raw, "T1:A", 1))
+    assert moved(before, after) == MOVES["T1:A"]
+
+
+def test_the_position_is_the_number_of_original_steps_before_the_marked_step():
+    raw = _staged_with_original_steps()
+    raw["data_schemas"]["A"]["tier1"]["steps"] = [DROP, FILTER_A]
+    keys = [all_keys(_with_marked_at(raw, "T1:A", i))["T1:A"] for i in (0, 1, 2)]
+    assert len(set(keys)) == 3
+
+
+def test_two_marked_steps_keep_their_order_and_their_places_among_the_original_steps():
+    raw = _staged_with_original_steps()
+
+    def two(order, at):
+        audit = audit_recipe_of(raw)
+        steps = _tier_steps(audit, "T1:A")
+        for offset, (step_id, step) in enumerate(order):
+            steps.insert(at[offset] + offset, {**step, "id": step_id})
+        return all_keys(audit)["T1:A"]
+
+    ab = [(ID1, FILTER_A), (ID2, FILTER_B)]
+    assert two(ab, [1, 1]) != two(ab[::-1], [1, 1]), "order among marked steps matters"
+    assert two(ab, [0, 1]) != two(ab, [1, 1]), "a marked step moved before an original step"
+
+
+def test_with_every_marked_step_at_the_end_the_reason_and_the_id_move_no_key_and_removing_gives_the_original_back():
+    raw = _staged_with_original_steps()
+    base = all_keys(raw)
+    for place in MOVES:
+        one = all_keys(with_step(raw, place, step_id=ID1, comment="a"))
+        assert one == all_keys(with_step(raw, place, step_id=ID3, comment="another reason")), place
+        audit = with_step(raw, place)
+        remove_step(audit, ID1, raw)
+        assert all_keys(audit) == base, place
+
+
+@pytest.mark.parametrize("path", SHIPPED, ids=lambda p: str(Path(p).relative_to(ROOT)))
+def test_on_every_shipped_recipe_add_then_remove_gives_back_exactly_the_copy_at_every_place(path):
+    """F3: a tier that existed before the add stays, a tier the add created goes, at every place `add_step` accepts a step."""
+    from utils.audit_copy import AuditCopyError
+    raw = load_raw(path)
+    if not raw:
+        pytest.skip("the file holds no recipe")
+    places = [f"T1:{t}" for t in collection_bodies(raw)] + [f"T2:{t}" for t in collection_bodies(raw)] + [f"T3:{p}" for p in plot_entries(raw)]
+    done = 0
+    for place in places:
+        audit = audit_recipe_of(raw)
+        try:
+            add_step(audit, place, FILTER_B, ID1)
+        except AuditCopyError:
+            continue
+        remove_step(audit, ID1, raw)
+        assert audit == raw, place
+        done += 1
+    assert done >= 1 or not places

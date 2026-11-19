@@ -256,12 +256,38 @@ class _Run:
                 (self.audit_dir / f"{run.table}__T2.parquet").unlink(missing_ok=True)
 
 
+def _snapshot(folder: Path) -> Dict[str, tuple]:
+    """{path relative to `folder`: (size, modification time)} of every file now in the audit folder (empty when it does not exist)."""
+    if not folder.is_dir():
+        return {}
+    return {str(p.relative_to(folder)): (p.stat().st_size, p.stat().st_mtime_ns) for p in folder.rglob("*") if p.is_file()}
+
+
+def _rollback(folder: Path, before: Dict[str, tuple], created: bool) -> None:
+    """After a run that did not finish (a refused step, any error, an interrupt): take out of the audit folder what THIS run built, so that nothing is left
+    that should be gone (rules_verification_testing.md section 9).
+
+    The rule: a file that is not in `before` (the run created it) or whose size or modification time differs from `before` (the run replaced it) is removed;
+    a file that was there before and was not touched stays, so a table that a previous successful run of the same copy left, and that this run only read,
+    is still served. The folder itself is removed when this run created it and it is empty. The original's folder is never touched here."""
+    if not folder.is_dir():
+        return
+    for path in sorted(folder.rglob("*"), reverse=True):
+        if path.is_file() and before.get(str(path.relative_to(folder))) != (path.stat().st_size, path.stat().st_mtime_ns):
+            path.unlink(missing_ok=True)
+        elif path.is_dir() and not any(path.iterdir()):
+            path.rmdir()
+    if created and not any(folder.iterdir()):
+        folder.rmdir()
+
+
 def run_audit(orchestrator: DataOrchestrator, recipe_id: str, audit_recipe: dict, original_dir: Path, audit_dir: Path) -> AuditRun:
     """Build every table and every plot table of an audit copy, reusing the original's stored tables where the keys are equal; say which plots are affected.
 
     `original_dir` holds the original's stored tables (`<table>.parquet`, `<table>__T2.parquet`); `audit_dir` is the audit's own folder and must be another
     folder. Raises `AuditRunError` when the copy is not a copy of the original plus audit steps at the end of their lists (`integrity_errors`), when the
-    folders are the same, or when an audit step cannot be applied (naming its id and its place). Changes neither the original's recipe nor the audit copy."""
+    folders are the same, or when an audit step cannot be applied (naming its id and its place). Changes neither the original's recipe nor the audit copy. A run that does not finish (a refused step, any error, an interrupt)
+    leaves in the audit folder nothing that it built (`_rollback`)."""
     original_dir, audit_dir = Path(original_dir), Path(audit_dir)
     if original_dir.resolve() == audit_dir.resolve():
         raise AuditRunError("The audit's stored tables go in a folder of their own, never in the folder of the original's tables.")
@@ -269,5 +295,11 @@ def run_audit(orchestrator: DataOrchestrator, recipe_id: str, audit_recipe: dict
     problems = integrity_errors(audit_recipe, original.raw)
     if problems:
         raise AuditRunError("The audit copy is not the original plus audit steps, so it is not run: " + " ".join(problems))
+    created = not audit_dir.exists()
+    before = _snapshot(audit_dir)
     audit_dir.mkdir(parents=True, exist_ok=True)
-    return _Run(orchestrator, recipe_id, audit_recipe, original_dir, audit_dir).run()
+    try:
+        return _Run(orchestrator, recipe_id, audit_recipe, original_dir, audit_dir).run()
+    except BaseException:
+        _rollback(audit_dir, before, created)
+        raise

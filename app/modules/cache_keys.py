@@ -1,7 +1,7 @@
 """
 @deps
 provides: function:load_data_analysis_recipe, function:tier1_material, function:tier1_engines, function:tier2_engine, function:collection_tier2_key, function:plot_tier3_key, function:tier3_key, function:tier3_engine, function:tier2_steps (from utils.recipe_tiers), function:tier3_steps (from utils.recipe_tiers), function:tier1_key, function:tier2_key, function:table_key_parts, function:table_definition_for_key, function:dataset_file_hashes, function:batch_hash_of, constant:ENGINE_CACHE_VERSION, constant:CACHE_VERSION_META, constant:STORED_TABLES_REBUILT_NOTICE, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys, class:TableKeyParts, class:ResolvedRecipe, function:loaded_from_resolved, function:tier1_audit_part, function:audit_part
-consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/engines.py (tier_engine: the one reading of the engine of a tier), libs/utils/src/utils/recipe_graph.py (build_graph: lineage_back, source_tables, parents: which definitions and which data files a table depends on, ADR-101), libs/utils/src/utils/audit_copy.py (split_marked, audit_operation, strip_marked: the marked audit steps of a copy are the audit parts of a key, not its definition)
+consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/engines.py (tier_engine: the one reading of the engine of a tier), libs/utils/src/utils/recipe_graph.py (build_graph: lineage_back, source_tables, parents: which definitions and which data files a table depends on, ADR-101), libs/utils/src/utils/audit_copy.py (split_marked, positioned_marked, audit_operation, strip_marked: the marked audit steps of a copy are the audit parts of a key, not its definition)
 consumed_by: app/modules/orchestrator.py, app/modules/session_manager.py, app/src/server.py, app/src/bootloader.py, app/handlers/export_handlers.py, app/tests/test_cache_keys.py, app/tests/test_engine_keys.py, app/tests/test_table_keys.py, app/tests/test_tier3_reader.py, app/tests/test_audit_keys.py, app/modules/audit_run.py
 doc: .claude/knowledge/architecture_decisions.md#adr-089, .claude/knowledge/architecture_decisions.md#adr-101, docs/foundations/reproducibility_hash_schema.qmd
 @end_deps
@@ -25,7 +25,8 @@ Each part is 128 bits (32 hex characters); a part that is empty is left out:
         the operations without their `id` and `comment` ("without reasons, dates or initials"), in list order; a2 and a3 also hold the engine that runs
         the tier. The marked steps are NOT part of rC, s2 and s3, so a copy with no audit step has exactly the keys of its original, and an audit step
         reaches the keys downstream of it the way an upstream definition does (a1 is the audit part of the whole lineage, like rC is its definition).
-        The part is left out when there is no audit step. PROVISIONAL: the spelling of the labels a1 a2 a3 is ADR-101's.
+        Each audit operation enters its part with its position among the original steps of its list (the number of original steps before it), so a
+        marked step before an original step and the same step after it never give one key. The part is left out when there is no audit step. PROVISIONAL: the spelling of the labels a1 a2 a3 is ADR-101's.
 
 A change in one table therefore moves the key of that table and of the tables built from it, and no other (the fail-safe is below).
 The first part that differs between two keys says where two builds diverge.
@@ -62,7 +63,7 @@ from importlib import metadata
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Union
 
-from utils.audit_copy import audit_operation, split_marked, strip_marked
+from utils.audit_copy import audit_operation, positioned_marked, split_marked, strip_marked
 from utils.errors import RecipeLoadError
 from utils.config_loader import ConfigManager
 from utils.engines import tier_engine
@@ -214,17 +215,22 @@ class TableKeyParts:
 
 def tier1_audit_part(bodies: dict, names) -> str:
     """The finished `a1` part of the tables `names` (a table and everything upstream of it; the whole recipe when coarse), or "" when none of them has a
-    marked audit step at the end of its tier 1. The steps are the operations without `id` and `comment`, in list order, per table."""
-    held = {name: [audit_operation(step) for step in split_marked(step_list(bodies[name], "tier1"))[1]] for name in names}
+    marked audit step in its tier 1. Per table the steps are [position, operation] in list order: the operation without `id` and `comment`, the
+    position the number of original steps before it. WHY the position is in the part: the marked steps are out of the definition, so without it a marked
+    step before an original step and the same step after it would give one key for two different tables (a stale table for a caller that did not check
+    the copy with `integrity_errors`; today `add_step` writes at the end only). With every step at the end the position is the same for all."""
+    held = {name: [[at, audit_operation(step)] for at, step in positioned_marked(step_list(bodies[name], "tier1"))] for name in names}
     held = {name: operations for name, operations in held.items() if operations}
     return key_part("a1", canonical_hash(held)) if held else ""
 
 
-def audit_part(label: str, marked_steps: list, engine) -> str:
-    """The finished `a2` or `a3` part of a list of marked audit steps (`label` says which), with the data engine that runs the tier, or "" when the list is empty."""
-    if not marked_steps:
+def audit_part(label: str, steps: list, engine) -> str:
+    """The finished `a2` or `a3` part of the tier list `steps` (`label` says which; marked and original steps as written), with the data engine that runs
+    the tier, or "" when the list holds no marked step. Each audit operation enters with its position among the original steps (see `tier1_audit_part`)."""
+    marked = positioned_marked(steps)
+    if not marked:
         return ""
-    return key_part(label, canonical_hash([audit_operation(step) for step in marked_steps]), canonical_hash(engine))
+    return key_part(label, canonical_hash([[at, audit_operation(step)] for at, step in marked]), canonical_hash(engine))
 
 
 def _coarse_parts(raw: dict, table: str = "") -> TableKeyParts:
@@ -290,12 +296,13 @@ def collection_tier2_key(raw: dict, collection_id: str, tier1_key_value: str) ->
     the key is the Tier 1 key itself (ADR-101 point 2). Nothing is stored for it. (Before the tier-3 reader this returned an empty
     string for that case and each caller read "" as "no key"; a caller that needs to know whether T2 has steps asks `tier2_steps`.)
     The marked audit steps at the end of the list are not in `s2`: they are the part `a2`, after it (and alone when the original has no tier-2 step)."""
-    plain, marked = split_marked(tier2_steps(raw, collection_id))
+    steps = tier2_steps(raw, collection_id)
+    plain, marked = split_marked(steps)
     if not (plain or marked):
         return tier1_key_value
     engine = tier2_engine(raw, collection_id)
     key = tier2_key(tier1_key_value, plain, engine) if plain else tier1_key_value
-    return f"{key}.{audit_part('a2', marked, engine)}" if marked else key
+    return f"{key}.{audit_part('a2', steps, engine)}" if marked else key
 
 
 def tier3_key(tier2_key_value: str, steps: list, engine) -> str:
@@ -309,12 +316,13 @@ def plot_tier3_key(raw: dict, plot_id: str, tier2_key_value: str) -> str:
     the `s3` part. A plot with none reads its table as it is: the empty part is left out, the key IS the key of its table, and
     nothing is built or stored twice. The marked audit steps at the end of the list are not in `s3`: they are the part `a3`, after it (and alone when the
     plot has no tier-3 step of its own). The one place that makes a tier-3 key from a recipe."""
-    plain, marked = split_marked(tier3_steps(raw, plot_id))
+    steps = tier3_steps(raw, plot_id)
+    plain, marked = split_marked(steps)
     if not (plain or marked):
         return tier2_key_value
     engine = tier3_engine(raw, plot_id)
     key = tier3_key(tier2_key_value, plain, engine) if plain else tier2_key_value
-    return f"{key}.{audit_part('a3', marked, engine)}" if marked else key
+    return f"{key}.{audit_part('a3', steps, engine)}" if marked else key
 
 
 def data_analysis_recipe_fileset_hash(files: Iterable[Union[str, Path]], base_dir: Union[str, Path]) -> str:

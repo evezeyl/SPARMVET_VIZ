@@ -26,6 +26,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+from unittest import mock
 
 import polars as pl
 import pytest
@@ -208,8 +209,8 @@ def test_removing_the_step_gives_the_original_back_and_empties_the_audit_folder(
     audit = world.copy_with(("T1:A", KEEP_S1, ID1), ("T2:J", DROP_GROUP_B, ID2))
     assert world.run(audit).affected_plots == ["pj", "pa"]
     assert world.audit_files() == ["A.parquet", "J.parquet", "J__T2.parquet"]
-    remove_step(audit, ID1)
-    remove_step(audit, ID2)
+    remove_step(audit, ID1, world.original_raw())
+    remove_step(audit, ID2, world.original_raw())
     run = world.run(audit)
     assert world.audit_files() == [], "a table that is the original's again is taken out of the audit's folder"
     assert run.built_tables == [] and run.affected_plots == [] and all(reused(run, t) for t in run.tables)
@@ -218,7 +219,7 @@ def test_removing_the_step_gives_the_original_back_and_empties_the_audit_folder(
 def test_removing_one_of_two_steps_takes_out_only_what_is_the_originals_again(world):
     audit = world.copy_with(("T1:X", KEEP_S1, ID1), ("T2:J", DROP_GROUP_B, ID2))
     world.run(audit)
-    remove_step(audit, ID1)
+    remove_step(audit, ID1, world.original_raw())
     world.run(audit)
     assert world.audit_files() == ["J__T2.parquet"]
 
@@ -286,7 +287,59 @@ def test_the_bad_one_of_several_steps_in_a_list_is_the_one_named(world):
         world.run(audit)
     assert raised.value.step_id == ID2 and raised.value.place == "T1:A"
     assert world.audit_files() == []
-    assert [p.name for p in world.audit.iterdir() if p.name.startswith(".audit_probe_")] == [], "the scratch folder of the diagnosis is removed"
+    assert not world.audit.exists() or [p.name for p in world.audit.iterdir() if p.name.startswith(".audit_probe_")] == [], "the scratch folder of the diagnosis is removed"
+
+
+def _audit_bytes(world) -> dict:
+    return {p.name: p.read_bytes() for p in sorted(world.audit.glob("*.parquet"))} if world.audit.exists() else {}
+
+
+def test_a_refused_run_leaves_nothing_it_built_in_the_audit_folder_and_the_original_untouched(world):
+    """MUTATION F2: without the clean-up on failure, A, J and J__T2 stay after the refused step at tier 3."""
+    before = world.original_files()
+    audit = world.copy_with(("T1:A", KEEP_S2, ID1), ("T3:pj", BAD, ID2))
+    with pytest.raises(AuditRunError) as raised:
+        world.run(audit)
+    assert raised.value.step_id == ID2
+    assert world.audit_files() == [] and not world.audit.exists(), "the folder this run created is removed too"
+    assert world.original_files() == before
+
+
+def test_a_refused_run_keeps_the_tables_a_previous_run_of_the_same_copy_left_and_removes_only_its_own(world):
+    good = world.copy_with(("T1:A", KEEP_S2, ID1))
+    world.run(good)
+    kept = _audit_bytes(world)
+    assert sorted(kept) == ["A.parquet", "J.parquet", "J__T2.parquet"]
+    before = world.original_files()
+    bad = world.copy_with(("T1:A", KEEP_S2, ID1), ("T1:B", KEEP_S2, ID2), ("T3:pj", BAD, ID3))
+    with pytest.raises(AuditRunError):
+        world.run(bad)
+    assert world.original_files() == before
+    assert "B.parquet" not in world.audit_files(), "the table this run built is gone"
+    assert set(_audit_bytes(world)) <= set(kept), "nothing new is left"
+    assert _audit_bytes(world)["A.parquet"] == kept["A.parquet"], "the table the run only read is still there"
+    again = world.run(good)
+    # J of the earlier run was replaced by the refused run under the same name (its key moved with B) and was taken out with it: rebuilt, not served stale
+    assert again.built_tables == ["J T1", "J T2"]
+
+
+def test_a_refused_run_that_built_nothing_new_changes_nothing_in_the_audit_folder(world):
+    good = world.copy_with(("T1:A", KEEP_S2, ID1))
+    world.run(good)
+    kept = _audit_bytes(world)
+    with pytest.raises(AuditRunError):
+        world.run(world.copy_with(("T1:A", KEEP_S2, ID1), ("T3:pj", BAD, ID2)))
+    assert _audit_bytes(world) == kept
+
+
+def test_an_interrupt_leaves_nothing_in_the_audit_folder_either(world):
+    before = world.original_files()
+    audit = world.copy_with(("T1:A", KEEP_S2, ID1))
+    with mock.patch.object(world.orch, "materialize_tier3", side_effect=KeyboardInterrupt):
+        with pytest.raises(KeyboardInterrupt):
+            world.run(audit)
+    assert world.audit_files() == [] and not world.audit.exists()
+    assert world.original_files() == before
 
 
 def test_a_bad_step_on_a_table_the_join_reads_is_named_at_its_own_place(world):
