@@ -5,12 +5,16 @@ readers every time it recomputes, even when the result is the same, so a change 
 A render that had started before the server received the user's new column put the first column back, and nothing told the user.
 The form now depends on two signals that change only when what they stand for changes (`filter_and_audit_handlers._signal_dialog_table`).
 
-Headless: the two signatures (`dialog_schema_signature`, `dialog_rows_signature`) and the reactive pattern. Browser (qa app features):
+Headless: the two signatures (`dialog_schema_signature`; `dialog_rows_signature` with `stored_table_identity`: the audited steps in full and the
+keys of the stored files, never the text of a Polars plan, which printed a long list of values truncated and the same for a rewritten file), the
+reactive pattern, and the real handler's Effect defined with stand-ins (it does nothing without interactivity). Browser (qa app features):
 the real form, the real race, and the edge cases (the column is gone, a real change of columns, a number column on a discrete axis).
 
 Run: PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_filter_form_survives_rerender.py -q
 """
 import asyncio
+from types import SimpleNamespace
+from unittest import mock
 
 import polars as pl
 import pytest
@@ -18,9 +22,15 @@ from playwright.sync_api import Page, expect
 from shiny import reactive
 from shiny.run import ShinyAppProc
 
-from app.modules.t3_audit_engine import column_types, dialog_rows_signature, dialog_schema_signature
+import app.handlers.filter_and_audit_handlers as h
+from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, tier2_path_for
+from app.modules.session_manager import make_audit_step
+from app.modules.t3_audit_engine import (audited_frame, dialog_rows_signature, dialog_schema_signature, stored_key,
+                                          stored_table_identity)
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_shiny_filter_types import typed_app  # noqa: F401 - a recipe of one table with an integer year on a discrete axis
+from app.tests.test_shiny_step_order import (N, THRESHOLD, _expect_rows, _filter_step, _start,  # noqa: F401 - a recipe of one table of 30 rows
+                                             staged_app)
 from app.tests.test_shiny_smoke import (_load_data_analysis_recipe, _navigate_to_mlst_plot, _open_filters_panel, _wait_for_fb_col_option,
                                         _wait_shiny)
 
@@ -53,43 +63,215 @@ class TestSchemaSignature:
         assert dialog_schema_signature({}, set()) != dialog_schema_signature(TYPES, set())
 
 
-class TestRowsSignature:
-    def _write(self, path, rows):
-        pl.DataFrame({"sample_id": [r[0] for r in rows], "year": [r[1] for r in rows]}).write_parquet(path)
-        return pl.scan_parquet(path)
+def _step(column, op, value, dtype="String", **extra):
+    """An audit step as the app records it (`make_audit_step`)."""
+    return make_audit_step("filter_row", {"column": column, "op": op, "value": value, "dtype": dtype, **extra}, plot_scope="subtab_p", reason="r")
 
-    def test_the_same_table_read_again_is_equal(self, tmp_path):
-        self._write(tmp_path / "a.parquet", [("s1", 2020.0)])
-        one = dialog_rows_signature(pl.scan_parquet(tmp_path / "a.parquet"), "key1")
-        two = dialog_rows_signature(pl.scan_parquet(tmp_path / "a.parquet"), "key1")
-        assert one == two
 
-    def test_another_stored_table_with_the_same_columns_is_not_equal(self, tmp_path):
-        """Same columns, other rows (the T1 table and the T2 table of a join, another plot's dataset)."""
-        a = self._write(tmp_path / "a.parquet", [("s1", 2020.0)])
-        b = self._write(tmp_path / "b.parquet", [("s2", 2021.0), ("s3", 2022.0)])
-        assert dialog_schema_signature(column_types(a), set()) == dialog_schema_signature(column_types(b), set())   # the form would be the same
-        assert dialog_rows_signature(a, "key1") != dialog_rows_signature(b, "key1")
+def _old_plan_signature(lf, table_key):
+    """The signature of the first fix, kept here only to show the defect it had (review of 2026-11-19, finding 1): the text of the
+    Polars plan plus the tier-1 key. The tests below assert that it is EQUAL for tables whose rows differ."""
+    return (lf.explain(optimized=False), table_key)
 
-    def test_the_same_path_with_another_content_key_is_not_equal(self, tmp_path):
-        """The stored table is rewritten under the same path when the data or the recipe change (ADR-089): the key tells."""
-        a = self._write(tmp_path / "a.parquet", [("s1", 2020.0)])
-        assert dialog_rows_signature(a, "key1") != dialog_rows_signature(a, "key2")
 
-    def test_an_audited_step_changes_the_table_and_the_signature(self, tmp_path):
-        """The dialog in My view acts on the table after the audited steps (a filter keeps fewer rows)."""
-        a = self._write(tmp_path / "a.parquet", [("s1", 2020.0), ("s2", 2021.0)])
-        assert dialog_rows_signature(a, "k") != dialog_rows_signature(a.filter(pl.col("year") > 2020), "k")
+def _stored(folder, t1_key="k1", t2_key=None, rows=("a", "b", "c"), t2_rows=None):
+    """A stored Tier 1 table (and a Tier 2 table next to it) with the content keys in the footers, as `write_anchor` writes them."""
+    t1 = folder / "t.parquet"
+    pl.DataFrame({"era": list(rows)}).write_parquet(t1, metadata={TIER1_KEY_META: t1_key})
+    if t2_key is not None:
+        pl.DataFrame({"era": list(t2_rows or rows)}).write_parquet(tier2_path_for(t1), metadata={TIER2_KEY_META: t2_key})
+    return t1
 
-    def test_no_table(self):
-        assert dialog_rows_signature(None, "k") == (None, "k")
 
-    def test_a_plan_that_cannot_be_read_is_never_equal_to_another(self):
-        """A doubt means one more render, never a stale list of values."""
-        class Broken:
-            def explain(self, **_):
-                raise RuntimeError("no plan")
-        assert dialog_rows_signature(Broken(), "k") != dialog_rows_signature(Broken(), "k")
+def _identity(t1, tier="T2", unstored=0, view_key="vk"):
+    return stored_table_identity(tier, "t", "recipe", view_key, t1, unstored)
+
+
+def _rows_after(parquet, nodes):
+    return sorted(audited_frame(pl.scan_parquet(parquet), nodes, "p").collect()["sample_id"].to_list())
+
+
+class TestRowsSignatureOfTheAuditedSteps:
+    """The rows of My view are decided by the audited steps in full. The first signature (the text of the Polars plan) printed a
+    long list of values truncated, so two steps that differ in the middle, or in the length, looked equal (finding 1, case a)."""
+
+    @pytest.fixture
+    def table(self, tmp_path):
+        path = tmp_path / "t.parquet"
+        pl.DataFrame({"sample_id": [f"s{i}" for i in range(20)], "year": list(range(20))}).write_parquet(path, metadata={TIER1_KEY_META: "k1"})
+        return path
+
+    def _sig(self, table, nodes):
+        return dialog_rows_signature(_identity(table), nodes)
+
+    def test_the_same_steps_twice_are_equal(self, table):
+        nodes = [_step("sample_id", "not_in", ["s0", "s1", "s2", "s3", "s4", "s5"])]
+        copy = [dict(n, params=dict(n["params"])) for n in nodes]
+        assert self._sig(table, nodes) == self._sig(table, copy)
+
+    def test_two_steps_that_differ_only_in_a_middle_value_are_not_equal(self, table):
+        a = [_step("sample_id", "not_in", ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7"])]
+        b = [_step("sample_id", "not_in", ["s0", "s1", "s2", "s19", "s4", "s5", "s6", "s7"])]
+        assert _rows_after(table, a) != _rows_after(table, b), "the two step lists must leave other rows"
+        assert _old_plan_signature(audited_frame(pl.scan_parquet(table), a), "k1") == _old_plan_signature(audited_frame(pl.scan_parquet(table), b), "k1"), \
+            "the defect of the plan text was not reproduced (the Polars version prints the whole list?)"
+        assert self._sig(table, a) != self._sig(table, b)
+
+    def test_two_steps_that_differ_only_in_the_length_of_the_list_are_not_equal(self, table):
+        a = [_step("sample_id", "not_in", [f"s{i}" for i in range(0, 8)])]
+        b = [_step("sample_id", "not_in", [f"s{i}" for i in range(0, 4)] + ["s9"] + [f"s{i}" for i in range(4, 8)])]   # one longer; first two and last equal
+        assert _rows_after(table, a) != _rows_after(table, b)
+        assert _old_plan_signature(audited_frame(pl.scan_parquet(table), a), "k1") == _old_plan_signature(audited_frame(pl.scan_parquet(table), b), "k1")
+        assert self._sig(table, a) != self._sig(table, b)
+
+    def test_a_changed_na_choice_or_closed_end_is_not_equal(self, table):
+        assert self._sig(table, [_step("year", "gt", 3, "Int64", na="keep")]) != self._sig(table, [_step("year", "gt", 3, "Int64", na="remove")])
+        between = lambda closed: [_step("year", "between", [3, 7], "Int64", closed=closed)]
+        assert self._sig(table, between("both")) != self._sig(table, between("none"))
+
+    def test_the_same_steps_in_another_order_are_not_equal(self, table):
+        """Order can change the result (a drop before a filter of the same column fails, the other order works): unequal is the safe answer."""
+        f = _step("sample_id", "not_in", ["s0"])
+        d = make_audit_step("drop_column", {"column": "sample_id"}, plot_scope="subtab_p", reason="r")
+        assert self._sig(table, [f, d]) != self._sig(table, [d, f])
+
+    def test_a_step_added_or_removed_is_not_equal(self, table):
+        one = [_step("sample_id", "not_in", ["s0"])]
+        assert self._sig(table, one) != self._sig(table, [])
+        assert self._sig(table, one) != self._sig(table, one + [_step("sample_id", "not_in", ["s1"])])
+
+    def test_no_steps_in_raw_result_and_my_view_is_the_same_rows(self, table):
+        """Result and My view without audited steps are the same table: the form must not be mounted again (the first fix)."""
+        assert self._sig(table, []) == self._sig(table, list())
+
+    def test_steps_that_cannot_be_written_as_text_are_never_equal(self, table):
+        broken = [{"node_type": "filter_row", "params": {1: "a", "b": 2}}]    # mixed keys: sort_keys fails
+        assert self._sig(table, broken) != self._sig(table, broken)
+
+
+class TestRowsSignatureOfTheStoredTable:
+    def test_the_same_table_read_twice_is_equal(self, tmp_path):
+        t1 = _stored(tmp_path, "k1", "k2")
+        assert dialog_rows_signature(_identity(t1), []) == dialog_rows_signature(_identity(t1), [])
+        assert dialog_rows_signature(_identity(t1, "T1"), []) == dialog_rows_signature(_identity(t1, "T1"), [])
+
+    def test_raw_and_result_with_tier_2_steps_are_not_equal(self, tmp_path):
+        """The Tier 2 table has its own rows (its own file and key): Raw and Result are two tables."""
+        t1 = _stored(tmp_path, "k1", "k2", rows=("a", "b", "c", "d"), t2_rows=("a", "b"))
+        assert dialog_rows_signature(_identity(t1, "T1"), []) != dialog_rows_signature(_identity(t1, "T2"), [])
+
+    def test_raw_and_result_without_tier_2_steps_are_the_same_table(self, tmp_path):
+        t1 = _stored(tmp_path, "k1")
+        assert dialog_rows_signature(_identity(t1, "T1"), []) == dialog_rows_signature(_identity(t1, "T2"), []) == dialog_rows_signature(_identity(t1, "T3"), [])
+
+    def test_a_changed_tier_2_key_with_the_same_tier_1_key_is_not_equal(self, tmp_path):
+        """Case b of the review: a tier-2 step is edited. The Tier 1 key does not hold tier-2 steps, the file keeps its path and its row
+        count, and the text of the plan is the same; only the key in the footer of the Tier 2 file tells."""
+        t1 = _stored(tmp_path, "k1", "k2", rows=("a", "b", "c"))
+        before = dialog_rows_signature(_identity(t1), [])
+        plan_before = _old_plan_signature(pl.scan_parquet(tier2_path_for(t1)), "k1")
+        _stored(tmp_path, "k1", "k2-edited", rows=("a", "b", "c"), t2_rows=("a", "b", "z"))     # same path, same row count, other value
+        assert _old_plan_signature(pl.scan_parquet(tier2_path_for(t1)), "k1") == plan_before, "the defect of the plan text was not reproduced"
+        assert dialog_rows_signature(_identity(t1), []) != before
+
+    def test_the_same_path_rewritten_with_the_same_row_count_under_another_tier_1_key_is_not_equal(self, tmp_path):
+        t1 = _stored(tmp_path, "k1", rows=("a", "b", "c"))
+        before = dialog_rows_signature(_identity(t1, "T1"), [])
+        _stored(tmp_path, "k1-new", rows=("a", "b", "z"))
+        assert dialog_rows_signature(_identity(t1, "T1"), []) != before
+
+    def test_a_changed_key_of_the_open_view_is_not_equal(self, tmp_path):
+        t1 = _stored(tmp_path, "k1")
+        assert dialog_rows_signature(_identity(t1, view_key="a"), []) != dialog_rows_signature(_identity(t1, view_key="b"), [])
+
+    def test_a_table_built_and_returned_without_being_stored_makes_a_new_identity(self, tmp_path):
+        """No file carries a key for such a table (STALE-KEY-STORE-1); the count of these builds is part of the identity."""
+        t1 = _stored(tmp_path, "k1")
+        assert dialog_rows_signature(_identity(t1, unstored=0), []) != dialog_rows_signature(_identity(t1, unstored=1), [])
+
+    def test_a_table_with_no_key_is_never_equal_to_itself(self, tmp_path):
+        """A doubt is never equal: a missing file, a file with no key, a plot with no collection, a Tier 1 table read with no identity."""
+        keyless = tmp_path / "keyless.parquet"
+        pl.DataFrame({"era": ["a"]}).write_parquet(keyless)
+        for identity in (stored_table_identity("T2", "t", "r", "vk", tmp_path / "missing.parquet", 0),
+                         stored_table_identity("T2", "t", "r", "vk", keyless, 0),
+                         stored_table_identity("T2", None, "r", "vk", keyless, 0), None):
+            assert identity is None
+            assert dialog_rows_signature(identity, []) != dialog_rows_signature(identity, [])
+
+    def test_a_footer_that_cannot_be_read_is_none_not_an_error(self, tmp_path):
+        broken = tmp_path / "broken.parquet"
+        broken.write_bytes(b"not a parquet file")
+        assert stored_key(broken, TIER1_KEY_META) is None
+        assert stored_key(tmp_path / "missing.parquet", TIER1_KEY_META) is None
+
+    def test_in_memory_tables_have_no_identity_so_two_of_them_are_never_equal(self):
+        """Case c of the review: `DF ["x"]` is the same plan text for other rows. The signature does not read the plan."""
+        a = pl.DataFrame({"x": [1, 2]}).lazy()
+        b = pl.DataFrame({"x": [7, 8]}).lazy()
+        assert _old_plan_signature(a, "k") == _old_plan_signature(b, "k"), "the defect of the plan text was not reproduced"
+        assert dialog_rows_signature(None, []) != dialog_rows_signature(None, [])
+
+
+# ---- headless: the real handler's Effect, defined with stand-ins -------------------------------------------------------------
+
+class _AnyInput:
+    """Every input is a function that returns nothing: the handler only needs them to exist at definition time."""
+    def __getattr__(self, name):
+        return lambda *a, **k: None
+
+
+def _define_handler(interactivity: bool, tier: str, nodes: list):
+    """Define the real `define_filter_audit_server` with stand-ins and run its Effects once. Returns what the form's Effect asked for."""
+    seen = {"tables": 0, "identity": [], "signature": []}
+
+    def make_lf(spec, tier=None):
+        seen["tables"] += 1
+        return pl.DataFrame({"era": ["a", "b"]}).lazy()
+
+    def identity(spec, tier_now):
+        seen["identity"].append((spec, tier_now))
+        return ("a stored table",)
+
+    real_signature = h.dialog_rows_signature
+
+    def record(identity_in, nodes_in):
+        seen["signature"].append((identity_in, list(nodes_in)))
+        return real_signature(identity_in, nodes_in)
+
+    async def main():
+        stub = SimpleNamespace(is_enabled=lambda flag: interactivity if flag == "interactivity_enabled" else True)
+        with mock.patch.object(h, "bootloader", stub), mock.patch.object(h, "dialog_rows_signature", record):
+            h.define_filter_audit_server(
+                _AnyInput(), lambda fn: fn, None,
+                applied_filters=reactive.Value([]), _pending_filters=reactive.Value([]), _propagation_scratch=reactive.Value({}),
+                home_state=reactive.Value({"t3_audit_steps_by_plot": {"subtab_p": nodes}}), tier_toggle=reactive.Value(tier),
+                active_home_subtab=reactive.Value("subtab_p"), safe_input=lambda inp, key, default=None: default,
+                _resolve_active_spec=lambda p: {"target_dataset": "t", "plot": p}, _resolve_active_lf=make_lf,
+                _spec_discrete_axes=lambda spec: ([], []), _t3_drop_columns=lambda *a: [], _all_plot_subtab_ids=lambda: [],
+                _plot_label=lambda sub: sub, _table_identity=identity)
+            await reactive.flush()
+    asyncio.run(main())
+    return seen
+
+
+class TestTheFormsEffectInTheRealHandler:
+    def test_without_interactivity_the_effect_builds_no_table_and_asks_for_no_identity(self):
+        """The Filters panel does not exist then (`sidebar_filters` shows a static message): the Effect does nothing."""
+        seen = _define_handler(False, "T3", [_step("era", "in", ["a"])])
+        assert seen["tables"] == 0 and seen["identity"] == [] and seen["signature"] == []
+
+    def test_with_interactivity_the_effect_builds_the_table_once_and_asks_for_the_identity_of_the_open_plot_and_view(self):
+        seen = _define_handler(True, "T2", [])
+        assert seen["tables"] >= 1
+        assert seen["identity"] == [({"target_dataset": "t", "plot": "p"}, "T2")]
+
+    def test_the_audited_steps_are_part_of_the_signature_in_my_view_only(self):
+        """The dialog applies the audited steps in My view (T3) only, like `_active_frame`: the signature reads the same steps."""
+        step = _step("era", "in", ["a"])
+        assert _define_handler(True, "T3", [step])["signature"][-1] == (("a stored table",), [step])
+        assert _define_handler(True, "T2", [step])["signature"][-1] == (("a stored table",), [])
+        assert _define_handler(True, "T1", [step])["signature"][-1] == (("a stored table",), [])
 
 
 # ---- headless: the reactive pattern -------------------------------------------------------------------------------------------
@@ -300,3 +482,42 @@ class TestNumberColumnOnADiscreteAxis:
             _show(page, tier)
         expect(page.locator("#fb_op")).to_have_value("gt")
         expect(page.locator("#fb_value")).to_have_value("1999")
+
+
+def _list_options(page: Page) -> list:
+    """The values the open list box offers."""
+    return page.evaluate("() => { const e = document.getElementById('fb_value'); return e && e.selectize ? Object.keys(e.selectize.options) : []; }")
+
+
+class TestTheValueWidgetFollowsTheRows:
+    """The columns stay and the rows change: the value widget is built from the rows, so it must be built again (the rows signal).
+    Table of 30 rows (sample_id s1..s30, score 1..30); an audited filter `score >= 16` keeps 15 of them. Waits are on the form's state."""
+
+    def test_a_list_of_values_loses_the_removed_values_with_the_audited_step_and_gets_them_back_when_it_is_deleted(self, page: Page, staged_app):
+        _start(page, staged_app)                                   # My view, 30 rows
+        _filter_step(page, 1)                                      # audited step: score >= 16 (rows 16..30)
+        _expect_rows(page, N - THRESHOLD + 1)
+        _choose(page, "sample_id")
+        page.wait_for_function("() => { const e = document.getElementById('fb_value'); return e && e.selectize && Object.keys(e.selectize.options).length > 0; }",
+                               timeout=15_000)
+        options = _list_options(page)
+        assert "s30" in options and "s1" not in options and len(options) == N - THRESHOLD + 1, f"the list holds the removed rows: {options}"
+        # The column stays chosen: only the rows change. Delete the step (the trash button of the audit step).
+        page.locator("button[id^=t3_delete_]").first.click()
+        _expect_rows(page, N)
+        page.wait_for_function("() => Object.keys(document.getElementById('fb_value').selectize.options).length === 30", timeout=15_000)
+        expect(page.locator("#fb_col")).to_have_value("sample_id")
+        assert "s1" in _list_options(page), "the value list was not built again when the rows came back"
+
+    def test_the_range_of_a_number_box_follows_the_rows_with_the_same_column_chosen(self, page: Page, staged_app):
+        """`score` stays the chosen column and `>=` the operator while the step is applied and deleted: the box holds the smallest value of
+        the rows that are there."""
+        _start(page, staged_app)
+        _filter_step(page, 1)
+        _expect_rows(page, N - THRESHOLD + 1)
+        expect(page.locator("#fb_col")).to_have_value("score")
+        page.wait_for_function("() => document.querySelector('#fb_value') && document.querySelector('#fb_value').min === '16'", timeout=15_000)
+        page.locator("button[id^=t3_delete_]").first.click()
+        _expect_rows(page, N)
+        page.wait_for_function("() => document.querySelector('#fb_value') && document.querySelector('#fb_value').min === '1'", timeout=15_000)
+        expect(page.locator("#fb_col")).to_have_value("score")
