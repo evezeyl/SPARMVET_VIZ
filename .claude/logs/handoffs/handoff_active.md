@@ -4,21 +4,23 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
-## OPEN STATE 2026-11-19 afternoon (after the power cut; updated 2026-11-19 late afternoon)
+## OPEN STATE 2026-11-19 afternoon (after the power cut; updated 2026-11-19 late afternoon; updated 2026-11-19 evening)
 
-- dev = `ecd09fbd`, NOT pushed by an agent. The review session was told in channel M339 of the coordinator that the owner can push. (Earlier head `75e52b2c`, channel M338.)
-- Controls on `ecd09fbd` (slice A1, A2 and A3 merged): headless 11703 passed, 0 failed; all browser files 360 passed, 4 failed under parallel running and each passed alone (FLAKY-BROWSER-UNDER-PARALLEL-1); all eight setups start.
+- dev = `c7cb58da` (not pushed by an agent; the review session was last told `7e179146`). The review session was told in channel M339 of the coordinator that the owner can push (that was head `ecd09fbd`; earlier head `75e52b2c`, channel M338).
+- Controls on `7e179146` (slice A1 to A4 merged): headless 11767 passed, 0 failed; all browser files 259 passed (1 failed under parallel running, passed alone). On the A5 branch `task/audit-recipe` (head `dca589f8`): headless 12130 passed, 0 failed.
+- Controls on `ecd09fbd` (slice A1, A2 and A3 merged), earlier: headless 11703 passed, 0 failed; all browser files 360 passed, 4 failed under parallel running and each passed alone (FLAKY-BROWSER-UNDER-PARALLEL-1); all eight setups start.
 - The big recipe change is MERGED (`2c6cc1d2`) and CONTROLLED on `a538eca2`: headless 11246 passed, 5 skipped, 31 xfailed, 0 failed; 27 browser files 240 passed (3 skipped, 1 xfailed, 1 flaky failure, see below); all eight setups start; pictures 50 identical plus the one known row (the empty orphan `experimental/test_logic.yaml`); golden passed.
 - The one file that failed for good was `app/tests/test_tier_decides_filter_form.py` (9 setup errors): written before the merge, it staged its recipe with the old group key `label`, which the merged format refuses. Repaired TEST ONLY in `75e52b2c`; its 17 tests pass on the merged head.
 - Evidence: `tmpAI/coordinator/CONTROLS_merged_recipe_change_2026-11-19.md` (outputs in `tmpAI/coordinator/controls_merged_2026-11-19/`).
 - Not covered by these controls: ghost save (off in qa); setups other than qa (only started); the Quarto render of the export; the flaky test was rerun once only.
 - The owner's order (2026-11-19): build now, bring questions when the work stops; rebuild HOME and GALLERY, retest, then decide on the gaps.
-- Slice A of the HOME audit redesign is being built (plan `tmpAI/coordinator/SLICE_A_plan.md`; slice plan `tmpAI/panel/audit_redesign/SLICES_v3_2026-11-18.md`); slices B to E wait for her answers. Questions for the stop: `tmpAI/coordinator/QUESTIONS_FOR_THE_STOP.md`.
+- Slice A of the HOME audit redesign (plan `tmpAI/coordinator/SLICE_A_plan.md`; slice plan `tmpAI/panel/audit_redesign/SLICES_v3_2026-11-18.md`): all five pieces are merged (A1 `b9d9b325`, A3 `711bb40f`, A2 `ecd09fbd`, A4 `7e179146`, A5 `c7cb58da`), plus the export piece `43c2dbcc` (structure built once) and the plain texts `ebbdd787`. Slices B to E wait for her answers. Questions for the stop: `tmpAI/coordinator/QUESTIONS_FOR_THE_STOP.md` (Q-A1 to Q-A17 and the slice 0 points).
   - A1 `libs/utils/src/utils/recipe_graph.py` (the recipe map): DONE and merged (`b9d9b325`).
   - A2 Blueprint's navigator, the tube map and the checker's join check on the map: DONE and merged (`ecd09fbd`).
   - A3 a key per stored table: DONE and merged (`711bb40f`; cache version 6).
-  - A4 the engine reads tier 3 at the plot entry: IN PROGRESS, worktree `.claude/worktrees/tier3-reader`, branch `task/tier3-reader` (head `4eb9032a`): built; the review repairs of the filter form and of the load gate are being made on the branch; then a review, then the merge.
-  - A5 the audit recipe copy and a headless build: after A4.
+  - A4 the engine reads tier 3 at the plot entry: DONE and merged (`7e179146`).
+  - A5 the audit recipe copy (`libs/utils/src/utils/audit_copy.py`) and the headless run (`app/modules/audit_run.py`), in memory, not on any screen: DONE and merged (`c7cb58da`).
+  - STILL TO DO before slice A is called done: (1) the three low fixes on the audit recipe, worktree `.claude/worktrees/audit-recipe-fixes`, branch `task/audit-recipe-fixes` (the key must hold the position of an audit step among the original steps; a refused run leaves built tables behind; add-then-remove must give back exactly the same recipe); (2) the full controls on dev (`AUDIT-SLICE-A-FINAL-CONTROLS`); (3) the questions (`tmpAI/coordinator/QUESTIONS_FOR_THE_STOP.md`) go to the owner through the review session, one at a time. Slice B does not start before her answers.
   - Each worker keeps `tmpAI/progress.md` in its worktree.
 - The rule sentences stay out of date by decision (owner, 2026-11-19): list in `tmpAI/engine_keys/RULE_SENTENCES_OUT_OF_DATE_after_merge.md`.
 - Coordinator restart note: top of `tmpAI/coordinator/progress_2026-11-14_session3.md`.
