@@ -30,7 +30,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui
-# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, AuditStepError), app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, AuditStepError), app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/knowledge/architecture_decisions.md#ADR-097, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
@@ -53,7 +53,7 @@ from utils.pipeline_error import capture_entry
 from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
 from viz_factory.viz_factory import show_draw_errors
 
-from app.modules.t3_audit_engine import AuditStepError, _apply_filter_rows, audited_frame, filter_rows_from_nodes
+from app.modules.t3_audit_engine import AuditStepError, _apply_filter_rows, audited_frame, filter_rows_from_nodes, stored_table_identity
 from utils.na_choice import na_of, no_value_text
 from app.modules.sidebar_registry import is_panel_active
 from app.handlers.session_handlers import define_session_server
@@ -171,10 +171,16 @@ def define_server(input, output, session, *,
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
 
+    # How many tables were built and returned without being stored since the app started (inputs changed during the build). A table
+    # returned and not stored has no file that carries a key for it, so the filter form cannot tell its rows from another table's
+    # by a key: the count is part of the identity it reads (`t3_audit_engine.stored_table_identity`), so a later table differs.
+    _unstored_builds = [0]
+
     def _tell_inputs_changed(change):
         """The orchestrator built a table while its recipe or data changed (STALE-KEY-STORE-1): say so, in the form of the
         data-change notice. Told after the flush, under isolate: the tables are built inside renders, which may not write
         the Alerts log (R1). Nothing is re-read and nothing is blocked."""
+        _unstored_builds[0] += 1
         text = "⚠️ " + inputs_changed_during_build_notice(change.text)
 
         def show():
@@ -316,6 +322,17 @@ def define_server(input, output, session, *,
                 data_analysis_recipe_id=data_analysis_recipe_id, collection_id=target_ds,
                 tier1_path=out_path, keys=_data_analysis_recipe_keys(), on_inputs_changed=_tell_inputs_changed)
         return _resolve_t1_lf(spec)
+
+    def _dialog_table_identity(spec: dict | None, tier: str):
+        """Which stored table `_resolve_active_lf(spec, tier)` reads, for the filter form (`stored_table_identity`); None when the
+        plot names no collection (the table then comes from the app's open anchor, which no key of this view describes)."""
+        target_ds = (spec or {}).get("target_dataset")
+        if not target_ds:
+            return None
+        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
+        return stored_table_identity(
+            tier, target_ds, data_analysis_recipe_id, _data_analysis_recipe_keys().tier1_key,
+            bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet", _unstored_builds[0])
 
     def _active_plot_t3_nodes(plot_id: str | None = None) -> list[dict]:
         """Return the committed T3 AuditSteps for the active plot subtab.
@@ -2270,7 +2287,7 @@ def define_server(input, output, session, *,
         _t3_drop_columns=_t3_drop_columns,
         _all_plot_subtab_ids=_all_plot_subtab_ids,
         _plot_label=_plot_label,
-        _table_key=lambda: _data_analysis_recipe_keys().tier1_key,
+        _table_identity=_dialog_table_identity,
         notification_log=notification_log,
     )
 

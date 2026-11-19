@@ -12,13 +12,14 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:column_is_in_frame, class:AuditStepError
-# consumes: polars, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
+# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:column_is_in_frame, class:AuditStepError
+# consumes: polars, app/modules/orchestrator.py (TIER1_KEY_META, TIER2_KEY_META, tier2_path_for), libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_step_order.py, app/tests/test_removed_audit_step_type.py, app/tests/test_audit_error_names_the_plot.py, app/tests/test_filters_cleared_on_recipe_change.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
 
 import datetime
+import json
 import math
 import re
 from decimal import Decimal
@@ -26,6 +27,7 @@ from decimal import Decimal
 import polars as pl
 
 from utils import action_names
+from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, tier2_path_for
 from app.modules.renamed_keys import FIX_IN_APP, audit_step_defect
 from utils.errors import TransformationError
 from utils.pipeline_error import PipelineError
@@ -717,20 +719,64 @@ def dialog_schema_signature(types: dict, discrete: set) -> tuple:
     return (tuple((name, str(dtype)) for name, dtype in types.items()), tuple(sorted(discrete)))
 
 
-def dialog_rows_signature(lf, table_key) -> tuple:
-    """Which rows the dialog's table holds: the plan of the table (which stored table, which audited steps) and the content key
-    of the stored tables of the open recipe (ADR-089: it changes when the recipe's tier 1 material or its data change).
-
-    The value widget (list of values, range, bounds) is built from the rows, so it is mounted again when this changes and not
-    when a recompute rebuilt the same table. A plan that cannot be read gives a signature that is never equal to another, so a
-    doubt means one more render, never a stale list. `lf` is None when no table can be built."""
-    if lf is None:
-        return (None, table_key)
+def stored_key(path, meta_key: str) -> str | None:
+    """The content key written in the footer of a stored table (ADR-089), read from the file now; None when the file is
+    missing, cannot be read or carries no such key. Only the footer is read, never the rows."""
     try:
-        plan = lf.explain(optimized=False)
-    except Exception:
-        return (object(), table_key)
-    return (plan, table_key)
+        footer = pl.read_parquet_metadata(path)
+    except (OSError, pl.exceptions.PolarsError):
+        return None
+    return footer.get(meta_key) or None
+
+
+def stored_table_identity(tier: str, collection: str | None, recipe_id: str, view_key: str, tier1_path,
+                          unstored_builds: int) -> tuple | None:
+    """Which stored table the dialog reads, as a value that is equal for two reads of the same table and different when the
+    table can have other rows; None when nothing says which rows the table holds (the signature is then never equal).
+
+    The dialog reads the stored Tier 1 table of the plot's collection ("T1": Raw) or its stored Tier 2 table ("T2" and "T3": Result
+    and My view; the Tier 1 table when the collection has no tier-2 steps, so Raw and Result without tier-2 steps are the same table).
+    The identity holds: the collection and the recipe, the Tier 1 key the open view holds (`DataAnalysisRecipeKeys`), the key written
+    in the footer of the stored files the rows come from (read now, from the files, not computed: a file rewritten at the same path
+    under another key, for example after an edit of a tier-2 step, which the Tier 1 key does not see because tier-2 steps are not
+    part of it), and `unstored_builds`, how many tables were built and returned without being stored since the app started (their
+    rows are in memory and no file carries a key for them). A collection that is not named, or a Tier 1 file with no key, gives None.
+    The Tier 2 file is read when the view is T2 or T3 and the file exists: without tier-2 steps it does not exist (the orchestrator
+    removes it), and the rows are those of the Tier 1 file.
+    """
+    if not collection:
+        return None
+    t1 = stored_key(tier1_path, TIER1_KEY_META)
+    if t1 is None:
+        return None
+    t2 = stored_key(tier2_path_for(tier1_path), TIER2_KEY_META) if tier in ("T2", "T3") else None
+    return (collection, recipe_id, view_key, t1, t2, unstored_builds)
+
+
+def dialog_rows_signature(table_identity, audit_nodes) -> tuple:
+    """Which rows the dialog's table holds, as a value: equal for the same rows, different when they can differ.
+
+    The rows are decided by (a) the stored table the dialog reads (`stored_table_identity`) and (b) the plot's audited steps that
+    My view applies to it (`audited_frame`; empty in Raw and Result): every step in full (its type, column, operator, the whole list
+    of values, `na`, `closed`, its reason) and their order. Exploration filters are not an input: the dialog does not apply them
+    (`filter_and_audit_handlers._active_frame`). Nothing is read from the printed plan of the table: a plan is only the text of the
+    steps and drops what makes two tables differ (a long list of values is printed truncated, a rewritten file prints the same).
+
+    The value widget (list of values, range, bounds) is built from the rows, so it is mounted again when this changes, and not when a
+    recompute rebuilt the same table. A doubt is never equal: when `table_identity` is None, or the steps cannot be written as text,
+    every call returns a value that differs from every other (one more render).
+
+    What this does NOT cover (so a list can still be old): a stored file that another process replaces between the build of the table
+    and the read of its footer, and a file changed outside the app that still carries its old key (the key says what the file was
+    built from, not what is in it now; ADR-089 and the export check work on the same keys).
+    """
+    if table_identity is None:
+        return ("uncovered", object())
+    try:
+        steps = json.dumps(list(audit_nodes or []), sort_keys=True, default=str, separators=(",", ":"))
+    except (TypeError, ValueError):
+        return ("uncovered", object())
+    return ("rows", table_identity, steps)
 
 
 def audit_failures(plots: list) -> list[tuple[str, AuditStepError]]:

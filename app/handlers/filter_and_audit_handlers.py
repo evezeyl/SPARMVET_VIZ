@@ -116,7 +116,7 @@ def define_filter_audit_server(input, output, session, *,
                                 safe_input,
                                 _resolve_active_spec, _resolve_active_lf,
                                 _spec_discrete_axes, _t3_drop_columns,
-                                _all_plot_subtab_ids, _plot_label, _table_key,
+                                _all_plot_subtab_ids, _plot_label, _table_identity,
                                 notification_log=None):
     """Register filter UI + T3 audit propagation handlers.
 
@@ -136,7 +136,8 @@ def define_filter_audit_server(input, output, session, *,
       _t3_drop_columns()         → list[str]   — committed drop-column targets
       _all_plot_subtab_ids()     → list[str]   — every "subtab_<plot_id>" id
       _plot_label(subtab_id)     → str         — human-readable plot label
-      _table_key()               → str         — content key of the stored tables of the open recipe (ADR-089)
+      _table_identity(spec, tier) → tuple | None — which stored table the dialog reads (`stored_table_identity`); None when no
+                                    key says which rows it holds (the rows signal is then never equal)
     """
 
     def _on_my_view() -> bool:
@@ -301,16 +302,23 @@ def define_filter_audit_server(input, output, session, *,
 
     @reactive.Effect
     def _signal_dialog_table():
+        # The Filters panel does not exist without interactivity (`sidebar_filters` shows a static message): nothing to signal.
+        if not bootloader.is_enabled("interactivity_enabled"):
+            return
         try:
             lf, types, disc = _dialog_table()
             schema = dialog_schema_signature(types, disc)
-            try:
-                key = _table_key()
-            except Exception as exc:
-                # No key, no way to tell two tables apart: a signature that is never equal to another (one more render, never a stale list).
-                _log.exception("filter dialog: the content key of the tables could not be read")
-                key = ("no key", object())
-            rows = dialog_rows_signature(lf, key)
+            subtab = active_home_subtab.get()
+            tier = tier_toggle.get()
+            identity = None
+            if lf is not None:
+                try:
+                    identity = _table_identity(_resolve_active_spec(subtab.removeprefix("subtab_") if subtab else None), tier)
+                except Exception:
+                    # No identity, no way to tell two tables apart: the signature is never equal (one more render).
+                    _log.exception("filter dialog: the stored table the form reads could not be identified")
+            # The same condition as `_active_frame`: the audited steps apply in My view only.
+            rows = dialog_rows_signature(identity, _audit_nodes_of(subtab) if tier == "T3" else [])
         except Exception as exc:
             # The outputs read the table again and show the error themselves; this only makes them run again when it changes.
             _log.exception("filter dialog: the table of the form could not be read")
