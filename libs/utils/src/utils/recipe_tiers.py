@@ -15,7 +15,7 @@ rule exists once.
 
 # @deps
 # provides: function:collection_body, function:tier2_steps, function:step_list, function:plot_entries, function:plot_entry, function:tier3_steps, function:plot_targets, function:unapplied_schema_tier2, function:unapplied_join_tier2, function:without_tier2, function:without_data_engines, function:collection_bodies, function:schema_bodies
-# consumed_by: app/modules/cache_keys.py, app/modules/engine_record.py (collection_body, step_list), app/modules/orchestrator.py (through cache_keys), libs/utils/src/utils/recipe_check.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/utils/tests/test_recipe_tiers.py, app/tests/test_schema_tier2.py
+# consumed_by: app/modules/cache_keys.py, app/modules/engine_record.py (collection_body, step_list), app/modules/orchestrator.py (plot_entry, tier3_steps; collection_body), libs/utils/src/utils/recipe_check.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/utils/tests/test_recipe_tiers.py, app/tests/test_schema_tier2.py
 # doc: .claude/design/recipe_format_spec.md (DEC16, line 357, S07, X4), .claude/knowledge/architecture_decisions.md#adr-089
 # @end_deps
 """

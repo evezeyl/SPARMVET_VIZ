@@ -11,7 +11,8 @@ The Publication export carries no recipe, so this record is the only place the e
 - `recipe_default`: the `data_engine` and `plot_engine` the recipe writes at its top (None when it writes none: no default is invented);
 - `tables`: every table and join the plots of the export read, with the engine of each tier that ran (the tier 1 of the
   ingredients of a join too: a join reads the tier 1 of its ingredients, their tier 2 did not run);
-- `plots`: per plot the engine it was drawn with, whether it was drawn, the theme as it was applied (or why none is recorded);
+- `plots`: per plot the engine it was drawn with, whether it was drawn, the theme as it was applied (or why none is recorded); and, only
+  for a plot that writes `tier3` steps, `tier3`: the data engine that ran them (a plot with none reads its table as it is: nothing ran);
 - `library_versions`: per engine that appears, the installed versions of the libraries behind it, read when the record is made.
 
 One source: the engine of a tier is `utils.engines.tier_engine`, the function `DataOrchestrator` chooses the entry with; the engine
@@ -71,14 +72,17 @@ def engine_record(raw: dict, plots: Iterable[Tuple[str, Any]], drawn: Dict[str, 
 
     plot_records: Dict[str, dict] = {}
     for plot_id, entry in plots:
-        plot_records[plot_id] = drawn.get(plot_id) or {
+        plot_records[plot_id] = dict(drawn.get(plot_id) or {
             "plot_engine": engines.effective_engine("plot_engine", entry, raw), "drawn": False, "theme": None,
-            "not_drawn_because": "it was not attempted in this export"}
+            "not_drawn_because": "it was not attempted in this export"})
+        if step_list(entry, "tier3"):
+            plot_records[plot_id]["tier3"] = engines.tier_engine(raw, entry, "tier3")
 
     used = []
     for record in tables.values():
         used += [record["tier1"]] + ([record["tier2"]] if record.get("tier2") not in (None, NOT_RUN) else [])
     used += [record["plot_engine"] for record in plot_records.values()]
+    used += [record["tier3"] for record in plot_records.values() if "tier3" in record]
     versions: Dict[str, Any] = {}
     for engine in used:
         found = engines.engine_versions(engine) if isinstance(engine, str) else None

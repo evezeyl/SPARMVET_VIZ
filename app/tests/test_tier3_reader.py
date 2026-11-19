@@ -396,6 +396,15 @@ def test_the_export_draws_each_plot_from_its_table_writes_the_t3_data_and_record
     assert "sparmvet:tier3_key" not in Image.open(io.BytesIO(bundle.read(plain_picture))).text
 
 
+def test_the_engine_record_names_the_tier3_engine_only_for_a_plot_with_tier3_steps(tmp_path):
+    from app.modules.engine_record import engine_record
+    raw = Tier3World(tmp_path).raw()
+    record = engine_record(raw, list(plot_entries(raw).items()), {})
+    assert record["plots"]["p_steps"]["tier3"] == "python-polars"
+    assert "tier3" not in record["plots"]["p_plain"], "nothing ran for a plot with no tier-3 steps"
+    assert "python-polars" in record["library_versions"]
+
+
 def test_the_export_of_a_recipe_with_no_tier3_steps_has_no_t3_file_and_no_plot_key(tmp_path, monkeypatch):
     world, view, drawn, bundle, notes = _export(tmp_path, monkeypatch, tier3=None)
     names = bundle.namelist()

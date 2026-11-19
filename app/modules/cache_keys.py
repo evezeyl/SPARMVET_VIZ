@@ -2,7 +2,7 @@
 @deps
 provides: function:load_data_analysis_recipe, function:tier1_material, function:tier1_engines, function:tier2_engine, function:collection_tier2_key, function:plot_tier3_key, function:tier3_key, function:tier3_engine, function:tier2_steps (from utils.recipe_tiers), function:tier3_steps (from utils.recipe_tiers), function:tier1_key, function:tier2_key, function:table_key_parts, function:table_definition_for_key, function:dataset_file_hashes, function:batch_hash_of, constant:ENGINE_CACHE_VERSION, constant:CACHE_VERSION_META, constant:STORED_TABLES_REBUILT_NOTICE, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys, class:TableKeyParts
 consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/engines.py (tier_engine: the one reading of the engine of a tier), libs/utils/src/utils/recipe_graph.py (build_graph: lineage_back, source_tables, parents: which definitions and which data files a table depends on, ADR-101)
-consumed_by: app/modules/orchestrator.py, app/modules/session_manager.py, app/src/server.py, app/src/bootloader.py, app/handlers/export_handlers.py, app/tests/test_cache_keys.py, app/tests/test_engine_keys.py, app/tests/test_table_keys.py
+consumed_by: app/modules/orchestrator.py, app/modules/session_manager.py, app/src/server.py, app/src/bootloader.py, app/handlers/export_handlers.py, app/tests/test_cache_keys.py, app/tests/test_engine_keys.py, app/tests/test_table_keys.py, app/tests/test_tier3_reader.py
 doc: .claude/knowledge/architecture_decisions.md#adr-089, .claude/knowledge/architecture_decisions.md#adr-101, docs/foundations/reproducibility_hash_schema.qmd
 @end_deps
 
