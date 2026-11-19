@@ -130,6 +130,7 @@ def test_the_fields_survive_a_filter_applied_to_the_data(clean_panel):
     page.wait_for_function("() => Array.from(document.querySelectorAll('#fb_col option')).some(o => o.value === 'year')",
                            timeout=30_000)
     page.locator("#fb_col").select_option("year"); _wait_shiny(page)
+    page.wait_for_function("() => Array.from(document.querySelectorAll('#fb_op option')).some(o => o.value === 'lt')", timeout=20_000)
     page.locator("#fb_op").select_option("lt"); _wait_shiny(page)
     page.locator("#fb_value").fill("1900"); page.wait_for_timeout(200)
     page.locator("#filter_add_row").click(); _wait_shiny(page)

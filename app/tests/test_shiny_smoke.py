@@ -94,6 +94,17 @@ def _wait_for_fb_col_option(page: Page, value: str, timeout: int = 20_000) -> No
     page.wait_for_function(js, timeout=timeout)
 
 
+def _choose_fb_op(page: Page, op: str, timeout: int = 20_000) -> None:
+    """Choose a filter operator once the re-rendered #fb_op offers it.
+
+    After a column is chosen the form is rebuilt and the operator list follows the column's type: an operator picked before
+    the rebuilt list holds it is lost or times out. Waits for the option, not for a fixed time.
+    """
+    page.wait_for_function(
+        "(op) => Array.from(document.querySelectorAll('#fb_op option')).some(o => o.value === op)", arg=op, timeout=timeout)
+    page.locator("#fb_op").select_option(op)
+
+
 def _load_data_analysis_recipe(page: Page, base_url: str, data_analysis_recipe_id: str = "1_test_data_ST22_dummy") -> None:
     """Navigate to app, select the test data analysis recipe, and wait for groups to render.
 
@@ -266,7 +277,7 @@ class TestFilterPipeline:
         _wait_for_fb_col_option(page, "year")
         page.locator("#fb_col").select_option("year")
         _wait_shiny(page)
-        page.locator("#fb_op").select_option("gt")
+        _choose_fb_op(page, "gt")
         _wait_shiny(page)
         page.locator("#fb_value").fill("2000")
         page.wait_for_timeout(200)
@@ -296,7 +307,7 @@ class TestFilterPipeline:
         _wait_for_fb_col_option(page, "year")
         page.locator("#fb_col").select_option("year")
         _wait_shiny(page)
-        page.locator("#fb_op").select_option("gt")
+        _choose_fb_op(page, "gt")
         _wait_shiny(page)
         page.locator("#fb_value").fill("2000")
         page.wait_for_timeout(200)
@@ -330,7 +341,7 @@ class TestAuditGate:
         _wait_for_fb_col_option(page, "year")
         page.locator("#fb_col").select_option("year")
         _wait_shiny(page)
-        page.locator("#fb_op").select_option("gt")
+        _choose_fb_op(page, "gt")
         _wait_shiny(page)
         page.locator("#fb_value").fill("2000")
         page.wait_for_timeout(200)
