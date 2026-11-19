@@ -23,11 +23,8 @@ In the qa app features, with no audit step and no filter of the user, what a per
 - no error text for `kept` and `full`; for `broken` the data preview says an error and names the plot (a value-dependent failure shows at the
   read, and the plot's name is added by the consumer, `plot_read_error_text`).
 
-STATUS (builder, 2026-11-19): this file has NOT been run to the end. The staged recipe is refused by the app's own load gate
-(`validate_data_analysis_recipe`: "the check read 0 of the 2 steps written here"): `engine_load_problems` counts the steps written outside
-`analysis_groups`, and `ConfigManager.raw_config` holds a flat copy of the plots under the key `plots`, so the tier-3 steps of the plots are
-counted as written and never read. Every recipe with tier-3 steps is refused by HOME until that count is corrected (the file
-`data_analysis_recipe_validator.py` was outside the brief). The assertion of the fixture below is that gate; the render itself is covered headless by
+The staged recipe is checked with `validate_data_analysis_recipe` before the app starts (the load gate counts a plot's tier-3 steps once as
+written and as read, `test_gate_accepts_tier3.py`); the fixture asserts it passes. The render itself is also covered headless by
 `test_home_reads_the_plots_table.py::test_the_plot_and_the_reference_pane_of_compare_are_drawn_from_the_plots_table_in_every_view`.
 
 Mutations (each seen failing, restored; the headless test for M1a and M1b): MUTATION M1a the plot render reads tier "T2" (`home_theater.py`, the line `_resolve_active_lf(spec, tier="T3")` of
