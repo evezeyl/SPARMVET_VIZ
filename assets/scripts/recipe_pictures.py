@@ -273,13 +273,20 @@ def draw_recipe(recipe_id: str, path: Path, data_root: Path, palettes: Optional[
             if target not in tables:
                 records.append(failure(group, plot, "error", f"no table for collection {target!r}: " + table_errors.get(target, "not built")))
                 continue
+            try:
+                # the table the plot reads: the Tier 2 of its target plus the plot's own tier-3 steps (the one reader, DataOrchestrator.materialize_tier3)
+                with contextlib.redirect_stdout(io.StringIO()):
+                    plot_table = orchestrator.materialize_tier3(recipe_id, plot, work, keys=keys)
+            except BaseException as error:  # noqa: BLE001 - one plot whose table cannot be built must not stop the others
+                records.append(failure(group, plot, "error", short(error)))
+                continue
             file_name = f"{recipe_id}__{group}__{plot}.png".replace("/", "_").replace(" ", "_")
             try:
                 hashes, arrays = [], []
                 for attempt in range(repeat):
                     target_file = out / file_name if attempt == 0 else work / f"again_{attempt}.png"
                     with contextlib.redirect_stdout(io.StringIO()):
-                        ggplot = PlotEngines(palette_registry=palettes).render(tables[target], raw, plot)
+                        ggplot = PlotEngines(palette_registry=palettes).render(plot_table, raw, plot)
                         ggplot.save(target_file, verbose=False, **size)
                     arrays.append(pixels(target_file))
                     hashes.append(pixel_hash(arrays[-1]))

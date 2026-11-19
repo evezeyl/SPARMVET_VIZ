@@ -251,7 +251,7 @@ def test_a_plot_entry_steps_container_becomes_tier3(tmp_path):
     assert "        tier3:\n          steps:\n          - {action: polars_sort" in new
     assert "steps:\n          tier3" not in new
     assert load(path) == expected_new(yaml.safe_load(text))
-    assert [e for e in errors(path) if e[0] != "P05"] == []                      # P05: the engine does not read tier3 yet (a rule of the checker)
+    assert errors(path) == []                                                     # the engine reads tier3: its steps are judged like any step list
 
 
 def test_an_empty_tier3_container_is_dropped_with_a_note(tmp_path):

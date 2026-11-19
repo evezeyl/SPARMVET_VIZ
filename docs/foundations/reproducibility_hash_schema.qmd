@@ -31,7 +31,7 @@ Each question requires a separate hash. No single hash can answer all three.
 
 *Replaces the former `decision_hash` (a hash of the assembly steps only), see ADR-089.*
 
-**What they hash:** the `tier1_key` is a key per table, a series of labelled parts (ADR-101): the engine version (the cache version, 6 since the key per table) and the **effective data engine** (the tier's own `data_engine`, else the data analysis recipe's) of the table and of everything upstream of it, the **resolved data analysis recipe** as far as the table depends on it (every included file merged, without the downstream-only parts and without the written engine lines), and the content of the **data files that table reads**. The `tier2_key` covers the `tier1_key`, the `tier2` steps of the collection and the effective data engine of its tier 2. Each key contains the one before it, so a change upstream changes every key after it. The engine is an argument of the key function and not a part of the data analysis recipe text: the same engine written on a tier or inherited from the top gives the same key. **The plot engine is in no table key**: a plot is drawn from a stored table and a picture has no stored key. When the cache version changed (5 to 6), every table stored under an older version is removed at the start of the app and rebuilt once; the results do not change (D-0240).
+**What they hash:** the `tier1_key` is a key per table, a series of labelled parts (ADR-101): the engine version (the cache version, 6 since the key per table) and the **effective data engine** (the tier's own `data_engine`, else the data analysis recipe's) of the table and of everything upstream of it, the **resolved data analysis recipe** as far as the table depends on it (every included file merged, without the downstream-only parts and without the written engine lines), and the content of the **data files that table reads**. The `tier2_key` covers the `tier1_key`, the `tier2` steps of the collection and the effective data engine of its tier 2; a collection with no `tier2` steps has the key of its tier 1 (an empty part is left out, ADR-101). A plot that writes `tier3` steps has one more key, the key of the table it reads: the `tier2_key` of its target, then one part `s3-<32>` made of the plot's `tier3` steps and the data engine that runs them; a plot with no `tier3` steps reads its table as it is and its key IS the `tier2_key` of its target. Each key contains the one before it, so a change upstream changes every key after it. The engine is an argument of the key function and not a part of the data analysis recipe text: the same engine written on a tier or inherited from the top gives the same key. **The plot engine is in no table key**: a plot is drawn from a stored table and a picture has no stored key. When the cache version changed (5 to 6), every table stored under an older version is removed at the start of the app and rebuilt once; the results do not change (D-0240).
 
 **Where they live:** in the Parquet file metadata of each stored stage: `sparmvet_tier1_key` (Tier 1 file) and `sparmvet_tier2_key` (`<name>__T2.parquet`). The older key `sparmvet_decision_hash` is still written, with the same value, for readers of older bundles. Readable without scanning data rows.
 
@@ -97,10 +97,13 @@ flowchart LR
   K1 --> K2
   S2["Tier 2 steps of the join"] --> K2
   K2{{"tier2_key"}} --> P2[("Tier 2 parquet<br/>(none if tier2 is empty)")]
-  K2 --> KP
-  PS["Plot spec, plot_defaults,<br/>palette"] --> KP
-  KP{{"plot input"}} --> PL["Plot"]
-  P2 --> T3["T3: your filters and drops<br/>(never stored)"] --> PL
+  K2 --> K3
+  S3["Tier 3 steps of the plot"] --> K3
+  K3{{"key of the plot's table<br/>(the tier2_key when tier3 is empty)"}} --> T3R["The table the plot reads<br/>(never stored)"]
+  P2 --> T3R
+  T3R --> PL["Plot"]
+  PS["Plot spec, plot_defaults,<br/>palette"] --> PL
+  AU["Your audited filters and drops<br/>(My view, never stored)"] --> PL
 ```
 :::
 
@@ -110,7 +113,8 @@ flowchart LR
 |---|---|---|
 | `tier1_key` of a table or join | three labelled parts, `E-<32>.rC-<32>.dC-<32>` (128 bits each): `E` the engine cache version, the installed `polars` and `transformer` versions and the data engine of the table and of everything upstream of it; `rC` the definition of the table and of everything upstream of it, from the recipe graph, together with the parts of the recipe that belong to no table; `dC` the content of the data files the table reads. One key per table: a change in one table moves its key and that of the tables built from it, and no other | Tier 1 parquet of that table, key in the file metadata (`sparmvet_decision_hash`) |
 | `tier2_key` | the `tier1_key` of the table, then one part `s2-<32>`: the `tier2` steps of that table and the data engine that runs them | Tier 2 parquet `<name>__T2.parquet` (nothing when `tier2` is empty: T2 equals T1) |
-| plot input | `tier2_key`; the plot spec; `plot_defaults`; the palette registry | not stored |
+| key of the table a plot reads | the `tier2_key` of the plot's target, then (only when the plot writes `tier3` steps) one part `s3-<32>`: the `tier3` steps of that plot and the data engine that runs them | not stored: the table is built on demand from the stored Tier 2 (provisional: the design leaves open whether it is stored). A plot with no `tier3` steps has the `tier2_key` of its target |
+| plot input | the plot spec; `plot_defaults`; the palette registry (never a key: a picture has no stored key) | not stored |
 
 The **resolved data analysis recipe** is what `ConfigManager` returns after every `!include` is merged, as if all the fragments were concatenated into one file. It is written in a canonical form (sorted keys), so comments, spacing and how the data analysis recipe is split into files do not change the key.
 
@@ -144,13 +148,13 @@ This means: a session is uniquely identified by the combination of *which data a
 
 ## Where Hashes Appear in Exports
 
-All the hashes are surfaced in every export output, as literal values. The export records the keys it used (the Tier 1 and Tier 2 key of each dataset); it refuses to run when the keys of the open view differ from the keys now (the data analysis recipe or the data changed after the view was opened).
+All the hashes are surfaced in every export output, as literal values. The export records the keys it used (the Tier 1 and Tier 2 key of each dataset, and the key of the table of each plot that writes `tier3` steps); it refuses to run when the keys of the open view differ from the keys now (the data analysis recipe or the data changed after the view was opened).
 
 | Export surface | data_analysis_recipe_sha256 | data_batch_hash | tier1_key / tier2_key |
 |---|---|---|---|
 | Bundle README.txt | ✅ full | ✅ full | ✅ per dataset |
 | Bundle QMD provenance table | ✅ full | ✅ full | ✅ per dataset |
-| PNG / SVG plot metadata | ✅ full | ✅ full | ✅ (`sparmvet:tier1_key`, `sparmvet:tier2_key`) |
+| PNG / SVG plot metadata | ✅ full | ✅ full | ✅ (`sparmvet:tier1_key`, `sparmvet:tier2_key`, and `sparmvet:tier3_key` for a plot that writes `tier3` steps) |
 
 ---
 

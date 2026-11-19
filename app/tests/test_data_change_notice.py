@@ -80,8 +80,8 @@ def test_the_notice_of_a_table_built_while_its_inputs_changed_says_what_then_a_s
 
 
 def test_home_tells_the_notice_when_the_orchestrator_reports_a_change():
-    """The handler passes `_tell_inputs_changed` at all three places where HOME builds a table."""
+    """The handler passes `_tell_inputs_changed` at all four places where HOME builds a table (Tier 1 twice, Tier 2, the table a plot reads; it was three before the plot's table had its own reader)."""
     source = (ROOT / "app" / "handlers" / "home_theater.py").read_text()
-    assert source.count("on_inputs_changed=_tell_inputs_changed") == 3
+    assert source.count("on_inputs_changed=_tell_inputs_changed") == 4
     assert "notice_after_data_change(view_dbh, new_dbh)" in source and "view_dbh = _data_analysis_recipe_keys().data_batch_hash" in source
     assert "inputs_changed_during_build_notice(change.text)" in source and "session.on_flushed(show, once=True)" in source

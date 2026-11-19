@@ -46,9 +46,6 @@ from utils.polars_types import PARAMETER_KEYS, dtype_with_parameters, text_dtype
 from utils.recipe_paths import containment_problems, shape_problems
 from utils.ui_schema import STEP_KEYS, step_problems
 
-# P05: the engine does not read `steps.tier3` yet; switched to True in the commit that adds the reader (spec 7.7).
-TIER3_READ_BY_ENGINE = False
-
 # The tool that rewrites a recipe of the old shape (written in a later step of the engine-keys change); every refusal of an old shape names it.
 REWRITE_TOOL = "assets/scripts/migrate_recipe_engine_keys.py"
 
@@ -1032,10 +1029,8 @@ class _Check:
         if "plot_engine" in plot:
             self.engine_value(plot["plot_engine"], "plot_engine", f"{path}.plot_engine")
         if "tier3" in plot:
-            lists = self.tiers(plot, path, "P04", self.spec["elements"]["tiers"]["plot"], "plot")
-            if lists.get("tier3") and not TIER3_READ_BY_ENGINE:
-                self.add("P05", f"{path}.tier3.steps", "the engine does not read tier3 yet, so these steps would never be applied",
-                         "leave tier3 empty until the engine reads it")
+            # P05 is retired: the engine reads `tier3` (`DataOrchestrator.materialize_tier3`), so its steps are judged like any step list
+            self.tiers(plot, path, "P04", self.spec["elements"]["tiers"]["plot"], "plot")
         if "taxonomy" in plot and not isinstance(plot["taxonomy"], dict):
             self.add("P01", f"{path}.taxonomy", "taxonomy is a mapping of axis to term", "write taxonomy: {family: ..., ...}")
         if "spec" not in plot:  # an old `spec` holds the content: told once as an old shape, the content is judged after the rewrite
@@ -1062,7 +1057,7 @@ class _Check:
         themes = (self.catalogs or {}).get("themes")
         if theme is not None and themes is not None and theme not in themes:
             self.add("PS05", f"{path}.theme", f"{theme!r} is not a registered theme", "write one of " + ", ".join(sorted(themes)))
-        if "filters" in plot and TIER3_READ_BY_ENGINE:
+        if "filters" in plot:
             self.add("P06", f"{path}.filters", "filters in a plot moved to the plot's tier3", "write the filters as tier3 steps")
 
     def layers(self, layers: list, path: str, *, needs_geom: bool = True, plot_engine: Any = None) -> None:

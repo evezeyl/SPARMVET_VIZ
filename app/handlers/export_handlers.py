@@ -12,7 +12,7 @@ from __future__ import annotations
 
 # @deps
 # provides: constant:EXPORT_READY_TEXTS, constant:EXPORT_PANEL_FIELDS, constant:EXPORT_WATCHED_FIELDS, function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
-# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/export_fields_store.py (D-0288, D-0291, D-0296: the Export fields remembered per session, in memory only; defaults D-0294), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table, the same function the orchestrator uses, D-0240), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
+# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/export_fields_store.py (D-0288, D-0291, D-0296: the Export fields remembered per session, in memory only; defaults D-0294), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table, the same function the orchestrator uses, D-0240; tier2_steps, tier3_steps: which tables and plots have steps; DataAnalysisRecipeKeys.plot_key_of: the key of the table a plot reads), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
 # consumes: libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237), app/modules/engine_record.py (engine_record, failed_plot_record: the `engines` part of effective_run.yaml, D-0248)
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 # consumed_by: app/handlers/home_theater.py
@@ -26,6 +26,7 @@ from pathlib import Path
 
 from shiny import reactive, render, ui
 
+from app.modules.cache_keys import tier2_steps, tier3_steps
 from app.modules.error_notice import notice, what_failed
 from app.modules.export_fields_store import (
     EXPORT_FIELD_DEFAULTS as _FIELD_DEFAULTS, EXPORT_LABEL_DEFAULT, EXPORT_LABEL_FIELD, REMEMBERED_EXPORT_FIELDS,
@@ -67,6 +68,7 @@ def build_export_provenance(
     data_sha: str,
     bootloader,
     stage_keys: dict | None = None,
+    plot_keys: dict | None = None,
     orchestrator=None,
     anchor_dir=None,
     t3_by_plot: dict | None = None,
@@ -207,6 +209,8 @@ def build_export_provenance(
         "data_batch_hash": data_sha,
         "decision_hashes": decision_hashes,
         "stage_keys": stage_keys or {},
+        # {plot id: key of the table the plot reads}, only for a plot with tier-3 steps in the recipe (its table is not its target's Tier 2)
+        "plot_keys": plot_keys or {},
         "git_commit": git_commit,
         "release_version": release_version,
         "software_versions": sw_versions,
@@ -394,6 +398,7 @@ def _embed_png_provenance(
             "sparmvet:decision_hash": prov.get("decision_hashes", {}).get(dataset_key, ""),
             "sparmvet:tier1_key": prov.get("stage_keys", {}).get(dataset_key, {}).get("tier1_key", ""),
             "sparmvet:tier2_key": prov.get("stage_keys", {}).get(dataset_key, {}).get("tier2_key", ""),
+            "sparmvet:tier3_key": prov.get("plot_keys", {}).get(plot_id, ""),
             "sparmvet:git_commit": prov.get("git_commit", ""),
             "sparmvet:created_at": prov.get("created_at", ""),
         }
@@ -429,6 +434,7 @@ def _embed_svg_provenance(
             f"sparmvet:decision_hash={prov.get('decision_hashes', {}).get(dataset_key, '')}",
             f"sparmvet:tier1_key={prov.get('stage_keys', {}).get(dataset_key, {}).get('tier1_key', '')}",
             f"sparmvet:tier2_key={prov.get('stage_keys', {}).get(dataset_key, {}).get('tier2_key', '')}",
+            *([f"sparmvet:tier3_key={prov['plot_keys'][plot_id]}"] if plot_id in prov.get("plot_keys", {}) else []),
             f"sparmvet:git_commit={prov.get('git_commit', '')}",
             f"sparmvet:created_at={prov.get('created_at', '')}",
         ])
@@ -1076,20 +1082,23 @@ def define_export_server(input, output, session, *,
             return bool(audited_rows or audited_drops)
 
         audited_plots = {p for p, _ in all_plots if _has_audited_steps(p)}
+        # The plots whose table is not their target's Tier 2 as it is: the recipe writes tier-3 steps for them, or the user audited them.
+        # Each has its own T3 data file in the bundle (the plot is drawn from it).
+        t3_table_plots = audited_plots | {p for p, _ in all_plots if tier3_steps(cfg.raw_config, p)}
 
         # PLOT-TABLE-ORDER-1: check before anything is written. If the audited steps of a plot cannot run in their
         # recorded order, the table, the plot and the exported recipe would differ or fail: nothing is exported.
-        def _base_frame(spec: dict):
-            """The base of a plot's My view: the stored Tier 2 (Tier 1 without tier2 steps), as the data and plot sections read it."""
-            target = spec.get("target_dataset")
-            if not target:
+        def _base_frame(p_id: str, spec: dict):
+            """The base of a plot's My view: the table the plot reads (`materialize_tier3`: the stored Tier 2, Tier 1 without tier2
+            steps, plus the plot's own tier-3 steps), as the data and plot sections read it."""
+            if not spec.get("target_dataset"):
                 return tier1_anchor()
-            return orchestrator.materialize_tier2(
-                data_analysis_recipe_id=data_analysis_recipe_id, collection_id=target,
-                tier1_path=bootloader.get_location("user_data") / "anchors" / f"{target}.parquet", keys=export_keys,
+            return orchestrator.materialize_tier3(
+                data_analysis_recipe_id=data_analysis_recipe_id, plot_id=p_id,
+                anchors_dir=bootloader.get_location("user_data") / "anchors", keys=export_keys,
                 on_inputs_changed=_on_build_change)
 
-        _failing = audit_failures([(_p, (lambda _s=_s: _base_frame(_s)), _audited_nodes(_p)) for _p, _s in all_plots])
+        _failing = audit_failures([(_p, (lambda _p=_p, _s=_s: _base_frame(_p, _s)), _audited_nodes(_p)) for _p, _s in all_plots])
         if _failing:
             with reactive.isolate():
                 _notify("Export blocked: the audit steps cannot run for " + ", ".join(f"'{_p}'" for _p, _ in _failing)
@@ -1117,7 +1126,6 @@ def define_export_server(input, output, session, *,
             # ── Hashes + Provenance (before tmpdir so image embedding can use it) ──
             # The keys of this export (ADR-089): the file-set hash of the data analysis recipe, the content
             # hash of the data, and the chained key of every stored stage the export reads.
-            from app.modules.cache_keys import collection_tier2_key as _collection_tier2_key
             data_analysis_recipe_sha = export_keys.data_analysis_recipe_sha256
             data_sha = export_keys.data_batch_hash
             stage_keys: dict[str, dict[str, str]] = {}
@@ -1126,11 +1134,15 @@ def define_export_server(input, output, session, *,
                 if _ds and _ds not in stage_keys:
                     stage_keys[_ds] = {
                         "tier1_key": export_keys.tier1_key_of(_ds),
-                        # the one function that makes a tier-2 key from a recipe (steps and engine); empty when T2 equals T1
-                        "tier2_key": _collection_tier2_key(cfg.raw_config, _ds, export_keys.tier1_key_of(_ds)),
+                        # the key of the Tier 2 table (the keys object makes it with the one function that makes a tier-2 key from a
+                        # recipe: steps and engine); the record keeps its words for a table with no tier-2 steps: empty, "none (T2 equals T1)"
+                        "tier2_key": export_keys.tier2_key_of(_ds) if tier2_steps(cfg.raw_config, _ds) else "",
                     }
+            # the key of the table a plot reads, only for a plot that has tier-3 steps (a plot with none reads its table: that is the key above)
+            plot_keys = {_p: export_keys.plot_key_of(_p) for _p, _spec in all_plots
+                         if _spec.get("target_dataset") and tier3_steps(cfg.raw_config, _p)}
 
-            tiers_exported = ["T1"] + (["T3"] if audited_plots else [])
+            tiers_exported = ["T1"] + (["T3"] if t3_table_plots else [])
             anchor_dir = bootloader.get_location("user_data") / "anchors"
 
             prov = build_export_provenance(
@@ -1149,6 +1161,7 @@ def define_export_server(input, output, session, *,
                 data_sha=data_sha,
                 bootloader=bootloader,
                 stage_keys=stage_keys,
+                plot_keys=plot_keys,
                 orchestrator=orchestrator,
                 anchor_dir=anchor_dir,
                 t3_by_plot=_t3_listed,
@@ -1235,12 +1248,12 @@ def define_export_server(input, output, session, *,
                         if target_ds:
                             anchor_dir = bootloader.get_location("user_data") / "anchors"
                             out_path = anchor_dir / f"{target_ds}.parquet"
-                            # Plots never show T1 (ADR-086): same base as HOME, the stored
-                            # Tier 2 (equal to T1 when the table has no tier2 steps).
-                            lf = orchestrator.materialize_tier2(
+                            # Plots never show T1 (ADR-086): same base as HOME, the table the plot reads: the stored
+                            # Tier 2 (equal to T1 when the table has no tier2 steps) plus the plot's own tier-3 steps.
+                            lf = orchestrator.materialize_tier3(
                                 data_analysis_recipe_id=data_analysis_recipe_id,
-                                collection_id=target_ds,
-                                tier1_path=out_path,
+                                plot_id=p_id,
+                                anchors_dir=anchor_dir,
                                 keys=export_keys,
                                 on_inputs_changed=_on_build_change,
                             )
@@ -1367,7 +1380,6 @@ def define_export_server(input, output, session, *,
 
                     # ── T2 (exported when tier2 steps exist) ───────
                     try:
-                        from app.modules.cache_keys import tier2_steps
                         if target_ds and tier2_steps(active_cfg().raw_config, target_ds):
                             lf_t2 = orchestrator.materialize_tier2(
                                 data_analysis_recipe_id=data_analysis_recipe_id,
@@ -1390,22 +1402,23 @@ def define_export_server(input, output, session, *,
                         )
 
                     # ── T3 / My view data, one file per plot (audit nodes are per plot) ──
-                    # Build rule T3 > T2 > T1: the base is the stored Tier 2, which is Tier 1
-                    # when the table has no tier2 steps; the plot's filters and drops go on top.
-                    # Written for every plot that has audited steps: its plot is built from this data,
-                    # so the file must be there. Plots without audited steps have no T3 file.
-                    if audited_plots:
+                    # Build rule T3 > T2 > T1: the base is the table the plot reads (`materialize_tier3`: the stored Tier 2, which
+                    # is Tier 1 when the table has no tier2 steps, plus the plot's own tier-3 steps of the recipe); the plot's
+                    # audited filters and drops go on top.
+                    # Written for every plot that has audited steps or tier-3 steps in the recipe: its plot is built from this
+                    # data, so the file must be there. Other plots have no T3 file (their plot reads T2).
+                    if t3_table_plots:
                         for _t3_pid, _t3_spec in all_plots:
                             if (_t3_spec.get("target_dataset") or "__tier1_anchor__") != ds_key:
                                 continue
-                            if _t3_pid not in audited_plots:
+                            if _t3_pid not in t3_table_plots:
                                 continue
                             try:
                                 if target_ds:
-                                    lf_t3 = orchestrator.materialize_tier2(
+                                    lf_t3 = orchestrator.materialize_tier3(
                                         data_analysis_recipe_id=data_analysis_recipe_id,
-                                        collection_id=target_ds,
-                                        tier1_path=bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet",
+                                        plot_id=_t3_pid,
+                                        anchors_dir=bootloader.get_location("user_data") / "anchors",
                                         keys=export_keys,
                                         on_inputs_changed=_on_build_change,
                                     )
@@ -1776,6 +1789,11 @@ def define_export_server(input, output, session, *,
                     f"| Tier 2 key ({_qp(_ds_k)}) | {_qc(_k['tier2_key'] or 'none (T2 equals T1)', True)} | "
                     "Key of the Tier 2 parquet: Tier 1 key and the tier2 steps of the table (a join, or a table a plot reads directly) |"
                 )
+            for _pk, _pkey in prov.get("plot_keys", {}).items():
+                _dh_qmd_rows.append(
+                    f"| Tier 3 key ({_qp(_pk)}) | {_qc(_pkey, True)} | "
+                    "Key of the table this plot reads: the key of its Tier 2 table and the tier3 steps of the plot (written only for a plot that has tier3 steps) |"
+                )
             if _dh_qmd_rows:
                 pass
             elif _prov_dh:
@@ -1865,7 +1883,7 @@ def define_export_server(input, output, session, *,
                     qmd_lines.append(f"*{shape_note}*  ")
                 qmd_lines.append("")
                 # Only files that are in the bundle (VERIF-FIX-2, E4): T1 when it was written, T2 when the table has tier 2
-                # steps, and one T3 file per plot that has audited steps and whose file was written.
+                # steps, and one T3 file per plot that has audited steps or tier3 steps of the recipe and whose file was written.
                 # (A plot with no target table has its plots in `__anchor__/` and its data under the key `__tier1_anchor__`.)
                 _data_key = "__tier1_anchor__" if ds_key == "__anchor__" else ds_key
                 _data_folder = _quote(_safe_ds_name(_data_key))
@@ -1875,7 +1893,8 @@ def define_export_server(input, output, session, *,
                     qmd_lines.append(f"[Result data (T2)]({_data_folder}/T2_data.tsv)")
                 for _plot in plot_list:
                     if (_data_key, _plot) in _t3_written:
-                        qmd_lines.append(f"[Analyst-filtered data (T3) of {_qp(_plot)}]({_data_folder}/T3_data_{_quote(_plot)}.tsv)")
+                        _t3_label = "Analyst-filtered data (T3)" if _plot in audited_plots else "Data of the plot (T3)"
+                        qmd_lines.append(f"[{_t3_label} of {_qp(_plot)}]({_data_folder}/T3_data_{_quote(_plot)}.tsv)")
                 qmd_lines.append("")
 
             # ── T3 Audit Trail section ────────────────────────────────────
@@ -2064,7 +2083,7 @@ def define_export_server(input, output, session, *,
                 mapping_block.append(f"  {ds_key}/")
                 tier_files = ["T1_data.tsv"] \
                     + (["T2_data.tsv"] if ds_key in exported_t2 else []) \
-                    + ([f"T3_data_{_p}.tsv" for _p in plot_list if _p in audited_plots])
+                    + ([f"T3_data_{_p}.tsv" for _p in plot_list if _p in t3_table_plots])
                 mapping_block.append(f"    data : {', '.join(tier_files)}")
                 mapping_block.append(f"    plots: {', '.join(plot_list)}")
 
@@ -2077,6 +2096,8 @@ def define_export_server(input, output, session, *,
             for _ds_k, _k in prov.get("stage_keys", {}).items():
                 _dh_lines.append(f"  {_ds_k}: tier1_key={_k['tier1_key']}")
                 _dh_lines.append(f"  {_ds_k}: tier2_key={_k['tier2_key'] or 'none (T2 equals T1)'}")
+            for _pk, _pkey in prov.get("plot_keys", {}).items():
+                _dh_lines.append(f"  plot {_pk}: tier3_key={_pkey}")
             if _dh_lines:
                 pass
             elif _dh:
@@ -2156,7 +2177,7 @@ def define_export_server(input, output, session, *,
                 "  <dataset>/T1_data.tsv — raw assembled data (T1)",
                 "  <dataset>/T2_data.tsv — processed data (T2, when steps defined)",
                 "  <dataset>/T3_data_<plot>.tsv — My view data of each plot (T3, when exported): T2 (T1 when there",
-                "                     are no tier2 steps) plus that plot's filters and column drops",
+                "                     are no tier2 steps) plus that plot's tier3 steps of the recipe and its audited filters and column drops",
                 "  t3_steps.yaml     — human-readable audit record (when T3 has steps)",
                 "  effective_run.yaml — the full verification record: recipe/data/T3-steps/engine",
                 "                     hashes, per-plot seeds, the engine of each tier and plot, the theme as",

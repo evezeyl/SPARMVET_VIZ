@@ -107,13 +107,14 @@ def test_a_tier2_engine_is_not_in_the_tier1_material_so_tier1_is_not_rebuilt_for
     assert tier1_engines(before) == tier1_engines(after)
 
 
-def test_a_tier2_with_no_steps_has_no_key_whatever_its_engine():
-    """T2 equals T1 and nothing is stored (ADR-089 point 6): an engine written on an empty tier 2 makes no key."""
+def test_a_tier2_with_no_steps_has_the_key_of_tier1_whatever_its_engine():
+    """T2 equals T1 and nothing is stored (ADR-089 point 6): an engine written on an empty tier 2 adds no part, the key of T2 IS
+    the key of T1 (ADR-101 point 2: an empty part is left out)."""
     raw = recipe()
     raw["joins"]["J"]["tier2"] = {"data_engine": STAND_IN, "steps": []}
-    assert collection_tier2_key(raw, "J", "T1") == ""
+    assert collection_tier2_key(raw, "J", "T1") == "T1"
     raw["joins"]["J"].pop("tier2")
-    assert collection_tier2_key(raw, "J", "T1") == ""
+    assert collection_tier2_key(raw, "J", "T1") == "T1"
 
 
 # --- the plot engine is in no table key ------------------------------------------------------------------------------------

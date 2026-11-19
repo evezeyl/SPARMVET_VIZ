@@ -63,13 +63,17 @@ def screen_text(source: Path, marker: str) -> str:
 
 
 def test_home_and_blueprint_show_the_whole_message_of_a_render_error():
-    """Both screens draw the exception text itself (`{e}` / `str(e)`), so the problem and the fix reach the user."""
-    home = screen_text(ROOT / "app/handlers/home_theater.py", 'f"Render error:\\n{e}"')
-    assert "{e}" in home
+    """Both screens draw the exception text itself (HOME: `plot_read_error_text(..., e)`, which starts with `str(e)`; Blueprint: `str(e)`),
+    so the problem and the fix reach the user."""
+    home = screen_text(ROOT / "app/handlers/home_theater.py", 'f"Render error:\\n{plot_read_error_text(')
+    assert "plot_read_error_text(cfg.raw_config, p_id, e)" in home
     blueprint = screen_text(ROOT / "app/modules/wrangle_studio.py", 'return None, f"Render error: {msg}"')
     assert "msg = str(e)" in blueprint
     message = str(refusal([{"name": "geom_point", "params": {"position": "jitter", "random_state": None}}]))
-    for shown in (f"Render error:\n{message}", f"Render error: {message}"):          # what each screen draws
+    from app.modules.orchestrator import plot_read_error_text
+    home_text = plot_read_error_text({}, "p", refusal([{"name": "geom_point", "params": {"position": "jitter", "random_state": None}}]))
+    assert home_text == message, "a plot without tier-3 steps: HOME shows the whole message as it is"
+    for shown in (f"Render error:\n{home_text}", f"Render error: {message}"):          # what each screen draws
         assert "Plot 'p', layer 1 (geom_point)" in shown and "Fix: write a number: random_state: 0" in shown
 
 

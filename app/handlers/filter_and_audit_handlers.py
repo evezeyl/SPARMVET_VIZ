@@ -868,8 +868,9 @@ def define_filter_audit_server(input, output, session, *,
         Returns a dict mapping subtab_id → 'present' | 'absent' | 'unknown'.
         Plots whose target_dataset can't be resolved get 'unknown' (treated
         as a soft warning).
-        Schema scans are memoised per target_dataset since many plots share
-        the same assembly.
+        Schema scans are memoised per PLOT: two plots on one table can read
+        two different tables (a plot's own tier-3 steps of the recipe), so a
+        table's schema is never shared between plots.
         """
         cols_needed = {
             n.get("params", {}).get("column", "")
@@ -888,14 +889,13 @@ def define_filter_audit_server(input, output, session, *,
             if spec is None:
                 result[sub] = "unknown"
                 continue
-            target_ds = spec.get("target_dataset") or "__tier1_anchor__"
-            if target_ds not in schema_cache:
+            if p_id not in schema_cache:
                 try:
                     lf = _resolve_active_lf(spec)
-                    schema_cache[target_ds] = set(lf.collect_schema().names())
+                    schema_cache[p_id] = set(lf.collect_schema().names())
                 except Exception:
-                    schema_cache[target_ds] = set()
-            ds_cols = schema_cache[target_ds]
+                    schema_cache[p_id] = set()
+            ds_cols = schema_cache[p_id]
             if not ds_cols:
                 result[sub] = "unknown"
             elif cols_needed.issubset(ds_cols):

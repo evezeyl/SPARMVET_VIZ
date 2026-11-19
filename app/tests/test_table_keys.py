@@ -123,13 +123,14 @@ def test_a_tier2_key_is_the_tier1_key_it_is_computed_from_and_one_more_part():
     assert T2_FORM.match(t2) and t2.startswith(t1 + ".s2-")
 
 
-def test_an_empty_tier2_list_adds_no_part_and_makes_no_key():
-    """The empty part is left out: T2 equals T1, nothing is stored, the record holds an empty tier-2 key (as before ADR-101)."""
+def test_an_empty_tier2_list_adds_no_part_so_the_key_is_the_tier1_key():
+    """The empty part is left out (ADR-101 point 2): T2 equals T1, nothing is stored, and the key of T2 IS the key of T1."""
     raw = recipe()
     raw["joins"]["J"]["tier2"] = {"steps": []}
-    assert collection_tier2_key(raw, "J", t1_keys(raw)["J"]) == ""
+    t1 = t1_keys(raw)["J"]
+    assert collection_tier2_key(raw, "J", t1) == t1
     del raw["joins"]["J"]["tier2"]
-    assert collection_tier2_key(raw, "J", t1_keys(raw)["J"]) == ""
+    assert collection_tier2_key(raw, "J", t1) == t1
 
 
 def test_the_same_inputs_give_the_same_keys_twice():

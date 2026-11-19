@@ -130,7 +130,7 @@ def test_a_stale_tag_strip_of_a_standard_example_is_set_again(tmp_path):
 
 
 @pytest.mark.parametrize("change,reason", [
-    (lambda text: text.replace("  tier3: []", "  tier3:\n  - action: filter_rows\n    column: rate\n    operator: '>'\n    value: 0"), "P05"),
+    (lambda text: text.replace("  tier3: []", "  tier3:\n  - action: filter_rows\n    column: rate\n    operator: '>'\n    value: 0"), "'filter_rows' is not a registered action"),   # a tier3 list is judged like any step list (the engine reads it); the invented action is refused
     (lambda text: "# a note of the author\n" + text, "comments"),
     (lambda text: text + "extra_key: 1\n", "extra_key"),
     (lambda text: text.replace("  sample_size: any", "  sample_size: any\n  author: me"), "info.author"),
