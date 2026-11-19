@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (filters_cleared_notice, column_is_in_frame, describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (filters_cleared_notice, column_is_in_frame, describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, dialog_schema_signature, dialog_rows_signature, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -30,7 +30,7 @@ from app.src.bootloader import bootloader
 from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
-    dialog_value, not_offered_line, value_choices, value_widget_for, AuditStepError, dialog_frame,
+    dialog_value, not_offered_line, value_choices, value_widget_for, AuditStepError, dialog_frame, dialog_rows_signature, dialog_schema_signature,
     column_bounds, column_is_in_frame, filters_cleared_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
 from utils.filter_values import UNIT_NS, FilterValueError, kind_of
@@ -116,7 +116,7 @@ def define_filter_audit_server(input, output, session, *,
                                 safe_input,
                                 _resolve_active_spec, _resolve_active_lf,
                                 _spec_discrete_axes, _t3_drop_columns,
-                                _all_plot_subtab_ids, _plot_label,
+                                _all_plot_subtab_ids, _plot_label, _table_identity,
                                 notification_log=None):
     """Register filter UI + T3 audit propagation handlers.
 
@@ -136,6 +136,8 @@ def define_filter_audit_server(input, output, session, *,
       _t3_drop_columns()         → list[str]   — committed drop-column targets
       _all_plot_subtab_ids()     → list[str]   — every "subtab_<plot_id>" id
       _plot_label(subtab_id)     → str         — human-readable plot label
+      _table_identity(spec, tier) → tuple | None — which stored table the dialog reads (`stored_table_identity`); None when no
+                                    key says which rows it holds (the rows signal is then never equal)
     """
 
     def _on_my_view() -> bool:
@@ -284,6 +286,49 @@ def define_filter_audit_server(input, output, session, *,
             return None, {}, set()
         return lf, types, _discrete_columns(spec)
 
+    def _dialog_table_now():
+        """The table of the dialog read fresh and without subscribing (the signal and fresh-read pattern of
+        `app/tests/test_dialog_mirror_window.py`): the outputs depend on the signals below, never on the Calc, because a Calc
+        invalidates its readers every time it recomputes, even when the result is the same."""
+        with reactive.isolate():
+            return _dialog_table()
+
+    # WHY: found 2026-11-19 (FORM RESET). The form read `_dialog_table()` directly, so every recompute of the table (a change of "Data to show",
+    # a plot tab, a recipe load) mounted the column select again, even when the columns and the rows were the same. A render that
+    # started before the server had received the user's new column put the first column back; nothing told the user (D-0050).
+    # The two Values change only when the thing they stand for changes (R3, idempotent guard); `_signal_dialog_table` sets them.
+    _dialog_schema_signal = reactive.Value(None)   # columns, types and discrete axes: what the form's selects are made of
+    _dialog_rows_signal = reactive.Value(None)     # which rows the table holds: what the value widget is made of
+
+    @reactive.Effect
+    def _signal_dialog_table():
+        # The Filters panel does not exist without interactivity (`sidebar_filters` shows a static message): nothing to signal.
+        if not bootloader.is_enabled("interactivity_enabled"):
+            return
+        try:
+            lf, types, disc = _dialog_table()
+            schema = dialog_schema_signature(types, disc)
+            subtab = active_home_subtab.get()
+            tier = tier_toggle.get()
+            identity = None
+            if lf is not None:
+                try:
+                    identity = _table_identity(_resolve_active_spec(subtab.removeprefix("subtab_") if subtab else None), tier)
+                except Exception:
+                    # No identity, no way to tell two tables apart: the signature is never equal (one more render).
+                    _log.exception("filter dialog: the stored table the form reads could not be identified")
+            # The same condition as `_active_frame`: the audited steps apply in My view only.
+            rows = dialog_rows_signature(identity, _audit_nodes_of(subtab) if tier == "T3" else [])
+        except Exception as exc:
+            # The outputs read the table again and show the error themselves; this only makes them run again when it changes.
+            _log.exception("filter dialog: the table of the form could not be read")
+            schema = rows = ("error", f"{type(exc).__name__}: {exc}")
+        with reactive.isolate():
+            if _dialog_schema_signal.get() != schema:
+                _dialog_schema_signal.set(schema)
+            if _dialog_rows_signal.get() != rows:
+                _dialog_rows_signal.set(rows)
+
     def _selected_column(types: dict):
         col = safe_input(input, "fb_col", next(iter(types), None))
         return col if col in types else next(iter(types), None)
@@ -299,8 +344,13 @@ def define_filter_audit_server(input, output, session, *,
 
         Reads the table the filter acts on only (R4, ui_implementation_contract.md section 14: it does not read the
         widgets it mounts, apart from an isolated read to keep the column the user chose when the plot changes).
+        It depends on the schema signal, not on the table: a recompute that gives the same columns, types and discrete axes
+        (a change of "Data to show" on a table without tier-2 steps, a plot tab with the same table) does not mount it again, so the
+        column, operator and value the user has just chosen are not put back to the first column while the server has not yet
+        received them.
         """
-        _lf, types, _disc = _dialog_table()
+        _dialog_schema_signal.get()   # the dependency: the form is mounted again when its columns or types change, not when the table is rebuilt
+        _lf, types, _disc = _dialog_table_now()
         col_choices = {c: f"{c}  [{types[c]}]" for c in types}
         with reactive.isolate():
             kept = safe_input(input, "fb_col", None)
@@ -320,8 +370,9 @@ def define_filter_audit_server(input, output, session, *,
     @output
     @render.ui
     def filter_type_ui():
-        """What the chosen column holds, in words ("Year holds whole numbers (Int64)."); reads fb_col only."""
-        _lf, types, _disc = _dialog_table()
+        """What the chosen column holds, in words ("Year holds whole numbers (Int64)."); reads fb_col and the schema signal."""
+        _dialog_schema_signal.get()
+        _lf, types, _disc = _dialog_table_now()
         col = _selected_column(types)
         text = column_type_line(col, types[col]) if col in types else ""
         return ui.tags.small(text, class_="text-muted d-block spv-text-meta", id="fb_col_type")
@@ -329,8 +380,9 @@ def define_filter_audit_server(input, output, session, *,
     @output
     @render.ui
     def filter_op_ui():
-        """The operators of the chosen column; reads fb_col (and the table). The operator kept is read isolated."""
-        _lf, types, disc = _dialog_table()
+        """The operators of the chosen column; reads fb_col and the schema signal. The operator kept is read isolated."""
+        _dialog_schema_signal.get()
+        _lf, types, disc = _dialog_table_now()
         col = _selected_column(types)
         choices = _op_choices(types.get(col), col in disc)
         if not choices:
@@ -347,8 +399,12 @@ def define_filter_audit_server(input, output, session, *,
 
         List of values: from the whole column. Number box: the range of the whole column. Two number boxes and the four
         ends for `between`. A comparison on a number column that is a discrete axis uses the number box (Eve, 2026-11-14).
+        It depends on the schema signal and the rows signal: a rebuilt table with the same rows does not mount the box again and
+        wipe the value the user has typed.
         """
-        lf, types, disc = _dialog_table()
+        _dialog_schema_signal.get()
+        _dialog_rows_signal.get()
+        lf, types, disc = _dialog_table_now()
         col = _selected_column(types)
         dtype = types.get(col)
         choices = _op_choices(dtype, col in disc)
