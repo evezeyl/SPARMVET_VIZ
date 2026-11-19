@@ -35,6 +35,8 @@ class Home:
 
     def __init__(self, tmp_path, monkeypatch, tier: str):
         self.readers = {}
+        self.outputs = {}          # the render functions HOME registers, by output id (`@output(id=...)`)
+        self.drawn = {}            # plot id -> the rows the plot was handed to draw (the fake factory records them)
         monkeypatch.setattr(reactive, "Effect", lambda fn: fn)
         monkeypatch.setattr(reactive, "event", lambda *a, **k: (lambda fn: fn))
         monkeypatch.setattr(reactive, "Calc", lambda fn: fn)
@@ -51,10 +53,27 @@ class Home:
         bootloader.get_default_data_analysis_recipe_or_none.return_value = "tiny"
         bootloader.get_default_data_analysis_recipe.return_value = "tiny"
         bootloader.is_enabled.return_value = False
+        bootloader.discovered_data_analysis_recipes = {"tiny": self.world.data_analysis_recipes_dir / "tiny.yaml"}
+        def record(fn, key):
+            self.outputs[key] = fn
+            return fn
+
+        def output(*a, **k):
+            if a and callable(a[0]):
+                return a[0]
+            return lambda fn: record(fn, k.get("id"))
+
+        monkeypatch.setattr(home_theater, "show_draw_errors", lambda figure, **kw: figure)
+        factory = mock.MagicMock()
+
+        def draw(lf, recipe, plot_id, **kw):
+            self.drawn[plot_id] = lf.collect()
+            return "figure"
+        factory.render.side_effect = draw
         home_theater.define_server(
-            mock.MagicMock(), lambda *a, **k: (lambda fn: fn) if not (a and callable(a[0])) else a[0], mock.MagicMock(),
+            mock.MagicMock(), output, mock.MagicMock(),
             bootloader=bootloader, wrangle_studio=mock.MagicMock(), dev_studio=mock.MagicMock(),
-            orchestrator=self.world.orch, viz_factory=mock.MagicMock(), gallery_viewer=mock.MagicMock(),
+            orchestrator=self.world.orch, viz_factory=factory, gallery_viewer=mock.MagicMock(),
             current_app_features=mock.MagicMock(), anchor_path=mock.MagicMock(), tier1_anchor=mock.MagicMock(),
             active_cfg=lambda: self.cfg, active_collection_id=mock.MagicMock(),
             safe_input=lambda i, k, d: "tiny" if k == "data_analysis_recipe_id" else d,
@@ -131,3 +150,21 @@ def test_stored_table_identity_puts_the_plot_key_in_only_when_it_differs_from_th
     other = stored_table_identity("T3", "t", "r", "vk", t1, 0, plot_key="K3", table_key="K2")
     assert same[-1] is None and other[-1] == "K3"
     assert same == stored_table_identity("T2", "t", "r", "vk", t1, 0, plot_key="K2", table_key="K2")
+
+
+def test_the_plot_and_the_reference_pane_of_compare_are_drawn_from_the_plots_table_in_every_view(tmp_path, monkeypatch):
+    """M1, the render itself (headless: the real `define_server`, the plot render functions it registers, a factory that records the rows it
+    is handed). The plot with tier-3 steps is drawn from its 3 kept rows and the plot without from the 5 rows of the Tier 2, whatever the data
+    view: a plot drawn from the Tier 2 of its target (the old reader) fails here. The browser test is `test_shiny_plot_tier3.py`."""
+    for view in ("T2", "T3"):
+        home = Home(tmp_path / view, monkeypatch, view)
+        with reactive.isolate():
+            home.outputs["plot_group_p_steps"]()
+            home.outputs["plot_group_p_plain"]()
+            assert ids(home.drawn["p_steps"]) == ["s3", "s4", "s5"] and "group" not in home.drawn["p_steps"].columns, view
+            assert ids(home.drawn["p_plain"]) == ["s1", "s2", "s3", "s4", "s5"], view
+            home.drawn.clear()
+            home.outputs["plot_group_p_steps_cmp_base"]()
+            home.outputs["plot_group_p_plain_cmp_base"]()
+            assert ids(home.drawn["p_steps"]) == ["s3", "s4", "s5"], f"Compare's reference pane in view {view}"
+            assert ids(home.drawn["p_plain"]) == ["s1", "s2", "s3", "s4", "s5"]
