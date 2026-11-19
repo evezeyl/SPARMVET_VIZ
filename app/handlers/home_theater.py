@@ -32,6 +32,7 @@ from __future__ import annotations
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui
 # consumes: app/modules/orchestrator.py, app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, AuditStepError), app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
+# consumes: libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/knowledge/architecture_decisions.md#ADR-097, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
 # @end_deps
@@ -49,6 +50,7 @@ from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_change_notice import inputs_changed_during_build_notice, notice_after_data_change
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.view_badge import has_tier2_steps, view_badge
+from utils.engines import plot_engine_slot
 from utils.pipeline_error import capture_entry
 from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
 from viz_factory.viz_factory import show_draw_errors
@@ -83,11 +85,27 @@ def _safe_id(label: str) -> str:
     return out or "group"
 
 
-def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
-    """Enumerate all (plot_id, spec_dict) pairs from analysis_groups AND top-level plots.
+def group_tab_label(group_id: str, group: dict) -> str:
+    """The text of a group tab: `ui_label`, else `description`, else the group id (D-0253)."""
+    return group.get("ui_label") or group.get("description", group_id)
 
+
+def plot_tab_label(p_id: str, entry: dict) -> str:
+    """The text of a plot tab: `ui_label`, else the plot id in title case (D-0253)."""
+    return entry.get("ui_label") or p_id.replace("_", " ").title()
+
+
+def plot_list_label(p_id: str, entry: dict | None) -> str:
+    """The name of a plot in a list of the audit dialogs: `ui_label`, else the plot id as written (D-0253)."""
+    return (entry or {}).get("ui_label") or (entry or {}).get("name") or p_id
+
+
+def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
+    """Enumerate all (plot_id, plot entry) pairs from analysis_groups AND top-level plots.
+
+    The entry is the plot content (D-0237): `target_dataset`, `mapping`, `layers` are written in it, with the app-side keys beside them.
     Called once at server init to register dynamic @render.plot handlers.
-    Returns list of (p_id, spec) tuples (spec may be None for unresolved entries).
+    Returns list of (p_id, entry) tuples.
     """
     seen = set()
     results = []
@@ -102,7 +120,7 @@ def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
                 for p_id, plot_entry in gspec.get("plots", {}).items():
                     if p_id not in seen:
                         seen.add(p_id)
-                        results.append((p_id, plot_entry.get("spec")))
+                        results.append((p_id, plot_entry))
             # Collect from top-level plots (fallback when no analysis_groups)
             top_plots = cfg.raw_config.get("plots", {})
             for p_id, plot_spec in top_plots.items():
@@ -248,14 +266,14 @@ def define_server(input, output, session, *,
         spec = None
         for _gid, gspec in groups.items():
             if p_id and p_id in gspec.get("plots", {}):
-                spec = gspec["plots"][p_id].get("spec")
+                spec = gspec["plots"][p_id]
                 break
         if spec is None and p_id and p_id in top_plots:
             spec = top_plots[p_id]
         if spec is None:
             for _gid, gspec in groups.items():
                 for _pid, pentry in gspec.get("plots", {}).items():
-                    spec = pentry.get("spec")
+                    spec = pentry
                     break
                 if spec:
                     break
@@ -395,7 +413,7 @@ def define_server(input, output, session, *,
         for gspec in (cfg.raw_config.get("analysis_groups") or {}).values():
             entry = (gspec.get("plots") or {}).get(p_id)
             if entry:
-                return entry.get("label") or entry.get("name") or p_id
+                return plot_list_label(p_id, entry)
         return p_id
 
     def _t3_filter_rows(plot_id: str | None = None) -> list[dict]:
@@ -442,7 +460,7 @@ def define_server(input, output, session, *,
             for _gid, gspec in groups.items():
                 plot_entry = gspec.get("plots", {}).get(p_id)
                 if plot_entry is not None:
-                    spec = plot_entry.get("spec")
+                    spec = plot_entry
                     break
             # Fall back to top-level plots if not found in any group
             if spec is None:
@@ -478,8 +496,8 @@ def define_server(input, output, session, *,
             synthetic_data_analysis_recipe = {
                 "plots": {p_id: plot_spec},
                 "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
-                # ADR-106 V8: the factory refuses an engine it does not implement (checker code T06 refuses it earlier)
-                **({"plot_engine": cfg.raw_config["plot_engine"]} if "plot_engine" in cfg.raw_config else {}),
+                # the recipe's default engine; the dispatcher reads the plot's own and refuses one the app has no library for (D-0237, D-0239)
+                **plot_engine_slot(cfg.raw_config),
             }
 
             try:
@@ -568,7 +586,7 @@ def define_server(input, output, session, *,
             for _gid, gspec in groups.items():
                 plot_entry = gspec.get("plots", {}).get(p_id)
                 if plot_entry is not None:
-                    spec = plot_entry.get("spec")
+                    spec = plot_entry
                     break
             if spec is None:
                 top_plot = cfg.raw_config.get("plots", {}).get(p_id)
@@ -583,8 +601,8 @@ def define_server(input, output, session, *,
             synthetic_data_analysis_recipe = {
                 "plots": {p_id: plot_spec},
                 "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
-                # ADR-106 V8: the factory refuses an engine it does not implement (checker code T06 refuses it earlier)
-                **({"plot_engine": cfg.raw_config["plot_engine"]} if "plot_engine" in cfg.raw_config else {}),
+                # the recipe's default engine; the dispatcher reads the plot's own and refuses one the app has no library for (D-0237, D-0239)
+                **plot_engine_slot(cfg.raw_config),
             }
             try:
                 lf = _resolve_active_lf(spec, tier="T2")  # reference = T2 (ADR-086)
@@ -1150,15 +1168,12 @@ def define_server(input, output, session, *,
         for group_id, group_spec in groups.items():
             # ADR-036 ID sanitation
             safe_sub_id = _safe_id(group_id)
-            group_label = group_spec.get("label") or group_spec.get("description", group_id)
+            group_label = group_tab_label(group_id, group_spec)
             plot_ids = list(group_spec.get("plots", {}).keys())
 
             plot_subtabs = []
             for p_id in plot_ids:
-                tab_label = (
-                    group_spec["plots"][p_id].get("label")
-                    or p_id.replace("_", " ").title()
-                )
+                tab_label = plot_tab_label(p_id, group_spec["plots"][p_id])
                 plot_cell = ui.output_ui(f"plot_cell_{p_id}")
 
                 plot_subtabs.append(

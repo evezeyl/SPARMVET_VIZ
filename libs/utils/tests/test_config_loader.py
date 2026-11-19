@@ -49,17 +49,16 @@ def test_flat_plots_at_root_raises(tmp_path):
                 params: {}
         analysis_groups:
           group_a:
-            label: Group A
+            ui_label: Group A
             plots:
               plot_a:
-                label: Plot A
-                spec:
-                  target_dataset: my_schema
-                  mapping:
-                    x: col_a
-                  layers:
-                    - name: geom_bar
-                      params: {}
+                ui_label: Plot A
+                target_dataset: my_schema
+                mapping:
+                  x: col_a
+                layers:
+                  - name: geom_bar
+                    params: {}
     """)
     with pytest.raises(SystemExit) as exc_info:
         ConfigManager(str(data_analysis_recipe))
@@ -78,18 +77,98 @@ def test_valid_analysis_groups_no_flat_plots(tmp_path):
         joins: {}
         analysis_groups:
           group_a:
-            label: Group A
+            ui_label: Group A
             plots:
               plot_a:
-                label: Plot A
-                spec:
-                  target_dataset: my_schema
-                  mapping:
-                    x: col_a
-                  layers:
-                    - name: geom_bar
-                      params: {}
+                ui_label: Plot A
+                target_dataset: my_schema
+                mapping:
+                  x: col_a
+                layers:
+                  - name: geom_bar
+                    params: {}
     """)
     cm = ConfigManager(str(data_analysis_recipe))
     assert "plot_a" in cm.raw_config["plots"]
     assert "group_a" in cm.raw_config["analysis_groups"]
+
+
+def test_the_plot_entry_is_the_plot_config_and_a_spec_key_is_not_unnested(tmp_path):
+    """D-0237: a plot entry holds its content directly. The engine's loader no longer reads a `spec:` key (no shim);
+    the strict checker refuses it (P01)."""
+    path = _write_yaml(tmp_path, "entry_recipe.yaml", """
+        id: entry
+        data_schemas:
+          my_schema:
+            source: {type: local_tsv, path: fake.tsv}
+        joins: {}
+        plot_defaults: {theme: theme_bw}
+        analysis_groups:
+          group_a:
+            ui_label: Group A
+            plots:
+              plot_a:
+                ui_label: Plot A
+                target_dataset: my_schema
+                mapping: {x: col_a}
+                layers: [{name: geom_bar, params: {}}]
+              plot_old:
+                ui_label: Plot old
+                spec: {target_dataset: my_schema, mapping: {x: col_a}, layers: []}
+    """)
+    cm = ConfigManager(str(path))
+    assert cm.raw_config["plots"]["plot_a"]["target_dataset"] == "my_schema"
+    assert cm.raw_config["plots"]["plot_a"]["ui_label"] == "Plot A"
+    assert "target_dataset" not in cm.raw_config["plots"]["plot_old"]  # not unnested
+    assert cm.get_plot_config("group_a", "plot_a")["theme"] == "theme_bw"  # the defaults are merged under the entry
+    assert cm.get_plot_config("group_a", "plot_a")["mapping"] == {"x": "col_a"}
+
+
+def test_a_tier_file_that_holds_only_steps_is_not_unnested_into_a_bare_list(tmp_path):
+    """D-0250: `tier1: !include f.yaml` where f.yaml is `steps: [...]`. The wrapper-key rule of the tolerant loader used to remove a
+    root key `steps` (the old join fragment wrapper); now `steps` is the content of the tier, so the tier must keep it (the old
+    behaviour gave `tier1: [...]` and the assembler said "No step list and no ingredients"). A fragment of `input_fields` is
+    still unwrapped (the strict loader refuses it, F01)."""
+    (tmp_path / "t1.yaml").write_text("steps:\n- {action: polars_sort, by: [id]}\n")
+    (tmp_path / "fields.yaml").write_text("input_fields:\n  id: {type: String}\n")
+    path = _write_yaml(tmp_path, "tier_recipe.yaml", """
+        id: tier
+        data_schemas:
+          my_schema:
+            source: {type: local_tsv, path: fake.tsv}
+            input_fields: !include fields.yaml
+            tier1: !include t1.yaml
+        joins: {}
+        analysis_groups:
+          group_a:
+            ui_label: Group A
+            plots:
+              plot_a: {ui_label: Plot A, target_dataset: my_schema, mapping: {x: id}, layers: [{name: geom_bar}]}
+    """)
+    schema = ConfigManager(str(path)).raw_config["data_schemas"]["my_schema"]
+    assert schema["tier1"] == {"steps": [{"action": "polars_sort", "by": ["id"]}]}
+    assert schema["input_fields"] == {"id": {"type": "String"}}
+
+
+def test_a_file_that_holds_only_output_fields_is_not_unwrapped_and_the_strict_loader_refuses_it(tmp_path):
+    """`output_fields` is not a key of a recipe any more (FD01). The tolerant loader used to remove a wrapper `output_fields`
+    from an included file and load it as if it were right; now the wrapper stays (a double nesting nobody reads) and the strict
+    loader, which HOME's gate uses, refuses the file with F01 and its fix."""
+    from utils.recipe_loader import load_recipe
+    (tmp_path / "o.yaml").write_text("output_fields:\n  id: {type: String}\n")
+    path = _write_yaml(tmp_path, "old_recipe.yaml", """
+        id: old_recipe
+        data_schemas:
+          A:
+            source: {type: local_tsv, path: fake.tsv}
+            output_fields: !include o.yaml
+        joins: {}
+        analysis_groups:
+          group_a:
+            ui_label: Group A
+            plots:
+              plot_a: {ui_label: Plot A, target_dataset: A, mapping: {x: id}, layers: [{name: geom_bar}]}
+    """)
+    assert ConfigManager(str(path)).raw_config["data_schemas"]["A"]["output_fields"] == {"output_fields": {"id": {"type": "String"}}}
+    _, problems = load_recipe(path)
+    assert [p.code for p in problems] == ["F01"]

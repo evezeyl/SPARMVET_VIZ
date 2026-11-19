@@ -2,7 +2,7 @@
 """Draw the preview picture of the gallery examples by the app's own path, and compare with the committed pictures.
 
 The picture of an example is drawn exactly as HOME draws a plot: the recipe is loaded by ConfigManager, its table is
-built by DataOrchestrator, the plot is rendered by VizFactory (spec section 9, finding G2). An example that fails the
+built by DataOrchestrator, the plot is rendered by the plot engine the recipe names (PlotEngines, D-0219; spec section 9, finding G2). An example that fails the
 gallery check, or that the app cannot load, gets no picture and its reason is printed. Every picture has one standard
 size, 960 x 600 pixels (finding G5).
 

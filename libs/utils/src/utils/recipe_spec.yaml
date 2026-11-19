@@ -1,7 +1,20 @@
 # The recipe format as data (spec section 9, D3): the checker, the migration tool and the documentation read this file.
 # Cross-element rules, the registries and the engine names (utils/engines.py) stay in code. Changing a key, a requirement or the engine names changes
 # `format_version`; a new term of an open vocabulary (the gallery terms) does not.
+# Format 1 was amended before its first release, on 2026-11-17, by decision of Eve (D-0236): the tiers are written as their own keys
+# with an optional `data_engine` and `steps` (D-0250), a plot entry holds its content directly with no `spec:` (D-0237, D-0252),
+# the app-side names are `ui_label` and `ui_title` (D-0253), and four dead `plot_defaults` keys are removed (D-0242, D-0220). No format 2.
 format_version: 1
+
+# PENDING (Eve, channel M271, not decided): which of these places keep `label` and which are renamed `ui_label`.
+# One place, so that her answer is a one-line change per place: the checker reads the key written here for the recipe's `info`,
+# for a table (schema), for a join and for the entries of `input_fields`. The group and the plot entry are decided (D-0253): they
+# use `ui_label` and are written in `elements` below.
+label_keys:
+  info: label
+  schema: label
+  join: label
+  field: label
 
 # the engine names (data_engine, plot_engine) are in utils/engines.py, one place for the checker and the libraries
 # required and optional keys of each element (the checker refuses any other key)
@@ -10,37 +23,45 @@ elements:
     required: [id, spec_version, data_engine, plot_engine, info, data_schemas, analysis_groups]
     optional: [entity, additional_datasets_schemas, metadata_schema, joins, plot_defaults]
   info:
-    required: [label]
+    required: []
     optional: [description, subtitle, contact, version, comment]
     free_form: true
   entity:
     required: [noun, plural, population]
     optional: []
   schema:
-    required: [label, source, null_values, strip, input_fields, wrangling]
-    optional: [description, comment]
+    required: [source, null_values, strip, input_fields, tier1]
+    optional: [description, comment, tier2]
   source:
     required: [type, path]
     optional: []
     types: [local_tsv, local_parquet]
   field:
     required: [type]
-    optional: [categories, precision, scale, format, time_unit, time_zone, original_name, label, is_entity_key, null_values, strip]
+    optional: [categories, precision, scale, format, time_unit, time_zone, original_name, is_entity_key, null_values, strip]
   join:
-    required: [label, ingredients, steps]
-    optional: [description, comment, labels]
+    required: [ingredients, tier1]
+    optional: [description, comment, labels, tier2]
   group:
-    required: [label, plots]
-    optional: [description, comment]
+    required: [ui_label, plots]
+    optional: [ui_title, description, comment]
+  # The plot entry holds its content directly (no `spec:`). Order where present: plot_engine first, ui_label, ui_title,
+  # description, comment, taxonomy, the content (target_dataset, mapping, layers, theme, palette, ...), then tier3 (D-0237, D-0253).
+  # `target_dataset`, `mapping` and `layers` are required too; the checker reports their absence as PS02 and PS03.
   plot:
-    required: [label, spec]
-    optional: [description, comment, steps, taxonomy]
-  spec:
-    required: [target_dataset, mapping, layers]
-    optional: [title, theme, facet_by, palette, labels, guides, filters]
+    required: [ui_label]
+    optional: [plot_engine, ui_title, description, comment, taxonomy, target_dataset, mapping, layers,
+               theme, facet_by, palette, labels, guides, filters, tier3]
+    # The keys of the entry that belong to the app, not to the plot content: the plot library takes the other keys of the
+    # entry as the content of the plot and ignores these (it still refuses a key that is on neither list).
+    entry_keys: [plot_engine, ui_label, ui_title, description, comment, taxonomy, tier3]
+  # one tier of a table, of a join, or tier3 of a plot entry: the key of the tier holds this mapping (D-0250)
+  tier:
+    required: [steps]
+    optional: [data_engine]
   plot_defaults:
     required: []
-    optional: [palette, theme, default_font_family, facet_panel_spacing, legend_position, optimisation, layers, random_state]
+    optional: [palette, theme, layers, random_state]
   layer:
     required: [name]
     optional: [params, comment]
@@ -48,6 +69,9 @@ elements:
     schema: [tier1, tier2]
     join: [tier1, tier2]
     plot: [tier3]
+
+# the engine of what a step or a component belongs to comes from the registries (`engine` of each entry, D-0238) and is given to
+# the checker in its catalogues (`action_engines`, `component_engines`); the names of the engines are in utils/engines.py
 
 reserved_schema_ids: [metadata_schema]
 
@@ -83,11 +107,11 @@ renamed:
     output_fields: "end steps.tier1 with a polars_select step; display names go in labels"
     final_contract: "end steps.tier1 with a polars_select step; display names go in labels"
     recipe: "steps"
+  group:
+    label: "renamed ui_label (the short name of the tab and of the lists); write ui_title for a longer name used by the report"
   plot:
     info: "description"
-  spec:
-    description: "put it on the plot entry"
-    info: "description on the plot entry"
+    label: "renamed ui_label (the short name of the tab and of the lists); write ui_title for a longer name used by the report"
     family: "taxonomy on the plot entry"
     pattern: "taxonomy on the plot entry"
     difficulty: "taxonomy on the plot entry"
@@ -97,6 +121,42 @@ renamed:
   plot_defaults:
     height: "removed"
     show_legend: "removed"
+
+# Old shapes of format 1 before the amendment of 2026-11-17. The checker refuses each with the key, where to write it now, and the
+# rewrite tool (a key listed here is refused whichever element holds it).
+old_shapes:
+  tool: assets/scripts/migrate_recipe_engine_keys.py
+  schema:
+    wrangling: "write tier1 (and tier2) directly in the table, each as a mapping with steps: [...] (and an optional data_engine); there is no wrangling key now"
+  join:
+    steps: "write tier1 (and tier2) directly in the join, each as a mapping with steps: [...] (and an optional data_engine); there is no steps container now"
+  plot:
+    spec: "write the content of the plot (target_dataset, mapping, layers, theme, palette, ...) directly in the plot entry; there is no spec key now"
+    steps: "write tier3 directly in the plot entry as a mapping with steps: [...]; there is no steps container now"
+    title: "removed from the plot (D-0253): write the figure title in a labs layer (its title argument) and the name used by the report in ui_title"
+
+# Tombstones of removed keys (rules_legacy_management.md section 2c): a key that did nothing was dead code and is removed from the
+# structure (D-0220); the checker refuses it with this text. "expires" is a distance, not a phase number: the removal task is made
+# when this is merged.
+removed:
+  plot_defaults:
+    default_font_family:
+      decision: D-0242
+      date: "2026-11-17"
+      why: "The font, like the text size, is set through a theme layer"
+    facet_panel_spacing:
+      decision: D-0242
+      date: "2026-11-17"
+      why: "The spacing of the panels is set through a theme layer"
+    legend_position:
+      decision: D-0242
+      date: "2026-11-17"
+      why: "The position of the legend is set through a theme layer"
+    optimisation:
+      decision: D-0242
+      date: "2026-11-17"
+      why: "The automatic adjustment of the axis text has no switch of its own: an author overrides it for an axis with an element_text layer"
+  tombstone_expires: "two phases after this change is merged (delete the text then; the removal task is made with the merge)"
 
 # old field type names -> the replacement (spec 7.4). The migration writes the first word; `categorical` was cast to Categorical after reading.
 renamed_types:

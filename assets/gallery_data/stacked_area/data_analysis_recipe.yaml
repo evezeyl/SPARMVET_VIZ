@@ -20,25 +20,27 @@ data_schemas:
       species: {type: String}
       year: {type: Int64}
       count: {type: Int64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       stacked_area:
-        label: Stacked Area Chart
+        ui_label: Stacked Area Chart
         description: >-
           Drawn with geom_area; x is year, y is count, fill is species.
         taxonomy: {family: Evolution, pattern: '1 Numeric, 2 Categorical', difficulty: Intermediate, show: proportion,
           sample_size: medium+}
-        spec:
-          target_dataset: example
-          mapping: {x: year, y: count, fill: species}
-          layers:
-            - {name: geom_area, params: {position: stack, alpha: 0.85}}
-            - name: labs
-              params:
-                title: AMR Isolate Counts Over Time by Species (Stacked)
-                x: Year
-                y: Total Isolate Count
+        target_dataset: example
+        mapping: {x: year, y: count, fill: species}
+        layers:
+          - {name: geom_area, params: {position: stack, alpha: 0.85}}
+          - name: labs
+            params:
+              title: AMR Isolate Counts Over Time by Species (Stacked)
+              x: Year
+              y: Total Isolate Count

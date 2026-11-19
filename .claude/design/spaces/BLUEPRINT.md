@@ -32,10 +32,10 @@ at that node it **splits into two (or more) child lineages**. Everything **upstr
 stays shared** — it is computed once (the Tier 1 trunk is materialized to parquet and the branches
 `scan_parquet` it; the shared cleaning/wrangling is **never duplicated or recomputed**). The child
 lineages **diverge downstream** and are stored as **fragment-per-component `!include` files**
-(`wrangling/`, `output_fields/`, `assembly/`, `plots/`) wired into the master data analysis recipe.
+(`wrangling/` for the tier files, `assembly/` for the tiers of the joins, `plots/` for the whole plot entries) wired into the master data analysis recipe.
 
 Canonical example in the codebase: `Summary` and `Summary_quality` — same source TSV, same
-`input_fields` (shared upstream), divergent `wrangling` + `output_fields` (the branch). Typical
+`input_fields` (shared upstream), divergent tiers (the branch). Typical
 motivation: avoid redoing shared work when the process diverges, e.g. **wide → plot A** vs.
 **long → plot B**.
 
@@ -119,7 +119,7 @@ When in doubt, restate the definition above and confirm before building or editi
 **Done:**
 - TubeMap DAG visualisation + Lineage Rail + 3-column contract viewer (ADR-039/040/074).
 - Library-driven action forms: rich 8-widget renderer for editing logic-stack nodes — all 60 transformer actions verified rendering headless (ADR-075).
-- Searchable, context-filtered action picker (BP-ACTION-PARITY-1); Field Gap Analysis + forward-prop hints (BP-FIELD-GAP-1, BP-FWD-HINT-1).
+- Searchable, context-filtered action picker (BP-ACTION-PARITY-1); Field Gap Analysis (BP-FIELD-GAP-1). The forward-propagation hint (BP-FWD-HINT-1) was removed on 2026-11-17: it checked `output_fields` slots of downstream nodes, and no data analysis recipe has such a slot (data analysis recipe format 1).
 - Live preview on-Apply (Glimpse + plot); data analysis recipe save + download.
 - Branching via Visual Fork (BP-VISUAL-FORK-1); 20-step undo; YAML escape hatch (read-only / editable per `data_analysis_recipe_edit_enabled`); AI agent (ADR-076 MVP-1).
 

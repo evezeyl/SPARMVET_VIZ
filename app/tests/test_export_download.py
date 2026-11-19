@@ -73,6 +73,18 @@ def test_the_bundle_records_the_keys_and_has_the_data(loaded):
     assert "contact" in run and "contact_source" in run
     assert len([ln for ln in readme.splitlines() if ln.startswith("Contact")]) == 1
     assert "not attempted" in run["t3_translation_skipped"]   # Mode 2 not requested here
+    # D-0248: the engine of each tier and plot, the theme as applied and the library versions are in the record
+    record = run["engines"]
+    assert record["tables"] and all(t["tier1"] == "python-polars" for t in record["tables"].values())
+    assert record["plots"] and all(p["plot_engine"] == "python-plotnine" and p["drawn"] for p in record["plots"].values())
+    assert set(record["library_versions"]) == {"python-polars", "python-plotnine"}
+
+    # D-0292, D-0294: no scope choice, every plot is exported, as SVG when the user did not choose a format
+    pictures = {m.group(1): m.group(2) for n in names if (m := re.search(r"/plots/([^/]+)\.(png|svg|pdf)$", n))}
+    assert set(pictures) == set(record["plots"]) and len(pictures) > 1, "the bundle holds every plot of the recipe"
+    assert set(pictures.values()) == {"svg"}, pictures
+    assert "export_scope" not in readme and "export_scope" not in run
+    print(f"EXPORT_PLOTS={len(pictures)} FORMATS={sorted(set(pictures.values()))}")
 
     assert any(n.endswith("T1_data.tsv") for n in names)
     assert any("/plots/" in n and not n.endswith("_ERROR.txt") for n in names)
@@ -333,7 +345,7 @@ def test_the_export_records_the_seed_the_recipe_writes_and_writes_it_into_the_re
     recipe_name = next(n for n in z.namelist() if "/data_analysis_recipes_reproducibility/" in n
                        and n.endswith(".yaml") and not n.endswith("effective_run.yaml"))
     recipe = _yaml.safe_load(z.read(recipe_name).decode())
-    spec = next(g["plots"][pid]["spec"] for g in recipe["analysis_groups"].values() if pid in g["plots"])
+    spec = next(g["plots"][pid] for g in recipe["analysis_groups"].values() if pid in g["plots"])
     assert {l["params"].get("random_state") for l in spec["layers"]
             if (l.get("params") or {}).get("position") == "jitter"} == {0}
 

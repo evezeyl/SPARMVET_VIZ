@@ -90,7 +90,7 @@ def run_assembler_debug(data_analysis_recipe_path: str, data_dir_override: str =
     ingredients: Dict[str, pl.LazyFrame] = {}
     for ds_id, ds_schema in all_schemas.items():
         lf, _ = ingestor.ingest(ds_id, ds_schema)
-        rules = DataWrangler._resolve_tier(ds_schema.get("wrangling", []), "tier1")
+        rules = DataWrangler.tier_steps(ds_schema, "tier1")
         ingredients[ds_id] = DataWrangler().run(lf, rules)
 
     # 5. Assembly Execution Loop
@@ -108,12 +108,8 @@ def run_assembler_debug(data_analysis_recipe_path: str, data_dir_override: str =
         assembly_ingredients = {ds_id: ingredients[ds_id] for ds_id in ingredient_ids}
 
         # b) Execute Assembly (Layer 2: Relational step list)
-        # Use _resolve_tier to handle tiered steps format (same as orchestrator)
-        steps_raw = assembly_info.get("steps", [])
-        steps = DataWrangler._resolve_tier(steps_raw, "tier1")
-
-        if not steps and steps_raw:
-            print(f"  └── ⚠️  Warning: No tier1 steps resolved from step list.")
+        # tier_steps reads the tiers of the join the same way as the orchestrator
+        steps = DataWrangler.tier_steps(assembly_info, "tier1")
 
         # A step that names an ingredient the join does not hold fails in the assembler (no step is skipped).
         filtered_steps = steps
@@ -134,7 +130,7 @@ def run_assembler_debug(data_analysis_recipe_path: str, data_dir_override: str =
         # the Tier 1 result, before the tier-2 steps and the contract
         # the same call as the orchestrator: a refused `validate` of a join is explained in plain words (join_diagnosis)
         write_anchor(consolidated_lf, intermediate_parquet, decision_hash="debug_assembler", join_checks=assembler.join_checks)
-        tier2 = DataWrangler._resolve_tier(assembly_info.get("steps"), "tier2")
+        tier2 = DataWrangler.tier_steps(assembly_info, "tier2")
         if tier2:
             print(f"  └── 🌿 Tier 2: {len(tier2)} steps.")
             consolidated_lf = DataWrangler().run(consolidated_lf, tier2)

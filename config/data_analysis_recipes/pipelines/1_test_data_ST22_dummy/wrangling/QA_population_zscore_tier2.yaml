@@ -1,0 +1,6 @@
+
+steps:
+  # appends n50_zscore = (n50 - mean over all samples) / standard deviation over all samples
+  - action: polars_with_columns
+    named_exprs:
+      n50_zscore: (pl.col('n50') - pl.col('n50').mean()) / pl.col('n50').std()

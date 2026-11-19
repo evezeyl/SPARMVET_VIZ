@@ -30,11 +30,12 @@ input_fields:
   s:
     type: String
     label: s
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_str_replace_all
     columns: [s]
     pattern: b
     value: B
     literal: false
-  tier2: []
+tier2:
+  steps: []

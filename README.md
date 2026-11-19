@@ -57,12 +57,13 @@ history. All current development is Claude Code.
 Wrangling logic is separated into logical tiers to promote reuse and clarity:
 
 ```yaml
-wrangling:
-  tier1: # Relational Foundations
+tier1: # Relational Foundations: a key of the table, then `steps`
+  steps:
     - action: polars_rename
       mapping: { old: new }
 
-  tier2: # Plot-Ready Reshaping (Optional)
+tier2: # Plot-Ready Reshaping (Optional)
+  steps:
     - action: polars_group_by
       by: [sample_id]
       maintain_order: true
@@ -70,7 +71,7 @@ wrangling:
         counts: "pl.col('gene').count()"
 ```
 
-A join is written in the `joins` block (`steps: {tier1: [polars_join, ..., polars_select]}`). Every action name starts with `polars_`, `modif_` or `step_`, and a parameter that changes the result is written in the data analysis recipe: there is no hidden default. See `docs/foundations/data_contracts_adr.qmd`.
+A tier is its own key of the table (there is no `wrangling:` key). A join is written in the `joins` block, with its own tiers (`tier1: {steps: [polars_join, ..., polars_select]}`). The two engines (`data_engine`, `plot_engine`) are written at the top of the data analysis recipe and are the defaults of every tier and every plot; a tier or a plot entry may name its own. A plot entry holds its content directly (`target_dataset`, `mapping`, `layers`, ...; there is no `spec:` key) and is named in the app by `ui_label`. Every action name starts with `polars_`, `modif_` or `step_`, and a parameter that changes the result is written in the data analysis recipe: there is no hidden default. See `docs/foundations/data_contracts_adr.qmd`.
 
 > [!NOTE]
 > If `tier2` is omitted, the system invokes **Identity Logic (ADR-014)**, passing the refined Tier 1 data directly to the visualization engine.

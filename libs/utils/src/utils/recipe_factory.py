@@ -77,17 +77,17 @@ def minimal_schema(path: str, columns: Mapping[str, Union[str, Mapping[str, Any]
         if entity_key not in fields:
             raise ValueError(f"entity_key {entity_key!r} is not one of the columns {list(fields)}")
         fields[entity_key]["is_entity_key"] = True
-    wrangling: Dict[str, list] = {"tier1": copy.deepcopy(list(tier1))}
-    if tier2 is not None:
-        wrangling["tier2"] = copy.deepcopy(list(tier2))
-    return {
+    schema: Dict[str, Any] = {
         "label": label if label is not None else Path(path).stem,
         "source": {"type": source_type, "path": str(path)},
         "null_values": list(null_values),
         "strip": strip,
         "input_fields": fields,
-        "wrangling": wrangling,
+        "tier1": {"steps": copy.deepcopy(list(tier1))},
     }
+    if tier2 is not None:
+        schema["tier2"] = {"steps": copy.deepcopy(list(tier2))}
+    return schema
 
 
 def minimal_join(ingredients: Iterable[str], tier1: Iterable[dict], *, label: Optional[str] = None,
@@ -97,14 +97,13 @@ def minimal_join(ingredients: Iterable[str], tier1: Iterable[dict], *, label: Op
     `label` is the ingredient ids joined by " + " unless given.
     """
     ids = list(ingredients)
-    steps: Dict[str, list] = {"tier1": copy.deepcopy(list(tier1))}
-    if tier2 is not None:
-        steps["tier2"] = copy.deepcopy(list(tier2))
     join: Dict[str, Any] = {
         "label": label if label is not None else " + ".join(ids),
         "ingredients": [{"dataset_id": dataset_id} for dataset_id in ids],
-        "steps": steps,
+        "tier1": {"steps": copy.deepcopy(list(tier1))},
     }
+    if tier2 is not None:
+        join["tier2"] = {"steps": copy.deepcopy(list(tier2))}
     if labels is not None:
         join["labels"] = dict(labels)
     return join
@@ -114,18 +113,17 @@ def minimal_plot(target: str, mapping: Mapping[str, str], layers: Optional[Itera
                  label: Optional[str] = None, tier3: Optional[Iterable[dict]] = None) -> dict:
     """One plot entry on the table `target`. Without `layers` it is a bar chart (`geom_bar`), which needs only `x`.
 
-    `label` is "Plot of <target>" unless given. `tier3` writes `steps: {tier3: [...]}`; without it the key is absent.
+    `label` is "Plot of <target>" unless given; it is written as `ui_label` (D-0253). The content is written in the entry itself,
+    with no `spec:` (D-0237). `tier3` writes `tier3: {steps: [...]}`; without it the key is absent.
     """
     plot: Dict[str, Any] = {
-        "label": label if label is not None else f"Plot of {target}",
-        "spec": {
-            "target_dataset": target,
-            "mapping": dict(mapping),
-            "layers": copy.deepcopy(list(layers)) if layers is not None else [{"name": "geom_bar"}],
-        },
+        "ui_label": label if label is not None else f"Plot of {target}",
+        "target_dataset": target,
+        "mapping": dict(mapping),
+        "layers": copy.deepcopy(list(layers)) if layers is not None else [{"name": "geom_bar"}],
     }
     if tier3 is not None:
-        plot["steps"] = {"tier3": copy.deepcopy(list(tier3))}
+        plot["tier3"] = {"steps": copy.deepcopy(list(tier3))}
     return plot
 
 
@@ -153,7 +151,7 @@ def minimal_recipe(recipe_id: str = "minimal", *, label: Optional[str] = None,
             raise ValueError(f"steps were given for {len(schemas)} schemas, so their place is not said: "
                              "write them with minimal_schema(tier1=...) or minimal_join(...)")
         (only,) = schemas.values()
-        only["wrangling"]["tier1"] = copy.deepcopy(list(steps))
+        only["tier1"]["steps"] = copy.deepcopy(list(steps))
     if plots is None:
         plots = {f"{recipe_id}_plot": _default_plot(schemas, joins)}
     format_spec = spec()
@@ -167,7 +165,7 @@ def minimal_recipe(recipe_id: str = "minimal", *, label: Optional[str] = None,
     }
     if joins is not None:
         recipe["joins"] = joins
-    recipe["analysis_groups"] = {DEFAULT_GROUP_ID: {"label": "Main", "plots": copy.deepcopy(dict(plots))}} if plots else {}
+    recipe["analysis_groups"] = {DEFAULT_GROUP_ID: {"ui_label": "Main", "plots": copy.deepcopy(dict(plots))}} if plots else {}
     return recipe
 
 

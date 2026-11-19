@@ -72,6 +72,8 @@ def _two_tables(tmp_path, left_type="Categorical", right_type="Categorical", rig
     entry = world.data_analysis_recipes_dir / "tiny.yaml"
     entry.write_text(f"""id: tiny
 info: {{label: Tiny}}
+data_engine: python-polars
+plot_engine: python-plotnine
 data_schemas:
   T:
     source: {{type: local_tsv, path: {world.data_file}}}
@@ -80,7 +82,8 @@ data_schemas:
     input_fields:
       sample_id: {{original_name: sample_id, type: {left_type}, label: Sample, is_entity_key: true}}
       group: {{original_name: group, type: Categorical, label: Group}}
-    wrangling: {{tier1: [], tier2: []}}
+    tier1: {{steps: []}}
+    tier2: {{steps: []}}
   R:
     source: {{type: local_tsv, path: {world.data_dir / "R.tsv"}}}
     null_values: []
@@ -88,33 +91,34 @@ data_schemas:
     input_fields:
       {right_key}: {{original_name: {right_key}, type: {right_type}, label: Sample}}
       year: {{original_name: year, type: Int64, label: Year}}
-    wrangling: {{tier1: [], tier2: []}}
+    tier1: {{steps: []}}
+    tier2: {{steps: []}}
 joins:
   C:
     ingredients:
       - dataset_id: T
       - dataset_id: R
-    steps:
-      tier1:
+    tier1:
+      steps:
         {extra_step}
         - action: polars_join
           right_ingredient: R
           {on}
           how: left
           maintain_order: left_right
-      tier2: []
+    tier2:
+      steps: []
 analysis_groups:
   g:
-    label: G
+    ui_label: G
     plots:
       p:
-        label: P
-        spec:
-          target_dataset: C
-          mapping: {{x: group}}
-          layers:
-            - name: geom_bar
-              params: {{}}
+        ui_label: P
+        target_dataset: C
+        mapping: {{x: group}}
+        layers:
+          - name: geom_bar
+            params: {{}}
 """)
     bump(entry)
     return world

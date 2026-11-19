@@ -105,7 +105,7 @@
 ## `app/handlers/blueprint_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `output:bp_branch_ui`, `output:bp_branch_preview_ui`, `output:bp_groups_inventory_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`, `effect:_load_component_from_selection`, `effect:_handle_branch_preview`, `effect:_handle_branch_write (BP-BRANCH-NODE-1 — node-level lineage bifurcation`, `replaces Visual Fork)`, `effects:_handle_grp_action/_handle_create_group_btn/_handle_grp_submit/_handle_plt_submit/_handle_move_plt_submit (BP-GROUPS-1)`, `helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts data analysis recipe rebuild logic so CRUD Effects can call it after mutations)`, `output:bp_meta_form_ui`, `effect:_handle_meta_save (BP-META-1 — data analysis recipe info: block read/edit form)`, `effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)`, `function:_warn_on_upload`, `output:bp_validate_ui`, `effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path`, `issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))`, `helpers:_draft_key/_write_bp_draft/_read_bp_draft`, `effect:_autosave_blueprint_draft`, `output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)`, `outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui`, `effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)`, `function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit)`, `helper:_bundle_filename (full-data analysis recipe zip)`, `output:bp_import_error_ui (ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface for component/recipe import failures)`
-- **consumes:** `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/action_names.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result`, `never blocking; uploaded_recipe_report`, `load_uploaded_recipe`, `load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)`, `app/modules/validate_runner.py (run_structure_check`, `could_not_run_result`, `StructureCheckError — the child process of Validate uses sys.executable`, `D-0050)`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (check_join_keys`, `compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `libs/blueprint_arch/src/blueprint_arch/new_recipe.py (new_recipe_draft — BP-NEW-1`, `recipe format 1)`, `libs/utils/src/utils/recipe_factory.py (write_recipe)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError`, `make_render_payload — DIAG-RUNTIME-BLUEPRINT-1`, `wired to screen 2026-11-08 ADR-094)`, `app/src/render/pipeline_error_renderers.py (render_blueprint_inline)`, `libs/utils/src/utils/fix_text.py (fix_prefix)`, `libs/utils/src/utils/errors.py (SPARMVET_Error)`, `app/modules/data_change_notice.py (inputs_changed_during_build_notice)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
+- **consumes:** `app/modules/blueprint_plot_view.py (plot_view: the mapping and layers of a plot node)`, `app/modules/blueprint_tier_refusal.py (other_tier_refusal: the text of the Save refusal`, `PROVISIONAL)`, `app/modules/plot_defaults_form.py (the plot_defaults form: what it shows and writes)`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/action_names.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result`, `never blocking; uploaded_recipe_report`, `load_uploaded_recipe`, `load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)`, `app/modules/validate_runner.py (run_structure_check`, `could_not_run_result`, `StructureCheckError — the child process of Validate uses sys.executable`, `D-0050)`, `libs/utils/src/utils/recipe_check.py (plot_keys)`, `libs/utils/src/utils/recipe_tiers.py (step_list) — tier keys and plot entry keys of recipe format 1 (D-0250`, `D-0252)`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (check_join_keys`, `compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `libs/blueprint_arch/src/blueprint_arch/new_recipe.py (new_recipe_draft — BP-NEW-1`, `recipe format 1)`, `libs/utils/src/utils/recipe_factory.py (write_recipe)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError`, `make_render_payload — DIAG-RUNTIME-BLUEPRINT-1`, `wired to screen 2026-11-08 ADR-094)`, `app/src/render/pipeline_error_renderers.py (render_blueprint_inline)`, `libs/utils/src/utils/fix_text.py (fix_prefix)`, `libs/utils/src/utils/errors.py (SPARMVET_Error)`, `app/modules/data_change_notice.py (inputs_changed_during_build_notice)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui")`, `ui.output_ui("bp_branch_ui")`, `ui.output_ui("bp_groups_inventory_ui")`, `ui.output_ui("bp_meta_form_ui"))`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-076`, `.claude/knowledge/architecture_decisions.md#ADR-082`
 
@@ -118,15 +118,15 @@
 
 ## `app/handlers/export_handlers.py`
 - **Role:** `ref`
-- **provides:** `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `output:import_bundle_report`, `function:_build_methods_section`
-- **consumes:** `app/modules/error_notice.py (notice — VERIF-FIX-2)`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1)`, `app/modules/cache_keys.py (canonical_hash`, `engine_fingerprint — REPRO-PROV-1)`, `app/modules/bundle_importer.py (import_bundle`, `BundleImportError — REPRO-IMPORT-1)`, `app/modules/plot_seeds.py (SEED-HOLDS-1)`, `polars`, `shiny`
+- **provides:** `constant:EXPORT_READY_TEXTS`, `constant:EXPORT_PANEL_FIELDS`, `constant:EXPORT_WATCHED_FIELDS`, `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `output:import_bundle_report`, `function:_build_methods_section`
+- **consumes:** `app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen)`, `app/modules/export_fields_store.py (D-0288`, `D-0291`, `D-0296: the Export fields remembered per session`, `in memory only; defaults D-0294)`, `app/modules/error_notice.py (notice — VERIF-FIX-2)`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1)`, `app/modules/cache_keys.py (canonical_hash`, `engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table`, `the same function the orchestrator uses`, `D-0240)`, `app/modules/bundle_importer.py (import_bundle`, `BundleImportError — REPRO-IMPORT-1)`, `app/modules/plot_seeds.py (SEED-HOLDS-1)`, `app/modules/plot_issue_reporter.py (plot_warning_text — D-0269)`, `libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269)`, `polars`, `shiny`, `libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library`, `D-0237)`, `app/modules/engine_record.py (engine_record`, `failed_plot_record: the `engines` part of effective_run.yaml`, `D-0248)`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text)`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/export_specification.md`, `.claude/design/reproducible_export_design.md`
 
 ## `app/handlers/filter_and_audit_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_filter_audit_server`, `output:sidebar_filters`, `output:filter_rows_ui`, `output:filter_form_ui`, `output:filter_type_ui`, `output:filter_op_ui`, `output:filter_value_ui`, `output:filter_closed_text_ui`, `output:filter_na_ui`, `output:filter_na_text_ui`, `output:filter_controls_ui`, `input:fb_na`, `input:filter_apply`, `input:filter_send_to_audit`
-- **consumes:** `app/modules/session_manager.py (make_audit_step)`, `app/modules/t3_audit_engine.py (describe_filter`, `op_choice_label`, `dialog_value`, `value_choices`, `column_types`, `ops_for_column`, `value_widget_for`, `number_range`, `column_type_line`, `closed_phrase`, `CLOSED_CHOICES`, `dialog_frame`, `AuditStepError`, `column_bounds`, `compose_date`, `compose_time`, `compose_datetime`, `compose_duration`, `control_hint`, `LIST_ON_DEMAND_FROM`, `list_note)`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/missing_values.py`, `libs/utils/src/utils/na_choice.py`, `app/src/bootloader.py (is_enabled)`, `shiny`
+- **consumes:** `app/modules/session_manager.py (make_audit_step)`, `app/modules/t3_audit_engine.py (filters_cleared_notice`, `column_is_in_frame`, `describe_filter`, `op_choice_label`, `dialog_value`, `value_choices`, `column_types`, `ops_for_column`, `value_widget_for`, `number_range`, `column_type_line`, `closed_phrase`, `CLOSED_CHOICES`, `dialog_frame`, `dialog_schema_signature`, `dialog_rows_signature`, `AuditStepError`, `column_bounds`, `compose_date`, `compose_time`, `compose_datetime`, `compose_duration`, `control_hint`, `LIST_ON_DEMAND_FROM`, `list_note)`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/missing_values.py`, `libs/utils/src/utils/na_choice.py`, `app/src/bootloader.py (is_enabled)`, `shiny`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-049`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/rules/ui_implementation_contract.md#8`
 
@@ -140,7 +140,7 @@
 ## `app/handlers/home_theater.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (home_theater)`, `output:dynamic_tabs`, `output:home_data_preview`, `output:home_col_selector_ui`, `output:col_drop_audit_btn_ui`, `output:sidebar_nav_ui`, `output:sidebar_tools_ui`, `output:right_sidebar_content_ui`, `output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui`
-- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py (render`, `show_draw_errors)`, `libs/utils/src/utils/config_loader.py`, `app/modules/t3_audit_engine.py (_apply_filter_rows`, `filter_rows_from_nodes`, `audited_frame`, `AuditStepError)`, `app/modules/sidebar_registry.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`
+- **consumes:** `app/modules/orchestrator.py`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py (render`, `show_draw_errors)`, `libs/utils/src/utils/config_loader.py`, `app/modules/t3_audit_engine.py (_apply_filter_rows`, `filter_rows_from_nodes`, `audited_frame`, `stored_table_identity`, `AuditStepError)`, `app/modules/sidebar_registry.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`, `libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library`, `D-0237)`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-043`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-047`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-073`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/knowledge/architecture_decisions.md#ADR-094`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/rules/ui_implementation_contract.md#4`, `.claude/rules/ui_implementation_contract.md#5`
 
@@ -152,15 +152,15 @@
 
 ## `app/handlers/recipe_gate_handlers.py`
 - **Role:** `ref`
-- **provides:** `function:define_server (HOME's load gate follower`, `GATE-GAP-1)`, `function:follow_gate`, `function:gate_notes`
-- **consumes:** `app/src/bootloader.py (recheck_changed_data_analysis_recipes`, `data_analysis_recipe_gate_version`, `available/rejected recipes)`, `app/modules/data_analysis_recipe_validator.py (home_advice_entries)`
+- **provides:** `function:define_server (HOME's load gate follower`, `GATE-GAP-1)`, `function:tell_tables_rebuilt`, `function:follow_gate`, `function:gate_notes`
+- **consumes:** `app/src/bootloader.py (take_stored_tables_notice: the one-time notice of the cache version`, `recheck_changed_data_analysis_recipes`, `data_analysis_recipe_gate_version`, `available/rejected recipes)`, `app/modules/data_analysis_recipe_validator.py (home_advice_entries)`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#11`, `.claude/knowledge/architecture_decisions.md#ADR-094`, `.claude/rules/ui_implementation_contract.md#14`
 
 ## `app/handlers/session_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_session_server`, `output:session_management_ui`, `output:session_export_active`
-- **consumes:** `shiny`, `app.modules.error_notice (notice`, `issue_entry — VERIF-FIX-2)`, `app.modules.plot_issue_reporter (make_issue_reporter)`, `pathlib`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`, `app.modules.session_manager (normalise_audit_steps)`
+- **consumes:** `app.src.bootloader (get_session_import_limits — D-0283)`, `shiny`, `app.modules.error_notice (notice`, `issue_entry — VERIF-FIX-2)`, `app.modules.plot_issue_reporter (make_issue_reporter)`, `pathlib`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`, `app.modules.session_manager (normalise_audit_steps`, `split_key_drops`, `key_drop_notice`, `session_id_collisions`, `session_input_id_parts)`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-097`
 
@@ -171,6 +171,20 @@
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/rules/rules_test_lab.md §6`, `.claude/design/spaces/TEST_LAB.md`
 
+## `app/modules/blueprint_plot_view.py`
+- **Role:** `ref`
+- **provides:** `function:plot_view`
+- **consumes:** `libs/viz_factory/src/viz_factory/plot_config_resolver.py (normalise_plot_spec)`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/tests/test_blueprint_plot_open.py`
+- **doc:** `.claude/design/recipe_format_spec.md (the plot entry`, `D-0252)`
+
+## `app/modules/blueprint_tier_refusal.py`
+- **Role:** `ref`
+- **provides:** `function:other_tier_refusal`
+- **consumes:** `none (pure text`, `no Shiny`, `no recipe reading: the caller hands over the tier files it knows)`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/tests/test_blueprint_tier_refusal.py`
+- **doc:** `.claude/design/recipe_format_spec.md (tier files`, `D-0250)`
+
 ## `app/modules/bundle_importer.py`
 - **Role:** `ref`
 - **provides:** `function:import_bundle`, `function:read_effective_run`, `class:ImportResult`, `class:LegResult`, `class:BundleImportError`
@@ -180,15 +194,15 @@
 
 ## `app/modules/cache_keys.py`
 - **Role:** `ref`
-- **provides:** `function:load_data_analysis_recipe`, `function:tier1_material`, `function:tier2_steps (from utils.recipe_tiers)`, `function:tier1_key`, `function:tier2_key`, `function:data_analysis_recipe_fileset_hash`, `function:data_analysis_recipe_keys`, `class:LoadedDataAnalysisRecipe`, `class:DataAnalysisRecipeKeys`
-- **consumes:** `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/recipe_tiers.py`
-- **consumed_by:** `app/modules/orchestrator.py`, `app/modules/session_manager.py`, `app/src/server.py`, `app/tests/test_cache_keys.py`
+- **provides:** `function:load_data_analysis_recipe`, `function:tier1_material`, `function:tier1_engines`, `function:tier2_engine`, `function:collection_tier2_key`, `function:tier2_steps (from utils.recipe_tiers)`, `function:tier1_key`, `function:tier2_key`, `constant:ENGINE_CACHE_VERSION`, `constant:CACHE_VERSION_META`, `constant:STORED_TABLES_REBUILT_NOTICE`, `function:data_analysis_recipe_fileset_hash`, `function:data_analysis_recipe_keys`, `class:LoadedDataAnalysisRecipe`, `class:DataAnalysisRecipeKeys`
+- **consumes:** `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/recipe_tiers.py`, `libs/utils/src/utils/engines.py (tier_engine: the one reading of the engine of a tier)`
+- **consumed_by:** `app/modules/orchestrator.py`, `app/modules/session_manager.py`, `app/src/server.py`, `app/src/bootloader.py`, `app/handlers/export_handlers.py`, `app/tests/test_cache_keys.py`, `app/tests/test_engine_keys.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-089`, `docs/foundations/reproducibility_hash_schema.qmd`
 
 ## `app/modules/data_analysis_recipe_validator.py`
 - **Role:** `ref`
 - **provides:** `function:load_uploaded_recipe`, `function:load_config_or_problems`, `function:uploaded_recipe_report`, `function:validate_data_analysis_recipe`, `function:checker_problems`, `function:checker_advices`, `const:SHOWN_ADVICES`, `function:home_advice_entries`, `function:validate_advice_entries`, `function:engine_load_problems`, `function:checker_catalogs`, `function:validate_data_analysis_recipe_data`, `function:find_data_analysis_recipes`, `function:read_data_analysis_recipe_header`, `function:resolve_contact`, `function:rejected_recipe_text (GATE-GAP-1)`, `class:DataAnalysisRecipeProblem`
-- **consumes:** `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/recipe_loader.py (load_recipe)`, `libs/utils/src/utils/recipe_loader.py (check_recipe_file)`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS)`, `libs/viz_factory/src/viz_factory/arguments.py (argument_catalog)`, `app/modules/orchestrator.py`
+- **consumes:** `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/recipe_loader.py (load_recipe)`, `libs/utils/src/utils/recipe_loader.py (check_recipe_file)`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS)`, `libs/viz_factory/src/viz_factory/arguments.py (argument_catalog)`, `app/modules/engine_registry.py (engine_tables: the `engine` field of every action and component`, `D-0238)`, `app/modules/orchestrator.py`
 - **consumed_by:** `app/tests/test_upload_load_never_exits.py`, `app/tests/test_upload_recipe_check.py`, `app/tests/test_data_analysis_recipe_validator.py`, `app/tests/test_data_analysis_recipe_data_check.py`, `app/tests/test_retest_data_analysis_recipes.py`, `app/handlers/blueprint_handlers.py (_handle_validate`, `BP-VALIDATE-1/VALIDATE-UI-1)`, `app/src/bootloader.py (HOME load gate`, `ADR-094)`
 - **doc:** `.claude/tasks/tasks.md (BP-VALIDATE-1`, `VALIDATE-UI-1)`, `.claude/rules/rules_data_engine.md#3`, `.claude/knowledge/architecture_decisions.md#ADR-094`
 
@@ -205,12 +219,33 @@
 - **consumed_by:** `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
 
+## `app/modules/engine_record.py`
+- **Role:** `ref`
+- **provides:** `function:engine_record`, `function:failed_plot_record`, `constant:NOT_RUN`
+- **consumes:** `libs/utils/src/utils/engines.py (tier_engine`, `effective_engine`, `engine_versions: the functions the run chooses with)`, `libs/utils/src/utils/recipe_tiers.py (collection_body`, `step_list)`
+- **consumed_by:** `app/handlers/export_handlers.py`, `app/tests/test_engine_record.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0248`, `D-0258`, `D-0219)`, `.claude/rules/ui_implementation_contract.md#7.2`
+
+## `app/modules/engine_registry.py`
+- **Role:** `ref`
+- **provides:** `constant:REGISTRY`, `function:data_entry`, `function:plot_entry`, `function:engine_tables`, `class:PlotEngines (render`, `record_of: what the export records of a drawn plot)`
+- **consumes:** `libs/utils/src/utils/engines.py`, `libs/utils/src/utils/errors.py`, `libs/transformer/src/transformer/engine_python_polars.py`, `libs/viz_factory/src/viz_factory/engine_python_plotnine.py`, `libs/transformer/src/transformer/actions/base.py (ACTION_ENGINES)`, `libs/viz_factory/src/viz_factory/registry.py (COMPONENT_ENGINES)`
+- **consumed_by:** `app/modules/orchestrator.py`, `app/handlers/export_handlers.py (PlotEngines.record_of`, `passed in)`, `app/modules/data_analysis_recipe_validator.py`, `app/modules/gallery_examples.py`, `app/src/server.py`, `assets/scripts/golden_baseline.py`, `assets/scripts/recipe_pictures.py`, `app/tests/test_engine_registry.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0219`, `D-0238`, `D-0239`, `D-0247`, `D-0050)`
+
 ## `app/modules/error_notice.py`
 - **Role:** `ref`
 - **provides:** `function:notice`, `function:what_failed`, `function:issue_entry`
 - **consumes:** `utils.fix_text (with_fix`, `SUGGESTION)`
 - **consumed_by:** `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/test_lab_handlers.py`, `app/modules/session_manager.py`, `app/modules/bundle_importer.py`
 - **doc:** `.claude/knowledge/decision_ledger.md (D-0050 no silent error`, `D-0099 advice text form)`
+
+## `app/modules/export_fields_store.py`
+- **Role:** `ref`
+- **provides:** `ExportFieldsStore`, `EXPORT_FIELD_DEFAULTS`, `EXPORT_LABEL_FIELD`, `EXPORT_LABEL_DEFAULT`, `REMEMBERED_EXPORT_FIELDS`
+- **consumes:** `—`
+- **consumed_by:** `app/handlers/export_handlers.py (the Export panel remembers its fields per session)`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0288`, `D-0291`, `D-0294`, `D-0296)`
 
 ## `app/modules/export_refusal.py`
 - **Role:** `ref`
@@ -222,13 +257,13 @@
 ## `app/modules/gallery_examples.py`
 - **Role:** `ref`
 - **provides:** `function:check_gallery`, `function:check_gallery_at_start`, `function:rebuild_gallery_index`, `function:render_example`, `function:example_table`, `constant:PREVIEW_SIZE`
-- **consumes:** `app/modules/data_analysis_recipe_validator.py (checker_catalogs)`, `libs/viz_gallery/src/viz_gallery/gallery_manager.py`, `libs/viz_gallery/src/viz_gallery/taxonomy.py`, `app/modules/orchestrator.py`, `app/modules/cache_keys.py`, `libs/utils/src/utils/config_loader.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/arguments.py`, `libs/viz_factory/src/viz_factory/registry.py`, `libs/transformer/src/transformer/actions/base.py`
+- **consumes:** `app/modules/data_analysis_recipe_validator.py (checker_catalogs)`, `libs/viz_gallery/src/viz_gallery/gallery_manager.py`, `libs/viz_gallery/src/viz_gallery/taxonomy.py`, `app/modules/orchestrator.py`, `app/modules/cache_keys.py`, `libs/utils/src/utils/config_loader.py`, `app/modules/engine_registry.py (PlotEngines)`, `libs/viz_factory/src/viz_factory/arguments.py`, `libs/viz_factory/src/viz_factory/registry.py`, `libs/transformer/src/transformer/actions/base.py`
 - **consumed_by:** `app/src/bootloader.py`, `assets/scripts/refresh_gallery.py`, `assets/scripts/gallery_previews.py`, `app/tests/test_gallery_app_path.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 9: G2`, `G3`, `D4`, `D5; section 14)`
 
 ## `app/modules/gallery_listing.py`
 - **Role:** `ref`
-- **provides:** `function:build_listing`, `function:read_listing`, `class:GalleryListing`, `constant:READ_ONLY_LINE`, `constant:FAILED_LINE`, `constant:NOTE_LINES`
+- **provides:** `function:external_links_new_tab`, `function:build_listing`, `function:read_listing`, `class:GalleryListing`, `constant:READ_ONLY_LINE`, `constant:FAILED_LINE`, `constant:NOTE_LINES`
 - **consumes:** `app/src/bootloader.py (rejected_gallery_examples`, `gallery_index_status`, `as data given by the caller)`
 - **consumed_by:** `app/handlers/gallery_handlers.py`, `app/tests/test_gallery_listing.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 9: D4`, `DEC48)`, `.claude/design/decisions_2026-11-14/proposals_for_eve.md (G-a`, `G-b)`
@@ -256,7 +291,7 @@
 ## `app/modules/orchestrator.py`
 - **Role:** `ref`
 - **provides:** `pipeline:materialize_tier1`, `pipeline:materialize_tier2`, `method:prepare_ingredient`, `method:locate_dataset_file`, `method:get_source_files`, `function:compute_data_analysis_recipe_keys`
-- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/metadata_validator.py`, `app/modules/cache_keys.py`
+- **consumes:** `libs/ingestion/src/ingestion/ingestor.py`, `libs/utils/src/utils/recipe_tiers.py (collection_body)`, `app/modules/engine_registry.py (data_entry: the engine that runs a tier`, `D-0219)`, `libs/transformer/src/transformer/anchor.py`, `app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table)`
 - **mirrors:** `libs/transformer/tests/debug_assembler.py`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`, `app/modules/bundle_importer.py`, `app/modules/data_analysis_recipe_validator.py`
 - **doc:** `.claude/knowledge/dependency_index.md`
@@ -268,11 +303,18 @@
 - **consumed_by:** `app.src.server`
 - **doc:** `ADR-045 (Two-Category Law §5 — shared utility functions)`
 
+## `app/modules/plot_defaults_form.py`
+- **Role:** `ref`
+- **provides:** `function:form_values`, `function:theme_choices`, `function:merged_plot_defaults`, `constant:FORM_KEYS`, `constant:NO_THEME`
+- **consumes:** `libs/utils/src/utils/recipe_check.py (plot_defaults_keys: the keys the checker accepts)`
+- **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/tests/test_blueprint_plot_defaults_form.py`
+- **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#10`
+
 ## `app/modules/plot_issue_reporter.py`
 - **Role:** `ref`
-- **provides:** `make_issue_reporter() -> report(entry`, `message`, `kind)`
+- **provides:** `make_issue_reporter() -> report(entry`, `message`, `kind)`, `plot_warning_text(warning)`
 - **consumes:** `shiny.reactive`, `datetime`
-- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/session_handlers.py`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/export_handlers.py (D-0269)`, `app/handlers/session_handlers.py`
 - **doc:** `.claude/rules/ui_implementation_contract.md section 14 (reactive write discipline)`
 
 ## `app/modules/plot_seeds.py`
@@ -290,9 +332,9 @@
 
 ## `app/modules/session_manager.py`
 - **Role:** `ref`
-- **provides:** `class:SessionManager`, `typedef:AuditStep`, `function:make_audit_step`, `function:normalise_audit_steps`
-- **consumes:** `app/modules/error_notice.py (notice — VERIF-FIX-2`, `lazy)`, `libs/utils/src/utils/na_choice.py`, `stdlib (hashlib`, `json`, `shutil`, `zipfile`, `pathlib`, `datetime`, `uuid)`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`
-- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/session_handlers.py`
+- **provides:** `class:SessionManager`, `typedef:AuditStep`, `function:make_audit_step`, `function:normalise_audit_steps`, `function:extract_primary_keys`, `function:split_key_drops`, `function:key_drop_notice`, `class:SessionImportLimits`, `function:session_import_limits_from (D-0283)`, `function:session_input_id_part`, `function:session_input_id_parts (two listed sessions never share a button)`, `exception:SessionImportRefused`, `exception:SessionKeyExists (D-0281)`
+- **consumes:** `app/modules/error_notice.py (notice — VERIF-FIX-2`, `lazy)`, `libs/utils/src/utils/na_choice.py`, `stdlib (hashlib`, `json`, `re`, `shutil`, `zipfile`, `pathlib`, `datetime`, `uuid)`, `app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)`, `libs/utils/src/utils/join_keys.py (JOIN_ACTIONS`, `key_columns)`, `libs/utils/src/utils/recipe_tiers.py (step_list) — extract_primary_keys reads joins.*.tier1.steps and tier2.steps (D-0250)`
+- **consumed_by:** `app/src/bootloader.py (limits)`, `app/tests/test_session_import_safety.py`, `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/session_handlers.py`, `app/handlers/filter_and_audit_handlers.py (make_audit_step)`
 - **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/knowledge/architecture_decisions.md#ADR-097`
 
 ## `app/modules/sidebar_registry.py`
@@ -311,9 +353,9 @@
 
 ## `app/modules/t3_audit_engine.py`
 - **Role:** `ref`
-- **provides:** `function:dialog_value`, `function:not_offered_line`, `function:column_types`, `function:value_choices`, `function:pick_values`, `function:number_range`, `function:typed_operand`, `function:compose_date`, `function:compose_time`, `function:compose_datetime`, `function:compose_duration`, `function:column_bounds`, `function:control_hint`, `function:readable_duration`, `function:list_note`, `constant:LIST_ON_DEMAND_FROM`, `function:ops_for_column`, `function:value_widget_for`, `function:column_type_line`, `function:closed_phrase`, `function:between_prose`, `constant:CLOSED_CHOICES`, `function:_apply_filter_rows`, `function:filter_rows_from_nodes`, `function:staged_filter_row`, `function:audit_params_from_row`, `function:inapplicable_filter_rows`, `function:describe_filter`, `function:op_choice_label`, `function:audited_frame`, `function:audit_steps_in_order`, `function:dialog_frame`, `function:audit_failures`, `class:AuditStepError`
-- **consumes:** `polars`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/pipeline_error.py`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/missing_values.py`, `libs/utils/src/utils/na_choice.py`
-- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/export_handlers.py`, `app/tests/test_filter_dialog_values.py`, `app/tests/test_filter_four_way_pickers.py`, `app/tests/test_step_order.py`, `app/tests/test_removed_audit_step_type.py`, `app/tests/test_audit_error_names_the_plot.py`
+- **provides:** `function:dialog_value`, `function:not_offered_line`, `function:column_types`, `function:value_choices`, `function:pick_values`, `function:number_range`, `function:typed_operand`, `function:compose_date`, `function:compose_time`, `function:compose_datetime`, `function:compose_duration`, `function:column_bounds`, `function:control_hint`, `function:readable_duration`, `function:list_note`, `constant:LIST_ON_DEMAND_FROM`, `function:ops_for_column`, `function:value_widget_for`, `function:column_type_line`, `function:closed_phrase`, `function:between_prose`, `constant:CLOSED_CHOICES`, `function:_apply_filter_rows`, `function:filter_rows_from_nodes`, `function:staged_filter_row`, `function:audit_params_from_row`, `function:inapplicable_filter_rows`, `function:describe_filter`, `function:op_choice_label`, `function:audited_frame`, `function:audit_steps_in_order`, `function:dialog_frame`, `function:dialog_schema_signature`, `function:stored_key`, `function:stored_table_identity`, `function:dialog_rows_signature`, `function:audit_failures`, `function:filters_cleared_notice`, `function:column_is_in_frame`, `class:AuditStepError`
+- **consumes:** `polars`, `app/modules/orchestrator.py (TIER1_KEY_META`, `TIER2_KEY_META`, `tier2_path_for)`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/pipeline_error.py`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/missing_values.py`, `libs/utils/src/utils/na_choice.py`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/export_handlers.py`, `app/tests/test_filter_dialog_values.py`, `app/tests/test_filter_four_way_pickers.py`, `app/tests/test_step_order.py`, `app/tests/test_removed_audit_step_type.py`, `app/tests/test_audit_error_names_the_plot.py`, `app/tests/test_filters_cleared_on_recipe_change.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-051`
 
 ## `app/modules/test_lab_studio.py`
@@ -340,14 +382,14 @@
 ## `app/modules/wrangle_studio.py`
 - **Role:** `ref`
 - **provides:** `class:WrangleStudio`, `method:build_sidebar_ui (issue #42 — Blueprint's left sidebar`, `moved here from home_theater.py's sidebar_tools_ui()`, `mirrors GalleryViewer.build_sidebar_ui(); registered as the "blueprint_main" freestanding panel type)`, `method:_render_action_form`, `method:_extract_upstream_cols`, `output:bp_yaml_escape_ui`, `output:bp_help_panel_ui`, `function:_resolve_action_doc`, `reactive.Value:inline_errors (ADR-079/ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface)`, `function:_enum_preview_legend (BP-ENUM-PREVIEW-1)`, `constants:_LINETYPE_DASHARRAY/_POSITION_DESC`, `reactive.Value:active_component_path (BP-PLOT-COMMIT-1 — loaded fragment file path`, `Save target); node marker _tier on action stubs (source-tier routing on commit`, `set from bp_action_context)`, `reactive.Value:joint_request`, `reactive.Value:joint_edit_idx (BP-JOINT-1 — shared with blueprint_handlers Joint Designer wiring); nav_panel "joint_designer" in architect_internal_tabs`
-- **consumes:** `app/src/render/pipeline_error_renderers.py (render_blueprint_inline — ADR-094)`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `search_actions`, `get_actions_for_context; get_component_catalog`, `search_components`, `get_components_for_context — BP-COMPONENT-FORMS-1)`, `node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1/BP-MAPPING-FORM-1); action key ({"action":...}) for wrangling nodes`, `__mapping__ node: dedicated aes form with bp_map_{key} inputs (BP-MAPPING-FORM-1); method:_extract_upstream_cols drives column picker choices`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `loaded via ui.py head)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (JOIN_HOW_OPTIONS — BP-JOINT-1 Joint Designer pane)`
+- **consumes:** `app/src/render/pipeline_error_renderers.py (render_blueprint_inline — ADR-094)`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `libs/utils/src/utils/engines.py (plot_engine_slot — the plot preview dict)`, `libs/utils/src/utils/errors.py (DataAnalysisRecipeError)`, `method:DataWrangler.tier_steps (libs/transformer/src/transformer/data_wrangler.py — the steps of a join on a node click`, `D-0250)`, `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `search_actions`, `get_actions_for_context; get_component_catalog`, `search_components`, `get_components_for_context — BP-COMPONENT-FORMS-1)`, `node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1/BP-MAPPING-FORM-1); action key ({"action":...}) for wrangling nodes`, `__mapping__ node: dedicated aes form with bp_map_{key} inputs (BP-MAPPING-FORM-1); method:_extract_upstream_cols drives column picker choices`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `loaded via ui.py head)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (JOIN_HOW_OPTIONS — BP-JOINT-1 Joint Designer pane)`
 - **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/audit_stack.py`, `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-004`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-082`
 
 ## `app/src/bootloader.py`
 - **Role:** `ref`
-- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_imports_dir (IMPORT-PATH-1)`, `method:get_agent_adapter`, `method:get_palettes`, `method:get_contact`, `attr:available_data_analysis_recipes`, `attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)`, `attr:data_analysis_recipe_advices (J12/J13`, `never reject)`, `method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1)`, `method:get_default_data_analysis_recipe_or_none`, `attr:has_usable_data_analysis_recipe (issue #38 empty-state gate)`, `attr:rejected_gallery_examples`, `attr:gallery_index_status (gallery check at start`, `DEC48)`
-- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`, `app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data`, `checker_advices`, `read_data_analysis_recipe_header`, `resolve_contact — ADR-094)`, `app.modules.gallery_examples (check_gallery_at_start`, `deferred import)`, `app.modules.renamed_keys`, `utils.path_expansion`
+- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_imports_dir (IMPORT-PATH-1)`, `method:get_agent_adapter`, `method:get_palettes`, `method:get_contact`, `method:get_session_import_limits (D-0283)`, `attr:available_data_analysis_recipes`, `attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)`, `attr:data_analysis_recipe_advices (J12/J13`, `never reject)`, `method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1)`, `method:get_default_data_analysis_recipe_or_none`, `attr:has_usable_data_analysis_recipe (issue #38 empty-state gate)`, `attr:rejected_gallery_examples`, `attr:gallery_index_status (gallery check at start`, `DEC48)`, `method:take_stored_tables_notice (the one notice of the cache version sweep)`
+- **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.cache_keys (CACHE_VERSION_META`, `ENGINE_CACHE_VERSION`, `STORED_TABLES_REBUILT_NOTICE: the sweep of stored tables of another cache version at start`, `D-0240)`, `libs/transformer/src/transformer/anchor.py (remove_tables_of_other_version`, `deferred import)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`, `app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data`, `checker_advices`, `read_data_analysis_recipe_header`, `resolve_contact — ADR-094)`, `app.modules.gallery_examples (check_gallery_at_start`, `deferred import)`, `app.modules.renamed_keys`, `app.modules.session_manager (session_import_limits_from`, `deferred import)`, `utils.path_expansion`
 - **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`
 - **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `ADR-087`, `ADR-094 (issue #38 closure note)`, `project_conventions.md §"Deployment Resolution`
 
@@ -367,14 +409,14 @@
 ## `app/src/server.py`
 - **Role:** `ref`
 - **provides:** `server (Shiny server function)`, `reactive.Value:_selected_lineage_rel (shared between wrangle_studio and blueprint_handlers — BP-LINEAGE-NAV-1)`
-- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.orchestrator_helpers`, `app.modules.session_manager`, `utils.config_loader`, `viz_factory.viz_factory`, `app.modules.wrangle_studio (gated: blueprint_enabled or t3_sandbox_enabled)`, `app.modules.test_lab_studio (gated: test_lab_enabled)`, `app.modules.gallery_viewer`, `app.modules.app_features_validator`, `app.modules.sidebar_validator`, `app.modules.deployment_error`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
+- **consumes:** `shiny`, `polars`, `pathlib`, `app.src.bootloader`, `app.modules.orchestrator`, `app.modules.orchestrator_helpers`, `app.modules.session_manager`, `utils.config_loader`, `app.modules.engine_registry (PlotEngines: the plot engine chosen per plot)`, `app.modules.wrangle_studio (gated: blueprint_enabled or t3_sandbox_enabled)`, `app.modules.test_lab_studio (gated: test_lab_enabled)`, `app.modules.gallery_viewer`, `app.modules.app_features_validator`, `app.modules.sidebar_validator`, `app.modules.deployment_error`, `app.handlers.home_theater`, `app.handlers.audit_stack`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`
 - **consumed_by:** `app.src.main`
 - **doc:** `ADR-045`, `ADR-003`, `ADR-094 §6 closure (issue #38 — active_cfg() empty-state stand-in)`
 
 ## `app/src/ui.py`
 - **Role:** `ref`
 - **provides:** `app_ui (Shiny UI definition`, `page_fillable layout)`
-- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `included via ui.tags.script)`
+- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `included via ui.tags.script)`, `app/src/www/export_ready.js (D-0270`, `included via ui.tags.script)`
 - **consumed_by:** `app.src.main`
 - **doc:** `ADR-027`, `ADR-029a`, `ADR-030`, `ADR-039`, `ADR-052`
 
@@ -411,9 +453,27 @@
 - **Role:** `info`
 - **consumes:** `app/modules/data_analysis_recipe_validator.py (checker_catalogs)`, `libs/utils/src/utils/recipe_check.py`
 
+## `app/tests/test_engine_registry.py`
+- **Role:** `info`
+- **consumes:** `app/modules/engine_registry.py`, `app/modules/orchestrator.py`, `app/modules/data_analysis_recipe_validator.py`, `libs/utils/src/utils/engines.py`, `libs/utils/src/utils/recipe_factory.py`, `libs/transformer/src/transformer/engine_python_polars.py`, `libs/viz_factory/src/viz_factory/engine_python_plotnine.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0219`, `D-0238`, `D-0239`, `D-0247`, `D-0050)`
+
 ## `app/tests/test_export_failed_plot.py`
 - **Role:** `info`
 - **consumes:** `app/handlers/export_handlers.py (failed_plot_stub`, `plot_report_lines)`, `libs/viz_factory`
+
+## `app/tests/test_export_plot_engine.py`
+- **Role:** `info`
+- **consumes:** `app/handlers/export_handlers.py`, `app/modules/engine_registry.py`, `app/tests/test_export_download_path.py`, `app/tests/test_cache_chain.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0219`, `D-0239`, `D-0050)`
+
+## `app/tests/test_export_report_names.py`
+- **Role:** `info`
+- **consumes:** `app/handlers/export_handlers.py (plot_report_name`, `plot_report_lines`, `_build_methods_section)`, `app/modules/cache_keys.py (load_data_analysis_recipe)`, `app/tests/data/report_names_before_engine_keys.yaml`
+
+## `app/tests/test_home_reads_the_plot_entry.py`
+- **Role:** `info`
+- **consumes:** `app/handlers/home_theater.py (group_tab_label`, `plot_tab_label`, `plot_list_label`, `_collect_all_group_plot_ids)`, `app/handlers/audit_stack.py (plot_target_dataset)`, `app/modules/session_manager.py (extract_primary_keys)`
 
 ## `app/tests/test_plot_callers_are_checked.py`
 - **Role:** `info`
@@ -421,16 +481,41 @@
 
 ## `app/tests/test_plot_engine_reaches_the_factory.py`
 - **Role:** `info`
-- **consumes:** `app/handlers/home_theater.py`, `app/modules/wrangle_studio.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`
+- **consumes:** `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/modules/wrangle_studio.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md (ADR-106 V8)`
 
 ## `app/tests/test_plot_issue_reporter.py`
 - **Role:** `info`
 - **consumes:** `app/modules/plot_issue_reporter.py`
 
+## `app/tests/test_plot_own_engine_over_recipe.py`
+- **Role:** `info`
+- **consumes:** `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/modules/engine_registry.py`, `app/tests/test_export_download_path.py`, `app/tests/test_cache_chain.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0237`, `D-0219)`
+
 ## `app/tests/test_removed_audit_step_type.py`
 - **Role:** `info`
 - **consumes:** `app/modules/renamed_keys.py`, `app/modules/t3_audit_engine.py`, `app/modules/session_manager.py`, `app/modules/bundle_importer.py`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py`
+
+## `app/tests/test_session_id_collisions.py`
+- **Role:** `info`
+- **provides:** `test:session_id_collisions`
+- **consumes:** `app/handlers/session_handlers.py`, `app/modules/session_manager.py`, `app/tests/test_session_clicks_once.py`, `app/tests/test_session_import_safety.py`
+- **consumed_by:** `CI`
+
+## `app/tests/test_session_import_copy_panel.py`
+- **Role:** `info`
+- **provides:** `test:session_import_copy_panel`
+- **consumes:** `app/modules/session_manager.py`, `app/handlers/session_handlers.py`, `app/tests/test_session_import_safety.py`
+- **consumed_by:** `CI`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`
+
+## `app/tests/test_session_import_safety.py`
+- **Role:** `info`
+- **provides:** `test:session_import_safety`
+- **consumes:** `app/modules/session_manager.py`, `app/handlers/session_handlers.py`, `app/src/bootloader.py`
+- **consumed_by:** `CI`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`
 
 ## `app/tests/test_session_manager.py`
 - **Role:** `info`
@@ -447,6 +532,13 @@
 - **Role:** `info`
 - **consumes:** `app/handlers/home_theater.py`, `app/modules/plot_issue_reporter.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`
 
+## `app/tests/test_shiny_session_keep_both.py`
+- **Role:** `info`
+- **provides:** `test:shiny_session_keep_both`
+- **consumes:** `app/handlers/session_handlers.py`, `app/modules/session_manager.py`, `app/tests/test_shiny_session_restore.py`
+- **consumed_by:** `CI`
+- **doc:** `.claude/rules/ui_implementation_contract.md#12d`
+
 ## `app/tests/test_shiny_step_order.py`
 - **Role:** `info`
 - **consumes:** `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/modules/t3_audit_engine.py`, `app/modules/plot_issue_reporter.py`
@@ -454,8 +546,9 @@
 ## `assets/scripts/SF_create_data_analysis_recipe.py`
 - **Role:** `info`
 - **provides:** `script:SF_create_data_analysis_recipe`
-- **consumes:** `assets/test_data/ (TSV/CSV source files)`, `assets/template_data_analysis_recipes/ (writes scaffolded YAML)`
-- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
+- **consumes:** `assets/test_data/ (TSV/CSV source files)`, `libs/utils/src/utils/recipe_factory.py (minimal_recipe`, `minimal_schema`, `recipe_text`, `write_recipe)`
+- **consumed_by:** `app/tests/test_writers_emit_format_one.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`, `.claude/design/recipe_format_spec.md (sections 4`, `7)`
 
 ## `assets/scripts/build_dep_graph.py`
 - **Role:** `info`
@@ -507,6 +600,20 @@
 - **provides:** `script:make_left_join_lesson_data`
 - **consumes:** `nothing (the values are invented; plain random.Random(seed))`
 - **consumed_by:** `app/tests/test_left_join_lesson.py`
+- **doc:** `.claude/rules/rules_asset_scripts.md`
+
+## `assets/scripts/migrate_recipe_engine_keys.py`
+- **Role:** `info`
+- **provides:** `script:migrate_recipe_engine_keys`
+- **consumes:** `libs/utils/src/utils/engine_keys_migration.py (migrate`, `format_events`, `summary)`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py (is_partial_theme: which theme components set only some properties)`
+- **consumed_by:** `app/tests/test_migrate_recipe_engine_keys.py`
+- **doc:** `.claude/design/recipe_format_spec.md (section 12`, `the amendment of 2026-11-17)`, `.claude/knowledge/decision_ledger.md (D-0236`, `D-0250`, `D-0255`, `D-0258)`
+
+## `assets/scripts/recipe_pictures.py`
+- **Role:** `info`
+- **provides:** `script:recipe_pictures`
+- **consumes:** `app/modules/orchestrator.py`, `app/modules/cache_keys.py`, `app/modules/data_analysis_recipe_validator.py`, `libs/utils/src/utils/config_loader.py`, `app/modules/engine_registry.py`
+- **consumed_by:** `app/tests/test_recipe_pictures.py`
 - **doc:** `.claude/rules/rules_asset_scripts.md`
 
 ## `assets/scripts/viz_rename_table.py`
@@ -569,14 +676,14 @@
 
 ## `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`
 - **Role:** `info`
-- **provides:** `function:build_sibling_map`, `function:build_lineage_chain`, `function:build_schema_registry`, `function:load_fields_file`, `function:resolve_fields_for_schema`, `function:build_plot_lineage`, `function:get_plot_ids_in_group`, `function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml)`
+- **provides:** `function:include_paths (every !include target of a recipe text`, `quoted or not)`, `function:build_sibling_map (entry keys: role; tier = tier1 or tier2 for a tier file (new); schema_id; schema_type; siblings = input_fields/tier1/tier2 with no wrangling and no output_fields; ingredients; a plot entry is the plot itself`, `D-0250 D-0252)`, `function:build_lineage_chain`, `function:build_schema_registry`, `function:load_fields_file`, `function:resolve_fields_for_schema`, `function:build_plot_lineage`, `function:get_plot_ids_in_group`, `function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml)`
 - **consumes:** `libs/utils/src/utils/recipe_tiers.py`
 - **consumed_by:** `app/handlers/blueprint_handlers.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-074`
 
 ## `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py`
 - **Role:** `info`
-- **provides:** `func:list_groups_plots`, `func:create_group`, `func:delete_group`
+- **provides:** `func:list_groups_plots`, `func:plot_ui_label`, `func:create_group`, `func:delete_group`
 - **consumes:** `yaml`, `pathlib`, `re`
 - **consumed_by:** `app/handlers/blueprint_handlers.py (bp_groups_inventory_ui + CRUD Effects — BP-GROUPS-1)`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-082`
@@ -742,7 +849,8 @@
 
 ## `libs/transformer/src/transformer/actions/base.py`
 - **Role:** `wrangle`
-- **provides:** `decorator:register_action`, `registry:AVAILABLE_WRANGLING_ACTIONS`, `registry:ACTION_SCHEMAS`
+- **provides:** `decorator:register_action`, `registry:AVAILABLE_WRANGLING_ACTIONS`, `registry:ACTION_SCHEMAS`, `registry:ACTION_ENGINES`
+- **consumes:** `libs/utils/src/utils/engines.py (DATA_ENGINE`, `engine_problem)`
 - **consumed_by:** `libs/transformer/src/transformer/actions/composite.py`, `libs/transformer/src/transformer/actions/modified.py`, `libs/transformer/src/transformer/actions/polars_calls.py`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
 - **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
@@ -790,23 +898,30 @@
 
 ## `libs/transformer/src/transformer/anchor.py`
 - **Role:** `wrangle`
-- **provides:** `function:write_anchor`, `function:read_anchor`, `function:read_anchor_if_key`, `function:open_anchor`, `function:remove_orphan_temporaries`
-- **consumed_by:** `app/modules/orchestrator.py`
+- **provides:** `function:write_anchor`, `function:read_anchor`, `function:read_anchor_if_key`, `function:open_anchor`, `function:remove_orphan_temporaries`, `function:remove_tables_of_other_version`
+- **consumed_by:** `app/modules/orchestrator.py`, `app/src/bootloader.py`
 - **doc:** `.claude/design/recipe_format_spec.md (DEC42)`, `.claude/knowledge/architecture_decisions.md (ADR-024`, `ADR-031`, `ADR-089)`
 
 ## `libs/transformer/src/transformer/data_assembler.py`
 - **Role:** `wrangle`
 - **provides:** `class:DataAssembler`, `method:assemble`
 - **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
-- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`
+- **consumed_by:** `libs/transformer/src/transformer/engine_python_polars.py (the entry that app/modules/engine_registry.py hands to app/modules/orchestrator.py)`, `libs/transformer/tests/debug_assembler.py`
 - **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#7`, `.claude/knowledge/architecture_decisions.md#ADR-094`
 
 ## `libs/transformer/src/transformer/data_wrangler.py`
 - **Role:** `wrangle`
-- **provides:** `class:DataWrangler`, `method:_resolve_tier`, `method:run`
+- **provides:** `class:DataWrangler`, `method:tier_steps`, `method:run`
 - **consumes:** `libs/transformer/src/transformer/actions/ (all registered actions via registry)`
-- **consumed_by:** `app/modules/orchestrator.py`, `libs/transformer/tests/debug_assembler.py`, `libs/transformer/tests/debug_wrangler.py`
+- **consumed_by:** `libs/transformer/src/transformer/engine_python_polars.py (the entry that app/modules/engine_registry.py hands to app/modules/orchestrator.py)`, `app/modules/data_analysis_recipe_validator.py (tier_steps)`, `app/modules/wrangle_studio.py (tier_steps)`, `app/handlers/blueprint_handlers.py`, `libs/transformer/tests/debug_assembler.py`, `libs/transformer/tests/debug_wrangler.py`
 - **doc:** `.claude/rules/rules_data_engine.md`, `.claude/knowledge/architecture_decisions.md#ADR-094`
+
+## `libs/transformer/src/transformer/engine_python_polars.py`
+- **Role:** `wrangle`
+- **provides:** `constant:ENTRY`, `constant:ENGINE`
+- **consumes:** `libs/utils/src/utils/engines.py (DATA_ENGINE`, `DataEngineEntry)`, `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`
+- **consumed_by:** `app/modules/engine_registry.py`, `libs/transformer/tests/test_action_engine_field.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0247)`
 
 ## `libs/transformer/src/transformer/join_diagnosis.py`
 - **Role:** `wrangle`
@@ -842,6 +957,11 @@
 - **consumed_by:** `libs/transformer/tests/test_debug_wrangler.py`
 - **doc:** `.claude/rules/rules_data_engine.md#3`
 
+## `libs/transformer/tests/test_action_engine_field.py`
+- **Role:** `wrangle`
+- **consumes:** `libs/transformer/src/transformer/actions/base.py`, `libs/transformer/src/transformer/engine_python_polars.py`, `libs/utils/src/utils/engines.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0238`, `D-0247)`
+
 ## `libs/utils/src/utils/action_names.py`
 - **Role:** `ref`
 - **provides:** `constant:JOIN`, `constant:SELECT`, `constant:DROP`, `constant:WITH_COLUMNS`, `constant:FILTER`, `constant:CAST`
@@ -869,11 +989,19 @@
 - **consumed_by:** `app/modules/deployment_error.py (re-export shim)`, `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`, `libs/connector/src/connector/irida.py`, `libs/connector/src/connector/filesystem.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
 
+## `libs/utils/src/utils/engine_keys_migration.py`
+- **Role:** `ref`
+- **provides:** `function:migrate`, `class:Result`, `class:Event`
+- **consumes:** `libs/utils/src/utils/recipe_spec.yaml (label_keys`, `removed)`, `libs/utils/src/utils/recipe_check.py (spec)`, `libs/utils/src/utils/recipe_migration.py (_content_end)`
+- **consumed_by:** `assets/scripts/migrate_recipe_engine_keys.py`, `libs/utils/tests/test_engine_keys_migration.py`
+- **doc:** `.claude/design/recipe_format_spec.md (4.1)`, `decisions D-0236`, `D-0237`, `D-0241`, `D-0242`, `D-0250 to D-0253`, `D-0255`, `D-0258`
+
 ## `libs/utils/src/utils/engines.py`
 - **Role:** `ref`
-- **provides:** `constant:DATA_ENGINE`, `constant:PLOT_ENGINE`, `constant:ENGINES`, `function:engine_problem`
-- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/utils/src/utils/recipe_migration.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`
-- **doc:** `.claude/knowledge/architecture_decisions.md (ADR-106 V8`, `ADR-100)`
+- **provides:** `constant:DATA_ENGINE`, `constant:PLOT_ENGINE`, `constant:ENGINE_TABLE`, `constant:ENGINES`, `class:EngineRow`, `class:DataEngineEntry`, `class:PlotEngineEntry`, `function:engines_of`, `function:entry_module_name`, `function:effective_engine`, `function:engine_versions`, `function:tier_engine`, `function:engine_known`, `function:engine_problem`, `function:engine_error`, `function:prefix_problems`, `function:plot_engine_slot`
+- **consumes:** `libs/utils/src/utils/errors.py (DataAnalysisRecipeError: the refusal of an engine the app has no library for)`
+- **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/utils/src/utils/recipe_migration.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/registry.py`
+- **doc:** `.claude/knowledge/architecture_decisions.md (ADR-106 V8`, `ADR-100)`, `.claude/knowledge/decision_ledger.md (D-0219`, `D-0238`, `D-0239`, `D-0247)`
 
 ## `libs/utils/src/utils/errors.py`
 - **Role:** `ref`
@@ -897,7 +1025,7 @@
 
 ## `libs/utils/src/utils/formula_check.py`
 - **Role:** `ref`
-- **provides:** `function:formula_problems`, `function:evaluate_formula`, `function:function_string_problems`, `function:smoother_formula_problems`, `constant:SMOOTHER_FUNCTIONS`, `function:denied_methods`, `function:member_refusal`, `function:refused_members`, `constant:REFUSED_BY_NAME`, `constant:REFUSED_DTYPES`, `constant:MODULE_FUNCTIONS`, `constant:MATH_FUNCTIONS`, `constant:PLOT_FUNCTION_MODULES`, `constant:PLOT_FUNCTION_NAMES`, `constant:PYTHON_MATH_FUNCTIONS`, `constant:MATH_CONSTANTS`, `class:FormulaError`
+- **provides:** `function:formula_problems`, `function:evaluate_formula`, `function:function_string_problems`, `function:smoother_formula_problems`, `constant:SMOOTHER_FUNCTIONS`, `function:denied_methods`, `function:member_refusal`, `function:refused_members`, `constant:REFUSED_BY_NAME`, `constant:REFUSED_BY_NAME_SUGGESTION`, `constant:RANDOM_REFUSAL`, `constant:REFUSED_DTYPES`, `constant:MODULE_FUNCTIONS`, `constant:MATH_FUNCTIONS`, `constant:PLOT_FUNCTION_MODULES`, `constant:PLOT_FUNCTION_NAMES`, `constant:PYTHON_MATH_FUNCTIONS`, `constant:MATH_CONSTANTS`, `class:FormulaError`
 - **consumed_by:** `libs/utils/tests/test_formula_check.py`, `libs/utils/tests/test_formula_element_field.py`, `libs/utils/tests/test_formula_refuses_object.py`, `libs/utils/tests/test_formula_reads_no_outside_data.py`, `libs/utils/tests/test_plot_text_check.py`, `libs/utils/tests/test_stat_function_names.py`, `libs/utils/src/utils/plot_text_check.py`, `libs/utils/src/utils/recipe_check.py`, `libs/viz_factory/src/viz_factory/checked_plot.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/transformer/src/transformer/actions/polars_calls.py`, `libs/id_reconciliation/src/id_reconciliation/core.py`, `libs/viz_factory/tests/test_stat_function_names_drawn.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 15; check ST06)`
 
@@ -941,8 +1069,8 @@
 
 ## `libs/utils/src/utils/plot_text_check.py`
 - **Role:** `ref`
-- **provides:** `function:layer_text_problems`, `function:facet_variable_problems`, `function:facet_variables`, `function:facet_sides`, `function:facet_wrap_spec`, `class:FacetTextError`, `constant:FACET_PARAMETERS`
-- **consumes:** `libs/utils/src/utils/formula_check.py`, `libs/utils/src/utils/fix_text.py (split_fix)`
+- **provides:** `constant:STAT_FUNCTION_TEXT_BLOCKED`, `constant:STAT_FUNCTION_TEXT_SUGGESTION`, `function:layer_text_problems`, `function:facet_variable_problems`, `function:facet_variables`, `function:facet_sides`, `function:facet_wrap_spec`, `class:FacetTextError`, `constant:FACET_PARAMETERS`
+- **consumes:** `libs/utils/src/utils/formula_check.py (smoother_formula_problems)`
 - **consumed_by:** `libs/utils/src/utils/recipe_check.py`, `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/facets/core.py`, `libs/utils/tests/test_plot_text_check.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 15; check PS06)`
 
@@ -960,7 +1088,7 @@
 
 ## `libs/utils/src/utils/recipe_check.py`
 - **Role:** `ref`
-- **provides:** `function:check_recipe`, `function:spec`, `class:Problem`, `class:Result`
+- **provides:** `function:check_recipe`, `function:spec`, `function:plot_keys`, `class:Problem`, `class:Result`
 - **consumes:** `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/engines.py`, `libs/utils/src/utils/action_names.py`, `libs/utils/src/utils/ui_schema.py`, `libs/utils/src/utils/formula_check.py`, `libs/utils/src/utils/plot_text_check.py`, `libs/utils/src/utils/recipe_paths.py`, `libs/utils/src/utils/polars_types.py`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/recipe_tiers.py`, `libs/utils/src/utils/fix_text.py (split_fix`, `with_fix)`
 - **consumed_by:** `libs/utils/src/utils/recipe_loader.py`, `libs/utils/src/utils/recipe_factory.py`, `libs/utils/src/utils/recipe_migration.py`, `libs/utils/src/utils/strict_form_migration.py`, `libs/ingestion/src/ingestion/declared.py`, `libs/viz_gallery/src/viz_gallery/gallery_manager.py`, `libs/viz_gallery/src/viz_gallery/example_recipe.py`, `libs/viz_gallery/src/viz_gallery/taxonomy.py`, `assets/scripts/convert_gallery_examples.py`, `assets/scripts/create_data_analysis_recipe.py`, `libs/utils/tests/test_recipe_check.py`
 - **doc:** `.claude/design/recipe_format_spec.md (sections 3 to 11`, `14)`
@@ -994,8 +1122,8 @@
 
 ## `libs/utils/src/utils/recipe_tiers.py`
 - **Role:** `ref`
-- **provides:** `function:tier2_steps`, `function:step_list`, `function:plot_targets`, `function:unapplied_schema_tier2`, `function:unapplied_join_tier2`, `function:without_tier2`, `function:schema_bodies`
-- **consumed_by:** `app/modules/cache_keys.py`, `app/modules/orchestrator.py (through cache_keys)`, `libs/utils/src/utils/recipe_check.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/utils/tests/test_recipe_tiers.py`, `app/tests/test_schema_tier2.py`
+- **provides:** `function:collection_body`, `function:tier2_steps`, `function:step_list`, `function:plot_targets`, `function:unapplied_schema_tier2`, `function:unapplied_join_tier2`, `function:without_tier2`, `function:without_data_engines`, `function:collection_bodies`, `function:schema_bodies`
+- **consumed_by:** `app/modules/cache_keys.py`, `app/modules/engine_record.py (collection_body`, `step_list)`, `app/modules/orchestrator.py (through cache_keys)`, `libs/utils/src/utils/recipe_check.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/utils/tests/test_recipe_tiers.py`, `app/tests/test_schema_tier2.py`
 - **doc:** `.claude/design/recipe_format_spec.md (DEC16`, `line 357`, `S07`, `X4)`, `.claude/knowledge/architecture_decisions.md#adr-089`
 
 ## `libs/utils/src/utils/signature_params.py`
@@ -1029,6 +1157,11 @@
 - **consumed_by:** `libs/utils/tests/test_step_problems.py`, `libs/transformer/tests/test_ui_schemas.py`, `libs/transformer/tests/test_action_schema_examples.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py`, `libs/blueprint_arch/tests/test_schema_registry.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 8; checks ST03`, `ST04`, `ST07`, `ST09`, `ST10`, `ST11; R3)`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
+## `libs/utils/tests/test_engine_table.py`
+- **Role:** `ref`
+- **consumes:** `libs/utils/src/utils/engines.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0219`, `D-0238`, `D-0239`, `D-0247)`
+
 ## `libs/utils/tests/test_engines.py`
 - **Role:** `ref`
 - **consumes:** `libs/utils/src/utils/engines.py`, `libs/utils/src/utils/recipe_check.py`, `libs/utils/src/utils/recipe_spec.yaml`
@@ -1042,8 +1175,8 @@
 
 ## `libs/viz_factory/src/viz_factory/checked_plot.py`
 - **Role:** `plot`
-- **provides:** `class:CheckedPlot`, `class:PlotContext`, `class:Step`, `function:plot_environment`, `function:draw_checked`, `function:show_draw_errors`, `function:plot_warnings`, `function:explain_build_failure`, `function:describe_failure`, `function:error_figure`
-- **consumes:** `libs/viz_factory/src/viz_factory/errors.py`, `libs/viz_factory/src/viz_factory/arguments.py`, `libs/viz_factory/src/viz_factory/registry.py`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/formula_check.py (MATH_CONSTANTS`, `MATH_FUNCTIONS)`, `plotnine`, `matplotlib`
+- **provides:** `class:CheckedPlot`, `class:PlotContext`, `class:Step`, `function:plot_environment`, `function:draw_checked`, `function:show_draw_errors`, `function:plot_warnings`, `function:applied_theme`, `function:explain_build_failure`, `function:describe_failure`, `function:error_figure`
+- **consumes:** `libs/viz_factory/src/viz_factory/errors.py`, `libs/viz_factory/src/viz_factory/arguments.py`, `libs/viz_factory/src/viz_factory/registry.py`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/formula_check.py (MATH_CONSTANTS`, `MATH_FUNCTIONS)`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py (is_partial_theme`, `for applied_theme)`, `plotnine`, `matplotlib`
 - **consumed_by:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `app/handlers/home_theater.py`, `app/modules/wrangle_studio.py`, `app/modules/gallery_examples.py`
 - **doc:** `.claude/design/decisions_2026-11-14/viz_plan_for_eve.md (V7)`, `.claude/rules/rules_viz_factory.md`
 
@@ -1052,6 +1185,13 @@
 - **provides:** `component:coord_cartesian`, `component:coord_flip`, `component:coord_fixed`, `component:coord_equal`, `component:coord_trans`, `component:coord_lims`
 - **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`
 - **doc:** `.claude/rules/rules_viz_factory.md`
+
+## `libs/viz_factory/src/viz_factory/engine_python_plotnine.py`
+- **Role:** `plot`
+- **provides:** `constant:ENTRY`, `constant:ENGINE`
+- **consumes:** `libs/utils/src/utils/engines.py (PLOT_ENGINE`, `PlotEngineEntry)`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/checked_plot.py (applied_theme: the theme as applied`, `recorded per plot`, `D-0248)`
+- **consumed_by:** `app/modules/engine_registry.py`, `libs/viz_factory/tests/test_component_engine_field.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0247)`
 
 ## `libs/viz_factory/src/viz_factory/errors.py`
 - **Role:** `plot`
@@ -1075,8 +1215,8 @@
 
 ## `libs/viz_factory/src/viz_factory/geoms/core.py`
 - **Role:** `plot`
-- **provides:** `component:geom_boxplot`, `component:geom_violin`, `component:geom_point`, `component:geom_line`, `component:geom_bar`, `component:geom_col`, `component:geom_histogram`, `component:geom_smooth`, `component:geom_density`, `component:geom_errorbar`, `component:geom_pointrange`, `component:geom_tile`, `component:geom_raster`, `component:geom_text`, `component:geom_label`, `component:geom_jitter`, `component:geom_step`, `component:geom_segment`, `component:geom_abline`, `component:geom_area`, `component:geom_bin_2d`, `component:geom_blank`, `component:geom_count`, `component:geom_crossbar`, `component:geom_density_2d`, `component:geom_dotplot`, `component:geom_errorbarh`, `component:geom_freqpoly`, `component:geom_hline`, `component:geom_linerange`, `component:geom_path`, `component:geom_vline`, `component:stat_count`, `component:stat_bin`, `component:stat_summary`, `component:stat_boxplot`, `component:stat_smooth`, `component:stat_density`, `component:labs (geom)`, `function:function_string_namespace`
-- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/errors.py (CannotAct)`, `libs/utils/src/utils/fix_text.py (split_fix`, `with_fix)`, `libs/utils/src/utils/formula_check.py (PLOT_FUNCTION_MODULES`, `PLOT_FUNCTION_NAMES`, `MATH_FUNCTIONS`, `MATH_CONSTANTS)`
+- **provides:** `component:geom_boxplot`, `component:geom_violin`, `component:geom_point`, `component:geom_line`, `component:geom_bar`, `component:geom_col`, `component:geom_histogram`, `component:geom_smooth`, `component:geom_density`, `component:geom_errorbar`, `component:geom_pointrange`, `component:geom_tile`, `component:geom_raster`, `component:geom_text`, `component:geom_label`, `component:geom_jitter`, `component:geom_step`, `component:geom_segment`, `component:geom_abline`, `component:geom_area`, `component:geom_bin_2d`, `component:geom_blank`, `component:geom_count`, `component:geom_crossbar`, `component:geom_density_2d`, `component:geom_dotplot`, `component:geom_errorbarh`, `component:geom_freqpoly`, `component:geom_hline`, `component:geom_linerange`, `component:geom_path`, `component:geom_vline`, `component:stat_count`, `component:stat_bin`, `component:stat_summary`, `component:stat_boxplot`, `component:stat_smooth`, `component:stat_density`, `component:labs (geom)`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/errors.py (CannotAct)`, `libs/utils/src/utils/fix_text.py (split_fix`, `with_fix)`, `libs/utils/src/utils/plot_text_check.py (STAT_FUNCTION_TEXT_BLOCKED`, `STAT_FUNCTION_TEXT_SUGGESTION)`
 - **consumed_by:** `any YAML plot spec using these component names`, `libs/viz_factory/src/viz_factory/viz_factory.py (via registry)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (ui_schema via COMPONENT_SCHEMAS)`
 - **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
@@ -1096,7 +1236,7 @@
 ## `libs/viz_factory/src/viz_factory/plot_config_resolver.py`
 - **Role:** `plot`
 - **provides:** `function:resolve_plot_config`, `function:compute_optimisation_layer`
-- **consumes:** `libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)`
+- **consumes:** `libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)`, `libs/utils/src/utils/recipe_check.py (plot_keys: the entry keys and the content keys of a plot entry; plot_defaults_keys: the allowed and the removed keys of plot_defaults)`
 - **consumed_by:** `libs/viz_factory/src/viz_factory/viz_factory.py`
 - **doc:** `.claude/design/plot_config_cascade.md`, `.claude/design/plot_authoring_model.md`
 
@@ -1108,8 +1248,8 @@
 
 ## `libs/viz_factory/src/viz_factory/registry.py`
 - **Role:** `plot`
-- **provides:** `decorator:register_plot_component`, `function:refuse_unsafe_texts`, `registry:PLOT_COMPONENTS`, `registry:COMPONENT_SCHEMAS`, `function:get_component`
-- **consumes:** `libs/viz_factory/src/viz_factory/parameters.py (exact_parameters)`, `libs/utils/src/utils/plot_text_check.py (layer_text_problems`, `facet_wrap_spec`, `FacetTextError)`, `libs/viz_factory/src/viz_factory/errors.py (CannotAct)`
+- **provides:** `decorator:register_plot_component`, `function:refuse_unsafe_texts`, `registry:PLOT_COMPONENTS`, `registry:COMPONENT_SCHEMAS`, `registry:COMPONENT_ENGINES`, `function:get_component`
+- **consumes:** `libs/utils/src/utils/engines.py (PLOT_ENGINE`, `engine_problem)`, `libs/viz_factory/src/viz_factory/parameters.py (exact_parameters)`, `libs/utils/src/utils/plot_text_check.py (layer_text_problems`, `facet_wrap_spec`, `FacetTextError)`, `libs/viz_factory/src/viz_factory/errors.py (CannotAct)`
 - **consumed_by:** `libs/viz_factory/tests/test_component_plotnine_field.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/scales/core.py`, `libs/viz_factory/src/viz_factory/positions/core.py`, `libs/viz_factory/src/viz_factory/guides/core.py`, `libs/viz_factory/src/viz_factory/facets/core.py`, `libs/viz_factory/src/viz_factory/coords/core.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py`
 - **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
 
@@ -1130,7 +1270,7 @@
 - **Role:** `plot`
 - **provides:** `class:VizFactory`, `function:VizFactory.render`, `constant:DEFAULT_RANDOM_STATE`, `function:draw_checked and function:show_draw_errors (re-exported from checked_plot.py)`
 - **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`, `libs/viz_factory/src/viz_factory/checked_plot.py`, `libs/viz_factory/src/viz_factory/font_check.py`, `libs/viz_factory/src/viz_factory/errors.py`, `libs/utils/src/utils/errors.py`, `libs/utils/src/utils/pipeline_error.py`, `libs/utils/src/utils/filter_values.py`, `libs/utils/src/utils/engines.py`, `libs/utils/src/utils/missing_values.py`, `libs/utils/src/utils/na_choice.py`
-- **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/export_handlers.py`, `app/modules/gallery_examples.py`, `app/tests/test_render_every_plot.py`, `libs/viz_factory/tests/`
+- **consumed_by:** `libs/viz_factory/src/viz_factory/engine_python_plotnine.py (the entry that app/modules/engine_registry.py hands to app/src/server.py`, `HOME`, `the export`, `Blueprint and the gallery through PlotEngines)`, `app/handlers/home_theater.py (show_draw_errors)`, `app/modules/wrangle_studio.py (show_draw_errors)`, `app/tests/test_render_every_plot.py`, `libs/viz_factory/tests/`
 - **doc:** `.claude/rules/rules_viz_factory.md`, `.claude/knowledge/architecture_decisions.md (ADR-081`, `ADR-090`, `ADR-094`, `ADR-106)`
 
 ## `libs/viz_factory/tests/debug_audit.py`
@@ -1180,6 +1320,11 @@
 - **consumes:** `libs/viz_factory/src/viz_factory/`, `libs/transformer/src/transformer/data_wrangler.py`
 - **consumed_by:** `manual Tier 3 wrangling+viz testing`
 - **doc:** `.claude/rules/rules_data_engine.md`
+
+## `libs/viz_factory/tests/test_component_engine_field.py`
+- **Role:** `plot`
+- **consumes:** `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/engine_python_plotnine.py`, `libs/utils/src/utils/engines.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0238`, `D-0247)`
 
 ## `libs/viz_factory/tests/test_component_plotnine_field.py`
 - **Role:** `plot`

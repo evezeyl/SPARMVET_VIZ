@@ -64,7 +64,7 @@ def test_a_table_without_the_id_column_is_not_refused():
     def change(raw):
         raw["data_schemas"]["B"]["input_fields"].pop("id")
         raw["joins"] = {}
-        raw["analysis_groups"]["g"]["plots"]["p"]["spec"]["target_dataset"] = "A"
+        raw["analysis_groups"]["g"]["plots"]["p"]["target_dataset"] = "A"
     assert "E03" not in run(mutated(change)).codes()
 
 
@@ -79,7 +79,7 @@ def test_the_metadata_schema_is_checked_like_any_table():
     def change(raw):
         raw["metadata_schema"] = raw["data_schemas"].pop("B")
         raw["joins"]["AB"]["ingredients"][1]["dataset_id"] = "metadata_schema"
-        raw["joins"]["AB"]["steps"]["tier1"][0]["right_ingredient"] = "metadata_schema"
+        raw["joins"]["AB"]["tier1"]["steps"][0]["right_ingredient"] = "metadata_schema"
         raw["metadata_schema"]["input_fields"]["id"]["type"] = "Int64"
     result = run(mutated(change))
     assert [p.path for p in result.problems if p.code == "E03"] == ["metadata_schema.input_fields.id.type"]

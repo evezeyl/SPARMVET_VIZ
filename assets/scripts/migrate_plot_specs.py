@@ -25,6 +25,7 @@ Usage:
 
 import argparse
 import copy
+import sys
 from pathlib import Path
 
 import yaml
@@ -316,6 +317,18 @@ def main() -> None:
         help="Skip patching generator scripts (create_data_analysis_recipe.py)."
     )
     args = parser.parse_args()
+
+    # WHY: this was the one-time migration of ADR-083 (2026-05-20). It writes the plot under `spec:`, which the recipe checker
+    # refuses since 2026-11-17 (D-0236, D-0237), so its output is no longer a valid recipe. It is kept only until the removal
+    # is decided (tmpAI/engine_keys/leftovers_report.md); it must not write.
+    print(
+        "migrate_plot_specs.py no longer runs: it was the one-time migration of 2026-05-20 (ADR-083) and writes the plot "
+        "under 'spec:', a shape the recipe checker refuses now.\n"
+        "To bring a recipe in an older shape to the current one run: assets/scripts/migrate_recipe_engine_keys.py\n"
+        "A plot that still holds 'factory_id' or flat aesthetics (x:, y: at the top of the plot) is rewritten by hand: "
+        "an explicit geom_* layer in 'layers:' and the aesthetics under 'mapping:'.",
+        file=sys.stderr)
+    sys.exit(2)
 
     dry_run = not args.apply
 

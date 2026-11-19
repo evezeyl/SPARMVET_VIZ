@@ -49,11 +49,12 @@ Now an order comes in for a specific dish (a Plot):
 Individual data contracts (`.yaml`) are structured to reflect these stages:
 
 ```yaml
-wrangling:
-  tier1: 
+tier1:
+  steps:
     - action: polars_rename   # Foundational
-    # joins have their own tier1 list (polars_join, ...)
-  tier2:
+    # joins have their own tier1 (polars_join, ...), written the same way
+tier2:
+  steps:
     - action: polars_group_by # Specific to this visual
     - action: polars_pivot    # Specific to this visual
 ```

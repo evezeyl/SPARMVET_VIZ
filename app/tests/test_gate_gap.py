@@ -42,10 +42,10 @@ def _deployment(tmp_path, contact=None):
 
 
 def _write_with_fragment(folder: Path, name: str, shared_dir: Path | None = None) -> Path:
-    """A recipe whose plot spec is an included fragment (`<name>/spec_p.yaml`, or a shared file outside the mirrored folder)."""
+    """A recipe whose plot entry is an included file (`<name>/spec_p.yaml`, or a shared file outside the mirrored folder)."""
     recipe = tiny_recipe(name)
-    spec = recipe["analysis_groups"]["g"]["plots"]["p"]["spec"]
-    recipe["analysis_groups"]["g"]["plots"]["p"]["spec"] = "__INC__"
+    spec = recipe["analysis_groups"]["g"]["plots"]["p"]  # the whole plot entry is the included file (D-0252)
+    recipe["analysis_groups"]["g"]["plots"]["p"] = "__INC__"
     if shared_dir is None:
         fragment = folder / name / "spec_p.yaml"
         include = f"{name}/spec_p.yaml"

@@ -1,6 +1,6 @@
 """One numbering of steps for the recipe writer: from 1, in the checker and in every assembler message (Eve, 2026-11-15).
 
-The checker writes paths such as `joins.AB.steps.tier1[2]` (the second step); the assembler said "step 1" for the same step
+The checker writes paths such as `joins.AB.tier1.steps[2]` (the second step); the assembler said "step 1" for the same step
 (it counted from 0). Both count from 1 now. This test takes one recipe with an error in its SECOND join step and shows the same number
 in the checker's path and in the assembler's error.
 
@@ -35,7 +35,7 @@ def test_the_checker_and_the_assembler_name_the_same_step_number_for_the_same_st
     raw, steps = two_step_recipe()
     found = [p for p in check_recipe(raw, "run", catalogs=checker_catalogs()).problems if p.code == "J05"]
     assert found, "the checker must refuse the second step"
-    checker_number = int(re.search(r"tier1\[(\d+)\]", found[0].path).group(1))
+    checker_number = int(re.search(r"tier1\.steps\[(\d+)\]", found[0].path).group(1))
     ingredients = {"A": pl.LazyFrame({"a": ["a"]}), "B": pl.LazyFrame({"a": ["a"]})}
     with pytest.raises(TransformationError) as caught:
         DataAssembler(ingredients, recipe_id="r", join_id="AB").assemble(steps)

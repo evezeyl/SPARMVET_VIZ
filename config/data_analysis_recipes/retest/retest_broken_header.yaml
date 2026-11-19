@@ -23,28 +23,32 @@ data_schemas:
       sample_id: {original_name: sample_id, type: String, label: Sample, is_entity_key: true}
       gene: {original_name: gene, type: String, label: Gene}
       predicted_phenotype: {original_name: predicted_phenotype, type: String, label: Phenotype}
-    wrangling:
-      tier1: []
-      tier2: []
+    tier1:
+      steps: []
+    tier2:
+      steps: []
 
 joins:
   Genes_joined:
     label: "Genes joined"
     ingredients:
       - dataset_id: Genes
-    steps:
-      tier1: []
-      tier2: []
+    tier1:
+      steps: []
+    tier2:
+      steps: []
+
+plot_defaults:
+  theme: theme_bw
 
 analysis_groups:
   retest:
-    label: "Retest"
+    ui_label: "Retest"
     plots:
       genes_bar:
-        label: "Genes"
-        spec:
-          target_dataset: Genes_joined
-          mapping: {x: gene}
-          layers:
-            - name: geom_bar
-              params: {}
+        ui_label: "Genes"
+        target_dataset: Genes_joined
+        mapping: {x: gene}
+        layers:
+          - name: geom_bar
+            params: {}

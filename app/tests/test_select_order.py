@@ -89,9 +89,9 @@ def test_no_select_keeps_the_assembled_order(tmp_path):
 # -- the key itself: the order of a select is in it, the order of unordered things is not ------
 
 def _raw(order, input_fields):
-    return {"id": "r", "data_schemas": {"T": {"input_fields": input_fields}},
+    return {"id": "r", "data_engine": "python-polars", "plot_engine": "python-plotnine", "data_schemas": {"T": {"input_fields": input_fields}},
             "joins": {"C": {"ingredients": [{"dataset_id": "T"}],
-                            "steps": {"tier1": [{"action": "polars_select", "exprs": list(order)}]}}}}
+                            "tier1": {"steps": [{"action": "polars_select", "exprs": list(order)}]}}}}
 
 
 def test_the_tier1_material_depends_on_the_order_of_the_select():

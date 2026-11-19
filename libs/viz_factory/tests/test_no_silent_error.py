@@ -140,8 +140,28 @@ def test_an_unknown_spec_key_without_a_close_match_lists_the_keys():
 
 
 def test_the_spec_keys_a_plot_may_have_are_still_accepted():
-    plot = VizFactory().render(DF, recipe([POINT], theme="theme_light", title="t", labels={"x": "X"}, palette="sparmvet_brand"), "p")
+    plot = VizFactory().render(DF, recipe([POINT], theme="theme_light", labels={"x": "X"}, palette="sparmvet_brand"), "p")
     plot.draw()
+
+
+def test_the_title_key_is_refused_and_the_message_says_where_the_title_goes_now():
+    """D-0253: the figure title is written in a labs layer; a `title` key of the plot is not drawn and is not ignored."""
+    with pytest.raises(VisualizationError) as error:
+        VizFactory().render(DF, recipe([POINT], title="t"), "p")
+    text = str(error.value)
+    assert "'title' is not a key of a plot spec" in text and "labs layer" in text
+
+
+def test_the_app_side_keys_of_the_plot_entry_are_ignored_not_refused():
+    """The entry holds ui_label, ui_title, description, comment, taxonomy, plot_engine next to the plot content (D-0237, D-0253)."""
+    entry = dict(ui_label="L", ui_title="T", description="d", comment="c", taxonomy={"family": "Ranking"}, plot_engine="python-plotnine")
+    VizFactory().render(DF, recipe([POINT], **entry), "p").draw()
+
+
+def test_the_figure_title_comes_from_the_labs_layer_only():
+    plot = VizFactory().render(DF, recipe([POINT, {"name": "labs", "params": {"title": "From labs"}}], ui_title="Not the figure title"), "p")
+    plot.draw()
+    assert plot.labels.title == "From labs"
 
 
 def test_an_explicit_meta_block_is_still_accepted():

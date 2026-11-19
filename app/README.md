@@ -27,6 +27,7 @@ app/
 │
 ├── modules/                    ← Importable, testable, Shiny-free
 │   ├── orchestrator.py         ← Tier 1/2 assembly bridge, cache keys
+│   ├── engine_registry.py      ← Joins the engine entry files; chooses the library by `data_engine` / `plot_engine`
 │   ├── wrangle_studio.py       ← Blueprint Architect UI class
 │   ├── gallery_viewer.py       ← Static gallery browser
 │   ├── test_lab_studio.py      ← Test Lab coordinator (renamed from dev_studio.py)

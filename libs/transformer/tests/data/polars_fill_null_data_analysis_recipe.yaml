@@ -29,9 +29,10 @@ input_fields:
   s:
     type: String
     label: s
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_fill_null
     columns: [n]
     value: 0
-  tier2: []
+tier2:
+  steps: []

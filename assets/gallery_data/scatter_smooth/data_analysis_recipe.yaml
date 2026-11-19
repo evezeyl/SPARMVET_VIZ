@@ -20,26 +20,28 @@ data_schemas:
       species: {type: String}
       year: {type: Int64}
       resistance_rate: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       scatter_smooth:
-        label: Scatter Plot with Smoother
+        ui_label: Scatter Plot with Smoother
         description: >-
           Drawn with geom_point; x is year, y is resistance_rate, color is species.
         taxonomy: {family: Correlation, pattern: '2 Numeric, 1 Categorical', difficulty: Simple, show: relationship,
           sample_size: individual points}
-        spec:
-          target_dataset: example
-          mapping: {x: year, y: resistance_rate, color: species}
-          layers:
-            - {name: geom_point, params: {alpha: 0.7, size: 2}}
-            - {name: geom_smooth, params: {method: lm, se: true, alpha: 0.15}}
-            - name: labs
-              params:
-                title: Resistance Rate Trend with Linear Fit
-                x: Year
-                y: Resistance Rate (%)
+        target_dataset: example
+        mapping: {x: year, y: resistance_rate, color: species}
+        layers:
+          - {name: geom_point, params: {alpha: 0.7, size: 2}}
+          - {name: geom_smooth, params: {method: lm, se: true, alpha: 0.15}}
+          - name: labs
+            params:
+              title: Resistance Rate Trend with Linear Fit
+              x: Year
+              y: Resistance Rate (%)

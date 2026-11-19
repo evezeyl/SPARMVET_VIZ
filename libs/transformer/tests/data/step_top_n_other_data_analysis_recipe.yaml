@@ -29,11 +29,12 @@ input_fields:
   s:
     type: String
     label: s
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: step_top_n_other
     column: g
     n: 1
     other_label: other
     new_column: g_top1
-  tier2: []
+tier2:
+  steps: []

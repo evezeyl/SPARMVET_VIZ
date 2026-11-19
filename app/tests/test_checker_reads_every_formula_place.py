@@ -97,7 +97,7 @@ def test_every_formula_parameter_of_the_schemas_is_a_known_place():
 def recipe_with(step: dict) -> dict:
     raw = yaml.safe_load(TEMPLATE.read_text())
     raw = copy.deepcopy(raw)
-    raw["joins"]["main_collection"]["steps"]["tier1"].append(step)
+    raw["joins"]["main_collection"]["tier1"]["steps"].append(step)
     return raw
 
 

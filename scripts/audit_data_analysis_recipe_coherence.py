@@ -174,14 +174,14 @@ def _walk_join_steps(obj: object, depth: int = 0) -> list[dict]:
 
 
 def _collect_all_field_slugs(data_analysis_recipe: dict) -> set[str]:
-    """Return union of all input_fields and output_fields slugs across all schemas."""
+    """Return the union of all input_fields slugs across all schemas (recipe format 1 has no output_fields)."""
     slugs: set[str] = set()
     schemas = data_analysis_recipe.get("data_schemas", {})
     if isinstance(schemas, dict):
         for schema in schemas.values():
             if not isinstance(schema, dict):
                 continue
-            for fields_key in ("input_fields", "output_fields"):
+            for fields_key in ("input_fields",):
                 fields = schema.get(fields_key, {})
                 # Unnest !include wrapper (same pattern as Check 1)
                 if isinstance(fields, dict) and list(fields.keys()) == [fields_key]:
@@ -342,7 +342,7 @@ def analyse_data_analysis_recipe(
                         result["join_violations"].append({
                             "context": data_analysis_recipe_path.name,
                             "key": k,
-                            "message": f"Join key `{k}` not declared in any schema's input_fields or output_fields",
+                            "message": f"Join key `{k}` not declared in any schema's input_fields",
                         })
 
     return result
@@ -436,7 +436,7 @@ def render_report(
         lines += [
             "`factory_id` was removed in ADR-083. Any data analysis recipe using it will receive a hard",
             "`VisualizationError` at runtime. Use explicit `geom_*` layers in `layers:` instead.",
-            "Migration tool: `assets/scripts/migrate_plot_specs.py --apply`",
+            "Rewrite it by hand: no script converts it (an old recipe shape is converted by `assets/scripts/migrate_recipe_engine_keys.py`).",
             "",
         ]
         for r in factory_id_fails:
@@ -499,9 +499,8 @@ def render_report(
         "**Input field slug mismatch:** Run `head -1 <source.tsv>` to see actual column names.",
         "Update the `input_fields` slug to match exactly (case-sensitive).",
         "",
-        "**Deprecated `factory_id` key (ADR-083):** Run the migration script:",
-        "`assets/scripts/migrate_plot_specs.py --apply`",
-        "Then verify with `debug_runner.py` that the plot still renders correctly.",
+        "**Deprecated `factory_id` key (ADR-083):** rewrite the plot by hand: an explicit `geom_*` layer in `layers:` and the aesthetics under `mapping:`.",
+        "No script converts it. Then check that the plot still renders correctly.",
         "",
         "## References",
         "- `rules_data_analysis_recipe_structure.md §7` — Canonical steps syntax, YAML boolean trap",

@@ -83,7 +83,7 @@ def test_tier2_built_on_a_new_tier1_is_stored_under_the_chain_of_the_new_tier1(t
     assert rows == []                                                   # B rows then kept A only: nothing
     t2 = tier2_path_for(w.anchor)
     assert stored(w.anchor, TIER1_KEY_META) == now.tier1_key
-    assert stored(t2, TIER2_KEY_META) == tier2_key(now.tier1_key, [FILTER_A])
+    assert stored(t2, TIER2_KEY_META) == tier2_key(now.tier1_key, [FILTER_A], "python-polars")
 
 
 def test_matching_keys_still_reuse_the_stored_table(tmp_path):

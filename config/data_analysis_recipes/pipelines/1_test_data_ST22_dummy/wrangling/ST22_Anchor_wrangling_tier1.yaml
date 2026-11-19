@@ -1,4 +1,4 @@
-tier1:
+steps:
   # RELATIONAL ANCHOR: Master Cross-Dataset Integration
   # Purpose: Create a "Wide" Anchor table with metadata + AMR + MLST + Virulence.
 
@@ -45,16 +45,3 @@ tier1:
     strict: true
   - action: polars_select
     exprs: ["sample_id", "source", "year", "country", "sequence_type", "serotype", "Selected_Virulence_Genes", "VF_protein", "gene", "status", "phenotype"]
-
-# tier2: aggregation / sorting for cross-dataset visualizations
-tier2:
-  # 1. Provide virulence gene count for sorting
-  - action: polars_with_columns
-    named_exprs:
-      virulence_count: pl.len().over(['sample_id'])
-
-  # 2. Sort samples by virulence count (primary) to highlight high-risk isolates
-  - action: polars_sort
-    by: [virulence_count, sample_id]
-    maintain_order: true
-    descending: [true, false]

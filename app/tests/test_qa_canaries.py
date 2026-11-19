@@ -118,7 +118,7 @@ def test_fanout_exhibit_multiplies_rows_as_documented(stage, raw_config):
     the check is built, change this test on purpose."""
     res = _tsv("test_data_ResFinder_*.tsv").group_by("sample_id").len().rename({"len": "n_res"})
     spec = raw_config["additional_datasets_schemas"]["VirulenceFinder"]
-    with_stage = stage.orchestrator.prepare_ingredient("VirulenceFinder", spec).collect()
+    with_stage = stage.orchestrator.prepare_ingredient("VirulenceFinder", spec, recipe=raw_config).collect()
     vir = with_stage.group_by("sample_id").len().rename({"len": "n_vir"})
     both = (
         vir.with_columns(pl.col("sample_id").cast(pl.String))
@@ -193,7 +193,7 @@ def test_every_canary_plot_states_what_to_expect(raw_config):
     assert plots, "the QA group is empty"
     for plot_id, entry in plots.items():
         assert plot_id.startswith("qa_"), plot_id
-        labs = [layer for layer in entry["spec"]["layers"] if layer["name"] == "labs"]
+        labs = [layer for layer in entry["layers"] if layer["name"] == "labs"]
         subtitle = (labs[0]["params"].get("subtitle", "") if labs else "")
         assert subtitle.startswith(("Expect", "Inflated")), f"{plot_id}: the expected numbers must be in the plot subtitle"
 

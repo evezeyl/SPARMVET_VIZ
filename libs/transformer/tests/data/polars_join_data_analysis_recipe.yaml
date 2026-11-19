@@ -31,9 +31,10 @@ data_schemas:
       s:
         type: String
         label: s
-    wrangling:
-      tier1: []
-      tier2: []
+    tier1:
+      steps: []
+    tier2:
+      steps: []
   polars_join_right:
     source:
       type: local_tsv
@@ -47,19 +48,21 @@ data_schemas:
       v:
         type: Int64
         label: v
-    wrangling:
-      tier1: []
-      tier2: []
+    tier1:
+      steps: []
+    tier2:
+      steps: []
 joins:
   polars_join:
     ingredients:
     - dataset_id: polars_join
     - dataset_id: polars_join_right
-    steps:
-      tier1:
+    tier1:
+      steps:
       - action: polars_join
         right_ingredient: polars_join_right
         'on': [id]
         how: left
         maintain_order: left_right
-      tier2: []
+    tier2:
+      steps: []

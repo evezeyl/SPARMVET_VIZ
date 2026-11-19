@@ -2,6 +2,7 @@ import functools
 import logging
 from typing import Callable, Dict, Any, Optional
 
+from utils.engines import PLOT_ENGINE, engine_problem
 from utils.plot_text_check import FacetTextError, facet_wrap_spec, layer_text_problems
 
 from viz_factory.parameters import ComponentParameterError, exact_parameters
@@ -9,8 +10,8 @@ from viz_factory.parameters import ComponentParameterError, exact_parameters
 logger = logging.getLogger(__name__)
 
 # @deps
-# provides: decorator:register_plot_component, function:refuse_unsafe_texts, registry:PLOT_COMPONENTS, registry:COMPONENT_SCHEMAS, function:get_component
-# consumes: libs/viz_factory/src/viz_factory/parameters.py (exact_parameters), libs/utils/src/utils/plot_text_check.py (layer_text_problems, facet_wrap_spec, FacetTextError), libs/viz_factory/src/viz_factory/errors.py (CannotAct)
+# provides: decorator:register_plot_component, function:refuse_unsafe_texts, registry:PLOT_COMPONENTS, registry:COMPONENT_SCHEMAS, registry:COMPONENT_ENGINES, function:get_component
+# consumes: libs/utils/src/utils/engines.py (PLOT_ENGINE, engine_problem), libs/viz_factory/src/viz_factory/parameters.py (exact_parameters), libs/utils/src/utils/plot_text_check.py (layer_text_problems, facet_wrap_spec, FacetTextError), libs/viz_factory/src/viz_factory/errors.py (CannotAct)
 # consumed_by: libs/viz_factory/tests/test_component_plotnine_field.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/themes/core.py, libs/viz_factory/src/viz_factory/scales/core.py, libs/viz_factory/src/viz_factory/positions/core.py, libs/viz_factory/src/viz_factory/guides/core.py, libs/viz_factory/src/viz_factory/facets/core.py, libs/viz_factory/src/viz_factory/coords/core.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/schema_registry.py
 # doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
@@ -22,6 +23,10 @@ PLOT_COMPONENTS: Dict[str, Callable[[Any, Dict[str, Any]], Any]] = {}
 # Parallel registry: component_name → ui_schema dict (ADR-075 BLUEPRINT IDE form catalog)
 # Only populated when @register_plot_component(..., ui_schema={...}) is provided.
 COMPONENT_SCHEMAS: Dict[str, Dict[str, Any]] = {}
+
+# Parallel registry: component_name -> the engine that draws it (D-0238). Every registered component has an entry, whatever its
+# prefix: `plotnine_` names will say it, `modif_` and `step_` names do not, so the checker reads this field and not the name.
+COMPONENT_ENGINES: Dict[str, str] = {}
 
 
 def refuse_unsafe_texts(name: str, p: Any, spec: Any) -> None:
@@ -41,7 +46,7 @@ def refuse_unsafe_texts(name: str, p: Any, spec: Any) -> None:
                         " ".join(s if s[-1:] in ".!?" else s + "." for s in dict.fromkeys(suggestion for _param, _what, suggestion in problems)))
 
 
-def register_plot_component(name: str, ui_schema: Optional[Dict[str, Any]] = None):
+def register_plot_component(name: str, ui_schema: Optional[Dict[str, Any]] = None, *, engine: Any = PLOT_ENGINE):
     """
     Standard Plugin Decorator for Plotting Components.
     Any function decorated with `@register_plot_component("name")`
@@ -59,13 +64,21 @@ def register_plot_component(name: str, ui_schema: Optional[Dict[str, Any]] = Non
     carries a small `overlay` (label, widget, options per parameter name) and optionally `not_exposed` (name: reason),
     and `params` is filled in from plotnine. A `modified` or `own` component writes its own `params`. A schema that
     mixes the two, or a list that cannot be read, is an error that names the component.
+
+    `engine` is the field of the entry (D-0238): the engine that draws this component. The library holds one engine, so it is
+    that engine unless written; an entry whose engine the app has no library for cannot be registered, so no entry lacks the field.
     """
+    refusal = engine_problem("plot_engine", engine)
+    if refusal is not None:
+        raise ValueError(f"Plot component '{name}' cannot be registered: {refusal[0]}. {refusal[1]}.")
+
     def decorator(func: Callable):
         if ui_schema is not None:
             _read_exact_parameters(name, ui_schema)  # a refused schema leaves both registries as they were
         if name in PLOT_COMPONENTS:
             logger.warning(f"Overwriting plotting component: {name}")
         PLOT_COMPONENTS[name] = func
+        COMPONENT_ENGINES[name] = engine
         _CHECKED.pop(name, None)
         if ui_schema is not None:
             COMPONENT_SCHEMAS[name] = ui_schema

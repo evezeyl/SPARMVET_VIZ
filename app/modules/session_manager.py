@@ -22,9 +22,10 @@ Ghost slots (per session_key, under {location_4}/_sessions/{session_key}/)
 from __future__ import annotations
 
 # @deps
-# provides: class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, class:SessionImportLimits, function:session_import_limits_from (D-0283), function:session_input_id_part, function:session_input_id_parts (two listed sessions never share a button), exception:SessionImportRefused, exception:SessionKeyExists (D-0281)
+# provides: class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, function:extract_primary_keys, function:split_key_drops, function:key_drop_notice, class:SessionImportLimits, function:session_import_limits_from (D-0283), function:session_input_id_part, function:session_input_id_parts (two listed sessions never share a button), exception:SessionImportRefused, exception:SessionKeyExists (D-0281)
 # consumes: app/modules/error_notice.py (notice — VERIF-FIX-2, lazy), libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, re, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)
-# consumed_by: app/src/bootloader.py (limits), app/tests/test_session_import_safety.py, app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py
+# consumes: libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/recipe_tiers.py (step_list) — extract_primary_keys reads joins.*.tier1.steps and tier2.steps (D-0250)
+# consumed_by: app/src/bootloader.py (limits), app/tests/test_session_import_safety.py, app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py, app/handlers/filter_and_audit_handlers.py (make_audit_step)
 # doc: .claude/rules/ui_implementation_contract.md#12d, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
 
@@ -40,7 +41,9 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 from app.modules.cache_keys import canonical_hash
+from utils.join_keys import JOIN_ACTIONS, key_columns
 from utils.na_choice import with_na
+from utils.recipe_tiers import step_list
 
 # The node types that are a row filter: each one records `na` (keep or remove the rows with no value).
 _FILTER_NODE_TYPES = ("filter_row", "exclusion_row")
@@ -121,8 +124,8 @@ def normalise_audit_steps(by_plot: dict[str, list[dict]]) -> dict[str, list[dict
 def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
     """Return the union of join-key column names across all assembly steps.
 
-    A column is a primary key if it appears as `on`/`left_on`/`right_on` in any
-    `joins.*.audit trail[*]` step. This includes both true PKs
+    A column is a primary key if it is a key column (`on`, `left_on`, `right_on`, and the `by` groups of an as-of join: the rule of
+    `utils.join_keys.key_columns`) of a join step of `joins.*.tier1.steps` or `joins.*.tier2.steps`. This includes both true PKs
     (sample_id) and secondary/accessory keys for long-format joins (gene_id).
 
     See ADR-049 / §12g.2.
@@ -134,21 +137,61 @@ def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
     for join_def in join_defs.values():
         if not isinstance(join_def, dict):
             continue
-        audit_steps = join_def.get("steps", [])
-        if not isinstance(audit_steps, list):
-            continue
-        for step in audit_steps:
-            if not isinstance(step, dict):
+        # the steps of a join are its tier 1 and its tier 2 (`tier1: {steps: [...]}`, D-0250)
+        for step in step_list(join_def, "tier1") + step_list(join_def, "tier2"):
+            # only a join step names join keys: `on` of an unpivot or a group step names columns that are not keys
+            if not isinstance(step, dict) or step.get("action") not in JOIN_ACTIONS:
                 continue
-            for field in ("on", "left_on", "right_on"):
-                v = step.get(field)
-                if isinstance(v, str):
-                    keys.add(v)
-                elif isinstance(v, list):
-                    for c in v:
-                        if isinstance(c, str):
-                            keys.add(c)
+            left, right = key_columns(step)
+            keys.update(left)
+            keys.update(right)
     return sorted(keys)
+
+
+def split_key_drops(by_plot: dict[str, list[dict]], primary_keys) -> tuple[dict[str, list[dict]], list[dict]]:
+    """Separate the stored `drop_column` steps that name a join key from the rest of the per-plot audit stacks.
+
+    WHY: the audit refuses to drop a join key (D-0297) but a session saved before that rule, or written by hand, can hold such a
+    step, and Restore puts stored steps straight into the view. Returns `(kept, refused)`: `kept` is a copy of `by_plot` without those
+    steps (every other step, in its order, plots that become empty stay as empty lists); `refused` lists them, one entry per step
+    copy as `{"plot", "id", "column", "reason"}`. With no known join keys nothing is refused. The argument is not changed.
+    """
+    keys = set(primary_keys or [])
+    kept: dict[str, list[dict]] = {}
+    refused: list[dict] = []
+    for plot, nodes in (by_plot or {}).items():
+        kept[plot] = []
+        for node in nodes or []:
+            column = (node.get("params") or {}).get("column") if isinstance(node, dict) else None
+            if isinstance(node, dict) and node.get("node_type") == "drop_column" and column in keys:
+                refused.append({"plot": plot, "id": node.get("id", ""), "column": column, "reason": node.get("reason", "")})
+            else:
+                kept[plot].append(node)
+    return kept, refused
+
+
+def key_drop_notice(refused: list[dict], restored_ids: int) -> str:
+    """The sentence that tells the user which stored steps were not restored because they drop a join key, and why.
+
+    PROVISIONAL wording (D-0297 asks for plain words and the text of `ui_implementation_contract.md` 12g.3 goes to Eve with the other
+    texts). One entry per decision (a decision propagated to several plots has one copy per plot and one id): its column, the plots, the
+    reason the user wrote. `restored_ids` is how many other decisions were restored.
+    """
+    from app.modules.error_notice import notice
+    by_decision: dict[tuple, dict] = {}
+    for item in refused:
+        entry = by_decision.setdefault((item["id"] or f"{item['plot']}/{item['column']}", item["column"]),
+                                       {"column": item["column"], "plots": [], "reason": item["reason"]})
+        entry["plots"].append(item["plot"])
+        entry["reason"] = entry["reason"] or item["reason"]
+    parts = []
+    for entry in by_decision.values():
+        why = f", your reason was: \"{entry['reason']}\"" if entry["reason"] else ""
+        parts.append(f"dropping the column {entry['column']} (plot {', '.join(entry['plots'])}{why})")
+    n = len(by_decision)
+    what = (f"{n} step(s) of the saved session were not restored: {'; '.join(parts)}. A join key column cannot be dropped through the audit, "
+            f"because the tables are joined on it. The other {restored_ids} step(s) were restored")
+    return notice(what, "use a row filter or row exclusion instead; the saved file is not changed")
 
 
 def node_blocks_apply(node: AuditStep) -> bool:

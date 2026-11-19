@@ -17,7 +17,7 @@ CATALOG = {**CATALOGS, "actions": {**CATALOGS["actions"], **{n: {"context": ["t1
 
 def recipe(steps):
     raw = copy.deepcopy(valid())
-    raw["data_schemas"]["A"]["wrangling"] = {"tier1": steps}
+    raw["data_schemas"]["A"]["tier1"] = {"steps": steps}
     return raw
 
 

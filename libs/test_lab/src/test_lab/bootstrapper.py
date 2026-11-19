@@ -1,6 +1,6 @@
 # @deps
 # provides: DataAnalysisRecipeBootstrapper class (bootstrap, id_cleaning_steps) — infers TSV schemas
-#           and writes data analysis recipe YAML fragments (analysis_groups, joins, tiered wrangling)
+#           and writes data analysis recipe YAML fragments (analysis_groups, joins, a tier file per table: tier1: !include, D-0250)
 # consumes: polars, pathlib, typing, yaml, re (stdlib/third-party), libs/utils/src/utils/engines.py
 # consumed_by: libs/test_lab/tests/test_bootstrapper.py
 # @end_deps
@@ -30,7 +30,9 @@ yaml.add_representer(IncludeRef, represent_include, Dumper=yaml.SafeDumper)
 class DataAnalysisRecipeBootstrapper:
     """
     Logic for inferring data schemas from TSVs and bootstrapping data analysis recipe YAMLs.
-    Follows the structure of recipe format 1 (input_fields, wrangling; no output_fields).
+    Follows the structure of recipe format 1: a table has `label`, `source`, `null_values`, `strip`, `input_fields` and `tier1`
+    (D-0250: the tier is its own key, here an `!include` of a file that holds `steps`); no `wrangling`, no `output_fields`.
+    A tier 2 is not written: an absent tier 2 means that the table of tier 2 equals the table of tier 1.
     """
 
     def __init__(self, cardinality_threshold: int = 15):
@@ -59,6 +61,59 @@ class DataAnalysisRecipeBootstrapper:
 
     def _sanitize_name(self, name: str) -> str:
         return re.sub(r'[^\w]', '_', name.lower()).strip('_')
+
+    def write_table_files(self, fragments_dir: Path, table_id: str, tsv_path: Path, tier1_steps: List[Dict[str, Any]]):
+        """Write the two files of one table: its `input_fields` and its tier 1 (`steps`, D-0250).
+
+        The names are `<table_id>_input_fields.yaml` and `<table_id>_wrangling.yaml`. Returns the candidate-key hint line
+        (empty when no column is unique), which the tier file starts with as a comment.
+        """
+        df = pl.read_csv(tsv_path, separator='\t', n_rows=100)
+        fields = {}
+        pk_candidates = []
+        for col in df.columns:
+            safe_col = self._sanitize_name(col)
+            fields[safe_col] = {
+                "type": self._map_dtype(df[col]),
+                "label": col.replace('_', ' ').title(),
+                "original_name": col
+            }
+            if safe_col in ["id", "sample_id", "isolate_id"]:
+                fields[safe_col]["is_entity_key"] = True
+            # Annotate high-uniqueness columns as PK candidates
+            if df[col].n_unique() == len(df):
+                pk_candidates.append(safe_col)
+
+        with open(fragments_dir / f"{table_id}_input_fields.yaml", 'w') as f:
+            yaml.safe_dump(fields, f, sort_keys=False)
+
+        with open(fragments_dir / f"{table_id}_wrangling.yaml", 'w') as f:
+            if pk_candidates:
+                f.write(f"# Candidate PK: {', '.join(pk_candidates)} (100% unique)\n")
+            yaml.safe_dump({"steps": tier1_steps}, f, sort_keys=False)
+
+    @staticmethod
+    def source_path(path) -> str:
+        """The path a recipe names a data file by: relative to the project (the working folder) when the file is inside it,
+        else absolute (the recipe checker refuses an absolute path, so the author must move the file into the project)."""
+        resolved = Path(path).resolve()
+        try:
+            return str(resolved.relative_to(Path.cwd().resolve()))
+        except ValueError:
+            return str(resolved)
+
+    @staticmethod
+    def table_block(recipe_id: str, table_id: str, source_path: str, label: str) -> Dict[str, Any]:
+        """The table entry of the master recipe: the keys in the order of the specification, the two files included."""
+        return {
+            "label": label,
+            "source": {"type": "local_tsv", "path": source_path},
+            # No default for missing values (spec 7.3): the author states what means missing in this file
+            "null_values": [],
+            "strip": False,
+            "input_fields": IncludeRef(f"{recipe_id}/{table_id}_input_fields.yaml"),
+            "tier1": IncludeRef(f"{recipe_id}/{table_id}_wrangling.yaml"),
+        }
 
     def bootstrap(
         self,
@@ -106,61 +161,11 @@ class DataAnalysisRecipeBootstrapper:
 
         for tsv_p in tsv_paths:
             dataset_id = self._sanitize_name(tsv_p.stem)
-            # Peek for inference
-            df = pl.read_csv(tsv_p, separator='\t', n_rows=100)
-
-            # 1. Infer Fields
-            fields = {}
-            pk_candidates = []
-            for col in df.columns:
-                safe_col = self._sanitize_name(col)
-                fields[safe_col] = {
-                    "type": self._map_dtype(df[col]),
-                    "label": col.replace('_', ' ').title(),
-                    "original_name": col
-                }
-                if safe_col in ["id", "sample_id", "isolate_id"]:
-                    fields[safe_col]["is_entity_key"] = True
-                # Annotate high-uniqueness columns as PK candidates
-                if df[col].n_unique() == len(df):
-                    pk_candidates.append(safe_col)
-
-            # Write Fragment: input_fields
-            input_fields_file = fragments_dir / f"{dataset_id}_input_fields.yaml"
-            with open(input_fields_file, 'w') as f:
-                yaml.safe_dump(fields, f, sort_keys=False)
-
-            # Write Fragment: wrangling (tiered, ADR-024 §3)
-            tier1_steps = id_cleaning_steps.get(dataset_id, [])
-            wrangling_file = fragments_dir / f"{dataset_id}_wrangling.yaml"
-            pk_hints = (
-                f"# Candidate PK: {', '.join(pk_candidates)} (100% unique)\n"
-                if pk_candidates
-                else ""
-            )
-            with open(wrangling_file, 'w') as f:
-                f.write(f"{pk_hints}")
-                yaml.safe_dump({"tier1": tier1_steps, "tier2": []}, f, sort_keys=False)
-
-            # Prefer a project-relative path; fall back to absolute for files outside cwd.
-            resolved = Path(tsv_p).resolve()
-            try:
-                source_path = str(resolved.relative_to(Path.cwd().resolve()))
-            except ValueError:
-                source_path = str(resolved)
+            self.write_table_files(fragments_dir, dataset_id, tsv_p, id_cleaning_steps.get(dataset_id, []))
 
             # Add to master config
-            datasets_config[dataset_id] = {
-                "source": {
-                    "type": "local_tsv",
-                    "path": source_path,
-                },
-                # No default for missing values (spec 7.3): the author states what means missing in this file
-                "null_values": [],
-                "strip": False,
-                "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_input_fields.yaml"),
-                "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_wrangling.yaml"),
-            }
+            datasets_config[dataset_id] = self.table_block(
+                data_analysis_recipe_id, dataset_id, self.source_path(tsv_p), dataset_id.replace('_', ' ').capitalize())
 
         # Write Master Data Analysis Recipe
         master_data_analysis_recipe: Dict[str, Any] = {
@@ -179,13 +184,9 @@ class DataAnalysisRecipeBootstrapper:
         # metadata_schema only when a metadata file was explicitly supplied
         if metadata_path is not None:
             meta_id = self._sanitize_name(metadata_path.stem)
-            master_data_analysis_recipe["metadata_schema"] = {
-                "source": {"type": "local_tsv", "path": str(metadata_path)},
-                "null_values": [],
-                "strip": False,
-                "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_input_fields.yaml"),
-                "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_wrangling.yaml"),
-            }
+            self.write_table_files(fragments_dir, meta_id, metadata_path, [])
+            master_data_analysis_recipe["metadata_schema"] = self.table_block(
+                data_analysis_recipe_id, meta_id, self.source_path(metadata_path), "Metadata")
 
         master_data_analysis_recipe["joins"] = {}
         master_data_analysis_recipe["analysis_groups"] = {}

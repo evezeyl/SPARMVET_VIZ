@@ -60,7 +60,7 @@ class VisualizationError(SPARMVET_Error):
 class DataAnalysisRecipeError(SPARMVET_Error):
     """Raised when YAML data analysis recipe structure is malformed or missing required keys."""
 
-    def __init__(self, message: str, tip: str = "Check YAML indentation and ensure required keys (input_fields, wrangling, output_fields) are present.",
+    def __init__(self, message: str, tip: str = "Check YAML indentation and ensure the required keys of a recipe (id, spec_version, data_engine, plot_engine, info, data_schemas, analysis_groups) are present.",
                  pipeline_error: Optional[PipelineError] = None):
         super().__init__(message, context="DataAnalysisRecipe", tip=tip, pipeline_error=pipeline_error)
 

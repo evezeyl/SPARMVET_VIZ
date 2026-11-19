@@ -21,25 +21,27 @@ data_schemas:
       drug_class: {type: String}
       year: {type: Int64}
       breakpoint_change: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       step_chart:
-        label: Step Chart
+        ui_label: Step Chart
         description: >-
           Drawn with geom_step; x is year, y is breakpoint_change, color is drug_class.
         taxonomy: {family: Evolution, pattern: '1 Numeric, 1 Categorical', difficulty: Simple, show: trend, sample_size: any}
-        spec:
-          target_dataset: example
-          mapping: {x: year, y: breakpoint_change, color: drug_class}
-          layers:
-            - {name: geom_step, params: {size: 1.2}}
-            - {name: geom_point, params: {size: 2.5}}
-            - name: labs
-              params:
-                title: EUCAST Breakpoint Changes Over Time
-                x: Year
-                y: MIC Breakpoint (mg/L)
+        target_dataset: example
+        mapping: {x: year, y: breakpoint_change, color: drug_class}
+        layers:
+          - {name: geom_step, params: {size: 1.2}}
+          - {name: geom_point, params: {size: 2.5}}
+          - name: labs
+            params:
+              title: EUCAST Breakpoint Changes Over Time
+              x: Year
+              y: MIC Breakpoint (mg/L)

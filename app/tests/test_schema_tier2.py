@@ -2,7 +2,7 @@
 
 Decided by Eve 2026-11-12: every table has T1, T2 and T3, with or without a join; T2 and T3 can be empty. A schema
 plotted directly is a collection and its tier-2 list is its T2: stored as `<name>__T2.parquet` with the chained key
-`tier2_key(tier1_key, steps)` exactly as for a join (ADR-089 point 6); an empty list means T2 equals T1 and nothing is
+`tier2_key(tier1_key, steps, engine)` exactly as for a join (ADR-089 point 6); an empty list means T2 equals T1 and nothing is
 stored. Before the fix the engine ran the tier 1 only (`prepare_ingredient`) and read tier-2 steps of joins only, so
 the steps were silently ignored (verified on `ResFinder` of `1_test_data_ST22_dummy`).
 
@@ -50,20 +50,22 @@ class SchemaWorld:
     def write(self, *, tier2, plot_t=True) -> None:
         frag = self.recipes / "tiny" / "wrangling"
         frag.mkdir(parents=True, exist_ok=True)
-        wrangling = frag / "T_wrangling.yaml"
-        wrangling.write_text(json.dumps({"tier1": [], "tier2": list(tier2)}))
+        # a tier is its own key; an include holds the content of the tier, `steps` (D-0250)
+        tier2_file = frag / "T_tier2.yaml"
+        tier2_file.write_text(json.dumps({"steps": list(tier2)}))
         plot_t_text = """
       p_t:
-        label: T directly
-        spec:
-          target_dataset: T
-          mapping: {x: group}
-          layers:
-            - name: geom_bar
-              params: {}""" if plot_t else ""
+        ui_label: T directly
+        target_dataset: T
+        mapping: {x: group}
+        layers:
+          - name: geom_bar
+            params: {}""" if plot_t else ""
         entry = self.recipes / "tiny.yaml"
         entry.write_text(f"""id: tiny
 info: {{label: Tiny}}
+data_engine: python-polars
+plot_engine: python-plotnine
 data_schemas:
   T:
     source: {{type: local_tsv, path: {self.data_file}}}
@@ -72,26 +74,26 @@ data_schemas:
     input_fields:
       sample_id: {{original_name: sample_id, type: String, label: Sample, is_entity_key: true}}
       group: {{original_name: group, type: String, label: Group}}
-    wrangling: !include 'tiny/wrangling/T_wrangling.yaml'
+    tier1: {{steps: []}}
+    tier2: !include 'tiny/wrangling/T_tier2.yaml'
 joins:
   C:
     ingredients:
       - dataset_id: T
-    steps: {{tier1: []}}
+    tier1: {{steps: []}}
 analysis_groups:
   g:
-    label: G
+    ui_label: G
     plots:{plot_t_text}
       p_c:
-        label: C
-        spec:
-          target_dataset: C
-          mapping: {{x: group}}
-          layers:
-            - name: geom_bar
-              params: {{}}
+        ui_label: C
+        target_dataset: C
+        mapping: {{x: group}}
+        layers:
+          - name: geom_bar
+            params: {{}}
 """)
-        for f in (entry, wrangling):
+        for f in (entry, tier2_file):
             st = os.stat(f)
             os.utime(f, ns=(st.st_atime_ns, st.st_mtime_ns + 10**9))
         clear_data_analysis_recipe_cache()
@@ -137,7 +139,7 @@ def test_the_tier2_of_a_schema_is_stored_with_the_chained_key(world):
     world.t2("T")
     stored = tier2_path_for(world.anchor("T"))
     assert stored.name == "T__T2.parquet" and stored.exists()
-    assert get_parquet_metadata_hash(str(stored), TIER2_KEY_META) == tier2_key(world.keys().tier1_key, [KEEP_A])
+    assert get_parquet_metadata_hash(str(stored), TIER2_KEY_META) == tier2_key(world.keys().tier1_key, [KEEP_A], "python-polars")
 
 
 def test_a_second_read_uses_the_stored_tier2(world):
@@ -197,7 +199,7 @@ def test_the_shared_reading_and_the_badge_see_the_schema_tier2(world):
 
 def test_the_tier1_material_holds_no_schema_tier2(world):
     material = tier1_material(world.raw())
-    assert "tier2" not in material["data_schemas"]["T"]["wrangling"]
+    assert "tier2" not in material["data_schemas"]["T"]
 
 
 # -- the load gate: a tier-2 list that is run nowhere is an error ----------------------------------
@@ -230,7 +232,7 @@ def test_home_refuses_a_join_tier2_that_no_plot_reads(tmp_path):
     schema["description"] = "one row per sample"
     join = minimal_join(["T"], [])
     join["description"] = "the samples"
-    join["steps"]["tier2"] = [KEEP_A]
+    join["tier2"] = {"steps": [KEEP_A]}
     recipe = minimal_recipe("gate_join", schemas={"T": schema}, joins={"C": join},
                             plots={"p_t": minimal_plot("T", {"x": "group"})})
     problems = validate_data_analysis_recipe(write_recipe(tmp_path / "gate_join.yaml", recipe))

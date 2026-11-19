@@ -31,7 +31,7 @@ Each question requires a separate hash. No single hash can answer all three.
 
 *Replaces the former `decision_hash` (a hash of the assembly steps only), see ADR-089.*
 
-**What they hash:** the `tier1_key` covers the engine version, the **resolved data analysis recipe** (every included file merged, without the downstream-only parts) and the data content. The `tier2_key` covers the `tier1_key` and the join's `tier2` steps. Each key contains the one before it, so a change upstream changes every key after it.
+**What they hash:** the `tier1_key` covers the engine version (the cache version, 5 since 2026-11-18), the **resolved data analysis recipe** (every included file merged, without the downstream-only parts and without the written engine lines), the data content and the **effective data engine of every table and join** (the tier's own `data_engine`, else the data analysis recipe's). The `tier2_key` covers the `tier1_key`, the `tier2` steps of the collection and the effective data engine of its tier 2. Each key contains the one before it, so a change upstream changes every key after it. The engine is an argument of the key function and not a part of the data analysis recipe text: the same engine written on a tier or inherited from the top gives the same key. **The plot engine is in no table key**: a plot is drawn from a stored table and a picture has no stored key. When the cache version changed (4 to 5), every table stored under an older version is removed at the start of the app and rebuilt once; the results do not change (D-0240).
 
 **Where they live:** in the Parquet file metadata of each stored stage: `sparmvet_tier1_key` (Tier 1 file) and `sparmvet_tier2_key` (`<name>__T2.parquet`). The older key `sparmvet_decision_hash` is still written, with the same value, for readers of older bundles. Readable without scanning data rows.
 
@@ -39,7 +39,7 @@ Each question requires a separate hash. No single hash can answer all three.
 
 **Implementation:** `app/modules/cache_keys.py` (`tier1_key`, `tier2_key`), `app/modules/orchestrator.py` (`materialize_tier1`, `materialize_tier2`). The Parquet file is written by `libs/transformer/src/transformer/anchor.py` with Polars, metadata inside the file.
 
-**Key property:** the keys use the resolved content, so comments, spacing and the way the data analysis recipe is split into files do not change them. The one order that is part of the content is the key order of a join's `final_contract`: it is the column order of the table, so it enters the `tier1_key` as an ordered list (a reorder rebuilds Tier 1 and with it Tier 2; issue #86). The order of other dictionaries (for example `input_fields`) is not part of the key.
+**Key property:** the keys use the resolved content, so comments, spacing and the way the data analysis recipe is split into files do not change them. The one order that is part of the content is the order of a step list: the `exprs` of the last `polars_select` step of a join are the column order of the table, and the steps are part of the key (a reorder rebuilds Tier 1 and with it Tier 2; issue #86, then DEC23). The order of other dictionaries (for example `input_fields`) is not part of the key.
 
 ---
 

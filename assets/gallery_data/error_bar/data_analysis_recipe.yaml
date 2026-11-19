@@ -21,25 +21,27 @@ data_schemas:
       mean_mic: {type: Float64}
       ci_low: {type: Float64}
       ci_high: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       error_bar:
-        label: Error Bar / Point Range
+        ui_label: Error Bar / Point Range
         description: >-
           Drawn with geom_pointrange; x is species, y is mean_mic, ymin is ci_low, ymax is ci_high, color is species.
         taxonomy: {family: Comparison, pattern: '1 Numeric, 1 Categorical', difficulty: Intermediate, show: uncertainty,
           sample_size: any}
-        spec:
-          target_dataset: example
-          mapping: {x: species, y: mean_mic, ymin: ci_low, ymax: ci_high, color: species}
-          layers:
-            - {name: geom_pointrange, params: {size: 1.0}}
-            - name: labs
-              params:
-                title: Mean MIC with 95% Confidence Interval by Species
-                x: Species
-                y: Mean MIC (log2)
+        target_dataset: example
+        mapping: {x: species, y: mean_mic, ymin: ci_low, ymax: ci_high, color: species}
+        layers:
+          - {name: geom_pointrange, params: {size: 1.0}}
+          - name: labs
+            params:
+              title: Mean MIC with 95% Confidence Interval by Species
+              x: Species
+              y: Mean MIC (log2)

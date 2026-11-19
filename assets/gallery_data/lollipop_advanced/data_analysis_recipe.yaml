@@ -21,23 +21,22 @@ data_schemas:
       species: {type: String}
       avg_growth: {type: Float64}
       y_zero: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       lollipop_advanced:
-        label: Lollipop Advanced
+        ui_label: Lollipop Advanced
         description: >-
           Drawn with geom_segment; x is species, y is y_zero, xend is species, yend is avg_growth.
         taxonomy: {family: Ranking, pattern: '1 Numeric, 1 Categorical', difficulty: Intermediate, show: ranking,
           sample_size: any}
-        spec:
-          target_dataset: example
-          mapping: {x: species, y: y_zero, xend: species, yend: avg_growth}
-          layers:
-            - {name: geom_segment, params: {color: grey, size: 1}}
-            - {name: geom_point, params: {color: darkred, size: 4}}
-            - {name: coord_flip, params: {}}
-            - {name: theme_bw, params: {}}
+        target_dataset: example
+        mapping: {x: species, y: y_zero, xend: species, yend: avg_growth}
+        layers:
+          - {name: geom_segment, params: {color: grey, size: 1}}
+          - {name: geom_point, params: {color: darkred, size: 4}}
+          - {name: coord_flip, params: {}}
+          - {name: theme_bw, params: {}}

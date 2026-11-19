@@ -240,7 +240,7 @@ Once manual test passes:
 - **Output:** `.claude/logs/audits/audit_data_analysis_recipes_YYYY-MM-DD.md`
 - **Violations checked:**
   - Data analysis recipe file format (valid YAML)
-  - Missing required keys (`input_fields`, `wrangling`, `output_fields`)
+  - Missing required keys (for example `input_fields`, `tier1`) and keys of an older shape (`wrangling`, `output_fields`)
   - Broken `!include` references (file not found)
   - Undefined actions in wrangling steps (not in `@register_action` registry)
   - Undefined plot components (not in `@register_plot_component` registry)

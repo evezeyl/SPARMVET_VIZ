@@ -191,14 +191,14 @@ def codes(raw, code):
 
 def recipe(**step):
     raw = valid()
-    raw["joins"]["AB"]["steps"]["tier1"][0].update(right_ingredient="A", **step)
+    raw["joins"]["AB"]["tier1"]["steps"][0].update(right_ingredient="A", **step)
     return raw
 
 
 def test_the_anti_join_of_a_table_with_itself_is_an_advice_and_the_recipe_still_passes():
     raw = recipe(how="anti")
     problems = codes(raw, "J12")
-    assert len(problems) == 1 and problems[0].severity == "A" and problems[0].path == "joins.AB.steps.tier1[1]"
+    assert len(problems) == 1 and problems[0].severity == "A" and problems[0].path == "joins.AB.tier1.steps[1]"
     assert "keeps only the rows whose key is missing" in problems[0].message
     assert problems[0].fix.startswith("Suggestion:")
     assert check(raw).ok and check(raw).errors == []
@@ -218,7 +218,7 @@ def test_no_self_join_is_refused_whatever_the_kind(how):
 def test_a_self_join_on_other_keys_is_advised_too():
     raw = valid()
     raw["data_schemas"]["A"]["input_fields"]["parent"] = {"type": "String"}
-    step = raw["joins"]["AB"]["steps"]["tier1"][0]
+    step = raw["joins"]["AB"]["tier1"]["steps"][0]
     step.pop("on")
     step.update(right_ingredient="A", left_on="parent", right_on="id", how="left")
     problems = codes(raw, "J12")
@@ -228,7 +228,7 @@ def test_a_self_join_on_other_keys_is_advised_too():
 
 def test_the_advice_is_given_once_when_a_step_before_may_change_the_key():
     raw = recipe(how="anti")
-    raw["joins"]["AB"]["steps"]["tier1"].insert(0, {"action": action_names.WITH_COLUMNS, "named_exprs": {"id": "pl.col('id')"}})
+    raw["joins"]["AB"]["tier1"]["steps"].insert(0, {"action": action_names.WITH_COLUMNS, "named_exprs": {"id": "pl.col('id')"}})
     assert len(codes(raw, "J12")) == 1
 
 

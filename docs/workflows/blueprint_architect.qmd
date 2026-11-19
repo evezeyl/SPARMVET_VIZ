@@ -136,16 +136,17 @@ workspaces share one mental model.
 Apply does **not** touch disk. Two separate actions persist:
 
 - **Save** (`btn_save_internal`) writes the currently-loaded component file in its native shape:
-  a plot spec serialises to `mapping:` + `layers:`; wrangling nodes route back to their source
-  tier (`tier1` / `tier2`). Save requires the component to have been loaded **from a file** —
+  a plot entry serialises to its own keys (`mapping:`, `layers:` and the others; there is no `spec:` key); step nodes route back to their source
+  tier file (`tier1` / `tier2`, each a mapping with `steps`). Save requires the component to have been loaded **from a file** —
   inline components must be edited via the YAML escape hatch (BP-PLOT-COMMIT-1).
 - **Download** (`btn_download_data_analysis_recipe`) emits the full multi-file data analysis recipe as a zip bundle —
   the master plus its mirrored `basename/` fragment tree.
 
 ::: {.callout-important}
 ### BLUEPRINT never writes Tier 3
-BLUEPRINT authors `input_fields`, `wrangling.tier1`, `wrangling.tier2`, `joins`,
-`output_fields` / `final_contract`, `analysis_groups`, and plot specs. It **never** writes T3
+BLUEPRINT authors `input_fields`, `tier1`, `tier2`, `joins`,
+`analysis_groups`, and plot entries (there is no `output_fields` / `final_contract` any more:
+the published columns are the last step of a join's `tier1`). It **never** writes T3
 audit nodes (filters, exclusions, column drops, aesthetic overrides) — those are authored
 exclusively in HOME by the analyst (ADR-082 §4). An earlier bug dumped the logic stack into
 `wrangling.tier3` and wiped tier1/tier2; it was fixed in BP-PLOT-COMMIT-1. This boundary is a
@@ -173,7 +174,7 @@ interactive.
 | `Summary_quality` (new divergent downstream) | Also reads the anchor via `scan_parquet` — no recompute |
 
 The canonical example is the `Summary` / `Summary_quality` pattern: both share the same
-`source` and `input_fields`, then diverge in their `wrangling` and `output_fields`. Physically,
+`source` and `input_fields`, then diverge in their tiers. Physically,
 the branch is a new `!include` fragment wired into the master data analysis recipe — the same
 fragment-per-component structure the data analysis recipe already uses.
 
@@ -208,18 +209,18 @@ prefilled from the original:
 
 | Branch role | Shared (by reference / inline copy) | Divergent (new, empty) |
 |---|---|---|
-| `data_schema` | `source` (copied inline), `input_fields` (`!include` reused) | `wrangling` → `tier1: []` / `tier2: []`; `output_fields` → `{}` |
-| `join` (assembly) | `ingredients` (copied inline) | `steps` → `[]`; `output_fields` → `{}` |
-| `plot` (leaf) | `target_dataset` (carried inside the copied spec) | a **copy** of the original spec (see below) |
+| `data_schema` | `source`, `null_values`, `strip` (copied inline), `input_fields` (`!include` reused) | a new tier 1 file (`steps: []`) |
+| `join` (assembly) | `ingredients` (copied inline) | a new tier 1 file (`steps: []`) |
+| `plot` (leaf) | `target_dataset` (carried inside the copied entry) | a **copy** of the original entry in its own file, with the branch name as `ui_label` (see below) |
 
 The empty seed is deliberate and matches the Tier-1-shared / Tier-2-diverges mental model: the
 shared trunk is what you keep; the divergent tail is what you are about to author differently.
 A prefilled copy would imply "tweak from here," which is the wrong frame — if you wanted a tweak
 you would edit the original, not branch it. The canonical `Summary_quality` fragment is itself
-empty-wrangling with its own `output_fields`, so the seed matches the established pattern.
+an empty tier 1, so the seed matches the established pattern.
 
-**Plots are the exception.** A plot is a leaf — the whole spec *is* the branch unit, and an
-empty plot cannot render. So a plot branch seeds a **copy** of the original spec under the new
+**Plots are the exception.** A plot is a leaf — the whole entry *is* the branch unit, and an
+empty plot cannot render. So a plot branch seeds a **copy** of the original entry under the new
 ID. (See `generate_branch_plan` in `DataAnalysisRecipeNavigator (data_analysis_recipe_navigator.py)`.)
 
 ### Why text-level insertion (not a YAML round-trip)
@@ -274,8 +275,8 @@ so they cannot drift — BLUEPRINT serialises the very model the renderer normal
 layer, never as a stored key.
 
 Encountering a removed key is now a **loud, actionable failure**, not silent sugar:
-`normalise_plot_spec` raises `VisualizationError` with migration instructions pointing at
-`assets/scripts/migrate_plot_specs.py --apply`.
+`normalise_plot_spec` raises `VisualizationError` that says what to write instead: an
+explicit `geom_*` layer in `layers:` and the aesthetics under `mapping:`, by hand (no script converts it).
 
 ::: {.callout-note}
 ### The render cascade

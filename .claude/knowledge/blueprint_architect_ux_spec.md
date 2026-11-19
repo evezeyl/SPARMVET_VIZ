@@ -75,7 +75,7 @@ TubeMap node click
   → Shiny.setInputValue("blueprint_node_clicked", schema_id, {priority:'event'})
   → _sync_selector_from_node_click   [server.py @reactive.event]
     → reverse-lookup _component_ctx_map: safe(schema_id) == safe(entry.schema_id)
-    → role priority: assembly(0) > wrangling(1) > plot_spec(2) > plot_wrangling(3) > output_fields(4) > input_fields(5)
+    → role priority: join(0) > wrangling(1) > plot_spec(2) > input_fields(5) (the roles `plot_wrangling` and `output_fields` do not exist any more, 2026-11-17)
     → ui.update_select("dataset_pipeline_selector", selected=best_rel)
     → ui.js_eval("document.getElementById('btn_import_data_analysis_recipe').click()")
   → _handle_data_analysis_recipe_import          [server.py @reactive.event]
@@ -132,7 +132,7 @@ cy.tap(node)
 
 **Right card — Logic Stack:** Scrollable vertical list of wrangling step cards. Each card shows action name, parameters summary, optional comment field, reorder arrows, delete button. Stack can be cleared. Export-to-YAML button at bottom.
 
-**Behaviour:** `logic_stack` reactive value drives this view. For `wrangling`/`plot_wrangling` roles, `apply_logic` is called in `processed_data_surgical` to show live preview. For other roles, the stack displays the declared steps but does not re-transform.
+**Behaviour:** `logic_stack` reactive value drives this view. For the `wrangling` role, `apply_logic` is called in `processed_data_surgical` to show live preview. For other roles, the stack displays the declared steps but does not re-transform.
 
 ---
 
@@ -160,37 +160,34 @@ Above the cards: the **Lineage Rail** — a horizontal scrollable chain of role-
 |---|---|
 | `input_fields` | Empty ("Raw source — no upstream") |
 | `wrangling` | `input_fields` from sibling file or inline dict |
-| `assembly` | Accordion: one panel per ingredient showing its `output_fields` |
-| `plot_spec` | `target_dataset` output resolved via `_resolve_fields_for_schema` (see §4.1 below) |
-| `plot_wrangling` | Same as `plot_spec` — parent assembly/dataset `output_fields` |
+| `join` | Accordion: one panel per ingredient showing its fields (`input_fields`) |
+| `plot_spec` | `target_dataset` output resolved via `resolve_fields_for_schema` (see §4.1 below) |
 
 ### 4.1 Upstream Backtracking for Plot Nodes
 
-For `plot_spec` and `plot_wrangling`, upstream = what physically enters the plot = `target_dataset` output. Resolution chain:
+For `plot_spec`, upstream = what physically enters the plot = `target_dataset` output. Resolution chain (data analysis recipe format 1: no `output_fields` and no `final_contract`; the fields of a join are those of its ingredients):
 
 ```
-plot.spec.target_dataset  →  assembly.final_contract        (if declared)
-                          →  assembly.output_fields (inline) (if declared)
-                          →  union of assembly ingredient output_fields (if no assembly output)
-                          →  each ingredient's output_fields → falls to input_fields if absent
+plot.target_dataset  →  the input_fields file of the schema
+                     →  a join: the union of its ingredients' fields
+                     →  inline input_fields
 ```
 
-**Critical:** `target_dataset` is at `plot_spec["spec"]["target_dataset"]` (under the `spec:` wrapper), NOT at `plot_spec["target_dataset"]`. Both levels must be checked.
+**Critical:** `target_dataset` is a key of the plot entry itself (`plot_spec["target_dataset"]`); there is no `spec:` wrapper since 2026-11-17.
 
-**Implementation:** `_resolve_fields_for_schema(target_dataset_id, ctx_map, inc_map)` in `server.py` handles this recursion. For Mode B (inline data analysis recipes), the fallback also reads directly from `raw_config["joins"][target_ds].get("output_fields")`.
+**Implementation:** `resolve_fields_for_schema(target_dataset_id, ctx_map, inc_map)` in `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py` handles this recursion.
 
 **Materialization for plot preview:** `orchestrator.materialize_tier1(collection_id=target_dataset_id)` — NOT `plot_id`. The parquet is stored as `anchors/{target_dataset_id}.parquet`.
 
-**Active Component card:** Shows `schema_id`, `role`, `schema_type`, `ingredients` list (for assembly), wrangling presence indicator. For `plot_spec` without `pre_plot_wrangling`: shows "➕ Add plot wrangling" button.
+**Active Component card:** Shows `schema_id`, `role`, `schema_type`, `ingredients` list (for assembly), wrangling presence indicator. (The "Add plot wrangling" button of `plot_spec` nodes and the "forward clear" hint were removed on 2026-11-17: the key `pre_plot_wrangling` is read by nothing and refused by the plot checker, and no data analysis recipe has an `output_fields` slot for the hint to check. A plot's own steps are `tier3` of the plot entry.)
 
 **Downstream Contract variants:**
 
 | Role | Downstream content |
 |---|---|
-| `output_fields` | The fields themselves |
-| `wrangling` | `output_fields` from sibling file or inline dict |
-| `assembly` | Assembly `output_fields` / `final_contract` |
-| `plot_spec` / `plot_wrangling` | "Plot terminal — no output schema" |
+| `wrangling` | the schema's fields after its steps (as declared in `input_fields`) |
+| `join` | the published columns are the last step of its `tier1` (not computed here) |
+| `plot_spec` | "Plot terminal — no output schema" |
 
 **Fields table columns:** `field` (slug), `type`, `description`. Rendered by `_parse_fields_safe` which handles Rich Dict (`{slug: {type, label, ...}}`), simple dict (`{slug: type}`), and list-of-dict formats. Legacy format triggers a warning badge.
 
@@ -252,10 +249,9 @@ Always visible, 50/50 horizontal split:
 | Role selected | What is materialised | `apply_logic` in calc? |
 |---|---|---|
 | `wrangling` | Source ingredient for that schema | YES — apply current logic_stack |
-| `plot_wrangling` | Parent assembly output | YES — apply wrangling steps |
 | `assembly` | Full assembled output (all ingredients joined) | NO — parquet IS the output |
 | `plot_spec` | Parent assembly output | NO — parquet IS the input to plot |
-| `output_fields` / `input_fields` | Not materialised | N/A |
+| `input_fields` | Not materialised | N/A |
 
 Parquets are cached in `user_data/anchors/{schema_id}.parquet`. If the file already exists, it is not recomputed. To force refresh: delete the file.
 
@@ -272,11 +268,9 @@ Horizontal scrollable list rendered by `lineage_rail_ui`. Each node is a `<butto
 
 | Selected role | Chain shown |
 |---|---|
-| `wrangling` | `[input_fields?] → [wrangling★] → [assembly?] → [output_fields?]` |
-| `assembly` | `[ingredient_wranglings...] → [assembly★] → [output_fields?]` |
-| `plot_spec` | `[ancestor chain] → [pre_plot_wrangling?] → [plot_spec★]` |
-| `plot_wrangling` | `[plot_wrangling★] → [plot_spec]` |
-| `output_fields` | `[wrangling/assembly chain] → [output_fields★]` |
+| `wrangling` (a tier file: tier 1 or tier 2 of a table) | `[input_fields?] → [wrangling★] → [join?]` |
+| `join` (a tier file of a join) | `[ingredient tier 1 files...] → [join★]` (a join reads the tier 1 of its ingredients, never their tier 2) |
+| `plot_spec` | `[ancestor chain] → [plot_spec★]` |
 | inline schemas | Single node `[schema_id★]` (no file siblings to walk) |
 
 ---

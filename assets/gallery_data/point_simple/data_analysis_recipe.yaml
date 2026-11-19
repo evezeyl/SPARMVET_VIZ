@@ -20,20 +20,22 @@ data_schemas:
       date: {type: String}
       growth_index: {type: Float64}
       species: {type: String}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       point_simple:
-        label: Point Simple
+        ui_label: Point Simple
         description: >-
           Drawn with geom_point; color is species, x is date, y is growth_index.
         taxonomy: {family: Correlation, pattern: 2 Numeric, difficulty: Simple, show: relationship, sample_size: individual
             points}
-        spec:
-          target_dataset: example
-          mapping: {color: species, x: date, y: growth_index}
-          layers:
-            - {name: geom_point, params: {}}
+        target_dataset: example
+        mapping: {color: species, x: date, y: growth_index}
+        layers:
+          - {name: geom_point, params: {}}

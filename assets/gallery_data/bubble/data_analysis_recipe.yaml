@@ -22,28 +22,27 @@ data_schemas:
       sample_size: {type: Int64}
       mean_resistance: {type: Float64}
       pct_resistant: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       bubble:
-        label: Bubble Chart
+        ui_label: Bubble Chart
         description: >-
           Drawn with geom_point; x is sample_size, y is mean_resistance, size is pct_resistant, color is species.
         taxonomy: {family: Correlation, pattern: '2 Numeric, 1 Categorical', difficulty: Intermediate, show: relationship,
           sample_size: any}
-        spec:
-          target_dataset: example
-          mapping: {x: sample_size, y: mean_resistance, size: pct_resistant, color: species}
-          layers:
-            - {name: geom_point, params: {alpha: 0.7}}
-            - {name: scale_size, params: {range: [4, 20], name: '% Resistant'}}
-            - name: labs
-              params:
-                x: Sample Size
-                y: Mean Resistance (%)
-                color: Species
-                size: '% Resistant'
-            - {name: theme_minimal, params: {}}
+        target_dataset: example
+        mapping: {x: sample_size, y: mean_resistance, size: pct_resistant, color: species}
+        layers:
+          - {name: geom_point, params: {alpha: 0.7}}
+          - {name: scale_size, params: {range: [4, 20], name: '% Resistant'}}
+          - name: labs
+            params:
+              x: Sample Size
+              y: Mean Resistance (%)
+              color: Species
+              size: '% Resistant'
+          - {name: theme_minimal, params: {}}

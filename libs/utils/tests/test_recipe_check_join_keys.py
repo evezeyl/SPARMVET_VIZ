@@ -19,7 +19,7 @@ def codes(raw):
 
 
 def join_step(raw):
-    return raw["joins"]["AB"]["steps"]["tier1"][0]
+    return raw["joins"]["AB"]["tier1"]["steps"][0]
 
 
 def test_equal_types_are_accepted():
@@ -33,7 +33,7 @@ def test_different_types_with_on_are_refused_with_a_fix():
     assert len(problems) == 1
     assert "String" in problems[0].message and "Int64" in problems[0].message and "'id'" in problems[0].message
     assert "input_fields of both tables" in problems[0].fix and "changes only the left table" in problems[0].fix
-    assert problems[0].path == "joins.AB.steps.tier1[1]"
+    assert problems[0].path == "joins.AB.tier1.steps[1]"
 
 
 def test_different_types_with_left_on_and_right_on_are_refused():
@@ -88,7 +88,7 @@ def test_a_left_key_brought_by_an_earlier_join_is_not_missing():
     raw = valid()
     raw["data_schemas"]["C"] = {**valid()["data_schemas"]["B"], "input_fields": {"id": {"type": "String"}, "c": {"type": "Int64"}}}
     raw["joins"]["AB"]["ingredients"].append({"dataset_id": "C"})
-    raw["joins"]["AB"]["steps"]["tier1"].append({"action": "polars_join", "right_ingredient": "C", "on": "w", "how": "left"})
+    raw["joins"]["AB"]["tier1"]["steps"].append({"action": "polars_join", "right_ingredient": "C", "on": "w", "how": "left"})
     raw["data_schemas"]["C"]["input_fields"]["w"] = {"type": "Int64"}
     assert codes(raw) == []
     raw["data_schemas"]["C"]["input_fields"]["w"] = {"type": "Float64"}
@@ -109,32 +109,32 @@ def test_a_step_before_the_join_in_the_schema_keeps_the_checker_silent():
     for action in ("polars_cast", "polars_rename", "polars_with_columns"):
         raw = valid()
         raw["data_schemas"]["B"]["input_fields"]["id"]["type"] = "Int64"
-        raw["data_schemas"]["A"]["wrangling"] = {"tier1": [{"action": action}]}
+        raw["data_schemas"]["A"]["tier1"] = {"steps": [{"action": action}]}
         assert "J09" not in [p.code for p in check(raw).problems], action
         raw = valid()
         raw["data_schemas"]["B"]["input_fields"]["id"]["type"] = "Int64"
-        raw["data_schemas"]["B"]["wrangling"] = {"tier1": [{"action": action}]}
+        raw["data_schemas"]["B"]["tier1"] = {"steps": [{"action": action}]}
         assert "J09" not in [p.code for p in check(raw).problems], action
 
 
 def test_a_row_filter_in_the_schema_does_not_hide_a_difference():
     raw = valid()
     raw["data_schemas"]["B"]["input_fields"]["id"]["type"] = "Int64"
-    raw["data_schemas"]["B"]["wrangling"] = {"tier1": [{"action": "modif_filter"}]}
+    raw["data_schemas"]["B"]["tier1"] = {"steps": [{"action": "modif_filter"}]}
     assert "J09" in codes(raw)
 
 
 def test_a_step_before_the_join_in_the_join_keeps_the_checker_silent():
     raw = valid()
     raw["data_schemas"]["B"]["input_fields"]["id"]["type"] = "Int64"
-    raw["joins"]["AB"]["steps"]["tier1"].insert(0, {"action": "polars_with_columns", "exprs": {"id": "pl.col('id')"}})
+    raw["joins"]["AB"]["tier1"]["steps"].insert(0, {"action": "polars_with_columns", "exprs": {"id": "pl.col('id')"}})
     assert codes(raw) == []
 
 
 def test_a_key_the_declaration_lacks_is_silent_when_a_step_may_create_it():
     raw = valid()
     del raw["data_schemas"]["B"]["input_fields"]["id"]
-    raw["data_schemas"]["B"]["wrangling"] = {"tier1": [{"action": "polars_with_columns"}]}
+    raw["data_schemas"]["B"]["tier1"] = {"steps": [{"action": "polars_with_columns"}]}
     assert codes(raw) == []
 
 
@@ -164,7 +164,7 @@ def test_a_table_with_unknown_fields_brought_by_an_earlier_join_makes_the_checke
     raw = valid()
     raw["data_schemas"]["C"] = {**valid()["data_schemas"]["B"], "input_fields": {}}
     raw["joins"]["AB"]["ingredients"].append({"dataset_id": "C"})
-    raw["joins"]["AB"]["steps"]["tier1"].append({"action": "polars_join", "right_ingredient": "C", "on": "zzz", "how": "left"})
+    raw["joins"]["AB"]["tier1"]["steps"].append({"action": "polars_join", "right_ingredient": "C", "on": "zzz", "how": "left"})
     assert codes(raw) == []
 
 
@@ -172,7 +172,7 @@ def test_a_suffixed_key_of_an_earlier_join_is_not_missing():
     raw = valid()
     raw["data_schemas"]["C"] = {**valid()["data_schemas"]["B"], "input_fields": {"id": {"type": "String"}, "w_right": {"type": "Int64"}}}
     raw["joins"]["AB"]["ingredients"].append({"dataset_id": "C"})
-    raw["joins"]["AB"]["steps"]["tier1"].append({"action": "polars_join", "right_ingredient": "C", "left_on": "w_right", "right_on": "w_right", "how": "left"})
+    raw["joins"]["AB"]["tier1"]["steps"].append({"action": "polars_join", "right_ingredient": "C", "left_on": "w_right", "right_on": "w_right", "how": "left"})
     assert "J10" not in codes(raw)
 
 
@@ -192,7 +192,7 @@ def test_a_self_join_on_the_same_key_is_advised_j12_and_does_not_block():
     raw = valid()
     join_step(raw).update(right_ingredient="A")
     problems = advices(raw, "J12")
-    assert len(problems) == 1 and problems[0].severity == "A" and problems[0].path == "joins.AB.steps.tier1[1]"
+    assert len(problems) == 1 and problems[0].severity == "A" and problems[0].path == "joins.AB.tier1.steps[1]"
     assert "'A'" in problems[0].message and "id" in problems[0].message and "_right" in problems[0].message and problems[0].fix
     assert check(raw).ok or all(p.severity == "A" for p in check(raw).problems if p.code == "J12")
     assert [p.code for p in check(raw).errors if p.code == "J12"] == []
@@ -224,7 +224,7 @@ def test_j12_text_for_semi_says_no_column_is_copied():
 def _j12_anti_text(*earlier):
     """An anti-join that is not the base table itself: of a table joined before, or of the base table after a step that may change the key."""
     raw = valid()
-    steps = raw["joins"]["AB"]["steps"]["tier1"]
+    steps = raw["joins"]["AB"]["tier1"]["steps"]
     steps[:] = [*earlier, {"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "anti"}]
     problems = advices(raw, "J12")
     assert len(problems) == 1
@@ -242,7 +242,7 @@ def test_j12_text_for_anti_of_a_table_joined_before_says_what_it_does():
 
 def test_j12_text_for_anti_of_the_base_table_after_a_step_that_writes_the_key():
     raw = valid()
-    steps = raw["joins"]["AB"]["steps"]["tier1"]
+    steps = raw["joins"]["AB"]["tier1"]["steps"]
     steps[:] = [{"action": "polars_with_columns", "named_exprs": {"id": "pl.col('id').str.to_uppercase()"}},
                 {"action": "polars_join", "right_ingredient": "A", "on": "id", "how": "anti"}]
     problem, = advices(raw, "J12")
@@ -278,9 +278,9 @@ def test_a_join_with_another_table_is_not_advised():
 
 def test_a_table_joined_twice_on_the_same_key_is_advised_on_the_second_step():
     raw = valid()
-    raw["joins"]["AB"]["steps"]["tier1"].append({"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "left"})
+    raw["joins"]["AB"]["tier1"]["steps"].append({"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "left"})
     problems = advices(raw, "J12")
-    assert len(problems) == 1 and problems[0].path == "joins.AB.steps.tier1[2]"
+    assert len(problems) == 1 and problems[0].path == "joins.AB.tier1.steps[2]"
 
 
 # -- J13: a float join key (advice) --------------------------------------------------------------
@@ -331,5 +331,5 @@ def test_a_float_column_that_is_not_a_key_is_not_advised():
 def test_a_float_key_is_silent_when_a_step_may_change_the_table():
     raw = valid()
     raw["data_schemas"]["A"]["input_fields"]["id"]["type"] = "Float64"
-    raw["data_schemas"]["A"]["wrangling"] = {"tier1": [{"action": "polars_cast"}]}
+    raw["data_schemas"]["A"]["tier1"] = {"steps": [{"action": "polars_cast"}]}
     assert len(advices(raw, "J13")) == 0

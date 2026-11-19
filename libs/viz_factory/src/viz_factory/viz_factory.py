@@ -5,7 +5,7 @@ from typing import Dict, Any, List
 # Explicit imports to ensure registration occurs
 from viz_factory.registry import get_component
 from viz_factory.plot_config_resolver import (
-    BATCHED_COMPONENTS, resolve_plot_config, spec_key_names, unknown_spec_keys)
+    _VALID_PLOT_DEFAULTS_KEYS, BATCHED_COMPONENTS, resolve_plot_config, spec_key_names, unknown_spec_keys)
 from utils.random_layers import is_random_layer, is_seed_value, position_of
 from viz_factory.font_check import font_problems, family_text, settings_text
 from viz_factory.checked_plot import (
@@ -23,7 +23,7 @@ import difflib
 # @deps
 # provides: class:VizFactory, function:VizFactory.render, constant:DEFAULT_RANDOM_STATE, function:draw_checked and function:show_draw_errors (re-exported from checked_plot.py)
 # consumes: libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py, libs/viz_factory/src/viz_factory/checked_plot.py, libs/viz_factory/src/viz_factory/font_check.py, libs/viz_factory/src/viz_factory/errors.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/engines.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
-# consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/gallery_examples.py, app/tests/test_render_every_plot.py, libs/viz_factory/tests/
+# consumed_by: libs/viz_factory/src/viz_factory/engine_python_plotnine.py (the entry that app/modules/engine_registry.py hands to app/src/server.py, HOME, the export, Blueprint and the gallery through PlotEngines), app/handlers/home_theater.py (show_draw_errors), app/modules/wrangle_studio.py (show_draw_errors), app/tests/test_render_every_plot.py, libs/viz_factory/tests/
 # doc: .claude/rules/rules_viz_factory.md, .claude/knowledge/architecture_decisions.md (ADR-081, ADR-090, ADR-094, ADR-106)
 # @end_deps
 
@@ -133,7 +133,7 @@ class VizFactory:
     Takes standardized Polars dataframes and applies declarative Plotnine layers.
 
     Default Injection Policy:
-    - Theme: theme_bw (if no theme_ layer defined)
+    - Theme: none is injected (D-0258): a plot with no theme written is drawn with plotnine's own default
     - Coord: coord_cartesian (if no coord_ layer defined)
     - Facet: facet_null (if no facet_ layer defined)
     - Position/Stat: These are ggplot2 geom-level defaults (identity); no injection needed.
@@ -211,7 +211,7 @@ class VizFactory:
         if not raw_spec:
             raise plot_failure(
                 plot_id, "it is not in the data analysis recipe",
-                "declare it under 'analysis_groups.<group>.plots' in the data analysis recipe and check that the `spec: !include` path resolves",
+                "declare it under 'analysis_groups.<group>.plots' in the data analysis recipe and check that its `!include` path resolves",
                 evidence={"plot_id": plot_id, "available_plots": list(data_analysis_recipe.get("plots", {}).keys())})
 
         # A key that is not part of the plot spec format used to be moved to `_meta` and ignored: `theem: theme_bw`
@@ -220,9 +220,13 @@ class VizFactory:
         if unknown:
             known = spec_key_names()
             close = difflib.get_close_matches(str(unknown[0]), known, n=1, cutoff=0.6)
+            if unknown[0] == "title":
+                fix = "remove it and write the figure title in a labs layer (its title argument); the name used by the report is ui_title (D-0253)"
+            else:
+                fix = f"write {close[0]}" if close else "remove it, or write one of " + ", ".join(known)
             raise plot_failure(
                 plot_id, "; ".join(f"{key!r} is not a key of a plot spec" for key in unknown),
-                f"write {close[0]}" if close else "remove it, or write one of " + ", ".join(known),
+                fix,
                 evidence={"unknown_keys": [str(k) for k in unknown]})
 
         plot_defaults = data_analysis_recipe.get('plot_defaults') or {}
@@ -277,8 +281,8 @@ class VizFactory:
                 location="recipe plot_defaults",
                 fix=(
                     f"Remove or correct the key '{key}' in the data analysis recipe 'plot_defaults:' block. "
-                    "Valid keys: palette, theme, default_font_family, facet_panel_spacing, "
-                    "legend_position, optimisation. See rules_data_analysis_recipe_structure.md §10."
+                    f"Valid keys: {', '.join(sorted(_VALID_PLOT_DEFAULTS_KEYS))}. "
+                    "See rules_data_analysis_recipe_structure.md §10."
                 ),
                 who="data_analysis_recipe_author",
                 category="visualization",

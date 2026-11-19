@@ -66,10 +66,10 @@ def test_the_export_writes_the_values_typed_not_as_the_text_of_the_session():
 
 
 def test_the_exported_recipe_is_written_with_typed_values():
-    raw = {"analysis_groups": {"g": {"plots": {"p": {"spec": {"target_dataset": "j"}}}}},
-           "joins": {"j": {"ingredients": [{"dataset_id": "t"}], "steps": {"tier1": [], "tier2": []}}}}
+    raw = {"analysis_groups": {"g": {"plots": {"p": {"ui_label": "P", "target_dataset": "j"}}}},
+           "joins": {"j": {"ingredients": [{"dataset_id": "t"}], "tier1": {"steps": []}, "tier2": {"steps": []}}}}
     forked, _skipped = build_mode2_recipe(raw, {"p": NODES})[:2]
-    written = [s["value"] for s in forked["joins"][next(k for k in forked["joins"] if k != "j")]["steps"]["tier2"]]
+    written = [s["value"] for s in forked["joins"][next(k for k in forked["joins"] if k != "j")]["tier2"]["steps"]]
     assert written == [2000, 90.5, [2003, 2004], ["NO", "SE"], [True]]
 
 

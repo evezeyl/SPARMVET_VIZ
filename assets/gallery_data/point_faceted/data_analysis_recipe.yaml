@@ -21,21 +21,23 @@ data_schemas:
       growth_index: {type: Float64}
       species: {type: String}
       amr_class: {type: String}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       point_faceted:
-        label: Point Faceted
+        ui_label: Point Faceted
         description: >-
           Drawn with geom_point; color is species, x is date, y is growth_index.
         taxonomy: {family: Comparison, pattern: '2 Numeric, 1 Categorical (Faceted)', difficulty: Intermediate,
           show: relationship, sample_size: individual points}
-        spec:
-          target_dataset: example
-          mapping: {color: species, x: date, y: growth_index}
-          layers:
-            - {name: geom_point, params: {}}
-            - {name: facet_grid, params: {cols: amr_class, rows: species}}
+        target_dataset: example
+        mapping: {color: species, x: date, y: growth_index}
+        layers:
+          - {name: geom_point, params: {}}
+          - {name: facet_grid, params: {cols: amr_class, rows: species}}

@@ -228,7 +228,7 @@ class Anonymiser:
     def build_deanon_steps(self, id_column: str, mapping_filename: str) -> str:
         """Return a YAML snippet for a BLUEPRINT join steps to restore original IDs.
 
-        Paste this into a tier2 wrangling block in BLUEPRINT to de-anonymise results
+        Paste this step into the `steps` of a tier 2 (`tier2: {steps: [...]}`) in BLUEPRINT to de-anonymise results
         by joining the anonymised dataset with the mapping TSV.
         """
         anon_col = f"anon_{id_column}"

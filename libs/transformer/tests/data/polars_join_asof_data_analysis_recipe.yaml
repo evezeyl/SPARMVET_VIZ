@@ -28,9 +28,10 @@ data_schemas:
       x:
         type: Int64
         label: x
-    wrangling:
-      tier1: []
-      tier2: []
+    tier1:
+      steps: []
+    tier2:
+      steps: []
   polars_join_asof_right:
     source:
       type: local_tsv
@@ -47,20 +48,22 @@ data_schemas:
       v:
         type: Int64
         label: v
-    wrangling:
-      tier1: []
-      tier2: []
+    tier1:
+      steps: []
+    tier2:
+      steps: []
 joins:
   polars_join_asof:
     ingredients:
     - dataset_id: polars_join_asof
     - dataset_id: polars_join_asof_right
-    steps:
-      tier1:
+    tier1:
+      steps:
       - action: polars_join_asof
         right_ingredient: polars_join_asof_right
         'on': t
         by: [site]
         strategy: backward
         tolerance: 5
-      tier2: []
+    tier2:
+      steps: []

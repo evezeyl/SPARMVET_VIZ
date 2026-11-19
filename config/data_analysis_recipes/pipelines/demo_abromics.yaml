@@ -17,7 +17,7 @@ data_schemas:
     null_values: []
     strip: true
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
-    wrangling: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
+    tier1: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
 metadata_schema:
   label: "metadata"
   description: "One row per metadata line (source, year, country). In this demo file no sample id is repeated, but three lines have no usable id (one empty, one written as a dash, one written as two quote marks); all three are read as missing."
@@ -27,9 +27,10 @@ metadata_schema:
   null_values: []
   strip: true
   input_fields: !include '1_test_data_ST22_dummy/input_fields/metadata_schema_input_fields.yaml'
-  wrangling:
-    tier1: []
-    tier2: []
+  tier1:
+    steps: []
+  tier2:
+    steps: []
 joins:
   demo_join:
     label: "demo join"
@@ -39,8 +40,8 @@ joins:
     - dataset_id: metadata_schema
     - dataset_id: MLST
     labels: {sequence_type: Sequence Type, source: Source, year: Year, country: Country}
-    steps:
-      tier1:
+    tier1:
+      steps:
       # a metadata line without a sample id cannot be linked to an MLST result: it is removed here (3 lines in this demo data)
       - action: polars_drop_nulls
         subset: [sample_id]
@@ -63,20 +64,23 @@ joins:
         dtype: String
       - action: polars_select
         exprs: [sample_id, sequence_type, source, year, country]
-      tier2: []
+    tier2:
+      steps: []
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   MLST_Overview:
-    label: MLST Overview
+    ui_label: MLST Overview
     description: "Which sequence types occur in each source."
     plots:
       demo_st_by_source:
-        label: Sequence Types by Source
+        ui_label: Sequence Types by Source
         description: "Bars count the rows of the joined table (one row per sample) for each sequence type, coloured by source. The bar \"Non Determined\" holds the samples that have no MLST result or an unknown one."
-        spec:
-          target_dataset: demo_join
-          mapping:
-            x: sequence_type
-            fill: source
-          layers:
-          - name: geom_bar
-            params: {}
+        target_dataset: demo_join
+        mapping:
+          x: sequence_type
+          fill: source
+        layers:
+        - name: geom_bar
+          params: {}

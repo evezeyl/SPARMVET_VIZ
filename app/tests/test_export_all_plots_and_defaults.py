@@ -33,11 +33,11 @@ def _three_plot_world(tmp_path) -> World:
     """The tiny recipe with a second group: plots p (group g), q and r (group h)."""
     world = World(tmp_path)
     recipe = world.data_analysis_recipes_dir / "tiny.yaml"
-    plot = "          target_dataset: C\n          mapping: {x: group}\n          layers:\n            - name: geom_bar\n              params: {}\n"
+    plot = "        target_dataset: C\n        mapping: {x: group}\n        layers:\n          - name: geom_bar\n            params: {}\n"
     recipe.write_text(recipe.read_text() + (
-        "  h:\n    label: H\n    plots:\n"
-        f"      q:\n        label: Q\n        spec:\n{plot}"
-        f"      r:\n        label: R\n        spec:\n{plot}"))
+        "  h:\n    ui_label: H\n    plots:\n"
+        f"      q:\n        ui_label: Q\n{plot}"
+        f"      r:\n        ui_label: R\n{plot}"))
     clear_data_analysis_recipe_cache()
     return world
 

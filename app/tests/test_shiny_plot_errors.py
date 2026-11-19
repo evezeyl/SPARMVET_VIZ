@@ -72,7 +72,7 @@ def staged_app():
     recipe = minimal_recipe("staged", label="Staged", schemas={"table": schema}, plots=plots)
     recipe["info"]["description"] = "A table and three plots, one of which cannot be drawn, for a browser test."
     group = recipe["analysis_groups"].pop("main")
-    group.update({"label": "Plots", "description": "The one group."})
+    group.update({"ui_label": "Plots", "description": "The one group."})
     recipe["analysis_groups"] = {"plots_group": group}
     recipes = WORK / "recipes"
     recipes.mkdir(exist_ok=True)

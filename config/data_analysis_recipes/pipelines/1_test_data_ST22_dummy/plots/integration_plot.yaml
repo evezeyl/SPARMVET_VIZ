@@ -1,5 +1,8 @@
+ui_label: "Virulence Variants"
+ui_title: Integrated Virulence & MLST Typing
+description: "Heatmap with one tile per sample and selected virulence gene, coloured by whether the gene was detected."
+taxonomy: {"family": "Correlation", "pattern": "2 Categorical", "difficulty": "Advanced"}
 target_dataset: ST22_Anchor
-title: Integrated Virulence & MLST Typing
 mapping:
   x: Selected_Virulence_Genes
   y: sample_id
@@ -9,5 +12,8 @@ layers:
   params:
     color: white
     size: 0.1
+- name: labs
+  params:
+    title: Integrated Virulence & MLST Typing
 # facet_by: sequence_type was written here but never applied (issue #65). Applied now it gives 16 panels too small to read
 # with this table, so it is left out until Eve decides what this plot shows (issue #67).

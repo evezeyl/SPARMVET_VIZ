@@ -5,7 +5,7 @@ For every data file the script reads the header and the values, and writes:
   - one recipe file `<out_file>` (its id is the file name without `.yaml`);
   - next to it, in a folder with the same name, two included files per table:
     `<table>_fields.yaml` (one entry per column: its Polars type, a label, the name in the file when it differs)
-    and `<table>_wrangling.yaml` (the empty step lists, to fill).
+    and `<table>_wrangling.yaml` (the tier 1 of the table: `steps: []`, to fill; the table includes it as `tier1`, D-0250).
 The recipe has one plot (a bar chart of the first column of the first table), so it can be opened at once; the
 author then writes the steps, the joins and the plots.
 
@@ -54,8 +54,8 @@ from utils.recipe_check import check_recipe
 from utils.recipe_factory import Include, minimal_plot, minimal_recipe, minimal_schema, write_fragment, write_recipe
 
 METADATA_ID = "metadata_schema"
-WRANGLING_COMMENT = ("The steps of this table, in order (recipe format 1).\n"
-                     "tier1: applied when the table is read. tier2 is optional.")
+WRANGLING_COMMENT = ("The steps of tier 1 of this table, in order (recipe format 1).\n"
+                     "Applied when the table is read. A tier 2 is optional: write `tier2:` with its own `steps:` in the recipe.")
 
 
 class Refused(Exception):
@@ -163,7 +163,7 @@ def build(recipe_id: str, data_files: Sequence[Path], key_columns: Sequence[str]
     recipe = minimal_recipe(recipe_id, label=recipe_id.replace('_', ' ').capitalize(), schemas=schemas, plots=plots)
     recipe["info"]["description"] = (f"Scaffold written by create_data_analysis_recipe.py from {len(schemas)} data file(s). "
                                      "Review the types, then write the steps, the joins and the plots.")
-    recipe["analysis_groups"]["main"]["label"] = "First look"
+    recipe["analysis_groups"]["main"]["ui_label"] = "First look"
 
     if metadata_file is not None:
         fields, key = fields_of(read_table(metadata_file), [metadata_key] if metadata_key else [], metadata_file)
@@ -184,7 +184,7 @@ def split_into_files(recipe: dict, out_file: Path) -> Dict[Path, object]:
     if METADATA_ID in recipe:
         tables.append((METADATA_ID, recipe[METADATA_ID]))
     for table_id, schema in tables:
-        for key, suffix in (("input_fields", "fields"), ("wrangling", "wrangling")):
+        for key, suffix in (("input_fields", "fields"), ("tier1", "wrangling")):
             name = f"{table_id}_{suffix}.yaml"
             fragments[folder / name] = schema[key]
             schema[key] = Include(f"{out_file.stem}/{name}")

@@ -22,34 +22,38 @@ data_schemas:
     input_fields:
       sample_id: {original_name: sample_id, type: String, label: Sample, is_entity_key: true}
       variant: {original_name: variant, type: String, label: Variant}
-    wrangling:
-      tier1:
+    tier1:
+      steps:
         - action: step_top_n_other
           column: variant
           n: 3
           other_label: Other
           new_column: variant_top3
           count_distinct: sample_id     # EDIT HERE (test 2): delete this line, then reload
-      tier2: []
+    tier2:
+      steps: []
 
 joins:
   Variants_joined:
     label: "Variants joined"
     ingredients:
       - dataset_id: Variants
-    steps:
-      tier1: []
-      tier2: []
+    tier1:
+      steps: []
+    tier2:
+      steps: []
+
+plot_defaults:
+  theme: theme_bw
 
 analysis_groups:
   retest:
-    label: "Retest"
+    ui_label: "Retest"
     plots:
       variants_bar:
-        label: "Rows per grouped variant"
-        spec:
-          target_dataset: Variants_joined
-          mapping: {x: variant_top3}
-          layers:
-            - name: geom_bar
-              params: {}
+        ui_label: "Rows per grouped variant"
+        target_dataset: Variants_joined
+        mapping: {x: variant_top3}
+        layers:
+          - name: geom_bar
+            params: {}

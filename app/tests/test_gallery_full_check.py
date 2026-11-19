@@ -44,7 +44,7 @@ def _with_a_wrong_layer(work: Path) -> None:
 def _with_a_wrong_argument_and_a_wrong_theme(work: Path) -> None:
     """Two more examples: `bar_colr` has an argument geom_bar does not have, `bar_theme` a theme that is not registered."""
     for name, old, new in (("bar_colr", "{name: geom_bar, params: {}}", "{name: geom_bar, params: {colr: red}}"),
-                           ("bar_theme", "          layers:", "          theme: theme_nope\n          layers:")):
+                           ("bar_theme", "        layers:", "        theme: theme_nope\n        layers:")):
         shutil.copytree(work / "bar_simple", work / name)
         text = (work / name / RECIPE).read_text().replace("bar_simple", name)
         assert old in text

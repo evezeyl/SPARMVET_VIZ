@@ -20,26 +20,28 @@ data_schemas:
       species: {type: String}
       mic_value: {type: Float64}
       log_mic: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       qq_plot:
-        label: Q-Q Plot (Quantile-Quantile)
+        ui_label: Q-Q Plot (Quantile-Quantile)
         description: >-
           Drawn with geom_qq; sample is log_mic, color is species.
         taxonomy: {family: Distribution, pattern: '1 Numeric, 1 Categorical', difficulty: Advanced, show: normality,
           sample_size: medium+}
-        spec:
-          target_dataset: example
-          mapping: {sample: log_mic, color: species}
-          layers:
-            - {name: geom_qq, params: {alpha: 0.7}}
-            - {name: geom_qq_line, params: {size: 0.8}}
-            - name: labs
-              params:
-                title: Q-Q Plot of log(MIC) by Species
-                x: Theoretical Quantiles
-                y: Sample Quantiles
+        target_dataset: example
+        mapping: {sample: log_mic, color: species}
+        layers:
+          - {name: geom_qq, params: {alpha: 0.7}}
+          - {name: geom_qq_line, params: {size: 0.8}}
+          - name: labs
+            params:
+              title: Q-Q Plot of log(MIC) by Species
+              x: Theoretical Quantiles
+              y: Sample Quantiles

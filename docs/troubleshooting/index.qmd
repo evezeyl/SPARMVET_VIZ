@@ -601,11 +601,9 @@ is nothing to render.
 ```yaml
 analysis_groups:
   MyGroup:
-    label: "My Analysis Group"
+    ui_label: "My Analysis Group"
     plots:
-      my_plot:
-        label: "My Plot"
-        spec: !include my_data_analysis_recipe/plots/my_plot.yaml
+      my_plot: !include my_data_analysis_recipe/plots/my_plot.yaml   # the file holds the whole plot entry (ui_label, target_dataset, mapping, layers)
 ```
 
 See `rules_data_analysis_recipe_structure.md §8` for the full specification.

@@ -6,7 +6,7 @@ combine the libraries (rules_runtime_environment.md, Tier 3):
 - `check_gallery`: the full check of every example, with the action and plot-component registries given to
   `check_recipe` as catalogs. It returns the accepted examples and the rejected ones with their reasons. The index
   rebuild, the tests and (decision DEC48) the check at app start call it.
-- `render_example`: the picture of an example by the same path as HOME (ConfigManager, DataOrchestrator, VizFactory),
+- `render_example`: the picture of an example by the same path as HOME (ConfigManager, DataOrchestrator, PlotEngines),
   so an example that the app could not load gets no picture (finding G2).
 
 No Shiny import. App features gate: none here; the Gallery panel itself is gated by `gallery_enabled`.
@@ -14,7 +14,7 @@ If deleted: the examples are checked for structure only and the previews cannot 
 
 # @deps
 # provides: function:check_gallery, function:check_gallery_at_start, function:rebuild_gallery_index, function:render_example, function:example_table, constant:PREVIEW_SIZE
-# consumes: app/modules/data_analysis_recipe_validator.py (checker_catalogs), libs/viz_gallery/src/viz_gallery/gallery_manager.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, app/modules/orchestrator.py, app/modules/cache_keys.py, libs/utils/src/utils/config_loader.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/arguments.py, libs/viz_factory/src/viz_factory/registry.py, libs/transformer/src/transformer/actions/base.py
+# consumes: app/modules/data_analysis_recipe_validator.py (checker_catalogs), libs/viz_gallery/src/viz_gallery/gallery_manager.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, app/modules/orchestrator.py, app/modules/cache_keys.py, libs/utils/src/utils/config_loader.py, app/modules/engine_registry.py (PlotEngines), libs/viz_factory/src/viz_factory/arguments.py, libs/viz_factory/src/viz_factory/registry.py, libs/transformer/src/transformer/actions/base.py
 # consumed_by: app/src/bootloader.py, assets/scripts/refresh_gallery.py, assets/scripts/gallery_previews.py, app/tests/test_gallery_app_path.py
 # doc: .claude/design/recipe_format_spec.md (section 9: G2, G3, D4, D5; section 14)
 # @end_deps
@@ -89,7 +89,7 @@ def _build(example_dir: Path, work_dir: Path, project_root: Path) -> Tuple[dict,
     orchestrator = DataOrchestrator(work_dir, project_root)
     keys = orchestrator.compute_data_analysis_recipe_keys(example_id)
     anchor = work_dir / f"{example_id}.parquet"
-    target = entry["spec"]["target_dataset"]
+    target = entry["target_dataset"]
     orchestrator.materialize_tier1(example_id, target, anchor, keys=keys, on_inputs_changed=tell_inputs_changed)
     return raw, plot_id, orchestrator.materialize_tier2(example_id, target, anchor, keys=keys, on_inputs_changed=tell_inputs_changed)
 
@@ -111,12 +111,12 @@ def render_example(example_dir: Union[str, Path], work_dir: Union[str, Path], ou
     """
     import matplotlib
     matplotlib.use("Agg")
-    from viz_factory.viz_factory import VizFactory
+    from app.modules.engine_registry import PlotEngines
 
     out_path = Path(out_path)
     with contextlib.redirect_stdout(io.StringIO()):
         raw, plot_id, table = _build(Path(example_dir), Path(work_dir), Path("."))
-        plot = VizFactory().render(table, raw, plot_id)
+        plot = PlotEngines().render(table, raw, plot_id)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         plot.save(out_path, verbose=False, **(size or PREVIEW_SIZE))
     return out_path

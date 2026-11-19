@@ -11,7 +11,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_session_server, output:session_management_ui, output:session_export_active
-# consumes: app.src.bootloader (get_session_import_limits — D-0283), shiny, app.modules.error_notice (notice, issue_entry — VERIF-FIX-2), app.modules.plot_issue_reporter (make_issue_reporter), pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps, session_id_collisions, session_input_id_parts)
+# consumes: app.src.bootloader (get_session_import_limits — D-0283), shiny, app.modules.error_notice (notice, issue_entry — VERIF-FIX-2), app.modules.plot_issue_reporter (make_issue_reporter), pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps, split_key_drops, key_drop_notice, session_id_collisions, session_input_id_parts)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
@@ -22,7 +22,14 @@ from shiny import reactive, render, ui
 from shiny.types import SilentException
 from app.modules.error_notice import issue_entry, notice
 from app.modules.plot_issue_reporter import make_issue_reporter
-from app.modules.session_manager import SessionDeleteError, normalise_audit_steps, session_id_collisions, session_input_id_parts
+from app.modules.session_manager import (
+    SessionDeleteError,
+    key_drop_notice,
+    normalise_audit_steps,
+    session_id_collisions,
+    session_input_id_parts,
+    split_key_drops,
+)
 from app.src.bootloader import bootloader
 
 
@@ -599,6 +606,12 @@ def define_session_server(input, output, session, *,
             # NA-RULE-63: steps made before the choice `na` existed are carried as "remove", what they always
             # did. After the checksum above, which is over the file as it was written.
             by_plot = normalise_audit_steps(by_plot)
+            # D-0297: a stored step that drops a join key is not restored (a file saved before the rule, or written by hand); the rest
+            # is, and the user is told which step and why. The keys are those of the open recipe.
+            by_plot, refused_key_drops = split_key_drops(by_plot, state.get("primary_keys"))
+            if refused_key_drops:
+                _kept_ids = {n.get("id") for nodes in by_plot.values() for n in nodes}
+                _notify("⚠️ " + key_drop_notice(refused_key_drops, len(_kept_ids)), type="warning", duration=15)
             new_state = {
                 **state,
                 "t3_audit_steps_by_plot": by_plot,

@@ -23,7 +23,7 @@ CATALOGS = checker_catalogs()
 
 def refusal(name):
     raw = copy.deepcopy(TEMPLATE)
-    raw["joins"]["main_collection"]["steps"]["tier1"].append({"action": name})
+    raw["joins"]["main_collection"]["tier1"]["steps"].append({"action": name})
     return [p for p in check_recipe(raw, "run", file_stem="simple_template", catalogs=CATALOGS).errors if p.code == "ST02"]
 
 

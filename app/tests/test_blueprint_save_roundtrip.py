@@ -60,11 +60,11 @@ def test_apply_with_a_multi_select_then_save_gives_a_file_that_safe_load_reads()
     applied = ws.logic_stack.get()[0]["params"]["columns"]
     assert type(applied) is list and applied == list(chosen)
 
-    content = ns["_serialise_component_for_save"]("wrangling", ws.logic_stack.get(), "")
+    content = ns["_serialise_component_for_save"]("wrangling", ws.logic_stack.get(), "", "tier1")
     written = blueprint_handlers.safe_dump_recipe(content)           # what the save handler writes
     assert "python" not in written
     loaded = yaml.safe_load(written)
-    assert loaded["wrangling"]["tier1"][0]["columns"] == list(chosen)
+    assert loaded["steps"][0]["columns"] == list(chosen)      # a tier file holds `steps` (D-0250)
 
 
 def test_the_recipe_writer_keeps_the_order_of_keys_and_writes_a_tuple_as_a_list():

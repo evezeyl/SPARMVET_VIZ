@@ -1,5 +1,8 @@
+ui_label: "QA Facet By Mapping"
+ui_title: "QA: facet_by written in mapping"
+description: "facet_by written in mapping must give 3 panels. Canary for the documented spelling of facets. The panels must exist; if the plot has a single panel, facet_by in mapping is being ignored (issue 65)."
+taxonomy: {"family": "Ranking", "pattern": "1 Categorical, 1 Categorical", "difficulty": "Simple"}
 target_dataset: QA_year_types
-title: "QA: facet_by written in mapping"
 mapping:
   x: year_label
   fill: year_label
@@ -9,6 +12,7 @@ layers:
   params: {}
 - name: labs
   params:
+    title: "QA: facet_by written in mapping"
     subtitle: "Expect 3 panels: France, Germany, Norway"
     x: Year
     y: Samples

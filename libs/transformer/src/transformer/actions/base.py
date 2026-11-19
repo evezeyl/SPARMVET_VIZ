@@ -2,10 +2,13 @@ from typing import Callable, Dict, Any, List, Optional, Union
 import polars as pl
 import logging
 
+from utils.engines import DATA_ENGINE, engine_problem
+
 logger = logging.getLogger(__name__)
 
 # @deps
-# provides: decorator:register_action, registry:AVAILABLE_WRANGLING_ACTIONS, registry:ACTION_SCHEMAS
+# provides: decorator:register_action, registry:AVAILABLE_WRANGLING_ACTIONS, registry:ACTION_SCHEMAS, registry:ACTION_ENGINES
+# consumes: libs/utils/src/utils/engines.py (DATA_ENGINE, engine_problem)
 # consumed_by: libs/transformer/src/transformer/actions/composite.py, libs/transformer/src/transformer/actions/modified.py, libs/transformer/src/transformer/actions/polars_calls.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/blueprint_arch/src/blueprint_arch/schema_registry.py
 # doc: .claude/rules/rules_data_engine.md, .claude/knowledge/architecture_decisions.md (ADR-075)
 # @end_deps
@@ -18,8 +21,12 @@ AVAILABLE_WRANGLING_ACTIONS: Dict[str, Callable[[
 # Only populated when @register_action(..., ui_schema={...}) is provided.
 ACTION_SCHEMAS: Dict[str, Dict[str, Any]] = {}
 
+# Parallel registry: action_name -> the engine that runs it (D-0238). Every registered action has an entry, whatever its
+# prefix: `polars_` names say it, `modif_` and `step_` names do not, so the checker reads this field and not the name.
+ACTION_ENGINES: Dict[str, str] = {}
 
-def register_action(name: str, ui_schema: Optional[Dict[str, Any]] = None):
+
+def register_action(name: str, ui_schema: Optional[Dict[str, Any]] = None, *, engine: Any = DATA_ENGINE):
     """
     Standard Plugin Decorator for Data Wrangling Actions.
     Any function decorated with `@register_action("action_name")`
@@ -27,12 +34,20 @@ def register_action(name: str, ui_schema: Optional[Dict[str, Any]] = None):
 
     Optional `ui_schema` kwarg populates ACTION_SCHEMAS for BLUEPRINT IDE form generation
     (ADR-075). Schema format: {label, category, context, tags, params: {param: {widget, ...}}}.
+
+    `engine` is the field of the entry (D-0238): the engine that runs this action. The library holds one engine, so it is
+    that engine unless written; an entry whose engine the app has no library for cannot be registered, so no entry lacks the field.
     """
+    refusal = engine_problem("data_engine", engine)
+    if refusal is not None:
+        raise ValueError(f"Action '{name}' cannot be registered: {refusal[0]}. {refusal[1]}.")
+
     def decorator(func: Callable):
         if name in AVAILABLE_WRANGLING_ACTIONS:
             logger.warning(
                 f"Warning: Extensibility clash. Action '{name}' is already registered and will be overwritten.")
         AVAILABLE_WRANGLING_ACTIONS[name] = func
+        ACTION_ENGINES[name] = engine
         if ui_schema is not None:
             ACTION_SCHEMAS[name] = ui_schema
         return func

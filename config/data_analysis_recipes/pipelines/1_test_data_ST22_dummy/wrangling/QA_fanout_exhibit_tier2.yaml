@@ -1,0 +1,7 @@
+
+steps:
+  - action: polars_group_by
+    by: [sample_id]
+    maintain_order: true
+    named_aggs:
+      rows_per_sample: pl.col('VF_gene').count()

@@ -19,23 +19,22 @@ data_schemas:
     input_fields:
       year: {type: Int64}
       resistance_pct: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       area_simple:
-        label: Area Chart
+        ui_label: Area Chart
         description: >-
           Drawn with geom_area; x is year, y is resistance_pct.
         taxonomy: {family: Evolution, pattern: '1 Year, 1 Numeric', difficulty: Simple, show: trend, sample_size: medium+}
-        spec:
-          target_dataset: example
-          mapping: {x: year, y: resistance_pct}
-          layers:
-            - {name: geom_area, params: {alpha: 0.6, fill: '#2196f3'}}
-            - {name: geom_line, params: {color: '#1565c0', size: 1.0}}
-            - name: labs
-              params: {x: Year, y: Resistance (%), title: Resistance Burden Over Time}
-            - {name: theme_minimal, params: {}}
+        target_dataset: example
+        mapping: {x: year, y: resistance_pct}
+        layers:
+          - {name: geom_area, params: {alpha: 0.6, fill: '#2196f3'}}
+          - {name: geom_line, params: {color: '#1565c0', size: 1.0}}
+          - name: labs
+            params: {x: Year, y: Resistance (%), title: Resistance Burden Over Time}
+          - {name: theme_minimal, params: {}}

@@ -90,7 +90,7 @@ def test_the_pair_of_the_action_equals_the_polars_call(action, monkeypatch):
     ingested, got, used = pairs._run(action)
     assert_frame_equal(ingested, BASE)                        # the TSV, the declared types and null_values lose nothing
     assert used == [action]
-    pair_spec = {k: v for k, v in pairs._recipe(action)["wrangling"]["tier1"][0].items() if k != "action"}
+    pair_spec = {k: v for k, v in pairs._recipe(action)["tier1"]["steps"][0].items() if k != "action"}
     assert_frame_equal(got, eager(AVAILABLE_WRANGLING_ACTIONS[action](BASE.lazy(), pair_spec)))
     assert not got.equals(BASE)
 

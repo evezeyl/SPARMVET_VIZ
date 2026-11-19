@@ -25,7 +25,7 @@ UNDETERMINED = "Non Determined"
 def mlst():
     raw = ConfigManager(str(DATA_ANALYSIS_RECIPES_DIR / "1_test_data_ST22_dummy.yaml")).raw_config
     orchestrator = DataOrchestrator(DATA_ANALYSIS_RECIPES_DIR, ROOT / "assets" / "test_data")
-    return orchestrator.prepare_ingredient("MLST", raw["data_schemas"]["MLST"]).collect()
+    return orchestrator.prepare_ingredient("MLST", raw["data_schemas"]["MLST"], recipe=raw).collect()
 
 
 def test_each_sample_keeps_its_raw_sequence_type(mlst):

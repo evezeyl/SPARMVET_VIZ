@@ -12,7 +12,8 @@ from __future__ import annotations
 
 # @deps
 # provides: constant:EXPORT_READY_TEXTS, constant:EXPORT_PANEL_FIELDS, constant:EXPORT_WATCHED_FIELDS, function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
-# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/export_fields_store.py (D-0288, D-0291, D-0296: the Export fields remembered per session, in memory only; defaults D-0294), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
+# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/export_fields_store.py (D-0288, D-0291, D-0296: the Export fields remembered per session, in memory only; defaults D-0294), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table, the same function the orchestrator uses, D-0240), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
+# consumes: libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237), app/modules/engine_record.py (engine_record, failed_plot_record: the `engines` part of effective_run.yaml, D-0248)
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text), .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/export_specification.md, .claude/design/reproducible_export_design.md
@@ -35,6 +36,8 @@ from viz_factory.checked_plot import plot_warnings
 from app.modules.export_refusal import export_refusal
 from app.modules.data_analysis_recipe_validator import export_contact_readme_line, export_contact_record
 from app.modules.t3_audit_engine import _op_label, audit_failures, audited_frame, between_prose
+from utils.engines import plot_engine_slot
+from app.modules.engine_record import engine_record, failed_plot_record
 from utils.fix_text import fix_label
 from app.modules.qmd_text import code as _qc, mermaid_label as _qm, plain as _qp, yaml_string as _qy
 from app.modules.plot_seeds import (
@@ -331,6 +334,27 @@ def _quote(name) -> str:
     return quote(str(name), safe="")
 
 
+def export_plot_entries(raw_config: dict) -> list[tuple[str, dict]]:
+    """[(plot_id, plot entry)] of the recipe, in the order of its groups: the plots an export draws.
+
+    The entry IS the plot content (D-0237): `target_dataset`, `mapping` and `layers` are written in it, with the app-side keys
+    (`ui_label`, `ui_title`, `plot_engine`, ...) beside them. An empty entry is not a plot. A recipe with no group falls back to a
+    root `plots` mirror (the loader's)."""
+    found = [(p_id, entry)
+             for gspec in (raw_config.get("analysis_groups") or {}).values()
+             for p_id, entry in (gspec.get("plots") or {}).items() if entry]
+    return found or list((raw_config.get("plots") or {}).items())
+
+
+def plot_report_name(entry, p_id: str) -> str:
+    """The name of a plot in the report (headings, captions, audit prose): `ui_title`, else `ui_label` (D-0253), else the plot id in
+    title case (a recipe the checker refused has no `ui_label`; the report is never left without a name).
+
+    The text of the figure is not read here: it is written only in the `labs` layer of the plot."""
+    entry = entry if isinstance(entry, dict) else {}
+    return entry.get("ui_title") or entry.get("ui_label") or p_id.replace("_", " ").title()
+
+
 def plot_report_lines(p_id: str, label: str, caption: str, fig_id: str, plot_ext: str, failure: str | None) -> list:
     """The lines of one plot in `report.qmd`: the figure, or, when the plot was not drawn, a note that says so and why.
 
@@ -439,8 +463,7 @@ def _build_methods_section(
     # T3 node prose
     for p_id, nodes in (t3_by_plot or {}).items():
         plot_label = _qp(next(
-            (s.get("title") or p_id.replace("_", " ").title()
-             for pid, s in all_plots if pid == p_id),
+            (plot_report_name(s, p_id) for pid, s in all_plots if pid == p_id),
             p_id.replace("_", " ").title(),
         ))
         for n in nodes:
@@ -489,8 +512,7 @@ def _build_methods_section(
     # Aesthetic overrides prose (from t3_plot_overrides — stored separately per §12c)
     for p_id, overrides in (t3_aesthetic_overrides or {}).items():
         plot_label = _qp(next(
-            (s.get("title") or p_id.replace("_", " ").title()
-             for pid, s in all_plots if pid == p_id),
+            (plot_report_name(s, p_id) for pid, s in all_plots if pid == p_id),
             p_id.replace("_", " ").title(),
         ))
         if overrides:
@@ -981,18 +1003,9 @@ def define_export_server(input, output, session, *,
                 _build_changes.append(change.text)
 
         groups = cfg.raw_config.get("analysis_groups", {})
-        top_plots = cfg.raw_config.get("plots", {})
 
-        # Collect all (plot_id, spec) pairs for this export
-        all_plots: list[tuple[str, dict]] = []
-        for _gid, gspec in groups.items():
-            for p_id, pentry in gspec.get("plots", {}).items():
-                spec = pentry.get("spec")
-                if spec:
-                    all_plots.append((p_id, spec))
-        if not all_plots:
-            for p_id, spec in top_plots.items():
-                all_plots.append((p_id, spec))
+        # Collect all (plot_id, entry) pairs for this export
+        all_plots = export_plot_entries(cfg.raw_config)
 
         # ── Mode 2 add-on (ADR-097 decision 1, #45): Publication content (plots,
         # report, T3 justification) is always built, unchanged — this is additive, not
@@ -1094,17 +1107,17 @@ def define_export_server(input, output, session, *,
             # ── Hashes + Provenance (before tmpdir so image embedding can use it) ──
             # The keys of this export (ADR-089): the file-set hash of the data analysis recipe, the content
             # hash of the data, and the chained key of every stored stage the export reads.
-            from app.modules.cache_keys import tier2_key as _tier2_key, tier2_steps as _tier2_steps
+            from app.modules.cache_keys import collection_tier2_key as _collection_tier2_key
             data_analysis_recipe_sha = export_keys.data_analysis_recipe_sha256
             data_sha = export_keys.data_batch_hash
             stage_keys: dict[str, dict[str, str]] = {}
             for _p, _spec in all_plots:
                 _ds = _spec.get("target_dataset")
                 if _ds and _ds not in stage_keys:
-                    _steps = _tier2_steps(cfg.raw_config, _ds)
                     stage_keys[_ds] = {
                         "tier1_key": export_keys.tier1_key,
-                        "tier2_key": _tier2_key(export_keys.tier1_key, _steps) if _steps else "",
+                        # the one function that makes a tier-2 key from a recipe (steps and engine); empty when T2 equals T1
+                        "tier2_key": _collection_tier2_key(cfg.raw_config, _ds, export_keys.tier1_key),
                     }
 
             tiers_exported = ["T1"] + (["T3"] if audited_plots else [])
@@ -1190,6 +1203,7 @@ def define_export_server(input, output, session, *,
             _plot_warning_rows: dict[str, list[dict]] = {}
             _warnings_unreadable: list[str] = []
             failed_plots: dict[str, str] = {}      # p_id → why it was not drawn (the report says so, no figure link)
+            drawn_records: dict[str, dict] = {}    # p_id → the engine and the theme of the plot as it was drawn (effective_run.yaml, D-0248)
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmpdir_path = Path(tmpdir)
 
@@ -1202,6 +1216,8 @@ def define_export_server(input, output, session, *,
                         synthetic_data_analysis_recipe = {
                             "plots": {p_id: plot_spec},
                             "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
+                            # the recipe's default engine; the dispatcher reads the plot's own (D-0237)
+                            **plot_engine_slot(cfg.raw_config),
                         }
 
                         # Resolve dataset
@@ -1229,6 +1245,8 @@ def define_export_server(input, output, session, *,
                         _plot_override = _t3_aesthetic_overrides.get(p_id)
                         fig = viz_factory.render(lf, synthetic_data_analysis_recipe, p_id,
                                                  **render_seed_args(_plot_seeds[p_id], _plot_override))
+                        # the record comes from the plot that was just drawn, by the dispatcher that drew it (D-0248)
+                        drawn_records[p_id] = viz_factory.record_of(fig, synthetic_data_analysis_recipe, p_id)
                         # WHY: a failure to read the warnings must not lose the picture; it is named in the bundle
                         try:
                             _found = plot_warnings(fig)
@@ -1276,6 +1294,7 @@ def define_export_server(input, output, session, *,
                         # detection without guidance in a file nobody can ask a follow-up
                         # question about is worse than in a live UI.
                         failed_plots[p_id] = str(e)
+                        drawn_records[p_id] = failed_plot_record(cfg.raw_config, spec, e)
                         _lost(f"the plot '{p_id}'", e)
                         zf.writestr(
                             f"{bundle_dir}/{_safe_ds}/plots/{p_id}_ERROR.txt",
@@ -1556,6 +1575,9 @@ def define_export_server(input, output, session, *,
                 "contact_source": _contact["contact_source"],
                 "software_versions": prov["software_versions"],
                 "data_source_paths": prov["data_source_paths"],
+                # the engine of each tier and plot, the theme as applied, the versions of the libraries behind them (D-0248):
+                # the Publication export carries no recipe, so this is the only place the engine of the export is written
+                "engines": engine_record(cfg.raw_config, all_plots, drawn_records),
                 "seeds_per_plot": seeds_per_plot_record(_plot_seeds),
                 "seed_source_per_plot": seed_sources_per_plot(_plot_seeds),
                 "seeds_per_layer": seeds_per_layer_record(_plot_seeds),
@@ -1806,7 +1828,7 @@ def define_export_server(input, output, session, *,
             # The user-facing plots/ folder in the zip keeps the chosen format.
             qmd_lines += ["## Plots", ""]
             for p_id, spec in all_plots:
-                label = spec.get("title") or p_id.replace("_", " ").title()
+                label = plot_report_name(spec, p_id)
                 ds_note = spec.get("target_dataset") or "—"
                 fig_id = f"fig-{_re.sub(r'[^A-Za-z0-9]', '-', p_id)}"
                 caption = f"{_qp(label)} — dataset: {_qc(ds_note)}"
@@ -1850,10 +1872,9 @@ def define_export_server(input, output, session, *,
             if _t3_listed:
                 qmd_lines += ["## T3 Audit Trail", ""]
                 for _pid, _nodes in _t3_listed.items():
-                    _spec_title = next(
-                        (s.get("title") for p, s in all_plots if p == _pid), None
-                    )
-                    _section_label = _qp(_spec_title or _pid.replace("_", " ").title())
+                    _section_label = _qp(next(
+                        (plot_report_name(s, _pid) for p, s in all_plots if p == _pid), _pid.replace("_", " ").title()
+                    ))
                     qmd_lines += [
                         f"### {_section_label}",
                         "",
@@ -2128,7 +2149,8 @@ def define_export_server(input, output, session, *,
                 "                     are no tier2 steps) plus that plot's filters and column drops",
                 "  t3_steps.yaml     — human-readable audit record (when T3 has steps)",
                 "  effective_run.yaml — the full verification record: recipe/data/T3-steps/engine",
-                "                     hashes, per-plot seeds. Written the same way either way (ADR-097).",
+                "                     hashes, per-plot seeds, the engine of each tier and plot, the theme as",
+                "                     applied and the library versions (`engines`). Written the same way either way (ADR-097).",
                 "  lineage/          — lineage_graph.json (shared-node DAG, ADR-074)",
                 "  report.qmd        — Quarto source (re-render: quarto render report.qmd)",
                 rendered_note,

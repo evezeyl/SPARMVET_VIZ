@@ -28,7 +28,7 @@ data_schemas:
     null_values: []
     strip: true
     input_fields: !include 'figshare_integration/input_fields/fg_metadata_input_fields.yaml'
-    wrangling: !include 'figshare_integration/wrangling/fg_metadata_wrangling.yaml'
+    tier1: !include 'figshare_integration/wrangling/fg_metadata_wrangling.yaml'
 
   fg_phenotypes:
     label: "fg phenotypes"
@@ -39,7 +39,7 @@ data_schemas:
     null_values: []
     strip: true
     input_fields: !include 'figshare_integration/input_fields/fg_phenotypes_input_fields.yaml'
-    wrangling: !include 'figshare_integration/wrangling/fg_phenotypes_wrangling.yaml'
+    tier1: !include 'figshare_integration/wrangling/fg_phenotypes_wrangling.yaml'
 
   fg_genotypes:
     label: "fg genotypes"
@@ -50,7 +50,7 @@ data_schemas:
     null_values: []
     strip: true
     input_fields: !include 'figshare_integration/input_fields/fg_genotypes_input_fields.yaml'
-    wrangling: !include 'figshare_integration/wrangling/fg_genotypes_wrangling.yaml'
+    tier1: !include 'figshare_integration/wrangling/fg_genotypes_wrangling.yaml'
 
 # ── Assembly Data Analysis Recipes ────────────────────────────────────────────────────────
 joins:
@@ -63,27 +63,18 @@ joins:
     - dataset_id: fg_metadata
     - dataset_id: fg_phenotypes
     - dataset_id: fg_genotypes
-    steps: !include 'figshare_integration/wrangling/figshare_triple_join_steps.yaml'
+    tier1: !include 'figshare_integration/wrangling/figshare_triple_join_steps.yaml'
+
+plot_defaults:
+  theme: theme_bw
 
 # ── Analysis Groups ───────────────────────────────────────────────────────────
 # Plot specs: see figshare_integration/plots/
 analysis_groups:
   AMR Integration:
-    label: "🧬 AMR Phenotype × Genotype × Host Integration"
+    ui_label: "🧬 AMR Phenotype × Genotype × Host Integration"
     description: 🧬 AMR Phenotype × Genotype × Host Integration
     plots:
-      plot_a_phenotype_bar:
-        label: "Plot A Phenotype Bar"
-        taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
-        description: "Bars count the rows of the joined table for each antibiotic (mic_id), coloured by predicted phenotype; the joined table repeats every antibiotic test once per resistance gene row of its sample, so a sample with more genes weighs more."
-        spec: !include 'figshare_integration/plots/plot_a_phenotype_bar.yaml'
-      plot_b_genotype_bar:
-        label: "Plot B Genotype Bar"
-        taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
-        description: "Bars count the rows of the joined table for each host animal, coloured by gene family; the joined table repeats every gene row once per antibiotic test of its sample, so a sample with more tests weighs more."
-        spec: !include 'figshare_integration/plots/plot_b_genotype_bar.yaml'
-      plot_c_resistance_class:
-        label: "Plot C Resistance Class"
-        taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
-        description: "Bars count the rows of the joined table for each resistance class, coloured by host animal; the joined table repeats every gene row once per antibiotic test of its sample, so a sample with more tests weighs more."
-        spec: !include 'figshare_integration/plots/plot_c_resistance_class.yaml'
+      plot_a_phenotype_bar: !include figshare_integration/plots/plot_a_phenotype_bar.yaml
+      plot_b_genotype_bar: !include figshare_integration/plots/plot_b_genotype_bar.yaml
+      plot_c_resistance_class: !include figshare_integration/plots/plot_c_resistance_class.yaml

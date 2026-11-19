@@ -1,7 +1,7 @@
 """
 @deps
 provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:checker_advices, const:SHOWN_ADVICES, function:home_advice_entries, function:validate_advice_entries, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, function:rejected_recipe_text (GATE-GAP-1), class:DataAnalysisRecipeProblem
-consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (load_recipe), libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/orchestrator.py
+consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (load_recipe), libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/engine_registry.py (engine_tables: the `engine` field of every action and component, D-0238), app/modules/orchestrator.py
 consumed_by: app/tests/test_upload_load_never_exits.py, app/tests/test_upload_recipe_check.py, app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
 @end_deps
@@ -9,9 +9,9 @@ doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_
 Data analysis recipe validator (headless, no Shiny).
 
 `validate_data_analysis_recipe` loads the recipe through the real engine path (ConfigManager,
-SystemExit caught per ADR-094) and checks every wrangling block and assembly steps is in a shape
-the engine accepts (tiered, with tier1/tier2 keys, via the same resolver the engine uses —
-DataWrangler._resolve_tier), plus the id == file name rule (ADR-092). `validate_data_analysis_recipe_data`
+SystemExit caught per ADR-094) and checks every table and join is in a shape
+the engine accepts (tiered: tier1 and tier2 as keys, each a mapping with steps, via the same reader the engine uses —
+DataWrangler.tier_steps), plus the id == file name rule (ADR-092). `validate_data_analysis_recipe_data`
 goes further: it reads the real data and checks it against the declared contract.
 
 Both are wired into the BLUEPRINT "Validate" action (`_handle_validate`, BP-VALIDATE-1 /
@@ -42,18 +42,19 @@ import polars as pl
 import yaml
 from transformer.data_wrangler import DataWrangler
 from utils.step_migration import old_action_hint, removed_action_catalog
+from app.modules.engine_registry import engine_tables
 from utils.config_loader import ConfigManager
 from utils.fix_text import with_fix
 from utils.recipe_loader import check_recipe_file
 
 # What the recipe checker must have looked at before a recipe is accepted (its `coverage`): the form of the file, every
-# step against the action registry, every plot layer against the component registry.
-REQUIRED_COVERAGE = frozenset({"structure", "actions", "components"})
+# step against the action registry, every plot layer against the component registry, every step and layer against the engine of its block.
+REQUIRED_COVERAGE = frozenset({"structure", "actions", "components", "engines"})
 # Advices that tell the author what a choice does to the result (a float join key, a join of a table with itself, a position step after an unfixed row order).
 # The other advices (missing descriptions and the like) are for the author's own review and stay out of HOME's panel.
 SHOWN_ADVICES = frozenset({"J12", "J13", "ST13", "ST14", "ST15"})
 
-# Sections whose entries (dataset id -> spec) may carry a 'wrangling' block.
+# Sections whose entries (dataset id -> spec) may carry tier1 and tier2 (D-0250).
 _SCHEMA_SECTIONS = ("data_schemas", "additional_datasets_schemas")
 
 
@@ -82,25 +83,47 @@ def find_data_analysis_recipes(directory: Union[str, Path]) -> list[Path]:
     return sorted(Path(directory).glob("*.yaml"))
 
 
-def _step_blocks(raw: dict) -> Iterator[tuple[str, object]]:
-    """Yield (location, block) for every wrangling block or assembly steps a data analysis recipe can carry."""
-    if "wrangling" in raw:
-        yield "wrangling", raw["wrangling"]
+def _tiered_bodies(raw: dict) -> Iterator[tuple[str, object]]:
+    """Yield (location, body) for every table and every join of a data analysis recipe: the places whose `tier1` and
+    `tier2` (each a mapping with `steps`, D-0250) the engine runs."""
     for section in _SCHEMA_SECTIONS:
         entries = raw.get(section)
         if not isinstance(entries, dict):
             continue
         for ds_id, spec in entries.items():
-            if isinstance(spec, dict) and "wrangling" in spec:
-                yield f"{section}.{ds_id}.wrangling", spec["wrangling"]
-    metadata = raw.get("metadata_schema")
-    if isinstance(metadata, dict) and "wrangling" in metadata:
-        yield "metadata_schema.wrangling", metadata["wrangling"]
+            yield f"{section}.{ds_id}", spec
+    if "metadata_schema" in raw:
+        yield "metadata_schema", raw["metadata_schema"]
     assemblies = raw.get("joins")
     if isinstance(assemblies, dict):
         for assembly_id, spec in assemblies.items():
-            if isinstance(spec, dict) and "steps" in spec:
-                yield f"joins.{assembly_id}.steps", spec["steps"]
+            yield f"joins.{assembly_id}", spec
+
+
+def count_steps_written(node: object) -> int:
+    """How many steps are written in a piece of a recipe, wherever they are: the items of a list that are mappings with
+    an `action`. It does not know the tiers, on purpose: it is the count the readers of the tiers are held against
+    (`engine_load_problems`, `validate_data_analysis_recipe_data`), so a reader that looks in the wrong place cannot
+    hide the steps it did not read (D-0050)."""
+    if isinstance(node, dict):
+        return sum(count_steps_written(value) for value in node.values())
+    if isinstance(node, list):
+        return sum(1 for item in node if isinstance(item, dict) and "action" in item) + sum(count_steps_written(item) for item in node)
+    return 0
+
+
+def unread_steps_problem(name: str, location: str, written: int, read: int) -> Optional["DataAnalysisRecipeProblem"]:
+    """The problem to report when the check read fewer steps than the recipe writes, else None.
+
+    A check that finds steps in the text of the recipe and runs none of them has checked nothing; saying nothing then
+    would pass a recipe that was never looked at (the `retest_bad_select_column` recipe passed the load gate for that reason
+    when the readers still looked for `wrangling`). It is a fault of the app, never a pass."""
+    if written == read:
+        return None
+    return DataAnalysisRecipeProblem(
+        name, location,
+        f"the check read {read} of the {written} steps written here, so {written - read} step(s) were not checked",
+        "This is a fault of the app, not of the data analysis recipe: report it. A recipe is never accepted on a partial check.")
 
 
 def _load_error_text(stderr_text: str, exc: BaseException) -> str:
@@ -131,21 +154,55 @@ def checker_catalogs() -> dict:
         "component_kinds": {name: COMPONENT_SCHEMAS[name]["plotnine"] for name in components},
         "themes": {name for name in components if name.startswith("theme_")},
         "old_action_names": removed_action_catalog(),
+        **engine_tables(),
     }
 
 
+FRAGMENT_TOOL = "assets/scripts/migrate_recipe_engine_keys.py"
+FRAGMENT_TIERS = ("tier1", "tier2")   # tier3 is a plot's: Blueprint never authors it (ADR-082 section 4)
+
+
+def fragment_tiers(raw) -> dict[str, list]:
+    """The steps of an uploaded fragment, by place (D-0250): `{"steps": [...]}` for a tier file (`steps:` and an optional
+    `data_engine:`), or `{"tier1": [...], "tier2": [...]}` for the tiers of a table written as their own keys
+    (`tier1: {steps: [...]}`). Empty when the file holds neither.
+
+    Only these shapes are read. A `wrangling` key, a tier written as a list or a `steps` that is not a list are old shapes and
+    are not read (no shim): `fragment_old_shape` names what is wrong, so the user is told instead of getting fewer steps."""
+    if not isinstance(raw, dict):
+        return {}
+    found: dict[str, list] = {}
+    if isinstance(raw.get("steps"), list):
+        found["steps"] = raw["steps"]
+    for tier in FRAGMENT_TIERS:
+        held = raw.get(tier)
+        if isinstance(held, dict) and isinstance(held.get("steps"), list):
+            found[tier] = held["steps"]
+    return found
+
+
+def fragment_old_shape(raw) -> Optional[str]:
+    """Why an uploaded fragment is in an old shape (it holds a `wrangling` key, or a tier as a list), or None."""
+    if not isinstance(raw, dict):
+        return None
+    if "wrangling" in raw:
+        return "'wrangling' is not a key any more: a tier file is `steps: [...]`, the tiers of a table are `tier1: {steps: [...]}`"
+    listed = [t for t in FRAGMENT_TIERS if isinstance(raw.get(t), list)]
+    if listed:
+        return f"{', '.join(listed)} written as a list: a tier is a mapping with its steps (`{listed[0]}: {{steps: [...]}}`)"
+    return None
+
+
 def _fragment_report(raw) -> list[str]:
-    """One line per problem of the steps of a wrangling-only upload, each step against its action schema."""
+    """One line per problem of the steps of an upload that is a fragment (a tier file, or the tiers of a table), each step
+    against its action schema."""
     from utils.ui_schema import step_problems
-    wrangling = raw.get("wrangling") if isinstance(raw, dict) else None
-    if isinstance(wrangling, list):
-        located = [("steps", i, s) for i, s in enumerate(wrangling, start=1)]
-    elif isinstance(wrangling, dict):
-        located = [(t, i, s) for t in ("tier1", "tier2", "tier3") for i, s in enumerate(wrangling.get(t) or [], start=1)]
-    else:
-        located = []
+    located = [(place, i, s) for place, steps in fragment_tiers(raw).items() for i, s in enumerate(steps, start=1)]
     if not located:
-        return ["[UP01] the file has no wrangling steps and no data_schemas: nothing to import"]
+        old = fragment_old_shape(raw)
+        if old:
+            return [f"[UP02] {old}. Rewrite the file with {FRAGMENT_TOOL}"]
+        return ["[UP01] the file has no steps and no data_schemas: nothing to import"]
     actions = checker_catalogs()["actions"]
     lines = []
     for tier, i, step in located:
@@ -329,18 +386,27 @@ def engine_load_problems(path: Union[str, Path]) -> list[DataAnalysisRecipeProbl
         problems.append(DataAnalysisRecipeProblem(
             name, "id", f"id '{file_id}' differs from the file name '{path.stem}'.",
             f"Set 'id: {path.stem}', or rename the file to '{file_id}.yaml'; the file name without .yaml is the data analysis recipe id."))
-    for location, block in _step_blocks(raw):
+    read = 0
+    block_problems = False
+    for location, body in _tiered_bodies(raw):
         seen: set[str] = set()
         for tier in ("tier1", "tier2"):
             try:
-                DataWrangler._resolve_tier(block, tier)
+                read += len(DataWrangler.tier_steps(body, tier))
             except Exception as exc:
                 message = str(exc)
-                # A flat list fails for both tiers with the same message: report it once.
+                block_problems = True
+                # the same message for both tiers (an old container): report it once
                 if message in seen:
                     continue
                 seen.add(message)
-                problems.append(DataAnalysisRecipeProblem(name, location, message, getattr(exc, "tip", None)))
+                problems.append(DataAnalysisRecipeProblem(name, f"{location}.{tier}", message, getattr(exc, "tip", None)))
+    if not block_problems:
+        # the steps of the plots (tier3) are not run by the engine and are refused by the checker (P05): only the tables and joins count here
+        written = count_steps_written({key: value for key, value in raw.items() if key != "analysis_groups"})
+        unread = unread_steps_problem(name, "recipe", written, read)
+        if unread is not None:
+            problems.append(unread)
     return problems
 
 
@@ -383,10 +449,17 @@ def validate_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Uni
     problems: list[DataAnalysisRecipeProblem] = []
     for location, ds_id, spec in schemas:
         try:
-            frame = orchestrator.prepare_ingredient(ds_id, spec, recipe_id=path.stem)
+            frame = orchestrator.prepare_ingredient(ds_id, spec, recipe_id=path.stem, recipe=raw)
             columns = frame.collect_schema().names()
         except Exception as exc:
             problems.append(DataAnalysisRecipeProblem(name, location, f"dataset cannot be loaded: {exc}", getattr(exc, "tip", None)))
+            continue
+        # The steps this check runs are the tier-1 steps the engine reads (the same reader as `prepare_ingredient`): every step
+        # written in the table, apart from its tier 2 (run when a plot reads the table), must have been among them (D-0050).
+        written = count_steps_written({key: value for key, value in spec.items() if key != "tier2"})
+        unread = unread_steps_problem(name, location, written, len(DataWrangler.tier_steps(spec, "tier1")))
+        if unread is not None:
+            problems.append(unread)
             continue
         # WHY: collect_schema() only plans the query. A step whose input type does not fit (a text step on a
         # column declared categorical) fails when the plan runs, so run it on one row (issue #71). Every Polars error

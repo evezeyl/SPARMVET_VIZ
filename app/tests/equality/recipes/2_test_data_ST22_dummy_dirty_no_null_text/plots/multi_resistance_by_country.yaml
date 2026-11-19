@@ -1,3 +1,5 @@
+ui_label: "Multi-Resistance by Country"
+description: "Bars count resistance gene hits (rows, not samples: a sample with more genes weighs more) per year, coloured by whether the sample is multi-resistant, one panel per country."
 target_dataset: AMR_Profile_Joint
 theme: theme_light
 layers:

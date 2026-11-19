@@ -57,7 +57,7 @@ def world(tmp_path):
 def test_tier2_is_written_next_to_tier1_with_its_chained_key(world):
     keys = world.orch.compute_data_analysis_recipe_keys("tiny")
     assert world.t2.name == "C__T2.parquet" and world.t2.parent == world.anchor.parent
-    assert get_parquet_metadata_hash(str(world.t2), TIER2_KEY_META) == tier2_key(keys.tier1_key, [FILTER_A])
+    assert get_parquet_metadata_hash(str(world.t2), TIER2_KEY_META) == tier2_key(keys.tier1_key, [FILTER_A], "python-polars")
 
 
 def test_nothing_changed_reads_the_stored_file(world):

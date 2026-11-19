@@ -22,9 +22,10 @@ from __future__ import annotations
 # provides: effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)
 # provides: function:_warn_on_upload, output:bp_validate_ui, effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path, issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))
 # provides: helpers:_draft_key/_write_bp_draft/_read_bp_draft, effect:_autosave_blueprint_draft, output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)
-# consumes: libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/utils/src/utils/action_names.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
+# consumes: app/modules/blueprint_plot_view.py (plot_view: the mapping and layers of a plot node), app/modules/blueprint_tier_refusal.py (other_tier_refusal: the text of the Save refusal, PROVISIONAL), app/modules/plot_defaults_form.py (the plot_defaults form: what it shows and writes), libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/utils/src/utils/action_names.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
 # consumes: app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe, validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result, never blocking; uploaded_recipe_report, load_uploaded_recipe, load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)
 # consumes: app/modules/validate_runner.py (run_structure_check, could_not_run_result, StructureCheckError — the child process of Validate uses sys.executable, D-0050)
+# consumes: libs/utils/src/utils/recipe_check.py (plot_keys), libs/utils/src/utils/recipe_tiers.py (step_list) — tier keys and plot entry keys of recipe format 1 (D-0250, D-0252)
 # consumes: function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
 # consumes: function:normalise_plot_spec, function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)
@@ -65,11 +66,17 @@ from blueprint_arch.data_analysis_recipe_navigator import (
     build_schema_registry,
     build_sibling_map,
     generate_branch_plan,
+    include_paths,
     load_fields_file,
     resolve_fields_for_schema,
 )
 from blueprint_arch.blueprint_mapper import BlueprintMapper
 from utils.action_names import JOIN
+from utils.recipe_check import plot_keys
+from utils.recipe_tiers import step_list
+from app.modules.blueprint_plot_view import plot_view
+from app.modules.blueprint_tier_refusal import other_tier_refusal
+from app.modules.plot_defaults_form import form_values, merged_plot_defaults, theme_choices
 from app.modules.data_analysis_recipe_validator import (
     validate_data_analysis_recipe,
     checker_advices,
@@ -78,13 +85,14 @@ from app.modules.data_analysis_recipe_validator import (
     load_uploaded_recipe,
     load_config_or_problems,
     validate_data_analysis_recipe_data,
+    fragment_tiers,
     _load_error_text,
 )
 from blueprint_arch.join_designer import (
     check_join_keys, compute_key_match, build_join_step, parse_join_step, JOIN_HOW_OPTIONS,
 )
 from blueprint_arch.group_plot_manager import (
-    list_groups_plots, create_group, delete_group,
+    list_groups_plots, plot_ui_label, create_group, delete_group,
     create_plot, delete_plot, assign_plot,
     _IncludeTag, _IncludeLoader, _IncludeDumper,
 )
@@ -412,7 +420,7 @@ def define_server(input, output, session, *,
             data_analysis_recipe_dir = data_analysis_recipe_path.parent
             raw_text = data_analysis_recipe_path.read_text(encoding="utf-8")
 
-            rel_paths = re.findall(r"!include\s+['\"]([^'\"]+)['\"]", raw_text)
+            rel_paths = include_paths(raw_text)
             inc_map: dict = {}
             groups: dict = {}
             seen: set = set()
@@ -436,8 +444,10 @@ def define_server(input, output, session, *,
                 abs_path = Path(inc_map[rel_path])
                 ctx_entry = ctx_map.get(rel_path, {})
                 if ctx_entry:
+                    # a table or a join writes its tiers in files of their own: the tier tells the two files apart
+                    tier_note = " (tier 2)" if ctx_entry.get("tier") == "tier2" else ""
                     display = (f"{ctx_entry.get('schema_id', abs_path.stem)}"
-                               f" — {ctx_entry.get('role', '?')}")
+                               f" — {ctx_entry.get('role', '?')}{tier_note}")
                 else:
                     display = abs_path.name
                 parts = Path(rel_path).parts
@@ -481,54 +491,53 @@ def define_server(input, output, session, *,
 
     # ── Local helpers (pure logic, no Shiny decorators) ──────────────────────
 
-    def _parse_logic_to_nodes(wrangling, source_name):
+    def _parse_logic_to_nodes(tiers, source_name):
         """
-        Normalizes potentially flat data analysis audit step into structured UI nodes.
+        Normalizes the steps of one or two tiers into structured UI nodes.
         ADR-031: Supports both Structure (params: {}) and Flat (top-level keys) formats.
 
+        `tiers` is {tier name: [steps]} (`step_list` of a table, the steps of a tier file, or the steps of an upload).
         BP-PLOT-COMMIT-1: each node is tagged with its source tier (``_tier``) so the
-        commit path can route it back to the same wrangling.tier{1,2} on Save. A bare
-        list (legacy flat / step list) defaults to tier1. Legacy tier3 nodes (artifacts of
-        the pre-BP-PLOT-COMMIT-1 dump bug) are folded into tier2 — BLUEPRINT never
-        authors T3 (ADR-082 §4).
+        commit path can check it against the tier of the file Save writes to. BLUEPRINT never
+        authors T3 (ADR-082 §4): only tier1 and tier2 are read.
         """
         nodes = []
-        tagged: list = []  # (raw_node, tier_name)
-
-        if isinstance(wrangling, list):
-            tagged = [(n, "tier1") for n in wrangling]
-        elif isinstance(wrangling, dict):
-            for tier in ["tier1", "tier2", "tier3"]:
-                dest = "tier2" if tier == "tier3" else tier
-                tagged.extend((n, dest) for n in wrangling.get(tier, []))
-
-        for node, tier_name in tagged:
-            if not isinstance(node, dict):
-                continue
-            n = node.copy()
-            action = n.pop("action", "unknown_action")
-            comment = n.pop("comment", source_name)
-            params = n.pop("params", n)
-            nodes.append({
-                "action": action, "params": params,
-                "comment": comment, "_tier": tier_name,
-            })
+        for tier_name in ("tier1", "tier2"):
+            for node in (tiers or {}).get(tier_name) or []:
+                if not isinstance(node, dict):
+                    continue
+                n = node.copy()
+                action = n.pop("action", "unknown_action")
+                comment = n.pop("comment", source_name)
+                params = n.pop("params", n)
+                nodes.append({
+                    "action": action, "params": params,
+                    "comment": comment, "_tier": tier_name,
+                })
 
         return nodes
 
-    def _serialise_component_for_save(role, nodes, raw_text):
+    def _upload_tiers(raw):
+        """{tier name: steps} of an uploaded fragment: a tier file (`steps:`) goes to tier 1, as a bare list did."""
+        found = fragment_tiers(raw)
+        tiers = {t_: found[t_] for t_ in ("tier1", "tier2") if t_ in found}
+        if "steps" in found:
+            tiers["tier1"] = tiers.get("tier1", []) + found["steps"]
+        return tiers
+
+    def _serialise_component_for_save(role, nodes, raw_text, tier=None, siblings=None, file_name=""):
         """Pure: serialise the live logic_stack back to the component file's dict shape.
 
         BP-PLOT-COMMIT-1 (ADR-083 §8). Routes by component role:
-          - plot_spec     -> canonical {mapping, layers, ...} via serialise_plot_spec;
-                             wrapped in {spec: ...} iff the source file used that wrapper.
-                             Plot-level scalars / taxonomy (target_dataset, theme, palette,
-                             family, ...) are recovered from the original file; mapping +
-                             layers are taken from the live stack (authoritative).
-          - wrangling /   -> {wrangling: {tier1: [...], tier2: [...]}} (or {steps: ...}),
-            plot_wrangling    action nodes routed to their source tier via the _tier marker.
-                              T3 is never written (ADR-082 §4) — _parse_logic_to_nodes folded
-                              any legacy tier3 into tier2 on load.
+          - plot_spec     -> the plot entry (D-0252): the keys that belong to the app (ui_label, ui_title, description,
+                             taxonomy, plot_engine, ...) first, then the content with mapping + layers taken from the
+                             live stack (authoritative); the other keys of the file are kept as they are.
+          - wrangling     -> the tier file (D-0250): {data_engine (kept when the file has it), steps: [...]}.
+                              A file holds ONE tier, `tier` (from the lineage map). A step of another tier is refused:
+                              it would be written into the wrong tier, which changes the result silently.
+                              T3 is never written (ADR-082 §4). The file of a join is not saved from here (as before:
+                              joins are authored in the Joint Designer). `siblings` (the tier files of the table, from the lineage
+                              map) and `file_name` only make the refusal message true: they name the file the step belongs in.
 
         Raises ValueError for roles that cannot be saved from the logic stack.
         """
@@ -538,10 +547,7 @@ def define_server(input, output, session, *,
             original = {}
 
         if role == "plot_spec":
-            had_wrapper = (isinstance(original, dict)
-                           and isinstance(original.get("spec"), dict))
-            base = (original["spec"] if had_wrapper
-                    else (original if isinstance(original, dict) else {}))
+            base = original if isinstance(original, dict) else {}
             canonical = normalise_plot_spec(base)
 
             # Live stack is authoritative for mapping + layers.
@@ -563,41 +569,45 @@ def define_server(input, output, session, *,
             canonical["layers"] = layers
 
             spec_out = serialise_plot_spec(canonical)
-            return {"spec": spec_out} if had_wrapper else spec_out
+            # the order of the specification: the keys of the app first, then the content, then tier3
+            entry_keys = [k for k in plot_keys()[0] if k != "tier3"]
+            entry = {k: spec_out[k] for k in entry_keys if k in spec_out}
+            entry.update({k: v for k, v in spec_out.items() if k not in entry and k != "tier3"})
+            if "tier3" in spec_out:
+                entry["tier3"] = spec_out["tier3"]
+            return entry
 
-        if role in ("wrangling", "plot_wrangling"):
-            # Preserve the original container key (wrangling vs step list) for round-trip.
-            container_key = "wrangling"
-            if isinstance(original, dict) and "steps" in original \
-                    and "wrangling" not in original:
-                container_key = "steps"
-
-            tiers: dict = {"tier1": [], "tier2": []}
+        if role == "wrangling":
+            if tier not in ("tier1", "tier2"):
+                raise ValueError("This file is not the tier 1 or the tier 2 of a table or a join, so the steps cannot be saved into it.")
+            steps = []
             for node in nodes:
                 if node.get("action") is None:
                     continue  # ignore stray component nodes
-                tier = node.get("_tier", "tier1")
-                if tier not in tiers:
-                    tier = "tier1"
+                node_tier = node.get("_tier", "tier1")
+                if node_tier != tier:
+                    # PROVISIONAL wording (D-0308): the refusal and its text go to the owner to be approved
+                    raise ValueError(other_tier_refusal(node["action"], node_tier, tier, file_name, siblings))
                 step = {"action": node["action"]}
                 step.update(node.get("params", {}))
                 comment = node.get("comment", "")
                 if comment:
                     step["comment"] = comment
-                tiers[tier].append(step)
+                steps.append(step)
 
-            block: dict = {"tier1": tiers["tier1"]}
-            if tiers["tier2"]:
-                block["tier2"] = tiers["tier2"]
-            return {container_key: block}
+            block: dict = {}
+            if isinstance(original, dict) and "data_engine" in original:
+                block["data_engine"] = original["data_engine"]
+            block["steps"] = steps
+            return block
 
         raise ValueError(
             f"Save is not supported for component role '{role}'. "
-            "Editable roles: plot_spec, wrangling, plot_wrangling."
+            "Editable roles: plot_spec, wrangling."
         )
 
     def _extract_wrangling_for_id(cfg, lid):
-        """Helper to find wrangling block in complex data analysis recipe."""
+        """The steps of both tiers of a table or a join written in the recipe: {tier name: [steps]}."""
         target = cfg.raw_config.get("data_schemas", {}).get(lid)
         if not target:
             target = cfg.raw_config.get("additional_datasets_schemas", {}).get(lid)
@@ -605,9 +615,7 @@ def define_server(input, output, session, *,
             target = cfg.raw_config.get("joins", {}).get(lid)
         if not target and lid == "metadata_schema":
             target = cfg.raw_config.get("metadata_schema")
-        if not target:
-            return {}
-        return target.get("wrangling", target.get("steps", {}))
+        return {tier: step_list(target, tier) for tier in ("tier1", "tier2")}
 
     def _do_load_component(master_path: str, selected: str,
                            inc_map: dict, ctx_map: dict):
@@ -632,35 +640,31 @@ def define_server(input, output, session, *,
                 except Exception:
                     file_content = {}
 
-                if isinstance(file_content, list):
-                    wrangling = file_content
-                elif isinstance(file_content, dict):
-                    wrangling = file_content.get(
-                        "wrangling",
-                        file_content.get("steps", file_content.get("tier1", []))
-                    )
-                else:
-                    wrangling = []
-
-                nodes = _parse_logic_to_nodes(wrangling, abs_file.name)
-                wrangle_studio.logic_stack.set(nodes)
-                wrangle_studio.active_raw_yaml.set(raw_text)
-                # BP-PLOT-COMMIT-1: remember the loaded fragment file so Save writes here.
-                wrangle_studio.active_component_path.set(str(abs_file))
-
                 ctx = component_ctx_map.get().get(selected, {})
                 role = ctx.get("role", "unknown")
+                tier = ctx.get("tier")
                 sib = ctx.get("siblings", {})
                 schema_id = ctx.get("schema_id", "")
                 schema_type = ctx.get("schema_type", "")
                 ingredients = ctx.get("ingredients", [])
 
+                # The file of a tier holds `steps` (D-0250): they are the nodes of that one tier.
+                tier_steps = file_content.get("steps") if isinstance(file_content, dict) else None
+                nodes = (_parse_logic_to_nodes({tier: tier_steps if isinstance(tier_steps, list) else []}, abs_file.name)
+                         if role in ("wrangling", "join") and tier in ("tier1", "tier2") else [])
+                wrangle_studio.logic_stack.set(nodes)
+                wrangle_studio.active_raw_yaml.set(raw_text)
+                # BP-PLOT-COMMIT-1: remember the loaded fragment file so Save writes here.
+                wrangle_studio.active_component_path.set(str(abs_file))
+
                 wrangle_studio.active_component_info.set({
                     "role": role,
+                    "tier": tier,
                     "schema_id": schema_id,
                     "schema_type": schema_type,
                     "ingredients": ingredients,
-                    "wrangling": sib.get("wrangling"),
+                    "tier1": sib.get("tier1"),
+                    "tier2": sib.get("tier2"),
                 })
 
                 if role == "input_fields":
@@ -669,52 +673,19 @@ def define_server(input, output, session, *,
                     wrangle_studio.active_upstream.set([])
                     wrangle_studio.active_downstream.set(in_fields)
 
-                elif role == "output_fields":
-                    in_fields = []
-                    out_fields = load_fields_file(abs_file)
-                    wrangle_studio.active_upstream.set(out_fields)
-                    wrangle_studio.active_downstream.set([])
-
                 elif role == "wrangling":
                     inp_rel = sib.get("input_fields")
-                    out_rel = sib.get("output_fields")
                     in_fields = load_fields_file(Path(inc_map[inp_rel])) \
                         if inp_rel and inp_rel in inc_map else []
-                    out_fields = load_fields_file(Path(inc_map[out_rel])) \
-                        if out_rel and out_rel in inc_map else []
+                    out_fields = []
                     wrangle_studio.active_upstream.set(in_fields)
                     wrangle_studio.active_downstream.set(out_fields)
 
                 elif role == "join":
-                    ctx_map_now = component_ctx_map.get()
-                    id_to_out_rel = {}
-                    for rel, entry in ctx_map_now.items():
-                        if entry.get("role") == "output_fields":
-                            sid = entry.get("schema_id", "")
-                            if sid and sid not in id_to_out_rel:
-                                id_to_out_rel[sid] = rel
-
-                    ing_items = []
-                    for ing_id in ingredients:
-                        out_rel_for_ing = id_to_out_rel.get(ing_id)
-                        ing_abs = inc_map.get(out_rel_for_ing) if out_rel_for_ing else None
-                        if not ing_abs:
-                            ing_entry = ctx_map_now.get(ing_id, {})
-                            out_slot = ing_entry.get("siblings", {}).get("output_fields")
-                            if isinstance(out_slot, dict) and "inline" in out_slot:
-                                fields = list(out_slot["inline"].keys()) if isinstance(
-                                    out_slot["inline"], dict) else []
-                                ing_items.append({"id": ing_id, "fields": fields})
-                                continue
-                        fields = load_fields_file(Path(ing_abs)) if ing_abs else []
-                        ing_items.append({"id": ing_id, "fields": fields})
-
-                    out_rel = sib.get("output_fields")
-                    out_fields = load_fields_file(Path(inc_map[out_rel])) \
-                        if isinstance(out_rel, str) and out_rel in inc_map else []
-                    if not out_fields and isinstance(out_rel, dict) and "inline" in out_rel:
-                        out_fields = list(out_rel["inline"].keys()) if isinstance(
-                            out_rel["inline"], dict) else []
+                    # Recipe format 1 has no published-fields file of an ingredient (what a tier 1 publishes is its last
+                    # step, not computed here): the ingredients are listed without fields, as they were before.
+                    ing_items = [{"id": ing_id, "fields": []} for ing_id in ingredients]
+                    out_fields = []
                     in_fields = []
                     wrangle_studio.active_upstream.set(ing_items)
                     wrangle_studio.active_downstream.set(out_fields)
@@ -736,8 +707,7 @@ def define_server(input, output, session, *,
                         print(f"[Architect] Join materialization failed: {e}")
 
                 elif role == "plot_spec":
-                    target_ds = file_content.get("target_dataset") \
-                        if isinstance(file_content, dict) else None
+                    target_ds, plot_nodes = plot_view(file_content)
 
                     ctx_map_now = component_ctx_map.get()
                     upstream_fields: list = []
@@ -752,25 +722,9 @@ def define_server(input, output, session, *,
                     wrangle_studio.active_downstream.set([])
                     wrangle_studio.active_viz_id.set(schema_id)
 
-                    # Populate logic_stack with plot spec nodes (read-only; BP-PLOT-LOAD-1)
+                    # BP-PLOT-LOAD-1: the stack holds the mapping and the layers of the entry in the file.
                     # BP-PLOT-COMMIT-1 handles writing back. component nodes use {"component":...}
-                    if isinstance(file_content, dict):
-                        canonical = normalise_plot_spec(file_content)
-                        plot_nodes: list = []
-                        mapping = canonical.get("mapping", {})
-                        if mapping:
-                            plot_nodes.append(
-                                {"component": "__mapping__", "params": mapping, "comment": ""}
-                            )
-                        for layer in canonical.get("layers", []):
-                            plot_nodes.append({
-                                "component": layer.get("name", ""),
-                                "params": layer.get("params", {}),
-                                "comment": "",
-                            })
-                        wrangle_studio.logic_stack.set(plot_nodes)
-                    else:
-                        wrangle_studio.logic_stack.set([])
+                    wrangle_studio.logic_stack.set(plot_nodes)
 
                     if target_ds:
                         try:
@@ -789,54 +743,9 @@ def define_server(input, output, session, *,
                         except Exception as e:
                             print(f"[Architect] Surgical materialization failed: {e}")
 
-                elif role == "plot_wrangling":
-                    target_ds = file_content.get("target_dataset") \
-                        if isinstance(file_content, dict) else None
-
-                    ctx_map_now = component_ctx_map.get()
-                    upstream_fields: list = []
-                    if target_ds:
-                        resolved = resolve_fields_for_schema(target_ds, ctx_map_now, inc_map)
-                        if resolved:
-                            upstream_fields = resolved
-
-                    if target_ds:
-                        try:
-                            anchor_dir = bootloader.get_location("user_data") / "anchors"
-                            anchor_dir.mkdir(parents=True, exist_ok=True)
-                            out_p = anchor_dir / f"{target_ds}.parquet"
-                            bp_data_analysis_recipe_id = Path(master_path).stem
-                            orchestrator.materialize_tier1(
-                                data_analysis_recipe_id=bp_data_analysis_recipe_id,
-                                collection_id=target_ds,
-                                output_path=out_p,
-                                on_inputs_changed=tell_inputs_changed
-                            )
-                            wrangle_studio.active_anchor_path.set(str(out_p))
-                        except Exception as e:
-                            print(f"[Architect] plot_wrangling materialization failed: {e}")
-
-                    if isinstance(file_content, list):
-                        wrangling = file_content
-                    elif isinstance(file_content, dict):
-                        wrangling = file_content.get(
-                            "wrangling",
-                            file_content.get("steps", file_content.get("tier1", [])))
-                    else:
-                        wrangling = []
-                    nodes = _parse_logic_to_nodes(wrangling, abs_file.name)
-                    wrangle_studio.logic_stack.set(nodes)
-
+                else:
                     in_fields = []
                     out_fields = []
-                    wrangle_studio.active_upstream.set(upstream_fields)
-                    wrangle_studio.active_downstream.set([])
-
-                else:
-                    in_fields = file_content.get("input_fields", []) \
-                        if isinstance(file_content, dict) else []
-                    out_fields = file_content.get("output_fields", []) \
-                        if isinstance(file_content, dict) else []
                     wrangle_studio.active_upstream.set(in_fields)
                     wrangle_studio.active_downstream.set(out_fields)
 
@@ -902,18 +811,10 @@ def define_server(input, output, session, *,
                     if selected in plots:
                         pspec = plots[selected]
                         if isinstance(pspec, dict):
-                            spec_block = pspec.get("spec", {}) if isinstance(pspec.get("spec"), dict) else {}
-                            plot_target_ds = (pspec.get("target_dataset")
-                                              or spec_block.get("target_dataset"))
+                            plot_target_ds = pspec.get("target_dataset")
                         if target is None:
                             target = pspec
                         break
-                    for _pid, pspec in plots.items():
-                        if isinstance(pspec, dict) and pspec.get("pre_plot_wrangling") == selected:
-                            spec_block = pspec.get("spec", {}) if isinstance(pspec.get("spec"), dict) else {}
-                            plot_target_ds = (pspec.get("target_dataset")
-                                              or spec_block.get("target_dataset"))
-                            break
 
             wrangling = _extract_wrangling_for_id(cfg, selected)
             nodes = _parse_logic_to_nodes(wrangling, f"Master: {selected}")
@@ -929,17 +830,11 @@ def define_server(input, output, session, *,
             ingredients_b = comp_entry.get("ingredients", [])
 
             in_f = target.get("input_fields", {}) if isinstance(target, dict) else {}
-            out_f = target.get("output_fields", {}) if isinstance(target, dict) else {}
+            out_f = {}   # recipe format 1 has no published-fields key: the published columns are the last step of a tier 1
 
             if role_b == "join":
-                ing_items_b = []
-                for ing_id in ingredients_b:
-                    ing_block = (raw.get("data_schemas", {}).get(ing_id)
-                                 or raw.get("additional_datasets_schemas", {}).get(ing_id)
-                                 or raw.get("joins", {}).get(ing_id))
-                    fields = ing_block.get("output_fields", {}) \
-                        if isinstance(ing_block, dict) else {}
-                    ing_items_b.append({"id": ing_id, "fields": fields})
+                # as in Mode A: the ingredients are listed without fields
+                ing_items_b = [{"id": ing_id, "fields": {}} for ing_id in ingredients_b]
                 wrangle_studio.active_upstream.set(ing_items_b)
                 wrangle_studio.active_downstream.set(out_f)
                 wrangle_studio.active_fields.set({"input": {}, "output": out_f})
@@ -958,15 +853,13 @@ def define_server(input, output, session, *,
                     wrangle_studio.active_anchor_path.set(str(out_p))
                 except Exception as e:
                     print(f"[Architect Mode B] Join materialization failed: {e}")
-            elif role_b in ("plot_spec", "plot_wrangling"):
+            elif role_b == "plot_spec":
+                # a plot written inline in the recipe: the same mapping and layers as a plot in its own file (D-0252)
+                _target_b, nodes = plot_view(target)
+                wrangle_studio.logic_stack.set(nodes)
                 upstream_b: dict = {}
                 if plot_target_ds:
                     upstream_b = resolve_fields_for_schema(plot_target_ds, ctx_map_b, inc_map)
-                if not upstream_b:
-                    join_block = (raw.get("joins") or {}).get(
-                        plot_target_ds or selected)
-                    if isinstance(join_block, dict):
-                        upstream_b = join_block.get("output_fields", {}) or {}
                 wrangle_studio.active_upstream.set(upstream_b)
                 wrangle_studio.active_downstream.set([])
                 wrangle_studio.active_fields.set({"input": upstream_b, "output": {}})
@@ -996,10 +889,12 @@ def define_server(input, output, session, *,
 
             wrangle_studio.active_component_info.set({
                 "role": role_b,
+                "tier": comp_entry.get("tier"),
                 "schema_id": schema_id,
                 "schema_type": comp_entry.get("schema_type", ""),
                 "ingredients": ingredients_b,
-                "wrangling": bool(wrangling),
+                "tier1": comp_entry.get("siblings", {}).get("tier1"),
+                "tier2": comp_entry.get("siblings", {}).get("tier2"),
             })
 
             chain = build_lineage_chain(
@@ -1141,7 +1036,7 @@ def define_server(input, output, session, *,
             if not ctx_map:
                 inc_map = {}
                 raw_text = Path(master_path).read_text(encoding="utf-8")
-                for rel in re.findall(r"!include\s+['\"]([^'\"]+)['\"]", raw_text):
+                for rel in include_paths(raw_text):
                     abs_p = (Path(master_path).parent / rel).resolve()
                     if abs_p.exists():
                         inc_map[rel] = str(abs_p)
@@ -1150,8 +1045,7 @@ def define_server(input, output, session, *,
                 component_ctx_map.set(ctx_map)
 
             _PRIORITY = {
-                "join": 0, "wrangling": 1, "plot_spec": 2,
-                "plot_wrangling": 3, "output_fields": 4, "input_fields": 5,
+                "join": 0, "wrangling": 1, "plot_spec": 2, "input_fields": 5,
             }
 
             best_rel: str | None = None
@@ -1224,8 +1118,7 @@ def define_server(input, output, session, *,
             if raw is None:
                 return
             _warn_on_upload(raw, name)
-            wrangling = raw.get("wrangling", {})
-            nodes = _parse_logic_to_nodes(wrangling, "Uploaded (Replace)")
+            nodes = _parse_logic_to_nodes(_upload_tiers(raw), "Uploaded (Replace)")
             wrangle_studio.logic_stack.set(nodes)
             ui.notification_show("✅ Stack Replaced.", type="success")
         except Exception as e:
@@ -1242,8 +1135,7 @@ def define_server(input, output, session, *,
             if raw is None:
                 return
             _warn_on_upload(raw, name)
-            wrangling = raw.get("wrangling", {})
-            new_nodes = _parse_logic_to_nodes(wrangling, "Uploaded (Append)")
+            new_nodes = _parse_logic_to_nodes(_upload_tiers(raw), "Uploaded (Append)")
             current_stack = wrangle_studio.logic_stack.get()
             wrangle_studio.logic_stack.set(current_stack + new_nodes)
             ui.notification_show(f"➕ Appended {len(new_nodes)} nodes.", type="success")
@@ -1275,7 +1167,9 @@ def define_server(input, output, session, *,
         raw_text = wrangle_studio.active_raw_yaml.get()
 
         try:
-            content = _serialise_component_for_save(role, nodes, raw_text)
+            content = _serialise_component_for_save(
+                role, nodes, raw_text, info.get("tier"),
+                siblings={"tier1": info.get("tier1"), "tier2": info.get("tier2")}, file_name=Path(comp_path).name)
         except ValueError as ve:
             ui.notification_show(f"⚠️ {ve}", type="warning")
             return
@@ -1494,7 +1388,7 @@ def define_server(input, output, session, *,
     def btn_download_data_analysis_recipe():
         # BP-PLOT-COMMIT-1 (ADR-083 §8): emit the FULL multi-file data analysis recipe as a zip —
         # the master .yaml plus its mirrored basename/ directory (all !include
-        # fragments: input_fields/, wrangling/, output_fields/, assembly/, plots/).
+        # fragments: input_fields/, wrangling/, assembly/, plots/).
         # Reflects the on-disk state, so the workflow is Save (commit fragment) ->
         # Download (bundle the tree). The old tier3 dump is removed.
         master = (wrangle_studio.active_data_analysis_recipe_path.get()
@@ -1632,7 +1526,7 @@ def define_server(input, output, session, *,
             schema_id = info.get("schema_id", "")
             role = info.get("role", "")
             schema_type = info.get("schema_type", "")
-            branchable_roles = {"wrangling", "input_fields", "output_fields", "join", "plot_spec"}
+            branchable_roles = {"wrangling", "input_fields", "join", "plot_spec"}
             if not schema_id or role not in branchable_roles:
                 return ui.div(
                     ui.tags.small(
@@ -1810,13 +1704,6 @@ def define_server(input, output, session, *,
     # Shown when no sub-component is selected (active_viz_id empty / None).
     # ------------------------------------------------------------------
 
-    # Allowed plot_defaults keys per rules_data_analysis_recipe_structure.md §10.
-    _PLOT_DEFAULT_KEYS = ["palette", "theme", "default_font_family",
-                          "facet_panel_spacing", "legend_position"]
-    _THEME_CHOICES = ["theme_light", "theme_bw", "theme_minimal",
-                      "theme_classic", "theme_dashboard"]
-    _LEGEND_CHOICES = ["right", "top", "bottom", "left", "none"]
-
     @output
     @render.ui
     def bp_plot_defaults_form_ui():
@@ -1835,26 +1722,13 @@ def define_server(input, output, session, *,
         except Exception:
             return ui.div()
 
-        palette_val = defaults.get("palette", "")
-        theme_val = defaults.get("theme", "theme_light")
-        font_val = defaults.get("default_font_family", "")
-        spacing_val = str(defaults.get("facet_panel_spacing", "0.05"))
-        legend_val = defaults.get("legend_position", "right")
+        shown = form_values(defaults)
 
         return ui.div(
             ui.tags.small("Active data analysis recipe — plot_defaults", class_="text-muted d-block mb-2"),
-            ui.input_text("bp_pd_palette", "Palette", value=palette_val,
+            ui.input_text("bp_pd_palette", "Palette", value=shown["palette"],
                           placeholder="e.g. nvi_official or Blues"),
-            ui.input_select("bp_pd_theme", "Theme",
-                            choices={t: t for t in _THEME_CHOICES},
-                            selected=theme_val if theme_val in _THEME_CHOICES else "theme_light"),
-            ui.input_text("bp_pd_font", "Default font family", value=font_val,
-                          placeholder="e.g. Liberation Sans"),
-            ui.input_text("bp_pd_spacing", "Facet panel spacing", value=spacing_val,
-                          placeholder="0.05 – 1.0"),
-            ui.input_select("bp_pd_legend", "Legend position",
-                            choices={v: v for v in _LEGEND_CHOICES},
-                            selected=legend_val if legend_val in _LEGEND_CHOICES else "right"),
+            ui.input_select("bp_pd_theme", "Theme", choices=theme_choices(defaults), selected=shown["theme"]),
             ui.input_action_button("bp_pd_apply", "Apply to session",
                                    class_="btn-primary btn-sm w-100 mt-2"),
             ui.tags.small(
@@ -1875,32 +1749,17 @@ def define_server(input, output, session, *,
         except Exception:
             return
         try:
-            palette = (getattr(input, "bp_pd_palette")() or "").strip()
-            theme = (getattr(input, "bp_pd_theme")() or "theme_light").strip()
-            font = (getattr(input, "bp_pd_font")() or "").strip()
-            spacing_raw = (getattr(input, "bp_pd_spacing")() or "0.05").strip()
-            legend = (getattr(input, "bp_pd_legend")() or "right").strip()
+            palette = getattr(input, "bp_pd_palette")() or ""
+            theme = getattr(input, "bp_pd_theme")() or ""
         except Exception:
             return
 
-        try:
-            spacing = float(spacing_raw)
-        except (ValueError, TypeError):
-            spacing = 0.05
-
-        new_defaults: dict = {}
-        if palette:
-            new_defaults["palette"] = palette
-        if theme:
-            new_defaults["theme"] = theme
-        if font:
-            new_defaults["default_font_family"] = font
-        if spacing != 0.05 or "facet_panel_spacing" in (cfg.raw_config.get("plot_defaults") or {}):
-            new_defaults["facet_panel_spacing"] = spacing
-        if legend and legend != "right":
-            new_defaults["legend_position"] = legend
-
-        cfg.raw_config["plot_defaults"] = new_defaults
+        # WHY: the form shows two keys; every other part of the block (the seed, the layers) is kept as it was.
+        new_defaults = merged_plot_defaults(cfg.raw_config.get("plot_defaults"), palette, theme)
+        if new_defaults:
+            cfg.raw_config["plot_defaults"] = new_defaults
+        else:
+            cfg.raw_config.pop("plot_defaults", None)
         ui.notification_show("plot_defaults updated for this session.", type="message", duration=3)
 
     @output
@@ -2388,7 +2247,7 @@ def define_server(input, output, session, *,
                                comment=comment)
         params = {k: v for k, v in step.items()
                   if k not in ("action", "comment")}
-        node = {"action": "join", "params": params, "comment": comment}
+        node = {"action": JOIN, "params": params, "comment": comment}
 
         _snapshot_state()
         stack = wrangle_studio.logic_stack.get().copy()
@@ -2438,14 +2297,13 @@ def define_server(input, output, session, *,
 
         group_cards = []
         for grp_id, grp in (groups or {}).items():
-            grp_label = (grp.get("label", grp_id)
+            grp_label = (grp.get("ui_label", grp_id)
                          if isinstance(grp, dict) else grp_id)
             plots = grp.get("plots", {}) if isinstance(grp, dict) else {}
 
             plot_rows = []
             for pid, pspec in (plots or {}).items():
-                plabel = (pspec.get("label", pid)
-                          if isinstance(pspec, dict) else pid)
+                plabel = plot_ui_label(path, pspec, pid)
                 plot_rows.append(
                     ui.div(
                         ui.span(plabel,
@@ -2536,7 +2394,7 @@ def define_server(input, output, session, *,
                 rest = raw[len("move:"):]
                 from_grp, pid = rest.split("/", 1)
                 groups = list_groups_plots(path)
-                other = {g: (groups[g].get("label", g)
+                other = {g: (groups[g].get("ui_label", g)
                              if isinstance(groups[g], dict) else g)
                          for g in groups if g != from_grp}
                 if not other:

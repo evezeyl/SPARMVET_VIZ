@@ -56,7 +56,7 @@ def _run_pair_with(action, name, value):
     """The action's own 1:1:1 pair, with one parameter replaced, run through the real path (ingestion, wrangler or assembler)."""
     recipe = yaml.safe_load((DATA / f"{action}_data_analysis_recipe.yaml").read_text())
     joins = action in JOINS
-    steps = next(iter(recipe["joins"].values()))["steps"]["tier1"] if joins else recipe["wrangling"]["tier1"]
+    steps = DataWrangler.tier_steps(next(iter(recipe["joins"].values())) if joins else recipe, "tier1")
     step = next(s for s in steps if s["action"] == action)
     step[name] = value
     # a left/right/by pair is an alternative to `on`/`by`: drop the one it replaces so the empty value is the only fault

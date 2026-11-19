@@ -2,11 +2,12 @@
 (ADR-106 V8). The plots of HOME and of Blueprint are rendered from a small dictionary built in the handler, not from the
 recipe itself, so a handler that forgets the key would draw with the implemented engine whatever the recipe says.
 
-The export (`app/handlers/export_handlers.py`) builds the same dictionary; it is not listed here until the line is added
-there (task VIZ-STANDARD-1, reported to the coordinator).
+The export (`app/handlers/export_handlers.py`) builds the same dictionary and is listed here too. The dictionary carries the
+recipe's default engine (`utils.engines.plot_engine_slot`); the plot's own engine travels in its entry under `plots`, and
+`PlotEngines.render` alone chooses between the two (D-0237). `test_plot_own_engine_over_recipe.py` holds that choice.
 
 # @deps
-# consumes: app/handlers/home_theater.py, app/modules/wrangle_studio.py, libs/viz_factory/src/viz_factory/viz_factory.py
+# consumes: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/wrangle_studio.py, libs/viz_factory/src/viz_factory/viz_factory.py
 # doc: .claude/knowledge/architecture_decisions.md (ADR-106 V8)
 # @end_deps
 """
@@ -16,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 BUILDERS = {
     "app/handlers/home_theater.py": "synthetic_data_analysis_recipe = {",
+    "app/handlers/export_handlers.py": "synthetic_data_analysis_recipe = {",
     "app/modules/wrangle_studio.py": "render_data_analysis_recipe = {",
 }
 
@@ -33,5 +35,5 @@ def test_every_recipe_dictionary_built_for_the_factory_carries_the_plot_engine()
     for relative, opening in BUILDERS.items():
         blocks = list(_blocks((ROOT / relative).read_text(encoding="utf-8"), opening))
         assert blocks, f"{relative}: no recipe dictionary found, update this test"
-        without = [b for b in blocks if '"plot_engine"' not in b]
+        without = [b for b in blocks if '"plot_engine"' not in b and "plot_engine_slot(" not in b]
         assert without == [], f"{relative}: a recipe dictionary for VizFactory.render has no plot_engine"

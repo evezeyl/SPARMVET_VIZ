@@ -75,7 +75,7 @@ def test_home_and_blueprint_show_the_whole_message_of_a_render_error():
 
 def test_a_recipe_that_writes_it_is_rejected_by_the_gate_with_the_problem_and_the_tip(tmp_path):
     recipe = tiny_recipe()
-    recipe["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"] = [
+    recipe["analysis_groups"]["g"]["plots"]["p"]["layers"] = [
         {"name": "geom_bar", "params": {}}, {"name": "geom_point", "params": {"position": "jitter", "random_state": None}}]
     problems = [str(p) for p in validate_data_analysis_recipe(write_tiny(tmp_path, recipe))]
     seed_problems = [p for p in problems if "a seed is a number" in p]

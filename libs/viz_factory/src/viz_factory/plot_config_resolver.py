@@ -4,7 +4,7 @@
 #           function:normalise_plot_spec, function:serialise_plot_spec, function:unknown_spec_keys, function:spec_key_names,
 #           function:layers_have_random (REPRO-SEED-2), function:recipe_pins_random_state (REPRO-RESHUFFLE-1),
 #           function:resolve_layer_seeds, function:apply_pin_to_layers, function:fixed_seed_of, class:LayerSeed (SEED-HOLDS-1)
-# consumes: libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys)
+# consumes: libs/utils/src/utils/errors.py (VisualizationError — hard error on legacy keys), libs/utils/src/utils/recipe_check.py (plot_keys: the entry keys and the content keys of a plot entry; plot_defaults_keys: the allowed and the removed keys of plot_defaults)
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py,
 #              libs/viz_factory/tests/test_plot_config_resolver.py,
 #              libs/viz_factory/tests/test_plot_spec_roundtrip.py
@@ -20,7 +20,7 @@ as the one merge point, then walks the returned dict to emit plotnine objects.
 
 Tier order (highest wins per key):
   L5 — T3 aesthetic_override for the active plot  (analyst)
-  L4 — plot spec (analysis_groups.<grp>.plots.<id>.spec)  (data analysis recipe author)
+  L4 — plot entry (analysis_groups.<grp>.plots.<id>, its content keys)  (data analysis recipe author)
   L3 — optimisation layer (computed from data + spec)  (VizFactory)
   L2 — data analysis recipe plot_defaults block  (data analysis recipe author)
   L1 — VizFactory built-in defaults  (developer)
@@ -37,17 +37,22 @@ from typing import Any, NamedTuple
 
 from utils.errors import VisualizationError
 from utils.random_layers import ALWAYS_RANDOM, is_random_layer
+from utils.recipe_check import plot_defaults_keys, plot_keys
 
 # ---------------------------------------------------------------------------
 # L1 — Built-in defaults (constants)
 # ---------------------------------------------------------------------------
 
 # Layer lists injected at L1 when no higher tier provides the same kind.
+# No theme is injected (D-0258): a plot with no theme written is drawn with plotnine's own default.
 _L1_LAYERS: list[dict] = [
-    {"name": "theme_bw",         "params": {}, "_tier": "L1"},
     {"name": "coord_cartesian",  "params": {}, "_tier": "L1"},
     {"name": "facet_null",       "params": {}, "_tier": "L1"},
 ]
+
+# The theme plotnine draws when none is added (`ggplot` with no theme). Only the NAME the resolved config reports for
+# a plot that writes no theme; nothing is added to the plot for it.
+PLOTNINE_DEFAULT_THEME = "theme_gray"
 
 # Scalar defaults used as the seed before tier merging.
 _BUILTIN_DEFAULTS: dict = {
@@ -55,40 +60,42 @@ _BUILTIN_DEFAULTS: dict = {
     "palette":        None,
     "palette_scope":  set(),
     "facet_by":       None,
-    "title":          None,
     "labels":         {},
     "guides":         {},
     "filters":        [],
     "element_text":   {},   # convenience dict for L3 axis-text overrides
-    "theme":          "theme_bw",  # derived from resolved layers after dedup
+    "theme":          PLOTNINE_DEFAULT_THEME,  # derived from resolved layers after dedup
 }
 
-# Allowed keys in plot_defaults: (unknown keys emit a PipelineError warning)
-_VALID_PLOT_DEFAULTS_KEYS: frozenset = frozenset({
-    "palette", "theme", "default_font_family",
-    "facet_panel_spacing", "legend_position", "optimisation", "layers", "random_state",
-})
+# Allowed keys in plot_defaults: the list of the recipe specification, the same one the recipe checker reads (D-0220).
+# An unknown key emits a PipelineError warning; a key REMOVED from the format is refused (see resolve_plot_config).
+_VALID_PLOT_DEFAULTS_KEYS: frozenset = frozenset(plot_defaults_keys()[0])
+_REMOVED_PLOT_DEFAULTS_KEYS: frozenset = frozenset(plot_defaults_keys()[1])
 
-# Keys recognised as part of the spec (not taxonomy / author metadata).
-# Any key NOT in this set is moved into the _meta passthrough dict by normalise_plot_spec.
-_CANONICAL_SPEC_KEYS: frozenset = frozenset({
-    "target_dataset", "mapping", "layers", "theme", "facet_by",
-    "palette", "labels", "guides", "filters", "title", "_meta",
-})
+# The keys of a plot entry come from the recipe specification (`utils.recipe_check.plot_keys`), the list the recipe checker
+# reads: the CONTENT keys are what this library draws from; the ENTRY keys (ui_label, ui_title, description, comment,
+# taxonomy, plot_engine, tier3) belong to the app and are ignored here, not refused (D-0237, D-0253). A key on neither list
+# is refused by VizFactory.render (`unknown_spec_keys`). `title` is on neither: the figure title is the `title` argument of a
+# labs layer (D-0253). Keys that are not content are moved into `_meta` by normalise_plot_spec.
+_ENTRY_KEYS: frozenset = frozenset(plot_keys()[0])
+_CANONICAL_SPEC_KEYS: frozenset = frozenset(plot_keys()[1]) | {"_meta"}
 
 def unknown_spec_keys(raw_spec: dict) -> list:
-    """The keys of a plot spec that are not part of the format, in the order written (VIZ-STANDARD-1, V6).
+    """The keys of a plot entry that are on neither list of the specification, in the order written (VIZ-STANDARD-1, V6).
 
-    `normalise_plot_spec` moves them into `_meta`, where nothing reads them, so a mistyped key (`theem: theme_bw`) used to
-    be dropped without a word. The factory refuses them. `factory_id` and the flat aesthetics are not listed here:
-    `normalise_plot_spec` refuses those with its own message (ADR-083). An explicit `_meta` block is allowed.
+    The content keys and the entry keys of the recipe specification are known (the entry keys are ignored by the
+    factory, not refused). `normalise_plot_spec` moves a key it does not draw from into `_meta`, where nothing reads it, so a
+    mistyped key (`theem: theme_bw`) used to be dropped without a word. The factory refuses them. `factory_id` and the flat
+    aesthetics are not listed here: `normalise_plot_spec` refuses those with its own message (ADR-083). An explicit `_meta`
+    block is allowed.
     """
-    return [k for k in raw_spec if k not in _CANONICAL_SPEC_KEYS and k != "factory_id" and k not in _LEGACY_FLAT_AES]
+    return [k for k in raw_spec if k not in _CANONICAL_SPEC_KEYS and k not in _ENTRY_KEYS
+            and k != "factory_id" and k not in _LEGACY_FLAT_AES]
 
 
 def spec_key_names() -> list:
-    """The keys a plot spec may have, sorted, for a message."""
-    return sorted(k for k in _CANONICAL_SPEC_KEYS if k != "_meta")
+    """The keys a plot entry may have (content and entry keys), sorted, for a message."""
+    return sorted((_CANONICAL_SPEC_KEYS | _ENTRY_KEYS) - {"_meta"})
 
 
 # Former flat aesthetic keys — checked early in normalise_plot_spec to raise a
@@ -342,8 +349,8 @@ def normalise_plot_spec(raw_spec: dict) -> dict:
             "'layers:' and all aesthetics under 'mapping:'.",
             tip=(
                 f"Replace 'factory_id: {factory_id}' with the appropriate geom layer "
-                "in 'layers:'. Run 'assets/scripts/migrate_plot_specs.py --apply' "
-                "for automatic migration of all plot specs."
+                "in 'layers:' (for example '- name: geom_bar') and write the aesthetics "
+                "under 'mapping:'. This is written by hand: no script converts it."
             ),
         )
     flat_aes_found = sorted(_LEGACY_FLAT_AES & raw_spec.keys())
@@ -354,8 +361,7 @@ def normalise_plot_spec(raw_spec: dict) -> dict:
             "a 'mapping:' block.",
             tip=(
                 "Use 'mapping: {x: col_name, fill: col_name}' instead of top-level "
-                "'x: col_name, fill: col_name'. Run "
-                "'assets/scripts/migrate_plot_specs.py --apply' for automatic migration."
+                "'x: col_name, fill: col_name'. This is written by hand: no script converts it."
             ),
         )
 
@@ -406,7 +412,7 @@ def serialise_plot_spec(canonical: dict) -> dict:
         out["layers"] = clean
 
     # scalar optional fields
-    for key in ("theme", "facet_by", "palette", "title"):
+    for key in ("theme", "facet_by", "palette"):
         val = canonical.get(key)
         if val:
             out[key] = val
@@ -544,7 +550,7 @@ def resolve_plot_config(
     -------
     dict with keys:
       mapping, layers, theme, facet_by, palette, palette_scope,
-      labels, guides, filters, title, element_text,
+      labels, guides, filters, element_text,
       _provenance, _unknown_plot_defaults_keys, _l5_mutex_warn
 
     The `_provenance` dict maps config keys → "L1".."L5".
@@ -564,12 +570,22 @@ def resolve_plot_config(
     seed: dict = copy.deepcopy(_BUILTIN_DEFAULTS)
     for layer in _L1_LAYERS:
         all_layers.append(copy.deepcopy(layer))
-    for key in ("mapping", "palette", "facet_by", "title",
-                "labels", "guides", "filters", "theme"):
+    for key in ("mapping", "palette", "facet_by",
+                "labels", "guides", "filters"):
         provenance[key] = "L1"
+    # the theme is not an app default: the plot is drawn with plotnine's own unless a recipe writes one (D-0258)
+    provenance["theme"] = "plotnine"
 
     # ── L2: plot_defaults ────────────────────────────────────────────────────
     for key, val in (plot_defaults or {}).items():
+        if key in _REMOVED_PLOT_DEFAULTS_KEYS:
+            # WHY: the checker refuses these keys, so HOME never gets here; a script or Blueprint's preview can. They did
+            # nothing for the picture, and ignoring one would let a recipe look as if it set a font or a legend.
+            raise VisualizationError(
+                f"plot_defaults.{key} was removed from the recipe format: the key did nothing (D-0242).",
+                tip=("Remove the key. Set the font, the legend and the panel spacing with a theme layer, for example "
+                     "layers: [{name: theme_bw, params: {legend_position: bottom}}]; the axis text of the app is changed "
+                     "per axis with an element_text layer."))
         if key == "layers":
             for number, layer in enumerate(val or [], start=1):
                 all_layers.append({**layer, "_tier": "L2", "_layer_no": number})
@@ -624,14 +640,9 @@ def resolve_plot_config(
         seed["filters"] = list(spec["filters"])
         provenance["filters"] = "L4"
 
-    # labels (merge: spec labels win; flat title fills in if missing)
+    # labels: the flat `labels` block of the plot. The figure title is not seeded from anywhere: it comes only from a
+    # labs layer (D-0253).
     labels = dict(spec.get("labels", {}))
-    title = spec.get("title")
-    if title:
-        seed["title"] = title
-        provenance["title"] = "L4"
-        if "title" not in labels:
-            labels["title"] = title
     if labels:
         seed["labels"] = labels
         provenance["labels"] = "L4"
@@ -713,8 +724,8 @@ def resolve_plot_config(
     seed["layers"] = _dedupe_layers(all_layers)
 
     # ── Derive convenience fields from resolved layers ───────────────────────
-    # theme: name of the surviving theme_* layer (or L1 fallback)
-    resolved_theme = _BUILTIN_DEFAULTS["theme"]
+    # theme: name of the surviving complete theme_* layer, or plotnine's own default when the recipe writes none
+    resolved_theme = PLOTNINE_DEFAULT_THEME
     for layer in reversed(seed["layers"]):
         if layer.get("name", "").startswith("theme_") and not is_partial_theme(layer["name"]):
             resolved_theme = layer["name"]

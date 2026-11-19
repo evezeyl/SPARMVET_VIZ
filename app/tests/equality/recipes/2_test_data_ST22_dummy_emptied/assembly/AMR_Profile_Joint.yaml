@@ -1,4 +1,4 @@
-tier1:
+steps:
   # Step 1: Clean predicted_phenotype into normalized slug for multi-resistance detection
   # (Must run before join — column is in amr_data, the base ingredient)
   - action: polars_with_columns

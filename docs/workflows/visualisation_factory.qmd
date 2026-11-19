@@ -191,7 +191,7 @@ To maximize user success and ensure a "Fail-Soft" experience, the `VizFactory` i
 The factory automatically collapses three layers of configuration into every plot:
 1.  **Plot Specifics**: Defined in the individual `plots:` entry.
 2.  **Data analysis recipe Tier**: The top-level `plot_defaults` block (if present in the YAML) is merged into every plot. This is the ideal place to define project-wide themes (e.g., `theme: theme_minimal`).
-3.  **Library Fallbacks**: Hardcoded safe anchors (e.g., `theme_bw`) apply if neither of the above are defined.
+3.  **Library Fallbacks**: Hardcoded safe anchors (`coord_cartesian`, `facet_null`) apply if neither of the above are defined. No theme is added: a plot with no theme written is drawn with plotnine's own default (`theme_gray`).
 
 ### 6.2 The Validation Gate
 The factory performs a "Pre-Flight" scan of all mapping aesthetics.

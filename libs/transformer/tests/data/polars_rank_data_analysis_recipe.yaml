@@ -22,11 +22,12 @@ input_fields:
   n:
     type: Int64
     label: n
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_rank
     columns: [x]
     method: min
     descending: false
     target_column: x_rank
-  tier2: []
+tier2:
+  steps: []

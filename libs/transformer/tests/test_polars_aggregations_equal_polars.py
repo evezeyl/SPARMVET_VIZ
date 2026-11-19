@@ -307,7 +307,7 @@ def test_the_pair_gives_the_polars_result_on_the_ingested_table(action, monkeypa
 
 @pytest.mark.parametrize("action", [f"polars_{n}" for n in AGGREGATIONS])
 def test_the_pair_recipe_writes_every_option_of_the_step(action):
-    step = pairs._recipe(action)["wrangling"]["tier1"][0]
+    step = pairs._recipe(action)["tier1"]["steps"][0]
     assert step == {"action": action, **FIRST_CASE[action].spec}
 
 

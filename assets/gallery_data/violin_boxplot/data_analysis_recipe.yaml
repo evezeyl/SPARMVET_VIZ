@@ -19,23 +19,25 @@ data_schemas:
     input_fields:
       species: {type: String}
       mic_value: {type: Float64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       violin_boxplot:
-        label: Violin + Boxplot Overlay
+        ui_label: Violin + Boxplot Overlay
         description: >-
           Drawn with geom_violin; x is species, y is mic_value, fill is species.
         taxonomy: {family: Distribution, pattern: '1 Numeric, 1 Categorical', difficulty: Intermediate, show: distribution,
           sample_size: medium+}
-        spec:
-          target_dataset: example
-          mapping: {x: species, y: mic_value, fill: species}
-          layers:
-            - {name: geom_violin, params: {alpha: 0.4, trim: false}}
-            - {name: geom_boxplot, params: {width: 0.1, outlier_alpha: 0.5}}
-            - name: labs
-              params: {title: MIC Distribution — Violin + Boxplot, x: Species, y: MIC Value}
+        target_dataset: example
+        mapping: {x: species, y: mic_value, fill: species}
+        layers:
+          - {name: geom_violin, params: {alpha: 0.4, trim: false}}
+          - {name: geom_boxplot, params: {width: 0.1, outlier_alpha: 0.5}}
+          - name: labs
+            params: {title: MIC Distribution — Violin + Boxplot, x: Species, y: MIC Value}

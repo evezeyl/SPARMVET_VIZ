@@ -11,7 +11,7 @@ An independent module that takes raw data and transforms it into a standardized 
 Polars promises no row order unless it is asked for. The actions that can reorder rows (group by, sort, join, unique) need their order parameter in the step (`maintain_order`, `keep`), and sample needs a `seed`. Actions that work by position (head, tail, slice, first, last, row index) use the order of the table at their step, so write a `polars_sort` with `maintain_order: true` before them. When rows tie, `top_k` and `bottom_k` do not promise which tied rows are kept, or in what order. The same input then gives the same rows in the same order on every run (ADR-090). `libs/transformer/tests/test_deterministic_order.py` checks this.
 
 This layer allows: 
-    - **Staged Pipeline Architecture (ADR-013):** Data analysis recipes are structured in distinct parts: `input_fields` -> `wrangling` (tier 1, tier 2); the published columns of a join are its last tier-1 step.
+    - **Staged Pipeline Architecture (ADR-013):** Data analysis recipes are structured in distinct parts: `input_fields` -> tier 1, tier 2 (`tier1:` and `tier2:`, each with its `steps`); the published columns of a join are its last tier-1 step.
     - **Identity Transformation (ADR-014):** Supports datasets requiring no cleaning (`tier1: []`).
     - **Wide-to-Long Guard (Phase 12-B):** Automated defensive check in the `WrangleStudio` collection logic. If a transformation results in an empty dataset, the system triggers a "Null State" UI notification instead of a silent failure.
 
@@ -63,20 +63,21 @@ The **Wrangling Pipeline** defined in the YAML data analysis recipe is a **Seque
 
 **Standard YAML Format:**
 
-The engine requires the tiered nesting structure (ADR-024) — a flat `wrangling:` list is
-refused by the data analysis recipe checker (`LEGACY-FLAT-WRANGLING-1`). `tier1:` is mandatory
-(even if empty); `tier2:` is optional.
+The engine requires the tiered structure (ADR-024). A tier is its own key of the table (or of the join): the key, then the optional `data_engine`, then `steps` with the list. There is no `wrangling:` key and no flat list: the data analysis recipe checker refuses both (`LEGACY-FLAT-WRANGLING-1`; the old container `wrangling:` was removed on 2026-11-17). `tier1:` is mandatory (even if its steps are empty); `tier2:` is optional.
 
 ```yaml
-wrangling:
-  tier1:
+tier1:
+  steps:
     - action: polars_str_strip_chars   # Action 1 runs first
       columns: [gene]
     - action: polars_fill_null         # Action 2 runs second
       columns: [amr]
       value: "None"
-  tier2: []   # Optional; omit if empty
+tier2:
+  steps: []   # Optional; omit if empty
 ```
+
+`data_engine` (optional, first key of the tier) names the engine that runs the tier; without it the data analysis recipe's `data_engine` applies. Today the only data engine is `python-polars`; another value is refused with "no library for this engine in this app".
 
 ## Data analysis recipe Construction Hacks & Hazards
 
@@ -97,7 +98,7 @@ During the complex relational refactoring of the ST22 pipeline, several critical
 ### 4. Identity Transformations (Import-As-Is)
 
 For reference datasets or pre-cleaned data, the system supports a "Straight-Through" or **Identity Transformation**. 
-- If `tier1` is `[]`: No decorators are executed, and all declared `input_fields` columns are kept.
+- If the `steps` of `tier1` are `[]`: No decorators are executed, and all declared `input_fields` columns are kept.
 - Only the columns written in `input_fields` are read; there is no `output_fields`.
 
 This ensures that the pipeline remains robust for reference files without requiring redundant boilerplate.

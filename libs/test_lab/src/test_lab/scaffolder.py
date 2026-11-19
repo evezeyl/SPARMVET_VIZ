@@ -1,7 +1,7 @@
 # @deps
 # provides: DataAnalysisRecipeScaffolder class (scaffold, dataset_id, column_slug, field_slugs) — generates a data
-#           analysis recipe ZIP with data analysis recipe fragments (input_fields, wrangling, assembly) and a master YAML.
-#           joins pre-filled with ingredients: format; 'on': quoted; tiered wrangling.
+#           analysis recipe ZIP with data analysis recipe fragments (input_fields, a tier file per table and per join) and a master YAML.
+#           joins pre-filled with ingredients: format; 'on': quoted; each tier is its own key, tier1: !include of a file with steps (D-0250).
 # consumes: polars, pathlib, typing, yaml, re, io, zipfile (stdlib/third-party)
 #           test_lab.bootstrapper (DataAnalysisRecipeBootstrapper, IncludeRef, represent_include)
 # consumed_by: libs/test_lab/tests/test_scaffolder.py, app/modules/test_lab_studio.py
@@ -30,7 +30,7 @@ class DataAnalysisRecipeScaffolder:
 
     Builds on DataAnalysisRecipeBootstrapper schema inference and adds:
     - joins pre-filled with ingredients: format
-    - assembly stub YAML with quoted 'on:' key
+    - assembly stub YAML (the tier file of the join) with quoted 'on:' key
     - ZIP packaging of all fragments and master YAML
     """
 
@@ -123,7 +123,8 @@ class DataAnalysisRecipeScaffolder:
         joins_config = {}
         all_ingredient_ids = list(dataset_ids)
         if metadata_path is not None:
-            all_ingredient_ids.append(self._bs._sanitize_name(Path(metadata_path).stem))
+            # the metadata table is the schema `metadata_schema` of the recipe (a reserved id), whatever its file is called
+            all_ingredient_ids.append("metadata_schema")
 
         if len(all_ingredient_ids) >= 2:
             join_id = f"{data_analysis_recipe_id}_joint"
@@ -131,8 +132,9 @@ class DataAnalysisRecipeScaffolder:
             assembly_path = f"{fragments_prefix}/assembly/{join_id}.yaml"
             self._write_assembly_stub(zf, assembly_path, all_ingredient_ids[1:])
             joins_config[join_id] = {
+                "label": join_id.replace('_', ' ').capitalize(),
                 "ingredients": ingredients,
-                "steps": IncludeRef(f"{data_analysis_recipe_id}/assembly/{join_id}.yaml"),
+                "tier1": IncludeRef(f"{data_analysis_recipe_id}/assembly/{join_id}.yaml"),
             }
         else:
             joins_config = {}
@@ -163,16 +165,17 @@ class DataAnalysisRecipeScaffolder:
         zf.writestr(arcname, yaml.safe_dump(content, sort_keys=False, allow_unicode=True))
 
     def _write_wrangling(self, zf, arcname: str, pk_candidates, tier1_steps):
+        """The tier 1 file of a table: `steps` (D-0250), with the candidate-key hint as a first comment line."""
         pk_hint = (
             f"# Candidate PK: {', '.join(pk_candidates)} (100% unique)\n"
             if pk_candidates
             else ""
         )
-        body = yaml.safe_dump({"tier1": tier1_steps, "tier2": []}, sort_keys=False)
+        body = yaml.safe_dump({"steps": tier1_steps}, sort_keys=False)
         zf.writestr(arcname, pk_hint + body)
 
     def _write_assembly_stub(self, zf, arcname: str, right_ingredients: List[str]):
-        """Write a tiered assembly stub with join steps for each right ingredient."""
+        """Write the tier 1 file of the join: `steps` with a join step for each right ingredient."""
         join_steps = [
             {
                 "action": action_names.JOIN,
@@ -183,25 +186,13 @@ class DataAnalysisRecipeScaffolder:
             }
             for ds_id in right_ingredients
         ]
-        steps = {"steps": {"tier1": join_steps, "tier2": []}}
-        zf.writestr(arcname, yaml.safe_dump(steps, sort_keys=False, allow_unicode=True))
+        zf.writestr(arcname, yaml.safe_dump({"steps": join_steps}, sort_keys=False, allow_unicode=True))
 
     def _build_master(self, data_analysis_recipe_id, tsv_paths, dataset_ids, metadata_path, joins_config):
         data_schemas = {}
         for tsv_p, dataset_id in zip(tsv_paths, dataset_ids):
-            resolved = Path(tsv_p).resolve()
-            try:
-                source_path = str(resolved.relative_to(Path.cwd().resolve()))
-            except ValueError:
-                source_path = str(resolved)
-
-            data_schemas[dataset_id] = {
-                "source": {"type": "local_tsv", "path": source_path},
-                "null_values": [],
-                "strip": False,
-                "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_input_fields.yaml"),
-                "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{dataset_id}_wrangling.yaml"),
-            }
+            data_schemas[dataset_id] = self._bs.table_block(
+                data_analysis_recipe_id, dataset_id, self._bs.source_path(tsv_p), dataset_id.replace('_', ' ').capitalize())
 
         master: Dict[str, Any] = {
             "id": data_analysis_recipe_id,
@@ -218,13 +209,8 @@ class DataAnalysisRecipeScaffolder:
 
         if metadata_path is not None:
             meta_id = self._bs._sanitize_name(Path(metadata_path).stem)
-            master["metadata_schema"] = {
-                "source": {"type": "local_tsv", "path": str(Path(metadata_path).resolve())},
-                "null_values": [],
-                "strip": False,
-                "input_fields": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_input_fields.yaml"),
-                "wrangling": IncludeRef(f"{data_analysis_recipe_id}/{meta_id}_wrangling.yaml"),
-            }
+            master["metadata_schema"] = self._bs.table_block(
+                data_analysis_recipe_id, meta_id, self._bs.source_path(metadata_path), "Metadata")
 
         master["joins"] = joins_config
         master["analysis_groups"] = {}

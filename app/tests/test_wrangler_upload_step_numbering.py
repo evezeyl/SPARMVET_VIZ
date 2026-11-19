@@ -32,14 +32,15 @@ def recipe() -> dict:
 
 def test_the_second_step_is_number_two_in_the_checker_the_wrangler_and_the_upload_report():
     checked = [p for p in check_recipe(recipe(), "build", catalogs=checker_catalogs()).errors if "no_such_action" in p.message]
-    assert checked and all("tier1[2]" in p.path for p in checked)
+    # the checker names the place in the recipe (D-0250: the tier is its own key, the list is under `steps`)
+    assert checked and all(p.path.endswith("tier1.steps[2].action") for p in checked)
 
     with pytest.raises(TransformationError) as raised:
         DataWrangler().run(pl.LazyFrame({"sample_id": ["a"], "reads": [1]}), STEPS)
     assert "wrangling step 2" in raised.value.pipeline_error.location
     assert not re.search(r"step [013]\b", raised.value.pipeline_error.location)
 
-    fragment = {"wrangling": {"tier1": STEPS}}
+    fragment = {"tier1": {"steps": STEPS}}      # the tiers of a table, as they are written now (D-0250)
     report = [line for line in uploaded_recipe_report(fragment) if "no_such_action" in line]
     assert report and all("tier1[2]" in line for line in report)
 
@@ -48,7 +49,7 @@ def test_the_first_step_is_number_one_not_zero():
     with pytest.raises(TransformationError) as raised:
         DataWrangler().run(pl.LazyFrame({"a": [1]}), [{"column": "a"}])
     assert "step 1 " in raised.value.pipeline_error.problem
-    assert [line for line in uploaded_recipe_report({"wrangling": {"tier1": [{"column": "a"}]}}) if "tier1[1]" in line]
+    assert [line for line in uploaded_recipe_report({"tier1": {"steps": [{"column": "a"}]}}) if "tier1[1]" in line]
 
 
 def test_the_same_number_in_the_checker_the_wrangler_the_assembler_and_the_upload_report():
@@ -65,7 +66,7 @@ def test_the_same_number_in_the_checker_the_wrangler_the_assembler_and_the_uploa
         DataAssembler({"A": pl.LazyFrame({"a": ["a"]}), "B": pl.LazyFrame({"a": ["a"]})}, recipe_id="r", join_id="AB").assemble(steps)
     with pytest.raises(TransformationError) as wrangling:
         DataWrangler().run(pl.LazyFrame({"sample_id": ["a"], "reads": [1]}), STEPS)
-    upload = [line for line in uploaded_recipe_report({"wrangling": {"tier1": STEPS}}) if "no_such_action" in line]
+    upload = [line for line in uploaded_recipe_report({"tier1": {"steps": STEPS}}) if "no_such_action" in line]
     numbers = {
         "checker (join)": int(re.search(r"\[(\d+)\]", found[0].path).group(1)),
         "assembler": int(re.search(r"step (\d+)", assembling.value.pipeline_error.location).group(1)),

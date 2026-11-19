@@ -262,7 +262,7 @@ def handle_theme_xkcd(p: ggplot, spec: Dict[str, Any]) -> ggplot:
         "base_size": {"widget": "number", "label": "Base font size (pt)", "required": False, "default": 14},
         "base_family": {"widget": "string", "label": "Base font family", "required": False},
     },
-    "description": "SPARMVET custom dashboard theme tuned for app display; the default theme in SPARMVET data analysis recipes \u2014 omit for the platform default. Not in plotnine: theme_bw with `base_size` 14 unless given; other keys are added as `theme()` settings.",
+    "description": "SPARMVET custom dashboard theme tuned for app display; it is not applied unless a recipe names it (without a theme the figure uses plotnine's own default, D-0258). Not in plotnine: theme_bw with `base_size` 14 unless given; other keys are added as `theme()` settings.",
     "yaml_example": "layers:\n  - name: theme_dashboard",
 })
 def handle_theme_dashboard(p: ggplot, spec: Dict[str, Any]) -> ggplot:

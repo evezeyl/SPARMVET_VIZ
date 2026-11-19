@@ -20,8 +20,8 @@ input_fields:
   l:
     type: String
     label: l
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_str_split
     columns: [l]
     by: ','
@@ -30,4 +30,5 @@ wrangling:
     columns: [l]
     offset: 0
     length: 1
-  tier2: []
+tier2:
+  steps: []

@@ -1,4 +1,5 @@
-"""`generate_branch_plan` writes recipe text: what it writes is recipe format 1 (work order W8).
+"""`generate_branch_plan` writes recipe text: what it writes is recipe format 1 (work order W8; the tier keys of D-0250 and the
+plot entry of D-0252).
 
 A branch adds a schema, a join or a plot to a recipe file by inserting text, so the comments of the author stay.
 The tests write a small valid recipe, apply the plan the way Blueprint does (the new files, then the recipe file),
@@ -75,15 +76,17 @@ def test_the_starting_recipe_is_valid(master):
 
 # -- a schema
 
-@pytest.mark.parametrize("role", ["wrangling", "input_fields", "output_fields"])
+@pytest.mark.parametrize("role", ["wrangling", "input_fields"])
 def test_a_schema_branch_gives_a_valid_recipe_that_loads(master, role):
-    """The node role `output_fields` still selects a schema; the KEY `output_fields` is not written any more."""
+    """Either node of a table selects the table; `output_fields` is neither a key nor a node role of format 1."""
     plan = generate_branch_plan(str(master), "samples", role, "samples_b")
     apply_plan(master, plan)
     assert check_recipe_file(master).errors == []
     loaded = ConfigManager(str(master)).raw_config
     assert set(loaded["data_schemas"]) == {"samples", "reads", "samples_b"}
-    assert loaded["data_schemas"]["samples_b"]["wrangling"] == {"tier1": [], "tier2": []}
+    assert loaded["data_schemas"]["samples_b"]["tier1"] == {"steps": []}
+    assert "tier2" not in loaded["data_schemas"]["samples_b"]      # absent tier 2: its table equals the table of tier 1
+    assert not {"wrangling", "output_fields"} & set(loaded["data_schemas"]["samples_b"])
 
 
 def test_a_schema_branch_writes_no_output_fields_key_and_no_file_for_it(master):
@@ -103,7 +106,7 @@ def test_a_schema_branch_reads_the_same_file_in_the_same_way(master):
         assert branch[key] == source[key]
     assert branch["null_values"] == ["", "NA"] and branch["strip"] is True
     assert branch["label"] == "Samples (branch)"
-    assert list(branch) == ["label", "source", "null_values", "strip", "input_fields", "wrangling"]
+    assert list(branch) == ["label", "source", "null_values", "strip", "input_fields", "tier1"]
 
 
 def test_a_schema_branch_reuses_an_included_fields_file(tmp_path):
@@ -148,15 +151,23 @@ def test_a_join_branch_gives_a_valid_recipe_that_loads(master):
     branch = ConfigManager(str(master)).raw_config["joins"]["C_b"]
     assert branch["label"] == "Combined (branch)"
     assert branch["ingredients"] == [{"dataset_id": "samples"}, {"dataset_id": "reads"}]
-    assert branch["steps"] == {"tier1": [], "tier2": []}
-    assert list(branch) == ["label", "ingredients", "steps"]
+    assert branch["tier1"] == {"steps": []}
+    assert list(branch) == ["label", "ingredients", "tier1"]
 
 
-def test_the_steps_file_of_a_join_branch_is_tiered_not_a_flat_list(master):
-    """`steps` is `{tier1: [...]}`; a flat list is refused by the format and by the engine."""
+def test_the_tier_file_of_a_join_branch_is_a_tier_not_a_flat_list(master):
+    """A tier is `{steps: [...]}`; a flat list is refused by the format and by the engine (D-0250)."""
     plan = generate_branch_plan(str(master), "C", "join", "C_b")
     (fragment,) = plan["fragments"]
-    assert yaml.safe_load(fragment["content"]) == {"tier1": [], "tier2": []}
+    assert yaml.safe_load(fragment["content"]) == {"steps": []}
+    assert "tier1: !include 'tiny/assembly/C_b_assembly.yaml'" in plan["new_master_text"]
+
+
+def test_the_tier_file_of_a_schema_branch_is_a_tier_and_the_master_includes_it_as_tier1(master):
+    plan = generate_branch_plan(str(master), "samples", "wrangling", "samples_b")
+    (fragment,) = plan["fragments"]
+    assert yaml.safe_load(fragment["content"]) == {"steps": []}
+    assert "    tier1: !include 'tiny/wrangling/samples_b_wrangling.yaml'" in plan["new_master_text"]
 
 
 def test_a_join_branch_keeps_the_comments(master):
@@ -167,42 +178,64 @@ def test_a_join_branch_keeps_the_comments(master):
 
 # -- a plot
 
-def test_a_plot_branch_of_an_inline_spec_writes_the_spec_itself_without_a_wrapper(master):
+def test_a_plot_branch_of_an_inline_entry_writes_the_entry_itself_in_its_own_file(master):
+    """The branch is the whole entry (D-0252), named "(branch)" by its `ui_label`; no `spec:`, no wrapper key."""
     plan = generate_branch_plan(str(master), "per_year", "plot_spec", "per_year_b")
     (fragment,) = plan["fragments"]
-    assert yaml.safe_load(fragment["content"]) == recipe_with_a_join()["analysis_groups"]["main"]["plots"]["per_year"]["spec"]
+    entry = recipe_with_a_join()["analysis_groups"]["main"]["plots"]["per_year"]
+    assert yaml.safe_load(fragment["content"]) == {**entry, "ui_label": "Samples per year (branch)"}
+    assert "      per_year_b: !include 'tiny/plots/per_year_b.yaml'" in plan["new_master_text"]
     apply_plan(master, plan)
     result = check_recipe_file(master)
     assert result.errors == []
     plots = ConfigManager(str(master)).raw_config["analysis_groups"]["main"]["plots"]
-    assert plots["per_year_b"]["label"] == "Samples per year (branch)"
-    assert plots["per_year_b"]["spec"] == plots["per_year"]["spec"]
+    assert plots["per_year_b"]["ui_label"] == "Samples per year (branch)"
+    assert {k: v for k, v in plots["per_year_b"].items() if k != "ui_label"} == {k: v for k, v in plots["per_year"].items() if k != "ui_label"}
 
 
-def test_a_plot_branch_of_an_included_spec_copies_the_file_with_its_comments(tmp_path):
+def test_a_plot_branch_of_an_included_entry_copies_the_file_with_its_comments_and_changes_only_the_name(tmp_path):
     recipe = recipe_with_a_join()
-    spec_text = "# drawn as bars because the years are few\n" + recipe_text(recipe["analysis_groups"]["main"]["plots"]["per_year"]["spec"])
+    entry_text = "# drawn as bars because the years are few\n" + recipe_text(recipe["analysis_groups"]["main"]["plots"]["per_year"])
     (tmp_path / "tiny" / "plots").mkdir(parents=True)
-    (tmp_path / "tiny" / "plots" / "per_year.yaml").write_text(spec_text, encoding="utf-8")
-    recipe["analysis_groups"]["main"]["plots"]["per_year"]["spec"] = Include("tiny/plots/per_year.yaml")
+    (tmp_path / "tiny" / "plots" / "per_year.yaml").write_text(entry_text, encoding="utf-8")
+    recipe["analysis_groups"]["main"]["plots"]["per_year"] = Include("tiny/plots/per_year.yaml")
     master = write_master(tmp_path, recipe)
     plan = generate_branch_plan(str(master), "per_year", "plot_spec", "per_year_b")
     (fragment,) = plan["fragments"]
-    assert fragment["content"] == spec_text
+    assert fragment["content"] == entry_text.replace("ui_label: Samples per year", "ui_label: Samples per year (branch)")
     apply_plan(master, plan)
     assert check_recipe_file(master).errors == []
 
 
+def test_a_plot_file_without_a_ui_label_line_is_refused_and_nothing_is_written(tmp_path):
+    recipe = recipe_with_a_join()
+    (tmp_path / "tiny" / "plots").mkdir(parents=True)
+    (tmp_path / "tiny" / "plots" / "per_year.yaml").write_text("{ui_label: Samples per year, target_dataset: C, mapping: {x: year}, layers: []}\n", encoding="utf-8")
+    recipe["analysis_groups"]["main"]["plots"]["per_year"] = Include("tiny/plots/per_year.yaml")
+    master = write_master(tmp_path, recipe)
+    plan = generate_branch_plan(str(master), "per_year", "plot_spec", "per_year_b")
+    assert plan["ok"] is False and "ui_label" in plan["error"]
+    assert plan["new_master_text"] == "" and plan["fragments"] == []
+
+
+def test_a_plot_written_without_a_ui_label_is_refused(tmp_path):
+    recipe = recipe_with_a_join()
+    del recipe["analysis_groups"]["main"]["plots"]["per_year"]["ui_label"]
+    master = write_master(tmp_path, recipe)
+    plan = generate_branch_plan(str(master), "per_year", "plot_spec", "per_year_b")
+    assert plan["ok"] is False and "ui_label" in plan["error"]
+
+
 def test_a_label_with_a_quote_and_a_colon_stays_valid_text(tmp_path):
     recipe = recipe_with_a_join()
-    recipe["analysis_groups"]["main"]["plots"]["per_year"]["label"] = 'Samples: the "good" ones'
+    recipe["analysis_groups"]["main"]["plots"]["per_year"]["ui_label"] = 'Samples: the "good" ones'
     recipe["data_schemas"]["samples"]["label"] = 'Samples: the "good" ones'
     master = write_master(tmp_path, recipe)
     apply_plan(master, generate_branch_plan(str(master), "per_year", "plot_spec", "per_year_b"))
     apply_plan(master, generate_branch_plan(str(master), "samples", "wrangling", "samples_b"))
     raw, problems = load_recipe(master)
     assert problems == []
-    assert raw["analysis_groups"]["main"]["plots"]["per_year_b"]["label"] == 'Samples: the "good" ones (branch)'
+    assert raw["analysis_groups"]["main"]["plots"]["per_year_b"]["ui_label"] == 'Samples: the "good" ones (branch)'
     assert raw["data_schemas"]["samples_b"]["label"] == 'Samples: the "good" ones (branch)'
 
 
@@ -216,6 +249,7 @@ def test_a_label_with_a_quote_and_a_colon_stays_valid_text(tmp_path):
     ("samples", "wrangling", "not an id", "snake_case"),
     ("samples", "wrangling", "", "snake_case"),
     ("samples", "something_else", "x", "not branchable"),
+    ("samples", "output_fields", "x", "not branchable"),
 ])
 def test_a_refused_branch_writes_nothing(master, schema_id, role, new_id, word):
     plan = generate_branch_plan(str(master), schema_id, role, new_id)

@@ -30,8 +30,8 @@ def asof_recipe():
     raw = copy.deepcopy(valid())
     raw["data_schemas"]["A"]["input_fields"] = {"id": {"type": "String"}, "t": {"type": "Int64"}, "site": {"type": "String"}}
     raw["data_schemas"]["B"]["input_fields"] = {"t": {"type": "Int64"}, "site": {"type": "String"}, "w": {"type": "Int64"}}
-    raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "polars_join_asof", "right_ingredient": "B", "on": "t", "by": ["site"], "strategy": "backward"}]
-    raw["analysis_groups"]["g"]["plots"]["p"]["spec"]["mapping"] = {"x": "id", "y": "t"}
+    raw["joins"]["AB"]["tier1"]["steps"] = [{"action": "polars_join_asof", "right_ingredient": "B", "on": "t", "by": ["site"], "strategy": "backward"}]
+    raw["analysis_groups"]["g"]["plots"]["p"]["mapping"] = {"x": "id", "y": "t"}
     return raw
 
 
@@ -53,7 +53,7 @@ def test_a_correct_asof_recipe_has_no_problem_and_the_by_column_is_not_a_clash()
 def test_without_the_by_columns_in_the_key_set_the_same_recipe_would_report_a_clash():
     """The check can fail: the column `site` is in both tables, and only the `by` keeps it from being reported."""
     raw = asof_recipe()
-    raw["joins"]["AB"]["steps"]["tier1"][0].pop("by")
+    raw["joins"]["AB"]["tier1"]["steps"][0].pop("by")
     assert "J08" in codes(raw)
 
 
@@ -71,14 +71,14 @@ def test_an_asof_key_that_is_not_declared_is_refused():
 
 def test_an_asof_step_in_tier_2_of_the_join_is_refused():
     raw = asof_recipe()
-    step = raw["joins"]["AB"]["steps"]["tier1"][0]
-    raw["joins"]["AB"]["steps"]["tier2"] = [dict(step)]
+    step = raw["joins"]["AB"]["tier1"]["steps"][0]
+    raw["joins"]["AB"]["tier2"] = {"steps": [dict(step)]}
     assert "ST05" in codes(raw)
 
 
 def where_recipe():
     raw = asof_recipe()
-    raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "modif_join_where", "right_ingredient": "B", "predicates": ["pl.col('w') > pl.col('t')"]}]
+    raw["joins"]["AB"]["tier1"]["steps"] = [{"action": "modif_join_where", "right_ingredient": "B", "predicates": ["pl.col('w') > pl.col('t')"]}]
     return raw
 
 
@@ -89,19 +89,19 @@ def test_a_join_on_conditions_needs_no_key_and_is_not_reported_as_missing_one():
 
 def test_a_join_on_conditions_still_needs_an_ingredient_of_the_join():
     raw = where_recipe()
-    raw["joins"]["AB"]["steps"]["tier1"][0]["right_ingredient"] = "Ghost"
+    raw["joins"]["AB"]["tier1"]["steps"][0]["right_ingredient"] = "Ghost"
     assert "J05" in codes(raw)
 
 
 def test_a_join_on_conditions_in_tier_2_of_the_join_is_refused():
     raw = where_recipe()
-    raw["joins"]["AB"]["steps"]["tier2"] = [dict(raw["joins"]["AB"]["steps"]["tier1"][0])]
+    raw["joins"]["AB"]["tier2"] = {"steps": [dict(raw["joins"]["AB"]["tier1"]["steps"][0])]}
     assert "ST05" in codes(raw)
 
 
 def test_the_key_check_still_asks_a_plain_join_for_its_key():
     raw = asof_recipe()
-    raw["joins"]["AB"]["steps"]["tier1"] = [{"action": "polars_join", "right_ingredient": "B", "how": "left"}]
+    raw["joins"]["AB"]["tier1"]["steps"] = [{"action": "polars_join", "right_ingredient": "B", "how": "left"}]
     assert "J05" in codes(raw)
 
 
@@ -109,7 +109,7 @@ def test_the_old_name_polars_join_where_is_refused_and_the_message_names_the_new
     """A removed name is refused with its replacement (no alias, it does not run): the action fixes the order, so it is not exactly Polars."""
     from utils.action_names import REMOVED_ACTIONS
     raw = where_recipe()
-    raw["joins"]["AB"]["steps"]["tier1"][0]["action"] = "polars_join_where"
+    raw["joins"]["AB"]["tier1"]["steps"][0]["action"] = "polars_join_where"
     result = check_recipe(raw, "run", catalogs={**CATALOG, "old_action_names": dict(REMOVED_ACTIONS)}, graph=Graph())
     problems = [p for p in result.problems if p.code == "ST02"]
     assert problems and problems[0].severity == "E"

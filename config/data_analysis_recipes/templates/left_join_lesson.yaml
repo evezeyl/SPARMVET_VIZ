@@ -34,8 +34,8 @@ data_schemas:
       gene:
         original_name: "Gene"
         type: "String"
-    wrangling:
-      tier1: []
+    tier1:
+      steps: []
 
 metadata_schema:
   label: "metadata (right table)"
@@ -53,8 +53,8 @@ metadata_schema:
     country:
       original_name: "Country"
       type: "String"
-  wrangling:
-    tier1: []
+  tier1:
+    steps: []
 
 joins:
   lesson_assembly:
@@ -63,8 +63,8 @@ joins:
     ingredients:
       - dataset_id: "sequenced"
       - dataset_id: "metadata_schema"
-    steps:
-      tier1:
+    tier1:
+      steps:
         - action: polars_join
           right_ingredient: metadata_schema
           'on': [sample_id]
@@ -73,17 +73,32 @@ joins:
         - action: polars_select
           exprs: ["sample_id", "gene", "country"]
 
+plot_defaults:
+  theme: theme_bw
+
 analysis_groups:
   Overview:
-    label: "Overview"
+    ui_label: "Overview"
     plots:
       samples_by_country:
-        label: "Samples by country"
-        spec:
-          target_dataset: lesson_assembly
-          mapping:
-            x: country
-            fill: gene
-          layers:
-            - name: geom_bar
-              params: {}
+        ui_label: "Samples by country"
+        target_dataset: lesson_assembly
+        mapping:
+          x: country
+          fill: gene
+        layers:
+          - name: geom_bar
+            params: {}
+        # Tier 3 (the steps of the audit, applied to this plot only) is written at the plot entry, as tier1 and tier2 are written
+        # in a table: the key of the tier, an optional data_engine as its first key, then the steps. The audit writes Polars
+        # steps, so python-polars is the only engine of tier 3 in this app; another value is refused with "no library for this
+        # engine in this app". The example is commented because the app does not read tier3 yet (check P05):
+        #
+        # tier3:
+        #   data_engine: python-polars
+        #   steps:
+        #     - action: modif_filter
+        #       column: country
+        #       op: ne
+        #       value: Norway
+        #       na: remove

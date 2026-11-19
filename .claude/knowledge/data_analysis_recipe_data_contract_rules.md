@@ -2,7 +2,11 @@
 
 **Authority:** ADR-004, ADR-024, ADR-041  
 **Last updated:** 2026-05-04 (data analysis recipe modularisation sprint)  
-**Status:** Active — authoritative reference for Blueprint Architect implementation
+**Status:** Partly historical. The rules on `output_fields` / `final_contract` inheritance are HISTORICAL; the structure, the roles and the ctx_map are current (rewritten 2026-11-18 for the engine-keys change)
+
+> **HISTORICAL (superseded by data analysis recipe format 1, DEC23, 2026-11-13; this note 2026-11-18):** `output_fields` and `final_contract` are not keys of a data analysis recipe any more: the published columns of a join are its last `tier1` step (`polars_select` or `polars_drop`), and what a table publishes is its `input_fields` after its steps. Sections 1 (the second to fourth bullets), 4.1 and 4.2 (`output_fields` lines), 5.1, 5.2 and 5.4 (the inheritance protocol), 8.2 to 8.4 and 9 (the `output_fields` lines) describe the earlier format and are kept to explain why Blueprint resolves fields the way it does; they are not instructions. The current resolution is `resolve_fields_for_schema` in `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`: (1) the `input_fields` file, (2) a join's fields are those of its ingredients (the columns its steps add or drop are not computed), (3) inline `input_fields`.
+>
+> **Also changed on 2026-11-17 (engine keys, D-0250, D-0252, D-0253):** a tier is its own key (`tier1`, `tier2`; there is no `wrangling` or join `steps` container) and a plot entry holds its content directly (there is no `spec:` and no `pre_plot_wrangling`); the sections below that name those keys were rewritten.
 
 ---
 
@@ -53,12 +57,13 @@ analysis_groups:     # Grouped plots (Tier 2/3)
 
 | Section | Role token | TubeMap colour | Is terminal? |
 |---|---|---|---|
-| `data_schemas` | `wrangling` (primary) + `input_fields` + `output_fields` | blue (source) / amber (wrangle) | No |
+| `data_schemas` | `wrangling` (primary, the tier files) + `input_fields` | blue (source) / amber (wrangle) | No |
 | `additional_datasets_schemas` | same as data_schemas | grey | No |
 | `metadata_schema` | same as data_schemas | orange | No |
-| `joins` | `assembly` | purple | No |
-| `analysis_groups.*.plots` | `plot_spec` | green | Yes — no output |
-| `plots.*.pre_plot_wrangling` | `plot_wrangling` | amber | Yes — no output |
+| `joins` | `join` (its tier files) | purple | No |
+| `analysis_groups.*.plots` | `plot_spec` (the whole plot entry, inline or in its own file) | green | Yes — no output |
+
+The role `plot_wrangling` (the file named by `pre_plot_wrangling`) and the role `output_fields` do not exist any more: no data analysis recipe held either on 2026-11-17 and the plot checker refuses the key (P01).
 
 ---
 
@@ -169,23 +174,22 @@ MLST_with_metadata (assembly, no output_fields)
 Result: UNION of {MLST.input_fields} ∪ {metadata_schema.output_fields}
 ```
 
-### 5.3 For a `plot_spec` or `plot_wrangling` node
+### 5.3 For a `plot_spec` node
 
 - **Upstream Contract** (what enters the plot): resolve the `target_dataset` schema via the protocol above.
 - **Downstream Contract**: None. Plots are terminal — they produce a visual, not a data table.
-- `target_dataset` is nested inside `spec:` for inline plots:
+- `target_dataset` is a key of the plot entry itself (there is no `spec:` since 2026-11-17, D-0237); an entry in its own file holds the same keys:
   ```yaml
   mlst_bar:
-    info: ...
-    spec:
-      target_dataset: MLST_with_metadata   # ← here, under spec
-      mapping:
-        x: sequence_type
-      layers:
-        - name: geom_bar
-          params: {}
+    ui_label: MLST counts
+    target_dataset: MLST_with_metadata
+    mapping:
+      x: sequence_type
+    layers:
+      - name: geom_bar
+        params: {}
   ```
-  **Not** at `mlst_bar.target_dataset`. Resolution code must check both levels.
+  `_target_dataset_of(plot_entry)` in the navigator reads it.
 
 ### 5.4 Inheritance summary table
 
@@ -242,20 +246,14 @@ config/data_analysis_recipes/pipelines/
       MLST_input_fields.yaml
       ...
     wrangling/
-      Summary_wrangling.yaml
-      MLST_Metadata_wrangling.yaml     ← assembly steps
-      ST22_Anchor_wrangling.yaml
-      ...
-    output_fields/
-      Summary_output_fields.yaml
-      ST22_Anchor_final_output_fields.yaml   ← final_contract
+      Summary_tier1.yaml               ← a tier file: `steps` (and an optional `data_engine`)
       ...
     plots/
-      MLST_counts_bar.yaml
+      MLST_counts_bar.yaml             ← the whole plot entry
       miaou.yaml
       ...
     assembly/
-      Summary_phenotype_length_fragmentation_assembly.yaml
+      Summary_phenotype_length_fragmentation_assembly.yaml   ← the tier 1 file of a join (its `steps`)
 ```
 
 #### Naming convention for fragment files
@@ -263,12 +261,9 @@ config/data_analysis_recipes/pipelines/
 | Fragment role | Naming pattern | Example |
 |---|---|---|
 | `input_fields` | `{SchemaID}_input_fields.yaml` | `MLST_input_fields.yaml` |
-| `wrangling` (schema) | `{SchemaID}_wrangling.yaml` | `MLST_wrangling.yaml` |
-| `wrangling` (assembly steps) | `{AssemblyID}_wrangling.yaml` or `{AssemblyID}_steps.yaml` | `MLST_Metadata_wrangling.yaml` |
-| `output_fields` | `{SchemaID}_output_fields.yaml` | `MLST_output_fields.yaml` |
-| `final_contract` | `{AssemblyID}_final_output_fields.yaml` or `{AssemblyID}_final_contract.yaml` | `ST22_Anchor_final_output_fields.yaml` |
-| plot `spec` | `{plot_id}.yaml` | `MLST_counts_bar.yaml` |
-| assembly `steps` (flat list) | `{AssemblyID}_assembly.yaml` | `Summary_phenotype_length_fragmentation_assembly.yaml` |
+| tier of a schema (`tier1: !include ...`) | `{SchemaID}_tier1.yaml` (a name per tier; the rewrite tool writes `<name>_tier1.yaml` and `<name>_tier2.yaml`) | `MLST_tier1.yaml` |
+| tier of a join (`tier1: !include ...`) | a name of the author's choice, in `assembly/` | `Summary_phenotype_length_fragmentation_assembly.yaml` |
+| plot entry (`<plot_id>: !include ...`) | `{plot_id}.yaml` | `MLST_counts_bar.yaml` |
 
 #### `!include` path resolution
 
@@ -282,15 +277,15 @@ input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.ya
 
 #### Auto-unnesting of wrapper keys
 
-`ConfigManager` silently strips a redundant top-level wrapper key when the fragment's root key matches one of: `input_fields`, `output_fields`, `wrangling`, `source`, `steps`, `spec`. This means a fragment can optionally start with its own section key and still be included correctly. **Flat fragments (no wrapper) are preferred** per ADR-041.
+`ConfigManager` strips a redundant top-level wrapper key only for `input_fields` and `source` (a file whose only key is `output_fields`, `wrangling`, `steps` or `spec` is NOT unwrapped; the strict loader and the data analysis recipe check refuse any wrapper key, F01). **Flat fragments (no wrapper) are the rule** (ADR-041): a tier file holds `steps` (and an optional `data_engine`), a plot file holds the whole plot entry.
 
-- ctx_map stores rel_paths as keys: `ctx_map["1_test_data_ST22_dummy/output_fields/MLST_output_fields.yaml"] = {...}`
+- ctx_map stores rel_paths as keys: `ctx_map["1_test_data_ST22_dummy/wrangling/amr_data.yaml"] = {...}`
 - `inc_map` maps rel_path → absolute file path
 - Mode A load path in `_do_load_component`
 
 ### 6.3 Hybrid (partial `!include` in otherwise inline data analysis recipe)
 
-A data analysis recipe may mix inline sections and `!include` markers — for example, keeping `info:` and `source:` inline while externalising `input_fields`/`wrangling`/`output_fields`. This is fully supported: `_build_sibling_map` registers the rel_path in ctx_map and inc_map for those specific slots, and inline siblings are stored as `{"inline": value}`.
+A data analysis recipe may mix inline sections and `!include` markers — for example, keeping `info:` and `source:` inline while externalising `input_fields` and the tier files. This is fully supported: `_build_sibling_map` registers the rel_path in ctx_map and inc_map for those specific slots, and inline siblings are stored as `{"inline": value}`.
 
 ---
 
@@ -300,14 +295,14 @@ Built by `_build_sibling_map(master_path)`. Maps navigable keys → component co
 
 ```python
 ctx_map[key] = {
-    "role": "input_fields" | "output_fields" | "wrangling" | "assembly"
-             | "plot_spec" | "plot_wrangling",
+    "role": "input_fields" | "wrangling" | "join" | "plot_spec",
+    "tier": "tier1" | "tier2",  # only for a tier file ("wrangling" of a table, "join" of a join)
     "schema_id": str,         # The parent schema ID (e.g. "MLST")
     "schema_type": str,       # "data_schemas" | "joins" | "plots" | ...
     "siblings": {
         "input_fields": str | {"inline": dict} | None,
-        "output_fields": str | {"inline": dict} | None,
-        "wrangling": str | {"inline": list} | None,
+        "tier1": str | {"inline": dict} | None,
+        "tier2": str | {"inline": dict} | None,
     },
     "ingredients": list[str],  # For assemblies: ordered schema_id list
     "group_id": str,           # For plots: parent analysis_group name
@@ -315,7 +310,7 @@ ctx_map[key] = {
 ```
 
 **Key registration rules:**
-- For file-linked slots: `key = rel_path` (e.g. `"MLST/output_fields/MLST_output_fields.yaml"`)
+- For file-linked slots: `key = rel_path` (e.g. `"MLST/wrangling/MLST_tier1.yaml"`)
 - For inline schemas (no `!include`): `key = schema_id` (e.g. `"MLST"`)
 - Both can coexist in the same data analysis recipe (hybrid style)
 - Schema_id key is only registered if no rel_path was registered for that schema (avoids duplicates)
@@ -324,18 +319,9 @@ ctx_map[key] = {
 
 ## 8. Known Edge Cases and Their Fixes
 
-### 8.1 `target_dataset` under `spec:` not at plot top level
+### 8.1 `target_dataset` of a plot
 
-```yaml
-mlst_bar:         # plot_id
-  info: ...
-  spec:           # ← spec wrapper (Phase 11-D convention)
-    target_dataset: MLST_with_metadata   # ← nested here
-    mapping:
-      x: sequence_type
-```
-
-Fix: always check `pspec.get("target_dataset") or pspec.get("spec", {}).get("target_dataset")`
+Written in the plot entry (inline or in its own file), never under `spec:` (removed 2026-11-17). A plot entry without it is refused by the checker (PS02).
 
 ### 8.2 Assembly with no `output_fields` returns empty
 
@@ -363,7 +349,7 @@ In Mode B, the analysis_groups scan must run **unconditionally** (not only when 
       ▼
 [data_schemas.X]
   input_fields  ──► describes columns as they arrive from the file
-  wrangling     ──► transforms (may change column names, types, count)
+  tier1 / tier2 ──► transforms (may change column names, types, count)
   output_fields ──► describes columns after wrangling
                     (OPTIONAL: if absent, inherit from input_fields)
       │
@@ -377,10 +363,10 @@ In Mode B, the analysis_groups scan must run **unconditionally** (not only when 
       │
       ▼
 [analysis_groups.G.plots.P]
-  spec.target_dataset: Y    ──► which assembly feeds this plot
-  spec.mapping.x / spec.mapping.fill / ...  ──► column mapping (must exist in target_dataset output)
-  spec.layers[0].name: geom_bar / geom_point / ...  ──► primary geom (ADR-083)
-  pre_plot_wrangling         ──► optional Tier 2 transform before rendering
+  target_dataset: Y    ──► which join (or schema) feeds this plot
+  mapping.x / mapping.fill / ...  ──► column mapping (must exist in the target dataset)
+  layers[0].name: geom_bar / geom_point / ...  ──► primary geom (ADR-083)
+  tier3                ──► optional steps applied to this plot's table
       │
       ▼
 [VizFactory.render(df, data_analysis_recipe, plot_id)]
@@ -402,11 +388,11 @@ When implementing any feature that reads or displays field contracts:
 - [ ] Handle both inline (`{"inline": {...}}`) and file-linked (`str` rel_path) siblings
 - [ ] Fall through to `input_fields` when `output_fields` is absent or empty
 - [ ] For assembly with no output: recurse into ingredients (use `_resolve_fields_for_schema`)
-- [ ] For plot `target_dataset`: look under `spec.target_dataset`, not `plot_id.target_dataset`
+- [ ] For plot `target_dataset`: read it from the plot entry (`plot_id.target_dataset`; there is no `spec`)
 - [ ] For materialization: use `target_dataset` as `collection_id`, NOT `plot_id`
 - [ ] For Mode A (file load): use `inc_map[rel_path]` to get absolute file path
 - [ ] For Mode B (inline): read directly from `raw_config` sections
-- [ ] Empty `wrangling: []` or `wrangling: {tier1: []}` = identity, do not treat as error
+- [ ] An empty tier (`tier1: {steps: []}`) = identity, do not treat as error
 
 ---
 

@@ -44,7 +44,7 @@ def png() -> bytes:
 
 
 def test_the_keys_of_the_export_are_recorded_per_dataset():
-    keys = {"C": {"tier1_key": T1, "tier2_key": tier2_key(T1, STEPS)}}
+    keys = {"C": {"tier1_key": T1, "tier2_key": tier2_key(T1, STEPS, "python-polars")}}
     p = prov(keys, [("p", {"target_dataset": "C"})])
     assert p["stage_keys"] == keys
     assert p["decision_hashes"] == {"C": T1}          # kept for older readers of the bundle
@@ -57,7 +57,7 @@ def test_a_join_without_tier2_steps_has_an_empty_tier2_key():
 
 
 def test_two_datasets_keep_their_own_tier2_key():
-    k2 = tier2_key(T1, STEPS)
+    k2 = tier2_key(T1, STEPS, "python-polars")
     keys = {"C": {"tier1_key": T1, "tier2_key": k2}, "D": {"tier1_key": T1, "tier2_key": ""}}
     p = prov(keys, [("p", {"target_dataset": "C"}), ("q", {"target_dataset": "D"})])
     assert p["stage_keys"]["C"]["tier2_key"] == k2 and p["stage_keys"]["D"]["tier2_key"] == ""
@@ -69,7 +69,7 @@ def test_no_keys_given_still_builds_the_provenance():
 
 
 def test_png_carries_both_keys():
-    k2 = tier2_key(T1, STEPS)
+    k2 = tier2_key(T1, STEPS, "python-polars")
     p = prov({"C": {"tier1_key": T1, "tier2_key": k2}}, [("p", {"target_dataset": "C"})])
     info = Image.open(io.BytesIO(_embed_png_provenance(png(), p, "p", "C"))).text
     assert info["sparmvet:tier1_key"] == T1 and info["sparmvet:tier2_key"] == k2
@@ -82,7 +82,7 @@ def test_png_of_a_dataset_without_tier2_has_no_tier2_key_field():
 
 
 def test_svg_carries_both_keys():
-    k2 = tier2_key(T1, STEPS)
+    k2 = tier2_key(T1, STEPS, "python-polars")
     p = prov({"C": {"tier1_key": T1, "tier2_key": k2}}, [("p", {"target_dataset": "C"})])
     svg = _embed_svg_provenance(b'<svg xmlns="http://www.w3.org/2000/svg"></svg>', p, "p", "C").decode()
     assert f"sparmvet:tier1_key={T1}" in svg and f"sparmvet:tier2_key={k2}" in svg

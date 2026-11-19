@@ -27,6 +27,8 @@
 | `app/handlers/gallery_handlers.py` | Gallery Shiny wiring (ADR-037/045/093) | Reactive hooks → Gallery UI | `_update_gallery_options`, `gallery_preview_img`, `gallery_md_content` |
 | `app/handlers/ingestion_handlers.py` | Ingestion & app features Shiny wiring (ADR-045) | Reactive hooks → Ingest/App features | `handle_ingest`, `update_app_features_context` |
 | `app/modules/orchestrator.py` | Tier 1 Ingestion & Assembly Bridge | Data analysis recipe + Data → Parquet | `DataOrchestrator (orchestrator.py)` |
+| `app/modules/engine_registry.py` | The one place that imports the engine entry files; chooses the library by the data analysis recipe's `data_engine` / `plot_engine` (D-0219, D-0247) | Recipe value → engine entry (`ENTRY`) | `REGISTRY`, `data_entry`, `plot_entry`, `PlotEngines`, `engine_tables` |
+| `app/modules/cache_keys.py` | Cache chain keys (ADR-089; the engine of a tier is an argument of that tier's key, the plot engine is in no table key, cache version 5, D-0240) | Resolved data analysis recipe + data → `tier1_key`, `tier2_key` | `tier1_key`, `tier2_key`, `collection_tier2_key`, `ENGINE_CACHE_VERSION` |
 | `libs/ingestion/src/ingestion/ingestor.py` | Reads sources, early validation | File → LazyFrame | `DataIngestor (ingestor.py)`, `scan_csv` |
 | `libs/transformer/src/transformer/data_wrangler.py` | Layer 1 execution (Atomic) | Dataset → LazyFrame | `DataWrangler`, `@register_action` |
 | `libs/transformer/src/transformer/data_assembler.py` | Layer 2 orchestration (Relational) | Multiple LFs → LazyFrame | `DataAssembler`, `sink_parquet` |
@@ -34,17 +36,17 @@
 | `libs/test_lab/src/test_lab/aqua_synthesizer.py` | [ADR-032/ADR-068] Relational Data Synthesis (SDK Core) | Schema → TSV | `clean_header`, `generate_fake_column`, `--generate_only` |
 | `libs/test_lab/src/test_lab/scaffolder.py` | [ADR-084] Data analysis recipe Scaffolding — generates data analysis recipe ZIP from uploaded TSVs | TSV paths + data_analysis_recipe_id → bytes (ZIP) | `DataAnalysisRecipeScaffolder.scaffold(tsv_paths, data_analysis_recipe_id, steps, metadata_path)`. Wired in TEST_LAB handler `tl_scaffold_ui` / `tl_scaffold_download`. |
 | `libs/viz_factory/src/viz_factory/viz_factory.py` | Artist Pillar: Plot Composition | Data + Data analysis recipe → ggplot | `VizFactory`, `Plot Layers` |
-| `libs/viz_factory/src/viz_factory/plot_config_resolver.py` | **Plot config cascade resolver** (VIZFAC-RESOLVER-1, done) | Tiered config dicts → flat resolved dict | Pure function `resolve_plot_config()` resolves L5(T3 override) > L4(spec) > L3(optimisation) > L2(plot_defaults) > L1(built-ins), wired into `viz_factory.py`'s render path. L5 (T3 `aesthetic_override`) itself is the remaining gap — see `project_conventions.md §E` and `rules_viz_factory.md §7`. See `.claude/design/plot_config_cascade.md`. |
+| `libs/viz_factory/src/viz_factory/plot_config_resolver.py` | **Plot config cascade resolver** (VIZFAC-RESOLVER-1, done) | Tiered config dicts → flat resolved dict | Pure function `resolve_plot_config()` resolves L5(T3 override) > L4(plot entry) > L3(optimisation) > L2(plot_defaults) > L1(built-ins), wired into `viz_factory.py`'s render path. L5 (T3 `aesthetic_override`) itself is the remaining gap — see `project_conventions.md §E` and `rules_viz_factory.md §7`. See `.claude/design/plot_config_cascade.md`. |
 | `libs/utils/src/utils/pipeline_error.py` | **Runtime error dataclass** (ADR-079; consumer side wired by ADR-094/ADR-095, 2026-11-08) | Library exceptions → structured runtime error | `PipelineError` dataclass; sits alongside `DeploymentError` (ADR-078); audience model adds `analyst`/`data_provider`/`data_analysis_recipe_author`; per-category render surfaces. `SPARMVET_Error` (`libs/utils/src/utils/errors.py`) carries the originating `PipelineError` through the raise (ADR-095 — every library used to discard it, raising a message-only exception); `capture_entry(exc, ...)` reads it back at any catch site, falling back to a plain dict if the exception wasn't built from a `PipelineError`. All 7 production raise points now surface fix/who to the user — HOME's "Processing Issues" panel (data materialization + VizFactory render, including Comparison Mode), all 3 BLUEPRINT catch points (inline, via `render_blueprint_inline()`), T3 Apply (gatekeeper message + a session-ghost-save failure that used to fail silently), and the export bundle's per-plot error stub. `PIPELINE-ERROR-WIRE-2` is closed. Still unwired: 4 `severity="warning"` constructions in `ingestor.py`/`viz_factory.py` that never raise — no exception to catch, so they still only print to console — tracked as `PIPELINE-WARNING-SURFACE-1`. |
 | `assets/scripts/refresh_gallery.py` | [ADR-037] Gallery Indexing & Integrity Refresher | CLI Tool → JSON | `refresh_gallery.py`, Pivot-Index |
 | `app/modules/gallery_viewer.py` | [ADR-033/057] Split-Pane Gallery (full-width) + sidebar filter builder | Main content + sidebar UI | `GalleryViewer.render_explorer_ui()` (main), `GalleryViewer.build_sidebar_ui()` (nav_sidebar accordion — called by home_theater.py sidebar_tools_ui) |
 | `protocol_tiered_data.md` | Logic Protocol for Tiers (ADR-024) | Source of Truth | Short-Circuit, Predicate Pushdown |
 | `test_action_recipe_pairs.py` | The 1:1:1 pair of every registered action runs and equals Polars | Registry → pytest | `libs/transformer/tests/` |
 | `libs/ingestion/src/ingestion/excel_handler.py` | [ADR-032] Excel Workbook Normalization | XLSX → Multi-TSV | `ExcelHandler`, authoritative extraction |
-| `pipeline/*.yaml` | Master configurations and nested data contracts | (Defs) → Pipeline state | `input_fields`, `output_fields` |
+| `pipeline/*.yaml` | Master configurations and nested data contracts | (Defs) → Pipeline state | `input_fields`, `tier1`, `tier2` |
 | `libs/*/src/*/registry.py` | Authority for valid Wrangling and Viz actions | Registry → Validation | `@register_action`, `@register_geom` |
 
-| `libs/transformer/tests/debug_assembler.py` | Assembly debug runner — mirrors orchestrator exactly | Data analysis recipe → `tmp/EVE_contracted_*.parquet` + `.tsv` | `DataWrangler._resolve_tier`, `MetadataValidator`, join dtype norm, `final_contract` |
+| `libs/transformer/tests/debug_assembler.py` | Assembly debug runner — mirrors orchestrator exactly | Data analysis recipe → `tmp/EVE_contracted_*.parquet` + `.tsv` | `DataWrangler.tier_steps`, `MetadataValidator`, join dtype norm |
 | `libs/viz_factory/tests/debug_gallery.py` | Headless plot renderer for data analysis recipe audit | Contracted parquet → PNG | Reads `tmp/EVE_contracted_*.parquet`; `VizFactory.render()` |
 | `.claude/knowledge/dependency_index.md` | **Forward/backward dependency map** for all tightly-coupled files | — | Check before modifying any indexed file; lists `provides` / `consumed_by` / sync risk pairs |
 
@@ -126,33 +128,36 @@ To ensure interoperability between the Blueprint Architect UI and the Polars Bac
 
 ### 1. The Schema (Keyed)
 
-- **Target**: `input_fields`, `output_fields`.
+- **Target**: `input_fields` (there is no `output_fields` in data analysis recipe format 1: the published columns are the last `polars_select` step of a join's `tier1`).
 - **Format**: **Dictionary** (Key = Slug).
-- **Rule**: Every entry must include `original_name`, `type`, and `label`.
+- **Rule**: Every entry must include `type` (a Polars type name); `original_name` and `label` are optional.
 - **Why**: Enables high-performance $O(1)$ lookup for ingestion and contract validation.
 
 ```yaml
 # input_fields.yaml
 sample_id:
   original_name: "Raw_Sample_ID"
-  type: categorical
+  type: String
   label: "Sample ID"
 ```
 
 ### 2. The Logic (Ordered)
 
-- **Target**: `wrangling.tier1`, `wrangling.tier2`.
-- **Format**: **Sequential List** of Action Dicts.
-- **Rule**: Tiered nesting is mandatory (ADR-024).
+- **Target**: `tier1`, `tier2` (tables and joins) and `tier3` (plot entry): each is a key of its own element, a mapping with an optional `data_engine` (first key) and `steps`.
+- **Format**: `steps` is a **Sequential List** of Action Dicts.
+- **Rule**: Tiered keys are mandatory (ADR-024); there is no `wrangling:` container and no `steps:` container (D-0250).
 - **Why**: Order of execution is critical for data pipelining.
 
 ```yaml
-# wrangling.yaml
-tier1:
-  - action: "rename"
+# tier1 file (included as `tier1: !include file.yaml`)
+steps:
+  - action: "polars_rename"
     mapping: { "old": "new" }
-  - action: "filter"
-    query: "new > 0"
+  - action: "modif_filter"
+    column: new
+    op: gt
+    value: 0
+    na: remove
 ```
 
 ### 3. Fragments (Flat)
@@ -167,7 +172,7 @@ tier1:
 
 - **Standard**: Wrangling follows definitions in [rules_data_engine.md](./.claude/rules/rules_data_engine.md).
 - **Registry Recognition**: Actions registered via `@register_action` are automatically available to `DataWrangler` and `DataAssembler`.
-- **Contract Boundary**: `output_fields` is the terminal `.select()` query guarding against column drift.
+- **Contract Boundary**: the last step of a join's `tier1` is a plain `polars_select` (or `polars_drop`): it publishes the columns and guards against column drift (`output_fields` and `final_contract` are removed).
 
 ## 7. Viz Factory Workflow (Artist Pillar)
 
@@ -176,7 +181,7 @@ tier1:
 - **B. Layer Composition**: Sequence of geoms -> scales -> themes.
 - **C. Violet Component Standard**: `ComponentName (file_name.py)` ONLY for docs and README lists.
 - **D. Hand-off Rule**: Conversion to Pandas ONLY at the moment of `ggplot()` initialization.
-- **E. Config Cascade (designed 2026-05-10; L1-L4 implemented, checked 2026-11-07)**: Plot configuration resolves through five tiers — L5(T3 `aesthetic_override`) > L4(plot `spec:`) > L3(optimisation, computed) > L2(`plot_defaults:`) > L1(built-ins) — at one merge point via `resolve_plot_config()` (`libs/viz_factory/src/viz_factory/plot_config_resolver.py`, wired into `viz_factory.py`'s render path). L1-L4 are live. L5 (T3 `aesthetic_override`) is still the gap this cascade was meant to close — `VIZFAC-T3-OVERRIDE-1` (render wiring), `VIZFAC-T3-EXPORT-1` (export wiring) and `VIZFAC-BLUEPRINT-FORM-1` (BLUEPRINT form) remain open (see `rules_viz_factory.md §7` for the authoritative ✓/open status per task). Full design: [.claude/design/plot_config_cascade.md](.claude/design/plot_config_cascade.md).
+- **E. Config Cascade (designed 2026-05-10; L1-L4 implemented, checked 2026-11-07)**: Plot configuration resolves through five tiers — L5(T3 `aesthetic_override`) > L4(the plot entry) > L3(optimisation, computed) > L2(`plot_defaults:`) > L1(built-ins) — at one merge point via `resolve_plot_config()` (`libs/viz_factory/src/viz_factory/plot_config_resolver.py`, wired into `viz_factory.py`'s render path). L1-L4 are live. L5 (T3 `aesthetic_override`) is still the gap this cascade was meant to close — `VIZFAC-T3-OVERRIDE-1` (render wiring), `VIZFAC-T3-EXPORT-1` (export wiring) and `VIZFAC-BLUEPRINT-FORM-1` (BLUEPRINT form) remain open (see `rules_viz_factory.md §7` for the authoritative ✓/open status per task). Full design: [.claude/design/plot_config_cascade.md](.claude/design/plot_config_cascade.md).
 
 ## 8. Blueprint Architect — Lineage Index (ADR-040 / ADR-045)
 
@@ -184,20 +189,20 @@ Eight pure functions in `libs/blueprint_arch/src/blueprint_arch/data_analysis_re
 
 | Function | Keyed by | Value summary |
 | :--- | :--- | :--- |
-| `build_sibling_map(data_analysis_recipe_path_str)` | `rel_path` (str) | `{role, schema_id, schema_type, siblings, ingredients}`. Role values: `input_fields`, `output_fields`, `wrangling`, `join`, `plot_spec`. |
+| `build_sibling_map(data_analysis_recipe_path_str)` | `rel_path` (str) | `{role, schema_id, schema_type, siblings, ingredients}` and, for a tier file, `tier` (`tier1` or `tier2`); `siblings` holds `input_fields`, `tier1`, `tier2`. Role values: `input_fields`, `wrangling`, `join`, `plot_spec`. |
 | `build_schema_registry(data_analysis_recipe_path_str, includes_map)` | `schema_id` (str) | Full slot map: each slot is `str` (rel_path), `{"inline": val}`, or `None`. |
 | `build_lineage_chain(selected_rel, ctx_map)` | — | Ordered `list[node_dict]` for the Rail; `is_active` marks the selected node. |
 | `load_fields_file(abs_path)` | — | Reads standalone fields YAML with ADR-014 unnesting. |
 | `resolve_fields_for_schema(schema_id, ctx_map, inc_map)` | — | Recursive field resolution with cycle guard; returns ADR-041 Rich Dict. |
 | `build_plot_lineage(plot_id, data_analysis_recipe_path)` | — | **ADR-074.** Backward trace from a named plot ID to its T1 root. Returns ordered `list[node_dict]`. Used by the export bundle lineage graph generator. |
 | `get_plot_ids_in_group(group_id, data_analysis_recipe_path)` | — | **ADR-074.** Forward trace — returns all `plot_id` strings declared under the given `analysis_group`. |
-| `generate_branch_plan(master_path, schema_id, role, new_id)` | — | **BP-BRANCH-NODE-1 (ADR-082 Q3).** Plans a node-level lineage bifurcation: shared upstream reused by `!include`, divergent downstream written as new empty fragment files wired into the master via text-level insertion (preserves existing `!include` tags). Roles: `wrangling`/`input_fields`/`output_fields` (→ `data_schemas`: share source + input_fields, new empty wrangling + output_fields), `join` (→ `joins`: share ingredients, new empty step list + output_fields), `plot_spec` (→ `analysis_groups`: share target_dataset, copy spec — a leaf must render). Returns `{ok, error, summary, new_master_text, fragments}`. Replaces the legacy append-only `generate_fork_yaml`. Consumed by `blueprint_handlers.py` (gated: `data_analysis_recipe_edit_enabled`). |
+| `generate_branch_plan(master_path, schema_id, role, new_id)` | — | **BP-BRANCH-NODE-1 (ADR-082 Q3).** Plans a node-level lineage bifurcation: shared upstream reused by `!include`, divergent downstream written as new empty fragment files wired into the master via text-level insertion (preserves existing `!include` tags). Roles: `wrangling`/`input_fields` (→ `data_schemas`: share source, `null_values`, `strip` and input_fields, new empty tier 1 file), `join` (→ `joins`: share ingredients, new empty tier 1 file), `plot_spec` (→ `analysis_groups`: share target_dataset, copy the whole plot entry under `ui_label` — a leaf must render). Returns `{ok, error, summary, new_master_text, fragments}`. Replaces the legacy append-only `generate_fork_yaml`. Consumed by `blueprint_handlers.py` (gated: `data_analysis_recipe_edit_enabled`). |
 
 **Key constraint**: Only `str` rel-paths are used as ctx dict keys. Inline YAML content (`{"inline": val}`) is stored in the `siblings` dict only — never as a dict key (unhashable).
 
-**Join ingredient resolution**: Join wrangling files have `role="join"` and `ingredients=[schema_ids]`. To load ingredient fields in the upstream accordion, resolve `schema_id → output_fields rel_path` by scanning `ctx_map` for matching `schema_id` + `role="output_fields"`. (Renamed from "assembly" — ADR-066, 2026-05-04)
+**Join ingredient resolution**: Join wrangling files have `role="join"` and `ingredients=[schema_ids]`. To load ingredient fields in the upstream accordion, resolve `schema_id → input_fields rel_path` by scanning `ctx_map` for matching `schema_id` + `role="input_fields"`. (Renamed from "assembly" — ADR-066, 2026-05-04)
 
-**Plot spec `target_dataset` resolution**: `target_dataset` names a data schema (e.g. `"FastP"`), not necessarily a join. Upstream lookup tries three passes: (1) join output_fields, (2) any output_fields for matching schema_id, (3) input_fields fallback.
+**Plot spec `target_dataset` resolution**: `target_dataset` names a data schema (e.g. `"FastP"`), not necessarily a join. Upstream lookup calls `resolve_fields_for_schema(target_dataset, ctx_map, inc_map)` (an input_fields file, a join's fields, or inline input_fields).
 
 **Sidebar display labels**: `_update_dataset_pipelines` shows `"{schema_id} — {role}"` labels. Option value stays as `rel_path` for `inc_map` lookup.
 
@@ -223,7 +228,7 @@ To ensure the SPARMVET data engine survives diverse YAML formatting and large-sc
 
 - **Reserved Word Resilience**: Wrangling rule iteration and metadata purging MUST use `isinstance(k, str)` guards. Unquoted YAML `on:` is parsed as boolean `True`; the engine handles this via explicit `.get(True)` lookups in `DataWrangler` and `DataAssembler`.
 - **Type-Safety in Recoding**: All comparison predicates in `recode_values` (e.g., `starts_with`, `contains`) MUST defensively cast targets to `pl.String`. This prevents `'bool' object has no attribute 'starts_with'` errors on heterogeneous datasets.
-- **Contract Mapping Logic**: The `DataAssembler` final select query uses a contract-first approach. If columns are renamed or aliased during wrangling, the `output_fields` contract (or `final_contract`) must define the mapping. The system prioritizes `original_name` for projection to ensure contract compliance even when internal keys vary.
+- **Contract Mapping Logic**: The published columns of a join are the last `polars_select` step of its `tier1`; the `DataAssembler` has no separate contract query. If columns are renamed or aliased during wrangling, the renaming is written as a step (`polars_rename`) or with `original_name` in `input_fields` (there is no `output_fields` or `final_contract` any more). The system prioritizes `original_name` for projection to ensure contract compliance even when internal keys vary.
 
 ---
 
@@ -502,8 +507,9 @@ bootloader.get_palettes()          # → {name: [hex, ...]} — never empty
 ### VizFactory construction
 
 ```python
-# app/src/server.py — the only call site
-VizFactory(palette_registry=bootloader.get_palettes())
+# app/src/server.py — the only place that is given the palettes; the plot engine dispatcher builds the VizFactory
+# of the engine `python-plotnine` once, with them (app/modules/engine_registry.py, D-0247)
+PlotEngines(palette_registry=bootloader.get_palettes())
 ```
 
 VizFactory is **library-autonomous**: works with only `_BUILTIN_PALETTES` when `palette_registry=None`. Never reads `config/palettes.yaml` directly — ADR-011 boundary.
@@ -515,10 +521,14 @@ VizFactory is **library-autonomous**: works with only `_BUILTIN_PALETTES` when `
 plot_defaults:
   palette: nvi_official
 
-# Per-plot override:
-plots:
-  my_plot:
-    palette: sparmvet_brand
+# Per-plot override (in the plot entry):
+analysis_groups:
+  my_group:
+    ui_label: My group
+    plots:
+      my_plot:
+        ui_label: My plot
+        palette: sparmvet_brand
 ```
 
 ### Scale injection (VizFactory._apply_palette)

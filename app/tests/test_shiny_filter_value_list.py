@@ -49,7 +49,7 @@ def long_app():
     recipe = minimal_recipe("long", label="Long", schemas={"long": schema}, plots={"long_plot": plot})
     recipe["info"]["description"] = "A table of 100000 different names, for a browser test."
     group = recipe["analysis_groups"].pop("main")
-    group.update({"label": "Long", "description": "The one group."})
+    group.update({"ui_label": "Long", "description": "The one group."})
     recipe["analysis_groups"] = {"long_group": group}
     recipes = WORK / "recipes"
     recipes.mkdir(exist_ok=True)

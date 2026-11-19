@@ -63,9 +63,9 @@ def test_the_arguments_are_not_changed_by_the_call():
     schemas = {"a": minimal_schema("data/a.tsv", {"x": "String"})}
     plots = {"p": minimal_plot("a", {"x": "x"})}
     recipe = minimal_recipe("tiny", schemas=schemas, steps=[{"action": "anything"}], plots=plots)
-    recipe["analysis_groups"]["main"]["plots"]["p"]["label"] = "changed"
-    assert schemas["a"]["wrangling"] == {"tier1": []}
-    assert plots["p"]["label"] == "Plot of a"
+    recipe["analysis_groups"]["main"]["plots"]["p"]["ui_label"] = "changed"
+    assert schemas["a"]["tier1"] == {"steps": []}
+    assert plots["p"]["ui_label"] == "Plot of a"
 
 
 def test_given_schemas_and_plots_are_used_as_they_are():
@@ -76,7 +76,7 @@ def test_given_schemas_and_plots_are_used_as_they_are():
     assert list(recipe["data_schemas"]) == ["reads"]
     assert recipe["data_schemas"]["reads"]["input_fields"]["sample_id"] == {"type": "String", "is_entity_key": True}
     assert recipe["data_schemas"]["reads"]["input_fields"]["reads"] == {"type": "Int64"}
-    assert recipe["analysis_groups"]["main"]["plots"]["reads_per_sample"]["spec"]["layers"] == [{"name": "geom_col"}]
+    assert recipe["analysis_groups"]["main"]["plots"]["reads_per_sample"]["layers"] == [{"name": "geom_col"}]
 
 
 def test_the_default_plot_draws_the_first_column_of_the_first_schema():
@@ -84,7 +84,7 @@ def test_the_default_plot_draws_the_first_column_of_the_first_schema():
     recipe = minimal_recipe("tiny", schemas=schemas)
     (plot_id, plot), = recipe["analysis_groups"]["main"]["plots"].items()
     assert plot_id == "tiny_plot"
-    assert plot["spec"]["target_dataset"] == "reads" and plot["spec"]["mapping"] == {"x": "country"}
+    assert plot["target_dataset"] == "reads" and plot["mapping"] == {"x": "country"}
 
 
 def test_the_default_plot_draws_the_first_join_when_there_is_one():
@@ -92,9 +92,9 @@ def test_the_default_plot_draws_the_first_join_when_there_is_one():
     assert check_recipe(recipe, "run", file_stem="tiny").errors == []
     assert list(recipe) == TOP_ORDER[:6] + ["joins", "analysis_groups"]
     (plot,) = recipe["analysis_groups"]["main"]["plots"].values()
-    assert plot["spec"]["target_dataset"] == "C"
+    assert plot["target_dataset"] == "C"
     assert recipe["joins"]["C"]["ingredients"] == [{"dataset_id": "table"}]
-    assert recipe["joins"]["C"]["steps"] == {"tier1": []}
+    assert recipe["joins"]["C"]["tier1"] == {"steps": []}
 
 
 def test_without_plots_the_recipe_is_a_draft_valid_in_profile_build_only():
@@ -107,7 +107,7 @@ def test_without_plots_the_recipe_is_a_draft_valid_in_profile_build_only():
 def test_steps_go_to_tier1_of_the_only_schema_in_the_given_order():
     steps = [{"action": "b_second_in_the_alphabet", "columns": ["value"]}, {"action": "a_first_in_the_alphabet"}]
     recipe = minimal_recipe("tiny", steps=steps)
-    assert recipe["data_schemas"]["table"]["wrangling"] == {"tier1": steps}
+    assert recipe["data_schemas"]["table"]["tier1"] == {"steps": steps}
 
 
 def test_steps_with_several_schemas_are_refused_because_the_place_is_not_said():
@@ -131,7 +131,7 @@ def test_the_schema_states_how_missing_values_are_read():
     assert schema["null_values"] == [] and schema["strip"] is False
     schema = minimal_schema("data/a.tsv", {"x": "String"}, null_values=["NA"], strip=True, tier2=[{"action": "s"}])
     assert schema["null_values"] == ["NA"] and schema["strip"] is True
-    assert schema["wrangling"] == {"tier1": [], "tier2": [{"action": "s"}]}
+    assert (schema["tier1"], schema["tier2"]) == ({"steps": []}, {"steps": [{"action": "s"}]})
 
 
 def test_a_field_can_be_given_as_a_full_mapping():
@@ -146,8 +146,8 @@ def test_an_entity_key_that_is_not_a_column_is_refused():
 
 def test_a_plot_can_carry_its_tier3_steps():
     plot = minimal_plot("table", {"x": "sample_id"}, tier3=[])
-    assert plot["steps"] == {"tier3": []}
-    assert "steps" not in minimal_plot("table", {"x": "sample_id"})
+    assert plot["tier3"] == {"steps": []}
+    assert "tier3" not in minimal_plot("table", {"x": "sample_id"})
 
 
 # -- the text
@@ -193,7 +193,7 @@ def test_the_join_key_on_is_written_quoted(tmp_path):
     path = write_recipe(tmp_path / "tiny.yaml", minimal_recipe("tiny", schemas=schemas, joins={"C": join}))
     assert "'on': sample_id" in path.read_text(encoding="utf-8")
     raw, problems = load_recipe(path)
-    assert problems == [] and raw["joins"]["C"]["steps"]["tier1"][0]["on"] == "sample_id"
+    assert problems == [] and raw["joins"]["C"]["tier1"]["steps"][0]["on"] == "sample_id"
 
 
 def test_one_object_used_twice_is_written_twice_not_as_an_anchor(tmp_path):

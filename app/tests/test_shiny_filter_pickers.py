@@ -66,7 +66,7 @@ def typed_app():
     recipe = minimal_recipe("typed", label="Typed", schemas={"typed": schema}, plots={"typed_plot": plot})
     recipe["info"]["description"] = "A table with a column of every type, for a browser test."
     group = recipe["analysis_groups"].pop("main")
-    group.update({"label": "Typed", "description": "The one group."})
+    group.update({"ui_label": "Typed", "description": "The one group."})
     recipe["analysis_groups"] = {"typed_group": group}
     recipes = WORK / "recipes"
     recipes.mkdir(exist_ok=True)

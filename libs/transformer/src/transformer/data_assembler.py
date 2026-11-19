@@ -2,7 +2,7 @@
 # provides: class:DataAssembler, method:assemble
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-ASSEMBLER-1)
-# consumed_by: app/modules/orchestrator.py, libs/transformer/tests/debug_assembler.py
+# consumed_by: libs/transformer/src/transformer/engine_python_polars.py (the entry that app/modules/engine_registry.py hands to app/modules/orchestrator.py), libs/transformer/tests/debug_assembler.py
 # doc: .claude/rules/rules_data_analysis_recipe_structure.md#7, .claude/knowledge/architecture_decisions.md#ADR-094
 # @end_deps
 import os
@@ -200,7 +200,7 @@ class DataAssembler:
                 component="DataAssembler",
                 problem="No step list and no ingredients — cannot assemble.",
                 location="assemble() entry",
-                fix="Verify that the data analysis recipe declares at least one data_schema and a joins step list.",
+                fix="Verify that the data analysis recipe declares at least one data_schema and that its join has steps under tier1.",
                 who="data_analysis_recipe_author",
                 category="assembly",
                 surface="plot_overlay",

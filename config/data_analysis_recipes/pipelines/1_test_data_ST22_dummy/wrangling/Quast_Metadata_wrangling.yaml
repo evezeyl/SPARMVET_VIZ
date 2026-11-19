@@ -1,4 +1,4 @@
-tier1:
+steps:
   - action: polars_join
     right_ingredient: metadata_schema
     'on': [sample_id]

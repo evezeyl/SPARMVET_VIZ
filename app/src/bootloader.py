@@ -1,6 +1,6 @@
 # @deps
-# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_imports_dir (IMPORT-PATH-1), method:get_agent_adapter, method:get_palettes, method:get_contact, method:get_session_import_limits (D-0283), attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), attr:data_analysis_recipe_advices (J12/J13, never reject), method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate), attr:rejected_gallery_examples, attr:gallery_index_status (gallery check at start, DEC48)
-# consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import), app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe, validate_data_analysis_recipe_data, checker_advices, read_data_analysis_recipe_header, resolve_contact — ADR-094), app.modules.gallery_examples (check_gallery_at_start, deferred import), app.modules.renamed_keys, app.modules.session_manager (session_import_limits_from, deferred import), utils.path_expansion
+# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_imports_dir (IMPORT-PATH-1), method:get_agent_adapter, method:get_palettes, method:get_contact, method:get_session_import_limits (D-0283), attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), attr:data_analysis_recipe_advices (J12/J13, never reject), method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate), attr:rejected_gallery_examples, attr:gallery_index_status (gallery check at start, DEC48), method:take_stored_tables_notice (the one notice of the cache version sweep)
+# consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.cache_keys (CACHE_VERSION_META, ENGINE_CACHE_VERSION, STORED_TABLES_REBUILT_NOTICE: the sweep of stored tables of another cache version at start, D-0240), libs/transformer/src/transformer/anchor.py (remove_tables_of_other_version, deferred import), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import), app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe, validate_data_analysis_recipe_data, checker_advices, read_data_analysis_recipe_header, resolve_contact — ADR-094), app.modules.gallery_examples (check_gallery_at_start, deferred import), app.modules.renamed_keys, app.modules.session_manager (session_import_limits_from, deferred import), utils.path_expansion
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
 # doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, ADR-087, ADR-094 (issue #38 closure note), project_conventions.md §"Deployment Resolution"
 # @end_deps
@@ -33,7 +33,7 @@ from app.modules.data_analysis_recipe_validator import (
     validate_data_analysis_recipe,
     validate_data_analysis_recipe_data,
 )
-from app.modules.cache_keys import files_signature
+from app.modules.cache_keys import CACHE_VERSION_META, ENGINE_CACHE_VERSION, STORED_TABLES_REBUILT_NOTICE, files_signature
 from utils.path_expansion import expand_deployment_paths
 from app.modules.renamed_keys import (
     renamed_app_features_key_errors,
@@ -198,9 +198,28 @@ class Bootloader:
 
         # 5. Stored tables: a writer killed in the middle leaves a hidden temporary file the size of a table (STALE-KEY-STORE-1).
         # Leftovers older than a short age are removed; a recent file may be a write in progress by another process.
-        from transformer.anchor import remove_orphan_temporaries
-        for removed in remove_orphan_temporaries(self.get_location("user_data") / "anchors"):
+        from transformer.anchor import remove_orphan_temporaries, remove_tables_of_other_version
+        anchors = self.get_location("user_data") / "anchors"
+        for removed in remove_orphan_temporaries(anchors):
             print(f"[Bootloader] Removed the leftover temporary file of a killed writer: anchors/{removed}")
+
+        # 6. Stored tables of another cache version (D-0240): removed here, once, and the user is told in one sentence. A second
+        # start finds none (they are gone), and a folder with nothing stored, or only tables of this version, says nothing.
+        self._stored_tables_notice_lock = threading.Lock()
+        self._stored_tables_notice: str | None = None
+        old_tables = remove_tables_of_other_version(anchors, CACHE_VERSION_META, ENGINE_CACHE_VERSION)
+        if old_tables:
+            print(f"[Bootloader] Removed {len(old_tables)} stored table(s) of another cache version (they are rebuilt when a recipe "
+                  f"is opened): {', '.join('anchors/' + name for name in old_tables)}")
+            self._stored_tables_notice = STORED_TABLES_REBUILT_NOTICE
+
+    def take_stored_tables_notice(self) -> str | None:
+        """The one sentence that tells the user that the stored tables are rebuilt, the first time it is asked for after a start
+        that removed tables of another cache version; None every time after, and at a start that removed nothing. PROVISIONAL
+        wording (`cache_keys.STORED_TABLES_REBUILT_NOTICE`)."""
+        with self._stored_tables_notice_lock:
+            text, self._stored_tables_notice = self._stored_tables_notice, None
+            return text
 
     def _check_gallery_if_enabled(self) -> None:
         """ADR-071: the gallery is touched only when `gallery_enabled` is on."""

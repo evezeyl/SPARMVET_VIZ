@@ -1,4 +1,4 @@
-tier1:
+steps:
   - action: modif_filter
     column: identity
     op: ge

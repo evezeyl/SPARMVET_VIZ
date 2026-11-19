@@ -1,0 +1,4 @@
+steps:
+  - action: polars_with_columns
+    named_exprs:
+      status: pl.lit('Detected')

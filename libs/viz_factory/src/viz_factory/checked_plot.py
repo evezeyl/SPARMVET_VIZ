@@ -1,8 +1,8 @@
 """A plot that explains its own failure: the plot the factory builds, and the one checked call that draws it (VIZ-STANDARD-1, V7).
 
 # @deps
-# provides: class:CheckedPlot, class:PlotContext, class:Step, function:plot_environment, function:draw_checked, function:show_draw_errors, function:plot_warnings, function:explain_build_failure, function:describe_failure, function:error_figure
-# consumes: libs/viz_factory/src/viz_factory/errors.py, libs/viz_factory/src/viz_factory/arguments.py, libs/viz_factory/src/viz_factory/registry.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/formula_check.py (MATH_CONSTANTS, MATH_FUNCTIONS), plotnine, matplotlib
+# provides: class:CheckedPlot, class:PlotContext, class:Step, function:plot_environment, function:draw_checked, function:show_draw_errors, function:plot_warnings, function:applied_theme, function:explain_build_failure, function:describe_failure, function:error_figure
+# consumes: libs/viz_factory/src/viz_factory/errors.py, libs/viz_factory/src/viz_factory/arguments.py, libs/viz_factory/src/viz_factory/registry.py, libs/utils/src/utils/errors.py, libs/utils/src/utils/formula_check.py (MATH_CONSTANTS, MATH_FUNCTIONS), libs/viz_factory/src/viz_factory/plot_config_resolver.py (is_partial_theme, for applied_theme), plotnine, matplotlib
 # consumed_by: libs/viz_factory/src/viz_factory/viz_factory.py, app/handlers/home_theater.py, app/modules/wrangle_studio.py, app/modules/gallery_examples.py
 # doc: .claude/design/decisions_2026-11-14/viz_plan_for_eve.md (V7), .claude/rules/rules_viz_factory.md
 # @end_deps
@@ -334,6 +334,35 @@ def plot_warnings(plot) -> list:
     """The warnings found while the plot was built (an unknown `plot_defaults` key, a palette that could not be applied ...)."""
     context = getattr(plot, "_sparmvet", None)
     return list(context.warnings) if context is not None else []
+
+
+# Where a step of the plot came from, in the words of the export record (the tiers of the plot cascade, `plot_config_resolver`).
+_TIER_WORDS = {"L1": "a built-in default", "L2": "plot_defaults of the recipe", "L3": "the optimisation of the app (from the data)",
+               "L4": "the plot entry", "L5": "the audit override"}
+
+
+def applied_theme(plot) -> Optional[dict]:
+    """The theme a plot built by the factory was drawn with, as the steps it applied say (D-0248, D-0258): None for a plot the
+    factory did not build.
+
+    `components`: the theme steps in the order they were applied (every `theme_*` component and every `element_*` setting that
+    reached the plot), each with its parameters as written and where it came from. `plotnine_default`: whether plotnine's own default
+    theme is in force because no complete theme was applied (a partial theme such as `theme_custom` only changes the default), and
+    its name as plotnine reports it. Nothing here is typed in: the names come from what was applied and from plotnine itself.
+    """
+    import json
+    from plotnine import theme_get
+    from viz_factory.plot_config_resolver import is_partial_theme
+    context = getattr(plot, "_sparmvet", None)
+    if context is None:
+        return None
+    steps = [s for s in context.steps if s.name.startswith("theme") or s.name.startswith("element_")]
+    complete = any(s.name.startswith("theme_") and not is_partial_theme(s.name) for s in steps)
+    return {
+        "components": [{"component": s.name, "params": json.loads(json.dumps(s.params, default=str)),
+                        "from": _TIER_WORDS.get(s.tier, "the plot")} for s in steps],
+        "plotnine_default": {"applies": not complete, "name": type(theme_get()).__name__},
+    }
 
 
 def show_draw_errors(plot: CheckedPlot, on_error: Optional[Callable[[VisualizationError], None]] = None,

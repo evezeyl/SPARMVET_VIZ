@@ -33,6 +33,8 @@ def _make_recipe(root: Path, recipe_id: str, data_path: Path) -> Path:
     entry = root / f"{recipe_id}.yaml"
     entry.write_text(f"""id: {recipe_id}
 info: {{display_name: Tiny}}
+data_engine: python-polars
+plot_engine: python-plotnine
 data_schemas:
   T:
     source: {{type: local_tsv, path: {data_path}}}
@@ -41,24 +43,25 @@ data_schemas:
     input_fields:
       sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}}
       group: {{original_name: group, type: Categorical, label: Group}}
-    wrangling: {{tier1: [], tier2: []}}
+    tier1: {{steps: []}}
+    tier2: {{steps: []}}
 joins:
   C:
     ingredients:
       - dataset_id: T
-    steps: {{tier1: [], tier2: []}}
+    tier1: {{steps: []}}
+    tier2: {{steps: []}}
 analysis_groups:
   g:
-    label: G
+    ui_label: G
     plots:
       p:
-        label: P
-        spec:
-          target_dataset: C
-          mapping: {{x: group}}
-          layers:
-            - name: geom_bar
-              params: {{}}
+        ui_label: P
+        target_dataset: C
+        mapping: {{x: group}}
+        layers:
+          - name: geom_bar
+            params: {{}}
 """)
     return entry
 

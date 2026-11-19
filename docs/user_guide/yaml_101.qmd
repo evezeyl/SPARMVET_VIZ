@@ -49,10 +49,10 @@ YAML is **strictly sensitive to spaces** (indentation). This is how it knows whi
 - YAML is **case-sensitive**. `True` is not the same as `true`. `Country` is not the same as `country`.
 
 ### Example of Good Spacing
-Notice how the wrangling steps are indented *under* `tier1`:
+Notice how the wrangling steps are indented *under* `steps`, and `steps` under `tier1`:
 ```yaml
-wrangling:
-  tier1:
+tier1:
+  steps:
     - action: modif_filter
       column: identity
       op: ge

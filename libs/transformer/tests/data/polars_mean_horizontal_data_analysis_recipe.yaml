@@ -21,10 +21,11 @@ input_fields:
   y:
     type: Float64
     label: y
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_mean_horizontal
     exprs: [x, y]
     ignore_nulls: true
     target_column: t
-  tier2: []
+tier2:
+  steps: []

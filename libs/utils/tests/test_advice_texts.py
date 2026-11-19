@@ -46,7 +46,7 @@ def float_key():
 
 def self_join():
     raw = valid()
-    raw["joins"]["AB"]["steps"]["tier1"][0]["right_ingredient"] = "A"
+    raw["joins"]["AB"]["tier1"]["steps"][0]["right_ingredient"] = "A"
     return raw
 
 

@@ -10,7 +10,7 @@ Provides the structural intelligence for the Blueprint Architect user space: par
 
 ## Key Components
 
-- **DataAnalysisRecipeNavigator (data_analysis_recipe_navigator.py)**: Pure data analysis recipe introspection engine. Builds sibling maps, schema registries, lineage chains, and resolves `input_fields`/`output_fields` contracts. The sole source of structural truth for data analysis recipe topology.
+- **DataAnalysisRecipeNavigator (data_analysis_recipe_navigator.py)**: Pure data analysis recipe introspection engine. Builds sibling maps, schema registries, lineage chains, and resolves `input_fields` contracts (there is no `output_fields` in data analysis recipe format 1). A tier file is a sibling with the role `wrangling` or `join` and the key `tier` (`tier1` or `tier2`); a plot entry is a node whose value is the whole entry. The sole source of structural truth for data analysis recipe topology.
 - **BlueprintMapper (blueprint_mapper.py)**: Generates Cytoscape.js graph elements (nodes + edges) for the TubeMap visualisation. Maps data analysis recipe roles to colour-coded visual tiers (trunk, branch, ref, plot, etc.).
 
 ## Public API
@@ -18,7 +18,7 @@ Provides the structural intelligence for the Blueprint Architect user space: par
 ```python
 from blueprint_arch.data_analysis_recipe_navigator import (
     build_sibling_map,         # rel_path → {role, schema_id, siblings, ingredients}
-    build_schema_registry,     # schema_id → {schema_type, input_fields, wrangling, ...}
+    build_schema_registry,     # schema_id → {schema_type, input_fields, tier1, tier2, ...}
     build_lineage_chain,       # ordered [{rel, schema_id, role, label, is_active}]
     load_fields_file,          # ADR-041 Rich Dict with ADR-014 unnesting
     resolve_fields_for_schema, # recursive, cycle-guarded
@@ -150,7 +150,7 @@ In test files, place these imports at module level so all test functions see a p
 ```python
 from blueprint_arch.group_plot_manager import (
     list_groups_plots,  # (data_analysis_recipe_path) -> the full analysis_groups dict
-                         # (group_id -> {label, plots: {plot_id: {...}}})
+                         # (group_id -> {ui_label, plots: {plot_id: {...}}})
     create_group,       # (data_analysis_recipe_path, group_id, label) -> tuple[bool, str]
     delete_group,       # (data_analysis_recipe_path, group_id) -> tuple[bool, str]
     create_plot,        # (data_analysis_recipe_path, group_id, plot_id, label) -> tuple[bool, str]
@@ -183,7 +183,7 @@ result = call_tool("get_available_actions", {"context": "t1"})
 |---|---|
 | `get_available_actions` | Returns actions valid for a given context (`t1`, `t2`, `assembly`) |
 | `get_available_components` | Returns plot components valid for the `plot` context |
-| `get_field_contract` | Returns `input_fields` and `output_fields` for a named schema in the active data analysis recipe |
+| `get_field_contract` | Returns the `input_fields` contract of a named schema in the active data analysis recipe (data analysis recipe format 1 has no `output_fields`) |
 
 ---
 

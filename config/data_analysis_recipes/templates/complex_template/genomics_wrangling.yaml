@@ -1,4 +1,4 @@
-tier1:
+steps:
   - action: polars_with_columns
     named_exprs:
       gene_presence: pl.col('gene_presence').cast(pl.String).str.split(';')

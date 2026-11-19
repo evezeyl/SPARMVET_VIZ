@@ -50,28 +50,28 @@ def valid():
                 "source": {"type": "local_tsv", "path": "assets/test_data/a.tsv"},
                 "null_values": [], "strip": True,
                 "input_fields": {"id": {"type": "String", "is_entity_key": True}, "v": {"type": "Float64"}},
-                "wrangling": {"tier1": []},
+                "tier1": {"steps": []},
             },
             "B": {
                 "label": "B", "description": "One row per sample.",
                 "source": {"type": "local_tsv", "path": "assets/test_data/b.tsv"},
                 "null_values": ["NA"], "strip": False,
                 "input_fields": {"id": {"type": "String", "is_entity_key": True}, "w": {"type": "Int64"}},
-                "wrangling": {"tier1": []},
+                "tier1": {"steps": []},
             },
         },
         "joins": {
             "AB": {
                 "label": "AB", "description": "One row per sample, A with B.",
                 "ingredients": [{"dataset_id": "A"}, {"dataset_id": "B"}],
-                "steps": {"tier1": [{"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "left"}]},
+                "tier1": {"steps": [{"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "left"}]},
                 "labels": {"v": "Value"},
             }
         },
         "analysis_groups": {
-            "g": {"label": "G", "description": "Question.", "plots": {
-                "p": {"label": "P", "description": "Drawn.",
-                      "spec": {"target_dataset": "AB", "mapping": {"x": "id", "y": "v"}, "layers": [{"name": "geom_col"}]}}}}
+            "g": {"ui_label": "G", "description": "Question.", "plots": {
+                "p": {"ui_label": "P", "description": "Drawn.",
+                      "target_dataset": "AB", "mapping": {"x": "id", "y": "v"}, "layers": [{"name": "geom_col"}]}}}
         },
     }
 
@@ -144,12 +144,14 @@ CASES = [
     ("S05", "E", lambda r: r["data_schemas"]["A"].pop("source"), "run"),
     ("S05", "E", lambda r: r["data_schemas"]["A"]["source"].update(type="remote"), "run"),
     ("S05", "E", lambda r: r["data_schemas"]["A"]["source"].pop("path"), "run"),
-    ("S06", "E", lambda r: r["data_schemas"]["A"].update(wrangling=[]), "run"),
-    ("S06", "E", lambda r: r["data_schemas"]["A"].update(wrangling=[{"action": "x"}]), "run"),
-    ("S06", "E", lambda r: r["data_schemas"]["A"].update(wrangling={"tier2": []}), "run"),
-    ("S06", "E", lambda r: r["data_schemas"]["A"].update(wrangling={"tier1": [], "tier9": []}), "run"),
-    ("S06", "E", lambda r: r["data_schemas"]["A"].update(wrangling={"tier1": {}}), "run"),
-    ("S07", "E", lambda r: r["data_schemas"]["A"]["wrangling"].update(tier2=[{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]), "run"),
+    ("S06", "E", lambda r: r["data_schemas"]["A"].update(tier1=[]), "run"),
+    ("S06", "E", lambda r: r["data_schemas"]["A"].update(tier1=[{"action": "x"}]), "run"),
+    ("S06", "E", lambda r: r["data_schemas"]["A"].pop("tier1"), "run"),
+    ("S06", "E", lambda r: r["data_schemas"]["A"]["tier1"].update(tier2=[]), "run"),
+    ("S06", "E", lambda r: r["data_schemas"]["A"]["tier1"].pop("steps"), "run"),
+    ("S06", "E", lambda r: r["data_schemas"]["A"].update(wrangling={"tier1": []}), "run"),
+    ("S01", "E", lambda r: r["data_schemas"]["A"].update(tier9={"steps": []}), "run"),
+    ("S07", "E", lambda r: r["data_schemas"]["A"].update(tier2={"steps": [{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]}), "run"),
     ("S08", "E", lambda r: r["data_schemas"]["A"].update(input_fields=["id"]), "run"),
     ("S09", "E", lambda r: r["data_schemas"]["A"].pop("null_values"), "run"),
     ("S09", "E", lambda r: r["data_schemas"]["A"].pop("strip"), "run"),
@@ -169,21 +171,21 @@ CASES = [
     ("FD05", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(categories=["a"]), "run"),
     ("FD05", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(precision=5), "run"),
     ("FD06", "E", lambda r: r["data_schemas"]["A"]["input_fields"].update(v="Float64"), "run"),
-    ("ST01", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"columns": ["v"]}), "run"),
-    ("ST01", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append("polars_filter_demo"), "run"),
-    ("ST02", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"action": "filter_range"}), "run"),
-    ("ST02", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"action": "nope"}), "run"),
-    ("ST03", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"action": "polars_filter_demo", "columns": ["v"], "na": "keep", "column": "v"}), "run"),
-    ("ST04", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"action": "polars_filter_demo", "columns": ["v"]}), "run"),
-    ("ST05", "E", lambda r: (r["data_schemas"]["A"]["wrangling"].update(tier2=[{"action": "polars_join", "right_ingredient": "B", "how": "left", "on": "id"}]),
-                             r["analysis_groups"]["g"]["plots"]["p"]["spec"].update(target_dataset="A")), "run"),
-    ("ST06", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"action": "polars_with_columns", "exprs": {"x": "__import__('os')"}}), "run"),
-    ("ST06", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"action": "polars_with_columns", "exprs": {"x": "pl.col('v').shuffle(seed=1)"}}), "run"),
-    ("ST07", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"action": "polars_filter_demo", "columns": "v", "na": "keep"}), "run"),
-    ("ST08", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"id": "mine", "action": "polars_filter_demo", "columns": ["v"], "na": "keep"}), "run"),
-    ("ST08", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"id": "audit_1a2b3c4d_1", "action": "polars_filter_demo", "columns": ["v"], "na": "keep"}), "build"),
-    ("ST09", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"action": "polars_filter_demo", "columns": ["v"], "na": "keep", "__metadata__": {}}), "run"),
-    ("ST10", "E", lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"action": "polars_filter_demo", "columns": ["v"], "na": "maybe"}), "run"),
+    ("ST01", "E", lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append({"columns": ["v"]}), "run"),
+    ("ST01", "E", lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append("polars_filter_demo"), "run"),
+    ("ST02", "E", lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append({"action": "filter_range"}), "run"),
+    ("ST02", "E", lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append({"action": "nope"}), "run"),
+    ("ST03", "E", lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append({"action": "polars_filter_demo", "columns": ["v"], "na": "keep", "column": "v"}), "run"),
+    ("ST04", "E", lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append({"action": "polars_filter_demo", "columns": ["v"]}), "run"),
+    ("ST05", "E", lambda r: (r["data_schemas"]["A"].update(tier2={"steps": [{"action": "polars_join", "right_ingredient": "B", "how": "left", "on": "id"}]}),
+                             r["analysis_groups"]["g"]["plots"]["p"].update(target_dataset="A")), "run"),
+    ("ST06", "E", lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append({"action": "polars_with_columns", "exprs": {"x": "__import__('os')"}}), "run"),
+    ("ST06", "E", lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append({"action": "polars_with_columns", "exprs": {"x": "pl.col('v').shuffle(seed=1)"}}), "run"),
+    ("ST07", "E", lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append({"action": "polars_filter_demo", "columns": "v", "na": "keep"}), "run"),
+    ("ST08", "E", lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append({"id": "mine", "action": "polars_filter_demo", "columns": ["v"], "na": "keep"}), "run"),
+    ("ST08", "E", lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append({"id": "audit_1a2b3c4d_1", "action": "polars_filter_demo", "columns": ["v"], "na": "keep"}), "build"),
+    ("ST09", "E", lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append({"action": "polars_filter_demo", "columns": ["v"], "na": "keep", "__metadata__": {}}), "run"),
+    ("ST10", "E", lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append({"action": "polars_filter_demo", "columns": ["v"], "na": "maybe"}), "run"),
     ("J01", "E", lambda r: r["joins"]["AB"].update(output_fields={}), "run"),
     ("J01", "E", lambda r: r["joins"]["AB"].update(final_contract={"id": {}}), "run"),
     ("J01", "E", lambda r: r["joins"]["AB"].update(info="s"), "run"),
@@ -194,47 +196,57 @@ CASES = [
     ("J04", "E", lambda r: r["joins"]["AB"].update(ingredients=[]), "run"),
     ("J04", "E", lambda r: r["joins"]["AB"]["ingredients"].append({"dataset_id": "Ghost"}), "run"),
     ("J04", "E", lambda r: r["joins"]["AB"]["ingredients"].append({"dataset_id": "A"}), "run"),
-    ("J05", "E", lambda r: r["joins"]["AB"]["steps"]["tier1"][0].update(right_ingredient="Ghost"), "run"),
-    ("J05", "E", lambda r: r["joins"]["AB"]["steps"]["tier1"][0].pop("on"), "run"),
-    ("J05", "E", lambda r: r["joins"]["AB"]["steps"]["tier1"][0].update(left_on="id", right_on="id"), "run"),
+    ("J05", "E", lambda r: r["joins"]["AB"]["tier1"]["steps"][0].update(right_ingredient="Ghost"), "run"),
+    ("J05", "E", lambda r: r["joins"]["AB"]["tier1"]["steps"][0].pop("on"), "run"),
+    ("J05", "E", lambda r: r["joins"]["AB"]["tier1"]["steps"][0].update(left_on="id", right_on="id"), "run"),
     ("J06", "E", lambda r: r["joins"]["AB"].update(labels=["v"]), "run"),
-    ("J07", "E", lambda r: r["joins"]["AB"].update(steps=[{"action": "polars_join"}]), "run"),
-    ("J14", "E", lambda r: (r["joins"]["AB"]["steps"].update(tier2=[{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]),
-                            r["analysis_groups"]["g"]["plots"]["p"]["spec"].update(target_dataset="A")), "run"),
-    ("J07", "E", lambda r: r["joins"]["AB"].update(steps={"tier2": []}), "run"),
+    ("J07", "E", lambda r: r["joins"]["AB"].update(tier1=[{"action": "polars_join"}]), "run"),
+    ("J07", "E", lambda r: r["joins"]["AB"].update(steps={"tier1": []}), "run"),
+    ("J14", "E", lambda r: (r["joins"]["AB"].update(tier2={"steps": [{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]}),
+                            r["analysis_groups"]["g"]["plots"]["p"].update(target_dataset="A")), "run"),
+    ("J07", "E", lambda r: r["joins"]["AB"].pop("tier1"), "run"),
     ("X1", "E", lambda r: r["joins"].update(A=copy.deepcopy(r["joins"]["AB"])), "run"),
-    ("G01", "E", lambda r: r["analysis_groups"]["g"].pop("label"), "run"),
+    ("G01", "E", lambda r: r["analysis_groups"]["g"].pop("ui_label"), "run"),
+    ("G01", "E", lambda r: r["analysis_groups"]["g"].update(label="G"), "run"),
     ("G01", "E", lambda r: r["analysis_groups"]["g"].update(unknown=1), "run"),
     ("G02", "A", lambda r: r["analysis_groups"]["g"].pop("description"), "run"),
-    ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].pop("label"), "run"),
+    ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].pop("ui_label"), "run"),
+    ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(label="P"), "run"),
+    ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(spec={"target_dataset": "AB"}), "run"),
+    ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(title="T"), "run"),
     ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(info="a sentence"), "run"),
     ("P02", "A", lambda r: r["analysis_groups"]["g"]["plots"]["p"].pop("description"), "run"),
     ("P03", "E", lambda r: r["analysis_groups"]["g"]["plots"].update({"Bad Id": copy.deepcopy(r["analysis_groups"]["g"]["plots"]["p"])}), "run"),
-    ("P04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(steps={"tier1": []}), "run"),
-    ("P04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(steps=[]), "run"),
-    ("P05", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(steps={"tier3": [{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]}), "run"),
-    ("PS01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"].update(family="Ranking"), "run"),
-    ("PS01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"].update(labs={}), "run"),
-    ("PS02", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"].update(target_dataset="Ghost"), "run"),
-    ("PS02", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"].pop("target_dataset"), "run"),
-    ("PS03", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"].pop("layers"), "run"),
-    ("PS03", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"].update(layers=[{"name": "theme_bw"}]), "run"),
-    ("PS04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append({"params": {}}), "run"),
-    ("PS04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append({"name": "geom_colum"}), "run"),
-    ("PS04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(params={"colour_": 1}), "run"),
-    ("PS05", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"].update(theme="theme_nope"), "run"),
-    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append(
+    ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(tier1={"steps": []}), "run"),
+    ("P04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(tier3=[]), "run"),
+    ("P04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(steps={"tier3": {"steps": []}}), "run"),
+    ("P05", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(tier3={"steps": [{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]}), "run"),
+    ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(family="Ranking"), "run"),
+    ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(labs={}), "run"),
+    ("PS02", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(target_dataset="Ghost"), "run"),
+    ("PS02", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].pop("target_dataset"), "run"),
+    ("PS03", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].pop("layers"), "run"),
+    ("PS03", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(layers=[{"name": "theme_bw"}]), "run"),
+    ("PS04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["layers"].append({"params": {}}), "run"),
+    ("PS04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["layers"].append({"name": "geom_colum"}), "run"),
+    ("PS04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["layers"][0].update(params={"colour_": 1}), "run"),
+    ("PS05", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(theme="theme_nope"), "run"),
+    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["layers"].append(
         {"name": "geom_smooth", "params": {"method": "lm", "formula": "y ~ I(__import__('os').getcwd())"}}), "run"),
-    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append(
+    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["layers"].append(
         {"name": "stat_smooth", "params": {"formula": "y ~ np.load('/etc/passwd')"}}), "run"),
-    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append(
+    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["layers"].append(
         {"name": "facet_wrap", "params": {"facets": "__import__('os').getcwd()"}}), "run"),
-    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append(
+    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["layers"].append(
         {"name": "facet_grid", "params": {"rows": "g", "cols": ["h", "len(open('/x').read())"]}}), "run"),
-    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["mapping"].update(facet_by="f(a + b)"), "run"),
-    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append(
+    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["mapping"].update(facet_by="f(a + b)"), "run"),
+    ("PS06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"]["layers"].append(
         {"name": "stat_function", "params": {"fun": "__import__('os').getcwd()"}}), "run"),
     ("PD01", "E", lambda r: r.update(plot_defaults={"height": 3}), "run"),
+    ("PD02", "E", lambda r: r.update(plot_defaults={"default_font_family": "Liberation Sans"}), "run"),
+    ("PD02", "E", lambda r: r.update(plot_defaults={"facet_panel_spacing": 0.1}), "run"),
+    ("PD02", "E", lambda r: r.update(plot_defaults={"legend_position": "top"}), "run"),
+    ("PD02", "E", lambda r: r.update(plot_defaults={"optimisation": {"auto_axis_text": True}}), "run"),
     ("CM01", "E", lambda r: r["data_schemas"]["A"].update(comment=3), "run"),
     ("CM01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(comment=["x"]), "run"),
     ("PA01", "E", lambda r: r["data_schemas"]["A"]["source"].update(path="/etc/passwd"), "run"),
@@ -255,7 +267,7 @@ def test_each_row_of_the_catalogue_is_found_with_the_fix(code, severity, change,
 
 
 def test_a_join_tier2_that_a_plot_reads_is_not_refused():
-    raw = mutated(lambda r: r["joins"]["AB"]["steps"].update(tier2=[{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]))
+    raw = mutated(lambda r: r["joins"]["AB"].update(tier2={"steps": [{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]}))
     assert "J14" not in check(raw, file_stem="r").codes()
 
 
@@ -287,34 +299,34 @@ def test_build_profile_accepts_placeholders_that_run_refuses():
 
 
 def test_an_audit_step_id_is_accepted_only_in_the_audit_profile_and_must_be_well_formed():
-    raw = mutated(lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append(
+    raw = mutated(lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append(
         {"id": "audit_1a2b3c4d_1", "action": "polars_filter_demo", "columns": ["v"], "na": "keep"}))
     assert "ST08" in check(raw, "run").codes()
     assert "ST08" not in check(raw, "audit").codes()
-    raw["data_schemas"]["A"]["wrangling"]["tier1"][0]["id"] = "audit_zz"
+    raw["data_schemas"]["A"]["tier1"]["steps"][0]["id"] = "audit_zz"
     assert "ST08" in check(raw, "audit").codes()
 
 
 def test_the_same_audit_id_twice_is_refused():
     step = {"id": "audit_1a2b3c4d_1", "action": "polars_filter_demo", "columns": ["v"], "na": "keep"}
-    raw = mutated(lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].extend([dict(step), dict(step)]))
+    raw = mutated(lambda r: r["data_schemas"]["A"]["tier1"]["steps"].extend([dict(step), dict(step)]))
     assert "ST08" in check(raw, "audit").codes()
 
 
 def test_a_step_may_carry_a_comment():
-    raw = mutated(lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append(
+    raw = mutated(lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append(
         {"action": "polars_filter_demo", "columns": ["v"], "na": "keep", "comment": "why"}))
     assert check(raw).problems == []
 
 
 def test_the_formula_of_a_mapping_step_is_checked():
-    ok = mutated(lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append(
+    ok = mutated(lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append(
         {"action": "polars_with_columns", "exprs": {"x": "pl.col('v') * 2"}}))
     assert check(ok).problems == []
 
 
 def test_a_tier3_step_list_is_refused_until_the_engine_reads_it_and_an_empty_one_is_fine():
-    raw = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(steps={"tier3": []}))
+    raw = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(tier3={"steps": []}))
     assert check(raw).problems == []
 
 
@@ -322,17 +334,17 @@ def test_a_tier3_step_is_judged_like_any_step_once_the_engine_reads_it(monkeypat
     import utils.recipe_check as module
     monkeypatch.setattr(module, "TIER3_READ_BY_ENGINE", True)
     good = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(
-        steps={"tier3": [{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]}))
+        tier3={"steps": [{"action": "polars_filter_demo", "columns": ["v"], "na": "keep"}]}))
     assert check(good).problems == []
     bad = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(
-        steps={"tier3": [{"action": "polars_filter_demo", "columns": ["v"]}]}))
+        tier3={"steps": [{"action": "polars_filter_demo", "columns": ["v"]}]}))
     assert "ST04" in check(bad).codes()
-    with_filters = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"].update(filters=[{"column": "v"}]))
+    with_filters = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(filters=[{"column": "v"}]))
     assert "P06" in check(with_filters).codes()
 
 
 def test_a_wrong_form_names_the_old_action_replacement():
-    raw = mutated(lambda r: r["data_schemas"]["A"]["wrangling"]["tier1"].append({"action": "filter_range"}))
+    raw = mutated(lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append({"action": "filter_range"}))
     st02 = next(p for p in check(raw).problems if p.code == "ST02")
     assert "polars_filter_demo" in st02.fix
 
@@ -383,7 +395,7 @@ def gallery_recipe():
     raw["joins"] = {}
     del raw["data_schemas"]["B"]
     raw["data_schemas"]["A"]["source"]["path"] = "./assets/gallery_data/bar_simple/example_data.tsv"
-    raw["analysis_groups"]["g"]["plots"]["p"]["spec"]["target_dataset"] = "A"
+    raw["analysis_groups"]["g"]["plots"]["p"]["target_dataset"] = "A"
     raw["analysis_groups"]["g"]["plots"]["p"]["taxonomy"] = {
         "family": "Ranking", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple", "show": "ranking", "sample_size": "any"}
     return raw
@@ -425,7 +437,7 @@ KINDS = {"geom_col": "exact", "geom_point": "modified", "theme_bw": "own"}
 
 def _wrong_argument_message(component, kinds):
     def put_wrong_argument(r):
-        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(name=component, params={"colr_": 1})
+        r["analysis_groups"]["g"]["plots"]["p"]["layers"][0].update(name=component, params={"colr_": 1})
     catalogs = {**CATALOGS, "component_arguments": {**CATALOGS["component_arguments"], component: {"fill"}}}
     if kinds is not None:
         catalogs["component_kinds"] = kinds
@@ -453,7 +465,7 @@ RANDOM_CATALOGS = {**CATALOGS, "components": CATALOGS["components"] | {"geom_sin
 
 def _seed_problems(name, params):
     def put(r):
-        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(name=name, params=params)
+        r["analysis_groups"]["g"]["plots"]["p"]["layers"][0].update(name=name, params=params)
     result = check(mutated(put), catalogs=RANDOM_CATALOGS, file_stem="r")
     return [p for p in result.problems if p.code == "PS04" and "random_state" in p.message]
 
@@ -496,7 +508,7 @@ def test_a_seed_is_refused_on_a_layer_that_is_not_random(name, params):
 def test_null_or_random_as_a_seed_is_refused_with_the_fix(name, params, written):
     """PROVISIONAL (S1): a seed is a number; the checker names the fix."""
     def put(r):
-        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(name=name, params={**params, "random_state": written})
+        r["analysis_groups"]["g"]["plots"]["p"]["layers"][0].update(name=name, params={**params, "random_state": written})
     result = check(mutated(put), catalogs=RANDOM_CATALOGS, file_stem="r")
     found = [p for p in result.problems if p.code == "PS04" and "random_state" in p.message]
     assert len(found) == 1 and "random_state: 0" in found[0].fix and "number" in found[0].message
@@ -505,7 +517,7 @@ def test_null_or_random_as_a_seed_is_refused_with_the_fix(name, params, written)
 @pytest.mark.parametrize("written", [0, 7, "5"])
 def test_a_number_as_a_seed_is_not_refused_by_s1(written):
     def put(r):
-        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"][0].update(name="geom_sina", params={"random_state": written})
+        r["analysis_groups"]["g"]["plots"]["p"]["layers"][0].update(name="geom_sina", params={"random_state": written})
     result = check(mutated(put), catalogs=RANDOM_CATALOGS, file_stem="r")
     assert not [p for p in result.problems if p.code == "PS04" and "random_state" in p.message]
 
@@ -533,13 +545,13 @@ def test_the_recipe_seed_is_a_whole_number(value):
 
 def _layer_problems(params, name="geom_smooth", catalogs=CATALOGS):
     def put(r):
-        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append({"name": name, "params": params})
+        r["analysis_groups"]["g"]["plots"]["p"]["layers"].append({"name": name, "params": params})
     return [p for p in check(mutated(put), catalogs=catalogs, file_stem="r").problems if p.code == "PS06"]
 
 
 def test_ps06_is_found_without_any_catalogue_and_names_the_layer_and_the_text():
     def put(r):
-        r["analysis_groups"]["g"]["plots"]["p"]["spec"]["layers"].append(
+        r["analysis_groups"]["g"]["plots"]["p"]["layers"].append(
             {"name": "geom_smooth", "params": {"formula": "y ~ I(eval(x))"}})
     found = [p for p in check_recipe(mutated(put)).problems if p.code == "PS06"]
     assert len(found) == 1
@@ -568,7 +580,7 @@ def test_ps06_refuses_a_function_text_of_stat_function_with_the_message_when_the
 
 
 def test_ps06_facet_by_in_the_mapping_is_a_plain_column_name():
-    ok = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"]["spec"]["mapping"].update(facet_by="country"))
+    ok = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"]["mapping"].update(facet_by="country"))
     assert "PS06" not in check(ok, file_stem="r").codes()
 
 

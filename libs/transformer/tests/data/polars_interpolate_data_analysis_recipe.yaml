@@ -20,9 +20,10 @@ input_fields:
   y:
     type: Float64
     label: y
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: polars_interpolate
     columns: [y]
     method: linear
-  tier2: []
+tier2:
+  steps: []

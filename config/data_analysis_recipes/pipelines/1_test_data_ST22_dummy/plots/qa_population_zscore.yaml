@@ -1,5 +1,8 @@
+ui_label: "QA Population Zscore"
+ui_title: "QA: N50 z-score per sample (depends on all samples)"
+description: "A z-score across all samples, the case where the place of a removal changes the numbers of the other samples. Canary for the audit placement rule. The z-score of each sample is computed across all 42 samples, so removing a sample before this step changes every other value."
+taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
 target_dataset: QA_population_zscore
-title: "QA: N50 z-score per sample (depends on all samples)"
 mapping:
   x: country
   y: n50_zscore
@@ -8,6 +11,7 @@ layers:
   params: {}
 - name: labs
   params:
+    title: "QA: N50 z-score per sample (depends on all samples)"
     subtitle: "Expect z-scores over 42 samples (mean 0, sd 1 over all 42); a removal before the step shifts all of them"
     x: Country
     y: N50 z-score

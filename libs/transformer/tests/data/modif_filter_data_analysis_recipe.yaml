@@ -29,11 +29,12 @@ input_fields:
   s:
     type: String
     label: s
-wrangling:
-  tier1:
+tier1:
+  steps:
   - action: modif_filter
     column: n
     op: gt
     value: 1
     na: remove
-  tier2: []
+tier2:
+  steps: []

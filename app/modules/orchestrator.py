@@ -1,7 +1,7 @@
 # @deps
 # provides: pipeline:materialize_tier1, pipeline:materialize_tier2, method:prepare_ingredient, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
 # mirrors: libs/transformer/tests/debug_assembler.py
-# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/transformer/src/transformer/metadata_validator.py, app/modules/cache_keys.py
+# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps
@@ -12,10 +12,11 @@ from pathlib import Path
 from typing import Any, Callable
 from utils.errors import DataAnalysisRecipeError, IngestionError, RecipeLoadError
 from ingestion.ingestor import DataIngestor, find_dataset_file
-from transformer.data_wrangler import DataWrangler
-from transformer.data_assembler import DataAssembler
 from transformer.anchor import read_anchor_if_key, write_anchor
-from app.modules.cache_keys import DataAnalysisRecipeKeys, LoadedDataAnalysisRecipe, load_data_analysis_recipe, data_analysis_recipe_keys, tier2_key, tier2_steps
+from app.modules.engine_registry import data_entry
+from utils.recipe_tiers import collection_body
+from app.modules.cache_keys import (CACHE_VERSION_META, DataAnalysisRecipeKeys, ENGINE_CACHE_VERSION, LoadedDataAnalysisRecipe, collection_tier2_key,
+                                    data_analysis_recipe_keys, load_data_analysis_recipe, tier2_engine, tier2_steps)
 
 # Parquet metadata key holding the chained Tier 1 key (ADR-089).
 TIER1_KEY_META = "sparmvet_tier1_key"
@@ -105,7 +106,7 @@ class DataOrchestrator:
         data_hash = SessionManager.compute_data_batch_hash(source_files) if source_files else ""
         return data_analysis_recipe_keys(loaded, data_hash)
 
-    def prepare_ingredient(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None) -> pl.LazyFrame:
+    def prepare_ingredient(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None, recipe: dict | None = None) -> pl.LazyFrame:
         """Read one dataset of a data analysis recipe and apply its input contract and tier-1 wrangling (its T1).
 
         The schema's own tier-2 list is not run here: it is the T2 of the schema when a plot reads it directly, run by
@@ -113,7 +114,8 @@ class DataOrchestrator:
 
         Raises when the file cannot be read, a declared input column is missing, or a value does
         not fit its declared type. Shared by materialize_tier1 and the data analysis recipe data check, so
-        both see the dataset the same way. `recipe_id` selects the data folder of an imported recipe.
+        both see the dataset the same way. `recipe_id` selects the data folder of an imported recipe; `recipe` is the recipe's
+        mapping, for the default `data_engine` of a table whose tier 1 names none (D-0219).
 
         The file read is the file `locate_dataset_file` names, the same one `get_source_files` hashes.
         """
@@ -135,8 +137,9 @@ class DataOrchestrator:
         # fit its declared type fails there and names the column and the values.
         lf, _ = self.ingestor.ingest(ds_id, ds_schema)
 
-        rules = DataWrangler._resolve_tier(ds_schema.get("wrangling", []), "tier1")
-        return DataWrangler().run(lf, rules)
+        engine = data_entry(recipe, ds_schema, "tier1", where=f"The tier1 of the table '{ds_id}'")
+        rules = engine.wrangler.tier_steps(ds_schema, "tier1")
+        return engine.wrangler().run(lf, rules)
 
     def inputs_changed(self, data_analysis_recipe_id: str, built_from: DataAnalysisRecipeKeys) -> InputsChanged | None:
         """None when the recipe files and the data files are still those `built_from` was made from, else what changed.
@@ -221,13 +224,16 @@ class DataOrchestrator:
             print(f"[Orchestrator] ✅ Tier 1 anchor '{collection_id}' is valid (key match) → {output_path}")
             return stored, keys.tier1_key, None, None
 
-        # Tier 1 is rebuilt, so the Tier 2 stored on top of the old one is invalid by definition.
+        # Tier 1 is rebuilt, so the Tier 2 stored on top of the old one is invalid by definition. The table that did not match
+        # (another key, another cache version, an unreadable file) is removed now, at the moment it is found: a build that
+        # then fails must not leave a table that a later change could serve (rules_verification_testing.md section 9).
         t2_file.unlink(missing_ok=True)
+        output_path.unlink(missing_ok=True)
 
         # The key of what this build reads: the recipe object loaded above and the data files as they are now. `keys` may
         # be older than both (a view computes them once).
         built_from = built_from or self.compute_data_analysis_recipe_keys(data_analysis_recipe_id, loaded=loaded)
-        stored_key = {TIER1_KEY_META: built_from.tier1_key}
+        stored_key = {TIER1_KEY_META: built_from.tier1_key, CACHE_VERSION_META: ENGINE_CACHE_VERSION}
         verdict: list[InputsChanged] = []
 
         def unchanged() -> bool:
@@ -250,7 +256,7 @@ class DataOrchestrator:
         failures: dict[str, Exception] = {}
         for ds_id, ds_schema in all_schemas.items():
             try:
-                ingredients[ds_id] = self.prepare_ingredient(ds_id, ds_schema, recipe_id=data_analysis_recipe_id)
+                ingredients[ds_id] = self.prepare_ingredient(ds_id, ds_schema, recipe_id=data_analysis_recipe_id, recipe=data_analysis_recipe)
             except Exception as e:
                 # Kept, not dropped: a dataset the requested collection needs makes the build
                 # fail below (issue #18). One the collection does not use only gets a console line.
@@ -293,8 +299,8 @@ class DataOrchestrator:
 
         # Path C: assembly — ordered ingredient dict so DataAssembler starts
         # from the correct base (first declared ingredient, not first dict key)
-        steps_raw = collection_spec.get("steps", [])
-        steps = DataWrangler._resolve_tier(steps_raw, "tier1")
+        engine = data_entry(data_analysis_recipe, collection_spec, "tier1", where=f"The tier1 of the join '{collection_id}'")
+        steps = engine.wrangler.tier_steps(collection_spec, "tier1")
 
         ingredient_ids = [
             item.get("dataset_id") if isinstance(item, dict) else item
@@ -310,7 +316,7 @@ class DataOrchestrator:
         assembly_ingredients = {ds_id: ingredients[ds_id] for ds_id in ingredient_ids}
 
         # A step that names an ingredient the join does not hold fails in the assembler; no step is skipped.
-        assembler = DataAssembler(assembly_ingredients, recipe_id=data_analysis_recipe_id, join_id=collection_id)
+        assembler = engine.assembler(assembly_ingredients, recipe_id=data_analysis_recipe_id, join_id=collection_id)
         lf = assembler.assemble(steps)
 
         # ADR-089: the chained Tier 1 key (the resolved recipe with every included file, the data content and the engine
@@ -344,6 +350,9 @@ class DataOrchestrator:
         keys = keys or self.compute_data_analysis_recipe_keys(data_analysis_recipe_id, loaded=loaded)
         steps = tier2_steps(loaded.raw, collection_id)
         t2_path = tier2_path_for(tier1_path)
+        # The engine of the tier is chosen before anything is built, also when it has no steps: a tier that names an engine this
+        # app has no library for is refused, never skipped (D-0050).
+        engine = data_entry(loaded.raw, collection_body(loaded.raw, collection_id), "tier2", where=f"The tier2 of '{collection_id}'")
 
         if not steps:
             # materialize_tier1 also removes a Tier 2 file left from an earlier data analysis recipe.
@@ -352,18 +361,20 @@ class DataOrchestrator:
                 self.tell_inputs_changed(change, on_inputs_changed)
             return lf
 
-        key = tier2_key(keys.tier1_key, steps)
+        key = collection_tier2_key(loaded.raw, collection_id, keys.tier1_key)
         stored = read_anchor_if_key(t2_path, TIER2_KEY_META, key)
         if stored is not None:
             print(f"[Orchestrator] ✅ Tier 2 '{collection_id}' is valid (key match) → {t2_path}")
             return stored
+        t2_path.unlink(missing_ok=True)   # not the table of this key: removed when found, as Tier 1 (see `_materialize_tier1`)
 
         lf_t1, t1_key, t1_built_from, t1_change = self._materialize_tier1(
             data_analysis_recipe_id, collection_id, tier1_path, keys, loaded=loaded)
         verdict: list[InputsChanged] = [t1_change] if t1_change is not None else []
         # The chain is that of the Tier 1 table this one is computed from: a Tier 1 built just now carries the key of the
         # files it was built from, which can differ from `keys` (STALE-KEY-STORE-1).
-        key = tier2_key(t1_key, steps)
+        key = collection_tier2_key(loaded.raw, collection_id, t1_key)
+        engine_now = tier2_engine(loaded.raw, collection_id)
 
         def unchanged() -> bool:
             # A Tier 1 that was itself built from changed inputs makes this table a mix too: nothing to store.
@@ -375,22 +386,25 @@ class DataOrchestrator:
                     verdict.append(change)
                     return False
             try:
-                steps_now = tier2_steps(load_data_analysis_recipe(data_analysis_recipe_path).raw, collection_id)
+                raw_now = load_data_analysis_recipe(data_analysis_recipe_path).raw
+                steps_now = tier2_steps(raw_now, collection_id)
+                engine_then = tier2_engine(raw_now, collection_id)
             except RecipeLoadError as exc:
                 verdict.append(InputsChanged(f"the data analysis recipe can no longer be read ({str(exc).strip()[:200]})"))
                 return False
             except FileNotFoundError:
                 verdict.append(InputsChanged("the data analysis recipe file is gone"))
                 return False
-            if steps_now != steps:
+            if steps_now != steps or engine_then != engine_now:
                 verdict.append(InputsChanged("the tier-2 steps of this table changed"))
                 return False
             return True
 
         # A copy: the dicts belong to the data analysis recipe kept in memory and the key of the next read must match.
-        lf_t2 = DataWrangler().run(lf_t1, copy.deepcopy(steps))
+        lf_t2 = engine.wrangler().run(lf_t1, copy.deepcopy(steps))
         print(f"[Orchestrator] ▶ Tier 2 '{collection_id}' recomputed from Tier 1 → {t2_path}")
-        table = write_anchor(lf_t2, str(t2_path), decision_hash=key, metadata={TIER2_KEY_META: key}, still_valid=unchanged)
+        table = write_anchor(lf_t2, str(t2_path), decision_hash=key,
+                              metadata={TIER2_KEY_META: key, CACHE_VERSION_META: ENGINE_CACHE_VERSION}, still_valid=unchanged)
         if verdict:
             self.tell_inputs_changed(verdict[0], on_inputs_changed)
         return table

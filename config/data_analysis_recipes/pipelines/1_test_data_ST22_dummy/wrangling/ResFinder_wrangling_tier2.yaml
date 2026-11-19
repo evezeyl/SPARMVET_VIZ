@@ -1,9 +1,5 @@
-tier1:
-  - action: polars_with_columns
-    named_exprs:
-      status: pl.lit('Detected')
 
-tier2:
+steps:
   # Calculate total gene count per sample for sorting purposes
   - action: polars_with_columns
     named_exprs:

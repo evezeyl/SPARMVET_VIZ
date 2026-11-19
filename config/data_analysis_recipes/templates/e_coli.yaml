@@ -39,8 +39,8 @@ data_schemas:
         original_name: growth_rate
         type: Float64
         label: Growth Rate (OD600)
-    wrangling:
-      tier1:
+    tier1:
+      steps: []
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
 metadata_schema:
   label: "metadata"
@@ -76,8 +76,8 @@ metadata_schema:
       original_name: patient_outcome
       type: String
       label: Outcome
-  wrangling:
-    tier1: []
+  tier1:
+    steps: []
 joins:
   amr_with_metadata:
     label: "amr with metadata"
@@ -85,8 +85,8 @@ joins:
     ingredients:
     - dataset_id: amr_results
     - dataset_id: metadata_schema
-    steps:
-      tier1:
+    tier1:
+      steps:
       - action: polars_join
         right_ingredient: metadata_schema
         'on': [sample_id]
@@ -96,33 +96,37 @@ plot_defaults:
   theme: theme_minimal
 analysis_groups:
   AMR:
-    label: "💊 Antimicrobial Resistance"
+    ui_label: "💊 Antimicrobial Resistance"
     description: 💊 Antimicrobial Resistance
     plots:
       serotype_dist:
-        label: "Serotype Dist"
-        taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
+        ui_label: "Serotype Dist"
+        ui_title: Serotype Distribution by Country
         description: "Distribution of serotypes across samples."
-        spec:
-          target_dataset: amr_with_metadata
-          title: Serotype Distribution by Country
-          mapping:
-            x: serotype
-            fill: country_of_origin
-          layers:
-          - name: geom_bar
-            params: {}
+        taxonomy: {"family": "Distribution", "pattern": "2 Categorical", "difficulty": "Beginner"}
+        target_dataset: amr_with_metadata
+        mapping:
+          x: serotype
+          fill: country_of_origin
+        layers:
+        - name: geom_bar
+          params: {}
+        - name: labs
+          params:
+            title: Serotype Distribution by Country
       growth_rate_by_st:
-        label: "Growth Rate By ST"
-        taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
+        ui_label: "Growth Rate By ST"
+        ui_title: Growth Rate by Sequence Type
         description: "Growth rate distribution by sequence type."
-        spec:
-          target_dataset: amr_with_metadata
-          title: Growth Rate by Sequence Type
-          mapping:
-            x: sequence_type
-            y: growth_rate
-            fill: sequence_type
-          layers:
-          - name: geom_boxplot
-            params: {}
+        taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
+        target_dataset: amr_with_metadata
+        mapping:
+          x: sequence_type
+          y: growth_rate
+          fill: sequence_type
+        layers:
+        - name: geom_boxplot
+          params: {}
+        - name: labs
+          params:
+            title: Growth Rate by Sequence Type

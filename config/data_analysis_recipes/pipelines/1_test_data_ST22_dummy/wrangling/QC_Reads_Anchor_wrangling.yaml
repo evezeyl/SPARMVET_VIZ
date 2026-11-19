@@ -1,4 +1,4 @@
-tier1:
+steps:
   # RELATIONAL ANCHOR: QC Reads
   # Combines reads metrics (FastP), assembly metrics (Quast), and taxonomy (Bracken) with metadata.
   - action: polars_join

@@ -7,8 +7,8 @@ Each writer is run for real, and what it wrote is judged three ways:
 
 The writers: `utils.recipe_factory` (the shared helper), the forked recipe of an export (`build_mode2_recipe`, written
 the way `export_handlers.py` writes it), Blueprint's new-recipe form (`new_recipe_draft`), Blueprint's branch
-(`generate_branch_plan`) and the script `assets/scripts/create_data_analysis_recipe.py`. The Test Lab writers have their
-own tests in `libs/test_lab/tests` (`TestWritersEmitFormatOne`).
+(`generate_branch_plan`) and the scripts `assets/scripts/create_data_analysis_recipe.py` and `SF_create_data_analysis_recipe.py`.
+The Test Lab writers have their own tests in `libs/test_lab/tests` (they run the checker on what they write).
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_writers_emit_format_one.py -q
 """
@@ -137,7 +137,7 @@ def test_the_forked_recipe_gives_the_audited_table_when_it_is_run(project, catal
     path = export_fork(project, T3_OF_THE_PLOT)
     raw, problems = load_recipe(path)
     assert problems == []
-    fork_id = raw["analysis_groups"]["main"]["plots"]["tiny_plot"]["spec"]["target_dataset"]
+    fork_id = raw["analysis_groups"]["main"]["plots"]["tiny_plot"]["target_dataset"]
     assert fork_id == "C__t3_tiny_plot"
     orchestrator = DataOrchestrator(path.parent, project / "data")
     anchor = project / "anchors" / "fork.parquet"
@@ -234,6 +234,8 @@ def test_the_script_writes_a_recipe_that_passes_the_checker_loads_and_reads_its_
     raw, problems = load_recipe(path)
     assert problems == []
     assert list(raw)[:5] == ["id", "spec_version", "data_engine", "plot_engine", "info"]
+    assert list(raw["analysis_groups"]["main"]) == ["ui_label", "plots"] and raw["analysis_groups"]["main"]["ui_label"] == "First look"
+    assert raw["data_schemas"]["samples"]["tier1"] == {"steps": []} and "wrangling" not in raw["data_schemas"]["samples"]
     assert raw["id"] == "scaffold" and raw["info"]["label"]
     samples = raw["data_schemas"]["samples"]
     assert samples["source"] == {"type": "local_tsv", "path": "data/samples.tsv"}
@@ -253,7 +255,7 @@ def test_the_script_refuses_a_recipe_with_an_unknown_action_name_like_the_app_do
     def build_with_a_wrong_action(*arguments, **keywords):
         recipe = real_build(*arguments, **keywords)
         table = next(iter(recipe["data_schemas"].values()))
-        table["wrangling"]["tier1"] = [{"action": "keep_columns", "columns": ["sample_id"]}]
+        table["tier1"]["steps"] = [{"action": "keep_columns", "columns": ["sample_id"]}]
         return recipe
 
     monkeypatch.setattr(create_script, "build", build_with_a_wrong_action)
@@ -276,7 +278,7 @@ def test_the_fragments_of_the_script_hold_the_value_itself_and_keep_their_commen
     assert run_script("--data_files", "data/samples.tsv", "--primary_key_data", "sample_id", "--out_file", "recipes/scaffold.yaml") == 0
     wrangling = (project / "recipes" / "scaffold" / "samples_wrangling.yaml").read_text(encoding="utf-8")
     assert wrangling.startswith("# ")
-    assert yaml.safe_load(wrangling) == {"tier1": []}
+    assert yaml.safe_load(wrangling) == {"steps": []}          # the file of tier 1 holds `steps` (D-0250)
     fields = yaml.safe_load((project / "recipes" / "scaffold" / "samples_fields.yaml").read_text(encoding="utf-8"))
     assert list(fields) == ["sample_id", "country", "reads"]
 
@@ -410,3 +412,33 @@ def test_the_writer_scan_can_fail():
     assert writer_faults("import yaml\nyaml.safe_dump({}, f)\n")
     assert writer_faults("import yaml\nclass D(yaml.Dumper): pass\nyaml.dump({}, f, Dumper=D, sort_keys=False)\n")
     assert not writer_faults("import yaml\nclass D(yaml.SafeDumper): pass\nyaml.dump({}, f, Dumper=D, sort_keys=False)\nyaml.safe_dump({}, sort_keys=False)\n")
+
+
+# -- 7. the script SF_create_data_analysis_recipe.py
+
+sf_script = _load_script("SF_create_data_analysis_recipe")
+
+
+def test_the_sf_script_writes_a_draft_recipe_that_passes_the_checker_in_profile_build(project, catalogs):
+    sf_script.generate_data_analysis_recipe("data/samples.tsv", str(project / "recipes" / "sf_samples.yaml"))
+    path = project / "recipes" / "sf_samples.yaml"
+    result = check_recipe_file(path, "build", catalogs=catalogs, roots=[Path.cwd()], base=Path.cwd())
+    assert [problem.text() for problem in result.errors] == []
+    raw, problems = load_recipe(path)
+    assert problems == [] and raw["id"] == "sf_samples"
+    table = raw["data_schemas"]["sf_samples"]
+    assert table["tier1"] == {"steps": []} and table["null_values"] == [] and table["strip"] is False
+    assert {name: field["type"] for name, field in table["input_fields"].items()} == {"sample_id": "String", "country": "String", "reads": "Int64"}
+    assert not [word for word in OLD_WORDS if word in path.read_text(encoding="utf-8")]
+
+
+def test_the_sf_script_in_input_only_mode_writes_the_fields_alone_as_an_included_file_holds_them(project):
+    sf_script.generate_data_analysis_recipe("data/samples.tsv", str(project / "recipes" / "fields.yaml"), "input_only")
+    fields = yaml.safe_load((project / "recipes" / "fields.yaml").read_text(encoding="utf-8"))
+    assert list(fields) == ["sample_id", "country", "reads"] and fields["reads"]["type"] == "Int64"
+
+
+def test_the_sf_script_says_what_is_wrong_with_a_file_it_cannot_read_and_writes_nothing(project, capsys):
+    sf_script.generate_data_analysis_recipe("data/none.tsv", str(project / "recipes" / "sf_none.yaml"))
+    assert "Error scanning data" in capsys.readouterr().out
+    assert not (project / "recipes" / "sf_none.yaml").exists()

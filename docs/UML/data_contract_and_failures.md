@@ -52,10 +52,14 @@ A data-vs-contract problem shows you exactly where it is and, when the app can g
 probably meant:
 
 ```
-data_schemas.amr_results.output_fields.Sample_ID
-declared column 'Sample_ID' matches no column of the dataset
-Did you mean 'sample_id'?
+demo_abromics.yaml: data_schemas.MLST: dataset cannot be loaded: Column(s) ['sequence_type'] declared in
+input_fields for 'MLST' not found in the source file (expected file headers: ['Sequence Typ']).
+Tip: The file header must match original_name exactly (spelling and case); the slug is used when no
+original_name is given. Correct original_name, or remove the declaration.
 ```
+
+(This is the message the check gives on the demo recipe when one `original_name` is misspelled; checked
+2026-11-18. The unchanged demo recipe gives no problem.)
 
 **This check is still manual inside BLUEPRINT.** It runs only when you press the button — not
 automatically on load or on data swap. That is correct for BLUEPRINT: you are iterating, and a
@@ -94,18 +98,18 @@ the plot itself. This is a first, partial step — not every kind of runtime fai
 Worth knowing regardless of which check you rely on: what does the engine itself do with a
 mismatched column name, with nothing checking at all?
 
-- An `input_fields` slug that matches no real column in your TSV is **silently skipped** — no
-  error, no warning, anywhere in the app. The wrangling step that referenced it simply does
-  nothing.
-- An `output_fields` slug that matches no column after Tier-1 wrangling is also silently dropped
-  from the final table — this is the one case the data-vs-contract check exists specifically to
-  catch, because nothing else ever will.
+- An `input_fields` entry that matches no real column in your file **stops the dataset from loading**,
+  with a message that names the column and the file headers it expected. The engine does this by
+  itself, while the dataset is built; the data-vs-contract check only runs it ahead of time (checked
+  2026-11-18 on the demo recipe with one misspelled `original_name`).
+- There is no `output_fields` any more (removed 2026-11-13). To keep or drop columns, end the step
+  list of the table or join with a `polars_select` step; a step that names a column that is not there is reported by the
+  same check, which runs the steps of each table on one row (code: `validate_data_analysis_recipe_data`).
 
-Neither of these stops the app or changes the plot's shape in an obviously wrong way — the rest of
-the pipeline runs normally on whatever columns *did* match, and you get a plot. It can look
-completely plausible while quietly missing or misusing the field you thought it was using. This is
-why the data-vs-contract check matters more than it might first appear, and why HOME's gate runs
-automatically rather than waiting for someone to remember to press a button.
+An earlier version of this page said that a wrong `input_fields` or `output_fields` name was dropped
+without any message. That is no longer true: a wrong `input_fields` name is reported (and `output_fields`
+no longer exists), so a plot cannot quietly be built without the field you thought it used. HOME's gate still runs automatically, so nobody has to
+remember to press a button.
 
 ## How this relates to reproducibility
 

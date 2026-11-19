@@ -1,4 +1,7 @@
-title: AMR Genes Presence by Category
+ui_label: "AMR Heatmap"
+ui_title: AMR Genes Presence by Category
+description: "Heatmap showing AMR gene presence across samples."
+taxonomy: {"family": "Correlation", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Intermediate"}
 target_dataset: ResFinder
 layers:
 - name: geom_tile
@@ -18,6 +21,9 @@ layers:
     size: 4
 - name: theme_minimal
   params: {}
+- name: labs
+  params:
+    title: AMR Genes Presence by Category
 mapping:
   x: gene
   y: sample_id

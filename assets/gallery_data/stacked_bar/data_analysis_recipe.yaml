@@ -20,23 +20,22 @@ data_schemas:
       species: {type: String}
       amr_class: {type: String}
       count: {type: Int64}
-    wrangling: {tier1: []}
+    tier1: {steps: []}
 analysis_groups:
   example:
-    label: Example
+    ui_label: Example
     description: The one plot of this example.
     plots:
       stacked_bar:
-        label: Stacked Bar Chart
+        ui_label: Stacked Bar Chart
         description: >-
           Drawn with geom_col; x is species, y is count, fill is amr_class.
         taxonomy: {family: Part-to-Whole, pattern: '1 Numeric, 2 Categorical', difficulty: Intermediate, show: proportion,
           sample_size: any}
-        spec:
-          target_dataset: example
-          mapping: {x: species, y: count, fill: amr_class}
-          layers:
-            - {name: geom_col, params: {}}
-            - {name: position_stack, params: {}}
-            - {name: labs, params: {x: Species, y: Isolate Count, fill: AMR Class}}
-            - {name: theme_minimal, params: {}}
+        target_dataset: example
+        mapping: {x: species, y: count, fill: amr_class}
+        layers:
+          - {name: geom_col, params: {}}
+          - {name: position_stack, params: {}}
+          - {name: labs, params: {x: Species, y: Isolate Count, fill: AMR Class}}
+          - {name: theme_minimal, params: {}}

@@ -28,6 +28,11 @@ seeds_per_layer:
   multi_resistance_by_country:
     - {layer_index: 1, layer: geom_point, seed: 20261109143012, source: audit}
 seeds_added_to_recipe: []              # the seeds written into the reproducibility recipe, with what your recipe wrote
+engines:                               # which engine ran each table tier and drew each plot (section 6)
+  recipe_default: {data_engine: python-polars, plot_engine: python-plotnine}
+  tables: ...
+  plots: ...
+  library_versions: ...
 ```
 
 `seeds_per_plot` holds, for every exported plot that uses random scatter (jitter), the seed that was really used to draw it. `seed_source_per_plot` says where it comes from; see [Reproducible plots](reproducible_plots.qmd). `seeds_per_layer` has one entry per jitter layer. `seeds_added_to_recipe` lists the seeds the export wrote into the reproducibility recipe (the file does not show which numbers were added). A plot marked `default` has no number in your recipe (its seed was 0): write the number there. A seed fixed by an audit step is also a `random_seed` step in `t3_steps.yaml` and in the audit trail of the report.
@@ -86,7 +91,7 @@ This is the fingerprint of your full T3 audit trail — every filter, exclusion,
 
 These keys are written in the README and the report, in the image metadata of each plot (`sparmvet:tier1_key`, `sparmvet:tier2_key`), and inside the stored data files (file metadata keys `sparmvet_tier1_key` and `sparmvet_tier2_key`).
 
-The **Tier 1 key** is built from the processing rules of the data analysis recipe, the data content and the engine version. The **Tier 2 key** is built from the Tier 1 key and the Tier 2 steps of the dataset, so a change upstream always changes it. A dataset without Tier 2 steps shows "none (T2 equals T1)".
+The **Tier 1 key** is built from the processing rules of the data analysis recipe, the data content, the engine version and the engine that runs the tier. The **Tier 2 key** is built from the Tier 1 key, the Tier 2 steps of the dataset and the engine that runs that tier, so a change upstream always changes it. The engine that draws a plot is in no table key: a plot is drawn from a stored table. A dataset without Tier 2 steps shows "none (T2 equals T1)".
 
 **What it guarantees:** The system uses these keys to check that its stored data still matches the data analysis recipe and the data. If you edit a wrangling step and reload, the keys differ and the data is recomputed automatically — you never see stored data presented as if it were current.
 
@@ -103,6 +108,19 @@ The **Tier 1 key** is built from the processing rules of the data analysis recip
 **What it guarantees:** Two exports with identical `data_analysis_recipe_sha256`, `data_batch_hash` and `t3_audit_steps_sha256` but **different** `engine_fingerprint`/`git_commit` were produced by the same recipe, the same data and the same audit decisions, run through two different versions of the software. If the plots differ, the difference came from the software, not from your analysis choices — useful if a bug was found and fixed between two runs, and you need to show a reviewer that the change in results is not a change in your reasoning.
 
 **When to use it:** Comparing two `effective_run.yaml` files field by field (see below) when results changed between runs and you need to know why.
+
+---
+
+### 6. engines — "Which engine ran each step, and which drew each plot?"
+
+A data analysis recipe names its engines: `data_engine` and `plot_engine` at its top are the defaults, and a tier or a plot may name its own. A standard export does not contain the data analysis recipe, so `effective_run.yaml` is the only place where the engine of the export is written. The entry `engines` holds:
+
+- `recipe_default`: the two engines the data analysis recipe writes at its top;
+- `tables`: for every table or join the exported plots read, the engine of each tier that ran (tier 2 is "none (T2 equals T1)" when it has no steps);
+- `plots`: for every plot, the engine that drew it, whether it was drawn, and the **theme as it was applied** (the theme components with their values and where they came from, or "plotnine's own default" when the data analysis recipe names no theme). A plot that could not be drawn says so and gives the first line of the reason;
+- `library_versions`: for every engine that appears, the installed versions of the libraries behind it (for `python-polars`: Polars and the transformer; for `python-plotnine`: plotnine, matplotlib and the plot library).
+
+**What it guarantees:** you can tell, from the export alone, which engine produced each table and each plot and in which version, and which theme a figure really had. Today the engines are `python-polars` and `python-plotnine`.
 
 ---
 

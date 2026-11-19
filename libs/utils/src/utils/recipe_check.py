@@ -5,7 +5,8 @@ files, the registries or the disk. What it cannot know it is given:
 - `catalogs`: the registries as plain data (`actions`: name -> ui_schema, `components`: name -> allowed argument names or
   None for free-form, `themes`: a set of names, `component_kinds`: component name -> exact, modified or own, what it is to
   plotnine, named in the messages about its arguments). Without them the checks of actions and components are not run, and
-  `coverage` says so;
+  `coverage` says so. `action_engines` and `component_engines` (name -> engine, the `engine` field of every registry entry,
+  D-0238) let it refuse a step or a layer written in a block of another engine (EN02); without them `coverage` lacks `engines`;
 - `graph`: an object with `columns_of(dataset_id)` (the columns of a table after its tier 1), for the checks of columns
   per node (J08, X7); without it they are not run;
 - `roots` and `base`: the folders a development path may lie in, and the folder its path is relative to, the project
@@ -16,7 +17,7 @@ Every problem has a permanent code (the catalogue of spec section 11), a severit
 recipe, what is wrong and the fix, in the message style of spec P5.
 
 # @deps
-# provides: function:check_recipe, function:spec, class:Problem, class:Result
+# provides: function:check_recipe, function:spec, function:plot_keys, class:Problem, class:Result
 # consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/engines.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/ui_schema.py, libs/utils/src/utils/formula_check.py, libs/utils/src/utils/plot_text_check.py, libs/utils/src/utils/recipe_paths.py, libs/utils/src/utils/polars_types.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/fix_text.py (split_fix, with_fix)
 # consumed_by: libs/utils/src/utils/recipe_loader.py, libs/utils/src/utils/recipe_factory.py, libs/utils/src/utils/recipe_migration.py, libs/utils/src/utils/strict_form_migration.py, libs/ingestion/src/ingestion/declared.py, libs/viz_gallery/src/viz_gallery/gallery_manager.py, libs/viz_gallery/src/viz_gallery/example_recipe.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, assets/scripts/convert_gallery_examples.py, assets/scripts/create_data_analysis_recipe.py, libs/utils/tests/test_recipe_check.py
 # doc: .claude/design/recipe_format_spec.md (sections 3 to 11, 14)
@@ -48,6 +49,9 @@ from utils.ui_schema import STEP_KEYS, step_problems
 # P05: the engine does not read `steps.tier3` yet; switched to True in the commit that adds the reader (spec 7.7).
 TIER3_READ_BY_ENGINE = False
 
+# The tool that rewrites a recipe of the old shape (written in a later step of the engine-keys change); every refusal of an old shape names it.
+REWRITE_TOOL = "assets/scripts/migrate_recipe_engine_keys.py"
+
 # Tier-1 actions that only remove or reorder rows: they cannot change the columns or their types (exact names).
 JOIN_KEEPS_COLUMNS = join_keys.JOIN_KEEPS_COLUMNS
 
@@ -78,6 +82,29 @@ def spec() -> dict:
     data = yaml.safe_load(resources.files("utils").joinpath("recipe_spec.yaml").read_text(encoding="utf-8"))
     data["engines"] = {key: list(names) for key, names in ENGINES.items()}  # one source: utils/engines.py (ADR-106 V8)
     return data
+
+
+def plot_defaults_keys() -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
+    """`(allowed keys, removed keys)` of `plot_defaults`, read from the specification.
+
+    The plot library reads its list from here, so the checker and the library cannot disagree on what `plot_defaults` may
+    hold (D-0220, D-0242).
+    """
+    data = spec()
+    return tuple(data["elements"]["plot_defaults"]["optional"]), tuple(data["removed"]["plot_defaults"])
+
+
+def plot_keys() -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
+    """`(entry keys, content keys)` of a plot entry, read from the specification (`elements.plot`).
+
+    The entry keys (`ui_label`, `ui_title`, `description`, `comment`, `taxonomy`, `plot_engine`, `tier3`) belong to the app;
+    the content keys (`target_dataset`, `mapping`, `layers`, `theme`, ...) are what the plot library draws from. The plot
+    library reads the two lists from here, so the checker and the library cannot disagree on what an entry may hold.
+    """
+    plot = spec()["elements"]["plot"]
+    entry = tuple(plot["entry_keys"])
+    content = tuple(key for key in [*plot["required"], *plot["optional"]] if key not in entry)
+    return entry, content
 
 
 def _plotnine_note(name: str, kinds: dict) -> str:
@@ -148,14 +175,19 @@ class _Check:
     def add(self, code: str, path: str, message: str, fix: str = "", severity: str = "E") -> None:
         self.result.problems.append(Problem(code, severity, path, message, fix))
 
-    def unknown_keys(self, element: str, mapping: dict, path: str, code: str) -> None:
+    def unknown_keys(self, element: str, mapping: dict, path: str, code: str, shape_codes: Optional[dict] = None,
+                     skip: Iterable[str] = ()) -> None:
         wanted = self.spec["elements"][element]
-        known = set(wanted["required"]) | set(wanted["optional"])
+        known = set(wanted["required"]) | set(wanted["optional"]) | self.label_keys_of(element)
         renamed = self.spec["renamed"].get(element, {})
+        old_shapes = self.spec["old_shapes"].get(element, {})
         for key in mapping:
-            if key in known:
+            if key in known or key in skip:
                 continue
-            if key in renamed:
+            if key in old_shapes:
+                self.add((shape_codes or {}).get(key, code), f"{path}.{key}" if path else str(key), f"{key} is not a key of this element any more (the form of the recipe changed)",
+                         f"{old_shapes[key]}. Rewrite tool: {self.spec['old_shapes']['tool']} (it rewrites a recipe file and says what it changed)")
+            elif key in renamed:
                 self.add(code, f"{path}.{key}" if path else str(key), f"{key} is not a key of this element", f"{renamed[key]}")
             else:
                 close = difflib.get_close_matches(str(key), list(known), n=1, cutoff=0.6)
@@ -166,6 +198,14 @@ class _Check:
         for key in self.spec["elements"][element]["required"]:
             if key not in mapping:
                 self.add(code, path, f"{key} is required", f"add {key}")
+
+    def label_keys_of(self, element: str) -> Set[str]:
+        """The key that names this element in the table `label_keys` of the specification (pending: Eve decides which become ui_label)."""
+        found = self.spec["label_keys"].get(element)
+        return {found} if found else set()
+
+    def label_key(self, element: str) -> str:
+        return self.spec["label_keys"][element]
 
     # -- the whole recipe
     def run(self) -> Result:
@@ -187,6 +227,8 @@ class _Check:
         self.result.coverage.add("actions") if self.catalogs and "actions" in self.catalogs else None
         if self.catalogs and "components" in self.catalogs:
             self.result.coverage.add("components")
+        if self.catalogs and "action_engines" in self.catalogs and "component_engines" in self.catalogs:
+            self.result.coverage.add("engines")
         if self.graph is not None:
             self.result.coverage.add("columns")
         return self.result
@@ -216,9 +258,52 @@ class _Check:
             self.add("V03", "spec_version", f"written for format {value}, this app reads {current}", "update the app")
 
     def engines(self, raw: dict) -> None:
-        for key, allowed in self.spec["engines"].items():
-            if key in raw and raw[key] not in allowed:
-                self.add("T06", key, f"{raw[key]!r} is not a built {key}", "write one of " + ", ".join(allowed))
+        for key in self.spec["engines"]:
+            if key in raw:
+                self.engine_value(raw[key], key, key)
+
+    def engine_value(self, value: Any, key: str, path: str) -> None:
+        """T06 for an engine value at any level: the top of the recipe, a tier (`data_engine`) or a plot entry (`plot_engine`).
+
+        D-0239: the engine names are an open list that an app release extends; an app without the library for a name refuses it
+        and the message lists the engines of the app.
+        """
+        allowed = self.spec["engines"][key]
+        if value not in allowed:
+            self.add("T06", path, f"{value!r} is not a built {key}: no library for this engine in this app (the engines of this app: {', '.join(allowed)})",
+                     "write one of " + ", ".join(allowed))
+
+    def effective_engine(self, key: str, *levels: Any) -> Any:
+        """The engine of a block: the first level that writes `key` (a tier, a plot entry), then the recipe's default (D-0219)."""
+        for level in levels:
+            if isinstance(level, dict) and level.get(key) is not None:
+                return level[key]
+        return self.raw.get(key) if isinstance(self.raw, dict) else None
+
+    def check_engine_of(self, kind: str, name: Any, wanted: Any, path: str, what: str) -> None:
+        """EN02: a step or a layer written in a block of another engine; EN03: the registry gives no engine for a registered name.
+
+        `kind` is 'action' or 'component'. Nothing is said when the catalogues give no engine table (the coverage then lacks
+        `engines`), when the name is not registered (ST02 and PS04 report that), or when the block names no engine (T04 reports it).
+        """
+        table = (self.catalogs or {}).get(f"{kind}_engines")
+        if table is None or wanted is None or not isinstance(name, str):
+            return
+        # PROVISIONAL (no decision names it; it follows the plain-message rule): a block whose engine is not an engine of this
+        # app at all already has its one real message (T06). An EN02 per step or layer would compare with an engine that cannot
+        # run here, so there is nothing true to compare, and it hid the T06 among dozens of lines. A plot engine written in a
+        # data slot (or the reverse) is an engine of the app: it keeps its EN02.
+        if wanted not in {name for names in self.spec["engines"].values() for name in names}:
+            return
+        registry = (self.catalogs or {}).get(f"{kind}s")
+        if name not in table:
+            if registry is not None and name in registry:
+                self.add("EN03", path, f"the registry gives no engine for the {what} {name!r}, so the check cannot tell which engine runs it. "
+                         "This is a fault of the app, not of the recipe.", "Report it: every registered action and component carries an engine.")
+            return
+        if table[name] != wanted:
+            self.add("EN02", path, f"the {what} {name!r} belongs to the engine {table[name]}, but this block is written for the engine {wanted}",
+                     f"move it to a block of the engine {table[name]}, or write the engine of this block as {table[name]}")
 
     def info(self, info: Any) -> None:
         if info is None:
@@ -228,8 +313,8 @@ class _Check:
             return
         if "display_name" in info:
             self.add("I03", "info.display_name", "display_name was renamed", self.spec["renamed"]["info"]["display_name"])
-        if not info.get("label"):
-            self.add("I01", "info", "info.label is required", "add label")
+        if not info.get(self.label_key("info")):
+            self.add("I01", "info", f"info.{self.label_key('info')} is required", f"add {self.label_key('info')}")
         if "comment" in info and not isinstance(info["comment"], str):
             self.add("CM01", "info.comment", "a comment is text", "write text")
         for key in ("description", "contact"):
@@ -301,9 +386,9 @@ class _Check:
         if not isinstance(schema, dict):
             self.add("S01", path, "a schema is a mapping", "write label, source, null_values, strip, input_fields, wrangling")
             return
-        self.unknown_keys("schema", schema, path, "S01")
-        if "label" not in schema:
-            self.add("S03", path, "the schema has no label", "add label")
+        self.unknown_keys("schema", schema, path, "S01", {"wrangling": "S06"})
+        if self.label_key("schema") not in schema:
+            self.add("S03", path, f"the schema has no {self.label_key('schema')}", f"add {self.label_key('schema')}")
         if not schema.get("description"):
             self.add("S04", f"{path}.description", "The schema has no description, so the grain (what one row is) is not stated.", "Suggestion: write the grain: what one row is (spec section 13).", "A")
         self.cut_description(f"{path}.description", schema.get("description"))
@@ -320,19 +405,15 @@ class _Check:
             for slug, definition in fields_.items():
                 self.field(definition, f"{path}.input_fields.{slug}")
                 self.entity_key_type(definition, f"{path}.input_fields.{slug}.type", path.rsplit(".", 1)[-1], slug)
-        wrangling = schema.get("wrangling")
-        if wrangling is None:
-            self.add("S06", f"{path}.wrangling", "wrangling is required", "write wrangling: {tier1: []}")
-        else:
-            self.step_container(wrangling, f"{path}.wrangling", "S06", self.spec["elements"]["tiers"]["schema"])
-            if isinstance(wrangling, dict) and isinstance(fields_, dict):
-                self.sum_advices(wrangling, f"{path}.wrangling", fields_)
-            if isinstance(wrangling, dict) and isinstance(fields_, dict) and fields_:
-                self.filter_value_problems(wrangling, f"{path}.wrangling", [(path.rsplit(".", 1)[-1], fields_)], joins=False)
-            if tier2_unapplied:
-                self.add("S07", f"{path}.wrangling.tier2", "tier2 of a schema applies only when the schema is plotted directly: "
-                         "no plot reads this schema, so these steps would run nowhere (a join reads the tier 1 of its ingredients)",
-                         "move the steps to a join, or plot this schema")
+        lists = self.tiers(schema, path, "S06", self.spec["elements"]["tiers"]["schema"], "schema")
+        if isinstance(fields_, dict):
+            self.sum_advices(lists, path, fields_)
+        if isinstance(fields_, dict) and fields_:
+            self.filter_value_problems(lists, path, [(path.rsplit(".", 1)[-1], fields_)], joins=False)
+        if tier2_unapplied:
+            self.add("S07", f"{path}.tier2", "tier2 of a schema applies only when the schema is plotted directly: "
+                     "no plot reads this schema, so these steps would run nowhere (a join reads the tier 1 of its ingredients)",
+                     "move the steps to a join, or plot this schema")
 
     def source(self, source: Any, path: str, present: bool) -> None:
         if not present:
@@ -395,7 +476,7 @@ class _Check:
             self.add("FD01", path, "a field is a mapping", "write {type: String}")
             return
         wanted = self.spec["elements"]["field"]
-        known = set(wanted["required"]) | set(wanted["optional"])
+        known = set(wanted["required"]) | set(wanted["optional"]) | self.label_keys_of("field")
         renamed = self.spec["renamed"]["field"]
         for key in definition:
             if key in known:
@@ -427,29 +508,58 @@ class _Check:
         self.missing_values(definition, path, required=False)
 
     # -- steps
-    def step_container(self, container: Any, path: str, code: str, tiers: Iterable[str]) -> None:
-        tiers = list(tiers)
-        if not isinstance(container, dict):
-            self.add(code, path, "the steps are written as {tier1: [...]}, not a list or a text",
-                     "write {tier1: [...]}" if tiers[0] == "tier1" else "write {tier3: [...]}")
-            return
-        for key in container:
-            if key not in tiers:
-                self.add(code, f"{path}.{key}", f"{key} is not a tier here", "write one of " + ", ".join(tiers))
-        if "tier1" in tiers and "tier1" not in container:
-            self.add(code, path, "tier1 is required", "add tier1: []")
-        for tier in tiers:
-            steps = container.get(tier)
-            if steps is None:
-                continue
-            if not isinstance(steps, list):
-                self.add(code, f"{path}.{tier}", f"{tier} is a list of steps", f"write {tier}: [...]")
-                continue
-            self.steps(steps, f"{path}.{tier}", tier)
-        self.order_advices(container, path, tiers)
-        self.tie_advices(container, path, tiers)
+    def tiers(self, parent: Any, path: str, code: str, names: Iterable[str], element: str) -> Dict[str, list]:
+        """The tiers of a table, a join (`tier1`, `tier2`) or a plot entry (`tier3`): each tier is its own key of `parent`.
 
-    def sum_advices(self, wrangling: dict, path: str, fields: dict) -> None:
+        D-0250: a tier is a mapping with an optional `data_engine` and `steps` (the list); `tier1` is required in a table and in a
+        join. Returns {tier name: the list of steps} for the tiers that are well formed; the problems of the others are reported.
+        """
+        names = list(names)
+        lists: Dict[str, list] = {}
+        if not isinstance(parent, dict):
+            return lists
+        old_container = any(key in parent for key in self.spec["old_shapes"].get(element, {}))  # told once, as an old shape
+        if "tier1" in names and "tier1" not in parent and not old_container:
+            self.add(code, f"{path}.tier1", "tier1 is required", "write tier1: {steps: []}")
+        for tier in names:
+            if tier in parent:
+                steps = self.tier(parent[tier], f"{path}.{tier}", code, tier)
+                if steps is not None:
+                    lists[tier] = steps
+        self.order_advices(lists, path)
+        self.tie_advices(lists, path)
+        return lists
+
+    def tier(self, body: Any, path: str, code: str, name: str) -> Optional[list]:
+        """One tier: a mapping with `steps` and an optional `data_engine`. Returns its list of steps, None when it cannot be read."""
+        tool = self.spec["old_shapes"]["tool"]
+        if not isinstance(body, dict):
+            self.add(code, path, f"{name} is written as a mapping with steps, not as {'a list' if isinstance(body, list) else 'a text or an empty value'} "
+                     "(the form of the recipe changed)", f"write {name}: {{steps: [...]}}. Rewrite tool: {tool} (it rewrites a recipe file and says what it changed)")
+            return None
+        wanted = self.spec["elements"]["tier"]
+        known = set(wanted["required"]) | set(wanted["optional"])
+        for key in body:
+            if key in known:
+                continue
+            if key in ("tier1", "tier2", "tier3"):
+                self.add(code, f"{path}.{key}", f"{key} is written inside {name}: each tier is a key of its own table, join or plot entry, not of another tier",
+                         f"write {key} next to {name}, and keep only data_engine and steps inside it. Rewrite tool: {tool}")
+            else:
+                self.add(code, f"{path}.{key}", f"{key} is not a key of a tier", "a tier holds data_engine and steps only")
+        if "data_engine" in body:
+            self.engine_value(body["data_engine"], "data_engine", f"{path}.data_engine")
+        if "steps" not in body:
+            self.add(code, path, f"{name} has no steps", f"write {name}: {{steps: []}} (steps is the list of steps, empty when there are none)")
+            return None
+        steps = body["steps"]
+        if not isinstance(steps, list):
+            self.add(code, f"{path}.steps", f"{name}.steps is a list of steps", "write steps: [...]")
+            return None
+        self.steps(steps, f"{path}.steps", name, self.effective_engine("data_engine", body))
+        return steps
+
+    def sum_advices(self, wrangling: Dict[str, list], path: str, fields: dict) -> None:
         """ST15 (advice, never blocks): a sum on a column declared Int32 or UInt32 (D43, PROVISIONAL).
 
         Only where the declared type is known: a step of this schema's own wrangling on a column of its input_fields, from
@@ -463,7 +573,7 @@ class _Check:
             if not isinstance(step, dict):
                 return
             name = step.get("action")
-            where = f"{path}.{tier}[{index}]"
+            where = f"{path}.{tier}.steps[{index}]"
             if name == action_names.CAST:
                 columns, dtype = step.get("columns"), step.get("dtype")
                 if not isinstance(columns, list) or not isinstance(dtype, str):
@@ -489,14 +599,13 @@ class _Check:
             if name not in JOIN_KEEPS_COLUMNS and name not in (action_names.SUM, action_names.CUM_SUM):
                 return  # the columns after this step are not known from the declarations
 
-    def tie_advices(self, container: dict, path: str, tiers: List[str]) -> None:
+    def tie_advices(self, lists: Dict[str, list], path: str) -> None:
         """ST14 (advice, never blocks): every top_k or bottom_k step. The checker cannot know whether ties exist in the data."""
-        for tier in tiers:
-            steps = container.get(tier)
-            for index, step in enumerate(steps if isinstance(steps, list) else [], start=1):
+        for tier, steps in lists.items():
+            for index, step in enumerate(steps, start=1):
                 if isinstance(step, dict) and step.get("action") in (action_names.TOP_K, action_names.BOTTOM_K):
                     nan_place = "first" if step["action"] == action_names.TOP_K else "last"
-                    self.add("ST14", f"{path}.{tier}[{index}]",
+                    self.add("ST14", f"{path}.{tier}.steps[{index}]",
                              f"Warning: {step['action']} keeps at most k rows: exactly k when the table has k rows or more. If several rows have the same value as the k-th row, only some of them fit, "
                              "and Polars does not promise which ones. "
                              f"A NaN comes {nan_place} ({'last' if nan_place == 'first' else 'first'} if `reverse` is true for that column). "
@@ -505,7 +614,7 @@ class _Check:
                              "Suggestion: to keep every row that ties with the k best, use `polars_rank` (method `min`) and a filter; this can return more than k rows.",
                              "A")
 
-    def order_advices(self, container: dict, path: str, tiers: List[str]) -> None:
+    def order_advices(self, lists: Dict[str, list], path: str) -> None:
         """ST13 (advice, never blocks): a position action after a step that does not keep the row order.
 
         The checker knows an order only from what the recipe states: `maintain_order` of sort, unique, group_by and join
@@ -513,19 +622,16 @@ class _Check:
         steps that comes before a position action decides. Nothing before it: the order is the file order, no advice.
         """
         unstated = None  # (path of the step, action) of the last step that does not keep the order
-        for tier in tiers:
-            steps = container.get(tier)
-            if not isinstance(steps, list):
-                continue
+        for tier, steps in lists.items():
             for index, step in enumerate(steps, start=1):
                 if not isinstance(step, dict):
                     continue
                 name = step.get("action")
                 if name in _ORDER_STEPS and "maintain_order" in step:
                     keeps = step["maintain_order"] not in (False, "none")
-                    unstated = None if keeps else (f"{path}.{tier}[{index}]", name)
+                    unstated = None if keeps else (f"{path}.{tier}.steps[{index}]", name)
                 elif name in action_names.POSITION_ACTIONS and unstated is not None:
-                    self.add("ST13", f"{path}.{tier}[{index}]",
+                    self.add("ST13", f"{path}.{tier}.steps[{index}]",
                              f"{name} keeps rows by their position, but the order of the rows is not fixed by {unstated[1]} "
                              f"({unstated[0]}, maintain_order: {'none' if unstated[1] == action_names.JOIN else 'false'}), so Polars does not promise the same rows "
                              "(the checker looks only at steps with a stated order parameter; it can miss, for example, a pivot or an explode before).",
@@ -533,7 +639,7 @@ class _Check:
                              "Suggestion: write a polars_sort step with maintain_order: true before this one.",
                              "A")
 
-    def steps(self, steps: list, path: str, tier: str) -> None:
+    def steps(self, steps: list, path: str, tier: str, engine: Any = None) -> None:
         actions = (self.catalogs or {}).get("actions")
         tier1_only = (self.catalogs or {}).get("tier1_only", _TIER1_ONLY_DEFAULT)
         audit_ids: Set[str] = set()
@@ -555,6 +661,7 @@ class _Check:
                 self.add("CM01", f"{where}.comment", "a comment is text", "write text")
             if tier in ("tier2", "tier3") and step.get("action") in tier1_only:
                 self.add("ST05", where, f"{step['action']} is only allowed in tier1", "move it to tier1")
+            self.check_engine_of("action", step.get("action"), engine, where, "step")
             if actions is None:
                 continue
             name = step["action"]
@@ -602,7 +709,7 @@ class _Check:
                     what, fix = split_fix(message)
                     self.add("ST06", f"{where}.{name}", what, fix)
 
-    def filter_value_problems(self, steps: dict, path: str, tables: List[Tuple[str, Dict[str, Any]]], *, joins: bool) -> None:
+    def filter_value_problems(self, steps: Dict[str, list], path: str, tables: List[Tuple[str, Dict[str, Any]]], *, joins: bool) -> None:
         """ST12: a `modif_filter` value does not have the declared type of its column (ADR-104 point 7).
 
         Walks tier1 then tier2 with the tables known at each step: a step that only removes or reorders rows keeps them,
@@ -615,7 +722,7 @@ class _Check:
                     return
                 action = step.get("action")
                 if action == action_names.FILTER:
-                    self.filter_value_at(step, f"{path}.{tier}[{index}].value", tables)
+                    self.filter_value_at(step, f"{path}.{tier}.steps[{index}].value", tables)
                 elif joins and "right_ingredient" in step:
                     right = self.declared_fields(step["right_ingredient"])
                     if right is None:
@@ -650,31 +757,28 @@ class _Check:
             path = f"joins.{jid}"
             self.join_ids.add(jid)
             if jid in unapplied_joins:
-                self.add("J14", f"{path}.steps.tier2", "tier2 of a join applies only when a plot reads the join: "
+                self.add("J14", f"{path}.tier2", "tier2 of a join applies only when a plot reads the join: "
                          "no plot reads this join, so these steps would run nowhere",
                          "plot this join, or remove the steps")
             if jid in self.schema_ids:
                 self.add("X1", path, f"the id {jid!r} is also a schema", "a plot's target must name one thing: rename one")
             if not isinstance(join, dict):
-                self.add("J01", path, "a join is a mapping", "write label, ingredients, steps")
+                self.add("J01", path, "a join is a mapping", f"write {self.label_key('join')}, ingredients, tier1")
                 continue
-            self.unknown_keys("join", join, path, "J01")
-            if "label" not in join:
-                self.add("J02", path, "the join has no label", "add label")
+            self.unknown_keys("join", join, path, "J01", {"steps": "J07"})
+            if self.label_key("join") not in join:
+                self.add("J02", path, f"the join has no {self.label_key('join')}", f"add {self.label_key('join')}")
             if not join.get("description"):
                 self.add("J03", f"{path}.description", "The join has no description, so its grain and its join type are not stated.", "Suggestion: write the grain and the join type (spec section 13).", "A")
             self.cut_description(f"{path}.description", join.get("description"))
             if "comment" in join and not isinstance(join["comment"], str):
                 self.add("CM01", f"{path}.comment", "a comment is text", "write text")
             ingredient_ids = self.ingredients(join.get("ingredients"), f"{path}.ingredients")
-            if "steps" not in join:
-                self.add("J07", f"{path}.steps", "steps is required", "write steps: {tier1: [...]}")
-            else:
-                self.step_container(join["steps"], f"{path}.steps", "J07", self.spec["elements"]["tiers"]["join"])
-                self.join_steps(join["steps"], path, ingredient_ids)
-                first = self.declared_fields(ingredient_ids[0]) if ingredient_ids else None
-                if isinstance(join["steps"], dict) and first is not None:
-                    self.filter_value_problems(join["steps"], f"{path}.steps", [(ingredient_ids[0], first)], joins=True)
+            lists = self.tiers(join, path, "J07", self.spec["elements"]["tiers"]["join"], "join")
+            self.join_steps(lists, path, ingredient_ids)
+            first = self.declared_fields(ingredient_ids[0]) if ingredient_ids else None
+            if first is not None:
+                self.filter_value_problems(lists, path, [(ingredient_ids[0], first)], joins=True)
             labels = join.get("labels")
             if labels is not None and not (isinstance(labels, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in labels.items())):
                 self.add("J06", f"{path}.labels", "labels maps a column to a display text", "write labels: {column: text}")
@@ -697,14 +801,12 @@ class _Check:
             ids.append(dataset)
         return ids
 
-    def join_steps(self, steps: Any, path: str, ingredient_ids: List[str]) -> None:
-        if not isinstance(steps, dict):
-            return
+    def join_steps(self, steps: Dict[str, list], path: str, ingredient_ids: List[str]) -> None:
         for tier in ("tier1", "tier2"):
             for index, step in enumerate(steps.get(tier) or [], start=1):
                 if not isinstance(step, dict) or "right_ingredient" not in step:
                     continue
-                where = f"{path}.steps.{tier}[{index}]"
+                where = f"{path}.{tier}.steps[{index}]"
                 if tier == "tier1":
                     self.join_key_problems(steps["tier1"], index - 1, where, ingredient_ids)
                     self.join_advices(steps["tier1"], index - 1, where, ingredient_ids)
@@ -774,11 +876,11 @@ class _Check:
         schema = self.schema_bodies.get(dataset_id)
         if not isinstance(schema, dict) or not isinstance(schema.get("input_fields"), dict) or not schema["input_fields"]:
             return None  # an empty input_fields makes the ingestion keep every column of the file
-        wrangling = schema.get("wrangling")
-        if wrangling not in (None, [], {}):
-            if not isinstance(wrangling, dict) or not isinstance(wrangling.get("tier1") or [], list):
+        tier1 = schema.get("tier1")
+        if tier1 is not None:
+            if not isinstance(tier1, dict) or not isinstance(tier1.get("steps") or [], list):
                 return None
-            for step in wrangling.get("tier1") or []:
+            for step in tier1.get("steps") or []:
                 if not isinstance(step, dict) or step.get("action") not in JOIN_KEEPS_COLUMNS:
                     return None
         return schema["input_fields"]
@@ -847,7 +949,8 @@ class _Check:
         """J08 needs the recipe graph: a column in both ingredients that is not a join key is renamed silently by Polars."""
         if self.graph is None or len(ingredient_ids) < 2:
             return
-        steps = (join.get("steps") or {}).get("tier1") if isinstance(join.get("steps"), dict) else None
+        tier1 = join.get("tier1")
+        steps = tier1.get("steps") if isinstance(tier1, dict) else None
         if not isinstance(steps, list):
             return
         base_columns = self.graph.columns_of(ingredient_ids[0])
@@ -861,7 +964,7 @@ class _Check:
             keys |= set(_as_list(step.get("by"))) | set(_as_list(step.get("by_left"))) | set(_as_list(step.get("by_right")))  # the `by` columns of an as-of join are merged, not renamed
             clash = sorted((set(base_columns) & set(right)) - keys)
             if clash:
-                self.add("J08", f"{path}.steps.tier1[{index}]",
+                self.add("J08", f"{path}.tier1.steps[{index}]",
                          f"the column {clash[0]!r} is in both {ingredient_ids[0]} and {step['right_ingredient']} and is not a join key; "
                          "Polars would rename the second one silently",
                          "rename or drop one of them before the join")
@@ -881,8 +984,8 @@ class _Check:
                 self.add("G01", path, "a group is a mapping", "write label and plots")
                 continue
             self.unknown_keys("group", group, path, "G01")
-            if "label" not in group:
-                self.add("G01", path, "the group has no label (the tab text)", "add label")
+            if "ui_label" not in group and "label" not in group:  # an old `label` is told as renamed (above), not also as missing
+                self.add("G01", path, "the group has no ui_label (the tab text)", "add ui_label")
             if not group.get("description"):
                 self.add("G02", f"{path}.description", "The group has no description, so the question its plots answer is not stated.", "Suggestion: write the question its plots answer.", "A")
             self.cut_description(f"{path}.description", group.get("description"))
@@ -890,7 +993,7 @@ class _Check:
                 self.add("CM01", f"{path}.comment", "a comment is text", "write text")
             plots = group.get("plots")
             if not isinstance(plots, dict):
-                self.add("G01", f"{path}.plots", "plots is a mapping of id to plot", "write plot id: {label, spec}")
+                self.add("G01", f"{path}.plots", "plots is a mapping of id to plot", "write plot id: {ui_label, target_dataset, mapping, layers}")
                 continue
             for pid, plot in plots.items():
                 plots_found += 1
@@ -899,61 +1002,57 @@ class _Check:
             self.add("T09", "analysis_groups", "profile run needs at least one group with one plot", "add a group with a plot")
 
     def plot(self, plot: Any, path: str, pid: str) -> None:
+        """A plot entry (D-0237, D-0253): the content of the plot is written in the entry itself, there is no `spec:`."""
         if not isinstance(pid, str) or not _SNAKE.match(pid):
             self.add("P03", path, f"the plot id {pid!r} is not snake_case", "use lowercase letters, digits and underscores")
         if not isinstance(plot, dict):
-            self.add("P01", path, "a plot is a mapping", "write label and spec")
+            self.add("P01", path, "a plot is a mapping", "write ui_label, target_dataset, mapping and layers")
             return
-        self.unknown_keys("plot", plot, path, "P01")
-        for key in ("label", "spec"):
-            if key not in plot:
-                self.add("P01", path, f"{key} is required", f"add {key}")
+        self.unknown_keys("plot", plot, path, "P01", {"steps": "P04"})
+        if "ui_label" not in plot and "label" not in plot:  # an old `label` is told as renamed (above), not also as missing
+            self.add("P01", path, "ui_label is required", "add ui_label")
         if not plot.get("description"):
             self.add("P02", f"{path}.description", "The plot has no description, so what is drawn and counted is not stated.", "Suggestion: write what is drawn and counted (spec section 13).", "A")
         self.cut_description(f"{path}.description", plot.get("description"))
         if "comment" in plot and not isinstance(plot["comment"], str):
             self.add("CM01", f"{path}.comment", "a comment is text", "write text")
-        if "steps" in plot:
-            steps = plot["steps"]
-            if not isinstance(steps, dict) or set(steps) - {"tier3"}:
-                self.add("P04", f"{path}.steps", "steps at the plot entry holds only tier3", "write steps: {tier3: [...]}")
-            else:
-                self.step_container(steps, f"{path}.steps", "P04", self.spec["elements"]["tiers"]["plot"])
-                if steps.get("tier3") and not TIER3_READ_BY_ENGINE:
-                    self.add("P05", f"{path}.steps.tier3", "the engine does not read steps.tier3 yet, so these steps would never be applied",
-                             "leave tier3 empty until the engine reads it")
-        if isinstance(plot.get("spec"), dict):
-            self.plot_spec(plot["spec"], f"{path}.spec")
-        elif "spec" in plot:
-            self.add("PS01", f"{path}.spec", "spec is a mapping", "write target_dataset, mapping, layers")
+        if "plot_engine" in plot:
+            self.engine_value(plot["plot_engine"], "plot_engine", f"{path}.plot_engine")
+        if "tier3" in plot:
+            lists = self.tiers(plot, path, "P04", self.spec["elements"]["tiers"]["plot"], "plot")
+            if lists.get("tier3") and not TIER3_READ_BY_ENGINE:
+                self.add("P05", f"{path}.tier3.steps", "the engine does not read tier3 yet, so these steps would never be applied",
+                         "leave tier3 empty until the engine reads it")
         if "taxonomy" in plot and not isinstance(plot["taxonomy"], dict):
             self.add("P01", f"{path}.taxonomy", "taxonomy is a mapping of axis to term", "write taxonomy: {family: ..., ...}")
+        if "spec" not in plot:  # an old `spec` holds the content: told once as an old shape, the content is judged after the rewrite
+            self.plot_content(plot, path)
 
-    def plot_spec(self, spec_: dict, path: str) -> None:
-        self.unknown_keys("spec", spec_, path, "PS01")
-        target = spec_.get("target_dataset")
+    def plot_content(self, plot: dict, path: str) -> None:
+        """The content of a plot (target, mapping, layers, theme, ...): the checks PS02 to PS06, read from the entry (PS01, unknown key of a spec, is retired: an unknown key of the entry is P01)."""
+        target = plot.get("target_dataset")
         if not target or (target not in self.schema_ids and target not in self.join_ids):
             self.add("PS02", f"{path}.target_dataset", f"target_dataset {target!r} is not a schema or a join of this recipe", "name one")
-        if "mapping" not in spec_ or "layers" not in spec_:
+        if "mapping" not in plot or "layers" not in plot:
             self.add("PS03", path, "mapping and layers are required", "add mapping and layers")
-        layers = spec_.get("layers")
+        layers = plot.get("layers")
         if isinstance(layers, list):
-            self.layers(layers, f"{path}.layers")
-        elif "layers" in spec_:
+            self.layers(layers, f"{path}.layers", plot_engine=self.effective_engine("plot_engine", plot))
+        elif "layers" in plot:
             self.add("PS03", f"{path}.layers", "layers is a list", "write layers: [{name: geom_point}]")
-        mapping = spec_.get("mapping")
+        mapping = plot.get("mapping")
         if isinstance(mapping, dict) and "facet_by" in mapping and facet_variable_problems(mapping["facet_by"]):
             shown = ", ".join(repr(r) for r in facet_variable_problems(mapping["facet_by"]))
             self.add("PS06", f"{path}.mapping.facet_by", f"the facet variable {shown} is not a plain column name",
                      "Suggestion: write a column of the data (letters, digits, underscore, space, dot or dash); to facet by a computed value, add a recipe step that makes the column first")
-        theme = spec_.get("theme")
+        theme = plot.get("theme")
         themes = (self.catalogs or {}).get("themes")
         if theme is not None and themes is not None and theme not in themes:
             self.add("PS05", f"{path}.theme", f"{theme!r} is not a registered theme", "write one of " + ", ".join(sorted(themes)))
-        if "filters" in spec_ and TIER3_READ_BY_ENGINE:
-            self.add("P06", f"{path}.filters", "filters in a plot spec moved to the plot's steps", "write the filters as steps.tier3")
+        if "filters" in plot and TIER3_READ_BY_ENGINE:
+            self.add("P06", f"{path}.filters", "filters in a plot moved to the plot's tier3", "write the filters as tier3 steps")
 
-    def layers(self, layers: list, path: str, *, needs_geom: bool = True) -> None:
+    def layers(self, layers: list, path: str, *, needs_geom: bool = True, plot_engine: Any = None) -> None:
         components = (self.catalogs or {}).get("components")
         arguments = (self.catalogs or {}).get("component_arguments", {})
         kinds = (self.catalogs or {}).get("component_kinds", {})
@@ -967,6 +1066,7 @@ class _Check:
             if "comment" in layer and not isinstance(layer["comment"], str):
                 self.add("CM01", f"{where}.comment", "a comment is text", "write text")
             name = layer["name"]
+            self.check_engine_of("component", name, plot_engine, where, "layer")
             has_geom = has_geom or (isinstance(name, str) and name.startswith(("geom_", "stat_")))
             if isinstance(name, str):
                 # PS06: a text that plotnine evaluates as Python (smoother formula, facet variable, function string); needs no catalogue
@@ -1006,7 +1106,15 @@ class _Check:
         if not isinstance(defaults, dict):
             self.add("PD01", "plot_defaults", "plot_defaults is a mapping", "write plot_defaults: {palette: ...}")
             return
-        self.unknown_keys("plot_defaults", defaults, "plot_defaults", "PD01")
+        dead = self.spec["removed"]["plot_defaults"]
+        self.unknown_keys("plot_defaults", defaults, "plot_defaults", "PD01", skip=dead)
+        for key, why in dead.items():
+            if key in defaults:
+                self.add("PD02", f"plot_defaults.{key}",
+                         f"{key} was removed from plot_defaults (REMOVED, {why['decision']}, {why['date']}): the key did nothing, and a key that does nothing is "
+                         f"removed from the recipe (D-0220). {why['why']}.",
+                         f"Remove the key. Rewrite tool: {self.spec['old_shapes']['tool']} removes it and prints its old value. "
+                         f"Tombstone expires: {self.spec['removed']['tombstone_expires']}")
         # PROVISIONAL (S3): the one seed of the whole recipe, a whole number
         if "random_state" in defaults:
             value = defaults["random_state"]
@@ -1017,7 +1125,7 @@ class _Check:
         # only the "needs a geom" rule does not apply, the defaults are added to every plot
         if "layers" in defaults:
             if isinstance(defaults["layers"], list):
-                self.layers(defaults["layers"], "plot_defaults.layers", needs_geom=False)
+                self.layers(defaults["layers"], "plot_defaults.layers", needs_geom=False, plot_engine=self.raw.get("plot_engine"))
             else:
                 self.add("PS03", "plot_defaults.layers", "layers is a list", "write layers: [{name: theme_bw}]")
 

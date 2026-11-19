@@ -71,7 +71,7 @@ def staged_app():
     recipe = minimal_recipe("t", label="T", schemas={"t": schema}, plots={PLOT: plot, OTHER_PLOT: other})
     recipe["info"]["description"] = "A table of 30 samples and one plot, for a browser test of the audit step order."
     group = recipe["analysis_groups"].pop("main")
-    group.update({"label": "TG", "description": "The one group."})
+    group.update({"ui_label": "TG", "description": "The one group."})
     recipe["analysis_groups"] = {"tg": group}
     recipes = WORK / "recipes"
     recipes.mkdir(exist_ok=True)
@@ -269,7 +269,7 @@ def _reference_png(frame: pl.DataFrame) -> Image.Image:
     """The plot of the staged recipe drawn directly from a frame (no app), saved like the export saves it (png, 300 dpi, 8 x 5)."""
     from viz_factory import VizFactory
     recipe = yaml.safe_load((WORK / "recipes" / "t.yaml").read_text(encoding="utf-8"))
-    spec = recipe["analysis_groups"]["tg"]["plots"][PLOT]["spec"]
+    spec = recipe["analysis_groups"]["tg"]["plots"][PLOT]
     figure = VizFactory().render(frame.lazy(), {"plots": {PLOT: spec}, "plot_defaults": recipe.get("plot_defaults", {})}, PLOT)
     path = WORK / "reference.png"
     figure.save(str(path), verbose=False, format="png", dpi=300, width=8, height=5)
