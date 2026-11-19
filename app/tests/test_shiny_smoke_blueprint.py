@@ -552,14 +552,19 @@ class TestBlueprintPlotOpen:
             # where "3. labs" was wanted). The condition is the plot's own numbered layers and mapping columns.
             numbered = [f"{i + 2}. {layer}" for i, layer in enumerate(wanted)]
             columns = list(entry["mapping"].values())
+            # a numbered layer matches with a boundary: "2. geom_x" must not be found inside "12. geom_x" or "2. geom_xy"
+            patterns = [r"(?<![0-9])" + re.escape(n) + r"(?![A-Za-z0-9_])" for n in numbered]
+            beyond = r"(?<![0-9])" + str(len(numbered) + 2) + r"\. "
             try:
                 page.wait_for_function(
-                    "([numbered, columns]) => { const t = (document.querySelector('#logic_stack_ui') || {}).innerText || '';"
-                    " return t.includes('mapping (aes)') && numbered.every(n => t.includes(n)) && columns.every(c => t.includes(c))"
-                    " && !t.includes((numbered.length + 2) + '. '); }",
-                    arg=[numbered, columns], timeout=30_000)
-            except Exception:
-                pass   # the assertions below report what the stack held
+                    "([patterns, columns, beyond]) => { const t = (document.querySelector('#logic_stack_ui') || {}).innerText || '';"
+                    " return t.includes('mapping (aes)') && patterns.every(p => new RegExp(p).test(t)) && columns.every(c => t.includes(c))"
+                    " && !new RegExp(beyond).test(t); }",
+                    arg=[patterns, columns, beyond], timeout=30_000)
+            except Exception as error:
+                seen = stack.inner_text()
+                raise AssertionError(f"{plot_id}: the stack of this plot did not appear (wanted {numbered}, columns {columns}); "
+                                     f"stack text seen: {seen!r}; wait error: {type(error).__name__}") from error
             text = stack.inner_text()
             assert f"{len(wanted) + 1}. {wanted[-1]}" in text, f"{plot_id}: the layers {wanted} are not all in the stack: {text!r}"
             for layer in wanted:
