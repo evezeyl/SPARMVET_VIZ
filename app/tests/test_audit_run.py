@@ -317,8 +317,10 @@ def test_a_refused_run_keeps_the_tables_a_previous_run_of_the_same_copy_left_and
     assert world.original_files() == before
     assert "B.parquet" not in world.audit_files(), "the table this run built is gone"
     assert set(_audit_bytes(world)) <= set(kept), "nothing new is left"
+    assert _audit_bytes(world)["A.parquet"] == kept["A.parquet"], "the table the run only read is still there"
     again = world.run(good)
-    assert again.built_tables == [], "what the earlier run left is still served"
+    # J of the earlier run was replaced by the refused run under the same name (its key moved with B) and was taken out with it: rebuilt, not served stale
+    assert again.built_tables == ["J T1", "J T2"]
 
 
 def test_a_refused_run_that_built_nothing_new_changes_nothing_in_the_audit_folder(world):
