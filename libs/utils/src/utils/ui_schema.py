@@ -13,6 +13,7 @@ registries, the form and the checker cannot disagree.
 
 A parameter's shape is what the recipe holds: a scalar, a list, a mapping, or a list of mappings.
 """
+import datetime
 import difflib
 from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional
@@ -136,7 +137,11 @@ def _names_problem(param_def: dict, value: Any) -> Optional[str]:
         return None
     for item in value:
         if not isinstance(item, str):
-            return f"write a column name (text) for every element, for example [a, b]; {item!r} is not a column name"
+            fix = f"write a column name (text) for every element, for example [a, b]; {item!r} is not a column name"
+            if item is None or isinstance(item, (int, float, bool, datetime.date)):
+                # YAML turns an unquoted 2022, yes, null or 2024-01-01 into a number, true/false, empty value or date
+                fix += f"; a column named like this must be written in quotes, for example \"{item}\""
+            return fix
     return None
 
 
