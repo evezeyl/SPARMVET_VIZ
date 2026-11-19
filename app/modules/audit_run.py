@@ -269,7 +269,7 @@ def _rollback(folder: Path, before: Dict[str, tuple], created: bool) -> None:
 
     The rule: a file that is not in `before` (the run created it) or whose size or modification time differs from `before` (the run replaced it) is removed;
     a file that was there before and was not touched stays, so a table that a previous successful run of the same copy left, and that this run only read,
-    is still served. The folder itself is removed when this run created it and it is empty. The original's folder is never touched here."""
+    is still served. The folder itself is removed when this run created it and it is empty. The original's folder is never touched here: `run_audit` refuses an audit folder that is, holds or lies inside the original's folder before anything is built, so it is not inside the folder this function cleans."""
     if not folder.is_dir():
         return
     for path in sorted(folder.rglob("*"), reverse=True):
@@ -286,11 +286,15 @@ def run_audit(orchestrator: DataOrchestrator, recipe_id: str, audit_recipe: dict
 
     `original_dir` holds the original's stored tables (`<table>.parquet`, `<table>__T2.parquet`); `audit_dir` is the audit's own folder and must be another
     folder. Raises `AuditRunError` when the copy is not a copy of the original plus audit steps at the end of their lists (`integrity_errors`), when the
-    folders are the same, or when an audit step cannot be applied (naming its id and its place). Changes neither the original's recipe nor the audit copy. A run that does not finish (a refused step, any error, an interrupt)
+    folders are the same or one lies inside the other (symlinks followed), or when an audit step cannot be applied (naming its id and its place). Changes neither the original's recipe nor the audit copy. A run that does not finish (a refused step, any error, an interrupt)
     leaves in the audit folder nothing that it built (`_rollback`)."""
     original_dir, audit_dir = Path(original_dir), Path(audit_dir)
-    if original_dir.resolve() == audit_dir.resolve():
+    original_real, audit_real = original_dir.resolve(), audit_dir.resolve()
+    if original_real == audit_real:
         raise AuditRunError("The audit's stored tables go in a folder of their own, never in the folder of the original's tables.")
+    # Symlinks are followed. A run that does not finish removes what it built in the audit folder (`_rollback`): that folder must never hold the original's tables.
+    if audit_real.is_relative_to(original_real) or original_real.is_relative_to(audit_real):
+        raise AuditRunError("The audit's stored tables go in a folder of their own: the folder of the audit and the folder of the original's tables must not be one inside the other.")
     original = load_data_analysis_recipe(orchestrator.data_analysis_recipes_dir / f"{recipe_id}.yaml")
     problems = integrity_errors(audit_recipe, original.raw)
     if problems:

@@ -126,6 +126,20 @@ def _min_items_problem(param_def: dict, value: Any) -> Optional[tuple]:
     return (f"is empty, {why}" if not value else f"has fewer than {wanted} items"), fix
 
 
+def _names_problem(param_def: dict, value: Any) -> Optional[str]:
+    """What is wrong with an element of a list of column names, or None.
+
+    The schema declares a list of names as `widget: column_selector` with `multi: true`; every element of it is the name of a
+    column, so it is text. A number, a nested list, a mapping, true/false or an empty value there could not run.
+    """
+    if param_def.get("widget") != "column_selector" or not param_def.get("multi") or not isinstance(value, list):
+        return None
+    for item in value:
+        if not isinstance(item, str):
+            return f"write a column name (text) for every element, for example [a, b]; {item!r} is not a column name"
+    return None
+
+
 def _options_problem(param_def: dict, value: Any) -> Optional[str]:
     options = param_def.get("options")
     if param_def.get("widget") != "enum" or not options:
@@ -224,7 +238,7 @@ def step_problems(action: str, spec: dict, schema: Optional[dict]) -> List[StepP
             problems.append(StepProblem("ST07", name, f"{name} takes a list", f"write [{value}]"))
             continue
         wrong = shape_problem(definition, value) or _single_value_problem(definition, value) \
-            or _options_problem(definition, value)
+            or _names_problem(definition, value) or _options_problem(definition, value)
         if wrong:
             problems.append(StepProblem("ST10", name, f"{name} has the wrong form", wrong))
             continue

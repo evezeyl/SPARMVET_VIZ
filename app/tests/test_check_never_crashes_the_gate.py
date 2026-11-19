@@ -118,3 +118,22 @@ def test_any_other_exception_says_the_check_could_not_run_and_never_blames_the_r
         assert "the check could not run" in text and type(exc).__name__ in text and str(exc) in text and "not accepted" in text
         assert "shape of this recipe" not in text
         assert "fault of the app or of its installation" in problems[0].tip
+
+
+@pytest.mark.parametrize("columns", [[["identity"]], [{"a": 1}], [5], [None], [True]])
+def test_the_demo_recipe_with_a_cast_of_a_non_text_column_name_is_rejected_at_the_gate(tmp_path, columns):
+    """A column name that is not text in a list of names is refused by the gate with a plain message; it was accepted and failed only at the first build."""
+    from utils.recipe_loader import load_recipe
+    raw = load_recipe("config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml")[0]
+    raw["data_schemas"]["amr_data"]["tier1"]["steps"].insert(0, {"action": "polars_cast", "columns": columns, "dtype": "Int32"})
+    path = write_recipe(tmp_path / "2_test_data_ST22_dummy.yaml", raw)
+    for problems in (checker_problems(path), validate_data_analysis_recipe(path)):
+        found = [p for p in problems if p.problem.startswith("[ST10]") and "column name" in (p.tip or "")]
+        assert found, [p.problem for p in problems]
+        assert not any("[CHECK]" in p.problem for p in problems)
+
+
+def test_the_demo_recipe_itself_still_passes_the_check(tmp_path):
+    from utils.recipe_loader import load_recipe
+    raw = load_recipe("config/data_analysis_recipes/pipelines/2_test_data_ST22_dummy.yaml")[0]
+    assert checker_problems(write_recipe(tmp_path / "2_test_data_ST22_dummy.yaml", raw)) == []
