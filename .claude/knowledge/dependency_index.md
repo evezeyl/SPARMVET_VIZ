@@ -45,13 +45,13 @@
 ## `.claude/rules/rules_data_analysis_recipe_structure.md`
 - **Role:** `meta`
 - **provides:** `rule:canonical_steps_syntax`, `rule:directory_taxonomy`, `rule:analysis_groups_structure`, `rule:final_contract`
-- **documents:** `libs/transformer/src/transformer/data_assembler.py`, `app/handlers/home_theater.py`, `libs/utils/src/utils/recipe_spec.yaml`, `libs/utils/src/utils/recipe_check.py`
+- **documents:** `libs/transformer/src/transformer/data_assembler.py`, `app/handlers/home_theater.py`
 - **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `docs/appendix/data_analysis_recipe_structure.yaml`, `.claude/knowledge/dependency_index.md`
 
 ## `.claude/rules/rules_data_engine.md`
 - **Role:** `meta`
 - **provides:** `rule:3tier_lifecycle`, `rule:wrangling_block_structure`, `rule:decorator_standards`, `rule:polars_parity`
-- **documents:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/actions/`, `libs/transformer/src/transformer/engine_python_polars.py`, `app/modules/cache_keys.py`, `app/modules/engine_registry.py`
+- **documents:** `libs/transformer/src/transformer/data_wrangler.py`, `libs/transformer/src/transformer/data_assembler.py`, `libs/transformer/src/transformer/actions/`
 - **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
 
 ## `.claude/rules/rules_documentation_aesthetics.md`
@@ -86,7 +86,7 @@
 ## `.claude/rules/rules_viz_factory.md`
 - **Role:** `meta`
 - **provides:** `rule:artist_pillar`, `rule:plotnine_parity`, `rule:core_geoms_standard`
-- **documents:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/registry.py`, `libs/viz_factory/src/viz_factory/engine_python_plotnine.py`, `libs/viz_factory/src/viz_factory/plot_config_resolver.py`
+- **documents:** `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/viz_factory/src/viz_factory/geoms/core.py`, `libs/viz_factory/src/viz_factory/themes/core.py`, `libs/viz_factory/src/viz_factory/registry.py`
 - **consumed_by:** `.claude/rules/rules_agent_role_bioscientist.md`, `.claude/knowledge/dependency_index.md`
 
 ## `app/handlers/__init__.py`
