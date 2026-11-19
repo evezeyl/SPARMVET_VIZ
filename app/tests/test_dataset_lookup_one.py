@@ -195,10 +195,10 @@ def test_the_keys_of_an_imported_recipe_cover_the_files_it_reads(tmp_path):
     assert before.data_batch_hash == SessionManager.compute_data_batch_hash({"T": f})
     f.write_text("sample_id\ntwo\n")
     after = orch.compute_data_analysis_recipe_keys("tiny")
-    assert after.tier1_key != before.tier1_key
+    assert after.tier1_key_of("T") != before.tier1_key_of("T")
     # a change of the file in raw_data (which is not read) changes nothing
     (tmp_path / "raw" / "T.tsv").write_text("sample_id\nchanged\n")
-    assert orch.compute_data_analysis_recipe_keys("tiny").tier1_key == after.tier1_key
+    assert orch.compute_data_analysis_recipe_keys("tiny").tier1_key_of("T") == after.tier1_key_of("T")
 
 
 def test_materialize_tier1_of_an_imported_recipe_holds_the_import_rows(tmp_path):

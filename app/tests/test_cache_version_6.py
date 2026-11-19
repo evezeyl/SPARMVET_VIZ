@@ -1,16 +1,16 @@
-"""The cache version 5: a table stored with another version is never served, is removed when the mismatch is found, and the user is
+"""The cache version 6 (the mechanism arrived with version 5): a table stored with another version is never served, is removed when the mismatch is found, and the user is
 told once (D-0240, D-0285 reading: the notice wording is PROVISIONAL, not approved by Eve).
 
 What is tested:
-  - a stored table whose key was made with version 4 is not served and is removed at the moment the mismatch is detected, also
+  - a stored table whose key was made with version 5 is not served and is removed at the moment the mismatch is detected, also
     when the rebuild then fails (nothing that should be gone is left behind, rules_verification_testing.md section 9);
-  - the sweep at the start of the app removes every stored table that carries no version 5 mark (a table of version 4 has none),
+  - the sweep at the start of the app removes every stored table that carries no version 6 mark (a table of version 5 has none),
     leaves what is not a stored table, and says so in one sentence, once;
   - the session key and the recipe hash do not depend on the cache version;
-  - a session of version 4 (a record with no table keys) and a bundle of version 4 are read, never half-read: the tables are
+  - a session of version 5 (a record with no table keys) and a bundle of version 5 are read, never half-read: the tables are
     rebuilt and the bundle's engine leg says plainly that it does not match.
 
-Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_cache_version_5.py -q
+Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_cache_version_6.py -q
 """
 import io
 import json
@@ -45,7 +45,7 @@ def _fresh_cache():
 
 
 def _store(path: Path, key: str, meta_key: str, version: str | None) -> None:
-    """A stored table as an older or the current app wrote it: with `version` None it carries no mark (a table of version 4)."""
+    """A stored table as an older or the current app wrote it: with `version` None it carries no mark (a table of version 5)."""
     metadata = {meta_key: key}
     if version is not None:
         metadata[CACHE_VERSION_META] = version
@@ -62,33 +62,33 @@ def test_the_notice_is_the_one_sentence_the_review_session_proposed_PROVISIONAL(
 # --- a stored table of another version is not served and is removed when it is found -----------------------------------------
 
 
-def test_a_table_stored_under_version_4_is_not_served_and_is_rebuilt_with_the_mark_of_version_5(tmp_path, monkeypatch):
-    monkeypatch.setattr(cache_keys, "ENGINE_CACHE_VERSION", "4")
+def test_a_table_stored_under_version_5_is_not_served_and_is_rebuilt_with_the_mark_of_version_6(tmp_path, monkeypatch):
+    monkeypatch.setattr(cache_keys, "ENGINE_CACHE_VERSION", "5")
     w = World(tmp_path)
     assert len(w.build()) == 3
     old_key = w.stored_key()
-    monkeypatch.undo()                          # the app is now version 5
+    monkeypatch.undo()                          # the app is now version 6
     clear_data_analysis_recipe_cache()
     assert w.anchor.exists()
     rows = w.build()
     assert len(rows) == 3
-    assert w.stored_key() != old_key, "the table of version 4 was served"
-    assert get_parquet_metadata_hash(str(w.anchor), CACHE_VERSION_META) == "5"
+    assert w.stored_key() != old_key, "the table of version 5 was served"
+    assert get_parquet_metadata_hash(str(w.anchor), CACHE_VERSION_META) == "6"
 
 
-def test_a_table_written_by_version_4_with_no_version_mark_is_rebuilt_not_served(tmp_path, monkeypatch):
-    """What an old file really is: the key of version 4 and no version mark at all."""
+def test_a_table_written_by_version_5_with_no_version_mark_is_rebuilt_not_served(tmp_path, monkeypatch):
+    """What an old file really is: the key of version 5 and no version mark at all."""
     w = World(tmp_path)
-    monkeypatch.setattr(cache_keys, "ENGINE_CACHE_VERSION", "4")
-    key_4 = w.orch.compute_data_analysis_recipe_keys("tiny").tier1_key
+    monkeypatch.setattr(cache_keys, "ENGINE_CACHE_VERSION", "5")
+    key_4 = w.orch.compute_data_analysis_recipe_keys("tiny").tier1_key_of("C")
     monkeypatch.undo()
     clear_data_analysis_recipe_cache()
     _store(w.anchor, key_4, TIER1_KEY_META, None)
     keys = w.orch.compute_data_analysis_recipe_keys("tiny")
-    assert keys.tier1_key != key_4
+    assert keys.tier1_key_of("C") != key_4
     lf = w.orch.materialize_tier1("tiny", "C", w.anchor, keys=keys)
-    assert sorted(lf.collect()["sample_id"].to_list()) == ["s1", "s2", "s3"], "the table of version 4 was served"
-    assert get_parquet_metadata_hash(str(w.anchor), CACHE_VERSION_META) == "5"
+    assert sorted(lf.collect()["sample_id"].to_list()) == ["s1", "s2", "s3"], "the table of version 5 was served"
+    assert get_parquet_metadata_hash(str(w.anchor), CACHE_VERSION_META) == "6"
 
 
 def test_a_table_of_another_version_is_removed_at_the_moment_it_is_found_even_when_the_rebuild_fails(tmp_path, monkeypatch):
@@ -109,8 +109,8 @@ def test_a_tier2_of_another_version_is_removed_when_it_is_found_and_rebuilt(tmp_
     w.orch.materialize_tier1("tiny", "C", w.anchor, keys=keys)
     _store(t2, "a-key-of-version-4", TIER2_KEY_META, None)
     lf = w.orch.materialize_tier2("tiny", "C", w.anchor, keys=keys)
-    assert sorted(lf.collect()["sample_id"].to_list()) == ["s1", "s2"], "the Tier 2 of version 4 was served"
-    assert get_parquet_metadata_hash(str(t2), CACHE_VERSION_META) == "5"
+    assert sorted(lf.collect()["sample_id"].to_list()) == ["s1", "s2"], "the Tier 2 of version 5 was served"
+    assert get_parquet_metadata_hash(str(t2), CACHE_VERSION_META) == "6"
 
 
 def test_a_tier2_of_another_version_is_removed_at_the_moment_it_is_found_even_when_its_rebuild_fails(tmp_path):
@@ -170,9 +170,9 @@ def test_the_stored_tables_carry_the_mark_of_the_version_that_wrote_them(tmp_pat
 
 def test_the_sweep_removes_every_stored_table_that_is_not_of_this_version_and_names_them(tmp_path):
     _store(tmp_path / "old.parquet", "k", TIER1_KEY_META, None)
-    _store(tmp_path / "older_T2.parquet", "k", TIER2_KEY_META, "4")
-    _store(tmp_path / "current.parquet", "k", TIER1_KEY_META, "5")
-    removed = remove_tables_of_other_version(tmp_path, CACHE_VERSION_META, "5")
+    _store(tmp_path / "older_T2.parquet", "k", TIER2_KEY_META, "5")
+    _store(tmp_path / "current.parquet", "k", TIER1_KEY_META, "6")
+    removed = remove_tables_of_other_version(tmp_path, CACHE_VERSION_META, "6")
     assert sorted(removed) == ["old.parquet", "older_T2.parquet"]
     assert sorted(p.name for p in tmp_path.iterdir()) == ["current.parquet"]
 
@@ -182,19 +182,19 @@ def test_the_sweep_leaves_a_file_that_is_not_a_stored_table_and_a_file_it_cannot
     (tmp_path / "broken.parquet").write_bytes(b"not a parquet file")
     (tmp_path / ".C.parquet.abc.tmp").write_bytes(b"temporary")                      # the temporary file of a writer
     (tmp_path / "notes.txt").write_text("keep")
-    assert remove_tables_of_other_version(tmp_path, CACHE_VERSION_META, "5") == []
+    assert remove_tables_of_other_version(tmp_path, CACHE_VERSION_META, "6") == []
     assert sorted(p.name for p in tmp_path.iterdir()) == [".C.parquet.abc.tmp", "broken.parquet", "not_ours.parquet", "notes.txt"]
 
 
 def test_the_sweep_of_an_empty_or_missing_folder_does_nothing(tmp_path):
-    assert remove_tables_of_other_version(tmp_path, CACHE_VERSION_META, "5") == []
-    assert remove_tables_of_other_version(tmp_path / "nowhere", CACHE_VERSION_META, "5") == []
+    assert remove_tables_of_other_version(tmp_path, CACHE_VERSION_META, "6") == []
+    assert remove_tables_of_other_version(tmp_path / "nowhere", CACHE_VERSION_META, "6") == []
 
 
 def test_a_second_sweep_finds_nothing_so_the_notice_cannot_come_twice(tmp_path):
     _store(tmp_path / "old.parquet", "k", TIER1_KEY_META, None)
-    assert remove_tables_of_other_version(tmp_path, CACHE_VERSION_META, "5") == ["old.parquet"]
-    assert remove_tables_of_other_version(tmp_path, CACHE_VERSION_META, "5") == []
+    assert remove_tables_of_other_version(tmp_path, CACHE_VERSION_META, "6") == ["old.parquet"]
+    assert remove_tables_of_other_version(tmp_path, CACHE_VERSION_META, "6") == []
 
 
 # --- the start of the app: the notice, once ------------------------------------------------------------------------------------
@@ -271,7 +271,7 @@ def test_the_recipe_hash_and_the_session_key_do_not_depend_on_the_cache_version(
     entry = w.data_analysis_recipes_dir / "tiny.yaml"
     sha_5 = SessionManager.compute_data_analysis_recipe_sha256(entry)
     key_5 = SessionManager.compute_session_key(sha_5, "d" * 64)
-    monkeypatch.setattr(cache_keys, "ENGINE_CACHE_VERSION", "4")
+    monkeypatch.setattr(cache_keys, "ENGINE_CACHE_VERSION", "5")
     clear_data_analysis_recipe_cache()
     sha_4 = SessionManager.compute_data_analysis_recipe_sha256(entry)
     assert sha_4 == sha_5 and SessionManager.compute_session_key(sha_4, "d" * 64) == key_5
@@ -286,13 +286,13 @@ def test_the_recipe_hash_is_the_hash_of_the_files_so_an_engine_written_in_the_re
     assert SessionManager.compute_data_analysis_recipe_sha256(entry) != before
 
 
-# --- a session and a bundle written under version 4 -----------------------------------------------------------------------------
+# --- a session and a bundle written under version 5 -----------------------------------------------------------------------------
 
 
-def test_a_session_of_version_4_restores_and_its_tables_are_rebuilt_from_the_recipe_and_data(tmp_path, monkeypatch):
+def test_a_session_of_version_5_restores_and_its_tables_are_rebuilt_from_the_recipe_and_data(tmp_path, monkeypatch):
     """A session record holds no table key and no table path (the app writes `parquet_paths: {}`): restoring it brings back the
     audit steps; the tables are read through the orchestrator's key check, which rebuilds what carries another version."""
-    monkeypatch.setattr(cache_keys, "ENGINE_CACHE_VERSION", "4")
+    monkeypatch.setattr(cache_keys, "ENGINE_CACHE_VERSION", "5")
     w = World(tmp_path)
     w.build()
     old_key = w.stored_key()
@@ -302,21 +302,21 @@ def test_a_session_of_version_4_restores_and_its_tables_are_rebuilt_from_the_rec
     batch = SessionManager.compute_data_batch_hash({"T": w.data_file})
     key = SessionManager.compute_session_key(sha, batch)
     sm.write_assembly_ghost(key, "tiny", sha, batch, {"T": str(w.data_file)}, parquet_paths={})
-    monkeypatch.undo()                                    # now version 5
+    monkeypatch.undo()                                    # now version 6
     clear_data_analysis_recipe_cache()
     restored = sm.restore_t1t2(entry, {"T": w.data_file})
     assert restored["session_key"] == key and restored["status"] in ("fast_path", "reassemble")
     assert len(w.build()) == 3 and w.stored_key() != old_key
 
 
-def test_a_bundle_of_version_4_is_imported_and_its_engine_leg_says_plainly_that_it_does_not_match(tmp_path):
+def test_a_bundle_of_version_5_is_imported_and_its_engine_leg_says_plainly_that_it_does_not_match(tmp_path):
     zb, run, _orig = _build_bundle(tmp_path)
-    old = dict(run, engine_fingerprint=run["engine_fingerprint"].replace("5|", "4|", 1))
-    assert old["engine_fingerprint"].startswith("4|")
+    old = dict(run, engine_fingerprint=run["engine_fingerprint"].replace("6|", "5|", 1))
+    assert old["engine_fingerprint"].startswith("5|")
     zb = _rewrite_zip(zb, drop=("effective_run.yaml",), add={"20261109_120000_autotest/effective_run.yaml": yaml.safe_dump(old)})
     result = import_bundle(zb, bootloader=_fresh_bootloader(tmp_path))
     engine = result.legs["engine"]
-    assert engine.status == "mismatch" and engine.recorded.startswith("4|") and engine.actual.startswith("5|")
+    assert engine.status == "mismatch" and engine.recorded.startswith("5|") and engine.actual.startswith("6|")
     assert "software change" in engine.detail
     assert result.legs["data"].status == "match"
 

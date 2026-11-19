@@ -58,9 +58,10 @@ def test_a_join_without_tier2_steps_has_an_empty_tier2_key():
 
 def test_two_datasets_keep_their_own_tier2_key():
     k2 = tier2_key(T1, STEPS, "python-polars")
-    keys = {"C": {"tier1_key": T1, "tier2_key": k2}, "D": {"tier1_key": T1, "tier2_key": ""}}
+    keys = {"C": {"tier1_key": T1, "tier2_key": k2}, "D": {"tier1_key": "b" * 64, "tier2_key": ""}}
     p = prov(keys, [("p", {"target_dataset": "C"}), ("q", {"target_dataset": "D"})])
     assert p["stage_keys"]["C"]["tier2_key"] == k2 and p["stage_keys"]["D"]["tier2_key"] == ""
+    assert p["stage_keys"]["C"]["tier1_key"] == T1 and p["stage_keys"]["D"]["tier1_key"] == "b" * 64   # a key per table (ADR-101)
 
 
 def test_no_keys_given_still_builds_the_provenance():
@@ -143,5 +144,5 @@ def test_the_report_row_of_the_tier_2_key_says_what_the_key_covers():
     from pathlib import Path
     from app.handlers import export_handlers
     source = Path(export_handlers.__file__).read_text(encoding="utf-8")
-    assert ("Chained key of the Tier 2 parquet: Tier 1 key and the tier2 steps of the table "
+    assert ("Key of the Tier 2 parquet: Tier 1 key and the tier2 steps of the table "
             "(a join, or a table a plot reads directly)") in source
