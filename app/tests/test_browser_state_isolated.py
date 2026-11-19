@@ -7,11 +7,19 @@ deployment with its own `user_data` and `cache`.
 import os
 from pathlib import Path
 
+import pytest
 import yaml
 
-from app.tests.conftest import REPO
+from app.tests.conftest import GENERATED_MARK, REPO
+
+# these tests check the deployment file that conftest.py generates; a person who runs the tests with a SPARMVET_DEPLOYMENT of their own keeps it
+uses_generated_deployment = pytest.mark.skipif(
+    os.environ.get("SPARMVET_DEPLOYMENT") != os.environ.get(GENERATED_MARK) or not os.environ.get(GENERATED_MARK),
+    reason="SPARMVET_DEPLOYMENT was set by the person running the tests, so the test deployment is not used; "
+           "run without it to check the folders of the test process")
 
 
+@uses_generated_deployment
 def test_the_process_has_a_deployment_with_state_folders_of_its_own():
     deployment = os.environ.get("SPARMVET_DEPLOYMENT")
     assert deployment, "conftest.py sets a deployment for the process when the caller sets none"
@@ -28,6 +36,7 @@ def _own_folder() -> Path:
     return deployment.parent
 
 
+@uses_generated_deployment
 def test_the_state_folder_is_named_after_the_worker():
     """Under pytest-xdist the folder is the worker's id (`gw0`, ...), without xdist it is `main`.
 
@@ -42,6 +51,7 @@ def test_the_state_folder_is_named_after_the_worker():
             out.write(f"{os.environ.get('PYTEST_XDIST_WORKER', 'main')} {folder}\n")
 
 
+@uses_generated_deployment
 def test_two_workers_get_different_state_folders(tmp_path):
     """Run the test above on two real xdist workers (`--dist each`): the folders must differ.
 

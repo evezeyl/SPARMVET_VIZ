@@ -226,3 +226,22 @@ def test_a_seeded_fuzz_of_300_shape_corruptions_never_raises(raw, catalogs):
                 pass
         for profile, graph in (("build", False), ("build", True), ("run", True)):
             check_recipe(mutated, profile, catalogs=catalogs, graph=_graph_of(mutated) if graph else None)
+
+
+@pytest.mark.parametrize("item, example", [(2022, '"2022"'), (True, '"True"'), (None, '"None"'), (1.5, '"1.5"')])
+def test_a_non_text_scalar_in_a_list_of_names_gets_the_quote_hint(catalogs, item, example):
+    """A bare 2022, yes or null is not text in YAML: the fix says to write such a column name in quotes, with the item as the example."""
+    from utils.ui_schema import step_problems
+    action, name = next(_name_list_parameters(catalogs).__iter__())
+    problems = step_problems(action, {"action": action, name: [item]}, catalogs["actions"][action])
+    texts = [p.text() for p in problems if p.code == "ST10" and p.param == name]
+    assert texts and all("in quotes" in t and example in t for t in texts), texts
+
+
+@pytest.mark.parametrize("item", [["a"], {"a": 1}])
+def test_a_nested_list_or_mapping_in_a_list_of_names_has_no_quote_hint(catalogs, item):
+    from utils.ui_schema import step_problems
+    action, name = next(_name_list_parameters(catalogs).__iter__())
+    problems = step_problems(action, {"action": action, name: [item]}, catalogs["actions"][action])
+    texts = [p.text() for p in problems if p.code == "ST10" and p.param == name]
+    assert texts and not any("quotes" in t for t in texts), texts
