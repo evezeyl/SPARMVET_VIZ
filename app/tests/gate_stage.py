@@ -10,6 +10,7 @@ Its `info.label` is unique, so a test can see whether anything of the recipe is 
 """
 import contextlib
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -26,7 +27,9 @@ REPO = Path(__file__).resolve().parents[2]
 PIPELINES = REPO / "config" / "data_analysis_recipes" / "pipelines"
 TEST_DATA = REPO / "assets" / "test_data"
 SOURCE = "1_test_data_ST22_dummy"
-STAGE = "zz_gate_gap_stage"
+STAGE_PREFIX = "zz_gate_gap_stage"
+# the staged name carries the pid of the process that owns it: `zz_gate_gap_stage_p<pid>_<hex>`; set by stage()
+STAGE = STAGE_PREFIX
 OTHER = "zz_gate_gap_other"
 LABEL = "ZZ Gate Gap Stage Label"
 LABEL_OF_SOURCE = "ST22 Dummy Dataset"
@@ -39,10 +42,10 @@ FRAGMENT: Path | None = None
 
 def stage(blueprint: bool = False) -> Path:
     """Build the staged recipe, its data and a deployment of their own in a new folder under tmpAI; returns the deployment file."""
-    global WORK, FRAGMENT
+    global WORK, FRAGMENT, STAGE
+    STAGE = f"{STAGE_PREFIX}_p{os.getpid()}_{uuid.uuid4().hex[:8]}"
     WORK = WORK_ROOT / uuid.uuid4().hex[:12]
     recipes, data = (PIPELINES if blueprint else WORK / "recipes"), WORK / "data"
-    unstage_recipes()
     WORK.mkdir(parents=True)
     recipes.mkdir(exist_ok=True)
     shutil.copytree(PIPELINES / SOURCE, recipes / STAGE)
@@ -70,8 +73,50 @@ def stage(blueprint: bool = False) -> Path:
     return deployment
 
 
+_OWNED = re.compile(rf"^{STAGE_PREFIX}_p(\d+)_[0-9a-f]+(\.yaml)?$")
+
+
+def remove_path(path: Path) -> None:
+    if path.is_dir():
+        shutil.rmtree(path, ignore_errors=True)
+    else:
+        path.unlink(missing_ok=True)
+
+
+def _staged(owner_filter) -> list[Path]:
+    found = []
+    for path in sorted(PIPELINES.glob(f"{STAGE_PREFIX}_p*")):
+        match = _OWNED.match(path.name)
+        if match and owner_filter(int(match.group(1))):
+            found.append(path)
+    return found
+
+
+def _alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def own_leftovers() -> list[Path]:
+    """Staged recipe files of this process that are still in the shipped recipe folder."""
+    return _staged(lambda pid: pid == os.getpid())
+
+
+def remove_dead_leftovers() -> list[Path]:
+    """Remove staged recipes of earlier runs whose owning process is gone; those of a live process are never touched."""
+    dead = _staged(lambda pid: not _alive(pid))
+    for path in dead:
+        remove_path(path)
+    return dead
+
+
 def unstage_recipes():
-    """Remove a staged recipe left in the shipped recipe folder (only the Blueprint mode puts one there)."""
+    """Remove this process's staged recipe from the shipped recipe folder (only the Blueprint mode puts one there)."""
     shutil.rmtree(PIPELINES / STAGE, ignore_errors=True)
     (PIPELINES / f"{STAGE}.yaml").unlink(missing_ok=True)
 
@@ -107,9 +152,10 @@ def _free_port() -> int:
 
 
 @contextlib.contextmanager
-def running_app(tmp_path, features: str = "qa", recipe: str = STAGE, blueprint: bool = False):
+def running_app(tmp_path, features: str = "qa", recipe: str | None = None, blueprint: bool = False):
     """The app on the staged recipe (named by SPARMVET_DATA_ANALYSIS_RECIPE); yields (url, log path). Always removes its work folder."""
     deployment = stage(blueprint)
+    recipe = recipe or STAGE
     log = tmp_path / "server.log"
     port = _free_port()
     env = app_env(SPARMVET_APP_FEATURES=features, SPARMVET_DATA_ANALYSIS_RECIPE=recipe, SPARMVET_DEPLOYMENT=str(deployment))

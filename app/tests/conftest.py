@@ -22,6 +22,7 @@ from shiny.pytest import create_app_fixture
 
 APP_PATH = Path(__file__).parent.parent / "src" / "main.py"
 REPO = Path(__file__).resolve().parents[2]
+GENERATED_MARK = "SPARMVET_TEST_GENERATED_DEPLOYMENT"
 
 
 def _own_state_deployment() -> None:
@@ -32,9 +33,13 @@ def _own_state_deployment() -> None:
     The local deployment is copied with `user_data` and `cache` under `tmpAI/browser_state/<worker>/`; the in-process
     bootloader of the tests and the app they start (it inherits the variable) read the same file, so a test that seeds
     sessions through `bootloader.get_location("user_data")` still seeds what its app reads. Runs at import, before any
-    test module imports the bootloader. A caller that sets SPARMVET_DEPLOYMENT keeps its own.
+    test module imports the bootloader. A caller that sets SPARMVET_DEPLOYMENT keeps its own; one inherited from the xdist controller (marked by
+    SPARMVET_TEST_GENERATED_DEPLOYMENT) is replaced by the worker's own.
     """
-    if os.environ.get("SPARMVET_DEPLOYMENT"):
+    inherited = os.environ.get("SPARMVET_DEPLOYMENT")
+    # a file this module generated is told from a caller's choice by the second variable, set together with it: under
+    # pytest-xdist the workers inherit both from the controller, and a worker must not keep the controller's folder
+    if inherited and os.environ.get(GENERATED_MARK) != inherited:
         return
     worker = os.environ.get("PYTEST_XDIST_WORKER", "main")
     folder = REPO / "tmpAI" / "browser_state" / worker
@@ -46,10 +51,23 @@ def _own_state_deployment() -> None:
     deployment = folder / "deployment.yaml"
     deployment.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
     os.environ["SPARMVET_DEPLOYMENT"] = str(deployment)
+    os.environ[GENERATED_MARK] = str(deployment)
 
 
 _own_state_deployment()
 
+
+@pytest.fixture(scope="session", autouse=True)
+def _staged_recipes_do_not_leak():
+    """Remove staged recipes of earlier runs that were killed, and fail when this process leaves one in the tracked folder."""
+    from app.tests import gate_stage
+
+    gate_stage.remove_dead_leftovers()
+    yield
+    leaked = gate_stage.own_leftovers()
+    for path in leaked:
+        gate_stage.remove_path(path)
+    assert not leaked, f"staged recipe files left in config/data_analysis_recipes by this process: {[p.name for p in leaked]}"
 
 
 @pytest.fixture(scope="session", autouse=True)
