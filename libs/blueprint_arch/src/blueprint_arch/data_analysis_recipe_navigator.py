@@ -6,6 +6,12 @@ Public API
 include_paths(raw_text)
     Every `!include` target of a recipe text, quoted or not, each once, in the order of the file.
 
+recipe_structure(raw)  /  recipe_structure_of_file(path)
+    The structure of a recipe (which table feeds which join, which plot reads which table) as the one recipe graph
+    (`utils.recipe_graph`) draws it, for the part of the recipe the graph can draw; what it cannot draw is listed
+    in `left_out`. The functions below take the structure from here and keep only what the graph does not know: the
+    file of each element (`!include`), its role and its label.
+
 build_sibling_map(data_analysis_recipe_path_str)
     Parse a master data analysis recipe WITHOUT resolving !include, then build:
     rel_path → {role, tier, schema_id, schema_type, siblings, ingredients}
@@ -43,24 +49,158 @@ Constraints (Two-Category Law — ADR-045)
 - Zero Shiny dependency: no import of shiny, reactive, render, or ui.
 - Importable from headless scripts, test suites, and CLI tools without
   triggering any Shiny registration side-effects.
-- All seven functions are pure (no global mutable state).
+- All the functions are pure (no global mutable state).
+
+Where the structure comes from (ADR-099 point 16(d), D-0031): the recipe is read ONCE into the recipe graph, and the ingredients of a
+join and the table a plot reads are asked of it. This module keeps no second description of the structure. What the graph cannot
+draw (an ingredient that is no table, a plot with no table, a cycle of joins, a repeated id) does not stop Blueprint: it is left out
+of the structure, listed in `RecipeStructure.left_out` with its place and why, and the rest still opens (Blueprint reports and never
+crashes, D-0029). `build_lineage_chain` and `resolve_fields_for_schema` work on the map of `build_sibling_map` only (they are given no
+recipe and no graph), so their structure comes in through the `ingredients` of that map.
 """
 
 from __future__ import annotations
 
 # @deps
-# provides: function:include_paths (every !include target of a recipe text, quoted or not), function:build_sibling_map (entry keys: role; tier = tier1 or tier2 for a tier file (new); schema_id; schema_type; siblings = input_fields/tier1/tier2 with no wrangling and no output_fields; ingredients; a plot entry is the plot itself, D-0250 D-0252), function:build_lineage_chain, function:build_schema_registry, function:load_fields_file, function:resolve_fields_for_schema, function:build_plot_lineage, function:get_plot_ids_in_group, function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml)
-# consumes: libs/utils/src/utils/recipe_tiers.py
-# consumed_by: app/handlers/blueprint_handlers.py, app/handlers/home_theater.py, app/handlers/export_handlers.py
+# provides: function:include_paths (every !include target of a recipe text, quoted or not), function:build_sibling_map (entry keys: role; tier = tier1 or tier2 for a tier file (new); schema_id; schema_type; siblings = input_fields/tier1/tier2 with no wrangling and no output_fields; ingredients; a plot entry is the plot itself, D-0250 D-0252), function:build_lineage_chain, function:build_schema_registry, function:load_fields_file, function:resolve_fields_for_schema, function:build_plot_lineage, function:get_plot_ids_in_group, function:generate_branch_plan (BP-BRANCH-NODE-1 — replaces generate_fork_yaml), function:recipe_structure and function:recipe_structure_of_file (the structure of a recipe from the recipe graph) and class:RecipeStructure (with what the graph left out)
+# consumes: libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/recipe_loader.py
+# consumed_by: app/handlers/blueprint_handlers.py, app/handlers/home_theater.py, app/handlers/export_handlers.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-074
 # @end_deps
 
+import copy
 import re
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Optional
 
 import yaml
 
-from utils.recipe_tiers import step_list
+from utils.recipe_graph import GraphProblem, RecipeGraph, RecipeGraphError, build_graph
+from utils.recipe_loader import load_recipe
+from utils.recipe_tiers import METADATA_SCHEMA, SCHEMA_SECTIONS
+
+# ── The structure of a recipe, from the recipe graph ──────────────────────────
+
+# A recipe that cannot be drawn is cut down at most this many times: each round leaves out what the graph named, so it ends long before.
+_MAX_ROUNDS = 50
+
+
+@dataclass(frozen=True)
+class RecipeStructure:
+    """What the recipe graph says of the recipe, and what it could not draw.
+
+    `graph`: the recipe graph of the part that can be drawn, or None when nothing can (the file is not a recipe, or it cannot be read).
+    `left_out`: every place the graph refused, each with the recipe path and the reason in the graph's own words, in the order found.
+    A recipe the graph accepts has an empty `left_out` and the whole recipe in the graph. For a recipe it refuses, the elements it
+    named are taken out of a COPY and the graph is built again, so Blueprint still opens it; the places are never hidden.
+    """
+    graph: Optional[RecipeGraph]
+    left_out: tuple
+
+    def ingredients(self, join_id: str) -> list:
+        """The tables a join reads, in the order the recipe writes them (the first is the base); empty for a table, an unknown id or a join left out."""
+        node = f"T1:{join_id}"
+        if self.graph is None or not self.graph.has_node(node) or self.graph.node(node).collection_kind != "join":
+            return []
+        return [self.graph.node(parent).name for parent in self.graph.parents(node)]
+
+    def target_of(self, plot_id: str) -> Optional[str]:
+        """The table a plot reads, or None when the plot is not in the graph (it has no valid table: it is in `left_out`)."""
+        node = f"T3:{plot_id}"
+        return self.graph.plot_target(plot_id) if self.graph is not None and self.graph.has_node(node) else None
+
+
+def recipe_structure(raw: Any) -> RecipeStructure:
+    """The structure of a resolved recipe (a dictionary) from the recipe graph; see `RecipeStructure`."""
+    if not isinstance(raw, dict):
+        return RecipeStructure(None, (GraphProblem("", "the recipe is not a mapping"),))
+    left_out: list = []
+    work = raw
+    for _ in range(_MAX_ROUNDS):
+        try:
+            return RecipeStructure(build_graph(work), tuple(left_out))
+        except RecipeGraphError as error:
+            if work is raw:
+                work = copy.deepcopy(raw)
+            places = _places(work)
+            named = [(problem, places.get(_place_of(problem.path))) for problem in error.problems]
+            if not all(place is not None for _, place in named):
+                return RecipeStructure(None, tuple(left_out) + tuple(problem for problem, _ in named))
+            left_out.extend(problem for problem, _ in named)
+            _take_out([place for _, place in named])
+    return RecipeStructure(None, tuple(left_out))
+
+
+def recipe_structure_of_file(path: str) -> RecipeStructure:
+    """The structure of the recipe file at `path` (its fragments read, `!include` resolved by the recipe loader).
+
+    A file that cannot be read as a recipe (it is not YAML, a key is written twice, it is not a mapping) has no structure: `graph` is None
+    and `left_out` says so; the checker and Blueprint's Validate report the file itself."""
+    try:
+        raw, problems = load_recipe(path)
+    except Exception as exc:  # the loader reports a file it cannot read as problems; anything else is still no structure, never a crash
+        return RecipeStructure(None, (GraphProblem(str(path), f"the file cannot be read: {exc}"),))
+    if raw is None:
+        return RecipeStructure(None, tuple(GraphProblem(p.path, p.message) for p in problems))
+    return recipe_structure(raw)
+
+
+def _place_of(path: str) -> str:
+    """The place to take out for a problem path: the plot itself when the problem names its `target_dataset`."""
+    return path[:-len(".target_dataset")] if path.endswith(".target_dataset") else path
+
+
+def _places(raw: dict) -> dict:
+    """{recipe path: (container, key or index)} for the places the graph names in its problems, with the same path words as the graph."""
+    places: dict = {}
+
+    def mapping(path: str, container: dict) -> None:
+        for key in container:
+            places[f"{path}.{key}" if path else str(key)] = (container, key)
+
+    for section in SCHEMA_SECTIONS:
+        places[section] = (raw, section)
+        if isinstance(raw.get(section), dict):
+            mapping(section, raw[section])
+    places[METADATA_SCHEMA] = (raw, METADATA_SCHEMA)
+    places["joins"] = (raw, "joins")
+    joins = raw.get("joins")
+    if isinstance(joins, dict):
+        mapping("joins", joins)
+        for jid, body in joins.items():
+            if not isinstance(body, dict):
+                continue
+            places[f"joins.{jid}.ingredients"] = (body, "ingredients")
+            if isinstance(body.get("ingredients"), list):
+                for number in range(1, len(body["ingredients"]) + 1):
+                    places[f"joins.{jid}.ingredients[{number}]"] = (body["ingredients"], number - 1)
+            tier1 = body.get("tier1")
+            steps = tier1.get("steps") if isinstance(tier1, dict) else None
+            if isinstance(steps, list):
+                for number in range(1, len(steps) + 1):
+                    places[f"joins.{jid}.tier1.steps[{number}]"] = (steps, number - 1)
+    places["analysis_groups"] = (raw, "analysis_groups")
+    groups = raw.get("analysis_groups")
+    if isinstance(groups, dict):
+        mapping("analysis_groups", groups)
+        for gid, group in groups.items():
+            if isinstance(group, dict) and isinstance(group.get("plots"), dict):
+                mapping(f"analysis_groups.{gid}.plots", group["plots"])
+    return places
+
+
+def _take_out(places: list) -> None:
+    """Take the named places out of the copy: a mapping entry is deleted; list items go from the last to the first so the numbers hold."""
+    lists: dict = {}
+    for container, key in places:
+        if isinstance(container, list):
+            lists.setdefault(id(container), (container, set()))[1].add(key)
+        elif isinstance(container, dict) and key in container:
+            del container[key]
+    for container, indexes in lists.values():
+        for index in sorted(indexes, reverse=True):
+            del container[index]
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -83,6 +223,11 @@ def include_paths(raw_text: str) -> list[str]:
 
 
 def build_sibling_map(data_analysis_recipe_path_str: str) -> dict:
+    """The sibling map of a recipe file (see `_sibling_map`); the structure it holds (the ingredients of a join) is the recipe graph's."""
+    return _sibling_map(data_analysis_recipe_path_str, recipe_structure_of_file(data_analysis_recipe_path_str))
+
+
+def _sibling_map(data_analysis_recipe_path_str: str, structure: RecipeStructure) -> dict:
     """Parse a master data analysis recipe WITHOUT resolving !include, then build a map:
       rel_path → {role, tier, schema_id, schema_type, siblings: {input_fields, tier1, tier2}, ingredients}
 
@@ -91,7 +236,8 @@ def build_sibling_map(data_analysis_recipe_path_str: str) -> dict:
     written inline it is registered by its id, written as `!include` its file is registered too.
 
     Uses a non-resolving subclass of SafeLoader so !include tags are captured
-    as plain strings instead of being followed to disk.
+    as plain strings instead of being followed to disk: this is where the FILE of each element comes from. The ingredients of a join come
+    from `structure` (the recipe graph); this reader keeps no second description of them.
     """
     class _CapLoader(yaml.SafeLoader):
         pass
@@ -119,21 +265,6 @@ def build_sibling_map(data_analysis_recipe_path_str: str) -> dict:
         if isinstance(val, str) and val.startswith(_MARK):
             return val[len(_MARK):]
         return None
-
-    def _extract_ingredients(block: dict) -> list:
-        """Extract ordered dataset_id list from an ingredients block."""
-        raw = block.get("ingredients", [])
-        if not isinstance(raw, list):
-            return []
-        ids = []
-        for item in raw:
-            if isinstance(item, dict):
-                did = item.get("dataset_id")
-                if did:
-                    ids.append(did)
-            elif isinstance(item, str):
-                ids.append(item)
-        return ids
 
     def _slot(block: dict, key: str):
         """Return the value for a data analysis recipe key as either:
@@ -194,8 +325,7 @@ def build_sibling_map(data_analysis_recipe_path_str: str) -> dict:
         _register("metadata_schema", "metadata_schema", meta)
 
     for aid, adict in (tree.get("joins") or {}).items():
-        ings = _extract_ingredients(adict) if isinstance(adict, dict) else []
-        _register("joins", aid, adict, ingredients=ings)
+        _register("joins", aid, adict, ingredients=structure.ingredients(aid))
 
     # analysis_groups → plots: each plot entry is the plot (inline, or the whole entry in its own file)
     for group_id, group_spec in (tree.get("analysis_groups") or {}).items():
@@ -273,7 +403,7 @@ def build_lineage_chain(selected_rel: str, ctx_map: dict, target_ds_override: st
 
     if role == "plot_spec":
         # Chain: [Ancestors..., plot(active)]
-        target_ds = target_ds_override or entry.get("target_dataset")
+        target_ds = target_ds_override
         if target_ds:
             # Recursively find the "best" anchor/assembly node for this target
             origin_rels = by_schema.get(target_ds, [])
@@ -354,7 +484,7 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
         "tier1":         str | {"inline": val} | None,
         "tier2":         str | {"inline": val} | None,
         "ingredients":   list[str],        # join only
-        "target_dataset": str | None,      # plot only (inline, or read from the plot's own file)
+        "target_dataset": str | None,      # plot only: the table the plot reads, from the recipe graph
         "group_id":      str | None,       # plot only
         "source":        dict | None,      # raw data source block
       }
@@ -362,6 +492,11 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
     Both !include references (stored as rel_path strings) and inline content
     (stored as {"inline": <value>}) are captured, giving a complete structural
     view of the data analysis recipe regardless of how authors have factored their YAML.
+
+    The ingredients of a join and the table of a plot come from the recipe graph, which reads the whole recipe with its fragments (a plot
+    written in its own file included). `includes_map` is no longer read: it was how this function found the file of a plot to read its
+    target; the callers still pass it (the handlers are not changed by this step). A plot with no valid table (its file is missing, it
+    names no table or an unknown one) has `target_dataset` None and is listed in the structure's `left_out`, never an error.
     """
     class _CapLoader(yaml.SafeLoader):
         pass
@@ -382,6 +517,8 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
     if not isinstance(tree, dict):
         return {}
 
+    structure = recipe_structure_of_file(data_analysis_recipe_path_str)
+
     def _slot(val):
         """Convert a raw block value to either a rel_path, {"inline":<v>}, or None."""
         if val is None:
@@ -391,33 +528,6 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
         if val == [] or val == {}:
             return None
         return {"inline": val}
-
-    def _extract_ingredients(block):
-        raw = block.get("ingredients", []) if isinstance(block, dict) else []
-        ids = []
-        for item in (raw if isinstance(raw, list) else []):
-            if isinstance(item, dict):
-                did = item.get("dataset_id")
-                if did:
-                    ids.append(str(did))
-            elif isinstance(item, str):
-                ids.append(item)
-        return ids
-
-    def _target_dataset_of(plot_entry):
-        """`target_dataset` of a plot entry: written inline, or read from the entry's own file (None when it cannot be read)."""
-        if isinstance(plot_entry, dict):
-            return plot_entry.get("target_dataset")
-        if isinstance(plot_entry, str) and plot_entry.startswith(_MARK):
-            abs_path = Path(includes_map.get(plot_entry[len(_MARK):], ""))
-            if not abs_path.is_file():
-                return None
-            try:
-                content = yaml.safe_load(abs_path.read_text(encoding="utf-8")) or {}
-            except Exception:
-                return None
-            return content.get("target_dataset") if isinstance(content, dict) else None
-        return None
 
     reg: dict = {}
 
@@ -429,7 +539,7 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
             "input_fields":  _slot(block.get("input_fields")),
             "tier1":         _slot(block.get("tier1")),
             "tier2":         _slot(block.get("tier2")),
-            "ingredients":   _extract_ingredients(block),
+            "ingredients":   structure.ingredients(schema_id) if schema_type == "joins" else [],
             "target_dataset": None,
             "group_id":      group_id,
             "source":        block.get("source") if not isinstance(
@@ -437,7 +547,7 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
         }
         reg[schema_id] = entry
 
-    for section in ("data_schemas", "additional_datasets_schemas"):
+    for section in SCHEMA_SECTIONS:
         for sid, sdict in (tree.get(section) or {}).items():
             _add(sid, section, sdict)
 
@@ -460,7 +570,7 @@ def build_schema_registry(data_analysis_recipe_path_str: str,
                 "tier1":          None,
                 "tier2":          None,
                 "ingredients":    [],
-                "target_dataset": _target_dataset_of(plot_entry),
+                "target_dataset": structure.target_of(plot_id),
                 "group_id":       group_id,
                 "source":         None,
             }
@@ -621,8 +731,7 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
             return val[len(_MARK):]
         return None
 
-    # ── Locate the plot and resolve its target_dataset ────────────────────────
-    target_dataset: str | None = None
+    # ── Locate the plot: its label comes from its entry (inline or in its own file); the table it reads comes from the recipe graph ──
     plot_label: str = plot_id
     found = False
 
@@ -645,14 +754,15 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
         if not isinstance(plot_entry, dict):
             break
         plot_label = plot_entry.get("ui_label", plot_id)
-        target_dataset = plot_entry.get("target_dataset")
         break
 
     if not found:
         return []
 
-    # ── Trace backward using the sibling map ──────────────────────────────────
-    ctx_map = build_sibling_map(data_analysis_recipe_path)
+    # ── Trace backward: the tables come from the recipe graph, the files from the sibling map ──────────────────
+    structure = recipe_structure_of_file(data_analysis_recipe_path)
+    target_dataset = structure.target_of(plot_id)
+    ctx_map = _sibling_map(data_analysis_recipe_path, structure)
     steps: list[dict] = []
 
     def _step(type_: str, schema_id: str, label: str, rel: str = "") -> dict:
@@ -664,31 +774,12 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
             "rel": rel,
         }
 
-    def _block_of(sid: str):
-        """The schema (or the metadata schema) with this id, as the recipe file has it; None when there is none."""
-        block = None
-        for section in ("data_schemas", "additional_datasets_schemas"):
-            found = (tree.get(section) or {}).get(sid)
-            if isinstance(found, dict):
-                block = found
-        if sid == "metadata_schema" and isinstance(tree.get("metadata_schema"), dict):
-            block = tree["metadata_schema"]
-        return block
-
     def _wrangling_label(sid: str) -> str:
         """`<id> / wrangling`, with a note when the schema has a tier-2 list (issue #77).
 
         A schema's tier 2 runs only where a plot reads the schema directly; a join reads its tier 1. The note says so in
         both places, so a node shared by both kinds of plot (the export deduplicates by id) is true for both."""
-        block = _block_of(sid)
-        tier2 = block.get("tier2") if isinstance(block, dict) else None
-        rel = _rel_path(tier2)
-        if rel:
-            try:
-                tier2 = yaml.load((data_analysis_recipe_dir / rel).read_text(encoding="utf-8"), Loader=_CapLoader)  # noqa: S506
-            except Exception:
-                tier2 = None
-        if step_list({"tier2": tier2}, "tier2"):
+        if structure.graph is not None and structure.graph.has_node(f"T2:{sid}") and structure.graph.node(f"T2:{sid}").steps:
             return f"{sid} / wrangling (tier 1; tier 2 only where {sid} is plotted directly)"
         return f"{sid} / wrangling"
 
@@ -717,11 +808,10 @@ def build_plot_lineage(plot_id: str, data_analysis_recipe_path: str) -> list[dic
         )
 
     if target_dataset:
-        # Prefer a join entry (the engine's order); fall back to a direct data schema
-        join_rel = _tier1_node(target_dataset, "join")
-
-        if join_rel:
-            for ing_id in ctx_map[join_rel].get("ingredients", []):
+        # a join (the engine's order: its ingredients as written), else a table read directly
+        if structure.graph.node(f"T1:{target_dataset}").collection_kind == "join":
+            join_rel = _tier1_node(target_dataset, "join")
+            for ing_id in structure.ingredients(target_dataset):
                 steps.append(_step("data_source", ing_id, ing_id,
                                    _source_path_for(ing_id)))
                 wrn_rel = _tier1_node(ing_id, "wrangling")

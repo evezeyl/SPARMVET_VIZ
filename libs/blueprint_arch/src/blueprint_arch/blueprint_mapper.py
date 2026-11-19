@@ -2,6 +2,7 @@
 
 # @deps
 # provides: class:BlueprintMapper, constant:_CY_COLOURS
+# consumes: libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py (recipe_structure), libs/utils/src/utils/recipe_graph.py
 # consumed_by: app/handlers/blueprint_handlers.py
 # doc: .claude/rules/rules_ui_dashboard.md
 # @end_deps
@@ -10,6 +11,8 @@ import json
 import re
 from pathlib import Path
 from typing import Dict, List, Optional
+
+from blueprint_arch.data_analysis_recipe_navigator import recipe_structure
 
 
 # ── Cytoscape node/edge colours ───────────────────────────────────────────────
@@ -54,6 +57,12 @@ class BlueprintMapper:
     IMPORTANT: Pass raw_config from ConfigManager (not yaml.safe_load) so that
     !include tags are resolved (a plot entry in its own file is read as the entry).
 
+    What is drawn (the nodes, their roles, the wrangling node of a table with a tier written, the group of a plot) is read from the
+    recipe as written. What feeds what (the ingredients of a join, the table a plot reads) is asked of the recipe graph
+    (`recipe_structure`, `utils.recipe_graph`), the one description of the structure (ADR-099 point 16(d)). A join ingredient that is no
+    table, or a plot with no valid table, is not in the graph: the plot gets the warning node, the ingredient no edge, and the map is
+    still drawn.
+
     Node types:
       trunk    (blue)   — raw data source (data_schemas)
       wrangle  (yellow) — wrangling step
@@ -90,6 +99,7 @@ class BlueprintMapper:
         self.nodes = []
         self.edges = []
         self.style_classes = []
+        structure = recipe_structure(self.cfg)
         _clickable: list = []   # (mermaid_node_id, schema_id) pairs
         all_known: set = set()
 
@@ -156,18 +166,7 @@ class BlueprintMapper:
             safe = self._safe_node_id(asid)
             _add_node(safe, f'{safe}{{"{asid}\\nJoin"}}', "branch", asid)
 
-            ingredients = []
-            if isinstance(details, dict):
-                raw_ing = details.get("ingredients", [])
-                for ing in raw_ing:
-                    if isinstance(ing, dict):
-                        did = ing.get("dataset_id", "")
-                        if did:
-                            ingredients.append(did)
-                    elif isinstance(ing, str):
-                        ingredients.append(ing)
-
-            for parent_raw in ingredients:
+            for parent_raw in structure.ingredients(asid):
                 up = _upstream_node(parent_raw)
                 _add_edge(up, safe)
 
@@ -207,10 +206,7 @@ class BlueprintMapper:
             group_name = plot_to_group.get(pid, "Ungrouped")
             subgraphs.setdefault(group_name, []).append(node_def)
 
-            target_raw = None
-            if isinstance(pspec, dict):
-                target_raw = (pspec.get("target_dataset")
-                              or pspec.get("join_id"))
+            target_raw = structure.target_of(pid)
 
             if target_raw:
                 # Connect from assembly wrangling output if present, else assembly
@@ -291,6 +287,7 @@ class BlueprintMapper:
         """
         elements: list = []
         all_known: set = set()
+        structure = recipe_structure(self.cfg)
 
         def _node(cy_id: str, label: str, role: str, schema_id: str,
                   tier: int, group: str = "") -> dict:
@@ -375,17 +372,7 @@ class BlueprintMapper:
             elements.append(_node(safe, asid, "branch", asid, 2))
             all_known.add(safe)
 
-            ingredients = []
-            if isinstance(details, dict):
-                for ing in details.get("ingredients", []):
-                    if isinstance(ing, dict):
-                        did = ing.get("dataset_id", "")
-                        if did:
-                            ingredients.append(did)
-                    elif isinstance(ing, str):
-                        ingredients.append(ing)
-
-            for parent_raw in ingredients:
+            for parent_raw in structure.ingredients(asid):
                 elements.append(_edge(_upstream(parent_raw), safe))
 
             has_wrn = _has_tier(details)
@@ -419,9 +406,7 @@ class BlueprintMapper:
             elements.append(_node(safe_pid, label, "plot", pid, 3, group))
             all_known.add(safe_pid)
 
-            target_raw = None
-            if isinstance(pspec, dict):
-                target_raw = pspec.get("target_dataset") or pspec.get("join_id")
+            target_raw = structure.target_of(pid)
 
             if target_raw:
                 asm_wrn = _wrn_id(target_raw)
