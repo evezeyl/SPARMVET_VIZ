@@ -23,7 +23,7 @@ from __future__ import annotations
 
 # @deps
 # provides: class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, function:extract_primary_keys, function:split_key_drops, function:key_drop_notice, class:SessionImportLimits, function:session_import_limits_from (D-0283), function:session_input_id_part, function:session_input_id_parts (two listed sessions never share a button), exception:SessionImportRefused, exception:SessionKeyExists (D-0281)
-# consumes: app/modules/error_notice.py (notice — VERIF-FIX-2, lazy), libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, re, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1)
+# consumes: app/modules/error_notice.py (notice — VERIF-FIX-2, lazy), libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, re, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1; batch_hash_of, dataset_file_hashes: the one reading of the data files for the keys, ADR-101)
 # consumes: libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/recipe_tiers.py (step_list) — extract_primary_keys reads joins.*.tier1.steps and tier2.steps (D-0250)
 # consumed_by: app/src/bootloader.py (limits), app/tests/test_session_import_safety.py, app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py, app/handlers/filter_and_audit_handlers.py (make_audit_step)
 # doc: .claude/rules/ui_implementation_contract.md#12d, .claude/knowledge/architecture_decisions.md#ADR-097
@@ -40,7 +40,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypedDict
 
-from app.modules.cache_keys import canonical_hash
+from app.modules.cache_keys import batch_hash_of, canonical_hash, dataset_file_hashes
 from utils.join_keys import JOIN_ACTIONS, key_columns
 from utils.na_choice import with_na
 from utils.recipe_tiers import step_list
@@ -256,16 +256,7 @@ class SessionManager:
 
         source_files: {dataset_id: path}
         """
-        parts = []
-        for key in sorted(source_files.keys()):
-            p = Path(source_files[key])
-            if p.exists():
-                file_hash = hashlib.sha256(p.read_bytes()).hexdigest()
-            else:
-                file_hash = f"MISSING:{key}"
-            parts.append(f"{key}:{file_hash}")
-        combined = "\n".join(parts).encode()
-        return hashlib.sha256(combined).hexdigest()
+        return batch_hash_of(dataset_file_hashes(source_files))
 
     # ------------------------------------------------------------------
     # 22-A-4: Session key

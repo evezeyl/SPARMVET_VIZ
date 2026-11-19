@@ -129,7 +129,7 @@ def world(tmp_path):
 
 
 def test_first_build_stores_the_chained_key(world):
-    assert world.stored_key() == world.orch.compute_data_analysis_recipe_keys("tiny").tier1_key
+    assert world.stored_key() == world.orch.compute_data_analysis_recipe_keys("tiny").tier1_key_of("C")
 
 
 def test_nothing_changed_keeps_the_anchor(world):
@@ -194,7 +194,7 @@ def test_an_anchor_without_a_key_is_rebuilt(world):
     assert world.stored_key() is None
     world.build()
     assert world.was_rewritten()
-    assert world.stored_key() == world.orch.compute_data_analysis_recipe_keys("tiny").tier1_key
+    assert world.stored_key() == world.orch.compute_data_analysis_recipe_keys("tiny").tier1_key_of("C")
 
 
 def test_the_select_step_gives_the_same_table_on_a_fresh_and_a_reused_anchor(tmp_path):

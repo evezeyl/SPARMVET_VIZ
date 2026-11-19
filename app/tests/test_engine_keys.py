@@ -1,7 +1,8 @@
 """The engine of a tier is an argument of the key of that tier; the plot engine is in no table key (D-0240, D-0003, ADR-089).
 
 The rule (one sentence): a key holds the engine of what it stores, and nothing else.
-  - the tier-1 key holds the effective tier-1 engine of every table and join (the tier's own `data_engine`, else the recipe's);
+  - the tier-1 key of a table holds the effective tier-1 engine of that table and of everything upstream of it (the tier's own
+    `data_engine`, else the recipe's); the engine of another table, one it does not read, is not in it (ADR-101);
   - the tier-2 key holds the effective tier-2 engine of its collection, and chains on the tier-1 key;
   - the plot engine (the recipe's or a plot entry's) is in no table key;
   - a later stage's engine never moves the key of an earlier stage.
@@ -17,7 +18,7 @@ import pytest
 
 from app.modules import cache_keys
 from app.modules.cache_keys import (
-    canonical_hash, collection_tier2_key, tier1_engines, tier1_key, tier1_material, tier2_engine, tier2_key,
+    TableKeyParts, canonical_hash, collection_tier2_key, table_key_parts, tier1_engines, tier1_key, tier1_material, tier2_engine, tier2_key,
 )
 
 POLARS = "python-polars"
@@ -46,9 +47,12 @@ def recipe() -> dict:
 
 
 def keys(raw: dict, data=DATA) -> dict:
-    """What a session computes: the tier-1 key of the recipe and the tier-2 key of each collection that has tier-2 steps."""
-    t1 = tier1_key(canonical_hash(tier1_material(raw)), data, tier1_engines(raw))
-    return {"tier1": t1, "J": collection_tier2_key(raw, "J", t1), "C": collection_tier2_key(raw, "C", t1)}
+    """What a session computes: the tier-1 key of each table (`A`, `B`, `C`, `J`) and the tier-2 key of each collection that has
+    tier-2 steps (`J2` for the join, `C2` for the table C plotted directly). Every source table has its own file content."""
+    parts, _ = table_key_parts(raw)
+    files = {ds: f"{data}:{ds}" for ds in ("A", "B", "C")}
+    t1 = {table: tier1_key(parts[table], files) for table in ("A", "B", "C", "J")}
+    return {**t1, "J2": collection_tier2_key(raw, "J", t1["J"]), "C2": collection_tier2_key(raw, "C", t1["C"])}
 
 
 def moved(before: dict, after: dict) -> set:
@@ -58,44 +62,41 @@ def moved(before: dict, after: dict) -> set:
 # --- the engine of a tier is in the key of that tier ----------------------------------------------------------------------
 
 
-def test_a_changed_tier1_engine_of_a_table_moves_the_tier1_key_and_every_tier2_key_after_it():
+def test_a_changed_tier1_engine_of_a_table_moves_its_key_and_the_keys_of_what_is_built_from_it_only():
     before = recipe()
     after = copy.deepcopy(before)
     after["data_schemas"]["A"]["tier1"]["data_engine"] = STAND_IN
-    assert moved(keys(before), keys(after)) == {"tier1", "J", "C"}
+    assert moved(keys(before), keys(after)) == {"A", "J", "J2"}
 
 
 def test_a_changed_tier1_engine_of_a_join_moves_the_tier1_key_and_the_tier2_keys():
     before = recipe()
     after = copy.deepcopy(before)
     after["joins"]["J"]["tier1"]["data_engine"] = STAND_IN
-    assert moved(keys(before), keys(after)) == {"tier1", "J", "C"}
+    assert moved(keys(before), keys(after)) == {"J", "J2"}
 
 
-def test_the_tier1_key_is_one_per_recipe_so_a_tier1_engine_moves_the_key_of_every_table_PROVISIONAL():
-    """PROVISIONAL, the brief asked "no key of another table that does not depend on it". ADR-089 as built has ONE tier-1 key for the
-    whole recipe (`DataAnalysisRecipeKeys.tier1_key`, the fail-safe rule: a part that cannot be assigned to a table is part of
-    Tier 1), so the engine of table A moves the key that table B and table C are stored under too. A key per table is ADR-101 (the
-    series of labelled parts), not built. This test pins today's behaviour so that the day ADR-101 is built it is changed on purpose."""
+def test_the_tier1_engine_of_a_table_moves_the_keys_of_the_tables_that_read_it_and_of_no_other_ADR_101():
+    """The key is per table (ADR-101): the engine of table B moves B, the join J that reads it and the tier-2 key of J; table A,
+    and table C that reads nothing of B (with its tier-2 key), keep theirs. Before ADR-101 one key per recipe moved them all."""
     before = recipe()
     after = copy.deepcopy(before)
-    after["data_schemas"]["B"]["tier1"]["data_engine"] = STAND_IN   # B is read by J only; C reads nothing of B
-    assert keys(before)["tier1"] != keys(after)["tier1"]
-    assert keys(before)["C"] != keys(after)["C"]     # chained on the one tier-1 key
+    after["data_schemas"]["B"]["tier1"]["data_engine"] = STAND_IN
+    assert moved(keys(before), keys(after)) == {"B", "J", "J2"}
 
 
 def test_a_changed_tier2_engine_moves_only_the_tier2_key_of_that_collection():
     before = recipe()
     after = copy.deepcopy(before)
     after["joins"]["J"]["tier2"]["data_engine"] = STAND_IN
-    assert moved(keys(before), keys(after)) == {"J"}
+    assert moved(keys(before), keys(after)) == {"J2"}
 
 
 def test_a_changed_tier2_engine_of_a_table_plotted_directly_moves_only_its_tier2_key():
     before = recipe()
     after = copy.deepcopy(before)
     after["data_schemas"]["C"]["tier2"]["data_engine"] = STAND_IN
-    assert moved(keys(before), keys(after)) == {"C"}
+    assert moved(keys(before), keys(after)) == {"C2"}
 
 
 def test_a_tier2_engine_is_not_in_the_tier1_material_so_tier1_is_not_rebuilt_for_it():
@@ -160,7 +161,7 @@ def test_the_recipe_engine_is_the_default_of_every_tier_so_changing_it_moves_eve
     before = recipe()
     after = copy.deepcopy(before)
     after["data_engine"] = STAND_IN
-    assert moved(keys(before), keys(after)) == {"tier1", "J", "C"}
+    assert moved(keys(before), keys(after)) == {"A", "B", "C", "J", "J2", "C2"}
 
 
 def test_changing_the_recipe_engine_does_not_move_the_tier1_key_of_a_recipe_whose_tier1s_all_name_their_own():
@@ -172,7 +173,7 @@ def test_changing_the_recipe_engine_does_not_move_the_tier1_key_of_a_recipe_whos
     before["joins"]["J"]["tier1"]["data_engine"] = POLARS
     after = copy.deepcopy(before)
     after["data_engine"] = STAND_IN
-    assert moved(keys(before), keys(after)) == {"J", "C"}
+    assert moved(keys(before), keys(after)) == {"J2", "C2"}
 
 
 def test_a_recipe_whose_every_tier_names_its_own_engine_is_not_moved_by_the_recipe_engine():
@@ -221,7 +222,7 @@ def test_a_recipe_that_names_no_engine_gives_a_key_that_says_so_and_never_a_defa
     bare = recipe()
     del bare["data_engine"]
     assert set(tier1_engines(bare).values()) == {None}
-    assert keys(bare) != keys(recipe())
+    assert all(keys(bare)[table] != keys(recipe())[table] for table in ("A", "B", "C", "J"))
 
 
 def test_a_tier_written_as_a_list_or_not_at_all_does_not_break_the_keys():
@@ -229,7 +230,7 @@ def test_a_tier_written_as_a_list_or_not_at_all_does_not_break_the_keys():
     raw["data_schemas"]["A"]["tier1"] = [FILTER]      # the old shape, refused by the checker, never keyed by a default
     del raw["data_schemas"]["B"]["tier1"]
     assert tier1_engines(raw)["A"] == POLARS and tier1_engines(raw)["B"] == POLARS
-    assert isinstance(keys(raw)["tier1"], str)
+    assert isinstance(keys(raw)["A"], str)
 
 
 # --- the key functions take the engine as an argument ----------------------------------------------------------------------
@@ -238,8 +239,8 @@ def test_a_tier_written_as_a_list_or_not_at_all_does_not_break_the_keys():
 @pytest.mark.parametrize("name", ["tier1", "tier2"])
 def test_every_key_function_changes_with_the_engine_it_is_given(name):
     if name == "tier1":
-        one = tier1_key("material", DATA, {"A": POLARS})
-        other = tier1_key("material", DATA, {"A": STAND_IN})
+        one = tier1_key(TableKeyParts("A", canonical_hash({"A": POLARS}), "rC-x", ("A",)), {"A": DATA})
+        other = tier1_key(TableKeyParts("A", canonical_hash({"A": STAND_IN}), "rC-x", ("A",)), {"A": DATA})
     else:
         one = tier2_key("T1", [FILTER], POLARS)
         other = tier2_key("T1", [FILTER], STAND_IN)
@@ -253,7 +254,9 @@ def test_no_two_engines_give_the_same_key_for_the_same_steps():
 
 
 def test_the_tier1_key_does_not_depend_on_the_order_the_engines_are_listed_in():
-    assert tier1_key("m", DATA, {"A": POLARS, "B": STAND_IN}) == tier1_key("m", DATA, {"B": STAND_IN, "A": POLARS})
+    one = TableKeyParts("J", canonical_hash({"A": POLARS, "B": STAND_IN}), "rC-x", ("A", "B"))
+    other = TableKeyParts("J", canonical_hash({"B": STAND_IN, "A": POLARS}), "rC-x", ("A", "B"))
+    assert tier1_key(one, {"A": DATA, "B": DATA}) == tier1_key(other, {"B": DATA, "A": DATA})
 
 
 # --- the same recipe and data give the same keys, always -------------------------------------------------------------------
@@ -270,15 +273,15 @@ def test_the_same_recipe_with_another_key_order_gives_the_same_keys():
 
 
 def test_other_data_gives_other_keys():
-    assert moved(keys(recipe(), "d1"), keys(recipe(), "d2")) == {"tier1", "J", "C"}
+    assert moved(keys(recipe(), "d1"), keys(recipe(), "d2")) == {"A", "B", "C", "J", "J2", "C2"}
 
 
 # --- the cache version ------------------------------------------------------------------------------------------------------
 
 
-def test_the_cache_version_is_5_and_a_version_4_key_is_another_key(monkeypatch):
-    assert cache_keys.ENGINE_CACHE_VERSION == "5"
+def test_the_cache_version_is_6_and_a_version_5_key_is_another_key(monkeypatch):
+    assert cache_keys.ENGINE_CACHE_VERSION == "6"
     raw = recipe()
     now = keys(raw)
-    monkeypatch.setattr(cache_keys, "ENGINE_CACHE_VERSION", "4")
-    assert moved(now, keys(raw)) == {"tier1", "J", "C"}
+    monkeypatch.setattr(cache_keys, "ENGINE_CACHE_VERSION", "5")
+    assert moved(now, keys(raw)) == {"A", "B", "C", "J", "J2", "C2"}

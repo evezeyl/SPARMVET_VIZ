@@ -221,12 +221,15 @@ def build_export_provenance(
     }
 
 
-def changed_since_view(view_keys, current_keys) -> list[str]:
+def changed_since_view(view_keys, current_keys, tables=None) -> list[str]:
     """What changed between the keys the view was built on and the keys now (empty: nothing).
 
     ADR-089 / EXPORT-KEYCHECK-1. The view is built once per session from the data analysis recipe files and
     the data files; the export recomputes the keys. A difference means a file changed on disk
     after the user opened the view, so what is on screen is not what an export would contain.
+
+    The identity hashes (the recipe file set, all the data files) are compared as before. The third check compares the Tier 1 key of
+    each table IN SCOPE (`tables`: the tables the export reads; every table of the view when None), ADR-101.
     """
     changes: list[str] = []
     if view_keys is None or current_keys is None:
@@ -235,12 +238,17 @@ def changed_since_view(view_keys, current_keys) -> list[str]:
         changes.append("the data analysis recipe (the data analysis recipe file or a file it includes)")
     if view_keys.data_batch_hash != current_keys.data_batch_hash:
         changes.append("the data files")
-    if not changes and view_keys.tier1_key != current_keys.tier1_key:
+    if not changes and any(view_keys.tier1_key_of(t) != current_keys.tier1_key_of(t) for t in _scope_tables(view_keys, tables)):
         changes.append("the processing rules (the engine version or the Tier 1 parts of the data analysis recipe)")
     return changes
 
 
-def blocked_export_notice(changes: list[str], view_keys, current_keys, during_build: bool = False) -> str:
+def _scope_tables(keys, tables) -> list[str]:
+    """The tables whose keys are compared and recorded: those named, else every table the keys hold."""
+    return sorted(set(tables)) if tables is not None else sorted(keys.tier1_keys)
+
+
+def blocked_export_notice(changes: list[str], view_keys, current_keys, during_build: bool = False, tables=None) -> str:
     """Plain-language explanation shown (and written in the bundle) when an export is refused.
 
     `during_build`: the change was seen while a table of the export was being built (STALE-KEY-STORE-1), so a table of the
@@ -268,10 +276,10 @@ def blocked_export_notice(changes: list[str], view_keys, current_keys, during_bu
         "Keys (for the record)",
         f"  view  data analysis recipe {view_keys.data_analysis_recipe_sha256}",
         f"        data     {view_keys.data_batch_hash}",
-        f"        tier1    {view_keys.tier1_key}",
+        *(f"        tier1    {t}: {view_keys.tier1_key_of(t)}" for t in _scope_tables(view_keys, tables)),
         f"  now   data analysis recipe {current_keys.data_analysis_recipe_sha256}",
         f"        data     {current_keys.data_batch_hash}",
-        f"        tier1    {current_keys.tier1_key}",
+        *(f"        tier1    {t}: {current_keys.tier1_key_of(t)}" for t in _scope_tables(current_keys, tables)),
     ]
     return "\n".join(lines)
 
@@ -284,7 +292,7 @@ def blocked_export_zip(text: str) -> bytes:
     return blocked.getvalue()
 
 
-def refusal_for_build_changes(changes: list[str], view_keys, current_keys, notify) -> bytes | None:
+def refusal_for_build_changes(changes: list[str], view_keys, current_keys, notify, tables=None) -> bytes | None:
     """The refusal (zip with only EXPORT_NOT_CREATED.txt, plus the error notification) when a table of the export was built while
     its recipe or data changed, else None. The same refusal as a change since the view; the tables were returned but not stored,
     and the export records the held keys, so nothing may be exported (D-0005: the export refuses when files changed)."""
@@ -293,7 +301,7 @@ def refusal_for_build_changes(changes: list[str], view_keys, current_keys, notif
     view_keys = view_keys if view_keys is not None else current_keys     # no view (a headless caller): the keys of this export
     notify("Export blocked: " + "; ".join(changes) + " while a table of this export was being built. "
            "Reload the page (F5), check the plots, then export again.", type="error", duration=None)
-    return blocked_export_zip(blocked_export_notice(changes, view_keys, current_keys, during_build=True))
+    return blocked_export_zip(blocked_export_notice(changes, view_keys, current_keys, during_build=True, tables=tables))
 
 
 def blocked_audit_notice(failing: list) -> str:
@@ -984,9 +992,11 @@ def define_export_server(input, output, session, *,
         # user looked at.
         with reactive.isolate():
             _view = view_keys() if view_keys is not None else None
-        _changes = changed_since_view(_view, export_keys)
+        # The tables in scope: the collections the plots of this export read (every export holds all plots of the recipe).
+        _scope_tables_now = sorted({_s.get("target_dataset") for _, _s in export_plot_entries(cfg.raw_config) if _s.get("target_dataset")})
+        _changes = changed_since_view(_view, export_keys, _scope_tables_now)
         if _changes:
-            _text = blocked_export_notice(_changes, _view, export_keys)
+            _text = blocked_export_notice(_changes, _view, export_keys, tables=_scope_tables_now)
             with reactive.isolate():
                 _notify("Export blocked: " + "; ".join(_changes) + " changed since this view was opened. "
                         "Reload the page (F5), check the plots, then export again.",
@@ -1115,9 +1125,9 @@ def define_export_server(input, output, session, *,
                 _ds = _spec.get("target_dataset")
                 if _ds and _ds not in stage_keys:
                     stage_keys[_ds] = {
-                        "tier1_key": export_keys.tier1_key,
+                        "tier1_key": export_keys.tier1_key_of(_ds),
                         # the one function that makes a tier-2 key from a recipe (steps and engine); empty when T2 equals T1
-                        "tier2_key": _collection_tier2_key(cfg.raw_config, _ds, export_keys.tier1_key),
+                        "tier2_key": _collection_tier2_key(cfg.raw_config, _ds, export_keys.tier1_key_of(_ds)),
                     }
 
             tiers_exported = ["T1"] + (["T3"] if audited_plots else [])
@@ -1760,11 +1770,11 @@ def define_export_server(input, output, session, *,
             for _ds_k, _k in prov.get("stage_keys", {}).items():
                 _dh_qmd_rows.append(
                     f"| Tier 1 key ({_qp(_ds_k)}) | {_qc(_k['tier1_key'], True)} | "
-                    "Chained key of the Tier 1 parquet: engine version, resolved data analysis recipe, data |"
+                    "Key of the Tier 1 parquet of this table: engine and version, the definition of the table and of what it reads, the data files it reads |"
                 )
                 _dh_qmd_rows.append(
                     f"| Tier 2 key ({_qp(_ds_k)}) | {_qc(_k['tier2_key'] or 'none (T2 equals T1)', True)} | "
-                    "Chained key of the Tier 2 parquet: Tier 1 key and the tier2 steps of the table (a join, or a table a plot reads directly) |"
+                    "Key of the Tier 2 parquet: Tier 1 key and the tier2 steps of the table (a join, or a table a plot reads directly) |"
                 )
             if _dh_qmd_rows:
                 pass
@@ -2129,7 +2139,7 @@ def define_export_server(input, output, session, *,
                 *(["Plot warnings (these plots were drawn; read each warning before you rely on the plot):",
                    *[f"  {_pid}: {_row['text']}" for _pid, _rows in _plot_warning_rows.items() for _row in _rows],
                    ""] if _plot_warning_rows else []),
-                "Stage keys (per dataset; Tier 1 and Tier 2 chained keys):",
+                "Stage keys (per dataset; the Tier 1 key of each table, then its Tier 2 key):",
                 *_dh_lines,
                 "",
                 "Data source paths:",
@@ -2183,7 +2193,7 @@ def define_export_server(input, output, session, *,
             zf.writestr(f"{bundle_dir}/README.txt", "\n".join(readme_lines))
 
         with reactive.isolate():
-            _build_refusal = refusal_for_build_changes(_build_changes, _view, export_keys, _notify)
+            _build_refusal = refusal_for_build_changes(_build_changes, _view, export_keys, _notify, tables=_scope_tables_now)
         if _build_refusal is not None:
             yield _build_refusal
             return

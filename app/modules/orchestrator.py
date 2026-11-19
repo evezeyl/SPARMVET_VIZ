@@ -1,7 +1,7 @@
 # @deps
 # provides: pipeline:materialize_tier1, pipeline:materialize_tier2, method:prepare_ingredient, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
 # mirrors: libs/transformer/tests/debug_assembler.py
-# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table)
+# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
 # consumed_by: app/src/server.py, app/handlers/home_theater.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps
@@ -16,11 +16,11 @@ from transformer.anchor import read_anchor_if_key, write_anchor
 from app.modules.engine_registry import data_entry
 from utils.recipe_tiers import collection_body
 from app.modules.cache_keys import (CACHE_VERSION_META, DataAnalysisRecipeKeys, ENGINE_CACHE_VERSION, LoadedDataAnalysisRecipe, collection_tier2_key,
-                                    data_analysis_recipe_keys, load_data_analysis_recipe, tier2_engine, tier2_steps)
+                                    data_analysis_recipe_keys, dataset_file_hashes, load_data_analysis_recipe, tier2_engine, tier2_steps)
 
-# Parquet metadata key holding the chained Tier 1 key (ADR-089).
+# Parquet metadata key holding the Tier 1 key of the table (ADR-089, ADR-101: a key per table).
 TIER1_KEY_META = "sparmvet_tier1_key"
-# Parquet metadata key holding the chained Tier 2 key (ADR-089 point 6).
+# Parquet metadata key holding the Tier 2 key of the table (ADR-089 point 6, ADR-101).
 TIER2_KEY_META = "sparmvet_tier2_key"
 
 
@@ -97,14 +97,13 @@ class DataOrchestrator:
         and pass it to materialize_tier1(). `loaded` is the recipe a build reads: the key is then made from that very
         object, not from a second reading of the files.
         """
-        from app.modules.session_manager import SessionManager
         data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
         if not data_analysis_recipe_path.exists():
             raise FileNotFoundError(f"Data analysis recipe not found: {data_analysis_recipe_path}")
         loaded = loaded or load_data_analysis_recipe(data_analysis_recipe_path)
-        source_files = self.get_source_files(data_analysis_recipe_id)
-        data_hash = SessionManager.compute_data_batch_hash(source_files) if source_files else ""
-        return data_analysis_recipe_keys(loaded, data_hash)
+        # The data files are read once, here: the identity hash of all of them and the data part of the key of each table come
+        # from the same content hashes (ADR-101 point 4).
+        return data_analysis_recipe_keys(loaded, dataset_file_hashes(self.get_source_files(data_analysis_recipe_id)))
 
     def prepare_ingredient(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None, recipe: dict | None = None) -> pl.LazyFrame:
         """Read one dataset of a data analysis recipe and apply its input contract and tier-1 wrangling (its T1).
@@ -141,12 +140,14 @@ class DataOrchestrator:
         rules = engine.wrangler.tier_steps(ds_schema, "tier1")
         return engine.wrangler().run(lf, rules)
 
-    def inputs_changed(self, data_analysis_recipe_id: str, built_from: DataAnalysisRecipeKeys) -> InputsChanged | None:
-        """None when the recipe files and the data files are still those `built_from` was made from, else what changed.
+    def inputs_changed(self, data_analysis_recipe_id: str, built_from: DataAnalysisRecipeKeys, collection_id: str) -> InputsChanged | None:
+        """None when what the table `collection_id` depends on is still what `built_from` was made from, else what changed.
 
         The last check of a build, before its table is stored (STALE-KEY-STORE-1): a table built while its inputs
-        changed holds rows of neither state, so no key could be true for it. A recipe that can no longer be read, or a
-        recipe file that is gone, is a change and is named as such, never turned into "nothing changed" or left unsaid.
+        changed holds rows of neither state, so no key could be true for it. The inputs of a table are what its key says
+        (ADR-101): a change in another table, or a comment in the recipe, is not a change of this one and does not stop the
+        store. A recipe that can no longer be read, or a recipe file that is gone, is a change and is named as such, never turned
+        into "nothing changed" or left unsaid.
         """
         try:
             now = self.compute_data_analysis_recipe_keys(data_analysis_recipe_id)
@@ -154,7 +155,7 @@ class DataOrchestrator:
             return InputsChanged(f"the data analysis recipe can no longer be read ({str(exc).strip()[:200]})")
         except FileNotFoundError:
             return InputsChanged("the data analysis recipe file is gone")
-        if now == built_from:
+        if now.tier1_key_of(collection_id) == built_from.tier1_key_of(collection_id):
             return None
         if now.data_analysis_recipe_sha256 != built_from.data_analysis_recipe_sha256:
             return InputsChanged("the data analysis recipe changed")
@@ -219,10 +220,10 @@ class DataOrchestrator:
         # Cheap validity check before any ingestion: the stored key must match the current one.
         # The key is read from the very file that is then scanned (a rename between the two would pair a key with the
         # content of another file).
-        stored = read_anchor_if_key(output_path, TIER1_KEY_META, keys.tier1_key)
+        stored = read_anchor_if_key(output_path, TIER1_KEY_META, keys.tier1_key_of(collection_id))
         if stored is not None:
             print(f"[Orchestrator] ✅ Tier 1 anchor '{collection_id}' is valid (key match) → {output_path}")
-            return stored, keys.tier1_key, None, None
+            return stored, keys.tier1_key_of(collection_id), None, None
 
         # Tier 1 is rebuilt, so the Tier 2 stored on top of the old one is invalid by definition. The table that did not match
         # (another key, another cache version, an unreadable file) is removed now, at the moment it is found: a build that
@@ -233,11 +234,12 @@ class DataOrchestrator:
         # The key of what this build reads: the recipe object loaded above and the data files as they are now. `keys` may
         # be older than both (a view computes them once).
         built_from = built_from or self.compute_data_analysis_recipe_keys(data_analysis_recipe_id, loaded=loaded)
-        stored_key = {TIER1_KEY_META: built_from.tier1_key, CACHE_VERSION_META: ENGINE_CACHE_VERSION}
+        built_key = built_from.tier1_key_of(collection_id)
+        stored_key = {TIER1_KEY_META: built_key, CACHE_VERSION_META: ENGINE_CACHE_VERSION}
         verdict: list[InputsChanged] = []
 
         def unchanged() -> bool:
-            change = self.inputs_changed(data_analysis_recipe_id, built_from)
+            change = self.inputs_changed(data_analysis_recipe_id, built_from, collection_id)
             if change is not None:
                 verdict.append(change)
             return change is None
@@ -285,9 +287,9 @@ class DataOrchestrator:
         if collection_spec is None and collection_id in ingredients:
             print(f"      └── 💾 Materializing data_schema '{collection_id}' to: {output_path}")
             lf = ingredients[collection_id]
-            stored = write_anchor(lf, str(output_path), decision_hash=built_from.tier1_key, metadata=stored_key, still_valid=unchanged)
+            stored = write_anchor(lf, str(output_path), decision_hash=built_key, metadata=stored_key, still_valid=unchanged)
             print(f"[Orchestrator] ✅ materialize_tier1 DONE — '{collection_id}' (bare schema) in {time.perf_counter()-_t_start:.2f}s → {output_path}")
-            return stored, built_from.tier1_key, built_from, (verdict[0] if verdict else None)
+            return stored, built_key, built_from, (verdict[0] if verdict else None)
 
         # Path B: the id is neither a join nor a schema of this recipe. It fails: building another collection in its
         # place (the first join, as the code did before) gives a table that looks right and is something else.
@@ -319,13 +321,13 @@ class DataOrchestrator:
         assembler = engine.assembler(assembly_ingredients, recipe_id=data_analysis_recipe_id, join_id=collection_id)
         lf = assembler.assemble(steps)
 
-        # ADR-089: the chained Tier 1 key (the resolved recipe with every included file, the data content and the engine
-        # version) is written into the anchor, so any upstream change rebuilds it.
-        lf = write_anchor(lf, str(output_path), decision_hash=built_from.tier1_key, metadata=stored_key,
+        # ADR-101: the Tier 1 key of THIS table (its definition and that of what it reads, the data files it reads, the engine and
+        # its version) is written into the anchor, so a change in any of them rebuilds it and a change elsewhere does not.
+        lf = write_anchor(lf, str(output_path), decision_hash=built_key, metadata=stored_key,
                           join_checks=assembler.join_checks, still_valid=unchanged)
 
         print(f"[Orchestrator] ✅ materialize_tier1 DONE — assembly '{collection_id}' in {time.perf_counter()-_t_start:.2f}s → {output_path}")
-        return lf, built_from.tier1_key, built_from, (verdict[0] if verdict else None)
+        return lf, built_key, built_from, (verdict[0] if verdict else None)
 
     def materialize_tier2(self, data_analysis_recipe_id: str, collection_id: str, tier1_path: Path,
                           keys: DataAnalysisRecipeKeys | None = None,
@@ -339,7 +341,7 @@ class DataOrchestrator:
         - stored file whose key matches: read, nothing is recomputed;
         - missing or mismatched file: recomputed from the (valid) Tier 1 and stored with its key.
 
-        The key chains the Tier 1 key, so a change in a Tier 1 part invalidates Tier 2 as well,
+        The key starts with the Tier 1 key of the table, so a change in a Tier 1 part invalidates Tier 2 as well,
         while a change in a Tier 2 step recomputes only Tier 2 (the Tier 1 file is only checked).
 
         A table built while its inputs changed is returned, not stored, and `on_inputs_changed` is called with what
@@ -361,7 +363,7 @@ class DataOrchestrator:
                 self.tell_inputs_changed(change, on_inputs_changed)
             return lf
 
-        key = collection_tier2_key(loaded.raw, collection_id, keys.tier1_key)
+        key = collection_tier2_key(loaded.raw, collection_id, keys.tier1_key_of(collection_id))
         stored = read_anchor_if_key(t2_path, TIER2_KEY_META, key)
         if stored is not None:
             print(f"[Orchestrator] ✅ Tier 2 '{collection_id}' is valid (key match) → {t2_path}")
@@ -381,7 +383,7 @@ class DataOrchestrator:
             if t1_change is not None:
                 return False
             if t1_built_from is not None:
-                change = self.inputs_changed(data_analysis_recipe_id, t1_built_from)
+                change = self.inputs_changed(data_analysis_recipe_id, t1_built_from, collection_id)
                 if change is not None:
                     verdict.append(change)
                     return False
