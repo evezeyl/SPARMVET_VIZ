@@ -4,7 +4,22 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
-## OPEN STATE 2026-11-19 00:25 (coordinator session 3ce2c163; replaces the 18:25 block below)
+## OPEN STATE 2026-11-19 morning (coordinator session 3ce2c163; read at 2026-11-19 morning; corrects the 03:40 block below on the keep question and on the push)
+
+- The keep question is DECIDED (owner, 2026-11-19, channel M335 of 62, option B of three: keep, with a note and a check). The filter form repair `8f8474a9` stays on dev and on the recipe-change branch; nothing is reverted. It is a STOPGAP, not the tier rule. The hold of M302 is lifted for this one repair only.
+- Running: the check of the tier rule, FILTER-TIER-CHECK-1, in worktree `.claude/worktrees/tier-filter-check` (branch `task/tier-filter-check`). If it fails it is not patched: it goes to the gap list of the audit redesign and the owner is told. The owner's vision for the redesign: FILTERS-TIER-VISION-FOR-REDESIGN (no build; no slice before she sees the slice plan).
+- Still waiting for the owner: (1) the rule sentences R1 to R45 (page `tmpAI/engine_keys/RULE_SENTENCES_for_eve_2026-11-19.md`); (2) the lost column pick, options A to D (FILTER-FORM-LOST-PICK-1); (3) the tier-3 button of the big recipe change (options A to C, see below). After answer (1) dev may be pushed; the review session will say so (channel M335 point 5).
+- Push: NOT yet. The owner has not said that dev may be pushed. The push advice stays on hold until the review session says so.
+
+## OPEN STATE 2026-11-19 03:40 (coordinator session 3ce2c163; replaces the 00:25 block below)
+
+- `dev` = `8f8474a9`, NOT pushed. Controls passed after the filter form fix (`tmpAI/coordinator/CONTROL_dev_after_filter_fix_2026-11-19.md`: headless 10552 passed, 5 skipped, 31 xfailed, 0 failed; browser files all passed). CORRECTED 2026-11-19 morning: the owner has NOT said that dev may be pushed; the push waits for the review session's word after the rule sentences (M335 point 5).
+- The filter form of HOME kept neither the chosen column nor a true value list: fixed and merged in `8f8474a9` (FILTER-FORM-RESET-1 in `.claude/tasks/tasks.md`). Still open: a column picked right after a REAL change of columns, while the plots are drawn, is lost with no message. Options A to D; the owner chooses (FILTER-FORM-LOST-PICK-1; channel M327 of 78).
+- Big recipe change, branch `task/engine-keys`, head `57831da3`: it holds this `dev` (merge `1724966b`, dependency index regenerated in `57831da3`). The last full run on the branch was on `5d9d5404`; before its merge: one full headless run on the branch, since the filter change came in. Two answers of the owner gate its merge: (1) the rule sentences: page `tmpAI/engine_keys/RULE_SENTENCES_for_eve_2026-11-19.md`, R1 to R45 (channel M324 and M325 of the coordinator); (2) the tier-3 button: the branch removes the Blueprint button "Add plot wrangling", while D-0305 says it stays and points to tier 3. Options: A build the reader of tier 3, B honest text, C stays removed for now (channel M317 and M324 of the coordinator; facts `tmpAI/engine_keys/TIER3_facts_2026-11-18.md`).
+- Not covered by the test setups: ghost save is off in `qa`, so the save at Apply and Blueprint's draft autosave are not run in the browser tests; the setups with the recipe selector hidden (pipeline-static, pipeline-exploration-simple, web-demo) are only started; the AI agent with a working backend (`claude_cli`) is not run; `export_enabled` false and `interactivity_enabled` false are not run in the browser; Firefox and Safari are not run.
+- Records: the section "Control run of dev and open items from the 2026-11-18 reviews" of `tasks.md` holds the new items of this hour.
+
+## OPEN STATE 2026-11-19 00:25 (coordinator session 3ce2c163; replaces the 18:25 block below) — SUPERSEDED 2026-11-19 03:40 by the block above; kept for the record
 
 - `dev` = `4ed1c1ba`, NOT pushed. Controls PASSED: one full control run on dev (`tmpAI/coordinator/CONTROL_RUN_dev_2026-11-18.md`); its two failures were stale tests, fixed in `41a8068d` (`tmpAI/coordinator/dev_control_fixes_report.md`), reviewed MERGE, merged. Eve can push.
 - Big recipe change, branch `task/engine-keys` (head `5d9d5404`, dev `efd1cd5f` merged in): under final review and full controls (report `tmpAI/engine_keys/FINAL_REVIEW_and_CONTROLS.md`). It must take dev again for two test files (the stale tests above).
