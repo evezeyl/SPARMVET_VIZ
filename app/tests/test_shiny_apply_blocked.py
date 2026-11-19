@@ -31,7 +31,7 @@ def test_a_forced_apply_on_a_step_without_a_reason_keeps_the_page_alive_and_appl
     _navigate_to_mlst_plot(page)
     page.locator("#tier_toggle input[value=T3]").check(force=True)
     _wait_shiny(page)
-    _choose_column_firmly(page, "year") 
+    _choose_column_firmly(page, "year")
     _choose_fb_op(page, "gt")
     _wait_shiny(page)
     page.locator("#fb_value").fill("2000")
