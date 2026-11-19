@@ -624,6 +624,8 @@ class _Check:
                 if not isinstance(step, dict):
                     continue
                 name = step.get("action")
+                if not isinstance(name, str):
+                    continue  # reported by `steps` (ST01)
                 if name in _ORDER_STEPS and "maintain_order" in step:
                     keeps = step["maintain_order"] not in (False, "none")
                     unstated = None if keeps else (f"{path}.{tier}.steps[{index}]", name)
@@ -662,6 +664,9 @@ class _Check:
             if actions is None:
                 continue
             name = step["action"]
+            if not isinstance(name, str):
+                self.add("ST01", f"{where}.action", "the action of a step is a name (text)", "write - {action: <name>, ...}")
+                continue
             if name not in actions:
                 legacy = (self.catalogs or {}).get("old_action_names", {}).get(name)
                 close = difflib.get_close_matches(str(name), list(actions), n=1, cutoff=0.6)
@@ -725,7 +730,7 @@ class _Check:
                     if right is None:
                         return
                     tables = tables + [(step["right_ingredient"], right)]
-                elif action not in JOIN_KEEPS_COLUMNS:
+                elif not isinstance(action, str) or action not in JOIN_KEEPS_COLUMNS:
                     return
 
     def filter_value_at(self, step: dict, where: str, tables: List[Tuple[str, Dict[str, Any]]]) -> None:
@@ -814,6 +819,11 @@ class _Check:
                     self.add("J05", where, "write either on, or left_on with right_on", "choose one form")
                 if True in step:
                     self.add("T07", where, "an unquoted on became the key true", "quote it: 'on'")
+                for key_name in ("on", "left_on", "right_on", "by", "by_left", "by_right"):
+                    value = step.get(True) if key_name == "on" and "on" not in step else step.get(key_name)
+                    if value is not None and not _is_column_names(value):
+                        self.add("J05", f"{where}.{key_name}", f"{key_name} of a join is a column name or a list of column names; it is {value!r}",
+                                 "write the column names as text: on: sample_id, or on: [sample_id, gene_id]")
 
     def join_advices(self, tier1: list, position: int, where: str, ingredient_ids: List[str]) -> None:
         """J12, J13 (advice, never block): a join of a table with itself; a join key declared as a float.
@@ -957,6 +967,9 @@ class _Check:
             right = self.graph.columns_of(step["right_ingredient"])
             if base_columns is None or right is None:
                 continue
+            if not all(_is_column_names(step.get(k)) for k in ("on", "left_on", "right_on", "by", "by_left", "by_right")) \
+                    or not _is_column_names(step.get(True)):
+                continue  # a join key that is not text is reported (J05) by join_steps; no column comparison is possible
             keys = set(_as_list(step.get("on", step.get(True)))) | set(_as_list(step.get("left_on"))) | set(_as_list(step.get("right_on")))
             keys |= set(_as_list(step.get("by"))) | set(_as_list(step.get("by_left"))) | set(_as_list(step.get("by_right")))  # the `by` columns of an as-of join are merged, not renamed
             clash = sorted((set(base_columns) & set(right)) - keys)
@@ -1069,6 +1082,9 @@ class _Check:
                     self.add("PS06", f"{where}.params.{param}", what, suggestion)
             if components is None:
                 continue
+            if not isinstance(name, str):
+                self.add("PS04", f"{where}.name", "the name of a layer is a component name (text)", "write - {name: geom_point}")
+                continue
             if name not in components:
                 close = difflib.get_close_matches(str(name), list(components), n=1, cutoff=0.6)
                 self.add("PS04", f"{where}.name", f"{name!r} is not a registered plot component", f"write {close[0]}" if close else "choose a registered component")
@@ -1175,6 +1191,13 @@ def check_recipe_set(recipes: Dict[str, Any]) -> List[Problem]:
                 else:
                     owners[pid] = name
     return problems
+
+
+def _is_column_names(value: Any) -> bool:
+    """A join key: nothing, a column name, or a list of column names (text only)."""
+    if value is None or isinstance(value, str):
+        return True
+    return isinstance(value, (list, tuple)) and all(isinstance(item, str) for item in value)
 
 
 def _as_list(value: Any) -> list:
