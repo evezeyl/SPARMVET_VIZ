@@ -50,7 +50,7 @@ from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_change_notice import inputs_changed_during_build_notice, notice_after_data_change
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.orchestrator import plot_read_error_text
-from app.modules.view_badge import has_tier2_steps, view_badge
+from app.modules.view_badge import has_plot_steps, has_tier2_steps, view_badge
 from utils.engines import plot_engine_slot
 from utils.pipeline_error import capture_entry
 from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
@@ -800,7 +800,8 @@ def define_server(input, output, session, *,
             tier = "T3" if view == "T3" else "T2"
             spec = _resolve_active_spec(p_id)
             has_t2 = has_tier2_steps(active_cfg().raw_config, (spec or {}).get("target_dataset"))
-            return _badge_ui(view_badge(tier, has_t2, _my_view_has_changes(f"subtab_{p_id}"), table_only_filters=len(applied_filters.get())))
+            return _badge_ui(view_badge(tier, has_t2, _my_view_has_changes(f"subtab_{p_id}"), table_only_filters=len(applied_filters.get()),
+                                       plot_has_steps=has_plot_steps(active_cfg().raw_config, p_id)))
 
         @output(id=f"plot_cell_{p_id}")
         @render.ui
@@ -1416,7 +1417,8 @@ def define_server(input, output, session, *,
         p_id = subtab.removeprefix("subtab_") if subtab else None
         spec = _resolve_active_spec(p_id)
         has_t2 = has_tier2_steps(active_cfg().raw_config, (spec or {}).get("target_dataset"))
-        return _badge_ui(view_badge(tier_toggle.get(), has_t2, _my_view_has_changes(subtab), len(applied_filters.get())))
+        return _badge_ui(view_badge(tier_toggle.get(), has_t2, _my_view_has_changes(subtab), len(applied_filters.get()),
+                                   plot_has_steps=has_plot_steps(active_cfg().raw_config, p_id)))
 
     @output
     @render.text
