@@ -1,6 +1,6 @@
 """
 @deps
-provides: function:load_data_analysis_recipe, function:tier1_material, function:tier1_engines, function:tier2_engine, function:collection_tier2_key, function:plot_tier3_key, function:tier3_key, function:tier3_engine, function:tier2_steps (from utils.recipe_tiers), function:tier3_steps (from utils.recipe_tiers), function:tier1_key, function:tier2_key, function:table_key_parts, function:table_definition_for_key, function:dataset_file_hashes, function:batch_hash_of, constant:ENGINE_CACHE_VERSION, constant:CACHE_VERSION_META, constant:STORED_TABLES_REBUILT_NOTICE, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys, class:TableKeyParts, function:loaded_from_resolved
+provides: function:load_data_analysis_recipe, function:tier1_material, function:tier1_engines, function:tier2_engine, function:collection_tier2_key, function:plot_tier3_key, function:tier3_key, function:tier3_engine, function:tier2_steps (from utils.recipe_tiers), function:tier3_steps (from utils.recipe_tiers), function:tier1_key, function:tier2_key, function:table_key_parts, function:table_definition_for_key, function:dataset_file_hashes, function:batch_hash_of, constant:ENGINE_CACHE_VERSION, constant:CACHE_VERSION_META, constant:STORED_TABLES_REBUILT_NOTICE, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys, class:TableKeyParts, class:ResolvedRecipe, function:loaded_from_resolved, function:tier1_audit_part, function:audit_part
 consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/engines.py (tier_engine: the one reading of the engine of a tier), libs/utils/src/utils/recipe_graph.py (build_graph: lineage_back, source_tables, parents: which definitions and which data files a table depends on, ADR-101), libs/utils/src/utils/audit_copy.py (split_marked, audit_operation, strip_marked: the marked audit steps of a copy are the audit parts of a key, not its definition)
 consumed_by: app/modules/orchestrator.py, app/modules/session_manager.py, app/src/server.py, app/src/bootloader.py, app/handlers/export_handlers.py, app/tests/test_cache_keys.py, app/tests/test_engine_keys.py, app/tests/test_table_keys.py, app/tests/test_tier3_reader.py, app/tests/test_audit_keys.py, app/modules/audit_run.py
 doc: .claude/knowledge/architecture_decisions.md#adr-089, .claude/knowledge/architecture_decisions.md#adr-101, docs/foundations/reproducibility_hash_schema.qmd
@@ -366,6 +366,26 @@ class LoadedDataAnalysisRecipe:
     @property
     def raw(self) -> dict:
         return self.config.raw_config
+
+
+@dataclass(frozen=True)
+class ResolvedRecipe:
+    """What the engine reads of a recipe that is not a file: the resolved dictionary (`raw_config`) and no file (`loaded_files`). It stands where
+    the `ConfigManager` of a loaded file stands, for an audit copy (`loaded_from_resolved`)."""
+    raw_config: dict
+    loaded_files: tuple = ()
+
+
+def loaded_from_resolved(original: LoadedDataAnalysisRecipe, raw: dict) -> LoadedDataAnalysisRecipe:
+    """The recipe `raw` (an audit copy of the original, `utils.audit_copy`) in the form the engine reads, with the key parts of that very dictionary.
+
+    The path, the files and their signature are the original's: the copy has no file of its own, the original's names it (its id, its data
+    location). `data_analysis_recipe_sha256` is the hash of the resolved dictionary, NOT of a file set (there is none): PROVISIONAL, the identity of
+    an audit copy that is written to a file is not decided. The original is not changed."""
+    table_parts, coarse_parts = table_key_parts(raw)
+    return LoadedDataAnalysisRecipe(
+        path=original.path, config=ResolvedRecipe(raw), files=original.files, signature=original.signature,
+        data_analysis_recipe_sha256=canonical_hash(raw), table_parts=table_parts, coarse_parts=coarse_parts)
 
 
 @dataclass(frozen=True)

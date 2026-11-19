@@ -2,7 +2,7 @@
 # provides: pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3, function:plot_read_error_text, method:prepare_ingredient, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
 # mirrors: libs/transformer/tests/debug_assembler.py
 # consumes: libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
-# consumed_by: app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and My view base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py
+# consumed_by: app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and My view base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py, app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps
 import copy
@@ -151,7 +151,8 @@ class DataOrchestrator:
         rules = engine.wrangler.tier_steps(ds_schema, "tier1")
         return engine.wrangler().run(lf, rules)
 
-    def inputs_changed(self, data_analysis_recipe_id: str, built_from: DataAnalysisRecipeKeys, collection_id: str) -> InputsChanged | None:
+    def inputs_changed(self, data_analysis_recipe_id: str, built_from: DataAnalysisRecipeKeys, collection_id: str,
+                       pinned: LoadedDataAnalysisRecipe | None = None) -> InputsChanged | None:
         """None when what the table `collection_id` depends on is still what `built_from` was made from, else what changed.
 
         The last check of a build, before its table is stored (STALE-KEY-STORE-1): a table built while its inputs
@@ -159,9 +160,12 @@ class DataOrchestrator:
         (ADR-101): a change in another table, or a comment in the recipe, is not a change of this one and does not stop the
         store. A recipe that can no longer be read, or a recipe file that is gone, is a change and is named as such, never turned
         into "nothing changed" or left unsaid.
+
+        `pinned` is a recipe the caller handed the build (an audit copy, `loaded_from_resolved`): it is not a file, so it cannot change on disk; the
+        keys now are those of that very recipe over the data files as they are now, and only a change of the data is a change.
         """
         try:
-            now = self.compute_data_analysis_recipe_keys(data_analysis_recipe_id)
+            now = self.compute_data_analysis_recipe_keys(data_analysis_recipe_id, loaded=pinned)
         except RecipeLoadError as exc:
             return InputsChanged(f"the data analysis recipe can no longer be read ({str(exc).strip()[:200]})")
         except FileNotFoundError:
@@ -183,7 +187,8 @@ class DataOrchestrator:
 
     def materialize_tier1(self, data_analysis_recipe_id: str, collection_id: str, output_path: Path,
                           keys: DataAnalysisRecipeKeys | None = None,
-                          on_inputs_changed: Callable[[InputsChanged], None] | None = None) -> pl.LazyFrame:
+                          on_inputs_changed: Callable[[InputsChanged], None] | None = None,
+                          loaded: LoadedDataAnalysisRecipe | None = None) -> pl.LazyFrame:
         """
         Executes the full ingestion and assembly to create a Tier 1 Anchor.
 
@@ -195,17 +200,22 @@ class DataOrchestrator:
         (STALE-KEY-STORE-1). The built table is not stored at all when its inputs changed while it was built; it is still
         returned (it may mix the two states), and `on_inputs_changed` is called with what changed so that the caller can
         tell the user. Nothing is re-read or blocked here.
+
+        `loaded` is a recipe the caller hands the build instead of the file (an audit copy, `cache_keys.loaded_from_resolved`, with the keys of that
+        copy): the build then reads that recipe and is not stopped by the difference between it and the recipe file. The file of the original still
+        names the recipe (its id, its data location). Without it nothing changes.
         """
-        lf, _, _, change = self._materialize_tier1(data_analysis_recipe_id, collection_id, output_path, keys)
+        lf, _, _, change = self._materialize_tier1(data_analysis_recipe_id, collection_id, output_path, keys, loaded=loaded,
+                                                   pinned=loaded is not None)
         if change is not None:
             self.tell_inputs_changed(change, on_inputs_changed)
         return lf
 
     def _materialize_tier1(self, data_analysis_recipe_id: str, collection_id: str, output_path: Path,
-                           keys: DataAnalysisRecipeKeys | None, loaded: LoadedDataAnalysisRecipe | None = None
+                           keys: DataAnalysisRecipeKeys | None, loaded: LoadedDataAnalysisRecipe | None = None, pinned: bool = False
                            ) -> tuple[pl.LazyFrame, str, DataAnalysisRecipeKeys | None, InputsChanged | None]:
         """(table, the Tier 1 key that table carries, the keys of the build or None when a stored table was served,
-        what changed while it was built or None)."""
+        what changed while it was built or None). `pinned`: `loaded` was handed in by the caller and is the recipe of the build (see `materialize_tier1`)."""
         import time
         _t_start = time.perf_counter()
         print(f"[Orchestrator] ▶ materialize_tier1 START — data_analysis_recipe='{data_analysis_recipe_id}', collection='{collection_id}'")
@@ -250,7 +260,7 @@ class DataOrchestrator:
         verdict: list[InputsChanged] = []
 
         def unchanged() -> bool:
-            change = self.inputs_changed(data_analysis_recipe_id, built_from, collection_id)
+            change = self.inputs_changed(data_analysis_recipe_id, built_from, collection_id, pinned=loaded if pinned else None)
             if change is not None:
                 verdict.append(change)
             return change is None
@@ -342,7 +352,8 @@ class DataOrchestrator:
 
     def materialize_tier2(self, data_analysis_recipe_id: str, collection_id: str, tier1_path: Path,
                           keys: DataAnalysisRecipeKeys | None = None,
-                          on_inputs_changed: Callable[[InputsChanged], None] | None = None) -> pl.LazyFrame:
+                          on_inputs_changed: Callable[[InputsChanged], None] | None = None,
+                          loaded: LoadedDataAnalysisRecipe | None = None, tier2_path: Path | None = None) -> pl.LazyFrame:
         """The Tier 2 data of one collection, read from its stored parquet (ADR-089 point 6, issue #10).
 
         A collection is a join or a schema that a plot reads directly; its tier-2 list is `tier2_steps` (one reading,
@@ -357,19 +368,24 @@ class DataOrchestrator:
 
         A table built while its inputs changed is returned, not stored, and `on_inputs_changed` is called with what
         changed (see `materialize_tier1`).
+
+        `loaded`: the recipe of the build when the caller hands one in (an audit copy, see `materialize_tier1`). `tier2_path`: where the Tier 2
+        table is stored when it is not next to the Tier 1 table (an audit copy reads a Tier 1 table that its original stored, and stores its own Tier 2
+        in its own folder); without it the Tier 2 table is `tier2_path_for(tier1_path)`, as always.
         """
         data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
-        loaded = load_data_analysis_recipe(data_analysis_recipe_path)
+        pinned = loaded is not None
+        loaded = loaded or load_data_analysis_recipe(data_analysis_recipe_path)
         keys = keys or self.compute_data_analysis_recipe_keys(data_analysis_recipe_id, loaded=loaded)
         steps = tier2_steps(loaded.raw, collection_id)
-        t2_path = tier2_path_for(tier1_path)
+        t2_path = Path(tier2_path) if tier2_path is not None else tier2_path_for(tier1_path)
         # The engine of the tier is chosen before anything is built, also when it has no steps: a tier that names an engine this
         # app has no library for is refused, never skipped (D-0050).
         engine = data_entry(loaded.raw, collection_body(loaded.raw, collection_id), "tier2", where=f"The tier2 of '{collection_id}'")
 
         if not steps:
             # materialize_tier1 also removes a Tier 2 file left from an earlier data analysis recipe.
-            lf, _, _, change = self._materialize_tier1(data_analysis_recipe_id, collection_id, tier1_path, keys, loaded=loaded)
+            lf, _, _, change = self._materialize_tier1(data_analysis_recipe_id, collection_id, tier1_path, keys, loaded=loaded, pinned=pinned)
             if change is not None:
                 self.tell_inputs_changed(change, on_inputs_changed)
             return lf
@@ -382,7 +398,7 @@ class DataOrchestrator:
         t2_path.unlink(missing_ok=True)   # not the table of this key: removed when found, as Tier 1 (see `_materialize_tier1`)
 
         lf_t1, t1_key, t1_built_from, t1_change = self._materialize_tier1(
-            data_analysis_recipe_id, collection_id, tier1_path, keys, loaded=loaded)
+            data_analysis_recipe_id, collection_id, tier1_path, keys, loaded=loaded, pinned=pinned)
         verdict: list[InputsChanged] = [t1_change] if t1_change is not None else []
         # The chain is that of the Tier 1 table this one is computed from: a Tier 1 built just now carries the key of the
         # files it was built from, which can differ from `keys` (STALE-KEY-STORE-1).
@@ -394,12 +410,12 @@ class DataOrchestrator:
             if t1_change is not None:
                 return False
             if t1_built_from is not None:
-                change = self.inputs_changed(data_analysis_recipe_id, t1_built_from, collection_id)
+                change = self.inputs_changed(data_analysis_recipe_id, t1_built_from, collection_id, pinned=loaded if pinned else None)
                 if change is not None:
                     verdict.append(change)
                     return False
             try:
-                raw_now = load_data_analysis_recipe(data_analysis_recipe_path).raw
+                raw_now = loaded.raw if pinned else load_data_analysis_recipe(data_analysis_recipe_path).raw
                 steps_now = tier2_steps(raw_now, collection_id)
                 engine_then = tier2_engine(raw_now, collection_id)
             except RecipeLoadError as exc:
@@ -424,7 +440,8 @@ class DataOrchestrator:
 
     def materialize_tier3(self, data_analysis_recipe_id: str, plot_id: str, anchors_dir: Path,
                           keys: DataAnalysisRecipeKeys | None = None,
-                          on_inputs_changed: Callable[[InputsChanged], None] | None = None) -> pl.LazyFrame:
+                          on_inputs_changed: Callable[[InputsChanged], None] | None = None,
+                          loaded: LoadedDataAnalysisRecipe | None = None, tier2_path: Path | None = None) -> pl.LazyFrame:
         """The table one plot reads: the Tier 2 of its target (Tier 1 when the target has no tier-2 steps) with the plot's own
         `tier3` steps applied (DEC17, ADR-101). PROVISIONAL name: the specification leaves the name and place of the reader open
         (`recipe_format_spec.md`, "Who reads tier3").
@@ -444,9 +461,13 @@ class DataOrchestrator:
           the step is not named there (the engine's message names the column and the values, not the number of the step).
 
         `anchors_dir` is the folder of the stored tables: the target is stored as `<anchors_dir>/<target>.parquet`.
+
+        `loaded` and `tier2_path` are for an audit copy: the recipe of the build when the caller hands one in, and where the Tier 2 table of the target is
+        when it is not next to its Tier 1 table (see `materialize_tier2`). Without them nothing changes.
         """
         data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
-        loaded = load_data_analysis_recipe(data_analysis_recipe_path)
+        handed = loaded
+        loaded = loaded or load_data_analysis_recipe(data_analysis_recipe_path)
         entry = plot_entry(loaded.raw, plot_id)
         if entry is None:
             raise DataAnalysisRecipeError(f"The data analysis recipe '{data_analysis_recipe_id}' has no plot '{plot_id}'.")
@@ -458,7 +479,7 @@ class DataOrchestrator:
         engine = data_entry(loaded.raw, entry, "tier3", where=f"The tier3 of the plot '{plot_id}'")
         steps = tier3_steps(loaded.raw, plot_id)
         lf = self.materialize_tier2(data_analysis_recipe_id, target, Path(anchors_dir) / f"{target}.parquet",
-                                    keys=keys, on_inputs_changed=on_inputs_changed)
+                                    keys=keys, on_inputs_changed=on_inputs_changed, loaded=handed, tier2_path=tier2_path)
         if not steps:
             return lf
         runner = engine.wrangler()

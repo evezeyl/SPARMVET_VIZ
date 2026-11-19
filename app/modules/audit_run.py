@@ -1,0 +1,261 @@
+"""A run of an audit copy without a screen: which tables and plots of the copy are the original's and which are rebuilt (piece A5 of slice A of the HOME audit redesign).
+
+Serves the audit that the next slices put on the screen. Nothing a user sees is wired to it yet.
+
+Inputs: the orchestrator (`DataOrchestrator`), the id of the recipe, the audit copy (`utils.audit_copy`, a resolved dictionary), the folder of the
+stored tables of the ORIGINAL and a SEPARATE folder for the stored tables of the audit ("its own folder, never in the anchors folder",
+`home_audit_steps.md` section 7.1). Output: an `AuditRun`, a plain record of what was reused, what was built and which plots are affected.
+
+How: the copy and the original are built by the SAME engine functions (`DataOrchestrator.materialize_tier1`, `materialize_tier2`,
+`materialize_tier3`); the copy is handed to them as a recipe (`cache_keys.loaded_from_resolved`, the `loaded` argument). "Nothing is ever copied: a stage
+is either reused or recomputed":
+- a table whose key in the copy EQUALS its key in the original is not rebuilt and not copied: it is read from the original's stored table (the original's
+  table is stored first when it was not, as the app does);
+- a table whose key differs is built into the audit's own folder (its Tier 1 and its Tier 2 separately: a step at tier 2 rebuilds the Tier 2 only and
+  reads the original's Tier 1);
+- a plot has no stored table (the tier-3 reader is lazy, A4): equal keys mean the same table; different keys mean the two tables are built and compared.
+
+A plot is AFFECTED when the CONTENT of its table differs between the original and the audit run (ADR-101 point 6: "equal keys imply identical data;
+different keys do not imply different data"). A filter that removes nothing moves a key and no row: that plot is not affected.
+
+A step that the engine cannot apply is refused, naming the id of the step and its place; never skipped (D-0102). The audit folder holds only what the
+copy needs: a table that is the original's again (the step was removed) is taken out of it at once.
+
+PROVISIONAL: the names and fields of the result; the words of `source` (`original`, `audit store`, `built`); that the run checks the copy with
+`integrity_errors` and not with the checker's audit profile (the engine refuses what it cannot apply; limiting which actions the audit may add is not
+decided).
+
+Consumed by: app/tests/test_audit_run.py. If deleted: nothing runs a copy yet; the slices that put the audit on the screen need it.
+
+# @deps
+# provides: function:run_audit, class:AuditRun, class:TableRun, class:PlotRun, class:AuditRunError
+# consumes: app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3 with a handed recipe), app/modules/cache_keys.py (loaded_from_resolved, load_data_analysis_recipe), libs/utils/src/utils/audit_copy.py, libs/utils/src/utils/recipe_graph.py, libs/transformer/src/transformer/anchor.py (read_anchor_if_key)
+# consumed_by: app/tests/test_audit_run.py
+# doc: .claude/knowledge/architecture_decisions.md#adr-101, .claude/knowledge/architecture_decisions.md#adr-105, .claude/design/home_audit_steps.md (section 7.1)
+# @end_deps
+"""
+import copy
+import shutil
+import tempfile
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Callable, Dict, List, Optional
+
+import polars as pl
+
+from app.modules.cache_keys import (
+    DataAnalysisRecipeKeys, LoadedDataAnalysisRecipe, load_data_analysis_recipe, loaded_from_resolved, tier2_steps)
+from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, DataOrchestrator, tier2_path_for
+from transformer.anchor import read_anchor_if_key
+from utils.audit_copy import AuditCopyError, MarkedStep, add_step, audit_recipe_of, integrity_errors, marked_steps
+from utils.recipe_graph import build_graph
+
+# Where a table of the copy comes from.
+FROM_ORIGINAL = "original"      # the key equals the original's: read from the original's stored table
+FROM_AUDIT_STORE = "audit store"  # the key differs and the audit's own folder already held that table
+BUILT = "built"                 # the key differs and the table was built now, into the audit's own folder
+NONE = "none"                   # no tier-2 steps: Tier 2 is the Tier 1 table
+
+
+class AuditRunError(Exception):
+    """The run of a copy cannot go on. `step_id` and `place` name the audit step that cannot be applied, when the cause is one."""
+
+    def __init__(self, message: str, step_id: Optional[str] = None, place: Optional[str] = None) -> None:
+        super().__init__(message)
+        self.step_id = step_id
+        self.place = place
+
+
+@dataclass(frozen=True)
+class TableRun:
+    """One table (a schema or a join) in the original and in the copy: its keys, where each stage came from and the file that holds it.
+    `t1` and `t2` are `original`, `audit store`, `built` (and `none` for a Tier 2 with no steps); `t1_path` and `t2_path` are the stored files read."""
+    table: str
+    t1_key_original: str
+    t1_key_audit: str
+    t1: str
+    t1_path: Path
+    t2_key_original: str
+    t2_key_audit: str
+    t2: str
+    t2_path: Optional[Path]
+
+
+@dataclass(frozen=True)
+class PlotRun:
+    """One plot: the key of its table in the original and in the copy, `reused` (equal keys, so the same table, nothing was built) or not, and
+    whether the content of its table differs (`affected`)."""
+    plot: str
+    key_original: str
+    key_audit: str
+    reused: bool
+    affected: bool
+
+
+@dataclass(frozen=True)
+class AuditRun:
+    recipe_id: str
+    audit_dir: Path
+    tables: Dict[str, TableRun] = field(default_factory=dict)
+    plots: Dict[str, PlotRun] = field(default_factory=dict)
+
+    @property
+    def affected_plots(self) -> List[str]:
+        """The plots whose table differs in content between the original and the audit run, in the order of the recipe."""
+        return [plot_id for plot_id, run in self.plots.items() if run.affected]
+
+    @property
+    def built_tables(self) -> List[str]:
+        """The stages built now, as `<table> T1` or `<table> T2`, in the order of the recipe."""
+        return [f"{t.table} {stage}" for t in self.tables.values() for stage, source in (("T1", t.t1), ("T2", t.t2)) if source == BUILT]
+
+
+def _stored(path: Path, meta_key: str, key: str) -> bool:
+    return read_anchor_if_key(path, meta_key, key) is not None
+
+
+class _Run:
+    """The state of one run: the orchestrator, the original with its keys, the copy as a recipe, the two folders."""
+
+    def __init__(self, orchestrator: DataOrchestrator, recipe_id: str, audit_recipe: dict, original_dir: Path, audit_dir: Path) -> None:
+        self.orch = orchestrator
+        self.recipe_id = recipe_id
+        self.original_dir = original_dir
+        self.audit_dir = audit_dir
+        self.original: LoadedDataAnalysisRecipe = load_data_analysis_recipe(orchestrator.data_analysis_recipes_dir / f"{recipe_id}.yaml")
+        self.audit_raw = copy.deepcopy(audit_recipe)
+        self.audit_loaded = loaded_from_resolved(self.original, self.audit_raw)
+        self.keys_original = orchestrator.compute_data_analysis_recipe_keys(recipe_id, loaded=self.original)
+        self.keys_audit = orchestrator.compute_data_analysis_recipe_keys(recipe_id, loaded=self.audit_loaded)
+        self.graph = build_graph(self.audit_raw)
+
+    # -- where a stage of the copy is
+    def t1_dir(self, table: str, keys: DataAnalysisRecipeKeys, out_dir: Path) -> Path:
+        """The folder of the Tier 1 table the copy reads for `table`: the original's folder when the key is the original's, else `out_dir`."""
+        return self.original_dir if keys.tier1_key_of(table) == self.keys_original.tier1_key_of(table) else out_dir
+
+    def t2_path(self, table: str, keys: DataAnalysisRecipeKeys, out_dir: Path) -> Optional[Path]:
+        """Where the Tier 2 table of the copy is stored when its key is not the original's (else None: it is the original's, beside its Tier 1)."""
+        return None if keys.tier2_key_of(table) == self.keys_original.tier2_key_of(table) else out_dir / f"{table}__T2.parquet"
+
+    # -- the original
+    def ensure_original(self, table: str) -> None:
+        """The original's tables of `table` are stored under their keys (built now when they were not), as the app stores them."""
+        path = self.original_dir / f"{table}.parquet"
+        self.orch.materialize_tier1(self.recipe_id, table, path, keys=self.keys_original)
+        if tier2_steps(self.original.raw, table):
+            self.orch.materialize_tier2(self.recipe_id, table, path, keys=self.keys_original)
+
+    # -- the copy
+    def copy_table(self, table: str, loaded: LoadedDataAnalysisRecipe, keys: DataAnalysisRecipeKeys, out_dir: Path) -> TableRun:
+        """Tier 1 and Tier 2 of `table` in the copy `loaded` with `keys`: read from the original when the key is its own, else built into `out_dir`."""
+        k1o, k1c = self.keys_original.tier1_key_of(table), keys.tier1_key_of(table)
+        k2o, k2c = self.keys_original.tier2_key_of(table), keys.tier2_key_of(table)
+        t1_path = self.t1_dir(table, keys, out_dir) / f"{table}.parquet"
+        if k1c == k1o:
+            t1 = FROM_ORIGINAL
+        else:
+            t1 = FROM_AUDIT_STORE if _stored(t1_path, TIER1_KEY_META, k1c) else BUILT
+            self.orch.materialize_tier1(self.recipe_id, table, t1_path, keys=keys, loaded=loaded)
+        t2_path: Optional[Path] = None
+        if not tier2_steps(loaded.raw, table):
+            t2 = NONE
+        elif k2c == k2o:
+            t2, t2_path = FROM_ORIGINAL, tier2_path_for(t1_path)
+        else:
+            t2_path = self.t2_path(table, keys, out_dir)
+            t2 = FROM_AUDIT_STORE if _stored(t2_path, TIER2_KEY_META, k2c) else BUILT
+            self.orch.materialize_tier2(self.recipe_id, table, t1_path, keys=keys, loaded=loaded, tier2_path=t2_path)
+        return TableRun(table, k1o, k1c, t1, t1_path, k2o, k2c, t2, t2_path)
+
+    def plot_frame(self, plot_id: str, loaded: LoadedDataAnalysisRecipe, keys: DataAnalysisRecipeKeys, out_dir: Path) -> pl.DataFrame:
+        """The table a plot reads in the copy, collected. The tables under it are those `copy_table` placed."""
+        target = self.graph.plot_target(plot_id)
+        return self.orch.materialize_tier3(self.recipe_id, plot_id, self.t1_dir(target, keys, out_dir), keys=keys, loaded=loaded,
+                                           tier2_path=self.t2_path(target, keys, out_dir)).collect()
+
+    # -- an audit step that cannot be applied
+    def refuse(self, error: BaseException, places: List[str], attempt: Callable[[LoadedDataAnalysisRecipe, DataAnalysisRecipeKeys, Path], object]) -> None:
+        """Raise the error of the engine as an `AuditRunError` that names the audit step that causes it. `places` are the lists whose marked steps can
+        cause it. One candidate is named at once; several are tried in order, each added to the original on its own, in a scratch folder, and the first
+        that fails is named. An error that no marked step can cause (the original's own) is raised as it is."""
+        candidates = [m for m in marked_steps(self.audit_raw) if m.place in places]
+        if not candidates:
+            raise error
+        culprit = candidates[0] if len(candidates) == 1 else self.first_failing(candidates, attempt)
+        why = str(error).strip() + (f" ({error.tip})" if getattr(error, "tip", None) else "")
+        if culprit is None:
+            ids = ", ".join(f"{m.step_id} at {m.place}" for m in candidates)
+            raise AuditRunError(f"An audit step cannot be applied; it is one of these, which together cannot be applied: {ids}. The engine says: {why}") from error
+        raise AuditRunError(f"The audit step {culprit.step_id} at {culprit.place} cannot be applied: {why}", culprit.step_id, culprit.place) from error
+
+    def first_failing(self, candidates: List[MarkedStep], attempt) -> Optional[MarkedStep]:
+        scratch = Path(tempfile.mkdtemp(prefix=".audit_probe_", dir=self.audit_dir))
+        try:
+            for count in range(1, len(candidates) + 1):
+                probe = audit_recipe_of(self.original.raw)
+                for found in candidates[:count]:
+                    add_step(probe, found.place, {k: v for k, v in found.step.items() if k not in ("id", "comment")}, found.step_id, found.step.get("comment"))
+                loaded = loaded_from_resolved(self.original, probe)
+                try:
+                    attempt(loaded, self.orch.compute_data_analysis_recipe_keys(self.recipe_id, loaded=loaded), scratch)
+                except Exception:
+                    return candidates[count - 1]
+            return None
+        finally:
+            shutil.rmtree(scratch, ignore_errors=True)
+
+    # -- the whole run
+    def run(self) -> AuditRun:
+        tables: Dict[str, TableRun] = {}
+        for table in self.graph.collections():
+            self.ensure_original(table)
+        for table in self.graph.collections():
+            places = [f"T1:{self.graph.node(n).name}" for n in self.graph.lineage_back(f"T1:{table}") if self.graph.node(n).kind == "T1"]
+            places += [f"T1:{table}", f"T2:{table}"]
+            try:
+                tables[table] = self.copy_table(table, self.audit_loaded, self.keys_audit, self.audit_dir)
+            except AuditRunError:
+                raise
+            except Exception as error:
+                self.refuse(error, places, lambda loaded, keys, out, table=table: self.copy_table(table, loaded, keys, out))
+        plots: Dict[str, PlotRun] = {}
+        for plot_id in self.graph.plots():
+            key_original, key_audit = self.keys_original.plot_key_of(plot_id), self.keys_audit.plot_key_of(plot_id)
+            if key_original == key_audit:
+                plots[plot_id] = PlotRun(plot_id, key_original, key_audit, True, False)
+                continue
+            try:
+                table_audit = self.plot_frame(plot_id, self.audit_loaded, self.keys_audit, self.audit_dir)
+            except Exception as error:
+                self.refuse(error, [f"T3:{plot_id}"], lambda loaded, keys, out, plot_id=plot_id: self.plot_frame(plot_id, loaded, keys, out))
+            table_original = self.orch.materialize_tier3(self.recipe_id, plot_id, self.original_dir, keys=self.keys_original).collect()
+            plots[plot_id] = PlotRun(plot_id, key_original, key_audit, False, not table_original.equals(table_audit))
+        self.clean(tables)
+        return AuditRun(self.recipe_id, self.audit_dir, tables, plots)
+
+    def clean(self, tables: Dict[str, TableRun]) -> None:
+        """Take out of the audit's folder the stored tables that are the original's again: a leftover that cannot be served today can be served by a
+        later bug (rules_verification_testing.md section 9)."""
+        for run in tables.values():
+            if run.t1 == FROM_ORIGINAL:
+                (self.audit_dir / f"{run.table}.parquet").unlink(missing_ok=True)
+            if run.t2 in (FROM_ORIGINAL, NONE):
+                (self.audit_dir / f"{run.table}__T2.parquet").unlink(missing_ok=True)
+
+
+def run_audit(orchestrator: DataOrchestrator, recipe_id: str, audit_recipe: dict, original_dir: Path, audit_dir: Path) -> AuditRun:
+    """Build every table and every plot table of an audit copy, reusing the original's stored tables where the keys are equal; say which plots are affected.
+
+    `original_dir` holds the original's stored tables (`<table>.parquet`, `<table>__T2.parquet`); `audit_dir` is the audit's own folder and must be another
+    folder. Raises `AuditRunError` when the copy is not a copy of the original plus audit steps at the end of their lists (`integrity_errors`), when the
+    folders are the same, or when an audit step cannot be applied (naming its id and its place). Changes neither the original's recipe nor the audit copy."""
+    original_dir, audit_dir = Path(original_dir), Path(audit_dir)
+    if original_dir.resolve() == audit_dir.resolve():
+        raise AuditRunError("The audit's stored tables go in a folder of their own, never in the folder of the original's tables.")
+    original = load_data_analysis_recipe(orchestrator.data_analysis_recipes_dir / f"{recipe_id}.yaml")
+    problems = integrity_errors(audit_recipe, original.raw)
+    if problems:
+        raise AuditRunError("The audit copy is not the original plus audit steps, so it is not run: " + " ".join(problems))
+    audit_dir.mkdir(parents=True, exist_ok=True)
+    return _Run(orchestrator, recipe_id, audit_recipe, original_dir, audit_dir).run()
