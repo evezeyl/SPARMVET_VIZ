@@ -272,7 +272,7 @@ def test_removing_the_step_gives_the_original_keys_back(place):
     raw = staged_recipe()
     audit = with_step(raw, place)
     assert all_keys(audit) != all_keys(raw)
-    remove_step(audit, ID1)
+    remove_step(audit, ID1, raw)
     assert all_keys(audit) == all_keys(raw)
 
 
@@ -309,7 +309,7 @@ def test_on_every_shipped_recipe_a_step_moves_the_keys_after_it_and_no_other(pat
         audit = with_step(raw, place)
         expected = {n for n in downstream(raw, place) if n in base}
         assert moved(base, all_keys(audit, files)) == expected, place
-        remove_step(audit, ID1)
+        remove_step(audit, ID1, raw)
         assert all_keys(audit, files) == base, f"{place}: removing the step gives the original keys back"
 
 
@@ -385,5 +385,26 @@ def test_with_every_marked_step_at_the_end_the_reason_and_the_id_move_no_key_and
         one = all_keys(with_step(raw, place, step_id=ID1, comment="a"))
         assert one == all_keys(with_step(raw, place, step_id=ID3, comment="another reason")), place
         audit = with_step(raw, place)
-        remove_step(audit, ID1)
+        remove_step(audit, ID1, raw)
         assert all_keys(audit) == base, place
+
+
+@pytest.mark.parametrize("path", SHIPPED, ids=lambda p: str(Path(p).relative_to(ROOT)))
+def test_on_every_shipped_recipe_add_then_remove_gives_back_exactly_the_copy_at_every_place(path):
+    """F3: a tier that existed before the add stays, a tier the add created goes, at every place `add_step` accepts a step."""
+    from utils.audit_copy import AuditCopyError
+    raw = load_raw(path)
+    if not raw:
+        pytest.skip("the file holds no recipe")
+    places = [f"T1:{t}" for t in collection_bodies(raw)] + [f"T2:{t}" for t in collection_bodies(raw)] + [f"T3:{p}" for p in plot_entries(raw)]
+    done = 0
+    for place in places:
+        audit = audit_recipe_of(raw)
+        try:
+            add_step(audit, place, FILTER_B, ID1)
+        except AuditCopyError:
+            continue
+        remove_step(audit, ID1, raw)
+        assert audit == raw, place
+        done += 1
+    assert done >= 1 or not places

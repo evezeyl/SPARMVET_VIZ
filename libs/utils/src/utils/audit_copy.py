@@ -21,8 +21,9 @@ a step, the log of added and removed steps and the limits of the actions the aud
 
 Tiers that the copy creates: a table with no `tier2` (or a plot with no `tier3`) gets `tier2: {steps: [...]}` (the form of D-0250) when the first audit
 step is added; the engine of a tier is NOT written, so the effective one stays (the tier's own `data_engine`, else the recipe's). When its last audit
-step is removed, a tier2 or tier3 that holds nothing but an empty `steps` is removed again, so the copy equals the original again. An EMPTY tier2 or
-tier3 (`{steps: []}`) and an ABSENT one mean the same to the engine, so `integrity_errors` treats them as equal.
+step is removed, a tier2 or tier3 that holds nothing but an empty `steps` is removed again only if the ORIGINAL did not write it there (`remove_step` takes
+the original for that), so add then remove gives back exactly the copy as it was. An EMPTY tier2 or tier3 (`{steps: []}`) and an ABSENT one mean the same
+to the engine, so `integrity_errors` treats them as equal; `strip_marked` alone cannot know what the add created and leaves such an empty tier.
 
 Consumed by: app/modules/cache_keys.py (the audit parts of the keys), app/modules/audit_run.py (the run of a copy), libs/utils/tests/test_audit_copy.py.
 If deleted: no audit copy can be made, checked or keyed.
@@ -148,8 +149,9 @@ def marked_steps(audit_recipe: dict) -> List[MarkedStep]:
 
 
 def strip_marked(audit_recipe: dict) -> dict:
-    """The copy without its marked audit steps (a new dictionary). A tier that the copy created stays, empty: `integrity_errors` compares with
-    that in mind."""
+    """The copy without its marked audit steps (a new dictionary). A tier that the add created stays, as an empty `{steps: []}`: the copy does not say
+    what the add created, so this is the original plus those empty tiers, and the rule "an empty created tier equals an absent one" lives in
+    `integrity_errors` only (it has the original). Never used to rebuild the original."""
     stripped = copy.deepcopy(audit_recipe)
     for _, tier, _, body in _holders(stripped):
         held = body.get(tier)
@@ -209,19 +211,25 @@ def add_step(audit_recipe: dict, place: str, step: dict, step_id: str, comment: 
     body[tier]["steps"].append(written)
 
 
-def remove_step(audit_recipe: dict, step_id: str) -> None:
+def remove_step(audit_recipe: dict, step_id: str, original_recipe: dict) -> None:
     """Take one marked audit step out of the copy (changes the copy). An id that is not an audit id, or that no marked step has, is refused: an
-    original step can never be removed. A tier2 or tier3 that the copy created and that is empty again is removed, so the copy can equal the original."""
+    original step can never be removed.
+
+    `original_recipe` is what the copy was made from. It decides what happens to the tier the step stood in once that tier holds nothing but an empty
+    `steps`: if the original did not write that tier at that place, the add created it and it goes; if the original wrote it (an empty `tier2: {steps: []}`
+    is what the loader gives some tables), it stays. So an add followed by a remove gives back exactly the dictionary the copy was before the add, with no
+    hidden state in the recipe (no key is written into it to remember what the add created). The tier 1 of a table is never removed."""
     if not isinstance(step_id, str) or not AUDIT_ID.match(step_id):
         raise AuditCopyError(f"{step_id!r} is not an audit id: only the audit steps of the copy can be removed, never a step of the original recipe.")
-    for _, tier, _, body in _holders(audit_recipe):
+    written_by_original = {place for place, tier, _, body in _holders(original_recipe) if tier in body}
+    for place, tier, _, body in _holders(audit_recipe):
         steps = _steps_of(body, tier)
         if steps is None:
             continue
         for index, step in enumerate(steps):
             if is_marked(step) and step["id"] == step_id:
                 del steps[index]
-                if tier in _REMOVABLE_TIERS and body[tier] == {"steps": []}:
+                if tier in _REMOVABLE_TIERS and body[tier] == {"steps": []} and place not in written_by_original:
                     del body[tier]
                 return
     raise AuditCopyError(f"No audit step of the copy has the id {step_id}, so nothing was removed.")
