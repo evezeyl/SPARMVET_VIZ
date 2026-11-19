@@ -10,14 +10,45 @@ accumulation on resource-constrained machines where 10+ concurrent sessions
 cause T1 materialization timeouts.
 """
 
+import os
 from pathlib import Path
+
 import pytest
+import yaml
 
 from app.tests.subprocess_env import app_env
 from playwright.sync_api import sync_playwright
 from shiny.pytest import create_app_fixture
 
 APP_PATH = Path(__file__).parent.parent / "src" / "main.py"
+REPO = Path(__file__).resolve().parents[2]
+
+
+def _own_state_deployment() -> None:
+    """Give each test process its own user data and cache folders (found in parallel runs: browser tests of different files
+    seeded and deleted sessions in the one `tmp/UI_TEST/user/` of the local deployment, so a delete-all of one file emptied
+    the sessions of another).
+
+    The local deployment is copied with `user_data` and `cache` under `tmpAI/browser_state/<worker>/`; the in-process
+    bootloader of the tests and the app they start (it inherits the variable) read the same file, so a test that seeds
+    sessions through `bootloader.get_location("user_data")` still seeds what its app reads. Runs at import, before any
+    test module imports the bootloader. A caller that sets SPARMVET_DEPLOYMENT keeps its own.
+    """
+    if os.environ.get("SPARMVET_DEPLOYMENT"):
+        return
+    worker = os.environ.get("PYTEST_XDIST_WORKER", "main")
+    folder = REPO / "tmpAI" / "browser_state" / worker
+    (folder / "user").mkdir(parents=True, exist_ok=True)
+    (folder / "cache").mkdir(parents=True, exist_ok=True)
+    config = yaml.safe_load((REPO / "config" / "deployment" / "local" / "local.yaml").read_text(encoding="utf-8"))
+    config["locations"]["user_data"] = str(folder / "user")
+    config["locations"]["cache"] = str(folder / "cache")
+    deployment = folder / "deployment.yaml"
+    deployment.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    os.environ["SPARMVET_DEPLOYMENT"] = str(deployment)
+
+
+_own_state_deployment()
 
 
 
