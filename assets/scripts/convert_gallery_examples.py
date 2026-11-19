@@ -15,8 +15,7 @@ recipe, the same format as every other recipe:
 
 The result is checked with `check_recipe` (profile `gallery`) before it is written, with the same catalogs of actions
 and plot components as the app (`checker_catalogs()`), so an unknown action or layer name is refused here too. An example that the checker
-refuses is NOT converted and its reasons are printed (for example steps in tier 3: the engine does not read tier 3
-yet). A file with `#` comments is not converted either: a rewrite would lose them.
+refuses is NOT converted and its reasons are printed (for example an action name that is not registered). A file with `#` comments is not converted either: a rewrite would lose them.
 
 It also sets the tag strip of every `example_meta.md` (the `> ...` line under the heading) from the taxonomy of the
 recipe, for converted and for already standard examples. No other line of that file is touched.

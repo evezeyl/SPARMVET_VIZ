@@ -92,7 +92,8 @@ analysis_groups:
         # Tier 3 (the steps of the audit, applied to this plot only) is written at the plot entry, as tier1 and tier2 are written
         # in a table: the key of the tier, an optional data_engine as its first key, then the steps. The audit writes Polars
         # steps, so python-polars is the only engine of tier 3 in this app; another value is refused with "no library for this
-        # engine in this app". The example is commented because the app does not read tier3 yet (check P05):
+        # engine in this app". The engine reads the tier 3 of a plot entry (`DataOrchestrator.materialize_tier3`); the example stays
+        # commented because the plots of this lesson read their table as it is:
         #
         # tier3:
         #   data_engine: python-polars
