@@ -209,8 +209,8 @@ def test_removing_the_step_gives_the_original_back_and_empties_the_audit_folder(
     audit = world.copy_with(("T1:A", KEEP_S1, ID1), ("T2:J", DROP_GROUP_B, ID2))
     assert world.run(audit).affected_plots == ["pj", "pa"]
     assert world.audit_files() == ["A.parquet", "J.parquet", "J__T2.parquet"]
-    remove_step(audit, ID1)
-    remove_step(audit, ID2)
+    remove_step(audit, ID1, world.original_raw())
+    remove_step(audit, ID2, world.original_raw())
     run = world.run(audit)
     assert world.audit_files() == [], "a table that is the original's again is taken out of the audit's folder"
     assert run.built_tables == [] and run.affected_plots == [] and all(reused(run, t) for t in run.tables)
@@ -219,7 +219,7 @@ def test_removing_the_step_gives_the_original_back_and_empties_the_audit_folder(
 def test_removing_one_of_two_steps_takes_out_only_what_is_the_originals_again(world):
     audit = world.copy_with(("T1:X", KEEP_S1, ID1), ("T2:J", DROP_GROUP_B, ID2))
     world.run(audit)
-    remove_step(audit, ID1)
+    remove_step(audit, ID1, world.original_raw())
     world.run(audit)
     assert world.audit_files() == ["J__T2.parquet"]
 
