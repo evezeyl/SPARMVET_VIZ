@@ -16,7 +16,7 @@ from app.tests.gate_stage import wait_shiny
 
 @pytest.mark.xfail(strict=True, reason="BP-GLIMPSE-ANCHOR-1: the glimpse applies a component's steps to HOME's anchor")
 def test_the_live_data_glimpse_does_not_apply_a_component_to_another_dataset(page: Page, tmp_path):
-    with g.running_app(tmp_path) as (url, log):
+    with g.running_app(tmp_path, blueprint=True) as (url, log):
         page.goto(url)
         page.wait_for_selector("#sidebar_nav", timeout=60_000)
         wait_shiny(page, timeout=120_000)

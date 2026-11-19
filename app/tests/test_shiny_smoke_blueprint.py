@@ -547,7 +547,26 @@ class TestBlueprintPlotOpen:
             _wait_shiny(page, timeout=60_000)
             wanted = [layer["name"] for layer in entry["layers"]]
             stack = page.locator("#logic_stack_ui")
-            expect(stack).to_contain_text("mapping (aes)", timeout=30_000)
+            # Wait for THIS plot's stack, not for any stack: the stack of the previous plot also holds "mapping (aes)" and stays
+            # on the page until Blueprint has switched (seen under parallel load: "3. coord_flip" of the previous plot read
+            # where "3. labs" was wanted). The condition is the plot's own numbered layers and mapping columns.
+            numbered = [f"{i + 2}. {layer}" for i, layer in enumerate(wanted)]
+            columns = list(entry["mapping"].values())
+            # each node card has its label ("2. geom_x") in its own bold span: compare whole labels, so "2. geom_x" is never
+            # found inside "12. geom_x" or "2. geom_xy"
+            beyond = f"{len(numbered) + 2}. "
+            try:
+                page.wait_for_function(
+                    "([numbered, columns, beyond]) => { const root = document.querySelector('#logic_stack_ui');"
+                    " if (!root) return false; const t = root.innerText || '';"
+                    " const labels = Array.from(root.querySelectorAll('.fw-bold')).map(e => e.textContent.trim());"
+                    " return t.includes('mapping (aes)') && numbered.every(n => labels.includes(n)) && columns.every(c => t.includes(c))"
+                    " && !labels.some(l => l.startsWith(beyond)); }",
+                    arg=[numbered, columns, beyond], timeout=30_000)
+            except Exception as error:
+                seen = stack.inner_text()
+                raise AssertionError(f"{plot_id}: the stack of this plot did not appear (wanted {numbered}, columns {columns}); "
+                                     f"stack text seen: {seen!r}; wait error: {type(error).__name__}") from error
             text = stack.inner_text()
             assert f"{len(wanted) + 1}. {wanted[-1]}" in text, f"{plot_id}: the layers {wanted} are not all in the stack: {text!r}"
             for layer in wanted:

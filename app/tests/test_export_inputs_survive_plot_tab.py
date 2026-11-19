@@ -40,6 +40,15 @@ def _download(page: Page) -> zipfile.ZipFile:
     return zipfile.ZipFile(io.BytesIO(Path(info.value.path()).read_bytes()))
 
 
+def _watch_notifications(page: Page) -> None:
+    """Record the text of every notification that appears from now on (a notification lives 12 s and is shown in the middle of the
+    bundle build, so on a busy machine it is gone before the download arrives: look for it as it comes, not afterwards)."""
+    page.evaluate("""() => { window.__seen_notifications = [];
+        const note = () => document.querySelectorAll('.shiny-notification').forEach(n => {
+            if (!window.__seen_notifications.includes(n.innerText)) window.__seen_notifications.push(n.innerText); });
+        new MutationObserver(note).observe(document.body, {childList: true, subtree: true, characterData: true}); note(); }""")
+
+
 def _fields(page: Page) -> dict:
     """Every field of the Export panel as the page shows it now."""
     return {
@@ -166,6 +175,7 @@ def test_a_ticked_box_after_a_tab_change_gives_the_reproducibility_part_and_the_
     _wait_plot_tab_open(page)
     page.wait_for_timeout(2_000)
     expect(page.locator("#export_include_reproducibility")).to_be_checked()
+    _watch_notifications(page)
     ticked = _download(page)
     names = ticked.namelist()
     assert any("data_analysis_recipes_reproducibility/" in n for n in names)
@@ -173,5 +183,5 @@ def test_a_ticked_box_after_a_tab_change_gives_the_reproducibility_part_and_the_
     readme_on = next(ticked.read(n).decode() for n in names if n.endswith("README.txt"))
     assert "Reproducibility  : included" in readme_on
     # the confirmation the user sees after the download says it as well
-    expect(page.locator(".shiny-notification").filter(has_text="Reproducibility part: included")).to_be_visible(
-        timeout=15_000)
+    page.wait_for_function(
+        "() => (window.__seen_notifications || []).some(t => t.includes('Reproducibility part: included'))", timeout=15_000)

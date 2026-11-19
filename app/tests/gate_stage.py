@@ -1,15 +1,25 @@
 """Staging for the browser tests of the HOME load gate (GATE-GAP-1): a staged copy of a shipped recipe, a running app, breaks and repairs.
 
-The copy is `zz_gate_gap_stage` next to the shipped recipes (and its test data next to theirs); it is removed at the end,
-so no shipped file changes. Its `info.label` is unique, so a test can see whether anything of the recipe is still on the page.
+The copy is `zz_gate_gap_stage` in a work folder of its own under `tmpAI/gate_stage/<unique name>/` (recipes, data, cache and
+user data, and a deployment file that points at them); the app is started on that deployment. No tracked folder is written, so
+a test that lists `assets/test_data` or `config/` in parallel never sees it. The folder is removed at the end.
+One exception, forced by the app: Blueprint lists its recipes from `config/data_analysis_recipes/pipelines` of the working
+folder and ignores the deployment's recipes location, so a test that drives Blueprint (`blueprint=True`) must put the staged
+RECIPE there; only its recipe files go there (its data, cache and user data stay in the work folder) and they are removed at the end.
+Its `info.label` is unique, so a test can see whether anything of the recipe is still on the page.
 """
 import contextlib
+import os
+import re
 import shutil
 import socket
 import subprocess
 import time
 import urllib.request
+import uuid
 from pathlib import Path
+
+import yaml
 
 from app.tests.subprocess_env import app_command, app_env
 
@@ -17,25 +27,104 @@ REPO = Path(__file__).resolve().parents[2]
 PIPELINES = REPO / "config" / "data_analysis_recipes" / "pipelines"
 TEST_DATA = REPO / "assets" / "test_data"
 SOURCE = "1_test_data_ST22_dummy"
-STAGE = "zz_gate_gap_stage"
+STAGE_PREFIX = "zz_gate_gap_stage"
+# the staged name carries the pid of the process that owns it: `zz_gate_gap_stage_p<pid>_<hex>`; set by stage()
+STAGE = STAGE_PREFIX
+OTHER = "zz_gate_gap_other"
 LABEL = "ZZ Gate Gap Stage Label"
-FRAGMENT = PIPELINES / STAGE / "wrangling" / "MLST_wrangling.yaml"
 LABEL_OF_SOURCE = "ST22 Dummy Dataset"
+WORK_ROOT = REPO / "tmpAI" / "gate_stage"
+
+# set by stage(): the work folder of the running app and the fragment a test breaks (one app per process at a time)
+WORK: Path | None = None
+FRAGMENT: Path | None = None
 
 
-def stage():
-    unstage()
-    shutil.copytree(PIPELINES / SOURCE, PIPELINES / STAGE)
-    shutil.copytree(TEST_DATA / SOURCE, TEST_DATA / STAGE)
-    text = (PIPELINES / f"{SOURCE}.yaml").read_text().replace(f"{SOURCE}/", f"{STAGE}/")
+def stage(blueprint: bool = False) -> Path:
+    """Build the staged recipe, its data and a deployment of their own in a new folder under tmpAI; returns the deployment file."""
+    global WORK, FRAGMENT, STAGE
+    STAGE = f"{STAGE_PREFIX}_p{os.getpid()}_{uuid.uuid4().hex[:8]}"
+    WORK = WORK_ROOT / uuid.uuid4().hex[:12]
+    recipes, data = (PIPELINES if blueprint else WORK / "recipes"), WORK / "data"
+    WORK.mkdir(parents=True)
+    recipes.mkdir(exist_ok=True)
+    shutil.copytree(PIPELINES / SOURCE, recipes / STAGE)
+    shutil.copytree(TEST_DATA / SOURCE, data / STAGE)
+    rel_data = "./" + os.path.relpath(data, REPO)
+    text = (PIPELINES / f"{SOURCE}.yaml").read_text()
+    text = text.replace(f"./assets/test_data/{SOURCE}/", f"{rel_data}/{STAGE}/")
+    text = text.replace(f"{SOURCE}/", f"{STAGE}/")
     text = text.replace(f"id: {SOURCE}", f"id: {STAGE}", 1).replace(f"label: {LABEL_OF_SOURCE}", f"label: {LABEL}", 1)
-    (PIPELINES / f"{STAGE}.yaml").write_text(text)
+    (recipes / f"{STAGE}.yaml").write_text(text)
+    if not blueprint:
+        # a second, healthy recipe: when the open one is dropped by the gate, HOME shows another (the shipped folder has many)
+        shutil.copytree(PIPELINES / SOURCE, recipes / OTHER)
+        other = (PIPELINES / f"{SOURCE}.yaml").read_text().replace(f"./assets/test_data/{SOURCE}/", f"{rel_data}/{STAGE}/")
+        other = other.replace(f"{SOURCE}/", f"{OTHER}/").replace(f"id: {SOURCE}", f"id: {OTHER}", 1)
+        (recipes / f"{OTHER}.yaml").write_text(other)
+    FRAGMENT = recipes / STAGE / "wrangling" / "MLST_wrangling.yaml"
+    locations = {"raw_data": str(data), "data_analysis_recipes": str(recipes), "cache": str(WORK / "cache"),
+                 "user_data": str(WORK / "user"), "gallery": str(REPO / "assets" / "gallery_data")}
+    for key in ("cache", "user_data"):
+        Path(locations[key]).mkdir()
+    deployment = WORK / "deployment.yaml"
+    deployment.write_text(yaml.safe_dump({"deployment_type": "filesystem", "deployment_name": "gate stage", "locations": locations,
+                                          "default_data_analysis_recipe": STAGE, "default_app_features": "qa"}), encoding="utf-8")
+    return deployment
+
+
+_OWNED = re.compile(rf"^{STAGE_PREFIX}_p(\d+)_[0-9a-f]+(\.yaml)?$")
+
+
+def remove_path(path: Path) -> None:
+    if path.is_dir():
+        shutil.rmtree(path, ignore_errors=True)
+    else:
+        path.unlink(missing_ok=True)
+
+
+def _staged(owner_filter) -> list[Path]:
+    found = []
+    for path in sorted(PIPELINES.glob(f"{STAGE_PREFIX}_p*")):
+        match = _OWNED.match(path.name)
+        if match and owner_filter(int(match.group(1))):
+            found.append(path)
+    return found
+
+
+def _alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def own_leftovers() -> list[Path]:
+    """Staged recipe files of this process that are still in the shipped recipe folder."""
+    return _staged(lambda pid: pid == os.getpid())
+
+
+def remove_dead_leftovers() -> list[Path]:
+    """Remove staged recipes of earlier runs whose owning process is gone; those of a live process are never touched."""
+    dead = _staged(lambda pid: not _alive(pid))
+    for path in dead:
+        remove_path(path)
+    return dead
+
+
+def unstage_recipes():
+    """Remove this process's staged recipe from the shipped recipe folder (only the Blueprint mode puts one there)."""
+    shutil.rmtree(PIPELINES / STAGE, ignore_errors=True)
+    (PIPELINES / f"{STAGE}.yaml").unlink(missing_ok=True)
 
 
 def unstage():
-    shutil.rmtree(PIPELINES / STAGE, ignore_errors=True)
-    shutil.rmtree(TEST_DATA / STAGE, ignore_errors=True)
-    (PIPELINES / f"{STAGE}.yaml").unlink(missing_ok=True)
+    unstage_recipes()
+    if WORK is not None:
+        shutil.rmtree(WORK, ignore_errors=True)
 
 
 def break_on_disk(kind: str) -> str:
@@ -63,12 +152,13 @@ def _free_port() -> int:
 
 
 @contextlib.contextmanager
-def running_app(tmp_path, features: str = "qa", recipe: str = STAGE):
-    """The app on the staged recipe (named by SPARMVET_DATA_ANALYSIS_RECIPE); yields (url, log path). Always unstages."""
-    stage()
+def running_app(tmp_path, features: str = "qa", recipe: str | None = None, blueprint: bool = False):
+    """The app on the staged recipe (named by SPARMVET_DATA_ANALYSIS_RECIPE); yields (url, log path). Always removes its work folder."""
+    deployment = stage(blueprint)
+    recipe = recipe or STAGE
     log = tmp_path / "server.log"
     port = _free_port()
-    env = app_env(SPARMVET_APP_FEATURES=features, SPARMVET_DATA_ANALYSIS_RECIPE=recipe)
+    env = app_env(SPARMVET_APP_FEATURES=features, SPARMVET_DATA_ANALYSIS_RECIPE=recipe, SPARMVET_DEPLOYMENT=str(deployment))
     try:
         with open(log, "w") as out:
             proc = subprocess.Popen(app_command(port),
