@@ -65,6 +65,7 @@ from blueprint_arch.data_analysis_recipe_navigator import (
     build_lineage_chain,
     build_schema_registry,
     build_sibling_map,
+    recipe_structure_of_file,
     generate_branch_plan,
     include_paths,
     load_fields_file,
@@ -436,9 +437,10 @@ def define_server(input, output, session, *,
                 inc_map[rel_path] = str(abs_path)
 
             includes_map.set(inc_map)
-            ctx_map = build_sibling_map(path)
+            _structure = recipe_structure_of_file(path)  # loaded once for both calls
+            ctx_map = build_sibling_map(path, _structure)
             component_ctx_map.set(ctx_map)
-            schema_registry.set(build_schema_registry(path, inc_map))
+            schema_registry.set(build_schema_registry(path, inc_map, _structure))
 
             for rel_path in inc_map:
                 abs_path = Path(inc_map[rel_path])
