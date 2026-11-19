@@ -32,7 +32,22 @@ Columns: a node's columns are never guessed. `column_info(n)` says what is known
   (a join, a rename, `polars_with_columns`, an unpivot, ...) leaves the columns unknown, because the recipe does not
   declare what such a step does to them.
 
-Raises `RecipeGraphError` for what makes a graph impossible (a join that names an unknown ingredient, a cycle of joins, a
+Order of columns: for a table whose columns come from the declared fields, the SET of columns is known and the ORDER is not:
+the engine returns the columns in the order of the FILE, not of `input_fields` (`ingestor.py`). `ColumnInfo.order_known` says
+it: True only after a `polars_select` (the order written), kept by steps that choose or order rows and by a `polars_drop`;
+False for `declared`, for a `provider` answer and for `unknown`. A caller must not rely on the order when it is False.
+
+Provisional choices of the builder, not decided by the owner:
+- a join that names a join as ingredient is drawn (a chain of tier-1 nodes), although the engine and the checker accept source
+  tables only today;
+- the signature `build_graph(raw, *, columns_provider=None)` differs from the one on the mechanism page;
+- the build is strict: it raises `RecipeGraphError` on a broken recipe instead of returning a partial graph;
+- the rule of what a step does to the column list (only row steps, a plain `polars_select` and a plain `polars_drop` are
+  understood; every other step makes the columns unknown);
+- the key-family rule: the `by` columns of an as-of join link families too, and families are by column name for the whole
+  recipe (not per table).
+
+Raises `RecipeGraphError` for what makes a graph impossible (a join that names an unknown ingredient, a join step whose `right_ingredient` is not one of the join's ingredients, a cycle of joins, a
 plot whose target does not exist, one id for two things); the error lists every problem with the place in the recipe.
 The checker (`recipe_check`) still judges the recipe; this module does not repeat its advice.
 
@@ -48,10 +63,11 @@ If deleted: nothing runs yet; the rebuild of those callers needs it.
 # @end_deps
 """
 import heapq
+import re
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-from utils import action_names, join_keys, recipe_tiers
+from utils import action_names, join_keys, recipe_tiers, ui_schema
 
 ColumnsProvider = Callable[[str], Optional[Sequence[str]]]
 
@@ -92,10 +108,20 @@ class Node:
 @dataclass(frozen=True)
 class ColumnInfo:
     """What is known of the columns of a node. `names` is None when they are not known; `how` says why they are known
-    (`declared`, `select`, `drop`, `provider`) or `unknown`; `reason` says in words what stops the knowledge (empty when known)."""
+    (`declared`, `select`, `drop`, `provider`) or `unknown`; `reason` says in words what stops the knowledge (empty when known).
+    `order_known`: True only when the ORDER of `names` is the order of the table (after a `polars_select`); False when only the set
+    of columns is known (the engine returns the file's order for a source table, not the order of `input_fields`)."""
     names: Optional[Tuple[str, ...]]
     how: str
     reason: str = ""
+    order_known: bool = False
+
+
+_PLAIN_NAME = re.compile(r"[^\s.()]+")
+
+
+def _is_plain_name(text: str) -> bool:
+    return bool(_PLAIN_NAME.fullmatch(text)) and not text.startswith("pl.")
 
 
 def _plain_names(value: Any) -> Optional[Tuple[str, ...]]:
@@ -138,6 +164,7 @@ class RecipeGraph:
         return list(self._nodes)
 
     def has_node(self, node_id: str) -> bool:
+        """True when the recipe has a node of this id (`DS:`, `T1:`, `T2:` or `T3:` and a name); a bare table id is not a node."""
         return node_id in self._nodes
 
     def node(self, node_id: str) -> Node:
@@ -207,13 +234,29 @@ class RecipeGraph:
         return ([node_id] if node.kind == "DS" else []) + found
 
     def same_t1_definition(self, table_a: str, table_b: str) -> bool:
-        """True when two tables have the same definition up to their tier 1: for schemas the same source, null values, strip,
-        `input_fields` and tier 1; for joins the same ingredients in the same order and the same tier 1. A schema and a join are never
-        the same. Labels, descriptions, comments and the tier 2 are not part of it. KeyError for an id that is not a table."""
+        """True when two tables have the same definition up to their tier 1, as the TEXT of the recipe: for schemas the same source,
+        null values, strip, `input_fields` and tier 1; for joins the same ingredients in the same order and the same tier 1. A schema
+        and a join are never the same. Labels, descriptions, comments and the tier 2 are not part of it. KeyError for an id that is not
+        a table.
+
+        Two DIFFERENT schema ids are the same only when both carry an explicit source path (`source` with a type and a `path`) and the
+        paths are equal: the engine often finds the file by the table id, so equal text without a path may read two files.
+        The answer is about the recipe text only. It says nothing about the content of the files, and it must never be used alone to
+        share a stored table: the data hash decides that (D-0025)."""
         for table in (table_a, table_b):
             if table not in self._bodies:
                 raise KeyError(f"no table {table!r} in the recipe")
+        if table_a != table_b and self._nodes[f"T1:{table_a}"].collection_kind == "schema" == self._nodes[f"T1:{table_b}"].collection_kind:
+            path_a, path_b = self._explicit_path(table_a), self._explicit_path(table_b)
+            if path_a is None or path_a != path_b:
+                return False
         return self._definition(table_a) == self._definition(table_b)
+
+    def _explicit_path(self, table: str) -> Optional[str]:
+        source = self._bodies[table].get("source")
+        if isinstance(source, dict) and source.get("type") and isinstance(source.get("path"), str) and source["path"]:
+            return source["path"]
+        return None
 
     def _definition(self, table: str) -> Tuple[Any, ...]:
         body = self._bodies[table]
@@ -231,7 +274,8 @@ class RecipeGraph:
         return None
 
     def column_info(self, node_or_table: str) -> ColumnInfo:
-        """What is known of a node's columns and why; a table id means its tier 1. KeyError for an id the recipe does not have."""
+        """What is known of a node's columns and why; a table id means its tier 1. `order_known` says whether the order of `names` is a
+        fact or only the order the recipe lists them in. KeyError for an id the recipe does not have."""
         node_id = self._resolve(node_or_table)
         if node_id is None:
             raise KeyError(f"no node or table {node_or_table!r} in the recipe graph")
@@ -240,12 +284,16 @@ class RecipeGraph:
             if info.names is None and self._provider is not None:
                 given = self._provider(node_id)
                 if given is not None:
-                    info = ColumnInfo(tuple(given), "provider")
+                    info = ColumnInfo(tuple(given), "provider", order_known=False)
             self._info[node_id] = info
         return self._info[node_id]
 
     def columns_of(self, node_or_table: str) -> Optional[Tuple[str, ...]]:
-        """The columns of a node, or of a table after its tier 1 (the checker's call), in table order; None when not known.
+        """The columns of a node, or of a table after its tier 1 (the checker's call); None when not known.
+
+        The SET is what is known. The order is the order of the table only when `column_info(...).order_known` is True (after a
+        `polars_select`); for a table whose columns come from the declared fields it is the order of `input_fields`, which the
+        engine does not promise (it returns the file's order).
 
         None is also the answer for an id the recipe does not have: `has_node` tells the two apart."""
         if self._resolve(node_or_table) is None:
@@ -262,7 +310,7 @@ class RecipeGraph:
                 return ColumnInfo(None, "unknown", f"{node.path}.input_fields is empty, so the table keeps every column of its file and the recipe does not list them")
             if not all(isinstance(name, str) for name in fields):
                 return ColumnInfo(None, "unknown", f"{node.path}.input_fields has a name that is not text")
-            return ColumnInfo(tuple(fields), "declared")
+            return ColumnInfo(tuple(fields), "declared", order_known=False)
         parents = self._parents[node_id]
         if not parents:
             return ColumnInfo(None, "unknown", f"{node.path} has no table to start from")
@@ -271,7 +319,7 @@ class RecipeGraph:
 
     @staticmethod
     def _flow(start: ColumnInfo, steps: Sequence[Any], steps_path: str) -> ColumnInfo:
-        names, how, reason = start.names, start.how, start.reason
+        names, how, reason, ordered = start.names, start.how, start.reason, start.order_known
         for number, step in enumerate(steps, start=1):
             where = f"{steps_path}[{number}]"
             action = step.get("action") if isinstance(step, dict) else None
@@ -279,10 +327,12 @@ class RecipeGraph:
                 continue
             if action == action_names.SELECT:
                 chosen = _plain_names(step.get("exprs"))
-                if chosen is not None:
-                    names, how, reason = chosen, "select", ""
+                extra = sorted(str(key) for key in step if key != "exprs" and key not in ui_schema.STEP_KEYS)
+                if chosen is not None and not extra and all(_is_plain_name(name) for name in chosen):
+                    names, how, reason, ordered = chosen, "select", "", True
                     continue
-                why = f"{where} ({action}): `exprs` is not a list of plain column names"
+                why = (f"{where} ({action}): the step has the key(s) {extra}, which the engine does not expose" if extra else
+                       f"{where} ({action}): `exprs` is not a list of plain column names")
             elif action == action_names.DROP and names is not None:
                 dropped = _plain_names(step.get("columns"))
                 if dropped is not None:
@@ -292,8 +342,8 @@ class RecipeGraph:
             else:
                 why = f"{where} ({action}): the recipe does not declare what this step does to the columns"
             if names is not None:
-                names, how, reason = None, "unknown", why
-        return ColumnInfo(names, how, reason)
+                names, how, reason, ordered = None, "unknown", why, False
+        return ColumnInfo(names, how, reason, ordered if names is not None else False)
 
     def column_presence(self, column: str) -> Dict[str, str]:
         """For every node, in graph order: `yes` (the column is certainly there), `no` (the columns are known and it is not) or `unknown`."""
@@ -313,7 +363,9 @@ class RecipeGraph:
         return [n for n in self._nodes if self.column_info(n).names is None]
 
     def shared_columns(self, node_a: str, node_b: str) -> Optional[Tuple[str, ...]]:
-        """The columns two nodes (or two tables, at their tier 1) both have, in the order of the first; None when either side is unknown."""
+        """The columns two nodes (or two tables, at their tier 1) both have, in the order of the first; None when either side is unknown.
+
+        A set: the order is a fact only when `column_info` of the first node says `order_known`."""
         first, second = self.columns_of(node_a), self.columns_of(node_b)
         if first is None or second is None:
             return None
@@ -388,6 +440,7 @@ def build_graph(raw: Any, *, columns_provider: Optional[ColumnsProvider] = None)
     schemas = _schemas(raw, problems)
     joins = _joins(raw, schemas, problems)
     ingredients = _ingredients(joins, schemas, problems)
+    _join_steps(joins, ingredients, problems)
     plots = _plots(raw, set(schemas) | set(joins), problems)
     cycle = _cycle({jid: [i for i in ids if i in joins] for jid, ids in ingredients.items()})
     if cycle:
@@ -489,6 +542,16 @@ def _ingredients(joins: Dict[str, Tuple[str, Any]], schemas: Dict[str, Tuple[str
                 ids.append(name)
         found[jid] = ids
     return found
+
+
+def _join_steps(joins: Dict[str, Tuple[str, Any]], ingredients: Dict[str, List[str]], problems: List[GraphProblem]) -> None:
+    """A tier-1 step of a join that names a `right_ingredient` the join does not list would be a missing edge (checker J05)."""
+    for jid, (path, body) in joins.items():
+        for number, step in enumerate(recipe_tiers.step_list(body, "tier1"), start=1):
+            name = step.get("right_ingredient") if isinstance(step, dict) else None
+            if isinstance(name, str) and name not in ingredients[jid]:
+                problems.append(GraphProblem(f"{path}.tier1.steps[{number}]",
+                                             f"the step names right_ingredient {name!r}, which is not an ingredient of join {jid!r}; list it in ingredients"))
 
 
 def _plots(raw: dict, tables: Set[str], problems: List[GraphProblem]) -> List[Tuple[str, str, str, dict]]:

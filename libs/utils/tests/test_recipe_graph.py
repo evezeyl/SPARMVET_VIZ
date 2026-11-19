@@ -401,21 +401,109 @@ def test_a_join_on_an_undeclared_column_makes_no_family():
     assert graph.key_families() == []
 
 
-def test_two_tables_with_the_same_tier1_definition_are_recognised_whatever_their_names_and_descriptions():
+def _no_source(columns, **kw):
+    body = schema(columns, **kw)
+    del body["source"]
+    return body
+
+
+def test_two_tables_with_the_same_tier1_definition_are_recognised_whatever_their_descriptions():
     one = schema(["id", "a"], tier1=[FILTER], label="One", description="first")
     two = schema(["id", "a"], tier1=[FILTER], label="Two", description="second")
     three = schema(["id", "a"], tier1=[SORT])
     graph = build_graph(recipe({"A": one, "B": two, "C": three}))
-    assert graph.same_t1_definition("A", "B") is True
+    assert graph.same_t1_definition("A", "B") is True              # both name the same explicit source path
     assert graph.same_t1_definition("A", "C") is False
     assert graph.same_t1_definition("A", "A") is True
+
+
+def test_two_tables_with_equal_text_and_no_source_are_not_the_same_definition():
+    # the engine finds such a file by the table id: two ids are two files
+    graph = build_graph(recipe({"A": _no_source(["id", "a"]), "B": _no_source(["id", "a"])}))
+    assert graph.same_t1_definition("A", "B") is False
+    assert graph.same_t1_definition("A", "A") is True
+
+
+def test_a_source_without_a_path_is_not_an_explicit_source():
+    one, two = schema(["id"]), schema(["id"])
+    one["source"] = two["source"] = {"type": "local_tsv"}
+    assert build_graph(recipe({"A": one, "B": two})).same_t1_definition("A", "B") is False
+
+
+def test_two_tables_with_different_source_paths_are_not_the_same_definition():
+    one, two = schema(["id"]), schema(["id"])
+    two["source"] = {"type": "local_tsv", "path": "y.tsv"}
+    assert build_graph(recipe({"A": one, "B": two})).same_t1_definition("A", "B") is False
+
+
+def test_a_difference_in_null_values_alone_makes_two_tables_differ():
+    one, two = schema(["id"], null_values=["NA"]), schema(["id"], null_values=["NA", "-"])
+    graph = build_graph(recipe({"A": one, "B": two, "C": schema(["id"], null_values=["NA"])}))
+    assert graph.same_t1_definition("A", "B") is False
+    assert graph.same_t1_definition("A", "C") is True
 
 
 def test_a_join_and_a_schema_never_share_a_definition_and_the_tier2_list_is_not_part_of_it():
     raw = recipe({"A": schema(["id"], tier2=[SORT]), "B": schema(["id"])}, {"J": join(["A", "B"])})
     graph = build_graph(raw)
-    assert graph.same_t1_definition("A", "B") is True              # only the tier 2 differs: T1 is the same
+    assert graph.same_t1_definition("A", "B") is True              # only the tier 2 differs: T1 is the same (same explicit path)
     assert graph.same_t1_definition("A", "J") is False
+
+
+# ---------------------------------------------------------------- order of columns, select, join steps -------
+
+def test_the_order_of_a_declared_table_is_marked_as_not_known():
+    info = build_graph(recipe({"A": schema(["id", "a"])})).column_info("DS:A")
+    assert info.how == "declared" and info.order_known is False     # the file's order wins in the engine
+
+
+def test_the_order_after_a_select_is_known_and_a_drop_after_a_select_keeps_it():
+    select = {"action": "polars_select", "exprs": ["b", "id", "a"]}
+    drop = {"action": "polars_drop", "columns": ["id"]}
+    graph = build_graph(recipe({"A": schema(["id", "a", "b"], tier1=[select, drop])}))
+    assert graph.column_info("T1:A").order_known is True and graph.columns_of("T1:A") == ("b", "a")
+
+
+def test_a_drop_after_declared_columns_keeps_the_order_unknown_and_a_provider_is_a_known_order_of_nothing():
+    drop = {"action": "polars_drop", "columns": ["a"]}
+    graph = build_graph(recipe({"A": schema(["id", "a", "b"], tier1=[drop])}))
+    assert graph.column_info("T1:A").order_known is False
+
+
+def test_unknown_columns_have_no_order_claim():
+    raw = recipe({"A": schema(["id"], tier1=[{"action": "polars_unpivot", "on": ["id"]}])})
+    assert build_graph(raw).column_info("T1:A").order_known is False
+
+
+@pytest.mark.parametrize("item", ["pl.col('a')", "a.b", "a b", "sum(a)", "pl.all()"])
+def test_a_select_text_that_is_not_a_plain_column_name_gives_unknown_columns(item):
+    select = {"action": "polars_select", "exprs": ["id", item]}
+    info = build_graph(recipe({"A": schema(["id", "a"], tier1=[select])})).column_info("T1:A")
+    assert info.names is None and info.how == "unknown"
+
+
+def test_a_select_with_keys_the_engine_does_not_expose_gives_unknown_columns():
+    select = {"action": "polars_select", "exprs": ["id"], "named_exprs": {"z": "pl.lit(1)"}}
+    assert build_graph(recipe({"A": schema(["id", "a"], tier1=[select])})).columns_of("T1:A") is None
+
+
+def test_a_plain_select_still_gives_the_names():
+    select = {"action": "polars_select", "exprs": ["id", "a_1"]}
+    assert build_graph(recipe({"A": schema(["id", "a_1"], tier1=[select])})).columns_of("T1:A") == ("id", "a_1")
+
+
+def test_a_join_step_that_names_a_table_that_is_not_an_ingredient_is_named():
+    step = {"action": "polars_join", "right_ingredient": "C", "on": "id", "how": "left"}
+    raw = recipe({"A": schema(["id"]), "B": schema(["id"]), "C": schema(["id"])}, {"J": join(["A", "B"], [step])})
+    with pytest.raises(RecipeGraphError) as error:
+        build_graph(raw)
+    problem = error.value.problems[0]
+    assert problem.path == "joins.J.tier1.steps[1]" and "'C'" in problem.message
+
+
+def test_a_join_step_on_a_listed_ingredient_is_fine():
+    step = {"action": "polars_join", "right_ingredient": "B", "on": "id"}
+    build_graph(recipe({"A": schema(["id"]), "B": schema(["id"])}, {"J": join(["A", "B"], [step])}))
 
 
 # ---------------------------------------------------------------- the checker's J08 --------------------------
