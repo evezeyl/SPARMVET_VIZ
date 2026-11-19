@@ -2,7 +2,7 @@
 trigger: always_on
 deps:
   provides: [rule:artist_pillar, rule:plotnine_parity, rule:core_geoms_standard]
-  documents: [libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/themes/core.py, libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/engine_python_plotnine.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py]
+  documents: [libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/themes/core.py, libs/viz_factory/src/viz_factory/registry.py]
   consumed_by: [.claude/rules/rules_agent_role_bioscientist.md, .claude/knowledge/dependency_index.md]
 ---
 
@@ -85,13 +85,13 @@ plot_defaults:
   palette: nvi_official      # applies to ALL plots in the data analysis recipe
   # Full plot_defaults schema → rules_data_analysis_recipe_structure.md §10
 
-# Per-plot override (in the plot entry of analysis_groups):
+# Per-plot override (inside analysis_groups plot spec):
 palette: sparmvet_brand      # overrides plot_defaults.palette for this plot
 ```
 
 Resolution order: **plot-level `palette:` > `plot_defaults.palette` > none (matplotlib default)**.
 
-`palette` is one of several `plot_defaults` keys. The authoritative schema (palette, theme, layers, random_state) is documented at `rules_data_analysis_recipe_structure.md §10`. `default_font_family`, `facet_panel_spacing`, `legend_position` and `optimisation` were removed (D-0220, D-0242). Unknown keys emit `PipelineError(severity: warning, who: data_analysis_recipe_author, surface: notification)`. A removed key is refused with a tombstone text (PD02).
+`palette` is one of several `plot_defaults` keys. The authoritative schema (palette, theme, default_font_family, facet_panel_spacing, legend_position, optimisation toggles) is documented at `rules_data_analysis_recipe_structure.md §10`. Unknown keys emit `PipelineError(severity: warning, who: data_analysis_recipe_author, surface: notification)`.
 
 ### 6c. Scale injection rules
 
@@ -115,20 +115,19 @@ Plot configuration resolves through a **five-tier priority cascade** at one merg
 | Tier | Source | Modifiable by |
 |---|---|---|
 | **L5** | T3 `aesthetic_override` for the active plot | Analyst (T3 sandbox) |
-| **L4** | The plot entry (`analysis_groups.<grp>.plots.<id>`; the entry has no `spec:` key) | Data analysis recipe author |
-| **L3** | Optimisation layer (computed from data + the plot entry) — **visual/aesthetic only** | None — emitted by VizFactory |
+| **L4** | Plot `spec:` (`analysis_groups.<grp>.plots.<id>.spec`) | Data analysis recipe author |
+| **L3** | Optimisation layer (computed from data + spec) — **visual/aesthetic only** | None — emitted by VizFactory |
 | **L2** | Data analysis recipe `plot_defaults:` block | Data analysis recipe author |
-| **L1** | VizFactory built-in defaults (`coord_cartesian`, `facet_null`; no theme: a plot with no theme written is drawn with plotnine's own default, `theme_gray`, D-0258) | Developer |
+| **L1** | VizFactory built-in defaults | Developer |
 
-- **Names in the cascade (DECIDED, not built, D-0218)**: the `theme:` key of a plot entry and of `plot_defaults` changes, because it is a component call (D-0214). Names written as values stay plotnine's own (D-0214). It must be tested thoroughly; on an error, investigate and propose solutions (D-0214).
+- **Names in the cascade (DECIDED, not built, D-0218)**: the `theme:` key of a plot spec and of `plot_defaults` changes, because it is a component call (D-0214). Names written as values stay plotnine's own (D-0214). It must be tested thoroughly; on an error, investigate and propose solutions (D-0214).
 
 **Resolution rule:** higher tier wins per key (winner-takes-all, no value merging). The `layers:` list is the exception — append-then-deduplicate by `(layer_kind, target)` keeping LAST occurrence (so L5 wins on theme/coord/facet/scale/element_text). `geom_*`/`stat_*` layers never deduplicated.
 
 **Key constraints from the design:**
 - L3 (optimisation) is **purely visual/aesthetic** — MUST NOT change `mapping`, `layers`, `geom_*`, `filters`, or `palette`. Allowed: axis text rotation/size, panel spacing, density-aware positions.
 - L5 `aesthetic_override` has a **fixed schema** (design §6): `fill_color` ⊕ `fill_palette` (mutex with warning), `color`, `alpha`, `shape`, `size`, `theme`. `plot_scope` MUST be a single plot_id (never `__all__`).
-- Unknown keys in `plot_defaults` emit `PipelineError(severity: warning, who: data_analysis_recipe_author, surface: notification)` per ADR-079. Non-fatal. The four removed keys are refused with a tombstone text (PD02).
-- **The engine (D-0238, D-0239):** the engine of a component is a field of its registry entry (`python-plotnine` for every component today); the plot library is chosen by the `plot_engine` of the plot entry, else of the data analysis recipe; an engine the app has no library for is refused with "no library for this engine in this app". The plot engine is in no table cache key (D-0240).
+- Unknown keys in `plot_defaults` emit `PipelineError(severity: warning, who: data_analysis_recipe_author, surface: notification)` per ADR-079. Non-fatal.
 - §6 above describes today's `_apply_palette` behaviour — under the cascade it remains the renderer for the resolved `palette:` key (now produced by the cascade resolver, not read directly from the data analysis recipe dict). Behaviour rules in §6c are unchanged.
 
 **Full design specification:** [.claude/design/plot_config_cascade.md](../design/plot_config_cascade.md). Implementation tasks: ~~VIZFAC-RESOLVER-1~~ ✓, ~~VIZFAC-DEFAULTS-DOCS-1~~ ✓, ~~VIZFAC-RENDER-WIRE-1~~ ✓, VIZFAC-T3-OVERRIDE-1, VIZFAC-T3-EXPORT-1, VIZFAC-BLUEPRINT-FORM-1.

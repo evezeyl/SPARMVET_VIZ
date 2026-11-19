@@ -2,7 +2,7 @@
 trigger: always_on
 deps:
   provides: [rule:canonical_steps_syntax, rule:directory_taxonomy, rule:analysis_groups_structure, rule:final_contract]
-  documents: [libs/transformer/src/transformer/data_assembler.py, app/handlers/home_theater.py, libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/recipe_check.py]
+  documents: [libs/transformer/src/transformer/data_assembler.py, app/handlers/home_theater.py]
   consumed_by: [.claude/rules/rules_agent_role_bioscientist.md, docs/appendix/data_analysis_recipe_structure.yaml, .claude/knowledge/dependency_index.md]
 ---
 
@@ -22,10 +22,10 @@ To maintain modularity and prevent YAML bloat, **high-complexity data analysis r
 When decomposition is triggered, components must be strictly categorized into subdirectories based on their logical keywords. Specifically:
 
 - `input_fields/`: Defines raw incoming schemas.
-- `wrangling/`: Defines all Transformation (`tier1`, `tier2`) operations for individual data sources, one file per tier; a tier file holds `steps` (and an optional `data_engine`) and is included as `tier1: !include <file>`.
+- `wrangling/`: Defines all Transformation (`tier1`, `tier2`) operations for individual data sources.
 - `output_fields/`: Defines the terminal contract schemas.
-- `join/`: Defines the join steps (the `steps` of a tier, included as `tier1: !include <file>`) for joining multiple ingredients into a collection. One file per join block (e.g., `AMR_Profile_Joint.yaml`). Top-level data analysis recipe key: `joins:`.
-- `plots/`: Contains the plot entries of `analysis_groups` that are written in their own file. Each file contains the whole plot entry (there is no `spec:` key).
+- `join/`: Defines the join steps (`steps:` key only) for joining multiple ingredients into a collection. One file per join block (e.g., `AMR_Profile_Joint.yaml`). Top-level data analysis recipe key: `joins:`.
+- `plots/`: Contains visualization specifications for `analysis_groups`. Each file contains a single `spec:` block.
 
 ## 3. Structural Authority Reference
 
@@ -56,20 +56,19 @@ The file `config/data_analysis_recipes/pipelines/1_test_data_ST22_dummy.yaml` se
 ### ✅ Canonical (ONLY valid format)
 
 ```yaml
-tier1:
-  steps:
-    - action: cast
-      columns: [Year]
-      dtype: String
-    - action: mutate
-      column: predicted_phenotype_clean
-      expression: "pl.col('predicted_phenotype').str.strip_chars().str.to_lowercase()"
-    - action: join
-      right_ingredient: metadata_schema
-      'on': sample_id
-      how: inner
-    - action: sort
-      columns: [Year, Source, Country]
+steps:
+  - action: cast
+    columns: [Year]
+    dtype: String
+  - action: mutate
+    column: predicted_phenotype_clean
+    expression: "pl.col('predicted_phenotype').str.strip_chars().str.to_lowercase()"
+  - action: join
+    right_ingredient: metadata_schema
+    'on': sample_id
+    how: inner
+  - action: sort
+    columns: [Year, Source, Country]
 ```
 
 ### ❌ Forbidden shorthand (silently broken)
@@ -129,19 +128,18 @@ The `analysis_groups` top-level key defines the groups and plots rendered in the
 ```yaml
 analysis_groups:
   <group_id>:                         # Snake_case, no spaces
-    ui_label: "Human-readable group name"
+    label: "Human-readable group name"
     plots:
       <plot_id>:                      # Snake_case; unique across ALL data analysis recipes
-        ui_label: "Human-readable plot name"
-        # the plot content is written here (target_dataset, mapping, layers, ...), or the WHOLE entry is in a file:
-      <other_plot_id>: !include <basename>/<subdir>/<other_plot_id>.yaml
+        label: "Human-readable plot name"
+        spec: !include <basename>/<subdir>/<plot_id>.yaml
 ```
 
 **Rules:**
 - `plot_id` must be snake_case (ASCII identifier — letters, digits, underscore) and **globally unique across all data analysis recipes** (the app registers `@render.plot` by ID at startup).
 - `group_id` (the dict key) is auto-sanitised to a Shiny-safe internal ID via `_safe_id()`. **Spaces, emoji, and punctuation are allowed** — they're stripped from the internal ID but preserved verbatim in the visible label. (Updates ADR-036: previously hardcoded sanitisation; now general regex sanitisation.)
-- Each plot entry written as `!include` points to a file in `plots/` subdirectory.
-- The included plot file holds the whole plot entry (`ui_label`, `target_dataset`, `mapping`, `layers`, ...) and no wrapper key; there is no `spec:` key.
+- Each `spec: !include` points to a file in `plots/` subdirectory.
+- The included plot file must contain a single `spec:` root key. `ConfigManager` auto-unnests it.
 
 ### Visible labels (icons & emoji are encouraged)
 
@@ -156,10 +154,12 @@ All three preserve any unicode, including emoji and CJK. Data Analysis Recipe au
 ```yaml
 analysis_groups:
   Cat 🐱:                              # Internal id auto-sanitised to "cat"
-    ui_label: "🐱 Cat"                 # ← Tab shows "🐱 Cat"
+    label: "🐱 Cat"                    # ← Tab shows "🐱 Cat"
     description: The boss's favourites
     plots:
-      miaou: !include cat/miaou.yaml   # plot_id stays snake_case (unique-id contract); the file holds the whole entry, e.g. ui_label: "Miaou 🐱" (Tab shows "Miaou 🐱")
+      miaou:                           # plot_id stays snake_case (unique-id contract)
+        label: "Miaou 🐱"              # ← Tab shows "Miaou 🐱"
+        spec: !include cat/miaou.yaml
 ```
 
 Reserve `description:` for longer prose; use `label:` for short emoji-rich tab text.
@@ -174,24 +174,23 @@ Reserve `description:` for longer prose; use `label:` for short emoji-rich tab t
 Plot specs use a grammar-of-graphics format (ADR-083): explicit `geom_*` layers in `layers:`, all aesthetics in a `mapping:` block.
 
 ```yaml
-ui_label: "Plot name"            # Required — the short name of the tab
-ui_title: "Plot Title"           # Optional — the longer name the report uses (else ui_label)
-target_dataset: <join_id>        # Must match a joins key
-mapping:
-  x: <column>                    # Aesthetic mapping — column must exist in target_dataset
-  fill: <column>                 # Optional
-  facet_by: <column>             # Optional — triggers facet_wrap(~<column>)
-theme: theme_light               # Optional — must be a registered theme component
-layers:
-  - name: geom_bar               # Primary geom — always first. See registered components.
-    params: {}
-  - name: position_dodge         # For side-by-side bars
-    params: {}
-  - name: labs
-    params:
-      title: "Plot Title"
-      fill: "Legend Label"
-      x: "X Axis Label"
+spec:
+  target_dataset: <join_id>      # Must match a joins key
+  mapping:
+    x: <column>                  # Aesthetic mapping — column must exist in target_dataset
+    fill: <column>               # Optional
+    facet_by: <column>           # Optional — triggers facet_wrap(~<column>)
+  theme: theme_light             # Optional — must be a registered theme component
+  layers:
+    - name: geom_bar             # Primary geom — always first. See registered components.
+      params: {}
+    - name: position_dodge       # For side-by-side bars
+      params: {}
+    - name: labs
+      params:
+        title: "Plot Title"
+        fill: "Legend Label"
+        x: "X Axis Label"
 ```
 
 Common primary geoms: `geom_bar`, `geom_col` (needs `y`), `geom_point`, `geom_tile`, `geom_boxplot`, `geom_violin`. See `libs/viz_factory/src/viz_factory/geoms/` for the full registered list.
@@ -218,7 +217,7 @@ Common primary geoms: `geom_bar`, `geom_col` (needs `y`), `geom_point`, `geom_ti
 
 ## 10. `plot_defaults` Block (ADR-081, BP-COLOR-3, VIZFAC-PLOT-CASCADE-1)
 
-The optional `plot_defaults:` top-level key in a data analysis recipe sets defaults applied to every plot in that data analysis recipe. Individual plot specs may override any key. `plot_defaults` participates as **L2** in the five-tier resolution cascade (L5 T3 override > L4 plot entry > L3 optimisation > L2 plot_defaults > L1 built-ins). Full cascade spec: [.claude/design/plot_config_cascade.md §7a](../design/plot_config_cascade.md).
+The optional `plot_defaults:` top-level key in a data analysis recipe sets defaults applied to every plot in that data analysis recipe. Individual plot specs may override any key. `plot_defaults` participates as **L2** in the five-tier resolution cascade (L5 T3 override > L4 spec > L3 optimisation > L2 plot_defaults > L1 built-ins). Full cascade spec: [.claude/design/plot_config_cascade.md §7a](../design/plot_config_cascade.md).
 
 ### 10a. Allowed keys (authoritative — extend by ADR amendment only)
 
@@ -227,13 +226,21 @@ plot_defaults:
   # Visual style
   palette:             nvi_official       # deployment palette name or matplotlib name (see §10b)
   theme:               theme_light        # registered theme component name (e.g. theme_bw)
-  layers:              []                 # layers added to every plot (a theme layer sets font, legend position, panel spacing)
-  random_state:        0                  # the one seed of the random layers of the recipe
+  default_font_family: "Liberation Sans"  # plotnine default font family
+
+  # Layout
+  facet_panel_spacing: 0.1    # float 0–1; plotnine default 0.05; increase for dense facets
+  legend_position:     "right" # "right" | "top" | "bottom" | "left" | "none"
+
+  # Optimisation toggles (reserved — disabled by default except auto_axis_text)
+  optimisation:
+    auto_axis_text: true   # auto-rotate axis labels when text is long (default true)
+    density_jitter: false  # jitter geom_point on dense scatter (default false)
+    panel_spacing:  false  # auto-adjust facet panel spacing (default false)
+    legend_ncol:    false  # auto-set legend column count (default false)
 ```
 
-**Removed keys (D-0220, D-0242, 2026-11-17):** `default_font_family`, `facet_panel_spacing`, `legend_position` and `optimisation` did nothing and are not keys of `plot_defaults`. Font, legend position and panel spacing are set through a theme layer in `layers:`; the automatic axis-text adjustment has no switch of its own: an `element_text` layer for an axis overrides it.
-
-**Unknown key warning:** keys not in the list above emit `PipelineError(severity: warning, who: data_analysis_recipe_author, surface: notification)`. Non-fatal — experimental keys are allowed — but the warning prevents silent typos. Each of the four removed keys is refused with a tombstone text (PD02).
+**Unknown key warning:** keys not in the list above emit `PipelineError(severity: warning, who: data_analysis_recipe_author, surface: notification)`. Non-fatal — experimental keys are allowed — but the warning prevents silent typos.
 
 ### 10b. `palette` key
 
@@ -245,8 +252,7 @@ plot_defaults:
 ### 10c. `theme` key
 
 - Value must be a registered theme component name. Examples: `theme_bw`, `theme_light`, `theme_minimal`, `theme_dashboard`.
-- Per-plot `theme:` in the plot entry overrides this default (L4 wins over L2).
-- With no theme in the data analysis recipe, a plot is drawn with plotnine's own default (`theme_gray`): the app injects no theme (D-0258).
+- Per-plot `theme:` in the spec overrides this default (L4 wins over L2).
 
 ### Built-in palettes (always available, no `config/palettes.yaml` required)
 
