@@ -4,9 +4,9 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
-## OPEN STATE 2026-11-19 afternoon (after the power cut; updated 2026-11-19 late afternoon; updated 2026-11-19 evening)
+## OPEN STATE 2026-11-19 afternoon (after the power cut; updated 2026-11-19 late afternoon; updated 2026-11-19 evening; slice A DONE 2026-11-19 evening)
 
-- dev = `c7cb58da` (not pushed by an agent; the review session was last told `7e179146`). The review session was told in channel M339 of the coordinator that the owner can push (that was head `ecd09fbd`; earlier head `75e52b2c`, channel M338).
+- dev = `a1d79820` (not pushed by an agent; the review session was told in channel M341 that the owner can push). Earlier head: `c7cb58da`; the review session was last told `7e179146`. The review session was told in channel M339 of the coordinator that the owner can push (that was head `ecd09fbd`; earlier head `75e52b2c`, channel M338).
 - Controls on `7e179146` (slice A1 to A4 merged): headless 11767 passed, 0 failed; all browser files 259 passed (1 failed under parallel running, passed alone). On the A5 branch `task/audit-recipe` (head `dca589f8`): headless 12130 passed, 0 failed.
 - Controls on `ecd09fbd` (slice A1, A2 and A3 merged), earlier: headless 11703 passed, 0 failed; all browser files 360 passed, 4 failed under parallel running and each passed alone (FLAKY-BROWSER-UNDER-PARALLEL-1); all eight setups start.
 - The big recipe change is MERGED (`2c6cc1d2`) and CONTROLLED on `a538eca2`: headless 11246 passed, 5 skipped, 31 xfailed, 0 failed; 27 browser files 240 passed (3 skipped, 1 xfailed, 1 flaky failure, see below); all eight setups start; pictures 50 identical plus the one known row (the empty orphan `experimental/test_logic.yaml`); golden passed.
@@ -20,7 +20,9 @@
   - A3 a key per stored table: DONE and merged (`711bb40f`; cache version 6).
   - A4 the engine reads tier 3 at the plot entry: DONE and merged (`7e179146`).
   - A5 the audit recipe copy (`libs/utils/src/utils/audit_copy.py`) and the headless run (`app/modules/audit_run.py`), in memory, not on any screen: DONE and merged (`c7cb58da`).
-  - STILL TO DO before slice A is called done: (1) the three low fixes on the audit recipe, worktree `.claude/worktrees/audit-recipe-fixes`, branch `task/audit-recipe-fixes` (the key must hold the position of an audit step among the original steps; a refused run leaves built tables behind; add-then-remove must give back exactly the same recipe); (2) the full controls on dev (`AUDIT-SLICE-A-FINAL-CONTROLS`); (3) the questions (`tmpAI/coordinator/QUESTIONS_FOR_THE_STOP.md`) go to the owner through the review session, one at a time. Slice B does not start before her answers.
+  - SLICE A IS DONE AND CONTROLLED (evidence `tmpAI/coordinator/SLICE_A_DONE_controls_2026-11-19.md`, outputs `tmpAI/coordinator/slice_a_final/`): headless 12254 passed, 0 failed; browser 252 passed, 1 failed under parallel running and passed alone; all eight setups start; golden identical; pictures 50 identical plus the one known row; a real audit run on the demo recipe: 26 of 28 tables reused, 2 built, 1 of 17 plots affected, the original byte-identical.
+  - THE STOP: the questions are with the review session (`tmpAI/coordinator/QUESTIONS_FOR_THE_STOP.md`: slice 0 points 1 to 8, Q-A1 to Q-A17). Slice B does not start before the owner's answers.
+  - Work that needs no decision meanwhile: FLAKY-BROWSER-UNDER-PARALLEL-1; the seven checker places that fail on a wrong shape (listed under AUDIT-SLICE-A2-NAVIGATOR-ON-GRAPH); AUDIT-RUN-NESTED-FOLDERS-1; the two plain sentences of TEXTS-OUT-OF-DATE-AFTER-SLICE-A; the dependency index (DEP-INDEX-REGEN-1). No worktree of the coordinator is open now.
   - Each worker keeps `tmpAI/progress.md` in its worktree.
 - The rule sentences stay out of date by decision (owner, 2026-11-19): list in `tmpAI/engine_keys/RULE_SENTENCES_OUT_OF_DATE_after_merge.md`.
 - Coordinator restart note: top of `tmpAI/coordinator/progress_2026-11-14_session3.md`.
