@@ -28,7 +28,7 @@
 | `app/handlers/ingestion_handlers.py` | Ingestion & app features Shiny wiring (ADR-045) | Reactive hooks → Ingest/App features | `handle_ingest`, `update_app_features_context` |
 | `app/modules/orchestrator.py` | Tier 1 Ingestion & Assembly Bridge | Data analysis recipe + Data → Parquet | `DataOrchestrator (orchestrator.py)` |
 | `app/modules/engine_registry.py` | The one place that imports the engine entry files; chooses the library by the data analysis recipe's `data_engine` / `plot_engine` (D-0219, D-0247) | Recipe value → engine entry (`ENTRY`) | `REGISTRY`, `data_entry`, `plot_entry`, `PlotEngines`, `engine_tables` |
-| `app/modules/cache_keys.py` | Cache chain keys (ADR-089; the engine of a tier is an argument of that tier's key, the plot engine is in no table key, cache version 5, D-0240) | Resolved data analysis recipe + data → `tier1_key`, `tier2_key` | `tier1_key`, `tier2_key`, `collection_tier2_key`, `ENGINE_CACHE_VERSION` |
+| `app/modules/cache_keys.py` | Keys of the stored tables, one key per table, a series of labelled parts (ADR-089, ADR-101; the engine of a tier is an argument of that tier's key, the plot engine is in no table key, cache version 6, D-0240) | Resolved data analysis recipe + data → `tier1_key`, `tier2_key` | `tier1_key`, `tier2_key`, `collection_tier2_key`, `ENGINE_CACHE_VERSION` |
 | `libs/ingestion/src/ingestion/ingestor.py` | Reads sources, early validation | File → LazyFrame | `DataIngestor (ingestor.py)`, `scan_csv` |
 | `libs/transformer/src/transformer/data_wrangler.py` | Layer 1 execution (Atomic) | Dataset → LazyFrame | `DataWrangler`, `@register_action` |
 | `libs/transformer/src/transformer/data_assembler.py` | Layer 2 orchestration (Relational) | Multiple LFs → LazyFrame | `DataAssembler`, `sink_parquet` |

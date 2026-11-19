@@ -52,7 +52,7 @@ app has started — that part has always held.
 
 Every stored artifact that can be compared against another run carries the keys it was built from:
 `data_analysis_recipe_sha256` (file set), `data_batch_hash` (content hash of the source files),
-`tier1_key` / `tier2_key` (chained, ADR-089). These appear in the export bundle's README and
+`tier1_key` / `tier2_key` (one key per stored table, a series of labelled parts, ADR-089 as amended by ADR-101). These appear in the export bundle's README and
 `report.qmd`, and are embedded in exported PNG/SVG metadata. The export's key check
 (`REQ-VIZ-EXP-01`) exists because these keys can be compared cheaply before any heavy recomputation.
 
