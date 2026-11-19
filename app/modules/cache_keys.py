@@ -300,7 +300,7 @@ def collection_tier2_key(raw: dict, collection_id: str, tier1_key_value: str) ->
 
 def tier3_key(tier2_key_value: str, steps: list, engine) -> str:
     """The key of a plot's T3 table: the key of the Tier 2 table it is computed from, then the `s3` part (its steps and the data
-    engine that runs them). A series of labelled parts like the other tiers (ADR-101 point 2); a place is left after `s3` for the audit part."""
+    engine that runs them). A series of labelled parts like the other tiers (ADR-101 point 2); the audit part `a3` follows it (`plot_tier3_key`)."""
     return f"{tier2_key_value}.{key_part('s3', canonical_hash(steps), canonical_hash(engine))}"
 
 

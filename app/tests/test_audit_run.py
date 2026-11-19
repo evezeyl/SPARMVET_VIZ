@@ -244,6 +244,28 @@ def test_a_changed_data_file_rebuilds_the_audit_tables_it_feeds(world):
     assert run.tables["B"].t1 == FROM_ORIGINAL
 
 
+def test_a_table_built_while_the_data_changed_is_not_stored_and_the_run_says_so(world):
+    """Every caller of a build is told when the inputs changed during it (STALE-KEY-STORE-1): the run puts it in its result, never silently."""
+    from unittest import mock
+    audit = world.copy_with(("T1:X", KEEP_S2, ID1))
+    real = world.orch.prepare_ingredient
+
+    def ingest_then_the_file_changes(ds_id, *args, **kwargs):
+        lf = real(ds_id, *args, **kwargs)
+        if ds_id == "X":
+            world.write_data("X", "sample_id\tgroup\ns1\tA\ns2\tB\ns3\tB\n")
+        return lf
+
+    with mock.patch.object(world.orch, "prepare_ingredient", side_effect=ingest_then_the_file_changes):
+        run = world.run(audit)
+    assert run.inputs_changed and all("the data files changed" in text and "not stored" in text for text in run.inputs_changed)
+    assert any("the audit's table 'X'" in text or "the original's table 'X'" in text for text in run.inputs_changed)
+
+
+def test_a_run_that_saw_no_change_says_nothing(world):
+    assert world.run(world.copy_with(("T1:X", KEEP_S2, ID1))).inputs_changed == ()
+
+
 # =====================================================================================================================
 # A step the engine cannot apply
 # =====================================================================================================================

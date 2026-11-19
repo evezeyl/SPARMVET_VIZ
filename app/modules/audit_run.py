@@ -18,7 +18,8 @@ is either reused or recomputed":
 A plot is AFFECTED when the CONTENT of its table differs between the original and the audit run (ADR-101 point 6: "equal keys imply identical data;
 different keys do not imply different data"). A filter that removes nothing moves a key and no row: that plot is not affected.
 
-A step that the engine cannot apply is refused, naming the id of the step and its place; never skipped (D-0102). The audit folder holds only what the
+A step that the engine cannot apply is refused, naming the id of the step and its place; never skipped (D-0102). A table built while its inputs changed
+(a data file) is returned and not stored, as for every caller of a build; the run says so in `AuditRun.inputs_changed`, never silently. The audit folder holds only what the
 copy needs: a table that is the original's again (the step was removed) is taken out of it at once.
 
 PROVISIONAL: the names and fields of the result; the words of `source` (`original`, `audit store`, `built`); that the run checks the copy with
@@ -45,9 +46,9 @@ import polars as pl
 
 from app.modules.cache_keys import (
     DataAnalysisRecipeKeys, LoadedDataAnalysisRecipe, load_data_analysis_recipe, loaded_from_resolved, tier2_steps)
-from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, DataOrchestrator, tier2_path_for
+from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, DataOrchestrator, InputsChanged, tier2_path_for
 from transformer.anchor import read_anchor_if_key
-from utils.audit_copy import AuditCopyError, MarkedStep, add_step, audit_recipe_of, integrity_errors, marked_steps
+from utils.audit_copy import MarkedStep, add_step, audit_recipe_of, integrity_errors, marked_steps
 from utils.recipe_graph import build_graph
 
 # Where a table of the copy comes from.
@@ -98,6 +99,7 @@ class AuditRun:
     audit_dir: Path
     tables: Dict[str, TableRun] = field(default_factory=dict)
     plots: Dict[str, PlotRun] = field(default_factory=dict)
+    inputs_changed: tuple = ()   # one sentence per build whose inputs changed while it ran ("the data files changed"): that table was not stored
 
     @property
     def affected_plots(self) -> List[str]:
@@ -128,6 +130,7 @@ class _Run:
         self.keys_original = orchestrator.compute_data_analysis_recipe_keys(recipe_id, loaded=self.original)
         self.keys_audit = orchestrator.compute_data_analysis_recipe_keys(recipe_id, loaded=self.audit_loaded)
         self.graph = build_graph(self.audit_raw)
+        self.changed: List[str] = []   # the builds whose inputs changed while they ran
 
     # -- where a stage of the copy is
     def t1_dir(self, table: str, keys: DataAnalysisRecipeKeys, out_dir: Path) -> Path:
@@ -139,15 +142,20 @@ class _Run:
         return None if keys.tier2_key_of(table) == self.keys_original.tier2_key_of(table) else out_dir / f"{table}__T2.parquet"
 
     # -- the original
+    def told(self, changed: List[str], what: str) -> Callable[[InputsChanged], None]:
+        """What a build says when its inputs changed while it ran: kept as a sentence in `changed`, shown in the result (never silent)."""
+        return lambda change: changed.append(f"{what}: {change.text}; it was returned and not stored")
+
     def ensure_original(self, table: str) -> None:
         """The original's tables of `table` are stored under their keys (built now when they were not), as the app stores them."""
         path = self.original_dir / f"{table}.parquet"
-        self.orch.materialize_tier1(self.recipe_id, table, path, keys=self.keys_original)
+        told = self.told(self.changed, f"the original's table '{table}'")
+        self.orch.materialize_tier1(self.recipe_id, table, path, keys=self.keys_original, on_inputs_changed=told)
         if tier2_steps(self.original.raw, table):
-            self.orch.materialize_tier2(self.recipe_id, table, path, keys=self.keys_original)
+            self.orch.materialize_tier2(self.recipe_id, table, path, keys=self.keys_original, on_inputs_changed=told)
 
     # -- the copy
-    def copy_table(self, table: str, loaded: LoadedDataAnalysisRecipe, keys: DataAnalysisRecipeKeys, out_dir: Path) -> TableRun:
+    def copy_table(self, table: str, loaded: LoadedDataAnalysisRecipe, keys: DataAnalysisRecipeKeys, out_dir: Path, changed: List[str]) -> TableRun:
         """Tier 1 and Tier 2 of `table` in the copy `loaded` with `keys`: read from the original when the key is its own, else built into `out_dir`."""
         k1o, k1c = self.keys_original.tier1_key_of(table), keys.tier1_key_of(table)
         k2o, k2c = self.keys_original.tier2_key_of(table), keys.tier2_key_of(table)
@@ -156,7 +164,8 @@ class _Run:
             t1 = FROM_ORIGINAL
         else:
             t1 = FROM_AUDIT_STORE if _stored(t1_path, TIER1_KEY_META, k1c) else BUILT
-            self.orch.materialize_tier1(self.recipe_id, table, t1_path, keys=keys, loaded=loaded)
+            self.orch.materialize_tier1(self.recipe_id, table, t1_path, keys=keys, loaded=loaded,
+                                        on_inputs_changed=self.told(changed, f"the audit's table '{table}' (tier 1)"))
         t2_path: Optional[Path] = None
         if not tier2_steps(loaded.raw, table):
             t2 = NONE
@@ -165,17 +174,19 @@ class _Run:
         else:
             t2_path = self.t2_path(table, keys, out_dir)
             t2 = FROM_AUDIT_STORE if _stored(t2_path, TIER2_KEY_META, k2c) else BUILT
-            self.orch.materialize_tier2(self.recipe_id, table, t1_path, keys=keys, loaded=loaded, tier2_path=t2_path)
+            self.orch.materialize_tier2(self.recipe_id, table, t1_path, keys=keys, loaded=loaded, tier2_path=t2_path,
+                                        on_inputs_changed=self.told(changed, f"the audit's table '{table}' (tier 2)"))
         return TableRun(table, k1o, k1c, t1, t1_path, k2o, k2c, t2, t2_path)
 
-    def plot_frame(self, plot_id: str, loaded: LoadedDataAnalysisRecipe, keys: DataAnalysisRecipeKeys, out_dir: Path) -> pl.DataFrame:
+    def plot_frame(self, plot_id: str, loaded: LoadedDataAnalysisRecipe, keys: DataAnalysisRecipeKeys, out_dir: Path, changed: List[str]) -> pl.DataFrame:
         """The table a plot reads in the copy, collected. The tables under it are those `copy_table` placed."""
         target = self.graph.plot_target(plot_id)
         return self.orch.materialize_tier3(self.recipe_id, plot_id, self.t1_dir(target, keys, out_dir), keys=keys, loaded=loaded,
-                                           tier2_path=self.t2_path(target, keys, out_dir)).collect()
+                                           tier2_path=self.t2_path(target, keys, out_dir),
+                                           on_inputs_changed=self.told(changed, f"the table of the plot '{plot_id}'")).collect()
 
     # -- an audit step that cannot be applied
-    def refuse(self, error: BaseException, places: List[str], attempt: Callable[[LoadedDataAnalysisRecipe, DataAnalysisRecipeKeys, Path], object]) -> None:
+    def refuse(self, error: BaseException, places: List[str], attempt: Callable[[LoadedDataAnalysisRecipe, DataAnalysisRecipeKeys, Path, List[str]], object]) -> None:
         """Raise the error of the engine as an `AuditRunError` that names the audit step that causes it. `places` are the lists whose marked steps can
         cause it. One candidate is named at once; several are tried in order, each added to the original on its own, in a scratch folder, and the first
         that fails is named. An error that no marked step can cause (the original's own) is raised as it is."""
@@ -198,7 +209,7 @@ class _Run:
                     add_step(probe, found.place, {k: v for k, v in found.step.items() if k not in ("id", "comment")}, found.step_id, found.step.get("comment"))
                 loaded = loaded_from_resolved(self.original, probe)
                 try:
-                    attempt(loaded, self.orch.compute_data_analysis_recipe_keys(self.recipe_id, loaded=loaded), scratch)
+                    attempt(loaded, self.orch.compute_data_analysis_recipe_keys(self.recipe_id, loaded=loaded), scratch, [])
                 except Exception:
                     return candidates[count - 1]
             return None
@@ -214,11 +225,11 @@ class _Run:
             places = [f"T1:{self.graph.node(n).name}" for n in self.graph.lineage_back(f"T1:{table}") if self.graph.node(n).kind == "T1"]
             places += [f"T1:{table}", f"T2:{table}"]
             try:
-                tables[table] = self.copy_table(table, self.audit_loaded, self.keys_audit, self.audit_dir)
+                tables[table] = self.copy_table(table, self.audit_loaded, self.keys_audit, self.audit_dir, self.changed)
             except AuditRunError:
                 raise
             except Exception as error:
-                self.refuse(error, places, lambda loaded, keys, out, table=table: self.copy_table(table, loaded, keys, out))
+                self.refuse(error, places, lambda loaded, keys, out, changed, table=table: self.copy_table(table, loaded, keys, out, changed))
         plots: Dict[str, PlotRun] = {}
         for plot_id in self.graph.plots():
             key_original, key_audit = self.keys_original.plot_key_of(plot_id), self.keys_audit.plot_key_of(plot_id)
@@ -226,13 +237,14 @@ class _Run:
                 plots[plot_id] = PlotRun(plot_id, key_original, key_audit, True, False)
                 continue
             try:
-                table_audit = self.plot_frame(plot_id, self.audit_loaded, self.keys_audit, self.audit_dir)
+                table_audit = self.plot_frame(plot_id, self.audit_loaded, self.keys_audit, self.audit_dir, self.changed)
             except Exception as error:
-                self.refuse(error, [f"T3:{plot_id}"], lambda loaded, keys, out, plot_id=plot_id: self.plot_frame(plot_id, loaded, keys, out))
-            table_original = self.orch.materialize_tier3(self.recipe_id, plot_id, self.original_dir, keys=self.keys_original).collect()
+                self.refuse(error, [f"T3:{plot_id}"], lambda loaded, keys, out, changed, plot_id=plot_id: self.plot_frame(plot_id, loaded, keys, out, changed))
+            table_original = self.orch.materialize_tier3(self.recipe_id, plot_id, self.original_dir, keys=self.keys_original,
+                                                         on_inputs_changed=self.told(self.changed, f"the original's table of the plot '{plot_id}'")).collect()
             plots[plot_id] = PlotRun(plot_id, key_original, key_audit, False, not table_original.equals(table_audit))
         self.clean(tables)
-        return AuditRun(self.recipe_id, self.audit_dir, tables, plots)
+        return AuditRun(self.recipe_id, self.audit_dir, tables, plots, tuple(self.changed))
 
     def clean(self, tables: Dict[str, TableRun]) -> None:
         """Take out of the audit's folder the stored tables that are the original's again: a leftover that cannot be served today can be served by a
