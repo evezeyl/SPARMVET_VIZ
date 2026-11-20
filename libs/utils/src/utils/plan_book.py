@@ -19,7 +19,7 @@ If deleted: the walk has no input.
 
 # @deps
 # provides: class:Plan, class:PlanFailure, class:PlanBook, class:PlanBookIncomplete
-# consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/src/utils/step_effects.py, libs/utils/tests/lineage_oracle.py
+# consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/src/utils/step_effects.py, libs/utils/src/utils/declared_plans.py, libs/utils/src/utils/key_drop.py, libs/utils/tests/lineage_oracle.py
 # doc: .claude/knowledge/decision_ledger.md (D-0325, D-0342), .claude/design/home_stage2_mechanism_spec.md
 # @end_deps
 """
