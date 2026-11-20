@@ -236,3 +236,36 @@ def test_every_shipped_app_features_file_passes_the_pair_rule():
 def test_the_simple_setup_has_no_comparison_and_no_audit():
     text = open("config/app_features/pipeline-exploration-simple.yaml").read()
     assert "\n  comparison_mode_enabled: false" in text and "\n  t3_sandbox_enabled: false" in text
+
+
+# --- one thing said per flag: a fatal rule and the soft-cascade warning never both name the same flag (D-0018) ---
+
+def test_interactivity_off_comparison_on_audit_off_prints_only_the_fatal_line(capsys):
+    t, path = _tmpl(overrides={"interactivity_enabled": False, "comparison_mode_enabled": True})
+    errors = V.validate(t, path)
+    assert [e.problem for e in errors] == [
+        "comparison_mode_enabled is true but t3_sandbox_enabled is false: comparison requires the audit"]
+    out = capsys.readouterr().out
+    assert "comparison_mode_enabled" not in out and "no effect" not in out, out
+
+
+def test_interactivity_off_audit_on_comparison_off_prints_only_the_fatal_line_for_the_audit(capsys):
+    t, path = _tmpl(overrides={"interactivity_enabled": False, "t3_sandbox_enabled": True, "comparison_mode_enabled": False,
+                               "session_management_enabled": True})
+    errors = V.validate(t, path)
+    assert [e.problem for e in errors] == [
+        "t3_sandbox_enabled is true but comparison_mode_enabled is false: the audit requires comparison, sessions and export"]
+    out = capsys.readouterr().out
+    assert "t3_sandbox_enabled" not in out
+    # a flag no fatal rule names keeps its warning
+    lines = [l for l in out.splitlines() if "no effect" in l]
+    assert lines == ["[AppFeaturesValidator] WARNING: 'session_management_enabled=True' has no effect — "
+                     "'interactivity_enabled=False' (bootloader cascade will suppress it at runtime). Fix the template."]
+
+
+def test_a_consistent_file_with_interactivity_off_still_warns_for_each_flag(capsys):
+    t, path = _tmpl(overrides={"interactivity_enabled": False, **_AUDIT_ON})
+    assert V.validate(t, path) == []
+    out = capsys.readouterr().out
+    for flag in ("t3_sandbox_enabled", "comparison_mode_enabled", "session_management_enabled"):
+        assert f"'{flag}=True' has no effect" in out

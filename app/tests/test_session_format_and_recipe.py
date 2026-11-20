@@ -292,3 +292,69 @@ def test_the_app_start_with_an_old_assembly_for_the_opened_recipe_does_not_crash
         sm.write_assembly_ghost(KEY, "tiny", "a" * 64, "b" * 64, {}, {})
     assert path.read_bytes() == before
     assert [s["session_key"] for s in sm.list_all_sessions()] == [KEY]
+
+
+# --- a session file whose JSON is not a mapping (a list, a number, text): refused as unreadable, plain line, no traceback ---
+
+NOT_MAPPINGS = [("a list", [1, 2]), ("a number", 7), ("text", "hello")]
+
+
+@pytest.mark.parametrize("name, value", NOT_MAPPINGS)
+def test_the_direct_read_of_a_non_mapping_file_says_which_file_in_plain_words(sm, name, value):
+    path = sm.session_dir(KEY) / "assembly.json"
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError) as exc:
+        sm.read_assembly_ghost(KEY)
+    text = str(exc.value)
+    assert text.startswith(f"Session {KEY} (assembly.json) is not a session file: it holds {name}")
+    assert not isinstance(exc.value, (AttributeError, LegacySessionError)) and "Traceback" not in text
+
+
+@pytest.mark.parametrize("name, value", NOT_MAPPINGS)
+def test_the_list_names_such_an_assembly_file_as_unreadable_not_as_a_crash(sm, name, value):
+    (sm.session_dir(KEY) / "assembly.json").write_text(json.dumps(value))
+    sessions, unreadable = sm.scan_sessions()
+    assert sessions == [] and len(unreadable) == 1
+    assert unreadable[0]["kind"] == "session" and "is not a session file" in unreadable[0]["reason"]
+
+
+@pytest.mark.parametrize("name, value", NOT_MAPPINGS)
+def test_a_non_mapping_save_is_named_as_skipped(sm, name, value):
+    sm.write_assembly_ghost(KEY, "tiny", "a" * 64, "b" * 64, {}, {})
+    bad = sm.session_dir(KEY) / "t3_20261102T100000.json"
+    bad.write_text(json.dumps(value))
+    saves, skipped = sm.scan_t3_ghosts(KEY)
+    assert saves == [] and [s["name"] for s in skipped] == [bad.name] and "is not a session file" in skipped[0]["reason"]
+
+
+@pytest.mark.parametrize("name, value", NOT_MAPPINGS)
+def test_the_zip_import_refuses_a_non_mapping_file_and_extracts_nothing(sm, name, value):
+    from app.modules.session_manager import SessionImportRefused
+    for members in ([(f"{KEY}/assembly.json", value)],
+                    [(f"{KEY}/assembly.json", _assembly()), (f"{KEY}/t3_20261102T100000.json", value)]):
+        with pytest.raises(SessionImportRefused) as exc:
+            sm.import_session_zip(_zip(members))
+        assert "nothing was written" in str(exc.value) and "is not a session file" in str(exc.value)
+        assert "assembly.json" in str(exc.value) or "t3_20261102T100000.json" in str(exc.value)
+        assert not sm.root.exists() or not [p for p in sm.root.rglob("*")]
+
+
+@pytest.mark.parametrize("name, value", NOT_MAPPINGS)
+def test_writing_over_a_non_mapping_record_tells_the_user_like_a_truncated_one(sm, name, value):
+    path = sm.session_dir(KEY) / "assembly.json"
+    path.write_text(json.dumps(value))
+    problems = []
+    sm.write_assembly_ghost(KEY, "tiny", "a" * 64, "b" * 64, {}, {}, on_problem=problems.append)
+    assert len(problems) == 1
+    assert "could not be read, so it was written again" in problems[0] and "is not a session file" in problems[0]
+    assert sm.read_assembly_ghost(KEY)["schema_version"] == SESSION_FORMAT_VERSION
+
+
+def test_writing_over_a_truncated_record_still_tells_the_user_and_a_readable_one_does_not(sm):
+    path = sm.session_dir(KEY) / "assembly.json"
+    path.write_text("{ truncated")
+    problems = []
+    sm.write_assembly_ghost(KEY, "tiny", "a" * 64, "b" * 64, {}, {}, on_problem=problems.append)
+    assert len(problems) == 1
+    sm.write_assembly_ghost(KEY, "tiny", "a" * 64, "b" * 64, {}, {}, on_problem=problems.append)
+    assert len(problems) == 1

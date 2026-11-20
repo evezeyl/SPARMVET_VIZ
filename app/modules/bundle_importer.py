@@ -2,8 +2,9 @@
 
 # @deps
 # provides: function:import_bundle, function:read_effective_run, class:ImportResult, class:LegResult, class:BundleImportError
-# consumes: app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/cache_keys.py (engine_fingerprint), app/modules/data_analysis_recipe_validator.py (engine_load_problems — safe ConfigManager probe, ADR-077), app/modules/session_manager.py (SessionManager), app/modules/orchestrator.py (DataOrchestrator.get_source_files — the file read is the file hashed), app/src/bootloader.py (get_imports_dir)
-# consumed_by: app/handlers/export_handlers.py (define_export_server — Import control in the Export panel)
+# consumes: app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/cache_keys.py (engine_fingerprint), app/modules/data_analysis_recipe_validator.py (engine_load_problems — safe ConfigManager probe, ADR-077), app/modules/session_manager.py (SessionManager, LegacySessionError), app/modules/orchestrator.py (DataOrchestrator.get_source_files — the file read is the file hashed), app/src/bootloader.py (get_imports_dir)
+# consumed_by: app/handlers/export_handlers.py (define_export_server — Import control in the Export panel), app/tests/test_bundle_importer.py
+# note: SessionManager.write_assembly_ghost refuses a record of another format number (LegacySessionError, D-0312); the import is then refused and its files removed
 # doc: .claude/knowledge/architecture_decisions.md#ADR-097, .claude/design/reproducible_export_design.md
 # @end_deps
 

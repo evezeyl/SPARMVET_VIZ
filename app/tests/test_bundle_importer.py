@@ -419,3 +419,36 @@ def test_a_broken_frozen_recipe_raises_loudly_not_silently(tmp_path):
         import_bundle(buf.getvalue(), bootloader=_fresh_bootloader(tmp_path))
     assert _tree(tmp_path / "user_data") == set()          # a refused import leaves no data folder and no ghost
     assert list((tmp_path / "recipes").iterdir()) == []    # and no recipe file
+
+
+def test_an_older_record_under_the_same_session_key_refuses_the_import_and_leaves_nothing(tmp_path, monkeypatch):
+    """D-0312: a record of an older format is never written over; the import is refused with the plain line and the files
+    the import wrote are removed, and nothing that existed before is touched."""
+    import json
+    zb, _run, _orig = _build_bundle(tmp_path)
+    bl = _fresh_bootloader(tmp_path)
+    key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
+    monkeypatch.setattr(SessionManager, "compute_session_key", staticmethod(lambda msig, dbh: key))
+    sessions = bl.get_location("user_data") / "_sessions" / key
+    sessions.mkdir(parents=True)
+    old = sessions / "assembly.json"
+    old.write_text(json.dumps({"session_key": key, "data_analysis_recipe_id": "x", "label": "mine"}))   # no format number
+    old_bytes = old.read_bytes()
+    # things that exist BEFORE the import
+    kept_import = bl.get_imports_dir() / "earlier_import" / "data" / "keep.tsv"
+    kept_import.parent.mkdir(parents=True)
+    kept_import.write_text("a\n")
+    kept_recipe = bl.data_analysis_recipes_dir / "earlier.yaml"
+    kept_recipe.write_text("id: earlier\n")
+    recipes_before, imports_before = _tree(bl.data_analysis_recipes_dir), _tree(bl.get_imports_dir())
+
+    with pytest.raises(BundleImportError) as exc:
+        import_bundle(zb, bootloader=bl)
+
+    assert str(exc.value) == ("The bundle was not imported and nothing was written. "
+                              f"Session {key} (assembly.json) was saved by an older version of the app and cannot be opened. "
+                              "Delete it and start a new session.")
+    assert _tree(bl.data_analysis_recipes_dir) == recipes_before and not list(bl.data_analysis_recipes_dir.glob("*_imported_*"))
+    assert _tree(bl.get_imports_dir()) == imports_before
+    assert kept_import.read_text() == "a\n" and kept_recipe.read_text() == "id: earlier\n"
+    assert old.read_bytes() == old_bytes
