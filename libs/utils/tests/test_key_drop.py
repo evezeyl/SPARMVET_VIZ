@@ -144,17 +144,21 @@ def test_the_gate_with_the_declared_plan_gives_the_verdict_of_the_walk_with_the_
     assert compared > 150 and refused >= 8
 
 
-def test_PROVISIONAL_where_the_recipe_cannot_say_what_a_step_does_the_gate_does_not_refuse_and_says_it_could_not_follow():
-    """An unread step (a fill of missing values) between the table and the place: the recipe alone cannot say which column is which after it. The gate does NOT refuse (it
-    would refuse by a guess) and the facts say `uncertain`; the engine's plan says the truth and the same rule refuses. The build of the unrefused drop fails at the join
-    with an error and never silently (checked with the oracle). PROVISIONAL: the owner has not decided this case."""
+def test_PROVISIONAL_where_the_recipe_cannot_say_what_a_step_does_the_drop_is_not_written_and_the_sentence_says_why():
+    """An unread step (a fill of missing values) between the table and the place: the recipe alone cannot say which column is which after it. The gate does not claim the
+    column is a key (it would be a guess: `refused` is False, the facts say `uncertain`) and does NOT write the drop either: no silent allow (LBFB step 0b, the review of
+    2026-11-20 finding F2, replaces the earlier P16 that allowed it). The sentence says that the app could not follow the column and why, in plain words. The engine's plan says the
+    truth and the same rule refuses by the join that needs the key. PROVISIONAL: the owner has not decided this case."""
     recipe, tables = F.chain(a_steps=[F.keep("val", "gt", 0.0), F.fill_null(["val"], 0.0)])
     blind = key_drop.DropGate(recipe).facts("T1:A", "sample_id")
-    assert not blind.refused and blind.uncertain and blind.unfollowed and key_drop.key_drop_problem(recipe, "T1:A", ["sample_id"]) is None
+    assert not blind.refused and blind.uncertain and blind.unfollowed
+    unsure = key_drop.key_drop_problem(recipe, "T1:A", ["sample_id"])
+    assert unsure and unsure.startswith("Cannot tell whether a join later needs the column 'sample_id' at T1:A") and "The drop is not written" in unsure and "read as a join key" not in unsure
     _, real = setup(recipe, tables)
     assert key_drop.DropGate(recipe, real).facts("T1:A", "sample_id").refused
-    assert key_drop.key_drop_problem(recipe, "T1:A", ["sample_id"], real) is not None
-    assert O.replay(O.with_audit_drop(recipe, "T1:A", "sample_id"), tables).failures      # what the build does with a drop the blind gate let through: an error
+    certain = key_drop.key_drop_problem(recipe, "T1:A", ["sample_id"], real)
+    assert certain and "it is read as a join key by" in certain and "Cannot tell" not in certain
+    assert O.replay(O.with_audit_drop(recipe, "T1:A", "sample_id"), tables).failures      # what the build does with the drop: an error, so refusing it is right
 
 
 def test_a_plot_is_never_refused_even_when_nothing_is_known_about_its_table():
