@@ -50,6 +50,7 @@ never saved, never exported and never changes a plot. To change what a plot show
 7. Never saved in sessions, never exported. [built]
 8. Switching between Exploration and audit mode is **not** a view change: the lists are kept, and not applied while
    audit mode is on. [NOT as built: slice B clears the lists on a mode switch, with the notice (a provisional choice of the builder); this point and the code differ, reported for Eve]
+   [as built, slice B clears them on a mode switch: PROVISIONAL, open for the owner]
 
 **Why clear on a view change (state this reason in the code as a short `WHY` comment, in the help text and in
 the ADR):** a preview filter is built against the columns, names and data types of ONE stage. T1 (Raw) and T2

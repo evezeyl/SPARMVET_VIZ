@@ -13,7 +13,7 @@
 |---|---|---|
 | Banner | `.sparmvet-banner` | "top banner" |
 | View title banner | `.view-title-banner` | "view-title banner" — Blueprint/Gallery/TestLab header strip |
-| Theater header strip | `.theater-header-strip` | "tier toggle area" — contains T1/T2/T3 radio buttons |
+| Theater header strip | `.theater-header-strip` | "header strip" — the mode switch **Mode: Exploration | Audit** and the data choice **Table to view: Source | T1 | T2 | T3** (built 2026-11-20, slice B; D-0016, D-0310). Before slice B it was the tier toggle with T1/T2/T3 radio buttons |
 | Nav pills strip | `#nav_sidebar .flex-column > .bg-white` | "navigation" — Home · Blueprint · Test Lab · Gallery pills |
 | Left sidebar | `#nav_sidebar` | "left sidebar" |
 | Right sidebar | `#audit_sidebar` | "right sidebar" / "audit sidebar" |
