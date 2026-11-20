@@ -72,6 +72,12 @@ from app.handlers.data_import_handlers import define_data_import_server
 _DOCS_AVAILABLE = (Path(__file__).parent.parent.parent / "docs" / "_site").exists()
 _GITHUB_REPO_URL = "https://github.com/evezeyl/SPARMVET_VIZ"
 
+# PROVISIONAL (the coordinator's text, D-0312; the owner reads it): told when the record of a session cannot be written because an older session
+# with the same recipe and data is stored (`LegacySessionError`). The old session is listed in the Session panel as refused, with a Delete button.
+LEGACY_RECORD_NOTICE = (
+    "This session cannot be recorded yet: an older session with the same recipe and data is stored. Open the Session panel and delete the "
+    "session marked as saved by an older version, then change the recipe or data box again.")
+
 # ADR-036: Shiny input IDs must match ^[a-zA-Z0-9_]+$ — no spaces, emoji, or
 # punctuation. This sanitiser strips anything outside that set so data analysis recipe
 # group/plot labels can use any characters (including emoji) without breaking
@@ -1431,7 +1437,7 @@ def define_server(input, output, session, *,
             return
         try:
             from app.modules.session_manager import SessionManager as _SM
-            from app.modules.session_manager import extract_primary_keys
+            from app.modules.session_manager import LegacySessionError, extract_primary_keys
             source_files = orchestrator.get_source_files(data_analysis_recipe_id)
             new_dbh = _SM.compute_data_batch_hash(source_files) if source_files else ""
             data_analysis_recipe_path = bootloader.get_location("data_analysis_recipes") / f"{data_analysis_recipe_id}.yaml"
@@ -1484,6 +1490,10 @@ def define_server(input, output, session, *,
                         on_problem=lambda text: _isolated_notify("⚠️ " + text, "warning", 10),
                     )
                     _provenance_told["record"] = None
+                except LegacySessionError:
+                    # PROVISIONAL (the coordinator's text, D-0312; the owner reads it): an older session with the same recipe and data is stored.
+                    # The generic remedy below (check that the folder can be written) would be wrong: what helps is deleting the old session.
+                    _tell_provenance_failure("record", "⚠️ " + LEGACY_RECORD_NOTICE)
                 except Exception as exc:
                     _tell_provenance_failure("record", "⚠️ " + notice(
                         "The record of this session could not be written, so the session cannot be exported or restored "

@@ -98,7 +98,7 @@ class Home:
     """`define_server` with fakes. `readers` holds what HOME hands to the filter handlers and the export; `outputs` the render functions by id."""
 
     def __init__(self, world, monkeypatch, *, view="T3", mode="exploration", flags=("interactivity_enabled",), subtab="subtab_p_join",
-                 recipe="tiny", source=None, home_state=None, inputs=None):
+                 recipe="tiny", source=None, home_state=None, inputs=None, session_manager=None):
         self.world = world
         self.readers, self.outputs, self.effects, self.drawn, self.notes = {}, {}, {}, {}, []
         self.filter_effects = {}
@@ -155,7 +155,7 @@ class Home:
             active_cfg=lambda: self.cfg, active_collection_id=lambda: "J",
             safe_input=lambda i, k, d: self.inputs.get(k, recipe if k == "data_analysis_recipe_id" else d),
             active_home_subtab=self.subtab, home_mode=self.mode, data_view=self.view, source_table=self.source,
-            home_state=self.home_state, session_manager=mock.MagicMock(), notification_log=reactive.Value([]))
+            home_state=self.home_state, session_manager=session_manager or mock.MagicMock(), notification_log=reactive.Value([]))
         self.filters_applied = self.readers["applied_filters"]
         self.filters_pending = self.readers["_pending_filters"]
 
