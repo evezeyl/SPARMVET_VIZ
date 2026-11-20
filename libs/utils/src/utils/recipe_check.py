@@ -559,12 +559,14 @@ class _Check:
         self.steps(steps, f"{path}.steps", name, self.effective_engine("data_engine", body))
         return steps
 
+    # PROVISIONAL wording: the texts of AU01, AU02, AU03 and of the ST08 line for an audit id among the author's steps are the builder's (piece C-1); the owner reads
+    # them in the app and may keep or change them (D-0330). The codes AU01 to AU03 are new and are not yet in spec section 11.
     def audit_step_keys(self, step: dict, where: str) -> None:
         """What an item of `audit_steps` must have (D-0322, D-0329, D-0321): an allowed action, an audit id used once in the recipe, a reason."""
         action = step.get("action")
         if isinstance(action, str) and action not in AUDIT_ACTIONS:
             self.add("AU02", f"{where}.action", f"the audit step is '{action}'; an audit step is a filter, a column drop or a removal by key: {', '.join(AUDIT_ACTIONS)} "
-                     "(a removal by key is the filter on the key column)", f"use one of {', '.join(AUDIT_ACTIONS)}. PROVISIONAL text")
+                     "(a removal by key is the filter on the key column)", f"use one of {', '.join(AUDIT_ACTIONS)}")
         step_id = step.get("id")
         if not isinstance(step_id, str) or not _AUDIT_ID.match(step_id):
             self.add("AU03", f"{where}.id", f"the audit step has no audit id ({step_id!r})", "write id: audit_<8 hex>_<k>")
@@ -575,7 +577,7 @@ class _Check:
         reason = step.get(recipe_tiers.AUDIT_COMMENT)
         if not isinstance(reason, str) or not reason.strip():
             self.add("AU03", f"{where}.{recipe_tiers.AUDIT_COMMENT}", "the audit step has no reason (audit_comment is a text that is not empty)",
-                     f"write {recipe_tiers.AUDIT_COMMENT}: <why the step was added>. PROVISIONAL text")
+                     f"write {recipe_tiers.AUDIT_COMMENT}: <why the step was added>")
 
     def sum_advices(self, wrangling: Dict[str, list], path: str, fields: dict) -> None:
         """ST15 (advice, never blocks): a sum on a column declared Int32 or UInt32 (D43, PROVISIONAL).
@@ -667,10 +669,10 @@ class _Check:
         reason (`audit_comment`, a text that is not empty), and passes the same checks as any step (the action's parameters, the engine of the tier)."""
         if self.profile != "audit":
             self.add("AU01", path, "only an audit recipe has audit steps (an audit recipe is the copy the audit made of a recipe; the app writes it, an author never does)",
-                     f"remove {recipe_tiers.AUDIT_STEPS}; a step of the author goes in steps. PROVISIONAL text")
+                     f"remove {recipe_tiers.AUDIT_STEPS}; a step of the author goes in steps")
             return
         if not isinstance(audit_steps, list):
-            self.add("AU03", path, f"{recipe_tiers.AUDIT_STEPS} is a list of steps", f"write {recipe_tiers.AUDIT_STEPS}: [...]. PROVISIONAL text")
+            self.add("AU03", path, f"{recipe_tiers.AUDIT_STEPS} is a list of steps", f"write {recipe_tiers.AUDIT_STEPS}: [...]")
             return
         self.steps(audit_steps, path, tier, engine, audit=True)
 
@@ -690,13 +692,13 @@ class _Check:
                 if "id" in step:
                     if self.profile == "audit" and isinstance(step["id"], str) and _AUDIT_ID.match(step["id"]):
                         self.add("ST08", f"{where}.id", f"the audit id {step['id']} is on a step of the author's list: an audit step belongs in {recipe_tiers.AUDIT_STEPS}",
-                                 f"move the step to {recipe_tiers.AUDIT_STEPS}, or remove id. PROVISIONAL text")
+                                 f"move the step to {recipe_tiers.AUDIT_STEPS}, or remove id")
                     else:
                         self.add("ST08", f"{where}.id", "authors write no step id (the app writes it)", "remove id")
                 if recipe_tiers.AUDIT_COMMENT in step:
                     self.add("AU01", f"{where}.{recipe_tiers.AUDIT_COMMENT}",
                              f"{recipe_tiers.AUDIT_COMMENT} is the reason of an audit step: it is written only on a step of {recipe_tiers.AUDIT_STEPS} in an audit recipe",
-                             f"remove {recipe_tiers.AUDIT_COMMENT}; the author's note is comment. PROVISIONAL text")
+                             f"remove {recipe_tiers.AUDIT_COMMENT}; the author's note is comment")
             if "comment" in step and not isinstance(step["comment"], str):
                 self.add("CM01", f"{where}.comment", "a comment is text", "write text")
             if tier in ("tier2", "tier3") and isinstance(step.get("action"), str) and step.get("action") in tier1_only:
