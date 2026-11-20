@@ -10,11 +10,10 @@ EXACTLY the one named in `ALLOWED`, with the reason that this file may read the 
 a listed file that no longer reads the key fails too (the list does not keep a place that is gone).
 
 What is NOT seen: a read through another name (`getattr`, `**` unpacking, a key built at run time), and the attribute `.steps` of an object that is not a mapping
-(the recipe graph's `Node.steps`, the id transformation's `steps`): those are not a tier of a recipe. The second test says which files that RUN steps must call the
-helper, so a reader that dropped it fails there.
+(the recipe graph's `Node.steps`, the id transformation's `steps`): those are not a tier of a recipe. The second test names, per file that RUNS or follows steps, how many times it calls the helper, so a reader that dropped it, or went to the author's steps, fails there.
 
 Mutation index (each seen failing, see the report): T1 a direct read `["steps"]` added to `app/modules/orchestrator.py`; T2 `recipe_graph.py` reads the tier through
-`author_steps` instead of `step_list`.
+`author_steps` instead of `step_list`; T3 `engine_record.py:78` switched to `author_steps`.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_tier_steps_one_reader.py -q
 """
@@ -44,15 +43,23 @@ ALLOWED = {
     "libs/id_reconciliation/src/id_reconciliation/id_transformation.py": (1, "the `steps` of an id transformation (a saved list of recoding steps), not a tier of a recipe"),
 }
 
-# files that RUN, follow or count the steps of a tier: each must call at least one of the helper names, so that it reads the audit steps too
+# files that RUN, follow or count the steps of a tier -> {helper name: the number of CALLS of it in the file}. The count is exact: a site that is dropped, or switched to
+# `author_steps` (which would skip the audit steps), lowers the count of the right helper and fails; a new legitimate call raises it and the number is changed on purpose.
+# The behaviour of the readers that are not the engine is proved in `test_audit_readers_see_audit_steps.py`.
 MUST_USE_THE_HELPER = {
-    "app/modules/orchestrator.py": ("tier2_steps", "tier3_steps", "tier_steps"),
-    "app/modules/cache_keys.py": ("tier2_parts", "tier3_parts", "audit_steps_of"),
-    "app/modules/engine_record.py": ("step_list",),
-    "libs/utils/src/utils/recipe_graph.py": ("step_list",),
-    "libs/utils/src/utils/recipe_tiers.py": ("step_list",),
-    "libs/transformer/src/transformer/data_wrangler.py": ("AUDIT_STEPS",),
-    "app/modules/session_manager.py": ("step_list",),
+    "app/modules/orchestrator.py": {"tier2_steps": 3, "tier3_steps": 2, "tier_steps": 2},
+    "app/modules/cache_keys.py": {"tier2_parts": 1, "tier3_parts": 1, "audit_steps_of": 1},
+    "app/modules/engine_record.py": {"step_list": 2},
+    "app/modules/view_badge.py": {"tier2_steps": 1, "tier3_steps": 1},
+    "app/modules/audit_run.py": {"tier2_steps": 2},
+    "app/modules/session_manager.py": {"step_list": 2},
+    "app/handlers/audit_stack.py": {"tier2_steps": 1},
+    "app/handlers/export_handlers.py": {"tier2_steps": 2, "tier3_steps": 2},
+    "libs/utils/src/utils/recipe_graph.py": {"step_list": 4},
+    "libs/utils/src/utils/recipe_tiers.py": {"step_list": 5},
+    "libs/utils/src/utils/recipe_check.py": {"audit_steps_of": 2},
+    "libs/utils/src/utils/join_keys.py": {"step_list": 2},
+    "libs/utils/src/utils/audit_copy.py": {"without_audit_steps": 1},
 }
 
 
@@ -105,14 +112,23 @@ def test_every_allowed_reader_names_a_reason_and_is_a_file_that_exists():
         assert count >= 1 and len(reason) > 30, name
 
 
+def _calls(path: Path) -> dict:
+    found: dict = {}
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if isinstance(node, ast.Call):
+            name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr if isinstance(node.func, ast.Attribute) else None
+            if name:
+                found[name] = found.get(name, 0) + 1
+    return found
+
+
 @pytest.mark.parametrize("name", sorted(MUST_USE_THE_HELPER))
-def test_the_files_that_run_follow_or_count_steps_call_the_helper(name):
-    """A reader that RUNS or follows the steps of a tier must reach the audit steps: it names the helper (`step_list`, `tier2_steps`, `tier3_steps`,
-    `tier_steps`, or the two lists apart where the audit parts are kept apart)."""
-    tree = ast.parse((ROOT / name).read_text(encoding="utf-8"))
-    names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)} | {n.attr for n in ast.walk(tree) if isinstance(n, ast.Attribute)}
-    used = [helper for helper in MUST_USE_THE_HELPER[name] if helper in names]
-    assert used, f"{name} no longer uses any of {MUST_USE_THE_HELPER[name]}: it would read the author's steps only and skip the audit steps"
+def test_the_files_that_run_follow_or_count_steps_call_the_helper_as_often_as_named(name):
+    """A reader that RUNS or follows the steps of a tier must reach the audit steps: it calls the helper (`step_list`, `tier2_steps`, `tier3_steps`, `tier_steps`, or the two
+    lists apart where the audit parts are kept apart) at EVERY site. The count per file is exact, so a dropped site, or one switched to the author's steps, fails."""
+    calls = _calls(ROOT / name)
+    wrong = {helper: (calls.get(helper, 0), wanted) for helper, wanted in MUST_USE_THE_HELPER[name].items() if calls.get(helper, 0) != wanted}
+    assert not wrong, f"{name}: calls of the helper (found, named) {wrong}: a reader of steps dropped the helper, or went to `author_steps`, and would skip the audit steps"
 
 
 def test_no_file_outside_the_helper_names_the_key_as_a_bare_text_in_a_comparison_or_a_loop():
