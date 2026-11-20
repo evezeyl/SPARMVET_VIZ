@@ -72,6 +72,11 @@ class World(Staged):
                                                   "tier3": {"steps": [DROP_GROUP]}}, **changes}
         super().write_recipe(**changes)
 
+    def build_all(self):
+        """What the opening of the recipe stores (D-0326, D-0343): the tables of the staged recipe and the table of the plot that has a tier 3 of its own."""
+        super().build_all()
+        self.orch.materialize_tier3("staged", "pa", self.anchors, keys=self.keys())
+
     def original_raw(self) -> dict:
         return load_data_analysis_recipe(self.recipes / "staged.yaml").raw
 
