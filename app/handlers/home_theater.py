@@ -53,7 +53,7 @@ from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.orchestrator import plot_read_error_text
 from app.modules.view_badge import has_plot_steps, has_tier2_steps, plot_badge, view_badge
 from app.modules.opening_build import opening_signature, plot_render_recipe
-from app.handlers.opening_handlers import define_server as define_opening_server, opening_waits
+from app.handlers.opening_handlers import define_server as define_opening_server, opening_cover_text, opening_waits
 from utils.pipeline_error import capture_entry
 from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
 from viz_factory.viz_factory import show_draw_errors
@@ -1082,9 +1082,7 @@ def define_server(input, output, session, *,
         if recipe_gate_version is not None and _opening_signature is not None and opening_waits(opening_state.get(), bootloader.available_data_analysis_recipes, _open_recipe, _opening_signature):
             # PROVISIONAL (D-0334 asks for a progress line, not for this waiting sentence): the text of the alert that stands in the place of the theater while the
             # opening runs is the builder's
-            return ui.div(ui.tags.p(f"Opening the data analysis recipe '{_open_recipe}': building its tables and drawing its plots once. "
-                                    "This takes a while the first time; the progress is shown at the bottom of the page.", class_="mb-0"),
-                          class_="alert alert-info m-3")
+            return ui.div(ui.tags.p(opening_cover_text(_open_recipe), class_="mb-0"), class_="alert alert-info m-3")
 
         # 2. Results Theater (Home) Logic — ADR-043 Unified Home Theater
         try:

@@ -126,3 +126,55 @@ def test_a_recipe_with_a_plot_that_cannot_be_drawn_is_not_used_and_the_page_says
         # the user is told that HOME switched, never switched silently (ADR-104): the recipe that was open on the first screen is named
         expect(notes).to_contain_text(f"'{g.STAGE}' was open and no longer passes its checks: HOME shows '{g.OTHER}' instead.", timeout=30_000)
         assert g.server_errors(log) == []
+
+
+# On the first progress message of an opening, what the theater and the Pipeline Audit panel hold at that moment (the opening blocks the server, so what is
+# on the page then is what the server sent BEFORE the block).
+SNAPSHOT_AT_PROGRESS = """
+window.__snap = null;
+new MutationObserver(() => {
+  if (window.__snap) return;
+  const m = Array.from(document.querySelectorAll('.progress-message')).find(e => (e.textContent || '').trim().startsWith("Opening '%s'"));
+  if (m) {
+    const t = document.querySelector('#dynamic_tabs');
+    const a = document.querySelector('#audit_nodes_header_ui');
+    const c = document.querySelector('#home_opening_cover');
+    const shown = (e) => !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
+    window.__snap = {cover: c ? c.innerText : '', cover_shown: shown(c), theater_shown: shown(t),
+                     audit: a && shown(a) ? a.innerText : '',
+                     right_text: Array.from(document.querySelectorAll('#right_sidebar_content_ui *')).filter(shown).map(e => e.children.length ? '' : (e.innerText || '')).join(' ').trim(),
+                     apply_shown: shown(document.querySelector('#btn_apply')),
+                     left_old: ['#data_analysis_recipe_info_ui', '#sidebar_filters', '#data_import_ui', '#system_tools_ui', '#session_management_ui'].filter(i => shown(document.querySelector(i))),
+                     selector_shown: shown(document.querySelector('#data_analysis_recipe_id')),
+                     tabs: Array.from(document.querySelectorAll('#dynamic_tabs .nav-link')).filter(shown).length};
+  }
+}).observe(document.documentElement, {subtree: true, childList: true, characterData: true});
+"""
+
+
+def test_while_a_recipe_opens_the_previous_recipe_is_not_on_the_screen(page: Page, tmp_path):
+    """HOME-WALK A (D-0334, the owner's yes of 2026-11-20): from the first progress message the theater says which recipe is being opened and holds no
+    group tab of the previous recipe, and the right panel does not name the previous recipe. Flags: qa, ghost save off. One app, the staged recipe open first,
+    then the second staged recipe is chosen in the selector. Not covered: the wording (PROVISIONAL), a narrow window."""
+    with g.running_app(tmp_path) as (url, log):
+        page.goto(url)
+        page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=240_000)
+        wait_shiny(page, 120_000)
+        expect(page.locator("#audit_nodes_header_ui")).to_contain_text(g.STAGE, timeout=60_000)   # the first recipe is shown, the right panel names it
+        expect(page.locator("#btn_apply")).to_be_visible()   # before: the right panel is there with its Apply button
+        page.evaluate(SNAPSHOT_AT_PROGRESS % g.OTHER)
+        page.select_option("#data_analysis_recipe_id", g.OTHER)
+        page.wait_for_function("() => window.__snap !== null", timeout=240_000)
+        snap = page.evaluate("() => window.__snap")
+        assert snap["cover_shown"] and g.OTHER in snap["cover"] and "Opening" in snap["cover"], snap
+        assert not snap["theater_shown"] and snap["tabs"] == 0, f"nothing of the previous recipe is visible while the opening runs: {snap}"
+        assert g.STAGE not in snap["audit"], f"the right panel does not name the previous recipe: {snap}"
+        # D-0372: the previous recipe is not kept on the screen: nothing of the right panel and of the left panels' bodies is visible, no Apply to click
+        assert snap["right_text"] == "" and not snap["apply_shown"], f"the right panel shows nothing of the previous recipe during the opening: {snap}"
+        assert snap["left_old"] == [], f"the left panel bodies of the previous recipe are hidden: {snap}"
+        assert snap["selector_shown"], snap   # the recipe selector stays (PROVISIONAL)
+        page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=240_000)
+        wait_shiny(page, 120_000)
+        expect(page.locator("#home_opening_cover")).to_have_count(0)
+        expect(page.locator("#btn_apply")).to_be_visible()   # after: back
+        expect(page.locator("#audit_nodes_header_ui")).to_contain_text(g.OTHER)   # when the opening ends the recipe shows

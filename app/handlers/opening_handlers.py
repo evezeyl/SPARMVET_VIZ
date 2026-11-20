@@ -1,6 +1,6 @@
 """
 @deps
-provides: function:define_server (HOME's opening of a recipe: build, store, draw once, progress; writes the shared shown_recipe), function:opening_waits, function:ProvenDrawings
+provides: function:define_server (HOME's opening of a recipe: build, store, draw once, progress; writes the shared shown_recipe), function:opening_waits, function:opening_cover_text, function:cover_ui, constant:COVER_ID (the cover of the screen while a recipe opens, HOME-WALK A), function:ProvenDrawings
 consumes: app/modules/opening_build.py (build_plan, run_opening, draw_plot_proof, opening_signature, progress_text), app/src/bootloader.py (reject_after_opening, available_data_analysis_recipes, data_analysis_recipe_gate_version), app/modules/cache_keys.py (load_data_analysis_recipe), app/modules/data_change_notice.py (inputs_changed_during_build_notice); notify (the Alerts notifier) and shown_recipe (a reactive.Value of server.py, read by recipe_gate_handlers) are handed in
 consumed_by: app/handlers/home_theater.py
 doc: .claude/knowledge/decision_ledger.md (D-0326, D-0343, D-0335, D-0334, D-0336, D-0327), .claude/rules/ui_implementation_contract.md#14, .claude/rules/rules_data_analysis_recipe_structure.md#11
@@ -56,6 +56,19 @@ class ProvenDrawings:
 
 PROVEN = ProvenDrawings()
 
+COVER_ID = "home_opening_cover"
+
+
+def opening_cover_text(recipe_id: str) -> str:
+    """The sentence of the screen while a recipe is opened (HOME-WALK A, D-0334). PROVISIONAL: the words are the builder's; D-0334 asks for the progress
+    line, the owner's yes of 2026-11-20 for "the recipe NAME is being opened". The progress line (tables n of N, plots n of N) is the toast it points to."""
+    return (f"Opening the data analysis recipe '{recipe_id}': building its tables and drawing its plots once. "
+            "This takes a while the first time; the progress is shown at the bottom of the page.")
+
+
+def cover_ui(recipe_id: str):
+    return ui.div(ui.tags.p(opening_cover_text(recipe_id), class_="mb-0"), id=COVER_ID, class_="alert alert-info m-3")
+
 
 def opening_waits(state: dict, available, recipe_id, signature) -> bool:
     """True while the theater must wait for the opening of the open recipe: the recipe is one HOME can open and its opening has not finished for this
@@ -93,6 +106,12 @@ def define_server(input, output, session, *, bootloader, orchestrator, viz_facto
                 shown_recipe.set(recipe_id)
             if opening_state.get().get("signature") == signature:
                 return
+        # HOME-WALK A (D-0334): the opening blocks the server, and Shiny sends the outputs only at the end of the flush, so the theater would keep the
+        # previous recipe on screen for the whole build. These two messages are sent at once (`immediate`): a cover that the stylesheet puts in the place of the
+        # theater (and hides the Pipeline Audit panel's recipe line) and that is removed after the flush has sent the new theater.
+        ui.remove_ui(f"#{COVER_ID}", immediate=True)
+        ui.insert_ui(cover_ui(recipe_id), selector="#dynamic_tabs", where="beforeBegin", immediate=True)
+        session.on_flushed(lambda: ui.remove_ui(f"#{COVER_ID}", immediate=True), once=True)
         status, result = "ready", None
         try:
             plan = build_plan(loaded.raw, keys)
