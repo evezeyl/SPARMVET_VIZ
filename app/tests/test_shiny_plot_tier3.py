@@ -15,17 +15,17 @@ A staged recipe in a work folder of `tmpAI/` (no tracked file is touched), valid
 
 In the qa app features, with no audit step and no filter of the user, what a person can see:
 
-- the data preview: in "My view" the plot `kept` holds 15 rows and `full` 30; in "Result" both hold the 30 rows of the stored Tier 2
-  (the views are not changed by this piece: it is the owner's question whether "Result" of `kept` should show its table);
+- the data preview: on T3 the plot `kept` holds 15 rows and `full` 30; on T2 both hold the 30 rows of the stored Tier 2 (slice B: T3 is the table
+  the plot shows, T2 the table after tier 2);
 - the plot picture (one image per plot): `kept` and `full` are drawn from the same mapping, so equal pictures mean equal rows; they are
-  different, in "Result" and "My view" of the plot and in the left pane of Compare, because every plot is drawn from its own table (a picture
+  different, in Exploration, in Audit mode and in the original pane of Compare, because every plot is drawn from its own table (a picture
   of `kept` equal to that of `full` is the old reader: the plot drawn from the Tier 2 of its target);
 - no error text for `kept` and `full`; for `broken` the data preview says an error and names the plot (a value-dependent failure shows at the
   read, and the plot's name is added by the consumer, `plot_read_error_text`).
 
 The staged recipe is checked with `validate_data_analysis_recipe` before the app starts (the load gate counts a plot's tier-3 steps once as
 written and as read, `test_gate_accepts_tier3.py`); the fixture asserts it passes. The render itself is also covered headless by
-`test_home_reads_the_plots_table.py::test_the_plot_and_the_reference_pane_of_compare_are_drawn_from_the_plots_table_in_every_view`.
+`test_home_reads_the_plots_table.py::test_the_plot_and_the_original_pane_of_compare_are_drawn_from_the_plots_table_in_every_data_choice`.
 
 Mutations (each seen failing, restored; the headless test for M1a and M1b): MUTATION M1a the plot render reads tier "T2" (`home_theater.py`, the line `_resolve_active_lf(spec, tier="T3")` of
 `_group_plot_handler`); MUTATION M1b the same line of the Compare reference handler; MUTATION M1c `plot_read_error_text` returns the error as it is.
@@ -46,6 +46,7 @@ from PIL import Image
 from playwright.sync_api import Page, expect
 
 from app.modules.data_analysis_recipe_validator import validate_data_analysis_recipe
+from app.tests.browser_view import set_compare, set_mode, set_view
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _wait_shiny
 from app.tests.test_shiny_step_order import N, _free_port, _red_pixels, _same_picture
@@ -120,13 +121,14 @@ def _plot_tab(page: Page, plot_id: str) -> None:
 
 
 def _data_view(page: Page, tier: str) -> None:
-    page.locator(f"#tier_toggle input[value={tier}]").check(force=True)
-    _wait_shiny(page)
+    set_view(page, tier)
 
 
-def _plot_view(page: Page, view: str) -> None:
-    page.locator(f"#plot_view input[value={view}]").check(force=True)
-    _wait_shiny(page)
+def _plot_mode(page: Page, mode: str) -> None:
+    """"exploration" (the Result plot), "audit" (the audited plot) or "compare" (Audit mode with Compare on)."""
+    set_mode(page, "exploration" if mode == "exploration" else "audit")
+    if mode != "exploration":
+        set_compare(page, mode == "compare")
 
 
 def _picture(page: Page, output_id: str) -> Image.Image:
@@ -157,32 +159,32 @@ def test_the_data_preview_of_each_plot_holds_the_rows_of_the_table_it_reads(page
     _start(page, staged_app)
     _data_view(page, "T3")
     _plot_tab(page, KEPT)
-    _rows(page, N - THRESHOLD + 1)                       # My view of the plot with tier-3 steps: the 15 kept rows
+    _rows(page, N - THRESHOLD + 1)                       # T3 of the plot with tier-3 steps: the 15 kept rows
     _plot_tab(page, FULL)
     _rows(page, N)                                       # the plot without: the 30 rows
     _data_view(page, "T2")
-    _rows(page, N)                                       # Result: the stored Tier 2, 30 rows (the view is unchanged by this piece)
+    _rows(page, N)                                       # T2: the stored Tier 2, 30 rows
     _plot_tab(page, KEPT)
     _rows(page, N)
     assert not [a for a in _alerts(page) if "error" in a.lower()], "no error for the plots that can be read"
 
 
-def test_every_plot_is_drawn_from_its_own_table_in_result_in_my_view_and_in_compare(page: Page, staged_app):
+def test_every_plot_is_drawn_from_its_own_table_in_exploration_in_audit_mode_and_in_compare(page: Page, staged_app):
     _start(page, staged_app)
     pictures = {}
-    for view in ("T2", "T3"):
-        _plot_view(page, view)
+    for view in ("exploration", "audit"):
+        _plot_mode(page, view)
         for plot_id in (KEPT, FULL):
             _plot_tab(page, plot_id)
             pictures[(view, plot_id)] = _picture(page, f"plot_group_{plot_id}")
             assert _red_pixels(pictures[(view, plot_id)]) == 0, f"the plot {plot_id} in view {view} is an error picture"
         assert not _same_picture(pictures[(view, KEPT)], pictures[(view, FULL)]), (
             f"view {view}: the plot with tier-3 steps is drawn like the plot without: it was drawn from the Tier 2 of its target")
-    # with no filter and no audit step of the user, My view is the plot's table: the same picture as Result
-    assert _same_picture(pictures[("T2", KEPT)], pictures[("T3", KEPT)])
-    assert _same_picture(pictures[("T2", FULL)], pictures[("T3", FULL)])
-    # Compare: the left pane is the Result plot, the plot's table (ADR-086), and differs between the two plots as well
-    _plot_view(page, "CMP")
+    # with no audit step of the user, the audited plot is the plot's table: the same picture as the Result
+    assert _same_picture(pictures[("exploration", KEPT)], pictures[("audit", KEPT)])
+    assert _same_picture(pictures[("exploration", FULL)], pictures[("audit", FULL)])
+    # Compare: the left pane is the original (Result) plot, the plot's table (D-0147), and differs between the two plots as well
+    _plot_mode(page, "compare")
     left = {}
     for plot_id in (KEPT, FULL):
         _plot_tab(page, plot_id)

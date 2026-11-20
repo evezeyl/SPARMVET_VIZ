@@ -24,6 +24,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
+from app.tests.browser_view import set_mode, set_view
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
 
 _LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_APP_FEATURES", "developer")
@@ -334,9 +335,9 @@ class TestAuditGate:
         _open_filters_panel(page)
         _navigate_to_mlst_plot(page)
 
-        # Switch to "My view" (T3) — Send to Audit only renders there.
-        page.locator("#tier_toggle input[value=T3]").check(force=True)
-        _wait_shiny(page)
+        # Switch to Audit mode on T3 — Send to Audit only renders there (slice B).
+        set_mode(page, "audit")
+        set_view(page, "T3")
 
         _wait_for_fb_col_option(page, "year")
         page.locator("#fb_col").select_option("year")
@@ -368,29 +369,31 @@ class TestAuditGate:
 
 
 # ---------------------------------------------------------------------------
-# T4-C — HOM-08 (Eve, 2026-11-08): the "Plot to show" / "Data to show" strip
-# used a hardcoded selected="T2" default every time dynamic_tabs re-rendered
+# T4-C — HOM-08 (Eve, 2026-11-08): the header strip (slice B: the mode and the data choice)
+# used a hardcoded default every time dynamic_tabs re-rendered
 # for any reason — including a workspace switch — silently discarding
-# whatever the user had actually picked. Fixed with an isolated read of the
-# current input value (same pattern as the existing active-tab restoration).
+# whatever the user had actually picked. Fixed by reading the current choice (the reactive
+# value the radio feeds), isolated.
 # ---------------------------------------------------------------------------
 
 class TestTierPersistence:
-    def test_tier_survives_a_workspace_switch(self, page: Page, shiny_app: ShinyAppProc):
+    def test_the_data_choice_and_the_mode_survive_a_workspace_switch(self, page: Page, shiny_app: ShinyAppProc):
         _load_data_analysis_recipe(page, shiny_app.url)
-        page.wait_for_selector("#tier_toggle", timeout=15_000)
+        page.wait_for_selector("#data_view", timeout=15_000)
 
-        page.locator("#tier_toggle input[value=T3]").check(force=True)
-        _wait_shiny(page)
-        expect(page.locator("#tier_toggle input[value=T3]")).to_be_checked()
+        set_view(page, "T1")
+        set_mode(page, "audit")
 
         page.get_by_text("Gallery", exact=True).click()
         _wait_shiny(page)
         page.get_by_text("Home", exact=True).click()
         _wait_shiny(page)
 
-        page.wait_for_selector("#tier_toggle", timeout=15_000)
-        expect(page.locator("#tier_toggle input[value=T3]")).to_be_checked(timeout=8_000)
+        page.wait_for_selector("#data_view", timeout=15_000)
+        expect(page.locator("#data_view input[value=T1]")).to_be_checked(timeout=8_000)
+        expect(page.locator("#home_mode input[value=audit]")).to_be_checked(timeout=8_000)
+        set_mode(page, "exploration")
+        set_view(page, "T3")
 
 
 class TestNoJoinsRecipe:
@@ -873,36 +876,36 @@ class TestViewBadges:
         page.locator(f"#{group} input[value={value}]").check(force=True)
         _wait_shiny(page)
 
-    def test_both_badges_say_result_by_default(self, page: Page, shiny_app: ShinyAppProc):
+    def test_the_plot_is_the_result_and_the_table_starts_on_t3(self, page: Page, shiny_app: ShinyAppProc):
         _load_data_analysis_recipe(page, shiny_app.url)
         self._open_plot(page)
-        expect(page.locator(self.PLOT_BADGE).first).to_have_text("Viewing: Result", timeout=15_000)
-        expect(page.locator(self.DATA_BADGE)).to_have_text("Viewing: Result", timeout=15_000)
+        expect(page.locator(self.PLOT_BADGE).first).to_have_text("Plot: Result", timeout=15_000)
+        expect(page.locator(self.DATA_BADGE)).to_have_text("Viewing: T3", timeout=15_000)
 
-    def test_plot_badge_follows_plot_to_show_and_says_when_my_view_is_the_result(
+    def test_plot_badge_follows_the_mode_and_says_when_the_audited_plot_is_the_result(
             self, page: Page, shiny_app: ShinyAppProc):
         _load_data_analysis_recipe(page, shiny_app.url)
         self._open_plot(page)
-        self._choose(page, "plot_view", "T3")
+        self._choose(page, "home_mode", "audit")
         try:
-            expect(page.locator(self.PLOT_BADGE).first).to_have_text("Viewing: My view", timeout=15_000)
-            # no filter or column drop yet: My view is identical to the Result (T3=T2 or T3=T2=T1)
-            expect(page.locator("[id^='plot_badge_'] .spv-view-note").first).to_contain_text("T3=T2", timeout=15_000)
+            expect(page.locator(self.PLOT_BADGE).first).to_have_text("Plot: Audited", timeout=15_000)
+            # no audited step yet: the audited plot is identical to the Result
+            expect(page.locator("[id^='plot_badge_'] .spv-view-note").first).to_contain_text("identical to the Result", timeout=15_000)
         finally:
-            self._choose(page, "plot_view", "T2")
-        expect(page.locator(self.PLOT_BADGE).first).to_have_text("Viewing: Result", timeout=15_000)
+            self._choose(page, "home_mode", "exploration")
+        expect(page.locator(self.PLOT_BADGE).first).to_have_text("Plot: Result", timeout=15_000)
 
-    def test_data_badge_follows_data_to_show_and_is_independent_of_the_plot(
+    def test_data_badge_follows_the_data_choice_and_is_independent_of_the_plot(
             self, page: Page, shiny_app: ShinyAppProc):
         _load_data_analysis_recipe(page, shiny_app.url)
         self._open_plot(page)
-        self._choose(page, "tier_toggle", "T1")
+        self._choose(page, "data_view", "T1")
         try:
-            expect(page.locator(self.DATA_BADGE)).to_have_text("Viewing: Raw", timeout=15_000)
-            expect(page.locator(self.PLOT_BADGE).first).to_have_text("Viewing: Result")   # plots never show T1
+            expect(page.locator(self.DATA_BADGE)).to_have_text("Viewing: T1", timeout=15_000)
+            expect(page.locator(self.PLOT_BADGE).first).to_have_text("Plot: Result")   # a plot is never drawn from T1
         finally:
-            self._choose(page, "tier_toggle", "T2")
-        expect(page.locator(self.DATA_BADGE)).to_have_text("Viewing: Result", timeout=15_000)
+            self._choose(page, "data_view", "T3")
+        expect(page.locator(self.DATA_BADGE)).to_have_text("Viewing: T3", timeout=15_000)
 
     def test_the_badge_is_html_and_not_part_of_the_plot_image(self, page: Page, shiny_app: ShinyAppProc):
         _load_data_analysis_recipe(page, shiny_app.url)
@@ -914,11 +917,11 @@ class TestViewBadges:
 
 
 # ---------------------------------------------------------------------------
-# T6 - Exploration filters preview on Raw and Result (ADR-098, issue #56, HOM-09)
+# T6 - Exploration filters preview on every table of the data choice (ADR-098, issue #56, HOM-09; slice B)
 # ---------------------------------------------------------------------------
 
 class TestPreviewFiltersOnReferenceViews:
-    """GUARDED: a filter must change what the user sees on Result and Raw, not only on My view.
+    """GUARDED: a filter must change what the user sees on the table of the view shown, whichever it is.
     The old gate (ADR-085) accepted the filter and silently showed unfiltered data."""
 
     GRID_ROWS = "#home_data_preview tbody tr"
@@ -984,9 +987,10 @@ class TestPreviewFiltersOnReferenceViews:
         expect(note).to_have_count(0, timeout=15_000)
         self._wait_grid(page, before, same=True)
 
-    def test_plot_changes_only_on_my_view(self, page: Page, shiny_app: ShinyAppProc):
-        """GUARDED (Eve, 2026-11-11): Apply changes the table everywhere, the PLOT only on My view.
-        Raw/Result plots are the recipe's plots."""
+    def test_a_preview_filter_never_changes_the_plot(self, page: Page, shiny_app: ShinyAppProc):
+        """GUARDED (Eve, 2026-11-11; slice B, D-0019, D-0311): Apply changes the table of the view shown, never a plot.
+        Exploration has one plot, the Result. Switching to Audit mode removes the filters (with a notice); the audited plot
+        of a plot with no audited step is the Result."""
         _load_data_analysis_recipe(page, shiny_app.url)
         _open_filters_panel(page)
         page.locator(".nav-link:has-text('QC Reads Horizontal Barplot')").first.click()
@@ -1006,12 +1010,17 @@ class TestPreviewFiltersOnReferenceViews:
             page.wait_for_timeout(1_500)
             assert page.locator(".shiny-plot-output img").first.get_attribute("src") == src_before
             expect(page.locator("[id^='plot_badge_'] .spv-view-note", has_text="table only")).to_be_visible()
-            page.locator("#plot_view input[value=T3]").check(force=True)
-            _wait_shiny(page)
+            for view in ("T1", "T2", "T3"):          # whatever table is viewed, the plot is the Result
+                set_view(page, view)
+                page.wait_for_timeout(500)
+                assert page.locator(".shiny-plot-output img").first.get_attribute("src") == src_before, view
+            set_mode(page, "audit")                  # the filters do not exist in Audit mode: they are removed, and the user is told
+            expect(page.locator("#shiny-notification-panel")).to_contain_text("The filters were removed", timeout=15_000)
             page.wait_for_timeout(1_500)
-            assert page.locator(".shiny-plot-output img").first.get_attribute("src") != src_before
+            assert page.locator(".shiny-plot-output img").first.get_attribute("src") == src_before
         finally:
-            page.locator("#plot_view input[value=T2]").check(force=True)
-            _wait_shiny(page)
-            page.locator("#filter_remove_0").click()
-            _wait_shiny(page)
+            set_mode(page, "exploration")
+            set_view(page, "T3")
+            if page.locator("#filter_remove_0").count():
+                page.locator("#filter_remove_0").click()
+                _wait_shiny(page)

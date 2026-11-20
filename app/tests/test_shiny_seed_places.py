@@ -5,9 +5,9 @@ CALL them and put nothing between (a flag, a replaced number, a dropped argument
 (Eve, 2026-11-15): a layer that writes a number keeps it, a layer that writes none uses 0, in every place.
 
   1. a seed written in the recipe (123) holds in HOME (two sessions show the same picture), in the comparison
-     reference pane, in the export and its record
+     original pane of Compare, in the export and its record
   2. a recipe that writes no seed: 0 in every place, so two sessions show the SAME arrangement, the reference
-     pane shows the same as My view, and the export records seed 0 as `default` and writes it into the
+     pane shows the same as the audited plot, and the export records seed 0 as `default` and writes it into the
      reproducibility recipe
   3. with the audit trail off (`pipeline-exploration-simple`: t3_sandbox_enabled false) the Reshuffle pin reaches
      HOME and the export, and the export lists it as a step (t3_steps.yaml, report)
@@ -32,6 +32,7 @@ import yaml
 from PIL import Image, ImageChops
 from playwright.sync_api import Page, expect
 
+from app.tests.browser_view import set_compare, set_mode
 from app.tests.conftest import browser  # noqa: F401
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _navigate_to_phenotype_plot, _wait_shiny
@@ -161,7 +162,7 @@ def same_picture(a: bytes, b: bytes) -> bool:
                                  Image.open(io.BytesIO(b)).convert("RGB")).getbbox() is None
 
 
-def test_a_seed_written_in_the_recipe_holds_in_home_the_reference_pane_and_the_export(browser, tmp_path):
+def test_a_seed_written_in_the_recipe_holds_in_home_the_original_pane_and_the_export(browser, tmp_path):
     with running_app("qa", staged_deployment(LOCAL, 'position: "jitter", random_state: 123}', tmp_path), tmp_path) as url:
         shots, runs = [], []
         for _ in range(2):                     # two sessions: each would draw its own seed if HOME drew over the recipe
@@ -173,12 +174,12 @@ def test_a_seed_written_in_the_recipe_holds_in_home_the_reference_pane_and_the_e
                 assert seed_line(page) == "seed 123, written in the recipe"
                 expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_have_count(0)
                 if len(shots) == 1:
-                    page.locator("#plot_view input[value=CMP]").check(force=True)
-                    _wait_shiny(page)
+                    set_mode(page, "audit")
+                    set_compare(page, True)
                     settle(page, f"plot_group_{PID}", f"plot_group_{PID}_cmp_base")
                     reference = page.locator(f"#plot_group_{PID}_cmp_base").screenshot()
                     mine = page.locator(f"#plot_group_{PID}").screenshot()
-                    assert same_picture(reference, mine), "the reference pane does not show the recipe's seed"
+                    assert same_picture(reference, mine), "the original pane does not show the recipe's seed"
                 runs.append(export_run_and_png(page, with_recipe=len(runs) == 0))
             finally:
                 context.close()
@@ -197,12 +198,12 @@ def test_without_a_seed_in_the_recipe_every_place_uses_zero_and_two_sessions_sho
         try:
             open_phenotype_plot(page, url, choose_recipe=True)
             assert seed_line(page) == "seed 0, default (nothing written in the recipe)"
-            page.locator("#plot_view input[value=CMP]").check(force=True)
-            _wait_shiny(page)
+            set_mode(page, "audit")
+            set_compare(page, True)
             settle(page, f"plot_group_{PID}", f"plot_group_{PID}_cmp_base")
             reference = page.locator(f"#plot_group_{PID}_cmp_base").screenshot()
             mine = page.locator(f"#plot_group_{PID}").screenshot()
-            assert same_picture(reference, mine), "the reference pane was drawn with another seed than My view"
+            assert same_picture(reference, mine), "the original pane was drawn with another seed than the audited plot"
             # a second session shows the SAME arrangement: nothing is drawn per session any more
             other_context = browser.new_context()
             other = other_context.new_page()
@@ -211,8 +212,7 @@ def test_without_a_seed_in_the_recipe_every_place_uses_zero_and_two_sessions_sho
                 other_view = other.locator(f"#plot_group_{PID}").screenshot()
             finally:
                 other_context.close()
-            page.locator("#plot_view input[value=T3]").check(force=True)
-            _wait_shiny(page)
+            set_compare(page, False)                 # the audited plot alone (no audited step: the same picture as the Result)
             settle(page, f"plot_group_{PID}")
             assert same_picture(other_view, page.locator(f"#plot_group_{PID}").screenshot()), \
                 "two sessions show different arrangements: HOME drew a seed"

@@ -18,6 +18,7 @@ from pathlib import Path
 import polars as pl
 
 from app.modules.t3_audit_engine import column_is_in_frame, filters_cleared_notice
+from app.tests.browser_view import set_mode, set_view
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_shiny_smoke import _choose_recipe, _open_app, _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
@@ -141,11 +142,10 @@ def _open_plot(page: Page, recipe: str) -> None:
 
 
 def _show_table(page: Page, recipe: str) -> None:
-    """Open a plot sub-tab of the recipe, in My view, and wait until the data preview shows that plot's table."""
+    """Open a plot sub-tab of the recipe, on T3, and wait until the data preview shows that plot's table."""
     _open_plot(page, recipe)
     _open_filters_panel(page)
-    page.locator("#tier_toggle input[value=T3]").check(force=True)   # My view: the table shows the applied filters
-    _wait_shiny(page)
+    set_view(page, "T3")   # T3: the table the plot shows; it shows the applied filters
     _wait_for_table(page, recipe)
 
 
@@ -250,8 +250,8 @@ class TestRecipeSwitchClearsFilters:
         _fresh(page, shiny_app.url)
         _open_filters_panel(page)
         _open_plot(page, A)
-        page.locator("#tier_toggle input[value=T3]").check(force=True)
-        _wait_shiny(page)
+        set_mode(page, "audit")                  # an audit step is made in Audit mode, on T3
+        set_view(page, "T3")
         _choose_column_firmly(page, "year")
         _choose_operator(page, "lt")
         page.locator("#fb_value").fill("2050")

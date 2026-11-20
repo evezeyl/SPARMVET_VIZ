@@ -37,6 +37,7 @@ import yaml
 from PIL import Image
 from playwright.sync_api import Page, expect
 
+from app.tests.browser_view import set_compare, set_mode
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _wait_shiny
 from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
@@ -175,14 +176,14 @@ def test_the_alerts_panel_holds_one_entry_however_often_the_plot_is_drawn(page: 
 def test_the_compare_pane_shows_the_message_too_and_the_alert_stays_one(page: Page, staged_app):
     _open_home(page, staged_app)
     _show_plot(page, BAD)
-    page.locator("#plot_view input[value=CMP]").check(force=True)
-    _wait_shiny(page, 20_000)
+    set_mode(page, "audit")
+    set_compare(page, True)
     reference = _image_of(page, f"#plot_group_{BAD}_cmp_base")
-    assert _red_pixels(reference) > 100, "the T2 reference pane of Compare shows the message"
-    assert _red_pixels(_image_of(page, f"#plot_group_{BAD}")) > 100, "and so does My view"
-    assert len(_mentions_the_bad_plot(_alerts(page))) <= 2, "one entry for the plot, one for its reference pane (a different place)"
-    page.locator("#plot_view input[value=T2]").check(force=True)
-    _wait_shiny(page, 20_000)
+    assert _red_pixels(reference) > 100, "the original pane of Compare shows the message"
+    assert _red_pixels(_image_of(page, f"#plot_group_{BAD}")) > 100, "and so does the audited plot"
+    assert len(_mentions_the_bad_plot(_alerts(page))) <= 2, "one entry for the plot, one for its original pane (a different place)"
+    set_compare(page, False)
+    set_mode(page, "exploration")
 
 
 def test_the_export_panel_opens_and_the_bundle_says_the_plot_was_not_drawn(page: Page, staged_app):
