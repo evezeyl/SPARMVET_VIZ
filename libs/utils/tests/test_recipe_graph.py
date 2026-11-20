@@ -549,6 +549,17 @@ def test_the_graph_builds_over_every_shipped_recipe_and_every_plot_reaches_a_sou
         assert (info.names is None) == (info.how == "unknown")
 
 
+def test_declared_entity_keys_are_the_declaration_only():
+    raw = {"data_schemas": {"A": {**schema(["sample_id", "x"]), "input_fields": {"sample_id": {"type": "String", "is_entity_key": True}, "x": {"type": "String"}}},
+                            "B": schema(["id"])},
+           "joins": {"J": join(["A", "B"])}, "analysis_groups": {"g": {"plots": {"P": plot("J")}}}}
+    graph = build_graph(raw)
+    assert graph.declared_entity_keys("A") == ("sample_id",)
+    assert graph.declared_entity_keys("B") == () and graph.declared_entity_keys("J") == ()      # a join declares none; a column named like a key is not one
+    with pytest.raises(KeyError):
+        graph.declared_entity_keys("nope")
+
+
 # ---------------------------------------------------------------- the audit steps of a tier (D-0332) ------------------------
 
 def _audit(step, number=1):
