@@ -228,7 +228,10 @@ def test_without_a_seed_in_the_recipe_every_place_uses_zero_and_two_sessions_sho
 
 def test_reshuffle_is_not_offered_in_exploration_nor_when_the_audit_is_off(browser, tmp_path):
     """D-0341: the button is offered in Audit mode only. A setup with the audit off has no Audit mode, so no button and no pin."""
-    with running_app("pipeline-exploration-simple", staged_deployment(PIPELINE, 'position: "jitter"}', tmp_path), tmp_path) as url:
+    simple, with_audit = tmp_path / "simple", tmp_path / "audit"
+    simple.mkdir()
+    with_audit.mkdir()
+    with running_app("pipeline-exploration-simple", staged_deployment(PIPELINE, 'position: "jitter"}', simple), simple) as url:
         page = browser.new_page()
         try:
             open_phenotype_plot(page, url, choose_recipe=False)
@@ -237,7 +240,7 @@ def test_reshuffle_is_not_offered_in_exploration_nor_when_the_audit_is_off(brows
             expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_have_count(0)
         finally:
             page.close()
-    with running_app("qa", staged_deployment(LOCAL, 'position: "jitter"}', tmp_path), tmp_path) as url:
+    with running_app("qa", staged_deployment(LOCAL, 'position: "jitter"}', with_audit), with_audit) as url:
         page = browser.new_page()
         try:
             open_phenotype_plot(page, url, choose_recipe=True)
