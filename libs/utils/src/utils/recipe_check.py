@@ -18,7 +18,7 @@ recipe, what is wrong and the fix, in the message style of spec P5.
 
 # @deps
 # provides: function:check_recipe, function:spec, function:plot_keys, class:Problem, class:Result
-# consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/engines.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/ui_schema.py, libs/utils/src/utils/formula_check.py, libs/utils/src/utils/plot_text_check.py, libs/utils/src/utils/recipe_paths.py, libs/utils/src/utils/polars_types.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/fix_text.py (split_fix, with_fix)
+# consumes: libs/utils/src/utils/recipe_spec.yaml, libs/utils/src/utils/engines.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/ui_schema.py, libs/utils/src/utils/formula_check.py, libs/utils/src/utils/plot_text_check.py, libs/utils/src/utils/recipe_paths.py, libs/utils/src/utils/polars_types.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/fix_text.py (split_fix, with_fix), libs/utils/src/utils/key_drop.py (DropGate: AU04, the drop of a key by place, audit steps only, D-0358)
 # consumed_by: libs/utils/src/utils/recipe_loader.py, libs/utils/src/utils/recipe_factory.py, libs/utils/src/utils/recipe_migration.py, libs/utils/src/utils/strict_form_migration.py, libs/ingestion/src/ingestion/declared.py, libs/viz_gallery/src/viz_gallery/gallery_manager.py, libs/viz_gallery/src/viz_gallery/example_recipe.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, assets/scripts/convert_gallery_examples.py, assets/scripts/create_data_analysis_recipe.py, libs/utils/tests/test_recipe_check.py
 # doc: .claude/design/recipe_format_spec.md (sections 3 to 11, 14)
 # @end_deps
@@ -41,7 +41,7 @@ from utils.filter_values import FilterValueError, check_filter
 from utils.fix_text import split_fix, with_fix
 from utils.formula_check import formula_problems
 from utils.plot_text_check import facet_variable_problems, layer_text_problems
-from utils import join_keys
+from utils import join_keys, key_drop
 from utils.polars_types import PARAMETER_KEYS, dtype_with_parameters, text_dtype_names
 from utils.recipe_paths import containment_problems, shape_problems
 from utils.ui_schema import STEP_KEYS, step_problems
@@ -168,6 +168,7 @@ class _Check:
         self.join_ids: Set[str] = set()
         self.schema_bodies: Dict[str, Any] = {}
         self.audit_ids: Dict[str, str] = {}   # {audit id: where it stands}: an audit id is used once in the whole recipe
+        self._drop_gate: Optional[key_drop.DropGate] = None   # the rule of a key drop (AU04), built on the first audit drop
 
     # -- helpers
     def add(self, code: str, path: str, message: str, fix: str = "", severity: str = "E") -> None:
@@ -568,7 +569,10 @@ class _Check:
             self.add("AU02", f"{where}.action", f"the audit step is '{action}'; an audit step is a filter, a column drop or a removal by key: {', '.join(AUDIT_ACTIONS)} "
                      "(a removal by key is the filter on the key column)", f"use one of {', '.join(AUDIT_ACTIONS)}")
         if action == action_names.DROP:
-            problem = join_keys.key_drop_problem(self.raw, step.get("columns"))   # D-0297: ONE rule, shared with the audit copy
+            if self._drop_gate is None:
+                self._drop_gate = key_drop.DropGate(self.raw)
+            place = self._drop_gate.place_of_steps_path(where.rsplit(f".{recipe_tiers.AUDIT_STEPS}[", 1)[0] + ".steps")
+            problem = self._drop_gate.problem(place, step.get("columns")) if place else None   # D-0358, D-0297: ONE rule, BY PLACE, shared with the audit copy
             if problem:
                 self.add("AU04", f"{where}.columns", problem, "use a row filter or a removal by key instead")
         step_id = step.get("id")

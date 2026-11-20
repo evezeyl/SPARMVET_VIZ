@@ -37,7 +37,7 @@ If deleted: the walk cannot follow a column across a step.
 # @deps
 # provides: function:effect_of, function:predict, function:agreement_problem, function:unread_pairs, class:Effect, class:PredictedColumn, class:Source, constant:READINGS, constant:FOLLOWED_JOINS, constant:VALUE_CHANGES, constant:NOTE_CHANGES
 # consumes: libs/utils/src/utils/join_keys.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/plan_book.py
-# consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_step_effects.py, libs/utils/tests/test_lineage_walk_follow.py
+# consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/src/utils/declared_plans.py, libs/utils/tests/test_step_effects.py, libs/utils/tests/test_lineage_walk_follow.py
 # doc: .claude/knowledge/decision_ledger.md (D-0351, D-0353, D-0356, D-0357), .claude/design/home_audit_steps.md
 # @end_deps
 """

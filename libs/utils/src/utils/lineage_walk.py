@@ -41,30 +41,41 @@ PROVISIONAL behaviour (the owner has not decided; each place is marked in the co
 - P13 a source line next to a tier 1 without steps is the same table: it stays grey `no_step_list` and carries `duplicates` (the tier 1 place), so that a caller shows one line.
 - P14 a walk that selects no place says so (`Walk.nothing`); which levels the column exists at is `Walk.held_at_levels`.
 
-The key refusal (D-0297) and the choice of a drop are step 4, not built: `step_kind` is carried, the lines are the same for a filter and a drop.
+A DROP (`kind="drop"`, step 4, D-0358 and D-0297): the lines are the places of a filter. A drop at a place is REFUSED, by place and not by name, when a join step later (in a
+table built from the place) reads the column as a key, followed forward by the links of the walk (`DropFacts`, `drop_facts`: ONE function, also the gate of `audit_copy`, the
+integrity check and the checker, through `utils.key_drop`); a refused line is grey with `refusal` (the join steps that need it, as data). Where no later join needs the column it can be
+dropped. A column that a later step or a plot uses without being a key is NOT refused: the line carries what it breaks (`Line.consequences`), from the steps the walk reads and,
+when the caller gives the engine's plan of the candidate recipe for a place (`candidates`), from that plan, each reading checked against it (a disagreement is grey with both facts).
+PROVISIONAL (not decided by the owner): P15 a declared entity key that no later join uses is not refused for being declared (D-0297 names join keys, D-0358 says by place): the line
+says so as information (`declared_entity_key` note); P16 a column the walk cannot follow to the end (a plan failure, an unfollowed step) is grey on a drop line and the gate
+does not refuse it (the engine tells at the build: no silent result, only an error), which is the owner's accepted worst case; P17 without a candidate plan the consequences hold only what the steps the walk reads and the
+plot mapping say (`consequences_checked` False, stated, never silent).
 
-Consumed by: libs/utils/tests/test_lineage_walk.py (the dialog of HOME calls it later; nothing in app/ yet).
+Consumed by: libs/utils/src/utils/key_drop.py (the gate of a drop), libs/utils/tests/test_lineage_walk.py (the dialog of HOME calls the walk later).
 If deleted: the audit dialog has no way to list its places.
 
 # @deps
-# provides: function:walk, class:LineageIndex, class:LineageError, class:ColumnNotFound, class:StartPlanFailed
-# consumes: libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/step_effects.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/lineage_records.py
-# consumed_by: libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py, libs/utils/tests/test_lineage_walk_properties.py
-# doc: .claude/knowledge/decision_ledger.md (D-0347, D-0346, D-0351, D-0195, D-0353, D-0352, D-0357, D-0337, D-0356, D-0355), .claude/design/home_audit_steps.md
+# provides: function:walk, function:LineageIndex.drop_facts, class:LineageIndex, class:LineageError, class:ColumnNotFound, class:StartPlanFailed
+# consumes: libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/step_effects.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/lineage_records.py
+# consumed_by: libs/utils/src/utils/key_drop.py, libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py, libs/utils/tests/test_lineage_walk_properties.py, libs/utils/tests/test_lineage_drop.py
+# doc: .claude/knowledge/decision_ledger.md (D-0347, D-0346, D-0351, D-0195, D-0353, D-0352, D-0357, D-0337, D-0356, D-0355, D-0358, D-0297), .claude/design/home_audit_steps.md
 # @end_deps
 """
 from __future__ import annotations
 
 import collections
+import dataclasses
 import heapq
 from dataclasses import dataclass
-from typing import Any, Dict, FrozenSet, Iterable, List, Optional, Sequence, Set, Tuple, Union
+from typing import Any, Dict, FrozenSet, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
-from utils import action_names, step_effects as fx
+from utils import action_names, join_keys, step_effects as fx
 from utils.lineage_records import (
-    AGGREGATED, CANNOT_FOLLOW, CAST, CREATED, GREY, GROUPED, JOIN_LINKED, LEVELS, LINEAGE, NO_STEP_LIST, NOTE_AGGREGATED, NOTE_ANOTHER_TYPE, NOTE_ONE_ROW_PER_GROUP,
-    NOTE_RECOMPUTED, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED, READING_DISAGREES, RE_CREATED, RECOMPUTED, RENAMED, SEVERAL_COLUMNS, SOURCE, STEP_NOT_READ, T1, T2, T3,
-    TICK, UNCHANGED, UNKNOWN, WHY_DECLARED_KEY_NOT_REACHED, Gone, Hop, Line, Note, Occurrence, Outside, Reach, Reason, SourceColumn, Start, StepRef, Unread, Walk,
+    AGGREGATED, CANNOT_FOLLOW, CAST, CONSEQUENCE_DISAGREES, CREATED, FROM_PLAN, FROM_READING, GREY, GROUPED, JOIN_LINKED, KEY_NEEDED_LATER, LEVELS, LINEAGE,
+    BUILD_FAILS, CLASH_NO_LONGER, NO_STEP_LIST, NOTE_AGGREGATED, NOTE_ANOTHER_TYPE, NOTE_DECLARED_ENTITY_KEY, NOTE_ONE_ROW_PER_GROUP, NOTE_RECOMPUTED, NOTE_UNREAD_STEP_PASSED,
+    PLAN_FAILED, PLOT_USES_COLUMN, READING_DISAGREES, RE_CREATED, RECOMPUTED, RENAMED, SEVERAL_COLUMNS, SOURCE, STEP_NAMES_COLUMN, STEP_NOT_READ, T1, T2, T3,
+    TICK, UNCHANGED, UNKNOWN, WHY_DECLARED_KEY_NOT_REACHED, Consequence, DropFacts, Gone, Hop, KeyNeed, Line, Note, Occurrence, Outside, Reach, Reason, SourceColumn,
+    Start, StepRef, Unread, Walk,
 )
 from utils.plan_book import Plan, PlanBook, PlanFailure
 from utils.recipe_graph import Node, RecipeGraph
@@ -117,6 +128,14 @@ class _Dead:
     ref: Optional[StepRef]
 
 
+@dataclass(frozen=True)
+class _KeyUse:
+    """A join step reads a column as one of its keys: the step, the side (`base` = the table at the step, `right` = the table it reads) and the name at the join."""
+    ref: StepRef
+    side: str
+    name: str
+
+
 class LineageIndex:
     """The links between the columns of a recipe at every step, built once from the graph and the plan book. `walk` is then a function of the
     start only. The plan book is read once per place (a counting mapping can prove it)."""
@@ -132,6 +151,7 @@ class LineageIndex:
         self._pred: Dict[Occ, List[_Link]] = collections.defaultdict(list)
         self._succ: Dict[Occ, List[_Link]] = collections.defaultdict(list)
         self._dead: List[_Dead] = []
+        self._key_uses: Dict[Occ, List[_KeyUse]] = collections.defaultdict(list)
         for nid in graph.nodes():
             node = graph.node(nid)
             if node.kind != "DS":
@@ -188,6 +208,8 @@ class LineageIndex:
         action = step.get("action") if isinstance(step, dict) and isinstance(step.get("action"), str) else ""
         ref = StepRef(nid, k, action, f"{node.steps_path}[{k}]", step.get("id") if isinstance(step, dict) and isinstance(step.get("id"), str) else None)
         before, after = self._plan[(nid, k - 1)], self._plan[(nid, k)]
+        if action in join_keys.JOIN_ACTIONS:
+            self._record_key_uses(nid, k, ref, step)
         effect = fx.effect_of(step)
         right_node = self._right_of(step) if effect.kind in (fx.JOIN, fx.UNREAD) and action == action_names.JOIN else None
         right: Optional[PlanOrFailure] = self._plan[self.end(right_node)] if right_node else None
@@ -210,6 +232,18 @@ class LineageIndex:
             return
         reason = Reason(STEP_NOT_READ, (("node", nid), ("step", k), ("action", action), ("why", effect.why)))
         self._plan_links(nid, k, ref, before, after, right_node, right, reason, passes_certain=True)
+
+    def _record_key_uses(self, nid: str, k: int, ref: StepRef, step: Any) -> None:
+        """The key columns a join step reads, whether or not the step can be followed: the left names at the table before the step, the right names at the end of the
+        table the step reads (D-0358: the drop of a key is refused by place, so every join step that names a key is known here)."""
+        left, right = join_keys.key_columns(step)
+        right_node = self._right_of(step)
+        for name in left:
+            self._key_uses[(nid, k - 1, name)].append(_KeyUse(ref, "base", name))
+        if right_node is not None:
+            end = self.end(right_node)
+            for name in right:
+                self._key_uses[(end[0], end[1], name)].append(_KeyUse(ref, "right", name))
 
     def _die_all(self, nid: str, k: int, before: PlanOrFailure, right_node: Optional[str], right: Optional[PlanOrFailure], reason: Reason, ref: StepRef) -> None:
         for name in self._names(before):
@@ -265,7 +299,9 @@ class LineageIndex:
         for name in before.names:
             src = (nid, k - 1, name)
             if after.has(name) and after.type_of(name) == before.type_of(name):
-                note = Note(NOTE_UNREAD_STEP_PASSED, (("node", nid), ("step", k), ("action", ref.action))) if passes_certain else None
+                # PROVISIONAL (P3): a step the walk does not read keeps the name and the type, but the walk cannot know whether the values changed there
+                note = (Note(NOTE_UNREAD_STEP_PASSED, (("node", nid), ("step", k), ("action", ref.action), ("knows_source_of_values", False)))
+                        if passes_certain else None)
                 self._link(_Link(src, (nid, k, name), passes_certain, UNCHANGED if passes_certain else UNKNOWN, None if passes_certain else reason,
                                  ref, hop=True, note=note))
             elif after.has(name):
@@ -424,13 +460,15 @@ class LineageIndex:
         return [(node, k, name) for name in self._names(plan) if (node, k, name) in within]
 
     # ------------------------------------------------------------------ the walk
-    def walk(self, start: Start, *, levels: Iterable[str], kind: str = "filter") -> Walk:
+    def walk(self, start: Start, *, levels: Iterable[str], kind: str = "filter", candidates: Optional[Mapping[str, PlanBook]] = None) -> Walk:
         g = self.graph
         chosen_levels = tuple(level for level in LEVELS if level in set(levels))
         if not chosen_levels or set(levels) - set(LEVELS):
             raise LineageError(f"the levels are some of {list(LEVELS)}; the caller must name at least one (got {sorted(set(levels), key=str)})")
         if kind not in STEP_KINDS:
             raise LineageError(f"the kind of step is {kind!r}; it is one of {list(STEP_KINDS)}")
+        if candidates is not None and kind != "drop":
+            raise LineageError("the candidate plans are for a drop: a filter changes no plan (D-0325)")
         if not g.has_node(start.node):
             raise LineageError(f"the recipe has no node {start.node!r}")
         plan = self.plan_end(start.node)
@@ -456,6 +494,8 @@ class LineageIndex:
                 unread.append(Unread(place, covers, bool(self.at_end(place, linked)), reach, region[place]))
                 continue
             line = self._classify(place, covers, reach, linked, lineage, linked, costs, start_place, region[place])
+            if kind == "drop" and isinstance(line, Line) and len(line.occurrences) == 1 and line.tier != "DS":
+                line = self._drop_line(line, self.at_end(place, linked)[0], (candidates or {}).get(place))
             (lines if isinstance(line, Line) else gone).append(line)  # type: ignore[arg-type]
         gone = [Gone(x.place, x.covers, x.removed_by, tuple(l.place for l in lines if self._reaches(l.reach, x.place)), kind, kind == "filter", x.reach, x.scope_group) for x in gone]
         held = {LEVEL_OF_KIND[g.node(n).kind] for p in self._region_groups(lineage, linked) if self.at_end(p, linked) for n in self.place_covers[p]}
@@ -539,6 +579,172 @@ class LineageIndex:
         in the order of the graph (sources, then tier 1 of tables and joins as they depend on each other, tier 2, then plots), then the lowest step number."""
         return sorted(found, key=lambda d: (self._order[d.in_node], d.ref.step if d.ref else 0))[0]
 
+    # ------------------------------------------------------------------ a drop: by place (D-0358)
+    def _forward_costs(self, start: Occ) -> Dict[Occ, Cost]:
+        """Every column that comes from `start` by the links, forward only, with the least number of uncertain links on a path to it (0: certain). Fixed order."""
+        best: Dict[Occ, Cost] = {start: 0}
+        heap: List[Tuple[Cost, Tuple[int, int, str], Occ]] = [(0, self._sort_key(start), start)]
+        while heap:
+            cost, _key, occ = heapq.heappop(heap)
+            if cost != best[occ]:
+                continue
+            for link in sorted(self._succ.get(occ, ()), key=lambda l: (self._sort_key(l.dst), not l.certain)):
+                step = cost + (0 if link.certain else 1)
+                if link.dst not in best or step < best[link.dst]:
+                    best[link.dst] = step
+                    heapq.heappush(heap, (step, self._sort_key(link.dst), link.dst))
+        return best
+
+    def drop_facts(self, node_id: str, column: str) -> DropFacts:
+        """Whether the column `column` of the table at the END of `node_id` can be dropped there, by place (D-0358, D-0297): the join steps that need it as a key,
+        the facts that stop the walk, and whether it comes from a declared entity key. ONE function: the lines of a drop walk, `audit_copy.add_step`, the integrity
+        check and the checker all ask it (through `utils.key_drop`).
+
+        A join step needs the column when the column, followed forward by the links of the walk (a rename, a key under another name and the suffix of a clash included,
+        never the name alone), is one of its keys: in a join step later in a table built from this one, or in the table a join reads. A join step of the node itself is
+        before the end of the node and does not count. Where nothing later reads the column as a key it can be dropped (an aggregation by count in a plot, her
+        example). A column the node does not have, or a node whose plan failed, gives no need: the plan failure is a fact `unfollowed`, never silence."""
+        end = self.end(node_id)
+        plan = self._plan[end]
+        place = node_id
+        if isinstance(plan, PlanFailure):
+            if not self.forward(node_id):
+                return DropFacts(place, column)                      # nothing is built from this node (a plot): no join can need the column, whatever the plan says
+            return DropFacts(place, column, (), (Reason(PLAN_FAILED, (("sentence", plan.sentence), ("node", node_id), ("step", end[1]))),))
+        if not plan.has(column):
+            return DropFacts(place, column)
+        return self._facts_at((end[0], end[1], column), place)
+
+    def _facts_at(self, occ: Occ, place: str) -> DropFacts:
+        reached = self._forward_costs(occ)
+        needs: List[KeyNeed] = []
+        for other in sorted(reached, key=self._sort_key):
+            for use in self._key_uses.get(other, ()):
+                found = KeyNeed(use.ref, use.side, use.name, reached[other] == 0)
+                if found not in needs:
+                    needs.append(found)
+        stops: List[Reason] = []
+        for dead in self._dead:
+            if not dead.certain and dead.occ in reached:
+                reason = dead.reason or Reason(CANNOT_FOLLOW, (("node", dead.in_node),))
+                if reason not in stops:
+                    stops.append(reason)
+        back = self._reach_set([occ], forward=False, backward=True)
+        declared = tuple(sc for sc in self._sources(occ, back) if sc.name in self.graph.declared_entity_keys(sc.table))
+        return DropFacts(place, occ[2], tuple(needs), tuple(stops), declared)
+
+    @staticmethod
+    def _reads_of(effect: fx.Effect) -> Tuple[str, ...]:
+        """The column names a step reads in an argument the walk may read (D-0351): the old names of a rename, the columns of a drop, a select, a cast and the group columns
+        of a group-by. The names a compute step or an aggregate WRITES are not read; the keys of a join are judged by the key rule, not here."""
+        if effect.kind == fx.RENAME:
+            return tuple(old for old, _ in effect.pairs)
+        if effect.kind in (fx.DROP, fx.SELECT, fx.CAST, fx.GROUP):
+            return effect.columns
+        return ()
+
+    def _reading_consequences(self, reached: Iterable[Occ]) -> List[Consequence]:
+        """What the steps the walk reads say a drop breaks: a later step that names the column (it fails), a plot that draws it (it cannot be drawn), a join
+        that gave the other table's same-named column a suffix because of it (that column now keeps its own name, and a step that names the suffixed name fails). A step that uses
+        the column inside a formula is not seen here (only names are read, D-0356); the engine's plan of the candidate sees it."""
+        found: List[Consequence] = []
+        g = self.graph
+        for occ in sorted(reached, key=self._sort_key):
+            nid, k0, name = occ
+            node = g.node(nid)
+            if k0 < len(node.steps):
+                step = node.steps[k0]
+                effect = fx.effect_of(step)
+                if name in self._reads_of(effect):
+                    ref = StepRef(nid, k0 + 1, effect.action, f"{node.steps_path}[{k0 + 1}]", step.get("id") if isinstance(step, dict) and isinstance(step.get("id"), str) else None)
+                    found.append(Consequence(STEP_NAMES_COLUMN, self.place_of[nid], ref, FROM_READING, (("name", name), ("node", nid), ("step", k0 + 1), ("action", effect.action))))
+                if effect.kind == fx.JOIN and name not in effect.left_keys:
+                    right_node = self._right_of(step)
+                    right = self._plan[self.end(right_node)] if right_node else None
+                    if isinstance(right, Plan) and right.has(name) and name not in effect.right_keys:       # the join gave the right table's `name` the suffix because this column was there
+                        ref = StepRef(nid, k0 + 1, effect.action, f"{node.steps_path}[{k0 + 1}]", step.get("id") if isinstance(step, dict) and isinstance(step.get("id"), str) else None)
+                        found.append(Consequence(CLASH_NO_LONGER, self.place_of[nid], ref, FROM_READING,
+                                                 (("name", name), ("was_called", name + effect.suffix), ("table", g.node(right_node).name), ("node", nid), ("step", k0 + 1))))
+            if node.kind == "T3" and k0 == len(node.steps) and name in g.plot_columns(node.name):
+                found.append(Consequence(PLOT_USES_COLUMN, self.place_of[nid], None, FROM_READING, (("plot", node.name), ("name", name), ("node", nid))))
+        return found
+
+    def _candidate_end(self, book: PlanBook, written: str, node_id: str) -> PlanOrFailure:
+        """The plan at the end of a node in the candidate recipe: the candidate is the recipe with ONE step added at the end of the list of `written`."""
+        return book.get(node_id, len(self.graph.node(node_id).steps) + (1 if node_id == written else 0))
+
+    def _plan_consequences(self, written: str, book: PlanBook) -> List[Consequence]:
+        """What the engine's plan of the candidate recipe says a drop breaks: a place that builds as the recipe is and does not build with the drop (the engine's own
+        sentence, once per origin, not again for every table built from a failing one), and a plot whose column the table no longer has."""
+        g = self.graph
+        found: List[Consequence] = []
+        for nid in [written] + self.forward(written):
+            node = g.node(nid)
+            end_k = len(node.steps) + (1 if nid == written else 0)
+            first_k = len(node.steps) + 1 if nid == written else 0
+            for k in range(first_k, end_k + 1):
+                cand = book.get(nid, k)
+                base = self._plan[(nid, k)] if k <= len(node.steps) else None
+                if isinstance(cand, PlanFailure) and not isinstance(base, PlanFailure):
+                    if k == 0 and any(isinstance(self._candidate_end(book, written, p), PlanFailure) for p in g.parents(nid)):
+                        break                                        # the table above fails already: not an origin
+                    ref = None
+                    if 1 <= k <= len(node.steps):
+                        step = node.steps[k - 1]
+                        ref = StepRef(nid, k, step.get("action", "") if isinstance(step, dict) else "", f"{node.steps_path}[{k}]",
+                                      step.get("id") if isinstance(step, dict) and isinstance(step.get("id"), str) else None)
+                    found.append(Consequence(BUILD_FAILS, self.place_of[nid], ref, FROM_PLAN, (("sentence", cand.sentence), ("node", nid), ("step", k))))
+                    break
+            if node.kind == "T3":
+                cand_end, base_end = self._candidate_end(book, written, nid), self.plan_end(nid)
+                if isinstance(cand_end, Plan) and isinstance(base_end, Plan):
+                    for name in g.plot_columns(node.name):
+                        if base_end.has(name) and not cand_end.has(name):
+                            found.append(Consequence(PLOT_USES_COLUMN, self.place_of[nid], None, FROM_PLAN, (("plot", node.name), ("name", name), ("node", nid))))
+        return found
+
+    def _disagreements(self, written: str, book: PlanBook, reading: Sequence[Consequence]) -> List[Consequence]:
+        """The readings the engine's plan of the candidate does not confirm (D-0351: shown grey with both facts): a step that names the column where the candidate still
+        builds, a plot that draws the column where the candidate's table still has it."""
+        wrong: List[Consequence] = []
+        for c in reading:
+            if c.code == CLASH_NO_LONGER:
+                after_join = book.get(c.step.node, c.step.step)                  # steps before the one added keep their numbers in the candidate
+                if isinstance(after_join, Plan) and after_join.has(c.get("was_called")):
+                    wrong.append(c)
+                continue
+            node = c.get("node")
+            if node is None and c.step is not None:
+                node = c.step.node
+            cand = self._candidate_end(book, written, node)
+            if c.code == STEP_NAMES_COLUMN and isinstance(cand, Plan):
+                wrong.append(c)
+            elif c.code == PLOT_USES_COLUMN and isinstance(cand, Plan) and cand.has(c.get("name")):
+                wrong.append(c)
+        return wrong
+
+    def _drop_line(self, line: Line, occ: Occ, candidate: Optional[PlanBook]) -> Line:
+        """The facts a drop adds to a line: the refusal by place (a join step later needs the column as a key), the declared entity key as information, what the drop
+        breaks downstream (from the readings, and from the engine's plan of the candidate when the caller gave one for this place)."""
+        facts = self._facts_at(occ, line.place)
+        notes = list(line.notes) + [Note(NOTE_DECLARED_ENTITY_KEY, (("table", sc.table), ("name", sc.name), ("column", occ[2]))) for sc in facts.declared]
+        state, reason, refusal = line.state, line.reason, None
+        if facts.refused:
+            refusal = Reason(KEY_NEEDED_LATER, (("column", occ[2]), ("place", line.place), ("needs", tuple(n for n in facts.needs if n.certain))))
+            state, reason = GREY, (reason if line.state == GREY and reason is not None else refusal)
+        elif facts.uncertain and state == TICK:
+            maybe = next((n for n in facts.needs if not n.certain), None)          # a join that reads the column only if an uncertain link is the right one
+            state, reason = GREY, (facts.unfollowed[0] if facts.unfollowed else Reason(CANNOT_FOLLOW, (("node", maybe.step.node if maybe else occ[0]), ("step", maybe.step.step if maybe else 0))))
+        consequences = self._reading_consequences(self._forward_costs(occ))
+        if candidate is not None:
+            plan = self._plan_consequences(self.place_first[line.place], candidate)
+            wrong = self._disagreements(self.place_first[line.place], candidate, consequences)
+            if wrong and state == TICK:
+                state, reason = GREY, Reason(CONSEQUENCE_DISAGREES, (("reading", tuple(wrong)), ("plan", tuple(plan))))
+            consequences = consequences + plan
+        return dataclasses.replace(line, notes=tuple(notes), state=state, reason=reason, refusal=refusal, consequences=tuple(consequences),
+                                   consequences_checked=candidate is not None)
+
     # ------------------------------------------------------------------ what is not reached
     def _outside(self, linked: Set[Occ]) -> Tuple[Outside, ...]:
         """The source tables that declare a key of the same family as the lineage's and that no join links to it: plain information (never a line, never matched by
@@ -557,11 +763,11 @@ class LineageIndex:
         return tuple(found)
 
 
-def walk(graph: RecipeGraph, plans: PlanBook, start: Start, *, levels: Iterable[str], kind: str = "filter") -> Walk:
+def walk(graph: RecipeGraph, plans: PlanBook, start: Start, *, levels: Iterable[str], kind: str = "filter", candidates: Optional[Mapping[str, PlanBook]] = None) -> Walk:
     """The places of the chosen levels where a step on the column `start.column` of `start.node` can be written, with what each reaches, each with its group.
 
     `levels` (some of `LEVELS`: source, T1, T2, T3) has no default: the user chooses which levels are offered (owner, D-0355). A place that covers several
-    tiers (an empty tier is no place) belongs to each of them. `kind` is `filter` or `drop` (the join-key refusal of a drop is not built here). Raises
+    tiers (an empty tier is no place) belongs to each of them. `kind` is `filter` or `drop` (a drop adds the refusal by place and the consequences; `candidates` maps a place to the plan book of the candidate recipe, drop only). Raises
     `ColumnNotFound` for a column the node does not have and `StartPlanFailed` when the engine could not give the plan of the node; every place of the
     chosen levels that the lineage reaches is a line, a note under a line, or a place no plot reads. For many walks on one recipe build `LineageIndex` once."""
-    return LineageIndex(graph, plans).walk(start, levels=levels, kind=kind)
+    return LineageIndex(graph, plans).walk(start, levels=levels, kind=kind, candidates=candidates)

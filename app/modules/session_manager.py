@@ -26,7 +26,7 @@ from __future__ import annotations
 # @deps
 # provides: constant:SESSION_FORMAT_VERSION, function:session_format_problem (D-0312), function:session_recipe_refusal (D-0317), class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, function:extract_primary_keys, function:split_key_drops, function:key_drop_notice, class:SessionImportLimits, function:session_import_limits_from (D-0283), function:session_input_id_part, function:session_input_id_parts (two listed sessions never share a button), exception:SessionImportRefused, exception:SessionKeyExists (D-0281)
 # consumes: app/modules/error_notice.py (notice — VERIF-FIX-2, lazy), libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, re, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1; batch_hash_of, dataset_file_hashes: the one reading of the data files for the keys, ADR-101)
-# consumes: libs/utils/src/utils/join_keys.py (recipe_join_keys: extract_primary_keys returns it; the join keys of joins.*.tier1 and tier2, read as the engine runs them, D-0250, D-0297)
+# consumes: libs/utils/src/utils/join_keys.py (recipe_join_keys: extract_primary_keys returns it; the join keys of joins.*.tier1 and tier2, read as the engine runs them, D-0250: the warning of a filter on a key), libs/utils/src/utils/key_drop.py (DropGate: split_key_drops asks the rule of a key drop by place, D-0358, D-0297)
 # consumed_by: app/src/bootloader.py (limits), app/tests/test_session_import_safety.py, app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py, app/handlers/filter_and_audit_handlers.py (make_audit_step), app/modules/bundle_importer.py (LegacySessionError)
 # doc: .claude/rules/ui_implementation_contract.md#12d, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
@@ -43,7 +43,7 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 from app.modules.cache_keys import batch_hash_of, canonical_hash, dataset_file_hashes
-from utils import join_keys
+from utils import join_keys, key_drop
 from utils.na_choice import with_na
 
 # The node types that are a row filter: each one records `na` (keep or remove the rows with no value).
@@ -131,53 +131,56 @@ def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
 
     See ADR-049 / §12g.2.
     """
-    # ONE rule, shared with the audit copy (D-0297): the same function says which columns the audit may not drop
+    # The set of join keys of the recipe: the warning of a filter on a key column (ADR-049). It no longer decides which drops are refused: that is by place (`utils.key_drop`, D-0358)
     return join_keys.recipe_join_keys(data_analysis_recipe_raw_config)
 
 
-def split_key_drops(by_plot: dict[str, list[dict]], primary_keys) -> tuple[dict[str, list[dict]], list[dict]]:
-    """Separate the stored `drop_column` steps that name a join key from the rest of the per-plot audit stacks.
+def split_key_drops(by_plot: dict[str, list[dict]], recipe_raw: Any) -> tuple[dict[str, list[dict]], list[dict]]:
+    """Separate the stored `drop_column` steps that the rule of a key drop refuses AT THEIR PLACE from the rest of the per-plot audit stacks.
 
-    WHY: the audit refuses to drop a join key (D-0297) but a session saved before that rule, or written by hand, can hold such a
-    step, and Restore puts stored steps straight into the view. Returns `(kept, refused)`: `kept` is a copy of `by_plot` without those
-    steps (every other step, in its order, plots that become empty stay as empty lists); `refused` lists them, one entry per step
-    copy as `{"plot", "id", "column", "reason"}`. With no known join keys nothing is refused. The argument is not changed.
+    WHY: the audit refuses to drop a column that a join step later reads as a key, by place (D-0358, which modulates D-0297; `utils.key_drop`), but a session saved
+    before that rule, or written by hand, can hold such a step, and Restore puts stored steps straight into the view. A stored step sits in the stack of a plot, so
+    its place is `T3:<plot>` (the subtab id `subtab_<plot>` without its prefix): nothing is built from a plot, so today the rule finds nothing to refuse there and the
+    steps are kept; the question is still asked, so that a step stored at another place is judged the same way. Returns `(kept, refused)`: `kept` is a copy of
+    `by_plot` without the refused steps (every other step, in its order, plots that become empty stay as empty lists); `refused` lists them, one entry per step copy
+    as `{"plot", "id", "column", "reason", "problem"}` (`reason` is what the user wrote, `problem` the sentence of the rule). Without a recipe nothing is judged. The
+    argument is not changed.
     """
-    keys = set(primary_keys or [])
+    gate = key_drop.DropGate(recipe_raw) if isinstance(recipe_raw, dict) else None
     kept: dict[str, list[dict]] = {}
     refused: list[dict] = []
     for plot, nodes in (by_plot or {}).items():
         kept[plot] = []
+        place = f"T3:{plot.removeprefix('subtab_')}"
         for node in nodes or []:
             column = (node.get("params") or {}).get("column") if isinstance(node, dict) else None
-            if isinstance(node, dict) and node.get("node_type") == "drop_column" and column in keys:
-                refused.append({"plot": plot, "id": node.get("id", ""), "column": column, "reason": node.get("reason", "")})
+            problem = gate.problem(place, [column]) if gate is not None and isinstance(node, dict) and node.get("node_type") == "drop_column" and isinstance(column, str) else None
+            if problem:
+                refused.append({"plot": plot, "id": node.get("id", ""), "column": column, "reason": node.get("reason", ""), "problem": problem})
             else:
                 kept[plot].append(node)
     return kept, refused
 
 
 def key_drop_notice(refused: list[dict], restored_ids: int) -> str:
-    """The sentence that tells the user which stored steps were not restored because they drop a join key, and why.
+    """The sentence that tells the user which stored steps were not restored because they drop a column a join still needs, and why (the sentence of the rule).
 
-    PROVISIONAL wording (D-0297 asks for plain words and the text of `ui_implementation_contract.md` 12g.3 goes to Eve with the other
-    texts). One entry per decision (a decision propagated to several plots has one copy per plot and one id): its column, the plots, the
-    reason the user wrote. `restored_ids` is how many other decisions were restored.
+    PROVISIONAL wording (D-0297 asks for plain words; the texts go to Eve with the other texts). One entry per decision (a decision propagated to several plots has
+    one copy per plot and one id): its column, the plots, the reason the user wrote, the sentence of the rule. `restored_ids` is how many other decisions were restored.
     """
     from app.modules.error_notice import notice
     by_decision: dict[tuple, dict] = {}
     for item in refused:
         entry = by_decision.setdefault((item["id"] or f"{item['plot']}/{item['column']}", item["column"]),
-                                       {"column": item["column"], "plots": [], "reason": item["reason"]})
+                                       {"column": item["column"], "plots": [], "reason": item["reason"], "problem": item.get("problem", "")})
         entry["plots"].append(item["plot"])
         entry["reason"] = entry["reason"] or item["reason"]
     parts = []
     for entry in by_decision.values():
         why = f", your reason was: \"{entry['reason']}\"" if entry["reason"] else ""
-        parts.append(f"dropping the column {entry['column']} (plot {', '.join(entry['plots'])}{why})")
+        parts.append(f"dropping the column {entry['column']} (plot {', '.join(entry['plots'])}{why}): {entry['problem']}")
     n = len(by_decision)
-    what = (f"{n} step(s) of the saved session were not restored: {'; '.join(parts)}. A join key column cannot be dropped through the audit, "
-            f"because the tables are joined on it. The other {restored_ids} step(s) were restored")
+    what = f"{n} step(s) of the saved session were not restored: {' '.join(parts)} The other {restored_ids} step(s) were restored"
     return notice(what, "use a row filter or row exclusion instead; the saved file is not changed")
 
 

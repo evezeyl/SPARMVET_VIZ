@@ -41,7 +41,8 @@ def define_session_server(input, output, session, *,
                           session_manager, current_app_features, home_state,
                           safe_input=None,
                           notification_log=None,
-                          session_processing_issues=None):
+                          session_processing_issues=None,
+                          recipe_raw=None):
     """Register session-management UI + import/restore/delete reactive handlers.
 
     Parameters
@@ -55,6 +56,9 @@ def define_session_server(input, output, session, *,
     safe_input : callable | None
         safe_input(input, key, default) — used by the active-session export
         download to read data_analysis_recipe_id for the filename. Optional for back-compat.
+    recipe_raw : callable | None
+        recipe_raw() -> the resolved dictionary of the open recipe; `split_key_drops` asks the rule of a key drop (`utils.key_drop`, by place, D-0358) about the stored
+        drops of a restored session. None: nothing is judged.
     """
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
@@ -629,9 +633,9 @@ def define_session_server(input, output, session, *,
             # NA-RULE-63: steps made before the choice `na` existed are carried as "remove", what they always
             # did. After the checksum above, which is over the file as it was written.
             by_plot = normalise_audit_steps(by_plot)
-            # D-0297: a stored step that drops a join key is not restored (a file saved before the rule, or written by hand); the rest
-            # is, and the user is told which step and why. The keys are those of the open recipe.
-            by_plot, refused_key_drops = split_key_drops(by_plot, state.get("primary_keys"))
+            # D-0297, by place (D-0358): a stored step that drops a column a join still needs is not restored (a file saved before the rule, or written by hand); the rest
+            # is, and the user is told which step and why. The recipe is the open one.
+            by_plot, refused_key_drops = split_key_drops(by_plot, recipe_raw() if recipe_raw is not None else None)
             if refused_key_drops:
                 _kept_ids = {n.get("id") for nodes in by_plot.values() for n in nodes}
                 _notify("⚠️ " + key_drop_notice(refused_key_drops, len(_kept_ids)), type="warning", duration=15)

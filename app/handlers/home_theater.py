@@ -351,6 +351,12 @@ def define_server(input, output, session, *,
                     return pid
         return None
 
+    def _recipe_raw() -> dict:
+        """The resolved dictionary of the open recipe, for the rule of a key drop (`utils.key_drop`, by place, D-0358). Read without a reactive dependency: the handlers that
+        ask it run on an event."""
+        with reactive.isolate():
+            return active_cfg().raw_config
+
     # ── Mode and data choice (slice B, D-0016, D-0310) ────────────────────────────────────────────────
     def _audit_available() -> bool:
         """True when the mode switch exists: the audit is on (`t3_sandbox_enabled`) and so is the interactive strip."""
@@ -2506,6 +2512,7 @@ def define_server(input, output, session, *,
         safe_input=safe_input,
         notification_log=notification_log,
         session_processing_issues=session_processing_issues,
+        recipe_raw=_recipe_raw,
     )
 
     # ── Phase 25-F: Data Import panel ────────────────────────────────────────
@@ -2541,5 +2548,6 @@ def define_server(input, output, session, *,
         _plot_label=_plot_label,
         _table_identity=_dialog_table_identity,
         notification_log=notification_log,
+        recipe_raw=_recipe_raw,
     )
 

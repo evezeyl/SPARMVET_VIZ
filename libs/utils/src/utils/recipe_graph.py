@@ -62,7 +62,7 @@ If deleted: nothing runs yet; the rebuild of those callers needs it.
 # @deps
 # provides: function:build_graph, function:source_tables_of_plot, function:source_tables_of_table, class:RecipeGraph, class:RecipeGraphError, class:GraphProblem, class:Node, class:ColumnInfo, method:RecipeGraph.declared_entity_keys
 # consumes: libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/join_keys.py, libs/utils/src/utils/action_names.py
-# consumed_by: libs/utils/tests/test_recipe_graph.py, libs/utils/src/utils/lineage_walk.py (declared_entity_keys, key_family_of, lineage_forward), app/tests/test_read_source.py (source_tables_of_plot: the source tables that feed a plot, for the Source view of HOME, D-0310)
+# consumed_by: libs/utils/tests/test_recipe_graph.py, libs/utils/src/utils/lineage_walk.py (declared_entity_keys, key_family_of, lineage_forward, plot_columns), libs/utils/src/utils/declared_plans.py (column_info, parents), libs/utils/src/utils/key_drop.py (build_graph), app/tests/test_read_source.py (source_tables_of_plot: the source tables that feed a plot, for the Source view of HOME, D-0310)
 # doc: .claude/knowledge/architecture_decisions.md#adr-099, .claude/knowledge/architecture_decisions.md#adr-101, .claude/design/home_stage2_mechanism_spec.md (sections 1 to 3, P3), .claude/design/home_audit_steps.md (D1, 5a points 3, 8, 18)
 # @end_deps
 """

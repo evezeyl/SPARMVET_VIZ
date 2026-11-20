@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 from utils import action_names, recipe_tiers
 
 # @deps
-# provides: function:recipe_join_keys, function:key_drop_problem, function:join_key_problem, function:key_length_problem, function:self_join, function:self_join_text, function:key_columns, function:suffix_of, constant:JOIN_KEEPS_COLUMNS, constant:JOIN_ACTIONS, constant:ROW_STEPS
+# provides: function:recipe_join_keys, function:join_key_problem, function:key_length_problem, function:self_join, function:self_join_text, function:key_columns, function:suffix_of, constant:JOIN_KEEPS_COLUMNS, constant:JOIN_ACTIONS, constant:ROW_STEPS
 # consumed_by: libs/transformer/src/transformer/data_assembler.py, libs/blueprint_arch/src/blueprint_arch/join_designer.py, libs/utils/src/utils/recipe_check.py, libs/utils/src/utils/step_effects.py (suffix_of, key_columns, ROW_STEPS)
 # doc: .claude/knowledge/architecture_decisions.md#ADR-102
 # @end_deps
@@ -297,7 +297,7 @@ def _counts_sentence(found: Mapping[str, Any], counts: Mapping[str, Any], table:
 
 
 # ---------------------------------------------------------------------------------------------------------------------
-# The columns an audit may never drop (D-0297)
+# The join keys and the declared keys of a recipe (the warning of a filter on a key; the drop of a key is judged by place in `utils.key_drop`, D-0358)
 # ---------------------------------------------------------------------------------------------------------------------
 
 
@@ -318,28 +318,3 @@ def recipe_join_keys(raw: Any) -> List[str]:
                 keys.update(left)
                 keys.update(right)
     return sorted(keys)
-
-
-def entity_key_columns(raw: Any) -> List[str]:
-    """The columns declared `is_entity_key: true` in any schema of the recipe, sorted (the key of a table: the sample id)."""
-    found: set = set()
-    for body in recipe_tiers.schema_bodies(raw).values() if isinstance(raw, dict) else []:
-        fields = body.get("input_fields") if isinstance(body, dict) else None
-        for name, field in (fields.items() if isinstance(fields, dict) else []):
-            if isinstance(field, dict) and field.get("is_entity_key") is True:
-                found.add(name)
-    return sorted(found)
-
-
-def key_drop_problem(raw: Any, columns: Any) -> Optional[str]:
-    """None, or the plain sentence that says why the audit may not drop these columns: one of them is a join key of the recipe, or the declared key of a
-    table (D-0297: "dropping a column that is a join key through the audit is refused, and the app says why in plain words"). `columns` is the list of a
-    `polars_drop` step; anything that is not a list of names is not judged here (the checker reports it)."""
-    if not isinstance(columns, list):
-        return None
-    joined, declared = set(recipe_join_keys(raw)), set(entity_key_columns(raw))
-    named = [c for c in columns if isinstance(c, str) and (c in joined or c in declared)]
-    if not named:
-        return None
-    return (f"Cannot drop the key column(s) {', '.join(named)}: the tables are joined on {'it' if len(named) == 1 else 'them'} or {'it is' if len(named) == 1 else 'they are'} "
-            "the declared key of a table, so a key column cannot be dropped through the audit. Use a row filter or a removal by key instead.")
