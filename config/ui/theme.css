@@ -362,6 +362,13 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 .spv-strip-label { padding-top: 0; margin-top: -1px; }
 /* One shared 4-column grid (Source, T1, T2, T3) so the options of the two rows (the mode row has two) line up. */
 .spv-header-strip-rows .shiny-options-group { display: grid; grid-template-columns: repeat(4, minmax(0, 9.5rem)); align-items: start; }
+/* HOME-WALK B: in a narrow theater (a 1100 px window leaves about 400 px between the two sidebars) four columns that shrink to nothing printed the options
+   over each other. Below 520 px of strip the row wraps (the title above its options) and the options use two columns. The strip is the container. */
+.theater-header-strip { container-type: inline-size; }
+@container (max-width: 520px) {
+    .spv-header-strip-rows > div { flex-wrap: wrap; }
+    .spv-header-strip-rows .shiny-options-group { grid-template-columns: repeat(2, minmax(0, 9.5rem)); }
+}
 .spv-header-strip-rows .shiny-options-group > label.radio-inline { margin-left: 0 !important; }
 /* View badge (issue #17): what a panel shows now. The original tables and the Result plot are grey ("plain");
    an audited table or plot (Audit mode, with audited steps) is amber, as the Compare pane label. Notes such as T2=T1 are small muted text. */
