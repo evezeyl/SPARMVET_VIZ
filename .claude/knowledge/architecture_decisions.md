@@ -4087,6 +4087,8 @@ following the basename mirroring standard (`rules_manifest_structure.md §1`).
 
 ## ADR-085: "My View" (T3) Decoupled from Audit Capability + T1/T2 Tier Isolation (2026-08-10)
 
+> **SUPERSEDED, replacement BUILT (2026-11-20, ledger D-0350):** there is no "My view" any more (D-0179). Slice B built the mode switch Exploration | Audit (only with `t3_sandbox_enabled`) and the data choice Source | T1 | T2 | T3 (D-0016, D-0310). Exploration filters change only the table viewed and never a plot (D-0327); audit nodes apply only in Audit mode. This entry no longer describes the app.
+
 > **HISTORICAL in part (superseded by ADR-098, 2026-11-11):** decision 1 below, for *exploration* filters (`applied_filters`), no longer holds: they now preview on every view. The rule for audit-committed nodes (My view only) and decisions 2-3 stay active until ADR-099 is built, which replaces My view by audit mode.
 > **SUPERSEDED as the target design (ADR-099 points 1 and 2, 2026-11-11; ADR-105, 2026-11-12, confirmed 2026-11-14):** My view, the scratchpad without the sandbox flag (decision 2) and Send to Audit from My view (decision 3) are replaced by Exploration (table only, data viewed only) and audit mode. This entry describes the app as built until ADR-099 and ADR-105 are built.
 
@@ -4170,6 +4172,8 @@ frozen T1/T2 references — and once `_filter_apply` was fixed to route all comm
 ---
 
 ## ADR-086: Separate "Plot to show" from "Data to show"; Comparison Mode is T2 vs My view (2026-11-05)
+
+> **SUPERSEDED, replacement BUILT (2026-11-20, ledger D-0350):** "Data to show" and "Plot to show" are replaced by the mode (Exploration: one plot, the Result; Audit: the audited plot) and the data choice "Table to view: Source | T1 | T2 | T3" (D-0016, D-0019, D-0180, D-0310; D-0310 also supersedes the "Raw | Result" choice of ADR-099). Compare is a switch of Audit mode, "Original" vs "Audited" (gate `comparison_mode_enabled`, which requires the audit, D-0018). Still true: plots never show T1 (a plot is drawn from its T3); the panel badge is built (`view_badge.py`).
 
 > **To be amended by ADR-099 (not yet built):** the header choices "Plot to show" and "Data to show" are replaced by Exploration (Data: Raw | Result); My view and Compare move to audit mode (Compare as an on/off toggle).
 > **SUPERSEDED as the target design (2026-11-14, ADR-SYNC-1):** decided by ADR-099 points 1 and 2 (2026-11-11), P2 of 2026-11-12 (Exploration has one plot, the Result, immutable; audit mode shows the Result and the audited plot; handoff 2026-11-12) and ADR-105. Point 4 (tier isolation) was already replaced for exploration filters by ADR-098. Points 2 ("plots never show T1") and 7 (the badge) still hold. The text below describes the app as built.
@@ -4293,6 +4297,8 @@ separate "Compare T2 vs T3" switch (visible only in My view) split the plots in 
 
 ## ADR-089: Cache chain, chained content keys for Tier 1, Tier 2 and the loaded manifest (2026-11-05)
 
+> **Status note (2026-11-20, ledger D-0350):** the series of labelled parts of ADR-101 is BUILT (a key per stored table, cache version 6, `app/modules/cache_keys.py:77`), and the engine of a tier is an argument of its key while the plot engine is in no table key (D-0240). Points 3 to 7 below stay.
+
 > **To be amended by ADR-099 (not yet built):** the original cache keeps these rules; a separate audit cache with chained keys is added next to it (key = hash of the upstream key and the operations that will run, stored in the file).
 > **Amended by ADR-099 point 16 (Eve, 2026-11-12, not yet built):** a key is a **series of labelled parts** joined in execution order, not a hash of hashes: `E . rC . dC . [a1] . [s2] . [a2] . [s3] . [a3]`, 128 bits per part, an empty part is left out (T3 = T2 = T1); the T1 key is per collection with precise parts from the recipe graph (point 2 of the decision below stays fail-safe for a collection whose inputs cannot be listed); T3 and audit nodes have keys; `data_batch_hash` stays the full content hashed once per session (point 8, no stat cache; later maybe a pre-hash when new data arrives); the plot input key of the table below is dropped (never built); the older `decision_hash` is retired. Model: `.claude/design/home_evidence/home_hash_model_2026-11-12.md`, diagrams `DM-KEYS*`.
 > **Correction (2026-11-14, ADR-SYNC-1):** the banner above cites ADR-099 point 16, which does not hold this text. The series-of-parts model is recorded in **ADR-101** (decided 2026-11-12). It supersedes decision points 1 and 2 below and the "key = hash of the upstream key and the operations" wording of the first banner; points 3 to 7 stay.
@@ -4347,6 +4353,8 @@ manifest  ───┤                       -> stored as the Tier 1 parquet
 ---
 
 ## ADR-090: Reproducibility, the same data and manifest give the same rows and the same picture (2026-11-05)
+
+> **Status note (2026-11-20, ledger D-0350):** in point 2 below, "The seed is a default, never a rule: `random_state: null` (or `random`) ... asks for a different arrangement on every render" no longer holds. The seed is fixed at 0 by default and written in the recipe; every seed that is used is written in the recipe or the audit recipe; HOME draws no seed per session (D-0056, which replaces that part of D-0004; built, merge 653e70b1). `random_state: null` or `random` on a random layer or in `plot_defaults` is refused by the checker and the render (built). A seed written in the recipe holds (D-0052). The Reshuffle button is offered only in Audit mode (D-0341, built); how a reshuffle is written as an audit step is not decided (D-0341).
 
 > **Partly stale (2026-11-14, ADR-SYNC-1):** decision points 1 and 3 are amended by ADR-100 (DEC34, 2026-11-13): the order rule is a required parameter written in each step, with the Polars name, and the action adds no default (`polars_group_by`, `polars_sort`, `polars_join`, `polars_unique`, `polars_sample`; `summarize`, `drop_duplicates`, `join_filter`, `value_counts` no longer exist). The full new wording is in `.claude/design/adr_100_recipe_format_1_draft.md`, section "ADR-090, proposed new wording". Point 5: the cache version is now "4". Point 2: a seed written in the recipe holds in every view (ADR-104, 2026-11-14; HOME does not follow it yet, SEED-HOLDS-1). **The default when the recipe writes no seed is OPEN, awaiting Eve:** this point says 0; ADR-097 point 2 and HOME's code draw one per session (see ADR-104).
 
@@ -4805,6 +4813,8 @@ while planning this with Eve (2026-11-08):
 
 ## ADR-097: Reproducible export & import — two export modes, T3 reaches the engine only through a forked copy, verification warns rather than blocks (2026-11-09)
 
+> **Status note (2026-11-20, ledger D-0350):** decision 2 below (for `random_state: random`, the seed actually drawn is remembered per session and per plot) is replaced: the seed is fixed at 0 by default and written; HOME draws no seed per session; `random` is refused (D-0056; built, merge 653e70b1). Decision 4 (T3 steps reach the engine through a forked copy of the join's tier 2) is to be replaced: when audit steps have been added, the export holds the audit recipe as the recipe that produced the figures, the original may be added as the baseline, and an audit record with the hash of the audit recipe goes with it (D-0324, D-0333; DECIDED, not built). The old name `decision_hash` is retired with the bundle texts when the export of an audit is built (D-0345).
+
 > **To be amended by ADR-099 (not yet built):** the forked-recipe mechanism gains shared late insertion (level 2) and early source insertion (levels 0-1); the importer's verification legs are to be re-specified for audit steps.
 
 **Status:** ACCEPTED, implemented 2026-11-09. Tracked by
@@ -5018,6 +5028,8 @@ Note 2026-11-15 (Eve): the seed is fixed at 0 by default; HOME draws no seed per
 
 ## ADR-098: Exploration filters preview on every view; only audited steps are permanent (2026-11-11)
 
+> **SUPERSEDED for exploration filters, replacement BUILT (2026-11-20, ledger D-0350):** an exploration filter is built on the table viewed (Source, T1, T2 or T3), changes only that table and never a plot, a stored table or the export, and is removed when the viewed table changes (D-0178, D-0310, D-0311, D-0327; slice B). Point 1 ("plots only on My view") no longer holds; there is no My view (D-0179).
+
 > **Built on dev 2026-11-11. To be amended by ADR-099 (not yet built).** It was first numbered ADR-087 by mistake and renumbered the same day, because ADR-087 is the manifest-errors decision. It describes what the app does today; ADR-099 is the target.
 > **Target superseded in part (2026-11-14, ADR-SYNC-1):** point 1 (exploration filters change plots on My view) by ADR-099 point 1 (the table only; the plot is the recipe's plot) and P2; points 7 and 8 (a step belongs to one plot's T3 and is propagated by "this plot / all / all except") by ADR-105 (the user ticks the nodes of the lineage). **Point 4 (a filter on a column absent from the view is skipped) CONTRADICTS ADR-104 ("no silent error", 2026-11-14).** ~~Its replacement is OPEN, awaiting Eve (D1, see ADR-104).~~ **[Corrected 2026-11-14 after review: point 4 no longer holds. A filter that cannot run is never skipped silently; it gives a plain error (ADR-104 point 1). D1 (a value of another type than its column) was decided the same day: the engine stays strict and gives a plain error (ADR-104 point 7).]** Point 9 is settled by ADR-099 (My view is replaced). Points 2, 3, 5, 6 describe today's app.
 
@@ -5041,6 +5053,8 @@ Note 2026-11-15 (Eve): the seed is fixed at 0 by default; HOME draws no seed per
 
 
 ## ADR-099: Exploration and audit mode — original and audit data, four levels of audit step, no draft (2026-11-11)
+
+> **Status note (2026-11-20, ledger D-0350):** BUILT in part. Slice A: a key per stored table, the plot's T3 reader, the audit copy in memory. Slice B: Exploration with the data choice Source | T1 | T2 | T3 (D-0310 supersedes the "Raw and Result" choice of point 1), Audit mode with Compare, the flag rule of point 8 (fatal, D-0018). Refined on 2026-11-20 by D-0310 to D-0347: filters cleared on a view change (D-0311); old and other-recipe sessions refused (D-0312, D-0317); one undo control "Remove step" (D-0314); the audit log (D-0315); the dialog: all places ticked, table and picture changed, distinct tables with their reach, the lineage walk (D-0316, D-0318, D-0337, D-0346, D-0347); the entity key and the join columns (D-0313); only filters and drops (D-0322); the audit recipe file: folder, comments kept, id counter, `info.audit_of`, `audit_comment`, `audit_steps`, tamper check, audit record (D-0319, D-0320, D-0321, D-0328, D-0329, D-0331, D-0332, D-0333, D-0339, D-0340); places by the engine's plan (D-0325); the build at opening (D-0326, D-0334, D-0335, D-0336, D-0343); exploration never changes a plot (D-0327); the export of an audit (D-0324). NOT BUILT: the audit recipe file and its record, the new dialog and its walk, the opening build, the export of an audit.
 
 > **[HISTORICAL title words, 2026-11-14: "four levels of audit step" no longer holds. A step is written at T1 or T2 of a table or at T3 of a plot, on the nodes the user ticks (point 12, 2026-11-12, and ADR-105).]**
 
@@ -5186,6 +5200,8 @@ with levels 0-2. **[HISTORICAL in part, 2026-11-14: the reach options and the le
 
 ## ADR-100: Recipe format version 1 (decided 2026-11-12 to 2026-11-14)
 
+> **Status note (2026-11-20, ledger D-0350):** point 9 below is out of date in two places: the engine reads `tier3` (`DataOrchestrator.materialize_tier3`, built) and P05 is retired (`recipe_check.py:1064`); the tier-3 container is written `tier3: {steps: [...]}` since the amendment of 2026-11-17 (D-0236, D-0250). The axis-title default of DEC22 is NOT built, and D-0253 (figure text only in `labs`) is in tension with it: listed for Eve.
+
 **Status:** DECIDED by @evezeyl, decision by decision (DEC01 to DEC49, each dated in `.claude/design/recipe_format_spec.md` section 2.1). Recorded here on 2026-11-14 (ADR-SYNC-1) from the draft `.claude/design/adr_100_recipe_format_1_draft.md`, which keeps the per-item build table (checked against the code at `27f7a2e3`; not re-checked here). Eve reads this wording. Mostly BUILT on `feat/recipe-format-1`; items NOT BUILT are named below.
 **Supersedes:** ADR-013 and ADR-014 (DEC23, DEC24, DEC45); the last point of ADR-042 (an unquoted `on` is refused, DEC02 and check T07).
 **Amends:** ADR-090 points 1 and 3 (DEC34: order rules are required parameters; the new wording is in the draft, section "ADR-090, proposed new wording"); ADR-001 and ADR-004 (the `columns` rule, DEC14, DEC15, DEC32); ADR-041 point 1 (`output_fields` is gone; the rest is confirmed by DEC08); ADR-046 (`final_contract`); ADR-037 and ADR-063 (gallery taxonomy, DEC21, DEC47, DEC48); ADR-094 (one checker, DEC03); ADR-099 point 16(g) (unknown keys fail, DEC02).
@@ -5227,6 +5243,8 @@ Note 2026-11-15 (Eve): row order: the user is informed; warnings are clearly dis
 
 
 ## ADR-101: Node keys are a series of labelled parts (decided 2026-11-12)
+
+> **Status note (2026-11-20, ledger D-0350):** BUILT for the stored tables and the plot's T3 (slice A: a key per stored table, cache version 6, `app/modules/cache_keys.py`; `DataAnalysisRecipeKeys.plot_key_of`); the audit parts a1, a2, a3 are built for the audit copy in memory (`cache_keys.py` with `utils.audit_copy`). The "NOT BUILT" of the status line below is out of date. The engine of a tier is an argument of its key (D-0240). The retirement of `decision_hash` is done with the bundle texts when the export of an audit is built (D-0345; not built).
 
 **Status:** DECIDED by @evezeyl on 2026-11-12 (`.claude/design/home_evidence/home_hash_model_2026-11-12.md` section 5, points 1 to 5; commit `4e1407bb`, 17:19). Recorded here 2026-11-14 (ADR-SYNC-1). NOT BUILT (task KEYS-NODE-1; the precise parts need the recipe graph, RECIPE-GRAPH-UTILS-1).
 **Supersedes:** ADR-089 decision points 1 and 2 (a key as a hash of the upstream key and inputs; the "plot input" key); the key formula of ADR-099 point 5 ("SHA-256(upstream key + the canonical list of operations)"); the wording `hash(previous key, steps)` of ADR-099 point 12 and `home_audit_steps.md` 5a point 15 (same day, earlier). Retires `decision_hash` (ADR-031, ADR-069, ADR-089 consequence 2).
@@ -5325,6 +5343,8 @@ Note 2026-11-15 (Eve): row order: the user is informed; warnings are clearly dis
 
 
 ## ADR-105: Audit acts along the lineage, chosen by the user; exploration acts only on the data viewed (2026-11-12, confirmed 2026-11-14)
+
+> **Status note (2026-11-20, ledger D-0350):** refined, NOT BUILT: the tick lines are only distinct tables, the lowest level of the lineage that really has steps, each with its reach, plus a line for one plot only; a join that no plot reads is not offered (D-0346); every place starts ticked (D-0316), a place with another type too, with its type stated (D-0337); the places are found by the engine's plan (D-0325) and a walk back, forward and back again (D-0347); the dialog says "table changed" and "picture changed" per plot (D-0318). Point 6 ("the copy minus its marked audit steps must equal the original") is kept, with the file form of D-0332: the author's `steps` untouched and a second list `audit_steps` per tier, `audit_comment` as the reason (D-0329), tamper check by hash (D-0331). Built today: exploration acts only on the data viewed (slice B); the audit writes at T3 of a plot with the old dialog.
 
 **Status:** DECIDED by @evezeyl. The design: `.claude/design/home_audit_steps.md` sections 3, 4 and 5a (2026-11-12, P1, P3, P5, P7; 2026-11-13, point 22). Confirmed 2026-11-14 as R1 (channel M73, her words: "We decided the lineage for audit. For exploration it is only the data that is viewed. That is the rule."). Recorded here 2026-11-14 (ADR-SYNC-1). NOT BUILT (stage 2, STAGE2-SPEC-1; the recipe graph, RECIPE-GRAPH-UTILS-1).
 **Supersedes:** ADR-099 point 4 (reach selector, levels 0 to 3, "remove samples by ID is early, at the sources"), point 6 as a mechanism (the key is information, not mechanism), point 7 sentence "Drops are not recommended outside plot level"; ADR-098 points 7 and 8 (a step propagated by "this plot / all / all except"); ADR-049 (propagation dialog, `plot_scope`).
