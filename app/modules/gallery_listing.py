@@ -10,7 +10,7 @@ Consumed by: app/handlers/gallery_handlers.py. App features gate: none here; the
 If deleted: the viewer would list whatever the stored index lists, failed examples included.
 
 # @deps
-# provides: function:external_links_new_tab, function:build_listing, function:read_listing, class:GalleryListing, constant:READ_ONLY_LINE, constant:FAILED_LINE, constant:NOTE_LINES
+# provides: function:matching_examples, constant:FILTER_AXES, constant:NO_MATCH_TEXT, constant:APPLY_RULE_TEXT, function:external_links_new_tab, function:build_listing, function:read_listing, class:GalleryListing, constant:READ_ONLY_LINE, constant:FAILED_LINE, constant:NOTE_LINES
 # consumes: app/src/bootloader.py (rejected_gallery_examples, gallery_index_status, as data given by the caller)
 # consumed_by: app/handlers/gallery_handlers.py, app/tests/test_gallery_listing.py
 # doc: .claude/design/recipe_format_spec.md (section 9: D4, DEC48), .claude/design/decisions_2026-11-14/proposals_for_eve.md (G-a, G-b)
@@ -67,6 +67,34 @@ def read_listing(gallery_dir: Union[str, Path], rejected: dict, status: str) -> 
     except (OSError, ValueError):
         index = {}
     return build_listing(index if isinstance(index, dict) else {}, rejected, status)
+
+
+# The six taxonomy groups, as the ids of the filter inputs write them (gallery_filter_<axis>); the index pivot calls them by_<axis>.
+FILTER_AXES = ("family", "pattern", "difficulty", "geom", "show", "sample_size")
+
+# Texts of the screen (wording PROVISIONAL, owner to confirm).
+APPLY_RULE_TEXT = "Ticks act only after you press Apply."
+NO_MATCH_TEXT = ("Nothing within this selection. No example matches the ticked filters: tick more values "
+                 'or use "Select all" in the filter groups, then press Apply.')
+
+
+def matching_examples(listing: GalleryListing, applied) -> dict:
+    """The examples that match the applied filters as `{id: name}`, sorted by name.
+
+    `applied` maps an axis to the ticked terms; None means no filter was applied yet. A group with nothing ticked does
+    not filter (all examples stay), the groups combine by intersection, and the terms of one group by union.
+    """
+    registry = listing.registry
+    valid = set(registry)
+    for axis in FILTER_AXES:
+        terms = (applied or {}).get(axis)
+        if not terms:
+            continue
+        found: set = set()
+        for term in terms:
+            found.update(listing.pivot.get(f"by_{axis}", {}).get(term, []))
+        valid &= found
+    return dict(sorted(((rid, registry[rid]["name"]) for rid in valid), key=lambda item: item[1]))
 
 
 _A_OPEN = re.compile(r"<a\b([^>]*)>", re.IGNORECASE)

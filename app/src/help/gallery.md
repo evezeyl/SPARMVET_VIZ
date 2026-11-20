@@ -5,6 +5,8 @@
 ### Browsing
 Use the **Family**, **Data Pattern**, **Difficulty**, **Primary Geom**, **What it Shows**, and **Sample Size** taxonomy filter panels (checkbox groups, with a "Select all" toggle each) to narrow the choices in the **Select an Example** dropdown.
 
+**Ticks act only after you press Apply.** This keeps the screen fast: the list is not recomputed at each tick. A filter group with nothing ticked does not filter, so all its examples stay in the list. The "Select all" box of a group ticks or clears the whole group. When no example matches, the screen says "Nothing within this selection": tick more values, then press Apply again.
+
 ### Example View
 Once an example is selected, the top pane shows three tabs:
 - **Plot Preview** — the rendered example plot

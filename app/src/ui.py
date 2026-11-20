@@ -3,6 +3,7 @@
 # consumes: pathlib, shiny, app.src.bootloader, base64, mimetypes
 # consumes: app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1, included via ui.tags.script)
 # consumes: app/src/www/export_ready.js (D-0270, included via ui.tags.script)
+# consumes: app/src/www/gallery_select_all.js (GALLERY-CHECK-1, included via ui.tags.script, only with gallery_enabled)
 # consumed_by: app.src.main
 # doc: ADR-027, ADR-029a, ADR-030, ADR-039, ADR-052
 # @end_deps
@@ -81,6 +82,13 @@ def export_ready_script_tags() -> list:
     return [ui.tags.script(src=_versioned("/export_ready.js"))]
 
 
+def gallery_script_tags() -> list:
+    """The script of the Gallery filter groups, only where the Gallery can exist (ADR-071 rule 2: positive inclusion)."""
+    if not bootloader.is_enabled("gallery_enabled"):
+        return []
+    return [ui.tags.script(src=_versioned("/gallery_select_all.js"))]
+
+
 app_ui = ui.page_fillable(
     ui.head_content(
         ui.tags.style(_base_css),
@@ -95,6 +103,8 @@ app_ui = ui.page_fillable(
         ui.tags.script(src=_versioned("/bp_expr_editor.js")),
         # [D-0270] Export button is ready only when the server holds the values on the screen — vanilla JS, no CDN.
         *export_ready_script_tags(),
+        # [GALLERY-CHECK-1] "Select all" of a Gallery filter group is done in the page, not by a server answer that can arrive late.
+        *gallery_script_tags(),
         # [ADR-039] Cytoscape.js Tube-Map Integration (replaces Mermaid + svg-pan-zoom)
         # Cytoscape core + dagre layout plugin for ranked-LR hierarchical DAG.
         ui.tags.script(src=_versioned("/vendor/cytoscape.min.js")),

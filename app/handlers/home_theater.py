@@ -157,7 +157,8 @@ def define_server(input, output, session, *,
                   data_refresh_trigger=None,
                   notification_log=None,
                   session_processing_issues=None,
-                  recipe_gate_version=None, shown_recipe=None):
+                  recipe_gate_version=None, shown_recipe=None,
+                  gallery_state=None):
     """Register all Home Theater reactive handlers.
 
     Parameters
@@ -2007,7 +2008,9 @@ def define_server(input, output, session, *,
         }
 
         def _render_gallery_main():
-            return gallery_viewer.build_sidebar_ui()
+            # Isolated: the shell must not re-render when the Gallery state changes (section 14, rule R4).
+            with reactive.isolate():
+                return gallery_viewer.build_sidebar_ui(gallery_state.get() if gallery_state is not None else None)
 
         def _render_blueprint_main():
             return wrangle_studio.build_sidebar_ui()
