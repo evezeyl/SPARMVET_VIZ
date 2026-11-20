@@ -35,7 +35,7 @@ e862a2923dbe9748122871ab3b9ad3ce,Gallus gallus,chicken,cloacal swab,uri,Not UTI/
 3faee75572618f1e5b45c2be52f9eb81,Gallus gallus,chicken,air sac,colibacillosis/egg yolk peritonitis,Not UTI/urine/urinary tract
 c55dbb6ab50b86f453a3c1bc89e3ceb6,Gallus gallus,chicken,"liver, lung, intestines","septicemia, peritonitis",Not UTI/urine/urinary tract
 914fffce74c51ac81a8c0a29db4dfdfa,Gallus gallus,chicken,oviduct,salpingitis and egg yolk peritonitis,Not UTI/urine/urinary tract
-b7c6e081689c49ce4a5941b52a9338d0,Gallus gallus,chicken,liver,"mild enteritis--coccidia detected
+b7c6e081689c49ce4a5941b52a9338d0,Gallus gallus,chicken,liver,"mild enteritis--coccidia detected
 ",Not UTI/urine/urinary tract
 17d6e9c6b16468a1a8741c36ff21188f,Gallus gallus,chicken,swab,"air sacc ecol ---->lung-airsacculitis(b), escherichia coli",Not UTI/urine/urinary tract
 1384232ea5fedcf0e16f8ac0b2cc78fe,Gallus gallus,chicken,eye,infection,Not UTI/urine/urinary tract
@@ -110,7 +110,7 @@ d3face8a95823bfd72656034280b3aeb,Canis familiaris,dog,urine,urinary tract infect
 0eead77699b378be1900f4f3339067e6,Canis familiaris,dog,urine,uti,UTI/urine/urinary tract
 ab07ff57134ed6b5cfae05e4f4a046be,Canis familiaris,dog,urine,uti,UTI/urine/urinary tract
 8217a7827352332f8bcfd6079a87ee05,Canis familiaris,dog,urine,uti,UTI/urine/urinary tract
-abfca92c41e510c52a87fe3b16e1ae4f,Canis familiaris,dog,lung,"extraintestinal pathogenic e. coli pneumonia; severe, subacute and necrohemorrhagi
+abfca92c41e510c52a87fe3b16e1ae4f,Canis familiaris,dog,lung,"extraintestinal pathogenic e. coli pneumonia; severe, subacute and necrohemorrhagi
 septicemia/endotoxemia",Not UTI/urine/urinary tract
 14831af72110eed296b73a345503f14d,Canis familiaris,dog,feces,e. coli,Not UTI/urine/urinary tract
 277086e1a73b2d27b5433704e5af1261,Equus caballus,horse,uterine swab,placentitis,Not UTI/urine/urinary tract
@@ -305,9 +305,9 @@ e99de6ca42aabf99092822a359bb2327,Bos taurus,cattle,feces,scours,Not UTI/urine/ur
 22763a93b7dac29fd6efe24dbb4aeb0d,Bos taurus,cattle,intestine,enterocolitis,Not UTI/urine/urinary tract
 0a0e00bef3b7cc92264ec5ba5badc891,Bos taurus,cattle,liver,purulent hepatitis - non hemolytic escherichia coli,Not UTI/urine/urinary tract
 c8ce684686462599f5d6c0773111350c,Bos taurus,cattle,intestine,necrotizing enteritis,Not UTI/urine/urinary tract
-b30faddf2967840d6ec98e2e1bb78098,Bos taurus,cattle,"small 
+b30faddf2967840d6ec98e2e1bb78098,Bos taurus,cattle,"small 
 intestine",enterocolitis,Not UTI/urine/urinary tract
-866b6ba25cb0fdbda21fe3f1289b32b1,Bos taurus,cattle,small intestine,"died; meconium aspiration; fetal
+866b6ba25cb0fdbda21fe3f1289b32b1,Bos taurus,cattle,small intestine,"died; meconium aspiration; fetal
 distress",Not UTI/urine/urinary tract
 847b98b1d9aa07a3958c4f31bb22b15f,Bos taurus,cattle,feces,dead,Not UTI/urine/urinary tract
 13d5d3004589bbe0ea28f3a92bd3d865,Bos taurus,cattle,small intestine,diarrhea,Not UTI/urine/urinary tract
@@ -351,8 +351,8 @@ ddac0c8c4234333086583c759b29c30c,Bos taurus,cattle,feces,enteritis,Not UTI/urine
 ef421e4d2afd23daec258a2aee91fc17,Bos taurus,cattle,fetal tissue pool,abortion,Not UTI/urine/urinary tract
 493defd95515b0daabd2634887446318,Bos taurus,cattle,lung,rotaviral enteric disease/e. coli systemic infection,Not UTI/urine/urinary tract
 e6d69374298cf42485e1dc360bf78062,Bos taurus,cattle,lung,bacteremia,Not UTI/urine/urinary tract
-bbef4ade9a2da694787db0fb6ce0cebc,Bos taurus,cattle,lung,"k99+ escherichia coli pcr (+)
-segmental enteric villus atrophy with weak rotavirus pcr (+)
+bbef4ade9a2da694787db0fb6ce0cebc,Bos taurus,cattle,lung,"k99+ escherichia coli pcr (+)
+segmental enteric villus atrophy with weak rotavirus pcr (+)
 serous atrophy of fat",Not UTI/urine/urinary tract
 d1265265593787b0c25d755e7dbee6bd,Bos taurus,cattle,lung,chronic bronchitis and pleuritis,Not UTI/urine/urinary tract
 2fc26f0a02f103e685140389492b8688,Bos taurus,cattle,lung,enteric k99+ escherichia coli (enterotoxigenic colibacillosis),Not UTI/urine/urinary tract
@@ -499,7 +499,7 @@ d5d394001ae5e337564f2b078f48a8fb,Sus domesticus,swine,joint swab,suppurative bro
 6347d89c971ce55f7a7a3700000abf86,Sus domesticus,swine,brain swab,"enterocolitis, severe,?neutrophilic to histiocytic with phlebitis",Not UTI/urine/urinary tract
 624565f5792b63b0e636a36181d62c73,Sus domesticus,swine,feces,enteritis,Not UTI/urine/urinary tract
 5b9df16843604d024324dee661d70bcd,Sus domesticus,swine,ileum,enteritis,Not UTI/urine/urinary tract
-fa89703059eb6ad5f15281017497e947,Sus domesticus,swine,lung,"subacute necrotizing enteritis
+fa89703059eb6ad5f15281017497e947,Sus domesticus,swine,lung,"subacute necrotizing enteritis
 ",Not UTI/urine/urinary tract
 f2f5dbb01629b5afb70b5b4fb99bb9c7,Sus domesticus,swine,small intestine,necrotizing enteritis,Not UTI/urine/urinary tract
 4643d7e1bf5f9f487c17ddaf4b5b3ced,Sus domesticus,swine,lung,acute pneumonia,Not UTI/urine/urinary tract
@@ -509,9 +509,9 @@ f44014a08ded3eeddeb778a27c5ceaca,Sus domesticus,swine,ileum,enterocolitis due to
 5abcd1757aad8fa06a98bc4c8dec3fa9,Sus domesticus,swine,intestine,enteritis,Not UTI/urine/urinary tract
 2f9e645d9d4a7260c9a4775fcbb81a9f,Sus domesticus,swine,intestine,enteritis,Not UTI/urine/urinary tract
 24b3c36fd8235ee4a66151172fac68b0,Sus domesticus,swine,intestine,enteritis,Not UTI/urine/urinary tract
-30c1249694e4cd455f0ac6d802f548db,Sus domesticus,swine,liver,"hematopoiesis 
+30c1249694e4cd455f0ac6d802f548db,Sus domesticus,swine,liver,"hematopoiesis 
 in liver and spleen",Not UTI/urine/urinary tract
-c0ffc53853c4a36a416ac4609d0e1a01,Sus domesticus,swine,"small
+c0ffc53853c4a36a416ac4609d0e1a01,Sus domesticus,swine,"small
  intestine",enteritis,Not UTI/urine/urinary tract
 36aaf1b00ca9f237309cbefea152b980,Sus domesticus,swine,rectal swab,diarrhea,Not UTI/urine/urinary tract
 c879d279fa7743951fb93fa0b8c0ec5c,Sus domesticus,swine,rectal swab,enteritis,Not UTI/urine/urinary tract
@@ -917,7 +917,7 @@ cb201c91fa862783565c97d48165671c,Bos taurus,cattle,synovial fluid,septic arthrit
 3d499e54a57d5d3bb97d50932298a56c,Bos taurus,cattle,intestine,enterocolitis,Not UTI/urine/urinary tract
 d7cf2172fd7f0efd9e041f624a026acc,Bos taurus,cattle,intestine,enteritis,Not UTI/urine/urinary tract
 d3faa0c1bdf4a6c57093d8250cc0ebe2,Bos taurus,cattle,feces,enteritis,Not UTI/urine/urinary tract
-28d47cc799ccfeeb9d78a2b0328a5745,Bos taurus,cattle,jejunum,"sepsis (possible colibacillosis)
+28d47cc799ccfeeb9d78a2b0328a5745,Bos taurus,cattle,jejunum,"sepsis (possible colibacillosis)
 multiple antibiotic resistant e coli",Not UTI/urine/urinary tract
 f14350aca5a92b543d87c4074418ff4c,Bos taurus,cattle,liver,enteritis,Not UTI/urine/urinary tract
 f8a9383ece007837365c1ee04211cd43,Bos taurus,cattle,feces,enteritis,Not UTI/urine/urinary tract
