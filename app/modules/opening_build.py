@@ -32,8 +32,9 @@ import polars as pl
 from app.modules.build_failure import short_engine_text
 from utils.recipe_tiers import plot_entries, tier2_steps, tier3_steps
 
-# PROVISIONAL (D-0336 leaves the number open; the coordinator proposed one million rows per plot): the number of rows a plot receives above which the
-# app warns in plain words. Nothing is refused. The one place of the number.
+# The number of rows a plot receives above which the app warns in plain words; nothing is refused (D-0336). The VALUE is decided by the owner on
+# 2026-11-20 (1,000,000 rows per plot; ledger line D-0363 is being written by the coordinator): it is no longer provisional. The TEXT of the warning
+# (`large_plot_warning`) stays PROVISIONAL. The one place of the number.
 LARGE_PLOT_ROWS = 1_000_000
 
 TIER1, TIER2, TIER3, PLOT = "tier1", "tier2", "tier3", "plot"
@@ -97,7 +98,7 @@ def progress_text(recipe_id: str, tables_done: int, tables_total: int, plots_don
 
 
 def large_plot_warning(plot_id: str, rows: int, limit: int) -> str:
-    """PROVISIONAL wording (D-0336): the plot receives very many rows; nothing is refused."""
+    """The warning text, PROVISIONAL wording (D-0336): the plot receives very many rows; nothing is refused."""
     return (f"The plot '{plot_id}' receives {rows:,} rows (more than {limit:,}). Drawing it may take long and use much memory; nothing is refused. "
             f"Suggestion: count or aggregate in the recipe first (a tier-2 step of its table or a tier-3 step of the plot), so the plot receives fewer rows.")
 

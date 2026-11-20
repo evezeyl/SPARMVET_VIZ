@@ -2,7 +2,7 @@
 
 D-0326: at the opening every tier 1 table, every tier 2 table of a collection that has tier-2 steps, the tier 3 table of every plot with tier-3 steps
 (D-0343) is built and stored by key; a later opening with equal keys builds nothing. D-0335: every plot is drawn once, from its table, as the proof that
-it draws; nothing is stored of it. D-0336: a plot that receives very many rows gets a warning, nothing is refused (the number is PROVISIONAL, one
+it draws; nothing is stored of it. D-0336: a plot that receives very many rows gets a warning, nothing is refused (the number, 1,000,000, is decided by the owner on 2026-11-20 and kept in one
 constant). D-0327: a recipe with a plot that cannot be drawn is refused with a plain reason, and a recipe whose plots all draw opens. D-0334: the
 progress is counted from the plan.
 
