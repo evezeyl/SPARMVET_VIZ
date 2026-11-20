@@ -1167,7 +1167,13 @@ body:has(#home_opening_cover) #session_management_ui { visibility: hidden; }
 /* bslib draws the handle of each side panel (class .bslib-sidebar-resize-handle); by default a 2 px bar at 10 % opacity that nobody finds.
    Here: a wider area to grab, the resize cursor and a grip that is always visible in the middle of the panel's edge (muted grey, brand blue
    when pointed at or dragged). The tooltip is set by app/src/www/panel_widths.js. PROVISIONAL look (D-0386): the owner judges it. */
-.bslib-sidebar-layout { --bslib-sidebar-resize-handle-width: 16px; }
+/* The grab area lies in the 10 px gap between a panel and the main area (rules_css_style_spec.md section 3c), never over the panel's content: bslib
+   puts it over the panel's edge, where it covered the last pixels of the controls (a day of the date calendar could not be clicked). Its z-index
+   is below the pop-ups of the panel (the date calendar has z-index 10, Bootstrap dropdowns 1000), so a pop-up that reaches the edge is above it. PROVISIONAL (D-0386). */
+.bslib-sidebar-layout { --bslib-sidebar-resize-handle-width: 10px; }
+.bslib-sidebar-layout > .bslib-sidebar-resize-handle { z-index: 5; }
+.bslib-sidebar-layout:has(> #nav_sidebar) > .bslib-sidebar-resize-handle { transform: translateX(calc(var(--bslib-sidebar-resize-handle-width) + 2px)); }
+.bslib-sidebar-layout:has(> #audit_sidebar) > .bslib-sidebar-resize-handle { transform: translateX(calc(-1 * (var(--bslib-sidebar-resize-handle-width) + 2px))); }
 .bslib-sidebar-layout > .bslib-sidebar-resize-handle { cursor: ew-resize; }
 .bslib-sidebar-layout > .bslib-sidebar-resize-handle .resize-indicator { width: 4px; height: 48px; background-color: #6c757d; opacity: 1; border-radius: 2px; }
 .bslib-sidebar-layout > .bslib-sidebar-resize-handle:hover .resize-indicator,

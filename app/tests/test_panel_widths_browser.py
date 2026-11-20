@@ -215,6 +215,46 @@ def test_many_drags_in_one_page_load_all_work_and_a_real_resize_still_applies_th
     assert abs(got["left"] - left / 1366 * 1600) < 3 and abs(got["right"] - right / 1366 * 1600) < 3, (got, left, right)
 
 
+# what a click must reach: the controls of the panels and of the main panel. The grab area of a handle never lies over one of them.
+CONTROLS = "input, button, a, select, textarea, label, .selectize-control, .accordion-button, .nav-link, .card, .plot-container, img, svg, canvas, table"
+HANDLES_OVER = """([ctl, sel]) => { const out = [];
+  for (const h of document.querySelectorAll('.bslib-sidebar-resize-handle')) {
+    const b = h.getBoundingClientRect(); if (b.width === 0) continue;
+    const prev = h.style.pointerEvents; h.style.pointerEvents = 'none';
+    for (let y = b.top + 4; y < b.bottom - 4; y += 12) for (const x of [b.left + 1, (b.left + b.right) / 2, b.right - 1]) {
+      const e = document.elementFromPoint(x, y); const c = e && e.closest(ctl); if (c) out.push(c.tagName + '#' + c.id + '.' + String(c.className).slice(0, 30) + ' at ' + Math.round(x) + ',' + Math.round(y)); }
+    h.style.pointerEvents = prev; }
+  return out; }"""
+
+
+def test_the_grab_area_of_the_handles_lies_in_the_gap_and_covers_no_control(page: Page, shiny_app: ShinyAppProc):
+    """A grab area over a control makes it unclickable (the date calendar near the left panel's edge); it lies between the panel and the main area."""
+    _open_recipe(page, shiny_app.url, 1100)
+    set_mode(page, "audit")
+    _wait_right(page, True)
+    page.wait_for_timeout(500)
+    got = page.evaluate("""() => { const r = {}; for (const [k, id] of [['left', 'nav_sidebar'], ['right', 'audit_sidebar']]) {
+      const a = document.getElementById(id).getBoundingClientRect(); const h = document.getElementById(id).closest('.bslib-sidebar-layout').querySelector(':scope > .bslib-sidebar-resize-handle').getBoundingClientRect();
+      r[k] = {aside: [a.left, a.right], handle: [h.left, h.right]}; } return r; }""")
+    assert got["left"]["handle"][0] >= got["left"]["aside"][1] - 1, got        # not over the left panel
+    assert got["right"]["handle"][1] <= got["right"]["aside"][0] + 1, got      # not over the right panel
+    assert got["left"]["handle"][1] - got["left"]["handle"][0] >= 8, got        # still wide enough to grab
+    assert page.evaluate(HANDLES_OVER, [CONTROLS, None]) == []
+
+
+def test_a_control_at_the_right_edge_of_the_left_panel_is_clickable_at_1100(page: Page, shiny_app: ShinyAppProc):
+    _open_recipe(page, shiny_app.url, 1100)
+    aside = page.locator("#nav_sidebar").bounding_box()
+    edge = aside["x"] + aside["width"] - 3
+    # the last pixels of the panel (its content and its scroll bar) belong to the panel, not to the handle
+    tops = page.evaluate("([x, ys]) => ys.map(y => { const e = document.elementFromPoint(x, y); return e && e.closest('.bslib-sidebar-resize-handle') ? 'handle' : 'ok'; })",
+                         [edge, [150, 300, 450, 600, 750]])
+    assert set(tops) == {"ok"}, tops
+    # a pop-up reaching the edge is above the handle: the stacking order of the handle is lower than the pop-ups (the date calendar has 10)
+    z = page.evaluate("() => parseInt(getComputedStyle(document.querySelector('.bslib-sidebar-resize-handle')).zIndex)")
+    assert z < 10                       # the date calendar (z-index 10) and Bootstrap's drop-downs (1000) are above it
+
+
 @pytest.mark.parametrize("stored", ["not json {", '{"left": "abc"}', '{"left": -0.3}', '{"left": 5}', '{"left": 0.9, "right": null}', "[1, 2]"])
 def test_a_broken_stored_value_gives_the_default(page: Page, shiny_app: ShinyAppProc, stored):
     _open_app(page, shiny_app.url, 1366, stored=stored)
