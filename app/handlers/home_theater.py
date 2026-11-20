@@ -157,7 +157,7 @@ def define_server(input, output, session, *,
                   data_refresh_trigger=None,
                   notification_log=None,
                   session_processing_issues=None,
-                  recipe_gate_version=None):
+                  recipe_gate_version=None, shown_recipe=None):
     """Register all Home Theater reactive handlers.
 
     Parameters
@@ -203,6 +203,8 @@ def define_server(input, output, session, *,
         DIAG-RUNTIME-AUDIT-1: accumulates structured runtime error entries.
     recipe_gate_version : reactive.Value[int] | None
         The version of the load gate (GATE-GAP-1); the opening of a recipe moves it when it refuses the recipe (D-0326).
+    shown_recipe : reactive.Value | None
+        The recipe HOME shows in this session; the opening writes the recipe it opens, so the gate follower can name it when it is refused on the first screen.
     """
 
     from app.modules.notification_utils import make_notifier
@@ -2464,6 +2466,7 @@ def define_server(input, output, session, *,
             recipe_gate_version=recipe_gate_version,
             opening_state=opening_state,
             notify=_notify,
+            shown_recipe=shown_recipe,
         )
 
     # ── Export pipeline (system_tools_ui + bundle + audit reports) ────────────

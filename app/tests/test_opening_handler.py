@@ -253,17 +253,18 @@ def real_opening(gate_world, tmp_path, monkeypatch):
     effects = {}
     monkeypatch.setattr(reactive, "Effect", lambda fn: effects.setdefault(fn.__name__, fn) and fn)
     orchestrator = DataOrchestrator(gate_world.folder, gate_world.root / "raw_data", data_lookup="by_dataset_id")
-    notes, state, version = [], reactive.Value({}), reactive.Value(0)
+    notes, state, version, shown = [], reactive.Value({}), reactive.Value(0), reactive.Value(None)
     define_server(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), bootloader=gate_world.boot, orchestrator=orchestrator, viz_factory=PlotEngines(),
                   safe_input=lambda i, k, d: {"sidebar_nav": "Home", "data_analysis_recipe_id": "tiny"}.get(k, d),
                   view_keys=lambda: orchestrator.compute_data_analysis_recipe_keys("tiny"), recipe_gate_version=version, opening_state=state,
-                  notify=lambda text, type="message", duration=5: notes.append((type, text)), proven=ProvenDrawings())
+                  notify=lambda text, type="message", duration=5: notes.append((type, text)), proven=ProvenDrawings(), shown_recipe=shown)
 
     def run():
         clear_data_analysis_recipe_cache()
         with reactive.isolate():
             effects["_open_recipe"]()
             return state.get(), version.get()
+    run.shown = shown
     return run, notes
 
 
@@ -292,6 +293,24 @@ def test_a_recipe_with_a_plot_that_cannot_be_drawn_is_refused_through_the_gate_w
     assert any(kind == "error" and "could not be opened" in text and "'p'" in text for kind, text in notes)
     text = rejected_recipe_text("tiny", record)
     assert "could not be opened" in text and "'p'" in text and "lab@example.org" in text and "after its files changed" not in text
+
+
+def test_a_recipe_refused_on_the_first_screen_is_named_in_the_fall_back_notice(gate, tmp_path, monkeypatch):
+    """The first screen: the selector value has not reached the server (`current` None) and nothing was remembered. The opening writes the recipe it opens into the
+    shared `shown_recipe`, so the follower names it. MUTATION F1: an opening that does not write it leaves the notice empty (the recipe is switched silently)."""
+    from app.handlers.recipe_gate_handlers import follow_step
+    gate.set_plot_column("no_such_column")
+    gate.boot.recheck_changed_data_analysis_recipes()
+    run, _ = real_opening(gate, tmp_path, monkeypatch)
+    with reactive.isolate():
+        assert run.shown.get() is None, "first screen: nothing remembered yet"
+    state, _ = run()
+    assert state["status"] == "refused"
+    with reactive.isolate():
+        remembered = run.shown.get()
+    assert remembered == "tiny"
+    choices, selected, notice, announce = follow_step(["other"], None, remembered, None)
+    assert (choices, selected, notice, announce) == (["other"], "other", ("tiny", "other"), True)
 
 
 def test_a_refused_recipe_comes_back_when_its_files_change_and_is_refused_again_if_it_still_fails(gate, tmp_path, monkeypatch):

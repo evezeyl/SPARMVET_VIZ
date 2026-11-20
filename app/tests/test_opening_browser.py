@@ -10,7 +10,8 @@ What a person sees, and is proved here:
   opening is done; the theater waits and then shows the plots;
 - after the opening every table is stored (files by key) and choosing another plot builds nothing: no file of the store is written and the server prints no build;
 - a second visit (a new page, the same app) builds nothing and draws nothing again;
-- a recipe with a plot that cannot be drawn is not used: the page falls back to the healthy recipe, says why, and the server did not crash.
+- a recipe with a plot that cannot be drawn is not used: the page falls back to the healthy recipe, says why, says that HOME switched (also when the refusal
+  comes on the very first screen), and the server did not crash.
 
 Flags: SPARMVET_APP_FEATURES=qa (`ghost_save` off), SPARMVET_DATA_ANALYSIS_RECIPE=the staged recipe, one app per test. NOT covered: the wording of the progress
 line in a narrow window, the memory and the time of a large recipe (measured in `tmpAI`, see the report), two sessions that open the same recipe at the same time,
@@ -122,4 +123,6 @@ def test_a_recipe_with_a_plot_that_cannot_be_drawn_is_not_used_and_the_page_says
         expect(notes).to_contain_text(g.STAGE, timeout=30_000)          # the recipe is listed with the ones HOME does not use
         expect(notes).to_contain_text("Plot 'mlst_bar'", timeout=30_000)  # the reason names the plot
         expect(notes).to_contain_text("no_such_column", timeout=30_000)   # and the column
+        # the user is told that HOME switched, never switched silently (ADR-104): the recipe that was open on the first screen is named
+        expect(notes).to_contain_text(f"'{g.STAGE}' was open and no longer passes its checks: HOME shows '{g.OTHER}' instead.", timeout=30_000)
         assert g.server_errors(log) == []

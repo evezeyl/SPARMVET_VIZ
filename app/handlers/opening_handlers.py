@@ -1,7 +1,7 @@
 """
 @deps
-provides: function:define_server (HOME's opening of a recipe: build, store, draw once, progress), function:opening_waits, function:ProvenDrawings
-consumes: app/modules/opening_build.py (build_plan, run_opening, draw_plot_proof, opening_signature, progress_text), app/src/bootloader.py (reject_after_opening, available_data_analysis_recipes, data_analysis_recipe_gate_version), app/modules/cache_keys.py (load_data_analysis_recipe), app/modules/data_change_notice.py (inputs_changed_during_build_notice), app/modules/notification_utils.py
+provides: function:define_server (HOME's opening of a recipe: build, store, draw once, progress; writes the shared shown_recipe), function:opening_waits, function:ProvenDrawings
+consumes: app/modules/opening_build.py (build_plan, run_opening, draw_plot_proof, opening_signature, progress_text), app/src/bootloader.py (reject_after_opening, available_data_analysis_recipes, data_analysis_recipe_gate_version), app/modules/cache_keys.py (load_data_analysis_recipe), app/modules/data_change_notice.py (inputs_changed_during_build_notice); notify (the Alerts notifier) and shown_recipe (a reactive.Value of server.py, read by recipe_gate_handlers) are handed in
 consumed_by: app/handlers/home_theater.py
 doc: .claude/knowledge/decision_ledger.md (D-0326, D-0343, D-0335, D-0334, D-0336, D-0327), .claude/rules/ui_implementation_contract.md#14, .claude/rules/rules_data_analysis_recipe_structure.md#11
 @end_deps
@@ -60,12 +60,14 @@ def opening_waits(state: dict, available, recipe_id, signature) -> bool:
 
 
 def define_server(input, output, session, *, bootloader, orchestrator, viz_factory, safe_input, view_keys, recipe_gate_version, opening_state,
-                  notify, proven: ProvenDrawings | None = None):
+                  notify, proven: ProvenDrawings | None = None, shown_recipe=None):
     """Registers the effect that opens the recipe HOME shows.
 
     `view_keys`: HOME's calc of the keys of the open recipe (computed once per project state). `recipe_gate_version`: server.py's shared value, read by
     `active_cfg`; it is moved here when a recipe is refused so that HOME falls back at once, not at the next poll of the gate. `opening_state`: a
-    `reactive.Value({})` made by the caller and read by the theater; `notify(text, type=, duration=)`: the Alerts notifier."""
+    `reactive.Value({})` made by the caller and read by the theater; `notify(text, type=, duration=)`: the Alerts notifier. `shown_recipe`: the
+    `reactive.Value` of the recipe HOME shows in this session (server.py); the effect writes the recipe it opens before it builds, so that the gate follower
+    can name it when the opening refuses it on the first screen, when the selector value has not reached the server (the notice "no longer passes its checks")."""
     memory = proven if proven is not None else PROVEN
 
     @reactive.Effect
@@ -83,6 +85,8 @@ def define_server(input, output, session, *, bootloader, orchestrator, viz_facto
             return   # the theater shows the error of reading the recipe or its data; nothing is opened from it
         signature = opening_signature(recipe_id, keys)
         with reactive.isolate():
+            if shown_recipe is not None and shown_recipe.get() != recipe_id:   # idempotent guard (section 14, R3)
+                shown_recipe.set(recipe_id)
             if opening_state.get().get("signature") == signature:
                 return
         status, result = "ready", None

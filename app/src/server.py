@@ -84,6 +84,9 @@ def server(input, output, session):
 
     # GATE-GAP-1: the gate version, published by recipe_gate_handlers (it polls the load gate, ADR-094); active_cfg depends on it
     recipe_gate_version = reactive.Value(0)
+    # The recipe HOME is showing (or opening) in this session: written by the opening and by the selector, read by the gate follower so that a recipe
+    # refused on the very first screen (the selector value has not reached the server yet) is still named in the "no longer passes its checks" notice.
+    shown_recipe = reactive.Value(None)
 
     # 1. Reactive Data Analysis Recipe Authority (Universal Architecture)
     @reactive.Calc
@@ -192,7 +195,7 @@ def server(input, output, session):
 
     # HOME follows the load gate: poll, recipe selector and its notes (GATE-GAP-1)
     _define_recipe_gate_server(input, output, session, bootloader=bootloader, safe_input=_safe_input,
-                               recipe_gate_version=recipe_gate_version, notification_log=notification_log)
+                               recipe_gate_version=recipe_gate_version, notification_log=notification_log, shown_recipe=shown_recipe)
 
     # Home Theater: dynamic_tabs, sidebar_nav_ui, sidebar_tools_ui, right_sidebar, plots/tables
     from app.handlers.home_theater import define_server as _define_home_theater_server
@@ -220,6 +223,7 @@ def server(input, output, session):
         notification_log=notification_log,
         session_processing_issues=session_processing_issues,
         recipe_gate_version=recipe_gate_version,
+        shown_recipe=shown_recipe,
     )
 
     # Pipeline Audit: T2/T3 nodes, btn_apply, audit_pending_badge (requires t3_sandbox_enabled)

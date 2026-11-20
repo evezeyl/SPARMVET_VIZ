@@ -26,6 +26,29 @@ def test_a_repaired_recipe_returns_to_the_choices_without_moving_the_selection()
     assert follow_gate(["a", "z"], "a", "a") == (["a", "z"], "a", None)
 
 
+def test_the_first_screen_still_says_which_recipe_was_replaced_when_the_selector_value_has_not_reached_the_server():
+    """The opening refused the recipe on the first screen: current is None, the recipe HOME opened is the remembered one (it was not before the fix: the notice was
+    None and the recipe was switched silently)."""
+    assert follow_step(["other"], None, "A", None) == (["other"], "other", ("A", "other"), True)
+    assert follow_step(["other"], None, None, None) == (["other"], "other", None, False), "no recipe was ever shown: nothing to say"
+
+
+def test_the_follower_remembers_into_the_value_the_opening_also_writes(monkeypatch):
+    """`recipe_gate_handlers.define_server` keeps the recipe HOME shows in the `shown_recipe` it is given (shared with the opening), not in a private value."""
+    from shiny import reactive
+    from app.handlers import recipe_gate_handlers as handlers
+    effects = {}
+    monkeypatch.setattr(handlers.reactive, "Effect", lambda fn: effects.setdefault(fn.__name__, fn) and fn)
+    monkeypatch.setattr(handlers.reactive, "poll", lambda *a, **k: (lambda fn: fn))
+    monkeypatch.setattr(handlers, "render", SimpleNamespace(ui=lambda fn: fn))
+    boot = SimpleNamespace(available_data_analysis_recipes={"A": 1}, data_analysis_recipe_gate_version=0)
+    shown = reactive.Value(None)
+    handlers.define_server(None, lambda fn: fn, None, bootloader=boot, safe_input=lambda i, k, d: "A", recipe_gate_version=reactive.Value(0), shown_recipe=shown)
+    with reactive.isolate():
+        effects["_remember_choice"]()
+        assert shown.get() == "A"
+
+
 def test_the_notes_list_the_unavailable_recipes_the_reason_the_contact_and_the_replacement():
     html = str(gate_notes({"r": {"problems": ["[ST02] unknown action", "p2", "p3"], "contact": None}}, {}, ("r", "a")))
     assert "'r' was open and no longer passes its checks" in html and "shows 'a' instead" in html
