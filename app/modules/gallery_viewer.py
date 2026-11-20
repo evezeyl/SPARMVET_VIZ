@@ -69,7 +69,7 @@ class GalleryViewer:
                             bootloader.gallery_index_status)
 
     @staticmethod
-    def _filter_panel(label, input_id, all_id, choices, value):
+    def _filter_panel(label, input_id, all_id, choices, value, selected=None, all_value=True):
         """One collapsible taxonomy filter panel (label + select-all + checkboxes)."""
         return ui.accordion_panel(
             label,
@@ -78,39 +78,49 @@ class GalleryViewer:
                     ui.div(
                         ui.span("Select all", class_="text-muted",
                                 style="font-size:0.78em; white-space:nowrap; margin-right:4px;"),
-                        ui.input_checkbox(all_id, "", value=True),
+                        ui.input_checkbox(all_id, "", value=all_value),
                         class_="gallery-select-all-row",
                         style="display:flex; align-items:center; margin-left:auto;",
                     ),
                     style="display:flex; margin-bottom:0;",
                 ),
                 ui.input_checkbox_group(input_id, label=None,
-                                        choices=choices, selected=choices),
+                                        choices=choices, selected=choices if selected is None else selected),
                 class_="gallery-sidebar-group"
             ),
             value=value,
         )
 
-    def build_sidebar_ui(self):
+    def build_sidebar_ui(self, state=None):
         """
         Gallery filter + example selector UI for the left nav_sidebar.
+
+        `state` is what the user left (ticked terms, applied filters, selected example, ui_implementation_contract.md
+        section 13: a panel's state survives a switch of space). The shell is rebuilt on every switch of space, so the
+        inputs are built from it: they come back as they were left, and the dropdown holds the applied list from the
+        first paint (no empty select filled a moment later). Without a state, everything is ticked and listed.
         ADR-057: moved from internal layout_sidebar to persistent nav_sidebar accordion.
         The six filter panels (label, icon, order of the axes and of their terms) come from the
         specification data through viz_gallery.taxonomy.filter_panels; a panel offers the terms that
         at least one indexed example uses. No list of terms is kept in this file (spec section 9, G1).
         """
+        state = state or {}
         listing = self._load_listing()
         panels = filter_panels(listing.pivot)
-        # The dropdown holds the list from the first paint, so that it and the picture pane agree at once.
-        choices = matching_examples(listing, None)
+        applied = state.get("applied")
+        choices = matching_examples(listing, applied)
+        label = (ui.span(f"Visual Gallery ({len(choices)} matched)", style="font-weight:700;color:#345beb;")
+                 if applied is not None else ui.span("Select an Example", class_="fw-bold"))
+        chosen = state.get("selected")
 
         accordion = ui.accordion(
             ui.accordion_panel(
                 "👨‍🍳 Example",
                 ui.input_select(
                     "gallery_example_select",
-                    ui.span("Select an Example", class_="fw-bold"),
+                    label,
                     choices=choices,
+                    selected=chosen if chosen in choices else None,
                 ),
                 value="gallery_example_panel",
             ),
@@ -122,6 +132,8 @@ class GalleryViewer:
                             panel["label"],
                             f"gallery_filter_{panel['axis']}", f"gallery_all_{panel['axis']}",
                             panel["choices"], f"tax_{panel['axis']}",
+                            selected=state.get("ticked", {}).get(panel["axis"]),
+                            all_value=state.get("all", {}).get(panel["axis"], True),
                         )
                         for panel in panels
                     ],
