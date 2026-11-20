@@ -33,7 +33,7 @@ from utils.legacy_keys import LEGACY_GALLERY_FILES
 from utils.recipe_check import check_recipe
 from utils.recipe_loader import check_recipe_file, load_recipe
 from viz_gallery.example_recipe import DATA_FILE, data_contract, data_summary, dump_example, example_recipe, plot_summary
-from viz_gallery.taxonomy import display_axes, example_taxonomy, tag_strip, with_tag_strip
+from viz_gallery.taxonomy import display_axes, example_name, example_taxonomy, tag_strip, with_tag_strip
 
 RECIPE_FILE = "data_analysis_recipe.yaml"
 META_FILE = "example_meta.md"
@@ -104,7 +104,7 @@ class GalleryManager:
             folder = self.gallery_dir / name
             taxonomy = example_taxonomy(recipe)
             registry[name] = {
-                "name": recipe["info"]["label"],
+                "name": example_name(recipe),
                 "path": str(folder / RECIPE_FILE),
                 "has_preview": (folder / PREVIEW_FILE).exists(),
                 "has_thumb": (folder / THUMB_FILE).exists(),

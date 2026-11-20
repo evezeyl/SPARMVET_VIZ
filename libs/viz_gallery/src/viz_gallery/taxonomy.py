@@ -11,7 +11,7 @@ Consumed by: gallery_manager.py, app/modules/gallery_viewer.py, app/handlers/gal
 assets/scripts/convert_gallery_examples.py. No Shiny import. If deleted: the index and the filter panels cannot be built.
 
 # @deps
-# provides: function:display_axes, function:first_geom, function:the_plot, function:example_taxonomy, function:tag_strip, function:with_tag_strip, function:filter_panels
+# provides: function:display_axes, function:first_geom, function:the_plot, function:example_name, function:example_taxonomy, function:tag_strip, function:with_tag_strip, function:filter_panels
 # consumes: libs/utils/src/utils/recipe_check.py (spec), libs/utils/src/utils/recipe_spec.yaml (gallery)
 # consumed_by: libs/viz_gallery/src/viz_gallery/gallery_manager.py, app/modules/gallery_viewer.py, app/handlers/gallery_handlers.py, assets/scripts/convert_gallery_examples.py
 # doc: .claude/design/recipe_format_spec.md (section 9; findings G1, G4, G7; design D2, D3)
@@ -50,6 +50,20 @@ def the_plot(recipe: Any) -> Optional[Tuple[str, dict]]:
     if len(found) != 1 or not isinstance(found[0][1], dict):
         return None
     return found[0]
+
+
+def example_name(recipe: Any) -> str:
+    """The name of an example: the `ui_label` of its plot entry (D-0387); nothing else is read, there is no fallback.
+
+    `info.label` is for the recipe maker and is not read here. A plot entry without `ui_label` never reaches this
+    function: the checker refuses it (P01, "ui_label is required", `recipe_check.py`), and an example that does not
+    hold exactly one plot is refused by GP01. A recipe that was not checked raises `ValueError`.
+    """
+    plot = the_plot(recipe)
+    label = plot[1].get("ui_label") if plot else None
+    if not isinstance(label, str) or not label.strip():
+        raise ValueError("the example has no plot entry with a ui_label, so it has no name. Fix: write ui_label on the plot entry")
+    return label
 
 
 def example_taxonomy(recipe: dict) -> Dict[str, str]:

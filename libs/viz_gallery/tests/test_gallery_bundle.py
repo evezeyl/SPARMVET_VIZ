@@ -16,7 +16,7 @@ from utils.recipe_check import check_recipe, spec
 from utils.recipe_loader import check_recipe_file
 from viz_gallery.example_recipe import data_contract, dump_example, example_recipe
 from viz_gallery.gallery_manager import GalleryManager
-from viz_gallery.taxonomy import (display_axes, example_taxonomy, filter_panels, first_geom, tag_strip, the_plot,
+from viz_gallery.taxonomy import (display_axes, example_name, example_taxonomy, filter_panels, first_geom, tag_strip, the_plot,
                                   with_tag_strip)
 
 RECIPE = "data_analysis_recipe.yaml"
@@ -315,3 +315,28 @@ def test_a_check_that_did_not_cover_the_actions_and_the_components_is_refused(tm
     with pytest.raises(ValueError, match="was not checked against"):
         _submit(manager, tmp_path, catalogs=catalogs)
     assert list(Path("assets/gallery_data").iterdir()) == []
+
+
+# ---- the name of an example is the ui_label of its plot entry (D-0387) -------------------------------------------------
+
+def test_the_name_is_the_ui_label_of_the_plot_entry_not_info_label(tmp_path):
+    folder = _write_example(tmp_path, "my_plot")
+    recipe = _recipe("my_plot")
+    recipe["info"]["label"] = "Name for the recipe maker"
+    the_plot(recipe)[1]["ui_label"] = "Name for the user"
+    (folder / RECIPE).write_text(dump_example(recipe))
+    manager = GalleryManager(str(tmp_path))
+    index = manager.rebuild_index(CATALOGS)
+    assert index["registry"]["my_plot"]["name"] == "Name for the user"
+    assert example_name(recipe) == "Name for the user"
+
+
+def test_a_plot_entry_without_ui_label_is_refused_by_the_check_and_has_no_name(tmp_path):
+    folder = _write_example(tmp_path, "my_plot")
+    recipe = _recipe("my_plot")
+    del the_plot(recipe)[1]["ui_label"]
+    (folder / RECIPE).write_text(dump_example(recipe))
+    examples = GalleryManager(str(tmp_path)).check_examples(CATALOGS)
+    assert "my_plot" in examples.rejected and any("ui_label" in text for text in examples.rejected["my_plot"])
+    with pytest.raises(ValueError, match="ui_label"):
+        example_name(recipe)
