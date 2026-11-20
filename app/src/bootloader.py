@@ -190,6 +190,7 @@ class Bootloader:
             self._validate_data_analysis_recipes(self._all_data_analysis_recipes)
         )
         self._gate_state = {name: self._watch(path) for name, path in self._all_data_analysis_recipes.items()}
+        # PROVISIONAL (see `reject_after_opening`): the way back of a recipe refused at its opening is a change of the size or time of a data file
         self._opening_watch: dict[str, tuple] = {}   # recipe name -> the data files it was refused for when it was opened, with their size and time (reject_after_opening)
         self.default_data_analysis_recipe_name = self._resolve_default_data_analysis_recipe()
 
@@ -553,7 +554,12 @@ class Bootloader:
         two tiers), and the gate version moves, so HOME falls back as it does for the gate. The record carries `"when": "opening"` so that the text names
         what happened. It comes back by the gate itself: when a file of the recipe changes (the poll), or when a data file in `data_files` changes
         (size or modification time: the data are not read here), the gate is run again; a recipe that still fails when opened is refused again.
-        The dictionaries are replaced, never changed in place (other sessions read them). A name that is not a discovered recipe is ignored."""
+        The dictionaries are replaced, never changed in place (other sessions read them). A name that is not a discovered recipe is ignored.
+
+        PROVISIONAL (no ledger line states these; D-0326 and D-0327 say only that the recipe is refused at the opening with a plain reason): (1) the refusal holds
+        for ALL sessions of the process, because the bootloader is shared; (2) the way back is a change of a file of the recipe or of the size or modification time
+        of a data file it read, not a button and not a time; (3) a data file replaced by another of the same size and the same modification time (a copy that keeps
+        the time) is not seen, so the recipe stays refused until a recipe file changes or the app restarts (the safe direction: nothing wrong is accepted by it)."""
         with self._gate_lock:
             path = self._all_data_analysis_recipes.get(name)
             if path is None:

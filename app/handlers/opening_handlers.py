@@ -31,7 +31,11 @@ from app.modules.opening_build import build_plan, draw_plot_proof, opening_signa
 
 class ProvenDrawings:
     """The recipes whose plots were all drawn once in this process, by signature (recipe, its files, its data): a later opening with the same signature
-    does not draw them again. In memory only: a restart proves again. Thread-safe (sessions run in one process)."""
+    does not draw them again. In memory only: a restart proves again. Thread-safe (sessions run in one process).
+
+    PROVISIONAL (D-0335 says "every plot is drawn once as the proof that it draws" and nothing about a second opening of the same recipe and data): the memory
+    exists so that a second session or a second visit does not pay the drawing of every plot again. What it cannot see is a change of the plot code, of the
+    palette file or of a library between two openings of the same process; these are fixed for a process, a restart proves again."""
 
     def __init__(self):
         self._lock = threading.Lock()
@@ -103,9 +107,13 @@ def define_server(input, output, session, *, bootloader, orchestrator, viz_facto
                     draw=(lambda plot_id, table: None) if already else (lambda plot_id, table: draw_plot_proof(viz_factory, loaded.raw, plot_id, table)),
                     progress=progress, plan=plan)
         except Exception as error:   # a fault of the opening itself, not of the recipe: HOME goes on and builds as it did, and says so
+            # PROVISIONAL (no ledger line states what happens when the opening itself stops): HOME goes on, builds what it shows when it is asked, and the text and the
+            # duration of the toast are the builder's.
             status = "error"
             notify(f"The opening of '{recipe_id}' stopped: {error}. HOME builds what it shows when it is asked.", type="error", duration=20)
         if result is not None:
+            # PROVISIONAL: the texts and the durations (in seconds: 25 a warning, 12 a change of the inputs, 30 a refusal or a stop) of these toasts are the builder's;
+            # no ledger line states them (D-0336 asks for a warning in plain words, D-0327 for a plain reason).
             for text in result.warnings:
                 notify(text, type="warning", duration=25)
             for text in dict.fromkeys(result.inputs_changed):

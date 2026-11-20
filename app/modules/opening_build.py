@@ -32,9 +32,9 @@ import polars as pl
 from app.modules.build_failure import short_engine_text
 from utils.recipe_tiers import plot_entries, tier2_steps, tier3_steps
 
-# The number of rows a plot receives above which the app warns in plain words; nothing is refused (D-0336). The VALUE is decided by the owner on
-# 2026-11-20 (1,000,000 rows per plot; ledger line D-0363 is being written by the coordinator): it is no longer provisional. The TEXT of the warning
-# (`large_plot_warning`) stays PROVISIONAL. The one place of the number.
+# The number of rows a plot receives above which the app warns in plain words; nothing is refused (D-0336). The value is decided: 1,000,000 rows per plot
+# (D-0363, "provisional value is large enough"); the warning fires ABOVE it (more than 1,000,000), not at it. The TEXT of the warning (`large_plot_warning`)
+# is PROVISIONAL. The one place of the number.
 LARGE_PLOT_ROWS = 1_000_000
 
 TIER1, TIER2, TIER3, PLOT = "tier1", "tier2", "tier3", "plot"
