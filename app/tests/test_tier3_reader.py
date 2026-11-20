@@ -467,7 +467,9 @@ def test_the_propagation_dialogs_column_check_reads_each_plot_own_table_not_the_
     check = closure(
         "_column_presence_per_plot",
         _resolve_active_spec=lambda p_id: {"target_dataset": "C", "plot": p_id},
-        _resolve_active_lf=lambda spec: world.orch.materialize_tier3("tiny", spec["plot"], world.anchors, keys=world.keys()))
+        # an audit step is written at the plot's table: the check asks for T3 explicitly, whatever table the data choice shows (slice B)
+        _resolve_active_lf=lambda spec, tier=None: (world.orch.materialize_tier3("tiny", spec["plot"], world.anchors, keys=world.keys())
+                                                    if tier == "T3" else pytest.fail(f"the column check read tier {tier!r}, not T3")))
     node = {"params": {"column": "group"}}
     assert check([node], subtabs) == {"subtab_p_steps": "absent", "subtab_p_plain": "present"}
     assert check([node], subtabs[::-1]) == {"subtab_p_steps": "absent", "subtab_p_plain": "present"}, "the order of the plots does not matter"
