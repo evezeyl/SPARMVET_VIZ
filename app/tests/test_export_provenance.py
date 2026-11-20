@@ -21,7 +21,7 @@ STEPS = [{"action": "filter_eq", "column": "group", "value": "A"}]
 def prov(stage_keys, all_plots):
     return build_export_provenance(
         now=datetime.datetime(2026, 11, 6, 12, 0, 0), data_analysis_recipe_id="tiny", safe_name="eve", app_features="qa",
-        preset="web", dpi=300, active_tier="T2", all_plots=all_plots,
+        preset="web", dpi=300, screen_view="Exploration mode, data view T3", all_plots=all_plots,
         tiers_exported=["T1"], data_analysis_recipe_sha="m" * 64, data_sha="d" * 64,
         bootloader=SimpleNamespace(available_data_analysis_recipes={}), stage_keys=stage_keys,
     )
@@ -30,7 +30,7 @@ def prov(stage_keys, all_plots):
 def prov_t3(t3_by_plot=None, t3_aesthetic_overrides=None):
     return build_export_provenance(
         now=datetime.datetime(2026, 11, 6, 12, 0, 0), data_analysis_recipe_id="tiny", safe_name="eve", app_features="qa",
-        preset="web", dpi=300, active_tier="T2", all_plots=[],
+        preset="web", dpi=300, screen_view="Exploration mode, data view T3", all_plots=[],
         tiers_exported=["T1"], data_analysis_recipe_sha="m" * 64, data_sha="d" * 64,
         bootloader=SimpleNamespace(available_data_analysis_recipes={}), stage_keys=None,
         t3_by_plot=t3_by_plot, t3_aesthetic_overrides=t3_aesthetic_overrides,

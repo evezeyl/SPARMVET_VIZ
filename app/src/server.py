@@ -133,7 +133,13 @@ def server(input, output, session):
     # Convenience shims — kept so existing home_theater.py code continues to work
     # while Phase 22-B wires everything through home_state.
     active_home_subtab = reactive.Value("")
-    tier_toggle = reactive.Value("T1")
+    # What HOME shows (slice B, D-0310). PROVISIONAL P-B7 (the coordinator's names): the mode (Exploration or Audit), the data choice
+    # (Source, T1, T2, T3) and the source table of the Source choice. They are what the radio inputs `home_mode`, `data_view` and
+    # `source_table` say, kept here so that every handler reads one value. PROVISIONAL P-B1: the data choice starts on T3, the table
+    # the plot shows. The session file holds none of them (D-0312).
+    home_mode = reactive.Value("exploration")
+    data_view = reactive.Value("T3")
+    source_table = reactive.Value(None)
 
     # Session manager — Location 4 from connector
     session_manager = SessionManager(bootloader.get_location("user_data"))
@@ -205,7 +211,9 @@ def server(input, output, session):
         active_collection_id=active_collection_id,
         safe_input=_safe_input,
         active_home_subtab=active_home_subtab,
-        tier_toggle=tier_toggle,
+        home_mode=home_mode,
+        data_view=data_view,
+        source_table=source_table,
         home_state=home_state,
         session_manager=session_manager,
         data_refresh_trigger=data_refresh_trigger,

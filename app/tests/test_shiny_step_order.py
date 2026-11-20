@@ -6,7 +6,7 @@
 # @end_deps
 
 A staged recipe (one table of 30 rows: sample_id, year, score = 1..30; one plot of the number of samples per year) in a
-temporary folder of `tmpAI/`; no tracked file is touched. In the qa app features, in "My view":
+temporary folder of `tmpAI/`; no tracked file is touched. In the qa app features, in Audit mode with T3 viewed (slice B):
 
 - order B (filter score >= 16, then drop score): the table and the plot both show the filtered rows (15). The plot differs
   from the Result plot, and the drop does not change it (the old plot path skipped the filter on the dropped column and drew
@@ -39,6 +39,7 @@ import yaml
 from PIL import Image
 from playwright.sync_api import Page, expect
 
+from app.tests.browser_view import set_mode, set_view
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
 from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
@@ -190,8 +191,8 @@ def _start(page: Page, url: str) -> None:
     expect(page.locator(f"#plot_group_{PLOT} img")).to_be_visible(timeout=30_000)
     _wait_shiny(page, 30_000)
     _open_filters_panel(page)
-    page.locator("#tier_toggle input[value=T3]").check(force=True)   # the table shows My view
-    _wait_shiny(page)
+    set_mode(page, "audit")                                           # audit steps are made in Audit mode
+    set_view(page, "T3")                                              # and written at the plot's table: the table shows T3, audited
     _wait_for_fb_col_option(page, "score")
     _expect_rows(page, N)
 
@@ -299,11 +300,7 @@ def _check_bundle(archive: zipfile.ZipFile, reference: pl.DataFrame, dropped: bo
 
 def test_order_b_filter_then_drop_gives_the_same_rows_in_the_table_and_the_plot(page: Page, staged_app):
     _start(page, staged_app)
-    page.locator("#plot_view input[value=T2]").check(force=True)
-    _wait_shiny(page)
-    result_plot = _plot_image(page)                       # the Result plot: all 30 rows
-    page.locator("#plot_view input[value=T3]").check(force=True)
-    _wait_shiny(page)
+    result_plot = _plot_image(page)                       # the plot before any audited step is the Result plot: all 30 rows
     _filter_step(page, 1)
     _expect_rows(page, N - THRESHOLD + 1)                 # the table shows the filtered rows
     filtered_plot = _plot_until(page, lambda im: not _same_picture(im, result_plot), "different from the Result plot (the filter shown)")
@@ -323,9 +320,8 @@ def test_the_filter_dialog_does_not_offer_a_column_that_an_earlier_audit_step_dr
     _drop_step(page, 1)
     page.wait_for_function("() => ![...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
     assert page.locator("#fb_col option").evaluate_all("els => els.map(e => e.value)") == ["sample_id", "year"]
-    # the other views are the tables as they are: Result still offers the column
-    page.locator("#tier_toggle input[value=T2]").check(force=True)
-    _wait_shiny(page)
+    # the other views are the tables as they are: T2 still offers the column
+    set_view(page, "T2")
     page.wait_for_function("() => [...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
 
 
@@ -334,8 +330,6 @@ def test_order_a_drop_then_filter_shows_the_error_in_the_table_and_the_plot_and_
     Apply clears the staged rows). It still can be made while the drop is pending: the dialog acts on the applied steps only. The
     engine must then refuse the list, never skip a step."""
     _start(page, staged_app)
-    page.locator("#plot_view input[value=T3]").check(force=True)
-    _wait_shiny(page)
     _pending_drop(page)                       # step 1, pending
     _stage_filter(page)                       # the dialog still offers `score`: the drop is not applied yet
     _press(page, "#filter_send_to_audit")
@@ -360,8 +354,6 @@ def test_order_a_drop_then_filter_shows_the_error_in_the_table_and_the_plot_and_
 
 def test_an_export_with_an_audited_filter_holds_the_filtered_rows_and_plot(page: Page, staged_app):
     _start(page, staged_app)
-    page.locator("#plot_view input[value=T3]").check(force=True)
-    _wait_shiny(page)
     _filter_step(page, 1)
     _expect_rows(page, N - THRESHOLD + 1)
     reference = _raw().filter(pl.col("score") >= THRESHOLD)
@@ -371,8 +363,6 @@ def test_an_export_with_an_audited_filter_holds_the_filtered_rows_and_plot(page:
 
 def test_an_export_with_a_filter_then_a_drop_holds_the_filtered_rows_without_the_column(page: Page, staged_app):
     _start(page, staged_app)
-    page.locator("#plot_view input[value=T3]").check(force=True)
-    _wait_shiny(page)
     _filter_step(page, 1)
     _drop_step(page, 2)
     expect(page.locator("#home_data_preview thead")).not_to_contain_text("score", timeout=20_000)
@@ -385,8 +375,6 @@ def test_the_dialog_of_another_plot_is_not_emptied_by_a_drop_on_this_one(page: P
     """A drop on plot A (this plot only) must not reach plot B's dialog, also not for a moment on the switch: B lists `score`
     in every state the page goes through after the click, and never an empty list (round 3, point 4)."""
     _start(page, staged_app)
-    page.locator("#plot_view input[value=T3]").check(force=True)
-    _wait_shiny(page)
     _drop_step(page, 1)
     page.wait_for_function("() => ![...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
     page.evaluate("""() => {

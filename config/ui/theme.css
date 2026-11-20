@@ -353,24 +353,22 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
    and DataGrid can use the full panel width. */
 #acc_home_data .accordion-body    { overflow: visible !important; padding-left: 4px !important; padding-right: 4px !important; }
 #acc_home_data .shiny-html-output { width: 100% !important; }
-/* Home header strip (ADR-086): "Plot to show" and "Data to show" as two aligned rows. */
+/* Home header strip (slice B): the mode row, the data choice row, the source table row and the audit row, aligned. */
 .spv-header-strip-rows { flex-direction: column; align-items: flex-start !important; gap: 2px; }
 .spv-header-strip-rows .shiny-input-container { margin-bottom: 0 !important; width: auto !important; }
 .spv-strip-label { min-width: 105px; white-space: nowrap; color: #345beb; }
 /* Row title aligns with the radio text line, not with the radio + grey sub-label block. */
 .spv-header-strip-rows > div { align-items: flex-start !important; }
 .spv-strip-label { padding-top: 0; margin-top: -1px; }
-/* One shared 4-column grid (Raw, Result, My view, Compare) so equal options line up across the two rows;
-   the plot row has no Raw, so its first option starts in column 2. */
+/* One shared 4-column grid (Source, T1, T2, T3) so the options of the two rows (the mode row has two) line up. */
 .spv-header-strip-rows .shiny-options-group { display: grid; grid-template-columns: repeat(4, minmax(0, 9.5rem)); align-items: start; }
 .spv-header-strip-rows .shiny-options-group > label.radio-inline { margin-left: 0 !important; }
-#plot_view .shiny-options-group > label:first-child { grid-column: 2; }
-/* View badge (issue #17): what a panel shows now. Raw and Result are the untouched views (grey);
-   My view is amber, as the Compare pane label. Notes such as T2=T1 are small muted text. */
+/* View badge (issue #17): what a panel shows now. The original tables and the Result plot are grey ("plain");
+   an audited table or plot (Audit mode, with audited steps) is amber, as the Compare pane label. Notes such as T2=T1 are small muted text. */
 .spv-view-badge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .spv-view-badge { font-size: 0.75rem; font-weight: 600; }
-.spv-view-badge-t1, .spv-view-badge-t2 { background-color: #6c757d; color: #ffffff; }
-.spv-view-badge-t3 { background-color: #ffc107; color: #000000; }
+.spv-view-badge-plain { background-color: #6c757d; color: #ffffff; }
+.spv-view-badge-audited { background-color: #ffc107; color: #000000; }
 .spv-view-note { font-size: 0.75rem; font-weight: 400; color: #6c757d; }
 /* In the Data Preview header the badge sits on the title line, not under it. */
 #home_data_preview_badge { display: inline-block; vertical-align: middle; }

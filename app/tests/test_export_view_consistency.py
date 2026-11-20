@@ -2,7 +2,7 @@
 
 Two parts, both headless:
 - the key check: an export is refused when a data analysis recipe or data file changed after the view was opened;
-- the T3 / My view build: T3 > T2 > T1, the same steps as the data preview in HOME.
+- the T3 build (the audited table): T3 > T2 > T1, the same steps as the data preview in HOME.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_export_view_consistency.py -q
 """
@@ -86,7 +86,7 @@ def test_the_refusal_text_explains_what_it_means_and_what_to_do(world):
 # -- T3 > T2 > T1 --------------------------------------------------------------------------
 
 def test_my_view_builds_on_tier2_when_there_are_tier2_steps(world):
-    """T2 keeps A (s1, s2); a My view filter on top can only narrow T2, never bring s3 back."""
+    """T2 keeps A (s1, s2); an audited filter on top can only narrow T2, never bring s3 back."""
     rows = [{"column": "sample_id", "op": "ne", "value": "s1", "dtype": "Utf8"}]
     assert ids(audited_frame(base(world), filter_nodes(rows))) == ["s2"]
     assert "s3" not in ids(audited_frame(base(world), []))

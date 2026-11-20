@@ -18,6 +18,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
+from app.tests.browser_view import set_mode, set_view
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_shiny_smoke import (
     _load_data_analysis_recipe, _navigate_to_mlst_plot, _navigate_to_phenotype_plot, _open_filters_panel, _wait_shiny,
@@ -150,8 +151,8 @@ def test_the_rerun_of_a_directly_plotted_table_equals_the_result_table_of_home(l
                 shutil.rmtree(p.parent, ignore_errors=True)
 
 
-def test_the_bundle_has_no_my_view_content_when_the_user_is_on_result(loaded):
-    """Both plot and data choices start on Result: no T3 files, no filter trace."""
+def test_the_bundle_has_no_audited_content_when_no_step_was_audited(loaded):
+    """The mode starts on Exploration and the data choice on T3: no T3 files, no filter trace."""
     names = _download(loaded).namelist()
     assert not any("T3_data" in n for n in names)
     assert not any(n.endswith("FILTERS.txt") for n in names)
@@ -181,8 +182,11 @@ def test_exploration_filters_are_never_exported(loaded):
     loaded.locator("#fb_value").fill("1900"); loaded.wait_for_timeout(200)
     loaded.locator("#filter_add_row").click(); _wait_shiny(loaded)
     loaded.locator("#filter_apply").click(); loaded.wait_for_timeout(1_500); _wait_shiny(loaded)
-    for view in ("T3", "T2"):                              # looking at My view, then at Result
-        loaded.locator(f"#plot_view input[value={view}]").check(force=True); _wait_shiny(loaded)
+    for view in ("T3", "T2", "T1", "audit"):               # looking at T3, T2 and T1 in Exploration, then Audit mode (the filters are cleared there)
+        if view == "audit":
+            set_mode(loaded, "audit")
+        else:
+            set_view(loaded, view)
         _open_export_panel(loaded)
         after = _download(loaded)
         names = after.namelist()
@@ -193,7 +197,7 @@ def test_exploration_filters_are_never_exported(loaded):
         for name in old:
             diff = ImageChops.difference(Image.open(io.BytesIO(old[name])).convert("RGB"),
                                          Image.open(io.BytesIO(new[name])).convert("RGB")).getbbox()
-            assert diff is None, f"plot {name} changed by an exploration filter (plot view {view})"
+            assert diff is None, f"plot {name} changed by an exploration filter (view {view})"
 
 
 def test_mode2_checkbox_adds_the_reproducibility_bundle(loaded):

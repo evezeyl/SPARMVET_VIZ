@@ -7,12 +7,13 @@ Entry point:
                   orchestrator, viz_factory, gallery_viewer,
                   current_app_features, anchor_path, tier1_anchor,
                   active_cfg,
-                  active_collection_id, safe_input, active_home_subtab, tier_toggle,
+                  active_collection_id, safe_input, active_home_subtab, home_mode, data_view, source_table,
                   home_state=None, session_manager=None)
 
 Concern: dynamic_tabs, sidebar_nav_ui, sidebar_tools_ui,
          right_sidebar_content_ui, home_data_preview/col_selector,
-         col_drop_audit_btn_ui. (ADR-086: the plot_view radio replaces the old comparison_mode switch.)
+         col_drop_audit_btn_ui. Slice B (D-0310, D-0311): the mode switch "Exploration | Audit" (only with the audit on) and the data
+         choice "Source | T1 | T2 | T3" replace the two old choices of the header strip.
          The legacy plot_reference/table_reference/plot_leaf/table_leaf outputs and the T3 brush modal
          were never mounted after ADR-043 and were removed 2026-11-06 (ADR-045-SERVER-SIZE-1).
 
@@ -29,12 +30,12 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui
-# consumes: app/modules/orchestrator.py (plot_read_error_text), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, AuditStepError), app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_open_audit_mode_after_restore, constant:LEGACY_RECORD_NOTICE
+# consumes: app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumes: libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237)
 # consumed_by: app/src/server.py
-# doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/knowledge/architecture_decisions.md#ADR-097, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
+# doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/knowledge/architecture_decisions.md#ADR-097, .claude/knowledge/architecture_decisions.md#ADR-099, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
 # @end_deps
 
 import re
@@ -50,13 +51,16 @@ from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_change_notice import inputs_changed_during_build_notice, notice_after_data_change
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.orchestrator import plot_read_error_text
-from app.modules.view_badge import has_plot_steps, has_tier2_steps, view_badge
+from app.modules.view_badge import has_plot_steps, has_tier2_steps, plot_badge, view_badge
 from utils.engines import plot_engine_slot
 from utils.pipeline_error import capture_entry
 from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
 from viz_factory.viz_factory import show_draw_errors
 
-from app.modules.t3_audit_engine import AuditStepError, _apply_filter_rows, audited_frame, filter_rows_from_nodes, stored_table_identity
+from app.modules.t3_audit_engine import (
+    AuditStepError, _apply_filter_rows, audited_frame, filter_rows_from_nodes, rows_built_on, source_table_identity, stored_table_identity,
+    view_key)
+from utils.recipe_graph import build_graph, source_tables_of_plot
 from utils.na_choice import na_of, no_value_text
 from app.modules.sidebar_registry import is_panel_active
 from app.handlers.session_handlers import define_session_server
@@ -68,6 +72,12 @@ from app.handlers.data_import_handlers import define_data_import_server
 # avoid a circular import (main.py imports server, which imports this module).
 _DOCS_AVAILABLE = (Path(__file__).parent.parent.parent / "docs" / "_site").exists()
 _GITHUB_REPO_URL = "https://github.com/evezeyl/SPARMVET_VIZ"
+
+# PROVISIONAL (the coordinator's text, D-0312; the owner reads it): told when the record of a session cannot be written because an older session
+# with the same recipe and data is stored (`LegacySessionError`). The old session is listed in the Session panel as refused, with a Delete button.
+LEGACY_RECORD_NOTICE = (
+    "This session cannot be recorded yet: an older session with the same recipe and data is stored. Open the Session panel and delete the "
+    "session marked as saved by an older version, then change the recipe or data box again.")
 
 # ADR-036: Shiny input IDs must match ^[a-zA-Z0-9_]+$ — no spaces, emoji, or
 # punctuation. This sanitiser strips anything outside that set so data analysis recipe
@@ -141,7 +151,7 @@ def define_server(input, output, session, *,
                   current_app_features, anchor_path, tier1_anchor,
                   active_cfg,
                   active_collection_id, safe_input,
-                  active_home_subtab, tier_toggle,
+                  active_home_subtab, home_mode, data_view, source_table,
                   home_state=None, session_manager=None,
                   data_refresh_trigger=None,
                   notification_log=None,
@@ -176,11 +186,15 @@ def define_server(input, output, session, *,
         Shared utility: safe_input(input_obj, key, default) → value.
     active_home_subtab : reactive.Value[str]
         Phase 21-B: tracks the active plot sub-tab id across groups.
-    tier_toggle : reactive.Value[str]
-        Phase 21-C: active data tier selection ("T1", "T2", "T3").
+    home_mode : reactive.Value[str]
+        "exploration" or "audit" (D-0016). Audit exists only with `t3_sandbox_enabled`; PROVISIONAL P-B7 (name).
+    data_view : reactive.Value[str]
+        The data choice: "SRC" (Source), "T1", "T2" or "T3" (D-0310). PROVISIONAL P-B1: it starts on "T3", the table the plot shows.
+    source_table : reactive.Value[str | None]
+        The source table the Source choice shows (one of the tables that feed the open plot); None until the user picks one.
     home_state : reactive.Value[dict] | None
         §13 Home Module State Object — survives all panel switches.
-        Contains t3_audit_steps, applied_filters, tier_toggle, and navigation state.
+        Contains t3_audit_steps, applied_filters and navigation state. The mode and the data choice are not in it (D-0312).
     session_manager : SessionManager | None
         §12d Session ghost save/restore manager.
     session_processing_issues : reactive.Value[list] | None
@@ -297,7 +311,7 @@ def define_server(input, output, session, *,
         return orchestrator.compute_data_analysis_recipe_keys(data_analysis_recipe_id)
 
     def _resolve_t1_lf(spec: dict | None):
-        """Return the T1 LazyFrame for spec, always ignoring tier_toggle."""
+        """Return the T1 LazyFrame for spec, whatever the data choice."""
         # Subscribe to data_refresh_trigger so imports invalidate this computation.
         if data_refresh_trigger is not None:
             data_refresh_trigger.get()
@@ -327,18 +341,123 @@ def define_server(input, output, session, *,
                     return pid
         return None
 
+    # ── Mode and data choice (slice B, D-0016, D-0310) ────────────────────────────────────────────────
+    def _audit_available() -> bool:
+        """True when the mode switch exists: the audit is on (`t3_sandbox_enabled`) and so is the interactive strip."""
+        return bootloader.is_enabled("t3_sandbox_enabled") and bootloader.is_enabled("interactivity_enabled")
+
+    def _in_audit() -> bool:
+        """True in Audit mode. Without the audit flag the app is always in Exploration."""
+        return _audit_available() and home_mode.get() == "audit"
+
+    _graph_memo: dict = {}
+
+    def _open_recipe_id() -> str:
+        """The id of the recipe open in HOME. Raises a plain error when there is none (zero usable recipes, ADR-094 point 6): the start path
+        never calls `get_default_data_analysis_recipe()`, which raises then."""
+        recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe_or_none())
+        if not recipe_id:
+            raise RuntimeError("No data analysis recipe is open, so no source table can be read.")
+        return recipe_id
+
+    def _source_tables_of(p_id: str | None) -> list[str]:
+        """The source tables (as the recipe names them) that feed the plot `p_id`, in graph order (`utils.recipe_graph`). Raises the plain error
+        of the graph (`KeyError` for a plot the recipe does not have, `RecipeLoadError` or `RecipeGraphError` for a recipe that cannot be
+        read or drawn): the caller shows it as the notice of the view, never as a traceback."""
+        if not p_id:
+            raise KeyError("No plot is open, so no source table can be listed.")
+        data_analysis_recipe_id = _open_recipe_id()
+        loaded = load_data_analysis_recipe(orchestrator.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml")
+        memo_key = (data_analysis_recipe_id, loaded.signature)
+        if memo_key not in _graph_memo:
+            _graph_memo.clear()
+            _graph_memo[memo_key] = build_graph(loaded.raw)
+        return source_tables_of_plot(_graph_memo[memo_key], p_id)
+
+    def _effective_source_table(p_id: str | None) -> str | None:
+        """The source table the Source choice shows for the plot `p_id`: the user's pick when it feeds this plot, else the first that does
+        (a different plot has a different list, so the pick can fall out of it). None when no table feeds the plot. Raises as `_source_tables_of`."""
+        tables = _source_tables_of(p_id)
+        picked = source_table.get()
+        return picked if picked in tables else (tables[0] if tables else None)
+
+    def _open_plot_id() -> str | None:
+        subtab = active_home_subtab.get()
+        return subtab.removeprefix("subtab_") if subtab else None
+
+    def _view_source_table() -> str | None:
+        """The source table of the view on screen, for the filter handlers: None when the data choice is not Source or no table can be named
+        (the error is then shown by the table itself)."""
+        if data_view.get() != "SRC":
+            return None
+        try:
+            return _effective_source_table(_open_plot_id())
+        except Exception:
+            return None
+
+    def _current_view_key():
+        """The view key of the view on screen (`view_key`: recipe, mode, data choice, source table, open plot); None without an open recipe. The ONE
+        definition: the clearing effect, the rows an exploration filter is stamped with and the preview all read it."""
+        recipe_id = safe_input(input, "data_analysis_recipe_id", None)
+        if recipe_id is None:
+            return None
+        view = data_view.get()
+        return view_key(recipe_id, "audit" if _in_audit() else "exploration", view, _view_source_table() if view == "SRC" else None,
+                        active_home_subtab.get())
+
+    def _applied_for_view() -> list:
+        """The applied exploration filters that were built on the view on screen: all the data preview and the badges may count (review F3)."""
+        return rows_built_on(list(applied_filters.get()), _current_view_key())
+
+    def _screen_view_text() -> str:
+        """The mode and the data choice on screen, in words, for the export record (P-B6): "Exploration mode, data view T3"."""
+        with reactive.isolate():
+            mode_word = "Audit" if _in_audit() else "Exploration"
+            view = data_view.get()
+            if view != "SRC":
+                return f"{mode_word} mode, data view {view}"
+            table = _view_source_table()
+            return f"{mode_word} mode, data view Source" + (f" (table '{table}')" if table else "")
+
+    _source_memo: dict = {}
+
+    def _read_source_lf(spec: dict | None):
+        """One source table as read from its file, before any recipe step (`DataOrchestrator.read_source`, D-0310): the table the Source choice
+        shows for the plot of `spec`. The call reads the file once to validate it, so the frame is kept per (recipe, table, data files hash) of
+        the open view; a reload or an import (new keys) reads again. Errors are the plain `IngestionError` / `KeyError` texts, shown by the caller."""
+        if data_refresh_trigger is not None:
+            data_refresh_trigger.get()
+        plot_id = _plot_id_of(spec)
+        if plot_id is None:
+            raise RuntimeError("The plot of this view is not a plot of the open data analysis recipe, so its source tables cannot be listed.")
+        table = _effective_source_table(plot_id)
+        if table is None:
+            raise RuntimeError(f"The plot '{plot_id}' reads no source table, so there is no Source view for it.")
+        data_analysis_recipe_id = _open_recipe_id()
+        # the key holds the recipe's own hash too (review F1): after an edit of how a source table is declared the table is read again
+        keys = _data_analysis_recipe_keys()
+        key = (data_analysis_recipe_id, table, keys.data_batch_hash, keys.data_analysis_recipe_sha256)
+        if key not in _source_memo:
+            if len(_source_memo) >= 8:
+                _source_memo.clear()
+            _source_memo[key] = orchestrator.read_source(data_analysis_recipe_id, table)
+        return _source_memo[key]
+
     def _resolve_active_lf(spec: dict | None, tier: str | None = None):
-        """Return a LazyFrame for the dataset referenced by spec (or tier1_anchor).
+        """Return a LazyFrame for the table the data choice names, for the plot of `spec` (or tier1_anchor).
 
-        "T2" reads the assembly's stored Tier 2 parquet (issue #10; equal to T1 when the table has no tier2 steps): the Result
-        data view. "T3" reads the table the plot reads (`materialize_tier3`: that Tier 2 plus the plot's own `tier3` steps of
-        the recipe; the same table when the plot has none). The audit nodes of My view (filters, drops) go on top of the T3 table,
-        applied by the callers with `audited_frame`.
+        "SRC" is one source table as read from its file (`_read_source_lf`). "T1" is the plot's table after tier 1. "T2" reads the assembly's
+        stored Tier 2 parquet (issue #10; equal to T1 when the table has no tier2 steps). "T3" reads the table the plot reads
+        (`materialize_tier3`: that Tier 2 plus the plot's own `tier3` steps of the recipe; the same table when the plot has none): the
+        table the plot shows. The audited steps of Audit mode (filters, drops) go on top of the T3 table, applied by the callers with
+        `audited_frame`.
 
-        `tier` defaults to the data view (tier_toggle). Plot handlers pass "T3" explicitly: plots never show T1 and follow
-        plot_view, not tier_toggle (ADR-086); the plot is drawn from the table it reads, in the Result view as in My view.
+        `tier` defaults to the data choice (`data_view`). Plot handlers and the audit write pass "T3" explicitly: a plot is drawn from the
+        table it reads, in Exploration as in Audit mode (D-0310, D-0019), and audit steps are written at the plot's table.
         """
-        chosen = tier or tier_toggle.get()
+        chosen = tier or data_view.get()
+        if chosen == "SRC":
+            return _read_source_lf(spec)
         if chosen in ("T2", "T3") and (spec or {}).get("target_dataset"):
             target_ds = spec["target_dataset"]
             if data_refresh_trigger is not None:
@@ -360,14 +479,20 @@ def define_server(input, output, session, *,
         return _resolve_t1_lf(spec)
 
     def _dialog_table_identity(spec: dict | None, tier: str):
-        """Which stored table `_resolve_active_lf(spec, tier)` reads, for the filter form (`stored_table_identity`); None when the
-        plot names no collection (the table then comes from the app's open anchor, which no key of this view describes)."""
-        target_ds = (spec or {}).get("target_dataset")
-        if not target_ds:
-            return None
-        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
-        keys = _data_analysis_recipe_keys()
+        """Which table `_resolve_active_lf(spec, tier)` reads, for the filter form: the stored table (`stored_table_identity`), or for the
+        Source choice the source table (`source_table_identity`); None when the plot names no collection (the table then comes from the app's
+        open anchor, which no key of this view describes)."""
+        # Nothing is asked of the recipe or the keys until there is a plot to identify: with no plot (zero usable recipes) there is no table, so no
+        # identity and no log line (found in review: the recipe id used to be read first, and with zero recipes that raised).
         plot_id = _plot_id_of(spec)
+        target_ds = (spec or {}).get("target_dataset")
+        if (tier == "SRC" and plot_id is None) or (tier != "SRC" and not target_ds):
+            return None
+        data_analysis_recipe_id = _open_recipe_id()
+        keys = _data_analysis_recipe_keys()
+        if tier == "SRC":
+            table = _effective_source_table(plot_id)
+            return None if table is None else source_table_identity(data_analysis_recipe_id, table, keys.data_analysis_recipe_sha256, keys.data_batch_hash)
         return stored_table_identity(
             tier, target_ds, data_analysis_recipe_id, keys.tier1_key_of(target_ds),
             bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet", _unstored_builds[0],
@@ -502,16 +627,14 @@ def define_server(input, output, session, *,
             # not by the active subtab (this plot may not be the active one
             # when its render runs in re-renders). `this_subtab` comes from the
             # enclosing factory scope (shared with _effective_random_state above).
-            # ADR-098 (issue #56): preview filters (Apply) change the DATA TABLE on every view,
-            # but a PLOT changes only on "My view" - the one place the user works on what the plot
-            # shows. Raw/Result plots are the recipe's plots. Audited nodes follow the same rule.
-            # Compare's left pane never filters (its own handler).
-            # ADR-086: plots follow "Plot to show" (plot_view), not the data view.
-            # "T3" = My view, "CMP" = Compare (right pane is My view).
-            # GUARDED by test_shiny_smoke.py::TestPreviewFiltersOnReferenceViews (plot unchanged on Result).
-            in_my_view = safe_input(input, "plot_view", "T2") in ("T3", "CMP")
-            # PLOT-TABLE-ORDER-1: the plot gets its data from the same frame as the table: the exploration filters, then the
-            # audited steps in their recorded order (`audited_frame`), applied below to the frame. Nothing is handed to the
+            # Slice B (D-0019, D-0180, D-0311): in Exploration there is ONE plot, the Result, drawn from the plot's own table
+            # (T3 of the recipe) with no exploration filter and no audited step on it: preview filters (Apply) change the data
+            # TABLE of the view shown and never a plot. In Audit mode the plot is the audited plot: the same table plus the plot's
+            # audited steps (Apply-gated); Compare's left pane never carries them (its own handler).
+            # GUARDED by test_filters_change_the_table_not_the_plot.py and test_shiny_smoke.py::TestPreviewFiltersOnReferenceViews.
+            in_audit_plot = _in_audit()
+            # PLOT-TABLE-ORDER-1: the plot gets its data from the same frame as the table of the audited T3 view: the audited
+            # steps in their recorded order (`audited_frame`), applied below to the frame. Nothing is handed to the
             # factory's `filters` key any more (that key is for what a recipe's plot spec writes), so the audited steps are
             # applied once, in one order, and a step that cannot run is an error, never a skip.
             synthetic_data_analysis_recipe = {
@@ -522,7 +645,7 @@ def define_server(input, output, session, *,
             }
 
             try:
-                lf = _resolve_active_lf(spec, tier="T3")   # the table the plot reads, in every view (ADR-086)
+                lf = _resolve_active_lf(spec, tier="T3")   # the table the plot reads, in every mode and every data choice (D-0310)
             except Exception as e:
                 # ADR-094: data materialization (ingestion/assembly) failures get the same
                 # session_processing_issues capture the VizFactory render path already has
@@ -539,11 +662,11 @@ def define_server(input, output, session, *,
                 ax.axis("off")
                 return fig
 
-            # My view: the exploration filters, then the audited steps in the recorded order (the same call as the table
-            # and the results bundle). HOM-41: T1/T2 must not see T3-committed steps either.
-            if in_my_view:
+            # Audit mode: the audited steps in the recorded order (the same call as the table and the results bundle). Exploration
+            # filters are not part of it: they do not exist in Audit mode and never change a plot.
+            if in_audit_plot:
                 try:
-                    lf = audited_frame(_apply_filter_rows(lf, list(applied_filters.get())), _active_plot_t3_nodes(this_subtab), p_id)
+                    lf = audited_frame(lf, _active_plot_t3_nodes(this_subtab), p_id)
                 except AuditStepError as e:
                     # PLOT-TABLE-ORDER-1: a step that cannot run is shown in the plot's place and in the Alerts panel, never skipped.
                     _report_plot_exception(e, "T3Audit", f"audit steps of plot '{p_id}'")
@@ -555,12 +678,13 @@ def define_server(input, output, session, *,
                     ax.axis("off")
                     return fig
 
-            # VIZFAC-T3-OVERRIDE-1: Extract L5 aesthetic_override from home_state.
+            # VIZFAC-T3-OVERRIDE-1: Extract L5 aesthetic_override from home_state (the Reshuffle pin among them). D-0341: only the audited plot of
+            # Audit mode carries it; the Exploration plot is the recipe's plot and equals the "Original" pane of Compare, whatever is stored.
             _t3_overrides = (
                 (home_state.get() if home_state is not None else {})
                 .get("t3_plot_overrides", {})
                 .get(this_subtab)
-            )
+            ) if in_audit_plot else None
 
             # SEED-HOLDS-1 (ADR-104): HOME draws no seed. A layer that writes a number keeps it, a layer that
             # writes none uses the factory's seed (0), an audit pin (Reshuffle) is in `_t3_overrides` and beats both:
@@ -592,12 +716,11 @@ def define_server(input, output, session, *,
     for _p_id, _spec in _all_group_plot_ids:
         _make_group_plot_handler(_p_id)
 
-    # Phase 21-E / ADR-086: Baseline (T2) plot handlers for Comparison Mode.
-    # Identical to the regular handlers but skip all exploration filters and T3
-    # audit nodes — always shows the pure T2 result so the user can see what
-    # their own changes did.
+    # Phase 21-E / slice B: the original plot (the Result) for Compare, in Audit mode.
+    # Identical to the regular handlers but skips all T3 audit nodes: always the plot's own table,
+    # so the user can see what the audited steps did.
     def _make_cmp_baseline_handler(p_id: str):
-        """Factory: renders plot_group_{p_id}_cmp_base WITHOUT T3 adjustments."""
+        """Factory: renders plot_group_{p_id}_cmp_base WITHOUT audited steps (the original plot of Compare)."""
         @output(id=f"plot_group_{p_id}_cmp_base")
         @render.plot(alt=f"Baseline: {p_id}")
         def _cmp_baseline_handler():
@@ -618,7 +741,7 @@ def define_server(input, output, session, *,
 
             import copy
             plot_spec = copy.deepcopy(spec)
-            # No exploration filters or T3 nodes — this is the T2 reference view
+            # No audited steps — this is the original plot (the Result)
             synthetic_data_analysis_recipe = {
                 "plots": {p_id: plot_spec},
                 "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
@@ -626,7 +749,7 @@ def define_server(input, output, session, *,
                 **plot_engine_slot(cfg.raw_config),
             }
             try:
-                lf = _resolve_active_lf(spec, tier="T3")  # reference = the Result plot (ADR-086): the table the plot reads, no exploration, no audit nodes
+                lf = _resolve_active_lf(spec, tier="T3")  # original = the Result plot (D-0147): the table the plot reads, no exploration, no audit nodes
             except Exception as e:
                 # ADR-094/PIPELINE-ERROR-WIRE-2: was silent (no session_processing_issues
                 # capture at all) — the comparison-mode twin of _group_plot_handler's
@@ -639,7 +762,7 @@ def define_server(input, output, session, *,
                 ax.axis("off")
                 return fig
 
-            # SEED-HOLDS-1: the reference pane draws with the same seeds as My view (recipe numbers, the factory's
+            # SEED-HOLDS-1: the original pane draws with the same seeds as the audited plot (recipe numbers, the factory's
             # seed); an audit pin is a change the user made and is not applied here.
             def _report_cmp_error(e):
                 _report_plot_exception(e, "VizFactory", f"render(plot_id='{p_id}', mode='cmp_base')")
@@ -671,14 +794,18 @@ def define_server(input, output, session, *,
         HTML next to the plot, never part of the image, so it is never exported.
         """
         return ui.div(
-            ui.tags.span(badge.label, class_=f"badge spv-view-badge spv-view-badge-{badge.tier.lower()}"),
+            ui.tags.span(badge.label, class_=f"badge spv-view-badge spv-view-badge-{badge.tone}"),
             *[ui.tags.span(note, class_="spv-view-note") for note in badge.notes],
             class_="spv-view-badge-row",
         )
 
-    def _my_view_has_changes(subtab_id) -> bool:
-        """An applied filter, or a committed filter or column drop for this plot (issue #17)."""
-        return bool(applied_filters.get() or _t3_filter_rows(subtab_id) or _t3_drop_columns(subtab_id))
+    def _audited_step_count(subtab_id) -> int:
+        """How many audited steps (filters and column drops) this plot has: what Audit mode puts on its T3 table and its plot (issue #17)."""
+        return len(_t3_filter_rows(subtab_id)) + len(_t3_drop_columns(subtab_id))
+
+    # Compare (Audit mode only, D-0147): a switch of the strip. Its value is kept here, so that a rebuild of the strip (a workspace switch)
+    # or a stay in Exploration does not forget it. PROVISIONAL P-B7: the input is called `audit_compare`.
+    _audit_compare = reactive.Value(False)
 
     def _make_plot_cell_handler(p_id: str):
         _acc_id = f"plot_acc_{p_id}"
@@ -694,8 +821,9 @@ def define_server(input, output, session, *,
             two outputs below re-render the moment a pin is set or removed."""
             spec = _resolve_active_spec(p_id)
             plot_defaults = (active_cfg().raw_config.get("plot_defaults") or {})
+            # D-0341: the pin is applied by the audited plot only; in Exploration the seed shown is the one the plot is drawn with (no pin)
             return seed_in_use((spec or {}).get("layers", []), plot_defaults,
-                               home_state.get() if home_state is not None else None, p_id,
+                               home_state.get() if home_state is not None and _in_audit() else None, p_id,
                                default=viz_factory.default_random_state)
 
         @output(id=_reshuffle_output_id)
@@ -710,8 +838,8 @@ def define_server(input, output, session, *,
 
             Deliberately NOT reactive.isolate() here: this output must re-render and hide itself the moment
             _handle_reshuffle pins the seed into home_state."""
-            if not reshuffle_offered(_seeds_in_use()):
-                return ui.div()
+            if not _in_audit() or not reshuffle_offered(_seeds_in_use()):
+                return ui.div()   # D-0341: the button belongs to Audit mode; Exploration shows the recipe's plot
             return ui.input_action_button(
                 _reshuffle_btn_id, "🔀 Reshuffle arrangement",
                 class_="btn-outline-secondary btn-sm",
@@ -722,7 +850,7 @@ def define_server(input, output, session, *,
         @reactive.Effect
         @reactive.event(getattr(input, _reshuffle_btn_id, lambda: None))
         def _handle_reshuffle():
-            if home_state is None:
+            if home_state is None or not _in_audit():
                 return
             try:
                 clicks = getattr(input, _reshuffle_btn_id)()
@@ -794,21 +922,21 @@ def define_server(input, output, session, *,
             this small badge and never the plot. In Compare each pane already has its own label."""
             if not bootloader.is_enabled("interactivity_enabled"):
                 return ui.div()
-            view = safe_input(input, "plot_view", "T2")
-            if view == "CMP":
+            audit = _in_audit()
+            if audit and _audit_compare.get() and bootloader.is_enabled("comparison_mode_enabled"):
                 return ui.div()
-            tier = "T3" if view == "T3" else "T2"
             spec = _resolve_active_spec(p_id)
             has_t2 = has_tier2_steps(active_cfg().raw_config, (spec or {}).get("target_dataset"))
-            return _badge_ui(view_badge(tier, has_t2, _my_view_has_changes(f"subtab_{p_id}"), table_only_filters=len(applied_filters.get()),
-                                       plot_has_steps=has_plot_steps(active_cfg().raw_config, p_id)))
+            return _badge_ui(plot_badge("audit" if audit else "exploration", has_plot_steps(active_cfg().raw_config, p_id), has_t2,
+                                        preview_filters=len(_applied_for_view()), audited_steps=_audited_step_count(f"subtab_{p_id}")))
 
         @output(id=f"plot_cell_{p_id}")
         @render.ui
         def _plot_cell_ui():
-            # ADR-086: Compare is the third value of "Plot to show" (plot_view).
+            # Compare lives in Audit mode only (D-0016, D-0018): the original plot beside the audited plot.
             in_comparison = (
-                safe_input(input, "plot_view", "T2") == "CMP"
+                _in_audit()
+                and _audit_compare.get()
                 and bootloader.is_enabled("comparison_mode_enabled")
             )
 
@@ -823,14 +951,15 @@ def define_server(input, output, session, *,
                 content = ui.div(ui.output_ui(f"plot_seed_{p_id}"), ui.layout_columns(
                     ui.div(
                         ui.tags.div(
-                            "T2 — Result (Reference)",
+                            # PROVISIONAL P-B7: the labels of the two panes of Compare
+                            "Original",
                             class_="badge bg-secondary mb-1 spv-text-xs",
                         ),
                         ui.output_plot(f"plot_group_{p_id}_cmp_base", height="440px"),
                     ),
                     ui.div(
                         ui.tags.div(
-                            "T3 — My view (Filtered / Dropped)",
+                            "Audited",
                             class_="badge mb-1 spv-text-xs",
                             style="background:#ffc107; color:#212529;",
                         ),
@@ -990,7 +1119,7 @@ def define_server(input, output, session, *,
         else:
             home_title_banner = ui.div()
 
-        # --- Thin header: dataset label left, tier toggle right (Phase 21-C/D) ---
+        # --- Thin header: the mode switch (only with the audit on) and the data choice (slice B, D-0016, D-0310) ---
         def _tier_label(label: str, sub: str, tooltip: str) -> object:
             return ui.HTML(
                 f'<span title="{tooltip}">'
@@ -999,109 +1128,74 @@ def define_server(input, output, session, *,
                 f'</span>'
             )
 
-        tier_choices = {
+        # PROVISIONAL (slice B, the coordinator's wording; the owner reads it): the texts of the data choice and of the mode switch
+        data_choices = {
+            "SRC": _tier_label(
+                "Source",
+                "as read from the file",
+                "Source: one source table as read from its file with its declared types, before any step of the recipe. "
+                "A second list names the source tables that feed this plot.",
+            ),
             "T1": _tier_label(
-                "Raw",
-                "T1 — As assembled",
-                "T1: Raw assembled data. No processing steps applied. "
-                "In most data analysis recipes T1 = T2. Use this to compare against the processed result.",
+                "T1",
+                "after tier 1",
+                "T1: the plot's table after the tier-1 steps of the recipe (cleaning, joins).",
             ),
             "T2": _tier_label(
-                "Result",
-                "T2 — Processed",
-                "T2: Data with pipeline processing applied "
-                "(e.g. range filters, long-format pivots, derived columns). "
-                "Default view. If no processing steps are defined, T2 = T1.",
+                "T2",
+                "after tier 2",
+                "T2: the plot's table after the tier-2 steps of the recipe. If the recipe has none, T2 = T1.",
+            ),
+            "T3": _tier_label(
+                "T3",
+                "the table the plot shows",
+                "T3: the table the plot is drawn from: T2 plus the plot's own tier-3 steps of the recipe. If it has none, T3 = T2.",
             ),
         }
-        # ADR-085 amendment (2026-08-10): "My view" is now decoupled from audit
-        # capability. It exists whenever Filters exist at all (interactivity_enabled,
-        # checked by the caller of tier_choices below) — NOT gated on
-        # t3_sandbox_enabled. Without t3_sandbox_enabled it's a pure scratchpad:
-        # you can explore filters here, but there's no Send to Audit button and
-        # no right sidebar to make anything permanent. With t3_sandbox_enabled,
-        # the same view also gains the permanent-save path. Either way, T1 and
-        # T2 stay untouched references — see the tier-isolation invariant.
-        _my_view_desc = (
-            "T3: Your personal adjustments — row filters and column drops "
-            "applied on top of T2. Only affects your session."
-            if bootloader.is_enabled("t3_sandbox_enabled") else
-            "T3: Your personal adjustments — row filters and column drops "
-            "applied on top of T2. Exploration only in this configuration — "
-            "there is no audit trail to save changes permanently here."
-        )
-        tier_choices["T3"] = _tier_label("My view", "T3 — Filtered / Dropped", _my_view_desc)
+        mode_choices = {
+            "exploration": _tier_label(
+                "Exploration",
+                "look at the data; nothing is saved",
+                "Exploration: one plot, the Result. Filters change the table you view, never the plot. Nothing here is saved or exported.",
+            ),
+            "audit": _tier_label(
+                "Audit",
+                "create audit steps",
+                "Audit: filters and column drops become audit steps with a reason. They change the plot, are saved with the session "
+                "and are exported. Compare shows the original and the audited plot.",
+            ),
+        }
 
-        # HOM-08 (Eve, 2026-11-08): dynamic_tabs rebuilds this strip for reasons unrelated to
-        # the tier choice itself (e.g. a workspace switch, Home -> Gallery -> Home), and a
-        # hardcoded selected="T2" silently discarded whatever the user had actually picked.
-        # Isolated read of the current input value (not the input.plot_view/input.tier_toggle
-        # live subscription, which would reintroduce the "re-renders on every tier flip"
-        # problem below) — same pattern as the active-tab restoration above.
+        # HOM-08 (Eve, 2026-11-08): dynamic_tabs rebuilds this strip for reasons unrelated to the choices themselves
+        # (e.g. a workspace switch, Home -> Gallery -> Home), and a hardcoded default silently discarded what the user had
+        # picked. The current choices are read, isolated (a live subscription would re-render the whole tab structure on every
+        # click), from the reactive values the radios feed (`home_mode`, `data_view`).
         with reactive.isolate():
-            _cur_plot_view = safe_input(input, "plot_view", "T2")
-            _cur_data_view = safe_input(input, "tier_toggle", "T2")
+            _cur_mode = home_mode.get()
+            _cur_data_view = data_view.get()
 
-        # STATIC-VIEW-1a: static app features files (interactivity_enabled=false) have no tier
-        # switching — hide the strip entirely. T2 is the implicit default via the
-        # _track_tier_toggle fallback (safe_input returns "T2" when input absent).
+        # STATIC-VIEW-1a: static app features files (interactivity_enabled=false) have no choices at all: the strip is absent. The plots show
+        # the Result and the table shows T3, the table the plot is drawn from (the starting value of `data_view`).
         if bootloader.is_enabled("interactivity_enabled"):
-            # ADR-086: "Plot to show" is separate from "Data to show". Plots never show
-            # T1; Compare (T2 vs My view) is the third value, gated by comparison_mode_enabled.
-            plot_choices = {
-                "T2": _tier_label(
-                    "Result",
-                    "T2 — Processed",
-                    "Plots show the T2 result produced by the data analysis recipe. "
-                    "If no processing steps are defined, T2 = T1.",
-                ),
-                "T3": _tier_label("My view", "T3 — Filtered / Dropped", _my_view_desc),
-            }
-            if bootloader.is_enabled("comparison_mode_enabled"):
-                plot_choices["CMP"] = _tier_label(
-                    "Compare",
-                    "Result vs My view",
-                    "Two plots side by side: the T2 result on the left, "
-                    "your filtered view on the right.",
-                )
-            theater_header = ui.div(
-                ui.div(
-                    ui.tags.span(
-                        "Plot to show:",
-                        class_="fw-semibold me-3 spv-strip-label",
-                    ),
+            rows = []
+            if _audit_available():
+                rows.append(ui.div(
+                    ui.tags.span("Mode:", class_="fw-semibold me-3 spv-strip-label"),
                     ui.input_radio_buttons(
-                        "plot_view",
-                        label=None,
-                        choices=plot_choices,
-                        # HOM-08: restore the isolated-read current value (falls back to "T2"
-                        # if it's not a valid choice here, e.g. a saved "CMP" on a config
-                        # without comparison_mode_enabled) — not a static default, see above.
-                        selected=_cur_plot_view if _cur_plot_view in plot_choices else "T2",
-                        inline=True,
-                    ),
+                        "home_mode", label=None, choices=mode_choices,
+                        selected=_cur_mode if _cur_mode in mode_choices else "exploration", inline=True),
                     class_="d-flex align-items-center",
-                ),
-                ui.div(
-                    ui.tags.span(
-                        "Data to show:",
-                        class_="fw-semibold me-3 spv-strip-label",
-                    ),
-                    ui.input_radio_buttons(
-                        "tier_toggle",
-                        label=None,
-                        choices=tier_choices,
-                        # HOM-08: restore the isolated-read current value (falls back to "T2"
-                        # if it's not a valid choice here) — not a static default, see above.
-                        # The _track_tier_toggle effect keeps the tier_toggle reactive.Value
-                        # in sync, separately, for server.py's own calcs.
-                        selected=_cur_data_view if _cur_data_view in tier_choices else "T2",
-                        inline=True,
-                    ),
-                    class_="d-flex align-items-center",
-                ),
-                class_="theater-header-strip spv-header-strip-rows",
-            )
+                ))
+            rows.append(ui.div(
+                ui.tags.span("Table to view:", class_="fw-semibold me-3 spv-strip-label"),
+                ui.input_radio_buttons(
+                    "data_view", label=None, choices=data_choices,
+                    selected=_cur_data_view if _cur_data_view in data_choices else "T3", inline=True),
+                class_="d-flex align-items-center",
+            ))
+            rows.append(ui.output_ui("source_table_ui"))
+            rows.append(ui.output_ui("audit_strip_ui"))
+            theater_header = ui.div(*rows, class_="theater-header-strip spv-header-strip-rows")
         else:
             theater_header = ui.div()
 
@@ -1246,12 +1340,86 @@ def define_server(input, output, session, *,
             class_="theater-container-main"
         )
 
-    # Phase 21-C: Sync tier_toggle input → reactive.Value so server.py calcs react.
+    # Slice B: what the radios and the switch of the header strip say is copied into the reactive values the handlers read
+    # (`home_mode`, `data_view`, `source_table`, `_audit_compare`). An input that is not on the page (another workspace is open, or the
+    # strip has no such row) reports nothing and changes nothing. The values are read isolated: this effect follows the inputs only, so a
+    # value set from the server (a restored session, a rebuilt strip) is not undone by the older value of an input still on the page.
     @reactive.Effect
-    def _track_tier_toggle():
-        val = safe_input(input, "tier_toggle", "T2")
-        if val:
-            tier_toggle.set(val)
+    def _track_view_inputs():
+        mode = safe_input(input, "home_mode", None)
+        view = safe_input(input, "data_view", None)
+        pick = safe_input(input, "source_table", None)
+        compare = safe_input(input, "audit_compare", None)
+        with reactive.isolate():
+            if mode in ("exploration", "audit") and (mode == "exploration" or _audit_available()) and home_mode.get() != mode:
+                home_mode.set(mode)
+            if view in ("SRC", "T1", "T2", "T3") and data_view.get() != view:
+                data_view.set(view)
+            if pick and source_table.get() != pick:
+                source_table.set(pick)
+            if compare is not None and _audit_compare.get() != bool(compare):
+                _audit_compare.set(bool(compare))
+
+    # P-B5 (PROVISIONAL, the coordinator's choice): a restored session that holds audit steps opens Audit mode, so that the user sees the
+    # audited plot the steps were made for. The restore (`session_handlers._restore_session`) writes `t3_ghost_file` into `home_state`, and
+    # only a restore does; this effect follows a change of it. A second restore of the same file does not change it, so it opens nothing.
+    _seen_ghost_file = {"file": None}
+
+    @reactive.Effect
+    def _open_audit_mode_after_restore():
+        if home_state is None:
+            return
+        ghost_file = home_state.get().get("t3_ghost_file")
+        with reactive.isolate():
+            previous, _seen_ghost_file["file"] = _seen_ghost_file["file"], ghost_file
+            if not ghost_file or ghost_file == previous or not _audit_available():
+                return
+            if any(home_state.get().get("t3_audit_steps_by_plot", {}).values()) and home_mode.get() != "audit":
+                home_mode.set("audit")
+                ui.update_radio_buttons("home_mode", selected="audit")
+
+    @output
+    @render.ui
+    def source_table_ui():
+        """The second list of the strip: the source tables that feed the open plot, only while the Source choice is on. Reads the data choice, the
+        open plot and the recipe; the pick itself is read isolated (R4: the list does not read what it mounts)."""
+        if data_view.get() != "SRC":
+            return ui.div()
+        p_id = _open_plot_id()
+        try:
+            tables = _source_tables_of(p_id)
+        except Exception as exc:
+            _report_plot_exception(exc, "RecipeGraph", f"source tables of plot '{p_id}'")
+            return ui.div(ui.tags.small(f"The source tables of this plot cannot be listed: {exc}", class_="text-danger"),
+                          class_="d-flex align-items-center")
+        if not tables:
+            return ui.div(ui.tags.small("No source table feeds this plot.", class_="text-muted"), class_="d-flex align-items-center")
+        with reactive.isolate():
+            picked = source_table.get()
+        return ui.div(
+            ui.tags.span("Source table:", class_="fw-semibold me-3 spv-strip-label"),
+            ui.input_select("source_table", label=None, choices=tables, selected=picked if picked in tables else tables[0]),
+            class_="d-flex align-items-center",
+        )
+
+    @output
+    @render.ui
+    def audit_strip_ui():
+        """The row of the strip that exists in Audit mode only: the Compare switch, and one plain line that says what audit steps apply to."""
+        if not _in_audit():
+            return ui.div()
+        rows = []
+        if bootloader.is_enabled("comparison_mode_enabled"):
+            with reactive.isolate():
+                compare_on = _audit_compare.get()
+            rows.append(ui.div(
+                ui.tags.span("Compare:", class_="fw-semibold me-3 spv-strip-label"),
+                ui.input_switch("audit_compare", "the original and the audited plot side by side", value=compare_on),
+                class_="d-flex align-items-center",
+            ))
+        # PROVISIONAL P-B3 text (slice B): until the audit dialog of slice C, a step is written at the plot's table only
+        rows.append(ui.tags.small("Audit steps apply to the plot's table (T3) for now.", class_="text-muted spv-text-meta"))
+        return ui.div(*rows)
 
     # ADR-045 R1: anchor_path.set() must not live inside dynamic_tabs render.
     # This effect reacts to the same inputs and writes with an idempotent guard.
@@ -1298,7 +1466,7 @@ def define_server(input, output, session, *,
             return
         try:
             from app.modules.session_manager import SessionManager as _SM
-            from app.modules.session_manager import extract_primary_keys
+            from app.modules.session_manager import LegacySessionError, extract_primary_keys
             source_files = orchestrator.get_source_files(data_analysis_recipe_id)
             new_dbh = _SM.compute_data_batch_hash(source_files) if source_files else ""
             data_analysis_recipe_path = bootloader.get_location("data_analysis_recipes") / f"{data_analysis_recipe_id}.yaml"
@@ -1351,6 +1519,10 @@ def define_server(input, output, session, *,
                         on_problem=lambda text: _isolated_notify("⚠️ " + text, "warning", 10),
                     )
                     _provenance_told["record"] = None
+                except LegacySessionError:
+                    # PROVISIONAL (the coordinator's text, D-0312; the owner reads it): an older session with the same recipe and data is stored.
+                    # The generic remedy below (check that the folder can be written) would be wrong: what helps is deleting the old session.
+                    _tell_provenance_failure("record", "⚠️ " + LEGACY_RECORD_NOTICE)
                 except Exception as exc:
                     _tell_provenance_failure("record", "⚠️ " + notice(
                         "The record of this session could not be written, so the session cannot be exported or restored "
@@ -1410,15 +1582,21 @@ def define_server(input, output, session, *,
     @render.ui
     def home_data_preview_badge():
         """What the data preview shows now (issue #17). Its own output: a filter change redraws only
-        this badge, not the table. Reads the data view (tier_toggle) and the active plot."""
+        this badge, not the table. Reads the data choice, the mode and the active plot."""
         if not bootloader.is_enabled("interactivity_enabled"):
             return ui.div()
         subtab = active_home_subtab.get()
         p_id = subtab.removeprefix("subtab_") if subtab else None
         spec = _resolve_active_spec(p_id)
         has_t2 = has_tier2_steps(active_cfg().raw_config, (spec or {}).get("target_dataset"))
-        return _badge_ui(view_badge(tier_toggle.get(), has_t2, _my_view_has_changes(subtab), len(applied_filters.get()),
-                                   plot_has_steps=has_plot_steps(active_cfg().raw_config, p_id)))
+        view = data_view.get()
+        try:
+            table = _effective_source_table(p_id) if view == "SRC" else None
+        except Exception:
+            table = None   # the table itself says why it cannot be shown
+        return _badge_ui(view_badge(view, has_t2, has_plot_steps(active_cfg().raw_config, p_id), len(_applied_for_view()),
+                                   mode="audit" if _in_audit() else "exploration", audited_steps=_audited_step_count(subtab),
+                                   source_table=table))
 
     @output
     @render.text
@@ -1440,15 +1618,17 @@ def define_server(input, output, session, *,
 
         try:
             lf = _resolve_active_lf(spec)
-            # ADR-098 (issue #56): exploration filters preview on every view, never saved;
-            # audit-committed nodes apply only on "My view" (T3).
-            in_t3_preview = tier_toggle.get() == "T3"
-            lf = _apply_filter_rows(lf, list(applied_filters.get()))
-            # PLOT-TABLE-ORDER-1: My view applies the audited steps in their recorded order, the same call as the plot and the
-            # results bundle. A step that cannot run raises AuditStepError: it is shown below in the table's place and in
-            # the Alerts panel, never skipped.
-            if in_t3_preview:
-                lf = audited_frame(lf, _active_plot_t3_nodes(), p_id)
+            # ADR-098 (issue #56), D-0311: exploration filters change the table of the view shown (Source, T1, T2 or T3), never saved and
+            # never a plot. They do not exist in Audit mode, where T3 is the audited table.
+            # PLOT-TABLE-ORDER-1: in Audit mode the T3 table is the plot's table after the audited steps in their recorded order, the
+            # same call as the audited plot and the results bundle. A step that cannot run raises AuditStepError: it is shown below in
+            # the table's place and in the Alerts panel, never skipped.
+            if _in_audit():
+                if data_view.get() == "T3":
+                    lf = audited_frame(lf, _active_plot_t3_nodes(), p_id)
+            else:
+                # review F3: only the filters built on this very view; one built on another table is not applied, whatever the clearing effect did
+                lf = _apply_filter_rows(lf, _applied_for_view())
             # PREVIEW-ALLROWS-1: respect the "Show all rows" toggle; default 100-row cap.
             show_all = safe_input(input, "preview_all_rows", False)
             df = lf.collect() if show_all else lf.head(100).collect()
@@ -1464,6 +1644,9 @@ def define_server(input, output, session, *,
         except Exception as e:
             if isinstance(e, AuditStepError):
                 _report_plot_exception(e, "T3Audit", "audit steps of the data preview")
+            elif data_view.get() == "SRC":
+                # the source table could not be read or listed: the plain text of the error, in the Alerts panel as well as in the table's place
+                _report_plot_exception(e, "DataOrchestrator", f"read_source(plot_id='{p_id}')")
             return render.DataGrid(
                 pl.DataFrame({"Error": [plot_read_error_text(active_cfg().raw_config, p_id, e) if p_id else str(e)]}),
                 filters=False
@@ -1484,15 +1667,14 @@ def define_server(input, output, session, *,
         spec = _resolve_active_spec(p_id)
         try:
             lf = _resolve_active_lf(spec)
-            # HOM-41 fix: T3-committed drops must not remove columns from the
-            # T1/T2 selector — those tiers are unaffected by the audit trail.
-            committed_drops = set(_t3_drop_columns()) if tier_toggle.get() == "T3" else set()
+            # HOM-41 fix: audited drops remove columns from the T3 table in Audit mode only — every other view is the table as it is.
+            audit_t3 = _in_audit() and data_view.get() == "T3"
+            committed_drops = set(_t3_drop_columns()) if audit_t3 else set()
             cols = [c for c in lf.collect_schema().names() if c not in committed_drops]
-            in_t3 = tier_toggle.get() == "T3"
-            # Dropping via audit only exists with audit capability (ADR-085).
+            # Dropping via audit exists in Audit mode on T3 only.
             label_text = (
                 "Columns (drop unselected via audit):"
-                if in_t3 and bootloader.is_enabled("t3_sandbox_enabled")
+                if audit_t3
                 else "Table columns (view only — no effect on plot):"
             )
 
@@ -1554,15 +1736,15 @@ def define_server(input, output, session, *,
         Kept SEPARATE from home_col_selector_ui so reading the selector input
         here does not invalidate the selectize component itself.
         """
-        # ADR-085: without t3_sandbox_enabled, My view is a scratchpad with no audit
-        # trail, so there is nothing to send drops to — no button.
-        if tier_toggle.get() != "T3" or not bootloader.is_enabled("t3_sandbox_enabled"):
+        # Slice B (P-B3): a column drop is an audit step; it is offered in Audit mode while T3 is viewed (an audit step is written at the
+        # plot's table). In Exploration there is nothing to send drops to - no button.
+        if not (_in_audit() and data_view.get() == "T3"):
             return ui.span()
         subtab = active_home_subtab.get()
         p_id = subtab.removeprefix("subtab_") if subtab else None
         spec = _resolve_active_spec(p_id)
         try:
-            lf = _resolve_active_lf(spec)
+            lf = _resolve_active_lf(spec, tier="T3")
         except Exception:
             return ui.span()
         committed = set(_t3_drop_columns())
@@ -2129,7 +2311,7 @@ def define_server(input, output, session, *,
     @output
     @render.ui
     def filter_inventory_ui():
-        filters = applied_filters.get()
+        filters = _applied_for_view()
         t3_nodes: list[dict] = []
         active_sub = ""
         if home_state is not None:
@@ -2273,7 +2455,7 @@ def define_server(input, output, session, *,
         current_app_features=current_app_features,
         active_cfg=active_cfg,
         tier1_anchor=tier1_anchor,
-        tier_toggle=tier_toggle,
+        screen_view=_screen_view_text,
         home_state=home_state,
         safe_input=safe_input,
         notification_log=notification_log,
@@ -2316,7 +2498,10 @@ def define_server(input, output, session, *,
         _pending_filters=_pending_filters,
         _propagation_scratch=_propagation_scratch,
         home_state=home_state,
-        tier_toggle=tier_toggle,
+        in_audit=_in_audit,
+        data_view=data_view,
+        view_source_table=_view_source_table,
+        current_view_key=_current_view_key,
         active_home_subtab=active_home_subtab,
         safe_input=safe_input,
         _resolve_active_spec=_resolve_active_spec,

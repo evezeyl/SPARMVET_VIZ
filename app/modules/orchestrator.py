@@ -2,7 +2,7 @@
 # provides: pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3, function:plot_read_error_text, method:prepare_ingredient, method:read_source, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
 # mirrors: libs/transformer/tests/debug_assembler.py
 # consumes: libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
-# consumed_by: app/tests/test_read_source.py (read_source: one source table as the ingestion reads it, for the Source view of HOME, D-0310), app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and My view base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py, app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)
+# consumed_by: app/tests/test_read_source.py (read_source: one source table as the ingestion reads it, for the Source view of HOME, D-0310), app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and T3 table base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py, app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps
 import copy
@@ -483,7 +483,7 @@ class DataOrchestrator:
         `tier3` steps applied (DEC17, ADR-101). PROVISIONAL name: the specification leaves the name and place of the reader open
         (`recipe_format_spec.md`, "Who reads tier3").
 
-        The one reader of a plot's data: HOME's plot and its My view table, the export, the pictures and the baselines read this table, so
+        The one reader of a plot's data: HOME's plot and its T3 table, the export, the pictures and the baselines read this table, so
         a plot equals its table. The key of the table is `DataAnalysisRecipeKeys.plot_key_of(plot_id)`.
 
         - no tier-3 steps: the plot reads its table as it is: the frame of `materialize_tier2` is returned (same key, nothing built or

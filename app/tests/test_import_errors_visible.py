@@ -95,7 +95,7 @@ def test_the_handler_shows_the_problem_texts_of_the_import(tmp_path, monkeypatch
     export_handlers.define_export_server(
         SimpleNamespace(import_bundle_upload=lambda: [{"datapath": str(upload)}], export_field_change=None), lambda fn: fn, None,
         bootloader=bl, orchestrator=None, viz_factory=None, current_app_features=None, active_cfg=None,
-        tier1_anchor=None, tier_toggle=None, home_state=None, safe_input=lambda i, k, d: d)
+        tier1_anchor=None, screen_view=lambda: "", home_state=None, safe_input=lambda i, k, d: d)
     with reactive.isolate():
         functions["_handle_import_bundle_upload"]()
     warnings = [m for t, m in notes if t == "warning"]

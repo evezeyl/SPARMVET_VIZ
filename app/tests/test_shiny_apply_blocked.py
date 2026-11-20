@@ -17,6 +17,7 @@ from shiny.run import ShinyAppProc
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
 from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly
 from app.tests.test_shiny_session_restore import _RECORD_NOTICES, _free, _notices, _reasons, _seen
+from app.tests.browser_view import set_mode, set_view
 from app.tests.test_shiny_smoke import (_INTERACTIVE_APP_FEATURES, _load_data_analysis_recipe, _navigate_to_mlst_plot,
                                         _open_filters_panel, _choose_fb_op, _wait_shiny)
 
@@ -29,8 +30,8 @@ def test_a_forced_apply_on_a_step_without_a_reason_keeps_the_page_alive_and_appl
     page.evaluate(_RECORD_NOTICES)
     _open_filters_panel(page)
     _navigate_to_mlst_plot(page)
-    page.locator("#tier_toggle input[value=T3]").check(force=True)
-    _wait_shiny(page)
+    set_mode(page, "audit")                  # an audit step is made in Audit mode, on T3
+    set_view(page, "T3")
     _choose_column_firmly(page, "year")
     _choose_fb_op(page, "gt")
     _wait_shiny(page)

@@ -12,6 +12,7 @@ import urllib.request
 from pathlib import Path
 
 import pytest
+import yaml
 from app.tests.subprocess_env import app_command, app_env
 from playwright.sync_api import Page, expect
 
@@ -31,6 +32,17 @@ CASES = [
 # app features whose blueprint_enabled flag is on: the Blueprint Architect tab must exist and open
 WITH_BLUEPRINT = {"developer", "qa", "standalone"}
 SERVER_ERRORS = ("Unhandled error", "Traceback", "ReactiveWarning")
+
+
+class _PlainLoader(yaml.SafeLoader):
+    """Reads an app features file as it is: the `!include` of the sidebar files is not followed, the flags do not need it."""
+
+
+_PlainLoader.add_multi_constructor("!", lambda loader, suffix, node: None)
+
+
+def _flags(app_features: str) -> dict:
+    return yaml.load((REPO / "config" / "app_features" / f"{app_features}.yaml").read_text(encoding="utf-8"), Loader=_PlainLoader)["flags"]
 
 
 def _free_port() -> int:
@@ -74,6 +86,14 @@ def test_app_features_renders_home_without_server_error(page: Page, tmp_path, ap
             # have no right sidebar at all.
             assert page.locator("#notification_log_panel_ui").count() == 1, \
                 "Alerts output must be mounted in every app features (left sidebar, never gated)"
+            # slice B: the header strip. The data choice exists with interactivity; the mode switch only with the audit on; Compare only in
+            # Audit mode (so never in the first view of a setup). simple: Exploration without a switch; static: no strip.
+            flags = _flags(app_features)
+            interactive, audit = bool(flags.get("interactivity_enabled")), bool(flags.get("t3_sandbox_enabled"))
+            expect(page.locator("#data_view")).to_have_count(1 if interactive else 0, timeout=20_000)
+            assert page.locator("#home_mode").count() == (1 if interactive and audit else 0), "the mode switch follows the audit flag"
+            assert page.locator("#audit_compare").count() == 0, "Compare is not shown in Exploration"
+            print(f"HEADER {app_features}: data choice={interactive} mode switch={interactive and audit}")
             time.sleep(4)
             tab = page.get_by_text("Blueprint Architect", exact=True)
             if app_features in WITH_BLUEPRINT:

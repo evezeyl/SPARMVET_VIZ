@@ -16,8 +16,8 @@ Why filter UI and T3 audit live in one file:
 from __future__ import annotations
 
 # @deps
-# provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (filters_cleared_notice, column_is_in_frame, describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, dialog_schema_signature, dialog_rows_signature, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# provides: function:define_filter_audit_server, effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change, slice B), output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, dialog_schema_signature, dialog_rows_signature, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -31,7 +31,7 @@ from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
     dialog_value, not_offered_line, value_choices, value_widget_for, AuditStepError, dialog_frame, dialog_rows_signature, dialog_schema_signature,
-    column_bounds, column_is_in_frame, filters_cleared_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
+    column_bounds, column_is_in_frame, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
 from utils.filter_values import UNIT_NS, FilterValueError, kind_of
 from utils.missing_values import dialog_lines, na_choice_texts
@@ -112,7 +112,7 @@ def _control(kind: str, suffix: str, d: dict):
 def define_filter_audit_server(input, output, session, *,
                                 applied_filters, _pending_filters,
                                 _propagation_scratch, home_state,
-                                tier_toggle, active_home_subtab,
+                                in_audit, data_view, view_source_table, current_view_key, active_home_subtab,
                                 safe_input,
                                 _resolve_active_spec, _resolve_active_lf,
                                 _spec_discrete_axes, _t3_drop_columns,
@@ -125,13 +125,16 @@ def define_filter_audit_server(input, output, session, *,
       _pending_filters      reactive.Value[list]   — staging rows in the add-row form
       _propagation_scratch  reactive.Value[dict]   — scratch nodes between Apply/Drop and modal confirm
       home_state            reactive.Value[dict] | None — audit steps state, active subtab, etc.
-      tier_toggle           reactive.Value[str]    — "T1"|"T2"|"T3"
+      in_audit()            → bool                 — True in Audit mode: the ONE function of HOME (audit on, interactive, mode "audit"; review F4)
+      current_view_key()    → tuple | None         — `view_key` of the view on screen (None without an open recipe): an exploration filter carries it
+      data_view             reactive.Value[str]    — "SRC"|"T1"|"T2"|"T3": the table the data preview shows (D-0310)
       active_home_subtab    reactive.Value[str]    — current home plot subtab id
     Helpers (kwargs):
       safe_input(input, key, default) → value
     Closures from home_theater.define_server (kwargs):
       _resolve_active_spec(p_id) → spec dict | None
-      _resolve_active_lf(spec)   → LazyFrame
+      view_source_table()        → str | None   — the source table of the Source choice (None for another choice)
+      _resolve_active_lf(spec, tier=None) → LazyFrame — the table of the data choice, or of `tier`
       _spec_discrete_axes(spec)  → (set, set)  — discrete x, discrete y columns
       _t3_drop_columns()         → list[str]   — committed drop-column targets
       _all_plot_subtab_ids()     → list[str]   — every "subtab_<plot_id>" id
@@ -140,16 +143,12 @@ def define_filter_audit_server(input, output, session, *,
                                     key says which rows it holds (the rows signal is then never equal)
     """
 
-    def _on_my_view() -> bool:
-        """True when "Data to show" or "Plot to show" is on My view (ADR-086).
+    _in_audit = in_audit   # one function for HOME and these handlers: `home_theater._in_audit`
 
-        Send to Audit is offered whenever the user is judging a filter on My view,
-        in either panel. "CMP" (Compare) has My view on its right pane.
-        """
-        return (
-            tier_toggle.get() == "T3"
-            or safe_input(input, "plot_view", "T2") in ("T3", "CMP")
-        )
+    def _can_write_audit_step() -> bool:
+        """An audit step is written at the plot's table: Audit mode while T3 is viewed (P-B3, PROVISIONAL: the existing dialog writes at
+        the plot's table only, so "a filter is built on the table of the view shown", D-0178, holds only there)."""
+        return _in_audit() and data_view.get() == "T3"
 
     from app.modules.notification_utils import make_notifier
     _notify = make_notifier(notification_log)
@@ -168,22 +167,26 @@ def define_filter_audit_server(input, output, session, *,
 
     # WHY: ADR-099 point 1 - exploration filters are cleared on a recipe change; a filter built on recipe A would
     # silently filter recipe B when it has a column of the same name (found 2026-11-18, switch check).
-    # Idempotent guard: only a real change of the id clears; the selector input is re-created when the user returns to
+    # Slice B (D-0311, D-0178): a filter is built on the table of the view shown, so it is cleared, with a notice, when that table changes:
+    # the data choice, the source table, the open plot (P-B2, PROVISIONAL: it changes the table viewed), the mode (exploration filters do not
+    # exist in Audit mode) and the recipe. One view key (`view_key`) says what the view is; the notice names the first cause that changed.
+    # Idempotent guard: only a real change of the key clears; the selector input is re-created when the user returns to
     # HOME from another space and then reports the same id again, which must not clear anything or notify.
-    _seen_recipe = {"id": None}
+    _seen_view = {"key": None}
 
     @reactive.Effect
-    def _clear_filters_on_recipe_change():
+    def _clear_filters_on_view_change():
         rid = safe_input(input, "data_analysis_recipe_id", None)
         if rid is None:
             return
+        key = current_view_key()
         with reactive.isolate():
-            previous = _seen_recipe["id"]
-            _seen_recipe["id"] = rid
-            if previous is None or previous == rid:
+            previous = _seen_view["key"]
+            _seen_view["key"] = key
+            if previous is None or previous == key:
                 return
             n_pending, n_applied = _clear_exploration_filters()
-            text = filters_cleared_notice(n_pending, n_applied)
+            text = view_change_notice(previous, key, n_pending, n_applied)
             if text:
                 _notify(text, type="warning", duration=10)
 
@@ -293,7 +296,7 @@ def define_filter_audit_server(input, output, session, *,
         with reactive.isolate():
             return _dialog_table()
 
-    # WHY: found 2026-11-19 (FORM RESET). The form read `_dialog_table()` directly, so every recompute of the table (a change of "Data to show",
+    # WHY: found 2026-11-19 (FORM RESET). The form read `_dialog_table()` directly, so every recompute of the table (a change of the data choice,
     # a plot tab, a recipe load) mounted the column select again, even when the columns and the rows were the same. A render that
     # started before the server had received the user's new column put the first column back; nothing told the user (D-0050).
     # The two Values change only when the thing they stand for changes (R3, idempotent guard); `_signal_dialog_table` sets them.
@@ -309,7 +312,8 @@ def define_filter_audit_server(input, output, session, *,
             lf, types, disc = _dialog_table()
             schema = dialog_schema_signature(types, disc)
             subtab = active_home_subtab.get()
-            tier = tier_toggle.get()
+            tier = data_view.get()
+            audit_t3 = _can_write_audit_step()
             identity = None
             if lf is not None:
                 try:
@@ -317,8 +321,8 @@ def define_filter_audit_server(input, output, session, *,
                 except Exception:
                     # No identity, no way to tell two tables apart: the signature is never equal (one more render).
                     _log.exception("filter dialog: the stored table the form reads could not be identified")
-            # The same condition as `_active_frame`: the audited steps apply in My view only.
-            rows = dialog_rows_signature(identity, _audit_nodes_of(subtab) if tier == "T3" else [])
+            # The same condition as `_active_frame`: the audited steps apply on T3 in Audit mode only.
+            rows = dialog_rows_signature(identity, _audit_nodes_of(subtab) if audit_t3 else [])
         except Exception as exc:
             # The outputs read the table again and show the error themselves; this only makes them run again when it changes.
             _log.exception("filter dialog: the table of the form could not be read")
@@ -345,7 +349,7 @@ def define_filter_audit_server(input, output, session, *,
         Reads the table the filter acts on only (R4, ui_implementation_contract.md section 14: it does not read the
         widgets it mounts, apart from an isolated read to keep the column the user chose when the plot changes).
         It depends on the schema signal, not on the table: a recompute that gives the same columns, types and discrete axes
-        (a change of "Data to show" on a table without tier-2 steps, a plot tab with the same table) does not mount it again, so the
+        (a change of the data choice on a table without tier-2 steps, a plot tab with the same table) does not mount it again, so the
         column, operator and value the user has just chosen are not put back to the first column while the server has not yet
         received them.
         """
@@ -511,7 +515,7 @@ def define_filter_audit_server(input, output, session, *,
                 _dialog_audit_steps_changed.set(nodes)
 
     def _active_frame():
-        """The table the filter in the form acts on: the active plot's table (None when it cannot be built)."""
+        """The table the filter in the form acts on: the table of the view shown for the active plot (D-0178; None when it cannot be built)."""
         subtab = active_home_subtab.get()
         p_id = subtab.removeprefix("subtab_") if subtab else None
         try:
@@ -519,11 +523,11 @@ def define_filter_audit_server(input, output, session, *,
         except Exception:
             _log.exception("filter dialog: the table the filter acts on could not be built")
             return None
-        # DECIDED 2026-11-15 (Eve, S2-1 (a)): in My view the dialog acts on the table after the plot's audited steps, so a column
+        # DECIDED 2026-11-15 (Eve, S2-1 (a)): in Audit mode on T3 the dialog acts on the table after the plot's audited steps, so a column
         # that an earlier step dropped is not offered. One source: the same function as the table, the plot and the export.
         try:
             _dialog_audit_steps_changed.get()   # the dependency: a change of this plot's steps builds the dialog again
-            return dialog_frame(lf, _audit_nodes_of(subtab), tier_toggle.get() == "T3", p_id)
+            return dialog_frame(lf, _audit_nodes_of(subtab), _can_write_audit_step(), p_id)
         except AuditStepError:
             # The audit list of the plot cannot run: the table and the plot show why. The dialog offers nothing until a step is removed.
             _log.warning("filter dialog: the audit steps of the plot cannot run; no table is offered")
@@ -574,33 +578,29 @@ def define_filter_audit_server(input, output, session, *,
         """Apply / Send to Audit / Reset buttons + status. Reads _pending_filters
         + applied_filters.
 
-        HOM-43 + ADR-085 amendment (2026-08-10): Apply and Send to Audit are two
-        distinct, always-labelled actions instead of one button that silently
-        changed meaning by tier. Apply always explores (transient) but ONLY
-        shows on "My view" (T3) — T1/T2 stay pure references, never touched by
-        exploration or audit. Send to Audit additionally requires
-        t3_sandbox_enabled: "My view" can exist as a pure scratchpad without
-        audit capability (see home_theater.py tier_choices), in which case
-        there's nothing to send to — no audit trail exists in that config.
+        Slice B (D-0016, D-0311, D-0177): Exploration and Audit mode are different. In Exploration the staged rows are tried on the table
+        of the view shown with "Apply": they change that table only, never a plot, and nothing is saved or exported. In Audit mode the form
+        builds audit steps, not previews: no Apply (P-B4, PROVISIONAL); "Send to Audit" is offered while T3 is viewed (P-B3, PROVISIONAL),
+        and on another view one plain line says why it is absent.
         """
         n_applied = len(applied_filters.get())
         n_pending = len(_pending_filters.get())
-        in_t3 = _on_my_view()
-        has_audit = bootloader.is_enabled("t3_sandbox_enabled")
+        audit = _in_audit()
+        can_send = _can_write_audit_step()
         status = (
             ui.tags.small(f"{n_applied} active", class_="text-success d-block mb-1 spv-text-xxs")
-            if n_applied else ui.div()
+            if n_applied and not audit else ui.div()
         )
-        buttons = [
-            ui.input_action_button(
-                "filter_apply", f"Apply ({n_pending})",
-                class_="btn-primary btn-sm spv-text-xs",
-                title="Applies these filters for exploration on \"My view\" (T3) only — "
-                      "T1/T2 stay untouched. Not written to the audit log, and not "
-                      "included in exports unless also sent to audit.",
-            ),
-        ]
-        if in_t3 and has_audit:
+        buttons = []
+        if not audit:
+            buttons.append(
+                ui.input_action_button(
+                    "filter_apply", f"Apply ({n_pending})",
+                    class_="btn-primary btn-sm spv-text-xs",
+                    title="Applies these filters to the table you view (Source, T1, T2 or T3) for exploration. They change that "
+                          "table only, never a plot. Not written to the audit log, and not exported.",
+                ))
+        if can_send:
             buttons.append(
                 ui.input_action_button(
                     "filter_send_to_audit", f"➜ Send to Audit ({n_pending})",
@@ -622,14 +622,15 @@ def define_filter_audit_server(input, output, session, *,
                 class_="btn-outline-secondary btn-sm spv-text-xs",
             )
         )
-        # Reminder (Eve, 2026-11-06): Apply is a sandbox to understand the data; only what is sent
-        # to audit (with a reason) is exported.
-        reminder = ui.div()
-        if in_t3 and has_audit:
-            reminder = ui.tags.small(
-                "Sandbox: only steps sent to audit are exported.",
-                class_="text-warning d-block mt-1 spv-text-xxs",
-            )
+        # Reminders (Eve, 2026-11-06; slice B): in Exploration a filter is a way to understand the data; only what is sent to audit (with a
+        # reason) is exported. PROVISIONAL words (the coordinator's; the owner reads them).
+        if audit and not can_send:
+            reminder = ui.tags.small("To create an audit step, view T3.", class_="text-warning d-block mt-1 spv-text-xxs")
+        elif audit:
+            reminder = ui.tags.small("Audit: a step you send changes the plot and is exported.", class_="text-warning d-block mt-1 spv-text-xxs")
+        else:
+            reminder = ui.tags.small("Exploration: filters change this table only, never a plot. Nothing here is exported.",
+                                     class_="text-muted d-block mt-1 spv-text-xxs")
         return ui.div(
             status,
             ui.div(*buttons, class_="d-flex gap-1 mt-1 flex-wrap"),
@@ -698,7 +699,8 @@ def define_filter_audit_server(input, output, session, *,
 
         # NA-RULE-63: the tick of the dialog, never absent from a row (None: not mounted, the default of the operator)
         na_tick = safe_input(input, "fb_na", None)
-        new_row = staged_filter_row(col, op, value, dtype_str, na_tick, closed=bt_closed)
+        # review F3: the row carries the view key it was built on; the data preview applies a filter only while the view is that one
+        new_row = staged_filter_row(col, op, value, dtype_str, na_tick, closed=bt_closed, view=current_view_key())
         current = list(_pending_filters.get())
         current.append(new_row)
         _pending_filters.set(current)
@@ -706,17 +708,17 @@ def define_filter_audit_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.filter_apply)
     def _filter_apply():
-        """Left-panel Apply — exploration only (HOM-43 + ADR-085, 2026-08-10).
+        """Left-panel Apply — exploration only (HOM-43 + ADR-085, 2026-08-10; slice B, D-0311).
 
         Commits _pending_filters → applied_filters: a transient view filter,
-        never written to the audit log. Rendering (home_theater.py) only
-        applies applied_filters on "My view" (T3) — T1/T2 stay untouched
-        references regardless of what's in here. Previously this button
-        changed behaviour entirely in T3 mode (skipped straight to the audit
-        pipeline, with no way to just look at a filter first) — that
-        promotion path is now the separate `filter_send_to_audit` button
+        never written to the audit log. The data preview applies it to the table of
+        the view shown; no plot ever does (home_theater.py). It does not exist in Audit
+        mode (the button is not drawn there; the guard below is the second line).
+        The promotion path is the separate `filter_send_to_audit` button
         below, so "try it" and "make it permanent" are two distinct actions.
         """
+        if _in_audit():
+            return
         applied_filters.set(list(_pending_filters.get()))
 
     @reactive.Effect
@@ -724,12 +726,8 @@ def define_filter_audit_server(input, output, session, *,
     def _filter_send_to_audit():
         """Promote staged filter rows into the permanent T3 audit pipeline.
 
-        ADR-085 amendment (2026-08-10): "My view" (T3) can now exist WITHOUT
-        audit capability (a pure scratchpad when t3_sandbox_enabled is off —
-        see home_theater.py tier_choices), so reaching this tier no longer
-        implies audit is available. filter_controls_ui only renders this
-        button when My view is selected in either choice (ADR-086) AND t3_sandbox_enabled — the
-        explicit re-check here matches the defensive-guard style already used
+        Slice B: an audit step is written in Audit mode while T3 is viewed (P-B3, PROVISIONAL). filter_controls_ui only renders this
+        button then — the explicit re-check here matches the defensive-guard style already used
         by `_col_drop_to_audit` below.
         Formerly the T3 branch of `filter_apply` (HOM-43 split, 2026-08-10) —
         same logic, now its own explicit action:
@@ -739,7 +737,7 @@ def define_filter_audit_server(input, output, session, *,
           - Opens the propagation dialog so the user picks
             this-plot / all-plots / all-except.
         """
-        if not bootloader.is_enabled("t3_sandbox_enabled") or not _on_my_view():
+        if not _can_write_audit_step():
             return
         rows = list(_pending_filters.get())
         if not rows or home_state is None:
@@ -781,7 +779,7 @@ def define_filter_audit_server(input, output, session, *,
         _propagation_scratch.set({"nodes": scratch_nodes, "kind": "filter"})
         _open_propagation_modal(scratch_nodes, active_subtab, kind="filter")
 
-        # Clear staged rows and the exploration view — they're now in the audit pipeline.
+        # Clear the staged rows — they're now in the audit pipeline.
         _clear_exploration_filters()
 
     @reactive.Effect
@@ -803,15 +801,14 @@ def define_filter_audit_server(input, output, session, *,
           - Otherwise → build pending drop_column nodes and open the
             propagation dialog.
         """
-        if (home_state is None or tier_toggle.get() != "T3"
-                or not bootloader.is_enabled("t3_sandbox_enabled")):
+        if home_state is None or not _can_write_audit_step():
             return
 
         subtab = active_home_subtab.get()
         p_id = subtab.removeprefix("subtab_") if subtab else None
         spec = _resolve_active_spec(p_id)
         try:
-            lf = _resolve_active_lf(spec)
+            lf = _resolve_active_lf(spec, tier="T3")
         except Exception:
             return
 
@@ -891,7 +888,7 @@ def define_filter_audit_server(input, output, session, *,
                 continue
             if p_id not in schema_cache:
                 try:
-                    lf = _resolve_active_lf(spec)
+                    lf = _resolve_active_lf(spec, tier="T3")
                     schema_cache[p_id] = set(lf.collect_schema().names())
                 except Exception:
                     schema_cache[p_id] = set()
@@ -1143,7 +1140,7 @@ def define_filter_audit_server(input, output, session, *,
         p_id = subtab_id.removeprefix("subtab_")
         try:
             spec = _resolve_active_spec(p_id)
-            lf = _resolve_active_lf(spec)
+            lf = _resolve_active_lf(spec, tier="T3")
             return column in lf.collect_schema().names()
         except Exception:
             return True

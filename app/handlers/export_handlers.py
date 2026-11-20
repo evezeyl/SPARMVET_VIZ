@@ -61,7 +61,7 @@ def build_export_provenance(
     dpi: int,
     plot_width: float = 8.0,
     plot_height: float = 5.0,
-    active_tier: str,
+    screen_view: str,
     all_plots: list,
     tiers_exported: list,
     data_analysis_recipe_sha: str,
@@ -197,7 +197,7 @@ def build_export_provenance(
         "data_analysis_recipe_name": data_analysis_recipe_name,
         "data_analysis_recipe_path": data_analysis_recipe_path_str,
         "app_features": app_features,
-        "active_tier": active_tier,
+        "screen_view": screen_view,
         "bundle_label": safe_name,
         "preset": preset,
         "dpi": dpi,
@@ -577,7 +577,7 @@ def define_export_server(input, output, session, *,
                          bootloader, orchestrator, viz_factory,
                          current_app_features, active_cfg,
                          tier1_anchor,
-                         tier_toggle,
+                         screen_view,
                          home_state, safe_input,
                          notification_log=None,
                          session_processing_issues=None,
@@ -593,7 +593,8 @@ def define_export_server(input, output, session, *,
       current_app_features    : reactive.Value[str]
       active_cfg         : reactive.Calc[ConfigManager]
       tier1_anchor       : reactive.Calc[LazyFrame]
-      tier_toggle        : reactive.Value[str]   ("T1"|"T2"|"T3")
+      screen_view        : callable() -> str   the mode and the data choice on screen, in words (slice B, P-B6): recorded in README.txt only;
+                           the content of the bundle does not depend on it
       home_state         : reactive.Value[dict] | None
       safe_input         : helper (input, key, default) → value
       t3_filter_rows     : callable(subtab_id) -> list[dict]  audited filter/exclusion rows (HOME's)
@@ -634,7 +635,7 @@ def define_export_server(input, output, session, *,
             remembered = _fields_store.fields_for(_session_key())
 
         # Reminder (Eve, 2026-11-06): only steps sent to audit are exported. Anything tried while
-        # exploring (filters in T1/T2/My view) is a sandbox and is never part of the bundle.
+        # exploring (filters on Source, T1, T2 or T3) is a sandbox and is never part of the bundle.
         audit_reminder = ui.div()
         if bootloader.is_enabled("interactivity_enabled"):
             audit_reminder = ui.tags.small(
@@ -1067,9 +1068,10 @@ def define_export_server(input, output, session, *,
 
         # The export is the Result (T2) plus the AUDITED T3 steps (committed with a reason, e.g.
         # removing poor quality data): the user's decision for the publication, always applied.
-        # Exploration (filters tried in T1/T2/My view, not sent to audit) is a sandbox and is never
-        # exported, from any view (Eve, 2026-11-06).
-        active_tier = tier_toggle.get()
+        # Exploration (filters tried on any table of the view, not sent to audit) is a sandbox and is never
+        # exported, from any view (Eve, 2026-11-06). What was on screen (the mode and the data choice) is recorded in README.txt
+        # and decides nothing in the bundle: the content below never reads it.
+        screen_view_text = screen_view()
 
         def _audited_nodes(p_id: str) -> list[dict]:
             """The plot's audited steps, in the recorded order: the input of `audited_frame` (exploration is not part of it)."""
@@ -1089,7 +1091,7 @@ def define_export_server(input, output, session, *,
         # PLOT-TABLE-ORDER-1: check before anything is written. If the audited steps of a plot cannot run in their
         # recorded order, the table, the plot and the exported recipe would differ or fail: nothing is exported.
         def _base_frame(p_id: str, spec: dict):
-            """The base of a plot's My view: the table the plot reads (`materialize_tier3`: the stored Tier 2, Tier 1 without tier2
+            """The base of a plot's audited data: the table the plot reads (`materialize_tier3`: the stored Tier 2, Tier 1 without tier2
             steps, plus the plot's own tier-3 steps), as the data and plot sections read it."""
             if not spec.get("target_dataset"):
                 return tier1_anchor()
@@ -1154,7 +1156,7 @@ def define_export_server(input, output, session, *,
                 dpi=dpi,
                 plot_width=plot_width,
                 plot_height=plot_height,
-                active_tier=active_tier,
+                screen_view=screen_view_text,
                 all_plots=all_plots,
                 tiers_exported=tiers_exported,
                 data_analysis_recipe_sha=data_analysis_recipe_sha,
@@ -1337,7 +1339,8 @@ def define_export_server(input, output, session, *,
                 # T1: always exported.
                 # T2: exported when the table has tier2 steps (a join, or a table a plot reads directly), read from the stored Tier 2
                 #     parquet (issue #10). Without tier2 steps T2 equals T1: no duplicate TSV.
-                # T3: only for advanced+ app features files, and only when tier_toggle == "T3".
+                # T3: one file per plot that has audited steps or tier-3 steps in the recipe (its plot is built from that data);
+                #     whatever the mode and the data choice on screen when Export was pressed (they decide nothing here).
 
                 exported_datasets: set[str] = set()
                 exported_t2: set[str] = set()
@@ -1401,7 +1404,7 @@ def define_export_server(input, output, session, *,
                             f"T2 data export failed:\n{e}"
                         )
 
-                    # ── T3 / My view data, one file per plot (audit nodes are per plot) ──
+                    # ── T3 data (the audited table), one file per plot (audit nodes are per plot) ──
                     # Build rule T3 > T2 > T1: the base is the table the plot reads (`materialize_tier3`: the stored Tier 2, which
                     # is Tier 1 when the table has no tier2 steps, plus the plot's own tier-3 steps of the recipe); the plot's
                     # audited filters and drops go on top.
@@ -2121,7 +2124,7 @@ def define_export_server(input, output, session, *,
                 f"User             : {prov['bundle_label']}",
                 f"App features     : {prov['app_features']}",
                 f"Preset           : {prov['preset']} (DPI={prov['dpi']}, {prov['plot_width']}×{prov['plot_height']} in)",
-                f"Active tier      : {prov['active_tier']}",
+                f"Screen view      : {prov['screen_view']}",
                 f"Plot format      : {plot_fmt}",
                 # D-0050: the choice that decides whether the recipe and the data files are in the bundle, as the server read
                 # it when Export was pressed (a box that went back to unticked would show here, not only as a missing folder).
@@ -2178,7 +2181,7 @@ def define_export_server(input, output, session, *,
                 "  <dataset>/plots/  — rendered figures, grouped by source dataset",
                 "  <dataset>/T1_data.tsv — raw assembled data (T1)",
                 "  <dataset>/T2_data.tsv — processed data (T2, when steps defined)",
-                "  <dataset>/T3_data_<plot>.tsv — My view data of each plot (T3, when exported): T2 (T1 when there",
+                "  <dataset>/T3_data_<plot>.tsv — the table of each plot with its audited steps (T3, when exported): T2 (T1 when there",
                 "                     are no tier2 steps) plus that plot's tier3 steps of the recipe and its audited filters and column drops",
                 "  t3_steps.yaml     — human-readable audit record (when T3 has steps)",
                 "  effective_run.yaml — the full verification record: recipe/data/T3-steps/engine",

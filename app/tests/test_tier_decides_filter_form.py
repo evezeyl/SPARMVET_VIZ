@@ -1,18 +1,14 @@
-"""The viewed tier decides what the HOME filter form shows (D-0178, D-0021, D-0177).
+"""The table of the view shown decides what the HOME filter form shows (D-0178, D-0310, D-0021, D-0177).
 
-The check (2026-11-19, owner's decision): an audited step (My view, sent to audit with a reason and applied) removes a value from
-the table of one plot. Then:
+D-0178: "a filter is built on the table of the view shown: if the user is on T1 the filter is built from T1". The view has four values
+(Source, T1, T2, T3) and two modes. The form's columns and values come from the table of the view shown; in Audit mode on T3 that table is
+the plot's table after its audited steps (a value an audited step removed is not listed and the table does not show it); in Exploration
+T3 holds no audited step. Changing the view changes the list in every direction with no page reload.
 
-1. In My view ("Data to show" = My view) the value list of the filter form does not hold the removed value, and the data table does
-   not show it;
-2. in Raw (T1) and in Result (T2) the list holds it and the table shows it;
-3. switching the view changes the list in both directions (My view -> Raw -> My view, My view -> Result -> My view), with no page reload.
-
-The filter form repair of 8f8474a9 is a stopgap, not the tier rule; this test checks that the viewed tier decides the filter list.
-
-Headless: the pure functions the form is made of (`dialog_frame`, `value_choices`, `dialog_rows_signature`, `stored_table_identity`).
-Browser (qa app features): the real form of the real app on a small staged recipe (30 samples; the audited step keeps score >= 16, so
-it removes the samples s1 to s15). The value list and the table rows are checked separately, so a failure says which one is wrong.
+Headless: the pure functions the form is made of (`dialog_frame`, `value_choices`, `dialog_rows_signature`, `stored_table_identity`), and the
+REAL form (`filter_form_ui` of `define_filter_audit_server`, run on the real HOME readers) for each of the four views of a plot on a join.
+Browser (qa app features): the real form of the real app on a small staged recipe (30 samples; the audited step keeps score >= 16, so it
+removes the samples s1 to s15). The value list and the table rows are checked separately, so a failure says which one is wrong.
 
 Run: PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_tier_decides_filter_form.py -q
 """
@@ -26,15 +22,18 @@ import polars as pl
 import pytest
 import yaml
 from playwright.sync_api import Page, expect
+from shiny import reactive
 
 from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, tier2_path_for
 from app.modules.data_analysis_recipe_validator import validate_data_analysis_recipe
 from app.modules.session_manager import make_audit_step
 from app.modules.t3_audit_engine import dialog_frame, dialog_rows_signature, stored_table_identity, value_choices
+from app.tests.browser_view import set_mode, set_view
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly, _choose_operator
 from app.tests.test_shiny_smoke import _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
 from app.tests.test_shiny_step_order import N, PLOT, THRESHOLD, _expect_rows, _filter_step, _start
+from app.tests.home_harness import Home, ViewWorld
 from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
 
 REPO = Path(__file__).resolve().parents[2]
@@ -58,23 +57,23 @@ def _listed(lf, column):
     return list(value_choices(lf, column))
 
 
-class TestValueListFollowsTheViewedTier:
-    """`dialog_frame` is what the form's value list is read from: the audited steps apply in My view only."""
+class TestValueListFollowsTheViewShown:
+    """`dialog_frame` is what the form's value list is read from: the audited steps apply on T3 in Audit mode only."""
 
-    def test_a_removed_sample_is_not_listed_in_my_view_and_is_listed_in_raw_and_result(self):
+    def test_a_removed_sample_is_not_listed_in_audit_t3_and_is_listed_on_every_other_view(self):
         nodes = [_step("sample_id", "not_in", ["s1"])]
-        assert "s1" not in _listed(dialog_frame(_lf(), nodes, in_my_view=True), "sample_id")
-        assert "s1" in _listed(dialog_frame(_lf(), nodes, in_my_view=False), "sample_id")   # Raw and Result: the table as it is
+        assert "s1" not in _listed(dialog_frame(_lf(), nodes, with_audited_steps=True), "sample_id")
+        assert "s1" in _listed(dialog_frame(_lf(), nodes, with_audited_steps=False), "sample_id")   # Source, T1, T2, Exploration T3: the table as it is
 
-    def test_a_removed_year_is_not_listed_in_my_view_and_is_listed_otherwise(self):
+    def test_a_removed_year_is_not_listed_in_audit_t3_and_is_listed_otherwise(self):
         nodes = [_step("year", "ge", 2001, "Int64")]                      # removes every row of 2000
-        assert 2000 in value_choices(dialog_frame(_lf(), nodes, in_my_view=False), "year").values()
-        mine = value_choices(dialog_frame(_lf(), nodes, in_my_view=True), "year").values()
+        assert 2000 in value_choices(dialog_frame(_lf(), nodes, with_audited_steps=False), "year").values()
+        mine = value_choices(dialog_frame(_lf(), nodes, with_audited_steps=True), "year").values()
         assert 2000 not in mine and 2001 in mine
 
     def test_switching_back_and_forth_gives_the_same_lists(self):
         nodes = [_step("sample_id", "not_in", ["s1", "s2"])]
-        mine = [_listed(dialog_frame(_lf(), nodes, in_my_view=v), "sample_id") for v in (True, False, True, False, True)]
+        mine = [_listed(dialog_frame(_lf(), nodes, with_audited_steps=v), "sample_id") for v in (True, False, True, False, True)]
         assert mine[0] == mine[2] == mine[4] and mine[1] == mine[3]
         assert mine[0] != mine[1]
 
@@ -85,8 +84,8 @@ class TestValueListFollowsTheViewedTier:
         assert "s1" not in with_step and "s1" in without
 
 
-class TestRowsSignatureFollowsTheViewedTier:
-    """The form mounts the value widget again when the rows signature changes: it must change with the viewed tier."""
+class TestRowsSignatureFollowsTheViewShown:
+    """The form mounts the value widget again when the rows signature changes: it must change with the view shown."""
 
     @pytest.fixture
     def stored(self, tmp_path):
@@ -95,29 +94,72 @@ class TestRowsSignatureFollowsTheViewedTier:
         return t1
 
     def _sig(self, t1, tier, nodes):
-        # The same call as the handler: the audited steps count in My view only (`_signal_dialog_table`).
+        # The same call as the handler: the audited steps count on T3 in Audit mode only (`_signal_dialog_table`); `tier` here is the view.
         return dialog_rows_signature(stored_table_identity(tier, "t", "recipe", "vk", t1, 0), nodes if tier == "T3" else [])
 
-    def test_my_view_with_the_step_differs_from_raw_and_result_without_tier2_the_two_are_the_same_table(self, stored):
+    def test_audit_t3_with_the_step_differs_from_t1_and_t2_and_without_tier2_the_two_are_the_same_table(self, stored):
         nodes = [_step("sample_id", "not_in", ["s1"])]
         mine, raw, result = (self._sig(stored, t, nodes) for t in ("T3", "T1", "T2"))
         assert mine != raw and mine != result
-        assert raw == result, "no tier-2 steps: Raw and Result are one stored table, no reason to mount the list again"
+        assert raw == result, "no tier-2 steps: T1 and T2 are one stored table, no reason to mount the list again"
 
-    def test_with_a_tier2_table_raw_and_result_differ_and_my_view_differs_from_both(self, stored):
+    def test_with_a_tier2_table_t1_and_t2_differ_and_audit_t3_differs_from_both(self, stored):
         pl.DataFrame({"sample_id": ["s2", "s3"]}).write_parquet(tier2_path_for(stored), metadata={TIER2_KEY_META: "k2"})
         nodes = [_step("sample_id", "not_in", ["s2"])]
         mine, raw, result = (self._sig(stored, t, nodes) for t in ("T3", "T1", "T2"))
         assert len({mine, raw, result}) == 3
 
-    def test_going_to_raw_or_result_and_back_returns_the_first_signature(self, stored):
+    def test_going_to_t1_or_t2_and_back_returns_the_first_signature(self, stored):
         nodes = [_step("sample_id", "not_in", ["s1"])]
         first = self._sig(stored, "T3", nodes)
         assert self._sig(stored, "T1", nodes) != first and self._sig(stored, "T3", nodes) == first
         assert self._sig(stored, "T2", nodes) != first and self._sig(stored, "T3", nodes) == first
 
-    def test_my_view_without_a_step_equals_result(self, stored):
+    def test_t3_without_a_step_equals_t2(self, stored):
         assert self._sig(stored, "T3", []) == self._sig(stored, "T2", [])
+
+
+# -- headless: the REAL form on the four views of a plot on a join -------------------------------------------------------------
+
+def _options(html: str, select_id: str = "fb_col") -> list:
+    import re
+    block = re.search(rf'<select[^>]*id="{select_id}".*?</select>', html, re.S).group(0)
+    return re.findall(r'<option value="([^"]+)"', block)
+
+
+class TestTheRealFormFollowsTheViewShown:
+    """The form's columns come from the table of the view shown (D-0178) for a plot on a join (T and M, joined; tier 2 keeps score >= 2) and for
+    a plot with its own tier-3 steps (score >= 3, `site` dropped). MUTATION F1: the form reads the T3 table whatever the view; this fails."""
+
+    def columns(self, tmp_path, monkeypatch, view, plot, source=None, mode="exploration", flags=("interactivity_enabled",)):
+        world = ViewWorld(tmp_path)
+        home = Home(world, monkeypatch, view=view, subtab=f"subtab_{plot}", source=source, mode=mode, flags=flags)
+        home.filter_handlers(monkeypatch)
+        with reactive.isolate():
+            return _options(str(home.outputs["filter_form_ui"]()))
+
+    @pytest.mark.parametrize("view,source,expected", [
+        ("SRC", "T", ["sample_id", "group", "score"]), ("SRC", "M", ["sample_id", "site"]),
+        ("T1", None, ["sample_id", "group", "score", "site"]), ("T2", None, ["sample_id", "group", "score", "site"]),
+        ("T3", None, ["sample_id", "group", "score", "site"])])
+    def test_a_plot_on_a_join(self, tmp_path, monkeypatch, view, source, expected):
+        assert self.columns(tmp_path, monkeypatch, view, "p_join", source) == expected
+
+    @pytest.mark.parametrize("view,expected", [("T1", ["sample_id", "group", "score", "site"]), ("T2", ["sample_id", "group", "score", "site"]),
+                                               ("T3", ["sample_id", "group", "score"])])
+    def test_a_plot_with_its_own_tier3_steps(self, tmp_path, monkeypatch, view, expected):
+        assert self.columns(tmp_path, monkeypatch, view, "p_steps") == expected
+
+    def test_audit_mode_t3_does_not_offer_a_column_an_audited_step_dropped(self, tmp_path, monkeypatch):
+        world = ViewWorld(tmp_path)
+        drop = make_audit_step("drop_column", {"column": "group"}, plot_scope="subtab_p_join", reason="r")
+        state = {"t3_audit_steps_by_plot": {"subtab_p_join": [drop]}}
+        flags = ("interactivity_enabled", "t3_sandbox_enabled", "comparison_mode_enabled")
+        for mode, view, expected_has_group in (("audit", "T3", False), ("audit", "T2", True), ("exploration", "T3", True)):
+            home = Home(world, monkeypatch, view=view, mode=mode, flags=flags, home_state=state, subtab="subtab_p_join")
+            home.filter_handlers(monkeypatch)
+            with reactive.isolate():
+                assert ("group" in _options(str(home.outputs["filter_form_ui"]()))) is expected_has_group, (mode, view)
 
 
 # -- browser: the real form on a staged recipe --------------------------------------------------------------------------------
@@ -195,7 +237,7 @@ def _print_flags(page: Page) -> None:
 
 @pytest.fixture(scope="module")
 def audited(page: Page, staged_app):
-    """My view of the plot with one applied audited step (score >= 16, with a reason): the samples s1..s15 are removed from it."""
+    """Audit mode on T3 of the plot with one applied audited step (score >= 16, with a reason): the samples s1..s15 are removed from it."""
     _start(page, staged_app)
     _print_flags(page)
     page.evaluate("() => { window.__no_reload_marker = 'same page'; }")
@@ -240,10 +282,8 @@ def _table_samples(page: Page, expected_count: int, timeout: float = 15.0):
 
 
 def _view(page: Page, tier: str) -> None:
-    """Choose "Data to show" (T1 Raw, T2 Result, T3 My view) and wait until Shiny is idle; nothing is chosen again after it."""
-    page.locator(f"#tier_toggle input[value={tier}]").check(force=True)
-    _wait_shiny(page)
-    expect(page.locator(f"#tier_toggle input[value={tier}]")).to_be_checked()
+    """Choose the data view (T1, T2 or T3) and wait until Shiny is idle; nothing is chosen again after it."""
+    set_view(page, tier)
 
 
 def _list_settles_to(page: Page, expected_count: int, timeout: float = 15.0):
@@ -264,23 +304,23 @@ def _describe(page: Page) -> str:
 
 
 class TestTheViewedTierDecidesTheForm:
-    def test_my_view_list_does_not_hold_the_removed_samples(self, audited: Page):
+    def test_audit_t3_list_does_not_hold_the_removed_samples(self, audited: Page):
         page = audited
         _view(page, "T3")
         _pick_sample_list(page)
         seen = _list_settles_to(page, len(KEPT))
-        assert seen is not None and sorted(seen) == sorted(KEPT), f"POINT 1, value list in My view: {_describe(page)}"
+        assert seen is not None and sorted(seen) == sorted(KEPT), f"POINT 1, value list in Audit T3: {_describe(page)}"
         assert not set(REMOVED) & set(seen)
 
-    def test_my_view_table_does_not_show_the_removed_samples(self, audited: Page):
+    def test_audit_t3_table_does_not_show_the_removed_samples(self, audited: Page):
         page = audited
         _view(page, "T3")
         _expect_rows(page, len(KEPT))
         shown = _table_samples(page, len(KEPT))
-        assert shown is not None and sorted(shown) == sorted(KEPT), f"POINT 1, table rows in My view: {_describe(page)}"
+        assert shown is not None and sorted(shown) == sorted(KEPT), f"POINT 1, table rows in Audit T3: {_describe(page)}"
 
     @pytest.mark.parametrize("tier", ["T1", "T2"])
-    def test_raw_and_result_list_holds_the_removed_samples(self, audited: Page, tier):
+    def test_t1_and_t2_list_holds_the_removed_samples(self, audited: Page, tier):
         page = audited
         _view(page, "T3")
         _pick_sample_list(page)
@@ -290,7 +330,7 @@ class TestTheViewedTierDecidesTheForm:
         _view(page, "T3")      # leave the view as the next test expects it
 
     @pytest.mark.parametrize("tier", ["T1", "T2"])
-    def test_raw_and_result_table_shows_the_removed_samples(self, audited: Page, tier):
+    def test_t1_and_t2_table_shows_the_removed_samples(self, audited: Page, tier):
         page = audited
         _view(page, tier)
         _expect_rows(page, N)
@@ -315,10 +355,24 @@ class TestTheViewedTierDecidesTheForm:
         assert page.evaluate("() => window.__no_reload_marker") == "same page", "the page was reloaded"
 
     def test_the_audited_step_is_still_applied_after_all_the_switches(self, audited: Page):
-        """The applied step applies no matter which view was visited in between (D-0177): back in My view the table is the filtered one."""
+        """The applied step applies no matter which view was visited in between (D-0177): back on Audit T3 the table is the filtered one."""
         page = audited
         for tier in ("T1", "T2", "T3"):
             _view(page, tier)
         _expect_rows(page, len(KEPT))
         shown = _table_samples(page, len(KEPT))
-        assert shown is not None and sorted(shown) == sorted(KEPT), f"after the switches, table rows in My view: {_describe(page)}"
+        assert shown is not None and sorted(shown) == sorted(KEPT), f"after the switches, table rows in Audit T3: {_describe(page)}"
+
+    def test_exploration_t3_holds_no_audited_step_so_its_list_and_table_hold_every_sample(self, audited: Page):
+        """D-0180: Exploration is clean. The audited step waits in Audit mode; the T3 table of Exploration is the plot's own table."""
+        page = audited
+        try:
+            set_mode(page, "exploration")
+            _view(page, "T3")
+            _expect_rows(page, N)
+            _pick_sample_list(page)
+            seen = _list_settles_to(page, N)
+            assert seen is not None and sorted(seen) == sorted(EVERY), f"Exploration T3, value list: {_describe(page)}"
+        finally:
+            set_mode(page, "audit")
+            _view(page, "T3")

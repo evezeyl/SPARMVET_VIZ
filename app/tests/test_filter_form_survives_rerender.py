@@ -1,8 +1,9 @@
 """The column, the operator and the value the user has chosen in the Filters form survive a recompute of the table (D-0050).
 
 The defect (found 2026-11-19, "FORM RESET"): the add-row form read the table of the open plot directly. A shiny Calc invalidates its
-readers every time it recomputes, even when the result is the same, so a change of "Data to show" mounted the column select again.
+readers every time it recomputes, even when the result is the same, so a change of the data choice mounted the column select again.
 A render that had started before the server received the user's new column put the first column back, and nothing told the user.
+(Slice B: the choice that changed is now the data choice, Source, T1, T2 or T3, and the mode.)
 The form now depends on two signals that change only when what they stand for changes (`filter_and_audit_handlers._signal_dialog_table`).
 
 Headless: the two signatures (`dialog_schema_signature`; `dialog_rows_signature` with `stored_table_identity`: the audited steps in full and the
@@ -27,6 +28,7 @@ from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, tier2_path_
 from app.modules.session_manager import make_audit_step
 from app.modules.t3_audit_engine import (audited_frame, dialog_rows_signature, dialog_schema_signature, stored_key,
                                           stored_table_identity)
+from app.tests.browser_view import set_view
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_shiny_filter_types import typed_app  # noqa: F401 - a recipe of one table with an integer year on a discrete axis
 from app.tests.test_shiny_step_order import (N, THRESHOLD, _expect_rows, _filter_step, _start,  # noqa: F401 - a recipe of one table of 30 rows
@@ -92,7 +94,7 @@ def _rows_after(parquet, nodes):
 
 
 class TestRowsSignatureOfTheAuditedSteps:
-    """The rows of My view are decided by the audited steps in full. The first signature (the text of the Polars plan) printed a
+    """The rows of Audit T3 are decided by the audited steps in full. The first signature (the text of the Polars plan) printed a
     long list of values truncated, so two steps that differ in the middle, or in the length, looked equal (finding 1, case a)."""
 
     @pytest.fixture
@@ -141,7 +143,7 @@ class TestRowsSignatureOfTheAuditedSteps:
         assert self._sig(table, one) != self._sig(table, one + [_step("sample_id", "not_in", ["s1"])])
 
     def test_no_steps_in_raw_result_and_my_view_is_the_same_rows(self, table):
-        """Result and My view without audited steps are the same table: the form must not be mounted again (the first fix)."""
+        """T2 and T3 without audited steps are the same table: the form must not be mounted again (the first fix)."""
         assert self._sig(table, []) == self._sig(table, list())
 
     def test_steps_that_cannot_be_written_as_text_are_never_equal(self, table):
@@ -156,7 +158,7 @@ class TestRowsSignatureOfTheStoredTable:
         assert dialog_rows_signature(_identity(t1, "T1"), []) == dialog_rows_signature(_identity(t1, "T1"), [])
 
     def test_raw_and_result_with_tier_2_steps_are_not_equal(self, tmp_path):
-        """The Tier 2 table has its own rows (its own file and key): Raw and Result are two tables."""
+        """The Tier 2 table has its own rows (its own file and key): T1 and T2 are two tables."""
         t1 = _stored(tmp_path, "k1", "k2", rows=("a", "b", "c", "d"), t2_rows=("a", "b"))
         assert dialog_rows_signature(_identity(t1, "T1"), []) != dialog_rows_signature(_identity(t1, "T2"), [])
 
@@ -221,7 +223,7 @@ class _AnyInput:
         return lambda *a, **k: None
 
 
-def _define_handler(interactivity: bool, tier: str, nodes: list):
+def _define_handler(interactivity: bool, tier: str, nodes: list, mode: str = "audit"):
     """Define the real `define_filter_audit_server` with stand-ins and run its Effects once. Returns what the form's Effect asked for."""
     seen = {"tables": 0, "identity": [], "signature": []}
 
@@ -245,7 +247,8 @@ def _define_handler(interactivity: bool, tier: str, nodes: list):
             h.define_filter_audit_server(
                 _AnyInput(), lambda fn: fn, None,
                 applied_filters=reactive.Value([]), _pending_filters=reactive.Value([]), _propagation_scratch=reactive.Value({}),
-                home_state=reactive.Value({"t3_audit_steps_by_plot": {"subtab_p": nodes}}), tier_toggle=reactive.Value(tier),
+                home_state=reactive.Value({"t3_audit_steps_by_plot": {"subtab_p": nodes}}), in_audit=lambda: mode == "audit",
+                data_view=reactive.Value(tier), view_source_table=lambda: None, current_view_key=lambda: None,
                 active_home_subtab=reactive.Value("subtab_p"), safe_input=lambda inp, key, default=None: default,
                 _resolve_active_spec=lambda p: {"target_dataset": "t", "plot": p}, _resolve_active_lf=make_lf,
                 _spec_discrete_axes=lambda spec: ([], []), _t3_drop_columns=lambda *a: [], _all_plot_subtab_ids=lambda: [],
@@ -266,12 +269,14 @@ class TestTheFormsEffectInTheRealHandler:
         assert seen["tables"] >= 1
         assert seen["identity"] == [({"target_dataset": "t", "plot": "p"}, "T2")]
 
-    def test_the_audited_steps_are_part_of_the_signature_in_my_view_only(self):
-        """The dialog applies the audited steps in My view (T3) only, like `_active_frame`: the signature reads the same steps."""
+    def test_the_audited_steps_are_part_of_the_signature_on_audit_t3_only(self):
+        """The dialog applies the audited steps on T3 in Audit mode only, like `_active_frame`: the signature reads the same steps."""
         step = _step("era", "in", ["a"])
         assert _define_handler(True, "T3", [step])["signature"][-1] == (("a stored table",), [step])
         assert _define_handler(True, "T2", [step])["signature"][-1] == (("a stored table",), [])
         assert _define_handler(True, "T1", [step])["signature"][-1] == (("a stored table",), [])
+        assert _define_handler(True, "SRC", [step])["signature"][-1] == (("a stored table",), [])
+        assert _define_handler(True, "T3", [step], mode="exploration")["signature"][-1] == (("a stored table",), []), "Exploration: no audited step on T3"
 
 
 # ---- headless: the reactive pattern -------------------------------------------------------------------------------------------
@@ -349,12 +354,12 @@ def _renders_of(page: Page, name: str) -> int:
 
 
 def _show(page: Page, tier: str) -> None:
-    page.locator(f"#tier_toggle input[value={tier}]").check(force=True)
+    set_view(page, tier)
     _wait_shiny(page, 30_000)
 
 
 def _ready_on_mlst(page: Page, base_url: str) -> None:
-    """The MLST Bar plot of the 1_test_data_ST22_dummy recipe (`year` is a number column), Result view, form open."""
+    """The MLST Bar plot of the 1_test_data_ST22_dummy recipe (`year` is a number column), data choice T2, form open."""
     _load_data_analysis_recipe(page, base_url)
     _open_filters_panel(page)
     _navigate_to_mlst_plot(page)
@@ -384,7 +389,7 @@ def _pick_first_value(page: Page) -> str:
 
 class TestFormInTheBrowser:
     def test_a_change_of_view_without_new_columns_keeps_column_operator_and_value_and_mounts_nothing(self, page: Page, shiny_app: ShinyAppProc):
-        """Result and My view hold the same columns: the form is not mounted again, so what was chosen is still there."""
+        """T2 and T3 of this plot hold the same columns: the form is not mounted again, so what was chosen is still there."""
         _ready_on_mlst(page, shiny_app.url)
         _choose(page, "source")
         page.wait_for_function("() => Array.from(document.querySelectorAll('#fb_op option')).some(o => o.value === 'not_in')", timeout=15_000)
@@ -404,14 +409,14 @@ class TestFormInTheBrowser:
         assert page.evaluate("(v) => document.getElementById('fb_value').selectize.items.includes(v)", value), "the value the user picked is gone"
 
     def test_the_column_chosen_right_after_a_change_of_view_is_not_put_back(self, page: Page, shiny_app: ShinyAppProc):
-        """The race of the defect, as a user makes it: change "Data to show", then choose a column a few milliseconds later. The server
+        """The race of the defect, as a user makes it: change the data choice, then choose a column a few milliseconds later. The server
         used to render the form with the old column while the new one was on its way (9 of 30 tries before the fix)."""
         _ready_on_mlst(page, shiny_app.url)
         delays = [0, 5, 10, 20, 40, 0, 10, 20]
         for i, delay in enumerate(delays * 2):
             target = ("year", "sample_id")[i % 2]
             _show_start = ("T3", "T2")[i % 2]
-            page.locator(f"#tier_toggle input[value={_show_start}]").check(force=True)
+            page.locator(f"#data_view input[value={_show_start}]").check(force=True)
             if delay:
                 page.wait_for_timeout(delay)   # the user's own delay between the two clicks, the thing under test
             page.locator("#fb_col").select_option(target)
@@ -433,7 +438,7 @@ class TestFormInTheBrowser:
         expect(page.locator("#fb_col")).to_have_value(first)
 
     def test_a_real_change_of_columns_builds_the_form_again_and_keeps_the_column_that_is_still_there(self, page: Page, shiny_app: ShinyAppProc):
-        """Raw (T1) has no `era` column, Result (T2) has: the columns really change. `year` is in both: it stays chosen."""
+        """T1 has no `era` column, T2 has: the columns really change. `year` is in both: it stays chosen."""
         _ready_on_mlst(page, shiny_app.url)
         _choose(page, "year")
         before = _renders_of(page, "filter_form_ui")
@@ -494,7 +499,7 @@ class TestTheValueWidgetFollowsTheRows:
     Table of 30 rows (sample_id s1..s30, score 1..30); an audited filter `score >= 16` keeps 15 of them. Waits are on the form's state."""
 
     def test_a_list_of_values_loses_the_removed_values_with_the_audited_step_and_gets_them_back_when_it_is_deleted(self, page: Page, staged_app):
-        _start(page, staged_app)                                   # My view, 30 rows
+        _start(page, staged_app)                                   # Audit mode, T3, 30 rows
         _filter_step(page, 1)                                      # audited step: score >= 16 (rows 16..30)
         _expect_rows(page, N - THRESHOLD + 1)
         _choose(page, "sample_id")
