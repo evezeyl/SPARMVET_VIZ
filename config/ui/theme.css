@@ -230,6 +230,15 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
     border-radius: 6px !important; box-shadow: none !important;
     font-size: 0.85rem !important;
 }
+/* Gallery "Clear all ticks": amber discard/reset type (rules_css_style_spec.md section 4, type 3) */
+#gallery_clear_ticks {
+    background-color: #ffc107 !important; border-color: #e0a800 !important;
+    color: #000 !important; font-weight: 700 !important; height: 32px !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    border-radius: 6px !important; box-shadow: none !important;
+    font-size: 0.85rem !important;
+}
+#gallery_clear_ticks:hover { background-color: #e0a800 !important; border-color: #e0a800 !important; }
 #btn_generate_data:hover, #btn_apply_gallery_filters:hover {
     background-color: #2a4bc4 !important; border-color: #2344bb !important;
 }

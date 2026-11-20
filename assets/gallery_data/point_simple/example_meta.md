@@ -13,7 +13,7 @@ The 'Trace' plot. Ideal for identifying correlations between two numeric variabl
 
 
 ### Inspiration & Resources
-- [Inspired by R Graph Gallery](https://r-graph-gallery.com/scatter-plot.html)
+- [Inspired by R Graph Gallery](https://r-graph-gallery.com/scatterplot.html)
 
 ### Interpretations
 - Visualize categorical patterns and distributions within your scientific datasets.

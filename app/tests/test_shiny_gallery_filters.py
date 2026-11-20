@@ -161,3 +161,42 @@ def test_apply_that_excludes_the_example_says_so(page: Page, shiny_app):
     assert _selected(page) in PIVOT["by_difficulty"][other]
     note = page.inner_text("#gallery_preview_img")
     assert REGISTRY[rid]["name"] in note and "does not match" in note
+
+
+def _all_ticked_count(page: Page) -> int:
+    return page.eval_on_selector_all("input[name^=gallery_filter_]:checked", "e=>e.length")
+
+
+def test_clear_all_ticks_unticks_everything_and_acts_only_after_apply(page: Page, shiny_app):
+    """D-0379 (PROVISIONAL control): 'Clear all ticks' removes every tick of every axis; the list waits for Apply."""
+    _open_gallery(page, shiny_app.url)
+    full = len(_options(page))
+    _only(page, "geom", "geom_line")
+    _only(page, "difficulty", next(iter(PIVOT["by_difficulty"])))
+    _apply(page)
+    narrowed = len(_options(page))
+    assert narrowed < full
+    page.locator("#gallery_clear_ticks").click()
+    _idle(page)
+    page.wait_for_timeout(500)
+    assert _all_ticked_count(page) == 0
+    assert page.eval_on_selector_all("input[id^=gallery_all_]:checked", "e=>e.length") == 0
+    assert len(_options(page)) == narrowed  # ticks only: the list is unchanged until Apply
+    _apply(page)
+    assert len(_options(page)) == full  # nothing ticked does not filter
+
+
+def test_cleared_ticks_survive_going_to_home_and_back(page: Page, shiny_app):
+    _open_gallery(page, shiny_app.url)
+    page.locator("#gallery_clear_ticks").click()
+    _idle(page)
+    page.wait_for_timeout(500)
+    page.locator("#sidebar_nav").get_by_text("Home", exact=True).first.click()
+    _idle(page)
+    page.locator("#sidebar_nav").get_by_text("Gallery", exact=True).first.click()
+    page.wait_for_function("document.querySelectorAll('#gallery_example_select option').length>0", timeout=30_000)
+    _idle(page)
+    page.evaluate("()=>document.querySelectorAll('#gallery_taxonomy_sub_accordion .accordion-button.collapsed')"
+                  ".forEach(b=>b.click())")
+    page.wait_for_timeout(600)
+    assert _all_ticked_count(page) == 0
