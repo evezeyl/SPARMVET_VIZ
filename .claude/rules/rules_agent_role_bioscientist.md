@@ -389,7 +389,7 @@ Outputs:
 | Error | Cause | Fix |
 |---|---|---|
 | `ColumnNotFoundError` | Step references a column not yet in the frame | Check step ordering relative to the join that creates the column |
-| `SchemaError` on join | Join key dtype mismatch between ingredients | Add `cast` step before join on the mismatched side |
+| `SchemaError` on join | Join key dtype mismatch between ingredients | Add a `polars_cast` step before the join on the mismatched side |
 | `FileNotFoundError` | Source file path wrong | Check `source: path:` in `data_schemas` |
 | Column missing from TSV output | Column not in the last `polars_select` | Add it to that `polars_select` |
 | Column in the last `polars_select` but missing from output | Column was never produced by the step list | Check wrangling/assembly step that should create it |
