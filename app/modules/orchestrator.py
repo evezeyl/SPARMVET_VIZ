@@ -1,8 +1,8 @@
 # @deps
-# provides: pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3 (stores the table of a plot with tier-3 steps by its key, D-0343), function:tier3_path_for, constant:TIER3_KEY_META, function:plot_read_error_text, method:prepare_ingredient, method:read_source, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys, method:_plot_key_now (the key of the table of a plot now, reading only the data files that table reads: the last check of a Tier 3 store)
+# provides: function:tier2_parts, function:tier3_parts, function:tier3_frames, class:JoinParts, method:ingredient_parts, method:join_parts (the engine, the steps and the assembler of a tier: read by the build and by the plan of every place), pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3 (stores the table of a plot with tier-3 steps by its key, D-0343), function:tier3_path_for, constant:TIER3_KEY_META, function:plot_read_error_text, method:prepare_ingredient, method:read_source, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys, method:_plot_key_now (the key of the table of a plot now, reading only the data files that table reads: the last check of a Tier 3 store)
 # mirrors: libs/transformer/tests/debug_assembler.py
 # consumes: app/modules/build_failure.py (the plain error of a build that failed: table, tier, step), libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body, audit_step_places), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
-# consumed_by: app/modules/opening_build.py (materialize_tier1/2/3: the opening of a recipe), app/tests/test_read_source.py (read_source: one source table as the ingestion reads it, for the Source view of HOME, D-0310), app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and T3 table base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py, app/tests/test_tier3_store.py, app/tests/test_build_failure_names.py, app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)
+# consumed_by: app/modules/plan_composer.py (ingredient_parts, join_parts, tier2_parts, tier3_parts, tier3_frames: the plan of every place composed from the build's own functions, LBFB step 0b), app/modules/opening_build.py (materialize_tier1/2/3: the opening of a recipe), app/tests/test_read_source.py (read_source: one source table as the ingestion reads it, for the Source view of HOME, D-0310), app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and T3 table base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py, app/tests/test_tier3_store.py, app/tests/test_build_failure_names.py, app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps
 import copy
@@ -48,6 +48,18 @@ DATA_LOOKUP_CHOICES = ("data_analysis_recipe_paths", "by_dataset_id")
 IMPORT_DATA_FOLDER = "data"
 
 @dataclass(frozen=True)
+class JoinParts:
+    """What `DataOrchestrator.join_parts` chose for the tier 1 of a join: the data engine, its steps (the author's, then the audit steps), the ingredient ids in the order
+    written (the first is the base), the assembler the build assembles with, and `new_assembler`, a fresh one over the same ingredients (the assembler keeps
+    what it checked; a reader that assembles several prefixes asks for one each time)."""
+    engine: Any
+    steps: list
+    ingredient_ids: list
+    assembler: Any
+    new_assembler: Callable[[], Any]
+
+
+@dataclass(frozen=True)
 class InputsChanged:
     """What changed while a table was being built (a clause, for example "the data files changed")."""
     text: str
@@ -84,6 +96,51 @@ def refuse_audit_steps_outside_an_audit(loaded: LoadedDataAnalysisRecipe, recipe
         raise DataAnalysisRecipeError(
             f"The audit copy of '{recipe_id}' is not the original plus sound audit steps, so it is not run: " + " ".join(problems),
             tip="Add the audit steps only through the audit (add_step), never by hand.")
+
+
+def tier2_parts(raw: dict, collection_id: str) -> tuple[Any, list]:
+    """(the data engine of the tier 2 of a collection, its tier-2 steps: the author's, then the audit steps).
+
+    The one place that chooses what runs a tier 2. The engine of the tier is chosen also when it has no steps: a tier that names an engine this app has no
+    library for is refused, never skipped (D-0050). The build (`_materialize_tier2`) and the plan of every place (`app/modules/plan_composer.py`) read it here."""
+    steps = tier2_steps(raw, collection_id)
+    engine = data_entry(raw, collection_body(raw, collection_id), "tier2", where=f"The tier2 of '{collection_id}'")
+    return engine, steps
+
+
+def tier3_parts(recipe_id: str, raw: dict, plot_id: str) -> tuple[dict, str, Any, list]:
+    """(the plot entry, its target, the data engine of its tier 3, its tier-3 steps), or the recipe error when the plot or its target is not named.
+
+    The one place that chooses what runs a tier 3 (the build `materialize_tier3` and `app/modules/plan_composer.py` read it here)."""
+    entry = plot_entry(raw, plot_id)
+    if entry is None:
+        raise DataAnalysisRecipeError(f"The data analysis recipe '{recipe_id}' has no plot '{plot_id}'.")
+    target = entry.get("target_dataset")
+    if not target:
+        raise DataAnalysisRecipeError(f"The plot '{plot_id}' of '{recipe_id}' names no target_dataset, so it has no table.")
+    # The engine of the tier is chosen before anything is built, also when it has no steps: an engine this app has no library for
+    # is refused, never skipped (D-0050), as for the other tiers.
+    engine = data_entry(raw, entry, "tier3", where=f"The tier3 of the plot '{plot_id}'")
+    return entry, target, engine, tier3_steps(raw, plot_id)
+
+
+def tier3_frames(runner: Any, lf: pl.LazyFrame, steps: list, recipe_id: str, plot_id: str):
+    """The table after step 1, after step 2, ... of the tier 3 of a plot: (number, lazy table), one step at a time through the same runner.
+
+    A copy of each step is run (the dicts belong to the recipe kept in memory). The schema is read after each step so that a missing column or a wrong type
+    shows here and not at the first read of the table; a step that cannot be applied raises the plain error that names the plot and the step. The build
+    takes the last table; the plan of every place reads the schema of each (`app/modules/plan_composer.py`): one code, so they cannot differ."""
+    for number, step in enumerate(steps, start=1):
+        action = step.get("action") if isinstance(step, dict) else None
+        try:
+            lf = runner.run(lf, [copy.deepcopy(step)])
+            lf.collect_schema()
+        except Exception as exc:
+            why = (f"{exc}" + (f" ({exc.tip})" if isinstance(exc, SPARMVET_Error) and getattr(exc, 'tip', None) else "")).strip()
+            raise TransformationError(
+                f"The tier 3 of the plot '{plot_id}' cannot be applied: step {number} ('{action}') failed: {why}",
+                tip=f"Correct or remove step {number} of the tier3 of the plot '{plot_id}' in the data analysis recipe '{recipe_id}'.") from exc
+        yield number, lf
 
 
 class DataOrchestrator:
@@ -201,10 +258,20 @@ class DataOrchestrator:
 
         The file read is the file `locate_dataset_file` names, the same one `get_source_files` hashes, through `_read_source`.
         """
+        lf, engine, rules = self.ingredient_parts(ds_id, ds_schema, recipe_id, recipe, audit)
+        return engine.wrangler().run(lf, rules)
+
+    def ingredient_parts(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None, recipe: dict | None = None,
+                         audit: bool = False) -> tuple[pl.LazyFrame, Any, list]:
+        """(the source table as read, the data engine of its tier 1, the steps of its tier 1): what `prepare_ingredient` runs, before it runs it.
+
+        The one place that reads a source table and chooses what runs on it. The build (`prepare_ingredient`) runs the steps on the table; the plan of every
+        place (`app/modules/plan_composer.py`, LBFB step 0b, D-0325) reads the columns after each step of the same lists, so the plan and the build cannot
+        differ in what they read or run. Nothing is run here."""
         lf, ds_schema = self._read_source(ds_id, ds_schema, recipe_id)
         engine = data_entry(recipe, ds_schema, "tier1", where=f"The tier1 of the table '{ds_id}'")
         rules = engine.wrangler.tier_steps(ds_schema, "tier1", audit=audit)
-        return engine.wrangler().run(lf, rules)
+        return lf, engine, rules
 
     # PROVISIONAL name (the coordinator's, owner's question P-B7): read_source
     def read_source(self, data_analysis_recipe_id: str, dataset_id: str, loaded: LoadedDataAnalysisRecipe | None = None) -> pl.LazyFrame:
@@ -311,6 +378,34 @@ class DataOrchestrator:
         if found is None:
             return table_failure_error(where, exc, tip)
         return step_failure_error(where, steps, found[0], found[1], tip)
+
+    @staticmethod
+    def join_parts(data_analysis_recipe_id: str, recipe: dict, collection_id: str, collection_spec: dict, ingredients: dict[str, pl.LazyFrame],
+                   all_schemas: dict, audit: bool = False) -> "JoinParts":
+        """The engine, the steps and the assembler of the tier 1 of one join, from the tier-1 tables of its ingredients (`ingredients`: dataset id -> table).
+
+        The one place that chooses what assembles a join and checks that it can: an ingredient that is not a data schema of the recipe, or a join with no
+        ingredient, raises the recipe error. The build (`_materialize_tier1`) assembles with it; the plan of every place (`app/modules/plan_composer.py`)
+        reads the columns after each prefix of the same steps. Nothing is assembled here."""
+        engine = data_entry(recipe, collection_spec, "tier1", where=f"The tier1 of the join '{collection_id}'")
+        steps = engine.wrangler.tier_steps(collection_spec, "tier1", audit=audit)
+
+        ingredient_ids = [
+            item.get("dataset_id") if isinstance(item, dict) else item
+            for item in collection_spec.get("ingredients", [])
+            if (item.get("dataset_id") if isinstance(item, dict) else item)
+        ]
+        unknown = [ds_id for ds_id in ingredient_ids if ds_id not in ingredients]
+        if unknown or not ingredient_ids:
+            what = f"names {', '.join(repr(u) for u in unknown)}, which is not a data schema of this recipe" if unknown else "has no ingredients"
+            raise DataAnalysisRecipeError(
+                f"The join '{collection_id}' of data analysis recipe '{data_analysis_recipe_id}' {what}. "
+                f"Data schemas: {', '.join(sorted(all_schemas)) or 'none'}.")
+        assembly_ingredients = {ds_id: ingredients[ds_id] for ds_id in ingredient_ids}
+
+        # A step that names an ingredient the join does not hold fails in the assembler; no step is skipped.
+        assembler = engine.assembler(assembly_ingredients, recipe_id=data_analysis_recipe_id, join_id=collection_id)
+        return JoinParts(engine, steps, ingredient_ids, assembler, lambda: engine.assembler(assembly_ingredients, recipe_id=data_analysis_recipe_id, join_id=collection_id))
 
     def materialize_tier1(self, data_analysis_recipe_id: str, collection_id: str, output_path: Path,
                           keys: DataAnalysisRecipeKeys | None = None,
@@ -457,24 +552,9 @@ class DataOrchestrator:
 
         # Path C: assembly — ordered ingredient dict so DataAssembler starts
         # from the correct base (first declared ingredient, not first dict key)
-        engine = data_entry(data_analysis_recipe, collection_spec, "tier1", where=f"The tier1 of the join '{collection_id}'")
-        steps = engine.wrangler.tier_steps(collection_spec, "tier1", audit=loaded.is_audit_copy)
-
-        ingredient_ids = [
-            item.get("dataset_id") if isinstance(item, dict) else item
-            for item in collection_spec.get("ingredients", [])
-            if (item.get("dataset_id") if isinstance(item, dict) else item)
-        ]
-        unknown = [ds_id for ds_id in ingredient_ids if ds_id not in ingredients]
-        if unknown or not ingredient_ids:
-            what = f"names {', '.join(repr(u) for u in unknown)}, which is not a data schema of this recipe" if unknown else "has no ingredients"
-            raise DataAnalysisRecipeError(
-                f"The join '{collection_id}' of data analysis recipe '{data_analysis_recipe_id}' {what}. "
-                f"Data schemas: {', '.join(sorted(all_schemas)) or 'none'}.")
-        assembly_ingredients = {ds_id: ingredients[ds_id] for ds_id in ingredient_ids}
-
-        # A step that names an ingredient the join does not hold fails in the assembler; no step is skipped.
-        assembler = engine.assembler(assembly_ingredients, recipe_id=data_analysis_recipe_id, join_id=collection_id)
+        parts = self.join_parts(data_analysis_recipe_id, data_analysis_recipe, collection_id, collection_spec, ingredients, all_schemas,
+                                audit=loaded.is_audit_copy)
+        engine, steps, ingredient_ids, assembler = parts.engine, parts.steps, parts.ingredient_ids, parts.assembler
         lf = assembler.assemble(steps)
 
         # ADR-101: the Tier 1 key of THIS table (its definition and that of what it reads, the data files it reads, the engine and
@@ -527,11 +607,8 @@ class DataOrchestrator:
         loaded = loaded or load_data_analysis_recipe(data_analysis_recipe_path)
         refuse_audit_steps_outside_an_audit(loaded, data_analysis_recipe_id)
         keys = keys or self.compute_data_analysis_recipe_keys(data_analysis_recipe_id, loaded=loaded)
-        steps = tier2_steps(loaded.raw, collection_id)
         t2_path = Path(tier2_path) if tier2_path is not None else tier2_path_for(tier1_path)
-        # The engine of the tier is chosen before anything is built, also when it has no steps: a tier that names an engine this app has no library for
-        # is refused, never skipped (D-0050).
-        engine = data_entry(loaded.raw, collection_body(loaded.raw, collection_id), "tier2", where=f"The tier2 of '{collection_id}'")
+        engine, steps = tier2_parts(loaded.raw, collection_id)
 
         if not steps:
             # materialize_tier1 also removes a Tier 2 file left from an earlier data analysis recipe.
@@ -625,16 +702,7 @@ class DataOrchestrator:
         handed = loaded
         loaded = loaded or load_data_analysis_recipe(data_analysis_recipe_path)
         refuse_audit_steps_outside_an_audit(loaded, data_analysis_recipe_id)
-        entry = plot_entry(loaded.raw, plot_id)
-        if entry is None:
-            raise DataAnalysisRecipeError(f"The data analysis recipe '{data_analysis_recipe_id}' has no plot '{plot_id}'.")
-        target = entry.get("target_dataset")
-        if not target:
-            raise DataAnalysisRecipeError(f"The plot '{plot_id}' of '{data_analysis_recipe_id}' names no target_dataset, so it has no table.")
-        # The engine of the tier is chosen before anything is built, also when it has no steps: an engine this app has no library for
-        # is refused, never skipped (D-0050), as for the other tiers.
-        engine = data_entry(loaded.raw, entry, "tier3", where=f"The tier3 of the plot '{plot_id}'")
-        steps = tier3_steps(loaded.raw, plot_id)
+        entry, target, engine, steps = tier3_parts(data_analysis_recipe_id, loaded.raw, plot_id)
         keys = keys or self.compute_data_analysis_recipe_keys(data_analysis_recipe_id, loaded=loaded)
         lf, t2_key, change = self._materialize_tier2(data_analysis_recipe_id, target, Path(anchors_dir) / f"{target}.parquet", keys, handed, tier2_path)
         t3_path = tier3_path_for(Path(tier2_path).parent if tier2_path is not None else Path(anchors_dir), target, plot_id)
@@ -657,18 +725,8 @@ class DataOrchestrator:
         if store:
             t3_path.unlink(missing_ok=True)   # not the table of this key (or its inputs changed): removed when found, as the other tiers
         runner = engine.wrangler()
-        for number, step in enumerate(steps, start=1):
-            action = step.get("action") if isinstance(step, dict) else None
-            try:
-                # A copy: the dicts belong to the recipe kept in memory. One step at a time through the same runner, then the
-                # schema is read so that a missing column or a wrong type shows here and not at the first read of the table.
-                lf = runner.run(lf, [copy.deepcopy(step)])
-                lf.collect_schema()
-            except Exception as exc:
-                why = (f"{exc}" + (f" ({exc.tip})" if isinstance(exc, SPARMVET_Error) and getattr(exc, 'tip', None) else "")).strip()
-                raise TransformationError(
-                    f"The tier 3 of the plot '{plot_id}' cannot be applied: step {number} ('{action}') failed: {why}",
-                    tip=f"Correct or remove step {number} of the tier3 of the plot '{plot_id}' in the data analysis recipe '{data_analysis_recipe_id}'.") from exc
+        for _, lf in tier3_frames(runner, lf, steps, data_analysis_recipe_id, plot_id):
+            pass
         if change is not None:
             self.tell_inputs_changed(change, on_inputs_changed)
         if not store or change is not None:
