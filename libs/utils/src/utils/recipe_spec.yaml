@@ -56,6 +56,10 @@ elements:
     # entry as the content of the plot and ignores these (it still refuses a key that is on neither list).
     entry_keys: [plot_engine, ui_label, ui_title, description, comment, taxonomy, tier3]
   # one tier of a table, of a join, or tier3 of a plot entry: the key of the tier holds this mapping (D-0250)
+  # PROVISIONAL (piece C-1, D-0332): an AUDIT recipe (profile `audit`) also holds a second list, `audit_steps`, in a tier, and `audit_comment` on each
+  # of its steps. They are NOT listed here: they are legal in the audit profile only, are judged by the checker (`AU01` to `AU03`) and are named in code
+  # (`utils.recipe_tiers.AUDIT_STEPS`, `AUDIT_COMMENT`), so a recipe of any other profile is checked exactly as before and `format_version` is unchanged.
+  # Whether these keys change the format version is a question to the owner (see the report of piece C-1).
   tier:
     required: [steps]
     optional: [data_engine]
