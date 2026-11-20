@@ -453,7 +453,8 @@ class TestFormInTheBrowser:
 
 class TestNumberColumnOnADiscreteAxis:
     """`year` of the `typed_app` table is a whole number that the plot uses as a discrete axis: its operator list holds the list
-    operators AND the comparisons, and its value widget is a list or a number box by the operator."""
+    operators AND the comparisons, and its value widget is a list or a number box by the operator. The plot casts `year` to text in its own tier-3
+    steps (so that it draws, D-0327), so the whole number is the table of the earlier tiers: the test reads the dialog in Raw (T1) and Result (T2)."""
 
     def test_operator_and_value_of_a_discrete_year_survive_a_change_of_view(self, page: Page, typed_app):
         page.goto(typed_app)
@@ -461,6 +462,7 @@ class TestNumberColumnOnADiscreteAxis:
         _wait_shiny(page, 60_000)
         page.locator(".nav-link:has-text('Years')").first.click()
         _wait_shiny(page)
+        _show(page, "T1")
         _open_filters_panel(page)
         _wait_for_fb_col_option(page, "year")
         _choose(page, "year")
@@ -471,7 +473,7 @@ class TestNumberColumnOnADiscreteAxis:
         _wait_shiny(page)
         value = _pick_first_value(page)
         before = _renders_of(page, "filter_form_ui") + _renders_of(page, "filter_op_ui") + _renders_of(page, "filter_value_ui")
-        for tier in ("T3", "T2"):
+        for tier in ("T2", "T1"):
             _show(page, tier)
         after = _renders_of(page, "filter_form_ui") + _renders_of(page, "filter_op_ui") + _renders_of(page, "filter_value_ui")
         assert after == before, "the discrete year was mounted again with the same columns"
@@ -483,7 +485,7 @@ class TestNumberColumnOnADiscreteAxis:
         page.locator("#fb_value").fill("1999")
         page.locator("#fb_value").press("Tab")
         _wait_shiny(page)
-        for tier in ("T3", "T2"):
+        for tier in ("T2", "T1"):
             _show(page, tier)
         expect(page.locator("#fb_op")).to_have_value("gt")
         expect(page.locator("#fb_value")).to_have_value("1999")
