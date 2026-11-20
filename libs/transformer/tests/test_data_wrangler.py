@@ -94,3 +94,51 @@ class TestPerformanceHeuristic:
     def test_a_join_in_tier1_is_fine(self):
         step = {"action": "polars_join", "right_ingredient": "B"}
         assert DataWrangler.tier_steps({"tier1": {"steps": [step]}}, "tier1") == [step]
+
+
+class TestTheAuditList:
+    """D-0332: in an audit recipe a tier holds `steps` (the author's) and `audit_steps` (the audit's); the engine runs the first, then the second. Only an
+    audit copy has the second list: the caller says so (`audit=True`), and in any other recipe the key is refused, never run and never skipped."""
+
+    AUDIT_FILTER = {"action": "modif_filter", "column": "v", "op": "gt", "value": 1, "na": "keep", "id": "audit_1a2b3c4d_1", "audit_comment": "why"}
+    AUDIT_DROP = {"action": "polars_drop", "columns": ["w"], "id": "audit_1a2b3c4d_2", "audit_comment": "why"}
+
+    def body(self):
+        return {"tier1": {"steps": [SORT], "audit_steps": [self.AUDIT_FILTER, self.AUDIT_DROP]}, "tier2": {"steps": [CAST]}}
+
+    def test_an_audit_recipe_runs_the_authors_steps_then_the_audit_steps_in_list_order(self):
+        assert DataWrangler.tier_steps(self.body(), "tier1", audit=True) == [SORT, self.AUDIT_FILTER, self.AUDIT_DROP]
+        assert DataWrangler.tier_steps(self.body(), "tier2", audit=True) == [CAST], "a tier with no audit list is as it was"
+
+    def test_an_empty_audit_list_gives_the_authors_steps_and_nothing_else(self):
+        assert DataWrangler.tier_steps({"tier1": {"steps": [SORT], "audit_steps": []}}, "tier1", audit=True) == [SORT]
+
+    def test_a_tier_that_holds_only_audit_steps_runs_them(self):
+        assert DataWrangler.tier_steps({"tier2": {"steps": [], "audit_steps": [self.AUDIT_FILTER]}}, "tier2", audit=True) == [self.AUDIT_FILTER]
+
+    @pytest.mark.parametrize("tier", ["tier1", "tier2", "tier3"])
+    def test_in_a_recipe_that_is_not_an_audit_copy_the_audit_list_is_refused_in_plain_words(self, tier):
+        with pytest.raises(DataAnalysisRecipeError, match="only an audit recipe has audit steps") as caught:
+            DataWrangler.tier_steps({tier: {"steps": [SORT], "audit_steps": [self.AUDIT_FILTER]}}, tier)
+        assert "audit_steps" in str(caught.value) and caught.value.tip
+        with pytest.raises(DataAnalysisRecipeError, match="only an audit recipe"):
+            DataWrangler.tier_steps({tier: {"steps": [], "audit_steps": []}}, tier)   # even an empty list: the key is not for an ordinary recipe
+
+    def test_an_audit_list_that_is_not_a_list_is_refused(self):
+        with pytest.raises(DataAnalysisRecipeError, match="is not a list of steps"):
+            DataWrangler.tier_steps({"tier1": {"steps": [], "audit_steps": "x"}}, "tier1", audit=True)
+
+    def test_another_key_in_a_tier_is_still_refused_in_an_audit_recipe(self):
+        with pytest.raises(DataAnalysisRecipeError, match="a tier holds data_engine and steps only"):
+            DataWrangler.tier_steps({"tier1": {"steps": [], "audit_steps": [], "comment": "x"}}, "tier1", audit=True)
+
+    def test_the_audit_steps_run_after_the_authors_steps_on_data(self):
+        """Head 1 of the sorted rows, THEN the audit filter: the filter sees the one row the author's steps left."""
+        import polars as pl
+        body = {"tier1": {"steps": [{"action": "polars_sort", "by": ["v"], "descending": [True], "maintain_order": True}, {"action": "polars_head", "n": 1}],
+                          "audit_steps": [{"action": "modif_filter", "column": "v", "op": "eq", "value": 1, "na": "remove", "id": "audit_1a2b3c4d_1", "audit_comment": "w"}]}}
+        lf = pl.LazyFrame({"v": [1, 2, 3]})
+        steps = DataWrangler.tier_steps(body, "tier1", audit=True)
+        assert DataWrangler().run(lf, steps).collect()["v"].to_list() == [], "3 is the only row after head 1; the audit filter v = 1 then leaves nothing"
+        swapped = steps[2:] + steps[:2]
+        assert DataWrangler().run(lf, swapped).collect()["v"].to_list() == [1], "the reverse order would give another table: the order is the format's, not free"
