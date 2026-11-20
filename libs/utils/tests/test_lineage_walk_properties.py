@@ -66,8 +66,8 @@ def test_I1_every_line_can_be_written_and_names_a_column_the_plan_has_at_the_end
     for name, recipe, tables, node, column, scope, walk in all_walks():
         replay = replays[name]
         for x in walk.lines:
-            copy_ = audit_copy.audit_recipe_of(recipe)
-            audit_copy.add_step(copy_, x.place, F.keep(x.occurrences[0].name if x.occurrences else column, "ne", "S3"), "audit_1a2b3c4d_1")      # add_step accepts the place
+            copy_ = audit_copy.start_audit(recipe)
+            audit_copy.add_step(copy_, x.place, F.keep(x.occurrences[0].name if x.occurrences else column, "ne", "S3"), "a reason")      # add_step accepts the place
             last = x.covers[0]
             end = replay.end(last)
             for occurrence in x.occurrences:

@@ -1,7 +1,7 @@
 # @deps
 # provides: pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3, function:plot_read_error_text, method:prepare_ingredient, method:read_source, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
 # mirrors: libs/transformer/tests/debug_assembler.py
-# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
+# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body, audit_step_places), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
 # consumed_by: app/tests/test_read_source.py (read_source: one source table as the ingestion reads it, for the Source view of HOME, D-0310), app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and T3 table base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py, app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps
@@ -14,7 +14,7 @@ from utils.errors import DataAnalysisRecipeError, IngestionError, RecipeLoadErro
 from ingestion.ingestor import DataIngestor, find_dataset_file
 from transformer.anchor import read_anchor_if_key, write_anchor
 from app.modules.engine_registry import data_entry
-from utils.recipe_tiers import collection_body, plot_entry
+from utils.recipe_tiers import audit_step_places, collection_body, plot_entry
 from app.modules.cache_keys import (CACHE_VERSION_META, DataAnalysisRecipeKeys, ENGINE_CACHE_VERSION, LoadedDataAnalysisRecipe, collection_tier2_key,
                                     data_analysis_recipe_keys, dataset_file_hashes, load_data_analysis_recipe, tier2_engine, tier2_steps, tier3_steps)
 
@@ -53,6 +53,28 @@ def plot_read_error_text(raw_recipe: dict, plot_id: str, error: BaseException) -
         return str(error)
     return (f"{error}\nThe plot '{plot_id}' has tier-3 steps in the data analysis recipe, applied to the table it reads; "
             f"if this error is about a value, check them.")
+
+
+def refuse_audit_steps_outside_an_audit(loaded: LoadedDataAnalysisRecipe, recipe_id: str) -> None:
+    """The engine's own refusal (D-0332), asked before any table or plot is built from `loaded`.
+
+    A recipe that is not an audit copy and holds an `audit_steps` key anywhere (even empty, even where no tier reads it) is not run, with a plain error that says
+    where. An audit copy is run only when it is the original plus sound audit steps: `utils.audit_copy.integrity_errors` against the recipe it was made from
+    (`ResolvedRecipe.original_raw`, set by `loaded_from_resolved`), so a caller that builds a copy by hand and goes to `materialize_*` directly meets the same
+    refusals as `run_audit` (an action that is not allowed, a missing reason, a dropped key column, an `audit_steps` that is not a list at any tier). A copy built
+    without its original is refused. The checker refuses an audit key when a recipe is loaded from a file (profile run); this reads what the build holds."""
+    places = audit_step_places(loaded.raw)
+    if not loaded.is_audit_copy:
+        if places:
+            raise DataAnalysisRecipeError(
+                f"The data analysis recipe '{recipe_id}' has audit steps at {', '.join(places)}, and it is not an audit recipe: only an audit recipe has audit steps.",
+                tip="Remove the audit_steps lists; the steps of the author are written under steps.")
+        return
+    problems = loaded.config.integrity_problems()
+    if problems:
+        raise DataAnalysisRecipeError(
+            f"The audit copy of '{recipe_id}' is not the original plus sound audit steps, so it is not run: " + " ".join(problems),
+            tip="Add the audit steps only through the audit (add_step), never by hand.")
 
 
 class DataOrchestrator:
@@ -139,7 +161,7 @@ class DataOrchestrator:
         lf, _ = self.ingestor.ingest(ds_id, ds_schema)
         return lf, ds_schema
 
-    def prepare_ingredient(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None, recipe: dict | None = None) -> pl.LazyFrame:
+    def prepare_ingredient(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None, recipe: dict | None = None, audit: bool = False) -> pl.LazyFrame:
         """Read one dataset of a data analysis recipe and apply its input contract and tier-1 wrangling (its T1).
 
         The schema's own tier-2 list is not run here: it is the T2 of the schema when a plot reads it directly, run by
@@ -154,7 +176,7 @@ class DataOrchestrator:
         """
         lf, ds_schema = self._read_source(ds_id, ds_schema, recipe_id)
         engine = data_entry(recipe, ds_schema, "tier1", where=f"The tier1 of the table '{ds_id}'")
-        rules = engine.wrangler.tier_steps(ds_schema, "tier1")
+        rules = engine.wrangler.tier_steps(ds_schema, "tier1", audit=audit)
         return engine.wrangler().run(lf, rules)
 
     # PROVISIONAL name (the coordinator's, owner's question P-B7): read_source
@@ -166,7 +188,8 @@ class DataOrchestrator:
         column or a value that does not fit its type raise here, not at `.collect()`); the returned frame is a lazy scan of the file, so the
         rows are read again when it is collected. Nothing is written to disk and no key is touched. It is not free: it costs one read of the file.
         `loaded` is a pinned recipe (an audit copy), as in `materialize_tier1`: the table is then the one of the pinned text, and the recipe
-        file need not exist.
+        file need not exist. It goes through the same guard as the builds (`refuse_audit_steps_outside_an_audit`): an audit copy that is not the original
+        plus sound audit steps is refused with the same plain error, and so is an `audit_steps` list in a recipe that is not an audit copy.
 
         Raises FileNotFoundError for a recipe that has no file (and none handed in), DataAnalysisRecipeError for a table id the recipe does not
         name, and IngestionError ("Source table 'X' could not be read: ...") when the file cannot be read; it is the kind of error the tier-1 build
@@ -175,6 +198,9 @@ class DataOrchestrator:
         if loaded is None and not path.exists():
             raise FileNotFoundError(f"Data analysis recipe not found: {path}")
         loaded = loaded or load_data_analysis_recipe(path)
+        # the same guard as every build: a source table read through an audit copy that is not sound, or through a recipe that is not an audit copy but holds
+        # `audit_steps`, is refused (the Source view shows what a build would read, so it is held to the same form)
+        refuse_audit_steps_outside_an_audit(loaded, data_analysis_recipe_id)
         schemas = self._schemas_of(loaded.raw)
         if dataset_id not in schemas:
             raise DataAnalysisRecipeError(
@@ -264,6 +290,7 @@ class DataOrchestrator:
 
         # 1. Load Data Analysis Recipe (kept in memory while none of its files changed on disk)
         loaded = loaded or load_data_analysis_recipe(data_analysis_recipe_path)
+        refuse_audit_steps_outside_an_audit(loaded, data_analysis_recipe_id)
         data_analysis_recipe = loaded.raw
         built_from = None
         if keys is None:
@@ -316,7 +343,8 @@ class DataOrchestrator:
         failures: dict[str, Exception] = {}
         for ds_id, ds_schema in all_schemas.items():
             try:
-                ingredients[ds_id] = self.prepare_ingredient(ds_id, ds_schema, recipe_id=data_analysis_recipe_id, recipe=data_analysis_recipe)
+                ingredients[ds_id] = self.prepare_ingredient(ds_id, ds_schema, recipe_id=data_analysis_recipe_id, recipe=data_analysis_recipe,
+                                                             audit=loaded.is_audit_copy)
             except Exception as e:
                 # Kept, not dropped: a dataset the requested collection needs makes the build
                 # fail below (issue #18). One the collection does not use only gets a console line.
@@ -360,7 +388,7 @@ class DataOrchestrator:
         # Path C: assembly — ordered ingredient dict so DataAssembler starts
         # from the correct base (first declared ingredient, not first dict key)
         engine = data_entry(data_analysis_recipe, collection_spec, "tier1", where=f"The tier1 of the join '{collection_id}'")
-        steps = engine.wrangler.tier_steps(collection_spec, "tier1")
+        steps = engine.wrangler.tier_steps(collection_spec, "tier1", audit=loaded.is_audit_copy)
 
         ingredient_ids = [
             item.get("dataset_id") if isinstance(item, dict) else item
@@ -413,6 +441,7 @@ class DataOrchestrator:
         data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
         pinned = loaded is not None
         loaded = loaded or load_data_analysis_recipe(data_analysis_recipe_path)
+        refuse_audit_steps_outside_an_audit(loaded, data_analysis_recipe_id)
         keys = keys or self.compute_data_analysis_recipe_keys(data_analysis_recipe_id, loaded=loaded)
         steps = tier2_steps(loaded.raw, collection_id)
         t2_path = Path(tier2_path) if tier2_path is not None else tier2_path_for(tier1_path)
@@ -505,6 +534,7 @@ class DataOrchestrator:
         data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
         handed = loaded
         loaded = loaded or load_data_analysis_recipe(data_analysis_recipe_path)
+        refuse_audit_steps_outside_an_audit(loaded, data_analysis_recipe_id)
         entry = plot_entry(loaded.raw, plot_id)
         if entry is None:
             raise DataAnalysisRecipeError(f"The data analysis recipe '{data_analysis_recipe_id}' has no plot '{plot_id}'.")

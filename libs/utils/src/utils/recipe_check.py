@@ -34,7 +34,7 @@ import polars as pl
 import yaml
 
 from utils import action_names, recipe_tiers
-from utils.action_names import TIER1_ONLY
+from utils.action_names import AUDIT_ACTIONS, TIER1_ONLY
 from utils.random_layers import is_random_layer, is_seed_value
 from utils.engines import ENGINES
 from utils.filter_values import FilterValueError, check_filter
@@ -58,7 +58,7 @@ _ORDER_STEPS = frozenset({action_names.SORT, action_names.UNIQUE, action_names.G
 _SUM_OF_COLUMN = re.compile(r"pl\.col\(\s*['\"]([^'\"]+)['\"]\s*\)\.sum\(\)")
 
 PROFILES = ("run", "build", "gallery", "audit")
-_AUDIT_ID = re.compile(r"^audit_[0-9a-f]{8}_\d+$")
+_AUDIT_ID = recipe_tiers.AUDIT_ID   # one form, one place (`utils.recipe_tiers`)
 _SNAKE = re.compile(r"^[a-z][a-z0-9_]*$")
 _TIER1_ONLY_DEFAULT = TIER1_ONLY
 
@@ -167,6 +167,7 @@ class _Check:
         self.schema_ids: Set[str] = set()
         self.join_ids: Set[str] = set()
         self.schema_bodies: Dict[str, Any] = {}
+        self.audit_ids: Dict[str, str] = {}   # {audit id: where it stands}: an audit id is used once in the whole recipe
 
     # -- helpers
     def add(self, code: str, path: str, message: str, fix: str = "", severity: str = "E") -> None:
@@ -406,7 +407,7 @@ class _Check:
         if isinstance(fields_, dict):
             self.sum_advices(lists, path, fields_)
         if isinstance(fields_, dict) and fields_:
-            self.filter_value_problems(lists, path, [(path.rsplit(".", 1)[-1], fields_)], joins=False)
+            self.filter_value_problems(lists, path, [(path.rsplit(".", 1)[-1], fields_)], joins=False, body=schema)
         if tier2_unapplied:
             self.add("S07", f"{path}.tier2", "tier2 of a schema applies only when the schema is plotted directly: "
                      "no plot reads this schema, so these steps would run nowhere (a join reads the tier 1 of its ingredients)",
@@ -537,7 +538,7 @@ class _Check:
         wanted = self.spec["elements"]["tier"]
         known = set(wanted["required"]) | set(wanted["optional"])
         for key in body:
-            if key in known:
+            if key in known or key == recipe_tiers.AUDIT_STEPS:   # the audit list is judged below, by the profile
                 continue
             if key in ("tier1", "tier2", "tier3"):
                 self.add(code, f"{path}.{key}", f"{key} is written inside {name}: each tier is a key of its own table, join or plot entry, not of another tier",
@@ -546,6 +547,8 @@ class _Check:
                 self.add(code, f"{path}.{key}", f"{key} is not a key of a tier", "a tier holds data_engine and steps only")
         if "data_engine" in body:
             self.engine_value(body["data_engine"], "data_engine", f"{path}.data_engine")
+        if recipe_tiers.AUDIT_STEPS in body:
+            self.audit_list(body[recipe_tiers.AUDIT_STEPS], f"{path}.{recipe_tiers.AUDIT_STEPS}", name, self.effective_engine("data_engine", body))
         if "steps" not in body:
             self.add(code, path, f"{name} has no steps", f"write {name}: {{steps: []}} (steps is the list of steps, empty when there are none)")
             return None
@@ -555,6 +558,30 @@ class _Check:
             return None
         self.steps(steps, f"{path}.steps", name, self.effective_engine("data_engine", body))
         return steps
+
+    # PROVISIONAL wording: the texts of AU01, AU02, AU03 and of the ST08 line for an audit id among the author's steps are the builder's (piece C-1); the owner reads
+    # them in the app and may keep or change them (D-0330). The codes AU01 to AU03 are new and are not yet in spec section 11.
+    def audit_step_keys(self, step: dict, where: str) -> None:
+        """What an item of `audit_steps` must have (D-0322, D-0329, D-0321): an allowed action, an audit id used once in the recipe, a reason."""
+        action = step.get("action")
+        if isinstance(action, str) and action not in AUDIT_ACTIONS:
+            self.add("AU02", f"{where}.action", f"the audit step is '{action}'; an audit step is a filter, a column drop or a removal by key: {', '.join(AUDIT_ACTIONS)} "
+                     "(a removal by key is the filter on the key column)", f"use one of {', '.join(AUDIT_ACTIONS)}")
+        if action == action_names.DROP:
+            problem = join_keys.key_drop_problem(self.raw, step.get("columns"))   # D-0297: ONE rule, shared with the audit copy
+            if problem:
+                self.add("AU04", f"{where}.columns", problem, "use a row filter or a removal by key instead")
+        step_id = step.get("id")
+        if not isinstance(step_id, str) or not _AUDIT_ID.match(step_id):
+            self.add("AU03", f"{where}.id", f"the audit step has no audit id ({step_id!r})", "write id: audit_<8 hex>_<k>")
+        elif step_id in self.audit_ids:
+            self.add("AU03", f"{where}.id", f"the audit id {step_id} is used twice (also at {self.audit_ids[step_id]})", "ids are unique in the recipe")
+        else:
+            self.audit_ids[step_id] = where
+        reason = step.get(recipe_tiers.AUDIT_COMMENT)
+        if not isinstance(reason, str) or not reason.strip():
+            self.add("AU03", f"{where}.{recipe_tiers.AUDIT_COMMENT}", "the audit step has no reason (audit_comment is a text that is not empty)",
+                     f"write {recipe_tiers.AUDIT_COMMENT}: <why the step was added>")
 
     def sum_advices(self, wrangling: Dict[str, list], path: str, fields: dict) -> None:
         """ST15 (advice, never blocks): a sum on a column declared Int32 or UInt32 (D43, PROVISIONAL).
@@ -640,24 +667,42 @@ class _Check:
                              "Suggestion: write a polars_sort step with maintain_order: true before this one.",
                              "A")
 
-    def steps(self, steps: list, path: str, tier: str, engine: Any = None) -> None:
+    def audit_list(self, audit_steps: Any, path: str, tier: str, engine: Any) -> None:
+        """The `audit_steps` list of a tier (D-0332). Legal only in an audit recipe (profile `audit`); anywhere else it is refused with one plain line and its
+        content is not read. In an audit recipe each item is a step of an allowed audit action (`action_names.AUDIT_ACTIONS`, D-0322) with an audit id and a
+        reason (`audit_comment`, a text that is not empty), and passes the same checks as any step (the action's parameters, the engine of the tier)."""
+        if self.profile != "audit":
+            self.add("AU01", path, "only an audit recipe has audit steps (an audit recipe is the copy the audit made of a recipe; the app writes it, an author never does)",
+                     f"remove {recipe_tiers.AUDIT_STEPS}; a step of the author goes in steps")
+            return
+        if not isinstance(audit_steps, list):
+            self.add("AU03", path, f"{recipe_tiers.AUDIT_STEPS} is a list of steps", f"write {recipe_tiers.AUDIT_STEPS}: [...]")
+            return
+        self.steps(audit_steps, path, tier, engine, audit=True)
+
+    def steps(self, steps: list, path: str, tier: str, engine: Any = None, audit: bool = False) -> None:
+        """The steps of one list. `audit` is True for an `audit_steps` list of an audit recipe, False for the author's `steps` (where an audit id or an
+        `audit_comment` is refused in every profile)."""
         actions = (self.catalogs or {}).get("actions")
         tier1_only = (self.catalogs or {}).get("tier1_only", _TIER1_ONLY_DEFAULT)
-        audit_ids: Set[str] = set()
         for index, step in enumerate(steps, start=1):
             where = f"{path}[{index}]"
             if not isinstance(step, dict) or "action" not in step:
                 self.add("ST01", where, "a step is a mapping with an action", "write - {action: <name>, ...}")
                 continue
-            if "id" in step:
-                if self.profile != "audit":
-                    self.add("ST08", f"{where}.id", "authors write no step id (the app writes it)", "remove id")
-                elif not isinstance(step["id"], str) or not _AUDIT_ID.match(step["id"]):
-                    self.add("ST08", f"{where}.id", f"{step['id']!r} is not an audit id", "write audit_<8 hex>_<k>")
-                elif step["id"] in audit_ids:
-                    self.add("ST08", f"{where}.id", f"the id {step['id']} is used twice", "ids are unique in a list")
-                else:
-                    audit_ids.add(step["id"])
+            if audit:
+                self.audit_step_keys(step, where)
+            else:
+                if "id" in step:
+                    if self.profile == "audit" and isinstance(step["id"], str) and _AUDIT_ID.match(step["id"]):
+                        self.add("ST08", f"{where}.id", f"the audit id {step['id']} is on a step of the author's list: an audit step belongs in {recipe_tiers.AUDIT_STEPS}",
+                                 f"move the step to {recipe_tiers.AUDIT_STEPS}, or remove id")
+                    else:
+                        self.add("ST08", f"{where}.id", "authors write no step id (the app writes it)", "remove id")
+                if recipe_tiers.AUDIT_COMMENT in step:
+                    self.add("AU01", f"{where}.{recipe_tiers.AUDIT_COMMENT}",
+                             f"{recipe_tiers.AUDIT_COMMENT} is the reason of an audit step: it is written only on a step of {recipe_tiers.AUDIT_STEPS} in an audit recipe",
+                             f"remove {recipe_tiers.AUDIT_COMMENT}; the author's note is comment")
             if "comment" in step and not isinstance(step["comment"], str):
                 self.add("CM01", f"{where}.comment", "a comment is text", "write text")
             if tier in ("tier2", "tier3") and isinstance(step.get("action"), str) and step.get("action") in tier1_only:
@@ -713,20 +758,30 @@ class _Check:
                     what, fix = split_fix(message)
                     self.add("ST06", f"{where}.{name}", what, fix)
 
-    def filter_value_problems(self, steps: Dict[str, list], path: str, tables: List[Tuple[str, Dict[str, Any]]], *, joins: bool) -> None:
+    def filter_value_problems(self, steps: Dict[str, list], path: str, tables: List[Tuple[str, Dict[str, Any]]], *, joins: bool, body: Any = None) -> None:
         """ST12: a `modif_filter` value does not have the declared type of its column (ADR-104 point 7).
 
         Walks tier1 then tier2 with the tables known at each step: a step that only removes or reorders rows keeps them,
         a join (in a join) adds the declared columns of its right table, any other step may change a column and ends the
         check (silent: the engine is the judge there). A column absent from every known table is not judged either.
+
+        In the audit profile each tier is walked as the engine runs it: the author's steps, then the `audit_steps` of `body` (D-0332). A wrong-typed filter value
+        of an audit step is reported here, before the run, naming the audit step by its id and its place; an audit drop of plain column names takes those columns
+        out of the known tables (a later filter on one of them is not judged: the engine is the judge there).
         """
         for tier in ("tier1", "tier2"):
-            for index, step in enumerate(steps.get(tier) or [], start=1):
+            author = [(f"{path}.{tier}.steps[{index}]", step, None) for index, step in enumerate(steps.get(tier) or [], start=1)]
+            audit = [(f"{path}.{tier}.{recipe_tiers.AUDIT_STEPS}[{index}]", step, f"T{tier[-1]}:{path.rsplit('.', 1)[-1]}")
+                     for index, step in enumerate(recipe_tiers.audit_steps_of(body, tier), start=1)] if self.profile == "audit" else []
+            for where, step, place in author + audit:
                 if not isinstance(step, dict):
                     return
                 action = step.get("action")
                 if action == action_names.FILTER:
-                    self.filter_value_at(step, f"{path}.{tier}.steps[{index}].value", tables)
+                    self.filter_value_at(step, f"{where}.value", tables, place)
+                elif place is not None and action == action_names.DROP and _is_column_names(step.get("columns")) and isinstance(step.get("columns"), list):
+                    gone = set(step["columns"])
+                    tables = [(name, {k: v for k, v in fields.items() if k not in gone}) for name, fields in tables]
                 elif joins and "right_ingredient" in step:
                     right = self.declared_fields(step["right_ingredient"])
                     if right is None:
@@ -735,7 +790,7 @@ class _Check:
                 elif not isinstance(action, str) or action not in JOIN_KEEPS_COLUMNS:
                     return
 
-    def filter_value_at(self, step: dict, where: str, tables: List[Tuple[str, Dict[str, Any]]]) -> None:
+    def filter_value_at(self, step: dict, where: str, tables: List[Tuple[str, Dict[str, Any]]], audit_place: Optional[str] = None) -> None:
         column, op, value = step.get("column"), step.get("op"), step.get("value")
         if not isinstance(column, str) or value is None:
             return
@@ -746,7 +801,8 @@ class _Check:
         try:
             check_filter(op, value, declared)  # the rule of the engine: the operator fits the type, each value has it
         except FilterValueError as exc:
-            self.add("ST12", where, f"{exc.problem} (column {column!r} of {owner[0]!r})", exc.fix)
+            named = f" [audit step {step.get('id')} at {audit_place}]" if audit_place else ""
+            self.add("ST12", where, f"{exc.problem} (column {column!r} of {owner[0]!r}){named}", exc.fix)
 
     # -- joins
     def joins(self, raw: dict) -> None:
@@ -782,7 +838,7 @@ class _Check:
             self.join_steps(lists, path, ingredient_ids)
             first = self.declared_fields(ingredient_ids[0]) if ingredient_ids else None
             if first is not None:
-                self.filter_value_problems(lists, path, [(ingredient_ids[0], first)], joins=True)
+                self.filter_value_problems(lists, path, [(ingredient_ids[0], first)], joins=True, body=join)
             labels = join.get("labels")
             if labels is not None and not (isinstance(labels, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in labels.items())):
                 self.add("J06", f"{path}.labels", "labels maps a column to a display text", "write labels: {column: text}")
@@ -905,7 +961,19 @@ class _Check:
             for step in tier1.get("steps") or []:
                 if not isinstance(step, dict) or not isinstance(step.get("action"), str) or step.get("action") not in JOIN_KEEPS_COLUMNS:
                     return None
-        return schema["input_fields"]
+        fields = schema["input_fields"]
+        if self.profile == "audit":
+            # the engine runs the audit steps of tier 1 after the author's (D-0332): a step that only removes rows keeps the columns, a drop of plain column
+            # names takes them out, anything else makes them unknown. The author's own drop stays "unknown" above, as before.
+            for step in recipe_tiers.audit_steps_of(schema, "tier1"):
+                action = step.get("action") if isinstance(step, dict) else None
+                if isinstance(action, str) and action in JOIN_KEEPS_COLUMNS:
+                    continue
+                if action == action_names.DROP and isinstance(step.get("columns"), list) and all(isinstance(c, str) for c in step["columns"]):
+                    fields = {k: v for k, v in fields.items() if k not in step["columns"]}
+                    continue
+                return None
+        return fields
 
     def join_key_problems(self, tier1: list, position: int, where: str, ingredient_ids: List[str]) -> None:
         """J11, J10, J09: the build refuses a join with unequal key lists, a missing key or keys of different types (JOIN-KEY-TYPES-1).

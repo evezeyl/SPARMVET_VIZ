@@ -877,7 +877,7 @@
 "resistance_class"
 ],
 "rows": 203146,
-"sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
+"sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
 },
 "plot_b_genotype_bar": {
 "names": [
@@ -897,7 +897,7 @@
 "resistance_class"
 ],
 "rows": 203146,
-"sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
+"sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
 },
 "plot_c_resistance_class": {
 "names": [
@@ -917,7 +917,7 @@
 "resistance_class"
 ],
 "rows": 203146,
-"sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
+"sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
 }
 },
 "t1": {
@@ -939,7 +939,7 @@
 "resistance_class"
 ],
 "rows": 203146,
-"sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
+"sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
 }
 },
 "t2": {
@@ -961,7 +961,7 @@
 "resistance_class"
 ],
 "rows": 203146,
-"sha256": "f9f583280c53ba06c1286ba5e5662f70a5462b3cd56b8f110a7b12ca6ea895cf"
+"sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
 }
 }
 },

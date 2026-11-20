@@ -5,7 +5,8 @@ T2. Before issue #77 the tier-2 list of a schema plotted directly was ignored by
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/utils/tests/test_recipe_tiers.py -q
 """
-from utils.recipe_tiers import (collection_bodies, plot_targets, step_list, tier2_steps, unapplied_join_tier2, unapplied_schema_tier2,
+from utils.recipe_tiers import (AUDIT_STEPS, audit_step_places, audit_steps_of, author_steps, collection_bodies, plot_targets, step_list, tier2_parts,
+                               tier2_steps, tier3_parts, tier3_steps, unapplied_join_tier2, unapplied_schema_tier2, without_audit_steps,
                                without_data_engines, without_tier2)
 
 STEP_A = {"action": "modif_filter", "column": "group", "op": "eq", "value": "A", "na": "remove"}
@@ -166,3 +167,66 @@ def test_collection_bodies_lists_every_table_and_join_and_a_join_wins_a_shared_i
     assert set(found) == {"A", "S", "B", "metadata_schema", "J"}
     assert found["S"] == {"k": "join"}        # the order `collection_body` resolves an id in
     assert collection_bodies({}) == {}
+
+
+# -- the two lists of a tier of an audit recipe (D-0332): the author's `steps` and the audit's `audit_steps` ----------------------------------------
+
+AUDIT_1 = {"action": "modif_filter", "column": "v", "op": "gt", "value": 1, "na": "keep", "id": "audit_1a2b3c4d_1", "audit_comment": "r"}
+AUDIT_2 = {"action": "polars_drop", "columns": ["w"], "id": "audit_1a2b3c4d_2", "audit_comment": "r"}
+
+
+def _audit_recipe():
+    raw = _recipe(t_tier2=[STEP_A], j_tier2=[STEP_B])
+    raw["data_schemas"]["T"]["tier1"] = {"steps": [STEP_B], AUDIT_STEPS: [AUDIT_1]}
+    raw["data_schemas"]["T"]["tier2"][AUDIT_STEPS] = [AUDIT_2]
+    raw["analysis_groups"]["g"]["plots"]["p_T"]["tier3"] = {"steps": [STEP_A], AUDIT_STEPS: [AUDIT_1, AUDIT_2]}
+    return raw
+
+
+def test_the_step_list_of_a_tier_is_the_authors_steps_then_the_audit_steps_and_each_list_can_be_read_apart():
+    body = _audit_recipe()["data_schemas"]["T"]
+    assert step_list(body, "tier1") == [STEP_B, AUDIT_1]
+    assert author_steps(body, "tier1") == [STEP_B] and audit_steps_of(body, "tier1") == [AUDIT_1]
+    assert step_list(body, "tier2") == [STEP_A, AUDIT_2]
+    assert step_list({"tier1": {"steps": [STEP_B]}}, "tier1") == [STEP_B] and audit_steps_of({"tier1": {"steps": [STEP_B]}}, "tier1") == []
+    assert step_list(None, "tier1") == [] and step_list({}, "tier2") == [] and audit_steps_of("x", "tier1") == []
+
+
+def test_the_readers_of_a_collection_and_of_a_plot_run_the_authors_steps_then_the_audit_steps():
+    raw = _audit_recipe()
+    assert tier2_steps(raw, "T") == [STEP_A, AUDIT_2] and tier2_parts(raw, "T") == ([STEP_A], [AUDIT_2])
+    assert tier3_steps(raw, "p_T") == [STEP_A, AUDIT_1, AUDIT_2] and tier3_parts(raw, "p_T") == ([STEP_A], [AUDIT_1, AUDIT_2])
+    assert tier2_parts(raw, "J") == ([STEP_B], []) and tier3_parts(raw, "nothing") == ([], [])
+
+
+def test_a_tier_that_holds_only_audit_steps_is_a_tier_with_steps_to_run():
+    raw = _recipe()
+    raw["data_schemas"]["T"]["tier2"] = {"steps": [], AUDIT_STEPS: [AUDIT_1]}
+    assert tier2_steps(raw, "T") == [AUDIT_1] and tier2_parts(raw, "T") == ([], [AUDIT_1])
+
+
+def test_a_tier_two_that_holds_audit_steps_on_a_table_no_plot_reads_is_an_unapplied_tier_two():
+    raw = _recipe(targets=("J",))
+    raw["data_schemas"]["T"]["tier2"] = {"steps": [], AUDIT_STEPS: [AUDIT_1]}
+    assert unapplied_schema_tier2(raw) == ["T"]
+
+
+def test_the_places_of_the_audit_lists_and_the_recipe_without_them():
+    raw = _audit_recipe()
+    assert audit_step_places(raw) == ["data_schemas.T.tier1", "data_schemas.T.tier2", "plot p_T.tier3"]
+    assert audit_step_places(_recipe()) == [] and audit_step_places("x") == []
+    stripped = without_audit_steps(raw)
+    assert audit_step_places(stripped) == [] and step_list(stripped["data_schemas"]["T"], "tier1") == [STEP_B]
+    assert raw["data_schemas"]["T"]["tier1"][AUDIT_STEPS] == [AUDIT_1], "the recipe given is not changed"
+
+
+def test_the_recipe_without_tier_2_loses_the_audit_steps_of_tier_2_with_it_and_keeps_those_of_tier_1():
+    material = without_tier2(_audit_recipe())
+    assert step_list(material["data_schemas"]["T"], "tier1") == [STEP_B, AUDIT_1] and "tier2" not in material["data_schemas"]["T"]
+
+
+def test_the_places_of_audit_lists_include_a_tier_where_no_tier_reads_them():
+    raw = _recipe()
+    raw["data_schemas"]["T"]["tier3"] = {"steps": [], AUDIT_STEPS: []}
+    raw["analysis_groups"]["g"]["plots"]["p_T"]["tier1"] = {"steps": [], AUDIT_STEPS: []}
+    assert audit_step_places(raw) == ["data_schemas.T.tier3", "plot p_T.tier1"]

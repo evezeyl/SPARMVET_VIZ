@@ -18,6 +18,8 @@ import difflib
 from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional
 
+from utils import recipe_tiers
+
 WIDGETS = (
     "column_selector",     # one column, or several when `multi`
     "expression",         # a Polars expression as text
@@ -63,8 +65,9 @@ def shape_problem(param_def: dict, value: Any) -> Optional[str]:
 
 # ---- the one rule set that judges a step against its action's schema -------------------------------------------
 
-# Keys every step may carry besides the action's own parameters (spec 7.5): the author's note and the audit marker.
-STEP_KEYS = ("action", "id", "comment")
+# Keys every step may carry besides the action's own parameters (spec 7.5): the author's note, and the audit id and reason (the two audit keys are legal only
+# in an audit recipe, in `audit_steps`: the checker judges where they stand, the engine reads steps that were already checked). One source: `utils.recipe_tiers`.
+STEP_KEYS = ("action", "id", "comment", recipe_tiers.AUDIT_COMMENT)
 
 # Old spellings of the column selector that the wrangler used to guess (spec 7.5, decision DEC14).
 _COLUMN_ALIASES = ("column", "source", "source_column", "target_column")
