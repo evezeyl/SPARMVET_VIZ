@@ -52,7 +52,7 @@ MUST_USE_THE_HELPER = {
     "app/modules/engine_record.py": {"step_list": 2},
     "app/modules/view_badge.py": {"tier2_steps": 1, "tier3_steps": 1},
     "app/modules/audit_run.py": {"tier2_steps": 2},
-    "app/modules/session_manager.py": {"step_list": 2},
+    "app/modules/session_manager.py": {"recipe_join_keys": 1},   # `extract_primary_keys` returns the shared rule; it read `step_list` itself before the merge of slice B
     "app/handlers/audit_stack.py": {"tier2_steps": 1},
     "app/handlers/export_handlers.py": {"tier2_steps": 2, "tier3_steps": 2},
     "libs/utils/src/utils/recipe_graph.py": {"step_list": 4},

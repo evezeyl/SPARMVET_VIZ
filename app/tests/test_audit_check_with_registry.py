@@ -191,8 +191,8 @@ def _shipped():
 
 @pytest.mark.parametrize("path", _shipped(), ids=lambda p: Path(p).name)
 def test_the_rule_gives_the_join_keys_home_gives_on_every_shipped_recipe(path):
-    """ONE rule: HOME's `extract_primary_keys` (`app/modules/session_manager.py`, not edited here) and the shared `utils.join_keys.recipe_join_keys` read the same keys,
-    so the audit copy and the HOME panel never disagree on which column is a key."""
+    """ONE rule: HOME's `extract_primary_keys` (`app/modules/session_manager.py`) returns the shared `utils.join_keys.recipe_join_keys` since the merge of slice B; this
+    equality is kept so that nobody makes a second walk again: the audit copy and the HOME panel never disagree on which column is a key."""
     raw, _ = load_recipe(path)
     if not isinstance(raw, dict):
         pytest.skip("no recipe")

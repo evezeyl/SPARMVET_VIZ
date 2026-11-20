@@ -26,7 +26,7 @@ from __future__ import annotations
 # @deps
 # provides: constant:SESSION_FORMAT_VERSION, function:session_format_problem (D-0312), function:session_recipe_refusal (D-0317), class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, function:extract_primary_keys, function:split_key_drops, function:key_drop_notice, class:SessionImportLimits, function:session_import_limits_from (D-0283), function:session_input_id_part, function:session_input_id_parts (two listed sessions never share a button), exception:SessionImportRefused, exception:SessionKeyExists (D-0281)
 # consumes: app/modules/error_notice.py (notice — VERIF-FIX-2, lazy), libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, re, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1; batch_hash_of, dataset_file_hashes: the one reading of the data files for the keys, ADR-101)
-# consumes: libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/recipe_tiers.py (step_list) — extract_primary_keys reads joins.*.tier1.steps and tier2.steps (D-0250)
+# consumes: libs/utils/src/utils/join_keys.py (recipe_join_keys: extract_primary_keys returns it; the join keys of joins.*.tier1 and tier2, read as the engine runs them, D-0250, D-0297)
 # consumed_by: app/src/bootloader.py (limits), app/tests/test_session_import_safety.py, app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py, app/handlers/filter_and_audit_handlers.py (make_audit_step), app/modules/bundle_importer.py (LegacySessionError)
 # doc: .claude/rules/ui_implementation_contract.md#12d, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
@@ -43,9 +43,8 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 from app.modules.cache_keys import batch_hash_of, canonical_hash, dataset_file_hashes
-from utils.join_keys import JOIN_ACTIONS, key_columns
+from utils import join_keys
 from utils.na_choice import with_na
-from utils.recipe_tiers import step_list
 
 # The node types that are a row filter: each one records `na` (keep or remove the rows with no value).
 _FILTER_NODE_TYPES = ("filter_row", "exclusion_row")
@@ -127,27 +126,13 @@ def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
     """Return the union of join-key column names across all assembly steps.
 
     A column is a primary key if it is a key column (`on`, `left_on`, `right_on`, and the `by` groups of an as-of join: the rule of
-    `utils.join_keys.key_columns`) of a join step of `joins.*.tier1.steps` or `joins.*.tier2.steps`. This includes both true PKs
+    `utils.join_keys.key_columns`) of a join step of `joins.*.tier1` or `joins.*.tier2` (`utils.join_keys.recipe_join_keys`, written once). This includes both true PKs
     (sample_id) and secondary/accessory keys for long-format joins (gene_id).
 
     See ADR-049 / §12g.2.
     """
-    keys: set[str] = set()
-    join_defs = data_analysis_recipe_raw_config.get("joins", {})
-    if not isinstance(join_defs, dict):
-        return []
-    for join_def in join_defs.values():
-        if not isinstance(join_def, dict):
-            continue
-        # the steps of a join are its tier 1 and its tier 2 (`tier1: {steps: [...]}`, D-0250)
-        for step in step_list(join_def, "tier1") + step_list(join_def, "tier2"):
-            # only a join step names join keys: `on` of an unpivot or a group step names columns that are not keys
-            if not isinstance(step, dict) or step.get("action") not in JOIN_ACTIONS:
-                continue
-            left, right = key_columns(step)
-            keys.update(left)
-            keys.update(right)
-    return sorted(keys)
+    # ONE rule, shared with the audit copy (D-0297): the same function says which columns the audit may not drop
+    return join_keys.recipe_join_keys(data_analysis_recipe_raw_config)
 
 
 def split_key_drops(by_plot: dict[str, list[dict]], primary_keys) -> tuple[dict[str, list[dict]], list[dict]]:

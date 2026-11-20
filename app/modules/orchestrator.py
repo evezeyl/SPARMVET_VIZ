@@ -188,7 +188,8 @@ class DataOrchestrator:
         column or a value that does not fit its type raise here, not at `.collect()`); the returned frame is a lazy scan of the file, so the
         rows are read again when it is collected. Nothing is written to disk and no key is touched. It is not free: it costs one read of the file.
         `loaded` is a pinned recipe (an audit copy), as in `materialize_tier1`: the table is then the one of the pinned text, and the recipe
-        file need not exist.
+        file need not exist. It goes through the same guard as the builds (`refuse_audit_steps_outside_an_audit`): an audit copy that is not the original
+        plus sound audit steps is refused with the same plain error, and so is an `audit_steps` list in a recipe that is not an audit copy.
 
         Raises FileNotFoundError for a recipe that has no file (and none handed in), DataAnalysisRecipeError for a table id the recipe does not
         name, and IngestionError ("Source table 'X' could not be read: ...") when the file cannot be read; it is the kind of error the tier-1 build
@@ -197,6 +198,9 @@ class DataOrchestrator:
         if loaded is None and not path.exists():
             raise FileNotFoundError(f"Data analysis recipe not found: {path}")
         loaded = loaded or load_data_analysis_recipe(path)
+        # the same guard as every build: a source table read through an audit copy that is not sound, or through a recipe that is not an audit copy but holds
+        # `audit_steps`, is refused (the Source view shows what a build would read, so it is held to the same form)
+        refuse_audit_steps_outside_an_audit(loaded, data_analysis_recipe_id)
         schemas = self._schemas_of(loaded.raw)
         if dataset_id not in schemas:
             raise DataAnalysisRecipeError(

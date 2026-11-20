@@ -210,13 +210,29 @@ def test_reading_the_shipped_sources_leaves_the_keys_of_the_recipes_as_they_were
 # -- a pinned recipe, the import folder, by_dataset_id --------------------------------------------
 
 def _pinned(world, mutate):
-    """A pinned recipe (an audit copy) made from the one on disk, changed by `mutate`; the file on disk is not changed."""
-    from app.modules.cache_keys import loaded_from_resolved
+    """A pinned recipe made from the one on disk, changed by `mutate`; the file on disk is not changed.
+
+    It is a recipe HANDED to the reader (the engine reads that text, not the file), NOT an audit copy: an audit copy may only add audit steps, and `read_source`
+    holds an audit copy to that (see `test_a_source_read_through_an_audit_copy_goes_through_the_guard_of_the_builds`). These tests are about pinning, which
+    changes the source path or the tables, so the handed recipe is not marked as an audit copy."""
     import copy
+    import dataclasses
+    from types import SimpleNamespace
     original = load_data_analysis_recipe(world.data_analysis_recipes_dir / "tiny.yaml")
     raw = copy.deepcopy(dict(original.raw))
     mutate(raw)
-    return loaded_from_resolved(original, raw)
+    return dataclasses.replace(original, config=SimpleNamespace(raw_config=raw, loaded_files=()))
+
+
+def _audit_copy(world, *steps):
+    """A real audit copy (`utils.audit_copy`) of the recipe on disk, as `loaded_from_resolved` hands it to the engine."""
+    from app.modules.cache_keys import loaded_from_resolved
+    from utils.audit_copy import add_step, start_audit
+    original = load_data_analysis_recipe(world.data_analysis_recipes_dir / "tiny.yaml")
+    audit = start_audit(original.raw, "1a2b3c4d")
+    for place, step in steps:
+        add_step(audit, place, step, "because")
+    return audit, loaded_from_resolved(original, audit.recipe)
 
 
 def test_a_pinned_recipe_with_another_source_path_gives_the_table_of_the_pinned_text(tmp_path):
@@ -343,3 +359,24 @@ def test_a_plot_with_no_target_table_makes_the_whole_graph_fail_so_no_list_is_gi
     bad = _recipe({}, {"p": {"mapping": {"x": "id"}, "layers": []}})
     with pytest.raises(RecipeGraphError, match="no target_dataset"):
         build_graph(bad)
+
+
+def test_a_source_read_through_an_audit_copy_goes_through_the_guard_of_the_builds(tmp_path):
+    """`read_source(..., loaded=copy)` asks `refuse_audit_steps_outside_an_audit` first, as `materialize_tier1/2/3` do: a sound copy (the original plus audit steps)
+    is read (the source table has no tier-1 step applied, so an audit step changes nothing of it); a copy that is not sound is refused with the plain error and
+    nothing is read; a recipe that is not an audit copy but holds an `audit_steps` list is refused too."""
+    from types import SimpleNamespace
+    import dataclasses
+    world = World(tmp_path)
+    audit, sound = _audit_copy(world, ("T1:C", FILTER_A))
+    assert world.orch.read_source("tiny", "T", loaded=sound).collect().height == 3
+    broken = audit.recipe
+    broken["data_schemas"]["T"]["tier1"]["steps"].append({"action": "polars_drop", "columns": ["group"]})
+    from app.modules.cache_keys import loaded_from_resolved
+    with pytest.raises(DataAnalysisRecipeError, match="not the original plus sound audit steps"):
+        world.orch.read_source("tiny", "T", loaded=loaded_from_resolved(load_data_analysis_recipe(world.data_analysis_recipes_dir / "tiny.yaml"), broken))
+    unsound = _audit_copy(world, ("T1:C", FILTER_A))[1]
+    ordinary = dataclasses.replace(unsound, config=SimpleNamespace(raw_config=unsound.raw, loaded_files=()))
+    with pytest.raises(DataAnalysisRecipeError, match="only an audit recipe has audit steps"):
+        world.orch.read_source("tiny", "T", loaded=ordinary)
+
