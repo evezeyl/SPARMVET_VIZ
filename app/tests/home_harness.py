@@ -77,6 +77,11 @@ analysis_groups:
         target_dataset: T
         mapping: {{x: group}}
         layers: [{{name: geom_bar, params: {{}}}}]
+      p_jitter:
+        ui_label: With a random layer
+        target_dataset: J
+        mapping: {{x: group, y: score}}
+        layers: [{{name: geom_point, params: {{position: jitter}}}}]
       p_join:
         ui_label: On a join
         target_dataset: J
@@ -101,6 +106,7 @@ class Home:
                  recipe="tiny", source=None, home_state=None, inputs=None, session_manager=None):
         self.world = world
         self.readers, self.outputs, self.effects, self.drawn, self.notes = {}, {}, {}, {}, []
+        self.drawn_kw = {}         # plot id -> the keyword arguments of the last draw (the aesthetic override, i.e. the Reshuffle pin)
         self.filter_effects = {}
         monkeypatch.setattr(reactive, "event", lambda *a, **k: (lambda fn: fn))
         monkeypatch.setattr(reactive, "Calc", lambda fn: fn)
@@ -143,6 +149,7 @@ class Home:
 
         def draw(lf, recipe_dict, plot_id, **kw):
             self.drawn[plot_id] = lf.collect()
+            self.drawn_kw[plot_id] = kw
             return "figure"
         factory.render.side_effect = draw
         self._output = output

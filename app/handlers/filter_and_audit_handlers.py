@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, view_key, column_is_in_frame, describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, dialog_schema_signature, dialog_rows_signature, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, dialog_schema_signature, dialog_rows_signature, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -31,7 +31,7 @@ from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
     dialog_value, not_offered_line, value_choices, value_widget_for, AuditStepError, dialog_frame, dialog_rows_signature, dialog_schema_signature,
-    column_bounds, column_is_in_frame, view_change_notice, view_key, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
+    column_bounds, column_is_in_frame, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
 from utils.filter_values import UNIT_NS, FilterValueError, kind_of
 from utils.missing_values import dialog_lines, na_choice_texts
@@ -112,7 +112,7 @@ def _control(kind: str, suffix: str, d: dict):
 def define_filter_audit_server(input, output, session, *,
                                 applied_filters, _pending_filters,
                                 _propagation_scratch, home_state,
-                                home_mode, data_view, view_source_table, active_home_subtab,
+                                in_audit, data_view, view_source_table, current_view_key, active_home_subtab,
                                 safe_input,
                                 _resolve_active_spec, _resolve_active_lf,
                                 _spec_discrete_axes, _t3_drop_columns,
@@ -125,7 +125,8 @@ def define_filter_audit_server(input, output, session, *,
       _pending_filters      reactive.Value[list]   — staging rows in the add-row form
       _propagation_scratch  reactive.Value[dict]   — scratch nodes between Apply/Drop and modal confirm
       home_state            reactive.Value[dict] | None — audit steps state, active subtab, etc.
-      home_mode             reactive.Value[str]    — "exploration"|"audit" (slice B, D-0016)
+      in_audit()            → bool                 — True in Audit mode: the ONE function of HOME (audit on, interactive, mode "audit"; review F4)
+      current_view_key()    → tuple | None         — `view_key` of the view on screen (None without an open recipe): an exploration filter carries it
       data_view             reactive.Value[str]    — "SRC"|"T1"|"T2"|"T3": the table the data preview shows (D-0310)
       active_home_subtab    reactive.Value[str]    — current home plot subtab id
     Helpers (kwargs):
@@ -142,9 +143,7 @@ def define_filter_audit_server(input, output, session, *,
                                     key says which rows it holds (the rows signal is then never equal)
     """
 
-    def _in_audit() -> bool:
-        """True in Audit mode (it exists only with the audit on)."""
-        return bootloader.is_enabled("t3_sandbox_enabled") and home_mode.get() == "audit"
+    _in_audit = in_audit   # one function for HOME and these handlers: `home_theater._in_audit`
 
     def _can_write_audit_step() -> bool:
         """An audit step is written at the plot's table: Audit mode while T3 is viewed (P-B3, PROVISIONAL: the existing dialog writes at
@@ -180,8 +179,7 @@ def define_filter_audit_server(input, output, session, *,
         rid = safe_input(input, "data_analysis_recipe_id", None)
         if rid is None:
             return
-        key = view_key(rid, "audit" if _in_audit() else "exploration", data_view.get(),
-                       view_source_table() if data_view.get() == "SRC" else None, active_home_subtab.get())
+        key = current_view_key()
         with reactive.isolate():
             previous = _seen_view["key"]
             _seen_view["key"] = key
@@ -701,7 +699,8 @@ def define_filter_audit_server(input, output, session, *,
 
         # NA-RULE-63: the tick of the dialog, never absent from a row (None: not mounted, the default of the operator)
         na_tick = safe_input(input, "fb_na", None)
-        new_row = staged_filter_row(col, op, value, dtype_str, na_tick, closed=bt_closed)
+        # review F3: the row carries the view key it was built on; the data preview applies a filter only while the view is that one
+        new_row = staged_filter_row(col, op, value, dtype_str, na_tick, closed=bt_closed, view=current_view_key())
         current = list(_pending_filters.get())
         current.append(new_row)
         _pending_filters.set(current)

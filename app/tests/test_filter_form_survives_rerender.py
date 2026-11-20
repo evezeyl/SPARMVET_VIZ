@@ -247,8 +247,8 @@ def _define_handler(interactivity: bool, tier: str, nodes: list, mode: str = "au
             h.define_filter_audit_server(
                 _AnyInput(), lambda fn: fn, None,
                 applied_filters=reactive.Value([]), _pending_filters=reactive.Value([]), _propagation_scratch=reactive.Value({}),
-                home_state=reactive.Value({"t3_audit_steps_by_plot": {"subtab_p": nodes}}), home_mode=reactive.Value(mode),
-                data_view=reactive.Value(tier), view_source_table=lambda: None,
+                home_state=reactive.Value({"t3_audit_steps_by_plot": {"subtab_p": nodes}}), in_audit=lambda: mode == "audit",
+                data_view=reactive.Value(tier), view_source_table=lambda: None, current_view_key=lambda: None,
                 active_home_subtab=reactive.Value("subtab_p"), safe_input=lambda inp, key, default=None: default,
                 _resolve_active_spec=lambda p: {"target_dataset": "t", "plot": p}, _resolve_active_lf=make_lf,
                 _spec_discrete_axes=lambda spec: ([], []), _t3_drop_columns=lambda *a: [], _all_plot_subtab_ids=lambda: [],

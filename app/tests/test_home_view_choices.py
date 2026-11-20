@@ -47,6 +47,12 @@ def table(home: Home, view: str, plot: str, source=None):
     return grid.data
 
 
+def stamped(home: Home, row: dict) -> dict:
+    """The row as "+ Add" stages it: carrying the view key of the view on screen now (review F3)."""
+    with reactive.isolate():
+        return {**row, "view": home.readers["current_view_key"]()}
+
+
 def test_a_data_choice_shows_the_right_table_for_a_plot_on_a_table_a_plot_on_a_join_and_a_plot_with_its_own_steps(world, monkeypatch):
     home = Home(world, monkeypatch, flags=("interactivity_enabled",))
     # a plot on a table (T): Source is the file as read (5 rows); T1 the table after its tier-1 step (4 rows); no tier-2 steps: T2 = T1 = T3
@@ -90,8 +96,9 @@ def test_an_exploration_filter_changes_the_table_of_the_view_shown_and_never_the
     home = Home(world, monkeypatch)
     before_plot = home.plot("p_join")
     before_table = table(home, view, "p_join", source)
+    row = stamped(home, SCORE_GE_4)
     with reactive.isolate():
-        home.filters_applied.set([SCORE_GE_4])
+        home.filters_applied.set([row])
     after_table = table(home, view, "p_join", source)
     assert ids(after_table) == ["s4", "s5"] if view == "SRC" else ids(after_table) == ["s4"]
     assert after_table.height < before_table.height
@@ -139,8 +146,9 @@ def test_exploration_filters_do_not_exist_in_audit_mode(world, monkeypatch):
     """A filter that survived in the reactive value (cleared by the effect in the app) changes neither the table nor the plot in Audit mode."""
     state = {"t3_audit_steps_by_plot": {"subtab_p_join": AUDITED_SCORE_LE_3}}
     home = Home(world, monkeypatch, flags=AUDIT, mode="audit", home_state=state)
+    row = stamped(home, SCORE_GE_4)
     with reactive.isolate():
-        home.filters_applied.set([SCORE_GE_4])
+        home.filters_applied.set([row])
     assert ids(table(home, "T3", "p_join")) == ["s2", "s3"] and ids(table(home, "T2", "p_join")) == ["s2", "s3", "s4"]
     assert ids(home.plot("p_join")) == ["s2", "s3"]
 

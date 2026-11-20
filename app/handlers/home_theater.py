@@ -58,7 +58,8 @@ from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_capt
 from viz_factory.viz_factory import show_draw_errors
 
 from app.modules.t3_audit_engine import (
-    AuditStepError, _apply_filter_rows, audited_frame, filter_rows_from_nodes, source_table_identity, stored_table_identity)
+    AuditStepError, _apply_filter_rows, audited_frame, filter_rows_from_nodes, rows_built_on, source_table_identity, stored_table_identity,
+    view_key)
 from utils.recipe_graph import build_graph, source_tables_of_plot
 from utils.na_choice import na_of, no_value_text
 from app.modules.sidebar_registry import is_panel_active
@@ -351,13 +352,21 @@ def define_server(input, output, session, *,
 
     _graph_memo: dict = {}
 
+    def _open_recipe_id() -> str:
+        """The id of the recipe open in HOME. Raises a plain error when there is none (zero usable recipes, ADR-094 point 6): the start path
+        never calls `get_default_data_analysis_recipe()`, which raises then."""
+        recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe_or_none())
+        if not recipe_id:
+            raise RuntimeError("No data analysis recipe is open, so no source table can be read.")
+        return recipe_id
+
     def _source_tables_of(p_id: str | None) -> list[str]:
         """The source tables (as the recipe names them) that feed the plot `p_id`, in graph order (`utils.recipe_graph`). Raises the plain error
         of the graph (`KeyError` for a plot the recipe does not have, `RecipeLoadError` or `RecipeGraphError` for a recipe that cannot be
         read or drawn): the caller shows it as the notice of the view, never as a traceback."""
         if not p_id:
             raise KeyError("No plot is open, so no source table can be listed.")
-        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
+        data_analysis_recipe_id = _open_recipe_id()
         loaded = load_data_analysis_recipe(orchestrator.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml")
         memo_key = (data_analysis_recipe_id, loaded.signature)
         if memo_key not in _graph_memo:
@@ -386,6 +395,20 @@ def define_server(input, output, session, *,
         except Exception:
             return None
 
+    def _current_view_key():
+        """The view key of the view on screen (`view_key`: recipe, mode, data choice, source table, open plot); None without an open recipe. The ONE
+        definition: the clearing effect, the rows an exploration filter is stamped with and the preview all read it."""
+        recipe_id = safe_input(input, "data_analysis_recipe_id", None)
+        if recipe_id is None:
+            return None
+        view = data_view.get()
+        return view_key(recipe_id, "audit" if _in_audit() else "exploration", view, _view_source_table() if view == "SRC" else None,
+                        active_home_subtab.get())
+
+    def _applied_for_view() -> list:
+        """The applied exploration filters that were built on the view on screen: all the data preview and the badges may count (review F3)."""
+        return rows_built_on(list(applied_filters.get()), _current_view_key())
+
     def _screen_view_text() -> str:
         """The mode and the data choice on screen, in words, for the export record (P-B6): "Exploration mode, data view T3"."""
         with reactive.isolate():
@@ -410,8 +433,10 @@ def define_server(input, output, session, *,
         table = _effective_source_table(plot_id)
         if table is None:
             raise RuntimeError(f"The plot '{plot_id}' reads no source table, so there is no Source view for it.")
-        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
-        key = (data_analysis_recipe_id, table, _data_analysis_recipe_keys().data_batch_hash)
+        data_analysis_recipe_id = _open_recipe_id()
+        # the key holds the recipe's own hash too (review F1): after an edit of how a source table is declared the table is read again
+        keys = _data_analysis_recipe_keys()
+        key = (data_analysis_recipe_id, table, keys.data_batch_hash, keys.data_analysis_recipe_sha256)
         if key not in _source_memo:
             if len(_source_memo) >= 8:
                 _source_memo.clear()
@@ -457,15 +482,17 @@ def define_server(input, output, session, *,
         """Which table `_resolve_active_lf(spec, tier)` reads, for the filter form: the stored table (`stored_table_identity`), or for the
         Source choice the source table (`source_table_identity`); None when the plot names no collection (the table then comes from the app's
         open anchor, which no key of this view describes)."""
-        data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
-        keys = _data_analysis_recipe_keys()
+        # Nothing is asked of the recipe or the keys until there is a plot to identify: with no plot (zero usable recipes) there is no table, so no
+        # identity and no log line (found in review: the recipe id used to be read first, and with zero recipes that raised).
         plot_id = _plot_id_of(spec)
+        target_ds = (spec or {}).get("target_dataset")
+        if (tier == "SRC" and plot_id is None) or (tier != "SRC" and not target_ds):
+            return None
+        data_analysis_recipe_id = _open_recipe_id()
+        keys = _data_analysis_recipe_keys()
         if tier == "SRC":
             table = _effective_source_table(plot_id)
             return None if table is None else source_table_identity(data_analysis_recipe_id, table, keys.data_analysis_recipe_sha256, keys.data_batch_hash)
-        target_ds = (spec or {}).get("target_dataset")
-        if not target_ds:
-            return None
         return stored_table_identity(
             tier, target_ds, data_analysis_recipe_id, keys.tier1_key_of(target_ds),
             bootloader.get_location("user_data") / "anchors" / f"{target_ds}.parquet", _unstored_builds[0],
@@ -651,12 +678,13 @@ def define_server(input, output, session, *,
                     ax.axis("off")
                     return fig
 
-            # VIZFAC-T3-OVERRIDE-1: Extract L5 aesthetic_override from home_state.
+            # VIZFAC-T3-OVERRIDE-1: Extract L5 aesthetic_override from home_state (the Reshuffle pin among them). D-0341: only the audited plot of
+            # Audit mode carries it; the Exploration plot is the recipe's plot and equals the "Original" pane of Compare, whatever is stored.
             _t3_overrides = (
                 (home_state.get() if home_state is not None else {})
                 .get("t3_plot_overrides", {})
                 .get(this_subtab)
-            )
+            ) if in_audit_plot else None
 
             # SEED-HOLDS-1 (ADR-104): HOME draws no seed. A layer that writes a number keeps it, a layer that
             # writes none uses the factory's seed (0), an audit pin (Reshuffle) is in `_t3_overrides` and beats both:
@@ -793,8 +821,9 @@ def define_server(input, output, session, *,
             two outputs below re-render the moment a pin is set or removed."""
             spec = _resolve_active_spec(p_id)
             plot_defaults = (active_cfg().raw_config.get("plot_defaults") or {})
+            # D-0341: the pin is applied by the audited plot only; in Exploration the seed shown is the one the plot is drawn with (no pin)
             return seed_in_use((spec or {}).get("layers", []), plot_defaults,
-                               home_state.get() if home_state is not None else None, p_id,
+                               home_state.get() if home_state is not None and _in_audit() else None, p_id,
                                default=viz_factory.default_random_state)
 
         @output(id=_reshuffle_output_id)
@@ -809,8 +838,8 @@ def define_server(input, output, session, *,
 
             Deliberately NOT reactive.isolate() here: this output must re-render and hide itself the moment
             _handle_reshuffle pins the seed into home_state."""
-            if not reshuffle_offered(_seeds_in_use()):
-                return ui.div()
+            if not _in_audit() or not reshuffle_offered(_seeds_in_use()):
+                return ui.div()   # D-0341: the button belongs to Audit mode; Exploration shows the recipe's plot
             return ui.input_action_button(
                 _reshuffle_btn_id, "🔀 Reshuffle arrangement",
                 class_="btn-outline-secondary btn-sm",
@@ -821,7 +850,7 @@ def define_server(input, output, session, *,
         @reactive.Effect
         @reactive.event(getattr(input, _reshuffle_btn_id, lambda: None))
         def _handle_reshuffle():
-            if home_state is None:
+            if home_state is None or not _in_audit():
                 return
             try:
                 clicks = getattr(input, _reshuffle_btn_id)()
@@ -899,7 +928,7 @@ def define_server(input, output, session, *,
             spec = _resolve_active_spec(p_id)
             has_t2 = has_tier2_steps(active_cfg().raw_config, (spec or {}).get("target_dataset"))
             return _badge_ui(plot_badge("audit" if audit else "exploration", has_plot_steps(active_cfg().raw_config, p_id), has_t2,
-                                        preview_filters=len(applied_filters.get()), audited_steps=_audited_step_count(f"subtab_{p_id}")))
+                                        preview_filters=len(_applied_for_view()), audited_steps=_audited_step_count(f"subtab_{p_id}")))
 
         @output(id=f"plot_cell_{p_id}")
         @render.ui
@@ -1565,7 +1594,7 @@ def define_server(input, output, session, *,
             table = _effective_source_table(p_id) if view == "SRC" else None
         except Exception:
             table = None   # the table itself says why it cannot be shown
-        return _badge_ui(view_badge(view, has_t2, has_plot_steps(active_cfg().raw_config, p_id), len(applied_filters.get()),
+        return _badge_ui(view_badge(view, has_t2, has_plot_steps(active_cfg().raw_config, p_id), len(_applied_for_view()),
                                    mode="audit" if _in_audit() else "exploration", audited_steps=_audited_step_count(subtab),
                                    source_table=table))
 
@@ -1598,7 +1627,8 @@ def define_server(input, output, session, *,
                 if data_view.get() == "T3":
                     lf = audited_frame(lf, _active_plot_t3_nodes(), p_id)
             else:
-                lf = _apply_filter_rows(lf, list(applied_filters.get()))
+                # review F3: only the filters built on this very view; one built on another table is not applied, whatever the clearing effect did
+                lf = _apply_filter_rows(lf, _applied_for_view())
             # PREVIEW-ALLROWS-1: respect the "Show all rows" toggle; default 100-row cap.
             show_all = safe_input(input, "preview_all_rows", False)
             df = lf.collect() if show_all else lf.head(100).collect()
@@ -2281,7 +2311,7 @@ def define_server(input, output, session, *,
     @output
     @render.ui
     def filter_inventory_ui():
-        filters = applied_filters.get()
+        filters = _applied_for_view()
         t3_nodes: list[dict] = []
         active_sub = ""
         if home_state is not None:
@@ -2468,9 +2498,10 @@ def define_server(input, output, session, *,
         _pending_filters=_pending_filters,
         _propagation_scratch=_propagation_scratch,
         home_state=home_state,
-        home_mode=home_mode,
+        in_audit=_in_audit,
         data_view=data_view,
         view_source_table=_view_source_table,
+        current_view_key=_current_view_key,
         active_home_subtab=active_home_subtab,
         safe_input=safe_input,
         _resolve_active_spec=_resolve_active_spec,

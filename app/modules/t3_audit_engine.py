@@ -12,7 +12,7 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:view_key, function:view_change_notice, function:column_is_in_frame, class:AuditStepError
+# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:rows_built_on, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:view_key, function:view_change_notice, function:column_is_in_frame, class:AuditStepError
 # consumes: polars, app/modules/orchestrator.py (TIER1_KEY_META, TIER2_KEY_META, tier2_path_for), libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_step_order.py, app/tests/test_removed_audit_step_type.py, app/tests/test_audit_error_names_the_plot.py, app/tests/test_filters_cleared_on_recipe_change.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
@@ -565,17 +565,26 @@ def filter_rows_from_nodes(nodes: list) -> list[dict]:
     return rows
 
 
-def staged_filter_row(column: str, op: str, value, dtype: str, na_tick: bool | None, closed: str = "both") -> dict:
+def staged_filter_row(column: str, op: str, value, dtype: str, na_tick: bool | None, closed: str = "both", view: tuple | None = None) -> dict:
     """The filter row the "+ Add" button stages: the tick of the dialog is recorded, never dropped.
 
     `na_tick` True keeps the rows with no value, False removes them; None (the tick is not mounted) is the default of
-    the operator. `closed` is written for `between` only.
+    the operator. `closed` is written for `between` only. `view` is the view key the row was built on (`view_key`): the data preview applies
+    the row only while the view is that one (`rows_built_on`); a row without it is never applied.
     """
     keep = default_na(op) == "keep" if na_tick is None else bool(na_tick)
     row = {"column": column, "op": op, "value": value, "dtype": dtype, "na": "keep" if keep else "remove"}
     if op == "between":
         row["closed"] = closed
+    if view is not None:
+        row["view"] = view
     return row
+
+
+def rows_built_on(rows: list, key: tuple | None) -> list:
+    """The exploration filter rows built on the view `key` (D-0311, review F3): the only ones the data preview may apply. A filter built on another
+    table (before the clearing effect has run, or kept by a bug) is not applied; a row with no view key is not applied either; no key, no row."""
+    return [row for row in rows if key is not None and row.get("view") == key]
 
 
 def audit_params_from_row(frow: dict) -> dict:
