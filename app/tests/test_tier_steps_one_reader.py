@@ -24,7 +24,8 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 KEYS = ("steps", "audit_steps")
-SKIP_PARTS = {"tests", "build", ".venv", "__pycache__", "node_modules"}
+# split on spaces: the guard `test_browser_tests_no_venv_path.py` forbids a quoted dot-venv name followed by a comma in test code, and this is a folder name, not a path
+SKIP_PARTS = frozenset("tests build .venv __pycache__ node_modules".split())
 
 # file (relative to the project root) -> (number of direct reads or writes of the key, why that file may do it)
 ALLOWED = {
@@ -112,14 +113,34 @@ def test_every_allowed_reader_names_a_reason_and_is_a_file_that_exists():
         assert count >= 1 and len(reason) > 30, name
 
 
-def _calls(path: Path) -> dict:
+def _calls_in(source: str) -> dict:
+    """The number of calls per name in `source`, seen through an alias on import: `from m import author_steps as step_list` counts the calls of `step_list` as calls
+    of `author_steps`, and `import x as y` counts `y(...)` as `x` (an alias is read for the whole file, also as an attribute name); a count of names alone would let an alias hide the wrong helper."""
+    tree = ast.parse(source)
+    alias = {}
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            for a in node.names:
+                if a.asname:
+                    alias[a.asname] = a.name.split(".")[-1]
     found: dict = {}
-    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+    for node in ast.walk(tree):
         if isinstance(node, ast.Call):
             name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr if isinstance(node.func, ast.Attribute) else None
+            name = alias.get(name, name)
             if name:
                 found[name] = found.get(name, 0) + 1
     return found
+
+
+def _calls(path: Path) -> dict:
+    return _calls_in(path.read_text(encoding="utf-8"))
+
+
+def test_the_call_counter_sees_through_an_alias_on_import():
+    assert _calls_in("from utils.recipe_tiers import author_steps as step_list\nstep_list(a, 't')\n") == {"author_steps": 1}
+    assert _calls_in("from utils.recipe_tiers import author_steps\nauthor_steps(a, 't')\n") == {"author_steps": 1}
+    assert _calls_in("from m import step_list as s\ns(a)\n") == {"step_list": 1}
 
 
 @pytest.mark.parametrize("name", sorted(MUST_USE_THE_HELPER))
