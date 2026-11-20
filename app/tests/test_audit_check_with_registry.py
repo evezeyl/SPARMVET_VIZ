@@ -189,14 +189,51 @@ def _shipped():
     return sorted(glob.glob(str(ROOT / "config" / "data_analysis_recipes" / "*" / "*.yaml")))
 
 
+# the join keys of the shipped recipes that have any, read once from their own join steps (the key columns of `polars_join*` steps in `joins.*.tier1/tier2`); a recipe not
+# listed has none. Pinned by hand, so a change of the rule (or of a recipe) shows here.
+SHIPPED_JOIN_KEYS = {
+    "pipelines/1_Abromics_general_pipeline.yaml": ["Gene_name", "VF_gene", "sample_id"],
+    "pipelines/1_test_data_ST22_dummy.yaml": ["Gene_name", "VF_gene", "sample_id"],
+    "pipelines/2_test_data_ST22_dummy.yaml": ["sample_id"],
+    "pipelines/demo_abromics.yaml": ["sample_id"],
+    "pipelines/figshare_integration.yaml": ["sample_id"],
+    "templates/complex_template.yaml": ["sample_id"],
+    "templates/e_coli.yaml": ["sample_id"],
+    "templates/left_join_lesson.yaml": ["sample_id"],
+    "templates/simple_template.yaml": ["sample_id"],
+}
+
+
+def _keys_read_independently(raw: dict) -> list:
+    """The join keys of a recipe by a small separate reading (it does not call `recipe_join_keys`): every `on`, `left_on`, `right_on`, `by` of a join step."""
+    found = set()
+    for join in (raw.get("joins") or {}).values():
+        for tier in ("tier1", "tier2"):
+            for step in (join.get(tier) or {}).get("steps") or []:
+                if "join" in str(step.get("action")):
+                    for key in ("on", "left_on", "right_on", "by"):
+                        value = step.get(key)
+                        found.update([value] if isinstance(value, str) else value or [])
+    return sorted(found)
+
+
 @pytest.mark.parametrize("path", _shipped(), ids=lambda p: Path(p).name)
-def test_the_rule_gives_the_join_keys_home_gives_on_every_shipped_recipe(path):
-    """ONE rule: HOME's `extract_primary_keys` (`app/modules/session_manager.py`) returns the shared `utils.join_keys.recipe_join_keys` since the merge of slice B; this
-    equality is kept so that nobody makes a second walk again: the audit copy and the HOME panel never disagree on which column is a key."""
+def test_the_join_keys_of_every_shipped_recipe_are_the_pinned_ones(path):
+    """The rule (`utils.join_keys.recipe_join_keys`, also HOME's `extract_primary_keys`) gives, on every shipped recipe, the keys read by hand from its join steps and pinned
+    above; a recipe that is not pinned has none. It can fail: a rule that misses a key, adds one, or reads the wrong list gives another set."""
     raw, _ = load_recipe(path)
     if not isinstance(raw, dict):
         pytest.skip("no recipe")
-    assert join_keys.recipe_join_keys(raw) == extract_primary_keys(raw)
+    expected = SHIPPED_JOIN_KEYS.get(str(Path(path).relative_to(ROOT / "config" / "data_analysis_recipes")), [])
+    assert _keys_read_independently(raw) == expected
+    assert join_keys.recipe_join_keys(raw) == expected
+    assert extract_primary_keys(raw) == expected
+
+
+def test_the_declared_entity_key_of_a_shipped_recipe_is_the_pinned_one():
+    raw, _ = load_recipe(str(ROOT / "config" / "data_analysis_recipes" / "pipelines" / "1_Abromics_general_pipeline.yaml"))
+    assert join_keys.entity_key_columns(raw) == ["sample_id"]
+    assert "Gene_name" in join_keys.recipe_join_keys(raw) and "Gene_name" not in join_keys.entity_key_columns(raw)
 
 
 def test_the_rule_gives_the_join_keys_home_gives_on_the_staged_recipes():
