@@ -1,6 +1,6 @@
 # @deps
 # provides: class:GalleryViewer, function:build_sidebar_ui, function:render_explorer_ui
-# consumes: app/src/bootloader.py (bootloader singleton), app/modules/gallery_listing.py, libs/viz_gallery/src/viz_gallery/taxonomy.py (filter_panels)
+# consumes: app/src/www/gallery_select_all.js (the "Clear all ticks" button, id gallery_clear_ticks), app/src/bootloader.py (bootloader singleton), app/modules/gallery_listing.py, libs/viz_gallery/src/viz_gallery/taxonomy.py (filter_panels)
 # consumed_by: app/handlers/gallery_handlers.py, app/src/server.py, app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-033, .claude/knowledge/architecture_decisions.md#ADR-057, .claude/design/recipe_format_spec.md (section 9, G1)
 # @end_deps
@@ -143,6 +143,10 @@ class GalleryViewer:
                 ),
                 ui.div(APPLY_RULE_TEXT, class_="text-muted gallery-apply-rule",
                        style="font-size:0.75rem; margin-top:6px;"),
+                # Plain button handled in the page (app/src/www/gallery_select_all.js): it only unticks; the list
+                # changes after Apply (PROVISIONAL label, D-0379). Amber discard/reset type (rules_css_style_spec.md 4).
+                ui.tags.button("Clear all ticks", type="button", id="gallery_clear_ticks",
+                               class_="btn w-100 mt-2"),
                 ui.input_action_button(
                     "btn_apply_gallery_filters",
                     ui.HTML('<i class="bi bi-play-fill"></i> Apply'),

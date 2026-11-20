@@ -19,4 +19,4 @@ Show individual data points distributed across categories. Ideal for small to me
 - Width jitter is aesthetic — use `width=0.2` to prevent overlap without implying numeric spread on x.
 
 ### Inspiration & Resources
-- [R Graph Gallery — Jitter](https://r-graph-gallery.com/jitter.html)
+- [R Graph Gallery — Boxplot with individual data points (geom_jitter)](https://r-graph-gallery.com/89-box-and-scatter-plot-with-ggplot2.html)
