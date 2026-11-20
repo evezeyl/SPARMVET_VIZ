@@ -104,11 +104,13 @@ LEFT SIDEBAR (#nav_sidebar)
 │  └── Session Management   (accordion, collapsed at startup)
 │
 CENTRAL THEATER (.theater-container-main)
-│  Theater Header Strip      (.theater-header-strip, two independent rows — ADR-086)
-│  │  "Plot to show:"        (ui.tags.span, inline colour #345beb)
-│  │  Result / My view / Compare toggle   (radio buttons, input id "plot_view")
-│  │  "Data to show:"        (ui.tags.span, inline colour #345beb)
-│  │  Raw / Result / My view toggle       (radio buttons, input id "tier_toggle")
+│  Theater Header Strip      (.theater-header-strip, rows — slice B)
+│  │  "Mode:"                (ui.tags.span, only with the audit on)
+│  │  Exploration / Audit toggle          (radio buttons, input id "home_mode")
+│  │  "Table to view:"       (ui.tags.span)
+│  │  Source / T1 / T2 / T3 toggle        (radio buttons, input id "data_view")
+│  │  "Source table:"        (only with Source; select, input id "source_table")
+│  │  "Compare:"             (only in Audit mode; switch, input id "audit_compare")
 │  Groups Pill Nav           (#home_groups_nav, navset_pill)
 │  └── Active Group Tab
 │       └── Plot Subtab Card (#subtabs_{group_id}, navset_card_tab)
@@ -133,10 +135,10 @@ RIGHT SIDEBAR (#audit_sidebar)
 | Any sidebar accordion header | `#nav_sidebar .accordion-button` | bg `#a0a0a0`, 0.85rem/700 | Yes — §3 |
 | Any sidebar accordion body | `#nav_sidebar .accordion-body` | bg `#c0c0c0` | Yes — §3 |
 | Theater header strip | `.theater-header-strip` | white bg, rounded 10px | Yes — §12 |
-| "Plot to show:" label | Python inline `style=` on `ui.tags.span` | `#345beb`, 0.85rem | **Python only** — no CSS selector |
-| "Data to show:" label | Python inline `style=` on `ui.tags.span` | `#345beb`, 0.85rem | **Python only** — no CSS selector |
-| Plot-view radio (checked bg, `plot_view`: Result/My view/Compare) | `#nav_sidebar .shiny-input-container .radio input:checked` | `#345beb` | Partial — §3; see Shiny note above |
-| Data-view radio (checked bg, `tier_toggle`: Raw/Result/My view) | `#nav_sidebar .shiny-input-container .radio input:checked` | `#345beb` | Partial — §3; see Shiny note above |
+| "Mode:" label | class `spv-strip-label` on `ui.tags.span` | `#345beb`, 0.85rem | Yes — `config/ui/theme.css` |
+| "Table to view:" label | class `spv-strip-label` on `ui.tags.span` | `#345beb`, 0.85rem | Yes — `config/ui/theme.css` |
+| Mode radio (checked bg, `home_mode`: Exploration/Audit) | `#nav_sidebar .shiny-input-container .radio input:checked` | `#345beb` | Partial — §3; see Shiny note above |
+| Data-view radio (checked bg, `data_view`: Source/T1/T2/T3) | `#nav_sidebar .shiny-input-container .radio input:checked` | `#345beb` | Partial — §3; see Shiny note above |
 | Groups pill nav bar | `.theater-container-main .nav-pills .nav-link` | `#345beb` text/bg | Yes — §6 |
 | Plot subtab card header | `#subtabs_{group_id} .card-header` | `.card-header` default | Yes — §5 / §18 |
 | Data Preview accordion header | `#acc_home_data .accordion-button` | `#345beb`, 0.85rem/700 | Yes — §16 |
@@ -323,7 +325,7 @@ RIGHT SIDEBAR (#audit_sidebar)
 | 7 | 237 | Ingest & Upload UI | `.upload-row`, `#nav_sidebar .input-group` |
 | 8 | 300 | Header Controls | `.active-view-btn`, `.control-btn`, `.ultra-small` |
 | 9 | 309 | Wrangle Studio | `#architect_internal_tabs`, `#blueprint_tubemap_accordion`, `#glimpse_body` |
-| 10 | 333 | Comparison Mode (ADR-086, "Compare Result vs My view") | `.reference-pane`, `.active-pane` |
+| 10 | 333 | Compare in Audit mode (the original and the audited plot) | `.reference-pane`, `.active-pane` |
 | 11 | 339 | Column Picker | `.column-picker-container`, `#acc_home_data .accordion-body` |
 | 12 | 362 | Structural Gaps & Layout | `.bslib-sidebar-layout`, `.theater-header-strip`, `.view-title-banner` |
 | 13 | 415 | Gallery Sidebar & Filter UI | `.gallery-filter-title`, `.gallery-sidebar-group` |

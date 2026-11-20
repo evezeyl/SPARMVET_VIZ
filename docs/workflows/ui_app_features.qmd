@@ -106,40 +106,38 @@ These features are always available regardless of app features. They require onl
 - Export Results Bundle
 - Data Preview with column selector
 
-## Group B — T3 Sandbox / "My view" (ADR-085, ADR-086)
+## Group B — Exploration and Audit mode (slice B; ADR-085, ADR-086 as changed by D-0016, D-0310)
 
-The HOME header strip is **not** a single combined T1/T2/T3 toggle. It is two independent
-choices:
+The HOME header strip has two choices (not one combined toggle):
 
-- **"Data to show"** (drives the data preview): Raw (T1) / Result (T2) / My view
-- **"Plot to show"** (drives the plots): Result (T2) / My view / Compare Result vs My view
+- **"Mode"**: Exploration | Audit. It exists only when `interactivity_enabled` and `t3_sandbox_enabled`
+  are both on. Without the audit flag there is no switch and the app is in Exploration.
+- **"Table to view"** (drives the data preview): Source | T1 | T2 | T3. A second list names the source tables
+  that feed the open plot when Source is chosen.
 
-`interactivity_enabled` is the master gate for the Filters panel and for the "My view" option
-on both selectors. If it is `false`, the Filters panel and the entire header strip are absent —
-there is no partial state where the strip exists without "My view".
+`interactivity_enabled` is the master gate for the Filters panel and for the header strip. If it is `false`,
+the Filters panel and the entire header strip are absent: the plots show the Result and the table shows T3.
 
-`t3_sandbox_enabled` is a **separate, decoupled** flag (ADR-085) — it does not gate "My view"
-itself. "My view" is available whenever the Filters panel exists, i.e. whenever
-`interactivity_enabled` is true, regardless of `t3_sandbox_enabled`. `t3_sandbox_enabled` only
-gates the capability to make a change permanent: the "Send to Audit" button, the propagation
-modal, and the right sidebar Pipeline Audit panel. Without it, "My view" is a pure scratchpad —
-filters apply and render there for the session, but there is no way to write them to an audit
-trail.
+In **Exploration** there is one plot per plot tab, the Result; filters change the table you view only and are
+cleared, with a notice, when that table changes. `t3_sandbox_enabled` gates **Audit mode**: the audited plot,
+the "Send to Audit" button (offered while T3 is viewed), the propagation modal, the **Compare** switch (the
+original and the audited plot; it also needs `comparison_mode_enabled`) and the right sidebar Pipeline Audit panel.
 
 ```
 interactivity_enabled: true
-  └─ Filters panel + "My view" option on both "Data to show" and "Plot to show"
-  └─ comparison_mode_enabled: true    → "Compare Result vs My view" option on "Plot to show"
+  └─ Filters panel + the header strip: "Table to view" (Source | T1 | T2 | T3)
   └─ session_management_enabled: true → Session Save/Import + ghost save
   (export_enabled is independent — Group A — even a read-only app features can export)
 
-t3_sandbox_enabled: true   (independent of interactivity_enabled — see ADR-085)
-  └─ "Send to Audit" button + propagation modal
+t3_sandbox_enabled: true   (together with interactivity_enabled)
+  └─ the mode switch "Exploration | Audit"
+  └─ Audit mode: audited plot, "Send to Audit" button + propagation modal
+  └─ comparison_mode_enabled: true    → Compare switch (Audit mode only)
   └─ Right sidebar Pipeline Audit panel (audit_stack)
 ```
 
 **Effect if `interactivity_enabled: false`:** The Filters panel and the whole header strip are
-absent — no T1/T2/"My view" selectors at all. `comparison_mode_enabled` and
+absent — no mode switch and no table selector at all. `comparison_mode_enabled` and
 `session_management_enabled` have no effect even if set to `true` (soft cascade — the
 bootloader silently forces them to `false` and logs a warning). `export_enabled` is unaffected
 (Group A).
@@ -372,7 +370,7 @@ The only feature that is jointly controlled is **data ingestion** — the deploy
 You see the results. You can filter what is displayed and export a bundle. You cannot change how data is processed. This is the default for automated pipeline integrations (Galaxy, IRIDA).
 
 ## pipeline-exploration-simple
-Same as above, plus you can view the data at different processing stages (T1 raw, T2 analysis-ready) and try filters in "My view". There is no audit and no comparison (comparison requires the audit): the interface stays clean.
+Same as above, plus you can view the data at different processing stages (T1 raw, T2 analysis-ready) and try filters on the table you view (Exploration). There is no audit and no comparison (comparison requires the audit): the interface stays clean.
 
 ## pipeline-exploration-advanced
 Full analytical access. You can add your own processing steps in T3, compare them side-by-side with the pipeline's output, export individual graphs, upload corrected metadata, and save/restore your work sessions. The Pipeline Audit panel shows all steps taken.

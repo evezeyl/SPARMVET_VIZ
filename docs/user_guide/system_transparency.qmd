@@ -56,27 +56,27 @@ SPARMVET's main results area — the **Home** view — is organized entirely by 
 
 Your data analysis recipe defines **Analysis Groups** (e.g., "Quality Control", "AMR Analysis"). Each group becomes a top-level tab. Within each tab, individual plots become **sub-tabs**. Everything is auto-generated from your YAML — if you add a new plot to your data analysis recipe, it appears immediately without changing any application code.
 
-### What you are looking at: "Data to show" and "Plot to show"
+### What you are looking at: the mode and the table to view
 
-Two small choices above the plot area control which layer you look at. They are independent.
+Two small choices above the plot area say what you look at. The first exists only when your setup switches the audit on.
 
-**Data to show** (the table below the plots):
+**Mode:**
+
+| Mode | What you see |
+|---|---|
+| **Exploration** | One plot per plot tab, the **Result**, drawn from the plot's own table. Your filters change the table you view and never the plot. Nothing here is saved or exported. |
+| **Audit** | The **audited plot**: the Result plus the steps you sent to audit. A **Compare** switch shows the original plot and the audited plot side by side. |
+
+**Table to view** (the table below the plots):
 
 | Choice | What you see |
 |---|---|
-| **Raw (T1)** | The assembled data before the Tier 2 steps (read-only reference). |
-| **Result (T2)** | The data exactly as the data analysis recipe specifies (read-only reference). Equal to Raw when the dataset has no Tier 2 steps. |
-| **My view** | The Result with your own filters and column drops applied. |
+| **Source** | One source table as read from its file, before any step of the data analysis recipe. A second list names the source tables that feed the open plot. |
+| **T1** | The plot's table after the tier-1 steps of the recipe. |
+| **T2** | The plot's table after the tier-2 steps. Equal to T1 when the dataset has no tier-2 steps. |
+| **T3** | The table the plot is drawn from: T2 plus the plot's own tier-3 steps of the recipe. In Audit mode it also carries your audited steps. |
 
-**Plot to show:**
-
-| Choice | What you see |
-|---|---|
-| **Result (T2)** | The plot of the Result, always unchanged by your filters. Plots never show Raw. |
-| **My view** | The plot with your filters, drops and (advanced) audited steps applied. |
-| **Compare Result vs My view** | Both side by side. |
-
-Each panel states what it shows and when two views are identical (for example "T2 identical to T1"). My view is only available if your deployment allows filters.
+Each panel states what it shows and when two tables are identical (for example "T2=T1"). In Audit mode, audit steps apply to the plot's table (T3) for now; Source, T1 and T2 stay the original tables.
 
 ### Filters adapt to what you are looking at
 
@@ -84,7 +84,7 @@ When you switch between sub-tabs (e.g., from "QC Reads Barplot" to "Assembly Qua
 
 ### Comparison Mode *(advanced app features files)*
 
-If your app features allows it, a **Comparison Mode** toggle splits the theater into two columns: the T2 blueprint reference on the left and your T3 sandbox on the right — both plots and data tables side by side — so you can see exactly what effect your wrangling steps have had.
+In Audit mode, a **Compare** switch splits the plot area into two columns: the original plot (the Result) on the left and the audited plot on the right, so you can see exactly what effect your audited steps have had.
 
 ### Collapsing sections
 
@@ -92,7 +92,7 @@ Both the **plot area** and the **data preview table** are independently collapsi
 
 ### Row Filters (left sidebar — Filters panel)
 
-The **Filters** accordion in the left sidebar lets you narrow down what is plotted and previewed. This is a **preview**: on Raw and Result it changes the **table only** (to help you understand the data); the **plots** change only on **My view**. It is never written to the data and never exported. Only steps you send to audit (with a reason) become permanent.
+The **Filters** accordion in the left sidebar lets you narrow down what is previewed (Exploration) or build audit steps (Audit mode). In Exploration this is a **preview**: it changes the **table you view only** (to help you understand the data) and never a plot. It is never written to the data and never exported. A filter belongs to the table it was built on: when you change the table to view, the source table, the plot tab, the mode or the recipe, the filters are removed and a notice says so. Only steps you send to audit (with a reason) become permanent.
 
 **How it works:**
 
@@ -101,12 +101,12 @@ The **Filters** accordion in the left sidebar lets you narrow down what is plott
    The line under the column says what it holds ("year holds whole numbers (Int64)"). A number column that the plot draws as categories offers both the list operators and the comparisons (`>`, `<`, `↔ between` use number boxes).
 3. Select or type a value, then click **+ Add** to stage the row. `↔ between` asks which ends are included (both, only min, only max, neither).
 4. Repeat for as many conditions as you need — rows on the same column use AND logic.
-5. Click **Apply** to show the filter: in the data table on every view, in the plots on My view only. A badge says "N preview filter(s) on, not saved" on Raw and Result. In Compare, the left plot (Result) ignores preview filters. The 🗑 icon removes a row and its effect at once.
+5. In Exploration, click **Apply** to show the filter in the data table. A badge says "N preview filter(s) on, not saved". The 🗑 icon removes a row and its effect at once. In Audit mode there is no Apply: the form builds audit steps.
 6. Click **Reset** to clear all filters.
 
 The column selector for the data preview (above the table) lets you show or hide columns in the preview only — this does not affect the plot.
 
-> **Note:** If "Plot to show" is set to **My view** and your deployment has the audit sandbox enabled, a **"➜ Send to Audit (N)"** button appears next to Apply. This is a shipped feature, not in progress: it promotes your staged rows into reason-gated audit nodes (not "wrangling steps" — T3 never authors wrangling, only filters, exclusions, column drops, and aesthetic overrides). See [The Audit Pipeline](audit_pipeline.qmd) for the full propagation workflow.
+> **Note:** In **Audit** mode, while **T3** is viewed, a **"➜ Send to Audit (N)"** button is offered (on another table the panel says "To create an audit step, view T3."). This is a shipped feature, not in progress: it promotes your staged rows into reason-gated audit nodes (not "wrangling steps" — T3 never authors wrangling, only filters, exclusions, column drops, and aesthetic overrides). See [The Audit Pipeline](audit_pipeline.qmd) for the full propagation workflow.
 
 ### Exporting your results (Export panel)
 
@@ -127,7 +127,7 @@ The **Export** accordion in the left sidebar contains an **Export Bundle** butto
 2. Choose a preset: **Web / Presentation** (SVG, smaller file) or **Publication** (PNG, ≥600 DPI).
 3. Click **📦 Export Bundle** and save the file.
 
-> **Only audited steps are exported:** the filters you apply while exploring (in T1, T2 or My view) are a sandbox to understand your data and are never part of the bundle. What you want in your results, for example removing poor quality data, you send to audit with a reason: it is then applied to the exported plot and data and recorded in the report (T3 Audit Trail) and in `data_analysis_recipes/t3_steps.yaml`. Your results are always traceable.
+> **Only audited steps are exported:** the filters you apply while exploring (on Source, T1, T2 or T3) are a sandbox to understand your data and are never part of the bundle. What you want in your results, for example removing poor quality data, you send to audit with a reason: it is then applied to the exported plot and data and recorded in the report (T3 Audit Trail) and in `data_analysis_recipes/t3_steps.yaml`. Your results are always traceable.
 
 ### The Audit Stack (advanced app features files only)
 

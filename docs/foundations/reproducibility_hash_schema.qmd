@@ -103,7 +103,7 @@ flowchart LR
   P2 --> T3R
   T3R --> PL["Plot"]
   PS["Plot spec, plot_defaults,<br/>palette"] --> PL
-  AU["Your audited filters and drops<br/>(My view, never stored)"] --> PL
+  AU["Your audited filters and drops<br/>(Audit mode, never stored)"] --> PL
 ```
 :::
 

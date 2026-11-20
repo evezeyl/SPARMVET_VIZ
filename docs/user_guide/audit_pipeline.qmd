@@ -2,18 +2,19 @@
 title: "The Audit Pipeline: Making Your Adjustments Defensible"
 ---
 
-When you run your data through SPARMVET, there are three underlying tiers — **T1 — Assembled**
-(the raw data joined per your data analysis recipe, no analytical decisions made yet),
-**T2 — Result** (the standard transformations every plot in your data analysis recipe shares),
-and **T3 — My view** (*your* decisions on top of T2) — but the Home header gives you **two
-independent choices**, not one combined toggle:
+When you run your data through SPARMVET, there are tiers: **T1** (the data joined per your data
+analysis recipe, after the tier-1 steps), **T2** (the standard transformations every plot in your
+recipe shares) and **T3** (the table one plot is drawn from: T2 plus that plot's own steps of the
+recipe). The Home header gives you **two choices**:
 
-- **"Data to show"** (Raw / Result / My view) — controls what the **data preview table** shows.
-- **"Plot to show"** (Result / My view / Compare Result vs My view) — controls what the
-  **plots** show. Plots never show T1 — only Result (T2) or My view.
+- **Mode** (only when your setup switches the audit on): **Exploration** (look at the data; one
+  plot, the Result; nothing is saved) or **Audit** (create audit steps; the plot becomes the
+  audited plot).
+- **Table to view**: **Source** (a source table as read from its file), **T1**, **T2** or **T3**.
+  In Audit mode, T3 is the audited table.
 
-**My view** is where you remove bad samples, drop unused columns, and filter to the rows you
-want to publish. The audit pipeline is what records every decision you commit in My view so
+**Audit mode** is where you remove bad samples, drop unused columns, and filter to the rows you
+want to publish. The audit pipeline is what records every decision you commit in Audit mode so
 your final figures are reproducible and defensible. Every change you commit is captured as an
 **audit node** — a small record that says *what* you changed, *which plots* it applies to, and
 (mandatory) *why* you made the change. Together, the audit nodes form your audit trail.
@@ -39,7 +40,7 @@ Every removal is named, dated, and justified. You take responsibility for the de
 
 ## How to author audit decisions
 
-With **"Plot to show"** set to **My view**, the left sidebar is your only authoring surface:
+In **Audit** mode, with **T3** viewed, the left sidebar is your only authoring surface (on another table the panel says "To create an audit step, view T3."):
 
 - The **filter builder** (button labelled "➜ Send to Audit (N)") — turn the rows you've staged into audit nodes.
 - The **column selector above the data preview** ("➜ Audit drops (N)" button) — turn deselected columns into `drop_column` audit nodes.
