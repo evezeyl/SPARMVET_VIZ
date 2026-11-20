@@ -872,6 +872,8 @@ New task entries (2026-11-20):
 - [ ] **HOME-WALK-FINDINGS** `[sonnet/medium]` — the 15 findings of the HOME browser walk, `tmpAI/coordinator/home_walk_2026-11-20/FINAL_REPORT.md`. After the opening build is merged. Finding "file columns not imported" is closed for HOME by D-0374 (HOME is silent by decision; nothing to build).
 - [ ] **PLOT-BUILD-ERROR-RAW-TEXT** `[sonnet/medium]` — HOME: a plot that fails in the plot library's build step (an empty table under a log scale) shows a raw error text instead of the message picture. Held as a strict xfail in `app/tests/test_shiny_plot_errors.py`.
 - [ ] **BLUEPRINT-UNDECLARED-COLUMNS** `[sonnet/medium]` — in BLUEPRINT, inform the recipe maker of file columns the recipe does not declare (D-0374). Not started; where and in what words is not decided.
+- [ ] **FRAME-PANEL-WIDTHS** `[sonnet/high]`: the widths of the three panels and the right panel of HOME shown only in Audit mode (D-0375); waits for the owner's choice on where a dragged width is kept and how the drag is made findable (panel round 2, `tmpAI/panel/panel_widths/`). Not built: both side panels are fixed at 340 px (`app/src/ui.py:364`, `:384`).
+- [ ] **FILTER-WHOLE-NUMBER-VALUE** `[sonnet/medium]`: HOME, Filters panel: a decimal typed as the value for an integer column gives `> 12.5` = 13 and more, `= 12.5` = no row, with no word to the user; proposed fix (the value box takes whole numbers only for an integer column, a decimal is refused with a plain line); waits for the owner's yes.
 
 ## Archive pointers
 
