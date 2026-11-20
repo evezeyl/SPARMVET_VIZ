@@ -150,7 +150,7 @@ The right sidebar (Pipeline Audit) is only meaningful when T3 is accessible. It 
 interactivity_enabled: true
   └─ Right sidebar visible for ≥ pipeline-exploration-advanced
        └─ btn_apply gate (requires at least one Yellow node with a comment)
-       └─ btn_revert (full wipe back to T2 blueprint)
+       └─ a trash button on each step: remove that step (one undo control, no "remove all")
 ```
 
 ## Group D — Data Ingestion (requires `import_helper_enabled: true`)
