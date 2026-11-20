@@ -32,6 +32,7 @@ from app.modules.session_manager import (
     split_key_drops,
 )
 from app.src.bootloader import bootloader
+from app.modules.plan_composer import PlanComposerBug
 
 
 _NOT_READ = object()   # a box of the screen that could not be read (does not exist yet, or failed)
@@ -638,7 +639,10 @@ def define_session_server(input, output, session, *,
             by_plot = normalise_audit_steps(by_plot)
             # D-0297, by place (D-0358): a stored step that drops a column a join still needs is not restored (a file saved before the rule, or written by hand); the rest
             # is, and the user is told which step and why. The recipe is the open one.
-            by_plot, refused_key_drops = split_key_drops(by_plot, recipe_raw() if recipe_raw is not None else None, recipe_plans() if recipe_plans is not None else None)
+            try:
+                by_plot, refused_key_drops = split_key_drops(by_plot, recipe_raw() if recipe_raw is not None else None, recipe_plans() if recipe_plans is not None else None)
+            except PlanComposerBug:
+                return      # the plain notice was shown by `recipe_plans` (an error of the app): nothing is restored
             if refused_key_drops:
                 _kept_ids = {n.get("id") for nodes in by_plot.values() for n in nodes}
                 _notify("⚠️ " + key_drop_notice(refused_key_drops, len(_kept_ids)), type="warning", duration=15)

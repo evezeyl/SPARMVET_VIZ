@@ -625,3 +625,31 @@ def test_a_join_with_several_ingredients_and_no_step_has_no_plan_and_says_what_t
     book = compose_plan_book(w.orch, "staged", SimpleNamespace(raw=raw, is_audit_copy=False), graph)
     assert isinstance(book.get("T1:J", 0), PlanFailure) and "No step list" in book.get("T1:J", 0).sentence
     assert isinstance(book.get("T3:pj", 0), PlanFailure) and isinstance(book.get("T2:J", 0), PlanFailure) and isinstance(book.get("T1:A", 0), Plan) and isinstance(book.get("T3:px", 0), Plan)
+
+
+# ---- the plan for the gate: a bug of the composer is an error, never "cannot tell" ------------------------------------------------------------------------------------
+
+def test_a_composer_bug_is_logged_notified_and_raised_never_none(caplog):
+    import pytest
+    from app.modules.plan_composer import BUG_NOTICE, PlanComposerBug, plan_book_for_the_gate
+    told = []
+
+    def compose():
+        raise PlanComposerBug("no plan for T1:X after 2 step(s)")
+    with caplog.at_level("ERROR"), pytest.raises(PlanComposerBug):
+        plan_book_for_the_gate(compose, told.append)
+    assert told == [BUG_NOTICE] and "error of the app, not of your recipe" in told[0]
+    assert any("no plan for T1:X" in (r.exc_text or "") for r in caplog.records), "the cause is in the log"
+
+
+def test_the_cases_that_stay_none_are_those_of_the_recipe_or_the_caller():
+    from app.modules.plan_composer import plan_book_for_the_gate
+    from utils.errors import RecipeLoadError
+    from utils.recipe_graph import RecipeGraphError
+    told = []
+    for error in (RuntimeError("No data analysis recipe is open"), RecipeLoadError("cannot be read"), RecipeGraphError([]), OSError("file")):
+        def compose(error=error):
+            raise error
+        assert plan_book_for_the_gate(compose, told.append) is None
+    assert told == [], "no notice for the cases the rule already explains with 'Cannot tell'"
+    assert plan_book_for_the_gate(lambda: "book", told.append) == "book"

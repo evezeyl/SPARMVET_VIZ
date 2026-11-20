@@ -53,8 +53,7 @@ from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.orchestrator import plot_read_error_text
 from app.modules.view_badge import has_plot_steps, has_tier2_steps, plot_badge, view_badge
 from app.modules.opening_build import opening_signature, plot_render_recipe
-from app.modules.plan_composer import compose_plan_book
-from utils.errors import RecipeLoadError
+from app.modules.plan_composer import PlanComposerBug, compose_plan_book, plan_book_for_the_gate
 from app.handlers.opening_handlers import define_server as define_opening_server, opening_waits
 from utils.pipeline_error import capture_entry
 from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
@@ -63,7 +62,7 @@ from viz_factory.viz_factory import show_draw_errors
 from app.modules.t3_audit_engine import (
     AuditStepError, _apply_filter_rows, audited_frame, filter_rows_from_nodes, rows_built_on, source_table_identity, stored_table_identity,
     view_key)
-from utils.recipe_graph import RecipeGraphError, build_graph, source_tables_of_plot
+from utils.recipe_graph import build_graph, source_tables_of_plot
 from utils.na_choice import na_of, no_value_text
 from app.modules.sidebar_registry import is_panel_active
 from app.handlers.session_handlers import define_session_server
@@ -365,18 +364,18 @@ def define_server(input, output, session, *,
         """The engine's plan book of the open recipe (the original, without audit steps), for the rule of a key drop (`utils.key_drop`, by place, D-0358): what every
         place of the recipe has as columns, asked of the engine's own plan without building anything (`plan_composer`, D-0325). Composed once per recipe, files and data (the
         handlers that ask it run on an event; no reactive dependency). None when the recipe cannot be drawn: the rule then reads the names the recipe declares and
-        a drop it cannot follow is refused (PROVISIONAL, `utils.key_drop`)."""
+        a drop it cannot follow is refused (PROVISIONAL, `utils.key_drop`). A `PlanComposerBug` is not that case: it is notified and raised (`plan_book_for_the_gate`)."""
+        def _compose():
+            recipe_id = _open_recipe_id()
+            loaded = load_data_analysis_recipe(orchestrator.data_analysis_recipes_dir / f"{recipe_id}.yaml")
+            memo_key = (recipe_id, loaded.signature, _data_analysis_recipe_keys().data_batch_hash)
+            if memo_key not in _plans_memo:
+                _plans_memo.clear()
+                _plans_memo[memo_key] = compose_plan_book(orchestrator, recipe_id, loaded)
+            return _plans_memo[memo_key]
+
         with reactive.isolate():
-            try:
-                recipe_id = _open_recipe_id()
-                loaded = load_data_analysis_recipe(orchestrator.data_analysis_recipes_dir / f"{recipe_id}.yaml")
-                memo_key = (recipe_id, loaded.signature, _data_analysis_recipe_keys().data_batch_hash)
-                if memo_key not in _plans_memo:
-                    _plans_memo.clear()
-                    _plans_memo[memo_key] = compose_plan_book(orchestrator, recipe_id, loaded)
-                return _plans_memo[memo_key]
-            except (RecipeGraphError, RecipeLoadError, RuntimeError, OSError):   # no recipe open, a recipe that cannot be read or drawn: no plan, and the rule says "cannot follow"
-                return None
+            return plan_book_for_the_gate(_compose, lambda text: _notify("⚠️ " + text, type="error", duration=12))
 
     # ── Mode and data choice (slice B, D-0016, D-0310) ────────────────────────────────────────────────
     def _audit_available() -> bool:

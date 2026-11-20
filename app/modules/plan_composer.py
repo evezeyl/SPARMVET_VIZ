@@ -28,7 +28,7 @@ Consumed by: app/modules/audit_run.py (the gate of an audit step), app/modules/c
 If deleted: the walk and the gate of a key drop have no engine plan, only the names the recipe declares.
 
 # @deps
-# provides: function:compose, function:compose_plan_book, function:composition_order, function:compose_candidate_plan_book, class:Composition, class:PlanComposerBug
+# provides: function:compose, function:compose_plan_book, function:composition_order, function:compose_candidate_plan_book, class:Composition, class:PlanComposerBug, function:plan_book_for_the_gate
 # consumes: app/modules/orchestrator.py (ingredient_parts, join_parts, tier2_parts, tier3_parts, tier3_frames, refuse_audit_steps_outside_an_audit), app/modules/opening_build.py (plan_places), app/modules/build_failure.py (step_failure_error), libs/utils/src/utils/plan_book.py, libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/audit_copy.py
 # consumed_by: app/tests/test_plan_composer.py, app/modules/audit_run.py, app/modules/cache_keys.py, app/modules/session_manager.py, app/handlers/filter_and_audit_handlers.py
 # doc: .claude/knowledge/decision_ledger.md (D-0325, D-0351, D-0358, D-0195, D-0326, D-0342, D-0176)
@@ -37,6 +37,7 @@ If deleted: the walk and the gate of a key drop have no engine plan, only the na
 from __future__ import annotations
 
 import copy
+import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -45,7 +46,8 @@ from app.modules.opening_build import TIER1, TIER2, TIER3, plan_places
 from app.modules.orchestrator import (DataOrchestrator, refuse_audit_steps_outside_an_audit, tier2_parts, tier3_frames, tier3_parts)
 from utils import audit_copy, recipe_tiers
 from utils.plan_book import Plan, PlanBook, PlanFailure
-from utils.recipe_graph import RecipeGraph, build_graph
+from utils.errors import RecipeLoadError
+from utils.recipe_graph import RecipeGraph, RecipeGraphError, build_graph
 
 PlanOrFailure = Union[Plan, PlanFailure]
 _NO_TIP = ""   # the sentence is data: the engine's words, no advice of ours
@@ -53,6 +55,28 @@ _NO_TIP = ""   # the sentence is data: the engine's words, no advice of ours
 
 class PlanComposerBug(RuntimeError):
     """The book is not complete: a place of the graph was not composed. A bug of this module, never a fault of the recipe."""
+
+
+_LOG = logging.getLogger(__name__)
+
+BUG_NOTICE = ("The check of the column could not be run because of an error of the app, not of your recipe. Nothing was changed. "
+              "Please report it; the details are in the log.")
+
+
+def plan_book_for_the_gate(compose: Any, tell: Any) -> Optional[PlanBook]:
+    """The plan book `compose()` makes, for the rule of a key drop, or None when there is truly no plan.
+
+    None only when no plan is possible for a reason the user or the recipe owns: no recipe is open (a `RuntimeError` of the caller), a recipe that cannot be read
+    (`RecipeLoadError`) or drawn as a graph (`RecipeGraphError`), a file that cannot be read (`OSError`). The rule then says "Cannot tell". A `PlanComposerBug` is a fault of
+    the app: it is logged with its cause, `tell(BUG_NOTICE)` shows the plain notice, and the bug is raised again, never shown as "cannot tell"."""
+    try:
+        return compose()
+    except PlanComposerBug:
+        _LOG.exception("The plan book of the open recipe could not be composed: a bug of the plan composer")
+        tell(BUG_NOTICE)
+        raise
+    except (RecipeGraphError, RecipeLoadError, RuntimeError, OSError):
+        return None
 
 
 def _plan_of(lf: Any) -> Plan:

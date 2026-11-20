@@ -182,3 +182,16 @@ def test_a_filter_on_another_column_carries_no_warning_and_a_mixed_send_marks_on
                      {"column": "VF_gene", "op": "ne", "value": "z", "dtype": "String"}])
     (nodes, _), = s.opened
     assert [(n["params"]["column"], n.get("primary_key_warning", False)) for n in nodes] == [("year", False), ("VF_gene", True)]
+
+
+def test_the_handler_writes_nothing_when_the_composer_has_a_bug():
+    """A bug of the plan composer is not "cannot tell": the handler opens no dialog and writes no step (the notice is shown by `recipe_plans`)."""
+    from app.modules.plan_composer import PlanComposerBug
+
+    def broken():
+        raise PlanComposerBug("bug")
+    s = Session(demo_keys(), FRAME, demo_raw())
+    s.state.set(dict(s.state.get()))
+    stand = s.stand_ins(input={"preview_col_selector": ["year", "source"]}, recipe_plans=broken)
+    closure("_col_drop_to_audit", **stand)()
+    assert s.opened == [] and s.scratch.get() is None and s.notes == []
