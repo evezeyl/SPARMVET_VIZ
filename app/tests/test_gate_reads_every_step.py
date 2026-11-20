@@ -127,6 +127,8 @@ def test_the_validator_uses_the_one_reader_of_the_engine():
     from app.modules.engine_registry import REGISTRY
     from transformer import DataWrangler
     # the orchestrator reaches the reader through the entry of the data engine (D-0219); the entry's class is the validator's
-    assert "wrangler.tier_steps(ds_schema" in inspect.getsource(orchestrator.DataOrchestrator.prepare_ingredient)
+    # `prepare_ingredient` runs what `ingredient_parts` reads, and `ingredient_parts` is where the reader is called (the plan of every place reads the same function)
+    assert "self.ingredient_parts(" in inspect.getsource(orchestrator.DataOrchestrator.prepare_ingredient)
+    assert "wrangler.tier_steps(ds_schema" in inspect.getsource(orchestrator.DataOrchestrator.ingredient_parts)
     assert REGISTRY["python-polars"].wrangler is DataWrangler
     assert "DataWrangler.tier_steps" in inspect.getsource(validator.validate_data_analysis_recipe_data)

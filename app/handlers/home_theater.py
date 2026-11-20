@@ -31,7 +31,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_open_audit_mode_after_restore, constant:LEGACY_RECORD_NOTICE
-# consumes: app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumes: app/handlers/opening_handlers.py (define_server: the opening of the recipe; opening_waits), app/modules/opening_build.py (opening_signature, plot_render_recipe: the recipe handed to the plot engine, D-0237, D-0239), libs/utils/src/utils/engines.py (plot_engine_slot, through it)
 # consumed_by: app/src/server.py
@@ -53,6 +53,7 @@ from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.orchestrator import plot_read_error_text
 from app.modules.view_badge import has_plot_steps, has_tier2_steps, plot_badge, view_badge
 from app.modules.opening_build import opening_signature, plot_render_recipe
+from app.modules.plan_composer import compose_plan_book, plan_book_for_the_gate
 from app.handlers.opening_handlers import define_server as define_opening_server, opening_cover_text, opening_waits
 from utils.pipeline_error import capture_entry
 from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
@@ -356,6 +357,25 @@ def define_server(input, output, session, *,
         ask it run on an event."""
         with reactive.isolate():
             return active_cfg().raw_config
+
+    _plans_memo: dict = {}
+
+    def _recipe_plans():
+        """The engine's plan book of the open recipe (the original, without audit steps), for the rule of a key drop (`utils.key_drop`, by place, D-0358): what every
+        place of the recipe has as columns, asked of the engine's own plan without building anything (`plan_composer`, D-0325). Composed once per recipe, files and data (the
+        handlers that ask it run on an event; no reactive dependency). None when the recipe cannot be drawn: the rule then reads the names the recipe declares and
+        a drop it cannot follow is refused (PROVISIONAL, `utils.key_drop`). A `PlanComposerBug` is not that case: it is notified and raised (`plan_book_for_the_gate`)."""
+        def _compose():
+            recipe_id = _open_recipe_id()
+            loaded = load_data_analysis_recipe(orchestrator.data_analysis_recipes_dir / f"{recipe_id}.yaml")
+            memo_key = (recipe_id, loaded.signature, _data_analysis_recipe_keys().data_batch_hash)
+            if memo_key not in _plans_memo:
+                _plans_memo.clear()
+                _plans_memo[memo_key] = compose_plan_book(orchestrator, recipe_id, loaded)
+            return _plans_memo[memo_key]
+
+        with reactive.isolate():
+            return plan_book_for_the_gate(_compose, lambda text: _notify("⚠️ " + text, type="error", duration=12))
 
     # ── Mode and data choice (slice B, D-0016, D-0310) ────────────────────────────────────────────────
     def _audit_available() -> bool:
@@ -2511,6 +2531,7 @@ def define_server(input, output, session, *,
         notification_log=notification_log,
         session_processing_issues=session_processing_issues,
         recipe_raw=_recipe_raw,
+        recipe_plans=_recipe_plans,
     )
 
     # ── Phase 25-F: Data Import panel ────────────────────────────────────────
@@ -2547,5 +2568,6 @@ def define_server(input, output, session, *,
         _table_identity=_dialog_table_identity,
         notification_log=notification_log,
         recipe_raw=_recipe_raw,
+        recipe_plans=_recipe_plans,
     )
 
