@@ -49,7 +49,7 @@ If deleted: the audit dialog has no way to list its places.
 # @deps
 # provides: function:walk, class:LineageIndex, class:LineageError, class:ColumnNotFound, class:StartPlanFailed
 # consumes: libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/step_effects.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/lineage_records.py
-# consumed_by: libs/utils/tests/test_lineage_walk.py
+# consumed_by: libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py, libs/utils/tests/test_lineage_walk_properties.py
 # doc: .claude/knowledge/decision_ledger.md (D-0347, D-0346, D-0351, D-0195, D-0353, D-0352, D-0357, D-0337, D-0356, D-0355), .claude/design/home_audit_steps.md
 # @end_deps
 """

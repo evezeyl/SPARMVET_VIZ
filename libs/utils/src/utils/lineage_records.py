@@ -14,8 +14,8 @@ If deleted: the walk has nothing to return.
 
 # @deps
 # provides: class:Walk, class:Line, class:Gone, class:Unread, class:Outside, class:Occurrence, class:Hop, class:StepRef, class:SourceColumn, class:Reach, class:Reason, class:Note, class:Start, class:SortedSet, constant:GROUPS, constant:LEVELS, constant:HOW_VALUES, constant:REASON_CODES, constant:NOTE_CODES, constant:VALUE_NOTES
-# consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_lineage_walk.py
-# doc: .claude/knowledge/decision_ledger.md (D-0346, D-0347, D-0195, D-0351)
+# consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py
+# doc: .claude/knowledge/decision_ledger.md (D-0346, D-0347, D-0195, D-0351, D-0353, D-0337, D-0357)
 # @end_deps
 """
 from __future__ import annotations

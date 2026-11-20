@@ -37,8 +37,8 @@ If deleted: the walk cannot follow a column across a step.
 # @deps
 # provides: function:effect_of, function:predict, function:agreement_problem, function:unread_pairs, class:Effect, class:PredictedColumn, class:Source, constant:READINGS, constant:FOLLOWED_JOINS, constant:VALUE_CHANGES, constant:NOTE_CHANGES
 # consumes: libs/utils/src/utils/join_keys.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/plan_book.py
-# consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_step_effects.py
-# doc: .claude/knowledge/decision_ledger.md (D-0351), .claude/design/home_audit_steps.md
+# consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_step_effects.py, libs/utils/tests/test_lineage_walk_follow.py
+# doc: .claude/knowledge/decision_ledger.md (D-0351, D-0353, D-0356, D-0357), .claude/design/home_audit_steps.md
 # @end_deps
 """
 from __future__ import annotations
@@ -65,7 +65,7 @@ FOLLOWED_JOINS = ("left", "inner")
 
 KEEPS, RENAME, DROP, SELECT, JOIN, WRITES, CAST, GROUP, UNREAD = "keeps", "rename", "drop", "select", "join", "writes", "cast", "group", "unread"
 
-# What a changed name is, for a link that is not the same name (the walk does not follow these yet: step 2).
+# What a changed name is, for a link that is not the same name (the walk follows these: the hop says which).
 CHANGE_RENAME, CHANGE_KEY_OTHER_NAME, CHANGE_SUFFIX = "rename", "key_other_name", "suffix"
 # What a step that writes a column of the same name changes: its values (a compute step), its type (a cast), its meaning (an aggregate); a group key keeps
 # its values but the rows after the step are the groups.
