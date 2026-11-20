@@ -29,6 +29,7 @@ import pytest
 import transformer.actions  # noqa: F401
 from app.modules.t3_audit_engine import _apply_filter_rows
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
+from utils.filter_values import FilterValueError
 from utils.step_migration import convert_step
 from viz_factory.viz_factory import VizFactory
 
@@ -62,16 +63,12 @@ def with_missing():
 
 # ── #62: integer column, non-integer threshold (fixed, HOME-EXPLORE-1; shared code in utils.filter_values) ──
 
-def test_ge_a_non_integer_threshold_keeps_only_the_larger_integers(ints):
-    assert ids(ints, [{"column": "x", "op": "ge", "value": "90.5"}]) == ["c"]
-
-
-def test_lt_a_non_integer_threshold_keeps_the_smaller_integers(ints):
-    assert ids(ints, [{"column": "x", "op": "lt", "value": "90.5"}]) == ["a", "b"]
-
-
-def test_eq_a_non_integer_threshold_matches_nothing(ints):
-    assert ids(ints, [{"column": "x", "op": "eq", "value": "90.5"}]) == []
+# D-0376 (2026-11-20) replaces the rule of #62 for HOME: the HOME engine refuses a decimal for an integer column with a plain
+# line; it no longer compares it as a number. The recipe actions (reference below) keep comparing as numbers.
+@pytest.mark.parametrize("op", ["ge", "lt", "eq", "gt", "ne", "le"])
+def test_the_home_engine_refuses_a_non_integer_threshold_on_an_integer_column(ints, op):
+    with pytest.raises(FilterValueError, match="This column holds whole numbers"):
+        ids(ints, [{"column": "x", "op": op, "value": "90.5"}])
 
 
 def test_the_registered_actions_already_compare_integers_to_a_non_integer_threshold(ints):
@@ -83,27 +80,10 @@ def test_the_registered_actions_already_compare_integers_to_a_non_integer_thresh
     assert rows(action_filter_eq, {"columns": ["x"], "value": 90.5}) == []
 
 
-@pytest.mark.parametrize("op, action, spec", [
-    ("ge", action_filter_range, {"min": 90.5}),
-    ("lt", action_filter_lt, {"value": 90.5}),
-    ("eq", action_filter_eq, {"value": 90.5}),
-])
-def test_the_engine_and_the_registered_action_give_the_same_rows(ints, op, action, spec):
-    by_engine = ids(ints, [{"column": "x", "op": op, "value": "90.5"}])
-    by_action = action(ints, {"columns": ["x"], **spec}).collect()["s"].to_list()
-    assert by_engine == by_action
-
-
-def test_gt_agrees_by_coincidence_for_a_positive_threshold(ints):
-    """Truncation toward zero makes `> 90.5` read `> 90`, which keeps the same integers: no defect here."""
-    by_engine = ids(ints, [{"column": "x", "op": "gt", "value": "90.5"}])
-    by_action = action_filter_gt(ints, {"columns": ["x"], "value": 90.5}).collect()["s"].to_list()
-    assert by_engine == by_action == ["c"]
-
-
-def test_gt_a_negative_non_integer_threshold_keeps_zero():
+def test_gt_a_negative_non_integer_threshold_is_refused_by_the_home_engine():
     lf = pl.LazyFrame({"x": [-1, 0, 1], "s": ["a", "b", "c"]})
-    assert ids(lf, [{"column": "x", "op": "gt", "value": "-0.5"}]) == ["b", "c"]
+    with pytest.raises(FilterValueError, match="whole number"):
+        ids(lf, [{"column": "x", "op": "gt", "value": "-0.5"}])
 
 
 # ── #63: missing values ───────────────────────────────────────────────────────

@@ -13,6 +13,7 @@ import pytest
 
 import transformer.actions  # noqa: F401
 from app.modules.t3_audit_engine import _apply_filter_rows
+from utils.filter_values import FilterValueError
 from blueprint_arch.t3_translator import translate_t3_node
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
 from viz_factory.viz_factory import VizFactory
@@ -44,6 +45,17 @@ def by_translated_action(rows):
     return lf.collect()["s"].to_list()
 
 
+def has_decimal(value):
+    """True when the value (or one of a list) is not a whole number: D-0376, a whole-number column of HOME refuses it."""
+    return any(float(v) != int(float(v)) for v in (value if isinstance(value, list) else [value]))
+
+
+def engine_refuses(rows):
+    """The HOME engine on an integer column with a decimal: the plain line, never rows (D-0376)."""
+    with pytest.raises(FilterValueError, match="This column holds whole numbers"):
+        by_engine(rows)
+
+
 def row(col, op, value, **extra):
     return {"column": col, "op": op, "value": value, **extra}
 
@@ -64,6 +76,10 @@ SET_CASES = [("in", [90.5, 91], ["c"]), ("not_in", [90.5, 91], ["a", "b"]), ("in
 @pytest.mark.parametrize("op, value, expected", NUMERIC_CASES)
 def test_numeric_value_all_three_agree(column, op, value, expected):
     rows = [row(column, op, value)]
+    if column == "i" and has_decimal(value):
+        engine_refuses(rows)   # D-0376; the plot filter and the exported action keep their own rule and still agree
+        assert by_plot(rows) == by_translated_action(rows) == expected
+        return
     assert by_engine(rows) == by_plot(rows) == by_translated_action(rows) == expected
 
 
@@ -74,6 +90,10 @@ def test_numeric_value_all_three_agree(column, op, value, expected):
 def test_set_operators_engine_and_translated_action_agree(column, n):
     op, value, expected = SET_CASES[n]
     rows = [row(column, op, value)]
+    if column == "i" and has_decimal(value):
+        engine_refuses(rows)   # D-0376
+        assert by_translated_action(rows) == expected
+        return
     assert by_engine(rows) == by_translated_action(rows) == expected
 
 
@@ -89,6 +109,10 @@ def test_set_operators_plot_filter_agrees(column, n):
 def test_text_value_as_the_panel_stores_it_engine_and_plot_agree(column, op, value, expected):
     """The panel stores the value as text. The translated action is not run here: see the report (it refuses a text value)."""
     rows = [row(column, op, str(value))]
+    if column == "i" and has_decimal(value):
+        engine_refuses(rows)   # D-0376: the old row holds the decimal as text; the plain line, not a silent result
+        assert by_plot(rows) == expected
+        return
     assert by_engine(rows) == by_plot(rows) == expected
 
 
@@ -103,16 +127,18 @@ def test_text_column_all_three_agree(op, value, expected):
 
 
 def test_between_text_value_on_an_integer_column_keeps_the_inside():
-    rows = [row("i", "between", ["89.5", "90.5"])]
-    assert by_engine(rows) == by_plot(rows) == ["b"]
-    rows = [row("i", "between", ["89.5", "90.5"], closed="none")]
-    assert by_engine(rows) == by_plot(rows) == ["b"]
+    for rows in ([row("i", "between", ["89.5", "90.5"])], [row("i", "between", ["89.5", "90.5"], closed="none")]):
+        engine_refuses(rows)   # D-0376: the HOME engine refuses the decimal ends; the plot filter keeps its rule
+        assert by_plot(rows) == ["b"]
 
 
 def test_a_negative_non_integer_threshold_keeps_zero():
     frame = pl.LazyFrame({"x": [-1, 0, 1], "s": ["a", "b", "c"]})
     rows = [row("x", "gt", "-0.5")]
-    assert _apply_filter_rows(frame, rows).collect()["s"].to_list() == ["b", "c"]
+    with pytest.raises(FilterValueError, match="whole number"):   # D-0376: HOME refuses it on an integer column
+        _apply_filter_rows(frame, rows).collect()
+    assert VizFactory().render(frame, {"plots": {"p": {"mapping": {"x": "s", "y": "x"}, "layers": [{"name": "geom_col", "params": {}}],
+                                                       "filters": rows}}}, "p").data["s"].to_list() == ["b", "c"]
 
 
 # -- the real export path: a row stored with the value as text + dtype -> translator (types it from the dtype) -> action --
@@ -127,6 +153,9 @@ def _stored_row(column, op, value, dtype):
 @pytest.mark.parametrize("value", ["90", "90.5"])
 def test_stored_text_value_translated_and_rerun_gives_the_engine_rows(column, dtype, op, value):
     rows = [_stored_row(column, op, value, dtype)]
+    if column == "i" and has_decimal(value):
+        engine_refuses(rows)   # D-0376
+        return
     assert by_translated_action(rows) == by_engine(rows)
 
 

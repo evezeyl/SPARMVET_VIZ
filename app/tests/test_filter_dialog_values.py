@@ -202,7 +202,7 @@ def test_the_widget_follows_the_type_and_the_operator(dtype, op, widget):
 
 # -- a number from the number box has the type of the column
 
-@pytest.mark.parametrize("raw, dtype, expected", [(1998, pl.Int64, 1998), (1998.0, pl.Int64, 1998), (90.5, pl.Int64, 90.5), (90, pl.Float64, 90.0)])
+@pytest.mark.parametrize("raw, dtype, expected", [(1998, pl.Int64, 1998), (1998.0, pl.Int64, 1998), (90.5, pl.Float64, 90.5), (90, pl.Float64, 90.0), ("12.0", pl.Int64, 12)])
 def test_a_number_of_the_box_is_typed_from_the_schema(raw, dtype, expected):
     got = typed_operand(raw, dtype)
     assert got == expected and type(got) is type(expected)

@@ -28,6 +28,8 @@ The badge next to the table says which table it is and when two tables are the s
 
 Operators: **= equals**, **≠ not equal**, **> greater than**, **≥ greater or equal**, **< less than**, **≤ less or equal**, **↔ between** (numbers); **∈ any of**, **∉ none of** (categories). Choosing one value shows as "column = value"; several values show as "any of".
 
+A column of **whole numbers** (an integer type) takes whole numbers only, for every operator: a decimal such as 12.5 is refused with a line under the box and nothing is added. A column of decimal numbers takes decimals.
+
 ### The seed line and Reshuffle
 A plot with a random layer (for example jitter) shows a line with its plot: the seed and where it comes from, for example "seed 0, written in the recipe". The same data and recipe then give the same picture everywhere. In **Audit** mode, a plot whose seed is written nowhere also has **Reshuffle**: it draws another arrangement and pins it as an audit step; **Remove the pinned seed** goes back. A seed written in the recipe is kept, so those plots have no Reshuffle.
 
