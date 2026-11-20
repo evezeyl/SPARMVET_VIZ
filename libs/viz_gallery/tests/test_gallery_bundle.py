@@ -340,3 +340,94 @@ def test_a_plot_entry_without_ui_label_is_refused_by_the_check_and_has_no_name(t
     assert "my_plot" in examples.rejected and any("ui_label" in text for text in examples.rejected["my_plot"])
     with pytest.raises(ValueError, match="ui_label"):
         example_name(recipe)
+
+
+# ---- the index at start follows the examples (the six cases of the Gallery study, architect section 7) ---------------
+
+def _synced_gallery(tmp_path, *names):
+    for name in names or ("my_plot",):
+        _write_example(tmp_path, name)
+    manager = GalleryManager(str(tmp_path))
+    manager.rebuild_index(CATALOGS)
+    return manager
+
+
+def _rewrite_recipe(tmp_path, name, change):
+    recipe = _recipe(name)
+    change(recipe)
+    (tmp_path / name / RECIPE).write_text(dump_example(recipe))
+
+
+def _index(tmp_path):
+    return json.loads((tmp_path / "gallery_index.json").read_text(encoding="utf-8"))
+
+
+def test_sync_of_an_unchanged_gallery_does_not_touch_the_file(tmp_path):
+    manager = _synced_gallery(tmp_path)
+    before = (tmp_path / "gallery_index.json").stat()
+    content = (tmp_path / "gallery_index.json").read_bytes()
+    _, outcome = manager.sync_index(CATALOGS)
+    after = (tmp_path / "gallery_index.json").stat()
+    assert outcome == "unchanged"
+    assert (tmp_path / "gallery_index.json").read_bytes() == content and after.st_mtime_ns == before.st_mtime_ns
+
+
+def test_sync_rewrites_the_index_when_a_name_changed(tmp_path):
+    manager = _synced_gallery(tmp_path)
+    _rewrite_recipe(tmp_path, "my_plot", lambda r: the_plot(r)[1].update(ui_label="A new name"))
+    _, outcome = manager.sync_index(CATALOGS)
+    assert outcome == "rewritten"
+    assert _index(tmp_path)["registry"]["my_plot"]["name"] == "A new name"
+
+
+def test_sync_rewrites_the_index_when_a_taxonomy_value_changed(tmp_path):
+    manager = _synced_gallery(tmp_path)
+    _rewrite_recipe(tmp_path, "my_plot", lambda r: the_plot(r)[1]["taxonomy"].update(family="Comparison"))
+    _, outcome = manager.sync_index(CATALOGS)
+    index = _index(tmp_path)
+    assert outcome == "rewritten"
+    assert index["registry"]["my_plot"]["taxonomy"]["family"] == "Comparison"
+    assert index["pivot"]["by_family"] == {"Comparison": ["my_plot"]}
+
+
+def test_sync_rewrites_the_index_when_the_thumbnail_appears(tmp_path):
+    # a missing preview_plot.png makes the example fail the check (GP05), so the picture flag that can change alone is the thumbnail
+    manager = _synced_gallery(tmp_path)
+    assert _index(tmp_path)["registry"]["my_plot"]["has_thumb"] is False
+    (tmp_path / "my_plot" / "preview_thumb.png").write_bytes(PNG)
+    assert manager.sync_index(CATALOGS)[1] == "rewritten"
+    assert _index(tmp_path)["registry"]["my_plot"]["has_thumb"] is True
+
+
+def test_sync_rewrites_the_index_when_an_example_is_added(tmp_path):
+    manager = _synced_gallery(tmp_path)
+    _write_example(tmp_path, "second_plot")
+    assert manager.sync_index(CATALOGS)[1] == "rewritten"
+    assert set(_index(tmp_path)["registry"]) == {"my_plot", "second_plot"}
+
+
+def test_sync_rewrites_the_index_when_an_example_is_removed(tmp_path):
+    import shutil
+    manager = _synced_gallery(tmp_path, "my_plot", "second_plot")
+    shutil.rmtree(tmp_path / "second_plot")
+    assert manager.sync_index(CATALOGS)[1] == "rewritten"
+    assert set(_index(tmp_path)["registry"]) == {"my_plot"}
+
+
+def test_sync_leaves_out_an_example_that_fails_the_check_with_its_reason(tmp_path):
+    manager = _synced_gallery(tmp_path, "my_plot", "second_plot")
+    _rewrite_recipe(tmp_path, "second_plot", lambda r: the_plot(r)[1].pop("ui_label"))
+    examples, outcome = manager.sync_index(CATALOGS)
+    index = _index(tmp_path)
+    assert outcome == "rewritten" and "second_plot" in examples.rejected
+    assert set(index["registry"]) == {"my_plot"}
+    assert any("ui_label" in text for text in index["metadata"]["rejected"]["second_plot"])
+    assert manager.sync_index(CATALOGS)[1] == "unchanged"
+
+
+def test_build_index_is_pure_and_the_write_is_separate(tmp_path):
+    manager = _synced_gallery(tmp_path)
+    before = (tmp_path / "gallery_index.json").read_bytes()
+    built = manager.build_index(manager.check_examples(CATALOGS))
+    assert built["registry"] == _index(tmp_path)["registry"] and built["pivot"] == _index(tmp_path)["pivot"]
+    assert (tmp_path / "gallery_index.json").read_bytes() == before
