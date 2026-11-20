@@ -1,8 +1,8 @@
 """
 @deps
-provides: function:build_plan, function:collections_of, function:run_opening, function:plot_render_recipe, function:draw_plot_proof, function:progress_text, function:opening_signature, function:large_plot_warning, function:check_store, function:stopped_text, function:orphan_tier3_files, function:sweep_orphan_tier3, class:BuildItem, class:OpeningResult, constant:LARGE_PLOT_ROWS
+provides: function:plan_places, function:build_plan, function:collections_of, function:run_opening, function:plot_render_recipe, function:draw_plot_proof, function:progress_text, function:opening_signature, function:large_plot_warning, function:check_store, function:stopped_text, function:orphan_tier3_files, function:sweep_orphan_tier3, class:BuildItem, class:OpeningResult, constant:LARGE_PLOT_ROWS
 consumes: app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3, tier2_path_for, tier3_path_for), app/modules/cache_keys.py (DataAnalysisRecipeKeys), app/modules/build_failure.py (short_engine_text, failure_kind, machine_cause), libs/utils/src/utils/recipe_tiers.py (plot_entries, tier2_steps, tier3_steps), libs/viz_factory/src/viz_factory/checked_plot.py (draw_checked), libs/utils/src/utils/engines.py (plot_engine_slot)
-consumed_by: app/handlers/opening_handlers.py, app/handlers/home_theater.py (plot_render_recipe: the recipe HOME draws a plot from), app/tests/test_opening_build.py, app/tests/test_opening_failures.py
+consumed_by: app/modules/plan_composer.py (plan_places: the one order of the places), app/handlers/opening_handlers.py, app/handlers/home_theater.py (plot_render_recipe: the recipe HOME draws a plot from), app/tests/test_opening_build.py, app/tests/test_opening_failures.py
 doc: .claude/knowledge/decision_ledger.md (D-0326, D-0343, D-0335, D-0334, D-0336, D-0327), .claude/rules/rules_data_engine.md, .claude/rules/rules_data_analysis_recipe_structure.md#11
 @end_deps
 
@@ -70,19 +70,27 @@ def collections_of(raw: dict) -> list[str]:
     return found
 
 
-def build_plan(raw: dict, keys) -> list[BuildItem]:
-    """The list of everything the opening builds, in the order it is built, with the key of each (D-0326, D-0343, D-0335).
+def plan_places(raw: dict) -> list[tuple[str, str, Optional[str]]]:
+    """The places the opening builds, in the order it builds them, as (kind, ident, target): the ONE ordering (D-0326, D-0343, D-0335).
 
     Tier 1 of every collection, then Tier 2 of those with tier-2 steps, then Tier 3 of the plots with tier-3 steps of their own, then every plot. A
-    collection or plot without steps of a tier has no item of that tier: its table IS the table before it (T2 = T1, T3 = T2), so nothing extra is built or
-    stored. `keys` is the `DataAnalysisRecipeKeys` of the recipe, computed once by the caller."""
+    collection or plot without steps of a tier has no place of that tier: its table IS the table before it (T2 = T1, T3 = T2), so nothing extra is built or
+    stored. `build_plan` adds the keys; the plan of every place (`app/modules/plan_composer.py`) reads the same order, so there is no second one."""
     collections = collections_of(raw)
     plots = plot_entries(raw)
-    plan = [BuildItem(TIER1, c, keys.tier1_key_of(c)) for c in collections]
-    plan += [BuildItem(TIER2, c, keys.tier2_key_of(c)) for c in collections if tier2_steps(raw, c)]
-    plan += [BuildItem(TIER3, p, _plot_key(keys, p), e.get("target_dataset")) for p, e in plots.items() if tier3_steps(raw, p)]
-    plan += [BuildItem(PLOT, p, _plot_key(keys, p), e.get("target_dataset")) for p, e in plots.items()]
-    return plan
+    places: list[tuple[str, str, Optional[str]]] = [(TIER1, c, None) for c in collections]
+    places += [(TIER2, c, None) for c in collections if tier2_steps(raw, c)]
+    places += [(TIER3, p, e.get("target_dataset")) for p, e in plots.items() if tier3_steps(raw, p)]
+    places += [(PLOT, p, e.get("target_dataset")) for p, e in plots.items()]
+    return places
+
+
+def build_plan(raw: dict, keys) -> list[BuildItem]:
+    """The list of everything the opening builds, in the order it is built (`plan_places`), with the key of each (D-0326, D-0343, D-0335).
+
+    `keys` is the `DataAnalysisRecipeKeys` of the recipe, computed once by the caller."""
+    key_of = {TIER1: keys.tier1_key_of, TIER2: keys.tier2_key_of, TIER3: lambda ident: _plot_key(keys, ident), PLOT: lambda ident: _plot_key(keys, ident)}
+    return [BuildItem(kind, ident, key_of[kind](ident), target) for kind, ident, target in plan_places(raw)]
 
 
 def _plot_key(keys, plot_id: str) -> str:
