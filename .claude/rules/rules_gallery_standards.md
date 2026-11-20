@@ -6,25 +6,32 @@
 
 Every gallery bundle directory MUST contain exactly:
 
-- **`data_analysis_recipe.yaml`**: The executable logic (info, plots, wrangling).
+- **`data_analysis_recipe.yaml`**: The executable logic: a standard recipe of format 1, checked in the `gallery` profile (D-0039, DEC47; D-0251).
 - **`example_data.tsv`**: A representative dataset (tab-separated).
 - **`example_meta.md`**: High-density scientific guidance and author metadata.
 - **`preview_plot.png`**: The rendered evidence of the visualization.
 
 ## 2. Taxonomy Requirements (6-Axis, ADR-063)
 
-The `info:` block in `data_analysis_recipe.yaml` MUST define all 6 taxonomy fields:
+The plot entry of the example holds a `taxonomy` mapping with five axes; the sixth, `geom`, is derived from the first `geom_*` or `stat_*` layer and is not typed (D-0034, D-0039, DEC47; built in all bundles, e.g. `assets/gallery_data/bar_simple/data_analysis_recipe.yaml`). The name of the example is the `ui_label` of the plot entry; `info` holds `label`, `description` and `submission_date`:
 
 ```yaml
 info:
-  name: Example Name
+  label: Example Name
   submission_date: 'YYYY-MM-DD'
-  family: Distribution         # 📊  see §2a
-  pattern: 1 Numeric, 1 Categorical  # 🔢  see §2b
-  difficulty: Intermediate     # 📈  Simple | Intermediate | Advanced
-  geom: geom_violin            # ⚙️  exact plotnine function name, lowercase
-  show: distribution           # 🎯  see §2c
-  sample_size: medium+         # 📏  see §2d
+analysis_groups:
+  example:
+    ui_label: Example
+    plots:
+      example_plot:
+        ui_label: Example Name
+        taxonomy:
+          family: Distribution             # 📊  see §2a
+          pattern: 1 Numeric, 1 Categorical  # 🔢  see §2b
+          difficulty: Intermediate         # 📈  Simple | Intermediate | Advanced
+          show: distribution               # 🎯  see §2c
+          sample_size: medium+             # 📏  see §2d
+        # ⚙️ geom: derived from the first geom_* / stat_* layer
 ```
 
 **Canonical reference:** `assets/gallery_data/TAXONOMY_CHEATSHEET.md` — single source of truth for all allowed values and icon assignments. Do NOT invent new values; add them to the cheatsheet first if needed.
@@ -68,22 +75,30 @@ Examples use the VizFactory data analysis recipe format. **Do NOT use `geom:` as
 
 Correct:
 ```yaml
-plots:
-  my_plot:
-    mapping:
-      x: column_a
-      y: column_b
-    layers:
-      - name: geom_point
+analysis_groups:
+  example:
+    ui_label: Example
+    plots:
+      my_plot:
+        ui_label: My plot      # the plot entry holds the content directly: there is no `spec:` key
+        mapping:
+          x: column_a
+          y: column_b
+        layers:
+          - name: geom_point
 ```
 
 Wrong (both errors):
 ```yaml
-plots:
-  my_plot:
-    layers:
-      - geom: geom_point        # ← wrong key
-        mapping: {x: column_a}  # ← mapping belongs at plot level
+analysis_groups:
+  example:
+    ui_label: Example
+    plots:
+      my_plot:
+        ui_label: My plot
+        layers:
+          - geom: geom_point        # ← wrong key
+            mapping: {x: column_a}  # ← mapping belongs at plot level
 ```
 
 ## 5. The Pivot-Index Integrity Gate
