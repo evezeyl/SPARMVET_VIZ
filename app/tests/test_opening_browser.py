@@ -126,3 +126,40 @@ def test_a_recipe_with_a_plot_that_cannot_be_drawn_is_not_used_and_the_page_says
         # the user is told that HOME switched, never switched silently (ADR-104): the recipe that was open on the first screen is named
         expect(notes).to_contain_text(f"'{g.STAGE}' was open and no longer passes its checks: HOME shows '{g.OTHER}' instead.", timeout=30_000)
         assert g.server_errors(log) == []
+
+
+# On the first progress message of an opening, what the theater and the Pipeline Audit panel hold at that moment (the opening blocks the server, so what is
+# on the page then is what the server sent BEFORE the block).
+SNAPSHOT_AT_PROGRESS = """
+window.__snap = null;
+new MutationObserver(() => {
+  if (window.__snap) return;
+  const m = Array.from(document.querySelectorAll('.progress-message')).find(e => (e.textContent || '').trim().startsWith("Opening '%s'"));
+  if (m) {
+    const t = document.querySelector('#dynamic_tabs');
+    const a = document.querySelector('#audit_nodes_header_ui');
+    window.__snap = {theater: t ? t.innerText : '', audit: a ? a.innerText : '', tabs: document.querySelectorAll('#dynamic_tabs .nav-link').length};
+  }
+}).observe(document.documentElement, {subtree: true, childList: true, characterData: true});
+"""
+
+
+def test_while_a_recipe_opens_the_previous_recipe_is_not_on_the_screen(page: Page, tmp_path):
+    """HOME-WALK A (D-0334, the owner's yes of 2026-11-20): from the first progress message the theater says which recipe is being opened and holds no
+    group tab of the previous recipe, and the right panel does not name the previous recipe. Flags: qa, ghost save off. One app, the staged recipe open first,
+    then the second staged recipe is chosen in the selector. Not covered: the wording (PROVISIONAL), a narrow window."""
+    with g.running_app(tmp_path) as (url, log):
+        page.goto(url)
+        page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=240_000)
+        wait_shiny(page, 120_000)
+        assert g.STAGE in page.locator("#audit_nodes_header_ui").inner_text()   # the first recipe is shown, the right panel names it
+        page.evaluate(SNAPSHOT_AT_PROGRESS % g.OTHER)
+        page.select_option("#data_analysis_recipe_id", g.OTHER)
+        page.wait_for_function("() => window.__snap !== null", timeout=240_000)
+        snap = page.evaluate("() => window.__snap")
+        assert g.OTHER in snap["theater"] and "Opening" in snap["theater"], snap
+        assert snap["tabs"] == 0, f"no group tab of the previous recipe while the opening runs: {snap}"
+        assert g.STAGE not in snap["audit"], f"the right panel does not name the previous recipe: {snap}"
+        page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=240_000)
+        wait_shiny(page, 120_000)
+        assert g.OTHER in page.locator("#audit_nodes_header_ui").inner_text()   # when the opening ends the recipe shows

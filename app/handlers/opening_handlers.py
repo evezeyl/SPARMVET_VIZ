@@ -56,6 +56,10 @@ class ProvenDrawings:
 
 PROVEN = ProvenDrawings()
 
+# The pause between the announcement of an opening and its build, so that the page receives the cleared theater first (HOME-WALK A). PROVISIONAL: a value
+# the builder chose; long enough for one flush to reach the browser, short enough not to be felt.
+ANNOUNCE_DELAY_SECONDS = 0.3
+
 
 def opening_waits(state: dict, available, recipe_id, signature) -> bool:
     """True while the theater must wait for the opening of the open recipe: the recipe is one HOME can open and its opening has not finished for this
@@ -73,6 +77,7 @@ def define_server(input, output, session, *, bootloader, orchestrator, viz_facto
     `reactive.Value` of the recipe HOME shows in this session (server.py); the effect writes the recipe it opens before it builds, so that the gate follower
     can name it when the opening refuses it on the first screen, when the selector value has not reached the server (the notice "no longer passes its checks")."""
     memory = proven if proven is not None else PROVEN
+    announced = {"signature": None}   # the opening whose start was announced to the page (see `_open_recipe`)
 
     @reactive.Effect
     def _open_recipe():
@@ -93,6 +98,15 @@ def define_server(input, output, session, *, bootloader, orchestrator, viz_facto
                 shown_recipe.set(recipe_id)
             if opening_state.get().get("signature") == signature:
                 return
+            first_run = announced["signature"] != signature
+            announced["signature"] = signature
+        if first_run:
+            # HOME-WALK A (D-0334): the opening blocks the server, and Shiny sends the outputs only at the end of a flush. The theater already waits
+            # (`opening_waits`), but its sentence would reach the page only after the build. So this run only announces; the build runs in the next
+            # flush, started by a short timer, after the first flush has sent the cleared theater. `announced` is plain state, not a reactive value:
+            # nothing reads it. `invalidate_later` must be called here, not inside `isolate` (it would invalidate the isolate, not this effect).
+            reactive.invalidate_later(ANNOUNCE_DELAY_SECONDS)
+            return
         status, result = "ready", None
         try:
             plan = build_plan(loaded.raw, keys)
