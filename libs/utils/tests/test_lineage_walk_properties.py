@@ -6,8 +6,6 @@ Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/utils/tests/test_lineage_wal
 """
 import builtins
 import copy
-import dataclasses
-import json
 import os
 import random
 import subprocess
@@ -40,6 +38,8 @@ def fixtures() -> Iterator[Tuple[str, Any, Any]]:
     renamed = F.recipe({"A": F.schema(["sample_id", "country"], [F.rename(country="origin")], keys=["sample_id"]), "B": F.schema(["isolate", "country"])},
                        {"J": F.join(["A", "B"], [F.join_step("B", on=("sample_id", "isolate"))])}, {"P": F.plot("J"), "Pb": F.plot("B")})
     yield "renamed", renamed, {"A": F.table(sample_id=["S1"], country=["NO"]), "B": F.table(isolate=["S1"], country=["SE"])}
+    for name, recipe, tables in F.followed():
+        yield name, recipe, tables
 
 
 def all_starts(recipe, tables) -> Iterator[Tuple[str, str]]:
@@ -189,41 +189,42 @@ def test_L076_the_walk_modules_import_no_polars_no_app_no_shiny():
     assert out.stdout.strip() == "[]"
 
 
-def plain(value: Any) -> Any:
-    """A walk as JSON data: sets become sorted lists, so that nothing depends on the order of a set."""
-    if dataclasses.is_dataclass(value) and not isinstance(value, type):
-        return {f.name: plain(getattr(value, f.name)) for f in dataclasses.fields(value)}
-    if isinstance(value, (set, frozenset)):
-        return sorted(plain(v) for v in value)
-    if isinstance(value, (list, tuple)):
-        return [plain(v) for v in value]
-    return value.value if hasattr(value, "value") and not isinstance(value, (str, int, float)) else value
-
-
 SNIPPET = """
-import json, sys
-sys.path.insert(0, {tests!r})
 import lineage_fixtures as F
 from lineage_support import TIERS, setup
-from test_lineage_walk_properties import plain
 from utils.lineage_walk import LineageIndex
 from utils.lineage_records import GROUPS, Start
 recipe, tables = F.tiers(u_declares_key=True, u_plot=True)
 graph, plans = setup(recipe, tables)
 index = LineageIndex(graph, plans)
-out = [plain(index.walk(Start(n, c), levels=TIERS).within(s)) for n, c in (("T3:Pd", "sample_id"), ("T1:J1", "country"), ("DS:E", "gene")) for s in GROUPS]
-print(json.dumps(out, sort_keys=True))
+for n, c in (("T3:Pd", "sample_id"), ("T1:J1", "country"), ("DS:E", "gene")):
+    for s in GROUPS:
+        walk = index.walk(Start(n, c), levels=TIERS).within(s)
+        print(repr(walk))
+        print([(list(x.reach.tables_with_plot), list(x.reach.tables_no_plot), list(x.reach.plots)) for x in walk.lines + walk.gone + walk.unread])
 """
 
 
-def test_I8_L077_the_same_input_gives_the_same_output_in_other_processes_with_other_hash_seeds():
+def raw_output():
+    """What a caller can print or iterate in order, RAW (no sorting here): the repr of every walk and the reach of every place as lists."""
     recipe, tables = F.tiers(u_declares_key=True, u_plot=True)
     graph, plans = setup(recipe, tables)
     index = LineageIndex(graph, plans)
-    here = json.dumps([plain(index.walk(Start(n, c), levels=TIERS).within(s)) for n, c in (("T3:Pd", "sample_id"), ("T1:J1", "country"), ("DS:E", "gene")) for s in GROUPS], sort_keys=True)
-    for seed in ("0", "1", "2", "3"):
-        out = subprocess.run([sys.executable, "-c", SNIPPET.format(tests=os.path.dirname(__file__))], capture_output=True, text=True, check=True,
-                             env={**os.environ, "PYTHONHASHSEED": seed, "PYTHONPATH": os.pathsep.join(sys.path)})
+    out = []
+    for n, c in (("T3:Pd", "sample_id"), ("T1:J1", "country"), ("DS:E", "gene")):
+        for s in GROUPS:
+            walk = index.walk(Start(n, c), levels=TIERS).within(s)
+            out.append(repr(walk))
+            out.append(str([(list(x.reach.tables_with_plot), list(x.reach.tables_no_plot), list(x.reach.plots)) for x in walk.lines + walk.gone + walk.unread]))
+    return "\n".join(out)
+
+
+def test_I8_L077_the_same_input_gives_the_same_raw_output_in_other_processes_with_other_hash_seeds():
+    here = raw_output()
+    assert "frozenset" not in here                                                                           # no plain set in anything a caller can print
+    for seed in ("0", "1", "2", "3", "77"):
+        out = subprocess.run([sys.executable, "-c", SNIPPET], capture_output=True, text=True, check=True,
+                             env={**os.environ, "PYTHONHASHSEED": seed, "PYTHONPATH": os.pathsep.join(sys.path)})      # the tests directory is already on the path of this process
         assert out.stdout.strip() == here, seed
 
 

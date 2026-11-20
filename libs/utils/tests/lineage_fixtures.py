@@ -131,3 +131,37 @@ def tiers(u_declares_key: bool = False, u_plot: bool = False) -> Tuple[Recipe, T
     if u_plot:
         plots["Pu"] = plot("U")
     return recipe(schemas, joins, plots), tables
+
+
+def followed() -> List[Tuple[str, Recipe, Tables]]:
+    """The recipes of LBFB steps 2 and 3: a column that changes name, type or values on the way (every start of every one is walked by the property tests).
+    Text columns only where a mark is put (the marker proof), numbers where a cast or a compute step needs them."""
+    ids = ["S1", "S2", "S3"]
+    out: List[Tuple[str, Recipe, Tables]] = []
+    out.append(("rename_across_tiers", recipe({"A": schema(["sample_id", "country", "lab"], [rename(country="origin")], [rename(origin="country")], keys=["sample_id"])},
+                                              {}, {"P": plot("A"), "Q": plot("A", [keep("lab", "ne", "Z")])}),
+                {"A": table(sample_id=ids, country=["NO", "SE", "NO"], lab=["X", "Y", "X"])}))
+    out.append(("rename_back_in_one_tier", recipe({"A": schema(["sample_id", "country"], [rename(country="origin"), rename(origin="country")], keys=["sample_id"])}, {}, {"P": plot("A")}),
+                {"A": table(sample_id=ids, country=["NO", "SE", "NO"])}))
+    out.append(("swap", recipe({"A": schema(["sample_id", "a", "b"], [rename(a="b", b="a")], keys=["sample_id"])}, {}, {"P": plot("A")}),
+                {"A": table(sample_id=ids, a=["x", "y", "z"], b=["u", "v", "w"])}))
+    out.append(("join_other_key_and_suffix",
+                recipe({"A": schema(["sample_id", "val", "lab"], keys=["sample_id"]), "B": schema(["isolate", "val", "lab", "note"])},
+                       {"J": join(["A", "B"], [join_step("B", on=("sample_id", "isolate"), suffix="_b")], [keep("note", "ne", "Q")])}, {"P": plot("J"), "Pb": plot("B")}),
+                {"A": table(sample_id=ids, val=["a1", "a2", "a3"], lab=["L1", "L2", "L3"]), "B": table(isolate=ids, val=["b1", "b2", "b3"], lab=["M1", "M2", "M3"], note=["n1", "n2", "n3"])}))
+    out.append(("join_default_suffix_then_rename",
+                recipe({"A": schema(["sample_id", "val"], keys=["sample_id"]), "B": schema(["sample_id", "val"], keys=["sample_id"])},
+                       {"J": join(["A", "B"], [join_step("B"), rename(val_right="val_b")])}, {"P": plot("J")}),
+                {"A": table(sample_id=ids, val=["a1", "a2", "a3"]), "B": table(sample_id=ids, val=["b1", "b2", "b3"])}))
+    out.append(("cast_text", recipe({"A": schema(["sample_id", "year", "country"], [cast(["year"], "Categorical")], keys=["sample_id"]), "B": schema(["sample_id", "lab"], keys=["sample_id"])},
+                                    {"J": join(["A", "B"], [join_step("B")])}, {"P": plot("J"), "Pa": plot("A")}),
+                {"A": table(sample_id=ids, year=["2022", "2023", "2024"], country=["NO", "SE", "NO"]), "B": table(sample_id=ids, lab=["X", "Y", "Z"])}))
+    out.append(("recompute_text", recipe({"A": schema(["sample_id", "country", "lab"], [with_columns(country="pl.col('country').str.to_lowercase()")], keys=["sample_id"])},
+                                         {}, {"P": plot("A")}), {"A": table(sample_id=ids, country=["NO", "SE", "NO"], lab=["X", "Y", "X"])}))
+    out.append(("group_by_text", recipe({"A": schema(["sample_id", "country", "lab"], [group_by(["country", "lab"], sample_id="pl.col('sample_id').first()")], keys=["sample_id"]),
+                                         "B": schema(["country", "lab2"])},
+                                        {"J": join(["A", "B"], [join_step("B", on="country")])}, {"P": plot("J"), "Pa": plot("A")}),
+                {"A": table(sample_id=ids, country=["NO", "SE", "NO"], lab=["X", "Y", "X"]), "B": table(country=["NO", "SE"], lab2=["p", "q"])}))
+    out.append(("rename_in_tier1_cast_in_tier2", recipe({"A": schema(["sample_id", "year"], [rename(year="yr")], [cast(["yr"], "Categorical"), rename(yr="year")], keys=["sample_id"])},
+                                                        {}, {"P": plot("A")}), {"A": table(sample_id=ids, year=["2022", "2023", "2024"])}))
+    return out

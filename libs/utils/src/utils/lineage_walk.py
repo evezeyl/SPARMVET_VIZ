@@ -533,8 +533,12 @@ class LineageIndex:
         if uncertain or not found:
             reason = uncertain[0].reason if uncertain else Reason(CANNOT_FOLLOW, (("node", last),))
             return Line(place, covers, tier, kind, (), GREY, reason, (), group, False, reach)
-        first = sorted(found, key=lambda d: (self._order[d.in_node], d.ref.step if d.ref else 0))[0]      # PROVISIONAL (P11): the FIRST removing step in data-flow order
-        return Gone(place, covers, first.ref, (), "filter", True, reach, group)
+        return Gone(place, covers, self.first_removal(found).ref, (), "filter", True, reach, group)
+
+    def first_removal(self, found: Sequence[_Dead]) -> _Dead:
+        """PROVISIONAL (P11): when several steps removed the column on the way to a place, the one named is the FIRST in data-flow order: the earliest node
+        in the order of the graph (sources, then tier 1 of tables and joins as they depend on each other, tier 2, then plots), then the lowest step number."""
+        return sorted(found, key=lambda d: (self._order[d.in_node], d.ref.step if d.ref else 0))[0]
 
     # ------------------------------------------------------------------ what is not reached
     def _outside(self, linked: Set[Occ]) -> Tuple[Outside, ...]:

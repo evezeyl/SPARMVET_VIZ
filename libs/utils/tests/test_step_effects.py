@@ -115,3 +115,35 @@ def test_join_prediction_keys_suffix_and_disagreement():
 def test_unread_pairs_say_only_what_the_plan_shows():
     after = Plan.of([("sample_id", "String"), ("country", "Categorical"), ("era", "String")])
     assert fx.unread_pairs(BEFORE, after) == (("sample_id",), ("country",), ("val",), ("era",))
+
+
+def registered_actions():
+    # the public reader of the registered actions is the checker's catalogue (libs/utils has none of its own; it must not import the transformer)
+    from app.modules.data_analysis_recipe_validator import checker_catalogs
+    return sorted(checker_catalogs()["actions"])
+
+
+ARGUMENTS = {"columns": ["x"], "mapping": {"x": "y"}, "exprs": ["x"], "named_exprs": {"x": "pl.col('x')"}, "by": ["x"], "named_aggs": {"y": "pl.col('x').sum()"},
+             "right_ingredient": "B", "on": "x", "how": "left", "dtype": "String"}
+
+
+def test_every_registered_action_outside_the_readings_is_unread():
+    # the list of readings is the ONE source: an action that effect_of read without being listed (a mutant that reads polars_explode) fails here
+    actions = registered_actions()
+    assert len(actions) > 30 and set(fx.READINGS) <= set(actions) and set(join_keys.ROW_STEPS) <= set(actions)
+    for action in actions:
+        effect = fx.effect_of({"action": action, **ARGUMENTS})
+        if action in join_keys.ROW_STEPS:
+            assert effect.kind == fx.KEEPS, action
+        elif action in fx.READINGS:
+            assert effect.kind not in (fx.UNREAD, fx.KEEPS), action
+        else:
+            assert effect.kind == fx.UNREAD and effect.why, action
+
+
+def test_every_listed_reading_has_a_reading_and_the_list_names_no_unregistered_action():
+    # the other way: a reading added to the list without code (or a name that is no registered action) is found here
+    assert set(fx.READINGS) <= set(registered_actions())
+    for action, arguments in fx.READINGS.items():
+        step = {"action": action, **{key: ARGUMENTS[key] for key in arguments if key in ARGUMENTS}}
+        assert fx.effect_of(step).kind not in (fx.UNREAD, fx.KEEPS), action
