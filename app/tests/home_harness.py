@@ -101,6 +101,7 @@ class Home:
                  recipe="tiny", source=None, home_state=None, inputs=None):
         self.world = world
         self.readers, self.outputs, self.effects, self.drawn, self.notes = {}, {}, {}, {}, []
+        self.filter_effects = {}
         monkeypatch.setattr(reactive, "event", lambda *a, **k: (lambda fn: fn))
         monkeypatch.setattr(reactive, "Calc", lambda fn: fn)
         monkeypatch.setattr(render, "ui", lambda fn=None, **k: (self.outputs.setdefault(fn.__name__, fn) and fn) if fn else (lambda f: f))
@@ -144,6 +145,8 @@ class Home:
             self.drawn[plot_id] = lf.collect()
             return "figure"
         factory.render.side_effect = draw
+        self._output = output
+        self.bootloader = bootloader
         home_theater.define_server(
             mock.MagicMock(), output, mock.MagicMock(),
             bootloader=bootloader, wrangle_studio=mock.MagicMock(), dev_studio=mock.MagicMock(),
@@ -155,6 +158,17 @@ class Home:
             home_state=self.home_state, session_manager=mock.MagicMock(), notification_log=reactive.Value([]))
         self.filters_applied = self.readers["applied_filters"]
         self.filters_pending = self.readers["_pending_filters"]
+
+    def filter_handlers(self, monkeypatch) -> dict:
+        """Run the REAL `define_filter_audit_server` with the readers HOME hands it: its outputs join `self.outputs`, its effects `self.effects`.
+        Returns the effects by name (the filter handlers' own: `_clear_filters_on_view_change`, `_filter_apply`...)."""
+        from app.handlers import filter_and_audit_handlers as handlers
+        monkeypatch.setattr(handlers, "bootloader", self.bootloader)
+        monkeypatch.setattr(reactive, "Effect", lambda fn: self.filter_effects.setdefault(fn.__name__, fn) and fn)
+        kw = {k: v for k, v in self.readers.items() if k != "export"}
+        self.filter_effects = {}
+        handlers.define_filter_audit_server(mock.MagicMock(), self._output, mock.MagicMock(), **kw)
+        return self.filter_effects
 
     def entry(self, plot_id: str) -> dict:
         return self.cfg.raw_config["analysis_groups"]["g"]["plots"][plot_id]

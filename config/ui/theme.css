@@ -353,7 +353,7 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
    and DataGrid can use the full panel width. */
 #acc_home_data .accordion-body    { overflow: visible !important; padding-left: 4px !important; padding-right: 4px !important; }
 #acc_home_data .shiny-html-output { width: 100% !important; }
-/* Home header strip (ADR-086): "Plot to show" and "Data to show" as two aligned rows. */
+/* Home header strip (slice B): the mode row, the data choice row, the source table row and the audit row, aligned. */
 .spv-header-strip-rows { flex-direction: column; align-items: flex-start !important; gap: 2px; }
 .spv-header-strip-rows .shiny-input-container { margin-bottom: 0 !important; width: auto !important; }
 .spv-strip-label { min-width: 105px; white-space: nowrap; color: #345beb; }

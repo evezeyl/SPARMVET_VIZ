@@ -298,7 +298,7 @@ def define_filter_audit_server(input, output, session, *,
         with reactive.isolate():
             return _dialog_table()
 
-    # WHY: found 2026-11-19 (FORM RESET). The form read `_dialog_table()` directly, so every recompute of the table (a change of "Data to show",
+    # WHY: found 2026-11-19 (FORM RESET). The form read `_dialog_table()` directly, so every recompute of the table (a change of the data choice,
     # a plot tab, a recipe load) mounted the column select again, even when the columns and the rows were the same. A render that
     # started before the server had received the user's new column put the first column back; nothing told the user (D-0050).
     # The two Values change only when the thing they stand for changes (R3, idempotent guard); `_signal_dialog_table` sets them.
@@ -351,7 +351,7 @@ def define_filter_audit_server(input, output, session, *,
         Reads the table the filter acts on only (R4, ui_implementation_contract.md section 14: it does not read the
         widgets it mounts, apart from an isolated read to keep the column the user chose when the plot changes).
         It depends on the schema signal, not on the table: a recompute that gives the same columns, types and discrete axes
-        (a change of "Data to show" on a table without tier-2 steps, a plot tab with the same table) does not mount it again, so the
+        (a change of the data choice on a table without tier-2 steps, a plot tab with the same table) does not mount it again, so the
         column, operator and value the user has just chosen are not put back to the first column while the server has not yet
         received them.
         """

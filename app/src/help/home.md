@@ -2,40 +2,34 @@
 
 **Home** is the main analysis theater. Data analysis recipe-defined `analysis_groups` become tabs; each group's plots appear as sub-tabs.
 
-### Plot to show / Data to show (header strip)
-Two independent choices — one for the plots, one for the data preview table below them.
+### The header strip
+Up to three rows; the first only when the audit is switched on in your setup.
 
-| Plot to show | What the plots render |
+| Choice | What it does |
 |---|---|
-| **Result** | T2 result produced by the data analysis recipe (T2 = T1 if no processing steps are defined). Always the recipe's plot: preview filters do not change it |
-| **My view** | Result plus your preview filters and the steps you sent to audit |
-| **Compare** | Side by side: Result (left) vs My view (right) — only when comparison is enabled |
+| **Mode: Exploration** | Look at the data. One plot per plot tab: the **Result**, drawn from the plot's own table. Filters change the table you view and never the plot. Nothing here is saved or exported. |
+| **Mode: Audit** | Create audit steps (filters and column drops with a reason). The plot becomes the **audited plot**: the Result plus your audited steps. A **Compare** switch shows the original plot and the audited plot side by side. |
 
-| Data to show | What the data preview table shows |
+| Table to view | What the data preview table shows |
 |---|---|
-| **Raw** | T1 — as assembled, no processing (preview filters change this table) |
-| **Result** | T2 — with data analysis recipe processing applied (preview filters change this table) |
-| **My view** | Result plus your preview filters and the steps you sent to audit |
+| **Source** | One source table as read from its file, before any step of the recipe. A second list names the source tables that feed the open plot (one table: the list still shows it) |
+| **T1** | The plot's table after the tier-1 steps of the recipe |
+| **T2** | The plot's table after the tier-2 steps (T2 = T1 if the recipe has none) |
+| **T3** | The table the plot is drawn from: T2 plus the plot's own tier-3 steps of the recipe (T3 = T2 if it has none). In Audit mode, T3 also carries your audited steps |
 
-Plots never show Raw (T1) directly — Raw is for comparing against Result in the table only. Raw and Result are never changed by anything you do in Filters: the data files stay as they are.
+The badge next to the table says which table it is and when two tables are the same. In Audit mode, audit steps apply to the plot's table (T3) for now; T1, T2 and Source stay the original tables.
 
 ### Filters (left sidebar)
-**Raw and Result are for looking at the data; My view is where you change what the plot shows.**
+**A filter is built on the table you are viewing, and it is cleared when that table changes.**
 
-- On **Raw** and **Result**, a filter changes the **table only**. Use it to check "what is this data?". It does not change any plot, and it is never saved or exported. A badge says "N preview filter(s) on, not saved".
-- On **My view**, the same filters also change the **plot** (still a preview: not saved, not exported). In **Compare**, the left plot is always the Result as the recipe defines it and the right plot is My view, so you see what your filters did.
-- Only **➜ Send to Audit** (with a reason, My view only) makes a step permanent: it is applied to the exported plot and data and recorded in the audit trail.
-
-Filters are one list for the whole analysis: they apply to every plot and table whose data has the filtered column. A dataset without that column ignores the filter.
-
-Click **+ Add** to stage a filter row, then **Apply** to show it. The 🗑 icon removes a row and its effect at once. **Reset** clears all rows. Send to Audit is described above.
+- In **Exploration**, a filter changes the **table only**. Use it to check "what is this data?". It does not change any plot, and it is never saved or exported. A badge says "N preview filter(s) on, not saved".
+- When you change what you view (the table to view, the source table, the plot tab, the mode or the recipe), the staged and applied filters are removed and a notice says so. Nothing is carried over silently.
+- In **Audit** mode the form builds audit steps, not previews: there is no Apply. **➜ Send to Audit** (with a reason) is offered while T3 is viewed; it makes a step permanent: it is applied to the audited plot and to the exported plot and data and recorded in the audit trail. On another table the panel says: "To create an audit step, view T3."
 
 Operators: **= equals**, **≠ not equal**, **> greater than**, **≥ greater or equal**, **< less than**, **≤ less or equal**, **↔ between** (numbers); **∈ any of**, **∉ none of** (categories). Choosing one value shows as "column = value"; several values show as "any of".
 
-If a filter names a column the current view does not have (Raw is wide, Result may be long), it is skipped for that view.
-
 ### Data Preview
-Shows up to the first 100 rows of the active plot's dataset at the selected "Data to show" tier. Toggle **All rows** to remove the cap. The column selector above the table hides columns from the preview only (view-only on Raw/Result); on My view, with the audit sandbox enabled, deselecting a column stages it to be permanently dropped via the audit trail.
+Shows up to the first 100 rows of the table you chose to view for the active plot. Toggle **All rows** to remove the cap. The column selector above the table hides columns from the preview only; in Audit mode on T3, deselecting a column stages it to be permanently dropped via the audit trail.
 
 ### Export
 Set a bundle label, pick a **Quality** preset (Web or Publication ≥600 DPI), a **Plot format** (PNG / SVG / PDF), a **Report format** (HTML / PDF / DOCX), and the plot size in inches, then click **Export Bundle**. Every export holds all plots of the loaded recipe. The bundle contains the plots, the underlying data, the data analysis recipe YAML, and a report with your audit trail. Only filters sent to audit are exported — exploration-only filters never are.
