@@ -32,12 +32,13 @@ from pathlib import Path
 import polars as pl
 from shiny import reactive, render, ui
 
-from app.modules.gallery_listing import NOTE_LINES, GalleryListing, external_links_new_tab, read_listing
-from viz_gallery.taxonomy import display_axes, filter_panels
+from app.modules.gallery_listing import (FILTER_AXES, NO_MATCH_TEXT, NOTE_LINES, GalleryListing,
+                                         external_links_new_tab, matching_examples, read_listing)
+from viz_gallery.taxonomy import display_axes
 
 
 def define_server(input, output, session, *,
-                  bootloader, safe_input):
+                  bootloader, safe_input, gallery_state):
     """Register all Gallery reactive handlers.
 
     Parameters
@@ -46,6 +47,12 @@ def define_server(input, output, session, *,
         Path Authority instance (ADR-031).
     safe_input : callable
         Shared utility: safe_input(input_obj, key, default) → value.
+    gallery_state : reactive.Value[dict]
+        What the user left in the Gallery: `ticked` (axis -> terms), `all` (axis -> the Select all box), `applied`
+        (axis -> terms, None before the first Apply), `selected` (example id), `dropped` (name of the example an Apply
+        removed from the list). It outlives the sidebar shell, which is rebuilt on every switch of space, and the
+        shell is built from it (gallery_viewer.build_sidebar_ui). Written only by the effects below, never by a render
+        (ui_implementation_contract.md section 14).
     """
 
     def _listing() -> GalleryListing:
@@ -53,38 +60,87 @@ def define_server(input, output, session, *,
         return read_listing(bootloader.get_location("gallery"),
                             bootloader.rejected_gallery_examples, bootloader.gallery_index_status)
 
+    def _remember(**changes):
+        """Merge changes into the Gallery state; idempotent (rule R3), and reads without taking a dependency."""
+        with reactive.isolate():
+            current = gallery_state.get()
+            merged = {**current, **changes}
+            if merged != current:
+                gallery_state.set(merged)
+
     # --- Gallery Taxonomy 'Select All' Logic ---
 
-    def _axis_choices(axis: str) -> list[str]:
-        """The choices of one filter panel: the same list the sidebar shows (viz_gallery.taxonomy, spec section 9, G1)."""
-        pivot = _listing().pivot
-        return next(panel["choices"] for panel in filter_panels(pivot) if panel["axis"] == axis)
+    def _make_select_all_tracker(axis: str):
+        """One effect per taxonomy axis; the axes come from the specification data.
 
-    def _make_select_all(axis: str):
-        """One 'Select all' effect per taxonomy axis; the axes come from the specification data."""
+        The 'Select all' box ticks or clears its group in the page (app/src/www/gallery_select_all.js), never by a
+        server answer: an answer that arrives after the user ticked one term wipes that tick (finding 9). The server
+        only remembers the box, so that the rebuilt shell shows it as it was left.
+        """
         @reactive.Effect
-        def _sync_all():
-            v = input[f"gallery_all_{axis}"]()
+        def _track_all():
+            v = safe_input(input, f"gallery_all_{axis}", None)
             if v is None:
                 return
-            ui.update_checkbox_group(f"gallery_filter_{axis}", selected=_axis_choices(axis) if v else [])
-        return _sync_all
+            with reactive.isolate():
+                known = gallery_state.get().get("all", {})
+            if bool(v) != known.get(axis, True):
+                _remember(all={**known, axis: bool(v)})
+        return _track_all
 
-    _select_all_effects = [_make_select_all(item["axis"]) for item in display_axes()]
+    _select_all_trackers = [_make_select_all_tracker(item["axis"]) for item in display_axes()]
 
-    # --- Gallery Initialization (ADR-037) ---
-    @reactive.Effect
-    def _init_gallery_selector():
-        """Ensure all plots are selected by default on startup."""
-        registry = _listing().registry
-        choices = {rid: entry["name"] for rid, entry in registry.items()}
-        choices = dict(sorted(choices.items(), key=lambda item: item[1]))
-        ui.update_select("gallery_example_select", choices=choices)
+    def _make_tick_tracker(axis: str):
+        """Keep the ticked terms of one group in the state (so a return to the Gallery shows them again)."""
+        @reactive.Effect
+        def _track_ticks():
+            v = safe_input(input, f"gallery_filter_{axis}", None)
+            if v is None:
+                return
+            with reactive.isolate():
+                ticked = gallery_state.get().get("ticked", {})
+            if list(v) != ticked.get(axis):
+                _remember(ticked={**ticked, axis: list(v)})
+        return _track_ticks
+
+    _tick_trackers = [_make_tick_tracker(item["axis"]) for item in display_axes()]
 
     # --- Gallery Content Resolution (ADR-037) ---
     @reactive.Calc
+    def _visible():
+        """{id: name} of the examples that match the applied filters (all of them before the first Apply)."""
+        return matching_examples(_listing(), gallery_state.get().get("applied"))
+
+    @reactive.Calc
+    def _current_rid():
+        """The example shown: the dropdown's value when it is in the list, else the one the state holds, else the first.
+
+        The same rule fills the dropdown's first paint (gallery_viewer builds it from the state), so the dropdown and
+        every pane agree before the input value has reached the server.
+        """
+        visible = _visible()
+        chosen = safe_input(input, "gallery_example_select", None)
+        if chosen in visible:
+            return chosen
+        if chosen and chosen not in _listing().registry:
+            return None  # an example that failed the check, or an unknown id, is never opened
+        kept = gallery_state.get().get("selected")
+        if kept in visible:
+            return kept
+        return next(iter(visible), None)
+
+    @reactive.Effect
+    def _track_selection():
+        """Remember the example the user picked; a pick ends the note about a dropped example."""
+        chosen = safe_input(input, "gallery_example_select", None)
+        with reactive.isolate():
+            if chosen not in _visible() or chosen == gallery_state.get().get("selected"):
+                return
+        _remember(selected=chosen, dropped=None)
+
+    @reactive.Calc
     def _gallery_active_metadata():
-        rid = safe_input(input, "gallery_example_select", None)
+        rid = _current_rid()
         if not rid:
             return None
         return _listing().registry.get(rid)
@@ -94,7 +150,13 @@ def define_server(input, output, session, *,
     def gallery_preview_img():
         meta = _gallery_active_metadata()
         if not meta:
+            if gallery_state.get().get("applied") is not None and not _visible():
+                return ui.div(NO_MATCH_TEXT, class_="p-5 text-muted gallery-no-match")
             return ui.div("Select an example to view preview.", class_="p-5 text-muted")
+        dropped = gallery_state.get().get("dropped")
+        note = (ui.div(f'"{dropped}" does not match the ticked filters, so it is not shown. '
+                       "Showing the first example that matches instead.", class_="alert alert-warning m-3 gallery-dropped")
+                if dropped else None)
 
         path_str = meta.get("path")
         if not path_str:
@@ -106,9 +168,12 @@ def define_server(input, output, session, *,
                 with open(img_path, "rb") as f:
                     encoded = base64.b64encode(f.read()).decode("utf-8")
                 return ui.div(
-                    ui.img(src=f"data:image/png;base64,{encoded}",
-                           style="max-width: 100%; border: 1px solid #dee2e6; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"),
-                    class_="p-3 text-center"
+                    note,
+                    ui.div(
+                        ui.img(src=f"data:image/png;base64,{encoded}",
+                               style="max-width: 100%; border: 1px solid #dee2e6; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"),
+                        class_="p-3 text-center"
+                    ),
                 )
             except Exception as e:
                 return ui.div(f"Error loading preview: {e}", class_="text-danger")
@@ -168,70 +233,39 @@ def define_server(input, output, session, *,
         return ui.div("Educational metadata (example_meta.md) missing.", class_="alert alert-warning")
 
     @reactive.Effect
-    @reactive.event(input.btn_apply_gallery_filters, input.sidebar_nav)
+    @reactive.event(input.btn_apply_gallery_filters)
     def _update_gallery_options():
         """
         High-Performance Filtering Gate (ADR-037).
-        TRIGGERED BY: 'Apply' button OR Tab switch to Gallery.
+        TRIGGERED BY: the 'Apply' button only. The shell is built from the state, so a switch of space needs no refresh.
         """
-        # 1. Check if we are actually in the Gallery (don't recalc if switching away)
-        if input.sidebar_nav() != "Gallery":
-            return
         listing = _listing()
         if not listing.registry:
             ui.notification_show("Indexer not found or no example passed the check.", type="error")
             return
 
-        # 2. Collect Filter Inputs
-        sel_families    = input.gallery_filter_family()
-        sel_patterns    = input.gallery_filter_pattern()
-        sel_difficulties = input.gallery_filter_difficulty()
-        sel_geoms       = safe_input(input, "gallery_filter_geom", [])
-        sel_shows       = safe_input(input, "gallery_filter_show", [])
-        sel_ss          = safe_input(input, "gallery_filter_sample_size", [])
+        # Pivot-Set Intersection across all 6 axes; a group with nothing ticked does not filter (matching_examples).
+        applied = {axis: list(safe_input(input, f"gallery_filter_{axis}", []) or []) for axis in FILTER_AXES}
+        choices = matching_examples(listing, applied)
 
-        ui.notification_show("🔍 Filtering examples...",
-                             duration=1, type="message")
+        # Keep the example the user is looking at when it still matches; else the first match, and say so on screen.
+        with reactive.isolate():
+            before = _current_rid()
+        if before in choices:
+            shown, dropped = before, None
+        else:
+            shown = next(iter(choices), None)
+            dropped = listing.registry[before]["name"] if (before and shown) else None
+        _remember(applied=applied, selected=shown, dropped=dropped)
 
-        # 3. Pivot-Set Intersection across all 6 axes
-        registry = listing.registry
-        pivot = listing.pivot
-
-        def _pivot_set(axis: str, selections) -> set:
-            """Union of example IDs matching any selected value on an axis.
-            If nothing selected OR axis absent, return full registry (no filter)."""
-            if not selections:
-                return set(registry.keys())
-            matched = set()
-            for val in selections:
-                matched.update(pivot.get(axis, {}).get(val, []))
-            return matched
-
-        family_matches     = _pivot_set("by_family",      sel_families)
-        pattern_matches    = _pivot_set("by_pattern",     sel_patterns)
-        difficulty_matches = _pivot_set("by_difficulty",  sel_difficulties)
-        geom_matches       = _pivot_set("by_geom",        sel_geoms)
-        show_matches       = _pivot_set("by_show",        sel_shows)
-        ss_matches         = _pivot_set("by_sample_size", sel_ss)
-
-        # Perform the final Multi-Set Intersection
-        valid_ids = (family_matches & pattern_matches & difficulty_matches
-                     & geom_matches & show_matches & ss_matches)
-
-        # 3. Build UI Choices
-        choices = {vid: registry[vid]["name"] for vid in valid_ids}
-        choices = dict(sorted(choices.items(), key=lambda item: item[1]))
-
-        # 4. Push Update to UI
         ui.update_select("gallery_example_select",
                          label=ui.span(
                              f"Visual Gallery ({len(choices)} matched)", style="font-weight:700;color:#345beb;"),
                          choices=choices,
-                         selected=None)
+                         selected=shown)
 
         if not choices:
-            ui.notification_show(
-                "⚠️ No matches found for these filters.", type="warning")
+            ui.notification_show("No matches found for these filters.", type="warning")
 
     @output
     @render.ui

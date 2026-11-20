@@ -16,7 +16,8 @@ def test_the_filter_panels_of_the_viewer_come_from_the_specification(monkeypatch
     from app.modules.gallery_viewer import GalleryViewer
     pivot = {"by_difficulty": {"Advanced": ["a"], "Simple": ["b"], "Intermediate": ["c"]}, "by_geom": {"geom_point": ["a"]},
              "by_pattern": {"Numeric-Numeric": ["a"], "2 Numeric": ["b"]}}
-    monkeypatch.setattr(GalleryViewer, "_load_pivot", lambda self: pivot)
+    from app.modules.gallery_listing import GalleryListing
+    monkeypatch.setattr(GalleryViewer, "_load_listing", lambda self: GalleryListing(pivot=pivot))
     html = str(GalleryViewer().build_sidebar_ui())
     for item in spec()["gallery"]["display"]:
         assert f"{item['icon']} {item['label']}" in html

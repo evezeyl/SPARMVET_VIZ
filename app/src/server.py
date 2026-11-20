@@ -123,6 +123,7 @@ def server(input, output, session):
     audit_pending = reactive.Value(False)
     snapshot_steps = reactive.Value([])
     gallery_refresh_trigger = reactive.Value(0)
+    gallery_state = reactive.Value({})         # what the user left in the Gallery; survives a switch of space
     data_refresh_trigger = reactive.Value(0)   # incremented after data import to bust plot cache
     notification_log = reactive.Value([])      # UX-NOTIF-1: persistent alert log (last 20)
     session_processing_issues = reactive.Value([])  # DIAG-RUNTIME-AUDIT-1: structured PipelineError log
@@ -204,6 +205,7 @@ def server(input, output, session):
         orchestrator=orchestrator,
         viz_factory=viz_factory,
         gallery_viewer=gallery_viewer,
+        gallery_state=gallery_state,
         current_app_features=current_app_features,
         anchor_path=anchor_path,
         tier1_anchor=tier1_anchor,
@@ -261,6 +263,7 @@ def server(input, output, session):
             input, output, session,
             bootloader=bootloader,
             safe_input=_safe_input,
+            gallery_state=gallery_state,
         )
 
     # Ingestion & app features switching
