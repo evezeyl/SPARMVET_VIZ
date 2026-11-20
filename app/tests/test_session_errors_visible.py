@@ -51,7 +51,7 @@ class FakeInput:
 class Screen:
     """`define_session_server` with its decorators made plain, so the handlers are plain functions."""
 
-    def __init__(self, tmp_path, monkeypatch, input_values=None, with_session=True):
+    def __init__(self, tmp_path, monkeypatch, input_values=None, with_session=True, open_recipe="tiny"):
         self.functions = {}
         self.notes = []
         monkeypatch.setattr(reactive, "Effect", lambda fn: self.functions.setdefault(fn.__name__, fn))
@@ -71,7 +71,8 @@ class Screen:
         kwargs = {"session_processing_issues": self.issues} if with_session else {}
         session_handlers.define_session_server(
             self.input, lambda fn: fn, self.session, session_manager=self.manager, current_app_features=None,
-            home_state=self.home_state, notification_log=self.log, **kwargs)
+            home_state=self.home_state, notification_log=self.log,
+            safe_input=lambda i, k, d: open_recipe if k == "data_analysis_recipe_id" else d, **kwargs)
 
     def run(self, name):
         with reactive.isolate():

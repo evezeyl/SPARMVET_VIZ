@@ -45,7 +45,7 @@ def _seed(sm, tmp_path, label: str, with_step: bool):
     if with_step:
         step = make_audit_step("filter_row", {"column": "year", "op": "gt", "value": 1900, "dtype": "Int64"},
                                "subtab_mlst_bar", SAVED_REASON)
-        sm.write_t3_ghost(key, label, msig, dbh, "T2", t3_audit_steps_by_plot={"subtab_mlst_bar": [step]})
+        sm.write_t3_ghost(key, label, msig, dbh, t3_audit_steps_by_plot={"subtab_mlst_bar": [step]})
     return key
 
 

@@ -101,8 +101,8 @@ def run(output_dir: Path) -> bool:
                              {"column": "sample_id", "op": "eq", "value": "S2"},
                              reason="S2 has instrument error noted in lab book."),
         ]
-        g1 = sm.write_t3_ghost(key, "my_pipeline", msig, dbh, "T3", steps, {}, label="batch-A v1")
-        g2 = sm.write_t3_ghost(key, "my_pipeline", msig, dbh, "T3", steps, {}, label="batch-A v2")
+        g1 = sm.write_t3_ghost(key, "my_pipeline", msig, dbh, steps, {}, label="batch-A v1")
+        g2 = sm.write_t3_ghost(key, "my_pipeline", msig, dbh, steps, {}, label="batch-A v2")
         ghosts = sm.list_t3_ghosts(key)
         ok = len(ghosts) == 2 and ghosts[0]["saved_at"] >= ghosts[1]["saved_at"]
         results.append(("Write 2 T3 ghosts, newest-first order", PASS if ok else FAIL))

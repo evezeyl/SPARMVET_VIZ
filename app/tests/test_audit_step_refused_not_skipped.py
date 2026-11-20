@@ -93,8 +93,8 @@ def _session(tmp_path, steps):
     sm = SessionManager(tmp_path)
     key = "abc123def456:0123456789ab"
     folder = sm.session_dir(key)
-    (folder / "assembly.json").write_text(json.dumps({"session_key": key, "data_analysis_recipe_id": "r", "label": ""}))
-    ghost = {"session_key": key, "saved_at": "2026-11-15T10:00:00", "tier_toggle": "T3",
+    (folder / "assembly.json").write_text(json.dumps({"session_key": key, "data_analysis_recipe_id": "r", "label": "", "schema_version": 3}))
+    ghost = {"session_key": key, "saved_at": "2026-11-15T10:00:00", "schema_version": 3,
              "t3_audit_steps_by_plot": {"subtab_p": steps}, "t3_audit_steps": []}
     (folder / "t3_20261115_100000.json").write_text(json.dumps(ghost))
     return sm, key

@@ -25,6 +25,7 @@ from app.modules.plot_issue_reporter import make_issue_reporter
 from app.modules.session_manager import (
     SessionDeleteError,
     key_drop_notice,
+    session_recipe_refusal,
     normalise_audit_steps,
     session_id_collisions,
     session_input_id_parts,
@@ -183,8 +184,14 @@ def define_session_server(input, output, session, *,
             for s in grp_sessions:
                 sk = s["session_key"]
                 if s.get("legacy_problem"):
-                    group_panels.append(ui.div(ui.tags.small(s["legacy_problem"], class_="text-danger d-block"),
-                                               class_="session-card legacy mb-1"))
+                    # A refused session can be deleted from the panel (D-0312); it cannot be restored.
+                    group_panels.append(ui.div(
+                        ui.tags.small(s["legacy_problem"], class_="text-danger d-block"),
+                        ui.input_action_button(
+                            f"session_delete_{id_parts[sk]}", "Delete Session",
+                            class_="btn-outline-danger btn-sm mt-1",
+                            style="font-size:0.72em; padding:1px 6px;"),
+                        class_="session-card legacy mb-1"))
                     continue
                 batch_short = s.get("data_batch_hash", "")[:8] or "?"
                 t3_count = s.get("t3_count", 0)
@@ -514,6 +521,14 @@ def define_session_server(input, output, session, *,
                       + "the damaged file stays in the session folder, keep it or delete it by hand")
             _notify("⚠️ " + notice(what, remedy, item["reason"]), type="warning", duration=12)
 
+    def _open_recipe_id() -> str:
+        """The id of the recipe open in this view: the recipe box, or the deployment's default when the box is hidden."""
+        value = safe_input(input, "data_analysis_recipe_id", "") if safe_input is not None else ""
+        if not value:
+            finder = getattr(bootloader, "get_default_data_analysis_recipe_or_none", None)
+            value = finder() if finder else ""
+        return value or ""
+
     def _restore_session(session_key: str) -> None:
         """Run T1/T2 restore + open T3 ghost picker notification."""
         if session_manager is None or home_state is None:
@@ -527,6 +542,14 @@ def define_session_server(input, output, session, *,
             return
         if ghost is None:
             _notify("❌ Session assembly record not found.", type="error", duration=6)
+            return
+
+        # D-0317: a session of another recipe is refused: nothing is applied and nothing is changed. Compared: the recipe id
+        # of the session record with the id of the recipe open in this view. The same id with another content hash (the recipe
+        # was edited) is NOT covered by D-0317: it keeps the warning below. PROVISIONAL wording.
+        refusal = session_recipe_refusal(ghost, _open_recipe_id(), session_key)
+        if refusal:
+            _notify("❌ " + refusal, type="error", duration=12)
             return
 
         # Check data analysis recipe SHA256 vs current
@@ -616,7 +639,6 @@ def define_session_server(input, output, session, *,
                 **state,
                 "t3_audit_steps_by_plot": by_plot,
                 "t3_plot_overrides": latest.get("t3_plot_overrides", {}),
-                "tier_toggle": latest.get("tier_toggle", "T2"),
                 "t3_ghost_file": latest.get("file", ""),
                 "t3_ghost_saved_at": latest.get("saved_at", ""),
                 "_pending_t3_nodes": [],

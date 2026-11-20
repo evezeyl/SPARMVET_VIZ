@@ -232,8 +232,8 @@ def test_write_list_t3_ghosts(sm):
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
     audit_steps = [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")]
 
-    p1 = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, "T3", audit_steps, {}, label="first")
-    p2 = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, "T3", audit_steps, {}, label="second")
+    p1 = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, audit_steps, {}, label="first")
+    p2 = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, audit_steps, {}, label="second")
 
     ghosts = sm.list_t3_ghosts(key)
     assert len(ghosts) == 2
@@ -248,7 +248,7 @@ def test_write_list_t3_ghosts(sm):
 def test_t3_ghost_carries_a_self_consistency_hash(sm):
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
     audit_steps = [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")]
-    sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, "T3", audit_steps, {}, label="x")
+    sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, audit_steps, {}, label="x")
     ghost = sm.list_t3_ghosts(key)[0]
     assert len(ghost["t3_audit_steps_sha256"]) == 64
 
@@ -256,8 +256,8 @@ def test_t3_ghost_carries_a_self_consistency_hash(sm):
 def test_t3_ghost_hash_is_stable_for_identical_content(sm):
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
     audit_steps = [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")]
-    sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, "T3", audit_steps, {}, label="a")
-    sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, "T3", list(audit_steps), {}, label="b")
+    sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, audit_steps, {}, label="a")
+    sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, list(audit_steps), {}, label="b")
     ghosts = sm.list_t3_ghosts(key)
     assert ghosts[0]["t3_audit_steps_sha256"] == ghosts[1]["t3_audit_steps_sha256"]
 
@@ -266,9 +266,9 @@ def test_t3_ghost_hash_differs_for_different_content(sm):
     """t3_audit_steps_by_plot is what the hash covers — t3_audit_steps_by_plot, not the
     legacy flat list, is the authoritative, current representation (Phase 22-J)."""
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
-    sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, "T3", label="a",
+    sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, label="a",
                        t3_audit_steps_by_plot={"subtab_p": [make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="x")]})
-    sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, "T3", label="b",
+    sm.write_t3_ghost(key, "p", "a" * 64, "b" * 64, label="b",
                        t3_audit_steps_by_plot={"subtab_p": [make_audit_step("exclusion_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="x")]})
     ghosts = sm.list_t3_ghosts(key)
     assert ghosts[0]["t3_audit_steps_sha256"] != ghosts[1]["t3_audit_steps_sha256"]
@@ -283,7 +283,7 @@ def test_legacy_ghost_with_no_stored_hash_reports_empty_not_a_mismatch(sm, tmp_p
     d.mkdir(parents=True, exist_ok=True)
     legacy = {
         "session_key": key, "data_analysis_recipe_sha256": "a" * 64, "data_batch_hash": "b" * 64,
-        "saved_at": "2026-01-01T00:00:00", "label": "", "tier_toggle": "T3",
+        "saved_at": "2026-01-01T00:00:00", "label": "", "schema_version": 3,
         "t3_audit_steps": [], "t3_audit_steps_by_plot": {"subtab_p": []}, "t3_plot_overrides": {},
     }
     (d / "t3_20260101_000000.json").write_text(json.dumps(legacy))
@@ -317,7 +317,7 @@ def test_export_import_roundtrip(sm, data_analysis_recipe_file, source_files, tm
 
     sm.write_assembly_ghost(key, "my_pipeline", msig, dbh,
                             {k: str(v) for k, v in source_files.items()}, {})
-    sm.write_t3_ghost(key, "my_pipeline", msig, dbh, "T3", [], {})
+    sm.write_t3_ghost(key, "my_pipeline", msig, dbh, [], {})
 
     zip_bytes = sm.export_session_zip(key)
     assert len(zip_bytes) > 0
@@ -501,7 +501,7 @@ def test_label_falls_back_to_legacy_t3_ghost_storage(sm, source_files):
     get_session_label must still find it."""
     key = "aaaaaaaaaaaa:gggggggggggg"
     _assemble(sm, key, source_files)  # label="" by default
-    sm.write_t3_ghost(key, "pid", "a" * 64, "c" * 64, "T3", [], {}, label="legacy")
+    sm.write_t3_ghost(key, "pid", "a" * 64, "c" * 64, [], {}, label="legacy")
     assert sm.get_session_label(key) == "legacy"
 
 
@@ -529,7 +529,8 @@ def test_stored_t3_ghost_key_names(sm):
     import json
     key = "aaaaaaaaaaaa:bbbbbbbbbbbb"
     node = make_audit_step("filter_row", {"column": "species", "op": "in", "value": ["cat"]}, reason="test")
-    path = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, "T3", [node], {}, label="x")
+    path = sm.write_t3_ghost(key, "my_pipeline", "a" * 64, "b" * 64, [node], {}, label="x")
     raw = json.loads(Path(path).read_text())
     assert {"session_key", "data_analysis_recipe_id", "data_analysis_recipe_sha256", "data_batch_hash", "saved_at",
-            "tier_toggle", "t3_audit_steps", "t3_plot_overrides"} <= set(raw)
+            "schema_version", "t3_audit_steps", "t3_plot_overrides"} <= set(raw)
+    assert "tier_toggle" not in raw   # PROVISIONAL (D-0312 work): the view is not stored in a session file
