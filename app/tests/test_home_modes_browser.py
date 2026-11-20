@@ -129,3 +129,11 @@ def test_audit_mode_has_compare_and_offers_send_to_audit_on_t3_only(page: Page, 
     finally:
         set_mode(page, "exploration")
         set_view(page, "T3")
+
+
+def test_no_reshuffle_button_in_exploration(page: Page, shiny_app: ShinyAppProc):
+    """D-0341: Reshuffle belongs to Audit mode. In Exploration no plot offers it, whatever is stored. The positive side, with a plot that has a
+    random layer and no written seed, and the stored pin that Exploration ignores, is `test_shiny_seed_places.py`."""
+    _ready(page, shiny_app.url)
+    set_mode(page, "exploration")
+    expect(page.locator("[id^='plot_reshuffle_btn_']")).to_have_count(0)

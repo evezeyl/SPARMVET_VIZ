@@ -9,8 +9,9 @@ CALL them and put nothing between (a flag, a replaced number, a dropped argument
   2. a recipe that writes no seed: 0 in every place, so two sessions show the SAME arrangement, the reference
      pane shows the same as the audited plot, and the export records seed 0 as `default` and writes it into the
      reproducibility recipe
-  3. with the audit trail off (`pipeline-exploration-simple`: t3_sandbox_enabled false) the Reshuffle pin reaches
-     HOME and the export, and the export lists it as a step (t3_steps.yaml, report)
+  3. Reshuffle belongs to Audit mode (D-0341): in Audit mode the pin reaches HOME and the export, and the export lists it as a
+     step (t3_steps.yaml, report); in Exploration, and in a setup with the audit off (`pipeline-exploration-simple`), the
+     button is not shown and the plot is the recipe's plot
 
 Each scenario starts its own app on a STAGED COPY of the recipes folder (the tracked plot file is never edited).
 
@@ -225,11 +226,39 @@ def test_without_a_seed_in_the_recipe_every_place_uses_zero_and_two_sessions_sho
     assert recipe_seeds(z) == {0}, "every seed used is written in the reproducibility recipe"
 
 
-def test_the_reshuffle_pin_reaches_home_and_the_export_when_the_audit_trail_is_off(browser, tmp_path):
+def test_reshuffle_is_not_offered_in_exploration_nor_when_the_audit_is_off(browser, tmp_path):
+    """D-0341: the button is offered in Audit mode only. A setup with the audit off has no Audit mode, so no button and no pin."""
     with running_app("pipeline-exploration-simple", staged_deployment(PIPELINE, 'position: "jitter"}', tmp_path), tmp_path) as url:
         page = browser.new_page()
         try:
             open_phenotype_plot(page, url, choose_recipe=False)
+            assert page.locator("#home_mode").count() == 0, "this setup has no Audit mode"
+            assert seed_line(page) == "seed 0, default (nothing written in the recipe)"
+            expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_have_count(0)
+        finally:
+            page.close()
+    with running_app("qa", staged_deployment(LOCAL, 'position: "jitter"}', tmp_path), tmp_path) as url:
+        page = browser.new_page()
+        try:
+            open_phenotype_plot(page, url, choose_recipe=True)
+            set_mode(page, "exploration")
+            expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_have_count(0)
+            set_mode(page, "audit")
+            expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_be_visible(timeout=10_000)
+            set_mode(page, "exploration")
+            expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_have_count(0, timeout=8_000)
+        finally:
+            page.close()
+
+
+def test_the_reshuffle_pin_reaches_home_and_the_export_in_audit_mode(browser, tmp_path):
+    with running_app("qa", staged_deployment(LOCAL, 'position: "jitter"}', tmp_path), tmp_path) as url:
+        page = browser.new_page()
+        try:
+            open_phenotype_plot(page, url, choose_recipe=True)
+            exploration_before = page.locator(f"#plot_group_{PID}").screenshot()     # the recipe's plot, in Exploration
+            set_mode(page, "audit")
+            settle(page, f"plot_group_{PID}")
             run_a, png_a, _ = export_run_and_png(page)
             assert run_a["seed_source_per_plot"][PID] == "default" and run_a["seeds_per_plot"][PID] == 0
             assert seed_line(page) == "seed 0, default (nothing written in the recipe)"
@@ -240,13 +269,22 @@ def test_the_reshuffle_pin_reaches_home_and_the_export_when_the_audit_trail_is_o
             btn.click()
             _wait_shiny(page)
             settle(page, f"plot_group_{PID}")
-            assert not same_picture(shown.screenshot(), before), "HOME ignored the pinned seed (audit trail off)"
+            assert not same_picture(shown.screenshot(), before), "HOME ignored the pinned seed"
             # once pinned there is nothing left to reshuffle: the control disappears, and the plot shows no error
             expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_have_count(0, timeout=8_000)
             assert page.locator(".shiny-output-error").count() == 0
             pinned_line = seed_line(page)
             assert re.fullmatch(r"seed \d+, pinned in the audit Remove the pinned seed", pinned_line), pinned_line
             pinned_picture = shown.screenshot()
+            # D-0341: with the pin stored, Exploration shows the recipe's plot (no pin, no button, the recipe's seed); Audit mode shows the pin again
+            set_mode(page, "exploration")
+            settle(page, f"plot_group_{PID}")
+            assert same_picture(page.locator(f"#plot_group_{PID}").screenshot(), exploration_before), "Exploration drew the pinned seed"
+            assert seed_line(page) == "seed 0, default (nothing written in the recipe)"
+            expect(page.locator(f"#plot_reshuffle_btn_{PID}")).to_have_count(0)
+            set_mode(page, "audit")
+            settle(page, f"plot_group_{PID}")
+            assert re.fullmatch(r"seed \d+, pinned in the audit Remove the pinned seed", seed_line(page))
             # the way back: remove the pinned seed; the plot returns to the recipe's seed and Reshuffle is offered again
             page.locator(f"#plot_unpin_btn_{PID}").click()
             _wait_shiny(page)
@@ -269,7 +307,7 @@ def test_the_reshuffle_pin_reaches_home_and_the_export_when_the_audit_trail_is_o
             run_b, png_b, z = export_run_and_png(page)
         finally:
             page.close()
-    assert run_b["seed_source_per_plot"][PID] == "audit", "the export ignored the pinned seed (audit trail off)"
+    assert run_b["seed_source_per_plot"][PID] == "audit", "the export ignored the pinned seed"
     assert run_b["seeds_per_plot"][PID] != 0
     assert not same_picture(png_b, png_a)
     # the pin is a step of the audit trail: listed in t3_steps.yaml and in the report
