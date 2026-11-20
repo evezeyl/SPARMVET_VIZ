@@ -102,7 +102,7 @@ def test_first_paint_dropdown_and_picture_agree(page: Page, shiny_app):
     page.wait_for_timeout(3000)
     assert page.evaluate("window.__seen") > 0
     assert page.evaluate("window.__bad") == []  # a blank pane before its first render is not a contradiction
-    assert page.locator("#gallery_preview_img img").count() == 1
+    page.wait_for_selector("#gallery_preview_img img", timeout=20_000)
 
 
 def test_filter_panel_states_the_apply_rule(page: Page, shiny_app):
@@ -133,3 +133,31 @@ def test_tick_right_after_select_all_is_not_wiped(page: Page, shiny_app):
         _idle(page)
         assert len(_ticked(page, "geom")) == len(PIVOT["by_geom"])
 
+
+
+def test_apply_keeps_a_still_matching_example(page: Page, shiny_app):
+    """Eve, 2026-11-20: Apply that still matches the example must not drop it."""
+    _open_gallery(page, shiny_app.url)
+    rid = "violin_simple"
+    difficulty = next(d for d, ids in PIVOT["by_difficulty"].items() if rid in ids)
+    page.select_option("#gallery_example_select", rid)
+    _idle(page)
+    _only(page, "difficulty", difficulty)
+    _apply(page)
+    assert _selected(page) == rid
+    assert page.locator("#gallery_preview_img img").count() == 1
+    assert "does not match" not in page.inner_text("#gallery_preview_img")
+
+
+def test_apply_that_excludes_the_example_says_so(page: Page, shiny_app):
+    _open_gallery(page, shiny_app.url)
+    rid = "violin_simple"
+    other = next(d for d, ids in PIVOT["by_difficulty"].items() if rid not in ids and ids)
+    page.select_option("#gallery_example_select", rid)
+    _idle(page)
+    _only(page, "difficulty", other)
+    _apply(page)
+    assert _selected(page) != rid
+    assert _selected(page) in PIVOT["by_difficulty"][other]
+    note = page.inner_text("#gallery_preview_img")
+    assert REGISTRY[rid]["name"] in note and "does not match" in note

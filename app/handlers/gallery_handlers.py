@@ -58,6 +58,9 @@ def define_server(input, output, session, *,
 
     # The examples the last Apply left in the list; None before the first Apply. Written only by the Apply effect.
     _applied_choices = reactive.Value(None)
+    # (name of the example an Apply removed from the list, the example shown instead), for a note; None otherwise.
+    # The note is shown only while that replacement is the example on screen. Written only by the Apply effect.
+    _dropped = reactive.Value(None)
 
     @reactive.Calc
     def _visible():
@@ -90,10 +93,15 @@ def define_server(input, output, session, *,
     @render.ui
     def gallery_preview_img():
         meta = _gallery_active_metadata()
+        dropped_pair = _dropped.get()
+        dropped = dropped_pair[0] if dropped_pair and dropped_pair[1] == _current_rid() else None
         if not meta:
             if _applied_choices.get() is not None and not _visible():
                 return ui.div(NO_MATCH_TEXT, class_="p-5 text-muted gallery-no-match")
             return ui.div("Select an example to view preview.", class_="p-5 text-muted")
+        note = (ui.div(f'"{dropped}" does not match the ticked filters, so it is not shown. '
+                       "Showing the first example that matches instead.", class_="alert alert-warning m-3 gallery-dropped")
+                if dropped else None)
 
         path_str = meta.get("path")
         if not path_str:
@@ -105,9 +113,12 @@ def define_server(input, output, session, *,
                 with open(img_path, "rb") as f:
                     encoded = base64.b64encode(f.read()).decode("utf-8")
                 return ui.div(
-                    ui.img(src=f"data:image/png;base64,{encoded}",
-                           style="max-width: 100%; border: 1px solid #dee2e6; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"),
-                    class_="p-3 text-center"
+                    note,
+                    ui.div(
+                        ui.img(src=f"data:image/png;base64,{encoded}",
+                               style="max-width: 100%; border: 1px solid #dee2e6; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"),
+                        class_="p-3 text-center"
+                    ),
                 )
             except Exception as e:
                 return ui.div(f"Error loading preview: {e}", class_="text-danger")
@@ -187,6 +198,12 @@ def define_server(input, output, session, *,
 
         # 3. Pivot-Set Intersection across all 6 axes
         choices = matching_examples(listing, applied)
+        # Keep the example the user is looking at when it still matches (Eve, 2026-11-20: "This is a bug fix");
+        # else the first match, and say so on screen.
+        with reactive.isolate():
+            before = _current_rid()
+        shown = before if before in choices else next(iter(choices), None)
+        _dropped.set((listing.registry[before]["name"], shown) if (before and shown and shown != before) else None)
         _applied_choices.set(choices)
 
         # 4. Push Update to UI
@@ -194,7 +211,7 @@ def define_server(input, output, session, *,
                          label=ui.span(
                              f"Visual Gallery ({len(choices)} matched)", style="font-weight:700;color:#345beb;"),
                          choices=choices,
-                         selected=None)
+                         selected=shown)
 
         if not choices:
             ui.notification_show(
