@@ -25,6 +25,7 @@ from pathlib import Path
 from playwright.sync_api import Page, expect
 
 from app.tests import gate_stage as g
+from app.tests.browser_view import set_mode
 from app.tests.gate_stage import wait_shiny
 
 # Collects every message the progress line shows (the page may show only the last one at any moment).
@@ -161,6 +162,7 @@ def test_while_a_recipe_opens_the_previous_recipe_is_not_on_the_screen(page: Pag
         page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=240_000)
         wait_shiny(page, 120_000)
         expect(page.locator("#audit_nodes_header_ui")).to_contain_text(g.STAGE, timeout=60_000)   # the first recipe is shown, the right panel names it
+        set_mode(page, "audit")   # the Apply button is shown in Audit mode only (D-0377)
         expect(page.locator("#btn_apply")).to_be_visible()   # before: the right panel is there with its Apply button
         page.evaluate(SNAPSHOT_AT_PROGRESS % g.OTHER)
         page.select_option("#data_analysis_recipe_id", g.OTHER)

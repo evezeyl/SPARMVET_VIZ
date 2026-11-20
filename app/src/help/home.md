@@ -30,6 +30,8 @@ Operators: **= equals**, **≠ not equal**, **> greater than**, **≥ greater or
 
 A column of **whole numbers** (an integer type) takes whole numbers only, for every operator: a decimal such as 12.5 is refused with a line under the box and nothing is added. A column of decimal numbers takes decimals.
 
+In the right panel (Pipeline Audit) the **Pending** badge and the **Apply** button are shown in Audit mode only: Exploration never writes audit steps.
+
 ### The seed line and Reshuffle
 A plot with a random layer (for example jitter) shows a line with its plot: the seed and where it comes from, for example "seed 0, written in the recipe". The same data and recipe then give the same picture everywhere. In **Audit** mode, a plot whose seed is written nowhere also has **Reshuffle**: it draws another arrangement and pins it as an audit step; **Remove the pinned seed** goes back. A seed written in the recipe is kept, so those plots have no Reshuffle.
 

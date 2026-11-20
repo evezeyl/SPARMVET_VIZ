@@ -64,7 +64,7 @@ class Screen:
         audit_stack.define_server(
             Input(), lambda fn=None, **k: fn if fn else (lambda f: f), mock.MagicMock(), wrangle_studio=studio,
             audit_pending=self.audit_pending, snapshot_steps=self.snapshot, active_cfg=lambda: SimpleNamespace(raw_config={}),
-            active_collection_id=lambda: "C", home_state=self.state, session_manager=self.manager,
+            active_collection_id=lambda: "C", home_mode=reactive.Value("audit"), home_state=self.state, session_manager=self.manager,
             notification_log=self.log, bootloader=SimpleNamespace(get_automation_setting=lambda *a: True))
 
     def apply(self):
