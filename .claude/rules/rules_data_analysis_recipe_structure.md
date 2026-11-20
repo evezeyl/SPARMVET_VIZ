@@ -324,6 +324,7 @@ the expected, normal state while building one.
   `output_fields` no longer exists (D-0034; section 5).
   `app/tests/test_data_analysis_recipe_data_check.py` runs it on every shipped data analysis
   recipe; `app/tests/test_data_analysis_recipe_load_gate.py` runs the full gate.
+- **Where a recipe fails (DECIDED, not built; D-0338, D-0342):** one function turns the place of a problem (the table or join, the tier, the step) into the file and the line where it is written, also inside an included file, and every error that names a place uses it: the recipe check, the load gate, the build at opening, the writing of the audit file. Not decided (D-0342): the form of the sentence, whether the path of keys stays in the message, the guard when a file changed between the check and the message, and how a problem met only when the data is read names its place. The line shown when the check itself fails is kept as built, provisional (D-0338).
 - A dataset that the requested collection needs and that cannot be loaded makes
   `materialize_tier1` raise `IngestionError` naming the dataset and the reason. Before issue #18
   it was dropped and the join steps that used it were skipped with a console line.
