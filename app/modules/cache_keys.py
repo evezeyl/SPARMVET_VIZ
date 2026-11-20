@@ -63,9 +63,9 @@ import threading
 from dataclasses import dataclass, field
 from importlib import metadata
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Union
+from typing import Any, Iterable, Mapping, Optional, Union
 
-from utils.audit_copy import audit_operation
+from utils.audit_copy import audit_operation, integrity_errors
 from utils.errors import RecipeLoadError
 from utils.config_loader import ConfigManager
 from utils.engines import tier_engine
@@ -387,6 +387,17 @@ class ResolvedRecipe:
     the `ConfigManager` of a loaded file stands, for an audit copy (`loaded_from_resolved`)."""
     raw_config: dict
     loaded_files: tuple = ()
+    # the recipe the copy was made from: the engine checks the copy against it before it runs one (D-0332, `refuse_audit_steps_outside_an_audit`);
+    # None for a copy built without its original, which the engine refuses
+    original_raw: Optional[dict] = None
+    verdict: dict = field(default_factory=dict, compare=False, repr=False)   # the answer of `integrity_errors`, kept: it is asked at every build
+
+    def integrity_problems(self) -> list:
+        """What `utils.audit_copy.integrity_errors` says of the copy against its original, asked once; None-original gives the one sentence that says why."""
+        if "problems" not in self.verdict:
+            self.verdict["problems"] = (["the copy was built without the recipe it was made from, so it cannot be checked"] if self.original_raw is None
+                                        else integrity_errors(self.raw_config, self.original_raw))
+        return self.verdict["problems"]
 
 
 def loaded_from_resolved(original: LoadedDataAnalysisRecipe, raw: dict) -> LoadedDataAnalysisRecipe:
@@ -397,7 +408,7 @@ def loaded_from_resolved(original: LoadedDataAnalysisRecipe, raw: dict) -> Loade
     an audit copy that is written to a file is not decided. The original is not changed."""
     table_parts, coarse_parts = table_key_parts(raw)
     return LoadedDataAnalysisRecipe(
-        path=original.path, config=ResolvedRecipe(raw), files=original.files, signature=original.signature,
+        path=original.path, config=ResolvedRecipe(raw, original_raw=original.raw), files=original.files, signature=original.signature,
         data_analysis_recipe_sha256=canonical_hash(raw), table_parts=table_parts, coarse_parts=coarse_parts)
 
 

@@ -446,6 +446,99 @@ def test_a_recipe_file_with_an_audit_steps_list_is_refused_by_the_load_gate_and_
     assert world.original_files() == before, "nothing was built or stored"
 
 
+def test_the_run_reads_the_audit_steps_of_tier_2_of_a_table_that_has_none_of_its_own(world):
+    """The reader of `audit_run.py` (l.170, `tier2_steps(loaded.raw, table)`) must see an audit step that is the ONLY tier-2 step of table A: with the author's steps
+    alone A would be taken for `none` (T2 equals T1), the audit step would be skipped and the plot `pa` not changed. (l.154 reads the ORIGINAL, which has no audit list:
+    reading the author's steps there changes nothing, so it has no behaviour of its own to test.)"""
+    run = world.run(world.copy_with(("T2:A", KEEP_S2)))
+    table = run.tables["A"]
+    assert table.t2 == BUILT and table.t2_path is not None and table.t2_path.exists()
+    assert pl.read_parquet(table.t2_path)["sample_id"].to_list() == ["s2"]
+    assert run.affected_plots == ["pa"]
+
+
+# =====================================================================================================================
+# The engine's own guard: a copy that is not sound is not run, whoever calls (reviewer's point 4)
+# =====================================================================================================================
+
+
+def handed(world, recipe: dict, original: bool = True):
+    """A recipe handed to the engine as an audit copy, the way a direct caller does it (no `run_audit`)."""
+    import dataclasses
+    from app.modules.cache_keys import ResolvedRecipe
+    loaded = loaded_from_resolved(load_data_analysis_recipe(world.recipes / "staged.yaml"), recipe)
+    return loaded if original else dataclasses.replace(loaded, config=ResolvedRecipe(recipe))
+
+
+def build_each_tier(world, loaded):
+    """The three builds a direct caller can make with a handed recipe; the outcome of each, as the exception type or None."""
+    from utils.errors import DataAnalysisRecipeError
+    target = world.root / "direct" / "T.parquet"
+    target.parent.mkdir(exist_ok=True)
+    outcome = {}
+    for name, call in (("tier1", lambda: world.orch.materialize_tier1("staged", "A", target, loaded=loaded)),
+                       ("tier2", lambda: world.orch.materialize_tier2("staged", "J", target, loaded=loaded)),
+                       ("tier3", lambda: world.orch.materialize_tier3("staged", "pa", target.parent, loaded=loaded))):
+        try:
+            call()
+            outcome[name] = None
+        except DataAnalysisRecipeError as error:
+            outcome[name] = str(error)
+    return outcome
+
+
+def test_a_sound_copy_handed_directly_is_run_as_before(world):
+    audit = world.copy_with(("T1:A", KEEP_S1), ("T2:J", DROP_GROUP_B), ("T3:pa", KEEP_S1))
+    assert build_each_tier(world, handed(world, audit.recipe)) == {"tier1": None, "tier2": None, "tier3": None}
+
+
+@pytest.mark.parametrize("tier, place", [("tier1", ("data_schemas", "A")), ("tier2", ("joins", "J")), ("tier3", None)])
+def test_an_audit_steps_that_is_not_a_list_is_refused_at_every_tier_by_every_build(world, tier, place):
+    """Before: at tier 1 it raised and at tier 2 and tier 3 the engine read it as an empty list and ran nothing, silently."""
+    audit = world.copy_with()
+    body = audit.recipe["analysis_groups"]["g"]["plots"]["pa"] if place is None else audit.recipe[place[0]][place[1]]
+    body[tier] = {**body.get(tier, {"steps": []}), AUDIT_STEPS: "not a list"}
+    outcome = build_each_tier(world, handed(world, audit.recipe))
+    assert all(text and "is not a list" in text for text in outcome.values()), outcome
+
+
+def test_a_copy_built_by_hand_with_an_action_that_is_not_allowed_is_refused(world):
+    audit = world.copy_with(("T1:A", KEEP_S1))
+    audit.recipe["data_schemas"]["A"]["tier1"][AUDIT_STEPS][0].update(action="polars_sort", by=["sample_id"])
+    outcome = build_each_tier(world, handed(world, audit.recipe))
+    assert all(text and "an audit step is one of modif_filter, polars_drop" in text for text in outcome.values()), outcome
+
+
+def test_a_copy_built_by_hand_with_no_reason_or_with_the_reason_in_comment_is_refused(world):
+    audit = world.copy_with(("T1:A", KEEP_S1))
+    step = audit.recipe["data_schemas"]["A"]["tier1"][AUDIT_STEPS][0]
+    step["comment"] = step.pop(AUDIT_COMMENT)
+    outcome = build_each_tier(world, handed(world, audit.recipe))
+    assert all(text and "has no reason" in text for text in outcome.values()), outcome
+
+
+def test_a_copy_built_by_hand_that_drops_a_key_column_is_refused_by_every_build(world):
+    audit = world.copy_with(("T1:A", KEEP_S1))
+    audit.recipe["data_schemas"]["A"]["tier1"][AUDIT_STEPS][0] = {"action": "polars_drop", "columns": ["sample_id"], "id": ID1, AUDIT_COMMENT: "x"}
+    outcome = build_each_tier(world, handed(world, audit.recipe))
+    assert all(text and "Cannot drop the key column(s) sample_id" in text for text in outcome.values()), outcome
+
+
+def test_a_copy_that_changed_an_author_step_or_holds_audit_steps_where_no_tier_reads_them_is_refused(world):
+    audit = world.copy_with()
+    audit.recipe["data_schemas"]["B"]["tier1"]["steps"].append(DROP_GROUP)
+    assert all("not the original plus sound audit steps" in (t or "") for t in build_each_tier(world, handed(world, audit.recipe)).values())
+    misplaced = world.copy_with()
+    misplaced.recipe["analysis_groups"]["g"]["plots"]["pj"]["tier1"] = {"steps": [], AUDIT_STEPS: []}
+    assert all("where no tier reads it" in (t or "") for t in build_each_tier(world, handed(world, misplaced.recipe)).values())
+
+
+def test_a_copy_built_without_its_original_is_refused_because_nothing_can_be_checked_against(world):
+    audit = world.copy_with(("T1:A", KEEP_S1))
+    outcome = build_each_tier(world, handed(world, audit.recipe, original=False))
+    assert all(text and "built without the recipe it was made from" in text for text in outcome.values()), outcome
+
+
 # =====================================================================================================================
 # What does not run
 # =====================================================================================================================

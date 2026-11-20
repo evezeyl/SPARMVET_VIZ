@@ -56,13 +56,25 @@ def plot_read_error_text(raw_recipe: dict, plot_id: str, error: BaseException) -
 
 
 def refuse_audit_steps_outside_an_audit(loaded: LoadedDataAnalysisRecipe, recipe_id: str) -> None:
-    """The engine's own refusal (D-0332): a recipe that is not an audit copy and holds an `audit_steps` list is not run, with a plain error that says where.
-    The checker refuses it when a recipe is loaded from a file (profile run); this reads the recipe the build holds, whatever way it came."""
+    """The engine's own refusal (D-0332), asked before any table or plot is built from `loaded`.
+
+    A recipe that is not an audit copy and holds an `audit_steps` key anywhere (even empty, even where no tier reads it) is not run, with a plain error that says
+    where. An audit copy is run only when it is the original plus sound audit steps: `utils.audit_copy.integrity_errors` against the recipe it was made from
+    (`ResolvedRecipe.original_raw`, set by `loaded_from_resolved`), so a caller that builds a copy by hand and goes to `materialize_*` directly meets the same
+    refusals as `run_audit` (an action that is not allowed, a missing reason, a dropped key column, an `audit_steps` that is not a list at any tier). A copy built
+    without its original is refused. The checker refuses an audit key when a recipe is loaded from a file (profile run); this reads what the build holds."""
     places = audit_step_places(loaded.raw)
-    if places and not loaded.is_audit_copy:
+    if not loaded.is_audit_copy:
+        if places:
+            raise DataAnalysisRecipeError(
+                f"The data analysis recipe '{recipe_id}' has audit steps at {', '.join(places)}, and it is not an audit recipe: only an audit recipe has audit steps.",
+                tip="Remove the audit_steps lists; the steps of the author are written under steps.")
+        return
+    problems = loaded.config.integrity_problems()
+    if problems:
         raise DataAnalysisRecipeError(
-            f"The data analysis recipe '{recipe_id}' has audit steps at {', '.join(places)}, and it is not an audit recipe: only an audit recipe has audit steps.",
-            tip="Remove the audit_steps lists; the steps of the author are written under steps.")
+            f"The audit copy of '{recipe_id}' is not the original plus sound audit steps, so it is not run: " + " ".join(problems),
+            tip="Add the audit steps only through the audit (add_step), never by hand.")
 
 
 class DataOrchestrator:

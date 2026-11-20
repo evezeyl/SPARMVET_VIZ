@@ -74,7 +74,7 @@ from blueprint_arch.data_analysis_recipe_navigator import (
 from blueprint_arch.blueprint_mapper import BlueprintMapper
 from utils.action_names import JOIN
 from utils.recipe_check import plot_keys
-from utils.recipe_tiers import author_steps
+from utils.recipe_tiers import AUDIT_STEPS, author_steps
 from app.modules.blueprint_plot_view import plot_view
 from app.modules.blueprint_tier_refusal import other_tier_refusal
 from app.modules.plot_defaults_form import form_values, merged_plot_defaults, theme_choices
@@ -597,6 +597,9 @@ def define_server(input, output, session, *,
                     step["comment"] = comment
                 steps.append(step)
 
+            if isinstance(original, dict) and AUDIT_STEPS in original:
+                raise ValueError("This file holds audit steps, so it belongs to an audit recipe. Blueprint edits original recipes only: an audit recipe is changed "
+                                 "by the audit, never here. Nothing was saved.")
             block: dict = {}
             if isinstance(original, dict) and "data_engine" in original:
                 block["data_engine"] = original["data_engine"]
@@ -617,7 +620,8 @@ def define_server(input, output, session, *,
             target = cfg.raw_config.get("joins", {}).get(lid)
         if not target and lid == "metadata_schema":
             target = cfg.raw_config.get("metadata_schema")
-        # The author's steps only: Blueprint edits the original recipe, and its writer (`block["steps"] = steps`) replaces the author's list and leaves any audit list alone.
+        # The author's steps only: Blueprint edits the ORIGINAL recipe. Its writer builds a NEW block of `data_engine` and `steps` and nothing else, so an audit list
+        # would be dropped by a save: the writer refuses a file that holds one (see `_serialise_component_for_save`).
         return {tier: author_steps(target, tier) for tier in ("tier1", "tier2")}
 
     def _do_load_component(master_path: str, selected: str,
