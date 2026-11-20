@@ -587,3 +587,30 @@ def test_a_recipe_wide_engine_that_differs_gives_no_reuse(tmp_path):
     changed = SimpleNamespace(raw={**original.raw, "data_engine": "no-such-engine"}, is_audit_copy=False)
     again = plan_composer.compose(w.orch, "staged", changed, reuse=base)
     assert failures_of(again.book, again.graph), "the engine of the recipe is read again, not taken from a base that had another one"
+
+
+def test_a_base_whose_place_has_the_same_steps_but_another_definition_is_not_taken(tmp_path):
+    """A's declaration of its source differs (`strip`), its steps do not: it is not the same place, so its source is read again (what shows is the read)."""
+    w = World(tmp_path)
+    original = load_data_analysis_recipe(w.recipes / "staged.yaml")
+    other = copy.deepcopy(w.original_raw())
+    other["data_schemas"]["A"]["strip"] = not bool(other["data_schemas"]["A"].get("strip", False))
+    other_base = plan_composer.compose(w.orch, "staged", SimpleNamespace(raw=other, is_audit_copy=False))
+    own = plan_composer.compose(w.orch, "staged", original)
+    audit = start_audit(original.raw, "1a2b3c4d")
+    real = DataOrchestrator.ingredient_parts
+    with mock.patch.object(DataOrchestrator, "ingredient_parts", autospec=True, side_effect=real) as read:
+        compose_candidate_plan_book(w.orch, "staged", original, audit, "T1:B", drop_step("group_b"), own.book, base=other_base)
+    assert sorted(call.args[1] for call in read.call_args_list) == ["A", "B"], "B because the step is written there, A because the base holds another A"
+
+
+def test_a_base_composed_for_another_recipe_id_is_not_reused(tmp_path):
+    w = World(tmp_path)
+    original = load_data_analysis_recipe(w.recipes / "staged.yaml")
+    elsewhere = plan_composer.compose(w.orch, "another_id", original)
+    audit = start_audit(original.raw, "1a2b3c4d")
+    own = plan_composer.compose(w.orch, "staged", original)
+    real = DataOrchestrator.ingredient_parts
+    with mock.patch.object(DataOrchestrator, "ingredient_parts", autospec=True, side_effect=real) as read:
+        compose_candidate_plan_book(w.orch, "staged", original, audit, "T2:J", drop_step("group_b"), own.book, base=elsewhere)
+    assert sorted(call.args[1] for call in read.call_args_list) == ["A", "B", "X"], "the data of a recipe is located by its id: nothing is taken from another id"

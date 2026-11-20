@@ -68,8 +68,9 @@ def _failure(error: BaseException, node: str, step: Optional[int]) -> PlanFailur
 
 @dataclass(frozen=True)
 class Composition:
-    """What one composition made: the book, and (kept so that a candidate can reuse them) the recipe, its graph and the lazy table at the end of every node that was planned.
+    """What one composition made: the book, and (kept so that a candidate can reuse them) the recipe id, the recipe, its graph and the lazy table at the end of every node that was planned.
     The lazy tables are plans, not data: nothing here is built or stored."""
+    recipe_id: str
     book: PlanBook
     raw: dict
     graph: RecipeGraph
@@ -94,7 +95,7 @@ class _Composer:
         self.entries: Dict[Tuple[str, int], PlanOrFailure] = {}
         self.frames: Dict[str, Any] = {}               # node id -> the lazy table at the end of the node (only when its plan is a Plan)
         self.sources: Dict[str, Any] = {}              # schema id -> (lazy source table, engine, tier-1 steps) or the error of reading it
-        self.reuse = reuse if reuse is not None and all(reuse.raw.get(key) == self.raw.get(key) for key in _RECIPE_WIDE_KEYS) else None
+        self.reuse = reuse if (reuse is not None and reuse.recipe_id == recipe_id and all(reuse.raw.get(key) == self.raw.get(key) for key in _RECIPE_WIDE_KEYS)) else None
         self._taken: Dict[str, bool] = {}
 
     # ------------------------------------------------------------------ the entries
@@ -123,13 +124,13 @@ class _Composer:
         return node.kind, recipe_tiers.collection_body(raw, node.name)
 
     def _take(self, nid: str) -> bool:
-        """Take the node from the base composition when it is the same definition and everything it reads is taken as well."""
+        """Take the node from the base composition when it is the same definition and everything it reads is taken as well. The definition is the whole body of the schema,
+        join or plot entry: it holds the steps, the engines of its tiers, the ingredients and the target, so equal definitions mean equal steps and equal parents."""
         if self.reuse is None:
             return False
         if nid not in self._taken:
             base, node = self.reuse, self.graph.node(nid)
-            same = (base.graph.has_node(nid) and base.graph.node(nid).steps == node.steps and base.graph.parents(nid) == self.graph.parents(nid)
-                    and self._definition(base.raw, base.graph, nid) == self._definition(self.raw, self.graph, nid)
+            same = (base.graph.has_node(nid) and self._definition(base.raw, base.graph, nid) == self._definition(self.raw, self.graph, nid)
                     and all(base.book.has(nid, k) for k in range(len(node.steps) + 1))
                     and all(self._take(parent) for parent in self.graph.parents(nid)))
             if same:
@@ -307,10 +308,10 @@ def compose(orchestrator: DataOrchestrator, recipe_id: str, loaded: Any, graph: 
         refuse_audit_steps_outside_an_audit(loaded, recipe_id)
     except Exception as error:   # the engine refuses every build of this recipe: every place is the same failure
         failure = _failure(error, "", None)
-        return Composition(PlanBook({(nid, k): failure for nid in graph.nodes() for k in range(len(graph.node(nid).steps) + 1)}), loaded.raw, graph, {})
+        return Composition(recipe_id, PlanBook({(nid, k): failure for nid in graph.nodes() for k in range(len(graph.node(nid).steps) + 1)}), loaded.raw, graph, {})
     for nid in composition_order(loaded.raw, graph):
         composer.end(nid)
-    return Composition(PlanBook(composer.entries), loaded.raw, graph, composer.frames)
+    return Composition(recipe_id, PlanBook(composer.entries), loaded.raw, graph, composer.frames)
 
 
 def compose_plan_book(orchestrator: DataOrchestrator, recipe_id: str, loaded: Any, graph: Optional[RecipeGraph] = None) -> PlanBook:
