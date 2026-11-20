@@ -1,6 +1,6 @@
 """
 @deps
-provides: function:define_server (HOME's opening of a recipe: build, store, draw once, progress; writes the shared shown_recipe), function:opening_waits, function:ProvenDrawings
+provides: function:define_server (HOME's opening of a recipe: build, store, draw once, progress; writes the shared shown_recipe), function:opening_waits, function:opening_cover_text, function:cover_ui, constant:COVER_ID (the cover of the screen while a recipe opens, HOME-WALK A), function:ProvenDrawings
 consumes: app/modules/opening_build.py (build_plan, run_opening, draw_plot_proof, opening_signature, progress_text), app/src/bootloader.py (reject_after_opening, available_data_analysis_recipes, data_analysis_recipe_gate_version), app/modules/cache_keys.py (load_data_analysis_recipe), app/modules/data_change_notice.py (inputs_changed_during_build_notice); notify (the Alerts notifier) and shown_recipe (a reactive.Value of server.py, read by recipe_gate_handlers) are handed in
 consumed_by: app/handlers/home_theater.py
 doc: .claude/knowledge/decision_ledger.md (D-0326, D-0343, D-0335, D-0334, D-0336, D-0327), .claude/rules/ui_implementation_contract.md#14, .claude/rules/rules_data_analysis_recipe_structure.md#11
