@@ -128,6 +128,23 @@ def test_the_handler_asks_the_rule_with_the_place_of_the_open_plot_and_follows_i
     assert s.opened == [] and s.scratch.get() is None and s.notes == [("⛔ STAND-IN refusal", "error")]
 
 
+def test_the_handler_gives_the_rule_the_engine_plan_of_the_open_recipe(monkeypatch):
+    """LBFB step 0b: the column box asks the rule with `recipe_plans()` (MUTATION PC8: the plan is not passed)."""
+    given = []
+    real = key_drop.DropGate.__init__
+
+    def init(self, raw, plans=None):
+        given.append(plans)
+        real(self, raw, plans)
+    monkeypatch.setattr(key_drop.DropGate, "__init__", init)
+    from utils.declared_plans import declared_plan_book
+    from utils.recipe_graph import build_graph
+    sentinel = declared_plan_book(build_graph(demo_raw()))      # any real plan book: the test is about which one the rule gets
+    s = Session(demo_keys(), FRAME, demo_raw(), plans=sentinel)
+    drop(s, kept=["year", "source"])
+    assert given == [sentinel]
+
+
 def test_dropping_a_column_that_is_not_a_key_goes_to_the_dialog():
     s = Session(demo_keys(), FRAME, demo_raw())
     drop(s, kept=["sample_id", "Gene_name", "VF_gene", "source"])   # `year` is deselected

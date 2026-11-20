@@ -493,6 +493,25 @@ def test_a_restored_session_keeps_a_key_drop_at_a_plot_and_says_nothing_about_ke
     asyncio.run(scenario())
 
 
+def test_a_restored_session_hands_the_rule_the_engine_plan_of_the_open_recipe(tmp_path, monkeypatch):
+    """LBFB step 0b: Restore asks the rule with the plan `recipe_plans()` gives, not with the names the recipe declares (MUTATION PC7: the plan is not passed)."""
+    given = []
+    real = key_drop.DropGate.__init__
+
+    def init(self, raw, plans=None):
+        given.append(plans)
+        real(self, raw, plans)
+    monkeypatch.setattr(key_drop.DropGate, "__init__", init)
+    sentinel = object()
+
+    async def scenario():
+        s = Screen(tmp_path, monkeypatch, raw=REAL, plans=sentinel)
+        s.write(SAVED)
+        await s.restore()
+    asyncio.run(scenario())
+    assert given and all(g is sentinel for g in given), given
+
+
 def test_a_restored_session_without_a_refused_drop_says_nothing_about_keys(tmp_path, monkeypatch):
     refuse_keys(monkeypatch, "sample_id")
 

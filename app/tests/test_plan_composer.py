@@ -208,7 +208,7 @@ def test_a_tier2_step_that_cannot_be_planned_fails_the_places_that_read_it_k_zer
 
 def test_a_join_step_that_cannot_be_planned_fails_the_join_and_what_reads_it(tmp_path):
     w = World(tmp_path)
-    raw = w.original_raw()
+    raw = copy.deepcopy(w.original_raw())
     raw["joins"]["J"]["tier1"]["steps"][0]["on"] = ["no_such_key"]
     loaded = loaded_from_resolved(load_data_analysis_recipe(w.recipes / "staged.yaml"), raw)
     loaded_plain = SimpleNamespace(raw=raw, is_audit_copy=False)
@@ -234,7 +234,7 @@ def test_a_missing_data_file_fails_that_source_and_only_what_depends_on_it(tmp_p
 
 def test_audit_steps_in_a_recipe_that_is_not_an_audit_copy_fail_every_place_with_the_engines_sentence(tmp_path):
     w = World(tmp_path)
-    raw = w.original_raw()
+    raw = copy.deepcopy(w.original_raw())
     raw["data_schemas"]["A"]["tier1"]["audit_steps"] = [{"action": "polars_drop", "columns": ["group"], "id": "audit_1a2b3c4d_1", "audit_comment": "x"}]
     loaded = SimpleNamespace(raw=raw, is_audit_copy=False)
     # the engine refuses it by `refuse_audit_steps_outside_an_audit(loaded, ...)`, which reads `loaded.raw` and `is_audit_copy`
@@ -245,7 +245,7 @@ def test_audit_steps_in_a_recipe_that_is_not_an_audit_copy_fail_every_place_with
 
 def test_the_composer_never_raises_for_a_recipe_that_cannot_be_planned_and_an_undrawable_recipe_has_no_places(tmp_path):
     w = World(tmp_path)
-    raw = w.original_raw()
+    raw = copy.deepcopy(w.original_raw())
     raw["analysis_groups"]["g"]["plots"]["pj"]["target_dataset"] = "nowhere"
     with pytest.raises(Exception) as caught:
         compose_plan_book(w.orch, "staged", SimpleNamespace(raw=raw, is_audit_copy=False))
@@ -481,3 +481,109 @@ def test_a_candidate_for_a_drop_the_gate_refuses_is_not_made(tmp_path):
     audit = start_audit(original.raw, "1a2b3c4d")
     with pytest.raises(AuditCopyError, match="read as a join key"):
         compose_candidate_plan_book(w.orch, "staged", original, audit, "T1:A", drop_step("sample_id"), base)
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# HOME's `_recipe_plans`: composed once per recipe, files and data; None where nothing can be composed
+# ---------------------------------------------------------------------------------------------------------------------
+
+
+def home_plans_closure(**stand_ins):
+    import ast
+    from app.handlers import home_theater
+    source = Path(home_theater.__file__)
+    define = next(n for n in ast.parse(source.read_text()).body if isinstance(n, ast.FunctionDef) and n.name == "define_server")
+    fn = next(n for n in ast.walk(define) if isinstance(n, ast.FunctionDef) and n.name == "_recipe_plans")
+    ns = dict(vars(home_theater))
+    ns.update(_plans_memo={}, **stand_ins)
+    exec(compile(ast.fix_missing_locations(ast.Module(body=[fn], type_ignores=[])), "_recipe_plans", "exec"), ns)
+    return ns["_recipe_plans"]
+
+
+def test_HOMEs_plan_of_the_open_recipe_is_composed_once_per_recipe_files_and_data_and_never_raises(tmp_path):
+    w = World(tmp_path)
+    calls = []
+    keys = SimpleNamespace(data_batch_hash="batch1")
+    real = compose_plan_book
+
+    def counting(orch, recipe_id, loaded, graph=None):
+        calls.append(recipe_id)
+        return real(orch, recipe_id, loaded, graph)
+    state = {"keys": keys}
+    recipe_plans = home_plans_closure(orchestrator=w.orch, _open_recipe_id=lambda: "staged", _data_analysis_recipe_keys=lambda: state["keys"], compose_plan_book=counting)
+    first = recipe_plans()
+    assert isinstance(first, PlanBook) and recipe_plans() is first and calls == ["staged"], "once"
+    state["keys"] = SimpleNamespace(data_batch_hash="batch2")
+    assert recipe_plans() is not first and calls == ["staged", "staged"], "other data, another composition"
+    broken = home_plans_closure(orchestrator=w.orch, _open_recipe_id=lambda: (_ for _ in ()).throw(RuntimeError("No data analysis recipe is open")),
+                                _data_analysis_recipe_keys=lambda: keys, compose_plan_book=counting)
+    assert broken() is None, "no recipe open: no plan, never an exception in a handler"
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# A candidate that reuses the composition of the audit as it is: the same book, far fewer reads
+# ---------------------------------------------------------------------------------------------------------------------
+
+
+def same_book(a, b, graph):
+    return all(a.get(*key) == b.get(*key) for key in entries_of(graph)) and all(a.has(*key) == b.has(*key) for key in entries_of(graph))
+
+
+def candidate_graph(original, audit, place, step, plans):
+    trial = audit_copy.AuditCopy(copy.deepcopy(audit.original), copy.deepcopy(audit.recipe), audit.audit_id, audit.created)
+    add_step(trial, place, copy.deepcopy(step), "candidate", plans=plans)
+    return build_graph(trial.recipe)
+
+
+@pytest.mark.parametrize("place, column", [("T1:A", "group"), ("T1:B", "group_b"), ("T1:J", "group"), ("T2:J", "group_b"), ("T1:X", "group"), ("T3:pa", "sample_id"), ("T3:pj", "group")])
+def test_a_candidate_that_reuses_the_composition_gives_the_book_of_a_full_recomposition(tmp_path, place, column):
+    w = World(tmp_path)
+    original = load_data_analysis_recipe(w.recipes / "staged.yaml")
+    base = plan_composer.compose(w.orch, "staged", original)
+    audit = start_audit(original.raw, "1a2b3c4d")
+    step = drop_step(column)
+    fresh = compose_candidate_plan_book(w.orch, "staged", original, audit, place, step, base.book)
+    cheap = compose_candidate_plan_book(w.orch, "staged", original, audit, place, step, base.book, base=base)
+    assert same_book(cheap, fresh, candidate_graph(original, audit, place, step, base.book))
+
+
+def test_the_reuse_reads_only_the_source_the_place_needs(tmp_path):
+    w = World(tmp_path)
+    original = load_data_analysis_recipe(w.recipes / "staged.yaml")
+    base = plan_composer.compose(w.orch, "staged", original)
+    audit = start_audit(original.raw, "1a2b3c4d")
+    real = DataOrchestrator.ingredient_parts
+
+    def reads(place, column, **kwargs):
+        with mock.patch.object(DataOrchestrator, "ingredient_parts", autospec=True, side_effect=real) as read:
+            compose_candidate_plan_book(w.orch, "staged", original, audit, place, drop_step(column), base.book, **kwargs)
+        return sorted(call.args[1] for call in read.call_args_list)
+    assert reads("T2:J", "group_b", base=base) == [], "a tier 2: no source is read again"
+    assert reads("T1:A", "group", base=base) == ["A"], "a tier 1 of a source: that source only"
+    assert reads("T1:A", "group") == ["A", "B", "X"], "without the base everything is read again"
+
+
+def test_a_base_that_differs_in_more_places_than_the_candidate_gives_less_reuse_and_never_a_wrong_plan(tmp_path):
+    """The base is the composition of ANOTHER recipe (A drops `group` in its own tier 1): the places that are not the same by definition are planned again."""
+    w = World(tmp_path)
+    original = load_data_analysis_recipe(w.recipes / "staged.yaml")
+    other = copy.deepcopy(w.original_raw())
+    other["data_schemas"]["A"]["tier1"]["steps"] = other["data_schemas"]["A"]["tier1"]["steps"] + [drop_step("group")]
+    other_base = plan_composer.compose(w.orch, "staged", SimpleNamespace(raw=other, is_audit_copy=False))
+    assert not other_base.book.get("T1:A", len(other_base.graph.node("T1:A").steps)).has("group")
+    audit = start_audit(original.raw, "1a2b3c4d")
+    own = plan_composer.compose(w.orch, "staged", original)
+    fresh = compose_candidate_plan_book(w.orch, "staged", original, audit, "T1:B", drop_step("group_b"), own.book)
+    cheap = compose_candidate_plan_book(w.orch, "staged", original, audit, "T1:B", drop_step("group_b"), own.book, base=other_base)
+    assert same_book(cheap, fresh, candidate_graph(original, audit, "T1:B", drop_step("group_b"), own.book))
+    assert cheap.get("T1:A", len(own.graph.node("T1:A").steps)).has("group"), "A was not taken from the base that does not hold the same A"
+    assert cheap.get("T1:J", len(own.graph.node("T1:J").steps)).has("group"), "nor J, which reads A"
+
+
+def test_a_recipe_wide_engine_that_differs_gives_no_reuse(tmp_path):
+    w = World(tmp_path)
+    original = load_data_analysis_recipe(w.recipes / "staged.yaml")
+    base = plan_composer.compose(w.orch, "staged", original)
+    changed = SimpleNamespace(raw={**original.raw, "data_engine": "no-such-engine"}, is_audit_copy=False)
+    again = plan_composer.compose(w.orch, "staged", changed, reuse=base)
+    assert failures_of(again.book, again.graph), "the engine of the recipe is read again, not taken from a base that had another one"
