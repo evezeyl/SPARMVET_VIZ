@@ -68,21 +68,25 @@ def step_list(body: Any, tier: str) -> list:
     return author_steps(body, tier) + audit_steps_of(body, tier)
 
 
+# Every tier name: `audit_step_places` looks in all of them, also where no tier is read (a tier 3 of a table, a tier 1 of a plot): the key is found wherever it is written.
+_ALL_TIERS = ("tier1", "tier2", "tier3")
+
+
 def audit_step_places(raw: Any) -> List[str]:
-    """Where a recipe holds an `audit_steps` key at all (even an empty one), as the path of each tier body, in the order of the recipe: tables, joins,
+    """Where a recipe holds an `audit_steps` key at all (even an empty one, even where no tier reads it), as the path of each tier body, in the order of the recipe: tables, joins,
     then plots. Empty for an ordinary recipe. Lets a reader that is not the checker (the engine) refuse an audit key in a recipe that is not an audit recipe."""
     found: List[str] = []
     if not isinstance(raw, dict):
         return found
     for section in SCHEMA_SECTIONS:
         for sid, body in (raw.get(section) or {}).items() if isinstance(raw.get(section), dict) else []:
-            found.extend(_tiers_with_audit(body, f"{section}.{sid}", ("tier1", "tier2")))
+            found.extend(_tiers_with_audit(body, f"{section}.{sid}", _ALL_TIERS))
     if METADATA_SCHEMA in raw:
-        found.extend(_tiers_with_audit(raw[METADATA_SCHEMA], METADATA_SCHEMA, ("tier1", "tier2")))
+        found.extend(_tiers_with_audit(raw[METADATA_SCHEMA], METADATA_SCHEMA, _ALL_TIERS))
     for jid, body in (raw.get("joins") or {}).items() if isinstance(raw.get("joins"), dict) else []:
-        found.extend(_tiers_with_audit(body, f"joins.{jid}", ("tier1", "tier2")))
+        found.extend(_tiers_with_audit(body, f"joins.{jid}", _ALL_TIERS))
     for pid, entry in plot_entries(raw).items():
-        found.extend(_tiers_with_audit(entry, f"plot {pid}", ("tier3",)))
+        found.extend(_tiers_with_audit(entry, f"plot {pid}", _ALL_TIERS))
     return found
 
 

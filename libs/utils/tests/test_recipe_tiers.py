@@ -223,3 +223,10 @@ def test_the_places_of_the_audit_lists_and_the_recipe_without_them():
 def test_the_recipe_without_tier_2_loses_the_audit_steps_of_tier_2_with_it_and_keeps_those_of_tier_1():
     material = without_tier2(_audit_recipe())
     assert step_list(material["data_schemas"]["T"], "tier1") == [STEP_B, AUDIT_1] and "tier2" not in material["data_schemas"]["T"]
+
+
+def test_the_places_of_audit_lists_include_a_tier_where_no_tier_reads_them():
+    raw = _recipe()
+    raw["data_schemas"]["T"]["tier3"] = {"steps": [], AUDIT_STEPS: []}
+    raw["analysis_groups"]["g"]["plots"]["p_T"]["tier1"] = {"steps": [], AUDIT_STEPS: []}
+    assert audit_step_places(raw) == ["data_schemas.T.tier3", "plot p_T.tier1"]

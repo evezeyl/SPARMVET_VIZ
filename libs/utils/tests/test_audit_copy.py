@@ -638,6 +638,19 @@ def test_an_original_that_already_holds_audit_steps_is_not_an_original(base):
     assert any(f"already holds the id {ID1} on a step at T1:B" in e for e in integrity_errors(handmade, handmade))
 
 
+def test_an_audit_list_where_no_tier_reads_it_is_named_in_plain_words(base):
+    """A tier 3 of a table or a join, a tier 1 or tier 2 of a plot: nothing runs those steps, so the list is inert; it is said, not left to show as 'a tier was added'."""
+    audit = start(base)
+    audit.recipe["data_schemas"]["B"]["tier3"] = {"steps": [], AUDIT_STEPS: [written(FILTER_V, ID1)]}
+    audit.recipe["joins"]["AB"]["tier3"] = {"steps": [], AUDIT_STEPS: []}
+    audit.recipe["analysis_groups"]["g"]["plots"]["q"]["tier1"] = {"steps": [], AUDIT_STEPS: [written(FILTER_V, ID2)]}
+    audit.recipe["analysis_groups"]["g"]["plots"]["q"]["tier2"] = {"steps": [], AUDIT_STEPS: []}
+    errors = integrity_errors(audit.recipe, base)
+    for place, kind in (("B.tier3", "a table or a join has no tier 3"), ("AB.tier3", "a table or a join has no tier 3"),
+                        ("plot q.tier1", "a plot has a tier 3 only"), ("plot q.tier2", "a plot has a tier 3 only")):
+        assert any(f"audit_steps list is written at {place}, where no tier reads it ({kind})" in e for e in errors), (place, errors)
+
+
 def test_an_audit_list_somewhere_outside_the_known_tiers_is_a_difference(base):
     audit = start(base)
     audit.recipe["analysis_groups"]["g"]["plots"]["p"]["layers"].append(written(FILTER_V, ID1))
