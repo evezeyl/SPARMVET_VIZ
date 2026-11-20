@@ -195,18 +195,18 @@ def _later_line_records(entries, number, later, verb, *cited):
     assert number in named and all(c in named for c in cited), "%s: %s does not record it in its relation" % (number, later)
 
 
-def git_versions(tmp_path, upto="HEAD"):
+def git_versions(tmp_path, upto="HEAD", repo=ROOT, baseline=BASELINE_COMMIT):
     """Every version of the ledger in git from the baseline commit to `upto`, oldest first, as [(label, path)].
 
     Why this form: the commits of the first-parent line that touched the ledger file are the versions that
     follow each other, so no line count is pinned and a line added in the future is guarded from the commit that adds it.
     """
-    out = subprocess.run(["git", "rev-list", "--reverse", "--first-parent", "%s..%s" % (BASELINE_COMMIT, upto), "--", LEDGER_REL],
-                         cwd=ROOT, capture_output=True, text=True)
+    out = subprocess.run(["git", "rev-list", "--reverse", "--first-parent", "%s..%s" % (baseline, upto), "--", LEDGER_REL],
+                         cwd=repo, capture_output=True, text=True)
     assert out.returncode == 0, out.stderr
     versions = []
-    for commit in [BASELINE_COMMIT] + out.stdout.split():
-        shown = subprocess.run(["git", "show", "%s:%s" % (commit, LEDGER_REL)], cwd=ROOT, capture_output=True, text=True)
+    for commit in [baseline] + out.stdout.split():
+        shown = subprocess.run(["git", "show", "%s:%s" % (commit, LEDGER_REL)], cwd=repo, capture_output=True, text=True)
         assert shown.returncode == 0, shown.stderr
         path = tmp_path / ("ledger_%s.md" % commit[:8])
         path.write_text(shown.stdout, encoding="utf-8")
@@ -244,10 +244,15 @@ def check_old_lines_unchanged(path, baseline):
             assert entries[m.group(1)]["status"] == "DECIDED" and _after(number, m.group(1)), "%s: the replacing line is not decided or not later" % number
 
 
-def test_every_version_of_the_ledger_in_git_follows_the_one_before_it(tmp_path):
-    """Each pair of versions that follow each other, and HEAD against the working tree, obeys the rule of the earlier lines."""
-    versions = git_versions(tmp_path) + [("working tree", REAL_LEDGER)]
-    assert len(versions) >= 3
+def walk_versions(tmp_path, working, repo=ROOT, baseline=BASELINE_COMMIT, minimum=3):
+    """Each pair of versions that follow each other, and the last commit against the working file, obeys the rule of the earlier lines.
+
+    Past versions are checked for their decision LINES only (no line removed or changed, numbers continuous, statuses
+    follow taken by). The count written in the header is NOT checked here: it is checked on the current ledger only
+    (Eve, D-0380), because one past version (commit 48cc102e) has a wrong count and history is not rewritten.
+    """
+    versions = git_versions(tmp_path, repo=repo, baseline=baseline) + [("working tree", working)]
+    assert len(versions) >= minimum
     for (old_label, old_path), (new_label, new_path) in zip(versions, versions[1:]):
         try:
             check_old_lines_unchanged(new_path, dl.read_ledger(old_path))
@@ -255,7 +260,50 @@ def test_every_version_of_the_ledger_in_git_follows_the_one_before_it(tmp_path):
             raise AssertionError("%s -> %s: %s" % (old_label, new_label, exc))
         check_numbering(new_path)
         check_statuses(new_path)
-        check_header_counts(new_path)
+
+
+def test_every_version_of_the_ledger_in_git_follows_the_one_before_it(tmp_path):
+    walk_versions(tmp_path, REAL_LEDGER)
+
+
+def _scratch_repo(root, versions):
+    """A git repository with the ledger at the same path, one commit per text in `versions`; returns (repo, first commit)."""
+    def git(*a):
+        return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=root, capture_output=True, text=True, check=True).stdout.strip()
+    root.mkdir(parents=True)
+    git("init", "-q")
+    first = None
+    for text in versions:
+        f = root / LEDGER_REL
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(text, encoding="utf-8")
+        git("add", LEDGER_REL)
+        git("commit", "-q", "-m", "v")
+        first = first or git("rev-parse", "HEAD")
+    return root, first
+
+
+def _ledger_text(numbers, decision="a decision"):
+    return "# ledger\n\n" + "\n".join(line("D-%04d" % n, decision=decision) for n in numbers) + "\n"
+
+
+def test_the_walk_fails_on_a_removed_line_a_changed_line_and_a_skipped_number_and_ignores_the_header(tmp_path):
+    good = [_ledger_text([1, 2]), _ledger_text([1, 2, 3])]
+    repo, first = _scratch_repo(tmp_path / "ok", good)
+    walk_versions(tmp_path, repo / LEDGER_REL, repo=repo, baseline=first, minimum=2)
+    # a wrong header count in a past version is not a failure of the walk
+    wrong_head = "**Total 99: EVE 99, AGENT 0, NOT STATED 0, REVIEW SESSION 0.**\n" + good[1]
+    repo, first = _scratch_repo(tmp_path / "hdr", [good[0], wrong_head, good[1].replace("D-0003", "D-0003") + "\n"])
+    walk_versions(tmp_path, repo / LEDGER_REL, repo=repo, baseline=first, minimum=2)
+    bads = {
+        "removed": [good[0], _ledger_text([1])],
+        "changed": [good[0], good[0].replace("a decision", "another decision", 1)],
+        "skipped": [good[0], _ledger_text([1, 2, 4])],
+    }
+    for name, versions in bads.items():
+        repo, first = _scratch_repo(tmp_path / name, versions)
+        with pytest.raises(AssertionError):
+            walk_versions(tmp_path, repo / LEDGER_REL, repo=repo, baseline=first, minimum=2)
 
 
 def test_real_ledger_parses_and_is_numbered_without_gaps():
