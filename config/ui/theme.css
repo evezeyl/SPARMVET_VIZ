@@ -1140,3 +1140,8 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 .gallery-left-out-title { font-size: 0.75rem; font-weight: 600; color: #d62828; }
 .gallery-left-out-line { font-size: 0.75rem; font-weight: 400; color: #1a1a1a; }
 .gallery-left-out-note { color: #6c757d; }
+
+/* HOME opening cover (HOME-WALK A): while a recipe is opened, the cover sentence stands in the place of the theater (the previous recipe is not shown)
+   and the Pipeline Audit panel does not name the previous recipe. The cover is inserted before the theater and removed when the new theater is sent. */
+#home_opening_cover ~ #dynamic_tabs { display: none; }
+body:has(#home_opening_cover) #audit_nodes_header_ui { visibility: hidden; }

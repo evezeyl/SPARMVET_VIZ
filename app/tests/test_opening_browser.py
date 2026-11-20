@@ -138,7 +138,11 @@ new MutationObserver(() => {
   if (m) {
     const t = document.querySelector('#dynamic_tabs');
     const a = document.querySelector('#audit_nodes_header_ui');
-    window.__snap = {theater: t ? t.innerText : '', audit: a ? a.innerText : '', tabs: document.querySelectorAll('#dynamic_tabs .nav-link').length};
+    const c = document.querySelector('#home_opening_cover');
+    const shown = (e) => !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
+    window.__snap = {cover: c ? c.innerText : '', cover_shown: shown(c), theater_shown: shown(t),
+                     audit: a && shown(a) ? a.innerText : '',
+                     tabs: Array.from(document.querySelectorAll('#dynamic_tabs .nav-link')).filter(shown).length};
   }
 }).observe(document.documentElement, {subtree: true, childList: true, characterData: true});
 """
@@ -157,9 +161,10 @@ def test_while_a_recipe_opens_the_previous_recipe_is_not_on_the_screen(page: Pag
         page.select_option("#data_analysis_recipe_id", g.OTHER)
         page.wait_for_function("() => window.__snap !== null", timeout=240_000)
         snap = page.evaluate("() => window.__snap")
-        assert g.OTHER in snap["theater"] and "Opening" in snap["theater"], snap
-        assert snap["tabs"] == 0, f"no group tab of the previous recipe while the opening runs: {snap}"
+        assert snap["cover_shown"] and g.OTHER in snap["cover"] and "Opening" in snap["cover"], snap
+        assert not snap["theater_shown"] and snap["tabs"] == 0, f"nothing of the previous recipe is visible while the opening runs: {snap}"
         assert g.STAGE not in snap["audit"], f"the right panel does not name the previous recipe: {snap}"
         page.wait_for_selector(".nav-link:has-text('Quality Control')", timeout=240_000)
         wait_shiny(page, 120_000)
-        assert g.OTHER in page.locator("#audit_nodes_header_ui").inner_text()   # when the opening ends the recipe shows
+        expect(page.locator("#home_opening_cover")).to_have_count(0)
+        expect(page.locator("#audit_nodes_header_ui")).to_contain_text(g.OTHER)   # when the opening ends the recipe shows
