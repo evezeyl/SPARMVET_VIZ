@@ -265,7 +265,9 @@ class LineageIndex:
         for name in before.names:
             src = (nid, k - 1, name)
             if after.has(name) and after.type_of(name) == before.type_of(name):
-                note = Note(NOTE_UNREAD_STEP_PASSED, (("node", nid), ("step", k), ("action", ref.action))) if passes_certain else None
+                # PROVISIONAL (P3): a step the walk does not read keeps the name and the type, but the walk cannot know whether the values changed there
+                note = (Note(NOTE_UNREAD_STEP_PASSED, (("node", nid), ("step", k), ("action", ref.action), ("knows_source_of_values", False)))
+                        if passes_certain else None)
                 self._link(_Link(src, (nid, k, name), passes_certain, UNCHANGED if passes_certain else UNKNOWN, None if passes_certain else reason,
                                  ref, hop=True, note=note))
             elif after.has(name):

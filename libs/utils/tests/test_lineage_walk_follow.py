@@ -352,3 +352,39 @@ def test_a_source_line_next_to_a_tier_1_without_steps_says_which_line_it_duplica
     assert source.state == "grey" and source.reason.code == NO_STEP_LIST and source.duplicates == "T1:E" and line(walk, "T1:E").duplicates is None
     steps = run(recipe, tables, "T3:Ps", "country", levels=ALL)                                              # S has a step at tier 1: its source is another table
     assert line(steps, "DS:S").duplicates is None and line(steps, "DS:S").reason.code == NO_STEP_LIST
+
+
+# ----------------------------------------------------------------------------------------------------------------------------- the two gaps of the second review
+
+def test_the_how_of_an_occurrence_is_the_strongest_kind_of_hop_on_the_path_in_either_order():
+    """Two kinds of hop on one path: `how` is the strongest of them (`HOW_PRIORITY`: renamed, then cast, then recomputed), whichever comes first. A walk that took the
+    last hop, or the first, gives another word in one of the orders below (second review, mutant Y2)."""
+    ids = ["S1", "S2"]
+    cases = [
+        ("cast then rename", [F.cast(["year"], "Categorical"), F.rename(year="yr")], "yr", "renamed"),
+        ("rename then cast", [F.rename(year="yr"), F.cast(["yr"], "Categorical")], "yr", "renamed"),
+        ("cast then recompute", [F.cast(["year"], "Categorical"), F.with_columns(year="pl.col('year')")], "year", "cast"),
+        ("recompute then cast", [F.with_columns(year="pl.col('year')"), F.cast(["year"], "Categorical")], "year", "cast"),
+    ]
+    for label, steps, name, expected in cases:
+        recipe = F.recipe({"A": F.schema(["sample_id", "year"], steps, keys=["sample_id"])}, {}, {"P": F.plot("A")})
+        walk = run(recipe, {"A": F.table(sample_id=ids, year=["2022", "2023"])}, "DS:A", "year")
+        occ = line(walk, "T1:A").occurrences[0]
+        assert occ.name == name and len(occ.steps) == 2 and occ.how == expected, label
+        assert line(walk, "T3:P").occurrences[0].how == expected, label            # the plot that reads the table sees the same path
+
+
+def test_the_aggregated_note_and_the_unread_step_note_say_the_walk_does_not_know_where_the_values_come_from():
+    """An aggregate under the column's own name and a step the walk does not read both ticked the line; names only are read (D-0356), so both notes carry
+    `knows_source_of_values` False, like the recompute note (PROVISIONAL, P3). Second review, mutant Y5."""
+    aggregated = F.recipe({"A": F.schema(["sample_id", "country", "val"], [F.group_by(["country"], val="pl.col('val').mean()")], keys=["sample_id"])}, {}, {"P": F.plot("A")})
+    walk = run(aggregated, {"A": F.table(sample_id=["S1", "S2"], country=["NO", "SE"], val=[1.0, 2.0])}, "DS:A", "val")
+    notes = [n for x in walk.lines for n in x.notes]
+    assert [n.code for n in notes] == [NOTE_AGGREGATED] * 2 and all(dict(n.params)["knows_source_of_values"] is False for n in notes)
+    unread = F.recipe({"A": F.schema(["sample_id", "val"], [F.fill_null(["val"], 0.0)], keys=["sample_id"])}, {}, {"P": F.plot("A")})
+    passed = run(unread, {"A": F.table(sample_id=["S1"], val=[1.0])}, "DS:A", "val")
+    from utils.lineage_records import NOTE_UNREAD_STEP_PASSED
+    notes = [n for x in passed.lines for n in x.notes]
+    assert notes and all(n.code == NOTE_UNREAD_STEP_PASSED and dict(n.params)["knows_source_of_values"] is False for n in notes)
+    other = run(unread, {"A": F.table(sample_id=["S1"], val=[1.0])}, "T3:P", "val")      # a start after the step crosses nothing: no note, no flag
+    assert [n for x in other.lines for n in x.notes] == []
