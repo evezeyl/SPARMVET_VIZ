@@ -1,7 +1,7 @@
 # HOME: Exploration (preview filters and column choices)
 
 **Status:** 2026-11-11, agreed with Eve (history of the comments: git commit 5b59a4a), checked again in the full
-consistency review. Companion: `home_audit_steps.md`. Decision record: ADR-099. Nothing here is code yet. Marks: **[built]** = in the app today, **[to build]** = decided,
+consistency review. Companion: `home_audit_steps.md`. Decision record: ADR-099. Since 2026-11-20 (slice B) most of this page is built; each mark says which. Marks: **[built]** = in the app today, **[to build]** = decided,
 not built.
 
 ## 1. The rule, in one sentence
@@ -14,14 +14,14 @@ never saved, never exported and never changes a plot. To change what a plot show
 >
 > **Why (the note to recheck):** "Result (T2)" may in fact be **T3** for a plot, because the recipe can give a plot its own data steps (a plot-level filter in its spec, plot-specific formatting). The engine applies the plot's `filters:` when it draws (VizFactory), while the data preview shows the table T2, so the table and the plot can differ for such a plot (reasoned, not tested; no shipped plot uses `filters:`). Exploration may need the three stages T1, T2, T3 (one more choice) and the data shown must be what the plot reads. To be rechecked when the Exploration screen is rewritten.
 
-## 2. Where it lives [to build]
+## 2. Where it lives [built 2026-11-20, slice B]
 
-- The header strip becomes **Exploration**: one selector **Data: T1 | T2 | T3** of the open plot (decided 2026-11-13, Eve; replaces "Raw (T1) | Result (T2)": "Raw" meant T1, the data after the recipe's first steps, not the original file; T3 is the Result, the data the plot reads; the original source files are the roots of the lineage and are shown in the node popup). The old "Plot to show"
+- The header strip becomes **Exploration**: one selector of the open plot, built as **Table to view: Source | T1 | T2 | T3** (D-0310, 2026-11-20, adds Source; Source shows a source table as read from the file, chosen in a second list "Source table") (decided 2026-11-13, Eve; replaces "Raw (T1) | Result (T2)": "Raw" meant T1, the data after the recipe's first steps, not the original file; T3 is the Result, the data the plot reads; the original source files are the roots of the lineage and are shown in the node popup). The old "Plot to show"
   choice goes (the plot is always the recipe's Result plot) and so do the grey explanations under the
   selectors: more space.
 - **My view and Compare leave the strip** and live in audit mode.
 - Exploration and audit mode are **exclusive**: opening one minimises the other. The **mode switch**
-  (Exploration | Audit mode) sits at the left of the group-tabs row and is shown only with the sandbox flag.
+  (Exploration | Audit mode) is shown only with the sandbox flag. As built it is the first row of the header strip ("Mode:"), not at the left of the group-tabs row.
 - The left panel keeps the name **Filters**. Its header names what it acts on, for example "Filters: Raw table of
   MLST_with_metadata". There is no Send to Audit here. **Under the hood** the same filter form serves two
   tools: in Exploration its button is "Add to preview" (a lazy filter on the shown table, this file); in the Audit
@@ -32,9 +32,9 @@ never saved, never exported and never changes a plot. To change what a plot show
 
 | Item | Behaviour |
 |---|---|
-| Row filter | Hides rows in the **data table** of the stage you are on (T1, T2 or T3). [built for the table] |
+| Row filter | Hides rows in the **data table** of the stage you are on (Source, T1, T2 or T3). [built] |
 | Column selector | Hides columns in the **data table** only. [built] |
-| Plot | **Not changed.** Exploration has **one plot: the Result, immutable** (the recipe's plot), always shown whatever the Data selector says (T1, T2 or T3); the selector only changes the table. Decided 2026-11-12 (Eve), replacing "Raw has no plot (NA)". [to build; today Apply also filters the My view plot] |
+| Plot | **Not changed.** Exploration has **one plot: the Result, immutable** (the recipe's plot), always shown whatever the Data selector says (T1, T2 or T3); the selector only changes the table. Decided 2026-11-12 (Eve), replacing "Raw has no plot (NA)"; confirmed D-0327 (2026-11-20). [built 2026-11-20] |
 | Data files | Never written; the filter runs on a lazy copy at render time. [built] |
 | Export | Never exported. [built] |
 
@@ -45,11 +45,11 @@ never saved, never exported and never changes a plot. To change what a plot show
 3. **Trash** on a row removes it from staged and applied at once. [built]
 4. **Reset** clears both. [built]
 5. **A change of Data view (T1, T2, T3) clears all preview filters and column choices**, with a message
-   ("3 preview filters cleared, you changed view"). [to build]
-6. **A change of recipe** clears them. [to build]
+   ("3 preview filters cleared, you changed view"). [built 2026-11-20: the data choice, the source table, the plot tab, the mode and the recipe each clear them with a notice; D-0311]
+6. **A change of recipe** clears them. [built]
 7. Never saved in sessions, never exported. [built]
 8. Switching between Exploration and audit mode is **not** a view change: the lists are kept, and not applied while
-   audit mode is on. [to build]
+   audit mode is on. [NOT as built: slice B clears the lists on a mode switch, with the notice (a provisional choice of the builder); this point and the code differ, reported for Eve]
 
 **Why clear on a view change (state this reason in the code as a short `WHY` comment, in the help text and in
 the ADR):** a preview filter is built against the columns, names and data types of ONE stage. T1 (Raw) and T2
@@ -60,7 +60,7 @@ valid for the data it is applied to.
 ## 5. Scope
 
 - A preview list belongs to **one view and one dataset** (the dataset of the plot; plots sharing it share the
-  list). Each dataset keeps its own list while you stay in the same view. [to build; today ONE global list]
+  list). Each dataset keeps its own list while you stay in the same view. [built differently 2026-11-20: one list whose rows carry the key of the view they were built on; a row of another view is not applied (`t3_audit_engine.rows_built_on`); the list is emptied on a view change]
 - The columns offered are those of the current stage, so a preview filter is always valid where it is applied.
   The safety skip ("a stage without the column skips the filter") stays but should never fire. [built]
 
