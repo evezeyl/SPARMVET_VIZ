@@ -390,13 +390,18 @@ class ResolvedRecipe:
     # the recipe the copy was made from: the engine checks the copy against it before it runs one (D-0332, `refuse_audit_steps_outside_an_audit`);
     # None for a copy built without its original, which the engine refuses
     original_raw: Optional[dict] = None
-    verdict: dict = field(default_factory=dict, compare=False, repr=False)   # the answer of `integrity_errors`, kept: it is asked at every build
+    verdict: dict = field(default_factory=dict, compare=False, repr=False)   # the answer of `integrity_errors` and the content it judged
 
     def integrity_problems(self) -> list:
-        """What `utils.audit_copy.integrity_errors` says of the copy against its original, asked once; None-original gives the one sentence that says why."""
-        if "problems" not in self.verdict:
+        """What `utils.audit_copy.integrity_errors` says of the copy against its original; None-original gives the one sentence that says why.
+
+        The answer is kept with the hash of the content it judged (the copy and its original) and asked again when either differs: a copy changed by hand after it
+        passed is judged again, never served from an old answer."""
+        judged = (canonical_hash(self.raw_config), None if self.original_raw is None else canonical_hash(self.original_raw))
+        if self.verdict.get("judged") != judged:
             self.verdict["problems"] = (["the copy was built without the recipe it was made from, so it cannot be checked"] if self.original_raw is None
                                         else integrity_errors(self.raw_config, self.original_raw))
+            self.verdict["judged"] = judged
         return self.verdict["problems"]
 
 
