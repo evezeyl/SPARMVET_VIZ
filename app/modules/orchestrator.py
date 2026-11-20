@@ -1,8 +1,8 @@
 # @deps
-# provides: pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3, function:plot_read_error_text, method:prepare_ingredient, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
+# provides: pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3, function:plot_read_error_text, method:prepare_ingredient, method:read_source, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
 # mirrors: libs/transformer/tests/debug_assembler.py
 # consumes: libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
-# consumed_by: app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and My view base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py, app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)
+# consumed_by: app/tests/test_read_source.py (read_source: one source table as the ingestion reads it, for the Source view of HOME, D-0310), app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and My view base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py, app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps
 import copy
@@ -116,19 +116,10 @@ class DataOrchestrator:
         # from the same content hashes (ADR-101 point 4).
         return data_analysis_recipe_keys(loaded, dataset_file_hashes(self.get_source_files(data_analysis_recipe_id)))
 
-    def prepare_ingredient(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None, recipe: dict | None = None) -> pl.LazyFrame:
-        """Read one dataset of a data analysis recipe and apply its input contract and tier-1 wrangling (its T1).
-
-        The schema's own tier-2 list is not run here: it is the T2 of the schema when a plot reads it directly, run by
-        `materialize_tier2` like a join's (issue #77); a join reads the T1 of its ingredients.
-
-        Raises when the file cannot be read, a declared input column is missing, or a value does
-        not fit its declared type. Shared by materialize_tier1 and the data analysis recipe data check, so
-        both see the dataset the same way. `recipe_id` selects the data folder of an imported recipe; `recipe` is the recipe's
-        mapping, for the default `data_engine` of a table whose tier 1 names none (D-0219).
-
-        The file read is the file `locate_dataset_file` names, the same one `get_source_files` hashes.
-        """
+    def _read_source(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None) -> tuple[pl.LazyFrame, dict]:
+        """The ONE read of a source table: the file `locate_dataset_file` names, with the declared types, `strip` and `null_values`
+        the ingestion applies, before any recipe step. Returns the lazy table and the schema with the file it was read from, so that
+        `prepare_ingredient` (tier 1) and `read_source` (the Source view) read exactly the same."""
         located = self.locate_dataset_file(recipe_id, ds_id, ds_schema)
         if located is not None:
             kind = "local_parquet" if located.suffix == ".parquet" else "local_tsv"
@@ -146,10 +137,49 @@ class DataOrchestrator:
         # The declared types, `strip` and `null_values` are applied by the ingestion itself; a value that does not
         # fit its declared type fails there and names the column and the values.
         lf, _ = self.ingestor.ingest(ds_id, ds_schema)
+        return lf, ds_schema
 
+    def prepare_ingredient(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None, recipe: dict | None = None) -> pl.LazyFrame:
+        """Read one dataset of a data analysis recipe and apply its input contract and tier-1 wrangling (its T1).
+
+        The schema's own tier-2 list is not run here: it is the T2 of the schema when a plot reads it directly, run by
+        `materialize_tier2` like a join's (issue #77); a join reads the T1 of its ingredients.
+
+        Raises when the file cannot be read, a declared input column is missing, or a value does
+        not fit its declared type. Shared by materialize_tier1 and the data analysis recipe data check, so
+        both see the dataset the same way. `recipe_id` selects the data folder of an imported recipe; `recipe` is the recipe's
+        mapping, for the default `data_engine` of a table whose tier 1 names none (D-0219).
+
+        The file read is the file `locate_dataset_file` names, the same one `get_source_files` hashes, through `_read_source`.
+        """
+        lf, ds_schema = self._read_source(ds_id, ds_schema, recipe_id)
         engine = data_entry(recipe, ds_schema, "tier1", where=f"The tier1 of the table '{ds_id}'")
         rules = engine.wrangler.tier_steps(ds_schema, "tier1")
         return engine.wrangler().run(lf, rules)
+
+    # PROVISIONAL name (the coordinator's): read_source
+    def read_source(self, data_analysis_recipe_id: str, dataset_id: str, loaded: LoadedDataAnalysisRecipe | None = None) -> pl.LazyFrame:
+        """One source table of a recipe as the ingestion reads it, with its declared types, before any tier-1 step (the Source view of HOME,
+        D-0310). Lazy; nothing is written to disk and no key is touched. The same read as the tier-1 build (`_read_source`).
+        `loaded` is a pinned recipe (an audit copy), as in `materialize_tier1`.
+
+        Raises FileNotFoundError for a recipe that has no file, DataAnalysisRecipeError for a table id the recipe does not name, and the
+        ingestion's own error (IngestionError) when the file is missing or cannot be read; the error is the one the tier-1 build gives."""
+        path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
+        if loaded is None and not path.exists():
+            raise FileNotFoundError(f"Data analysis recipe not found: {path}")
+        loaded = loaded or load_data_analysis_recipe(path)
+        schemas = self._schemas_of(loaded.raw)
+        if dataset_id not in schemas:
+            raise DataAnalysisRecipeError(
+                f"No source table '{dataset_id}' in data analysis recipe '{data_analysis_recipe_id}'. Known: {', '.join(sorted(schemas)) or 'none'}.")
+        try:
+            lf, _ = self._read_source(dataset_id, schemas[dataset_id], data_analysis_recipe_id)
+        except IngestionError as error:
+            # The same kind of error as the tier-1 build ("Dataset 'X' could not be loaded ..."), naming the table and the reason.
+            raise IngestionError(f"Source table '{dataset_id}' could not be read: {error}",
+                                 tip=getattr(error, "tip", None) or "Check the file and the input_fields of this table in the data analysis recipe.") from error
+        return lf
 
     def inputs_changed(self, data_analysis_recipe_id: str, built_from: DataAnalysisRecipeKeys, collection_id: str,
                        pinned: LoadedDataAnalysisRecipe | None = None) -> InputsChanged | None:
@@ -502,7 +532,11 @@ class DataOrchestrator:
         path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
         if not path.exists():
             return {}
-        recipe = load_data_analysis_recipe(path).raw
+        return self._schemas_of(load_data_analysis_recipe(path).raw)
+
+    @staticmethod
+    def _schemas_of(recipe: dict) -> dict[str, Any]:
+        """{dataset_id: schema} of a recipe mapping: data schemas, metadata, additional datasets."""
         schemas: dict[str, Any] = {}
         schemas.update(recipe.get("data_schemas", {}))
         if "metadata_schema" in recipe:

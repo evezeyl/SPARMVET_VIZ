@@ -56,9 +56,9 @@ Consumed by: libs/utils/tests/test_recipe_graph.py. The checker takes the graph 
 If deleted: nothing runs yet; the rebuild of those callers needs it.
 
 # @deps
-# provides: function:build_graph, class:RecipeGraph, class:RecipeGraphError, class:GraphProblem, class:Node, class:ColumnInfo
+# provides: function:build_graph, function:source_tables_of_plot, function:source_tables_of_table, class:RecipeGraph, class:RecipeGraphError, class:GraphProblem, class:Node, class:ColumnInfo
 # consumes: libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/join_keys.py, libs/utils/src/utils/action_names.py
-# consumed_by: libs/utils/tests/test_recipe_graph.py
+# consumed_by: libs/utils/tests/test_recipe_graph.py, app/tests/test_read_source.py (source_tables_of_plot: the source tables that feed a plot, for the Source view of HOME, D-0310)
 # doc: .claude/knowledge/architecture_decisions.md#adr-099, .claude/knowledge/architecture_decisions.md#adr-101, .claude/design/home_stage2_mechanism_spec.md (sections 1 to 3, P3), .claude/design/home_audit_steps.md (D1, 5a points 3, 8, 18)
 # @end_deps
 """
@@ -428,6 +428,21 @@ class RecipeGraph:
 
 
 # ---------------------------------------------------------------------- building
+
+# PROVISIONAL name (the coordinator's): source_tables_of_plot. It lives here, with the graph, because it is a pure query of the map (no data,
+# no file, no engine); the orchestrator reads the tables it names (`DataOrchestrator.read_source`).
+def source_tables_of_plot(graph: "RecipeGraph", plot_id: str) -> List[str]:
+    """The ids of the source tables (data schemas, metadata, additional datasets) that feed a plot, each once, in graph order.
+    KeyError with a plain message for a plot id the recipe does not have. A plot that reads a table directly lists that table's source;
+    a plot on a join lists the source of every ingredient."""
+    return [graph.node(n).name for n in graph.source_tables(f"T3:{plot_id}")]
+
+
+def source_tables_of_table(graph: "RecipeGraph", table_id: str) -> List[str]:
+    """The same for a table (a schema or a join): the source tables its tier 1 reads, each once, in graph order.
+    KeyError with a plain message for an id that is not a table of the recipe."""
+    return [graph.node(n).name for n in graph.source_tables(f"T1:{table_id}")]
+
 
 def build_graph(raw: Any, *, columns_provider: Optional[ColumnsProvider] = None) -> RecipeGraph:
     """The graph of a resolved recipe.
