@@ -1,0 +1,7 @@
+# Data and recipe files are byte-exact on every machine (D-0349): git never converts their line endings,
+# so a CRLF copy shows in git status instead of being hidden by core.autocrlf, and the data hash is the same everywhere.
+*.tsv  -text
+*.csv  -text
+*.yaml -text
+*.yml  -text
+*.json -text
