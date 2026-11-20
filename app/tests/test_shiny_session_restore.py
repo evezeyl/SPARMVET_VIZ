@@ -27,25 +27,28 @@ _LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_APP_FEATURES", "developer")
 SAVED_REASON = "seeded step of the saved session"
 
 
-def _seed(sm, tmp_path, label: str, with_step: bool):
-    """A session of its own recipe and data (its key differs from the open recipe's) with or without a saved audit step."""
+OPEN_RECIPE = "1_test_data_ST22_dummy"   # the recipe the browser opens (`_load_data_analysis_recipe`)
+OTHER_RECIPE = "restore_other_recipe"
+
+
+def _seed(sm, label: str, with_step: bool, recipe_id: str = OPEN_RECIPE):
+    """A session of the OPEN recipe (its real recipe key, a data batch of its own so that its key is its own) or, with another
+    `recipe_id`, of another recipe (D-0317: its Restore is refused). With or without a saved audit step."""
+    import hashlib
+    from pathlib import Path
     from app.modules.session_manager import SessionManager, make_audit_step
-    recipe = tmp_path / f"{label}.yaml"
-    recipe.write_text(
-        f"id: {label}\n"
-        "analysis_groups:\n  g:\n    label: G\n    plots:\n      p:\n        label: P\n"
-        "        spec:\n          target_dataset: C\n          mapping: {x: a}\n"
-        "          layers:\n            - name: geom_bar\n")
-    data = tmp_path / f"{label}.tsv"
-    data.write_text(f"a\tb\n1\t{label}\n")
-    msig = SessionManager.compute_data_analysis_recipe_sha256(recipe)
-    dbh = SessionManager.compute_data_batch_hash({"d": data})
+    from app.src.bootloader import bootloader
+    if recipe_id == OPEN_RECIPE:
+        msig = SessionManager.compute_data_analysis_recipe_sha256(Path(bootloader.discovered_data_analysis_recipes[OPEN_RECIPE]))
+    else:
+        msig = hashlib.sha256(recipe_id.encode()).hexdigest()
+    dbh = hashlib.sha256(f"seed batch {label}".encode()).hexdigest()
     key = SessionManager.compute_session_key(msig, dbh)
-    sm.write_assembly_ghost(key, label, msig, dbh, {"d": str(data)}, {})
+    sm.write_assembly_ghost(key, recipe_id, msig, dbh, {}, {}, label=label)
     if with_step:
         step = make_audit_step("filter_row", {"column": "year", "op": "gt", "value": 1900, "dtype": "Int64"},
                                "subtab_mlst_bar", SAVED_REASON)
-        sm.write_t3_ghost(key, label, msig, dbh, "T2", t3_audit_steps_by_plot={"subtab_mlst_bar": [step]})
+        sm.write_t3_ghost(key, recipe_id, msig, dbh, t3_audit_steps_by_plot={"subtab_mlst_bar": [step]})
     return key
 
 
@@ -96,12 +99,12 @@ def _free(page: Page, step: str, seconds: int = 20) -> None:
 
 
 def _show_card(page: Page, label: str, button: str) -> None:
-    """Open the session group of `label` if its button is not visible: the panel is drawn again after a restore (it reads the
-    state the restore sets), and its accordion starts closed."""
-    group = page.locator("#session_groups_accordion").get_by_text(f"📁 {label}", exact=False).first
-    expect(group).to_be_visible(timeout=10_000)
+    """Open the group of the session panel that holds `button` if the button is not visible (the panel is drawn again after a
+    restore and its accordion starts closed). Several groups can carry the same recipe id, so the group is found by its button."""
+    item = page.locator("#session_groups_accordion .accordion-item").filter(has=page.locator(button))
+    expect(item.first).to_be_visible(timeout=10_000)
     if not page.locator(button).is_visible():
-        group.click()
+        item.first.locator(".accordion-button").click()
         _wait_shiny(page)
     _wait_session_groups_open(page, label)
     expect(page.locator(button)).to_be_visible(timeout=10_000)
@@ -123,12 +126,12 @@ def _wait_reasons(page: Page, step: str, expected: list[str], timeout: int = 15_
 
 @pytest.mark.skipif(_LAUNCH_APP_FEATURES not in _INTERACTIVE_APP_FEATURES,
                     reason="Session Management panel only present for interactive app features files")
-def test_one_click_on_restore_and_on_delete_acts_once(page: Page, shiny_app: ShinyAppProc, tmp_path):
+def test_one_click_on_restore_and_on_delete_acts_once(page: Page, shiny_app: ShinyAppProc):
     from app.modules.session_manager import SessionManager
     from app.src.bootloader import bootloader
     sm = SessionManager(bootloader.get_location("user_data"))
-    key_saved = _seed(sm, tmp_path, "restore_once_saved", with_step=True)
-    key_empty = _seed(sm, tmp_path, "restore_once_empty", with_step=False)
+    key_saved = _seed(sm, "restore_once_saved", with_step=True)
+    key_empty = _seed(sm, "restore_once_empty", with_step=False)
     safe = lambda key: key.replace(":", "_")   # noqa: E731
     try:
         _load_data_analysis_recipe(page, shiny_app.url)
@@ -222,3 +225,40 @@ def test_one_click_on_restore_and_on_delete_acts_once(page: Page, shiny_app: Shi
     finally:
         for key in (key_saved, key_empty):
             sm.delete_session(key)
+
+
+@pytest.mark.skipif(_LAUNCH_APP_FEATURES not in _INTERACTIVE_APP_FEATURES,
+                    reason="Session Management panel only present for interactive app features files")
+def test_restore_of_a_session_of_another_recipe_is_refused_once_and_applies_nothing(page: Page, shiny_app: ShinyAppProc):
+    """D-0317: one click on Restore of a session saved against another recipe shows the refusal line once, no 'Session restored',
+    and the audit steps of the view are what they were."""
+    from app.modules.session_manager import SessionManager
+    from app.src.bootloader import bootloader
+    sm = SessionManager(bootloader.get_location("user_data"))
+    key_other = _seed(sm, "restore_refused", with_step=True, recipe_id=OTHER_RECIPE)
+    button = f"#session_restore_{key_other.replace(':', '_')}"
+    try:
+        if page.url.startswith("http"):
+            page.reload()   # the page is shared by the module: a fresh session draws the list with the session just written
+        _load_data_analysis_recipe(page, shiny_app.url)
+        page.evaluate(_RECORD_NOTICES)
+        _open_filters_panel(page)
+        _navigate_to_mlst_plot(page)
+        page.locator("#tier_toggle input[value=T3]").check(force=True)
+        _wait_shiny(page)
+        page.locator("#nav_accordion").get_by_text("Session Management").first.click()
+        _wait_shiny(page)
+        page.wait_for_selector("#session_groups_accordion", timeout=10_000)
+        before = _reasons(page)
+        restored_before = _seen(page, "Session restored")
+        _show_card(page, "restore_refused", button)
+        page.locator(button).click()
+        _notices(page, "refused restore", f"belongs to another recipe ({OTHER_RECIPE})", 1)
+        _free(page, "refused restore")
+        assert _seen(page, "Session restored") == restored_before, "a refused session was reported as restored"
+        assert _reasons(page) == before, "the audit steps of the view changed although the restore was refused"
+        assert SAVED_REASON not in _reasons(page)
+        assert "Open that recipe first, then restore the session." in " ".join(
+            page.evaluate("() => window.__seenNotices"))
+    finally:
+        sm.delete_session(key_other)

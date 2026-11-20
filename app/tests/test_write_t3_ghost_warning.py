@@ -24,7 +24,6 @@ _STATE = {
     "data_analysis_recipe_sha256": "abc123",
     "data_batch_hash": "def456",
     "data_analysis_recipe_id": "test_recipe",
-    "tier_toggle": "T2",
     "t3_audit_steps_by_plot": {},
     "t3_plot_overrides": {},
 }

@@ -981,7 +981,6 @@ def _write_t3_ghost(state: dict, session_manager, notif_log: list | None = None)
             data_analysis_recipe_id=state.get("data_analysis_recipe_id", ""),
             data_analysis_recipe_sha256=msig,
             data_batch_hash=dbh,
-            tier_toggle=state.get("tier_toggle", "T2"),
             t3_audit_steps_by_plot=state.get("t3_audit_steps_by_plot", {}),
             t3_plot_overrides=state.get("t3_plot_overrides", {}),
             label=state.get("t3_ghost_label", ""),

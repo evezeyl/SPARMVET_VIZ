@@ -257,10 +257,11 @@ app_features_id: pipeline-static
 
 ### `app-features-t3-companions-missing` {#app-features-t3-companions-missing}
 
-**Problem:** `t3_sandbox_enabled=True` but required companion flags are False:
-`<list of flags>`.
+**Problem:** `t3_sandbox_enabled is true but <flag> is false: the audit requires comparison, sessions and export`, or
+`comparison_mode_enabled is true but t3_sandbox_enabled is false: comparison requires the audit`. The same applies when
+the `app_features_override` block of the deployment sets one of these flags.
 
-The T3 sandbox requires all three companions active simultaneously:
+The audit (T3 sandbox) requires all three companions active simultaneously, and comparison requires the audit (D-0018):
 `comparison_mode_enabled`, `session_management_enabled`, `export_enabled`.
 (`audit_report_enabled` was removed in 2026-05: the audit trail is part of every export.)
 

@@ -83,19 +83,32 @@ def sm(tmp_path):
     return SessionManager(tmp_path / "sessions")
 
 
-def test_old_assembly_ghost_is_refused_with_the_fix(sm):
+# D-0312: a session saved before the redesign carries no format number and is refused as a whole, nothing is converted
+# (the older rename-key refusal and its migration hint stay for a file that has the current number and old keys).
+CURRENT_KEYS_OLD_NAMES = {**OLD_SESSION, "schema_version": 3}
+
+
+def test_old_assembly_ghost_is_refused_as_saved_by_an_older_version(sm):
     d = sm.session_dir("a:b")
     (d / "assembly.json").write_text(json.dumps(OLD_SESSION))
     with pytest.raises(LegacySessionError) as exc:
         sm.read_assembly_ghost("a:b")
-    assert "data_analysis_recipe_sha256" in str(exc.value) and "migrate_config_vocabulary" in str(exc.value)
+    assert "saved by an older version of the app" in str(exc.value) and "migrate_config_vocabulary" not in str(exc.value)
 
 
 def test_old_session_is_listed_with_its_problem_not_skipped(sm):
     d = sm.session_dir("a:b")
     (d / "assembly.json").write_text(json.dumps(OLD_SESSION))
     listed = sm.list_all_sessions()
-    assert len(listed) == 1 and "migrate_config_vocabulary" in listed[0]["legacy_problem"]
+    assert len(listed) == 1 and "saved by an older version" in listed[0]["legacy_problem"]
+
+
+def test_a_file_with_the_current_number_and_old_key_names_still_names_the_fix(sm):
+    d = sm.session_dir("a:b")
+    (d / "assembly.json").write_text(json.dumps(CURRENT_KEYS_OLD_NAMES))
+    with pytest.raises(LegacySessionError) as exc:
+        sm.read_assembly_ghost("a:b")
+    assert "data_analysis_recipe_sha256" in str(exc.value) and "migrate_config_vocabulary" in str(exc.value)
 
 
 def test_old_session_zip_is_refused_before_anything_is_extracted(sm):

@@ -15,8 +15,8 @@ flags:
   blueprint_agent_enabled: false
   # Can the user access the Test Lab (data utilities)?
   test_lab_enabled: false
-  # Comparison Theater (Phase 12-A) — requires t3_sandbox_enabled to be meaningful
-  comparison_mode_enabled: true
+  # Comparison needs the audit (t3_sandbox_enabled), D-0018: off here because the audit is off
+  comparison_mode_enabled: false
   # Session Management visibility
   session_management_enabled: false
   # External Import helper visibility

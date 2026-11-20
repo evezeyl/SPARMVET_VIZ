@@ -90,13 +90,13 @@ def test_a_folder_name_with_another_character_is_refused(sm, tmp_path, folder):
 
 
 def test_a_session_key_inside_that_differs_from_the_folder_is_refused(sm, tmp_path):
-    text = _refused(sm, [("aaa:bbb/assembly.json", json.dumps({"session_key": "ccc:ddd"}))], tmp_path)
+    text = _refused(sm, [("aaa:bbb/assembly.json", json.dumps({"session_key": "ccc:ddd", "schema_version": 3}))], tmp_path)
     assert "aaa:bbb" in text and "ccc:ddd" in text and "must be the same" in text
 
 
 def test_two_folder_names_that_look_the_same_on_the_screen_are_refused(sm, tmp_path):
-    sm.import_session_zip(_zip_of([("aa:bb/assembly.json", json.dumps({"session_key": "aa:bb"}))]), limits=BIG)
-    text = _refused(sm, [("aa_bb/assembly.json", json.dumps({"session_key": "aa_bb"}))], tmp_path)
+    sm.import_session_zip(_zip_of([("aa:bb/assembly.json", json.dumps({"session_key": "aa:bb", "schema_version": 3}))]), limits=BIG)
+    text = _refused(sm, [("aa_bb/assembly.json", json.dumps({"session_key": "aa_bb", "schema_version": 3}))], tmp_path)
     assert "aa_bb" in text and "aa:bb" in text
 
 

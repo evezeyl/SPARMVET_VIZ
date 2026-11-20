@@ -58,7 +58,7 @@ def _session_zip(label="first", key=KEY):
     with tempfile.TemporaryDirectory() as td:
         sm = SessionManager(Path(td))
         sm.write_assembly_ghost(key, "tiny", "a" * 64, "b" * 64, {}, {}, label=label)
-        sm.write_t3_ghost(key, "tiny", "a" * 64, "b" * 64, "T3", [], {})
+        sm.write_t3_ghost(key, "tiny", "a" * 64, "b" * 64, [], {})
         return sm.export_session_zip(key)
 
 
@@ -137,7 +137,7 @@ def test_an_unknown_choice_is_refused_and_writes_nothing(sm):
 
 # --------------------------------------------------------------------------- member names
 
-GOOD = (f"{KEY}/assembly.json", json.dumps({"session_key": KEY, "data_analysis_recipe_id": "t"}))
+GOOD = (f"{KEY}/assembly.json", json.dumps({"session_key": KEY, "data_analysis_recipe_id": "t", "schema_version": 3}))
 
 
 @pytest.mark.parametrize("bad", ["../escape.txt", f"{KEY}/../../escape.txt", "/abs/escape.txt", "C:/escape.txt",
