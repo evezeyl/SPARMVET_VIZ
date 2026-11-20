@@ -26,7 +26,6 @@ DEFAULT_HOME_STATE: dict = {
     # Navigation
     "active_group_tab": None,
     "active_plot_subtab": None,
-    "tier_toggle": "T1",
     # Accordion collapse states
     "accordion_plots_expanded": True,
     "accordion_data_expanded": True,

@@ -61,7 +61,7 @@ def build_export_provenance(
     dpi: int,
     plot_width: float = 8.0,
     plot_height: float = 5.0,
-    active_tier: str,
+    screen_view: str,
     all_plots: list,
     tiers_exported: list,
     data_analysis_recipe_sha: str,
@@ -197,7 +197,7 @@ def build_export_provenance(
         "data_analysis_recipe_name": data_analysis_recipe_name,
         "data_analysis_recipe_path": data_analysis_recipe_path_str,
         "app_features": app_features,
-        "active_tier": active_tier,
+        "screen_view": screen_view,
         "bundle_label": safe_name,
         "preset": preset,
         "dpi": dpi,
@@ -577,7 +577,7 @@ def define_export_server(input, output, session, *,
                          bootloader, orchestrator, viz_factory,
                          current_app_features, active_cfg,
                          tier1_anchor,
-                         tier_toggle,
+                         screen_view,
                          home_state, safe_input,
                          notification_log=None,
                          session_processing_issues=None,
@@ -593,7 +593,8 @@ def define_export_server(input, output, session, *,
       current_app_features    : reactive.Value[str]
       active_cfg         : reactive.Calc[ConfigManager]
       tier1_anchor       : reactive.Calc[LazyFrame]
-      tier_toggle        : reactive.Value[str]   ("T1"|"T2"|"T3")
+      screen_view        : callable() -> str   the mode and the data choice on screen, in words (slice B, P-B6): recorded in README.txt only;
+                           the content of the bundle does not depend on it
       home_state         : reactive.Value[dict] | None
       safe_input         : helper (input, key, default) → value
       t3_filter_rows     : callable(subtab_id) -> list[dict]  audited filter/exclusion rows (HOME's)
@@ -1068,8 +1069,9 @@ def define_export_server(input, output, session, *,
         # The export is the Result (T2) plus the AUDITED T3 steps (committed with a reason, e.g.
         # removing poor quality data): the user's decision for the publication, always applied.
         # Exploration (filters tried in T1/T2/My view, not sent to audit) is a sandbox and is never
-        # exported, from any view (Eve, 2026-11-06).
-        active_tier = tier_toggle.get()
+        # exported, from any view (Eve, 2026-11-06). What was on screen (the mode and the data choice) is recorded in README.txt
+        # and decides nothing in the bundle: the content below never reads it.
+        screen_view_text = screen_view()
 
         def _audited_nodes(p_id: str) -> list[dict]:
             """The plot's audited steps, in the recorded order: the input of `audited_frame` (exploration is not part of it)."""
@@ -1154,7 +1156,7 @@ def define_export_server(input, output, session, *,
                 dpi=dpi,
                 plot_width=plot_width,
                 plot_height=plot_height,
-                active_tier=active_tier,
+                screen_view=screen_view_text,
                 all_plots=all_plots,
                 tiers_exported=tiers_exported,
                 data_analysis_recipe_sha=data_analysis_recipe_sha,
@@ -1337,7 +1339,8 @@ def define_export_server(input, output, session, *,
                 # T1: always exported.
                 # T2: exported when the table has tier2 steps (a join, or a table a plot reads directly), read from the stored Tier 2
                 #     parquet (issue #10). Without tier2 steps T2 equals T1: no duplicate TSV.
-                # T3: only for advanced+ app features files, and only when tier_toggle == "T3".
+                # T3: one file per plot that has audited steps or tier-3 steps in the recipe (its plot is built from that data);
+                #     whatever the mode and the data choice on screen when Export was pressed (they decide nothing here).
 
                 exported_datasets: set[str] = set()
                 exported_t2: set[str] = set()
@@ -2121,7 +2124,7 @@ def define_export_server(input, output, session, *,
                 f"User             : {prov['bundle_label']}",
                 f"App features     : {prov['app_features']}",
                 f"Preset           : {prov['preset']} (DPI={prov['dpi']}, {prov['plot_width']}×{prov['plot_height']} in)",
-                f"Active tier      : {prov['active_tier']}",
+                f"Screen view      : {prov['screen_view']}",
                 f"Plot format      : {plot_fmt}",
                 # D-0050: the choice that decides whether the recipe and the data files are in the bundle, as the server read
                 # it when Export was pressed (a box that went back to unticked would show here, not only as a missing folder).

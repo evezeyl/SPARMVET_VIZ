@@ -71,7 +71,7 @@ class Home:
             current_app_features=mock.MagicMock(), anchor_path=mock.MagicMock(), tier1_anchor=mock.MagicMock(),
             active_cfg=lambda: SimpleNamespace(raw_config={}), active_collection_id=mock.MagicMock(),
             safe_input=lambda i, k, d: "tiny" if k == "data_analysis_recipe_id" else d,
-            active_home_subtab=mock.MagicMock(), tier_toggle=mock.MagicMock(),
+            active_home_subtab=mock.MagicMock(), home_mode=mock.MagicMock(), data_view=mock.MagicMock(), source_table=mock.MagicMock(),
             home_state=self.home_state, session_manager=self.manager, notification_log=self.log)
 
     def sync(self):

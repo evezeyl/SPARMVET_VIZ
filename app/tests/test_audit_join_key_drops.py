@@ -133,12 +133,12 @@ class Box:
     def drop(self, kept):
         closure(
             "_col_drop_to_audit",
-            bootloader=SimpleNamespace(is_enabled=lambda flag: True), home_state=self.state, tier_toggle=Val("T3"),
+            bootloader=SimpleNamespace(is_enabled=lambda flag: True), home_state=self.state, _can_write_audit_step=lambda: True,
             active_home_subtab=Val("subtab_p1"),
             _notify=lambda message, **kw: self.notes.append((message, kw.get("type"))),
             _propagation_scratch=self.scratch,
             _open_propagation_modal=lambda nodes, subtab, kind: self.opened.append((nodes, kind)),
-            _resolve_active_spec=lambda p_id: {}, _resolve_active_lf=lambda spec: self.frame.lazy(),
+            _resolve_active_spec=lambda p_id: {}, _resolve_active_lf=lambda spec, tier=None: self.frame.lazy(),
             _t3_drop_columns=lambda: [], safe_input=lambda i, k, d=None: i.get(k, d), input={"preview_col_selector": kept},
             ui=SimpleNamespace(update_selectize=lambda *a, **k: None),
         )()
@@ -200,7 +200,7 @@ def test_a_filter_on_either_column_of_a_two_name_key_carries_the_warning():
         opened, notes = [], []
         closure(
             "_filter_send_to_audit",
-            bootloader=SimpleNamespace(is_enabled=lambda flag: True), home_state=state, _on_my_view=lambda: True,
+            bootloader=SimpleNamespace(is_enabled=lambda flag: True), home_state=state, _can_write_audit_step=lambda: True,
             _pending_filters=Val([{"column": column, "op": "eq", "value": "x", "dtype": "String", "na": "remove"}]),
             active_home_subtab=Val("subtab_p1"), _notify=lambda message, **kw: notes.append(message),
             _propagation_scratch=Val(), _open_propagation_modal=lambda nodes, subtab, kind: opened.append(nodes),

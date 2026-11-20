@@ -75,7 +75,7 @@ def test_the_provenance_has_no_scope_key():
     import datetime
     prov = export_handlers.build_export_provenance(
         now=datetime.datetime(2026, 11, 18), data_analysis_recipe_id="tiny", safe_name="x", app_features="qa", preset="web",
-        dpi=300, active_tier="T2", all_plots=[], tiers_exported=["T1"], data_analysis_recipe_sha="m" * 64,
+        dpi=300, screen_view="Exploration mode, data view T3", all_plots=[], tiers_exported=["T1"], data_analysis_recipe_sha="m" * 64,
         data_sha="d" * 64, bootloader=SimpleNamespace(available_data_analysis_recipes={}))
     assert "export_scope" not in prov
 
@@ -103,7 +103,7 @@ def test_the_panel_shows_svg_and_html_selected_and_no_scope_choice(tmp_path, mon
         SimpleNamespace(import_bundle_upload=None, export_field_change=None), lambda fn: fn, None,
         bootloader=_Bootloader(world, ("export_enabled",)), orchestrator=world.orch, viz_factory=None,
         current_app_features=SimpleNamespace(get=lambda: "qa"), active_cfg=lambda: None, tier1_anchor=None,
-        tier_toggle=None, home_state=None, safe_input=lambda _i, key, default: default, view_keys=lambda: None)
+        screen_view=lambda: "", home_state=None, safe_input=lambda _i, key, default: default, view_keys=lambda: None)
     html = str(shown["system_tools_ui"]())
     assert re.search(r'name="export_plot_format"[^>]*value="svg"[^>]*checked', html)
     assert re.search(r'name="export_report_format"[^>]*value="html"[^>]*checked', html)
