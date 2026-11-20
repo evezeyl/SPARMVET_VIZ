@@ -299,19 +299,31 @@ def test_build_profile_accepts_placeholders_that_run_refuses():
     assert check(raw, "build").problems == []
 
 
-def test_an_audit_step_id_is_accepted_only_in_the_audit_profile_and_must_be_well_formed():
-    raw = mutated(lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append(
+AUDIT_CODES = ("ST08", "AU01", "AU02", "AU03")
+AUDIT_STEP = {"id": "audit_1a2b3c4d_1", "action": "modif_filter", "column": "v", "op": "gt", "value": 1, "na": "keep", "audit_comment": "why"}
+
+
+def audit_codes(raw, profile):
+    return [code for code in check(raw, profile).codes() if code in AUDIT_CODES]
+
+
+def test_an_audit_step_id_is_accepted_only_in_the_audit_list_of_the_audit_profile_and_must_be_well_formed():
+    """D-0332: the audit id and the reason live in `audit_steps`; in the author's `steps` an id is refused in every profile, the audit profile included."""
+    raw = mutated(lambda r: r["data_schemas"]["A"]["tier1"].update(audit_steps=[dict(AUDIT_STEP)]))
+    assert audit_codes(raw, "audit") == []
+    for profile in ("run", "build", "gallery"):
+        assert audit_codes(raw, profile) == ["AU01"], profile
+    raw["data_schemas"]["A"]["tier1"]["audit_steps"][0]["id"] = "audit_zz"
+    assert audit_codes(raw, "audit") == ["AU03"]
+    among_authors = mutated(lambda r: r["data_schemas"]["A"]["tier1"]["steps"].append(
         {"id": "audit_1a2b3c4d_1", "action": "polars_filter_demo", "columns": ["v"], "na": "keep"}))
-    assert "ST08" in check(raw, "run").codes()
-    assert "ST08" not in check(raw, "audit").codes()
-    raw["data_schemas"]["A"]["tier1"]["steps"][0]["id"] = "audit_zz"
-    assert "ST08" in check(raw, "audit").codes()
+    for profile in ("run", "build", "audit"):
+        assert "ST08" in audit_codes(among_authors, profile), profile
 
 
 def test_the_same_audit_id_twice_is_refused():
-    step = {"id": "audit_1a2b3c4d_1", "action": "polars_filter_demo", "columns": ["v"], "na": "keep"}
-    raw = mutated(lambda r: r["data_schemas"]["A"]["tier1"]["steps"].extend([dict(step), dict(step)]))
-    assert "ST08" in check(raw, "audit").codes()
+    raw = mutated(lambda r: r["data_schemas"]["A"]["tier1"].update(audit_steps=[dict(AUDIT_STEP), dict(AUDIT_STEP)]))
+    assert audit_codes(raw, "audit") == ["AU03"]
 
 
 def test_a_step_may_carry_a_comment():

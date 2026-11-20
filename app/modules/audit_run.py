@@ -1,8 +1,8 @@
-"""A run of an audit copy without a screen: which tables and plots of the copy are the original's and which are rebuilt (piece A5 of slice A of the HOME audit redesign).
+"""A run of an audit copy without a screen: which tables and plots of the copy are the original's and which are rebuilt (piece A5 of slice A, changed over to the second list `audit_steps` in piece C-1 of slice C of the HOME audit redesign).
 
 Serves the audit that the next slices put on the screen. Nothing a user sees is wired to it yet.
 
-Inputs: the orchestrator (`DataOrchestrator`), the id of the recipe, the audit copy (`utils.audit_copy`, a resolved dictionary), the folder of the
+Inputs: the orchestrator (`DataOrchestrator`), the id of the recipe, the audit copy (`utils.audit_copy`, the resolved dictionary `AuditCopy.recipe`: each tier holds the author's `steps` and the audit's `audit_steps`), the folder of the
 stored tables of the ORIGINAL and a SEPARATE folder for the stored tables of the audit ("its own folder, never in the anchors folder",
 `home_audit_steps.md` section 7.1). Output: an `AuditRun`, a plain record of what was reused, what was built and which plots are affected.
 
@@ -12,7 +12,7 @@ is either reused or recomputed":
 - a table whose key in the copy EQUALS its key in the original is not rebuilt and not copied: it is read from the original's stored table (the original's
   table is stored first when it was not, as the app does);
 - a table whose key differs is built into the audit's own folder (its Tier 1 and its Tier 2 separately: a step at tier 2 rebuilds the Tier 2 only and
-  reads the original's Tier 1);
+  reads the original's Tier 1); the engine runs the author's `steps`, then the `audit_steps` of the tier (`utils.recipe_tiers.step_list`);
 - a plot has no stored table (the tier-3 reader is lazy, A4): equal keys mean the same table; different keys mean the two tables are built and compared.
 
 A plot is AFFECTED when the CONTENT of its table differs between the original and the audit run (ADR-101 point 6: "equal keys imply identical data;
@@ -23,8 +23,8 @@ A step that the engine cannot apply is refused, naming the id of the step and it
 copy needs: a table that is the original's again (the step was removed) is taken out of it at once.
 
 PROVISIONAL: the names and fields of the result; the words of `source` (`original`, `audit store`, `built`); that the run checks the copy with
-`integrity_errors` and not with the checker's audit profile (the engine refuses what it cannot apply; limiting which actions the audit may add is not
-decided).
+`integrity_errors` (which also refuses an action that is not one of `AUDIT_ACTIONS`) and not with the checker's audit profile (it needs the registries; the
+engine refuses what it cannot apply).
 
 Consumed by: app/tests/test_audit_run.py. If deleted: nothing runs a copy yet; the slices that put the audit on the screen need it.
 
@@ -48,7 +48,7 @@ from app.modules.cache_keys import (
     DataAnalysisRecipeKeys, LoadedDataAnalysisRecipe, load_data_analysis_recipe, loaded_from_resolved, tier2_steps)
 from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, DataOrchestrator, InputsChanged, tier2_path_for
 from transformer.anchor import read_anchor_if_key
-from utils.audit_copy import MarkedStep, add_step, audit_recipe_of, integrity_errors, marked_steps
+from utils.audit_copy import AuditStep, all_audit_steps, integrity_errors, with_audit_steps
 from utils.recipe_graph import build_graph
 
 # Where a table of the copy comes from.
@@ -187,10 +187,10 @@ class _Run:
 
     # -- an audit step that cannot be applied
     def refuse(self, error: BaseException, places: List[str], attempt: Callable[[LoadedDataAnalysisRecipe, DataAnalysisRecipeKeys, Path, List[str]], object]) -> None:
-        """Raise the error of the engine as an `AuditRunError` that names the audit step that causes it. `places` are the lists whose marked steps can
-        cause it. One candidate is named at once; several are tried in order, each added to the original on its own, in a scratch folder, and the first
-        that fails is named. An error that no marked step can cause (the original's own) is raised as it is."""
-        candidates = [m for m in marked_steps(self.audit_raw) if m.place in places]
+        """Raise the error of the engine as an `AuditRunError` that names the audit step that causes it. `places` are the lists whose audit steps can
+        cause it. One candidate is named at once; several are tried in order, the first N added to the original on their own (ids and reasons kept), in a
+        scratch folder, and the first that fails is named. An error that no audit step can cause (the original's own) is raised as it is."""
+        candidates = [m for m in all_audit_steps(self.audit_raw) if m.place in places]
         if not candidates:
             raise error
         culprit = candidates[0] if len(candidates) == 1 else self.first_failing(candidates, attempt)
@@ -200,13 +200,11 @@ class _Run:
             raise AuditRunError(f"An audit step cannot be applied; it is one of these, which together cannot be applied: {ids}. The engine says: {why}") from error
         raise AuditRunError(f"The audit step {culprit.step_id} at {culprit.place} cannot be applied: {why}", culprit.step_id, culprit.place) from error
 
-    def first_failing(self, candidates: List[MarkedStep], attempt) -> Optional[MarkedStep]:
+    def first_failing(self, candidates: List[AuditStep], attempt) -> Optional[AuditStep]:
         scratch = Path(tempfile.mkdtemp(prefix=".audit_probe_", dir=self.audit_dir))
         try:
             for count in range(1, len(candidates) + 1):
-                probe = audit_recipe_of(self.original.raw)
-                for found in candidates[:count]:
-                    add_step(probe, found.place, {k: v for k, v in found.step.items() if k not in ("id", "comment")}, found.step_id, found.step.get("comment"))
+                probe = with_audit_steps(self.original.raw, candidates[:count])
                 loaded = loaded_from_resolved(self.original, probe)
                 try:
                     attempt(loaded, self.orch.compute_data_analysis_recipe_keys(self.recipe_id, loaded=loaded), scratch, [])
@@ -285,7 +283,7 @@ def run_audit(orchestrator: DataOrchestrator, recipe_id: str, audit_recipe: dict
     """Build every table and every plot table of an audit copy, reusing the original's stored tables where the keys are equal; say which plots are affected.
 
     `original_dir` holds the original's stored tables (`<table>.parquet`, `<table>__T2.parquet`); `audit_dir` is the audit's own folder and must be another
-    folder. Raises `AuditRunError` when the copy is not a copy of the original plus audit steps at the end of their lists (`integrity_errors`), when the
+    folder. Raises `AuditRunError` when the copy is not a copy of the original plus audit steps in the `audit_steps` lists (`integrity_errors`), when the
     folders are the same or one lies inside the other (symlinks followed), or when an audit step cannot be applied (naming its id and its place). Changes neither the original's recipe nor the audit copy. A run that does not finish (a refused step, any error, an interrupt)
     leaves in the audit folder nothing that it built (`_rollback`)."""
     original_dir, audit_dir = Path(original_dir), Path(audit_dir)

@@ -16,6 +16,10 @@ ingredients, `recipe_tiers`); `T1:C` to `T2:C`; `T2:C` to `T3:p` for a plot `p` 
 and T3 with or without a join, and T2 and T3 may be empty (Eve, 2026-11-12). An ingredient that names a join is drawn too
 (a chain of tier-1 nodes), although the engine and the checker take schema ids only today.
 
+The steps of a node are the steps its tier RUNS: the author's `steps`, then the `audit_steps` of an audit recipe (D-0332, `recipe_tiers.step_list`).
+So a filter audit step keeps the columns and a drop audit step removes the column it names, exactly as the same steps do when an author writes them
+(a step number in a message counts the audit steps after the author's; the path names `steps`, which for an audit step is the list `audit_steps` of the same tier).
+
 Order: every list this module returns is in graph order. It is a topological order (a node after all its parents); among
 nodes that are free to come next the recipe order decides: schemas (`data_schemas`, `additional_datasets_schemas`,
 `metadata_schema`), then joins, then plots in the order of the groups. Plots always come last, in the order of the recipe.

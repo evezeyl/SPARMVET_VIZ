@@ -25,7 +25,7 @@ from __future__ import annotations
 # consumes: app/modules/blueprint_plot_view.py (plot_view: the mapping and layers of a plot node), app/modules/blueprint_tier_refusal.py (other_tier_refusal: the text of the Save refusal, PROVISIONAL), app/modules/plot_defaults_form.py (the plot_defaults form: what it shows and writes), libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/utils/src/utils/action_names.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
 # consumes: app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe, validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result, never blocking; uploaded_recipe_report, load_uploaded_recipe, load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)
 # consumes: app/modules/validate_runner.py (run_structure_check, could_not_run_result, StructureCheckError — the child process of Validate uses sys.executable, D-0050)
-# consumes: libs/utils/src/utils/recipe_check.py (plot_keys), libs/utils/src/utils/recipe_tiers.py (step_list) — tier keys and plot entry keys of recipe format 1 (D-0250, D-0252)
+# consumes: libs/utils/src/utils/recipe_check.py (plot_keys), libs/utils/src/utils/recipe_tiers.py (author_steps) — tier keys and plot entry keys of recipe format 1 (D-0250, D-0252)
 # consumes: function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
 # consumes: function:normalise_plot_spec, function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)
@@ -74,7 +74,7 @@ from blueprint_arch.data_analysis_recipe_navigator import (
 from blueprint_arch.blueprint_mapper import BlueprintMapper
 from utils.action_names import JOIN
 from utils.recipe_check import plot_keys
-from utils.recipe_tiers import step_list
+from utils.recipe_tiers import AUDIT_STEPS, author_steps
 from app.modules.blueprint_plot_view import plot_view
 from app.modules.blueprint_tier_refusal import other_tier_refusal
 from app.modules.plot_defaults_form import form_values, merged_plot_defaults, theme_choices
@@ -498,7 +498,7 @@ def define_server(input, output, session, *,
         Normalizes the steps of one or two tiers into structured UI nodes.
         ADR-031: Supports both Structure (params: {}) and Flat (top-level keys) formats.
 
-        `tiers` is {tier name: [steps]} (`step_list` of a table, the steps of a tier file, or the steps of an upload).
+        `tiers` is {tier name: [steps]} (`author_steps` of a table, the steps of a tier file, or the steps of an upload).
         BP-PLOT-COMMIT-1: each node is tagged with its source tier (``_tier``) so the
         commit path can check it against the tier of the file Save writes to. BLUEPRINT never
         authors T3 (ADR-082 §4): only tier1 and tier2 are read.
@@ -597,6 +597,9 @@ def define_server(input, output, session, *,
                     step["comment"] = comment
                 steps.append(step)
 
+            if isinstance(original, dict) and AUDIT_STEPS in original:
+                raise ValueError("This file holds audit steps, so it belongs to an audit recipe. Blueprint edits original recipes only: an audit recipe is changed "
+                                 "by the audit, never here. Nothing was saved.")
             block: dict = {}
             if isinstance(original, dict) and "data_engine" in original:
                 block["data_engine"] = original["data_engine"]
@@ -617,7 +620,9 @@ def define_server(input, output, session, *,
             target = cfg.raw_config.get("joins", {}).get(lid)
         if not target and lid == "metadata_schema":
             target = cfg.raw_config.get("metadata_schema")
-        return {tier: step_list(target, tier) for tier in ("tier1", "tier2")}
+        # The author's steps only: Blueprint edits the ORIGINAL recipe. Its writer builds a NEW block of `data_engine` and `steps` and nothing else, so an audit list
+        # would be dropped by a save: the writer refuses a file that holds one (see `_serialise_component_for_save`).
+        return {tier: author_steps(target, tier) for tier in ("tier1", "tier2")}
 
     def _do_load_component(master_path: str, selected: str,
                            inc_map: dict, ctx_map: dict):

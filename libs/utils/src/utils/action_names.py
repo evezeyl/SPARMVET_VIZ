@@ -56,6 +56,11 @@ REMOVED_ACTIONS = {
 # Actions whose result depends on the position of a row (the checker advice ST13 looks for a stated order before them).
 POSITION_ACTIONS = frozenset({HEAD, TAIL, SLICE, LIMIT, GATHER_EVERY, WITH_ROW_INDEX})
 
+# The actions an AUDIT step may be (D-0322, "a filter, a column drop or a removal by key", PROVISIONAL list: the ONE place to widen it). A removal by key is
+# not an action of its own: it is `modif_filter` on the entity-key column with `ne` or `not_in` (what the HOME audit writes for an `exclusion_row`,
+# `blueprint_arch/t3_translator.py`).
+AUDIT_ACTIONS = (FILTER, DROP)
+
 # Actions that are allowed only in tier 1 (spec ST05).
 TIER1_ONLY = frozenset({JOIN, JOIN_ASOF, JOIN_WHERE})
 

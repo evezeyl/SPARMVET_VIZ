@@ -79,7 +79,7 @@ def test_a_recipe_whose_steps_are_read_gives_no_problem(tmp_path):
 
 def test_a_reader_that_finds_no_step_in_a_recipe_that_has_steps_is_a_problem_not_a_pass(tmp_path, monkeypatch):
     """The failure of the changeover: the reader looked in the wrong place and returned nothing."""
-    monkeypatch.setattr(DataWrangler, "tier_steps", staticmethod(lambda body, tier: []))
+    monkeypatch.setattr(DataWrangler, "tier_steps", staticmethod(lambda body, tier, audit=False: []))
     problems = engine_load_problems(_write(tmp_path, _recipe_with_steps()))
     assert [p.location for p in problems] == ["recipe"]
     assert "read 0 of the 1 steps" in problems[0].problem
@@ -87,7 +87,7 @@ def test_a_reader_that_finds_no_step_in_a_recipe_that_has_steps_is_a_problem_not
 
 
 def test_a_recipe_with_no_steps_is_not_blamed_when_the_reader_finds_none(tmp_path, monkeypatch):
-    monkeypatch.setattr(DataWrangler, "tier_steps", staticmethod(lambda body, tier: []))
+    monkeypatch.setattr(DataWrangler, "tier_steps", staticmethod(lambda body, tier, audit=False: []))
     assert engine_load_problems(_write(tmp_path, minimal_recipe("no_steps"))) == []
 
 
@@ -110,7 +110,7 @@ def test_retest_bad_select_column_is_rejected_for_its_real_reason():
 
 
 def test_a_data_check_that_ran_none_of_the_written_steps_is_a_problem_not_a_pass(monkeypatch):
-    monkeypatch.setattr(DataWrangler, "tier_steps", staticmethod(lambda body, tier: []))
+    monkeypatch.setattr(DataWrangler, "tier_steps", staticmethod(lambda body, tier, audit=False: []))
     problems = validate_data_analysis_recipe_data(RETEST / "retest_bad_select_column.yaml", RAW)
     assert problems, "the gate must not pass a recipe whose steps it did not run"
     assert any("were not checked" in p.problem and "fault of the app" in (p.tip or "") for p in problems)

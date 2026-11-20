@@ -2,6 +2,7 @@
 # provides: class:DataWrangler, method:tier_steps, method:run
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-WRANGLER-1)
+#           libs/utils/src/utils/recipe_tiers.py (AUDIT_STEPS: the second list of a tier of an audit recipe)
 # consumed_by: libs/transformer/src/transformer/engine_python_polars.py (the entry that app/modules/engine_registry.py hands to app/modules/orchestrator.py), app/modules/data_analysis_recipe_validator.py (tier_steps), app/modules/wrangle_studio.py (tier_steps), app/handlers/blueprint_handlers.py, libs/transformer/tests/debug_assembler.py, libs/transformer/tests/debug_wrangler.py
 # doc: .claude/rules/rules_data_engine.md, .claude/knowledge/architecture_decisions.md#ADR-094
 # @end_deps
@@ -12,6 +13,7 @@ from transformer.registry import get_action_function
 from utils.step_migration import removed_action_catalog
 from utils.action_names import JOIN
 from utils.errors import TransformationError, DataAnalysisRecipeError
+from utils.recipe_tiers import AUDIT_STEPS
 from utils.pipeline_error import PipelineError
 
 
@@ -25,9 +27,11 @@ class DataWrangler:
     """
 
     @staticmethod
-    def tier_steps(body: Any, tier: str) -> List[Dict[str, Any]]:
+    def tier_steps(body: Any, tier: str, audit: bool = False) -> List[Dict[str, Any]]:
         """
-        The step list of one tier of a table, a join or a plot entry (D-0250): `body[tier]["steps"]`.
+        The step list of one tier of a table, a join or a plot entry (D-0250) that the engine RUNS: `body[tier]["steps"]`, then the audit steps
+        `body[tier]["audit_steps"]` (D-0332). The audit list is read only when `audit` is True (the engine runs an audit copy); in any other recipe a tier that
+        holds `audit_steps` is refused with a plain error, never run with fewer or more steps.
 
         `body` is the table (or join, or for tier3 the plot entry) mapping itself. A tier is written as its own key, a mapping with the
         list under `steps` and an optional `data_engine`; a tier that is not written gives no steps. The old shapes
@@ -37,6 +41,7 @@ class DataWrangler:
         Args:
             body: the table or join mapping (empty or None gives no steps).
             tier: 'tier1' or 'tier2' of a table or a join; 'tier3' of a plot entry.
+            audit: True when the recipe is an audit copy (the caller knows it: `LoadedDataAnalysisRecipe.is_audit_copy`).
         """
         if tier not in ("tier1", "tier2", "tier3"):
             raise ValueError(f"tier must be 'tier1', 'tier2' or 'tier3', not {tier!r}")
@@ -60,15 +65,22 @@ class DataWrangler:
             raise DataAnalysisRecipeError(
                 f"{tier} is written as {'a list' if isinstance(held, list) else repr(held)}, not as a mapping with steps.",
                 tip=f"Write {tier}: {{steps: [...]}} (the list under steps). Rewrite tool: {tool}.")
-        extra = sorted(k for k in held if k not in ("data_engine", "steps"))
+        extra = sorted(k for k in held if k not in ("data_engine", "steps", AUDIT_STEPS))
         if extra:
             raise DataAnalysisRecipeError(
                 f"{tier} has the key(s) {', '.join(map(str, extra))}; a tier holds data_engine and steps only.",
                 tip=f"Write the steps under {tier}.steps. Rewrite tool: {tool}.")
+        if AUDIT_STEPS in held and not audit:
+            raise DataAnalysisRecipeError(
+                f"{tier} has {AUDIT_STEPS}: only an audit recipe has audit steps, and this is not an audit recipe.",
+                tip=f"Remove {AUDIT_STEPS}; the steps of the author are written under {tier}.steps.")
         steps = held.get("steps")
         if not isinstance(steps, list):
             raise DataAnalysisRecipeError(
                 f"{tier} has no list of steps.", tip=f"Write {tier}: {{steps: []}} when the tier is empty.")
+        audit_list = held.get(AUDIT_STEPS) if AUDIT_STEPS in held else []
+        if not isinstance(audit_list, list):
+            raise DataAnalysisRecipeError(f"{tier}.{AUDIT_STEPS} is not a list of steps.", tip=f"Write {AUDIT_STEPS}: [...] or remove it.")
         # Performance heuristic: relational joins belong in Tier 1 (computed once and shared by every plot)
         if tier == "tier2":
             for act in steps:
@@ -76,7 +88,7 @@ class DataWrangler:
                     raise DataAnalysisRecipeError(
                         f"Performance Alert: Action '{act.get('action')}' found in Tier 2.",
                         tip="Relational joins are foundational. Please move this step to 'tier1' (The Trunk) to ensure it is only computed once and shared across all dependent plots.")
-        return steps
+        return steps + audit_list if audit_list else steps
 
     def run(self, lf: pl.LazyFrame, wrangling_rules: List[Dict[str, Any]]) -> pl.LazyFrame:
         """

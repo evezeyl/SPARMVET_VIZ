@@ -13,26 +13,100 @@ Pure functions on the resolved recipe (a dictionary); no engine, no disk. The en
 keys, the export, HOME's badge, the checker and the Blueprint lineage all read the tiers through this module, so the
 rule exists once.
 
+THE AUDIT LIST (D-0332, piece C-1). In an AUDIT recipe each tier body is `{steps: [...], audit_steps: [...]}`: `steps` is the author's list,
+never touched; `audit_steps` is the second list, the steps of the audit. The engine runs `steps`, then `audit_steps`. `step_list(body, tier)` is
+the ONE reading that RUNS a tier (the author's steps, then the audit steps); `author_steps` and `audit_steps_of` give each list apart (the keys of
+the stored tables, the audit copy, the checker and the Blueprint writer need them apart). A reader that reads a tier's `steps` directly would
+skip the audit steps silently: `app/tests/test_tier_steps_one_reader.py` fails when one does. The key name `audit_steps` is in ONE constant,
+`AUDIT_STEPS`; the reason of an audit step is the step key `AUDIT_COMMENT` (D-0329); the id of an audit step has the form `AUDIT_ID`.
+
 # @deps
-# provides: function:collection_body, function:tier2_steps, function:step_list, function:plot_entries, function:plot_entry, function:tier3_steps, function:plot_targets, function:unapplied_schema_tier2, function:unapplied_join_tier2, function:without_tier2, function:without_data_engines, function:collection_bodies, function:schema_bodies
+# provides: constant:AUDIT_STEPS, constant:AUDIT_COMMENT, constant:AUDIT_ID, function:author_steps, function:audit_steps_of, function:tier2_parts, function:tier3_parts, function:without_audit_steps, function:audit_step_places, function:collection_body, function:tier2_steps, function:step_list, function:plot_entries, function:plot_entry, function:tier3_steps, function:plot_targets, function:unapplied_schema_tier2, function:unapplied_join_tier2, function:without_tier2, function:without_data_engines, function:collection_bodies, function:schema_bodies
 # consumed_by: app/modules/cache_keys.py, app/modules/engine_record.py (collection_body, step_list), app/modules/orchestrator.py (plot_entry, tier3_steps; collection_body), libs/utils/src/utils/recipe_check.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/utils/tests/test_recipe_tiers.py, app/tests/test_schema_tier2.py
 # doc: .claude/design/recipe_format_spec.md (DEC16, line 357, S07, X4), .claude/knowledge/architecture_decisions.md#adr-089
 # @end_deps
 """
-from typing import Any, Dict, List, Set
+import copy
+import re
+from typing import Any, Dict, List, Set, Tuple
 
 # The sections that hold schemas. They share one id space with the joins (S02, X1).
 SCHEMA_SECTIONS = ("data_schemas", "additional_datasets_schemas")
 METADATA_SCHEMA = "metadata_schema"
 
 
-def step_list(body: Any, tier: str) -> list:
-    """The steps of one tier of a schema or a join (`body[tier]["steps"]`, D-0250) as a new list; empty when absent.
+# The second list of a tier body, in an audit recipe only (D-0332). The decided name; written here and nowhere else.
+AUDIT_STEPS = "audit_steps"
+# The reason of an audit step: a step key of its own, free text (D-0329). The author's `comment` key is another thing.
+AUDIT_COMMENT = "audit_comment"
+# The id of an audit step: `audit_<8 hex>_<k>`, `k` counting the order in which the steps were created in that audit (D-0321).
+AUDIT_ID = re.compile(r"^audit_[0-9a-f]{8}_\d+$")
 
-    Only the mapping form is read: a tier written as a list is refused by the checker (S06, J07)."""
+
+def _list_of(body: Any, tier: str, key: str) -> list:
     held = body.get(tier) if isinstance(body, dict) else None
-    steps = held.get("steps") if isinstance(held, dict) else None
+    steps = held.get(key) if isinstance(held, dict) else None
     return list(steps) if isinstance(steps, list) else []
+
+
+def author_steps(body: Any, tier: str) -> list:
+    """The author's steps of one tier of a schema or a join (`body[tier]["steps"]`, D-0250) as a new list; empty when absent.
+
+    Only the mapping form is read: a tier written as a list is refused by the checker (S06, J07). The audit steps are NOT here:
+    whatever RUNS steps reads `step_list`."""
+    return _list_of(body, tier, "steps")
+
+
+def audit_steps_of(body: Any, tier: str) -> list:
+    """The audit steps of one tier (`body[tier]["audit_steps"]`) as a new list; empty when absent (every recipe that is not an audit recipe)."""
+    return _list_of(body, tier, AUDIT_STEPS)
+
+
+def step_list(body: Any, tier: str) -> list:
+    """The steps one tier RUNS: the author's steps, then the audit steps, as a new list (D-0332). THE one reading of a tier for whatever
+    runs, counts or follows steps (the engine, the recipe map, the badge, the export); empty when the tier is absent."""
+    return author_steps(body, tier) + audit_steps_of(body, tier)
+
+
+# Every tier name: `audit_step_places` looks in all of them, also where no tier is read (a tier 3 of a table, a tier 1 of a plot): the key is found wherever it is written.
+_ALL_TIERS = ("tier1", "tier2", "tier3")
+
+
+def audit_step_places(raw: Any) -> List[str]:
+    """Where a recipe holds an `audit_steps` key at all (even an empty one, even where no tier reads it), as the path of each tier body, in the order of the recipe: tables, joins,
+    then plots. Empty for an ordinary recipe. Lets a reader that is not the checker (the engine) refuse an audit key in a recipe that is not an audit recipe."""
+    found: List[str] = []
+    if not isinstance(raw, dict):
+        return found
+    for section in SCHEMA_SECTIONS:
+        for sid, body in (raw.get(section) or {}).items() if isinstance(raw.get(section), dict) else []:
+            found.extend(_tiers_with_audit(body, f"{section}.{sid}", _ALL_TIERS))
+    if METADATA_SCHEMA in raw:
+        found.extend(_tiers_with_audit(raw[METADATA_SCHEMA], METADATA_SCHEMA, _ALL_TIERS))
+    for jid, body in (raw.get("joins") or {}).items() if isinstance(raw.get("joins"), dict) else []:
+        found.extend(_tiers_with_audit(body, f"joins.{jid}", _ALL_TIERS))
+    for pid, entry in plot_entries(raw).items():
+        found.extend(_tiers_with_audit(entry, f"plot {pid}", _ALL_TIERS))
+    return found
+
+
+def _tiers_with_audit(body: Any, path: str, tiers: Tuple[str, ...]) -> List[str]:
+    return [f"{path}.{tier}" for tier in tiers if isinstance(body, dict) and isinstance(body.get(tier), dict) and AUDIT_STEPS in body[tier]]
+
+
+def without_audit_steps(raw: Any) -> Any:
+    """A deep copy of the recipe without any `audit_steps` key: the recipe as the author wrote it (an audit recipe minus its audit steps is its
+    original, D-0040). A tier body that holds nothing else is kept (`{steps: [...]}`); the recipe given is not changed."""
+    stripped = copy.deepcopy(raw)
+    if not isinstance(stripped, dict):
+        return stripped
+    bodies: List[Any] = list(collection_bodies(stripped).values()) + list(plot_entries(stripped).values())
+    for body in bodies:
+        if isinstance(body, dict):
+            for tier in ("tier1", "tier2", "tier3"):
+                if isinstance(body.get(tier), dict):
+                    body[tier].pop(AUDIT_STEPS, None)
+    return stripped
 
 
 def schema_bodies(raw: dict) -> Dict[str, Any]:
@@ -55,7 +129,7 @@ def collection_body(raw: dict, collection_id: str) -> Any:
 
 
 def tier2_steps(raw: dict, collection_id: str) -> list:
-    """The tier-2 steps of one collection; an empty list means T2 equals T1.
+    """The tier-2 steps of one collection that RUN (the author's, then the audit steps); an empty list means T2 equals T1.
 
     A join id is looked up first, then a schema id, the order the engine resolves a collection in
     (`DataOrchestrator.materialize_tier1`); one id naming both is refused by the checker (X1)."""
@@ -67,6 +141,12 @@ def tier2_steps(raw: dict, collection_id: str) -> list:
     if isinstance(schema, dict):
         return step_list(schema, "tier2")
     return []
+
+
+def tier2_parts(raw: dict, collection_id: str) -> Tuple[list, list]:
+    """(the author's tier-2 steps, the audit tier-2 steps) of one collection, the two lists apart (the cache keys hold them in two parts)."""
+    body = collection_body(raw, collection_id)
+    return author_steps(body, "tier2"), audit_steps_of(body, "tier2")
 
 
 def plot_entries(raw: dict) -> Dict[str, dict]:
@@ -87,10 +167,16 @@ def plot_entry(raw: dict, plot_id: str) -> Any:
 
 
 def tier3_steps(raw: dict, plot_id: str) -> list:
-    """The tier-3 steps of one plot entry (`tier3.steps`, DEC17, D-0250); an empty list means the plot reads its table as it is.
+    """The tier-3 steps of one plot entry that RUN (`tier3.steps`, DEC17, D-0250, then the audit steps); an empty list means the plot reads its table as it is.
 
     The same reading as the other tiers (`step_list`): only the mapping form is read, the checker refuses any other (P04)."""
     return step_list(plot_entry(raw, plot_id), "tier3")
+
+
+def tier3_parts(raw: dict, plot_id: str) -> Tuple[list, list]:
+    """(the author's tier-3 steps, the audit tier-3 steps) of one plot entry, apart."""
+    entry = plot_entry(raw, plot_id)
+    return author_steps(entry, "tier3"), audit_steps_of(entry, "tier3")
 
 
 def plot_targets(raw: dict) -> Set[str]:

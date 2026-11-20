@@ -547,3 +547,46 @@ def test_the_graph_builds_over_every_shipped_recipe_and_every_plot_reaches_a_sou
     for column_node in graph.nodes():
         info = graph.column_info(column_node)
         assert (info.names is None) == (info.how == "unknown")
+
+
+# ---------------------------------------------------------------- the audit steps of a tier (D-0332) ------------------------
+
+def _audit(step, number=1):
+    return {**step, "id": f"audit_1a2b3c4d_{number}", "audit_comment": "why"}
+
+
+def test_an_audit_filter_keeps_the_columns_and_an_audit_drop_removes_a_named_column():
+    """The graph reads the tier the way the engine runs it: the author's steps, then the audit steps. A filter keeps the columns; a drop removes the one it names."""
+    raw = recipe(schemas={"A": schema(["id", "a", "b"])}, plots={"p": plot("A")})
+    assert build_graph(raw).columns_of("T1:A") == ("id", "a", "b")
+    raw["data_schemas"]["A"]["tier1"]["audit_steps"] = [_audit(FILTER)]
+    assert build_graph(raw).columns_of("T1:A") == ("id", "a", "b")
+    raw["data_schemas"]["A"]["tier1"]["audit_steps"] = [_audit(FILTER), _audit({"action": "polars_drop", "columns": ["b"]}, 2)]
+    graph = build_graph(raw)
+    assert graph.columns_of("T1:A") == ("id", "a")
+    assert graph.columns_of("T2:A") == ("id", "a") and graph.columns_of("T3:p") == ("id", "a")
+
+
+def test_an_audit_drop_comes_after_the_authors_select_and_a_drop_of_an_absent_column_changes_nothing():
+    select = {"action": "polars_select", "exprs": ["id", "a"]}
+    raw = recipe(schemas={"A": schema(["id", "a", "b"], tier1=[select])}, plots={"p": plot("A")})
+    raw["data_schemas"]["A"]["tier1"]["audit_steps"] = [_audit({"action": "polars_drop", "columns": ["a"]})]
+    assert build_graph(raw).columns_of("T1:A") == ("id",)
+    raw["data_schemas"]["A"]["tier1"]["audit_steps"] = [_audit({"action": "polars_drop", "columns": ["b"]})]
+    assert build_graph(raw).columns_of("T1:A") == ("id", "a")
+
+
+def test_an_audit_step_at_tier_2_and_tier_3_changes_the_columns_of_those_nodes_only():
+    raw = recipe(schemas={"A": schema(["id", "a"], tier2=[])}, plots={"p": plot("A", tier3=[])})
+    raw["data_schemas"]["A"]["tier2"]["audit_steps"] = [_audit({"action": "polars_drop", "columns": ["a"]})]
+    raw["analysis_groups"]["g"]["plots"]["p"]["tier3"]["audit_steps"] = [_audit({"action": "polars_drop", "columns": ["id"]}, 2)]
+    graph = build_graph(raw)
+    assert graph.columns_of("T1:A") == ("id", "a") and graph.columns_of("T2:A") == ("id",) and graph.columns_of("T3:p") == ()
+
+
+def test_an_audit_step_the_recipe_cannot_describe_makes_the_columns_unknown_with_its_place_named():
+    raw = recipe(schemas={"A": schema(["id", "a"])}, plots={"p": plot("A")})
+    raw["data_schemas"]["A"]["tier1"]["audit_steps"] = [_audit({"action": "polars_sort", "by": ["a"], "maintain_order": True}, 1),
+                                                        _audit({"action": "polars_with_columns", "exprs": []}, 2)]
+    info = build_graph(raw).column_info("T1:A")
+    assert info.names is None and "polars_with_columns" in info.reason
