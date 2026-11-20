@@ -42,6 +42,9 @@ def test_the_form_is_cleared_with_the_filters_by_a_mode_round_trip(page: Page, s
     _choose_operator(page, "in")
     picked = _pick_a_value(page)
     assert _form_state(page)["items"] == [picked]
+    page.locator("#filter_add_row").click()   # a staged filter row: there is something to clear
+    _wait_shiny(page)
+    _pick_a_value(page)   # and the form holds a pick again, as in the walk
     set_mode(page, "audit")
     set_mode(page, "exploration")
     _open_filters_panel(page)
@@ -51,11 +54,27 @@ def test_the_form_is_cleared_with_the_filters_by_a_mode_round_trip(page: Page, s
     assert state["col"] == state["first"] and not state["items"], state
 
 
+def test_the_form_is_kept_when_there_were_no_filters_to_clear(page: Page, shiny_app: ShinyAppProc):
+    """Nothing to remove: a change of the view that leaves the columns as they are keeps what the user is choosing (the rule of
+    test_filter_form_survives_rerender.py is not changed by HOME-WALK C)."""
+    _fresh(page, shiny_app.url)
+    _open_filters_panel(page)
+    _choose_column_firmly(page, "sample_id")
+    _choose_operator(page, "in")
+    picked = _pick_a_value(page)
+    set_view(page, "T2")
+    set_view(page, "T3")
+    assert _form_state(page)["items"] == [picked] and _form_state(page)["col"] == "sample_id"
+
+
 def test_the_form_is_cleared_when_the_viewed_table_changes(page: Page, shiny_app: ShinyAppProc):
     _fresh(page, shiny_app.url)
     _open_filters_panel(page)
     _choose_column_firmly(page, "sample_id")
     _choose_operator(page, "in")
+    _pick_a_value(page)
+    page.locator("#filter_add_row").click()
+    _wait_shiny(page)
     _pick_a_value(page)
     set_view(page, "T1")
     page.wait_for_function("() => { const e = document.getElementById('fb_value'); return !e || !e.selectize || e.selectize.items.length === 0; }", timeout=10_000)

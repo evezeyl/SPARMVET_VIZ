@@ -12,7 +12,6 @@ Run: PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/test
 from playwright.sync_api import Page
 
 from app.tests import gate_stage as g
-from app.tests.browser_view import set_mode, set_view
 from app.tests.gate_stage import wait_shiny
 from app.tests.test_opening_browser import built_lines, store_state
 
@@ -28,12 +27,13 @@ def test_user_actions_after_the_opening_build_nothing(page: Page, tmp_path, monk
 
         page.locator(".nav-link:has-text('AMR')").first.click()
         wait_shiny(page, 60_000)
-        page.locator("#dynamic_tabs .nav-link:has-text('Virulence Bar')").first.click()
+        page.locator("#dynamic_tabs .nav-link:has-text('MLST Bar')").first.click()
         wait_shiny(page, 60_000)
-        for view in ("T1", "T2", "SRC", "T3"):
-            set_view(page, view)
-        set_mode(page, "audit")
-        set_mode(page, "exploration")
+        # the waits are long: under the load of a parallel run a redraw can take more than the 10 s of `browser_view`
+        for radio in ("#data_view input[value=T1]", "#data_view input[value=T2]", "#data_view input[value=SRC]", "#data_view input[value=T3]",
+                      "#home_mode input[value=audit]", "#home_mode input[value=exploration]"):
+            page.locator(radio).check(force=True)
+            wait_shiny(page, 60_000)
         page.locator("#nav_accordion").get_by_text("Filters").first.click()
         wait_shiny(page)
         page.locator("#fb_col").select_option(index=1)

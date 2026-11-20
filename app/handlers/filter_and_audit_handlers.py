@@ -186,7 +186,11 @@ def define_filter_audit_server(input, output, session, *,
             if previous is None or previous == key:
                 return
             n_pending, n_applied = _clear_exploration_filters()
-            _form_reset.set(_form_reset.get() + 1)   # the column, the operator and the value of the form go back to their start
+            if n_pending or n_applied:
+                # HOME-WALK C: the filters were removed and the notice says so: the form goes back to its start with them (its column, operator and value
+                # would otherwise still name the pick of the removed filters). With nothing to remove the form is kept: a change of view that leaves the
+                # columns as they are keeps what the user is choosing (`test_filter_form_survives_rerender.py`).
+                _form_reset.set(_form_reset.get() + 1)
             text = view_change_notice(previous, key, n_pending, n_applied)
             if text:
                 _notify(text, type="warning", duration=10)
