@@ -2,8 +2,8 @@
 @deps
 provides: class:AppFeaturesValidator
 consumes: config/app_features/*.yaml, app/modules/deployment_error.py
-consumed_by: app/src/server.py
-doc: .claude/knowledge/architecture_decisions.md#adr-077, #adr-078
+consumed_by: app/src/server.py (validate_file with the deployment's app_features_override, D-0018), scripts/validate_app_features_config.py, scripts/audit_app_features_flags.py, app/tests/test_app_features_validator.py
+doc: .claude/knowledge/architecture_decisions.md#adr-077, #adr-078, .claude/rules/rules_app_features_flags.md (Rule 6, D-0018)
 """
 from pathlib import Path
 from typing import Optional
@@ -105,17 +105,6 @@ class AppFeaturesValidator:
         # Rule 4 (removed, ADR-091): an app features file names no data analysis recipe; the deployment does,
         # and the bootloader stops the app if the selector is hidden and no data analysis recipe is named.
 
-        # Rule 5: child flags must not be True when their master gate is False
-        # (Soft cascade — bootloader will silently suppress at runtime; warn so operator knows.)
-        for master, children in _CASCADE_GATES.items():
-            if not features.get(master, False):
-                for child in children:
-                    if features.get(child, False):
-                        warnings.append(
-                            f"'{child}=True' has no effect — '{master}=False' "
-                            f"(bootloader cascade will suppress it at runtime). Fix the template."
-                        )
-
         # Rule 6 (D-0018): the audit (t3_sandbox_enabled) requires comparison, sessions and
         # export; comparison requires the audit. FATAL, never silently rewritten.
         def _where(*flags: str) -> str:
@@ -164,6 +153,19 @@ class AppFeaturesValidator:
                 reference=".claude/rules/rules_app_features_flags.md (Rule 6) + D-0018",
                 related=("comparison_mode_enabled", "t3_sandbox_enabled"),
             ))
+
+        # Rule 5: child flags must not be True when their master gate is False
+        # (Soft cascade — bootloader will silently suppress at runtime; warn so operator knows.)
+        # A flag that a fatal rule below already names is not warned about as well: the output says one thing (D-0018).
+        fatal_flags = {f for e in errors for f in e.related}
+        for master, children in _CASCADE_GATES.items():
+            if not features.get(master, False):
+                for child in children:
+                    if features.get(child, False) and child not in fatal_flags:
+                        warnings.append(
+                            f"'{child}=True' has no effect — '{master}=False' "
+                            f"(bootloader cascade will suppress it at runtime). Fix the template."
+                        )
 
         # Rule 7: Group D FATAL cascades — child must NOT be True while master is False.
         # No silent suppression (ADR-077). YAML state and runtime state must match.

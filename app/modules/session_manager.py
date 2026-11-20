@@ -27,7 +27,7 @@ from __future__ import annotations
 # provides: constant:SESSION_FORMAT_VERSION, function:session_format_problem (D-0312), function:session_recipe_refusal (D-0317), class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, function:extract_primary_keys, function:split_key_drops, function:key_drop_notice, class:SessionImportLimits, function:session_import_limits_from (D-0283), function:session_input_id_part, function:session_input_id_parts (two listed sessions never share a button), exception:SessionImportRefused, exception:SessionKeyExists (D-0281)
 # consumes: app/modules/error_notice.py (notice — VERIF-FIX-2, lazy), libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, re, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1; batch_hash_of, dataset_file_hashes: the one reading of the data files for the keys, ADR-101)
 # consumes: libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/recipe_tiers.py (step_list) — extract_primary_keys reads joins.*.tier1.steps and tier2.steps (D-0250)
-# consumed_by: app/src/bootloader.py (limits), app/tests/test_session_import_safety.py, app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py, app/handlers/filter_and_audit_handlers.py (make_audit_step)
+# consumed_by: app/src/bootloader.py (limits), app/tests/test_session_import_safety.py, app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py, app/handlers/filter_and_audit_handlers.py (make_audit_step), app/modules/bundle_importer.py (LegacySessionError)
 # doc: .claude/rules/ui_implementation_contract.md#12d, .claude/knowledge/architecture_decisions.md#ADR-097
 # @end_deps
 
@@ -264,6 +264,13 @@ def session_recipe_refusal(ghost: dict, open_recipe_id: str, session_key: str) -
     return None
 
 
+def _not_a_mapping_line(where: str, data) -> str:
+    """The plain line for a session file whose JSON is not a mapping (a list, a number, text), naming the file."""
+    kind = {list: "a list", dict: "a mapping", str: "text", bool: "true or false", int: "a number", float: "a number",
+            type(None): "nothing (null)"}.get(type(data), type(data).__name__)
+    return f"{where} is not a session file: it holds {kind}, not the record of a session."
+
+
 class SessionManager:
     """Manages session identity, T1/T2 ghost, and T3 ghost files.
 
@@ -364,12 +371,21 @@ class SessionManager:
                         on_problem(notice(
                             f"The earlier record of the session {session_key} could not be read, so it was written again and "
                             "its label, if it had one, is lost", "type the label again in the Session Management panel", exc))
+                if earlier is not None and not isinstance(earlier, dict):
+                    label = ""
+                    if on_problem is not None:
+                        from app.modules.error_notice import notice
+                        on_problem(notice(
+                            f"The earlier record of the session {session_key} could not be read, so it was written again and "
+                            "its label, if it had one, is lost", "type the label again in the Session Management panel",
+                            ValueError(_not_a_mapping_line(f"Session {session_key} ({path.name})", earlier))))
+                    earlier = None
                 if earlier is not None:
                     # Never written over without saying so (D-0312): the stored record of another format number stays as it is.
                     problem = session_format_problem(earlier, f"Session {session_key} ({path.name})")
                     if problem:
                         raise LegacySessionError(problem)
-                    label = earlier.get("label", "") if isinstance(earlier, dict) else ""
+                    label = earlier.get("label", "")
         ghost = {
             "session_key": session_key,
             "data_analysis_recipe_id": data_analysis_recipe_id,
@@ -396,6 +412,8 @@ class SessionManager:
         """Read a stored session file; refuse one written before the rename, naming the fix."""
         from app.modules.renamed_keys import legacy_session_problem, refused_audit_step_in_ghost
         data = json.loads(path.read_text())
+        if not isinstance(data, dict):
+            raise ValueError(_not_a_mapping_line(f"{label} ({path.name})", data))
         problem = (session_format_problem(data, f"{label} ({path.name})")
                    or legacy_session_problem(data, f"{label} ({path.name})")
                    or refused_audit_step_in_ghost(data, f"{label} ({path.name})"))
@@ -691,7 +709,15 @@ class SessionManager:
                 raise ValueError("ZIP does not contain a valid session (no assembly.json or t3_*.json found).")
             from app.modules.renamed_keys import legacy_session_problem, refused_audit_step_in_ghost
             for name in assembly_files + t3_files:
-                data = json.loads(zf.read(name))
+                try:
+                    data = json.loads(zf.read(name))
+                except ValueError as exc:
+                    raise SessionImportRefused(
+                        f"The zip was refused and nothing was written: the file {_shown(name)} is not readable JSON ({exc}).") from exc
+                if not isinstance(data, dict):
+                    raise SessionImportRefused(
+                        "The zip was refused and nothing was written: "
+                        + _not_a_mapping_line(f"the file {_shown(name)}", data))
                 problem = (session_format_problem(data, f"Imported session file {name}")
                            or legacy_session_problem(data, f"Imported session file {name}")
                            or refused_audit_step_in_ghost(data, f"Imported session file {name}"))
