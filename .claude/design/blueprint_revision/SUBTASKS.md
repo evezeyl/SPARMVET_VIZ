@@ -13,6 +13,8 @@ States: done / in work / parked / next.
 | 5 | The Claude AI agent: what was planned, what exists; "integrated in CLI and via API" | partly done | facts in `02_planned_vs_existing.md` section J | The options document `.claude/design/adr076_mvp2_backend_options.md` already holds the open choices A to E; step 5 remains: bring them to the guide with the ranking |
 | 6 | The guide: what the rebuild planning needs, the larger decisions ranked first, no details | next (last) | `GUIDE.md` (not written) | Inputs: all files above. The ranked list of larger decisions starts from `02_planned_vs_existing.md` section K (open choices, unranked) and `03_parked_items_and_known_gaps.md` |
 
+Step 1 addendum (2026-11-20): the earlier BLUEPRINT studies that were only in the git-ignored `tmpAI/` are now kept in git under `prior_work/` (copies, each with a first header line naming its source; see `prior_work/README.md`). They are sources for the guide, not decisions; where they differ from `02_planned_vs_existing.md`, that file is the newer reading.
+
 ## Resume here
 
 Resume at step 2 (nothing of step 2 to 6 is started). First read `01_sources.md` (what exists and how reliable it is), then `02_planned_vs_existing.md` (sections A to K), then `03_parked_items_and_known_gaps.md`. The viewpoint agents of step 4 have not been started. Do not redo the reading of the code: the facts and their file:line are written there. Two things to refresh before relying on any line number: the code moves (the HOME and GALLERY work is still going on in `dev`), and the prior gap report of 2026-11-18 was written before the merge of the recipe format 1 branch.
