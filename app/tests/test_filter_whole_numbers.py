@@ -1,12 +1,11 @@
 """A column of whole numbers takes whole numbers only in the HOME filter (D-0376).
 
 # @deps
-# consumes: app/modules/t3_audit_engine.py (refuse_decimal_for_whole_numbers, dialog_value, _apply_filter_rows)
+# consumes: app/modules/t3_audit_engine.py (refuse_decimal_for_whole_numbers, dialog_value, _apply_filter_rows: unchanged for stored rows)
 # @end_deps
 
 For every integer type and every operator (both ends of between included) a decimal is refused with the plain line and
-nothing is added; a decimal column is untouched; "12.0" is read as 12 (PROVISIONAL); an old row that holds a decimal for an
-integer column gives the same plain error, never a silent result.
+nothing is added; a decimal column is untouched; "12.0" is read as 12 (PROVISIONAL); a stored row is read as before.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_filter_whole_numbers.py -q
 """
@@ -85,13 +84,38 @@ def test_text_that_is_not_a_number_is_not_the_business_of_this_rule():
         refuse_decimal_for_whole_numbers(["12", "12.5"], pl.Int64)
 
 
+@pytest.mark.parametrize("text", ["12,5", "1e-1", "12.5", " -0,5 "])
+def test_a_decimal_typed_as_text_gets_the_one_whole_number_sentence(text):
+    with pytest.raises(FilterValueError) as exc:
+        dialog_value(lf_of(pl.Int64), "x", pl.Int64, False, "gt", operand=text)
+    assert str(exc.value) == line(pl.Int64)
+
+
 @pytest.mark.parametrize("row", [
     {"column": "x", "op": "gt", "value": "12.5"}, {"column": "x", "op": "eq", "value": 12.5},
     {"column": "x", "op": "between", "value": ["11.5", 14]}, {"column": "x", "op": "in", "value": [12, 12.5]},
 ])
-def test_an_old_or_restored_row_with_a_decimal_gives_the_plain_error_not_rows(row):
-    with pytest.raises(FilterValueError, match="This column holds whole numbers"):
-        _apply_filter_rows(lf_of(pl.Int64), [row]).collect()
+def test_a_STORED_row_with_a_decimal_is_read_as_before_it_is_not_refused(row):
+    """D-0376 is about the value box; the evaluation of stored rows is unchanged (what they should do is not decided)."""
+    _apply_filter_rows(lf_of(pl.Int64), [row]).collect()   # no FilterValueError
+
+
+def test_a_stored_decimal_threshold_gives_the_same_rows_in_home_plot_and_recipe_action():
+    """The four-way agreement for a stored decimal on an integer column: the HOME table, the plot filter and the exported action."""
+    import transformer.actions  # noqa: F401
+    from blueprint_arch.t3_translator import translate_t3_node
+    from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
+    from viz_factory.viz_factory import VizFactory
+    lf = pl.LazyFrame({"i": [88, 90, 91], "s": ["a", "b", "c"]})
+    rows = [{"column": "i", "op": "ge", "value": "90.5", "dtype": "Int64"}]
+    home = _apply_filter_rows(lf, rows).collect()["s"].to_list()
+    plot = VizFactory().render(lf, {"plots": {"p": {"mapping": {"x": "s", "y": "i"}, "layers": [{"name": "geom_col", "params": {}}],
+                                                    "filters": rows}}}, "p").data["s"].to_list()
+    node = {"node_type": "filter_row", "params": dict(rows[0]), "reason": "r", "id": "n1"}
+    step = translate_t3_node(node)
+    step = step[0] if isinstance(step, list) else step
+    action = AVAILABLE_WRANGLING_ACTIONS[step["action"]](lf, {k: v for k, v in step.items() if k != "action"}).collect()["s"].to_list()
+    assert home == plot == action == ["c"]
 
 
 def test_an_old_row_with_whole_values_still_filters():

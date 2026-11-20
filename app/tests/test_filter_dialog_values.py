@@ -208,6 +208,18 @@ def test_a_number_of_the_box_is_typed_from_the_schema(raw, dtype, expected):
     assert got == expected and type(got) is type(expected)
 
 
+def test_a_decimal_entered_for_an_integer_column_is_refused_at_entry_D0376():
+    with pytest.raises(FilterValueError, match="whole number"):
+        typed_operand(90.5, pl.Int64)
+
+
+def test_a_STORED_decimal_value_for_an_integer_column_is_still_read_as_a_number():
+    # the reader of stored values is unchanged by D-0376 (what a stored decimal should do is not decided)
+    from utils.filter_values import read_filter_value
+    got = read_filter_value(90.5, pl.Int64)
+    assert got == 90.5 and type(got) is float
+
+
 def test_an_empty_number_box_is_reported():
     with pytest.raises(FilterValueError):
         typed_operand(None, pl.Int64)

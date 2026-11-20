@@ -264,7 +264,8 @@ def refuse_decimal_for_whole_numbers(value, dtype) -> None:
     Raises the plain `FilterValueError` "This column holds whole numbers (Int64); type a whole number." (PROVISIONAL sentence) when a
     value (or one of a list) is a decimal. "12.0" is read as 12 (PROVISIONAL). Text that is not a number, an empty value and a
     value for another type are not judged here: `read_filter_value` says what is wrong with them. A float column is untouched.
-    The recipe action `modif_filter` keeps its own rule (BLUEPRINT is not built, D-0376).
+    Called only where a value is ENTERED (`typed_operand`, used by `dialog_value`, and the live line of the form); rows already stored are read by
+    `_apply_filter_rows` as before (what a stored decimal on an integer column should do is not decided). The recipe action `modif_filter` keeps its own rule.
     """
     if kind_of(dtype) != "int":
         return
@@ -272,7 +273,10 @@ def refuse_decimal_for_whole_numbers(value, dtype) -> None:
         if isinstance(item, bool) or item is None:
             continue
         try:
-            number = float(str(item).strip()) if isinstance(item, str) else float(item)
+            text = item.strip() if isinstance(item, str) else None
+            if text is not None and re.fullmatch(r"[+-]?\d+,\d+", text):
+                text = text.replace(",", ".")   # a decimal comma gets the same whole-number line as a decimal point
+            number = float(text) if text is not None else float(item)
         except (ValueError, TypeError, OverflowError):
             continue
         if not number.is_integer():
@@ -648,7 +652,6 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
         if actual_dtypes and col not in actual_dtypes:
             continue
         dtype = actual_dtypes.get(col) or f.get("dtype")
-        refuse_decimal_for_whole_numbers(f.get("value"), dtype)   # an old row or a restored session row: a plain error, never a silent result (D-0376)
         condition = filter_condition(col, f.get("op", "eq"), f.get("value"), dtype, f.get("closed", "both"))
         # NA-RULE-63: "keep" adds the rows with no value; a row without `na` removes them
         lf = lf.filter(keep_missing(condition, col, na_of(f)))
