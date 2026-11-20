@@ -869,8 +869,9 @@ New task entries (2026-11-20):
 - [ ] **GALLERY-TWO-NAMES** `[haiku/low]` — waits for the owner: 13 examples show one name in the dropdown (recipe `info.label`) and another title in the guidance (`example_meta.md`). List in the builder's report, saved in `tmpAI/coordinator/gallery_fixes_review/`.
 - [ ] **GALLERY-DEAD-LINKS** `[haiku/low]` — waits for the owner: 7 examples link 6 addresses on r-graph-gallery.com that answer "not found".
 - [ ] **GALLERY-REMOVE-ALL-BUTTON** `[not decided]` — not decided: a button that clears every tick never existed in the Gallery (checked in the history of its files). Ledger D-0368.
-- [ ] **HOME-WALK-FINDINGS** `[sonnet/medium]` — the 15 findings of the HOME browser walk, `tmpAI/coordinator/home_walk_2026-11-20/FINAL_REPORT.md`. After the opening build is merged.
+- [ ] **HOME-WALK-FINDINGS** `[sonnet/medium]` — the 15 findings of the HOME browser walk, `tmpAI/coordinator/home_walk_2026-11-20/FINAL_REPORT.md`. After the opening build is merged. Finding "file columns not imported" is closed for HOME by D-0374 (HOME is silent by decision; nothing to build).
 - [ ] **PLOT-BUILD-ERROR-RAW-TEXT** `[sonnet/medium]` — HOME: a plot that fails in the plot library's build step (an empty table under a log scale) shows a raw error text instead of the message picture. Held as a strict xfail in `app/tests/test_shiny_plot_errors.py`.
+- [ ] **BLUEPRINT-UNDECLARED-COLUMNS** `[sonnet/medium]` — in BLUEPRINT, inform the recipe maker of file columns the recipe does not declare (D-0374). Not started; where and in what words is not decided.
 
 ## Archive pointers
 
