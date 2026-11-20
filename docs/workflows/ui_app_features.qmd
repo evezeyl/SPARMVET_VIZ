@@ -136,8 +136,12 @@ t3_sandbox_enabled: true   (together with interactivity_enabled)
   └─ Right sidebar Pipeline Audit panel (audit_stack)
 ```
 
+**The audit and comparison go together:** `t3_sandbox_enabled: true` requires `comparison_mode_enabled`,
+`session_management_enabled` and `export_enabled`, and `comparison_mode_enabled: true` requires
+`t3_sandbox_enabled`. A setup that breaks this does not start; the message names the two flags.
+
 **Effect if `interactivity_enabled: false`:** The Filters panel and the whole header strip are
-absent — no mode switch and no table selector at all. `comparison_mode_enabled` and
+absent — no mode switch and no table selector at all. `t3_sandbox_enabled`, `comparison_mode_enabled` and
 `session_management_enabled` have no effect even if set to `true` (soft cascade — the
 bootloader silently forces them to `false` and logs a warning). `export_enabled` is unaffected
 (Group A).
