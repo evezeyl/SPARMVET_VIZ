@@ -51,6 +51,12 @@ from app.modules.plot_seeds import (
 # Module-level provenance helpers (headless-safe — no Shiny imports)
 # ---------------------------------------------------------------------------
 
+def exported_tiers(*, has_t2: bool, has_t3: bool) -> list:
+    """The tiers whose tables are in the bundle, for the README and the report (HOME-WALK F): T1 always, T2 when a dataset of the plots has tier-2 steps
+    (the same condition that writes its T2 file), T3 when a plot has audited or tier-3 steps (the same condition that writes its T3 file)."""
+    return ["T1"] + (["T2"] if has_t2 else []) + (["T3"] if has_t3 else [])
+
+
 def build_export_provenance(
     *,
     now,
@@ -1144,7 +1150,7 @@ def define_export_server(input, output, session, *,
             plot_keys = {_p: export_keys.plot_key_of(_p) for _p, _spec in all_plots
                          if _spec.get("target_dataset") and tier3_steps(cfg.raw_config, _p)}
 
-            tiers_exported = ["T1"] + (["T3"] if t3_table_plots else [])
+            tiers_exported = exported_tiers(has_t2=any(tier2_steps(cfg.raw_config, _ds) for _ds in stage_keys), has_t3=bool(t3_table_plots))
             anchor_dir = bootloader.get_location("user_data") / "anchors"
 
             prov = build_export_provenance(
