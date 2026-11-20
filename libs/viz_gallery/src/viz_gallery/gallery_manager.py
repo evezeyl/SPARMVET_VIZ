@@ -13,7 +13,7 @@ No Shiny import. If deleted: `gallery_index.json` cannot be rebuilt and the gall
 
 # @deps
 # provides: class:GalleryManager (check_examples, build_index, write_index, rebuild_index, sync_index, submit_example (no screen or script calls it; only libs/viz_gallery/tests/test_gallery_bundle.py does, and example_recipe.py shares its form with convert_gallery_examples.py), list_submissions), class:Examples, constant:RECIPE_FILE
-# consumes: libs/utils/src/utils/recipe_loader.py (check_recipe_file, load_recipe), libs/utils/src/utils/recipe_check.py (check_recipe), libs/utils/src/utils/legacy_keys.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, libs/viz_gallery/src/viz_gallery/example_recipe.py
+# consumes: libs/utils/src/utils/recipe_loader.py (check_recipe_file, load_recipe), libs/utils/src/utils/recipe_check.py (check_recipe, check_recipe_set), libs/utils/src/utils/legacy_keys.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, libs/viz_gallery/src/viz_gallery/example_recipe.py
 # consumed_by: app/modules/gallery_examples.py, assets/scripts/gallery_previews.py, assets/scripts/convert_gallery_examples.py, libs/viz_gallery/tests/test_gallery_bundle.py
 # doc: .claude/design/recipe_format_spec.md (section 9)
 # @end_deps
@@ -30,7 +30,7 @@ from typing import Dict, FrozenSet, List, Optional, Tuple
 import polars as pl
 
 from utils.legacy_keys import LEGACY_GALLERY_FILES
-from utils.recipe_check import check_recipe
+from utils.recipe_check import check_recipe, check_recipe_set
 from utils.recipe_loader import check_recipe_file, load_recipe
 from viz_gallery.example_recipe import DATA_FILE, data_contract, data_summary, dump_example, example_recipe, plot_summary
 from viz_gallery.taxonomy import display_axes, example_name, example_taxonomy, tag_strip, with_tag_strip
@@ -94,8 +94,27 @@ class GalleryManager:
             elif result.errors:
                 rejected[name] = [problem.text() for problem in result.errors]
             else:
-                accepted[name] = load_recipe(recipe_path)[0]
+                recipe = load_recipe(recipe_path)[0]
+                reasons = self._repeats(name, recipe, accepted)
+                if reasons:
+                    rejected[name] = reasons
+                else:
+                    accepted[name] = recipe
         return Examples(accepted=accepted, rejected=rejected, coverage=frozenset(coverage))
+
+    @staticmethod
+    def _repeats(name: str, recipe: dict, accepted: Dict[str, dict]) -> List[str]:
+        """Why an example cannot join the ones already accepted: its name or its plot id is already taken (PROVISIONAL wording).
+
+        The plot id goes through the set check of the format (`check_recipe_set`, X5: the app registers plots by id);
+        the name shown in the dropdown is compared here, as written. The earlier example (folder name order) is kept.
+        """
+        reasons = [f"{problem.text()}" for problem in check_recipe_set({**accepted, name: recipe}) if problem.path.startswith(f"{name}:")]
+        taken = {example_name(other): other_id for other_id, other in accepted.items()}
+        label = example_name(recipe)
+        if label in taken:
+            reasons.append(f"the name {label!r} is also the name of the example {taken[label]}. Fix: give each example its own ui_label")
+        return reasons
 
     def build_index(self, examples: Examples) -> dict:
         """The index of the accepted examples and the pivot of the six axes, built and not written.

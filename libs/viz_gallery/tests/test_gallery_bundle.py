@@ -346,14 +346,14 @@ def test_a_plot_entry_without_ui_label_is_refused_by_the_check_and_has_no_name(t
 
 def _synced_gallery(tmp_path, *names):
     for name in names or ("my_plot",):
-        _write_example(tmp_path, name)
+        _write_example(tmp_path, name, label=f"Plot {name}")   # one name each: a repeated name is left out
     manager = GalleryManager(str(tmp_path))
     manager.rebuild_index(CATALOGS)
     return manager
 
 
 def _rewrite_recipe(tmp_path, name, change):
-    recipe = _recipe(name)
+    recipe = _recipe(name, label=f"Plot {name}")
     change(recipe)
     (tmp_path / name / RECIPE).write_text(dump_example(recipe))
 
@@ -401,7 +401,7 @@ def test_sync_rewrites_the_index_when_the_thumbnail_appears(tmp_path):
 
 def test_sync_rewrites_the_index_when_an_example_is_added(tmp_path):
     manager = _synced_gallery(tmp_path)
-    _write_example(tmp_path, "second_plot")
+    _write_example(tmp_path, "second_plot", label="Plot second_plot")
     assert manager.sync_index(CATALOGS)[1] == "rewritten"
     assert set(_index(tmp_path)["registry"]) == {"my_plot", "second_plot"}
 
@@ -431,3 +431,32 @@ def test_build_index_is_pure_and_the_write_is_separate(tmp_path):
     built = manager.build_index(manager.check_examples(CATALOGS))
     assert built["registry"] == _index(tmp_path)["registry"] and built["pivot"] == _index(tmp_path)["pivot"]
     assert (tmp_path / "gallery_index.json").read_bytes() == before
+
+
+# ---- a name or a plot id repeated across examples (the set check) -------------------------------------------------------
+
+def test_a_later_example_with_the_same_name_is_left_out_with_its_reason(tmp_path):
+    _write_example(tmp_path, "a_first")
+    _write_example(tmp_path, "b_second")   # both are called "My Plot"
+    examples = GalleryManager(str(tmp_path)).check_examples(CATALOGS)
+    assert set(examples.accepted) == {"a_first"}
+    assert any("My Plot" in text and "a_first" in text for text in examples.rejected["b_second"])
+
+
+def test_a_later_example_with_the_same_plot_id_is_left_out_with_its_reason(tmp_path):
+    _write_example(tmp_path, "a_first", plot_id="shared_id", label="First")
+    _write_example(tmp_path, "b_second", plot_id="shared_id", label="Second")
+    examples = GalleryManager(str(tmp_path)).check_examples(CATALOGS)
+    assert set(examples.accepted) == {"a_first"}
+    assert any("X5" in text and "shared_id" in text for text in examples.rejected["b_second"])
+
+
+def test_examples_with_their_own_name_and_plot_id_are_all_kept_and_the_reason_reaches_the_index(tmp_path):
+    _write_example(tmp_path, "a_first", label="First")
+    _write_example(tmp_path, "b_second", label="Second")
+    _write_example(tmp_path, "c_third")
+    _write_example(tmp_path, "d_fourth")   # "My Plot" again, repeats c_third
+    manager = GalleryManager(str(tmp_path))
+    index = manager.rebuild_index(CATALOGS)
+    assert set(index["registry"]) == {"a_first", "b_second", "c_third"}
+    assert "d_fourth" in index["metadata"]["rejected"]
