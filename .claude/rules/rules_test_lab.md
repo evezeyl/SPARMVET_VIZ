@@ -131,8 +131,8 @@ The Data analysis recipe Bootstrapper generates **boilerplate only**.
 | `data_schemas:` entries | Yes | One per uploaded file |
 | `source: type:` and `source: path:` | Yes | |
 | `input_fields:` with inferred types | Yes | From TSV headers + sampling |
-| `wrangling: tier1: []` / `tier2: []` stubs | Yes | Empty stubs only |
-| `output_fields: {}` stub | Yes | Empty — user fills |
+| `tier1:` (an `!include` of a file that holds `steps`; a tier is its own key) | Yes | Empty `steps` stub only; no `tier2` (an absent tier 2 means T2 equals T1) (D-0250; built, `bootstrapper.py:93, 115`) |
+| `output_fields` | No | Removed from the format (D-0034); the published columns are a last `polars_select` step |
 | PK candidate hints as YAML comments | Yes | e.g. `# Candidate PK: sample_id (100% unique)` |
 | Single-key cleaning steps | Yes | Only if `id_cleaning_steps` param provided |
 | `joins: {}` stub | Yes | Empty stub |
@@ -140,7 +140,7 @@ The Data analysis recipe Bootstrapper generates **boilerplate only**.
 | `analysis_groups:` | No | User's responsibility |
 | Analysis wrangling | No | User's responsibility |
 | Plot specs | No | User's responsibility |
-| `final_contract:` | No | User's responsibility |
+| `final_contract:` | No | Removed from the format (D-0034) |
 
 ### 4b. Known bugs — fix in TL-BOOTSTRAP-FIX-1 before any TEST_LAB integration
 
@@ -152,7 +152,7 @@ Do not add new Bootstrapper features until TL-BOOTSTRAP-FIX-1 is complete.
 
 ### 4c. ID cleaning id transformation injection
 
-When called with `id_cleaning_steps` param, the Bootstrapper may inject steps into `tier1:` wrangling. Valid actions: `strip_whitespace`, `cast` (String only), `regex_replace`. No other wrangling is injected by the Bootstrapper.
+When called with `id_cleaning_steps` param, the Bootstrapper may inject steps into `tier1:` wrangling. Valid actions (written by `id_reconciliation.recipe_steps`, with the prefixed names of D-0036): `polars_str_strip_chars`, `polars_cast` (String only), `polars_str_replace_all`, and `polars_with_columns` for lower case. No other wrangling is injected by the Bootstrapper.
 
 ---
 
