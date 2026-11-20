@@ -429,18 +429,24 @@ class RecipeGraph:
 
 # ---------------------------------------------------------------------- building
 
-# PROVISIONAL name (the coordinator's): source_tables_of_plot. It lives here, with the graph, because it is a pure query of the map (no data,
+# PROVISIONAL names (the coordinator's, owner's question P-B7): source_tables_of_plot, source_tables_of_table. It lives here, with the graph, because it is a pure query of the map (no data,
 # no file, no engine); the orchestrator reads the tables it names (`DataOrchestrator.read_source`).
 def source_tables_of_plot(graph: "RecipeGraph", plot_id: str) -> List[str]:
     """The ids of the source tables (data schemas, metadata, additional datasets) that feed a plot, each once, in graph order.
-    KeyError with a plain message for a plot id the recipe does not have. A plot that reads a table directly lists that table's source;
+    The order is the graph order (a table after those it depends on; among free ones the order of the recipe: schemas as declared), not the order
+    the ingredients of a join are written in. KeyError ("The recipe has no plot 'x'.") for a plot id the recipe does not have: KeyError is the
+    type `RecipeGraph.node` and `plot_key` already raise, so callers of the graph handle it. A plot that reads a table directly lists that table's source;
     a plot on a join lists the source of every ingredient."""
+    if not graph.has_node(f"T3:{plot_id}"):
+        raise KeyError(f"The recipe has no plot '{plot_id}'.")
     return [graph.node(n).name for n in graph.source_tables(f"T3:{plot_id}")]
 
 
 def source_tables_of_table(graph: "RecipeGraph", table_id: str) -> List[str]:
     """The same for a table (a schema or a join): the source tables its tier 1 reads, each once, in graph order.
-    KeyError with a plain message for an id that is not a table of the recipe."""
+    The order is the graph order, as for a plot. KeyError ("The recipe has no table or join 'x'.") for an id that is not a table of the recipe."""
+    if not graph.has_node(f"T1:{table_id}"):
+        raise KeyError(f"The recipe has no table or join '{table_id}'.")
     return [graph.node(n).name for n in graph.source_tables(f"T1:{table_id}")]
 
 

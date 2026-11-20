@@ -157,14 +157,20 @@ class DataOrchestrator:
         rules = engine.wrangler.tier_steps(ds_schema, "tier1")
         return engine.wrangler().run(lf, rules)
 
-    # PROVISIONAL name (the coordinator's): read_source
+    # PROVISIONAL name (the coordinator's, owner's question P-B7): read_source
     def read_source(self, data_analysis_recipe_id: str, dataset_id: str, loaded: LoadedDataAnalysisRecipe | None = None) -> pl.LazyFrame:
         """One source table of a recipe as the ingestion reads it, with its declared types, before any tier-1 step (the Source view of HOME,
-        D-0310). Lazy; nothing is written to disk and no key is touched. The same read as the tier-1 build (`_read_source`).
-        `loaded` is a pinned recipe (an audit copy), as in `materialize_tier1`.
+        D-0310). The same read as the tier-1 build (`_read_source`).
 
-        Raises FileNotFoundError for a recipe that has no file, DataAnalysisRecipeError for a table id the recipe does not name, and the
-        ingestion's own error (IngestionError) when the file is missing or cannot be read; the error is the one the tier-1 build gives."""
+        What is true: the CALL reads the file once to validate it, as the tier-1 build does (a missing file, an empty file, a missing declared
+        column or a value that does not fit its type raise here, not at `.collect()`); the returned frame is a lazy scan of the file, so the
+        rows are read again when it is collected. Nothing is written to disk and no key is touched. It is not free: it costs one read of the file.
+        `loaded` is a pinned recipe (an audit copy), as in `materialize_tier1`: the table is then the one of the pinned text, and the recipe
+        file need not exist.
+
+        Raises FileNotFoundError for a recipe that has no file (and none handed in), DataAnalysisRecipeError for a table id the recipe does not
+        name, and IngestionError ("Source table 'X' could not be read: ...") when the file cannot be read; it is the kind of error the tier-1 build
+        gives. IngestionError has no subclass today, so the re-raise loses none; the ingestion's PipelineError is carried over."""
         path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
         if loaded is None and not path.exists():
             raise FileNotFoundError(f"Data analysis recipe not found: {path}")
@@ -178,7 +184,8 @@ class DataOrchestrator:
         except IngestionError as error:
             # The same kind of error as the tier-1 build ("Dataset 'X' could not be loaded ..."), naming the table and the reason.
             raise IngestionError(f"Source table '{dataset_id}' could not be read: {error}",
-                                 tip=getattr(error, "tip", None) or "Check the file and the input_fields of this table in the data analysis recipe.") from error
+                                 tip=getattr(error, "tip", None) or "Check the file and the input_fields of this table in the data analysis recipe.",
+                                 pipeline_error=getattr(error, "pipeline_error", None)) from error
         return lf
 
     def inputs_changed(self, data_analysis_recipe_id: str, built_from: DataAnalysisRecipeKeys, collection_id: str,

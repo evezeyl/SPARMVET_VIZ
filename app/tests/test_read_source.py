@@ -36,23 +36,26 @@ def _tree(folder: Path) -> set:
     return {str(p.relative_to(folder)) for p in folder.rglob("*")} if folder.exists() else set()
 
 
+# The recipes that must load and draw as a graph. A recipe that drops out fails the test (it is not skipped). A recipe that is expected not
+# to draw would be named in EXPECTED_NOT_TO_DRAW with its reason; none is today.
+SHIPPED = ["1_Abromics_general_pipeline", "1_test_data_ST22_dummy", "2_test_data_ST22_dummy", "3_test_no_joins", "demo_abromics",
+           "figshare_integration", "stress_test_master"]
+EXPECTED_NOT_TO_DRAW: dict[str, str] = {}
+
+
 def _shipped():
-    out = []
-    for path in sorted(RECIPES.glob("*.yaml")):
-        try:
-            with contextlib.redirect_stdout(io.StringIO()):
-                raw = load_data_analysis_recipe(path).raw
-            graph = build_graph(raw)
-        except BaseException:  # noqa: BLE001 - a recipe that does not load or draw is not a subject here
-            continue
-        out.append(path.stem)
-    return out
+    return SHIPPED
 
 
 # -- the shipped recipes -----------------------------------------------------------------------
 
-def test_the_shipped_list_is_not_empty():
-    assert len(_shipped()) >= 5
+def test_the_pinned_shipped_recipes_are_exactly_the_recipes_of_the_folder_that_load_and_draw():
+    on_disk = sorted(p.stem for p in RECIPES.glob("*.yaml"))
+    assert sorted(SHIPPED + list(EXPECTED_NOT_TO_DRAW)) == on_disk, "a recipe was added or removed: update SHIPPED"
+    for recipe_id in SHIPPED:
+        with contextlib.redirect_stdout(io.StringIO()):
+            raw = load_data_analysis_recipe(RECIPES / f"{recipe_id}.yaml").raw
+            build_graph(raw)
 
 
 @pytest.mark.parametrize("recipe_id", _shipped())
@@ -102,9 +105,20 @@ def test_source_keeps_the_declared_type(tmp_path):
     assert world.orch.read_source("tiny", "T").collect_schema()["group"] == pl.String
 
 
-def test_read_source_is_lazy(tmp_path):
+def test_the_returned_frame_is_a_lazy_scan_of_the_file_not_a_collected_table(tmp_path):
     world = World(tmp_path)
-    assert isinstance(world.orch.read_source("tiny", "T"), pl.LazyFrame)
+    frame = world.orch.read_source("tiny", "T")
+    plan = frame.explain()
+    assert "SCAN" in plan and "T.tsv" in plan
+    assert "DF [" not in plan                      # the plan of an eagerly collected frame
+    assert "DF [" in frame.collect().lazy().explain()   # the check can tell the two apart
+
+
+def test_the_call_validates_the_file_before_any_collect(tmp_path):
+    world = World(tmp_path)
+    world.write_data("sample_id\tother\ns1\tA\n")
+    with pytest.raises(IngestionError):
+        world.orch.read_source("tiny", "T")   # no .collect()
 
 
 # -- the plain errors and edge cases ------------------------------------------------------------
@@ -156,7 +170,15 @@ def test_a_file_with_only_the_header_gives_an_empty_table_with_the_declared_type
 def test_a_missing_declared_column_fails_with_a_plain_error(tmp_path):
     world = World(tmp_path)
     world.write_data("sample_id\tother\ns1\tA\n")
-    with pytest.raises(IngestionError, match="group"):
+    with pytest.raises(IngestionError, match=r"Source table 'T' could not be read.*group"):
+        world.orch.read_source("tiny", "T").collect()
+
+
+def test_a_value_that_does_not_fit_its_declared_type_fails_and_names_the_table_and_the_column(tmp_path):
+    world = World(tmp_path)
+    world.write_data_analysis_recipe(group_type="Int64")
+    clear_data_analysis_recipe_cache()
+    with pytest.raises(IngestionError, match=r"Source table 'T' could not be read.*group"):
         world.orch.read_source("tiny", "T").collect()
 
 
@@ -183,6 +205,81 @@ def test_reading_the_shipped_sources_leaves_the_keys_of_the_recipes_as_they_were
                 except Exception:  # noqa: BLE001 - a table the tier-1 build cannot read either
                     pass
             assert orch.compute_data_analysis_recipe_keys(recipe_id) == before
+
+
+# -- a pinned recipe, the import folder, by_dataset_id --------------------------------------------
+
+def _pinned(world, mutate):
+    """A pinned recipe (an audit copy) made from the one on disk, changed by `mutate`; the file on disk is not changed."""
+    from app.modules.cache_keys import loaded_from_resolved
+    import copy
+    original = load_data_analysis_recipe(world.data_analysis_recipes_dir / "tiny.yaml")
+    raw = copy.deepcopy(dict(original.raw))
+    mutate(raw)
+    return loaded_from_resolved(original, raw)
+
+
+def test_a_pinned_recipe_with_another_source_path_gives_the_table_of_the_pinned_text(tmp_path):
+    world = World(tmp_path)
+    other = tmp_path / "other.tsv"
+    other.write_text("sample_id\tgroup\nz1\tB\n")
+    pinned = _pinned(world, lambda raw: raw["data_schemas"]["T"]["source"].update(path=str(other)))
+    assert world.orch.read_source("tiny", "T", loaded=pinned).collect().rows() == [("z1", "B")]
+    assert world.orch.read_source("tiny", "T").collect().height == 3   # the file on disk is unchanged
+
+
+def test_a_pinned_recipe_can_hold_a_table_the_file_on_disk_does_not_have(tmp_path):
+    world = World(tmp_path)
+    extra = tmp_path / "extra.tsv"
+    extra.write_text("sample_id\tgroup\nq1\tA\n")
+
+    def add(raw):
+        raw["data_schemas"]["X"] = {**raw["data_schemas"]["T"], "source": {"type": "local_tsv", "path": str(extra)}}
+    pinned = _pinned(world, add)
+    assert world.orch.read_source("tiny", "X", loaded=pinned).collect().rows() == [("q1", "A")]
+    with pytest.raises(DataAnalysisRecipeError, match="No source table 'X'"):
+        world.orch.read_source("tiny", "X")
+
+
+def test_a_pinned_recipe_does_not_need_a_recipe_file_on_disk(tmp_path):
+    world = World(tmp_path)
+    pinned = _pinned(world, lambda raw: None)
+    (world.data_analysis_recipes_dir / "tiny.yaml").unlink()
+    assert world.orch.read_source("tiny", "T", loaded=pinned).collect().height == 3
+    with pytest.raises(FileNotFoundError):
+        world.orch.read_source("tiny", "T")
+
+
+def test_an_unknown_table_in_a_pinned_recipe_gives_the_plain_error(tmp_path):
+    world = World(tmp_path)
+    pinned = _pinned(world, lambda raw: raw["data_schemas"].pop("T") and None)
+    with pytest.raises(DataAnalysisRecipeError, match="No source table 'T'.*Known: none"):
+        world.orch.read_source("tiny", "T", loaded=pinned)
+
+
+def test_a_table_not_in_the_import_folder_fails_and_raw_data_is_never_read(tmp_path):
+    world = World(tmp_path)
+    imports = tmp_path / "imports"
+    (imports / "tiny" / "data").mkdir(parents=True)
+    orch = DataOrchestrator(world.data_analysis_recipes_dir, world.data_dir, imports_dir=imports)
+    assert world.data_file.exists()   # raw_data and the recipe path HOLD a file for T
+    with pytest.raises(IngestionError, match="has no file in the data folder of the import of 'tiny'") as caught:
+        orch.read_source("tiny", "T")
+    assert "Source table 'T' could not be read" in str(caught.value)
+    (imports / "tiny" / "data" / "T.tsv").write_text("sample_id\tgroup\nonly\tA\n")
+    assert orch.read_source("tiny", "T").collect().rows() == [("only", "A")]   # now the import's file, not raw_data's
+
+
+def test_by_dataset_id_finds_the_file_by_the_table_id_and_ignores_the_recipe_path(tmp_path):
+    world = World(tmp_path)
+    raw_data = tmp_path / "delivered"
+    raw_data.mkdir()
+    (raw_data / "T.tsv").write_text("sample_id\tgroup\nd1\tB\n")
+    orch = DataOrchestrator(world.data_analysis_recipes_dir, raw_data, data_lookup="by_dataset_id")
+    assert orch.read_source("tiny", "T").collect().rows() == [("d1", "B")]
+    (raw_data / "T.tsv").unlink()
+    with pytest.raises(IngestionError, match="Source table 'T' could not be read"):
+        orch.read_source("tiny", "T")   # the recipe's own path (which exists) is not used
 
 
 # -- the source tables of a plot: the graph ------------------------------------------------------
@@ -217,19 +314,27 @@ def test_a_table_reached_through_two_paths_is_listed_once():
     assert source_tables_of_plot(graph, "p") == ["A", "B"]
 
 
-def test_the_order_is_stable_and_does_not_depend_on_the_order_of_the_ingredients_alone():
+def test_the_list_follows_the_graph_order_not_the_order_the_ingredients_are_written_in():
+    """Graph order: the order the tables are declared in `data_schemas` (a table after those it depends on)."""
     join = lambda *names: {"ingredients": [{"dataset_id": n} for n in names], "tier1": {"steps": []}}
-    one = build_graph(_recipe({"J": join("B", "A")}, {"p": _plot("J")}))
-    two = build_graph(_recipe({"J": join("B", "A")}, {"p": _plot("J")}))
-    assert source_tables_of_plot(one, "p") == source_tables_of_plot(two, "p")
+    ab = build_graph(_recipe({"J": join("A", "B")}, {"p": _plot("J")}))
+    ba = build_graph(_recipe({"J": join("B", "A")}, {"p": _plot("J")}))
+    assert source_tables_of_plot(ab, "p") == source_tables_of_plot(ba, "p") == ["A", "B"]
+    reordered = _recipe({"J": join("A", "B")}, {"p": _plot("J")})
+    reordered["data_schemas"] = {k: reordered["data_schemas"][k] for k in ("C", "B", "A")}
+    assert source_tables_of_plot(build_graph(reordered), "p") == ["B", "A"]
 
 
 def test_an_unknown_plot_or_table_fails_with_a_plain_message():
     graph = build_graph(_recipe({}, {"p": _plot("A")}))
-    with pytest.raises(KeyError, match="no node 'T3:nope'"):
+    with pytest.raises(KeyError, match="The recipe has no plot 'nope'"):
         source_tables_of_plot(graph, "nope")
-    with pytest.raises(KeyError, match="no node 'T1:nope'"):
+    with pytest.raises(KeyError, match="The recipe has no table or join 'nope'"):
         source_tables_of_table(graph, "nope")
+    with pytest.raises(KeyError, match="no table or join 'p'"):
+        source_tables_of_table(graph, "p")   # a plot id is not a table id
+    with pytest.raises(KeyError, match="no plot 'A'"):
+        source_tables_of_plot(graph, "A")
 
 
 def test_a_plot_with_no_target_table_makes_the_whole_graph_fail_so_no_list_is_given():
