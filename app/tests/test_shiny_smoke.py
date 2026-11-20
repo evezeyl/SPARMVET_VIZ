@@ -28,6 +28,7 @@ from app.tests.browser_view import set_mode, set_view
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
 
 _LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_APP_FEATURES", "developer")
+OPENING_WAIT_MS = 120_000   # the opening of a recipe builds every table and draws every plot once (D-0326)
 
 
 # ---------------------------------------------------------------------------
@@ -73,10 +74,12 @@ def _choose_recipe(page: Page, recipe_id: str) -> None:
     selector = page.locator("#data_analysis_recipe_id")
     selector.select_option(recipe_id)
     expect(selector).to_have_value(recipe_id)
-    _wait_shiny(page, 30_000)
+    # The first selection of a recipe is its opening (D-0326): every table is built and every plot is drawn once before the theater shows, about 15 s on the
+    # largest shipped recipe on an idle machine, so the wait is long.
+    _wait_shiny(page, OPENING_WAIT_MS)
     page.wait_for_timeout(500)
     expect(selector).to_have_value(recipe_id)
-    _wait_shiny(page, 30_000)
+    _wait_shiny(page, OPENING_WAIT_MS)
 
 
 def _wait_for_fb_col_option(page: Page, value: str, timeout: int = 20_000) -> None:

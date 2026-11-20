@@ -386,17 +386,6 @@ class DataOrchestrator:
 
         all_schemas.update(data_analysis_recipe.get("additional_datasets_schemas", {}))
 
-        failures: dict[str, Exception] = {}
-        for ds_id, ds_schema in all_schemas.items():
-            try:
-                ingredients[ds_id] = self.prepare_ingredient(ds_id, ds_schema, recipe_id=data_analysis_recipe_id, recipe=data_analysis_recipe,
-                                                             audit=loaded.is_audit_copy)
-            except Exception as e:
-                # Kept, not dropped: a dataset the requested collection needs makes the build
-                # fail below (issue #18). One the collection does not use only gets a console line.
-                failures[ds_id] = e
-                print(f"⚠️ Ingestion Error in '{ds_id}': {str(e)}")
-
         # 3. Resolve target — may be an assembly OR a bare data_schema
         collection_spec = data_analysis_recipe.get("joins", {}).get(collection_id)
 
@@ -404,6 +393,20 @@ class DataOrchestrator:
             [i.get("dataset_id") if isinstance(i, dict) else i for i in collection_spec.get("ingredients", [])]
             if collection_spec is not None else [collection_id]
         )
+
+        # Only the tables this collection reads are read and run: a build used to read every source table of the recipe, for every table it built
+        # (SPEED-TABLE-BUILD-READS-ALL-SOURCES, measured on the demo recipe: 17 tables, 12 sources read each time). A table the collection does not
+        # read cannot change it, and the load gate checks every table of the recipe at the start.
+        failures: dict[str, Exception] = {}
+        for ds_id in dict.fromkeys(ds for ds in needed if ds in all_schemas):
+            try:
+                ingredients[ds_id] = self.prepare_ingredient(ds_id, all_schemas[ds_id], recipe_id=data_analysis_recipe_id, recipe=data_analysis_recipe,
+                                                             audit=loaded.is_audit_copy)
+            except Exception as e:
+                # Kept, not dropped: the collection reads this table, so the build fails below (issue #18).
+                failures[ds_id] = e
+                print(f"⚠️ Ingestion Error in '{ds_id}': {str(e)}")
+
         broken = [(ds, failures[ds]) for ds in needed if ds in failures]
         if broken:
             ds, error = broken[0]

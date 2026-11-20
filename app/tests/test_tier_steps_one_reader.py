@@ -48,7 +48,7 @@ ALLOWED = {
 # `author_steps` (which would skip the audit steps), lowers the count of the right helper and fails; a new legitimate call raises it and the number is changed on purpose.
 # The behaviour of the readers that are not the engine is proved in `test_audit_readers_see_audit_steps.py`.
 MUST_USE_THE_HELPER = {
-    "app/modules/orchestrator.py": {"tier2_steps": 3, "tier3_steps": 2, "tier_steps": 2},
+    "app/modules/orchestrator.py": {"tier2_steps": 3, "tier3_steps": 2, "tier_steps": 3},   # 3: the table of a failed tier-1 build is explained by running its steps again (`_explain_table_failure`)
     "app/modules/cache_keys.py": {"tier2_parts": 1, "tier3_parts": 1, "audit_steps_of": 1},
     "app/modules/engine_record.py": {"step_list": 2},
     "app/modules/view_badge.py": {"tier2_steps": 1, "tier3_steps": 1},

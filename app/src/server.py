@@ -219,6 +219,7 @@ def server(input, output, session):
         data_refresh_trigger=data_refresh_trigger,
         notification_log=notification_log,
         session_processing_issues=session_processing_issues,
+        recipe_gate_version=recipe_gate_version,
     )
 
     # Pipeline Audit: T2/T3 nodes, btn_apply, audit_pending_badge (requires t3_sandbox_enabled)
