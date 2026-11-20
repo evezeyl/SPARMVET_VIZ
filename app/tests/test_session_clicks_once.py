@@ -88,7 +88,7 @@ class Live:
             self.manager.write_assembly_ghost(key, "tiny", tag * 64, "b" * 64, {}, {})
         self.manager.write_t3_ghost(KEY_A, "tiny", "a" * 64, "b" * 64, t3_audit_steps_by_plot={"subtab_p": [_step("saved")]})
         self.input = LiveInput()
-        for name in ("session_import_upload", "session_delete_all_btn", "session_delete_all_confirm"):
+        for name in ("session_import_upload", "session_delete_all_btn", "session_delete_all_confirm", "session_delete_one_confirm"):
             self.input.set(name, None)
         self.home_state = reactive.Value({"data_analysis_recipe_sha256": "a" * 64, "data_batch_hash": "b" * 64})
         self.log = reactive.Value([])
@@ -98,6 +98,14 @@ class Live:
             self.input, lambda fn: fn, self.session, session_manager=self.manager, current_app_features=None,
             home_state=self.home_state, notification_log=self.log, session_processing_issues=self.issues,
             safe_input=lambda i, k, d: "tiny" if k == "data_analysis_recipe_id" else d)
+
+    _confirms = 0
+
+    async def confirm_delete(self, times=6):
+        """The Delete button of the confirmation (D-0378): one more click of it."""
+        self._confirms += 1
+        self.input.set("session_delete_one_confirm", self._confirms)
+        await _flush(times)
 
     def texts(self, word):
         return [m for _, m in self.notes if word in m]
@@ -170,6 +178,8 @@ def test_one_delete_click_deletes_once(tmp_path, monkeypatch):
         live.input.set(f"session_label_input_{SAFE(KEY_B)}", "")     # the card is drawn: its label box exists
         live.input.set(f"session_delete_{SAFE(KEY_B)}", 1)
         await _flush(6)
+        assert calls == [], "Delete deleted before the question was answered"
+        await live.confirm_delete()
         live.input.set(f"session_label_input_{SAFE(KEY_A)}", "other box changed")
         await _flush(6)
         assert calls == [KEY_B], calls
@@ -195,6 +205,7 @@ def test_the_effect_does_not_depend_on_what_it_writes(tmp_path, monkeypatch):
             live.input.set(name, value)
             await _flush(6)
             assert len(runs) - before == 1, f"{name}: the effect ran {len(runs) - before} times for one click"
+        await live.confirm_delete()
         assert len(live.texts("Session restored")) == 1 and len(live.texts("Session deleted")) == 1
     asyncio.run(scenario())
 
@@ -206,6 +217,7 @@ def test_a_restore_and_a_delete_on_different_cards_both_run_once(tmp_path, monke
         live.input.set(f"session_restore_{SAFE(KEY_A)}", 1)
         live.input.set(f"session_delete_{SAFE(KEY_B)}", 1)
         await _flush(8)
+        await live.confirm_delete()
         assert len(live.texts("Session restored")) == 1 and len(live.texts("Session deleted")) == 1, live.notes
     asyncio.run(scenario())
 

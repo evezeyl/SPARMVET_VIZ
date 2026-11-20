@@ -47,4 +47,4 @@ Set a bundle label, pick a **Quality** preset (Web or Publication ≥600 DPI), a
 **Import a bundle** (above the export fields) reads a reproducibility bundle exported earlier and checks it against this machine; it writes a new recipe and session and never changes the app that is open. Reload the page afterwards to see the new recipe in the selector.
 
 ### Sessions
-**Export Active Session (.zip)** downloads the files of the active session: the record of the recipe and data it belongs to, and your saved audit steps. Exploration filters are never saved. Each saved session is listed with **Restore** (reload it) and **Delete Session**.
+**Export Active Session (.zip)** downloads the files of the active session: the record of the recipe and data it belongs to, and your saved audit steps. Exploration filters are never saved. Each saved session is listed with **Restore** (reload it) and **Delete Session**; Delete asks for a confirmation first ("Delete this session? It cannot be undone.") and Cancel changes nothing.

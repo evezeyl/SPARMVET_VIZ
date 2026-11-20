@@ -84,6 +84,7 @@ def test_keep_both_leaves_a_working_panel_and_the_copy_can_be_restored_and_delet
 
         _show_card(page, "keep_both_panel", f"#session_delete_{session_input_id_part(copy_key)}")
         page.locator(f"#session_delete_{session_input_id_part(copy_key)}").click()
+        page.locator("#session_delete_one_confirm").click()   # D-0378: Delete asks first
         _notices(page, "delete of the copy", "Session deleted", 1)
         expect(page.locator(f"#session_delete_{session_input_id_part(copy_key)}")).to_have_count(0, timeout=10_000)
         assert not (sm.root / copy_key).exists()
@@ -119,6 +120,7 @@ def test_deleting_one_of_two_folders_that_look_alike_leaves_the_other(page: Page
         expect(page.locator(f"#session_delete_{parts[second]}")).to_be_visible()
         assert "cannot tell apart" in page.locator("#session_management_ui").inner_text()
         page.locator(f"#session_delete_{parts[first]}").click()
+        page.locator("#session_delete_one_confirm").click()   # D-0378: Delete asks first
         _notices(page, "delete of one of two look-alike folders", "Session deleted", 1)
         # the panel is drawn again with its groups closed: the deleted card is gone, the group is still listed
         expect(page.locator(f"#session_delete_{parts[first]}")).to_have_count(0, timeout=10_000)

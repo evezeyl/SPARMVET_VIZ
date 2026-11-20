@@ -211,6 +211,7 @@ def test_one_click_on_restore_and_on_delete_acts_once(page: Page, shiny_app: Shi
         # 4. Delete on the other card runs once and the card is gone
         _show_card(page, "restore_once_empty", f"#session_delete_{safe(key_empty)}")
         page.locator(f"#session_delete_{safe(key_empty)}").click()
+        page.locator("#session_delete_one_confirm").click()   # D-0378: Delete asks first
         _notices(page, "4 delete of the other card", "Session deleted", 1)
         _free(page, "4 delete of the other card")
         expect(page.locator(f"#session_delete_{safe(key_empty)}")).to_have_count(0, timeout=10_000)
