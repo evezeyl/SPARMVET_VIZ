@@ -9,7 +9,7 @@
 //   3. at page load, restores it: only a finite number between the stored-share limits is used, turned into px and limited as in 1;
 //      anything else (missing, text, negative, out of range, broken JSON) is ignored and the default width stays. The number goes to
 //      a style as a number of px built here, never as stored text.
-//   4. on a window resize, applies the stored share again; a double click on the handle removes the stored value and gives the default
+//   4. on a window resize (not during a drag), applies the stored share again; a double click on the handle removes the stored value and gives the default
 //      width back.
 // All numbers (floors, ceilings, shares, the half rule) are read from data attributes of #spv_frame_widths, written by
 // app/modules/frame_widths.py: they are not repeated here. Every access to local storage is inside try/catch (private windows).
@@ -23,6 +23,7 @@
   var shares = { left: null, right: null };   // user choice as a share of the window (null: the default)
   var current = { left: null, right: null };  // user choice in px now (null: the default)
   var moved = { left: false, right: false };
+  var dragging = false;               // true from the bslib "start" phase to its "end": bslib fires window resize events during a drag, which must not put the stored share back
 
   function attr(el, name) {
     var v = parseFloat(el.getAttribute("data-" + name));
@@ -110,7 +111,8 @@
     var side = sideOfEvent(ev);
     var d = ev.detail || {};
     if (!side) return;
-    if (d.phase === "start") { moved[side] = false; return; }
+    if (d.phase === "start") { moved[side] = false; dragging = true; return; }
+    if (d.phase === "end") dragging = false;
     if (d.phase !== "move" && d.phase !== "end" && d.phase !== "keyboard") return;
     var width = d.width;
     if (typeof width !== "number" || !isFinite(width)) return;
@@ -167,7 +169,10 @@
       if (h && h.getAttribute("title") !== TITLE) h.setAttribute("title", TITLE);
     });
     document.addEventListener("shiny:connected", markHandles);
-    window.addEventListener("resize", applyShares);
+    // a drag that ends outside the window, is cancelled or loses the window never sends "end" to the page in every case: these clear the flag too
+    ["pointerup", "pointercancel", "mouseup", "blur"].forEach(function (n) { window.addEventListener(n, function () { dragging = false; }); });
+    // a real window resize applies the stored share again, but not while a drag is on
+    window.addEventListener("resize", function () { if (!dragging) applyShares(); });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();

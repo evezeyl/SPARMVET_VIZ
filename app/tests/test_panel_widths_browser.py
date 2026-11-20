@@ -191,6 +191,30 @@ def test_drag_is_kept_after_a_reload_limited_to_half_and_reset_by_a_double_click
     assert page.evaluate("(k) => localStorage.getItem(k)", KEY) is None
 
 
+def test_many_drags_in_one_page_load_all_work_and_a_real_resize_still_applies_the_share(page: Page, shiny_app: ShinyAppProc):
+    """bslib fires window resize events during a drag; re-applying the stored share on each pinned every drag after the first (review of 2026-11-21)."""
+    _open_recipe(page, shiny_app.url, 1366)
+    set_mode(page, "audit")
+    _wait_right(page, True)
+    page.wait_for_timeout(500)
+    left = widths(page)["left"]
+    for dx in (40, 40, -30, 100, -200, 60):
+        _drag(page, LEFT_HANDLE, dx)
+        want = max(fw.LEFT.floor, left + dx)
+        left = widths(page)["left"]
+        assert abs(left - want) < 3, (dx, want, left)
+    right = widths(page)["right"]
+    for dx in (-40, 30, -20):                       # to the left makes the right panel wider
+        _drag(page, RIGHT_HANDLE, dx)
+        want = right - dx
+        right = widths(page)["right"]
+        assert abs(right - want) < 3, (dx, want, right)
+    page.set_viewport_size({"width": 1600, "height": 1000})   # a real resize: the stored shares apply again
+    page.wait_for_timeout(600)
+    got = widths(page)
+    assert abs(got["left"] - left / 1366 * 1600) < 3 and abs(got["right"] - right / 1366 * 1600) < 3, (got, left, right)
+
+
 @pytest.mark.parametrize("stored", ["not json {", '{"left": "abc"}', '{"left": -0.3}', '{"left": 5}', '{"left": 0.9, "right": null}', "[1, 2]"])
 def test_a_broken_stored_value_gives_the_default(page: Page, shiny_app: ShinyAppProc, stored):
     _open_app(page, shiny_app.url, 1366, stored=stored)
