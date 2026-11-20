@@ -51,6 +51,18 @@ def cast(columns: Sequence[str], dtype: str) -> dict:
     return {"action": "polars_cast", "columns": list(columns), "dtype": dtype}
 
 
+def group_by(by: Sequence[str], **aggs: str) -> dict:
+    return {"action": "polars_group_by", "by": list(by), "named_aggs": dict(aggs)}
+
+
+def fill_null(columns: Sequence[str], value: Any) -> dict:
+    return {"action": "polars_fill_null", "columns": list(columns), "value": value}
+
+
+def unpivot(on: Sequence[str], index: Sequence[str]) -> dict:
+    return {"action": "polars_unpivot", "on": list(on), "index": list(index), "variable_name": "variable", "value_name": "value"}
+
+
 def schema(columns: Sequence[str], tier1: Sequence[dict] = (), tier2: Optional[Sequence[dict]] = None, keys: Sequence[str] = ()) -> dict:
     fields = {c: ({"type": "String", "is_entity_key": True} if c in keys else {"type": "String"}) for c in columns}
     body: dict = {"source": {"type": "local_tsv", "path": "x.tsv"}, "input_fields": fields, "tier1": {"steps": list(tier1)}}

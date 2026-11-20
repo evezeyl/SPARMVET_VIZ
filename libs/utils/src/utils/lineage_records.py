@@ -13,43 +13,40 @@ Consumed by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_lineage
 If deleted: the walk has nothing to return.
 
 # @deps
-# provides: class:Walk, class:Line, class:Gone, class:Unread, class:Outside, class:Occurrence, class:Hop, class:StepRef, class:SourceColumn, class:Reach, class:Reason, class:Note, class:Start, class:Scope, constant:HOW_VALUES, constant:REASON_CODES
+# provides: class:Walk, class:Line, class:Gone, class:Unread, class:Outside, class:Occurrence, class:Hop, class:StepRef, class:SourceColumn, class:Reach, class:Reason, class:Note, class:Start, constant:GROUPS, constant:HOW_VALUES, constant:REASON_CODES
 # consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_lineage_walk.py
 # doc: .claude/knowledge/decision_ledger.md (D-0346, D-0347, D-0195, D-0351)
 # @end_deps
 """
 from __future__ import annotations
 
-import enum
 from dataclasses import dataclass
 from typing import Any, FrozenSet, Optional, Tuple
 
 
-class Scope(str, enum.Enum):
-    """How far the walk goes for a column (NOT DECIDED, question O1 of the logic review: the caller must name it, the library has no default).
+# The GROUPS of places (owner, 2026-11-20: the user decides the scope; the walk offers every candidate place, each tagged with its group, and the
+# user ticks). Which groups are offered is PROVISIONAL. A line, a note or a place no plot reads carries the smallest group that holds it:
+LINEAGE = "lineage"          # above and below the chosen place: back to its sources, then forward from them (D-0347 as written)
+JOIN_LINKED = "join_linked"  # also the tables a join on the same column links to it (the key of a join that both sides equate)
+SAME_KEY = "same_key"        # also every source that declares the same key (`is_entity_key`), with no join that links it
+GROUPS = (LINEAGE, JOIN_LINKED, SAME_KEY)
 
-    LINEAGE      D-0347 as written: back to the sources of the chosen place, then forward from them. The set can depend on the place the user
-                 looked from (verified on the demo recipe).
-    JOIN_LINKED  also the tables joined on the same column: every table linked to the start through joins that equate the column. The same
-                 set from every start of one column.
-    SAME_KEY     also every source that declares the same key column (`is_entity_key`) and that a join equates with it or not.
-    """
-    LINEAGE = "lineage"
-    JOIN_LINKED = "join_linked"
-    SAME_KEY = "same_key"
+
+def group_rank(group: str) -> int:
+    return GROUPS.index(group)
 
 
 # How a column got to a place. `unchanged`, `renamed`, `created`, `re_created` and `unknown` are what the walk says today. `cast`, `recomputed`,
 # `dropped` and `gone` are reserved for the steps that are not built (casts, recompute notes, drops); nothing returns them yet.
 UNCHANGED, RENAMED, CREATED, RE_CREATED, UNKNOWN = "unchanged", "renamed", "created", "re_created", "unknown"
-CAST, RECOMPUTED, DROPPED, GONE = "cast", "recomputed", "dropped", "gone"
+CAST, RECOMPUTED, DROPPED, GONE = "cast", "recomputed", "dropped", "gone"   # `cast` and `recomputed` are the `how` of a hop whose step writes the column's values or type (read by name only)
 HOW_VALUES = (UNCHANGED, RENAMED, CAST, RECOMPUTED, DROPPED, RE_CREATED, CREATED, GONE, UNKNOWN)
 
 # The reasons a line is grey: a closed list.
 PLAN_FAILED = "plan_failed"                    # the engine could not give the plan here or above (its sentence is a parameter)
-STEP_NOT_READ = "step_not_read"                # a step on the path is outside the list of D-0351 and the plan cannot show the column unchanged
+STEP_NOT_READ = "step_not_read"                # a step on the path is outside the list of readings and the plan cannot show the column unchanged
 READING_DISAGREES = "reading_disagrees"        # a reading of D-0351 gives other columns than the plan (D-0351: grey, never guessed)
-CHANGE_NOT_FOLLOWED = "change_not_followed"    # the name changes on the path (a rename, a key under another name, a suffix): not followed yet
+CHANGE_NOT_FOLLOWED = "change_not_followed"    # the name or the values change on the path (a rename, a key under another name, a suffix, a cast, a recompute, an aggregate): not followed yet
 SEVERAL_COLUMNS = "several_columns"            # the column exists more than once here (a table joined with itself): which one a step names is not decided
 CANNOT_FOLLOW = "cannot_follow"                # no trace could be made (a plan that disagrees with the one above)
 REASON_CODES = (PLAN_FAILED, STEP_NOT_READ, READING_DISAGREES, CHANGE_NOT_FOLLOWED, SEVERAL_COLUMNS, CANNOT_FOLLOW)
@@ -59,11 +56,9 @@ NOTE_UNREAD_STEP_PASSED = "unread_step_passed"   # the plan shows the name and t
 NOTE_DECLARED_KEY_ONLY = "declared_key_only"     # no join links this table to the start: it declares the same key (`is_entity_key`), nothing more
 NOTE_CODES = (NOTE_UNREAD_STEP_PASSED, NOTE_DECLARED_KEY_ONLY)
 
-# Why a table is listed as outside the scope.
-WHY_JOIN_LINKED = "join_linked"                  # a join on the same column links it; the scope asked does not follow that join
-WHY_DECLARED_SAME_KEY = "declared_same_key"      # it declares the same key column, no join links it
+# Why a table is listed as outside every group.
 WHY_SAME_NAME_NOT_DECLARED = "same_name_not_declared"   # it has a column with the name of a key, not declared a key: information, never a line
-OUTSIDE_CODES = (WHY_JOIN_LINKED, WHY_DECLARED_SAME_KEY, WHY_SAME_NAME_NOT_DECLARED)
+OUTSIDE_CODES = (WHY_SAME_NAME_NOT_DECLARED,)
 
 TICK, GREY = "tick", "grey"
 
@@ -164,7 +159,7 @@ class Line:
 
     `covers`: the nodes collapsed into the place (an empty tier is not a place). `occurrences`: the column there (a list). `state`: `tick`
     (the column is the same one, proved by the plan and the readings) or `grey` (cannot be decided; `reason` says why). `scope_group`: the
-    smallest scope that holds the line (lineage, join_linked, same_key). `reach`: what a step here reaches, whether or not the column survives."""
+    smallest scope that holds the line (`GROUPS`). `reach`: what a step here reaches, whether or not the column survives."""
     place: str
     covers: Tuple[str, ...]
     tier: str
@@ -176,6 +171,7 @@ class Line:
     scope_group: str
     is_start: bool
     reach: Reach
+    refusal: Optional[Reason] = None            # "refused here, with the reason" (the drop of a key column, by place): carried per line, nothing sets it yet (step 4)
 
 
 @dataclass(frozen=True)
@@ -190,6 +186,7 @@ class Gone:
     step_kind: str
     table_changes: bool
     reach: Reach
+    scope_group: str = LINEAGE
 
 
 @dataclass(frozen=True)
@@ -199,12 +196,13 @@ class Unread:
     covers: Tuple[str, ...]
     holds: bool
     reach: Reach
+    scope_group: str = LINEAGE
 
 
 @dataclass(frozen=True)
 class Outside:
-    """A source table that holds a column of the same key and that the walk did not offer as a line, with why (`OUTSIDE_CODES`). Information,
-    never a line. `reach` is what depends on the table."""
+    """A source table that has a column with the name of a key of the walk and that no group holds, with why (`OUTSIDE_CODES`). Information, never a
+    line: the name alone does not make two columns one. `reach` is what depends on the table."""
     table: str
     column: str
     why: str
@@ -213,12 +211,11 @@ class Outside:
 
 @dataclass(frozen=True)
 class Walk:
-    """The result of one walk. `lines` holds every place where a step can be written, ticked or grey, in graph order; nothing the walk
-    cannot decide is left out (D-0195). `key_basis` says what the walk used to call two key columns the same: declared keys and the key pairs
-    of joins, never the name alone."""
+    """The result of one walk. `lines` holds every candidate place where a step can be written, ticked or grey, each tagged with its group (the user
+    chooses the scope by ticking; no scope is applied here), in graph order; nothing the walk cannot decide is left out (D-0195). `key_basis` says what the
+    walk used to call two key columns the same: declared keys and the key pairs of joins, never the name alone."""
     start: Start
     step_kind: str                               # filter or drop
-    scope: Scope
     lines: Tuple[Line, ...]
     gone: Tuple[Gone, ...]
     unread: Tuple[Unread, ...]
@@ -235,5 +232,11 @@ class Walk:
 
     @property
     def accounted(self) -> Tuple[str, ...]:
-        """Every place the walk accounts for: lines, notes and places no plot reads. Each place of the scope's reach is in exactly one."""
+        """Every place the walk accounts for: lines, notes and places no plot reads. Each candidate place is in exactly one."""
         return tuple(x.place for x in self.lines) + tuple(x.place for x in self.gone) + tuple(x.place for x in self.unread)
+
+    def within(self, group: str) -> "Walk":
+        """The walk restricted to the places of this group and the narrower ones (what a caller that offers only some groups shows)."""
+        keep = group_rank(group)
+        return Walk(self.start, self.step_kind, tuple(x for x in self.lines if group_rank(x.scope_group) <= keep), tuple(x for x in self.gone if group_rank(x.scope_group) <= keep),
+                    tuple(x for x in self.unread if group_rank(x.scope_group) <= keep), self.outside, self.key_basis)

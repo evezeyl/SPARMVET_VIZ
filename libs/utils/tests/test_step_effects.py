@@ -10,11 +10,14 @@ BEFORE = Plan.of([("sample_id", "String"), ("country", "String"), ("val", "Float
 RIGHT = Plan.of([("isolate", "String"), ("val", "Float64"), ("lab", "String")])
 
 
-def test_the_list_holds_exactly_the_four_readings_of_d_0351():
-    # a mutant that adds a reading (with_columns, cast, group_by) fails here: reading more than the owner decided is a decision
-    assert set(fx.READINGS) == {action_names.RENAME, action_names.JOIN, action_names.DROP, action_names.SELECT}
+def test_the_list_holds_exactly_the_decided_readings():
+    # a mutant that adds a reading (unpivot, fill_null, ...) fails here: reading more than the owner decided is a decision.
+    # D-0351: rename mapping, join keys and suffix, drop columns, select columns. 2026-11-20: the NAMES a compute step, a group-by and a cast write.
+    assert set(fx.READINGS) == {action_names.RENAME, action_names.JOIN, action_names.DROP, action_names.SELECT,
+                                action_names.WITH_COLUMNS, action_names.CAST, action_names.GROUP_BY}
     assert fx.READINGS[action_names.RENAME] == ("mapping",) and fx.READINGS[action_names.DROP] == ("columns",)
     assert fx.READINGS[action_names.SELECT] == ("exprs",) and "suffix" in fx.READINGS[action_names.JOIN]
+    assert fx.READINGS[action_names.WITH_COLUMNS] == ("named_exprs",) and fx.READINGS[action_names.CAST] == ("columns",)      # names only, never the formula or the type
 
 
 def test_row_steps_are_imported_not_copied():
@@ -24,15 +27,54 @@ def test_row_steps_are_imported_not_copied():
 
 
 @pytest.mark.parametrize("step", [
-    {"action": action_names.WITH_COLUMNS, "named_exprs": {"x": "pl.col('a')"}}, {"action": action_names.CAST, "columns": ["a"], "dtype": "String"},
-    {"action": action_names.GROUP_BY, "by": ["a"]}, {"action": "polars_unpivot"}, {"action": action_names.JOIN_ASOF, "right_ingredient": "B", "on": "a"},
+    {"action": "polars_unpivot"}, {"action": "polars_fill_null", "columns": ["a"], "value": 0}, {"action": action_names.JOIN_ASOF, "right_ingredient": "B", "on": "a"},
     {"action": action_names.JOIN, "right_ingredient": "B", "on": "a", "how": "full"}, {"action": action_names.JOIN, "right_ingredient": "B", "on": "a", "how": "anti"},
     {"action": action_names.SELECT, "exprs": ["pl.col('a')"]}, {"action": action_names.SELECT, "exprs": ["*"]}, {"action": action_names.DROP, "columns": "a"},
-    {"action": action_names.RENAME, "mapping": ["a"]}, {"action": action_names.JOIN, "right_ingredient": "B", "how": "left"}, {}, "not a step",
+    {"action": action_names.RENAME, "mapping": ["a"]}, {"action": action_names.JOIN, "right_ingredient": "B", "how": "left"},
+    {"action": action_names.WITH_COLUMNS, "named_exprs": ["x"]}, {"action": action_names.CAST, "columns": ["pl.col('a')"], "dtype": "String"},
+    {"action": action_names.GROUP_BY, "named_by": {"x": "pl.col('a')"}}, {"action": action_names.GROUP_BY, "by": ["a b"]}, {}, "not a step",
 ])
 def test_everything_else_is_unread_with_a_reason(step):
     effect = fx.effect_of(step)
     assert effect.kind == fx.UNREAD and effect.why
+
+
+def test_the_names_a_compute_step_a_cast_and_a_group_by_write_are_read_never_the_formula():
+    compute = fx.effect_of({"action": action_names.WITH_COLUMNS, "named_exprs": {"era": "pl.col('year') > 2022", "val": "pl.col('val') * 2"}})
+    assert (compute.kind, compute.written) == (fx.WRITES, ("era", "val"))
+    assert fx.effect_of({"action": action_names.CAST, "columns": ["year"], "dtype": "String"}).columns == ("year",)
+    group = fx.effect_of({"action": action_names.GROUP_BY, "by": ["sample_id"], "named_aggs": {"n": "pl.col('x').count()"}})
+    assert (group.kind, group.columns, group.written) == (fx.GROUP, ("sample_id",), ("n",))
+
+
+def test_a_compute_step_leaves_the_other_columns_untouched_and_the_plan_agrees():
+    effect = fx.effect_of({"action": action_names.WITH_COLUMNS, "named_exprs": {"val": "x", "era": "y"}})
+    predicted = fx.predict(effect, BEFORE, None)
+    assert [(p.name, p.change, len(p.sources)) for p in predicted] == [("sample_id", None, 1), ("country", None, 1), ("val", fx.CHANGE_RECOMPUTE, 1), ("era", None, 0)]
+    after = Plan.of([("sample_id", "String"), ("country", "String"), ("val", "Int64"), ("era", "Boolean")])        # a written column may have another type: the plan decides
+    assert fx.agreement_problem(effect, predicted, BEFORE, None, after) is None
+    changed = Plan.of([("sample_id", "Int64"), ("country", "String"), ("val", "Float64"), ("era", "Boolean")])      # but a column the step does not name may not
+    assert "sample_id" in fx.agreement_problem(effect, predicted, BEFORE, None, changed)
+    lost = Plan.of([("sample_id", "String"), ("val", "Float64"), ("era", "Boolean")])
+    assert "country" in fx.agreement_problem(effect, predicted, BEFORE, None, lost)
+
+
+def test_a_group_by_keeps_its_group_columns_aggregates_by_name_and_loses_the_rest():
+    effect = fx.effect_of({"action": action_names.GROUP_BY, "by": ["country"], "named_aggs": {"val": "m", "n": "c"}})
+    predicted = fx.predict(effect, BEFORE, None)
+    assert [(p.name, p.change, len(p.sources)) for p in predicted] == [("country", None, 1), ("val", fx.CHANGE_AGGREGATE, 1), ("n", None, 0)]
+    assert fx.agreement_problem(effect, predicted, BEFORE, None, Plan.of([("country", "String"), ("val", "Float64"), ("n", "UInt32")])) is None
+    assert fx.agreement_problem(effect, predicted, BEFORE, None, Plan.of([("country", "String"), ("val", "Float64")])) is not None
+    missing = fx.effect_of({"action": action_names.GROUP_BY, "by": ["nope"], "named_aggs": {}})
+    assert "nope" in fx.agreement_problem(missing, fx.predict(missing, BEFORE, None), BEFORE, None, Plan.of([]))
+
+
+def test_a_cast_changes_the_type_of_the_columns_it_names_only():
+    effect = fx.effect_of({"action": action_names.CAST, "columns": ["val"], "dtype": "String"})
+    predicted = fx.predict(effect, BEFORE, None)
+    assert [p.change for p in predicted] == [None, None, fx.CHANGE_CAST]
+    assert fx.agreement_problem(effect, predicted, BEFORE, None, Plan.of([("sample_id", "String"), ("country", "String"), ("val", "String")])) is None
+    assert "country" in fx.agreement_problem(effect, predicted, BEFORE, None, Plan.of([("sample_id", "String"), ("country", "Int64"), ("val", "String")]))
 
 
 def test_rename_drop_select_join_are_read():

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Mapping, Set, Tuple
 
 import lineage_oracle as oracle
 
-from utils.lineage_records import Scope, Start, Walk
+from utils.lineage_records import Start, Walk
 from utils.lineage_walk import LineageIndex
 from utils.plan_book import PlanBook
 from utils.recipe_graph import RecipeGraph, build_graph
@@ -17,9 +17,10 @@ def setup(recipe: Mapping[str, Any], tables: Mapping[str, Any]) -> Tuple[RecipeG
     return build_graph(recipe), oracle.replay(recipe, tables).plans
 
 
-def run(recipe: Mapping[str, Any], tables: Mapping[str, Any], node: str, column: str, scope: Scope = Scope.JOIN_LINKED, kind: str = "filter") -> Walk:
+def run(recipe: Mapping[str, Any], tables: Mapping[str, Any], node: str, column: str, group: str = "same_key", kind: str = "filter") -> Walk:
+    """The walk restricted to the places of `group` and the narrower ones (the default shows every group the walk returns)."""
     graph, plans = setup(recipe, tables)
-    return LineageIndex(graph, plans).walk(Start(node, column), scope=scope, kind=kind)
+    return LineageIndex(graph, plans).walk(Start(node, column), kind=kind).within(group)
 
 
 def places(walk: Walk) -> List[str]:

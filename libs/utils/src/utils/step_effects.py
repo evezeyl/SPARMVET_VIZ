@@ -1,17 +1,21 @@
 """What the lineage walk may read from a step itself: the closed list of D-0351, in one place (LBFB step 0c, limited).
 
-The owner decided (D-0351): besides the engine's plan, the walk may read "a short fixed list of what a step itself writes"
-and check each reading against the plan: "each reading is checked against the engine's plan; when they disagree the column
-is shown grey with the reason, never guessed". The list is EXACTLY these four readings:
+The owner decided (D-0351): besides the engine's plan, the walk may read "a short fixed list of what a step itself writes" and check each reading
+against the plan: "each reading is checked against the engine's plan; when they disagree the column is shown grey with the reason, never guessed". On
+2026-11-20 she added that the walk may read the column NAMES a compute step, a group-by and a cast write, never the formula. The list is EXACTLY:
 
 1. the mapping of a rename (`polars_rename`: `mapping`);
 2. the keys, the kind and the suffix of a join (`polars_join`: `right_ingredient`, `on`, `left_on`, `right_on`, `how`, `suffix`);
 3. the columns of a drop (`polars_drop`: `columns`);
-4. the columns of a select (`polars_select`: `exprs`, plain column names only).
+4. the columns of a select (`polars_select`: `exprs`, plain column names only);
+5. the names a compute step writes (`polars_with_columns`: the keys of `named_exprs`, never the formulas);
+6. the columns of a cast (`polars_cast`: `columns`; the type it gives is never read: the plan shows it);
+7. the group columns and the names of the aggregates of a group-by (`polars_group_by`: `by` and the keys of `named_aggs`, never the aggregations).
 
-`READINGS` is that list; a test fails when it holds anything else. Reading anything else from a step (the names a
-`polars_with_columns` writes, a group_by, a cast, a fill) is NOT decided (question O2 of the logic review): such a step is
-`unread`, and the walk then knows only what the plan shows across it (PROVISIONAL, see `lineage_walk`).
+`READINGS` is that list; a test fails when it holds anything else. A step outside it is `unread`: the walk knows only what the plan shows across it
+(PROVISIONAL, see `lineage_walk`). A column that a read step does NOT name is untouched by it (reading and plan agree): it passes with no note and is
+never grey for that step. A column that a step names and that already existed is the same column with its values or type changed (D-0353, D-0337):
+the link is marked `recompute`, `cast` or `aggregate` and the walk does not follow it yet (the note "recomputed here" is a later step).
 
 The actions that only remove, reorder or pick rows (`join_keys.ROW_STEPS`) need no reading of their arguments: the name of
 the action says that the columns stay. They are imported, never copied.
@@ -25,7 +29,7 @@ Consumed by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_step_ef
 If deleted: the walk cannot follow a column across a step.
 
 # @deps
-# provides: function:effect_of, function:predict, function:agreement_problem, function:unread_pairs, class:Effect, class:PredictedColumn, class:Source, constant:READINGS, constant:FOLLOWED_JOINS
+# provides: function:effect_of, function:predict, function:agreement_problem, function:unread_pairs, class:Effect, class:PredictedColumn, class:Source, constant:READINGS, constant:FOLLOWED_JOINS, constant:VALUE_CHANGES
 # consumes: libs/utils/src/utils/join_keys.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/plan_book.py
 # consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_step_effects.py
 # doc: .claude/knowledge/decision_ledger.md (D-0351), .claude/design/home_audit_steps.md
@@ -45,15 +49,21 @@ READINGS: Dict[str, Tuple[str, ...]] = {
     action_names.JOIN: ("right_ingredient", "on", "left_on", "right_on", "how", "suffix"),
     action_names.DROP: ("columns",),
     action_names.SELECT: ("exprs",),
+    action_names.WITH_COLUMNS: ("named_exprs",),
+    action_names.CAST: ("columns",),
+    action_names.GROUP_BY: ("by", "named_aggs"),
 }
 
 # The kinds of join the readings follow (PROVISIONAL, O8): the others are `unread`.
 FOLLOWED_JOINS = ("left", "inner")
 
-KEEPS, RENAME, DROP, SELECT, JOIN, UNREAD = "keeps", "rename", "drop", "select", "join", "unread"
+KEEPS, RENAME, DROP, SELECT, JOIN, WRITES, CAST, GROUP, UNREAD = "keeps", "rename", "drop", "select", "join", "writes", "cast", "group", "unread"
 
 # What a changed name is, for a link that is not the same name (the walk does not follow these yet: step 2).
 CHANGE_RENAME, CHANGE_KEY_OTHER_NAME, CHANGE_SUFFIX = "rename", "key_other_name", "suffix"
+# What a step that writes a column of the same name changes: its values (a compute step), its type (a cast), its meaning (an aggregate).
+CHANGE_RECOMPUTE, CHANGE_CAST, CHANGE_AGGREGATE = "recompute", "cast", "aggregate"
+VALUE_CHANGES = (CHANGE_RECOMPUTE, CHANGE_CAST, CHANGE_AGGREGATE)
 
 
 @dataclass(frozen=True)
@@ -62,7 +72,8 @@ class Effect:
     kind: str
     action: str
     pairs: Tuple[Tuple[str, str], ...] = ()      # rename: (old name, new name)
-    columns: Tuple[str, ...] = ()                # drop and select
+    columns: Tuple[str, ...] = ()                # drop, select, cast; the group columns of a group-by
+    written: Tuple[str, ...] = ()                # the names a compute step or a group-by writes
     left_keys: Tuple[str, ...] = ()              # join
     right_keys: Tuple[str, ...] = ()
     how: str = ""
@@ -83,7 +94,7 @@ class PredictedColumn:
     """A column after the step. `sources` is one source, or two for a join key that both sides equate; `change` is None when the name is
     the source's name, else why it differs (rename, key under another name, suffix of a clash)."""
     name: str
-    sources: Tuple[Source, ...]
+    sources: Tuple[Source, ...]                  # empty: the column is made by the step (it has no source column)
     change: Optional[str] = None
 
 
@@ -115,6 +126,19 @@ def effect_of(step: Any) -> Effect:
         if names is None:
             return Effect(UNREAD, action, why="the columns are not a list of plain column names")
         return Effect(DROP if action == action_names.DROP else SELECT, action, columns=names)
+    if action == action_names.WITH_COLUMNS:
+        named = step.get("named_exprs")
+        if isinstance(named, Mapping) and named and all(isinstance(k, str) and k for k in named):
+            return Effect(WRITES, action, written=tuple(named))
+        return Effect(UNREAD, action, why="named_exprs is not a mapping of column names")
+    if action == action_names.CAST:
+        names = _plain_names(step.get("columns"))
+        return Effect(CAST, action, columns=names) if names else Effect(UNREAD, action, why="the columns are not a list of plain column names")
+    if action == action_names.GROUP_BY:
+        by, aggs = _plain_names(step.get("by")), step.get("named_aggs", {})
+        if by is None or "named_by" in step or not isinstance(aggs, Mapping) or not all(isinstance(k, str) and k for k in aggs):
+            return Effect(UNREAD, action, why="the group columns or the named aggregates cannot be read as names")
+        return Effect(GROUP, action, columns=by, written=tuple(aggs))
     if action == action_names.JOIN:
         how, right = step.get("how", "left"), step.get("right_ingredient")
         if how not in FOLLOWED_JOINS:
@@ -141,6 +165,18 @@ def predict(effect: Effect, before: Plan, right: Optional[Plan]) -> Tuple[Predic
         return tuple(PredictedColumn(n, (Source("left", n),)) for n in before.names if n not in gone)
     if effect.kind == SELECT:
         return tuple(PredictedColumn(n, (Source("left", n),)) for n in effect.columns if before.has(n))
+    if effect.kind == WRITES:
+        written = set(effect.written)
+        kept = [PredictedColumn(n, (Source("left", n),), CHANGE_RECOMPUTE if n in written else None) for n in before.names]
+        return tuple(kept) + tuple(PredictedColumn(n, ()) for n in effect.written if not before.has(n))
+    if effect.kind == CAST:
+        cast_names = set(effect.columns)
+        return tuple(PredictedColumn(n, (Source("left", n),), CHANGE_CAST if n in cast_names else None) for n in before.names)
+    if effect.kind == GROUP:
+        grouped = [PredictedColumn(n, (Source("left", n),)) for n in effect.columns if before.has(n)]
+        aggregated = [PredictedColumn(n, (Source("left", n),), CHANGE_AGGREGATE) if before.has(n) and n not in effect.columns else PredictedColumn(n, ())
+                      for n in effect.written if n not in effect.columns]
+        return tuple(grouped) + tuple(aggregated)
     assert effect.kind == JOIN and right is not None
     keys = dict(zip(effect.right_keys, effect.left_keys))              # right key -> left key
     merged: Dict[str, str] = {lk: rk for rk, lk in keys.items()}      # left key -> right key
@@ -174,7 +210,11 @@ def agreement_problem(effect: Effect, predicted: Sequence[PredictedColumn], befo
     if set(names) != set(actual.names):
         missing, extra = sorted(set(names) - set(actual.names)), sorted(set(actual.names) - set(names))
         return f"the reading expects the columns {missing} that the plan does not have and the plan has {extra} that the reading does not expect"
+    if effect.kind in (CAST, GROUP) and any(not before.has(n) for n in effect.columns):
+        return f"the step names columns {[n for n in effect.columns if not before.has(n)]} that the table does not have"
     for p in predicted:
+        if not p.sources or p.change in VALUE_CHANGES:               # made by the step, or a column whose values or type the step writes: the plan decides
+            continue
         first = p.sources[0]
         expected = (before if first.side == "left" else right).type_of(first.name)  # type: ignore[union-attr]
         if actual.type_of(p.name) != expected:
