@@ -55,6 +55,7 @@ split into files do not force a rebuild.
 The loaded data analysis recipe is kept in memory and revalidated against the content of its files.
 """
 import contextlib
+import functools
 import hashlib
 import io
 import json
@@ -114,7 +115,11 @@ def key_part(label: str, *material: str) -> str:
     return f"{label}-{hash_text(chr(10).join(material))[:KEY_PART_LENGTH]}"
 
 
+@functools.lru_cache(maxsize=None)
 def _package_version(name: str) -> str:
+    """The installed version of a package. Remembered for the life of the process: the engine a process runs is the one it imported, and installing another
+    version needs a restart. Without this every key (one per table, several per opening) read the package files again: it was nine tenths of the time
+    of `compute_data_analysis_recipe_keys`."""
     try:
         return metadata.version(name)
     except metadata.PackageNotFoundError:

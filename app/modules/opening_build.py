@@ -1,7 +1,7 @@
 """
 @deps
-provides: function:build_plan, function:collections_of, function:run_opening, function:plot_render_recipe, function:draw_plot_proof, function:progress_text, function:opening_signature, function:large_plot_warning, function:check_store, function:stopped_text, class:BuildItem, class:OpeningResult, constant:LARGE_PLOT_ROWS
-consumes: app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3), app/modules/cache_keys.py (DataAnalysisRecipeKeys), app/modules/build_failure.py (short_engine_text, failure_kind, machine_cause), libs/utils/src/utils/recipe_tiers.py (plot_entries, tier2_steps, tier3_steps), libs/viz_factory/src/viz_factory/checked_plot.py (draw_checked), libs/utils/src/utils/engines.py (plot_engine_slot)
+provides: function:build_plan, function:collections_of, function:run_opening, function:plot_render_recipe, function:draw_plot_proof, function:progress_text, function:opening_signature, function:large_plot_warning, function:check_store, function:stopped_text, function:orphan_tier3_files, function:sweep_orphan_tier3, class:BuildItem, class:OpeningResult, constant:LARGE_PLOT_ROWS
+consumes: app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3, tier2_path_for, tier3_path_for), app/modules/cache_keys.py (DataAnalysisRecipeKeys), app/modules/build_failure.py (short_engine_text, failure_kind, machine_cause), libs/utils/src/utils/recipe_tiers.py (plot_entries, tier2_steps, tier3_steps), libs/viz_factory/src/viz_factory/checked_plot.py (draw_checked), libs/utils/src/utils/engines.py (plot_engine_slot)
 consumed_by: app/handlers/opening_handlers.py, app/handlers/home_theater.py (plot_render_recipe: the recipe HOME draws a plot from), app/tests/test_opening_build.py, app/tests/test_opening_failures.py
 doc: .claude/knowledge/decision_ledger.md (D-0326, D-0343, D-0335, D-0334, D-0336, D-0327), .claude/rules/rules_data_engine.md, .claude/rules/rules_data_analysis_recipe_structure.md#11
 @end_deps
@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import gc
 import tempfile
+from glob import escape as glob_escape
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterable, Optional
@@ -117,6 +118,7 @@ class OpeningResult:
     warnings: list = field(default_factory=list)
     inputs_changed: list = field(default_factory=list)
     stopped: Optional[str] = None
+    swept: list = field(default_factory=list)   # the stored Tier 3 files of plots that are not in the recipe any more, removed at the start of the opening
     tables_done: int = 0   # tables of the plan that were gone through (built, or read because their stored file carries their key): the count follows the plan
 
     @property
@@ -155,6 +157,37 @@ def check_store(anchors_dir: Path) -> None:
     anchors_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryFile(dir=anchors_dir):
         pass
+
+
+def orphan_tier3_files(anchors_dir: Path, plan: Iterable[BuildItem], collections: Iterable[str]) -> list:
+    """The stored Tier 3 files of the tables of this recipe that no plot of the plan owns: a plot that was taken out of the recipe, or that lost its tier-3 steps,
+    leaves `<table>__T3_<plot>.parquet` behind (`rules_verification_testing.md` section 9: what a change made invalid is removed when the change is found).
+
+    Only files of the tables this recipe names are looked at: the folder of the stored tables is shared by every recipe of the deployment, and a table name that
+    no recipe of this opening names belongs to nobody this opening can speak for. A file named like a table of the plan (a table whose own name holds `__T3_`) is
+    never an orphan."""
+    from app.modules.orchestrator import tier2_path_for, tier3_path_for
+    anchors_dir = Path(anchors_dir)
+    items = list(plan)
+    owned = {tier3_path_for(anchors_dir, i.target, i.ident).name for i in items if i.kind == TIER3}
+    tables = {anchors_dir / f"{i.ident}.parquet" for i in items if i.kind == TIER1}
+    tables |= {tier2_path_for(path) for path in tables}
+    names = {path.name for path in tables}
+    found = []
+    for table in dict.fromkeys(collections):
+        for path in sorted(anchors_dir.glob(f"{glob_escape(table)}__T3_*.parquet")):
+            if path.name not in owned and path.name not in names:
+                found.append(path)
+    return found
+
+
+def sweep_orphan_tier3(anchors_dir: Path, plan: Iterable[BuildItem], collections: Iterable[str]) -> list:
+    """Remove the orphan Tier 3 files (`orphan_tier3_files`); the names removed. An OSError (a file that cannot be removed) is the machine's and goes up."""
+    removed = []
+    for path in orphan_tier3_files(anchors_dir, plan, collections):
+        path.unlink(missing_ok=True)
+        removed.append(path.name)
+    return removed
 
 
 def stopped_text(recipe_id: str, error: BaseException, anchors_dir: Path, kind: str) -> str:
@@ -207,6 +240,7 @@ def run_opening(orchestrator, recipe_id: str, raw: dict, keys, anchors_dir: Path
 
     try:
         check_store(anchors_dir)
+        result.swept = sweep_orphan_tier3(anchors_dir, items, collections_of(raw))
     except OSError as error:
         result.stopped = stopped_text(recipe_id, error, anchors_dir, MACHINE)
         return result

@@ -140,18 +140,19 @@ def test_a_plot_that_loses_its_tier3_steps_loses_its_stored_table(tmp_path):
 def test_a_table_built_while_its_inputs_changed_is_returned_and_not_stored(tmp_path):
     world = Tier3World(tmp_path, tier2=[KEEP_FROM_2])
     told: list = []
-    real = world.orch.compute_data_analysis_recipe_keys
+    import app.modules.orchestrator as orchestrator_module
+    real = orchestrator_module.dataset_file_hashes
     calls = {"n": 0}
 
-    def keys_that_move(recipe_id, loaded=None):
+    def hashes_that_see_a_change(files):
         calls["n"] += 1
-        found = real(recipe_id, loaded=loaded)
-        if calls["n"] > 1:   # the keys asked for to check the table before it is stored: the data changed meanwhile
+        found = real(files)
+        if calls["n"] > 1:   # the files read to check the table before it is stored: the data changed meanwhile
             world.write_data("sample_id\tgroup\tscore\ns1\tA\t1\n")
         return found
 
     keys = world.keys()
-    with mock.patch.object(world.orch, "compute_data_analysis_recipe_keys", side_effect=keys_that_move):
+    with mock.patch.object(orchestrator_module, "dataset_file_hashes", side_effect=hashes_that_see_a_change):
         table = world.orch.materialize_tier3("tiny", "p_steps", world.anchors, keys=keys, on_inputs_changed=told.append)
     assert table.collect().height > 0
     assert not tier3_path_for(world.anchors, "C", "p_steps").exists(), "a table that mixes two states of its inputs is not stored"

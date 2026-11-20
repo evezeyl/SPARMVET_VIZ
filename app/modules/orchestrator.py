@@ -1,8 +1,8 @@
 # @deps
-# provides: pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3 (stores the table of a plot with tier-3 steps by its key, D-0343), function:tier3_path_for, constant:TIER3_KEY_META, function:plot_read_error_text, method:prepare_ingredient, method:read_source, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys
+# provides: pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3 (stores the table of a plot with tier-3 steps by its key, D-0343), function:tier3_path_for, constant:TIER3_KEY_META, function:plot_read_error_text, method:prepare_ingredient, method:read_source, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys, method:_plot_key_now (the key of the table of a plot now, reading only the data files that table reads: the last check of a Tier 3 store)
 # mirrors: libs/transformer/tests/debug_assembler.py
 # consumes: app/modules/build_failure.py (the plain error of a build that failed: table, tier, step), libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body, audit_step_places), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
-# consumed_by: app/tests/test_read_source.py (read_source: one source table as the ingestion reads it, for the Source view of HOME, D-0310), app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and T3 table base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py, app/tests/test_tier3_store.py, app/tests/test_build_failure_names.py, app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)
+# consumed_by: app/modules/opening_build.py (materialize_tier1/2/3: the opening of a recipe), app/tests/test_read_source.py (read_source: one source table as the ingestion reads it, for the Source view of HOME, D-0310), app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and T3 table base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py, app/tests/test_tier3_store.py, app/tests/test_build_failure_names.py, app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)
 # doc: .claude/knowledge/dependency_index.md
 # @end_deps
 import copy
@@ -146,6 +146,24 @@ class DataOrchestrator:
         # The data files are read once, here: the identity hash of all of them and the data part of the key of each table come
         # from the same content hashes (ADR-101 point 4).
         return data_analysis_recipe_keys(loaded, dataset_file_hashes(self.get_source_files(data_analysis_recipe_id)))
+
+    def _plot_key_now(self, data_analysis_recipe_id: str, plot_id: str) -> str:
+        """The key of the table a plot reads, as the recipe and the data are now, reading only the data files that table depends on.
+
+        The last check of a Tier 3 store (`materialize_tier3`) asks this once per stored table. The key of a table is made from the files that table
+        reads (`TableKeyParts.datasets`, ADR-101), so a file the table does not read cannot change the key: it is not read. A table whose key is the coarse
+        fail-safe form (every file) reads every file. Raises what `compute_data_analysis_recipe_keys` raises (the recipe cannot be read, the file is gone)
+        and `KeyError` when the recipe has no such plot."""
+        path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
+        if not path.exists():
+            raise FileNotFoundError(f"Data analysis recipe not found: {path}")
+        loaded = load_data_analysis_recipe(path)
+        entry = plot_entry(loaded.raw, plot_id)
+        parts = loaded.table_parts.get(entry.get("target_dataset")) if entry else None
+        files = self.get_source_files(data_analysis_recipe_id)
+        if parts is not None and not parts.coarse:
+            files = {ds: files[ds] for ds in parts.datasets if ds in files}
+        return data_analysis_recipe_keys(loaded, dataset_file_hashes(files)).plot_key_of(plot_id)
 
     def _read_source(self, ds_id: str, ds_schema: dict, recipe_id: str | None = None) -> tuple[pl.LazyFrame, dict]:
         """The ONE read of a source table: the file `locate_dataset_file` names, with the declared types, `strip` and `null_values`
@@ -661,8 +679,7 @@ class DataOrchestrator:
         def unchanged() -> bool:
             # The Tier 2 table it reads was stored under its key; what can change while this one is computed is the data, the recipe and its own steps.
             try:
-                now = self.compute_data_analysis_recipe_keys(data_analysis_recipe_id, loaded=handed)
-                same = now.plot_key_of(plot_id) == t3_key
+                same = self._plot_key_now(data_analysis_recipe_id, plot_id) == t3_key
             except RecipeLoadError as exc:
                 verdict.append(InputsChanged(f"the data analysis recipe can no longer be read ({str(exc).strip()[:200]})"))
                 return False

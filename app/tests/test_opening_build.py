@@ -452,3 +452,103 @@ def test_a_second_opening_reads_no_source_table_at_all(tmp_path):
     _with_an_unused_source(world)
     open_world(world)
     assert _sources_read_during(world, lambda: open_world(world)) == [], "every table is read from its stored file"
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# A plot taken out of the recipe leaves no stored table behind (rules_verification_testing.md section 9)
+# ---------------------------------------------------------------------------------------------------------------------
+
+
+def _rename_plot(world, old, new):
+    path = world.data_analysis_recipes_dir / "tiny.yaml"
+    path.write_text(path.read_text().replace(f"      {old}:\n", f"      {new}:\n"))
+    clear_data_analysis_recipe_cache()
+
+
+def test_the_stored_table_of_a_plot_that_is_not_in_the_recipe_any_more_is_removed_at_the_opening(tmp_path):
+    """MUTATION P1: without the sweep the file of the plot that is gone stays for ever (nothing reads it, nothing removes it)."""
+    world = Tier3World(tmp_path, tier2=[KEEP_FROM_2])
+    open_world(world)
+    assert "C__T3_p_steps.parquet" in stored(world)
+    _rename_plot(world, "p_steps", "p_renamed")
+    result = open_world(world)
+    assert result.ok and result.swept == ["C__T3_p_steps.parquet"]
+    assert stored(world) == ["C.parquet", "C__T2.parquet", "C__T3_p_renamed.parquet"], "the old file is gone, the file of the plot that is in the recipe is stored"
+
+
+def test_the_sweep_leaves_the_files_it_must_leave(tmp_path):
+    """A second opening removes nothing; a file of a table this recipe does not name (another recipe of the deployment) and a table whose own name holds the
+    mark are not orphans; the files of the plots of the plan stay."""
+    world = Tier3World(tmp_path, tier2=[KEEP_FROM_2])
+    open_world(world)
+    stranger = world.anchors / "OtherRecipeTable__T3_q.parquet"
+    stranger.write_bytes(b"belongs to another recipe")
+    assert open_world(world).swept == [] and stranger.exists()
+    assert "C__T3_p_steps.parquet" in stored(world)
+
+
+def test_orphan_tier3_files_never_names_a_planned_table(tmp_path):
+    from app.modules.opening_build import BuildItem, orphan_tier3_files
+    folder = tmp_path
+    for name in ("A__T3_p.parquet", "A__T3_gone.parquet", "A__T2.parquet", "A.parquet", "B__T3_x.parquet"):
+        (folder / name).write_bytes(b"x")
+    plan = [BuildItem(TIER1, "A", "k"), BuildItem(TIER1, "A__T3_p", "k"), BuildItem(TIER3, "p2", "k", "A"), BuildItem(PLOT, "p2", "k", "A")]
+    found = sorted(path.name for path in orphan_tier3_files(folder, plan, ["A"]))
+    assert found == ["A__T3_gone.parquet"], "A__T3_p.parquet is the Tier 1 table of a table named A__T3_p; B is not a table of this recipe"
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# The check before a Tier 3 table is stored reads only the data files its table reads
+# ---------------------------------------------------------------------------------------------------------------------
+
+
+def _files_hashed_during(action) -> list:
+    """The file names `dataset_file_hashes` reads while `action` runs, one list per call."""
+    import app.modules.orchestrator as orchestrator_module
+    calls: list = []
+    real = orchestrator_module.dataset_file_hashes
+
+    def counting(files):
+        calls.append(sorted(Path(p).name for p in files.values()))
+        return real(files)
+
+    with mock.patch.object(orchestrator_module, "dataset_file_hashes", counting):
+        action()
+    return calls
+
+
+def test_the_check_before_a_tier3_store_reads_only_the_files_of_the_table_the_plot_reads(tmp_path):
+    """MUTATION H1: the check hashing every file of the recipe (as `compute_data_analysis_recipe_keys` does) also reads `U.tsv` here. The checks of the tier 1
+    and tier 2 tables still read every file (not changed: reported as a proposal)."""
+    world = Tier3World(tmp_path, tier2=[KEEP_FROM_2])
+    _with_an_unused_source(world)
+    keys = world.keys()
+    calls = _files_hashed_during(lambda: world.orch.materialize_tier3("tiny", "p_steps", world.anchors, keys=keys))
+    assert len(calls) >= 2 and all(names == ["T.tsv", "U.tsv"] for names in calls[:-1]), f"the checks of the tier 1 and tier 2 tables read every file: {calls}"
+    assert calls[-1] == ["T.tsv"], f"the tier 3 check read a file its table does not read: {calls[-1]}"
+    assert (world.anchors / "C__T3_p_steps.parquet").exists()
+
+
+def test_a_file_that_changes_after_the_narrowed_check_read_it_gives_another_key_at_the_next_opening(tmp_path):
+    """The narrowed check still reads the file the table reads (the change DURING a build is told: `test_tier3_store.py`, the table built while its inputs changed)."""
+    import app.modules.orchestrator as orchestrator_module
+    world = Tier3World(tmp_path, tier2=[KEEP_FROM_2])
+    _with_an_unused_source(world)
+    real = orchestrator_module.dataset_file_hashes
+
+    def hashes_then_change(files):
+        found = real(files)
+        if set(files) == {"T"}:   # the check of the tier 3 table (the narrowed one): the data changes right after it read the file
+            world.write_data("sample_id\tgroup\tscore\ns1\tA\t9\n")
+        return found
+
+    told: list = []
+    keys = world.keys()
+    with mock.patch.object(orchestrator_module, "dataset_file_hashes", hashes_then_change):
+        # the check reads the file as it is before the change, so it sees nothing: the table IS stored under the key of the data it was built from, and the
+        # next opening (the data is another now) has another key and builds again
+        world.orch.materialize_tier3("tiny", "p_steps", world.anchors, keys=keys, on_inputs_changed=told.append)
+    assert told == [] and (world.anchors / "C__T3_p_steps.parquet").exists()
+    clear_data_analysis_recipe_cache()
+    assert world.orch.compute_data_analysis_recipe_keys("tiny").plot_key_of("p_steps") != keys.plot_key_of("p_steps"), "the key of the next opening is not the stored one"
+    assert stores_during(lambda: world.orch.materialize_tier3("tiny", "p_steps", world.anchors, keys=world.keys())) == ["C.parquet", "C__T2.parquet", "C__T3_p_steps.parquet"]
