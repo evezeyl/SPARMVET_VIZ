@@ -440,8 +440,6 @@ class DataOrchestrator:
         what changed while it was built or None). `pinned`: `loaded` was handed in by the caller and is the recipe of the build (see `materialize_tier1`)."""
         import time
         _t_start = time.perf_counter()
-        print(f"[Orchestrator] ▶ materialize_tier1 START — data_analysis_recipe='{data_analysis_recipe_id}', collection='{collection_id}'")
-
         data_analysis_recipe_path = self.data_analysis_recipes_dir / f"{data_analysis_recipe_id}.yaml"
         if not data_analysis_recipe_path.exists():
             raise FileNotFoundError(
@@ -468,6 +466,10 @@ class DataOrchestrator:
         if stored is not None:
             print(f"[Orchestrator] ✅ Tier 1 anchor '{collection_id}' is valid (key match) → {output_path}")
             return stored, keys.tier1_key_of(collection_id), None, None
+
+        # HOME-WALK H: the START line is for a build only; a read of a stored table is one line (the line above). It was printed before the check, so
+        # that every look at a stored table (a plot tab, a data choice, a mode) wrote two lines and the log of one session held about 450 of them.
+        print(f"[Orchestrator] ▶ materialize_tier1 START — data_analysis_recipe='{data_analysis_recipe_id}', collection='{collection_id}'")
 
         # Tier 1 is rebuilt, so the Tier 2 stored on top of the old one is invalid by definition. The table that did not match
         # (another key, another cache version, an unreadable file) is removed now, at the moment it is found: a build that

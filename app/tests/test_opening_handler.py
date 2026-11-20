@@ -76,6 +76,12 @@ class Opening:
         FakeProgress.instances = []
         self.world, self.notes, self.drawn = world, [], drawn if drawn is not None else []
         monkeypatch.setattr(handlers.ui, "Progress", FakeProgress)
+        # the cover (HOME-WALK A): the calls are recorded, in order, with the progress line's opening among them
+        self.ui_calls = []
+        monkeypatch.setattr(handlers.ui, "insert_ui", lambda content, selector, where="beforeEnd", immediate=False, **kw:
+                            self.ui_calls.append(("insert", selector, where, immediate, str(content))))
+        monkeypatch.setattr(handlers.ui, "remove_ui", lambda selector, immediate=False, **kw: self.ui_calls.append(("remove", selector, immediate)))
+        self.session = mock.MagicMock()
         self.effects = {}
         monkeypatch.setattr(reactive, "Effect", lambda fn: self.effects.setdefault(fn.__name__, fn) and fn)
         self.inputs = {"sidebar_nav": workspace, "data_analysis_recipe_id": "tiny"}
@@ -97,7 +103,7 @@ class Opening:
                 raise self.keys_error
             return world.orch.compute_data_analysis_recipe_keys("tiny")
 
-        define_server(mock.MagicMock(), mock.MagicMock(), mock.MagicMock(), bootloader=self.bootloader, orchestrator=world.orch, viz_factory=self.factory,
+        define_server(mock.MagicMock(), mock.MagicMock(), self.session, bootloader=self.bootloader, orchestrator=world.orch, viz_factory=self.factory,
                       safe_input=lambda i, k, d: self.inputs.get(k, d), view_keys=view_keys, recipe_gate_version=self.gate_version,
                       opening_state=self.state, notify=lambda text, type="message", duration=5: self.notes.append((type, text)), proven=self.proven)
 
@@ -250,6 +256,8 @@ def real_opening(gate_world, tmp_path, monkeypatch):
     from app.modules.orchestrator import DataOrchestrator
     FakeProgress.instances = []
     monkeypatch.setattr(handlers.ui, "Progress", FakeProgress)
+    monkeypatch.setattr(handlers.ui, "insert_ui", lambda *a, **kw: None)   # the cover is the page's (its own test above)
+    monkeypatch.setattr(handlers.ui, "remove_ui", lambda *a, **kw: None)
     effects = {}
     monkeypatch.setattr(reactive, "Effect", lambda fn: effects.setdefault(fn.__name__, fn) and fn)
     orchestrator = DataOrchestrator(gate_world.folder, gate_world.root / "raw_data", data_lookup="by_dataset_id")
@@ -351,3 +359,31 @@ def test_reject_after_opening_ignores_a_name_that_is_not_a_recipe_and_replaces_t
     assert gate.boot.rejected_data_analysis_recipes is not before_rejected and gate.boot.rejected_data_analysis_recipes["tiny"]["problems"] == ["problem one", "problem two"]
 
 
+
+
+def test_the_cover_is_sent_at_once_before_the_build_and_removed_after_the_flush(tmp_path, monkeypatch):
+    """HOME-WALK A (D-0334): while the opening blocks the server the screen already says which recipe is opened (inserted `immediate`, before the progress line
+    opens), and the cover is removed by a callback of the flush that sends the new theater, not by the effect (the old theater would show again for the rest of the flush).
+    MUTATION A1: without the insert the screen keeps the previous recipe for the whole build; this fails."""
+    opening = Opening(Tier3World(tmp_path), monkeypatch)
+    opening.run()
+    inserts = [c for c in opening.ui_calls if c[0] == "insert"]
+    assert len(inserts) == 1 and inserts[0][1:4] == ("#dynamic_tabs", "beforeBegin", True), opening.ui_calls
+    assert handlers.COVER_ID in inserts[0][4] and "tiny" in inserts[0][4]
+    assert opening.ui_calls[0] == ("remove", f"#{handlers.COVER_ID}", True)   # never two covers: the one of an earlier opening goes first
+    assert ("remove", f"#{handlers.COVER_ID}", True) not in opening.ui_calls[1:], "the effect itself does not remove the cover"
+    (callback,), kwargs = opening.session.on_flushed.call_args
+    assert kwargs == {"once": True}
+    callback()
+    assert opening.ui_calls[-1] == ("remove", f"#{handlers.COVER_ID}", True)
+
+
+def test_no_cover_when_the_opening_is_already_done_or_not_for_this_workspace(tmp_path, monkeypatch):
+    opening = Opening(Tier3World(tmp_path), monkeypatch)
+    opening.run()
+    opening.ui_calls.clear()
+    opening.run()   # the same signature: nothing at all
+    assert opening.ui_calls == []
+    other = Opening(Tier3World(tmp_path / "other"), monkeypatch, workspace="Blueprint Architect")
+    other.run()
+    assert other.ui_calls == []

@@ -144,6 +144,7 @@ An earlier statement of hers that says the same as principle 3 (CH M139 asked ag
 - Warn only when there is a problem: "be aware of not over warning - warn only when problem" (Tcd L2020, 2026-11-16). [READ]
 - Messages come in three levels: information (nothing to do), warning (the user ticks "I understand"), block (technical only: a column or key that no longer exists, a renamed key, a step the `audit_recipe` cannot represent, a failed recomputation; nothing is applied). [READ: AS:568-574, AS:574 ("decided 2026-11-12, Eve"); T92 L3370]
 - A filter on a join key is allowed with a warning that the join may change; a **drop** of a join-key column is refused. [READ: AS:134; RG:114 (the guide's item O12, "From Eve's answers of 2026-11-13: DECIDED ... drop of a key column refused"); her words in that turn: "yes - make fail", T92 L11773]
+  - **Status note 2026-11-20 (not rewriting the evidence above):** the refusal of a key drop is refined by D-0358 and D-0371: it is refused by place, only where a later join still uses the column; a plot's own steps may drop it, and a recipe's own steps are never refused. Built 2026-11-20 (merge `8772f368`, `libs/utils/src/utils/key_drop.py`).
 - A free-text reason is required; no fixed categories; the help suggests a hashtag form (`#technical failure: ...`). [READ: ADR:5125; AS:612; T92 L8522]
 - Apply or Cancel. Cancel changes nothing. [READ: ADR:5337]
 - *Stored:* nothing yet; the trial computation may sit in the audit cache as one entry. [READ: AS:78]

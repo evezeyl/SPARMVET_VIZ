@@ -190,6 +190,11 @@ def define_filter_audit_server(input, output, session, *,
             if previous is None or previous == key:
                 return
             n_pending, n_applied = _clear_exploration_filters()
+            if n_pending or n_applied:
+                # HOME-WALK C: the filters were removed and the notice says so: the form goes back to its start with them (its column, operator and value
+                # would otherwise still name the pick of the removed filters). With nothing to remove the form is kept: a change of view that leaves the
+                # columns as they are keeps what the user is choosing (`test_filter_form_survives_rerender.py`).
+                _form_reset.set(_form_reset.get() + 1)
             text = view_change_notice(previous, key, n_pending, n_applied)
             if text:
                 _notify(text, type="warning", duration=10)
@@ -306,6 +311,16 @@ def define_filter_audit_server(input, output, session, *,
     # The two Values change only when the thing they stand for changes (R3, idempotent guard); `_signal_dialog_table` sets them.
     _dialog_schema_signal = reactive.Value(None)   # columns, types and discrete axes: what the form's selects are made of
     _dialog_rows_signal = reactive.Value(None)     # which rows the table holds: what the value widget is made of
+    # HOME-WALK C (D-0311, D-0361): when the filters are cleared because the view changed, the form is cleared with them. The counter makes the form's
+    # outputs mount again; each output that keeps a choice of the user (`fb_col`, `fb_op`) ignores it once for every new count (`_form_is_fresh`).
+    _form_reset = reactive.Value(0)
+    _form_seen: dict = {}
+
+    def _form_is_fresh(output_name: str) -> bool:
+        gen = _form_reset.get()
+        fresh = _form_seen.get(output_name, 0) != gen
+        _form_seen[output_name] = gen
+        return fresh
 
     @reactive.Effect
     def _signal_dialog_table():
@@ -358,10 +373,12 @@ def define_filter_audit_server(input, output, session, *,
         received them.
         """
         _dialog_schema_signal.get()   # the dependency: the form is mounted again when its columns or types change, not when the table is rebuilt
+        _form_reset.get()             # and when the filters are cleared by a change of view (HOME-WALK C)
         _lf, types, _disc = _dialog_table_now()
         col_choices = {c: f"{c}  [{types[c]}]" for c in types}
         with reactive.isolate():
-            kept = safe_input(input, "fb_col", None)
+            fresh = _form_is_fresh("form")
+            kept = None if fresh else safe_input(input, "fb_col", None)
         selected = kept if kept in types else next(iter(types), None)
         return ui.div(
             ui.tags.small("Add filter row:", class_="fw-semibold text-muted d-block mb-1"),
@@ -380,6 +397,7 @@ def define_filter_audit_server(input, output, session, *,
     def filter_type_ui():
         """What the chosen column holds, in words ("Year holds whole numbers (Int64)."); reads fb_col and the schema signal."""
         _dialog_schema_signal.get()
+        _form_reset.get()
         _lf, types, _disc = _dialog_table_now()
         col = _selected_column(types)
         text = column_type_line(col, types[col]) if col in types else ""
@@ -390,13 +408,14 @@ def define_filter_audit_server(input, output, session, *,
     def filter_op_ui():
         """The operators of the chosen column; reads fb_col and the schema signal. The operator kept is read isolated."""
         _dialog_schema_signal.get()
+        _form_reset.get()
         _lf, types, disc = _dialog_table_now()
         col = _selected_column(types)
         choices = _op_choices(types.get(col), col in disc)
         if not choices:
             return ui.tags.small(f"{not_offered_line(col, types.get(col))} Suggestion: filter another column.", class_="text-warning d-block")
         with reactive.isolate():
-            kept = safe_input(input, "fb_op", None)
+            kept = None if _form_is_fresh("op") else safe_input(input, "fb_op", None)
         return ui.input_select("fb_op", label=None, choices=choices, selected=kept if kept in choices else next(iter(choices)),
                                width="100px")
 
@@ -412,6 +431,7 @@ def define_filter_audit_server(input, output, session, *,
         """
         _dialog_schema_signal.get()
         _dialog_rows_signal.get()
+        _form_reset.get()
         lf, types, disc = _dialog_table_now()
         col = _selected_column(types)
         dtype = types.get(col)

@@ -123,11 +123,9 @@ A **primary key** is a column that links your tables together. In a typical SPAR
 
 When you target a primary key with an audit decision, SPARMVET applies extra rules:
 
-### Dropping a primary-key column is **blocked**
+### Dropping a primary-key column is **blocked where a later join still uses it**
 
-You can't add a `drop_column` node for `sample_id` (or any other join key). The link between your tables would break. If you click "➜ Audit drops" with a primary key in the deselected list, you'll see:
-
-> Column `sample_id` is a join key — cannot be dropped. Use a row filter or row exclusion instead.
+You can't add a `drop_column` node for a join key (for example `sample_id`) when a later join of your recipe still uses that column: the link between your tables would break. The refusal is given for that place only. Where no later join uses the column, for example a drop in a plot's own steps, the drop is allowed. Steps written in the recipe itself are never refused. If you click "➜ Audit drops" with such a primary key in the deselected list, the message names the join that needs the column and says to use a row filter or row exclusion instead.
 
 If your need is to *anonymize* the IDs in the published report (e.g. the journal asks you not to expose internal sample IDs), that is a different problem and currently outside SPARMVET's scope. For now, the report shows whatever IDs your data analysis recipe uses; consider relabelling samples *before* assembly if anonymization is a hard requirement.
 

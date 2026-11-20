@@ -100,6 +100,7 @@ def test_a_table_plotted_directly_has_its_t2_table_and_a_real_tier2_key(loaded):
     names = z.namelist()
     assert any(n.endswith("/ResFinder/T2_data.tsv") for n in names), names
     readme = next(z.read(n).decode() for n in names if n.endswith("README.txt"))
+    assert re.search(r"^Tiers +: T1, T2", readme, re.M), "the Tiers line names T2 when T2 files are in the bundle (HOME-WALK F)"
     assert re.search(r"ResFinder: tier2_key=E-[0-9a-f]{32}\.rC-[0-9a-f]{32}\.dC-[0-9a-f]{32}\.s2-[0-9a-f]{32}\n", readme), readme
     qmd = next(z.read(n).decode() for n in names if n.endswith("report.qmd"))
     assert re.search(r"Tier 2 key \(ResFinder\) \| `E-[0-9a-f]{32}\.rC-[0-9a-f]{32}\.dC-[0-9a-f]{32}\.s2-[0-9a-f]{32}`", qmd)
