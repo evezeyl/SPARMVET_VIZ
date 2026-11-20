@@ -108,7 +108,7 @@ def define_server(input, output, session, *, bootloader, orchestrator, viz_facto
                     progress=progress, plan=plan)
         except Exception as error:   # a fault of the opening itself, not of the recipe: HOME goes on and builds as it did, and says so
             # PROVISIONAL (no ledger line states what happens when the opening itself stops): HOME goes on, builds what it shows when it is asked, and the text and the
-            # duration of the toast are the builder's.
+            # duration of the toast are the builder's. The same holds for the stop of `run_opening` below (status "error").
             status = "error"
             notify(f"The opening of '{recipe_id}' stopped: {error}. HOME builds what it shows when it is asked.", type="error", duration=20)
         if result is not None:
@@ -118,7 +118,13 @@ def define_server(input, output, session, *, bootloader, orchestrator, viz_facto
                 notify(text, type="warning", duration=25)
             for text in dict.fromkeys(result.inputs_changed):
                 notify("⚠️ " + inputs_changed_during_build_notice(text), type="warning", duration=12)
-            if result.problems:
+            if result.stopped:
+                # The machine, the store or a failure the app does not know stopped the opening: nothing is refused (it is not the recipe's fault), HOME goes on
+                # and builds what it shows when asked, and the page is told in plain words. The recipe problems found before the stop are told, not acted on.
+                status = "error"
+                found = (f" Before it stopped, {len(result.problems)} problem(s) of the recipe were found; the first: {result.problems[0]}" if result.problems else "")
+                notify(result.stopped + found, type="error", duration=30)
+            elif result.problems:
                 status = "refused"
                 bootloader.reject_after_opening(recipe_id, result.problems, data_files=orchestrator.get_source_files(recipe_id).values())
                 if recipe_gate_version.get() != bootloader.data_analysis_recipe_gate_version:   # idempotent guard (section 14, R3)

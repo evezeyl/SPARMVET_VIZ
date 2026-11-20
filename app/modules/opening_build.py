@@ -1,8 +1,8 @@
 """
 @deps
-provides: function:build_plan, function:collections_of, function:run_opening, function:plot_render_recipe, function:draw_plot_proof, function:progress_text, function:opening_signature, function:large_plot_warning, class:BuildItem, class:OpeningResult, constant:LARGE_PLOT_ROWS
-consumes: app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3), app/modules/cache_keys.py (DataAnalysisRecipeKeys), app/modules/build_failure.py (short_engine_text), libs/utils/src/utils/recipe_tiers.py (plot_entries, tier2_steps, tier3_steps), libs/viz_factory/src/viz_factory/checked_plot.py (draw_checked), libs/utils/src/utils/engines.py (plot_engine_slot)
-consumed_by: app/handlers/opening_handlers.py, app/handlers/home_theater.py (plot_render_recipe: the recipe HOME draws a plot from), app/tests/test_opening_build.py
+provides: function:build_plan, function:collections_of, function:run_opening, function:plot_render_recipe, function:draw_plot_proof, function:progress_text, function:opening_signature, function:large_plot_warning, function:check_store, function:stopped_text, class:BuildItem, class:OpeningResult, constant:LARGE_PLOT_ROWS
+consumes: app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3), app/modules/cache_keys.py (DataAnalysisRecipeKeys), app/modules/build_failure.py (short_engine_text, failure_kind, machine_cause), libs/utils/src/utils/recipe_tiers.py (plot_entries, tier2_steps, tier3_steps), libs/viz_factory/src/viz_factory/checked_plot.py (draw_checked), libs/utils/src/utils/engines.py (plot_engine_slot)
+consumed_by: app/handlers/opening_handlers.py, app/handlers/home_theater.py (plot_render_recipe: the recipe HOME draws a plot from), app/tests/test_opening_build.py, app/tests/test_opening_failures.py
 doc: .claude/knowledge/decision_ledger.md (D-0326, D-0343, D-0335, D-0334, D-0336, D-0327), .claude/rules/rules_data_engine.md, .claude/rules/rules_data_analysis_recipe_structure.md#11
 @end_deps
 
@@ -16,6 +16,9 @@ What opening does, in order (`build_plan`, ONE function: a later piece that need
 
 A step that cannot be built, or a plot that cannot be drawn, refuses the recipe with a plain reason that names the table, tier and step or the plot
 (D-0326, D-0327): `OpeningResult.problems`. The caller decides what a refusal does (HOME shows the recipe like one that failed the load gate).
+
+Only a fault of the RECIPE or its data refuses it. A failure of the machine or the store (no space, no right, no memory, a store folder that cannot be used) and a
+failure the app does not know are not the recipe's fault: the opening stops, says so in `OpeningResult.stopped`, and refuses nothing (`build_failure.failure_kind`).
 A later opening with equal keys builds nothing: each table is read from its stored file while its key matches (the orchestrator's own rule).
 
 This module builds. It does not know Shiny, the gate or the screen: the progress is a callback, the drawing is a callable.
@@ -23,13 +26,14 @@ This module builds. It does not know Shiny, the gate or the screen: the progress
 from __future__ import annotations
 
 import gc
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterable, Optional
 
 import polars as pl
 
-from app.modules.build_failure import short_engine_text
+from app.modules.build_failure import MACHINE, RECIPE, failure_kind, machine_cause, short_engine_text
 from utils.recipe_tiers import plot_entries, tier2_steps, tier3_steps
 
 # The number of rows a plot receives above which the app warns in plain words; nothing is refused (D-0336). The value is decided: 1,000,000 rows per plot
@@ -105,16 +109,19 @@ def large_plot_warning(plot_id: str, rows: int, limit: int) -> str:
 
 @dataclass
 class OpeningResult:
-    """What the opening found. `problems` are plain sentences: a recipe with one is refused. `warnings` do not refuse. `inputs_changed` are the
-    orchestrator's notices (a table built while its inputs changed was returned and not stored)."""
+    """What the opening found. `problems` are plain sentences about the RECIPE or its data: a recipe with one is refused. `warnings` do not refuse.
+    `inputs_changed` are the orchestrator's notices (a table built while its inputs changed was returned and not stored). `stopped` is a plain sentence when
+    the opening could not finish for a reason that is not the recipe's (the machine or the store failed, or a failure the app does not know): nothing is
+    refused for it, and the problems found before it stopped are still in `problems` for the caller to tell."""
     problems: list = field(default_factory=list)
     warnings: list = field(default_factory=list)
     inputs_changed: list = field(default_factory=list)
+    stopped: Optional[str] = None
     tables_done: int = 0   # tables of the plan that were gone through (built, or read because their stored file carries their key): the count follows the plan
 
     @property
     def ok(self) -> bool:
-        return not self.problems
+        return not self.problems and self.stopped is None
 
 
 def plot_render_recipe(raw: dict, plot_id: str, spec: dict) -> dict:
@@ -140,6 +147,27 @@ def draw_plot_proof(viz_factory, raw: dict, plot_id: str, lf: pl.LazyFrame) -> N
         gc.collect()
 
 
+def check_store(anchors_dir: Path) -> None:
+    """Make the folder of the stored tables and try to write one file in it; raises OSError when it cannot be used (read-only, no space, a file in the way).
+
+    Done before anything is built: a store that cannot be written is the machine's failure, and it is found here, once, not as one table failure per item."""
+    anchors_dir = Path(anchors_dir)
+    anchors_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryFile(dir=anchors_dir):
+        pass
+
+
+def stopped_text(recipe_id: str, error: BaseException, anchors_dir: Path, kind: str) -> str:
+    """PROVISIONAL wording: the plain sentence of an opening that stopped for a reason that is not the recipe's; says that nothing is refused and what to do."""
+    why = short_engine_text(machine_cause(error) or error, limit=300)
+    if kind == MACHINE:
+        return (f"The opening of '{recipe_id}' stopped because the computer or its storage failed, not because of the recipe: {why} "
+                f"Nothing is refused. Suggestion: free space or fix the rights of the folder where the tables are stored ('{anchors_dir}'), then open the recipe again "
+                f"(reload the page).")
+    return (f"The app could not finish the opening of '{recipe_id}': {why} The recipe is not refused. "
+            f"Suggestion: open it again (reload the page); if it happens again, report it with the recipe.")
+
+
 def _plain(error: BaseException) -> str:
     """A build error as one plain sentence: its text and its tip (the engine's plan is left out)."""
     text = short_engine_text(error, limit=900)
@@ -162,8 +190,10 @@ def run_opening(orchestrator, recipe_id: str, raw: dict, keys, anchors_dir: Path
     the one already told). A plot is drawn with `draw(plot_id, table)`, which raises when it cannot. `progress(tables_done, tables_total, plots_done,
     plots_total)` is called after every item; the counts are from the plan.
 
-    A failure of an item is a problem of the recipe (`result.problems`), whatever its kind: the engine's own error is turned into one plain sentence.
-    Only `Exception` is caught: an interrupt stops the opening."""
+    A failure of an item whose type says that the recipe or its data is at fault is a problem of the recipe (`result.problems`): the engine's own error is
+    turned into one plain sentence, and the opening goes on with the other items. A failure of the machine or the store, and a failure of a type the app does
+    not know, STOPS the opening (`result.stopped`, nothing after it would say anything true) and refuses nothing. Only `Exception` is caught: an interrupt
+    stops the opening."""
     large_rows = LARGE_PLOT_ROWS if large_rows is None else large_rows   # read when called, so that one change of the constant is the change everywhere
     result = OpeningResult()
     items = list(plan) if plan is not None else build_plan(raw, keys)
@@ -175,9 +205,15 @@ def run_opening(orchestrator, recipe_id: str, raw: dict, keys, anchors_dir: Path
     anchors_dir = Path(anchors_dir)
     told = lambda change: result.inputs_changed.append(change.text)   # noqa: E731
 
+    try:
+        check_store(anchors_dir)
+    except OSError as error:
+        result.stopped = stopped_text(recipe_id, error, anchors_dir, MACHINE)
+        return result
     if progress:
         progress(0, tables_total, 0, plots_total)
     for item in items:
+        stage = "build"
         try:
             if item.kind == TIER1:
                 orchestrator.materialize_tier1(recipe_id, item.ident, anchors_dir / f"{item.ident}.parquet", keys=keys, on_inputs_changed=told)
@@ -193,8 +229,17 @@ def run_opening(orchestrator, recipe_id: str, raw: dict, keys, anchors_dir: Path
                     rows = _row_count(table)
                     if rows is not None and rows > large_rows:
                         result.warnings.append(large_plot_warning(item.ident, rows, large_rows))
+                    stage = "draw"
                     draw(item.ident, table)
         except Exception as error:
+            kind = failure_kind(error)
+            # the drawing is the plot engine's own check (`draw_checked` turns every failure of a plot into the one error form), so a failure of the drawing that is
+            # not the machine's is a plot that cannot be drawn; a failure of a table build is the recipe's only when its type says so (`failure_kind`)
+            if kind != MACHINE and stage == "draw":
+                kind = RECIPE
+            if kind != RECIPE:
+                result.stopped = stopped_text(recipe_id, error, anchors_dir, kind)
+                break
             if item.kind == PLOT:
                 result.problems.append(_plot_problem(item.ident, error))
             else:
