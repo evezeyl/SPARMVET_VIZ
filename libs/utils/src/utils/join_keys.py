@@ -23,8 +23,8 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 from utils import action_names, recipe_tiers
 
 # @deps
-# provides: function:recipe_join_keys, function:key_drop_problem, function:join_key_problem, function:key_length_problem, function:self_join, function:self_join_text, function:key_columns, constant:JOIN_KEEPS_COLUMNS, constant:JOIN_ACTIONS
-# consumed_by: libs/transformer/src/transformer/data_assembler.py, libs/blueprint_arch/src/blueprint_arch/join_designer.py, libs/utils/src/utils/recipe_check.py
+# provides: function:recipe_join_keys, function:key_drop_problem, function:join_key_problem, function:key_length_problem, function:self_join, function:self_join_text, function:key_columns, function:suffix_of, constant:JOIN_KEEPS_COLUMNS, constant:JOIN_ACTIONS, constant:ROW_STEPS
+# consumed_by: libs/transformer/src/transformer/data_assembler.py, libs/blueprint_arch/src/blueprint_arch/join_designer.py, libs/utils/src/utils/recipe_check.py, libs/utils/src/utils/step_effects.py (suffix_of, key_columns, ROW_STEPS)
 # doc: .claude/knowledge/architecture_decisions.md#ADR-102
 # @end_deps
 
@@ -151,6 +151,12 @@ def key_columns(step: Mapping[str, Any]) -> tuple:
     return parts[0] + parts[2], parts[1] + parts[3]
 
 
+def suffix_of(step: Mapping[str, Any]) -> str:
+    """The suffix a join gives a right-table column whose name the table at this step already has: the step's `suffix`, else `_right`
+    (the Polars default). The one place the default is written (the self-join text and the lineage walk both ask it)."""
+    return step.get("suffix") or "_right"
+
+
 # Join steps that name a right table (the as-of join and the join on conditions are joins too).
 JOIN_ACTIONS = (action_names.JOIN, action_names.JOIN_ASOF, action_names.JOIN_WHERE)
 
@@ -188,7 +194,7 @@ def self_join(base_id: str, earlier_steps: Sequence[Any], step: Mapping[str, Any
     return {
         "table": right_id, "action": action, "how": step.get("how", "left" if action == action_names.JOIN else None),
         "left_keys": left_keys, "right_keys": right_keys, "same_key": same_key, "nulls_equal": bool(step.get("nulls_equal")),
-        "suffix": step.get("suffix") or "_right", "key_columns": key_columns(step), "is_base": right_id == base_id,
+        "suffix": suffix_of(step), "key_columns": key_columns(step), "is_base": right_id == base_id,
         "base_itself": action == action_names.JOIN and right_id == base_id and same_key and _left_is_base_itself(earlier_steps, left_keys),
     }
 
