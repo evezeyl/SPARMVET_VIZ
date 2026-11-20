@@ -113,16 +113,94 @@ def test_4_the_same_drop_as_an_audit_step_where_no_later_join_uses_the_key_is_ac
     assert [e.code for e in check(audit.recipe, "audit") if e.code.startswith("AU")] == []
 
 
+KEY_DROP = "utils.key_drop"
+
+
+def _binds(tree):
+    """(names that stand for the module `utils.key_drop`, names imported from it) among the imports of a tree: `from utils import key_drop [as k]`, `import utils.key_drop [as k]`
+    and `from utils.key_drop import X [as Y]` are the three forms; a plain `import utils.key_drop` binds `utils` and is reached as `utils.key_drop.X`."""
+    modules, members, dotted = set(), set(), False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.level == 0:
+            if node.module == "utils":
+                modules |= {a.asname or a.name for a in node.names if a.name == "key_drop"}
+            elif node.module == KEY_DROP:
+                members |= {a.asname or a.name for a in node.names}
+        elif isinstance(node, ast.Import):
+            for a in node.names:
+                if a.name == KEY_DROP:
+                    if a.asname:
+                        modules.add(a.asname)
+                    else:
+                        dotted = True
+    return modules, members, dotted
+
+
+def _uses_key_drop(fn, modules, members, dotted):
+    for node in ast.walk(fn):
+        if isinstance(node, ast.Name) and node.id in members:
+            return True
+        if isinstance(node, ast.Attribute):
+            value = node.value
+            if isinstance(value, ast.Name) and value.id in modules:
+                return True
+            if dotted and isinstance(value, ast.Attribute) and value.attr == "key_drop" and isinstance(value.value, ast.Name) and value.value.id == "utils":
+                return True
+    return False
+
+
+def key_drop_users(source_text: str) -> set:
+    """The functions of one source file that use `utils.key_drop`, whichever way they got it (the three forms of import, at the top of the file or inside a function). An
+    import at the top counts for every function of the file; an import inside a function counts for that function (an import line is not a use: the function must use the name)."""
+    tree = ast.parse(source_text)
+    top = _binds(ast.Module(body=[n for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom))], type_ignores=[]))
+    found = set()
+    for fn in [n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
+        local = _binds(fn)
+        modules, members, dotted = top[0] | local[0], top[1] | local[1], top[2] or local[2]
+        if _uses_key_drop(fn, modules, members, dotted):
+            found.add(fn.name)
+    return found
+
+
+def users_in(roots) -> dict:
+    users: dict = {}
+    for root in roots:
+        for path in sorted(Path(root).rglob("*.py")):
+            if "tests" in path.parts or "build" in path.parts or path.name == "key_drop.py":
+                continue
+            found = key_drop_users(path.read_text())
+            if found:
+                users.setdefault(path.name, set()).update(found)
+    return users
+
+
 def test_the_rule_is_asked_only_for_audit_steps_by_the_source():
-    """No caller of `utils.key_drop` outside the audit paths: in `utils`, `audit_copy` (add_step, integrity_errors) and the checker's `audit_step_keys` (plus the annotation of
-    `__init__`) only; in `app`, the drop of the column box (`_col_drop_to_audit`, inside `define_filter_audit_server`) and the restore of stored audit steps. The author's steps are walked by `_Check.steps` with `audit=False` and never
-    reach the rule."""
-    users = {}
-    for path in list((ROOT / "libs/utils/src/utils").glob("*.py")) + list((ROOT / "app").rglob("*.py")):
-        if "tests" in path.parts or path.name == "key_drop.py":
-            continue
-        for fn in [n for n in ast.walk(ast.parse(path.read_text())) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
-            if any(isinstance(a, ast.Attribute) and isinstance(a.value, ast.Name) and a.value.id == "key_drop" for a in ast.walk(fn)):
-                users.setdefault(path.name, set()).add(fn.name)
+    """No caller of `utils.key_drop` outside the audit paths, by any form of import (F3 of the review of 2026-11-20 saw only `key_drop.<attr>`): in `utils`, `audit_copy` (add_step,
+    integrity_errors) and the checker's `audit_step_keys` (plus the annotation of `__init__`) only; in `app`, the drop of the column box (`_col_drop_to_audit`, inside
+    `define_filter_audit_server`) and the restore of stored audit steps. The author's steps are walked by `_Check.steps` with `audit=False` and never reach the rule."""
+    users = users_in([ROOT / "libs/utils/src/utils", ROOT / "app"])
     assert users == {"audit_copy.py": {"_key_drop", "integrity_errors"}, "recipe_check.py": {"__init__", "audit_step_keys"},
                      "session_manager.py": {"split_key_drops"}, "filter_and_audit_handlers.py": {"_col_drop_to_audit", "define_filter_audit_server"}}, users
+
+
+@pytest.mark.parametrize("text", [
+    "from utils.key_drop import DropGate\ndef stray(raw):\n    return DropGate(raw)\n",
+    "from utils.key_drop import DropGate as Gate\ndef stray(raw):\n    return Gate(raw)\n",
+    "from utils import key_drop\ndef stray(raw):\n    return key_drop.DropGate(raw)\n",
+    "from utils import key_drop as kd\ndef stray(raw):\n    return kd.DropGate(raw)\n",
+    "import utils.key_drop as kd\ndef stray(raw):\n    return kd.DropGate(raw)\n",
+    "import utils.key_drop\ndef stray(raw):\n    return utils.key_drop.DropGate(raw)\n",
+    "def stray(raw):\n    from utils.key_drop import key_drop_problem\n    return key_drop_problem(raw, 'T1:A', ['x'])\n",
+    "def outer():\n    from utils import key_drop\n    def stray(raw):\n        return key_drop.DropGate(raw)\n    return stray\n",
+])
+def test_the_scan_sees_a_caller_in_every_form_of_import(text, tmp_path):
+    """The scanner of the test above can fail: a stray caller written in each form of import is found (the review's mutant, `from utils.key_drop import DropGate`, passed the
+    old scan). It is run on a scratch tree, never on the real one."""
+    (tmp_path / "stray_module.py").write_text(text)
+    assert users_in([tmp_path])["stray_module.py"] & {"stray", "outer"}      # a use inside a nested function is reported for the function that holds the import too
+
+
+def test_the_scan_does_not_flag_an_import_that_is_not_used_or_another_module_of_the_same_name(tmp_path):
+    (tmp_path / "quiet.py").write_text("from utils.key_drop import DropGate\nfrom other import key_drop as nothing\ndef quiet(raw):\n    return nothing(raw)\n")
+    assert users_in([tmp_path]) == {}

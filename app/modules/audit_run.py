@@ -30,7 +30,7 @@ Consumed by: app/tests/test_audit_run.py. If deleted: nothing runs a copy yet; t
 
 # @deps
 # provides: function:run_audit, class:AuditRun, class:TableRun, class:PlotRun, class:AuditRunError
-# consumes: app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3 with a handed recipe), app/modules/cache_keys.py (loaded_from_resolved, load_data_analysis_recipe), libs/utils/src/utils/audit_copy.py, libs/utils/src/utils/recipe_graph.py, libs/transformer/src/transformer/anchor.py (read_anchor_if_key)
+# consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the original, handed to the check of every copy), app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3 with a handed recipe), app/modules/cache_keys.py (loaded_from_resolved, load_data_analysis_recipe), libs/utils/src/utils/audit_copy.py, libs/utils/src/utils/recipe_graph.py, libs/transformer/src/transformer/anchor.py (read_anchor_if_key)
 # consumed_by: app/tests/test_audit_run.py
 # doc: .claude/knowledge/architecture_decisions.md#adr-101, .claude/knowledge/architecture_decisions.md#adr-105, .claude/design/home_audit_steps.md (section 7.1)
 # @end_deps
@@ -46,9 +46,11 @@ import polars as pl
 
 from app.modules.cache_keys import (
     DataAnalysisRecipeKeys, LoadedDataAnalysisRecipe, load_data_analysis_recipe, loaded_from_resolved, tier2_steps)
+from app.modules.plan_composer import compose_plan_book
 from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, DataOrchestrator, InputsChanged, tier2_path_for
 from transformer.anchor import read_anchor_if_key
 from utils.audit_copy import AuditStep, all_audit_steps, integrity_errors, with_audit_steps
+from utils.plan_book import PlanBook
 from utils.recipe_graph import build_graph
 
 # Where a table of the copy comes from.
@@ -119,14 +121,16 @@ def _stored(path: Path, meta_key: str, key: str) -> bool:
 class _Run:
     """The state of one run: the orchestrator, the original with its keys, the copy as a recipe, the two folders."""
 
-    def __init__(self, orchestrator: DataOrchestrator, recipe_id: str, audit_recipe: dict, original_dir: Path, audit_dir: Path) -> None:
+    def __init__(self, orchestrator: DataOrchestrator, recipe_id: str, audit_recipe: dict, original_dir: Path, audit_dir: Path, original: LoadedDataAnalysisRecipe,
+                 plans: PlanBook) -> None:
         self.orch = orchestrator
         self.recipe_id = recipe_id
         self.original_dir = original_dir
         self.audit_dir = audit_dir
-        self.original: LoadedDataAnalysisRecipe = load_data_analysis_recipe(orchestrator.data_analysis_recipes_dir / f"{recipe_id}.yaml")
+        self.original: LoadedDataAnalysisRecipe = original
+        self.plans = plans   # the engine's plan book of the ORIGINAL: the engine's check of every copy it builds from (the rule of a key drop) reads it
         self.audit_raw = copy.deepcopy(audit_recipe)
-        self.audit_loaded = loaded_from_resolved(self.original, self.audit_raw)
+        self.audit_loaded = loaded_from_resolved(self.original, self.audit_raw, plans)
         self.keys_original = orchestrator.compute_data_analysis_recipe_keys(recipe_id, loaded=self.original)
         self.keys_audit = orchestrator.compute_data_analysis_recipe_keys(recipe_id, loaded=self.audit_loaded)
         self.graph = build_graph(self.audit_raw)
@@ -205,7 +209,7 @@ class _Run:
         try:
             for count in range(1, len(candidates) + 1):
                 probe = with_audit_steps(self.original.raw, candidates[:count])
-                loaded = loaded_from_resolved(self.original, probe)
+                loaded = loaded_from_resolved(self.original, probe, self.plans)
                 try:
                     attempt(loaded, self.orch.compute_data_analysis_recipe_keys(self.recipe_id, loaded=loaded), scratch, [])
                 except Exception:
@@ -294,14 +298,15 @@ def run_audit(orchestrator: DataOrchestrator, recipe_id: str, audit_recipe: dict
     if audit_real.is_relative_to(original_real) or original_real.is_relative_to(audit_real):
         raise AuditRunError("The audit's stored tables go in a folder of their own: the folder of the audit and the folder of the original's tables must not be one inside the other.")
     original = load_data_analysis_recipe(orchestrator.data_analysis_recipes_dir / f"{recipe_id}.yaml")
-    problems = integrity_errors(audit_recipe, original.raw)
+    plans = compose_plan_book(orchestrator, recipe_id, original)   # the engine's plan of the original (LBFB step 0b): nothing is built or stored by it
+    problems = integrity_errors(audit_recipe, original.raw, plans)
     if problems:
         raise AuditRunError("The audit copy is not the original plus audit steps, so it is not run: " + " ".join(problems))
     created = not audit_dir.exists()
     before = _snapshot(audit_dir)
     audit_dir.mkdir(parents=True, exist_ok=True)
     try:
-        return _Run(orchestrator, recipe_id, audit_recipe, original_dir, audit_dir).run()
+        return _Run(orchestrator, recipe_id, audit_recipe, original_dir, audit_dir, original, plans).run()
     except BaseException:
         _rollback(audit_dir, before, created)
         raise

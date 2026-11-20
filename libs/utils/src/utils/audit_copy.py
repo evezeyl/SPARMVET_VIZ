@@ -43,7 +43,7 @@ If deleted: no audit copy can be made, checked or keyed.
 
 # @deps
 # provides: function:start_audit, function:add_step, function:remove_step, function:all_audit_steps, function:with_audit_steps, function:integrity_errors, function:is_audit_id, function:audit_operation, function:parse_place, class:AuditCopy, class:AuditStep, class:AuditCopyError
-# consumes: libs/utils/src/utils/key_drop.py (DropGate: a key column cannot be dropped where a join later reads it, D-0358, D-0297), libs/utils/src/utils/recipe_tiers.py (AUDIT_STEPS, AUDIT_COMMENT, AUDIT_ID, collection_bodies, collection_body, plot_entries, plot_entry, plot_targets, without_audit_steps, audit_step_places), libs/utils/src/utils/action_names.py (AUDIT_ACTIONS)
+# consumes: libs/utils/src/utils/key_drop.py (DropGate: a key column cannot be dropped where a join later reads it, D-0358, D-0297; `plans`: the engine's plan book of the original), libs/utils/src/utils/plan_book.py (PlanBook), libs/utils/src/utils/recipe_tiers.py (AUDIT_STEPS, AUDIT_COMMENT, AUDIT_ID, collection_bodies, collection_body, plot_entries, plot_entry, plot_targets, without_audit_steps, audit_step_places), libs/utils/src/utils/action_names.py (AUDIT_ACTIONS)
 # consumed_by: app/modules/cache_keys.py, app/modules/audit_run.py, libs/utils/tests/test_audit_copy.py, app/tests/test_audit_keys.py, app/tests/test_audit_run.py
 # doc: .claude/knowledge/architecture_decisions.md#adr-101, .claude/knowledge/architecture_decisions.md#adr-105, .claude/design/home_audit_steps.md, .claude/design/recipe_format_spec.md (DEC18)
 # @end_deps
@@ -56,6 +56,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from utils import action_names, key_drop, recipe_tiers
 from utils.action_names import AUDIT_ACTIONS
+from utils.plan_book import PlanBook
 from utils.recipe_tiers import AUDIT_COMMENT, AUDIT_ID, AUDIT_STEPS
 
 # The keys of an audit step that are not part of its operation: the id, the reason and the author's note (a note changes no data).
@@ -189,31 +190,35 @@ def _append(body: dict, tier: str, written: dict) -> None:
     body[tier].setdefault(AUDIT_STEPS, []).append(written)
 
 
-def _refuse_if_not_allowed(step: Any, recipe: dict, place: str) -> None:
+def _refuse_if_not_allowed(step: Any, recipe: dict, place: str, plans: Optional[PlanBook] = None) -> None:
     if not isinstance(step, dict) or not isinstance(step.get("action"), str):
         raise AuditCopyError("A step is a mapping with an action (for example {action: modif_filter, column: ..., op: ..., value: ..., na: ...}).")
     if step["action"] not in AUDIT_ACTIONS:
         raise AuditCopyError(f"An audit step is a filter, a column drop or a removal by key: {', '.join(AUDIT_ACTIONS)}. '{step['action']}' is not one of them.")
-    problem = _key_drop(step, recipe, place)
+    problem = _key_drop(step, recipe, place, plans=plans)
     if problem:
         raise AuditCopyError(problem)
 
 
-def _key_drop(step: Any, recipe: dict, place: str, gate: Optional[key_drop.DropGate] = None) -> Optional[str]:
-    """The plain sentence when the step drops a key column AT THIS PLACE (D-0358, D-0297), else None: ONE rule, `utils.key_drop`. A caller that asks several times
-    on one recipe passes the same `gate`."""
+def _key_drop(step: Any, recipe: dict, place: str, gate: Optional[key_drop.DropGate] = None, plans: Optional[PlanBook] = None) -> Optional[str]:
+    """The plain sentence when the step drops a key column AT THIS PLACE (D-0358, D-0297) or a column the app cannot follow to the joins after it (PROVISIONAL: not
+    written, see `utils.key_drop`), else None: ONE rule, `utils.key_drop`. A caller that asks several times on one recipe passes the same `gate`; `plans` is the engine's
+    plan book of the ORIGINAL recipe (the caller that has the engine gives it; without it the rule reads the names the recipe declares)."""
     if isinstance(step, dict) and step.get("action") == action_names.DROP:
-        return (gate or key_drop.DropGate(recipe)).problem(place, step.get("columns"))
+        return (gate or key_drop.DropGate(recipe, plans)).problem(place, step.get("columns"))
     return None
 
 
-def add_step(audit: AuditCopy, place: str, step: dict, comment: str) -> str:
+def add_step(audit: AuditCopy, place: str, step: dict, comment: str, plans: Optional[PlanBook] = None) -> str:
     """Write ONE audit step in the list `audit_steps` of `place`, after the ones already there, and return its id (changes the copy; a refused call changes nothing).
 
     `step` is the operation: `action` (one of `AUDIT_ACTIONS`) and its arguments, without `id` or `audit_comment` (the copy writes the id and takes the reason
-    from `comment`). `comment` is the reason, a text that is not empty. The id is `audit_<audit_id>_<created + 1>`: see the module text for what the number counts."""
+    from `comment`). `comment` is the reason, a text that is not empty. The id is `audit_<audit_id>_<created + 1>`: see the module text for what the number counts.
+
+    `plans`: the engine's plan book of the ORIGINAL recipe (`app/modules/plan_composer.py`), for the rule of a key drop (`utils.key_drop`); without it the rule reads only the
+    names the recipe declares and a drop it cannot follow is not written."""
     tier, _, body = _target(audit.recipe, place)
-    _refuse_if_not_allowed(step, audit.recipe, place)
+    _refuse_if_not_allowed(step, audit.recipe, place, plans)
     given = [k for k in ("id", AUDIT_COMMENT) if k in step]
     if given:
         raise AuditCopyError(f"The step already holds {', '.join(given)}; the copy writes the id, and the reason is the argument comment.")
@@ -344,14 +349,14 @@ def _unread_audit_lists(recipe: dict) -> List[Tuple[str, str]]:
     return found
 
 
-def integrity_errors(audit_recipe: dict, original_recipe: dict) -> List[str]:
+def integrity_errors(audit_recipe: dict, original_recipe: dict, plans: Optional[PlanBook] = None) -> List[str]:
     """Plain sentences about what makes the copy different from the original other than by audit steps in `audit_steps`; empty when the copy is sound.
 
     "The copy minus its audit steps must equal the original, otherwise it blocks" (ADR-105 point 6). Checks: the original holds no `audit_steps` and no audit
     id or reason anywhere; the audit ids are not used twice; every `audit_steps` is a list whose items have the form of an audit step (an audit id, a reason that
     is a text that is not empty, an action that an audit may use); no item of an author's `steps` list carries an audit id or a reason (a hand-made audit step
     in the wrong list); and the copy without its `audit_steps` equals the original (an original step changed, removed or reordered; a key changed, added or
-    removed anywhere else)."""
+    removed anywhere else). `plans`: the engine's plan book of the ORIGINAL recipe, for the rule of a key drop (see `add_step`)."""
     errors: List[str] = []
     gate: Optional[key_drop.DropGate] = None                 # built when the first audit step that drops a column needs it
     for where in recipe_tiers.audit_step_places(original_recipe):
@@ -382,7 +387,7 @@ def integrity_errors(audit_recipe: dict, original_recipe: dict) -> List[str]:
             if step.get("action") not in AUDIT_ACTIONS:
                 errors.append(f"The {where} is '{step.get('action')}'; an audit step is one of {', '.join(AUDIT_ACTIONS)}.")
             if step.get("action") == action_names.DROP:
-                gate = gate or key_drop.DropGate(audit_recipe)
+                gate = gate or key_drop.DropGate(audit_recipe, plans)
             problem = _key_drop(step, audit_recipe, place, gate)
             if problem:
                 errors.append(f"The {where} ({step_id}): {problem}")

@@ -47,8 +47,10 @@ integrity check and the checker, through `utils.key_drop`); a refused line is gr
 dropped. A column that a later step or a plot uses without being a key is NOT refused: the line carries what it breaks (`Line.consequences`), from the steps the walk reads and,
 when the caller gives the engine's plan of the candidate recipe for a place (`candidates`), from that plan, each reading checked against it (a disagreement is grey with both facts).
 PROVISIONAL (not decided by the owner): P15 a declared entity key that no later join uses is not refused for being declared (D-0297 names join keys, D-0358 says by place): the line
-says so as information (`declared_entity_key` note); P16 a column the walk cannot follow to the end (a plan failure, an unfollowed step) is grey on a drop line and the gate
-does not refuse it (the engine tells at the build: no silent result, only an error), which is the owner's accepted worst case; P17 without a candidate plan the consequences hold only what the steps the walk reads and the
+says so as information (`declared_entity_key` note); P16 a column the walk cannot follow to the end (a plan failure, an unfollowed step) is grey on a drop line and the gate REFUSES the drop (`key_drop`: a drop the walk cannot follow is not
+written; `DropFacts.uncertain`; it replaced the earlier rule "allow it, the engine tells at the build"). This rule is PROVISIONAL and goes to the owner: her words on the worst case are D-0358
+("worth case if a user removes the wrong column then the dependent steps wont work and there will be error / no plot"), which reads as accepting an error at the build, while the gate now
+blocks a drop that may have been harmless (on the demo recipe the columns behind an unpivot); the owner decides which side is the default; P17 without a candidate plan the consequences hold only what the steps the walk reads and the
 plot mapping say (`consequences_checked` False, stated, never silent).
 
 Consumed by: libs/utils/src/utils/key_drop.py (the gate of a drop), libs/utils/tests/test_lineage_walk.py (the dialog of HOME calls the walk later).
