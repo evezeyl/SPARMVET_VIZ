@@ -212,7 +212,7 @@ def test_without_a_seed_in_the_recipe_every_place_uses_zero_and_two_sessions_sho
                 other_view = other.locator(f"#plot_group_{PID}").screenshot()
             finally:
                 other_context.close()
-            set_compare(page, False)                 # the audited plot alone (no audited step: the same picture as the Result)
+            set_mode(page, "exploration")            # back to the Result plot: the page layout is then the same as the other session's (an extra strip row of Audit mode shifts the plot by a fraction of a pixel and the screenshots differ)
             settle(page, f"plot_group_{PID}")
             assert same_picture(other_view, page.locator(f"#plot_group_{PID}").screenshot()), \
                 "two sessions show different arrangements: HOME drew a seed"
