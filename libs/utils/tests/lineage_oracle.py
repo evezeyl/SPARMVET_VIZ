@@ -173,11 +173,11 @@ def marker_holders(recipe: Mapping[str, Any], tables: Mapping[str, pl.DataFrame]
     return {n for n in nodes if not n.startswith("DS:") and result.end(n) is not None and holds_mark(result.end(n))}  # type: ignore[arg-type]
 
 
-def with_audit_filter(recipe: Mapping[str, Any], place: str, column: str, value: Any) -> Dict[str, Any]:
-    """A copy of the recipe with one filter (remove the rows whose `column` equals `value`) added at the END of the list of a place (`T1:C`, `T2:C`, `T3:p`)."""
+def _with_step(recipe: Mapping[str, Any], place: str, step: Mapping[str, Any]) -> Dict[str, Any]:
+    """A copy of the recipe with one step added at the END of the list of a place (`T1:C`, `T2:C`, `T3:p`): the candidate recipe the walk's `candidates` are built from."""
     copy_ = copy.deepcopy(dict(recipe))
     tier, name = place.split(":", 1)
-    step = {"action": "modif_filter", "column": column, "op": "ne", "value": value, "na": "keep"}
+    step = dict(step)
     if tier == "T3":
         for group in copy_["analysis_groups"].values():
             if name in group["plots"]:
@@ -191,6 +191,16 @@ def with_audit_filter(recipe: Mapping[str, Any], place: str, column: str, value:
     if name == "metadata_schema":
         copy_["metadata_schema"].setdefault(key, {}).setdefault("steps", []).append(step)
     return copy_
+
+
+def with_audit_filter(recipe: Mapping[str, Any], place: str, column: str, value: Any) -> Dict[str, Any]:
+    """A copy of the recipe with one filter (remove the rows whose `column` equals `value`) added at the END of the list of a place (`T1:C`, `T2:C`, `T3:p`)."""
+    return _with_step(recipe, place, {"action": "modif_filter", "column": column, "op": "ne", "value": value, "na": "keep"})
+
+
+def with_audit_drop(recipe: Mapping[str, Any], place: str, *columns: str) -> Dict[str, Any]:
+    """A copy of the recipe with one `polars_drop` of these columns added at the END of the list of a place: the candidate recipe of a drop (D-0358)."""
+    return _with_step(recipe, place, {"action": "polars_drop", "columns": list(columns)})
 
 
 def changed_nodes(recipe: Mapping[str, Any], tables: Mapping[str, pl.DataFrame], after: Mapping[str, Any]) -> Set[str]:

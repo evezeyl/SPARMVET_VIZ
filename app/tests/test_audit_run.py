@@ -518,10 +518,11 @@ def test_a_copy_built_by_hand_with_no_reason_or_with_the_reason_in_comment_is_re
 
 
 def test_a_copy_built_by_hand_that_drops_a_key_column_is_refused_by_every_build(world):
+    """ADAPTED (D-0358, D-0297): refused by PLACE; at T1:A the join J still reads `sample_id`, and the sentence names the place and the join."""
     audit = world.copy_with(("T1:A", KEEP_S1))
     audit.recipe["data_schemas"]["A"]["tier1"][AUDIT_STEPS][0] = {"action": "polars_drop", "columns": ["sample_id"], "id": ID1, AUDIT_COMMENT: "x"}
     outcome = build_each_tier(world, handed(world, audit.recipe))
-    assert all(text and "Cannot drop the key column(s) sample_id" in text for text in outcome.values()), outcome
+    assert all(text and "Cannot drop the column 'sample_id' at T1:A" in text and "step 1 of T1:J" in text for text in outcome.values()), outcome
 
 
 def test_a_copy_that_changed_an_author_step_or_holds_audit_steps_where_no_tier_reads_them_is_refused(world):

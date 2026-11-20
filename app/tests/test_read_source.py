@@ -384,12 +384,13 @@ def test_a_source_read_through_an_audit_copy_goes_through_the_guard_of_the_build
 
 def test_the_verdict_on_an_audit_copy_follows_its_content_not_the_object(tmp_path):
     """The guard's answer is kept per copy, keyed on the content it judged: the SAME object, changed by hand after it passed, is judged again. A sound copy passes;
-    after a hand-appended `polars_drop` of the key column, and after an injected author step, the same object is refused with the plain sentence; put back, it passes again."""
+    after a hand-appended audit step of an action an audit may not use, and after an injected author step, the same object is refused with the plain sentence; put back, it passes again.
+    ADAPTED (D-0358): the first change was a `polars_drop` of the key column at the join C; a key is refused by PLACE now and nothing reads it after C, so the hand-made step is a `polars_sort`."""
     world = World(tmp_path)
     audit, sound = _audit_copy(world, ("T1:C", FILTER_A))
     assert world.orch.read_source("tiny", "T", loaded=sound).collect().height == 3
     tier = audit.recipe["joins"]["C"]["tier1"]
-    tier["audit_steps"].append({"action": "polars_drop", "columns": ["sample_id"], "id": "audit_1a2b3c4d_9", "audit_comment": "by hand"})
+    tier["audit_steps"].append({"action": "polars_sort", "by": ["sample_id"], "id": "audit_1a2b3c4d_9", "audit_comment": "by hand"})
     with pytest.raises(DataAnalysisRecipeError, match="not the original plus sound audit steps"):
         world.orch.read_source("tiny", "T", loaded=sound)
     tier["audit_steps"].pop()

@@ -13,9 +13,9 @@ Consumed by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_lineage
 If deleted: the walk has nothing to return.
 
 # @deps
-# provides: class:Walk, class:Line, class:Gone, class:Unread, class:Outside, class:Occurrence, class:Hop, class:StepRef, class:SourceColumn, class:Reach, class:Reason, class:Note, class:Start, class:SortedSet, constant:GROUPS, constant:LEVELS, constant:HOW_VALUES, constant:REASON_CODES, constant:NOTE_CODES, constant:VALUE_NOTES
+# provides: class:Walk, class:Line, class:Gone, class:Unread, class:Outside, class:Occurrence, class:Hop, class:StepRef, class:SourceColumn, class:Reach, class:Reason, class:Note, class:Start, class:SortedSet, class:KeyNeed, class:Consequence, class:DropFacts, constant:GROUPS, constant:LEVELS, constant:HOW_VALUES, constant:REASON_CODES, constant:NOTE_CODES, constant:VALUE_NOTES, constant:CONSEQUENCE_CODES
 # consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py
-# doc: .claude/knowledge/decision_ledger.md (D-0346, D-0347, D-0195, D-0351, D-0353, D-0337, D-0357)
+# doc: .claude/knowledge/decision_ledger.md (D-0346, D-0347, D-0195, D-0351, D-0353, D-0337, D-0357, D-0358, D-0297)
 # @end_deps
 """
 from __future__ import annotations
@@ -56,7 +56,9 @@ READING_DISAGREES = "reading_disagrees"        # a reading of D-0351 gives other
 SEVERAL_COLUMNS = "several_columns"            # the column exists more than once here (a table joined with itself): which one a step names is not decided
 CANNOT_FOLLOW = "cannot_follow"                # no trace could be made (a plan that disagrees with the one above)
 NO_STEP_LIST = "no_step_list"                  # a source table holds no list of steps (D-0332): the line is returned, a step cannot be written there (PROVISIONAL)
-REASON_CODES = (PLAN_FAILED, STEP_NOT_READ, READING_DISAGREES, SEVERAL_COLUMNS, CANNOT_FOLLOW, NO_STEP_LIST)
+KEY_NEEDED_LATER = "key_needed_later"          # a drop here is refused: a join step later (here or in a table built from this one) uses the column as a key (D-0358, D-0297)
+CONSEQUENCE_DISAGREES = "consequence_disagrees"   # what the readings say a drop breaks and what the engine's plan of the candidate says differ (D-0351): both facts are in the reason
+REASON_CODES = (PLAN_FAILED, STEP_NOT_READ, READING_DISAGREES, SEVERAL_COLUMNS, CANNOT_FOLLOW, NO_STEP_LIST, KEY_NEEDED_LATER, CONSEQUENCE_DISAGREES)
 
 # The notes under a line: a closed list. They are DATA (a code and parameters: node, step, action, the names and the types before and after, the direction); the
 # words the user reads are written later in their own module. `direction` says whether the path from the place the user chose crosses the step with the
@@ -67,7 +69,17 @@ NOTE_RECOMPUTED = "recomputed_here"              # a compute step writes the col
 NOTE_AGGREGATED = "aggregated_here"              # a group-by aggregate that keeps the name (D-0353); `knows_source_of_values` is False
 NOTE_ONE_ROW_PER_GROUP = "one_row_per_group_after_this_step"   # a group-by key keeps its name; the rows after the step are the groups (D-0353)
 VALUE_NOTES = (NOTE_ANOTHER_TYPE, NOTE_RECOMPUTED, NOTE_AGGREGATED, NOTE_ONE_ROW_PER_GROUP)
-NOTE_CODES = (NOTE_UNREAD_STEP_PASSED,) + VALUE_NOTES
+NOTE_DECLARED_ENTITY_KEY = "declared_entity_key"   # a drop here removes a column that a table declares `is_entity_key`: information for the dialog; it is no refusal (D-0358)
+NOTE_CODES = (NOTE_UNREAD_STEP_PASSED, NOTE_DECLARED_ENTITY_KEY) + VALUE_NOTES
+
+# What dropping a column breaks later, as data (D-0358: "the dependent steps wont work and there will be error / no plot"). `source` says where the fact comes from:
+# the steps the walk reads (`reading`) or the engine's plan of the candidate recipe (`plan`).
+STEP_NAMES_COLUMN = "step_names_column"        # a later step names the column in an argument the walk reads (a rename, a drop, a select, a cast, a group column): the step fails
+PLOT_USES_COLUMN = "plot_uses_column"          # a plot draws the column (its mapping, facet or filter): the plot cannot be drawn
+CLASH_NO_LONGER = "clash_no_longer"            # the dropped column was the one a join's suffix kept the other table's same-named column apart from: that column now keeps its own name there
+BUILD_FAILS = "build_fails"                    # the candidate plan fails here (the engine's sentence is a parameter) where the recipe as it is builds
+CONSEQUENCE_CODES = (STEP_NAMES_COLUMN, PLOT_USES_COLUMN, CLASH_NO_LONGER, BUILD_FAILS)
+FROM_READING, FROM_PLAN = "reading", "plan"
 
 # Why a walk holds no line, no note and no place no plot reads (never a silent empty result, D-0195).
 NO_PLACE_AT_THE_LEVELS = "no_place_at_the_chosen_levels"   # parameters: the chosen levels, the levels where the column exists in the lineage, the group
@@ -141,6 +153,51 @@ class Hop:
 
 
 @dataclass(frozen=True)
+class KeyNeed:
+    """A join step that needs a column as a key. `step` is the join step (its table, tier and number are `step.node` and `step.step`); `side` is `base` (the
+    table at the step) or `right` (the table the step reads); `name` is the column's name AT the join (it can differ from the name at the place the drop is
+    written: a rename or a key under another name lies between). `certain` is False when the walk reaches the join only through a link it cannot prove."""
+    step: StepRef
+    side: str
+    name: str
+    certain: bool = True
+
+
+@dataclass(frozen=True)
+class Consequence:
+    """What a drop breaks downstream, as data: `code` (`CONSEQUENCE_CODES`), the place where it shows, the step it concerns (None for a plot or a place), where the fact
+    comes from (`reading` or `plan`) and its parameters (the name, the plot, the engine's sentence)."""
+    code: str
+    place: str
+    step: Optional[StepRef]
+    source: str
+    params: Tuple[Tuple[str, Any], ...] = ()
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return next((v for k, v in self.params if k == key), default)
+
+
+@dataclass(frozen=True)
+class DropFacts:
+    """Whether a column can be dropped at the end of a node, by place (D-0358): the join steps that need it as a key (`needs`, with `certain` per need), the facts
+    that stop the walk from following it (`unfollowed`, as reasons), and whether it comes from a column a table declares `is_entity_key` (`declared`, the source
+    columns). Derived: `refused` is a certain need; `uncertain` is an uncertain need or a stop. The same facts decide the lines of a drop walk and the gate."""
+    place: str
+    column: str
+    needs: Tuple[KeyNeed, ...] = ()
+    unfollowed: Tuple[Reason, ...] = ()
+    declared: Tuple[SourceColumn, ...] = ()
+
+    @property
+    def refused(self) -> bool:
+        return any(n.certain for n in self.needs)
+
+    @property
+    def uncertain(self) -> bool:
+        return not self.refused and bool(self.unfollowed or any(not n.certain for n in self.needs))
+
+
+@dataclass(frozen=True)
 class SourceColumn:
     """A column of a source file as the recipe declares it: the table id and the column's name there."""
     table: str
@@ -202,8 +259,10 @@ class Line:
     scope_group: str
     is_start: bool
     reach: Reach
-    refusal: Optional[Reason] = None            # "refused here, with the reason" (the drop of a key column, by place): carried per line, nothing sets it yet (step 4)
+    refusal: Optional[Reason] = None            # "refused here, with the reason" (the drop of a key column, by place, D-0358): a Reason of KEY_NEEDED_LATER with the join steps that need it; only a drop sets it
     duplicates: Optional[str] = None            # a source line whose tier 1 has no steps is the same table as that tier 1 (PROVISIONAL, D-0346): the place it duplicates, so that a caller shows one line
+    consequences: Tuple[Consequence, ...] = ()   # a drop: what it breaks downstream (D-0358); empty for a filter and for a drop that breaks nothing the walk could see
+    consequences_checked: bool = False          # a drop: True when the engine's plan of the candidate recipe was given for this line, False when only the steps the walk reads were looked at
 
 
 @dataclass(frozen=True)
@@ -268,6 +327,11 @@ class Walk:
     @property
     def found(self) -> int:
         return sum(1 for line in self.lines if line.state == TICK)
+
+    @property
+    def refused(self) -> int:
+        """The lines of a drop that are refused by place (a later join needs the column as a key). A refused line is also grey: it cannot be written."""
+        return sum(1 for line in self.lines if line.refusal is not None)
 
     @property
     def grey(self) -> int:
