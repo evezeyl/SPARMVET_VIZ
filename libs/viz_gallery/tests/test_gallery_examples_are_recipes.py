@@ -70,3 +70,13 @@ def test_the_tag_strip_of_every_shipped_example_equals_its_taxonomy():
     for name, recipe in accepted.items():
         text = (SHIPPED / name / "example_meta.md").read_text()
         assert with_tag_strip(text, tag_strip(example_taxonomy(recipe))) == text, f"{name}: the tag strip does not equal the taxonomy"
+
+
+def test_every_name_in_the_committed_index_is_the_ui_label_of_its_recipe():
+    import json
+    from utils.recipe_loader import load_recipe
+    from viz_gallery.taxonomy import example_name
+    registry = json.loads((SHIPPED / "gallery_index.json").read_text(encoding="utf-8"))["registry"]
+    assert registry
+    for name, entry in registry.items():
+        assert entry["name"] == example_name(load_recipe(SHIPPED / name / RECIPE)[0]), name

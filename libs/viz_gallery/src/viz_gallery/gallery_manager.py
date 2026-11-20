@@ -12,8 +12,8 @@ Consumed by: app/modules/gallery_examples.py (which passes the catalogs), assets
 No Shiny import. If deleted: `gallery_index.json` cannot be rebuilt and the gallery has no list of examples.
 
 # @deps
-# provides: class:GalleryManager (check_examples, rebuild_index, sync_index, submit_example (no screen or script calls it; only libs/viz_gallery/tests/test_gallery_bundle.py does, and example_recipe.py shares its form with convert_gallery_examples.py), list_submissions), class:Examples, constant:RECIPE_FILE
-# consumes: libs/utils/src/utils/recipe_loader.py (check_recipe_file, load_recipe), libs/utils/src/utils/recipe_check.py (check_recipe), libs/utils/src/utils/legacy_keys.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, libs/viz_gallery/src/viz_gallery/example_recipe.py
+# provides: class:GalleryManager (check_examples, build_index, write_index, rebuild_index, sync_index, submit_example (no screen or script calls it; only libs/viz_gallery/tests/test_gallery_bundle.py does, and example_recipe.py shares its form with convert_gallery_examples.py), list_submissions), class:Examples, constant:RECIPE_FILE
+# consumes: libs/utils/src/utils/recipe_loader.py (check_recipe_file, load_recipe), libs/utils/src/utils/recipe_check.py (check_recipe, check_recipe_set), libs/utils/src/utils/legacy_keys.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, libs/viz_gallery/src/viz_gallery/example_recipe.py
 # consumed_by: app/modules/gallery_examples.py, assets/scripts/gallery_previews.py, assets/scripts/convert_gallery_examples.py, libs/viz_gallery/tests/test_gallery_bundle.py
 # doc: .claude/design/recipe_format_spec.md (section 9)
 # @end_deps
@@ -30,10 +30,10 @@ from typing import Dict, FrozenSet, List, Optional, Tuple
 import polars as pl
 
 from utils.legacy_keys import LEGACY_GALLERY_FILES
-from utils.recipe_check import check_recipe
+from utils.recipe_check import check_recipe, check_recipe_set
 from utils.recipe_loader import check_recipe_file, load_recipe
 from viz_gallery.example_recipe import DATA_FILE, data_contract, data_summary, dump_example, example_recipe, plot_summary
-from viz_gallery.taxonomy import display_axes, example_taxonomy, tag_strip, with_tag_strip
+from viz_gallery.taxonomy import display_axes, example_name, example_taxonomy, tag_strip, with_tag_strip
 
 RECIPE_FILE = "data_analysis_recipe.yaml"
 META_FILE = "example_meta.md"
@@ -49,6 +49,11 @@ class Examples:
     accepted: Dict[str, dict]          # example id (the folder name) -> its recipe
     rejected: Dict[str, List[str]]     # example id -> why it is not shown, one text per problem
     coverage: FrozenSet[str]           # the groups of checks that ran: structure, actions, components
+
+
+def _content(index: dict) -> dict:
+    """An index without the time it was built, to compare two of them."""
+    return {**index, "metadata": {key: value for key, value in index["metadata"].items() if key != "generated_at"}}
 
 
 class GalleryManager:
@@ -89,30 +94,60 @@ class GalleryManager:
             elif result.errors:
                 rejected[name] = [problem.text() for problem in result.errors]
             else:
-                accepted[name] = load_recipe(recipe_path)[0]
+                recipe = load_recipe(recipe_path)[0]
+                reasons = self._repeats(name, recipe, accepted)
+                if reasons:
+                    rejected[name] = reasons
+                else:
+                    accepted[name] = recipe
         return Examples(accepted=accepted, rejected=rejected, coverage=frozenset(coverage))
 
-    def rebuild_index(self, catalogs: Optional[dict] = None) -> dict:
-        """Check the examples and write `gallery_index.json`: the accepted examples and the pivot of the six axes.
+    @staticmethod
+    def _repeats(name: str, recipe: dict, accepted: Dict[str, dict]) -> List[str]:
+        """Why an example cannot join the ones already accepted: its name or its plot id is already taken (PROVISIONAL wording).
 
-        A rejected example is not in the registry; its reasons are in `metadata.rejected` and printed.
+        The plot id goes through the set check of the format (`check_recipe_set`, X5: the app registers plots by id);
+        the name shown in the dropdown is compared here, as written. PROVISIONAL rule (not decided by the owner): when two
+        examples repeat a name or a plot id, the first in folder-name order is kept and the later one is left out.
         """
-        examples = self.check_examples(catalogs)
+        reasons = [f"{problem.text()}" for problem in check_recipe_set({**accepted, name: recipe}) if problem.path.startswith(f"{name}:")]
+        taken = {example_name(other): other_id for other_id, other in accepted.items()}
+        label = example_name(recipe)
+        if label in taken:
+            reasons.append(f"the name {label!r} is also the name of the example {taken[label]}. Fix: give each example its own ui_label")
+        return reasons
+
+    def _index_path(self, name: str) -> str:
+        """The recipe path an index entry holds: relative to the folder the program runs from (the project root), in
+        `/` form, for an absolute or a relative gallery folder alike, so the index never depends on where the gallery
+        sits on the machine. A gallery folder outside the working folder is named by its own folder name."""
+        recipe = (self.gallery_dir / name / RECIPE_FILE).resolve()
+        try:
+            return recipe.relative_to(Path.cwd().resolve()).as_posix()
+        except ValueError:
+            return (Path(self.gallery_dir.resolve().name) / name / RECIPE_FILE).as_posix()
+
+    def build_index(self, examples: Examples) -> dict:
+        """The index of the accepted examples and the pivot of the six axes, built and not written.
+
+        The only thing it reads besides the examples is whether a picture and a thumbnail file exist in each folder.
+        `metadata.generated_at` is the time of the build; it is the one field that is not part of the content.
+        """
         registry: Dict[str, dict] = {}
         pivot: Dict[str, Dict[str, List[str]]] = {f"by_{item['axis']}": {} for item in display_axes()}
         for name, recipe in examples.accepted.items():
             folder = self.gallery_dir / name
             taxonomy = example_taxonomy(recipe)
             registry[name] = {
-                "name": recipe["info"]["label"],
-                "path": str(folder / RECIPE_FILE),
+                "name": example_name(recipe),
+                "path": self._index_path(name),
                 "has_preview": (folder / PREVIEW_FILE).exists(),
                 "has_thumb": (folder / THUMB_FILE).exists(),
                 "taxonomy": taxonomy,
             }
             for axis, term in taxonomy.items():
                 pivot[f"by_{axis}"].setdefault(term, []).append(name)
-        index = {
+        return {
             "metadata": {
                 "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "count": len(registry),
@@ -122,7 +157,9 @@ class GalleryManager:
             "registry": registry,
             "pivot": pivot,
         }
-        # Atomic write: a reader (or a second process starting) sees the old index or the new one, never half of it.
+
+    def write_index(self, index: dict) -> None:
+        """Write `gallery_index.json` atomically: a reader (or a second process starting) sees the old index or the new one, never half of it."""
         target = self.gallery_dir / INDEX_FILE
         temporary = self.gallery_dir / f".{INDEX_FILE}.{os.getpid()}.tmp"
         try:
@@ -132,32 +169,48 @@ class GalleryManager:
         finally:
             if temporary.exists():
                 temporary.unlink()
+
+    def rebuild_index(self, catalogs: Optional[dict] = None) -> dict:
+        """Check the examples and write `gallery_index.json`: the accepted examples and the pivot of the six axes.
+
+        A rejected example is not in the registry; its reasons are in `metadata.rejected` and printed.
+        """
+        examples = self.check_examples(catalogs)
+        index = self.build_index(examples)
+        self.write_index(index)
         for name, reasons in examples.rejected.items():
             for reason in reasons:
                 print(f"[gallery] {name} is left out of the index: {reason}")
-        print(f"[gallery] index rebuilt: {len(registry)} example(s), {len(examples.rejected)} left out.")
+        print(f"[gallery] index rebuilt: {len(index['registry'])} example(s), {len(examples.rejected)} left out.")
         return index
 
     def sync_index(self, catalogs: Optional[dict] = None) -> Tuple[Examples, str]:
-        """The check at app start (spec section 9, DEC48): the same check as the rebuild, the index rewritten only if it differs.
+        """The check at app start (spec section 9, DEC48): the same check as the rebuild, the index rewritten on any difference.
 
-        Returns the check result and what happened to the index: `unchanged` (it already lists exactly the accepted
-        examples and records the same rejections; the file is not touched), `rewritten` (by `rebuild_index`, the one
-        function) or `not_writable` (the folder cannot be written, the old index stays and the caller must not trust it).
+        The whole built index (names, paths, picture flags, taxonomy, pivot, coverage, rejections) is compared with the
+        file, `generated_at` excepted. Returns the check result and what happened to the index: `unchanged` (the file
+        holds exactly what a rebuild would write; it is not touched), `rewritten` (the file differed, was missing or
+        could not be read) or `not_writable` (the folder cannot be written, the old index stays and the caller must
+        not trust it). The viewer still reads the file, not this result (ADR-037).
         """
         examples = self.check_examples(catalogs)
+        built = self.build_index(examples)
         index_path = self.gallery_dir / INDEX_FILE
         try:
             current = json.loads(index_path.read_text(encoding="utf-8"))
-            if set(current["registry"]) == set(examples.accepted) and current["metadata"]["rejected"] == examples.rejected:
+            if _content(current) == _content(json.loads(json.dumps(built, ensure_ascii=False))):
                 return examples, "unchanged"
-        except (OSError, ValueError, KeyError, TypeError):
+        except (OSError, ValueError, KeyError, TypeError, AttributeError):
             pass
         try:
-            self.rebuild_index(catalogs)
+            self.write_index(built)
         except OSError as error:
             print(f"[gallery] the index cannot be written ({error}); the gallery keeps the old list.")
             return examples, "not_writable"
+        for name, reasons in examples.rejected.items():
+            for reason in reasons:
+                print(f"[gallery] {name} is left out of the index: {reason}")
+        print(f"[gallery] index rebuilt: {len(built['registry'])} example(s), {len(examples.rejected)} left out.")
         return examples, "rewritten"
 
     def submit_example(self, name: str, data: pl.DataFrame, meta_markdown: str, taxonomy: Dict[str, str],
