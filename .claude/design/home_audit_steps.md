@@ -331,6 +331,8 @@ step, edit a step (= replace it).
 ## 11. Reason, who, step record, export
 
 - **Reason** is required when the step is made, always, with no exception, and **one reason covers one user action** whatever the number of places it is written ("remove from all tables" is one action) and whatever the level; the record lists everything that was affected. Removing a step needs no reason and is recorded.
+
+**Decided 2026-11-20 (Eve, ledger D-0329): the reason of an audit step is the step key `audit_comment`.** Her words: "should we have 2 types of comments: eg the user comments that build the recipe and the audit_comment so the app can reuse it?" and "I think A2 its clearer, a separate key I think will be more reusable for the app". The author's `comment` key on the recipe's own steps stays as it is; an audit step keeps its `audit_` id. Not built yet: the audit steps of slice A hold the reason in `comment` and are changed over with a test that fails if a reason is lost. Also decided 2026-11-20 (D-0328): the audit recipe says which recipe it is the audit of in a key under `info:` (the original's name and a fingerprint of what it does), allowed only in an audit recipe; the name of the key is not decided yet.
 - **Who**: the app has no login, so the user may type optional initials once per session (several people can
   work on one project); empty is allowed.
 - **Event log [confirm]:** the step list shows what exists now; an append-only **event log** records every

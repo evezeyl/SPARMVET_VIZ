@@ -733,6 +733,8 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 
 The data check (a dataset that cannot be built, an `input_fields` entry with no column in the file) is **not** in this table: it needs the data and stays separate (`validate_data_analysis_recipe_data`).
 
+**Decided 2026-11-20 (Eve, ledger D-0329; NOT built yet, the checker still refuses the key):** an audit step carries its reason in a third step key, `audit_comment` (free text), legal only on an audit step of an audit recipe; `comment` stays the author's note. Her words: "I think A2 its clearer, a separate key I think will be more reusable for the app". Decided the same day (D-0328): an audit recipe carries under `info:` a key that names its original and holds a fingerprint of what the original does; the key's name is not decided.
+
 ## 12. Renamed and removed: the replacement table
 
 Refused at once; the message names the new form. Mechanism: `utils/legacy_keys.py` (three dictionaries today, `legacy_keys.py:9-16`) grows to a table keyed by path and old key; the checker reads it only to write "use X". Nothing is converted silently `[DECIDED, DEC02]`. The old-to-new table of the action names is data of the migration tool and of `legacy_keys.py` (7.5.1).
