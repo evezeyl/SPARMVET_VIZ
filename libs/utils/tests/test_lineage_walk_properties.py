@@ -175,8 +175,10 @@ def test_L076_the_walk_reads_no_file_no_clock_no_random_and_changes_nothing(monk
 
     for module, name in ((builtins, "open"), (os, "stat"), (time, "time"), (time, "perf_counter"), (random, "random")):
         monkeypatch.setattr(module, name, refuse)
-    walk = index.walk(Start("T3:Pd", "sample_id"), levels=TIERS).within(JOIN_LINKED)
-    monkeypatch.undo()
+    try:
+        walk = index.walk(Start("T3:Pd", "sample_id"), levels=TIERS).within(JOIN_LINKED)
+    finally:
+        monkeypatch.undo()                    # also when the walk raises: pytest needs the file system to report the failure
     assert walk.lines and recipe == raw_before and plans._entries == plans_before and graph.nodes() == nodes_before    # type: ignore[attr-defined]
 
 
