@@ -12,7 +12,7 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:column_is_in_frame, class:AuditStepError
+# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:view_key, function:view_change_notice, function:column_is_in_frame, class:AuditStepError
 # consumes: polars, app/modules/orchestrator.py (TIER1_KEY_META, TIER2_KEY_META, tier2_path_for), libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_step_order.py, app/tests/test_removed_audit_step_type.py, app/tests/test_audit_error_names_the_plot.py, app/tests/test_filters_cleared_on_recipe_change.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
@@ -63,6 +63,42 @@ def filters_cleared_notice(n_pending: int, n_applied: int) -> str | None:
         "The filters of the previous recipe were removed because the recipe changed "
         "(a filter is built on one recipe's columns). Audited steps are kept."
     )
+
+
+def view_key(recipe_id, mode: str, data_view: str, source_table, subtab) -> tuple:
+    """What the table on screen is made of (D-0311, D-0178): the recipe, the mode (exploration or audit), the data choice (SRC, T1, T2, T3), the
+    source table (only meaningful for SRC; None otherwise) and the open plot. An exploration filter is built on this table: when any of them
+    changes, the filters are cleared."""
+    return (recipe_id, mode, data_view, source_table if data_view == "SRC" else None, subtab)
+
+
+_VIEW_CAUSES = (
+    (1, "you switched to {mode_name} mode ({mode})"),
+    (2, "you changed the data you view"),
+    (3, "you changed the source table"),
+    (4, "you opened another plot (its table can differ)"),
+)
+
+
+def view_change_notice(old: tuple | None, new: tuple, n_pending: int, n_applied: int) -> str | None:
+    """The one plain notice shown when the view changed and exploration filters were emptied (D-0311); None when the view did not change,
+    when it is the first view, or when nothing was cleared (no notice for nothing).
+
+    A change of recipe keeps the recipe notice (`filters_cleared_notice`). When several things changed at once, the first cause in the order
+    recipe, mode, data, source table, plot is named. PROVISIONAL words (the owner reads them).
+    """
+    if old is None or old == new or (n_pending <= 0 and n_applied <= 0):
+        return None
+    if old[0] != new[0]:
+        return filters_cleared_notice(n_pending, n_applied)
+    for index, cause in _VIEW_CAUSES:
+        if old[index] != new[index]:
+            why = cause.format(mode_name="Audit" if new[1] == "audit" else "Exploration",
+                               mode=("Audit mode builds audit steps; exploration filters do not exist there" if new[1] == "audit"
+                                     else "a filter belongs to the table it was built on"))
+            return (f"The filters were removed because {why}. A filter is built on the table you view, so it is not kept when "
+                    "that table changes. Audited steps are kept.")
+    return None
 
 
 def _op_label(op: str) -> str:
@@ -681,10 +717,10 @@ def audit_steps_in_order(nodes: list, plot_id: str | None = None) -> list[dict]:
 
 
 def audited_frame(lf, nodes: list, plot_id: str | None = None):
-    """The "My view" data of one plot: its audited steps applied to its base frame, in the order of `audit_steps_in_order`.
+    """The audited data of one plot: its audited steps applied to its base frame, in the order of `audit_steps_in_order`.
 
-    The base is the stored Tier 2 (Tier 1 when the table has no tier2 steps): build rule T3 > T2 > T1. The ONE function
-    for HOME's table, HOME's plot (also in Compare), the results bundle (`T3_data_<plot>.tsv` and the plot), the check before an
+    The base is the table the plot reads (the stored Tier 2, Tier 1 when the table has no tier2 steps, plus the plot's own tier-3 steps):
+    build rule T3 > T2 > T1. The ONE function for HOME's T3 table in Audit mode, HOME's audited plot (also in Compare), the results bundle (`T3_data_<plot>.tsv` and the plot), the check before an
     export and the column list of the filter dialog: they cannot differ. A step whose column is not in the table at that point
     (never there, or removed by an earlier step) raises `AuditStepError`, which names the plot (`plot_id`); it is never skipped.
     Exploration filters are not an argument: they are not audited and are never exported (HOME applies them with
@@ -703,11 +739,11 @@ def audited_frame(lf, nodes: list, plot_id: str | None = None):
     return lf
 
 
-def dialog_frame(lf, nodes: list, in_my_view: bool, plot_id: str | None = None):
-    """The table the filter dialog acts on: in My view the plot's table after its audited steps (a column that an earlier
-    step dropped is not offered, a value list holds the rows that are still there); in T1 and T2 the table as it is. DECIDED
-    2026-11-15 (Eve, S2-1 (a))."""
-    return audited_frame(lf, nodes, plot_id) if in_my_view else lf
+def dialog_frame(lf, nodes: list, with_audited_steps: bool, plot_id: str | None = None):
+    """The table the filter dialog acts on. In Audit mode on T3 (`with_audited_steps`): the plot's table after its audited steps (a column
+    that an earlier step dropped is not offered, a value list holds the rows that are still there). On any other view: the table shown, as
+    it is (Source, T1, T2, and T3 in Exploration, where no audited step is on the table). DECIDED 2026-11-15 (Eve, S2-1 (a)); D-0178."""
+    return audited_frame(lf, nodes, plot_id) if with_audited_steps else lf
 
 
 def dialog_schema_signature(types: dict, discrete: set) -> tuple:
@@ -734,8 +770,9 @@ def stored_table_identity(tier: str, collection: str | None, recipe_id: str, vie
     """Which stored table the dialog reads, as a value that is equal for two reads of the same table and different when the
     table can have other rows; None when nothing says which rows the table holds (the signature is then never equal).
 
-    The dialog reads the stored Tier 1 table of the plot's collection ("T1": Raw) or its stored Tier 2 table ("T2" and "T3": Result
-    and My view; the Tier 1 table when the collection has no tier-2 steps, so Raw and Result without tier-2 steps are the same table).
+    The dialog reads the stored Tier 1 table of the plot's collection ("T1") or its stored Tier 2 table ("T2" and "T3"; the Tier 1 table
+    when the collection has no tier-2 steps, so T1 and T2 without tier-2 steps are the same table). The Source view reads no stored table
+    (`source_table_identity`).
     The identity holds: the collection and the recipe, the Tier 1 key the open view holds (`DataAnalysisRecipeKeys`), the key written
     in the footer of the stored files the rows come from (read now, from the files, not computed: a file rewritten at the same path
     under another key, for example after an edit of a tier-2 step, which the Tier 1 key does not see because tier-2 steps are not
@@ -744,7 +781,7 @@ def stored_table_identity(tier: str, collection: str | None, recipe_id: str, vie
     The Tier 2 file is read when the view is T2 or T3 and the file exists: without tier-2 steps it does not exist (the orchestrator
     removes it), and the rows are those of the Tier 1 file.
 
-    In My view ("T3") the base is the table the plot reads: the stored Tier 2 plus the plot's own tier-3 steps of the recipe. That table
+    In "T3" the base is the table the plot reads: the stored Tier 2 plus the plot's own tier-3 steps of the recipe. That table
     is not stored (nothing carries its key in a file), so the caller gives its key (`plot_key`, `DataAnalysisRecipeKeys.plot_key_of`) and
     the key of the stored Tier 2 table it starts from (`table_key`, `DataAnalysisRecipeKeys.tier2_key_of`). The plot's key is part of the
     identity in "T3" only when it differs from `table_key`, that is when the plot has tier-3 steps: a plot without them reads the stored
@@ -761,11 +798,18 @@ def stored_table_identity(tier: str, collection: str | None, recipe_id: str, vie
     return (collection, recipe_id, view_key, t1, t2, unstored_builds, own_key)
 
 
+def source_table_identity(recipe_id: str, table_id: str, recipe_sha256: str, data_batch_hash: str) -> tuple:
+    """Which source table the Source view reads, as a value: equal for two reads of the same table, different when it can have other rows.
+    A source table is read from its file with its declared types (`DataOrchestrator.read_source`) and stored nowhere, so what says which
+    rows it holds is the recipe (the declared types) and the hash of the data files the open view holds."""
+    return ("SRC", recipe_id, table_id, recipe_sha256, data_batch_hash)
+
+
 def dialog_rows_signature(table_identity, audit_nodes) -> tuple:
     """Which rows the dialog's table holds, as a value: equal for the same rows, different when they can differ.
 
     The rows are decided by (a) the stored table the dialog reads (`stored_table_identity`) and (b) the plot's audited steps that
-    My view applies to it (`audited_frame`; empty in Raw and Result): every step in full (its type, column, operator, the whole list
+    Audit mode applies to it on T3 (`audited_frame`; empty on every other view): every step in full (its type, column, operator, the whole list
     of values, `na`, `closed`, its reason) and their order. Exploration filters are not an input: the dialog does not apply them
     (`filter_and_audit_handlers._active_frame`). Nothing is read from the printed plan of the table: a plan is only the text of the
     steps and drops what makes two tables differ (a long list of values is printed truncated, a rewritten file prints the same).
