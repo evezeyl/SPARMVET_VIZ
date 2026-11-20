@@ -34,7 +34,7 @@ PROVISIONAL behaviour (the owner has not decided; each place is marked in the co
 - P6 (Q4) a table whose tier 2 is empty is one place with its tier 1, also when plots read the table directly and joins read it too (D-0346 as written).
 - P7 (O8) a column that exists twice at a place (a table joined with itself) is grey; joins that are not left or inner are not read.
 - P8 (O3) an empty tier 2 or tier 2 of a table no plot reads is not a place; a tier 3 is always a line ("only this plot", D-0346).
-- P9 a line is ticked when ANY path from the chosen place to it is certain (the path with the fewest uncertain links, then the fewest changes, is taken); grey only when every path is uncertain.
+- P9 a line is ticked when ANY path from the chosen place to it is certain (the path with the fewest uncertain links is taken); grey only when every path is uncertain.
 - P10 the GROUP of a place (lineage, join_linked) is the smallest group that reaches it, so the split depends on where the user looked from; the union of the groups does not.
 - P11 `Gone.removed_by` is the FIRST removing step in data-flow order (graph order of the node, then the step number) among the steps that removed the column on the way to the place.
 - P12 a join other than left or inner, and a column written under its own name from another column, are not told apart from the readable cases (see P3 and P7).
@@ -78,7 +78,7 @@ HOW_OF_CHANGE = {fx.CHANGE_RENAME: RENAMED, fx.CHANGE_KEY_OTHER_NAME: RENAMED, f
                  fx.CHANGE_RECOMPUTE: RECOMPUTED, fx.CHANGE_AGGREGATE: AGGREGATED, fx.CHANGE_GROUP_KEY: GROUPED}
 NOTE_OF_CHANGE = {fx.CHANGE_CAST: NOTE_ANOTHER_TYPE, fx.CHANGE_RECOMPUTE: NOTE_RECOMPUTED, fx.CHANGE_AGGREGATE: NOTE_AGGREGATED, fx.CHANGE_GROUP_KEY: NOTE_ONE_ROW_PER_GROUP}
 HOW_PRIORITY = (UNKNOWN, RENAMED, CAST, RECOMPUTED, AGGREGATED, GROUPED)
-Cost = Tuple[int, int]              # (uncertain links, links that change the name, type, values or rows) on a path: the least of both, in this order
+Cost = int                          # the number of uncertain links on a path
 
 
 class LineageError(ValueError):
@@ -105,7 +105,6 @@ class _Link:
     join_how: Optional[str] = None
     join_side: Optional[str] = None
     note: Optional[Note] = None
-    changes: bool = False                    # the step changes the name, the type, the values or the rows of the column (a cost of a path, never a doubt)
 
 
 @dataclass(frozen=True)
@@ -238,8 +237,7 @@ class LineageIndex:
                 kind_of = pc.change if (pc.change in fx.NOTE_CHANGES or source.name != pc.name) else None
                 note = self._change_note(kind_of, nid, k, ref, source.name, pc.name, before, after, src, dst)
                 self._link(_Link(src, dst, True, HOW_OF_CHANGE[kind_of] if kind_of else UNCHANGED, None, ref, hop=bool(kind_of) or is_join,
-                                 join_how=effect.how if is_join else None, join_side=("base" if left else "right") if is_join else None, note=note,
-                                 changes=bool(kind_of)))
+                                 join_how=effect.how if is_join else None, join_side=("base" if left else "right") if is_join else None, note=note))
         for name in before.names:
             if name not in used_left:                # dropped, or not selected: the plan and the reading agree that it is gone
                 self._die((nid, k - 1, name), nid, True, None, ref)
@@ -355,20 +353,21 @@ class LineageIndex:
         return self._reach_set(seeds, forward=True, backward=True)
 
     def _costs(self, start: Occ, allowed: Set[Occ]) -> Dict[Occ, Tuple[Cost, Optional[_Link], Optional[Occ]]]:
-        """Least cost of a path from the start inside `allowed`, either direction: for each column the cost (the number of uncertain links, then the number of links
-        that change the name, type, values or rows), the last link used and the column before it on that path. Neighbours are visited in a fixed order, so the paths
-        are the same every run. A column is certain when a path without an uncertain link reaches it (PROVISIONAL, P9)."""
-        best: Dict[Occ, Tuple[Cost, Optional[_Link], Optional[Occ]]] = {start: ((0, 0), None, None)}
-        heap: List[Tuple[Cost, Tuple[int, int, str], Occ]] = [((0, 0), self._sort_key(start), start)]
+        """Least cost of a path from the start inside `allowed`, either direction: for each column the number of uncertain links on the cheapest path, the last link
+        used and the column before it on that path. Neighbours are visited in a fixed order, so the paths are the same every run. A column is certain when a path
+        without an uncertain link reaches it (PROVISIONAL, P9). The links between the columns of one recipe form no diamond (a column has one way back to each
+        source), so the path, and the notes on it, do not depend on which cheapest path is taken."""
+        best: Dict[Occ, Tuple[Cost, Optional[_Link], Optional[Occ]]] = {start: (0, None, None)}
+        heap: List[Tuple[Cost, Tuple[int, int, str], Occ]] = [(0, self._sort_key(start), start)]
         while heap:
             cost, _key, occ = heapq.heappop(heap)
             if cost != best[occ][0]:
                 continue
             neighbours = [(link.dst, link) for link in self._succ.get(occ, ())] + [(link.src, link) for link in self._pred.get(occ, ())]
-            for other, link in sorted(neighbours, key=lambda x: (self._sort_key(x[0]), not x[1].certain, x[1].changes)):
+            for other, link in sorted(neighbours, key=lambda x: (self._sort_key(x[0]), not x[1].certain)):
                 if other not in allowed:
                     continue
-                step = (cost[0] + (0 if link.certain else 1), cost[1] + (1 if link.changes else 0))
+                step = cost + (0 if link.certain else 1)
                 if other not in best or step < best[other][0]:
                     best[other] = (step, link, occ)
                     heapq.heappush(heap, (step, self._sort_key(other), other))
@@ -499,7 +498,7 @@ class LineageIndex:
             occ = held[0]
             path = self._path(occ, costs)
             notes = [Note(l.note.code, l.note.params + (("direction", "forward" if forward else "backward"),)) for l, forward in path if l.note is not None]
-            if costs[occ][0][0] > 0:
+            if costs[occ][0] > 0:
                 state, reason = GREY, next((l.reason for l, _ in path if not l.certain and l.reason is not None), Reason(CANNOT_FOLLOW, (("node", occ[0]),)))
         duplicates: Optional[str] = None
         if tier == "DS":                                                                                              # PROVISIONAL (P1b, P13): a source holds no list of steps (D-0332)
