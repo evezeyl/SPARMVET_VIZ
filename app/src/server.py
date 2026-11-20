@@ -53,7 +53,9 @@ def server(input, output, session):
     # with a non-zero code. The operator sees a single readable summary instead
     # of a stack trace.
     _all_errors: list[DeploymentError] = []
-    _all_errors.extend(AppFeaturesValidator().validate_file(str(bootloader.app_features_path)))
+    _all_errors.extend(AppFeaturesValidator().validate_file(
+        str(bootloader.app_features_path),
+        flag_overrides=bootloader.deployment_config.get("app_features_override") or {}))
 
     _all_errors.extend(SidebarValidator().validate_file(str(bootloader.app_features_path)))
 

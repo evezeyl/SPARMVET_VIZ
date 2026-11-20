@@ -61,8 +61,13 @@ class AppFeaturesValidator:
     Call validate() before define_server(). Errors are fatal; warnings are logged.
     """
 
-    def validate(self, template: dict, template_path: str) -> list[DeploymentError]:
+    def validate(self, template: dict, template_path: str,
+                 flag_overrides: Optional[dict] = None) -> list[DeploymentError]:
         """Return a list of DeploymentError records. Empty list means template is valid.
+
+        flag_overrides is the deployment's app_features_override block: the flag rules are
+        checked on the RESOLVED flags (file plus override), the same ones the app runs with
+        (Bootloader.flags), so an override cannot break a rule unseen (D-0018).
 
         Errors carry full operator-facing context (component, problem, location,
         fix, who, reference). Warnings are still printed inline for missing-flag
@@ -86,7 +91,9 @@ class AppFeaturesValidator:
                 reference=".claude/rules/rules_app_features_flags.md (app features naming)",
             ))
 
-        features = template.get("flags", {})
+        file_features = template.get("flags", {})
+        overrides = dict(flag_overrides or {})
+        features = {**file_features, **overrides}
 
         # Rule 3: all required feature flags must be present (warn if missing, use defaults)
         for flag in _REQUIRED_FLAGS:
@@ -109,31 +116,54 @@ class AppFeaturesValidator:
                             f"(bootloader cascade will suppress it at runtime). Fix the template."
                         )
 
-        # Rule 6: T3 cascade — if t3_sandbox_enabled then its co-flags must ALL be true.
+        # Rule 6 (D-0018): the audit (t3_sandbox_enabled) requires comparison, sessions and
+        # export; comparison requires the audit. FATAL, never silently rewritten.
+        def _where(*flags: str) -> str:
+            from_override = [f for f in flags if f in overrides]
+            where = f"flags in {template_path}"
+            if from_override:
+                where += " and app_features_override of the deployment (" + ", ".join(from_override) + ")"
+            return where
+
         _T3_COMPANIONS = [
             "comparison_mode_enabled",
             "session_management_enabled",
             "export_enabled",
         ]
         if features.get("t3_sandbox_enabled", False):
-            missing = [f for f in _T3_COMPANIONS if not features.get(f, False)]
-            if missing:
-                errors.append(DeploymentError(
-                    component="AppFeaturesValidator",
-                    problem=(
-                        "t3_sandbox_enabled=True but required companion flags are False: "
-                        + ", ".join(missing)
-                    ),
-                    location=f"features in {template_path}",
-                    fix=(
-                        "Either set ALL of these to true: " + ", ".join(missing)
-                        + " — or set t3_sandbox_enabled: false. "
-                        "The T3 sandbox cannot function without comparison/audit/session/export."
-                    ),
-                    who="operator",
-                    reference=".claude/rules/rules_app_features_flags.md §Cascade-T3 (Rule 6)",
-                    related=tuple(missing),
-                ))
+            for companion in _T3_COMPANIONS:
+                if not features.get(companion, False):
+                    errors.append(DeploymentError(
+                        component="AppFeaturesValidator",
+                        problem=(
+                            f"t3_sandbox_enabled is true but {companion} is false: "
+                            "the audit requires comparison, sessions and export"
+                        ),
+                        location=_where("t3_sandbox_enabled", companion),
+                        fix=(
+                            f"Set {companion}: true, or set t3_sandbox_enabled: false. "
+                            "Both flags must agree."
+                        ),
+                        who="operator",
+                        reference=".claude/rules/rules_app_features_flags.md (Rule 6) + D-0018",
+                        related=("t3_sandbox_enabled", companion),
+                    ))
+        if features.get("comparison_mode_enabled", False) and not features.get("t3_sandbox_enabled", False):
+            errors.append(DeploymentError(
+                component="AppFeaturesValidator",
+                problem=(
+                    "comparison_mode_enabled is true but t3_sandbox_enabled is false: "
+                    "comparison requires the audit"
+                ),
+                location=_where("comparison_mode_enabled", "t3_sandbox_enabled"),
+                fix=(
+                    "Set t3_sandbox_enabled: true (with session_management_enabled and "
+                    "export_enabled), or set comparison_mode_enabled: false. Both flags must agree."
+                ),
+                who="operator",
+                reference=".claude/rules/rules_app_features_flags.md (Rule 6) + D-0018",
+                related=("comparison_mode_enabled", "t3_sandbox_enabled"),
+            ))
 
         # Rule 7: Group D FATAL cascades — child must NOT be True while master is False.
         # No silent suppression (ADR-077). YAML state and runtime state must match.
@@ -165,8 +195,11 @@ class AppFeaturesValidator:
 
         return errors
 
-    def validate_file(self, template_path: str) -> list[DeploymentError]:
+    def validate_file(self, template_path: str,
+                      flag_overrides: Optional[dict] = None) -> list[DeploymentError]:
         """Load YAML file and validate. Returns DeploymentError list.
+
+        flag_overrides: the deployment's app_features_override block (see validate()).
 
         Supports !include in app features files (paths relative to the template file).
         Uses a SafeLoader subclass to avoid polluting the global constructor registry.
@@ -217,4 +250,4 @@ class AppFeaturesValidator:
                 who="operator",
                 reference=".claude/rules/rules_app_features_flags.md",
             )]
-        return self.validate(template, template_path)
+        return self.validate(template, template_path, flag_overrides)
