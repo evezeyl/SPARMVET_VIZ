@@ -88,8 +88,8 @@ app/
 
 1. **Imports** of modules, handlers, and libraries.
 2. **Module initialisation**: `WrangleStudio(session.id)`, `TestLabStudio()`, `DataOrchestrator(...)`, `VizFactory(...)`.
-3. **Shared reactive state** (`reactive.Value`): `anchor_path`, `audit_pending`, `snapshot_steps`, `gallery_refresh_trigger`, `current_app_features`.
-4. **Shared reactive calcs** (`@reactive.Calc`): `active_collection_id`, `active_cfg`, `tier1_anchor`. These are shared because multiple handlers depend on them. (`tier_reference` and `tier3_leaf` were removed 2026-11-06: they fed outputs that no UI mounted; Tier 2 and My view data are resolved in `home_theater.py` and the orchestrator.)
+3. **Shared reactive state** (`reactive.Value`): `anchor_path`, `audit_pending`, `snapshot_steps`, `gallery_refresh_trigger`, `current_app_features`, and the HOME view state `home_mode` (Exploration or Audit), `data_view` (Source, T1, T2, T3) and `source_table` (D-0016, D-0310; built 2026-11-20, slice B).
+4. **Shared reactive calcs** (`@reactive.Calc`): `active_collection_id`, `active_cfg`, `tier1_anchor`. These are shared because multiple handlers depend on them. (`tier_reference` and `tier3_leaf` were removed 2026-11-06: they fed outputs that no UI mounted; the tables of each view are resolved in `home_theater.py` and the orchestrator; there is no "My view" any more, D-0179.)
 5. **Shared utility functions**: `_safe_input`, `_apply_tier2_transforms`. These are pure helpers used by multiple handlers.
 6. **Five `define_server(...)` delegation calls** — one per handler module, in dependency order.
 
@@ -189,7 +189,7 @@ def define_server(input, output, session, *,
 | Reactive | Type | Purpose |
 |---|---|---|
 | `_pending_filters` | `reactive.Value[list]` | Staging area — rows added but not yet applied |
-| `applied_filters` | `reactive.Value[list]` | Committed filters — consumed by plots and data preview |
+| `applied_filters` | `reactive.Value[list]` | Exploration filters applied to the table viewed — consumed by the data preview only, never by a plot (D-0327); emptied when the viewed table changes (D-0311) |
 
 Each filter row: `{column: str, op: str, value: str|list, dtype: str}`.
 
