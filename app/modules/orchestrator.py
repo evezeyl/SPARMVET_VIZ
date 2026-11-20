@@ -490,14 +490,8 @@ class DataOrchestrator:
 
         # 2. Ingest and Wrangle Ingredients
         ingredients = {}
-        all_schemas = {}
-        all_schemas.update(data_analysis_recipe.get("data_schemas", {}))
-
-        # Optional Metadata Support (ADR-014)
-        if "metadata_schema" in data_analysis_recipe:
-            all_schemas["metadata_schema"] = data_analysis_recipe["metadata_schema"]
-
-        all_schemas.update(data_analysis_recipe.get("additional_datasets_schemas", {}))
+        # the schemas of the recipe (data schemas, the optional metadata schema ADR-014, additional datasets): the one reading, shared with the plan of every place
+        all_schemas = self._schemas_of(data_analysis_recipe)
 
         # 3. Resolve target — may be an assembly OR a bare data_schema
         collection_spec = data_analysis_recipe.get("joins", {}).get(collection_id)

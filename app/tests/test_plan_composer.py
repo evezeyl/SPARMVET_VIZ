@@ -614,3 +614,14 @@ def test_a_base_composed_for_another_recipe_id_is_not_reused(tmp_path):
     with mock.patch.object(DataOrchestrator, "ingredient_parts", autospec=True, side_effect=real) as read:
         compose_candidate_plan_book(w.orch, "staged", original, audit, "T2:J", drop_step("group_b"), own.book, base=elsewhere)
     assert sorted(call.args[1] for call in read.call_args_list) == ["A", "B", "X"], "the data of a recipe is located by its id: nothing is taken from another id"
+
+
+def test_a_join_with_several_ingredients_and_no_step_has_no_plan_and_says_what_the_build_says(tmp_path):
+    """The build refuses it ("No step list and no ingredients ..."): the place is a failure value, the tables that do not read the join keep their plans."""
+    w = World(tmp_path)
+    raw = copy.deepcopy(w.original_raw())
+    raw["joins"]["J"]["tier1"]["steps"] = []
+    graph = build_graph(raw)
+    book = compose_plan_book(w.orch, "staged", SimpleNamespace(raw=raw, is_audit_copy=False), graph)
+    assert isinstance(book.get("T1:J", 0), PlanFailure) and "No step list" in book.get("T1:J", 0).sentence
+    assert isinstance(book.get("T3:pj", 0), PlanFailure) and isinstance(book.get("T2:J", 0), PlanFailure) and isinstance(book.get("T1:A", 0), Plan) and isinstance(book.get("T3:px", 0), Plan)
