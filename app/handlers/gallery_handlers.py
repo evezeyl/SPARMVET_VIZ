@@ -32,8 +32,8 @@ from pathlib import Path
 import polars as pl
 from shiny import reactive, render, ui
 
-from app.modules.gallery_listing import NOTE_LINES, GalleryListing, external_links_new_tab, read_listing
-from viz_gallery.taxonomy import display_axes, filter_panels
+from app.modules.gallery_listing import (FILTER_AXES, NO_MATCH_TEXT, NOTE_LINES, GalleryListing,
+                                         external_links_new_tab, matching_examples, read_listing)
 
 
 def define_server(input, output, session, *,
@@ -53,38 +53,35 @@ def define_server(input, output, session, *,
         return read_listing(bootloader.get_location("gallery"),
                             bootloader.rejected_gallery_examples, bootloader.gallery_index_status)
 
-    # --- Gallery Taxonomy 'Select All' Logic ---
+    # 'Select all' of a filter group is done in the page (app/src/www/gallery_select_all.js), never by a server
+    # answer: an answer that arrives after the user ticked one term wipes that tick (GALLERY-CHECK-1 finding 9).
 
-    def _axis_choices(axis: str) -> list[str]:
-        """The choices of one filter panel: the same list the sidebar shows (viz_gallery.taxonomy, spec section 9, G1)."""
-        pivot = _listing().pivot
-        return next(panel["choices"] for panel in filter_panels(pivot) if panel["axis"] == axis)
+    # The examples the last Apply left in the list; None before the first Apply. Written only by the Apply effect.
+    _applied_choices = reactive.Value(None)
 
-    def _make_select_all(axis: str):
-        """One 'Select all' effect per taxonomy axis; the axes come from the specification data."""
-        @reactive.Effect
-        def _sync_all():
-            v = input[f"gallery_all_{axis}"]()
-            if v is None:
-                return
-            ui.update_checkbox_group(f"gallery_filter_{axis}", selected=_axis_choices(axis) if v else [])
-        return _sync_all
+    @reactive.Calc
+    def _visible():
+        """{id: name} of the examples in the dropdown: the whole list until the first Apply."""
+        applied = _applied_choices.get()
+        return applied if applied is not None else matching_examples(_listing(), None)
 
-    _select_all_effects = [_make_select_all(item["axis"]) for item in display_axes()]
+    @reactive.Calc
+    def _current_rid():
+        """The example shown: the dropdown's value when it is in the list; the first of the list while the dropdown
+        has no value yet; nothing for a value that is not in the list (an example that failed the check is never opened).
 
-    # --- Gallery Initialization (ADR-037) ---
-    @reactive.Effect
-    def _init_gallery_selector():
-        """Ensure all plots are selected by default on startup."""
-        registry = _listing().registry
-        choices = {rid: entry["name"] for rid, entry in registry.items()}
-        choices = dict(sorted(choices.items(), key=lambda item: item[1]))
-        ui.update_select("gallery_example_select", choices=choices)
+        The dropdown is built with the same list (gallery_viewer), so its first option and the panes agree from the
+        first paint, before the input value has reached the server.
+        """
+        visible = _visible()
+        chosen = safe_input(input, "gallery_example_select", None)
+        if chosen is None:
+            return next(iter(visible), None)
+        return chosen if chosen in visible else None
 
-    # --- Gallery Content Resolution (ADR-037) ---
     @reactive.Calc
     def _gallery_active_metadata():
-        rid = safe_input(input, "gallery_example_select", None)
+        rid = _current_rid()
         if not rid:
             return None
         return _listing().registry.get(rid)
@@ -94,6 +91,8 @@ def define_server(input, output, session, *,
     def gallery_preview_img():
         meta = _gallery_active_metadata()
         if not meta:
+            if _applied_choices.get() is not None and not _visible():
+                return ui.div(NO_MATCH_TEXT, class_="p-5 text-muted gallery-no-match")
             return ui.div("Select an example to view preview.", class_="p-5 text-muted")
 
         path_str = meta.get("path")
@@ -182,45 +181,13 @@ def define_server(input, output, session, *,
             ui.notification_show("Indexer not found or no example passed the check.", type="error")
             return
 
-        # 2. Collect Filter Inputs
-        sel_families    = input.gallery_filter_family()
-        sel_patterns    = input.gallery_filter_pattern()
-        sel_difficulties = input.gallery_filter_difficulty()
-        sel_geoms       = safe_input(input, "gallery_filter_geom", [])
-        sel_shows       = safe_input(input, "gallery_filter_show", [])
-        sel_ss          = safe_input(input, "gallery_filter_sample_size", [])
-
-        ui.notification_show("🔍 Filtering examples...",
-                             duration=1, type="message")
+        # 2. Collect Filter Inputs; a group with nothing ticked does not filter (matching_examples)
+        applied = {axis: list(safe_input(input, f"gallery_filter_{axis}", []) or []) for axis in FILTER_AXES}
+        ui.notification_show("Filtering examples...", duration=1, type="message")
 
         # 3. Pivot-Set Intersection across all 6 axes
-        registry = listing.registry
-        pivot = listing.pivot
-
-        def _pivot_set(axis: str, selections) -> set:
-            """Union of example IDs matching any selected value on an axis.
-            If nothing selected OR axis absent, return full registry (no filter)."""
-            if not selections:
-                return set(registry.keys())
-            matched = set()
-            for val in selections:
-                matched.update(pivot.get(axis, {}).get(val, []))
-            return matched
-
-        family_matches     = _pivot_set("by_family",      sel_families)
-        pattern_matches    = _pivot_set("by_pattern",     sel_patterns)
-        difficulty_matches = _pivot_set("by_difficulty",  sel_difficulties)
-        geom_matches       = _pivot_set("by_geom",        sel_geoms)
-        show_matches       = _pivot_set("by_show",        sel_shows)
-        ss_matches         = _pivot_set("by_sample_size", sel_ss)
-
-        # Perform the final Multi-Set Intersection
-        valid_ids = (family_matches & pattern_matches & difficulty_matches
-                     & geom_matches & show_matches & ss_matches)
-
-        # 3. Build UI Choices
-        choices = {vid: registry[vid]["name"] for vid in valid_ids}
-        choices = dict(sorted(choices.items(), key=lambda item: item[1]))
+        choices = matching_examples(listing, applied)
+        _applied_choices.set(choices)
 
         # 4. Push Update to UI
         ui.update_select("gallery_example_select",
@@ -231,7 +198,7 @@ def define_server(input, output, session, *,
 
         if not choices:
             ui.notification_show(
-                "⚠️ No matches found for these filters.", type="warning")
+                "No matches found for these filters.", type="warning")
 
     @output
     @render.ui

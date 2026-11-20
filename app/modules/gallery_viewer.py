@@ -8,7 +8,7 @@ from shiny import ui, reactive, render
 import yaml
 from pathlib import Path
 from app.src.bootloader import bootloader
-from app.modules.gallery_listing import read_listing
+from app.modules.gallery_listing import APPLY_RULE_TEXT, matching_examples, read_listing
 from viz_gallery.taxonomy import filter_panels
 
 
@@ -63,10 +63,10 @@ class GalleryViewer:
             class_="d-flex flex-column gap-2"
         )
 
-    def _load_pivot(self) -> dict:
-        """The taxonomy pivot of the examples that pass the check (gallery_listing); {} when there is no index."""
+    def _load_listing(self):
+        """The examples that pass the check and their taxonomy pivot (gallery_listing); empty when there is no index."""
         return read_listing(bootloader.get_location("gallery"), bootloader.rejected_gallery_examples,
-                            bootloader.gallery_index_status).pivot
+                            bootloader.gallery_index_status)
 
     @staticmethod
     def _filter_panel(label, input_id, all_id, choices, value):
@@ -99,7 +99,10 @@ class GalleryViewer:
         specification data through viz_gallery.taxonomy.filter_panels; a panel offers the terms that
         at least one indexed example uses. No list of terms is kept in this file (spec section 9, G1).
         """
-        panels = filter_panels(self._load_pivot())
+        listing = self._load_listing()
+        panels = filter_panels(listing.pivot)
+        # The dropdown holds the list from the first paint, so that it and the picture pane agree at once.
+        choices = matching_examples(listing, None)
 
         accordion = ui.accordion(
             ui.accordion_panel(
@@ -107,7 +110,7 @@ class GalleryViewer:
                 ui.input_select(
                     "gallery_example_select",
                     ui.span("Select an Example", class_="fw-bold"),
-                    choices={}
+                    choices=choices,
                 ),
                 value="gallery_example_panel",
             ),
@@ -126,6 +129,8 @@ class GalleryViewer:
                     multiple=True,
                     open=False,
                 ),
+                ui.div(APPLY_RULE_TEXT, class_="text-muted gallery-apply-rule",
+                       style="font-size:0.75rem; margin-top:6px;"),
                 ui.input_action_button(
                     "btn_apply_gallery_filters",
                     ui.HTML('<i class="bi bi-play-fill"></i> Apply'),
