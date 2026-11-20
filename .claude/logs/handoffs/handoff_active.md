@@ -4,9 +4,16 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
-## OPEN STATE 2026-11-20, 15:20: three merges since 12:15 (not pushed); two builders running; LBFB first
+## OPEN STATE 2026-11-20, 16:50
 
-- dev head `95190ad0`. Not pushed: the owner pushes. Each merge was controlled; the state of the controls is in the lines below.
+- dev head `8772f368`. Not pushed: the owner pushes. Merged since 15:20: `9b22a67d` (the build at the opening of a recipe; controls identical, 334 keys; headless 12900 passed, browser 273 passed) and `8772f368` (the lineage walk, step 4: a key drop refused by place; tests `app/tests/test_author_drops.py`). Ledger: `D-0370` to `D-0373` added (demo in about two weeks, day to confirm; key-drop rule refined; HOME clears the screen while a recipe opens, not built; the demo recipe not changed by agents). Total 373, EVE 366.
+- Running: builder `task/home-walk-fixes` (`.claude/worktrees/home-walk-fixes`): findings of the HOME browser walk; builder `task/lbfb` (`.claude/worktrees/lbfb`): lineage step 0b and the gate given the plan.
+- Red on dev: one test, `app/tests/test_decision_ledger.py::test_every_version_of_the_ledger_in_git_follows_the_one_before_it` (LEDGER-HISTORY-TEST-HEADER; options A, B, C wait for the owner).
+- Waiting for Eve when she is home (no action now): four HOME behaviours from the walk (the Pending badge and Apply shown in Exploration; Delete Session without confirmation; the plot area that reopens); the Gallery's two content lists; the options of the ledger history test.
+- Texts: the key-drop texts corrected (`ui_implementation_contract.md` 12g.3 and 12g.4, `docs/user_guide/audit_pipeline.qmd`); the rest is in TEXTS-FOLLOW-UP.
+- The 15:20 state follows; where it says "running" or "next", the 16:50 lines above hold.
+
+- (15:20 state) dev head `95190ad0`. Not pushed: the owner pushes. Each merge was controlled; the state of the controls is in the lines below.
 - Merged since 12:15 (the done items of the 12:15 block are removed here; they are in `tasks.md` and the ledger):
   - `2e21fcea`: carriage returns inside values removed from two data files (D-0364; DATA-FILES-STRAY-CR done); reference labels and table hashes follow. Not pushed.
   - `67c38ea9`: the lineage walk, steps 1 to 3, in `libs/utils` (`plan_book.py`, `step_effects.py`, `lineage_records.py`, `lineage_walk.py`). Nothing calls it yet. Reviews: `tmpAI/coordinator/lbfb_review_1/`, `lbfb_review_2/`.

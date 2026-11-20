@@ -692,7 +692,7 @@ Both true primary keys (`sample_id`) and secondary/accessory keys used in long-f
 | User action | Targeted column | Result |
 |---|---|---|
 | Drop column | non-key | `drop_column` AuditStep, per-plot propagation dialog |
-| Drop column | **any join key** | **BLOCKED** — notification: *"Column [c] is a join key — cannot be dropped. Use a row filter or row exclusion instead."* |
+| Drop column | **join key that a later join still uses** | **BLOCKED by place** (built 2026-11-20, merge `8772f368`, `libs/utils/src/utils/key_drop.py`): the refusal names the join that needs the column and says to use a row filter or row exclusion instead. Where no later join uses the column (for example a drop in a plot's own steps) the drop is allowed. A recipe's own steps are never refused (D-0358, D-0371). PROVISIONAL (marked in the code): a declared entity key that no later join uses is not refused for being declared. |
 | Filter row (value condition) | non-key column | `filter_row` AuditStep |
 | Filter row | join key, any operator | `filter_row` AuditStep with `primary_key_warning=True`. **No silent conversion.** The user's operator is preserved verbatim. The PK warning banner appears in the modal and the audit panel. |
 | Filter row | non-key column whose effect happens to remove all rows for some sample | Stays as `filter_row`. The audit reports "value condition not met" — semantically different from "sample excluded". |
@@ -702,7 +702,7 @@ Both true primary keys (`sample_id`) and secondary/accessory keys used in long-f
 #### 12g.4. Propagation dialog
 
 Shown at promotion time when:
-- a `drop_column` node targets a non-key column (per-plot decision worth confirming), OR
+- a `drop_column` node targets a non-key column (per-plot decision worth confirming; a drop of a key that a later join uses is refused by place, see 12g.3, and gets no dialog), OR
 - an `exclusion_row` / primary-key-derived node is created (always propagation-eligible), OR
 - an `aesthetic_override` for `color` or `shape` is created (homogeneity often desired across plots).
 
