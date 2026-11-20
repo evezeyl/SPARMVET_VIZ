@@ -20,7 +20,8 @@ app/
 │                                  snapshot_steps, gallery_refresh_trigger,
 │                                  data_refresh_trigger, notification_log,
 │                                  session_processing_issues, home_state,
-│                                  active_home_subtab, tier_toggle,
+│                                  active_home_subtab, home_mode, data_view,
+│                                  source_table,
 │                                  current_app_features
 │                                  Shared calcs: active_collection_id,
 │                                  active_cfg, tier1_anchor
@@ -62,7 +63,7 @@ app/
 |---------|-------|---------------|
 | Group pill nav | 21-D | `home_groups_nav` |
 | Per-group plot tabs | 21-B | `subtabs_{group_id}`, `plot_group_{p_id}` |
-| Tier toggle | 21-C | `tier_toggle` (input + reactive.Value) |
+| Mode switch (only with the audit on) and data choice (Source, T1, T2, T3) | slice B | `home_mode`, `data_view`, `source_table`, `audit_compare` (inputs; `home_mode`, `data_view`, `source_table` also reactive.Values) |
 | Data preview | 21-D | `home_data_preview`, `home_col_selector_ui` |
 | Filter builder | 21-F | `sidebar_filters`, `filter_rows_ui`, `filter_form_ui`, `filter_controls_ui` |
 | Export bundle | 21-I | `system_tools_ui`, `export_bundle_download` |

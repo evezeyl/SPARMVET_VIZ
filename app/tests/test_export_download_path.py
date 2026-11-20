@@ -89,8 +89,8 @@ def _download_function(world, view_keys, notes, monkeypatch, tier1_anchor=None, 
         SimpleNamespace(import_bundle_upload=None, export_field_change=None), lambda fn: fn, None,
         bootloader=_Bootloader(world, flags, deployment_contact), orchestrator=world.orch, viz_factory=PlotEngines(),
         current_app_features=SimpleNamespace(get=lambda: "qa"), active_cfg=lambda: cfg,
-        tier1_anchor=tier1_anchor or (lambda: pl.DataFrame().lazy()), tier_toggle=SimpleNamespace(get=lambda: "T2"),
-        **{"home_state": None, **handler_kwargs},
+        tier1_anchor=tier1_anchor or (lambda: pl.DataFrame().lazy()),
+        **{"home_state": None, "screen_view": lambda: "Exploration mode, data view T3", **handler_kwargs},
         safe_input=lambda _input, key, default: default if values.get(key) is None else values[key], view_keys=lambda: view_keys)
     return captured["fn"]
 

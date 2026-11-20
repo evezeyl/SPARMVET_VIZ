@@ -133,12 +133,12 @@ class Box:
     def drop(self, kept):
         closure(
             "_col_drop_to_audit",
-            bootloader=SimpleNamespace(is_enabled=lambda flag: True), home_state=self.state, tier_toggle=Val("T3"),
+            bootloader=SimpleNamespace(is_enabled=lambda flag: True), home_state=self.state, _can_write_audit_step=lambda: True,
             active_home_subtab=Val("subtab_p1"),
             _notify=lambda message, **kw: self.notes.append((message, kw.get("type"))),
             _propagation_scratch=self.scratch,
             _open_propagation_modal=lambda nodes, subtab, kind: self.opened.append((nodes, kind)),
-            _resolve_active_spec=lambda p_id: {}, _resolve_active_lf=lambda spec: self.frame.lazy(),
+            _resolve_active_spec=lambda p_id: {}, _resolve_active_lf=lambda spec, tier=None: (self.frame.lazy() if tier == "T3" else pytest.fail(f"read tier {tier!r}, not T3: an audit step is written at the plot's table")),
             _t3_drop_columns=lambda: [], safe_input=lambda i, k, d=None: i.get(k, d), input={"preview_col_selector": kept},
             ui=SimpleNamespace(update_selectize=lambda *a, **k: None),
         )()
@@ -200,7 +200,7 @@ def test_a_filter_on_either_column_of_a_two_name_key_carries_the_warning():
         opened, notes = [], []
         closure(
             "_filter_send_to_audit",
-            bootloader=SimpleNamespace(is_enabled=lambda flag: True), home_state=state, _on_my_view=lambda: True,
+            bootloader=SimpleNamespace(is_enabled=lambda flag: True), home_state=state, _can_write_audit_step=lambda: True,
             _pending_filters=Val([{"column": column, "op": "eq", "value": "x", "dtype": "String", "na": "remove"}]),
             active_home_subtab=Val("subtab_p1"), _notify=lambda message, **kw: notes.append(message),
             _propagation_scratch=Val(), _open_propagation_modal=lambda nodes, subtab, kind: opened.append(nodes),
@@ -483,3 +483,21 @@ def test_the_export_and_the_view_apply_the_steps_they_are_given_a_key_drop_that_
     lf = pl.DataFrame({"sample_id": ["a"], "year": [1]}).lazy()
     assert audited_frame(lf, [drop_step("sample_id")], "p1").collect_schema().names() == ["year"]
     assert audited_frame(lf, [drop_step("year")], "p1").collect_schema().names() == ["sample_id"]
+
+
+# ------------------------------------------------------------------------------------------------ review item 8 (slice B)
+
+def test_the_check_of_a_column_for_another_plot_reads_that_plots_t3_table_whatever_table_is_shown():
+    """`_plot_has_column` (the propagation expansion) asks for the plot's T3 table explicitly: an audit step is written there, so the column it
+    needs must be there, whatever the data choice shows. MUTATION D2: it follows the viewed table: the stand-in refuses a read that is not T3."""
+    frame = pl.DataFrame({"sample_id": ["a"], "year": [1]})
+    asked = []
+
+    def resolve(spec, tier=None):
+        asked.append(tier)
+        return frame.lazy() if tier == "T3" else pytest.fail(f"read tier {tier!r}, not T3")
+
+    check = closure("_plot_has_column", _resolve_active_spec=lambda p_id: {"plot": p_id}, _resolve_active_lf=resolve)
+    assert check("subtab_p", "year") is False or True   # fail-safe path: an error would give True; the stand-in fails the test instead
+    assert asked == ["T3"]
+    assert check("subtab_p", "year") is True and check("subtab_p", "nope") is False

@@ -81,11 +81,13 @@ Every file in `app/` and in `libs/` is either pure logic (importable headless, n
 reactive wiring (`@render.*` / `@reactive.*`, never imported from a headless context). `PKG-TIERS`
 and `C4-COMP-HOME` draw the boundary; mixing the two in one file is a protocol violation.
 
-## Tier isolation (ADR-085)
+## What a filter or an audited step may change (slice B; ADR-085 as changed by D-0016, D-0310, D-0311)
 
-T1 and T2 are permanently pure in every configuration: no exploration filter and no audit-committed
-node ever renders there, regardless of flags. Only "My view" (T3) reflects either. Any new render
-function that reads filter or audit state must apply the same gate (`tier_toggle.get() == "T3"`).
+An exploration filter changes the data table of the view shown (Source, T1, T2 or T3) and never a plot;
+it carries the view key it was built on and is cleared when the view changes. An audited step exists in
+Audit mode only, and applies to the T3 table and to the audited plot of that mode; Source, T1 and T2
+stay the original tables in every mode. Any new render function that reads filter or audit state must
+apply the same gates (`_in_audit()` and the data choice `data_view`; `rows_built_on` for filters).
 
 ## Security (deferred — see risks)
 

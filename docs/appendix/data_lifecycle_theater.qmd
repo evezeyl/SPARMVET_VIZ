@@ -21,12 +21,12 @@ Imagine you are a Chef in a high-pressure kitchen:
 
 ::: {.lightbox}
 ![SEQ-AUDIT: exploration filters against Send to Audit and Apply — the real current flow,
-redrawn 2026-11-08 in plain language and current naming (ADR-085/ADR-086: "My view", not "Tier 3"
+redrawn 2026-11-08 in plain language and current naming (ADR-085/ADR-086, since replaced by the Exploration and Audit modes: the diagram still says "My view", not "Tier 3"
 or "Active Pane"). Source: `docs/UML/app.mdj`, package `HOME` (ADR-096 — StarUML trial mode
 watermarks this image; a clean re-export follows once licensed). Naming note: this page's own
 prose below still uses the older "Tier 3 / Active Pane / Comparison Theater" terms — not yet
 refreshed (`DOC-TIER-PROSE-REFRESH-1`); the
-diagram is the current source for the vocabulary.](../UML/diagrams/SEQ-AUDIT_Exploration_and_audit.png)
+diagram shows the flow before the Exploration and Audit modes and is to be exported again from the model (UML pass after slice B).](../UML/diagrams/SEQ-AUDIT_Exploration_and_audit.png)
 :::
 
 ### Tier 1: The Anchor (The Giant Library)

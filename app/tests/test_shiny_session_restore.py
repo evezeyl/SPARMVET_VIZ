@@ -19,6 +19,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
+from app.tests.browser_view import set_view
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
 from app.tests.test_shiny_smoke import (_INTERACTIVE_APP_FEATURES, _wait_session_groups_open, _load_data_analysis_recipe, _navigate_to_mlst_plot,
                                         _open_filters_panel, _wait_for_fb_col_option, _choose_fb_op, _wait_shiny)
@@ -138,8 +139,7 @@ def test_one_click_on_restore_and_on_delete_acts_once(page: Page, shiny_app: Shi
         page.evaluate(_RECORD_NOTICES)
         _open_filters_panel(page)
         _navigate_to_mlst_plot(page)
-        page.locator("#tier_toggle input[value=T3]").check(force=True)
-        _wait_shiny(page)
+        set_view(page, "T3")
 
         page.locator("#nav_accordion").get_by_text("Session Management").first.click()
         _wait_shiny(page)
@@ -154,6 +154,8 @@ def test_one_click_on_restore_and_on_delete_acts_once(page: Page, shiny_app: Shi
         _notices(page, "1 restore of the session with a saved step", "Session restored", 1)
         _free(page, "1 restore of the session with a saved step")
         _wait_reasons(page, "1 the saved step is in the audit panel", [SAVED_REASON])
+        # P-B5 (PROVISIONAL): a restored session that holds audit steps opens Audit mode, where the audited plot those steps were made for is shown
+        expect(page.locator("#home_mode input[value=audit]")).to_be_checked(timeout=10_000)
 
         # 2. Restore the session that has no save: one notice, nothing restored, the steps of the view are unchanged
         _show_card(page, "restore_once_empty", f"#session_restore_{safe(key_empty)}")
@@ -244,8 +246,7 @@ def test_restore_of_a_session_of_another_recipe_is_refused_once_and_applies_noth
         page.evaluate(_RECORD_NOTICES)
         _open_filters_panel(page)
         _navigate_to_mlst_plot(page)
-        page.locator("#tier_toggle input[value=T3]").check(force=True)
-        _wait_shiny(page)
+        set_view(page, "T3")
         page.locator("#nav_accordion").get_by_text("Session Management").first.click()
         _wait_shiny(page)
         page.wait_for_selector("#session_groups_accordion", timeout=10_000)

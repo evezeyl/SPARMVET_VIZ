@@ -1,6 +1,6 @@
 """The filter dialog acts on the table after the plot's audited steps (DECIDED 2026-11-15, Eve, S2-1 (a)).
 
-A column that an earlier audit step dropped is not offered, in My view only (T1 and T2 are the tables as they are), and the
+A column that an earlier audit step dropped is not offered, on T3 in Audit mode only (T1 and T2 are the tables as they are), and the
 values the dialog lists are the rows that are still there. The list comes from the same function as the table, the plot
 and the export (`audited_frame`, through `dialog_frame`).
 

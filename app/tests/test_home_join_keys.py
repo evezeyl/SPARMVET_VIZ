@@ -14,6 +14,7 @@ stand-ins for the session (as in `test_blueprint_tier_files.py`).
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_home_join_keys.py -q
 """
+import pytest
 import ast
 from pathlib import Path
 from types import SimpleNamespace
@@ -69,13 +70,13 @@ class Session:
     def stand_ins(self, **extra):
         base = dict(
             bootloader=SimpleNamespace(is_enabled=lambda flag: True),
-            home_state=self.state, tier_toggle=Val("T3"), active_home_subtab=Val("subtab_p1"),
+            home_state=self.state, active_home_subtab=Val("subtab_p1"),
             _notify=lambda message, **kw: self.notes.append((message, kw.get("type"))),
             _propagation_scratch=self.scratch,
             _open_propagation_modal=lambda nodes, subtab, kind: self.opened.append((nodes, kind)),
             _clear_exploration_filters=lambda: (0, 0),
-            _on_my_view=lambda: True,
-            _resolve_active_spec=lambda p_id: {}, _resolve_active_lf=lambda spec: self.frame.lazy(),
+            _can_write_audit_step=lambda: True,
+            _resolve_active_spec=lambda p_id: {}, _resolve_active_lf=lambda spec, tier=None: (self.frame.lazy() if tier == "T3" else pytest.fail(f"read tier {tier!r}, not T3: an audit step is written at the plot's table")),
             _t3_drop_columns=lambda: [], safe_input=lambda i, k, d=None: i.get(k, d),
             input={},
             ui=SimpleNamespace(update_selectize=lambda *a, **k: None, update_text=lambda *a, **k: None),   # no live session here
