@@ -165,3 +165,13 @@ def test_the_buttons_follow_the_mode_and_the_view(tmp_path, monkeypatch):
     assert 'id="filter_send_to_audit"' in audit_t3 and 'id="filter_apply"' not in audit_t3
     audit_t2 = buttons("audit", "T2")
     assert 'id="filter_send_to_audit"' not in audit_t2 and 'id="filter_apply"' not in audit_t2 and "To create an audit step, view T3." in audit_t2
+
+
+def test_one_function_says_whether_the_app_is_in_audit_mode(tmp_path, monkeypatch):
+    """Review F4: HOME and the filter handlers share `home_theater._in_audit` (audit on AND interactive AND mode "audit"). With the audit flag on and
+    interactivity off, a stale "audit" value is Exploration for both. MUTATION I1 (the handlers check the audit flag only): this fails."""
+    run = Run(tmp_path, monkeypatch, mode="audit", view="T3", flags=("t3_sandbox_enabled",))
+    with reactive.isolate():
+        html = str(run.home.outputs["filter_controls_ui"]())
+        assert 'id="filter_apply"' in html and 'id="filter_send_to_audit"' not in html
+        assert run.home.readers["in_audit"]() is False

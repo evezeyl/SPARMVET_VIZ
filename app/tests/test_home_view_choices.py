@@ -255,3 +255,54 @@ def test_the_data_choice_has_the_four_values_and_the_old_names_are_gone(world, m
         assert f'value="{value}"' in text
     for old in ("My view", "Raw", "Plot to show", "Data to show", 'id="plot_view"', 'id="tier_toggle"'):
         assert old not in text, old
+
+
+# -- review fixes: the memo of Source reads (F1), the view key of a filter (F3) ----------------------------------------
+
+def test_an_edit_of_how_a_source_table_is_declared_is_read_again_not_served_from_the_memo(world, monkeypatch):
+    """F1: the memo of Source reads is keyed by the recipe's own hash too. MUTATION M1 (the hash left out of the key): the table is served as
+    it was read under the old declaration (score as Int64) after the recipe now declares it as a String."""
+    home = Home(world, monkeypatch, view="SRC", subtab="subtab_p_table", source="T")
+    assert table(home, "SRC", "p_table", "T").schema["score"] == pl.Int64
+    recipe = world.data_analysis_recipes_dir / "tiny.yaml"
+    recipe.write_text(recipe.read_text().replace("score: {original_name: score, type: Int64", "score: {original_name: score, type: String", 1))
+    clear_data_analysis_recipe_cache()
+    assert table(home, "SRC", "p_table", "T").schema["score"] == pl.String
+
+
+def test_a_filter_built_on_another_view_is_not_applied_by_the_preview(world, monkeypatch):
+    """F3: a row carries the view key it was built on; the preview applies it only while the view is that one. A row built on T1 does nothing on
+    T3, a row with no key does nothing anywhere, a row built on this view applies. MUTATION K1 (the preview applies every row): this fails."""
+    home = Home(world, monkeypatch, view="T3", subtab="subtab_p_join")
+    other = stamped(Home(world, monkeypatch, view="T1", subtab="subtab_p_join"), SCORE_GE_4)
+    with reactive.isolate():
+        home.filters_applied.set([other])
+    assert ids(table(home, "T3", "p_join")) == ["s2", "s3", "s4"], "a filter built on T1 is not applied on T3"
+    with reactive.isolate():
+        home.filters_applied.set([dict(SCORE_GE_4)])
+    assert ids(table(home, "T3", "p_join")) == ["s2", "s3", "s4"], "a row with no view key is never applied"
+    with reactive.isolate():
+        home.filters_applied.set([stamped(home, SCORE_GE_4)])
+    assert ids(table(home, "T3", "p_join")) == ["s4"]
+
+
+def test_the_badge_counts_only_the_filters_of_this_view(world, monkeypatch):
+    home = Home(world, monkeypatch, view="T3", subtab="subtab_p_join")
+    other = stamped(Home(world, monkeypatch, view="T1", subtab="subtab_p_join"), SCORE_GE_4)
+    with reactive.isolate():
+        home.filters_applied.set([other])
+        assert "preview filter" not in html(home.outputs["home_data_preview_badge"]())
+        home.filters_applied.set([stamped(home, SCORE_GE_4)])
+        assert "1 preview filter(s) on" in html(home.outputs["home_data_preview_badge"]())
+
+
+def test_plus_add_stamps_the_row_with_the_view_it_was_built_on(world, monkeypatch):
+    """The real `_filter_add_row` stages the row with the view key of the screen (the same `view_key` the clearing effect uses)."""
+    inputs = {"fb_col": "score", "fb_op": "ge", "fb_value": 3}
+    home = Home(world, monkeypatch, view="T2", subtab="subtab_p_join", inputs=inputs)
+    effects = home.filter_handlers(monkeypatch)
+    with reactive.isolate():
+        effects["_filter_add_row"]()
+        [row] = home.filters_pending.get()
+        assert row["view"] == home.readers["current_view_key"]() == ("tiny", "exploration", "T2", None, "subtab_p_join")
+        assert row["column"] == "score" and row["op"] == "ge"

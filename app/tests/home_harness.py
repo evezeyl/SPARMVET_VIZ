@@ -146,6 +146,7 @@ class Home:
 
         monkeypatch.setattr(home_theater, "show_draw_errors", lambda figure, **kw: figure)
         factory = mock.MagicMock()
+        factory.default_random_state = 0
 
         def draw(lf, recipe_dict, plot_id, **kw):
             self.drawn[plot_id] = lf.collect()
@@ -158,7 +159,7 @@ class Home:
             mock.MagicMock(), output, mock.MagicMock(),
             bootloader=bootloader, wrangle_studio=mock.MagicMock(), dev_studio=mock.MagicMock(),
             orchestrator=world.orch, viz_factory=factory, gallery_viewer=mock.MagicMock(),
-            current_app_features=mock.MagicMock(), anchor_path=mock.MagicMock(), tier1_anchor=mock.MagicMock(),
+            current_app_features=mock.MagicMock(), anchor_path=mock.MagicMock(), tier1_anchor=lambda: pl.DataFrame().lazy(),
             active_cfg=lambda: self.cfg, active_collection_id=lambda: "J",
             safe_input=lambda i, k, d: self.inputs.get(k, recipe if k == "data_analysis_recipe_id" else d),
             active_home_subtab=self.subtab, home_mode=self.mode, data_view=self.view, source_table=self.source,
