@@ -672,17 +672,20 @@ The "primary keys" set is the union of every join key declared in any assembly s
 ```yaml
 joins:
   bigtable:
-    steps:
-      - action: join
-        on: sample_id           # → {sample_id} added
-      - action: join
-        left_on: sample_id
-        right_on: sample_id     # → already in set
-      - action: join
-        on: [sample_id, gene_id]  # → {sample_id, gene_id} added
+    tier1:
+      steps:
+        - action: polars_join
+          'on': [sample_id]           # → {sample_id} added
+        - action: polars_join
+          left_on: sample_id
+          right_on: sample_id         # → already in set
+        - action: polars_join
+          'on': [sample_id, gene_id]  # → {sample_id, gene_id} added
 ```
 
 Both true primary keys (`sample_id`) and secondary/accessory keys used in long-format joins (`gene_id` in Resfinder-style tables) qualify. The set is computed once per session and recomputed on data analysis recipe reassembly.
+
+**DECIDED, not built as described here (D-0313, D-0082):** both lists exist and are named differently: "the entity key" (declared in the recipe with `is_entity_key`; it drives the key warning and "remove from all tables") and "columns used to join" (the set above, shown as information). As built, the set above is what `primary_key_warning` uses (`session_manager.extract_primary_keys`).
 
 #### 12g.3. Authoring rules — column targeting
 
