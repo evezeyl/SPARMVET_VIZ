@@ -1149,6 +1149,13 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 .gallery-left-out-note { color: #6c757d; }
 
 /* HOME opening cover (HOME-WALK A): while a recipe is opened, the cover sentence stands in the place of the theater (the previous recipe is not shown)
-   and the Pipeline Audit panel does not name the previous recipe. The cover is inserted before the theater and removed when the new theater is sent. */
+   and nothing of the previous recipe stays in the side panels. The cover is inserted before the theater and removed when the new theater is sent. */
 #home_opening_cover ~ #dynamic_tabs { display: none; }
-body:has(#home_opening_cover) #audit_nodes_header_ui { visibility: hidden; }
+/* The whole right panel and the bodies of the left panels that belong to the open recipe are hidden, not only a header line: no text of the previous recipe and
+   no control of it (Apply, filters, export) can be seen or clicked (visibility hidden takes the children and the clicks). The recipe selector and its notes stay. */
+body:has(#home_opening_cover) #right_sidebar_content_ui,
+body:has(#home_opening_cover) #data_analysis_recipe_info_ui,
+body:has(#home_opening_cover) #sidebar_filters,
+body:has(#home_opening_cover) #data_import_ui,
+body:has(#home_opening_cover) #system_tools_ui,
+body:has(#home_opening_cover) #session_management_ui { visibility: hidden; }
