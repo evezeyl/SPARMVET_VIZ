@@ -18,10 +18,10 @@ from typing import Any, Dict, Iterator, Tuple
 import lineage_fixtures as F
 import lineage_oracle as O
 import pytest
-from lineage_support import independent_places, places, setup
+from lineage_support import TIERS, independent_places, places, setup
 
 from utils import audit_copy
-from utils.lineage_records import GROUPS, JOIN_LINKED, LINEAGE, SAME_KEY, Start, Walk
+from utils.lineage_records import GROUPS, JOIN_LINKED, LINEAGE, Start, Walk
 from utils.lineage_walk import LineageIndex
 from utils.plan_book import PlanBook, Plan
 
@@ -57,7 +57,7 @@ def all_walks() -> Iterator[Tuple[str, Any, Any, str, str, str, Walk]]:
         index = LineageIndex(graph, plans)
         for node, column in all_starts(recipe, tables):
             for scope in GROUPS:
-                yield name, recipe, tables, node, column, scope, index.walk(Start(node, column)).within(scope)
+                yield name, recipe, tables, node, column, scope, index.walk(Start(node, column), levels=TIERS).within(scope)
 
 
 def test_I1_every_line_can_be_written_and_names_a_column_the_plan_has_at_the_end_of_the_place():
@@ -95,26 +95,38 @@ def test_I3_nothing_is_lost_every_place_of_the_reach_is_a_line_a_note_or_counted
     assert seen > 500
 
 
+def test_I3_with_the_source_level_every_source_table_in_the_lineage_is_a_grey_line_or_counted_apart():
+    seen = 0
+    for name, recipe, tables in fixtures():
+        graph, plans = setup(recipe, tables)
+        index = LineageIndex(graph, plans)
+        sources = {f"DS:{n}" for n in graph.collections() if graph.node(f"T1:{n}").collection_kind == "schema"}
+        for node, column in all_starts(recipe, tables):
+            walk = index.walk(Start(node, column), levels=("source", "T1", "T2", "T3"))
+            accounted = list(walk.accounted)
+            assert len(accounted) == len(set(accounted)) and set(accounted) <= set(independent_places(recipe)) | sources, (name, node, column)
+            assert not any(x.state == "tick" for x in walk.lines if x.place.startswith("DS:"))             # a source holds no list of steps: never ticked
+            assert {x.place for x in walk.lines if x.place.startswith("DS:")} | {u.place for u in walk.unread if u.place.startswith("DS:")} <= sources
+            seen += 1
+    assert seen > 100
+
+
 def test_L087_the_places_of_the_reach_counted_from_the_recipe_text():
     recipe, tables = F.tiers()
     graph, plans = setup(recipe, tables)
     index = LineageIndex(graph, plans)
     indep = set(independent_places(recipe))
-    assert set(index.walk(Start("T3:Pd", "sample_id")).within(JOIN_LINKED).accounted) == indep - {"T1:U"}         # every place but the unlinked source
-    assert set(index.walk(Start("T3:Pd", "sample_id")).within(LINEAGE).accounted) == indep - {"T1:E", "T3:Pe", "T1:U"}
-    assert set(index.walk(Start("T3:Ps", "country")).within(LINEAGE).accounted) == {"T1:S", "T2:S", "T1:J1", "T2:J1", "T1:J2", "T3:Ps", "T3:Pa", "T3:Pb", "T3:Pc", "T3:Pd"}
-    recipe, tables = F.tiers(u_declares_key=True, u_plot=True)
-    graph, plans = setup(recipe, tables)
-    assert set(LineageIndex(graph, plans).walk(Start("T3:Pd", "sample_id")).within(SAME_KEY).accounted) == set(independent_places(recipe))
-    assert "T1:U" in places(LineageIndex(graph, plans).walk(Start("T3:Pd", "sample_id")).within(SAME_KEY))
+    assert set(index.walk(Start("T3:Pd", "sample_id"), levels=TIERS).within(JOIN_LINKED).accounted) == indep - {"T1:U"}         # every place but the unlinked source
+    assert set(index.walk(Start("T3:Pd", "sample_id"), levels=TIERS).within(LINEAGE).accounted) == indep - {"T1:E", "T3:Pe", "T1:U"}
+    assert set(index.walk(Start("T3:Ps", "country"), levels=TIERS).within(LINEAGE).accounted) == {"T1:S", "T2:S", "T1:J1", "T2:J1", "T1:J2", "T3:Ps", "T3:Pa", "T3:Pb", "T3:Pc", "T3:Pd"}
 
 
 def test_L069_walking_again_gives_the_same_and_a_recipe_rebuilt_from_a_copy_gives_the_same():
     recipe, tables = F.tiers()
     graph, plans = setup(recipe, tables)
     index = LineageIndex(graph, plans)
-    first = index.walk(Start("T3:Pd", "sample_id")).within(JOIN_LINKED)
-    assert index.walk(Start("T3:Pd", "sample_id")).within(JOIN_LINKED) == first
+    first = index.walk(Start("T3:Pd", "sample_id"), levels=TIERS).within(JOIN_LINKED)
+    assert index.walk(Start("T3:Pd", "sample_id"), levels=TIERS).within(JOIN_LINKED) == first
     again = F.tiers()
     assert run_again(*again) == first
     round_trip = copy.deepcopy(recipe)                                                                  # a step added and taken out again
@@ -125,7 +137,7 @@ def test_L069_walking_again_gives_the_same_and_a_recipe_rebuilt_from_a_copy_give
 
 def run_again(recipe, tables):
     graph, plans = setup(recipe, tables)
-    return LineageIndex(graph, plans).walk(Start("T3:Pd", "sample_id")).within(JOIN_LINKED)
+    return LineageIndex(graph, plans).walk(Start("T3:Pd", "sample_id"), levels=TIERS).within(JOIN_LINKED)
 
 
 class CountingEntries(dict):
@@ -147,7 +159,7 @@ def test_L075_the_plan_is_read_once_per_place_and_never_again_by_the_walks():
     assert max(entries.reads.values()) == 1
     before = dict(entries.reads)
     for node, column in list(all_starts(recipe, tables))[:60]:
-        index.walk(Start(node, column)).within(SAME_KEY)
+        index.walk(Start(node, column), levels=TIERS).within(JOIN_LINKED)
     assert entries.reads == before                                                                       # the walks ask nothing: starting from every column adds no read
 
 
@@ -163,7 +175,7 @@ def test_L076_the_walk_reads_no_file_no_clock_no_random_and_changes_nothing(monk
 
     for module, name in ((builtins, "open"), (os, "stat"), (time, "time"), (time, "perf_counter"), (random, "random")):
         monkeypatch.setattr(module, name, refuse)
-    walk = index.walk(Start("T3:Pd", "sample_id")).within(SAME_KEY)
+    walk = index.walk(Start("T3:Pd", "sample_id"), levels=TIERS).within(JOIN_LINKED)
     monkeypatch.undo()
     assert walk.lines and recipe == raw_before and plans._entries == plans_before and graph.nodes() == nodes_before    # type: ignore[attr-defined]
 
@@ -190,14 +202,14 @@ SNIPPET = """
 import json, sys
 sys.path.insert(0, {tests!r})
 import lineage_fixtures as F
-from lineage_support import setup
+from lineage_support import TIERS, setup
 from test_lineage_walk_properties import plain
 from utils.lineage_walk import LineageIndex
 from utils.lineage_records import GROUPS, Start
 recipe, tables = F.tiers(u_declares_key=True, u_plot=True)
 graph, plans = setup(recipe, tables)
 index = LineageIndex(graph, plans)
-out = [plain(index.walk(Start(n, c)).within(s)) for n, c in (("T3:Pd", "sample_id"), ("T1:J1", "country"), ("DS:E", "gene")) for s in GROUPS]
+out = [plain(index.walk(Start(n, c), levels=TIERS).within(s)) for n, c in (("T3:Pd", "sample_id"), ("T1:J1", "country"), ("DS:E", "gene")) for s in GROUPS]
 print(json.dumps(out, sort_keys=True))
 """
 
@@ -206,7 +218,7 @@ def test_I8_L077_the_same_input_gives_the_same_output_in_other_processes_with_ot
     recipe, tables = F.tiers(u_declares_key=True, u_plot=True)
     graph, plans = setup(recipe, tables)
     index = LineageIndex(graph, plans)
-    here = json.dumps([plain(index.walk(Start(n, c)).within(s)) for n, c in (("T3:Pd", "sample_id"), ("T1:J1", "country"), ("DS:E", "gene")) for s in GROUPS], sort_keys=True)
+    here = json.dumps([plain(index.walk(Start(n, c), levels=TIERS).within(s)) for n, c in (("T3:Pd", "sample_id"), ("T1:J1", "country"), ("DS:E", "gene")) for s in GROUPS], sort_keys=True)
     for seed in ("0", "1", "2", "3"):
         out = subprocess.run([sys.executable, "-c", SNIPPET.format(tests=os.path.dirname(__file__))], capture_output=True, text=True, check=True,
                              env={**os.environ, "PYTHONHASHSEED": seed, "PYTHONPATH": os.pathsep.join(sys.path)})
@@ -216,14 +228,14 @@ def test_I8_L077_the_same_input_gives_the_same_output_in_other_processes_with_ot
 def test_L078_the_lines_follow_the_order_of_the_graph_and_the_order_of_columns_changes_nothing():
     recipe, tables = F.tiers()
     graph, plans = setup(recipe, tables)
-    walk = LineageIndex(graph, plans).walk(Start("T3:Pd", "sample_id")).within(JOIN_LINKED)
+    walk = LineageIndex(graph, plans).walk(Start("T3:Pd", "sample_id"), levels=TIERS).within(JOIN_LINKED)
     order = {n: i for i, n in enumerate(graph.nodes())}
     assert [order[x.covers[0]] for x in walk.lines] == sorted(order[x.covers[0]] for x in walk.lines)                 # graph order, never alphabetical
     assert places(walk) != sorted(places(walk))
     assert sum(1 for x in walk.lines if x.is_start) == 1 and next(x for x in walk.lines if x.is_start).place == "T3:Pd"      # PROVISIONAL (Q11): marked, not moved first
     reordered = copy.deepcopy(recipe)
     reordered["data_schemas"]["S"]["tier1"]["steps"].append(F.select("val", "country", "sample_id"))                  # the same columns in another order
-    again = LineageIndex(*setup(reordered, tables)).walk(Start("T3:Pd", "sample_id")).within(JOIN_LINKED)
+    again = LineageIndex(*setup(reordered, tables)).walk(Start("T3:Pd", "sample_id"), levels=TIERS).within(JOIN_LINKED)
     assert places(again) == places(walk)
 
 

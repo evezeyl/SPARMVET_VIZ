@@ -13,14 +13,18 @@ from utils.plan_book import PlanBook
 from utils.recipe_graph import RecipeGraph, build_graph
 
 
+TIERS = ("T1", "T2", "T3")                  # the levels most tests ask for: everything but the source tables
+
+
 def setup(recipe: Mapping[str, Any], tables: Mapping[str, Any]) -> Tuple[RecipeGraph, PlanBook]:
     return build_graph(recipe), oracle.replay(recipe, tables).plans
 
 
-def run(recipe: Mapping[str, Any], tables: Mapping[str, Any], node: str, column: str, group: str = "same_key", kind: str = "filter") -> Walk:
-    """The walk restricted to the places of `group` and the narrower ones (the default shows every group the walk returns)."""
+def run(recipe: Mapping[str, Any], tables: Mapping[str, Any], node: str, column: str, group: str = "join_linked", kind: str = "filter",
+        levels: Tuple[str, ...] = TIERS) -> Walk:
+    """The walk for the chosen levels, restricted to the places of `group` and the narrower ones (the default shows every group the walk returns)."""
     graph, plans = setup(recipe, tables)
-    return LineageIndex(graph, plans).walk(Start(node, column), kind=kind).within(group)
+    return LineageIndex(graph, plans).walk(Start(node, column), levels=levels, kind=kind).within(group)
 
 
 def places(walk: Walk) -> List[str]:

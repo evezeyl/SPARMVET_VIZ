@@ -14,11 +14,11 @@ import dataclasses
 import lineage_fixtures as F
 import lineage_oracle as O
 import pytest
-from lineage_support import independent_places, places, run, setup, ticked
+from lineage_support import TIERS, independent_places, places, run, setup, ticked
 
 from utils.lineage_records import (
-    CHANGE_NOT_FOLLOWED, NOTE_DECLARED_KEY_ONLY, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED, READING_DISAGREES, SEVERAL_COLUMNS, STEP_NOT_READ, Reach,
-    Start, GROUPS, JOIN_LINKED, LINEAGE, SAME_KEY)
+    CHANGE_NOT_FOLLOWED, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED, READING_DISAGREES, SEVERAL_COLUMNS, STEP_NOT_READ, Reach,
+    Start, GROUPS, JOIN_LINKED, LINEAGE, NO_STEP_LIST)
 from utils.lineage_walk import ColumnNotFound, LineageError, LineageIndex, StartPlanFailed
 from utils.plan_book import PlanBook
 
@@ -179,14 +179,14 @@ def shape(walk):
     return [(x.place, x.state, x.reach, tuple(o.name for o in x.occurrences)) for x in walk.lines], [g.place for g in walk.gone], [u.place for u in walk.unread]
 
 
-@pytest.mark.parametrize("scope", [JOIN_LINKED, SAME_KEY])
+@pytest.mark.parametrize("scope", [JOIN_LINKED])
 def test_L014_same_places_from_every_start_of_one_key_when_joins_that_equate_it_are_followed(scope):
     recipe, tables = F.tiers()
     graph, plans = setup(recipe, tables)
     index = LineageIndex(graph, plans)
-    reference = shape(index.walk(Start("T3:Pd", "sample_id")).within(scope))
+    reference = shape(index.walk(Start("T3:Pd", "sample_id"), levels=TIERS).within(scope))
     for node in KEY_STARTS:
-        assert shape(index.walk(Start(node, "sample_id")).within(scope)) == reference, node
+        assert shape(index.walk(Start(node, "sample_id"), levels=TIERS).within(scope)) == reference, node
 
 
 def test_L014_PROVISIONAL_the_group_above_and_below_depends_on_where_the_user_looked_from_the_union_does_not():
@@ -201,15 +201,17 @@ def test_L014_PROVISIONAL_the_group_above_and_below_depends_on_where_the_user_lo
     assert len(from_pd.within(LINEAGE).lines) == 11 and len(from_pd.lines) == 13
 
 
-def test_the_groups_of_a_key_tell_above_and_below_linked_by_a_join_and_holding_the_key_with_no_join():
+def test_the_groups_of_a_key_tell_above_and_below_and_linked_by_a_join_and_nothing_else():
     recipe, tables = F.tiers(u_declares_key=True, u_plot=True)
     walk = run(recipe, tables, "T3:Pd", "sample_id")
     groups = {x.place: x.scope_group for x in walk.lines}
+    assert set(groups.values()) == {LINEAGE, JOIN_LINKED}                                              # no group for "the same key, no join links it"
     assert groups["T1:S"] == groups["T3:Pd"] == groups["T1:M"] == LINEAGE
     assert groups["T1:E"] == groups["T3:Pe"] == JOIN_LINKED
-    assert groups["T1:U"] == groups["T3:Pu"] == SAME_KEY
+    assert "T1:U" not in groups and "T3:Pu" not in groups                                               # U declares the key, no join links it: not a line
+    assert [(o.table, o.column, o.why) for o in walk.outside] == [("U", "sample_id", "declared_key_not_reached")]      # information only
+    assert walk.outside[0].reach.plots == {"Pu"}
     assert [u.place for u in walk.unread] == ["T1:JU"] and walk.unread[0].scope_group == LINEAGE      # JU is built from M, which the chosen place reads
-    assert [x.place for x in walk.within(JOIN_LINKED).lines] == [p for p in places(walk) if groups[p] != SAME_KEY]
     assert all(x.refusal is None for x in walk.lines)                       # the record can carry "refused here, with the reason"; nothing sets it yet (the drop step)
 
 
@@ -218,10 +220,10 @@ def test_L014_a_column_no_join_equates_gives_the_same_places_from_every_start_un
     recipe, tables = F.tiers()
     graph, plans = setup(recipe, tables)
     index = LineageIndex(graph, plans)
-    reference = shape(index.walk(Start("T3:Ps", "country")).within(scope))
+    reference = shape(index.walk(Start("T3:Ps", "country"), levels=TIERS).within(scope))
     for node in ("DS:S", "T1:S", "T2:S", "T1:J1", "T2:J1", "T1:J2", "T3:Pa", "T3:Pb", "T3:Pc", "T3:Pd"):
-        assert shape(index.walk(Start(node, "country")).within(scope)) == reference, node
-    assert places(index.walk(Start("T3:Ps", "country")).within(scope)) == ["T1:S", "T2:S", "T1:J1", "T2:J1", "T1:J2", "T3:Ps", "T3:Pa", "T3:Pb", "T3:Pc", "T3:Pd"]
+        assert shape(index.walk(Start(node, "country"), levels=TIERS).within(scope)) == reference, node
+    assert places(index.walk(Start("T3:Ps", "country"), levels=TIERS).within(scope)) == ["T1:S", "T2:S", "T1:J1", "T2:J1", "T1:J2", "T3:Ps", "T3:Pa", "T3:Pb", "T3:Pc", "T3:Pd"]
 
 
 def holders_after(recipe, tables, walk, value):
@@ -247,29 +249,28 @@ def node_place(recipe, node):
 
 
 @pytest.mark.parametrize("scope", ALL_SCOPES)
-def test_L052_remove_one_sample_in_the_places_ticked_what_is_left_is_offered_in_another_group(scope):
-    # "remove sample S3 from all tables": the user ticks the places of a scope; after a filter at every ticked line, every table that still holds S3 is a place
-    # that the walk offers in a wider group or as a place no plot reads (I4). What each scope really leaves, written by hand (the nodes that still hold S3):
+def test_L052_remove_one_sample_in_the_places_ticked_what_is_left_is_offered_in_a_wider_group_or_said_as_not_reached(scope):
+    # "remove sample S3 from all tables": the user ticks the places of a group; after a filter at every ticked line, every table that still holds S3 is a place
+    # that the walk offers in the wider group, a place no plot reads, or a table the walk lists as not reached (declared key, no join). By hand:
     recipe, tables = F.tiers(u_declares_key=True, u_plot=True)
+    graph, _ = setup(recipe, tables)
     full = run(recipe, tables, "T3:Pd", "sample_id")
     walk = full.within(scope)
     left = holders_after(recipe, tables, walk, "S3")
     e_chain, u_chain = {"T1:E", "T2:E", "T3:Pe", "T1:JU", "T2:JU"}, {"T1:U", "T2:U", "T3:Pu"}
-    assert left == {LINEAGE: e_chain | u_chain, JOIN_LINKED: u_chain, SAME_KEY: set()}[scope]
-    offered_wider = {x.place for x in full.lines if x not in walk.lines} | {u.place for u in full.unread}
-    assert {node_place(recipe, n) for n in left} <= offered_wider                  # nothing is left that the walk did not offer
-    assert holders_after(recipe, tables, full, "S3") == set()                      # all the groups ticked: S3 is in no table
+    assert left == {LINEAGE: e_chain | u_chain, JOIN_LINKED: u_chain}[scope]
+    offered = {x.place for x in full.lines if x not in walk.lines} | {u.place for u in full.unread}
+    not_reached = {n for o in full.outside for n in [f"T1:{o.table}"] + graph.lineage_forward(f"T1:{o.table}")}
+    assert {n for n in left if node_place(recipe, n) not in offered} == u_chain and u_chain <= not_reached      # nothing is left that the walk neither offered nor listed
 
 
-def test_L052_a_declared_key_alone_reaches_a_table_no_join_links_PROVISIONAL():
+def test_L052_a_table_that_declares_the_key_and_no_join_links_is_information_never_a_line():
     recipe, tables = F.tiers(u_declares_key=True, u_plot=True)
-    walk = run(recipe, tables, "T3:Pd", "sample_id", SAME_KEY)
-    assert {"T1:U", "T3:Pu"} <= set(places(walk)) and line(walk, "T1:U").scope_group == "same_key"
-    assert [n.code for n in line(walk, "T1:U").notes] == [NOTE_DECLARED_KEY_ONLY] and line(walk, "T1:U").state == "tick"
-    assert "never the column name alone" in walk.key_basis                                                    # the record says what it used
-    # the same table without a declared key is only listed, never a line
-    undeclared = run(*F.tiers(u_declares_key=False, u_plot=True), "T3:Pd", "sample_id", SAME_KEY)
-    assert "T1:U" not in places(undeclared) and [(o.table, o.why) for o in undeclared.outside] == [("U", "same_name_not_declared")]
+    walk = run(recipe, tables, "T3:Pd", "sample_id")
+    assert "T1:U" not in places(walk) and "T3:Pu" not in places(walk) and "never the column name alone" in walk.key_basis
+    # without the declaration the table is not even listed: the name alone never links two columns
+    undeclared = run(*F.tiers(u_declares_key=False, u_plot=True), "T3:Pd", "sample_id")
+    assert "T1:U" not in places(undeclared) and undeclared.outside == ()
 
 
 def test_L053_a_table_without_the_key_is_not_a_line_and_is_not_changed():
@@ -462,7 +463,7 @@ def test_L034_a_reading_that_the_plan_contradicts_is_grey_with_the_problem():
     both = [("a", "Int64"), ("b", "Int64")]
     graph = setup(recipe, {"A": F.table(a=[1], b=[2])})[0]
     plans = PlanBook.of({("DS:A", 0): both, ("T1:A", 0): both, ("T1:A", 1): both, ("T2:A", 0): both, ("T3:P", 0): both})      # the rename did not happen, says the plan
-    walk = LineageIndex(graph, plans).walk(Start("DS:A", "a")).within(JOIN_LINKED)
+    walk = LineageIndex(graph, plans).walk(Start("DS:A", "a"), levels=TIERS).within(JOIN_LINKED)
     assert [(x.place, x.state) for x in walk.lines] == [("T1:A", "grey"), ("T3:P", "grey")]
     assert line(walk, "T1:A").reason.code == READING_DISAGREES and "c" in line(walk, "T1:A").reason.get("problem")
 
@@ -483,14 +484,14 @@ def failing(recipe, tables, node, k, sentence="the engine said no"):
 def test_L072_one_place_cannot_answer_and_every_other_line_is_as_without_the_failure():
     recipe, tables = F.chain()
     graph, plans = setup(recipe, tables)
-    base = LineageIndex(graph, plans).walk(Start("DS:A", "country")).within(JOIN_LINKED)
+    base = LineageIndex(graph, plans).walk(Start("DS:A", "country"), levels=TIERS).within(JOIN_LINKED)
     assert base.found == 4
     for node in graph.nodes():
         if node.startswith("DS:"):
             continue
         for k in range(len(graph.node(node).steps) + 1):
             g, broken, below = failing(recipe, tables, node, k)
-            walk = LineageIndex(g, broken).walk(Start("DS:A", "country")).within(JOIN_LINKED)      # never an exception, never an empty list
+            walk = LineageIndex(g, broken).walk(Start("DS:A", "country"), levels=TIERS).within(JOIN_LINKED)      # never an exception, never an empty list
             assert set(walk.accounted) == set(base.accounted) and len(walk.lines) == len(base.lines)      # nothing is lost
             for x in base.lines:
                 got = line(walk, x.place)
@@ -525,16 +526,65 @@ def test_a_column_that_exists_nowhere_is_a_plain_error_and_so_is_every_wrong_cal
     graph, plans = setup(recipe, tables)
     index = LineageIndex(graph, plans)
     with pytest.raises(ColumnNotFound) as error:
-        index.walk(Start("T3:P1", "nope")).within(LINEAGE)
+        index.walk(Start("T3:P1", "nope"), levels=TIERS).within(LINEAGE)
     assert "nope" in str(error.value) and "T3:P1" in str(error.value)
     with pytest.raises(ColumnNotFound):
-        index.walk(Start("T3:P1", "COUNTRY")).within(LINEAGE)                       # names are exact
+        index.walk(Start("T3:P1", "COUNTRY"), levels=TIERS).within(LINEAGE)                       # names are exact
     with pytest.raises(LineageError):
-        index.walk(Start("T3:Nope", "country")).within(LINEAGE)
+        index.walk(Start("T3:Nope", "country"), levels=TIERS).within(LINEAGE)
     with pytest.raises(LineageError):
-        index.walk(Start("T3:P1", "country"), kind="rename").within(LINEAGE)
+        index.walk(Start("T3:P1", "country"), levels=TIERS, kind="rename").within(LINEAGE)
     with pytest.raises(TypeError):
         index.walk(Start("T3:P1", "country"), scope="lineage")                           # no scope is applied: the user ticks (owner, 2026-11-20)
     g, failed, _ = failing(recipe, tables, "T1:A", 0)
     with pytest.raises(StartPlanFailed):
-        LineageIndex(g, failed).walk(Start("T3:P2", "country")).within(LINEAGE)
+        LineageIndex(g, failed).walk(Start("T3:P2", "country"), levels=TIERS).within(LINEAGE)
+
+
+def test_the_levels_the_user_chooses_decide_the_places_offered_and_must_be_named():
+    recipe, tables = F.chain()
+    graph, plans = setup(recipe, tables)
+    index = LineageIndex(graph, plans)
+    start = Start("T3:P1", "country")
+    everything = index.walk(start, levels=("source", "T1", "T2", "T3"))
+    assert places(everything) == ["DS:A", "T1:A", "T1:J", "T3:P1", "T3:P2"] and everything.levels == ("source", "T1", "T2", "T3")
+    assert places(index.walk(start, levels=("T3",))) == ["T3:P1", "T3:P2"] and places(index.walk(start, levels=("source",))) == ["DS:A"]
+    assert places(index.walk(start, levels=("T1",))) == ["T1:A", "T1:J"]
+    # an empty tier is no place: the table of A at the tier-2 level is the one place T1:A (it covers both)
+    assert places(index.walk(start, levels=("T2",))) == ["T1:A", "T1:J"]
+    assert index.walk(start, levels=("T3", "source", "T3")).levels == ("source", "T3")             # any order, each once, in the order of the data flow
+    for wrong in ((), ("T4",), ("tier1",)):
+        with pytest.raises(LineageError):
+            index.walk(start, levels=wrong)
+    with pytest.raises(TypeError):
+        index.walk(start)                                                                           # the levels are not decided for the user: the caller names them
+
+
+def test_a_source_table_is_a_line_that_cannot_hold_a_step_PROVISIONAL():
+    # a source file holds no list of steps (D-0332): the line is returned, grey with the reason, so the dialog can say it; how a step acts at the source level is not decided
+    recipe, tables = F.chain()
+    walk = run(recipe, tables, "T3:P1", "sample_id", levels=("source",))
+    assert places(walk) == ["DS:A", "DS:B"] and all(x.state == "grey" and x.reason.code == NO_STEP_LIST for x in walk.lines)
+    assert line(walk, "DS:A").tier == "DS" and reach(line(walk, "DS:A")) == (2, 2) and line(walk, "DS:A").occurrences[0].name == "sample_id"
+    unread = F.recipe({"A": F.schema(["sample_id"]), "Z": F.schema(["sample_id"])}, {"J": F.join(["A", "Z"], [F.join_step("Z")])}, {"P": F.plot("A")})
+    alone = run(unread, {"A": F.table(sample_id=["S1"]), "Z": F.table(sample_id=["S1"])}, "T3:P", "sample_id", levels=("source",))
+    assert places(alone) == ["DS:A"] and [u.place for u in alone.unread] == ["DS:Z"]               # a table nothing reads gets no line (D-0346)
+
+
+def test_L034_an_unread_step_that_changes_the_type_of_a_column_is_not_proved_the_same():
+    recipe = F.recipe({"A": F.schema(["sample_id", "genes"], [F.str_split(["genes"], ",")])}, {}, {"P": F.plot("A")})
+    tables = {"A": F.table(sample_id=["S1"], genes=["a,b"])}
+    walk = run(recipe, tables, "DS:A", "genes")
+    assert [(x.place, x.state) for x in walk.lines] == [("T1:A", "grey"), ("T3:P", "grey")]
+    assert (line(walk, "T1:A").reason.code, line(walk, "T1:A").reason.get("action")) == (STEP_NOT_READ, "polars_str_split")
+    assert line(walk, "T1:A").occurrences[0].type != "String" and line(walk, "T1:A").occurrences[0].how == "unknown"
+    assert ticked(run(recipe, tables, "T3:P", "genes")) == ["T1:A", "T3:P"]                  # after the step it is the same column downstream
+
+
+def test_L006_a_tier_2_no_plot_reads_is_applied_nowhere_and_is_not_a_place():
+    recipe, tables = F.tiers()
+    recipe["joins"]["JU"]["tier2"] = {"steps": [F.keep("year", "gt", 1)]}                   # JU is read by no plot: its tier 2 runs nowhere
+    recipe["data_schemas"]["M"]["tier2"] = {"steps": [F.keep("year", "gt", 1)]}             # M is read by joins only: its tier 2 runs nowhere
+    walk = run(recipe, tables, "T3:Pd", "sample_id")
+    assert "T2:JU" not in walk.accounted and "T2:M" not in walk.accounted and [u.place for u in walk.unread] == ["T1:JU"]
+    assert places(walk) == places(run(*F.tiers(), "T3:Pd", "sample_id"))

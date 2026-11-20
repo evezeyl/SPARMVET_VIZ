@@ -59,6 +59,10 @@ def fill_null(columns: Sequence[str], value: Any) -> dict:
     return {"action": "polars_fill_null", "columns": list(columns), "value": value}
 
 
+def str_split(columns: Sequence[str], by: str) -> dict:
+    return {"action": "polars_str_split", "columns": list(columns), "by": by}
+
+
 def unpivot(on: Sequence[str], index: Sequence[str]) -> dict:
     return {"action": "polars_unpivot", "on": list(on), "index": list(index), "variable_name": "variable", "value_name": "value"}
 

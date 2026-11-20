@@ -13,7 +13,7 @@ Consumed by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_lineage
 If deleted: the walk has nothing to return.
 
 # @deps
-# provides: class:Walk, class:Line, class:Gone, class:Unread, class:Outside, class:Occurrence, class:Hop, class:StepRef, class:SourceColumn, class:Reach, class:Reason, class:Note, class:Start, constant:GROUPS, constant:HOW_VALUES, constant:REASON_CODES
+# provides: class:Walk, class:Line, class:Gone, class:Unread, class:Outside, class:Occurrence, class:Hop, class:StepRef, class:SourceColumn, class:Reach, class:Reason, class:Note, class:Start, constant:GROUPS, constant:LEVELS, constant:HOW_VALUES, constant:REASON_CODES
 # consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_lineage_walk.py
 # doc: .claude/knowledge/decision_ledger.md (D-0346, D-0347, D-0195, D-0351)
 # @end_deps
@@ -24,12 +24,17 @@ from dataclasses import dataclass
 from typing import Any, FrozenSet, Optional, Tuple
 
 
-# The GROUPS of places (owner, 2026-11-20: the user decides the scope; the walk offers every candidate place, each tagged with its group, and the
-# user ticks). Which groups are offered is PROVISIONAL. A line, a note or a place no plot reads carries the smallest group that holds it:
+# The LEVELS the user chooses (owner, 2026-11-20, D-0355: "we have all_raw data, all T1, All T2, All T3 ... so we need to have a way to choose"): the
+# source tables, the tables after tier 1, after tier 2, and what a plot reads after tier 3. The walk offers the places of the chosen levels (any combination)
+# that hold the column in the lineage of the chosen place. A place that covers several tiers (an empty tier is not a place) belongs to each of them.
+SOURCE, T1, T2, T3 = "source", "T1", "T2", "T3"
+LEVELS = (SOURCE, T1, T2, T3)
+
+# The GROUPS of places (the user ticks; which groups are offered is PROVISIONAL). A line, a note or a place no plot reads carries the smallest group that holds it:
 LINEAGE = "lineage"          # above and below the chosen place: back to its sources, then forward from them (D-0347 as written)
 JOIN_LINKED = "join_linked"  # also the tables a join on the same column links to it (the key of a join that both sides equate)
-SAME_KEY = "same_key"        # also every source that declares the same key (`is_entity_key`), with no join that links it
-GROUPS = (LINEAGE, JOIN_LINKED, SAME_KEY)
+# There is no group for "the same key, no join links it" (owner, D-0355): a column is never matched by its name alone.
+GROUPS = (LINEAGE, JOIN_LINKED)
 
 
 def group_rank(group: str) -> int:
@@ -49,16 +54,16 @@ READING_DISAGREES = "reading_disagrees"        # a reading of D-0351 gives other
 CHANGE_NOT_FOLLOWED = "change_not_followed"    # the name or the values change on the path (a rename, a key under another name, a suffix, a cast, a recompute, an aggregate): not followed yet
 SEVERAL_COLUMNS = "several_columns"            # the column exists more than once here (a table joined with itself): which one a step names is not decided
 CANNOT_FOLLOW = "cannot_follow"                # no trace could be made (a plan that disagrees with the one above)
-REASON_CODES = (PLAN_FAILED, STEP_NOT_READ, READING_DISAGREES, CHANGE_NOT_FOLLOWED, SEVERAL_COLUMNS, CANNOT_FOLLOW)
+NO_STEP_LIST = "no_step_list"                  # a source table holds no list of steps (D-0332): the line is returned, a step cannot be written there (PROVISIONAL)
+REASON_CODES = (PLAN_FAILED, STEP_NOT_READ, READING_DISAGREES, CHANGE_NOT_FOLLOWED, SEVERAL_COLUMNS, CANNOT_FOLLOW, NO_STEP_LIST)
 
 # The notes under a line: a closed list.
 NOTE_UNREAD_STEP_PASSED = "unread_step_passed"   # the plan shows the name and type unchanged across a step the walk may not read: values may have changed
-NOTE_DECLARED_KEY_ONLY = "declared_key_only"     # no join links this table to the start: it declares the same key (`is_entity_key`), nothing more
-NOTE_CODES = (NOTE_UNREAD_STEP_PASSED, NOTE_DECLARED_KEY_ONLY)
+NOTE_CODES = (NOTE_UNREAD_STEP_PASSED,)
 
-# Why a table is listed as outside every group.
-WHY_SAME_NAME_NOT_DECLARED = "same_name_not_declared"   # it has a column with the name of a key, not declared a key: information, never a line
-OUTSIDE_CODES = (WHY_SAME_NAME_NOT_DECLARED,)
+# Why a table is listed as not reached.
+WHY_DECLARED_KEY_NOT_REACHED = "declared_key_not_reached"   # it declares the same key as the lineage holds, and no join links it: information, never a line
+OUTSIDE_CODES = (WHY_DECLARED_KEY_NOT_REACHED,)
 
 TICK, GREY = "tick", "grey"
 
@@ -201,8 +206,8 @@ class Unread:
 
 @dataclass(frozen=True)
 class Outside:
-    """A source table that has a column with the name of a key of the walk and that no group holds, with why (`OUTSIDE_CODES`). Information, never a
-    line: the name alone does not make two columns one. `reach` is what depends on the table."""
+    """A source table that declares a key of the same family as the lineage's and that no join links to it: plain information, never a line (the name alone
+    does not make two columns one). `reach` is what depends on the table."""
     table: str
     column: str
     why: str
@@ -211,11 +216,12 @@ class Outside:
 
 @dataclass(frozen=True)
 class Walk:
-    """The result of one walk. `lines` holds every candidate place where a step can be written, ticked or grey, each tagged with its group (the user
-    chooses the scope by ticking; no scope is applied here), in graph order; nothing the walk cannot decide is left out (D-0195). `key_basis` says what the
+    """The result of one walk. `lines` holds every place of the chosen levels that holds the column in the lineage of the chosen place, ticked or grey, each
+    tagged with its group, in graph order; nothing the walk cannot decide is left out (D-0195). `key_basis` says what the
     walk used to call two key columns the same: declared keys and the key pairs of joins, never the name alone."""
     start: Start
     step_kind: str                               # filter or drop
+    levels: Tuple[str, ...]                      # the levels the caller chose (`LEVELS`); the places of the others are not offered
     lines: Tuple[Line, ...]
     gone: Tuple[Gone, ...]
     unread: Tuple[Unread, ...]
@@ -238,5 +244,5 @@ class Walk:
     def within(self, group: str) -> "Walk":
         """The walk restricted to the places of this group and the narrower ones (what a caller that offers only some groups shows)."""
         keep = group_rank(group)
-        return Walk(self.start, self.step_kind, tuple(x for x in self.lines if group_rank(x.scope_group) <= keep), tuple(x for x in self.gone if group_rank(x.scope_group) <= keep),
+        return Walk(self.start, self.step_kind, self.levels, tuple(x for x in self.lines if group_rank(x.scope_group) <= keep), tuple(x for x in self.gone if group_rank(x.scope_group) <= keep),
                     tuple(x for x in self.unread if group_rank(x.scope_group) <= keep), self.outside, self.key_basis)

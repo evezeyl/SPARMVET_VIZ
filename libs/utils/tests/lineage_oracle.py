@@ -7,7 +7,7 @@ replay, and see which tables still hold marked values; that finds where a column
 of the walk, (d) `after_filter`: replay with one filter step added at a place, to see which tables change and what a table holds.
 
 It uses only the Polars calls a test recipe needs: filter (`modif_filter` with the simple operators written here), rename, drop, select, join,
-with_columns (a formula text evaluated with `pl`), cast, group_by, fill_null, unpivot and sort. It is test code: it never imports the walk, `step_effects`, `recipe_graph` or
+with_columns (a formula text evaluated with `pl`), cast, group_by, fill_null, str_split, unpivot and sort. It is test code: it never imports the walk, `step_effects`, `recipe_graph` or
 anything of `app`.
 
 Run with the tests of libs/utils.
@@ -66,6 +66,8 @@ def apply_step(df: pl.DataFrame, step: Mapping[str, Any], ends: Mapping[str, pl.
         return df.with_columns(**{name: eval(text, {"pl": pl}) for name, text in step["named_exprs"].items()})   # noqa: S307 - test formulas
     if action == "polars_group_by":
         return df.group_by(step["by"], maintain_order=True).agg(**{name: eval(text, {"pl": pl}) for name, text in step["named_aggs"].items()})   # noqa: S307 - test formulas
+    if action == "polars_str_split":
+        return df.with_columns(pl.col(step["columns"]).str.split(step["by"]))
     if action == "polars_fill_null":
         return df.with_columns(pl.col(step["columns"]).fill_null(step["value"]))
     if action == "polars_unpivot":

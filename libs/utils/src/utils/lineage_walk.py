@@ -16,9 +16,10 @@ What decides what. The engine's plan (D-0325) says where a column exists and its
 reason, never a guess. A step outside the list is `unread`: the walk knows only what the plan shows across it.
 
 PROVISIONAL behaviour (the owner has not decided; each place is marked in the code):
-- P1 (O1) which GROUPS of places are offered. The owner decided (2026-11-20) that the user chooses the scope by ticking, so the walk applies no scope:
-  every line carries its group (lineage: above and below the chosen place; join_linked: linked by a join on the key; same_key: holds the declared key
-  with no join). Which groups exist, and the names, are provisional.
+- P1 (O1) which GROUPS of places are offered. The user chooses the LEVELS (source, T1, T2, T3; D-0355) and ticks; every line carries its group
+  (lineage: above and below the chosen place; join_linked: linked by a join on the key). There is no group for "the same key, no join links it" and a
+  column is never matched by its name alone; tables that declare the same key and are not linked are listed as plain information (`Walk.outside`).
+- P1b a line at the SOURCE level is returned and grey with `no_step_list` (a source file holds no list of steps, D-0332); how a step acts at that level is not decided.
 - P2 a step outside the readings (`step_effects.READINGS`, D-0351 and the names of 2026-11-20): a column across it is ticked only when the plan alone
   proves the name and the type unchanged; any other path through it is grey (`step_not_read`).
 - P3 (step 2 and the notes, not built) a name that changes on the path (a rename, a key under another name, a suffix of a clash) and a column a step
@@ -51,9 +52,9 @@ from typing import Any, Deque, Dict, FrozenSet, Iterable, List, Optional, Sequen
 
 from utils import action_names, step_effects as fx
 from utils.lineage_records import (
-    CANNOT_FOLLOW, CAST, CHANGE_NOT_FOLLOWED, CREATED, GREY, JOIN_LINKED, LINEAGE, NOTE_DECLARED_KEY_ONLY, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED,
-    READING_DISAGREES, RE_CREATED, RECOMPUTED, RENAMED, SAME_KEY, SEVERAL_COLUMNS, STEP_NOT_READ, TICK, UNCHANGED, UNKNOWN, WHY_SAME_NAME_NOT_DECLARED, Gone, Hop,
-    Line, Note, Occurrence, Outside, Reach, Reason, SourceColumn, Start, StepRef, Unread, Walk,
+    CANNOT_FOLLOW, CAST, CHANGE_NOT_FOLLOWED, CREATED, GREY, JOIN_LINKED, LEVELS, LINEAGE, NO_STEP_LIST, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED,
+    READING_DISAGREES, RE_CREATED, RECOMPUTED, RENAMED, SEVERAL_COLUMNS, SOURCE, STEP_NOT_READ, T1, T2, T3, TICK, UNCHANGED, UNKNOWN,
+    WHY_DECLARED_KEY_NOT_REACHED, Gone, Hop, Line, Note, Occurrence, Outside, Reach, Reason, SourceColumn, Start, StepRef, Unread, Walk,
 )
 from utils.plan_book import Plan, PlanBook, PlanFailure
 from utils.recipe_graph import Node, RecipeGraph
@@ -61,6 +62,7 @@ from utils.recipe_graph import Node, RecipeGraph
 Occ = Tuple[str, int, str]          # (node id, number of steps applied, column name)
 PlanOrFailure = Union[Plan, PlanFailure]
 STEP_KINDS = ("filter", "drop")
+LEVEL_OF_KIND = {"DS": SOURCE, "T1": T1, "T2": T2, "T3": T3}
 # What a hop says of a step that writes a column of the same name or changes its name (data only; the notes and the following are a later step)
 HOW_OF_CHANGE = {fx.CHANGE_RENAME: RENAMED, fx.CHANGE_KEY_OTHER_NAME: RENAMED, fx.CHANGE_SUFFIX: RENAMED, fx.CHANGE_CAST: CAST,
                  fx.CHANGE_RECOMPUTE: RECOMPUTED, fx.CHANGE_AGGREGATE: RECOMPUTED}
@@ -256,8 +258,6 @@ class LineageIndex:
         self.place_covers: Dict[str, List[str]] = {}
         for nid in g.nodes():
             node = g.node(nid)
-            if node.kind == "DS":
-                continue
             if node.kind == "T2" and not (node.steps and node.read_by_plot):
                 place = self.place_of[f"T1:{node.name}"]       # an empty tier 2, or one no plot reads, is the table before it (D-0346)
             else:
@@ -393,8 +393,11 @@ class LineageIndex:
         return [(node, k, name) for name in self._names(plan) if (node, k, name) in within]
 
     # ------------------------------------------------------------------ the walk
-    def walk(self, start: Start, *, kind: str = "filter") -> Walk:
+    def walk(self, start: Start, *, levels: Iterable[str], kind: str = "filter") -> Walk:
         g = self.graph
+        chosen_levels = tuple(level for level in LEVELS if level in set(levels))
+        if not chosen_levels or set(levels) - set(LEVELS):
+            raise LineageError(f"the levels are some of {list(LEVELS)}; the caller must name at least one (got {sorted(set(levels), key=str)})")
         if kind not in STEP_KINDS:
             raise LineageError(f"the kind of step is {kind!r}; it is one of {list(STEP_KINDS)}")
         if not g.has_node(start.node):
@@ -407,9 +410,9 @@ class LineageIndex:
         begin: Occ = (start.node, *self.end(start.node)[1:], start.column)
 
         lineage, linked = self.lineage_set(begin), self.component([begin])
-        same_key, extra = self._same_key(linked)                 # PROVISIONAL (O1): which groups are offered; the user chooses the scope by ticking
-        costs = self._costs(begin, linked)
-        region = self._region_groups(lineage, linked, same_key)
+        costs = self._costs(begin, linked)                      # PROVISIONAL (O1): which groups are offered; the levels the user chooses decide what is shown
+        region = {p: grp for p, grp in self._region_groups(lineage, linked).items()
+                  if any(LEVEL_OF_KIND[g.node(n).kind] in chosen_levels for n in self.place_covers[p])}
         start_place = self.place_of.get(start.node)
 
         lines: List[Line] = []
@@ -419,21 +422,20 @@ class LineageIndex:
             reach = self.reach_of(place)
             covers = tuple(self.place_covers[place])
             if not reach.plots:
-                unread.append(Unread(place, covers, bool(self.at_end(place, same_key)), reach, region[place]))
+                unread.append(Unread(place, covers, bool(self.at_end(place, linked)), reach, region[place]))
                 continue
-            line = self._classify(place, covers, reach, same_key, lineage, linked, costs, start_place, region[place])
+            line = self._classify(place, covers, reach, linked, lineage, linked, costs, start_place, region[place])
             (lines if isinstance(line, Line) else gone).append(line)  # type: ignore[arg-type]
         gone = [Gone(x.place, x.covers, x.removed_by, tuple(l.place for l in lines if self._reaches(l.reach, x.place)), kind, kind == "filter", x.reach, x.scope_group) for x in gone]
-        return Walk(start, kind, tuple(lines), tuple(gone), tuple(unread), self._outside(linked, same_key))
+        return Walk(start, kind, chosen_levels, tuple(lines), tuple(gone), tuple(unread), self._outside(linked))
 
-    def _region_groups(self, lineage: Set[Occ], linked: Set[Occ], same_key: Set[Occ]) -> Dict[str, str]:
+    def _region_groups(self, lineage: Set[Occ], linked: Set[Occ]) -> Dict[str, str]:
         """Every place that a group reaches (forward from the nodes that hold the column) with the smallest group that reaches it."""
         found: Dict[str, str] = {}
-        for group, held in ((LINEAGE, lineage), (JOIN_LINKED, linked), (SAME_KEY, same_key)):
+        for group, held in ((LINEAGE, lineage), (JOIN_LINKED, linked)):
             for h in sorted({occ[0] for occ in held}, key=self._order.__getitem__):
                 for n in [h] + self.forward(h):
-                    if self.graph.node(n).kind != "DS":
-                        found.setdefault(self.place_of[n], group)
+                    found.setdefault(self.place_of[n], group)
         return found
 
     @staticmethod
@@ -452,7 +454,7 @@ class LineageIndex:
         held = self.at_end(place, chosen)
         if not held:
             return self._without_column(place, covers, reach, chosen, default_group)
-        group = LINEAGE if any(o in lineage for o in held) else (JOIN_LINKED if any(o in linked for o in held) else SAME_KEY)
+        group = LINEAGE if any(o in lineage for o in held) else JOIN_LINKED
         occurrences = tuple(self.occurrence(o, chosen) for o in held)
         notes: List[Note] = []
         reason: Optional[Reason] = None
@@ -461,14 +463,13 @@ class LineageIndex:
             state, reason = GREY, Reason(SEVERAL_COLUMNS, (("names", tuple(o[2] for o in held)),))                 # PROVISIONAL P7
         else:
             occ = held[0]
-            if occ in costs:
-                cost = costs[occ][0]
-                path = self._path(occ, costs)
-                notes = [l.note for l in path if l.note is not None]
-                if cost > 0:
-                    state, reason = GREY, next((l.reason for l in path if not l.certain and l.reason is not None), Reason(CANNOT_FOLLOW, ("node", occ[0])))
-            else:                                                                                                   # PROVISIONAL P1: a declared key only
-                notes = [Note(NOTE_DECLARED_KEY_ONLY, ())]
+            cost = costs[occ][0]
+            path = self._path(occ, costs)
+            notes = [l.note for l in path if l.note is not None]
+            if cost > 0:
+                state, reason = GREY, next((l.reason for l in path if not l.certain and l.reason is not None), Reason(CANNOT_FOLLOW, (("node", occ[0]),)))
+        if tier == "DS" and state == TICK:                                                                            # PROVISIONAL: a source holds no list of steps (D-0332)
+            state, reason = GREY, Reason(NO_STEP_LIST, (("table", self.graph.node(self.place_first[place]).name),))
         return Line(place, covers, tier, kind, occurrences, state, reason, tuple(notes), group, place == start_place, reach)
 
     @staticmethod
@@ -495,51 +496,29 @@ class LineageIndex:
         nearest = sorted(found, key=lambda d: (self._order[d.in_node], d.ref.step if d.ref else 0))[-1]
         return Gone(place, covers, nearest.ref, (), "filter", True, reach, group)
 
-    # ------------------------------------------------------------------ the scope of a key (PROVISIONAL P1, question O1)
-    def _same_key(self, linked: Set[Occ]) -> Tuple[Set[Occ], Set[Occ]]:
-        """(the columns of every source that declares the same key, those columns alone). Only what the recipe declares is used: the
-        `is_entity_key` fields and the key pairs of joins (`RecipeGraph.key_families`); never the name alone."""
+    # ------------------------------------------------------------------ what is not reached
+    def _outside(self, linked: Set[Occ]) -> Tuple[Outside, ...]:
+        """The source tables that declare a key of the same family as the lineage's and that no join links to it: plain information (never a line, never matched by
+        the name alone: only `is_entity_key` declarations and the key pairs of joins are used)."""
         g = self.graph
+        reached = {g.node(o[0]).name for o in linked if g.node(o[0]).kind == "DS"}
         names: Set[str] = set()
-        reached_tables = set()
-        for occ in linked:
-            if g.node(occ[0]).kind == "DS":
-                reached_tables.add(g.node(occ[0]).name)
-                family = g.key_family_of(occ[2])
-                if family:
-                    names |= set(family)
-        extra: Set[Occ] = set()
-        for nid in g.nodes():
-            node = g.node(nid)
-            if node.kind != "DS" or node.name in reached_tables:
-                continue
-            plan = self._plan[(nid, 0)]
-            for name in g.declared_entity_keys(node.name):
-                if name in names and isinstance(plan, Plan) and plan.has(name):
-                    extra |= self.component([(nid, 0, name)])
-        return set(linked) | extra, extra
-
-    def _outside(self, linked: Set[Occ], same_key: Set[Occ]) -> Tuple[Outside, ...]:
-        """The source tables that no group holds and that have a column named like a key of the walk without declaring it a key: information only,
-        the name alone does not make two columns one (never a line)."""
-        g = self.graph
-        family_names = {n for o in linked if g.node(o[0]).kind == "DS" for n in (g.key_family_of(o[2]) or ())}
-        covered = {g.node(o[0]).name for o in same_key if g.node(o[0]).kind == "DS"}
+        for o in linked:
+            if g.node(o[0]).kind == "DS":
+                names |= set(g.key_family_of(o[2]) or ())
         found: List[Outside] = []
         for nid in g.nodes():
             node = g.node(nid)
-            plan = self._plan[(nid, 0)] if node.kind == "DS" else None
-            if node.kind == "DS" and node.name not in covered and isinstance(plan, Plan):
-                found.extend(Outside(node.name, name, WHY_SAME_NAME_NOT_DECLARED, self.reach_of(f"T1:{node.name}")) for name in plan.names if name in family_names)
+            if node.kind == "DS" and node.name not in reached:
+                found.extend(Outside(node.name, name, WHY_DECLARED_KEY_NOT_REACHED, self.reach_of(f"T1:{node.name}")) for name in g.declared_entity_keys(node.name) if name in names)
         return tuple(found)
 
 
-def walk(graph: RecipeGraph, plans: PlanBook, start: Start, *, kind: str = "filter") -> Walk:
-    """The places where a step on the column `start.column` of `start.node` can be written, with what each reaches, each tagged with its group.
+def walk(graph: RecipeGraph, plans: PlanBook, start: Start, *, levels: Iterable[str], kind: str = "filter") -> Walk:
+    """The places of the chosen levels where a step on the column `start.column` of `start.node` can be written, with what each reaches, each with its group.
 
-    No scope is applied: the owner decided that the user chooses the scope by ticking (2026-11-20), so the walk returns every candidate place of the
-    three groups (`GROUPS`) and `Walk.within(group)` restricts a result to the groups a caller offers. `kind` is `filter` or `drop` (the join-key
-    refusal of a drop is not built here). Raises `ColumnNotFound` for a column the node does not have and `StartPlanFailed` when the engine could not
-    give the plan of the node; never returns fewer places than the groups reach without saying so (every place is a line, a note under a line, or a
-    place no plot reads). For many walks on one recipe build `LineageIndex` once."""
-    return LineageIndex(graph, plans).walk(start, kind=kind)
+    `levels` (some of `LEVELS`: source, T1, T2, T3) has no default: the user chooses which levels are offered (owner, D-0355). A place that covers several
+    tiers (an empty tier is no place) belongs to each of them. `kind` is `filter` or `drop` (the join-key refusal of a drop is not built here). Raises
+    `ColumnNotFound` for a column the node does not have and `StartPlanFailed` when the engine could not give the plan of the node; every place of the
+    chosen levels that the lineage reaches is a line, a note under a line, or a place no plot reads. For many walks on one recipe build `LineageIndex` once."""
+    return LineageIndex(graph, plans).walk(start, levels=levels, kind=kind)
