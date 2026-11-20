@@ -372,18 +372,20 @@ step, edit a step (= replace it).
 
 ## 13. What exists today vs target
 
+The column "Today" was brought up to date on 2026-11-20 (slices A and B merged on `dev`; D-0350).
+
 | Item | Today | Target |
 |---|---|---|
 | Plot-level filter/drop steps | per plot, dialog "this / all / all except" [built] | level 3, reach "only this plot" or "these plots (pick)" |
 | Concerned plots | checked on the data view (#58, closed: superseded by #60) | checked on the plot's audit T2 |
 | Exclude by key | not built; a `sample_id` filter on a plot lacking the column is skipped | levels 0-1, exact at the sources |
 | Dataset-level step (shared T2) | not built | level 2 |
-| Audit mode, chain drawing, project overview, coverage check | not built | build |
-| Draft / staged lists in audit | preview filters shown in My view | none: validated step + undo |
-| My view without sandbox flag | offered (ADR-085) | not offered |
-| `comparison_mode_enabled` | independent flag | child of the sandbox flag |
+| Audit mode, chain drawing, project overview, coverage check | Audit mode built (switch, audited plot, Compare; slice B); chain drawing, overview, coverage check not built | build |
+| Draft / staged lists in audit | staged rows wait to be sent; there is no My view (slice B) | none: validated step + undo |
+| My view without sandbox flag | gone: without the sandbox flag only Exploration exists (slice B) | not offered |
+| `comparison_mode_enabled` | child of the sandbox flag, fatal check both ways (D-0018, built) | child of the sandbox flag |
 | Export | steps, T2, T3 data | + original T1/T2, audit T1/T2, attrition table, coverage, audit keys, forked recipe |
-| Filters panel | one form, one global list | same form, two actions (preview / audit step) |
+| Filters panel | one form, two actions by mode (Apply in Exploration; Send to Audit in Audit mode while T3 is viewed); rows carry the key of their view (slice B) | same form, two actions (preview / audit step) |
 | `t3_translator` | plot-private fork, appends to tier-2 | + shared late insertion, + early source insertion |
 
 ## 14. Impact of the change and what must be retested
