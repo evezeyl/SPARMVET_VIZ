@@ -70,8 +70,9 @@ def test_the_demo_recipe_gives_its_join_keys():
 class Session:
     """What the two handlers need from the app: notifications, the propagation dialog and the scratch they fill."""
 
-    def __init__(self, keys, frame, raw=None):
+    def __init__(self, keys, frame, raw=None, plans=None):
         self.notes, self.opened = [], []
+        self.plans = plans
         self.scratch = Val()
         self.raw = raw
         self.state = Val({"primary_keys": keys, "active_plot_subtab": f"subtab_{DEMO_PLOT}"})
@@ -80,7 +81,7 @@ class Session:
     def stand_ins(self, **extra):
         base = dict(
             bootloader=SimpleNamespace(is_enabled=lambda flag: True),
-            home_state=self.state, active_home_subtab=Val(f"subtab_{DEMO_PLOT}"), recipe_raw=(lambda: self.raw) if self.raw is not None else None,
+            home_state=self.state, active_home_subtab=Val(f"subtab_{DEMO_PLOT}"), recipe_raw=(lambda: self.raw) if self.raw is not None else None, recipe_plans=lambda: self.plans,
             _notify=lambda message, **kw: self.notes.append((message, kw.get("type"))),
             _propagation_scratch=self.scratch,
             _open_propagation_modal=lambda nodes, subtab, kind: self.opened.append((nodes, kind)),

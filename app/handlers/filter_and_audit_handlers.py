@@ -118,7 +118,7 @@ def define_filter_audit_server(input, output, session, *,
                                 _resolve_active_spec, _resolve_active_lf,
                                 _spec_discrete_axes, _t3_drop_columns,
                                 _all_plot_subtab_ids, _plot_label, _table_identity,
-                                notification_log=None, recipe_raw=None):
+                                notification_log=None, recipe_raw=None, recipe_plans=None):
     """Register filter UI + T3 audit propagation handlers.
 
     Reactive deps (kwargs) — all shared with home_theater.define_server:
@@ -143,6 +143,7 @@ def define_filter_audit_server(input, output, session, *,
       _table_identity(spec, tier) → tuple | None — which stored table the dialog reads (`stored_table_identity`); None when no
                                     key says which rows it holds (the rows signal is then never equal)
       recipe_raw()               → dict | None — the resolved dictionary of the open recipe, for the rule of a key drop (`utils.key_drop`); None: no drop is refused
+      recipe_plans()             → PlanBook | None — the engine's plan book of the open recipe (`app/modules/plan_composer.py`), handed to the same rule
     """
 
     _in_audit = in_audit   # one function for HOME and these handlers: `home_theater._in_audit`
@@ -830,7 +831,7 @@ def define_filter_audit_server(input, output, session, *,
 
         # A column a join step later reads as a key is refused BY PLACE (D-0358, which modulates D-0297 and §12g.4): this drop is written in the plot's own steps (the
         # place `T3:<plot>`), after every join, so the rule finds nothing to refuse there today; it is asked all the same, with the place the step has.
-        problem = key_drop.DropGate(recipe_raw()).problem(f"T3:{p_id}", to_drop) if recipe_raw is not None and p_id else None
+        problem = key_drop.DropGate(recipe_raw(), recipe_plans() if recipe_plans is not None else None).problem(f"T3:{p_id}", to_drop) if recipe_raw is not None and p_id else None
         if problem:
             _notify(f"⛔ {problem}", type="error", duration=8)
             return

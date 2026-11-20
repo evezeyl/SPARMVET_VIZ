@@ -138,10 +138,11 @@ def closure(name: str, source: Path = SOURCE, outer: str = "define_filter_audit_
 class Box:
     """What `_col_drop_to_audit` needs from the app."""
 
-    def __init__(self, raw, columns):
+    def __init__(self, raw, columns, plans=None):
         self.notes, self.opened = [], []
         self.scratch = Val()
         self.raw = raw
+        self.plans = plans
         self.state = Val({"active_plot_subtab": "subtab_p1"})
         self.frame = pl.DataFrame({c: ["x"] for c in columns})
 
@@ -155,7 +156,7 @@ class Box:
             _open_propagation_modal=lambda nodes, subtab, kind: self.opened.append((nodes, kind)),
             _resolve_active_spec=lambda p_id: {}, _resolve_active_lf=lambda spec, tier=None: (self.frame.lazy() if tier == "T3" else pytest.fail(f"read tier {tier!r}, not T3: an audit step is written at the plot's table")),
             _t3_drop_columns=lambda: [], safe_input=lambda i, k, d=None: i.get(k, d), input={"preview_col_selector": kept},
-            ui=SimpleNamespace(update_selectize=lambda *a, **k: None), recipe_raw=lambda: self.raw,
+            ui=SimpleNamespace(update_selectize=lambda *a, **k: None), recipe_raw=lambda: self.raw, recipe_plans=lambda: self.plans,
         )()
 
 
@@ -400,7 +401,7 @@ class LiveInput:
 class Screen:
     """The real `define_session_server` over a real `SessionManager` folder; the notifications are collected."""
 
-    def __init__(self, tmp_path, monkeypatch, raw, name="user"):
+    def __init__(self, tmp_path, monkeypatch, raw, name="user", plans=None):
         self.notes, self.effects = [], []
         real_effect = reactive.Effect
 
@@ -430,7 +431,8 @@ class Screen:
         session_handlers.define_session_server(
             self.input, lambda fn: fn, SimpleNamespace(on_flushed=lambda fn, once=True: fn()), session_manager=self.manager,
             current_app_features=None, home_state=self.home_state, notification_log=self.log, session_processing_issues=self.issues,
-            safe_input=lambda i, k, d: "tiny" if k == "data_analysis_recipe_id" else d, recipe_raw=(lambda: raw) if raw is not None else None)
+            safe_input=lambda i, k, d: "tiny" if k == "data_analysis_recipe_id" else d, recipe_raw=(lambda: raw) if raw is not None else None,
+            recipe_plans=(lambda: plans) if plans is not None else None)
 
     def write(self, by_plot):
         self.manager.write_assembly_ghost(KEY, "tiny", "a" * 64, "b" * 64, {}, {})
