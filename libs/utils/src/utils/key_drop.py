@@ -101,7 +101,7 @@ def key_drop_sentence(found: Sequence[DropFacts]) -> str:
     parts: List[str] = []
     for facts in found:
         joins = ", ".join(_where(n) for n in facts.needs if n.certain)
-        parts.append(f"the column {facts.column!r} at {facts.place}: {joins} read{'s' if len([n for n in facts.needs if n.certain]) == 1 else ''} it as a join key")
+        parts.append(f"the column {facts.column!r} at {facts.place}: it is read as a join key by {joins}")
     return ("Cannot drop " + "; ".join(parts) + ". A join needs its key column, so a key column cannot be dropped before that join through the audit. "
             "Use a row filter or a removal by key instead, or drop the column after the join (a plot's own steps are after every join).")
 

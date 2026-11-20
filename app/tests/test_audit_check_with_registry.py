@@ -133,7 +133,7 @@ def test_the_copy_refuses_to_drop_a_column_a_later_join_reads_as_a_key_and_chang
     refused where the join J (step 1 of T1:J) is still to come, T1:A and T1:B, and the sentence names that join."""
     audit = start_audit(recipe(), AUD)
     before = audit.recipe.copy()
-    with pytest.raises(AuditCopyError, match=f"Cannot drop the column 'sample_id' at {place}: step 1 of T1:J.*reads it as a join key.*row filter or a removal by key"):
+    with pytest.raises(AuditCopyError, match=f"Cannot drop the column 'sample_id' at {place}: it is read as a join key by step 1 of T1:J.*row filter or a removal by key"):
         add_step(audit, place, KEY_DROP, "why")
     assert audit.created == 0 and audit.recipe == before and AUDIT_STEPS not in str(audit.recipe)
 
@@ -185,7 +185,7 @@ def test_a_hand_made_key_drop_is_named_by_the_integrity_check_and_by_the_audit_p
     errors = integrity_errors(audit.recipe, recipe())
     assert any(f"audit_{AUD}_1" in e and "Cannot drop the column 'sample_id' at T1:A" in e for e in errors), errors
     found = [p for p in check(audit.recipe, "audit") if p.code == "AU04"]
-    assert [p.path for p in found] == ["data_schemas.A.tier1.audit_steps[1].columns"] and "reads it as a join key" in found[0].message
+    assert [p.path for p in found] == ["data_schemas.A.tier1.audit_steps[1].columns"] and "is read as a join key by" in found[0].message
     # the same hand-made step at a place after the join is no problem: by place
     ok = start_audit(recipe(), AUD)
     add_step(ok, "T1:J", {"action": "polars_drop", "columns": ["v"]}, "why")

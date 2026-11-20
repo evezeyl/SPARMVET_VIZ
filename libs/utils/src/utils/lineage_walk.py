@@ -733,7 +733,8 @@ class LineageIndex:
             refusal = Reason(KEY_NEEDED_LATER, (("column", occ[2]), ("place", line.place), ("needs", tuple(n for n in facts.needs if n.certain))))
             state, reason = GREY, (reason if line.state == GREY and reason is not None else refusal)
         elif facts.uncertain and state == TICK:
-            state, reason = GREY, (facts.unfollowed[0] if facts.unfollowed else Reason(CANNOT_FOLLOW, (("node", occ[0]),)))
+            maybe = next((n for n in facts.needs if not n.certain), None)          # a join that reads the column only if an uncertain link is the right one
+            state, reason = GREY, (facts.unfollowed[0] if facts.unfollowed else Reason(CANNOT_FOLLOW, (("node", maybe.step.node if maybe else occ[0]), ("step", maybe.step.step if maybe else 0))))
         consequences = self._reading_consequences(self._forward_costs(occ))
         if candidate is not None:
             plan = self._plan_consequences(self.place_first[line.place], candidate)

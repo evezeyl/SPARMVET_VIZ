@@ -30,7 +30,7 @@ def needs(facts):
 def test_the_gate_refuses_where_a_join_is_later_and_allows_where_it_is_not_with_the_sentence_of_the_rule():
     recipe, _ = F.chain()
     sentence = key_drop.key_drop_problem(recipe, "T1:A", ["sample_id"])
-    assert "Cannot drop the column 'sample_id' at T1:A" in sentence and "step 1 of T1:J" in sentence and "reads it as a join key" in sentence
+    assert "Cannot drop the column 'sample_id' at T1:A" in sentence and "step 1 of T1:J" in sentence and "is read as a join key by" in sentence
     assert "row filter or a removal by key" in sentence
     for place in ("T1:J", "T2:J", "T2:A", "T3:P1", "T3:P2"):
         assert key_drop.key_drop_problem(recipe, place, ["sample_id"]) is None, place

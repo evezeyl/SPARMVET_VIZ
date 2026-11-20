@@ -487,7 +487,7 @@ def test_a_restored_session_keeps_a_key_drop_at_a_plot_and_says_nothing_about_ke
         s.write(SAVED)
         await s.restore()
         assert steps_of(s.state()) == {"subtab_p1": [("filter_row", "year"), ("drop_column", "sample_id"), ("drop_column", "source")], "subtab_p2": [("drop_column", "sample_id")]}
-        assert s.texts("join key") == [] and s.texts("reads it as") == []
+        assert s.texts("join key") == [] and s.texts("is read as") == []
     asyncio.run(scenario())
 
 

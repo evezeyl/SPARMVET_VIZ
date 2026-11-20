@@ -118,7 +118,7 @@ def test_L029_a_key_is_refused_where_a_join_still_reads_it_and_allowed_after_it(
     assert places(walk) == ["T1:A", "T1:B", "T1:J", "T3:P1", "T3:P2"]
     assert needs(line(walk, "T1:A")) == [("T1:J", 1, "base", "sample_id")]            # the join J, its table, its step number and the name it reads
     assert needs(line(walk, "T1:B")) == [("T1:J", 1, "right", "sample_id")]
-    for place in ("T1:J", "T3:P1", "T3:P2"):                                           # after the join, and in the plots' own steps: nothing reads it as a key
+    for place in ("T1:J", "T3:P1", "T3:P2"):                                           # after the join, and in the plots' own steps: no join step reads the column as a key
         assert line(walk, place).refusal is None and line(walk, place).state == "tick", place
     refused = [x for x in walk.lines if x.refusal]
     assert [x.place for x in refused] == ["T1:A", "T1:B"] and all(x.state == "grey" and x.reason.code == KEY_NEEDED_LATER for x in refused)
@@ -492,3 +492,42 @@ def test_I6_with_the_candidate_plan_every_tickable_line_builds_and_every_failure
                     if failed and x.refusal is None:
                         assert any(c.code == BUILD_FAILS for c in x.consequences) or x.state == "grey", (name, x.place, x.occurrences[0].name, failed)
     assert lines > 100 and silent > 50
+
+
+# ----------------------------------------------------------------------------------------------------------------------------- the walk and the gate are one rule (L029)
+
+def test_L029_the_walk_and_add_step_agree_on_every_place_of_every_fixture():
+    """The walk of a drop and the gate of the audit copy (`add_step`, names-only plan) give the same verdict at every place of every column of every fixture whose steps are all
+    read: a line is refused exactly when `add_step` refuses its step for the key. A wrong walk that re-implements the rule (a refusal by name, a second rule) fails here."""
+    from utils.audit_copy import AuditCopyError, add_step, start_audit
+    compared = 0
+    for name, node, column, recipe, tables, walk in _walks():
+        for x in walk.lines:
+            if len(x.occurrences) != 1 or x.tier == "DS":
+                continue
+            audit = start_audit(recipe, "1a2b3c4d")
+            try:
+                add_step(audit, x.place, {"action": "polars_drop", "columns": [x.occurrences[0].name]}, "why")
+                gate_refuses = False
+            except AuditCopyError as error:
+                assert "is read as a join key by" in str(error), (name, x.place, str(error))
+                gate_refuses = True
+            assert gate_refuses == (x.refusal is not None), (name, node, column, x.place, x.occurrences[0].name)
+            compared += 1
+    assert compared > 150
+
+
+def test_a_key_that_a_join_reads_only_through_a_link_the_plan_contradicts_is_grey_not_refused_PROVISIONAL():
+    """J reads `lab` (which came from B) as the key of its second join. The plan of the first join contradicts the reading (a type differs), so the walk cannot prove that B's
+    `lab` is the column the second join reads: the line is grey with the reason, the need is listed as uncertain, and the gate does not refuse (the build would say)."""
+    recipe, tables = two_joins()
+    graph, plans = setup(recipe, tables)
+    book = {(n, k): plans.get(n, k) for n in graph.nodes() for k in range(len(graph.node(n).steps) + 1)}
+    after = book[("T1:J", 1)]
+    book[("T1:J", 1)] = type(after).of((name, "Int64" if name == "val" else kind) for name, kind in after.columns)      # the plan says `val` is a number: the reading expects a string
+    index = LineageIndex(graph, PlanBook(book))
+    facts = index.drop_facts("T1:B", "lab")
+    maybe = [(n.step.node, n.step.step, n.side, n.certain) for n in facts.needs]
+    assert ("T1:J", 2, "base", False) in maybe and not facts.refused and facts.uncertain
+    x = line(index.walk(Start("T1:B", "lab"), levels=TIERS, kind="drop"), "T1:B")
+    assert x.refusal is None and x.state == "grey" and x.reason.get("node") == "T1:J" and x.reason.get("step") == 2
