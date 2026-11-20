@@ -28,6 +28,10 @@ The badge next to the table says which table it is and when two tables are the s
 
 Operators: **= equals**, **≠ not equal**, **> greater than**, **≥ greater or equal**, **< less than**, **≤ less or equal**, **↔ between** (numbers); **∈ any of**, **∉ none of** (categories). Choosing one value shows as "column = value"; several values show as "any of".
 
+A column of **whole numbers** (an integer type) takes whole numbers only, for every operator: a decimal such as 12.5 is refused with a line under the box and nothing is added. A column of decimal numbers takes decimals.
+
+In the right panel (Pipeline Audit) the **Pending** badge and the **Apply** button are shown in Audit mode only: Exploration never writes audit steps.
+
 ### The seed line and Reshuffle
 A plot with a random layer (for example jitter) shows a line with its plot: the seed and where it comes from, for example "seed 0, written in the recipe". The same data and recipe then give the same picture everywhere. In **Audit** mode, a plot whose seed is written nowhere also has **Reshuffle**: it draws another arrangement and pins it as an audit step; **Remove the pinned seed** goes back. A seed written in the recipe is kept, so those plots have no Reshuffle.
 
@@ -43,4 +47,4 @@ Set a bundle label, pick a **Quality** preset (Web or Publication ≥600 DPI), a
 **Import a bundle** (above the export fields) reads a reproducibility bundle exported earlier and checks it against this machine; it writes a new recipe and session and never changes the app that is open. Reload the page afterwards to see the new recipe in the selector.
 
 ### Sessions
-**Export Active Session (.zip)** downloads the files of the active session: the record of the recipe and data it belongs to, and your saved audit steps. Exploration filters are never saved. Each saved session is listed with **Restore** (reload it) and **Delete Session**.
+**Export Active Session (.zip)** downloads the files of the active session: the record of the recipe and data it belongs to, and your saved audit steps. Exploration filters are never saved. Each saved session is listed with **Restore** (reload it) and **Delete Session**; Delete asks for a confirmation first ("Delete this session? It cannot be undone.") and Cancel changes nothing.

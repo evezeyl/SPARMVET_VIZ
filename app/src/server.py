@@ -238,6 +238,7 @@ def server(input, output, session):
             snapshot_steps=snapshot_steps,
             active_cfg=active_cfg,
             active_collection_id=active_collection_id,
+            home_mode=home_mode,
             home_state=home_state,
             session_manager=session_manager,
             notification_log=notification_log,

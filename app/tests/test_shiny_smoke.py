@@ -729,6 +729,7 @@ class TestSessionListRefresh:
             expect(delete_btn).to_be_visible(timeout=10_000)
 
             delete_btn.click()
+            page.locator("#session_delete_one_confirm").click()   # D-0378: Delete asks first
             _wait_shiny(page)
 
             # No page.reload() — the fix is that the panel re-renders on its own.

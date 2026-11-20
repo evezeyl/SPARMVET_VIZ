@@ -879,6 +879,8 @@ body { background-color: #d1d1d1; margin: 0 !important; padding: 0 !important; }
 .spv-text-xs    { font-size: 0.75em; }
 .spv-text-xxs   { font-size: 0.72em; }
 .spv-text-meta  { font-size: 0.7em; }
+/* a plain line under a value box that refuses its value (the filter form, D-0376): error red text, no fill */
+.spv-field-error { color: #d62828; font-weight: 600; }
 .spv-text-micro { font-size: 0.65em; }   /* .ultra-small is rem-based; this is em-based */
 
 /* Flex / overflow helpers */

@@ -16,7 +16,7 @@ Why filter UI and T3 audit live in one file:
 from __future__ import annotations
 
 # @deps
-# provides: function:define_filter_audit_server, effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change, slice B), output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
+# provides: function:define_filter_audit_server, output:filter_whole_number_ui (D-0376), effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change, slice B), output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
 # consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, dialog_schema_signature, dialog_rows_signature, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/key_drop.py (DropGate: the drop of a key column by place, D-0358), libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
@@ -32,7 +32,7 @@ from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
     dialog_value, not_offered_line, value_choices, value_widget_for, AuditStepError, dialog_frame, dialog_rows_signature, dialog_schema_signature,
-    column_bounds, column_is_in_frame, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
+    column_bounds, column_is_in_frame, refuse_decimal_for_whole_numbers, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
 from utils import key_drop
 from utils.filter_values import UNIT_NS, FilterValueError, kind_of
@@ -386,7 +386,7 @@ def define_filter_audit_server(input, output, session, *,
             ui.output_ui("filter_type_ui"),
             ui.div(
                 ui.output_ui("filter_op_ui"),
-                ui.div(ui.output_ui("filter_value_ui"), class_="spv-flex-1"),
+                ui.div(ui.output_ui("filter_value_ui"), ui.output_ui("filter_whole_number_ui"), class_="spv-flex-1"),
                 class_="d-flex gap-1 align-items-center"
             ),
             class_="mt-2 pt-2 border-top spv-text-sm",
@@ -506,6 +506,28 @@ def define_filter_audit_server(input, output, session, *,
                 ui.output_ui("filter_closed_text_ui"),
             )
         return ui.input_text("fb_value", label=None, placeholder="Value…")
+
+    @output
+    @render.ui
+    def filter_whole_number_ui():
+        """The plain line under the value box when a decimal is typed for a whole-number column (D-0376); reads the boxes, mounts none.
+
+        PROVISIONAL sentence: the same as the refusal of "+ Add" (the rule is `t3_audit_engine.refuse_decimal_for_whole_numbers`). Empty otherwise.
+        """
+        _dialog_schema_signal.get()
+        _form_reset.get()
+        _lf, types, _disc = _dialog_table_now()
+        dtype = types.get(_selected_column(types))
+        if kind_of(dtype) != "int":
+            return ui.div(id="fb_whole_number_line")
+        for box in ("fb_value", "fb_value_lo", "fb_value_hi"):
+            raw = safe_input(input, box, None)
+            if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+                try:
+                    refuse_decimal_for_whole_numbers(raw, dtype)
+                except FilterValueError as exc:
+                    return ui.tags.small(str(exc), class_="d-block spv-text-meta spv-field-error", id="fb_whole_number_line")
+        return ui.div(id="fb_whole_number_line")
 
     @output
     @render.ui

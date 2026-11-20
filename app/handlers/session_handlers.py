@@ -10,7 +10,7 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_session_server, output:session_management_ui, output:session_export_active
+# provides: function:define_session_server, output:session_management_ui, output:session_export_active, effect:_handle_delete_one_confirmed (D-0378)
 # consumes: app.src.bootloader (get_session_import_limits — D-0283), shiny, app.modules.error_notice (notice, issue_entry — VERIF-FIX-2), app.modules.plot_issue_reporter (make_issue_reporter), pathlib, app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1), app.modules.session_manager (normalise_audit_steps, split_key_drops, key_drop_notice, session_id_collisions, session_input_id_parts)
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-097
@@ -423,24 +423,12 @@ def define_session_server(input, output, session, *,
                             "check that the session folder can be read and try Restore again; if it keeps failing, "
                             "delete the session and record the steps again", exc), type="error", duration=10)
 
-            # Delete
+            # Delete: D-0378, asks first. The click only opens the confirmation; `_handle_delete_one_confirmed` deletes.
             delete_id = f"session_delete_{safe_sk}"
             clicks = _read_input(delete_id, "delete", sk)
             if clicks is not _NOT_READ and _is_new_click("delete", sk, clicks):
                 with reactive.isolate():
-                    try:
-                        session_manager.delete_session(sk)
-                        _session_list_version.set(_session_list_version.get() + 1)  # HOM-53
-                        _notify(
-                            f"🗑 Session deleted: {sk[:24]}…",
-                            type="message", duration=4,
-                        )
-                        continue        # nothing more to read for a session that is gone (reading it would create its folder again)
-                    except Exception as exc:
-                        _notify(notice(
-                            f"The session {sk[:24]} could not be deleted",
-                            "close any program that uses the session folder, check that it can be written and try again", exc),
-                            type="error", duration=10)
+                    _ask_delete_one(sk)
 
             # Label (REPRO-SESSION-LABELS-1, #50): saved on blur (ui.input_text's own
             # update_on="blur"), not a separate button. Idempotent guard (R3,
@@ -464,6 +452,48 @@ def define_session_server(input, output, session, *,
                     _tell_once("label", sk, new_label, notice(
                         f"The label of the session {sk[:24]} could not be saved",
                         "check that the session folder can be written and type the label again", exc))
+
+    # D-0378: "Delete Session" asks for a confirmation before anything is deleted (the sentence is PROVISIONAL). The key of the
+    # session the open dialog is about is kept here, read only when its Delete button is pressed; Cancel changes nothing.
+    _delete_asked: dict[str, str] = {}
+
+    def _ask_delete_one(sk: str) -> None:
+        _delete_asked["sk"] = sk
+        try:
+            label = (session_manager.get_session_label(sk) or "").strip()
+        except Exception:
+            label = ""
+        shown = label or sk
+        ui.modal_show(ui.modal(
+            ui.p("Delete this session? It cannot be undone."),
+            ui.p(ui.tags.strong(shown), class_="mb-0 text-break"),
+            title="Delete session?",
+            easy_close=True,
+            footer=ui.TagList(
+                ui.modal_button("Cancel"),
+                ui.input_action_button("session_delete_one_confirm", "Delete", class_="btn btn-sm"),
+            ),
+        ))
+
+    @reactive.Effect
+    @reactive.event(input.session_delete_one_confirm)
+    def _handle_delete_one_confirmed():
+        sk = _delete_asked.pop("sk", None)
+        if session_manager is None or sk is None:
+            ui.modal_remove()
+            return
+        try:
+            session_manager.delete_session(sk)
+        except Exception as exc:
+            ui.modal_remove()
+            _notify(notice(
+                f"The session {sk[:24]} could not be deleted",
+                "close any program that uses the session folder, check that it can be written and try again", exc),
+                type="error", duration=10)
+            return
+        _session_list_version.set(_session_list_version.get() + 1)  # HOM-53
+        ui.modal_remove()
+        _notify(f"🗑 Session deleted: {sk[:24]}…", type="message", duration=4)
 
     # HOM-54: confirm-before-destroy, same ui.modal/modal_button/modal_show/modal_remove
     # pattern as the propagation modal in filter_and_audit_handlers.py.
