@@ -39,7 +39,8 @@ _WATCH = """async ({recipe, ms}) => {
     sel.value = recipe;
     sel.dispatchEvent(new Event('input', {bubbles: true}));
     sel.dispatchEvent(new Event('change', {bubbles: true}));
-    const out = {greyAlways: true, firstOpenMs: null, busyGaps: [], notice: false, samples: 0};
+    const out = {greyAlways: true, firstOpenMs: null, busyGaps: [], notice: false, samples: 0, coverSamples: 0, shownUnderCover: 0, shownGrey: 0};
+    const shown = (e) => !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
     let lastBusy = null;
     while (performance.now() - t0 < ms) {
         const t = performance.now() - t0;
@@ -48,6 +49,9 @@ _WATCH = """async ({recipe, ms}) => {
         if (!grey) { out.greyAlways = false; if (out.firstOpenMs === null) out.firstOpenMs = Math.round(t); }
         if (t > 300 && !busy && grey && out.firstOpenMs === null) out.busyGaps.push(Math.round(t));
         out.samples += 1;
+        const cover = !!document.querySelector('#home_opening_cover');
+        if (cover) { out.coverSamples += 1; if (shown(b())) out.shownUnderCover += 1; }
+        else if (shown(b()) && grey) out.shownGrey += 1;
         await new Promise(r => setTimeout(r, 50));
     }
     out.notice = !!document.querySelector('.shiny-notification') &&
@@ -91,13 +95,28 @@ def test_a_switch_the_server_needs_longer_than_the_fallback_keeps_the_button_gre
     seen = page.evaluate(_WATCH, {"recipe": Q, "ms": int(SLOW_SECONDS * 1000) - 800})
     assert seen["greyAlways"], f"the button opened while the server was still working: {seen}"
     assert not seen["notice"], f"the fallback notice appeared while the server was still working: {seen}"
-    assert page.locator(BTN).inner_text().strip() != "", "the button has no text"
+    # D-0372: while the recipe is being opened the Export panel body is hidden by the cover, so the button is never visible then
+    assert seen["shownUnderCover"] == 0, f"the Export button was visible while the opening cover was on the screen: {seen}"
+    cover_on = page.locator("#home_opening_cover").count() > 0
+    if cover_on:
+        assert not page.locator(BTN).is_visible(), "the Export button is visible under the cover"
+    else:
+        assert page.locator(BTN).is_visible() and "export-not-ready" in (page.locator(BTN).get_attribute("class") or ""), \
+            "after the cover and before the server is done the button must be visible and grey"
+        assert page.locator(BTN).inner_text().strip() != "", "the button has no text"
+    # a real mouse click on the place of the button (no actionability wait: it hits what is really there): under the cover the hidden panel takes
+    # no click, on the grey button the click has no effect; either way no download starts (asserted below)
+    box = page.locator(BTN).bounding_box()
+    assert box is not None, "the button has no place on the page"
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
     press = page.evaluate("""() => { const b = document.querySelector('#export_bundle_download');
         const ev = new MouseEvent('click', {bubbles: true, cancelable: true}); b.dispatchEvent(ev);
         return {prevented: ev.defaultPrevented, grey: b.classList.contains('export-not-ready')}; }""")
     assert press["prevented"] and press["grey"], f"a press during the long switch was not refused: {press}"
     assert downloads == [], "the press during the long switch started a download"
     _ready(page, 90_000)
+    expect(page.locator("#home_opening_cover")).to_have_count(0)
+    assert page.locator(BTN).is_visible() and page.locator(BTN).inner_text().strip() != "", "after the server is done the button is visible with its text"
     assert page.locator(_LOST).count() == 0, "the button was opened by the fallback, not by the server's confirmation"
     _expect_fields(page, _shown(Q_SET), "Q's own fields after the long switch")
     z = _download(page)
