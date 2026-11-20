@@ -107,7 +107,8 @@ class GalleryManager:
         """Why an example cannot join the ones already accepted: its name or its plot id is already taken (PROVISIONAL wording).
 
         The plot id goes through the set check of the format (`check_recipe_set`, X5: the app registers plots by id);
-        the name shown in the dropdown is compared here, as written. The earlier example (folder name order) is kept.
+        the name shown in the dropdown is compared here, as written. PROVISIONAL rule (not decided by the owner): when two
+        examples repeat a name or a plot id, the first in folder-name order is kept and the later one is left out.
         """
         reasons = [f"{problem.text()}" for problem in check_recipe_set({**accepted, name: recipe}) if problem.path.startswith(f"{name}:")]
         taken = {example_name(other): other_id for other_id, other in accepted.items()}
@@ -115,6 +116,16 @@ class GalleryManager:
         if label in taken:
             reasons.append(f"the name {label!r} is also the name of the example {taken[label]}. Fix: give each example its own ui_label")
         return reasons
+
+    def _index_path(self, name: str) -> str:
+        """The recipe path an index entry holds: relative to the folder the program runs from (the project root), in
+        `/` form, for an absolute or a relative gallery folder alike, so the index never depends on where the gallery
+        sits on the machine. A gallery folder outside the working folder is named by its own folder name."""
+        recipe = (self.gallery_dir / name / RECIPE_FILE).resolve()
+        try:
+            return recipe.relative_to(Path.cwd().resolve()).as_posix()
+        except ValueError:
+            return (Path(self.gallery_dir.resolve().name) / name / RECIPE_FILE).as_posix()
 
     def build_index(self, examples: Examples) -> dict:
         """The index of the accepted examples and the pivot of the six axes, built and not written.
@@ -129,7 +140,7 @@ class GalleryManager:
             taxonomy = example_taxonomy(recipe)
             registry[name] = {
                 "name": example_name(recipe),
-                "path": str(folder / RECIPE_FILE),
+                "path": self._index_path(name),
                 "has_preview": (folder / PREVIEW_FILE).exists(),
                 "has_thumb": (folder / THUMB_FILE).exists(),
                 "taxonomy": taxonomy,

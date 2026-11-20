@@ -139,6 +139,11 @@ def define_server(input, output, session, *,
                 return
         _remember(selected=chosen, dropped=None)
 
+    def _example_dir():
+        """The folder of the example shown: the gallery folder of the deployment plus its id. The index holds no path that
+        depends on where the gallery sits, so the folder is never read from it."""
+        return Path(bootloader.get_location("gallery")) / _current_rid()
+
     @reactive.Calc
     def _gallery_active_metadata():
         rid = _current_rid()
@@ -159,11 +164,7 @@ def define_server(input, output, session, *,
                        "Showing the first example that matches instead.", class_="alert alert-warning m-3 gallery-dropped")
                 if dropped else None)
 
-        path_str = meta.get("path")
-        if not path_str:
-            return ui.div("Path missing in index.", class_="text-danger")
-
-        img_path = Path(path_str).parent / "preview_plot.png"
+        img_path = _example_dir() / "preview_plot.png"
         if img_path.exists():
             try:
                 with open(img_path, "rb") as f:
@@ -187,11 +188,7 @@ def define_server(input, output, session, *,
         meta = _gallery_active_metadata()
         if not meta:
             return None
-        path_str = meta.get("path")
-        if not path_str:
-            return None
-
-        example_dir = Path(path_str).parent
+        example_dir = _example_dir()
         if (example_dir / "example_data.tsv").exists():
             try:
                 # the table the plot is drawn from, read through the declared types (one reader with the picture)
@@ -207,12 +204,9 @@ def define_server(input, output, session, *,
         meta = _gallery_active_metadata()
         if not meta:
             return "Select an example"
-        path_str = meta.get("path")
-        if not path_str:
-            return "Data analysis recipe path not found"
-
-        if Path(path_str).exists():
-            with open(path_str, "r") as f:
+        recipe_path = _example_dir() / "data_analysis_recipe.yaml"
+        if recipe_path.exists():
+            with open(recipe_path, "r") as f:
                 return f.read()
         return "Source YAML not found"
 
@@ -223,11 +217,7 @@ def define_server(input, output, session, *,
         if not meta:
             return ui.div("Select an entry to view guidance.", class_="p-4 text-center text-muted")
 
-        path_str = meta.get("path")
-        if not path_str:
-            return ui.div("Metadata path not found", class_="text-danger")
-
-        md_path = Path(path_str).parent / "example_meta.md"
+        md_path = _example_dir() / "example_meta.md"
         if md_path.exists():
             with open(md_path, "r") as f:
                 return ui.div(ui.HTML(external_links_new_tab(str(ui.markdown(f.read())))), class_="gallery-guidance-styled")

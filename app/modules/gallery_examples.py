@@ -44,7 +44,7 @@ def check_gallery(gallery_dir: Union[str, Path]) -> Examples:
 def check_gallery_at_start(gallery_dir: Union[str, Path]) -> Tuple[Examples, str]:
     """The check at app start (DEC48): the full check of every example, the index fixed if it disagrees with it.
 
-    The same function as the rebuild (`GalleryManager.sync_index` calls `rebuild_index`). It never raises for an
+    The same check and the same build of the index as the rebuild (`GalleryManager.sync_index` builds the index with `build_index` and writes it with `write_index` only when it differs from the file). It never raises for an
     example: one that fails is left out of the index and its reasons are in `metadata.rejected`.
     """
     return GalleryManager(str(gallery_dir)).sync_index(checker_catalogs())
