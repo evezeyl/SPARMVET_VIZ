@@ -34,7 +34,7 @@ import polars as pl
 import yaml
 
 from utils import action_names, recipe_tiers
-from utils.action_names import TIER1_ONLY
+from utils.action_names import AUDIT_ACTIONS, TIER1_ONLY
 from utils.random_layers import is_random_layer, is_seed_value
 from utils.engines import ENGINES
 from utils.filter_values import FilterValueError, check_filter
@@ -58,7 +58,7 @@ _ORDER_STEPS = frozenset({action_names.SORT, action_names.UNIQUE, action_names.G
 _SUM_OF_COLUMN = re.compile(r"pl\.col\(\s*['\"]([^'\"]+)['\"]\s*\)\.sum\(\)")
 
 PROFILES = ("run", "build", "gallery", "audit")
-_AUDIT_ID = re.compile(r"^audit_[0-9a-f]{8}_\d+$")
+_AUDIT_ID = recipe_tiers.AUDIT_ID   # one form, one place (`utils.recipe_tiers`)
 _SNAKE = re.compile(r"^[a-z][a-z0-9_]*$")
 _TIER1_ONLY_DEFAULT = TIER1_ONLY
 
@@ -167,6 +167,7 @@ class _Check:
         self.schema_ids: Set[str] = set()
         self.join_ids: Set[str] = set()
         self.schema_bodies: Dict[str, Any] = {}
+        self.audit_ids: Dict[str, str] = {}   # {audit id: where it stands}: an audit id is used once in the whole recipe
 
     # -- helpers
     def add(self, code: str, path: str, message: str, fix: str = "", severity: str = "E") -> None:
@@ -537,7 +538,7 @@ class _Check:
         wanted = self.spec["elements"]["tier"]
         known = set(wanted["required"]) | set(wanted["optional"])
         for key in body:
-            if key in known:
+            if key in known or key == recipe_tiers.AUDIT_STEPS:   # the audit list is judged below, by the profile
                 continue
             if key in ("tier1", "tier2", "tier3"):
                 self.add(code, f"{path}.{key}", f"{key} is written inside {name}: each tier is a key of its own table, join or plot entry, not of another tier",
@@ -546,6 +547,8 @@ class _Check:
                 self.add(code, f"{path}.{key}", f"{key} is not a key of a tier", "a tier holds data_engine and steps only")
         if "data_engine" in body:
             self.engine_value(body["data_engine"], "data_engine", f"{path}.data_engine")
+        if recipe_tiers.AUDIT_STEPS in body:
+            self.audit_list(body[recipe_tiers.AUDIT_STEPS], f"{path}.{recipe_tiers.AUDIT_STEPS}", name, self.effective_engine("data_engine", body))
         if "steps" not in body:
             self.add(code, path, f"{name} has no steps", f"write {name}: {{steps: []}} (steps is the list of steps, empty when there are none)")
             return None
@@ -555,6 +558,24 @@ class _Check:
             return None
         self.steps(steps, f"{path}.steps", name, self.effective_engine("data_engine", body))
         return steps
+
+    def audit_step_keys(self, step: dict, where: str) -> None:
+        """What an item of `audit_steps` must have (D-0322, D-0329, D-0321): an allowed action, an audit id used once in the recipe, a reason."""
+        action = step.get("action")
+        if isinstance(action, str) and action not in AUDIT_ACTIONS:
+            self.add("AU02", f"{where}.action", f"the audit step is '{action}'; an audit step is a filter, a column drop or a removal by key: {', '.join(AUDIT_ACTIONS)} "
+                     "(a removal by key is the filter on the key column)", f"use one of {', '.join(AUDIT_ACTIONS)}. PROVISIONAL text")
+        step_id = step.get("id")
+        if not isinstance(step_id, str) or not _AUDIT_ID.match(step_id):
+            self.add("AU03", f"{where}.id", f"the audit step has no audit id ({step_id!r})", "write id: audit_<8 hex>_<k>")
+        elif step_id in self.audit_ids:
+            self.add("AU03", f"{where}.id", f"the audit id {step_id} is used twice (also at {self.audit_ids[step_id]})", "ids are unique in the recipe")
+        else:
+            self.audit_ids[step_id] = where
+        reason = step.get(recipe_tiers.AUDIT_COMMENT)
+        if not isinstance(reason, str) or not reason.strip():
+            self.add("AU03", f"{where}.{recipe_tiers.AUDIT_COMMENT}", "the audit step has no reason (audit_comment is a text that is not empty)",
+                     f"write {recipe_tiers.AUDIT_COMMENT}: <why the step was added>. PROVISIONAL text")
 
     def sum_advices(self, wrangling: Dict[str, list], path: str, fields: dict) -> None:
         """ST15 (advice, never blocks): a sum on a column declared Int32 or UInt32 (D43, PROVISIONAL).
@@ -640,24 +661,42 @@ class _Check:
                              "Suggestion: write a polars_sort step with maintain_order: true before this one.",
                              "A")
 
-    def steps(self, steps: list, path: str, tier: str, engine: Any = None) -> None:
+    def audit_list(self, audit_steps: Any, path: str, tier: str, engine: Any) -> None:
+        """The `audit_steps` list of a tier (D-0332). Legal only in an audit recipe (profile `audit`); anywhere else it is refused with one plain line and its
+        content is not read. In an audit recipe each item is a step of an allowed audit action (`action_names.AUDIT_ACTIONS`, D-0322) with an audit id and a
+        reason (`audit_comment`, a text that is not empty), and passes the same checks as any step (the action's parameters, the engine of the tier)."""
+        if self.profile != "audit":
+            self.add("AU01", path, "only an audit recipe has audit steps (an audit recipe is the copy the audit made of a recipe; the app writes it, an author never does)",
+                     f"remove {recipe_tiers.AUDIT_STEPS}; a step of the author goes in steps. PROVISIONAL text")
+            return
+        if not isinstance(audit_steps, list):
+            self.add("AU03", path, f"{recipe_tiers.AUDIT_STEPS} is a list of steps", f"write {recipe_tiers.AUDIT_STEPS}: [...]. PROVISIONAL text")
+            return
+        self.steps(audit_steps, path, tier, engine, audit=True)
+
+    def steps(self, steps: list, path: str, tier: str, engine: Any = None, audit: bool = False) -> None:
+        """The steps of one list. `audit` is True for an `audit_steps` list of an audit recipe, False for the author's `steps` (where an audit id or an
+        `audit_comment` is refused in every profile)."""
         actions = (self.catalogs or {}).get("actions")
         tier1_only = (self.catalogs or {}).get("tier1_only", _TIER1_ONLY_DEFAULT)
-        audit_ids: Set[str] = set()
         for index, step in enumerate(steps, start=1):
             where = f"{path}[{index}]"
             if not isinstance(step, dict) or "action" not in step:
                 self.add("ST01", where, "a step is a mapping with an action", "write - {action: <name>, ...}")
                 continue
-            if "id" in step:
-                if self.profile != "audit":
-                    self.add("ST08", f"{where}.id", "authors write no step id (the app writes it)", "remove id")
-                elif not isinstance(step["id"], str) or not _AUDIT_ID.match(step["id"]):
-                    self.add("ST08", f"{where}.id", f"{step['id']!r} is not an audit id", "write audit_<8 hex>_<k>")
-                elif step["id"] in audit_ids:
-                    self.add("ST08", f"{where}.id", f"the id {step['id']} is used twice", "ids are unique in a list")
-                else:
-                    audit_ids.add(step["id"])
+            if audit:
+                self.audit_step_keys(step, where)
+            else:
+                if "id" in step:
+                    if self.profile == "audit" and isinstance(step["id"], str) and _AUDIT_ID.match(step["id"]):
+                        self.add("ST08", f"{where}.id", f"the audit id {step['id']} is on a step of the author's list: an audit step belongs in {recipe_tiers.AUDIT_STEPS}",
+                                 f"move the step to {recipe_tiers.AUDIT_STEPS}, or remove id. PROVISIONAL text")
+                    else:
+                        self.add("ST08", f"{where}.id", "authors write no step id (the app writes it)", "remove id")
+                if recipe_tiers.AUDIT_COMMENT in step:
+                    self.add("AU01", f"{where}.{recipe_tiers.AUDIT_COMMENT}",
+                             f"{recipe_tiers.AUDIT_COMMENT} is the reason of an audit step: it is written only on a step of {recipe_tiers.AUDIT_STEPS} in an audit recipe",
+                             f"remove {recipe_tiers.AUDIT_COMMENT}; the author's note is comment. PROVISIONAL text")
             if "comment" in step and not isinstance(step["comment"], str):
                 self.add("CM01", f"{where}.comment", "a comment is text", "write text")
             if tier in ("tier2", "tier3") and isinstance(step.get("action"), str) and step.get("action") in tier1_only:
