@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change, slice B), output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, dialog_schema_signature, dialog_rows_signature, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, dialog_schema_signature, dialog_rows_signature, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/key_drop.py (DropGate: the drop of a key column by place, D-0358), libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -33,6 +33,7 @@ from app.modules.t3_audit_engine import (
     dialog_value, not_offered_line, value_choices, value_widget_for, AuditStepError, dialog_frame, dialog_rows_signature, dialog_schema_signature,
     column_bounds, column_is_in_frame, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
+from utils import key_drop
 from utils.filter_values import UNIT_NS, FilterValueError, kind_of
 from utils.missing_values import dialog_lines, na_choice_texts
 from utils.na_choice import default_na, na_of
@@ -117,7 +118,7 @@ def define_filter_audit_server(input, output, session, *,
                                 _resolve_active_spec, _resolve_active_lf,
                                 _spec_discrete_axes, _t3_drop_columns,
                                 _all_plot_subtab_ids, _plot_label, _table_identity,
-                                notification_log=None):
+                                notification_log=None, recipe_raw=None):
     """Register filter UI + T3 audit propagation handlers.
 
     Reactive deps (kwargs) — all shared with home_theater.define_server:
@@ -141,6 +142,7 @@ def define_filter_audit_server(input, output, session, *,
       _plot_label(subtab_id)     → str         — human-readable plot label
       _table_identity(spec, tier) → tuple | None — which stored table the dialog reads (`stored_table_identity`); None when no
                                     key says which rows it holds (the rows signal is then never equal)
+      recipe_raw()               → dict | None — the resolved dictionary of the open recipe, for the rule of a key drop (`utils.key_drop`); None: no drop is refused
     """
 
     _in_audit = in_audit   # one function for HOME and these handlers: `home_theater._in_audit`
@@ -795,9 +797,9 @@ def define_filter_audit_server(input, output, session, *,
     def _col_drop_to_audit():
         """Promote deselected columns into the T3 audit pipeline.
 
-        Phase 22-J / ADR-049:
-          - Drop on a primary-key column → BLOCKED with a notification listing
-            the offending columns (§12g.3 / §12g.4).
+        Phase 22-J / ADR-049, D-0358:
+          - A column that a join step later reads as a key → BLOCKED with the sentence of the rule (`utils.key_drop`, by place; this drop is
+            written in the plot's own steps, `T3:<plot>`, after every join).
           - Otherwise → build pending drop_column nodes and open the
             propagation dialog.
         """
@@ -813,7 +815,6 @@ def define_filter_audit_server(input, output, session, *,
             return
 
         state = home_state.get()
-        primary_keys = set(state.get("primary_keys") or [])
         committed = set(_t3_drop_columns())
         choosable = [c for c in lf.collect_schema().names() if c not in committed]
         visible = safe_input(input, "preview_col_selector", choosable)
@@ -827,14 +828,11 @@ def define_filter_audit_server(input, output, session, *,
             )
             return
 
-        # Block primary-key drops absolutely (§12g.4).
-        pk_targets = [c for c in to_drop if c in primary_keys]
-        if pk_targets:
-            _notify(
-                f"⛔ Cannot drop join key column(s): {', '.join(pk_targets)}. "
-                "Use a row filter or row exclusion instead.",
-                type="error", duration=8,
-            )
+        # A column a join step later reads as a key is refused BY PLACE (D-0358, which modulates D-0297 and §12g.4): this drop is written in the plot's own steps (the
+        # place `T3:<plot>`), after every join, so the rule finds nothing to refuse there today; it is asked all the same, with the place the step has.
+        problem = key_drop.DropGate(recipe_raw()).problem(f"T3:{p_id}", to_drop) if recipe_raw is not None and p_id else None
+        if problem:
+            _notify(f"⛔ {problem}", type="error", duration=8)
             return
 
         from app.modules.session_manager import make_audit_step

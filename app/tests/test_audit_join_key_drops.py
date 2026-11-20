@@ -1,13 +1,15 @@
-"""A column that is a join key cannot be dropped through the audit, at every place a drop can be made or can come in (D-0297).
+"""A column that a join step LATER reads as a key is refused BY PLACE (D-0358, which modulates D-0297); where nothing later reads it, a drop is allowed.
 
-The rule (`ui_implementation_contract.md` section 12g.2 and 12g.3): the key set is the union of every join key of any join step of the
-recipe (`on`, `left_on`, `right_on`, and the `by` groups of an as-of join); a drop of a key is refused and the app says why; never silently.
+ADAPTED to the decided design (the tests of D-0297 pinned "a key is refused at every place by its NAME"). The rule is `utils.key_drop` (one rule, by place; its own tests:
+`libs/utils/tests/test_key_drop.py`). HOME writes a column drop in the plot's own steps, the place `T3:<plot>`: nothing is built from a plot, so after every join, and the
+rule finds nothing to refuse there. These tests prove that HOME ASKS the rule with the place it has and follows its answer (the refusal path is driven by a stand-in answer,
+the real rule is proved elsewhere), and that a key column dropped at a plot is allowed all the way (the dialog, the pending list, the restore, the export).
 
-Places where a drop is CREATED or ENTERS the app, and what each one does (the table of the report of this task):
-  1. the column box of the data preview, "drop via audit" (`_col_drop_to_audit`)            refuses a key (these tests; also `test_home_join_keys.py`)
+Places where a drop is CREATED or ENTERS the app, and what each one does:
+  1. the column box of the data preview, "drop via audit" (`_col_drop_to_audit`)            asks the rule with `T3:<plot>` (these tests; also `test_home_join_keys.py`)
   2. the propagation dialog (`_handle_propagation_confirm`)                                  carries the steps of 1, creates none
   3. the audit panel's Apply (`audit_stack.handle_apply`)                                    carries the pending steps, creates none
-  4. a RESTORED session (`session_handlers._restore_session`)                               refuses a stored key drop, restores the rest (these tests)
+  4. a RESTORED session (`session_handlers._restore_session`)                               asks the rule for each stored drop with its place (these tests)
   5. an IMPORTED session zip, then restored                                                  the same as 4 (the zip is only unpacked)
   6. an imported reproducibility bundle                                                      holds no audit steps of the app: the audit is written into the frozen recipe by the export
   7. the export (`audited_frame`)                                                            applies the steps it is given; it is given the steps of the view
@@ -17,11 +19,11 @@ come here with its own test.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_audit_join_key_drops.py -q
 
-Mutation index (grep "MUTATION"; each seen failing, `tmpAI/breakonce_keys.py`, 7 of 7):
-  MUTATION K1  `split_key_drops` keeps a key drop
-  MUTATION K2  `_restore_session` does not call `split_key_drops` (this is the state before the repair: the key is dropped, nothing is said)
+Mutation index (grep "MUTATION"; each seen failing, `tmpAI/breakonce_keys.py`):
+  MUTATION K1  `split_key_drops` keeps a drop the rule refuses
+  MUTATION K2  `_restore_session` does not call `split_key_drops`
   MUTATION K3  `_restore_session` restores nothing when one step is refused
-  MUTATION K4  `_col_drop_to_audit` does not refuse a key
+  MUTATION K4  `_col_drop_to_audit` does not follow the answer of the rule
   MUTATION K5  `extract_primary_keys` does not read the right-hand names of a join (`right_on`)
   MUTATION K6  a second place that creates a `drop_column` step
   MUTATION K7  the notice leaves out the reason the user wrote
@@ -42,6 +44,7 @@ import app.handlers.session_handlers as session_handlers
 from app.handlers import filter_and_audit_handlers as handlers
 from app.modules.session_manager import SessionManager, extract_primary_keys, make_audit_step, split_key_drops
 from app.modules.t3_audit_engine import audited_frame
+from utils import key_drop
 
 APP = Path(handlers.__file__).resolve().parents[1]
 
@@ -53,6 +56,17 @@ def join(**keys):
 def recipe(*steps, tier2=()):
     """The part of a recipe `extract_primary_keys` reads: one join with its tier-1 steps and its tier-2 steps."""
     return {"joins": {"J": {"tier1": {"steps": list(steps)}, "tier2": {"steps": list(tier2)}}}}
+
+
+def plotted(*join_steps):
+    """A whole recipe the graph can draw: two tables A and R with the six columns, the join J of them with these steps, and the plots p1 and p2 on J."""
+    names = ["sample_id", "gene", "VF_gene", "Gene_name", "year", "source"]
+
+    def table():
+        return {"source": {"type": "local_tsv", "path": "x.tsv"}, "input_fields": {c: {"type": "String"} for c in names}, "tier1": {"steps": []}}
+    entry = {"target_dataset": "J", "mapping": {"x": "year"}, "layers": [{"name": "geom_bar"}]}
+    return {"data_schemas": {"A": table(), "R": table()}, "joins": {"J": {"ingredients": [{"dataset_id": "A"}, {"dataset_id": "R"}], "tier1": {"steps": list(join_steps)}}},
+            "analysis_groups": {"g": {"plots": {"p1": dict(entry), "p2": dict(entry)}}}}
 
 
 def drop_step(column, plot="subtab_p1", reason="", step_id=None):
@@ -124,10 +138,11 @@ def closure(name: str, source: Path = SOURCE, outer: str = "define_filter_audit_
 class Box:
     """What `_col_drop_to_audit` needs from the app."""
 
-    def __init__(self, keys, columns):
+    def __init__(self, raw, columns):
         self.notes, self.opened = [], []
         self.scratch = Val()
-        self.state = Val({"primary_keys": keys, "active_plot_subtab": "subtab_p1"})
+        self.raw = raw
+        self.state = Val({"active_plot_subtab": "subtab_p1"})
         self.frame = pl.DataFrame({c: ["x"] for c in columns})
 
     def drop(self, kept):
@@ -140,55 +155,67 @@ class Box:
             _open_propagation_modal=lambda nodes, subtab, kind: self.opened.append((nodes, kind)),
             _resolve_active_spec=lambda p_id: {}, _resolve_active_lf=lambda spec, tier=None: (self.frame.lazy() if tier == "T3" else pytest.fail(f"read tier {tier!r}, not T3: an audit step is written at the plot's table")),
             _t3_drop_columns=lambda: [], safe_input=lambda i, k, d=None: i.get(k, d), input={"preview_col_selector": kept},
-            ui=SimpleNamespace(update_selectize=lambda *a, **k: None),
+            ui=SimpleNamespace(update_selectize=lambda *a, **k: None), recipe_raw=lambda: self.raw,
         )()
 
 
 COLUMNS = ["sample_id", "gene", "VF_gene", "Gene_name", "year", "source"]
 COMPOSITE = extract_primary_keys(recipe(join(**{"on": ["sample_id", "gene"]})))
 TWO_NAMES = extract_primary_keys(recipe(join(left_on=["VF_gene"], right_on=["Gene_name"])))
+COMPOSITE_RECIPE = plotted(join(**{"on": ["sample_id", "gene"]}))
+TWO_NAMES_RECIPE = plotted(join(left_on=["VF_gene"], right_on=["Gene_name"]))
 
 
 @pytest.mark.parametrize("dropped", ["sample_id", "gene"])
-def test_with_a_two_column_key_dropping_either_column_is_refused(dropped):
-    """MUTATION K4 fails here."""
-    box = Box(COMPOSITE, COLUMNS)
+def test_a_key_column_dropped_in_the_plots_own_steps_goes_to_the_dialog_with_a_two_column_key(dropped):
+    """ADAPTED (D-0358; before: refused, MUTATION K4 failed here): the drop is written at `T3:p1`, after the join that reads the key, and nothing is built from a plot, so
+    the rule refuses nothing there ("an aggregation by count in a plot where the key does not matter")."""
+    box = Box(COMPOSITE_RECIPE, COLUMNS)
     box.drop(kept=[c for c in COLUMNS if c != dropped])
-    assert box.opened == [] and box.scratch.get() is None
-    assert [t for _, t in box.notes] == ["error"]
-    assert f"Cannot drop join key column(s): {dropped}" in box.notes[0][0]
-    assert "row filter or row exclusion" in box.notes[0][0]
+    assert box.notes == []
+    (nodes, kind), = box.opened
+    assert kind == "drop" and [n["params"]["column"] for n in nodes] == [dropped]
 
 
 @pytest.mark.parametrize("dropped", ["VF_gene", "Gene_name"])
-def test_with_two_names_for_the_key_each_name_is_refused(dropped):
-    box = Box(TWO_NAMES, COLUMNS)
+def test_with_two_names_for_the_key_each_name_goes_to_the_dialog_at_a_plot(dropped):
+    box = Box(TWO_NAMES_RECIPE, COLUMNS)
     box.drop(kept=[c for c in COLUMNS if c != dropped])
-    assert box.opened == [] and f"Cannot drop join key column(s): {dropped}" in box.notes[0][0]
+    assert box.notes == [] and [n["params"]["column"] for n in box.opened[0][0]] == [dropped]
 
 
-def test_a_column_next_to_a_composite_key_is_still_dropped_through_the_dialog():
-    box = Box(COMPOSITE, COLUMNS)
-    box.drop(kept=[c for c in COLUMNS if c != "year"])
-    assert box.notes == []
-    (nodes, kind), = box.opened
-    assert kind == "drop" and [n["params"]["column"] for n in nodes] == ["year"]
-    assert [n["node_type"] for n in nodes] == ["drop_column"]
+def test_the_handler_asks_the_rule_with_the_place_of_the_plot_and_follows_its_refusal(monkeypatch):
+    """MUTATION K4 fails here. The real rule never refuses at a plot, so its answer is a stand-in: the handler must ask `T3:<plot of the subtab>` with the deselected
+    columns, tell the sentence it is given as an error, send nothing to the dialog and keep the non-key columns of the same click out of it too."""
+    asked = []
 
-
-def test_several_columns_at_once_with_one_key_among_them_refuse_the_whole_drop():
-    """What the code does today (reported, not changed): one key among the deselected columns refuses ALL of them, the message
-    names only the key, and the non-key columns of the same click are NOT sent to the dialog either."""
-    box = Box(COMPOSITE, COLUMNS)
-    box.drop(kept=[c for c in COLUMNS if c not in ("sample_id", "year", "source")])
+    def answer(self, place, columns):
+        asked.append((place, list(columns)))
+        return "STAND-IN: the join at step 1 of T1:J reads sample_id."
+    monkeypatch.setattr(key_drop.DropGate, "problem", answer)
+    box = Box(COMPOSITE_RECIPE, COLUMNS)
+    box.drop(kept=[c for c in COLUMNS if c not in ("sample_id", "year")])
+    assert asked == [("T3:p1", ["sample_id", "year"])]
     assert box.opened == [] and box.scratch.get() is None
-    assert len(box.notes) == 1 and box.notes[0][1] == "error"
-    assert "Cannot drop join key column(s): sample_id." in box.notes[0][0]
-    assert "year" not in box.notes[0][0] and "source" not in box.notes[0][0]
+    assert box.notes == [("⛔ STAND-IN: the join at step 1 of T1:J reads sample_id.", "error")]
+
+
+def test_without_a_recipe_the_handler_judges_nothing_and_sends_the_drop_to_the_dialog():
+    box = Box(None, COLUMNS)
+    box.drop(kept=[c for c in COLUMNS if c != "year"])
+    assert box.notes == [] and len(box.opened) == 1
+
+
+def test_several_columns_at_once_next_to_a_key_all_go_to_the_dialog_at_a_plot():
+    """ADAPTED (D-0358): before, one key among the deselected columns refused ALL of them."""
+    box = Box(COMPOSITE_RECIPE, COLUMNS)
+    box.drop(kept=[c for c in COLUMNS if c not in ("sample_id", "year", "source")])
+    (nodes, kind), = box.opened
+    assert box.notes == [] and [n["params"]["column"] for n in nodes] == ["sample_id", "year", "source"]
 
 
 def test_several_non_key_columns_at_once_go_to_the_dialog():
-    box = Box(COMPOSITE, COLUMNS)
+    box = Box(COMPOSITE_RECIPE, COLUMNS)
     box.drop(kept=["sample_id", "gene", "VF_gene", "Gene_name"])
     (nodes, kind), = box.opened
     assert [n["params"]["column"] for n in nodes] == ["year", "source"]
@@ -214,7 +241,7 @@ def test_a_filter_on_either_column_of_a_two_name_key_carries_the_warning():
 
 def test_the_dialog_carries_the_non_key_drop_into_the_pending_steps_of_the_chosen_plots():
     """Place 2: the steps created by the column box go on as they are. A non-key drop works all the way to the pending list."""
-    box = Box(COMPOSITE, COLUMNS)
+    box = Box(COMPOSITE_RECIPE, COLUMNS)
     box.drop(kept=[c for c in COLUMNS if c != "year"])
     (nodes, _), = box.opened
     state = Val({"active_plot_subtab": "subtab_p1", "_pending_t3_nodes": []})
@@ -271,46 +298,72 @@ def test_only_one_place_creates_a_column_drop():
 
 # --------------------------------------------------------------------------------------------- the pure split used by Restore
 
-def test_split_removes_only_the_key_drops_and_keeps_the_order_of_the_rest():
+REAL = plotted(join(**{"on": ["sample_id", "gene"]}))
+
+
+def refuse_keys(monkeypatch, *columns):
+    """Stand in for the answer of the rule: it refuses a drop of these columns at any place (the real rule never refuses at a plot, so the plumbing of Restore is proved with
+    a stand-in and the rule itself in `libs/utils/tests/test_key_drop.py`)."""
+    real = key_drop.DropGate.problem
+
+    def answer(self, place, names):
+        return f"STAND-IN refusal of {names} at {place}" if any(n in columns for n in names) else real(self, place, names)
+    monkeypatch.setattr(key_drop.DropGate, "problem", answer)
+
+
+def test_split_keeps_every_drop_at_a_plot_when_the_real_rule_finds_nothing_to_refuse():
+    """D-0358: a stored drop sits in the stack of a plot, the place `T3:<plot>`, after every join; the real rule refuses nothing there. Before (by name) the key drops were refused."""
+    by_plot = {"subtab_p1": [drop_step("sample_id"), drop_step("source"), drop_step("gene")], "subtab_p2": [drop_step("sample_id", plot="subtab_p2")]}
+    kept, refused = split_key_drops(by_plot, REAL)
+    assert kept == by_plot and refused == []
+
+
+def test_split_removes_only_the_refused_drops_and_keeps_the_order_of_the_rest(monkeypatch):
     """MUTATION K1 fails here."""
+    refuse_keys(monkeypatch, "sample_id", "gene")
     by_plot = {
         "subtab_p1": [filter_step("year"), drop_step("sample_id", reason="old"), drop_step("source"), filter_step("sample_id")],
         "subtab_p2": [drop_step("gene", plot="subtab_p2")],
     }
-    kept, refused = split_key_drops(by_plot, ["sample_id", "gene"])
+    kept, refused = split_key_drops(by_plot, REAL)
     assert [(n["node_type"], n["params"]["column"]) for n in kept["subtab_p1"]] == [
         ("filter_row", "year"), ("drop_column", "source"), ("filter_row", "sample_id")]
     assert kept["subtab_p2"] == []
     assert [(r["plot"], r["column"], r["reason"]) for r in refused] == [("subtab_p1", "sample_id", "old"), ("subtab_p2", "gene", "")]
+    assert [r["problem"] for r in refused] == ["STAND-IN refusal of ['sample_id'] at T3:p1", "STAND-IN refusal of ['gene'] at T3:p2"], "the place of each step is its plot"
 
 
-def test_split_does_not_change_its_argument_and_a_non_key_drop_stays():
+def test_split_does_not_change_its_argument_and_a_drop_the_rule_allows_stays(monkeypatch):
+    refuse_keys(monkeypatch, "sample_id")
     by_plot = {"subtab_p1": [drop_step("sample_id"), drop_step("year")]}
     before = [dict(n) for n in by_plot["subtab_p1"]]
-    kept, refused = split_key_drops(by_plot, ["sample_id"])
+    kept, refused = split_key_drops(by_plot, REAL)
     assert by_plot["subtab_p1"] == before
     assert [n["params"]["column"] for n in kept["subtab_p1"]] == ["year"] and len(refused) == 1
 
 
-def test_split_with_no_keys_or_no_steps_refuses_nothing():
+def test_split_with_no_recipe_or_no_steps_refuses_nothing(monkeypatch):
+    refuse_keys(monkeypatch, "sample_id")
     by_plot = {"subtab_p1": [drop_step("sample_id")], "subtab_p2": []}
-    assert split_key_drops(by_plot, []) == (by_plot, [])
-    assert split_key_drops(by_plot, None)[1] == []
-    assert split_key_drops({}, ["sample_id"]) == ({}, [])
-    assert split_key_drops(None, ["sample_id"]) == ({}, [])
+    assert split_key_drops(by_plot, None) == (by_plot, [])
+    assert split_key_drops({}, REAL) == ({}, [])
+    assert split_key_drops(None, REAL) == ({}, [])
+    assert len(split_key_drops(by_plot, REAL)[1]) == 1, "with a recipe the stand-in refusal does apply: the first assertion is about the absence of a recipe"
 
 
-def test_split_lists_every_copy_of_a_propagated_step_and_keeps_a_style_step():
+def test_split_lists_every_copy_of_a_propagated_step_and_keeps_a_style_step(monkeypatch):
+    refuse_keys(monkeypatch, "sample_id")
     style = make_audit_step("aesthetic_override", {"alpha": 0.5}, plot_scope="subtab_p1")
     by_plot = {"subtab_p1": [style, drop_step("sample_id", step_id="same")], "subtab_p2": [drop_step("sample_id", plot="subtab_p2", step_id="same")]}
-    kept, refused = split_key_drops(by_plot, ["sample_id"])
+    kept, refused = split_key_drops(by_plot, REAL)
     assert kept["subtab_p1"] == [style]
     assert [(r["plot"], r["id"]) for r in refused] == [("subtab_p1", "same"), ("subtab_p2", "same")]
 
 
-def test_split_refuses_a_switched_off_key_drop_too():
+def test_split_refuses_a_switched_off_drop_too_when_the_rule_refuses_it(monkeypatch):
+    refuse_keys(monkeypatch, "sample_id")
     off = {**drop_step("sample_id"), "active": False}
-    assert split_key_drops({"subtab_p1": [off]}, ["sample_id"])[1][0]["column"] == "sample_id"
+    assert split_key_drops({"subtab_p1": [off]}, REAL)[1][0]["column"] == "sample_id"
 
 
 # ------------------------------------------------------------------------ places 4 and 5: the real session screen, real files
@@ -347,7 +400,7 @@ class LiveInput:
 class Screen:
     """The real `define_session_server` over a real `SessionManager` folder; the notifications are collected."""
 
-    def __init__(self, tmp_path, monkeypatch, keys, name="user"):
+    def __init__(self, tmp_path, monkeypatch, raw, name="user"):
         self.notes, self.effects = [], []
         real_effect = reactive.Effect
 
@@ -372,12 +425,12 @@ class Screen:
         self.input = LiveInput()
         for n in ("session_import_upload", "session_delete_all_btn", "session_delete_all_confirm"):
             self.input.set(n, None)
-        self.home_state = reactive.Value({"data_analysis_recipe_sha256": "a" * 64, "data_batch_hash": "b" * 64, "primary_keys": keys})
+        self.home_state = reactive.Value({"data_analysis_recipe_sha256": "a" * 64, "data_batch_hash": "b" * 64})
         self.log, self.issues = reactive.Value([]), reactive.Value([])
         session_handlers.define_session_server(
             self.input, lambda fn: fn, SimpleNamespace(on_flushed=lambda fn, once=True: fn()), session_manager=self.manager,
             current_app_features=None, home_state=self.home_state, notification_log=self.log, session_processing_issues=self.issues,
-            safe_input=lambda i, k, d: "tiny" if k == "data_analysis_recipe_id" else d)
+            safe_input=lambda i, k, d: "tiny" if k == "data_analysis_recipe_id" else d, recipe_raw=(lambda: raw) if raw is not None else None)
 
     def write(self, by_plot):
         self.manager.write_assembly_ghost(KEY, "tiny", "a" * 64, "b" * 64, {}, {})
@@ -408,65 +461,86 @@ def steps_of(state):
     return {plot: [(n["node_type"], n["params"].get("column")) for n in nodes] for plot, nodes in state["t3_audit_steps_by_plot"].items()}
 
 
-def test_a_restored_session_with_a_key_drop_restores_the_rest_and_tells_which_step_and_why(tmp_path, monkeypatch):
-    """MUTATION K2 and MUTATION K3 fail here."""
+def test_a_restored_session_with_a_drop_the_rule_refuses_restores_the_rest_and_tells_which_step_and_why(tmp_path, monkeypatch):
+    """MUTATION K2 and MUTATION K3 fail here. The refusal is a stand-in answer of the rule (it refuses nothing at a plot); the plumbing is real."""
+    refuse_keys(monkeypatch, "sample_id")
+
     async def scenario():
-        s = Screen(tmp_path, monkeypatch, keys=["sample_id"])
+        s = Screen(tmp_path, monkeypatch, raw=REAL)
         s.write(SAVED)
         await s.restore()
         assert steps_of(s.state()) == {"subtab_p1": [("filter_row", "year"), ("drop_column", "source")], "subtab_p2": []}
-        told = s.texts("join key")
+        told = s.texts("STAND-IN")
         assert len(told) == 1, s.notes
         assert "sample_id" in told[0] and "subtab_p1" in told[0] and "subtab_p2" in told[0]
         assert "not needed" in told[0], "the reason the user wrote is in the message"
         assert "row filter or row exclusion" in told[0]
-        assert any(t == "warning" for t, m in s.notes if "join key" in m)
+        assert any(t == "warning" for t, m in s.notes if "STAND-IN" in m)
         assert len(s.texts("Session restored")) == 1, "the rest of the session is restored, with its own notice"
     asyncio.run(scenario())
 
 
-def test_a_restored_session_without_a_key_drop_says_nothing_about_keys(tmp_path, monkeypatch):
+def test_a_restored_session_keeps_a_key_drop_at_a_plot_and_says_nothing_about_keys_D_0358(tmp_path, monkeypatch):
+    """ADAPTED: before (by name) the stored key drop was not restored and the user was told; by place nothing is built from a plot, so the real rule keeps it."""
     async def scenario():
-        s = Screen(tmp_path, monkeypatch, keys=["sample_id"])
+        s = Screen(tmp_path, monkeypatch, raw=REAL)
+        s.write(SAVED)
+        await s.restore()
+        assert steps_of(s.state()) == {"subtab_p1": [("filter_row", "year"), ("drop_column", "sample_id"), ("drop_column", "source")], "subtab_p2": [("drop_column", "sample_id")]}
+        assert s.texts("join key") == [] and s.texts("reads it as") == []
+    asyncio.run(scenario())
+
+
+def test_a_restored_session_without_a_refused_drop_says_nothing_about_keys(tmp_path, monkeypatch):
+    refuse_keys(monkeypatch, "sample_id")
+
+    async def scenario():
+        s = Screen(tmp_path, monkeypatch, raw=REAL)
         s.write({"subtab_p1": [filter_step("sample_id"), drop_step("source", reason="noise")]})
         await s.restore()
         assert steps_of(s.state())["subtab_p1"] == [("filter_row", "sample_id"), ("drop_column", "source")]
-        assert s.texts("join key") == []
+        assert s.texts("STAND-IN") == []
     asyncio.run(scenario())
 
 
-def test_a_restore_when_the_recipe_has_no_known_join_key_applies_the_steps_as_saved(tmp_path, monkeypatch):
-    """No key known (a recipe without joins, or the keys not read yet): nothing can be called a key, so nothing is refused. The user
-    is not told either, because there is nothing to tell: pinned so that a change of this is a decision."""
+def test_a_restore_without_an_open_recipe_applies_the_steps_as_saved(tmp_path, monkeypatch):
+    """No recipe known (none open): nothing can be judged, so nothing is refused. The user is not told either, because there is nothing to tell: pinned so that a change
+    of this is a decision."""
+    refuse_keys(monkeypatch, "sample_id")
+
     async def scenario():
-        s = Screen(tmp_path, monkeypatch, keys=[])
+        s = Screen(tmp_path, monkeypatch, raw=None)
         s.write(SAVED)
         await s.restore()
         assert ("drop_column", "sample_id") in steps_of(s.state())["subtab_p1"]
-        assert s.texts("join key") == []
+        assert s.texts("STAND-IN") == []
     asyncio.run(scenario())
 
 
-def test_an_imported_session_zip_with_a_key_drop_is_restored_the_same_way(tmp_path, monkeypatch):
+def test_an_imported_session_zip_with_a_refused_drop_is_restored_the_same_way(tmp_path, monkeypatch):
     """Place 5: another machine's session zip is unpacked as it is, then restored by the same screen."""
+    refuse_keys(monkeypatch, "sample_id")
+
     async def scenario():
-        source = Screen(tmp_path, monkeypatch, keys=[], name="other_machine")
+        source = Screen(tmp_path, monkeypatch, raw=None, name="other_machine")
         source.write(SAVED)
         zip_bytes = source.manager.export_session_zip(KEY)
-        target = Screen(tmp_path, monkeypatch, keys=["sample_id"], name="this_machine")
+        target = Screen(tmp_path, monkeypatch, raw=REAL, name="this_machine")
         assert target.manager.import_session_zip(zip_bytes) == KEY
         assert any(n["node_type"] == "drop_column" and n["params"]["column"] == "sample_id"
                    for n in target.manager.list_t3_ghosts(KEY)[0]["t3_audit_steps_by_plot"]["subtab_p1"]), "the import itself keeps the file as it is"
         await target.restore()
         assert steps_of(target.state()) == {"subtab_p1": [("filter_row", "year"), ("drop_column", "source")], "subtab_p2": []}
-        assert len(target.texts("join key")) == 1
+        assert len(target.texts("STAND-IN")) == 1
     asyncio.run(scenario())
 
 
 def test_restore_does_not_change_the_saved_file(tmp_path, monkeypatch):
     """The refusal is in the view: the saved file is left as it is (the user can still read what was saved); the next save writes the view."""
+    refuse_keys(monkeypatch, "sample_id")
+
     async def scenario():
-        s = Screen(tmp_path, monkeypatch, keys=["sample_id"])
+        s = Screen(tmp_path, monkeypatch, raw=REAL)
         s.write(SAVED)
         before = sorted(p.read_bytes() for p in (tmp_path / "user").rglob("t3_*.json"))
         await s.restore()
@@ -476,10 +550,9 @@ def test_restore_does_not_change_the_saved_file(tmp_path, monkeypatch):
 
 # --------------------------------------------------------------------------------------------- place 7: the export and the view
 
-def test_the_export_and_the_view_apply_the_steps_they_are_given_a_key_drop_that_reached_them_would_be_applied():
-    """Pins today's behaviour (a decision for Eve, see the report): `audited_frame` does not know the join keys; it drops what the
-    list says. After the repair a key drop cannot reach the list (the column box and Restore refuse it), so the list never holds one.
-    A defence inside `audited_frame` would need the keys as an argument of every caller."""
+def test_the_export_and_the_view_apply_the_steps_they_are_given_a_key_drop_at_a_plot_is_applied():
+    """Pins today's behaviour: `audited_frame` does not know the join keys; it drops what the list says. By place (D-0358) a key column dropped in a plot's own steps is
+    a legitimate step (nothing is built from the plot), so the list may hold one and the export applies it, as the view does."""
     lf = pl.DataFrame({"sample_id": ["a"], "year": [1]}).lazy()
     assert audited_frame(lf, [drop_step("sample_id")], "p1").collect_schema().names() == ["year"]
     assert audited_frame(lf, [drop_step("year")], "p1").collect_schema().names() == ["sample_id"]

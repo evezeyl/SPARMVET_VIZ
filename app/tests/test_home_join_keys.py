@@ -4,8 +4,9 @@
 recipe had, so it always gave `[]` and nothing was ever refused. Now, for the demo recipe, it gives `Gene_name`, `VF_gene` and
 `sample_id`, and HOME uses them (`home_state["primary_keys"]`):
 
-- "Send to audit" of a column drop that names a join key is REFUSED with the message "Cannot drop join key column(s): ...";
-  a column that is not a key still goes to the propagation dialog (so the refusal is by key, not for every drop);
+- a column drop is written in the plot's own steps (the place `T3:<plot>`), after every join, so a join key dropped there is NOT refused any more: the refusal is by PLACE
+  (D-0358, which modulates D-0297; the rule is `utils.key_drop`, its tests `libs/utils/tests/test_key_drop.py`), the handler asks it with the place it has (ADAPTED: before, a key
+  was refused by its name with "Cannot drop join key column(s): ...");
 - a filter on a join key is ALLOWED; the audit step it makes carries `primary_key_warning=True` (the yellow banner in the dialog and
   the audit panel, a marker in the report); a filter on another column does not carry it.
 
@@ -24,6 +25,7 @@ import polars as pl
 from app.handlers import filter_and_audit_handlers as handlers
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.session_manager import extract_primary_keys
+from utils import key_drop
 
 SOURCE = Path(handlers.__file__)
 DEMO = Path(__file__).resolve().parents[2] / "config" / "data_analysis_recipes" / "pipelines" / "1_test_data_ST22_dummy.yaml"
@@ -50,8 +52,15 @@ def closure(name: str, **stand_ins):
     return ns[name]
 
 
+def demo_raw() -> dict:
+    return load_data_analysis_recipe(DEMO).config.raw_config
+
+
 def demo_keys() -> list:
-    return extract_primary_keys(load_data_analysis_recipe(DEMO).config.raw_config)
+    return extract_primary_keys(demo_raw())
+
+
+DEMO_PLOT = "mlst_bar"      # a plot of the demo recipe: the subtab of the session below is `subtab_mlst_bar`
 
 
 def test_the_demo_recipe_gives_its_join_keys():
@@ -61,16 +70,17 @@ def test_the_demo_recipe_gives_its_join_keys():
 class Session:
     """What the two handlers need from the app: notifications, the propagation dialog and the scratch they fill."""
 
-    def __init__(self, keys, frame):
+    def __init__(self, keys, frame, raw=None):
         self.notes, self.opened = [], []
         self.scratch = Val()
-        self.state = Val({"primary_keys": keys, "active_plot_subtab": "subtab_p1"})
+        self.raw = raw
+        self.state = Val({"primary_keys": keys, "active_plot_subtab": f"subtab_{DEMO_PLOT}"})
         self.frame = frame
 
     def stand_ins(self, **extra):
         base = dict(
             bootloader=SimpleNamespace(is_enabled=lambda flag: True),
-            home_state=self.state, active_home_subtab=Val("subtab_p1"),
+            home_state=self.state, active_home_subtab=Val(f"subtab_{DEMO_PLOT}"), recipe_raw=(lambda: self.raw) if self.raw is not None else None,
             _notify=lambda message, **kw: self.notes.append((message, kw.get("type"))),
             _propagation_scratch=self.scratch,
             _open_propagation_modal=lambda nodes, subtab, kind: self.opened.append((nodes, kind)),
@@ -94,32 +104,40 @@ def drop(session, kept):
     closure("_col_drop_to_audit", **stand)()
 
 
-def test_dropping_a_join_key_column_is_refused_with_the_message_and_nothing_is_sent():
-    s = Session(demo_keys(), FRAME)
+def test_dropping_a_join_key_column_in_a_plots_own_steps_goes_to_the_dialog():
+    """ADAPTED (D-0358): the demo recipe joins on `sample_id`; the drop is at `T3:mlst_bar`, after every join, so nothing is refused (before: refused by name)."""
+    s = Session(demo_keys(), FRAME, demo_raw())
     drop(s, kept=["Gene_name", "VF_gene", "year", "source"])      # `sample_id` is deselected
-    assert s.opened == [] and s.scratch.get() is None
-    assert len(s.notes) == 1 and s.notes[0][1] == "error"
-    assert "Cannot drop join key column(s): sample_id" in s.notes[0][0]
-    assert "row filter or row exclusion" in s.notes[0][0]
+    assert s.notes == []
+    (nodes, kind), = s.opened
+    assert kind == "drop" and [n["params"]["column"] for n in nodes] == ["sample_id"]
 
 
-def test_every_deselected_key_is_named_in_the_refusal():
-    s = Session(demo_keys(), FRAME)
+def test_the_handler_asks_the_rule_with_the_place_of_the_open_plot_and_follows_its_refusal(monkeypatch):
+    """MUTATION K4 fails here: the real rule refuses nothing at a plot, so a stand-in answer proves the handler asks `T3:<open plot>` for the deselected columns and obeys."""
+    asked = []
+
+    def answer(self, place, columns):
+        asked.append((place, list(columns)))
+        return "STAND-IN refusal"
+    monkeypatch.setattr(key_drop.DropGate, "problem", answer)
+    s = Session(demo_keys(), FRAME, demo_raw())
     drop(s, kept=["year", "source"])
-    assert "Cannot drop join key column(s): sample_id, Gene_name, VF_gene" in s.notes[0][0]
+    assert asked == [(f"T3:{DEMO_PLOT}", ["sample_id", "Gene_name", "VF_gene"])]
+    assert s.opened == [] and s.scratch.get() is None and s.notes == [("⛔ STAND-IN refusal", "error")]
 
 
 def test_dropping_a_column_that_is_not_a_key_goes_to_the_dialog():
-    s = Session(demo_keys(), FRAME)
+    s = Session(demo_keys(), FRAME, demo_raw())
     drop(s, kept=["sample_id", "Gene_name", "VF_gene", "source"])   # `year` is deselected
     assert s.notes == []
     (nodes, kind), = s.opened
     assert kind == "drop" and [n["params"]["column"] for n in nodes] == ["year"]
 
 
-def test_with_no_join_keys_nothing_is_refused_the_state_before_step_4b():
-    """On dev `extract_primary_keys` gave [] for every recipe, so even `sample_id` was dropped without a word."""
-    s = Session([], FRAME)
+def test_with_no_recipe_nothing_is_judged_and_the_drop_goes_to_the_dialog():
+    """Without an open recipe (`recipe_raw` absent) the handler cannot ask the rule: nothing is refused, as on dev before the join keys were read."""
+    s = Session([], FRAME, None)
     drop(s, kept=["Gene_name", "VF_gene", "year", "source"])
     assert s.notes == [] and len(s.opened) == 1
 
