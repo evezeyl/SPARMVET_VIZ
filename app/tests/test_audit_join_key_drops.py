@@ -376,11 +376,12 @@ class Screen:
         self.log, self.issues = reactive.Value([]), reactive.Value([])
         session_handlers.define_session_server(
             self.input, lambda fn: fn, SimpleNamespace(on_flushed=lambda fn, once=True: fn()), session_manager=self.manager,
-            current_app_features=None, home_state=self.home_state, notification_log=self.log, session_processing_issues=self.issues)
+            current_app_features=None, home_state=self.home_state, notification_log=self.log, session_processing_issues=self.issues,
+            safe_input=lambda i, k, d: "tiny" if k == "data_analysis_recipe_id" else d)
 
     def write(self, by_plot):
         self.manager.write_assembly_ghost(KEY, "tiny", "a" * 64, "b" * 64, {}, {})
-        self.manager.write_t3_ghost(KEY, "tiny", "a" * 64, "b" * 64, "T3", t3_audit_steps_by_plot=by_plot)
+        self.manager.write_t3_ghost(KEY, "tiny", "a" * 64, "b" * 64, t3_audit_steps_by_plot=by_plot)
 
     def texts(self, word):
         return [m for _, m in self.notes if word in m]

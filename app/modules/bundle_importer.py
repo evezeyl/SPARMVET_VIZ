@@ -55,7 +55,7 @@ from app.modules.cache_keys import engine_fingerprint
 from app.modules.data_analysis_recipe_validator import engine_load_problems
 from app.modules.error_notice import notice
 from app.modules.orchestrator import IMPORT_DATA_FOLDER, DataOrchestrator
-from app.modules.session_manager import SessionManager
+from app.modules.session_manager import LegacySessionError, SessionManager
 
 
 class BundleImportError(ValueError):
@@ -302,14 +302,21 @@ def import_bundle(zip_bytes: bytes, *, bootloader) -> ImportResult:
     named = set(orchestrator.dataset_schemas(imported_id))
     data_batch_hash = sm.compute_data_batch_hash(source_files)
     session_key = sm.compute_session_key(local_recipe_sha256_this, data_batch_hash)
-    sm.write_assembly_ghost(
-        session_key=session_key,
-        data_analysis_recipe_id=imported_id,
-        data_analysis_recipe_sha256=local_recipe_sha256_this,
-        data_batch_hash=data_batch_hash,
-        source_files={k: str(v) for k, v in source_files.items()},
-        parquet_paths={},
-    )
+    try:
+        sm.write_assembly_ghost(
+            session_key=session_key,
+            data_analysis_recipe_id=imported_id,
+            data_analysis_recipe_sha256=local_recipe_sha256_this,
+            data_batch_hash=data_batch_hash,
+            source_files={k: str(v) for k, v in source_files.items()},
+            parquet_paths={},
+        )
+    except LegacySessionError as exc:
+        # A stored session of another format number under the same key is never written over (D-0312): the import is refused
+        # and leaves nothing behind.
+        shutil.rmtree(imports_dir / imported_id, ignore_errors=True)
+        dest_recipe_path.unlink(missing_ok=True)
+        raise BundleImportError(f"The bundle was not imported and nothing was written. {exc}") from exc
 
     # Recipe leg: only meaningful against the ORIGINAL recipe (not the frozen copy we
     # just wrote, which differs from it by design) — check whether the importing user

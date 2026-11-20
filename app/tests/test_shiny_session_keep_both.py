@@ -44,7 +44,7 @@ def test_keep_both_leaves_a_working_panel_and_the_copy_can_be_restored_and_delet
     from app.modules.session_manager import SessionManager, session_input_id_part
     from app.src.bootloader import bootloader
     sm = SessionManager(bootloader.get_location("user_data"))
-    key = _seed(sm, tmp_path, "keep_both_panel", with_step=True)
+    key = _seed(sm, "keep_both_panel", with_step=True)
     zip_path = tmp_path / "own_export.zip"
     zip_path.write_bytes(sm.export_session_zip(key))
     copy_key = None

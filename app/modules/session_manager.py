@@ -17,12 +17,14 @@ Ghost slots (per session_key, under {location_4}/_sessions/{session_key}/)
 ---------------------------------------------------------------------------
   assembly.json          — T1/T2 provenance (written once per assembly)
   t3_{timestamp}.json   — audit steps snapshots (one per btn_apply / panel leave)
+
+Both carry `schema_version` = SESSION_FORMAT_VERSION; every reader refuses a file with another number (D-0312).
 """
 
 from __future__ import annotations
 
 # @deps
-# provides: class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, function:extract_primary_keys, function:split_key_drops, function:key_drop_notice, class:SessionImportLimits, function:session_import_limits_from (D-0283), function:session_input_id_part, function:session_input_id_parts (two listed sessions never share a button), exception:SessionImportRefused, exception:SessionKeyExists (D-0281)
+# provides: constant:SESSION_FORMAT_VERSION, function:session_format_problem (D-0312), function:session_recipe_refusal (D-0317), class:SessionManager, typedef:AuditStep, function:make_audit_step, function:normalise_audit_steps, function:extract_primary_keys, function:split_key_drops, function:key_drop_notice, class:SessionImportLimits, function:session_import_limits_from (D-0283), function:session_input_id_part, function:session_input_id_parts (two listed sessions never share a button), exception:SessionImportRefused, exception:SessionKeyExists (D-0281)
 # consumes: app/modules/error_notice.py (notice — VERIF-FIX-2, lazy), libs/utils/src/utils/na_choice.py, stdlib (hashlib, json, re, shutil, zipfile, pathlib, datetime, uuid), app.modules.cache_keys (canonical_hash — REPRO-RESTORE-HASH-1; batch_hash_of, dataset_file_hashes: the one reading of the data files for the keys, ADR-101)
 # consumes: libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/recipe_tiers.py (step_list) — extract_primary_keys reads joins.*.tier1.steps and tier2.steps (D-0250)
 # consumed_by: app/src/bootloader.py (limits), app/tests/test_session_import_safety.py, app/src/server.py, app/handlers/home_theater.py, app/handlers/audit_stack.py, app/handlers/session_handlers.py, app/handlers/filter_and_audit_handlers.py (make_audit_step)
@@ -217,7 +219,49 @@ class SessionDeleteError(Exception):
 
 
 class LegacySessionError(ValueError):
-    """A stored session uses keys from before the configuration rename (ADR-091)."""
+    """A stored session file is refused: written by another version of the app (D-0312) or with keys from before the rename (ADR-091)."""
+
+
+# The format number of a session file (assembly.json and t3_*.json). Every writer writes it and every reader compares it
+# (D-0312): a file with no number, a lower one or a higher one is refused as a whole, nothing is converted. Number 3 is the
+# first of the redesigned sessions; the files written before it carried no number (assembly.json) or 2 (t3_*.json).
+SESSION_FORMAT_VERSION = 3
+
+
+def session_format_problem(data, where: str) -> str | None:
+    """The plain line that refuses a session file of another format number, or None when the number is the current one.
+
+    `where` names the file, e.g. "Session <key> (assembly.json)". PROVISIONAL wording (D-0312 gives the sense, a text the owner reads).
+    """
+    if not isinstance(data, dict):
+        return None   # not a session file at all: the reader's own error says so (an unreadable file, not an old one)
+    version = data.get("schema_version")
+    if isinstance(version, int) and not isinstance(version, bool) and version == SESSION_FORMAT_VERSION:
+        return None
+    if isinstance(version, int) and not isinstance(version, bool) and version > SESSION_FORMAT_VERSION:
+        return f"{where} was saved by a newer version of the app and cannot be opened. Delete it and start a new session."
+    return f"{where} was saved by an older version of the app and cannot be opened. Delete it and start a new session."
+
+
+def session_recipe_refusal(ghost: dict, open_recipe_id: str, session_key: str) -> str | None:
+    """The plain line that refuses a Restore of a session that belongs to another recipe (D-0317), or None when it may go on.
+
+    Compares the recipe id of the session record with the id of the open recipe. Same id: None (a different content hash or data
+    batch is the business of the warnings, not of this refusal). PROVISIONAL wording. A record without a recipe id, or no open
+    recipe, cannot be compared, and nothing is applied then either.
+    """
+    name = ghost.get("label") or session_key
+    saved_id = ghost.get("data_analysis_recipe_id") or ""
+    if not saved_id:
+        return (f"Session {name} does not say which recipe it belongs to, so it cannot be restored. "
+                "Delete it and start a new session.")
+    if not open_recipe_id:
+        return (f"Session {name} belongs to the recipe {saved_id}, and no recipe is open. "
+                "Open that recipe first, then restore the session.")
+    if saved_id != open_recipe_id:
+        return (f"Session {name} belongs to another recipe ({saved_id}). "
+                "Open that recipe first, then restore the session.")
+    return None
 
 
 class SessionManager:
@@ -311,14 +355,21 @@ class SessionManager:
             label = ""
             if path.exists():
                 try:
-                    label = json.loads(path.read_text()).get("label", "")
+                    earlier = json.loads(path.read_text())
                 except Exception as exc:
+                    earlier = None
                     label = ""
                     if on_problem is not None:
                         from app.modules.error_notice import notice
                         on_problem(notice(
                             f"The earlier record of the session {session_key} could not be read, so it was written again and "
                             "its label, if it had one, is lost", "type the label again in the Session Management panel", exc))
+                if earlier is not None:
+                    # Never written over without saying so (D-0312): the stored record of another format number stays as it is.
+                    problem = session_format_problem(earlier, f"Session {session_key} ({path.name})")
+                    if problem:
+                        raise LegacySessionError(problem)
+                    label = earlier.get("label", "") if isinstance(earlier, dict) else ""
         ghost = {
             "session_key": session_key,
             "data_analysis_recipe_id": data_analysis_recipe_id,
@@ -326,6 +377,7 @@ class SessionManager:
             "data_batch_hash": data_batch_hash,
             "assembled_at": _now_iso(),
             "label": label,
+            "schema_version": SESSION_FORMAT_VERSION,
             "source_files": {
                 k: {"path": str(v), "sha256": _file_sha256(v)}
                 for k, v in source_files.items()
@@ -344,7 +396,9 @@ class SessionManager:
         """Read a stored session file; refuse one written before the rename, naming the fix."""
         from app.modules.renamed_keys import legacy_session_problem, refused_audit_step_in_ghost
         data = json.loads(path.read_text())
-        problem = legacy_session_problem(data, f"{label} ({path.name})") or refused_audit_step_in_ghost(data, f"{label} ({path.name})")
+        problem = (session_format_problem(data, f"{label} ({path.name})")
+                   or legacy_session_problem(data, f"{label} ({path.name})")
+                   or refused_audit_step_in_ghost(data, f"{label} ({path.name})"))
         if problem:
             raise LegacySessionError(problem)
         return data
@@ -425,7 +479,6 @@ class SessionManager:
         data_analysis_recipe_id: str,
         data_analysis_recipe_sha256: str,
         data_batch_hash: str,
-        tier_toggle: str,
         t3_audit_steps: list[dict] | None = None,
         t3_plot_overrides: dict | None = None,
         label: str = "",
@@ -456,8 +509,9 @@ class SessionManager:
             "data_batch_hash": data_batch_hash,
             "saved_at": _now_iso(),
             "label": label,
-            "tier_toggle": tier_toggle,
-            "schema_version": 2,           # 22-J: bumped from implicit v1 (flat list only)
+            # D-0312: one format number for every session file (a lower or higher one is refused by every reader).
+            # PROVISIONAL (coordinator): no `tier_toggle` is stored any more; the saved value was never the user's choice on the screen.
+            "schema_version": SESSION_FORMAT_VERSION,
             "t3_audit_steps": t3_audit_steps,        # legacy flat view, kept for bw compat
             "t3_audit_steps_by_plot": t3_audit_steps_by_plot,
             "t3_plot_overrides": _overrides,
@@ -519,8 +573,7 @@ class SessionManager:
                 "label": data.get("label", ""),
                 "data_analysis_recipe_sha256": data.get("data_analysis_recipe_sha256", ""),
                 "data_batch_hash": data.get("data_batch_hash", ""),
-                "tier_toggle": data.get("tier_toggle", "T2"),
-                "schema_version": data.get("schema_version", 1),
+                "schema_version": data.get("schema_version"),
                 "t3_audit_steps": flat,
                 "t3_audit_steps_by_plot": by_plot,
                 "t3_plot_overrides": data.get("t3_plot_overrides", {}),
@@ -639,7 +692,8 @@ class SessionManager:
             from app.modules.renamed_keys import legacy_session_problem, refused_audit_step_in_ghost
             for name in assembly_files + t3_files:
                 data = json.loads(zf.read(name))
-                problem = (legacy_session_problem(data, f"Imported session file {name}")
+                problem = (session_format_problem(data, f"Imported session file {name}")
+                           or legacy_session_problem(data, f"Imported session file {name}")
                            or refused_audit_step_in_ghost(data, f"Imported session file {name}"))
                 if problem:
                     raise LegacySessionError(problem)
@@ -746,7 +800,7 @@ class SessionManager:
         path = self.session_dir(session_key) / "assembly.json"
         if not path.exists():
             return
-        data = json.loads(path.read_text())
+        data = self._read_current_json(path, f"Session {session_key}")   # a refused file is not written to
         data["label"] = label
         path.write_text(json.dumps(data, indent=2))
 

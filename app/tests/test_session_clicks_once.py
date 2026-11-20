@@ -86,7 +86,7 @@ class Live:
         self.manager = SessionManager(tmp_path / "user")
         for key, tag in ((KEY_A, "a"), (KEY_B, "c")):
             self.manager.write_assembly_ghost(key, "tiny", tag * 64, "b" * 64, {}, {})
-        self.manager.write_t3_ghost(KEY_A, "tiny", "a" * 64, "b" * 64, "T2", t3_audit_steps_by_plot={"subtab_p": [_step("saved")]})
+        self.manager.write_t3_ghost(KEY_A, "tiny", "a" * 64, "b" * 64, t3_audit_steps_by_plot={"subtab_p": [_step("saved")]})
         self.input = LiveInput()
         for name in ("session_import_upload", "session_delete_all_btn", "session_delete_all_confirm"):
             self.input.set(name, None)
@@ -96,7 +96,8 @@ class Live:
         self.session = SimpleNamespace(on_flushed=lambda fn, once=True: fn())
         session_handlers.define_session_server(
             self.input, lambda fn: fn, self.session, session_manager=self.manager, current_app_features=None,
-            home_state=self.home_state, notification_log=self.log, session_processing_issues=self.issues)
+            home_state=self.home_state, notification_log=self.log, session_processing_issues=self.issues,
+            safe_input=lambda i, k, d: "tiny" if k == "data_analysis_recipe_id" else d)
 
     def texts(self, word):
         return [m for _, m in self.notes if word in m]

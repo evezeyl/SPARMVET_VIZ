@@ -131,7 +131,7 @@ def _write_old_ghost(root, sm):
     from app.modules.cache_keys import canonical_hash
     by_plot_ = {"subtab_p": [OLD_NODE]}
     ghost = {"session_key": "k:k", "data_analysis_recipe_id": "r", "data_analysis_recipe_sha256": "a", "data_batch_hash": "b",
-             "saved_at": "2026-11-01T10:00:00", "label": "", "tier_toggle": "T3", "schema_version": 2,
+             "saved_at": "2026-11-01T10:00:00", "label": "", "schema_version": 3,
              "t3_audit_steps": [OLD_NODE], "t3_audit_steps_by_plot": by_plot_, "t3_plot_overrides": {},
              "notification_log": [], "t3_audit_steps_sha256": canonical_hash({"t3_audit_steps_by_plot": by_plot_, "t3_plot_overrides": {}})}
     (sm.session_dir("k:k") / "t3_20261101T100000000000.json").write_text(json.dumps(ghost))
@@ -154,7 +154,7 @@ def test_an_old_session_is_written_with_na_remove_when_it_is_next_saved(tmp_path
     sm = SessionManager(tmp_path)
     _write_old_ghost(tmp_path, sm)
     (ghost,) = sm.list_t3_ghosts("k:k")
-    path = sm.write_t3_ghost("k:k", "r", "a", "b", "T3", t3_audit_steps_by_plot=ghost["t3_audit_steps_by_plot"])
+    path = sm.write_t3_ghost("k:k", "r", "a", "b", t3_audit_steps_by_plot=ghost["t3_audit_steps_by_plot"])
     saved = json.loads(path.read_text())
     assert saved["t3_audit_steps_by_plot"]["subtab_p"][0]["params"]["na"] == "remove"
     assert saved["t3_audit_steps"][0]["params"]["na"] == "remove"
@@ -328,7 +328,7 @@ def test_a_staged_row_of_an_old_state_without_na_gives_remove_in_the_audit_param
 def test_a_keep_step_survives_save_list_and_restore(tmp_path):
     sm = SessionManager(tmp_path)
     keep = make_audit_step("filter_row", {"column": "x", "op": "ne", "value": 2.0, "na": "keep"}, plot_scope="subtab_p")
-    path = sm.write_t3_ghost("k:k", "r", "a", "b", "T3", t3_audit_steps_by_plot={"subtab_p": [keep]})
+    path = sm.write_t3_ghost("k:k", "r", "a", "b", t3_audit_steps_by_plot={"subtab_p": [keep]})
     saved = json.loads(path.read_text())
     assert saved["t3_audit_steps_by_plot"]["subtab_p"][0]["params"]["na"] == "keep"
     assert saved["t3_audit_steps"][0]["params"]["na"] == "keep"
@@ -343,7 +343,7 @@ def test_a_between_step_keeps_closed_through_save_and_restore(tmp_path):
     sm = SessionManager(tmp_path)
     node = make_audit_step("filter_row", {"column": "x", "op": "between", "value": [1.0, 3.0], "closed": "none", "na": "keep"},
                            plot_scope="subtab_p")
-    sm.write_t3_ghost("k:k", "r", "a", "b", "T3", t3_audit_steps_by_plot={"subtab_p": [node]})
+    sm.write_t3_ghost("k:k", "r", "a", "b", t3_audit_steps_by_plot={"subtab_p": [node]})
     (ghost,) = sm.list_t3_ghosts("k:k")
     (row,) = filter_rows_from_nodes(normalise_audit_steps(ghost["t3_audit_steps_by_plot"])["subtab_p"])
     assert row["closed"] == "none" and row["na"] == "keep"

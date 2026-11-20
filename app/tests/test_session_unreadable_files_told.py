@@ -27,7 +27,7 @@ def _step(reason):
 
 
 def _save(manager, reason):
-    path = manager.write_t3_ghost(KEY, "tiny", "a" * 64, "b" * 64, "T2", t3_audit_steps_by_plot={"subtab_p": [_step(reason)]})
+    path = manager.write_t3_ghost(KEY, "tiny", "a" * 64, "b" * 64, t3_audit_steps_by_plot={"subtab_p": [_step(reason)]})
     time.sleep(0.002)   # the file name holds a time stamp: two saves never share one
     return path
 
