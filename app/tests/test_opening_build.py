@@ -398,3 +398,57 @@ def test_an_exploration_filter_changes_no_stored_table_and_no_plot_built_at_open
     assert {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in world.anchors.glob("*.parquet")} == digests
     assert stores_during(lambda: open_world(world)) == [], "nothing to rebuild: the filter touched no stored table"
     assert world.orch.materialize_tier3("tiny", "p_steps", world.anchors, keys=world.keys()).collect().height == table.collect().height
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# A build reads only the sources it needs (the control found no test that could fail on this)
+# ---------------------------------------------------------------------------------------------------------------------
+
+
+def _with_an_unused_source(world):
+    """The recipe of `world` plus a second data schema `U` (its own file) that no join and no plot reads."""
+    (world.data_dir / "U.tsv").write_text("k\nx\ny\n")
+    path = world.data_analysis_recipes_dir / "tiny.yaml"
+    text = path.read_text()
+    unused = (f"  U:\n    source: {{type: local_tsv, path: {world.data_dir / 'U.tsv'}}}\n    null_values: []\n    strip: false\n"
+              "    input_fields:\n      k: {original_name: k, type: String, label: K}\n    tier1: {steps: []}\n")
+    assert "joins:\n" in text
+    path.write_text(text.replace("joins:\n", unused + "joins:\n", 1))
+    clear_data_analysis_recipe_cache()
+
+
+def _sources_read_during(world, action) -> list:
+    """The ids of the source tables the orchestrator reads while `action` runs, in order."""
+    read: list = []
+    real = DataOrchestrator.prepare_ingredient
+
+    def counting(self, ds_id, *args, **kwargs):
+        read.append(ds_id)
+        return real(self, ds_id, *args, **kwargs)
+
+    with mock.patch.object(DataOrchestrator, "prepare_ingredient", counting):
+        action()
+    return read
+
+
+def test_the_opening_reads_only_the_source_tables_the_recipe_uses_once_per_table_it_builds(tmp_path):
+    """MUTATION S1: a build that reads every source table of the recipe (as the code did before) reads `U` too, once per table built; this fails."""
+    world = Tier3World(tmp_path, tier2=[KEEP_FROM_2])
+    _with_an_unused_source(world)
+    read = _sources_read_during(world, lambda: open_world(world))
+    assert read == ["T"], f"the opening built the tables of C once and read only its source T; it read {read}"
+
+
+def test_a_table_that_is_a_source_reads_that_source_and_only_that_one(tmp_path):
+    """The positive control of the test above: a source that is needed is read (a build that reads nothing would fail here), and the other is not."""
+    world = Tier3World(tmp_path)
+    _with_an_unused_source(world)
+    read = _sources_read_during(world, lambda: world.orch.materialize_tier1("tiny", "U", world.anchors / "U.parquet", keys=world.keys()))
+    assert read == ["U"]
+
+
+def test_a_second_opening_reads_no_source_table_at_all(tmp_path):
+    world = Tier3World(tmp_path, tier2=[KEEP_FROM_2])
+    _with_an_unused_source(world)
+    open_world(world)
+    assert _sources_read_during(world, lambda: open_world(world)) == [], "every table is read from its stored file"
