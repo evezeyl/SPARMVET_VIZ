@@ -15,7 +15,13 @@ against the plan: "each reading is checked against the engine's plan; when they 
 `READINGS` is that list; a test fails when it holds anything else. A step outside it is `unread`: the walk knows only what the plan shows across it
 (PROVISIONAL, see `lineage_walk`). A column that a read step does NOT name is untouched by it (reading and plan agree): it passes with no note and is
 never grey for that step. A column that a step names and that already existed is the same column with its values or type changed (D-0353, D-0337):
-the link is marked `recompute`, `cast` or `aggregate` and the walk does not follow it yet (the note "recomputed here" is a later step).
+the link is marked `recompute`, `cast` or `aggregate`, and a group column `group_key`; the walk follows it and puts the fact on the line as a note (data only).
+What the walk can and cannot know there: it knows the step writes that NAME and the types before and after (from the plan); it cannot know whether the new
+values come from the same column or from another one, because only names are read, never the formula (D-0356). That is the PROVISIONAL part: the link
+says so (the note carries `knows_source_of_values` False).
+
+`READINGS` is the ONE source of what is read: `effect_of` reads an action only when it is a key of `READINGS` (or a row step), and a test proves that
+every registered action outside the two is `unread`.
 
 The actions that only remove, reorder or pick rows (`join_keys.ROW_STEPS`) need no reading of their arguments: the name of
 the action says that the columns stay. They are imported, never copied.
@@ -29,7 +35,7 @@ Consumed by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_step_ef
 If deleted: the walk cannot follow a column across a step.
 
 # @deps
-# provides: function:effect_of, function:predict, function:agreement_problem, function:unread_pairs, class:Effect, class:PredictedColumn, class:Source, constant:READINGS, constant:FOLLOWED_JOINS, constant:VALUE_CHANGES
+# provides: function:effect_of, function:predict, function:agreement_problem, function:unread_pairs, class:Effect, class:PredictedColumn, class:Source, constant:READINGS, constant:FOLLOWED_JOINS, constant:VALUE_CHANGES, constant:NOTE_CHANGES
 # consumes: libs/utils/src/utils/join_keys.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/plan_book.py
 # consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_step_effects.py
 # doc: .claude/knowledge/decision_ledger.md (D-0351), .claude/design/home_audit_steps.md
@@ -61,9 +67,11 @@ KEEPS, RENAME, DROP, SELECT, JOIN, WRITES, CAST, GROUP, UNREAD = "keeps", "renam
 
 # What a changed name is, for a link that is not the same name (the walk does not follow these yet: step 2).
 CHANGE_RENAME, CHANGE_KEY_OTHER_NAME, CHANGE_SUFFIX = "rename", "key_other_name", "suffix"
-# What a step that writes a column of the same name changes: its values (a compute step), its type (a cast), its meaning (an aggregate).
-CHANGE_RECOMPUTE, CHANGE_CAST, CHANGE_AGGREGATE = "recompute", "cast", "aggregate"
-VALUE_CHANGES = (CHANGE_RECOMPUTE, CHANGE_CAST, CHANGE_AGGREGATE)
+# What a step that writes a column of the same name changes: its values (a compute step), its type (a cast), its meaning (an aggregate); a group key keeps
+# its values but the rows after the step are the groups.
+CHANGE_RECOMPUTE, CHANGE_CAST, CHANGE_AGGREGATE, CHANGE_GROUP_KEY = "recompute", "cast", "aggregate", "group_key"
+VALUE_CHANGES = (CHANGE_RECOMPUTE, CHANGE_CAST, CHANGE_AGGREGATE)       # the plan decides the type of the column (its values or type are written by the step)
+NOTE_CHANGES = VALUE_CHANGES + (CHANGE_GROUP_KEY,)                      # the changes that are a note under the line
 
 
 @dataclass(frozen=True)
@@ -116,6 +124,8 @@ def effect_of(step: Any) -> Effect:
         return Effect(UNREAD, "", why="the step has no action name")
     if action in join_keys.ROW_STEPS:
         return Effect(KEEPS, action)
+    if action not in READINGS:                                                   # READINGS is the one source of what is read
+        return Effect(UNREAD, action, why=f"the walk may not read the action {action} yet")
     if action == action_names.RENAME:
         mapping = step.get("mapping")
         if isinstance(mapping, Mapping) and mapping and all(isinstance(k, str) and isinstance(v, str) for k, v in mapping.items()):
@@ -147,7 +157,7 @@ def effect_of(step: Any) -> Effect:
         if not isinstance(right, str) or not left_keys or len(left_keys) != len(right_keys):
             return Effect(UNREAD, action, why="the join has no readable key columns or no right table")
         return Effect(JOIN, action, left_keys=tuple(left_keys), right_keys=tuple(right_keys), how=how, suffix=join_keys.suffix_of(step), right=right)
-    return Effect(UNREAD, action, why=f"the walk may not read the action {action} yet")
+    raise AssertionError(f"READINGS lists {action} but effect_of has no reading for it")      # a listed action without a reading is a bug of this module, never a silent unread
 
 
 def predict(effect: Effect, before: Plan, right: Optional[Plan]) -> Tuple[PredictedColumn, ...]:
@@ -173,7 +183,7 @@ def predict(effect: Effect, before: Plan, right: Optional[Plan]) -> Tuple[Predic
         cast_names = set(effect.columns)
         return tuple(PredictedColumn(n, (Source("left", n),), CHANGE_CAST if n in cast_names else None) for n in before.names)
     if effect.kind == GROUP:
-        grouped = [PredictedColumn(n, (Source("left", n),)) for n in effect.columns if before.has(n)]
+        grouped = [PredictedColumn(n, (Source("left", n),), CHANGE_GROUP_KEY) for n in effect.columns if before.has(n)]
         aggregated = [PredictedColumn(n, (Source("left", n),), CHANGE_AGGREGATE) if before.has(n) and n not in effect.columns else PredictedColumn(n, ())
                       for n in effect.written if n not in effect.columns]
         return tuple(grouped) + tuple(aggregated)

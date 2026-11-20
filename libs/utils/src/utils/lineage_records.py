@@ -13,7 +13,7 @@ Consumed by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_lineage
 If deleted: the walk has nothing to return.
 
 # @deps
-# provides: class:Walk, class:Line, class:Gone, class:Unread, class:Outside, class:Occurrence, class:Hop, class:StepRef, class:SourceColumn, class:Reach, class:Reason, class:Note, class:Start, constant:GROUPS, constant:LEVELS, constant:HOW_VALUES, constant:REASON_CODES
+# provides: class:Walk, class:Line, class:Gone, class:Unread, class:Outside, class:Occurrence, class:Hop, class:StepRef, class:SourceColumn, class:Reach, class:Reason, class:Note, class:Start, class:SortedSet, constant:GROUPS, constant:LEVELS, constant:HOW_VALUES, constant:REASON_CODES, constant:NOTE_CODES, constant:VALUE_NOTES
 # consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_lineage_walk.py
 # doc: .claude/knowledge/decision_ledger.md (D-0346, D-0347, D-0195, D-0351)
 # @end_deps
@@ -41,31 +41,53 @@ def group_rank(group: str) -> int:
     return GROUPS.index(group)
 
 
-# How a column got to a place. `unchanged`, `renamed`, `created`, `re_created` and `unknown` are what the walk says today. `cast`, `recomputed`,
-# `dropped` and `gone` are reserved for the steps that are not built (casts, recompute notes, drops); nothing returns them yet.
+# How a column got to a place. `unchanged` and `unknown` say only that the name and the type did not change, or that the walk cannot say; `renamed` is a rename, a key under
+# another name or the suffix of a clash (the hop says which, with the name before and after); `cast`, `recomputed`, `aggregated` and `grouped` are a step that writes the
+# column's type, its values, its meaning (an aggregate) or the rows it sits on (a group key); `created` and `re_created` are a column made by a step. `dropped` and `gone`
+# are not produced (a column that is gone is a `Gone` note, not a line).
 UNCHANGED, RENAMED, CREATED, RE_CREATED, UNKNOWN = "unchanged", "renamed", "created", "re_created", "unknown"
-CAST, RECOMPUTED, DROPPED, GONE = "cast", "recomputed", "dropped", "gone"   # `cast` and `recomputed` are the `how` of a hop whose step writes the column's values or type (read by name only)
-HOW_VALUES = (UNCHANGED, RENAMED, CAST, RECOMPUTED, DROPPED, RE_CREATED, CREATED, GONE, UNKNOWN)
+CAST, RECOMPUTED, AGGREGATED, GROUPED, DROPPED, GONE = "cast", "recomputed", "aggregated", "grouped", "dropped", "gone"
+HOW_VALUES = (UNCHANGED, RENAMED, CAST, RECOMPUTED, AGGREGATED, GROUPED, DROPPED, RE_CREATED, CREATED, GONE, UNKNOWN)
 
 # The reasons a line is grey: a closed list.
 PLAN_FAILED = "plan_failed"                    # the engine could not give the plan here or above (its sentence is a parameter)
 STEP_NOT_READ = "step_not_read"                # a step on the path is outside the list of readings and the plan cannot show the column unchanged
-READING_DISAGREES = "reading_disagrees"        # a reading of D-0351 gives other columns than the plan (D-0351: grey, never guessed)
-CHANGE_NOT_FOLLOWED = "change_not_followed"    # the name or the values change on the path (a rename, a key under another name, a suffix, a cast, a recompute, an aggregate): not followed yet
+READING_DISAGREES = "reading_disagrees"        # a reading of D-0351 gives other columns than the plan (D-0351: grey, never guessed); both facts are in the reason
 SEVERAL_COLUMNS = "several_columns"            # the column exists more than once here (a table joined with itself): which one a step names is not decided
 CANNOT_FOLLOW = "cannot_follow"                # no trace could be made (a plan that disagrees with the one above)
 NO_STEP_LIST = "no_step_list"                  # a source table holds no list of steps (D-0332): the line is returned, a step cannot be written there (PROVISIONAL)
-REASON_CODES = (PLAN_FAILED, STEP_NOT_READ, READING_DISAGREES, CHANGE_NOT_FOLLOWED, SEVERAL_COLUMNS, CANNOT_FOLLOW, NO_STEP_LIST)
+REASON_CODES = (PLAN_FAILED, STEP_NOT_READ, READING_DISAGREES, SEVERAL_COLUMNS, CANNOT_FOLLOW, NO_STEP_LIST)
 
-# The notes under a line: a closed list.
+# The notes under a line: a closed list. They are DATA (a code and parameters: node, step, action, the names and the types before and after, the direction); the
+# words the user reads are written later in their own module. `direction` says whether the path from the place the user chose crosses the step with the
+# data (`forward`: the line is after the step) or against it (`backward`: the line is before the step).
 NOTE_UNREAD_STEP_PASSED = "unread_step_passed"   # the plan shows the name and type unchanged across a step the walk may not read: values may have changed
-NOTE_CODES = (NOTE_UNREAD_STEP_PASSED,)
+NOTE_ANOTHER_TYPE = "another_type_here"          # a cast: the type before and after (D-0337)
+NOTE_RECOMPUTED = "recomputed_here"              # a compute step writes the column under its own name (D-0353); `knows_source_of_values` is False: names only are read
+NOTE_AGGREGATED = "aggregated_here"              # a group-by aggregate that keeps the name (D-0353); `knows_source_of_values` is False
+NOTE_ONE_ROW_PER_GROUP = "one_row_per_group_after_this_step"   # a group-by key keeps its name; the rows after the step are the groups (D-0353)
+VALUE_NOTES = (NOTE_ANOTHER_TYPE, NOTE_RECOMPUTED, NOTE_AGGREGATED, NOTE_ONE_ROW_PER_GROUP)
+NOTE_CODES = (NOTE_UNREAD_STEP_PASSED,) + VALUE_NOTES
+
+# Why a walk holds no line, no note and no place no plot reads (never a silent empty result, D-0195).
+NO_PLACE_AT_THE_LEVELS = "no_place_at_the_chosen_levels"   # parameters: the chosen levels, the levels where the column exists in the lineage, the group
 
 # Why a table is listed as not reached.
 WHY_DECLARED_KEY_NOT_REACHED = "declared_key_not_reached"   # it declares the same key as the lineage holds, and no join links it: information, never a line
 OUTSIDE_CODES = (WHY_DECLARED_KEY_NOT_REACHED,)
 
 TICK, GREY = "tick", "grey"
+
+
+class SortedSet(frozenset):
+    """A frozen set that iterates, prints and lists in sorted order, whatever the hash seed of the process. Membership stays a set's. A caller that prints
+    or iterates a reach gets the same text in every run (the same input gives the same output)."""
+
+    def __iter__(self):
+        return iter(sorted(frozenset.__iter__(self)))
+
+    def __repr__(self) -> str:
+        return "{" + ", ".join(repr(x) for x in self) + "}" if self else "SortedSet()"
 
 
 @dataclass(frozen=True)
@@ -145,6 +167,10 @@ class Reach:
     tables_no_plot: FrozenSet[str]
     plots: FrozenSet[str]
 
+    def __post_init__(self) -> None:
+        for name in ("tables_with_plot", "tables_no_plot", "plots"):               # a plain set given is held as a sorted one: iteration and repr never depend on the hash seed
+            object.__setattr__(self, name, SortedSet(getattr(self, name)))
+
     @property
     def n_tables(self) -> int:
         return len(self.tables_with_plot)
@@ -177,6 +203,7 @@ class Line:
     is_start: bool
     reach: Reach
     refusal: Optional[Reason] = None            # "refused here, with the reason" (the drop of a key column, by place): carried per line, nothing sets it yet (step 4)
+    duplicates: Optional[str] = None            # a source line whose tier 1 has no steps is the same table as that tier 1 (PROVISIONAL, D-0346): the place it duplicates, so that a caller shows one line
 
 
 @dataclass(frozen=True)
@@ -227,6 +254,16 @@ class Walk:
     unread: Tuple[Unread, ...]
     outside: Tuple[Outside, ...]
     key_basis: str = "declared entity keys (is_entity_key) and the key pairs of the joins of the recipe; never the column name alone"
+    start_type: str = ""                         # the engine type of the column at the place the user chose: each line holds its own, the difference is the note
+    held_at_levels: Tuple[str, ...] = ()         # the levels (`LEVELS`) at which the column exists in the lineage, whatever levels were chosen
+
+    @property
+    def nothing(self) -> Optional[Reason]:
+        """Why the walk holds nothing, or None. Derived, never stored: no line, no note under a line and no place no plot reads means the chosen levels select no
+        place of the lineage; the reason says which levels were chosen and at which levels the column exists (D-0195: no silent empty result)."""
+        if self.lines or self.gone or self.unread:
+            return None
+        return Reason(NO_PLACE_AT_THE_LEVELS, (("levels", self.levels), ("held_at_levels", self.held_at_levels)))
 
     @property
     def found(self) -> int:
@@ -245,4 +282,5 @@ class Walk:
         """The walk restricted to the places of this group and the narrower ones (what a caller that offers only some groups shows)."""
         keep = group_rank(group)
         return Walk(self.start, self.step_kind, self.levels, tuple(x for x in self.lines if group_rank(x.scope_group) <= keep), tuple(x for x in self.gone if group_rank(x.scope_group) <= keep),
-                    tuple(x for x in self.unread if group_rank(x.scope_group) <= keep), self.outside, self.key_basis)
+                    tuple(x for x in self.unread if group_rank(x.scope_group) <= keep), self.outside, self.key_basis,
+                    self.start_type, self.held_at_levels)

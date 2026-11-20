@@ -22,15 +22,24 @@ PROVISIONAL behaviour (the owner has not decided; each place is marked in the co
 - P1b a line at the SOURCE level is returned and grey with `no_step_list` (a source file holds no list of steps, D-0332); how a step acts at that level is not decided.
 - P2 a step outside the readings (`step_effects.READINGS`, D-0351 and the names of 2026-11-20): a column across it is ticked only when the plan alone
   proves the name and the type unchanged; any other path through it is grey (`step_not_read`).
-- P3 (step 2 and the notes, not built) a name that changes on the path (a rename, a key under another name, a suffix of a clash) and a column a step
-  writes (recompute, cast, aggregate) are read and checked against the plan but NOT followed yet: the line is grey with `change_not_followed`.
-  A column such a step does not name is untouched: it passes, with no note.
+- P3 a name that changes on the path (a rename, a key under another name, the suffix of a clash) is FOLLOWED: the line on the other side carries the name the column has
+  THERE, with the source column and the hop (renamed from, to, by which step; D-0352, D-0357). A column that a step writes under its own name is the SAME column, ticked,
+  with a note as data (D-0353, D-0337): a cast (`another_type_here`, with the types), a compute step (`recomputed_here`), a group-by aggregate (`aggregated_here`) and
+  a group key (`one_row_per_group_after_this_step`). A column such a step does not name is untouched: it passes, with no note. PROVISIONAL (not stated by the owner): a recompute
+  or an aggregate under the same name is ticked also when its values come from ANOTHER column, because the walk reads names only (D-0356) and cannot tell; the note says
+  `knows_source_of_values` False. A cast to the type the column already has gives the hop but no note (no other type there).
 - P4 (O7) a place no plot reads is not a line; it is returned in `Walk.unread`, counted apart (D-0346 says it of a join; the same for a source).
 - P4b the record allows a rename in one tier and back in a later one as ONE column named as in each table (each occurrence has its own name; owner 2026-11-20).
 - P5 (O4) a place of the reach where the column no longer exists is a `Gone` note, distinct from grey (the three viewpoints agree; not confirmed).
 - P6 (Q4) a table whose tier 2 is empty is one place with its tier 1, also when plots read the table directly and joins read it too (D-0346 as written).
 - P7 (O8) a column that exists twice at a place (a table joined with itself) is grey; joins that are not left or inner are not read.
 - P8 (O3) an empty tier 2 or tier 2 of a table no plot reads is not a place; a tier 3 is always a line ("only this plot", D-0346).
+- P9 a line is ticked when ANY path from the chosen place to it is certain (the path with the fewest uncertain links, then the fewest changes, is taken); grey only when every path is uncertain.
+- P10 the GROUP of a place (lineage, join_linked) is the smallest group that reaches it, so the split depends on where the user looked from; the union of the groups does not.
+- P11 `Gone.removed_by` is the FIRST removing step in data-flow order (graph order of the node, then the step number) among the steps that removed the column on the way to the place.
+- P12 a join other than left or inner, and a column written under its own name from another column, are not told apart from the readable cases (see P3 and P7).
+- P13 a source line next to a tier 1 without steps is the same table: it stays grey `no_step_list` and carries `duplicates` (the tier 1 place), so that a caller shows one line.
+- P14 a walk that selects no place says so (`Walk.nothing`); which levels the column exists at is `Walk.held_at_levels`.
 
 The key refusal (D-0297) and the choice of a drop are step 4, not built: `step_kind` is carried, the lines are the same for a filter and a drop.
 
@@ -41,20 +50,21 @@ If deleted: the audit dialog has no way to list its places.
 # provides: function:walk, class:LineageIndex, class:LineageError, class:ColumnNotFound, class:StartPlanFailed
 # consumes: libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/step_effects.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/lineage_records.py
 # consumed_by: libs/utils/tests/test_lineage_walk.py
-# doc: .claude/knowledge/decision_ledger.md (D-0347, D-0346, D-0351, D-0195, D-0353), .claude/design/home_audit_steps.md
+# doc: .claude/knowledge/decision_ledger.md (D-0347, D-0346, D-0351, D-0195, D-0353, D-0352, D-0357, D-0337, D-0356, D-0355), .claude/design/home_audit_steps.md
 # @end_deps
 """
 from __future__ import annotations
 
 import collections
+import heapq
 from dataclasses import dataclass
-from typing import Any, Deque, Dict, FrozenSet, Iterable, List, Optional, Sequence, Set, Tuple, Union
+from typing import Any, Dict, FrozenSet, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 from utils import action_names, step_effects as fx
 from utils.lineage_records import (
-    CANNOT_FOLLOW, CAST, CHANGE_NOT_FOLLOWED, CREATED, GREY, JOIN_LINKED, LEVELS, LINEAGE, NO_STEP_LIST, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED,
-    READING_DISAGREES, RE_CREATED, RECOMPUTED, RENAMED, SEVERAL_COLUMNS, SOURCE, STEP_NOT_READ, T1, T2, T3, TICK, UNCHANGED, UNKNOWN,
-    WHY_DECLARED_KEY_NOT_REACHED, Gone, Hop, Line, Note, Occurrence, Outside, Reach, Reason, SourceColumn, Start, StepRef, Unread, Walk,
+    AGGREGATED, CANNOT_FOLLOW, CAST, CREATED, GREY, GROUPED, JOIN_LINKED, LEVELS, LINEAGE, NO_STEP_LIST, NOTE_AGGREGATED, NOTE_ANOTHER_TYPE, NOTE_ONE_ROW_PER_GROUP,
+    NOTE_RECOMPUTED, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED, READING_DISAGREES, RE_CREATED, RECOMPUTED, RENAMED, SEVERAL_COLUMNS, SOURCE, STEP_NOT_READ, T1, T2, T3,
+    TICK, UNCHANGED, UNKNOWN, WHY_DECLARED_KEY_NOT_REACHED, Gone, Hop, Line, Note, Occurrence, Outside, Reach, Reason, SourceColumn, Start, StepRef, Unread, Walk,
 )
 from utils.plan_book import Plan, PlanBook, PlanFailure
 from utils.recipe_graph import Node, RecipeGraph
@@ -63,10 +73,12 @@ Occ = Tuple[str, int, str]          # (node id, number of steps applied, column 
 PlanOrFailure = Union[Plan, PlanFailure]
 STEP_KINDS = ("filter", "drop")
 LEVEL_OF_KIND = {"DS": SOURCE, "T1": T1, "T2": T2, "T3": T3}
-# What a hop says of a step that writes a column of the same name or changes its name (data only; the notes and the following are a later step)
+# What a hop says of a step that changes the name of a column or writes its type, values or rows; and the note a change puts under the line (data only)
 HOW_OF_CHANGE = {fx.CHANGE_RENAME: RENAMED, fx.CHANGE_KEY_OTHER_NAME: RENAMED, fx.CHANGE_SUFFIX: RENAMED, fx.CHANGE_CAST: CAST,
-                 fx.CHANGE_RECOMPUTE: RECOMPUTED, fx.CHANGE_AGGREGATE: RECOMPUTED}
-HOW_PRIORITY = (UNKNOWN, RENAMED, CAST, RECOMPUTED)
+                 fx.CHANGE_RECOMPUTE: RECOMPUTED, fx.CHANGE_AGGREGATE: AGGREGATED, fx.CHANGE_GROUP_KEY: GROUPED}
+NOTE_OF_CHANGE = {fx.CHANGE_CAST: NOTE_ANOTHER_TYPE, fx.CHANGE_RECOMPUTE: NOTE_RECOMPUTED, fx.CHANGE_AGGREGATE: NOTE_AGGREGATED, fx.CHANGE_GROUP_KEY: NOTE_ONE_ROW_PER_GROUP}
+HOW_PRIORITY = (UNKNOWN, RENAMED, CAST, RECOMPUTED, AGGREGATED, GROUPED)
+Cost = Tuple[int, int]              # (uncertain links, links that change the name, type, values or rows) on a path: the least of both, in this order
 
 
 class LineageError(ValueError):
@@ -93,6 +105,7 @@ class _Link:
     join_how: Optional[str] = None
     join_side: Optional[str] = None
     note: Optional[Note] = None
+    changes: bool = False                    # the step changes the name, the type, the values or the rows of the column (a cost of a path, never a doubt)
 
 
 @dataclass(frozen=True)
@@ -211,6 +224,7 @@ class LineageIndex:
         is_join = effect.kind == fx.JOIN
         used_left: Set[str] = set()
         right_end = self.end(right_node) if right_node else ("", 0)
+        after = self._plan[(nid, k)]
         for pc in predicted:
             dst = (nid, k, pc.name)
             for source in pc.sources:
@@ -218,14 +232,33 @@ class LineageIndex:
                 src = (nid, k - 1, source.name) if left else (right_end[0], right_end[1], source.name)
                 if left:
                     used_left.add(source.name)
-                # a name that is kept is kept: only a source whose name differs, or a step that writes the column's values or type, changes it
-                kind_of = pc.change if (pc.change in fx.VALUE_CHANGES or source.name != pc.name) else None
-                reason = None if kind_of is None else Reason(CHANGE_NOT_FOLLOWED, (("change", kind_of), ("node", nid), ("step", k), ("from", source.name), ("to", pc.name)))
-                self._link(_Link(src, dst, kind_of is None, HOW_OF_CHANGE[kind_of] if kind_of else UNCHANGED, reason, ref, hop=bool(kind_of) or is_join,
-                                 join_how=effect.how if is_join else None, join_side=("base" if left else "right") if is_join else None))
+                # The reading agrees with the plan (checked by the caller), so the link is certain: the column is the same one under the name it has after the step
+                # (D-0351, D-0352, D-0357). A rename, a key under another name or the suffix of a clash changes the name (the hop says so); a step that writes the column
+                # under its own name changes its type, values or rows (a note, D-0353, D-0337).
+                kind_of = pc.change if (pc.change in fx.NOTE_CHANGES or source.name != pc.name) else None
+                note = self._change_note(kind_of, nid, k, ref, source.name, pc.name, before, after, src, dst)
+                self._link(_Link(src, dst, True, HOW_OF_CHANGE[kind_of] if kind_of else UNCHANGED, None, ref, hop=bool(kind_of) or is_join,
+                                 join_how=effect.how if is_join else None, join_side=("base" if left else "right") if is_join else None, note=note,
+                                 changes=bool(kind_of)))
         for name in before.names:
             if name not in used_left:                # dropped, or not selected: the plan and the reading agree that it is gone
                 self._die((nid, k - 1, name), nid, True, None, ref)
+
+    def _change_note(self, kind_of: Optional[str], nid: str, k: int, ref: StepRef, name_before: str, name_after: str, before: Plan, after: Plan,
+                     src: Occ, dst: Occ) -> Optional[Note]:
+        """The note a step puts under the lines it changes, as data: which step, the name and the type before and after. A rename, a key under another name and a
+        suffix are in the hop, not a note. A cast to the type the column already had changes nothing the user can see: no note (PROVISIONAL, P3)."""
+        if kind_of not in NOTE_OF_CHANGE:
+            return None
+        type_before = (self._plan[(src[0], src[1])].type_of(src[2]) if isinstance(self._plan[(src[0], src[1])], Plan) else None) or ""
+        type_after = after.type_of(name_after) or ""
+        if kind_of == fx.CHANGE_CAST and type_before == type_after:
+            return None
+        params: Tuple[Tuple[str, Any], ...] = (("node", nid), ("step", k), ("action", ref.action), ("name_before", name_before), ("name_after", name_after),
+                                               ("type_before", type_before), ("type_after", type_after))
+        if kind_of in (fx.CHANGE_RECOMPUTE, fx.CHANGE_AGGREGATE):
+            params += (("knows_source_of_values", False),)                  # PROVISIONAL (P3): names only are read, so the walk cannot tell where the new values come from
+        return Note(NOTE_OF_CHANGE[kind_of], params)
 
     def _plan_links(self, nid: str, k: int, ref: StepRef, before: Plan, after: Plan, right_node: Optional[str], right: Optional[PlanOrFailure],
                     reason: Reason, passes_certain: bool) -> None:
@@ -321,25 +354,24 @@ class LineageIndex:
         """Every column linked to the seeds, in both directions, until nothing new comes (joins that equate the column are followed both ways)."""
         return self._reach_set(seeds, forward=True, backward=True)
 
-    def _costs(self, start: Occ, allowed: Set[Occ]) -> Dict[Occ, Tuple[int, Optional[_Link], Optional[Occ]]]:
-        """Least number of uncertain links on a path from the start inside `allowed`, either direction (a 0-1 search): for each column the cost,
-        the last link used and the column before it on that path. Neighbours are visited in a fixed order, so the paths are the same every run."""
-        best: Dict[Occ, Tuple[int, Optional[_Link], Optional[Occ]]] = {start: (0, None, None)}
-        queue: Deque[Occ] = collections.deque([start])
-        while queue:
-            occ = queue.popleft()
-            cost = best[occ][0]
+    def _costs(self, start: Occ, allowed: Set[Occ]) -> Dict[Occ, Tuple[Cost, Optional[_Link], Optional[Occ]]]:
+        """Least cost of a path from the start inside `allowed`, either direction: for each column the cost (the number of uncertain links, then the number of links
+        that change the name, type, values or rows), the last link used and the column before it on that path. Neighbours are visited in a fixed order, so the paths
+        are the same every run. A column is certain when a path without an uncertain link reaches it (PROVISIONAL, P9)."""
+        best: Dict[Occ, Tuple[Cost, Optional[_Link], Optional[Occ]]] = {start: ((0, 0), None, None)}
+        heap: List[Tuple[Cost, Tuple[int, int, str], Occ]] = [((0, 0), self._sort_key(start), start)]
+        while heap:
+            cost, _key, occ = heapq.heappop(heap)
+            if cost != best[occ][0]:
+                continue
             neighbours = [(link.dst, link) for link in self._succ.get(occ, ())] + [(link.src, link) for link in self._pred.get(occ, ())]
-            for other, link in sorted(neighbours, key=lambda x: (self._sort_key(x[0]), not x[1].certain)):
+            for other, link in sorted(neighbours, key=lambda x: (self._sort_key(x[0]), not x[1].certain, x[1].changes)):
                 if other not in allowed:
                     continue
-                step = cost + (0 if link.certain else 1)
+                step = (cost[0] + (0 if link.certain else 1), cost[1] + (1 if link.changes else 0))
                 if other not in best or step < best[other][0]:
                     best[other] = (step, link, occ)
-                    if link.certain:
-                        queue.appendleft(other)
-                    else:
-                        queue.append(other)
+                    heapq.heappush(heap, (step, self._sort_key(other), other))
         return best
 
     # ------------------------------------------------------------------ the trail of an occurrence
@@ -427,7 +459,9 @@ class LineageIndex:
             line = self._classify(place, covers, reach, linked, lineage, linked, costs, start_place, region[place])
             (lines if isinstance(line, Line) else gone).append(line)  # type: ignore[arg-type]
         gone = [Gone(x.place, x.covers, x.removed_by, tuple(l.place for l in lines if self._reaches(l.reach, x.place)), kind, kind == "filter", x.reach, x.scope_group) for x in gone]
-        return Walk(start, kind, chosen_levels, tuple(lines), tuple(gone), tuple(unread), self._outside(linked))
+        held = {LEVEL_OF_KIND[g.node(n).kind] for p in self._region_groups(lineage, linked) if self.at_end(p, linked) for n in self.place_covers[p]}
+        return Walk(start, kind, chosen_levels, tuple(lines), tuple(gone), tuple(unread), self._outside(linked), start_type=plan.type_of(start.column) or "",
+                    held_at_levels=tuple(level for level in LEVELS if level in held))
 
     def _region_groups(self, lineage: Set[Occ], linked: Set[Occ]) -> Dict[str, str]:
         """Every place that a group reaches (forward from the nodes that hold the column) with the smallest group that reaches it."""
@@ -443,7 +477,7 @@ class LineageIndex:
         return place in reach.tables_with_plot or place in reach.tables_no_plot or (place.startswith("T3:") and place[3:] in reach.plots)
 
     def _classify(self, place: str, covers: Tuple[str, ...], reach: Reach, chosen: Set[Occ], lineage: Set[Occ], linked: Set[Occ],
-                  costs: Dict[Occ, Tuple[int, Optional[_Link], Optional[Occ]]], start_place: Optional[str], default_group: str) -> Union[Line, Gone]:
+                  costs: Dict[Occ, Tuple[Cost, Optional[_Link], Optional[Occ]]], start_place: Optional[str], default_group: str) -> Union[Line, Gone]:
         last = self.place_last[place]
         tier = self.graph.node(self.place_first[place]).kind
         kind = "plot" if tier == "T3" else "table"
@@ -463,22 +497,28 @@ class LineageIndex:
             state, reason = GREY, Reason(SEVERAL_COLUMNS, (("names", tuple(o[2] for o in held)),))                 # PROVISIONAL P7
         else:
             occ = held[0]
-            cost = costs[occ][0]
             path = self._path(occ, costs)
-            notes = [l.note for l in path if l.note is not None]
-            if cost > 0:
-                state, reason = GREY, next((l.reason for l in path if not l.certain and l.reason is not None), Reason(CANNOT_FOLLOW, (("node", occ[0]),)))
-        if tier == "DS" and state == TICK:                                                                            # PROVISIONAL: a source holds no list of steps (D-0332)
-            state, reason = GREY, Reason(NO_STEP_LIST, (("table", self.graph.node(self.place_first[place]).name),))
-        return Line(place, covers, tier, kind, occurrences, state, reason, tuple(notes), group, place == start_place, reach)
+            notes = [Note(l.note.code, l.note.params + (("direction", "forward" if forward else "backward"),)) for l, forward in path if l.note is not None]
+            if costs[occ][0][0] > 0:
+                state, reason = GREY, next((l.reason for l, _ in path if not l.certain and l.reason is not None), Reason(CANNOT_FOLLOW, (("node", occ[0]),)))
+        duplicates: Optional[str] = None
+        if tier == "DS":                                                                                              # PROVISIONAL (P1b, P13): a source holds no list of steps (D-0332)
+            table = self.graph.node(self.place_first[place]).name
+            if state == TICK:
+                state, reason = GREY, Reason(NO_STEP_LIST, (("table", table),))
+            first_tier = f"T1:{table}"
+            if self.graph.has_node(first_tier) and not self.graph.node(first_tier).steps:
+                duplicates = self.place_of[first_tier]                                                                # the same table as its tier 1: a caller shows one line
+        return Line(place, covers, tier, kind, occurrences, state, reason, tuple(notes), group, place == start_place, reach, None, duplicates)
 
     @staticmethod
-    def _path(occ: Occ, costs: Dict[Occ, Tuple[int, Optional[_Link], Optional[Occ]]]) -> List[_Link]:
-        """The links of the cheapest path from the start to a column, start first."""
-        links: List[_Link] = []
+    def _path(occ: Occ, costs: Dict[Occ, Tuple[Cost, Optional[_Link], Optional[Occ]]]) -> List[Tuple[_Link, bool]]:
+        """The links of the cheapest path from the start to a column, start first, each with whether the path crosses it with the data (`True`) or against it."""
+        links: List[Tuple[_Link, bool]] = []
         while costs[occ][1] is not None:
-            links.append(costs[occ][1])  # type: ignore[arg-type]
-            occ = costs[occ][2]  # type: ignore[assignment]
+            link, before = costs[occ][1], costs[occ][2]
+            links.append((link, link.src == before))  # type: ignore[union-attr]
+            occ = before  # type: ignore[assignment]
         links.reverse()
         return links
 
@@ -493,8 +533,8 @@ class LineageIndex:
         if uncertain or not found:
             reason = uncertain[0].reason if uncertain else Reason(CANNOT_FOLLOW, (("node", last),))
             return Line(place, covers, tier, kind, (), GREY, reason, (), group, False, reach)
-        nearest = sorted(found, key=lambda d: (self._order[d.in_node], d.ref.step if d.ref else 0))[-1]
-        return Gone(place, covers, nearest.ref, (), "filter", True, reach, group)
+        first = sorted(found, key=lambda d: (self._order[d.in_node], d.ref.step if d.ref else 0))[0]      # PROVISIONAL (P11): the FIRST removing step in data-flow order
+        return Gone(place, covers, first.ref, (), "filter", True, reach, group)
 
     # ------------------------------------------------------------------ what is not reached
     def _outside(self, linked: Set[Occ]) -> Tuple[Outside, ...]:

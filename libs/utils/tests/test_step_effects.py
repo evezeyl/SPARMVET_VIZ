@@ -62,7 +62,7 @@ def test_a_compute_step_leaves_the_other_columns_untouched_and_the_plan_agrees()
 def test_a_group_by_keeps_its_group_columns_aggregates_by_name_and_loses_the_rest():
     effect = fx.effect_of({"action": action_names.GROUP_BY, "by": ["country"], "named_aggs": {"val": "m", "n": "c"}})
     predicted = fx.predict(effect, BEFORE, None)
-    assert [(p.name, p.change, len(p.sources)) for p in predicted] == [("country", None, 1), ("val", fx.CHANGE_AGGREGATE, 1), ("n", None, 0)]
+    assert [(p.name, p.change, len(p.sources)) for p in predicted] == [("country", fx.CHANGE_GROUP_KEY, 1), ("val", fx.CHANGE_AGGREGATE, 1), ("n", None, 0)]
     assert fx.agreement_problem(effect, predicted, BEFORE, None, Plan.of([("country", "String"), ("val", "Float64"), ("n", "UInt32")])) is None
     assert fx.agreement_problem(effect, predicted, BEFORE, None, Plan.of([("country", "String"), ("val", "Float64")])) is not None
     missing = fx.effect_of({"action": action_names.GROUP_BY, "by": ["nope"], "named_aggs": {}})

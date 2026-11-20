@@ -17,8 +17,8 @@ import pytest
 from lineage_support import TIERS, independent_places, places, run, setup, ticked
 
 from utils.lineage_records import (
-    CHANGE_NOT_FOLLOWED, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED, READING_DISAGREES, SEVERAL_COLUMNS, STEP_NOT_READ, Reach,
-    Start, GROUPS, JOIN_LINKED, LINEAGE, NO_STEP_LIST)
+    NOTE_AGGREGATED, NOTE_ANOTHER_TYPE, NOTE_ONE_ROW_PER_GROUP, NOTE_RECOMPUTED, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED, READING_DISAGREES, SEVERAL_COLUMNS,
+    STEP_NOT_READ, Reach, Start, GROUPS, JOIN_LINKED, LINEAGE, NO_STEP_LIST)
 from utils.lineage_walk import ColumnNotFound, LineageError, LineageIndex, StartPlanFailed
 from utils.plan_book import PlanBook
 
@@ -288,7 +288,7 @@ def test_L053_a_table_without_the_key_is_not_a_line_and_is_not_changed():
 
 # ----------------------------------------------------------------------------------------------------------------------------- B. identity
 
-def test_L015_a_rename_on_one_path_is_not_followed_yet_and_the_other_table_is_never_offered():
+def test_L015_a_rename_on_one_path_is_followed_and_the_other_table_is_never_offered():
     recipe = F.recipe({"A": F.schema(["sample_id", "country"], [F.rename(country="origin")]), "B": F.schema(["sample_id", "country"])},
                       {}, {"Pa": F.plot("A"), "Pb": F.plot("B")})
     tables = {"A": F.table(sample_id=["S1"], country=["NO"]), "B": F.table(sample_id=["S1"], country=["SE"])}
@@ -300,8 +300,9 @@ def test_L015_a_rename_on_one_path_is_not_followed_yet_and_the_other_table_is_ne
     other = run(recipe, tables, "T3:Pb", "country")
     assert places(other) == ["T1:B", "T3:Pb"]                                                      # the plan of A's source also has `country`: still not offered
     from_source = run(recipe, tables, "DS:A", "country")
-    assert line(from_source, "T1:A").state == "grey" and line(from_source, "T1:A").reason.code == CHANGE_NOT_FOLLOWED      # PROVISIONAL (step 2 not built)
-    assert line(from_source, "T1:A").reason.get("change") == "rename" and line(from_source, "T1:A").occurrences[0].name == "origin"
+    assert places(from_source) == ["T1:A", "T3:Pa"] and ticked(from_source) == places(from_source)           # the rename is followed: the line carries the name THERE
+    assert line(from_source, "T1:A").occurrences[0].name == "origin" and line(from_source, "T1:A").occurrences[0].sources[0].name == "country"
+    assert line(from_source, "T1:A").notes == () and line(from_source, "T1:A").occurrences[0].steps[0].how == "renamed"      # a rename is a hop, not a note
 
 
 def test_L016_same_name_and_same_type_is_not_the_same_column():
@@ -311,33 +312,41 @@ def test_L016_same_name_and_same_type_is_not_the_same_column():
     assert places(run(recipe, tables, "T3:Pa", "year")) == ["T1:A", "T3:Pa"] and places(run(recipe, tables, "T3:Pb", "year")) == ["T1:B", "T3:Pb"]
 
 
-def test_L017_a_clash_in_a_join_the_right_column_carries_the_suffix_and_is_not_followed_yet():
+def test_L017_a_clash_in_a_join_the_right_column_carries_the_suffix_and_is_followed_to_its_name_in_its_table():
     recipe = F.recipe({"A": F.schema(["sample_id", "val"]), "B": F.schema(["sample_id", "val"])}, {"J": F.join(["A", "B"], [F.join_step("B")])}, {"P": F.plot("J")})
     tables = {"A": F.table(sample_id=["S1"], val=[1.0]), "B": F.table(sample_id=["S1"], val=[2.0])}
     left = run(recipe, tables, "T1:J", "val")
     assert places(left) == ["T1:A", "T1:J", "T3:P"] and ticked(left) == places(left)              # A's val; B's val is another column
     right = run(recipe, tables, "T1:J", "val_right")
-    assert places(right) == ["T1:B", "T1:J", "T3:P"] and line(right, "T1:B").state == "grey" and line(right, "T1:B").reason.get("change") == "suffix"
+    assert places(right) == ["T1:B", "T1:J", "T3:P"] and ticked(right) == places(right)
+    assert [(x.place, x.occurrences[0].name) for x in right.lines] == [("T1:B", "val"), ("T1:J", "val_right"), ("T3:P", "val_right")]      # `val` in B, `val_right` after the join
     hop = line(right, "T1:J").occurrences[0].steps[0]
     assert (hop.join_how, hop.join_side, hop.name_before, hop.name_after) == ("left", "right", "val", "val_right")
 
 
-def test_L019_a_swap_by_rename_is_never_ticked():
+def test_L019_a_swap_by_rename_is_followed_by_the_mapping_not_one_rename_after_the_other():
     recipe = F.recipe({"A": F.schema(["a", "b"], [F.rename(a="b", b="a")])}, {}, {"P": F.plot("A")})
-    tables = {"A": F.table(a=[1], b=[2])}
-    walk = run(recipe, tables, "DS:A", "a")                                                       # the plan shows no change when the types are equal
-    assert [(x.place, x.state, x.occurrences[0].name) for x in walk.lines] == [("T1:A", "grey", "b"), ("T3:P", "grey", "b")]
-    assert line(walk, "T1:A").reason.code == CHANGE_NOT_FOLLOWED
+    tables = {"A": F.table(a=["x"], b=["y"])}
+    walk = run(recipe, tables, "DS:A", "a")                                                       # Polars renames at once: the old `a` is the new `b`
+    assert [(x.place, x.state, x.occurrences[0].name) for x in walk.lines] == [("T1:A", "tick", "b"), ("T3:P", "tick", "b")]
+    other = run(recipe, tables, "DS:A", "b")
+    assert [(x.place, x.state, x.occurrences[0].name) for x in other.lines] == [("T1:A", "tick", "a"), ("T3:P", "tick", "a")]
+    back = run(recipe, tables, "T3:P", "b", levels=("source", "T1", "T2", "T3"))                   # and backwards: the column called `b` at the end was `a` in the file
+    assert line(back, "DS:A").occurrences[0].name == "a" and line(back, "T1:A").occurrences[0].name == "b"
+    typed = {"A": F.table(a=["x"], b=[1])}                                                        # with two types the plan itself shows the swap: the reading agrees with it
+    mixed = run(recipe, typed, "DS:A", "a")
+    assert [(x.place, x.state, x.occurrences[0].name, x.occurrences[0].type) for x in mixed.lines] == [("T1:A", "tick", "b", "String"), ("T3:P", "tick", "b", "String")]
 
 
-def test_L021_a_key_under_another_name_is_listed_and_grey_not_dropped():
+def test_L021_a_key_under_another_name_is_followed_to_its_name_in_the_other_table():
     recipe = F.recipe({"A": F.schema(["sample_id"], keys=["sample_id"]), "B": F.schema(["isolate", "lab"])},
                       {"J": F.join(["A", "B"], [F.join_step("B", on=("sample_id", "isolate"))])}, {"P": F.plot("J"), "Pb": F.plot("B")})
     tables = {"A": F.table(sample_id=["S1"]), "B": F.table(isolate=["S1"], lab=["X"])}
     walk = run(recipe, tables, "T1:J", "sample_id")
-    assert places(walk) == ["T1:A", "T1:B", "T1:J", "T3:P", "T3:Pb"]
-    assert line(walk, "T1:B").state == "grey" and line(walk, "T1:B").reason.get("change") == "key_other_name" and line(walk, "T1:B").occurrences[0].name == "isolate"
-    assert line(walk, "T1:A").state == "tick" and line(walk, "T1:J").state == "tick"
+    assert places(walk) == ["T1:A", "T1:B", "T1:J", "T3:P", "T3:Pb"] and ticked(walk) == places(walk)
+    assert line(walk, "T1:B").occurrences[0].name == "isolate" and line(walk, "T1:A").occurrences[0].name == "sample_id"      # the name THERE
+    hop = line(walk, "T1:J").occurrences[0].steps[0]
+    assert (hop.name_before, hop.name_after, hop.join_side) in {("sample_id", "sample_id", "base"), ("isolate", "sample_id", "right")}
 
 
 def test_L022_a_full_join_is_not_read_and_what_depends_on_it_is_grey_with_the_reason_PROVISIONAL():
@@ -388,16 +397,22 @@ def test_L024_the_column_dropped_on_one_path_is_a_note_under_the_lines_that_reac
 
 # ----------------------------------------------------------------------------------------------------------------------------- unread steps
 
-def test_L034_a_cast_changes_the_type_of_the_column_it_names_and_that_is_not_followed_yet():
+def test_L034_a_cast_changes_the_type_of_the_column_it_names_the_same_column_is_offered_with_a_note():
     recipe, tables = F.chain(a_steps=[F.keep("val", "gt", 0.0), F.cast(["year"], "String")])
     walk = run(recipe, tables, "DS:A", "year")                                       # from the source column, the cast is on the path
-    assert [(x.place, x.state) for x in walk.lines] == [("T1:A", "grey"), ("T1:J", "grey"), ("T3:P1", "grey"), ("T3:P2", "grey")]
-    reason = line(walk, "T1:A").reason
-    assert (reason.code, reason.get("node"), reason.get("step"), reason.get("change")) == (CHANGE_NOT_FOLLOWED, "T1:A", 2, "cast")
+    assert [(x.place, x.state) for x in walk.lines] == [("T1:A", "tick"), ("T1:J", "tick"), ("T3:P1", "tick"), ("T3:P2", "tick")]      # the same column (D-0353, D-0337)
     occurrence = line(walk, "T1:A").occurrences[0]
     assert (occurrence.how, occurrence.type, occurrence.steps[0].type_before, occurrence.steps[0].type_after) == ("cast", "String", "Int64", "String")
+    note = line(walk, "T1:A").notes[0]
+    assert note.code == NOTE_ANOTHER_TYPE and dict(note.params) == {"node": "T1:A", "step": 2, "action": "polars_cast", "name_before": "year", "name_after": "year",
+                                                                  "type_before": "Int64", "type_after": "String", "direction": "forward"}
+    assert walk.start_type == "Int64" and line(walk, "T3:P2").occurrences[0].type == "String" and line(walk, "T3:P2").notes[0].code == NOTE_ANOTHER_TYPE
     after = run(recipe, tables, "T3:P2", "year")                                      # from after the cast it is the same column everywhere downstream
-    assert places(after) == ["T1:A", "T1:J", "T3:P1", "T3:P2"] and ticked(after) == places(after)
+    assert places(after) == ["T1:A", "T1:J", "T3:P1", "T3:P2"] and ticked(after) == places(after) and all(x.notes == () for x in after.lines)
+    back = run(recipe, tables, "T3:P2", "year", levels=("source", "T1", "T2", "T3"))  # from after the cast, back to the file: the source has another type, said as data
+    source = line(back, "DS:A")
+    assert source.occurrences[0].type == "Int64" and back.start_type == "String" and source.notes[0].code == NOTE_ANOTHER_TYPE
+    assert (dict(source.notes[0].params)["direction"], dict(source.notes[0].params)["type_before"], dict(source.notes[0].params)["type_after"]) == ("backward", "Int64", "String")
     other = run(recipe, tables, "DS:A", "country")                                    # a column the cast does not name is untouched: no grey, no note
     assert ticked(other) == places(other) == ["T1:A", "T1:J", "T3:P1", "T3:P2"] and all(x.notes == () for x in other.lines)
 
@@ -415,9 +430,10 @@ def test_L034_a_step_the_walk_may_not_read_is_grey_unless_the_plan_shows_the_col
 
 def test_L030_PROVISIONAL_a_compute_step_names_the_columns_it_writes_the_others_pass_untouched():
     recipe, tables = F.chain(a_steps=[F.keep("val", "gt", 0.0), F.with_columns(year="pl.col('year') + 1")])
-    written = run(recipe, tables, "DS:A", "year")                                     # the step writes `year`: the same column, recomputed; not followed yet (the note is a later step)
-    assert [(x.place, x.state) for x in written.lines] == [("T1:A", "grey"), ("T1:J", "grey"), ("T3:P1", "grey"), ("T3:P2", "grey")]
-    assert (line(written, "T1:A").reason.code, line(written, "T1:A").reason.get("change")) == (CHANGE_NOT_FOLLOWED, "recompute")
+    written = run(recipe, tables, "DS:A", "year")                                     # the step writes `year`: the same column, recomputed (D-0353): offered, ticked, with a note
+    assert [(x.place, x.state) for x in written.lines] == [("T1:A", "tick"), ("T1:J", "tick"), ("T3:P1", "tick"), ("T3:P2", "tick")]
+    note = line(written, "T1:A").notes[0]
+    assert note.code == NOTE_RECOMPUTED and dict(note.params)["step"] == 2 and dict(note.params)["knows_source_of_values"] is False      # PROVISIONAL: names only
     assert line(written, "T1:A").occurrences[0].how == "recomputed"
     other = run(recipe, tables, "DS:A", "country")                                    # not named by the step: untouched, reading and plan agree: no grey, no note
     assert ticked(other) == places(other) == ["T1:A", "T1:J", "T3:P1", "T3:P2"] and all(x.notes == () for x in other.lines)
@@ -438,24 +454,33 @@ def test_L031_a_group_by_names_its_group_columns_and_aggregates_so_the_walk_read
     gone = run(recipe, tables, "DS:A", "country")                                     # not a group column and not an aggregate: the reading and the plan agree it is gone
     assert gone.lines == () and [g.place for g in gone.gone] == ["T1:A", "T1:J", "T3:P1", "T3:P2"]
     assert all((g.removed_by.node, g.removed_by.step, g.removed_by.action) == ("T1:A", 2, "polars_group_by") for g in gone.gone)
-    key = run(recipe, tables, "DS:A", "year")                                         # a group column passes untouched
-    assert ticked(key) == places(key) == ["T1:A", "T1:J", "T3:P1", "T3:P2"] and all(x.notes == () for x in key.lines)
-    aggregate = run(recipe, tables, "DS:A", "val")                                    # an aggregate under the same name: the same column, changed (not followed yet)
-    assert line(aggregate, "T1:A").state == "grey" and line(aggregate, "T1:A").reason.get("change") == "aggregate"
-    assert line(aggregate, "T1:A").occurrences[0].how == "recomputed"
+    key = run(recipe, tables, "DS:A", "year")                                         # a group column passes under its name, the rows after the step are the groups
+    aggregate = run(recipe, tables, "DS:A", "val")                                    # an aggregate under the same name: the same column, offered with a note (D-0353)
+    assert ticked(aggregate) == places(aggregate) == ["T1:A", "T1:J", "T3:P1", "T3:P2"]
+    assert [n.code for n in line(aggregate, "T1:A").notes] == [NOTE_AGGREGATED] and line(aggregate, "T1:A").occurrences[0].how == "aggregated"
+    assert [(x.place, x.state) for x in key.lines] == [(p, "tick") for p in ["T1:A", "T1:J", "T3:P1", "T3:P2"]]
+    assert [n.code for n in line(key, "T1:A").notes] == [NOTE_ONE_ROW_PER_GROUP] and line(key, "T1:A").occurrences[0].how == "grouped"       # a group key: rows are the groups after the step
 
 
 def test_L018_a_column_renamed_in_one_tier_and_back_in_a_later_one_is_one_column_named_as_in_each_table():
-    # owner 2026-11-20: ONE column, named as in each table. The rename is not followed yet (step 2), but the record already holds the name of each place
-    # and the one source; the line of each tier says its own name.
+    # owner 2026-11-20 (D-0357, D-0352): ONE column, named as in each table. A rename in tier 1 and back in tier 2: the tier 1 line shows the tier 1 name.
     recipe = F.recipe({"A": F.schema(["sample_id", "country"], [F.rename(country="origin")], [F.rename(origin="country")])}, {}, {"P": F.plot("A")})
     tables = {"A": F.table(sample_id=["S1"], country=["NO"])}
     walk = run(recipe, tables, "T3:P", "country")
-    assert places(walk) == ["T1:A", "T2:A", "T3:P"]
+    assert places(walk) == ["T1:A", "T2:A", "T3:P"] and ticked(walk) == places(walk)
     assert [(x.place, x.occurrences[0].name) for x in walk.lines] == [("T1:A", "origin"), ("T2:A", "country"), ("T3:P", "country")]
     assert {(s.table, s.name) for x in walk.lines for o in x.occurrences for s in o.sources} == {("A", "country")}        # one source column
-    assert line(walk, "T2:A").state == "tick" and line(walk, "T1:A").state == "grey"           # PROVISIONAL (step 2): the rename of tier 2 is on the way to T1, not followed yet
-    assert (line(walk, "T1:A").reason.get("node"), line(walk, "T1:A").reason.get("change")) == ("T2:A", "rename")
+    from_t1 = run(recipe, tables, "T1:A", "origin")
+    assert [(x.place, x.occurrences[0].name) for x in from_t1.lines] == [("T1:A", "origin"), ("T2:A", "country"), ("T3:P", "country")]
+    hops = line(from_t1, "T3:P").occurrences[0].steps
+    assert [(h.step.node, h.name_before, h.name_after) for h in hops] == [("T1:A", "country", "origin"), ("T2:A", "origin", "country")]       # renamed from, to, by which step
+
+
+def test_L018_a_rename_within_one_tier_and_back_leaves_no_place_with_the_other_name():
+    recipe = F.recipe({"A": F.schema(["sample_id", "country"], [F.rename(country="origin"), F.rename(origin="country")])}, {}, {"P": F.plot("A")})
+    walk = run(recipe, {"A": F.table(sample_id=["S1"], country=["NO"])}, "DS:A", "country")
+    assert [(x.place, x.occurrences[0].name) for x in walk.lines] == [("T1:A", "country"), ("T3:P", "country")]               # the tier's table has one name
+    assert [h.name_after for h in line(walk, "T1:A").occurrences[0].steps] == ["origin", "country"]                            # the way is still in the hops
 
 
 def test_L034_a_reading_that_the_plan_contradicts_is_grey_with_the_problem():
