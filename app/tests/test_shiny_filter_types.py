@@ -1,7 +1,14 @@
 """The HOME filter dialog keeps the real value and shows the type (ADR-104 point 7, Eve 2026-11-14), in the browser.
 
 A table of 600 rows with a whole-number column `year` that the plot uses as a discrete axis; the value 1900 appears only in
-the last row (after row 500, the rows the old dialog read). The dialog:
+the last row (after row 500, the rows the old dialog read).
+
+The plot has to draw (the opening draws every plot and refuses a recipe whose plot cannot be drawn, D-0327), and plotnine cannot put a
+discrete scale on a whole-number column: it raises `'RangeDiscrete' object has no attribute 'range'` (also on dev, where HOME showed an
+error picture and these tests never looked at the plot). The recipe rule is that a number used as a category is cast (`rules_data_analysis_recipe_structure.md`
+section 6), so the plot's own tier-3 steps cast `year` to text; the plot draws from that table. The table of the earlier tiers (the data
+choice "Raw (T1)", where these tests read the dialog) still holds `year` as a whole number, and the plot still declares the discrete
+axis: that is the case the dialog serves. The dialog:
   - says what the column holds ("year holds whole numbers (Int64).");
   - lists the late value 1900 (the list comes from the whole column);
   - offers "> 1999 and < 2003" on that discrete year, with number boxes, and the filter leaves the right rows;
@@ -19,6 +26,7 @@ import pytest
 import yaml
 from playwright.sync_api import Page, expect
 
+from app.tests.browser_view import set_view
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
 from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
@@ -42,7 +50,8 @@ def typed_app():
     (WORK / "years.tsv").write_text("sample_id\tyear\n" + "".join(f"s{i}\t{y}\n" for i, y in enumerate(YEARS)), encoding="utf-8")
     schema = minimal_schema("./tmpAI/browser_typed_values/years.tsv", {"sample_id": "String", "year": "Int64"}, entity_key="sample_id")
     schema["description"] = "One row per sample."
-    plot = minimal_plot("years", {"x": "year"}, [{"name": "geom_bar", "params": {}}, {"name": "scale_x_discrete", "params": {}}], label="Samples per year")
+    plot = minimal_plot("years", {"x": "year"}, [{"name": "geom_bar", "params": {}}, {"name": "scale_x_discrete", "params": {}}], label="Samples per year",
+                        tier3=[{"action": "polars_cast", "columns": ["year"], "dtype": "String"}])   # a number used as a category is cast: the plot draws
     plot["description"] = "Count of samples per year."
     recipe = minimal_recipe("years", label="Years", schemas={"years": schema}, plots={"years_plot": plot})
     recipe["info"]["description"] = "A table with an integer year, for a browser test."
@@ -100,6 +109,7 @@ def _open_dialog(page: Page, url: str) -> None:
     _open_app(page, url)
     page.locator(".nav-link:has-text('Years')").first.click()
     _wait_shiny(page)
+    set_view(page, "T1")   # the table before the plot's own steps: `year` is a whole number there
     _open_filters_panel(page)
     _wait_for_fb_col_option(page, "year")
     page.locator("#fb_col").select_option("year")

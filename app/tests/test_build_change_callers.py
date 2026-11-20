@@ -201,9 +201,15 @@ def test_the_preview_command_still_succeeds_when_nothing_changes_during_the_buil
 
 
 def test_the_gallery_build_hands_the_callback_to_both_tiers(tmp_path):
+    """Tier 1 gets the callback (checked on the call). The plot's table is read by `materialize_tier3`, which builds the Tier 2 through the private
+    `_materialize_tier2` and tells the callback it was given: a change that the build reports must reach the gallery's own callback, which fails the build.
+    Only the two builds are stand-ins (a build that reports a change); the reader `materialize_tier3` is the real one."""
+    import polars as pl
     example = ROOT / "assets" / "gallery_data" / "bar_simple"
+    change = InputsChanged("the data files changed")
     with mock.patch("app.modules.orchestrator.DataOrchestrator.materialize_tier1") as tier1, \
-            mock.patch("app.modules.orchestrator.DataOrchestrator.materialize_tier2") as tier2:
-        gallery_examples._build(example, tmp_path / "work", Path("."))
+            mock.patch("app.modules.orchestrator.DataOrchestrator._materialize_tier2", return_value=(pl.LazyFrame({"x": [1]}), "key", change)):
+        with pytest.raises(gallery_examples.InputsChangedDuringBuild) as raised:
+            gallery_examples._build(example, tmp_path / "work", Path("."))
     assert tier1.call_args.kwargs["on_inputs_changed"] is gallery_examples.tell_inputs_changed
-    assert tier2.call_args.kwargs["on_inputs_changed"] is gallery_examples.tell_inputs_changed
+    assert "the data files changed" in str(raised.value), "the plot's table was read without the gallery's callback"

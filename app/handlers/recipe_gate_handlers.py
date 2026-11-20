@@ -1,7 +1,7 @@
 """
 @deps
 provides: function:define_server (HOME's load gate follower, GATE-GAP-1), function:tell_tables_rebuilt, function:follow_gate, function:gate_notes
-consumes: app/src/bootloader.py (take_stored_tables_notice: the one-time notice of the cache version, recheck_changed_data_analysis_recipes, data_analysis_recipe_gate_version, available/rejected recipes), app/modules/data_analysis_recipe_validator.py (home_advice_entries)
+consumes: the shared reactive.Value shown_recipe (made by server.py, also written by app/handlers/opening_handlers.py), app/src/bootloader.py (take_stored_tables_notice: the one-time notice of the cache version, recheck_changed_data_analysis_recipes, data_analysis_recipe_gate_version, available/rejected recipes), app/modules/data_analysis_recipe_validator.py (home_advice_entries)
 consumed_by: app/src/server.py
 doc: .claude/rules/rules_data_analysis_recipe_structure.md#11, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/rules/ui_implementation_contract.md#14
 @end_deps
@@ -142,9 +142,12 @@ def tell_tables_rebuilt(bootloader, notify) -> bool:
     return bool(text)
 
 
-def define_server(input, output, session, *, bootloader, safe_input, recipe_gate_version, notification_log=None):
+def define_server(input, output, session, *, bootloader, safe_input, recipe_gate_version, notification_log=None, shown_recipe=None):
     """Registers the poll of the gate, the selector follower and the notes output. `recipe_gate_version` is a reactive.Value
-    created by server.py (shared state read by `active_cfg`); `notification_log` is the Alerts log."""
+    created by server.py (shared state read by `active_cfg`); `notification_log` is the Alerts log. `shown_recipe` is the
+    `reactive.Value` that holds the recipe HOME shows in this session (server.py): the selector writes it here, and the opening
+    of a recipe writes it too (`opening_handlers`), because on the first screen the selector value has not reached the server
+    when the opening refuses the recipe, and the notice still has to name the recipe that was left."""
     _notify = make_notifier(notification_log)
 
     @reactive.poll(lambda: (bootloader.recheck_changed_data_analysis_recipes(),
@@ -157,7 +160,7 @@ def define_server(input, output, session, *, bootloader, safe_input, recipe_gate
         """Runs once when the session starts: it reads no input."""
         tell_tables_rebuilt(bootloader, _notify)
 
-    _remembered = reactive.Value(None)   # the last recipe the selector had (it is off the page while Blueprint is open)
+    _remembered = shown_recipe if shown_recipe is not None else reactive.Value(None)   # the last recipe HOME showed (the selector is off the page while Blueprint is open)
     _switched = reactive.Value(None)     # (recipe that was open, recipe shown instead) after the gate dropped the open one
 
     @reactive.Effect

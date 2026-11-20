@@ -156,12 +156,14 @@ def test_the_steps_of_a_plot_are_applied_to_that_plots_table_and_the_other_plot_
 
 
 def test_a_plot_with_no_tier3_steps_reads_exactly_the_tier2_table_and_stores_nothing_for_it(tmp_path):
+    """D-0343: a plot with tier-3 steps of its own has its table stored by its key; a plot without reads the Tier 2 (T3 = T2) and adds no file."""
     world = Tier3World(tmp_path, tier2=[KEEP_FROM_2])
     plain = world.table("p_plain")
     assert plain.equals(world.orch.materialize_tier2("tiny", "C", world.anchors / "C.parquet", keys=world.keys()).collect())
+    assert sorted(p.name for p in world.anchors.iterdir()) == ["C.parquet", "C__T2.parquet"], "p_plain has no file of its own"
     world.table("p_steps")
     stored = sorted(p.name for p in world.anchors.iterdir())
-    assert stored == ["C.parquet", "C__T2.parquet"], f"no file is written for a plot's table (PROVISIONAL: lazy): {stored}"
+    assert stored == ["C.parquet", "C__T2.parquet", "C__T3_p_steps.parquet"], f"only the plot with its own tier-3 steps has a file: {stored}"
 
 
 def test_the_tier3_runs_after_the_tier2_in_that_order(tmp_path):
@@ -443,19 +445,19 @@ def test_an_export_of_a_plot_whose_tier3_cannot_be_applied_loses_nothing_silentl
     assert [m for t, m in notes if t in ("error", "warning") and "p_steps" in m], notes
 
 
-def test_a_failure_that_depends_on_a_value_shows_at_the_read_and_the_consumer_names_the_plot(tmp_path):
-    """M3: a cast of a value that does not fit cannot be seen from the schema: the table is returned lazy and the engine's own error
-    comes at the read. It names neither the plot nor the step; `plot_read_error_text` adds the plot, for a plot with tier-3 steps only."""
+def test_a_failure_that_depends_on_a_value_is_named_by_the_plot_and_the_step_when_the_table_is_stored(tmp_path):
+    """M3, changed by D-0343: the table of the plot is stored when it is built, so a cast of a value that does not fit shows then, and the app names the plot
+    and the first step that fails (`build_failure`), not the engine's bare sentence. A plot without tier-3 steps keeps the error as it is."""
     from app.modules.orchestrator import plot_read_error_text
-    world = Tier3World(tmp_path, tier3=({"action": "polars_cast", "columns": ["group"], "dtype": "Int64"},))
-    lazy = world.orch.materialize_tier3("tiny", "p_steps", world.anchors, keys=world.keys())   # no error here: only values fail
-    with pytest.raises(Exception) as error:
-        lazy.collect()
-    raw_message = str(error.value)
-    assert "p_steps" not in raw_message, "the engine's own message does not name the plot (what the docstring says)"
-    named = plot_read_error_text(world.raw(), "p_steps", error.value)
-    assert raw_message in named and "'p_steps'" in named and "tier-3 steps" in named
-    assert plot_read_error_text(world.raw(), "p_plain", error.value) == raw_message, "a plot without tier-3 steps: the error as it is"
+    world = Tier3World(tmp_path, tier3=(KEEP_FROM_3, {"action": "polars_cast", "columns": ["group"], "dtype": "Int64"}))
+    with pytest.raises(TransformationError) as error:
+        world.orch.materialize_tier3("tiny", "p_steps", world.anchors, keys=world.keys())
+    text = str(error.value)
+    assert "'p_steps'" in text and "step 2 ('polars_cast')" in text and "group" in text, text
+    assert "Resolved plan" not in text, "the plan of the engine is left out"
+    assert not (world.anchors / "C__T3_p_steps.parquet").exists(), "a table that failed is not stored"
+    raw_text = "boom"
+    assert plot_read_error_text(world.raw(), "p_plain", ValueError(raw_text)) == raw_text, "a plot without tier-3 steps: the error as it is"
 
 
 def test_the_propagation_dialogs_column_check_reads_each_plot_own_table_not_the_first_plots_of_the_same_target(tmp_path):

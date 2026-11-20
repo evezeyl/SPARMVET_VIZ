@@ -651,3 +651,17 @@ def test_a_change_after_the_view_was_built_is_detected_for_a_table_in_scope_on_r
     now = s.keys()
     assert changed_since_view(view, now, ["X"]) == ["the data files"]
     assert view.tier1_key_of("J") == now.tier1_key_of("J") and view.tier1_key_of("X") != now.tier1_key_of("X")
+
+
+def test_the_installed_versions_are_read_once_per_process_not_once_per_key():
+    """The engine fingerprint is part of every table key (several per opening). Reading the package files for each one was nine tenths of the time of the keys.
+    MUTATION K1: without the memory of `_package_version` the number of reads grows with the number of keys."""
+    from unittest import mock
+    from app.modules import cache_keys
+    cache_keys._package_version.cache_clear()
+    with mock.patch.object(cache_keys.metadata, "version", wraps=cache_keys.metadata.version) as reads:
+        first = cache_keys.engine_fingerprint()
+        for _ in range(50):
+            assert cache_keys.engine_fingerprint() == first
+    assert reads.call_count == 2, "polars and transformer, each read once"
+    assert "polars=" in first and "transformer=" in first

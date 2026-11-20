@@ -2,12 +2,12 @@
 
 The dispatcher `PlotEngines.render` alone chooses between the entry's own engine and the recipe's default. The small recipe
 dictionary a caller builds carries the recipe's default (`plot_engine_slot`) and the entry in `plots`. These tests run the
-dictionary of HOME (both builders, cut from the source with `ast`) and the real generator of the export through the real
+dictionary of HOME (built by `opening_build.plot_render_recipe`, which HOME calls in both places, checked with `ast`) and the real generator of the export through the real
 dispatcher with a stand-in engine, so a dispatcher that ignores the entry's own engine fails here (before, the caller's slot
 repeated the own engine and hid that break).
 
 # @deps
-# consumes: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/engine_registry.py, app/tests/test_export_download_path.py, app/tests/test_cache_chain.py
+# consumes: app/modules/opening_build.py (plot_render_recipe), app/handlers/home_theater.py, app/handlers/export_handlers.py, app/modules/engine_registry.py, app/tests/test_export_download_path.py, app/tests/test_cache_chain.py
 # doc: .claude/knowledge/decision_ledger.md (D-0237, D-0219)
 # @end_deps
 """
@@ -49,28 +49,25 @@ def stand_in(monkeypatch):
     monkeypatch.setattr(engines, "ENGINES", {**engines.ENGINES, "plot_engine": ("python-plotnine", "python-stand-in")})
 
 
-def dicts_built_by(relative):
-    """Every `synthetic_data_analysis_recipe = {...}` expression of a handler file, as code to evaluate."""
+def home_calls_the_one_builder(relative):
+    """The number of calls of `plot_render_recipe` in a handler file: HOME draws a plot in two places (plot and comparison pane)."""
     tree = ast.parse((ROOT / relative).read_text(encoding="utf-8"))
-    found = [n.value for n in ast.walk(tree) if isinstance(n, ast.Assign) and isinstance(n.value, ast.Dict)
-             and any(isinstance(t, ast.Name) and t.id == "synthetic_data_analysis_recipe" for t in n.targets)]
-    return [compile(ast.Expression(ast.fix_missing_locations(node)), relative, "eval") for node in found]
+    return [n for n in ast.walk(tree) if isinstance(n, ast.Call) and getattr(n.func, "id", None) == "plot_render_recipe"]
 
 
-def test_the_builders_of_home_hand_over_the_recipe_default_and_the_dispatcher_lets_the_entry_win(stand_in):
+def test_the_builder_of_home_hands_over_the_recipe_default_and_the_dispatcher_lets_the_entry_win(stand_in):
     import polars as pl
-    codes = dicts_built_by("app/handlers/home_theater.py")
-    assert len(codes) == 2, "HOME builds the plot dictionary in two places (plot and comparison); update this test"
-    from app.handlers.home_theater import plot_engine_slot
+    from app.modules.opening_build import plot_render_recipe
+    assert len(home_calls_the_one_builder("app/handlers/home_theater.py")) == 2, \
+        "HOME builds the plot dictionary in two places (plot and comparison) through plot_render_recipe; update this test"
     spec = {"plot_engine": "python-stand-in", "target_dataset": "A", "mapping": {"x": "x"}, "layers": [{"name": "geom_bar"}], "ui_label": "P"}
     frame = pl.DataFrame({"x": ["a", "b", "a"]})
-    for code in codes:
-        Stand_in.calls = []
-        cfg = type("Cfg", (), {"raw_config": {"plot_engine": "python-plotnine", "plot_defaults": {}}})()
-        recipe = eval(code, {"p_id": "p", "plot_spec": copy.deepcopy(spec), "spec": spec, "cfg": cfg, "plot_engine_slot": plot_engine_slot})
-        assert recipe["plot_engine"] == "python-plotnine", "the dictionary carries the recipe's default"
-        PlotEngines().render(frame, recipe, "p")
-        assert Stand_in.calls == [("p", "python-stand-in")], "the plot's own engine drew it"
+    Stand_in.calls = []
+    recipe = plot_render_recipe({"plot_engine": "python-plotnine", "plot_defaults": {}}, "p", copy.deepcopy(spec))
+    assert recipe["plot_engine"] == "python-plotnine", "the dictionary carries the recipe's default"
+    assert recipe["plots"]["p"]["plot_engine"] == "python-stand-in", "the entry keeps its own engine"
+    PlotEngines().render(frame, recipe, "p")
+    assert Stand_in.calls == [("p", "python-stand-in")], "the plot's own engine drew it"
 
 
 def test_the_export_draws_a_plot_with_the_engine_its_entry_names_not_the_recipes(tmp_path, monkeypatch, stand_in):

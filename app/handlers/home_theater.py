@@ -33,7 +33,7 @@ from __future__ import annotations
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_open_audit_mode_after_restore, constant:LEGACY_RECORD_NOTICE
 # consumes: app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
-# consumes: libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237)
+# consumes: app/handlers/opening_handlers.py (define_server: the opening of the recipe; opening_waits), app/modules/opening_build.py (opening_signature, plot_render_recipe: the recipe handed to the plot engine, D-0237, D-0239), libs/utils/src/utils/engines.py (plot_engine_slot, through it)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/knowledge/architecture_decisions.md#ADR-097, .claude/knowledge/architecture_decisions.md#ADR-099, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
 # @end_deps
@@ -52,7 +52,8 @@ from app.modules.data_change_notice import inputs_changed_during_build_notice, n
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.orchestrator import plot_read_error_text
 from app.modules.view_badge import has_plot_steps, has_tier2_steps, plot_badge, view_badge
-from utils.engines import plot_engine_slot
+from app.modules.opening_build import opening_signature, plot_render_recipe
+from app.handlers.opening_handlers import define_server as define_opening_server, opening_waits
 from utils.pipeline_error import capture_entry
 from app.modules.plot_seeds import RESHUFFLE_TITLE, reshuffle_offered, seed_caption, seed_in_use
 from viz_factory.viz_factory import show_draw_errors
@@ -156,6 +157,7 @@ def define_server(input, output, session, *,
                   data_refresh_trigger=None,
                   notification_log=None,
                   session_processing_issues=None,
+                  recipe_gate_version=None, shown_recipe=None,
                   gallery_state=None):
     """Register all Home Theater reactive handlers.
 
@@ -200,6 +202,10 @@ def define_server(input, output, session, *,
         §12d Session ghost save/restore manager.
     session_processing_issues : reactive.Value[list] | None
         DIAG-RUNTIME-AUDIT-1: accumulates structured runtime error entries.
+    recipe_gate_version : reactive.Value[int] | None
+        The version of the load gate (GATE-GAP-1); the opening of a recipe moves it when it refuses the recipe (D-0326).
+    shown_recipe : reactive.Value | None
+        The recipe HOME shows in this session; the opening writes the recipe it opens, so the gate follower can name it when it is refused on the first screen.
     """
 
     from app.modules.notification_utils import make_notifier
@@ -209,6 +215,9 @@ def define_server(input, output, session, *,
     # returned and not stored has no file that carries a key for it, so the filter form cannot tell its rows from another table's
     # by a key: the count is part of the identity it reads (`t3_audit_engine.stored_table_identity`), so a later table differs.
     _unstored_builds = [0]
+
+    # What the opening of the open recipe finished: {"signature", "status"}; written by `opening_handlers` (an effect), read by `dynamic_tabs`.
+    opening_state = reactive.Value({})
 
     def _tell_inputs_changed(change):
         """The orchestrator built a table while its recipe or data changed (STALE-KEY-STORE-1): say so, in the form of the
@@ -622,8 +631,6 @@ def define_server(input, output, session, *,
             # _apply_filter_rows handles coercion and eq/ne→in/not_in promotion for lists.
             # Here we just strip the 'dtype' key before passing to VizFactory
             # (VizFactory filter dicts don't need it).
-            import copy
-            plot_spec = copy.deepcopy(spec)
             # Phase 22-J: per-plot T3 stack — query by this plot's subtab id,
             # not by the active subtab (this plot may not be the active one
             # when its render runs in re-renders). `this_subtab` comes from the
@@ -638,12 +645,8 @@ def define_server(input, output, session, *,
             # steps in their recorded order (`audited_frame`), applied below to the frame. Nothing is handed to the
             # factory's `filters` key any more (that key is for what a recipe's plot spec writes), so the audited steps are
             # applied once, in one order, and a step that cannot run is an error, never a skip.
-            synthetic_data_analysis_recipe = {
-                "plots": {p_id: plot_spec},
-                "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
-                # the recipe's default engine; the dispatcher reads the plot's own and refuses one the app has no library for (D-0237, D-0239)
-                **plot_engine_slot(cfg.raw_config),
-            }
+            # the recipe the plot engine draws from: the same call as the opening's proof of drawing (`opening_build.plot_render_recipe`)
+            synthetic_data_analysis_recipe = plot_render_recipe(cfg.raw_config, p_id, spec)
 
             try:
                 lf = _resolve_active_lf(spec, tier="T3")   # the table the plot reads, in every mode and every data choice (D-0310)
@@ -740,15 +743,9 @@ def define_server(input, output, session, *,
             if spec is None:
                 return None
 
-            import copy
-            plot_spec = copy.deepcopy(spec)
             # No audited steps — this is the original plot (the Result)
-            synthetic_data_analysis_recipe = {
-                "plots": {p_id: plot_spec},
-                "plot_defaults": cfg.raw_config.get("plot_defaults", {}),
-                # the recipe's default engine; the dispatcher reads the plot's own and refuses one the app has no library for (D-0237, D-0239)
-                **plot_engine_slot(cfg.raw_config),
-            }
+            # the recipe the plot engine draws from: the same call as the opening's proof of drawing (`opening_build.plot_render_recipe`)
+            synthetic_data_analysis_recipe = plot_render_recipe(cfg.raw_config, p_id, spec)
             try:
                 lf = _resolve_active_lf(spec, tier="T3")  # original = the Result plot (D-0147): the table the plot reads, no exploration, no audit nodes
             except Exception as e:
@@ -1069,6 +1066,19 @@ def define_server(input, output, session, *,
                 ui.tags.p(rejected_recipe_text(_open_recipe, bootloader.rejected_data_analysis_recipes[_open_recipe])),
                 class_="alert alert-warning m-3",
             )
+
+        # D-0326: the tables of the recipe are built and stored by its opening (`opening_handlers`), in one place. This render waits for it and then only reads
+        # the stored tables; a recipe the opening refuses is rejected like one the gate rejects and is shown by the branches above.
+        try:
+            _opening_signature = opening_signature(_open_recipe, _data_analysis_recipe_keys())
+        except Exception:
+            _opening_signature = None   # the recipe or its data cannot be read: the assembly below says why
+        if recipe_gate_version is not None and _opening_signature is not None and opening_waits(opening_state.get(), bootloader.available_data_analysis_recipes, _open_recipe, _opening_signature):
+            # PROVISIONAL (D-0334 asks for a progress line, not for this waiting sentence): the text of the alert that stands in the place of the theater while the
+            # opening runs is the builder's
+            return ui.div(ui.tags.p(f"Opening the data analysis recipe '{_open_recipe}': building its tables and drawing its plots once. "
+                                    "This takes a while the first time; the progress is shown at the bottom of the page.", class_="mb-0"),
+                          class_="alert alert-info m-3")
 
         # 2. Results Theater (Home) Logic — ADR-043 Unified Home Theater
         try:
@@ -1426,6 +1436,7 @@ def define_server(input, output, session, *,
     # This effect reacts to the same inputs and writes with an idempotent guard.
     @reactive.Effect
     def _sync_anchor_path():
+        opening_state.get()   # the opening stores the first table: look again when it finished
         try:
             coll_id = active_collection_id()
             anchor_dir = bootloader.get_location("user_data") / "anchors"
@@ -2446,6 +2457,21 @@ def define_server(input, output, session, *,
             ),
             id="notification_log_accordion",
             open=False,
+        )
+
+    # ── The opening of the recipe (D-0326): build, store, draw once ────────────
+    if recipe_gate_version is not None:
+        define_opening_server(
+            input, output, session,
+            bootloader=bootloader,
+            orchestrator=orchestrator,
+            viz_factory=viz_factory,
+            safe_input=safe_input,
+            view_keys=_data_analysis_recipe_keys,
+            recipe_gate_version=recipe_gate_version,
+            opening_state=opening_state,
+            notify=_notify,
+            shown_recipe=shown_recipe,
         )
 
     # ── Export pipeline (system_tools_ui + bundle + audit reports) ────────────

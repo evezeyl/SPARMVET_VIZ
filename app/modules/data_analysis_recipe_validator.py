@@ -613,6 +613,11 @@ def rejected_recipe_text(name: str, record: dict) -> str:
     shown = "; ".join(problems[:3]) or "see Validate in Blueprint"
     more = f" (and {len(problems) - 3} more)" if len(problems) > 3 else ""
     contact = record.get("contact") or "not configured for this deployment"
+    if record.get("when") == "opening":
+        # PROVISIONAL wording (D-0326, D-0327): the recipe passed its checks and failed when it was opened
+        return (f"The data analysis recipe '{name}' passes its checks but could not be opened: building its tables or drawing its plots failed, "
+                f"so HOME does not use it. Problems: {shown}{more}. Fix the recipe or its data; HOME tries it again when one of its files changes. "
+                f"Contact: {contact}.")
     return (f"The data analysis recipe '{name}' failed its checks after its files changed, so HOME does not use it. "
             f"Problems: {shown}{more}. Open it in Blueprint, fix it and save; HOME takes it back when it passes. "
             f"Contact: {contact}.")

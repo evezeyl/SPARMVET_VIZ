@@ -1,5 +1,5 @@
 # @deps
-# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_imports_dir (IMPORT-PATH-1), method:get_agent_adapter, method:get_palettes, method:get_contact, method:get_session_import_limits (D-0283), attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), attr:data_analysis_recipe_advices (J12/J13, never reject), method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate), attr:rejected_gallery_examples, attr:gallery_index_status (gallery check at start, DEC48), method:take_stored_tables_notice (the one notice of the cache version sweep)
+# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_imports_dir (IMPORT-PATH-1), method:get_agent_adapter, method:get_palettes, method:get_contact, method:get_session_import_limits (D-0283), attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), attr:data_analysis_recipe_advices (J12/J13, never reject), method:reject_after_opening (a recipe that fails when it is opened is rejected like the gate rejects one, D-0326/D-0327), method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate), attr:rejected_gallery_examples, attr:gallery_index_status (gallery check at start, DEC48), method:take_stored_tables_notice (the one notice of the cache version sweep)
 # consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.cache_keys (CACHE_VERSION_META, ENGINE_CACHE_VERSION, STORED_TABLES_REBUILT_NOTICE: the sweep of stored tables of another cache version at start, D-0240), libs/transformer/src/transformer/anchor.py (remove_tables_of_other_version, deferred import), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import), app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe, validate_data_analysis_recipe_data, checker_advices, read_data_analysis_recipe_header, resolve_contact — ADR-094), app.modules.gallery_examples (check_gallery_at_start, deferred import), app.modules.renamed_keys, app.modules.session_manager (session_import_limits_from, deferred import), utils.path_expansion
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
 # doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, ADR-087, ADR-094 (issue #38 closure note), project_conventions.md §"Deployment Resolution"
@@ -190,6 +190,8 @@ class Bootloader:
             self._validate_data_analysis_recipes(self._all_data_analysis_recipes)
         )
         self._gate_state = {name: self._watch(path) for name, path in self._all_data_analysis_recipes.items()}
+        # PROVISIONAL (see `reject_after_opening`): the way back of a recipe refused at its opening is a change of the size or time of a data file
+        self._opening_watch: dict[str, tuple] = {}   # recipe name -> the data files it was refused for when it was opened, with their size and time (reject_after_opening)
         self.default_data_analysis_recipe_name = self._resolve_default_data_analysis_recipe()
 
         # 4. Gallery check at start (DEC48, ADR-071): only when the Gallery is mounted. An example that fails is
@@ -414,6 +416,12 @@ class Bootloader:
         mf_files = list(self.data_analysis_recipes_dir.glob("*.yaml"))
         return {f.stem: str(f) for f in mf_files}
 
+    def _contact_of(self, path: str) -> str | None:
+        """The contact HOME shows for a rejected recipe: its own `info.contact`, else the deployment's, else None (ADR-094; read without loading the recipe)."""
+        header = read_data_analysis_recipe_header(path)
+        info = header.get("info") if header else None
+        return resolve_contact(info, self.get_contact())
+
     def _gate_one(self, path: str) -> tuple[list, list[str], str | None]:
         """The two checks of the HOME load gate on one recipe: (problems, advices, contact of a rejection).
 
@@ -429,9 +437,7 @@ class Bootloader:
             except Exception as e:
                 problems = [f"data-vs-contract check could not run: {e}"]
         if problems:
-            header = read_data_analysis_recipe_header(path)
-            info = header.get("info") if header else None
-            return problems, [], resolve_contact(info, self.get_contact())
+            return problems, [], self._contact_of(path)
         try:
             advices = [a.text() for a in checker_advices(path)]
         except Exception as e:
@@ -499,7 +505,7 @@ class Bootloader:
         a new recipe file needs a restart)."""
         with self._gate_lock:
             changed = [name for name, (files, signature) in self._gate_state.items()
-                       if files_signature(files) != signature]
+                       if files_signature(files) != signature or self._data_changed_since_refusal(name)]
             if not changed:
                 return []
             available = dict(self.available_data_analysis_recipes)
@@ -510,6 +516,7 @@ class Bootloader:
                 available.pop(name, None)
                 rejected.pop(name, None)
                 advices.pop(name, None)
+                self._opening_watch.pop(name, None)
                 problems, found, contact = self._gate_one(path)
                 if problems:
                     rejected[name] = {"problems": [str(p) for p in problems], "contact": contact}
@@ -523,6 +530,50 @@ class Bootloader:
             self.data_analysis_recipe_advices = advices
             self.data_analysis_recipe_gate_version += 1
             return changed
+
+    @staticmethod
+    def _data_stat_signature(paths) -> tuple:
+        """(path, size, modification time) of each data file: cheap enough for the poll of the gate (the data files themselves are never read here)."""
+        found = []
+        for path in sorted(str(p) for p in paths):
+            try:
+                st = os.stat(path)
+                found.append((path, st.st_size, st.st_mtime_ns))
+            except OSError:
+                found.append((path, -1, -1))
+        return tuple(found)
+
+    def _data_changed_since_refusal(self, name: str) -> bool:
+        held = self._opening_watch.get(name)
+        return held is not None and self._data_stat_signature(p for p, _, _ in held) != held
+
+    def reject_after_opening(self, name: str, problems: list[str], data_files=()) -> None:
+        """A recipe that passed the load gate and fails when it is opened (D-0326, D-0327): it is shown exactly like a recipe the gate rejected.
+
+        It leaves `available_data_analysis_recipes`, enters `rejected_data_analysis_recipes` with its problems and its contact (`_contact_of`, the same
+        two tiers), and the gate version moves, so HOME falls back as it does for the gate. The record carries `"when": "opening"` so that the text names
+        what happened. It comes back by the gate itself: when a file of the recipe changes (the poll), or when a data file in `data_files` changes
+        (size or modification time: the data are not read here), the gate is run again; a recipe that still fails when opened is refused again.
+        The dictionaries are replaced, never changed in place (other sessions read them). A name that is not a discovered recipe is ignored.
+
+        PROVISIONAL (no ledger line states these; D-0326 and D-0327 say only that the recipe is refused at the opening with a plain reason): (1) the refusal holds
+        for ALL sessions of the process, because the bootloader is shared; (2) the way back is a change of a file of the recipe or of the size or modification time
+        of a data file it read, not a button and not a time; (3) a data file replaced by another of the same size and the same modification time (a copy that keeps
+        the time) is not seen, so the recipe stays refused until a recipe file changes or the app restarts (the safe direction: nothing wrong is accepted by it)."""
+        with self._gate_lock:
+            path = self._all_data_analysis_recipes.get(name)
+            if path is None:
+                return
+            available = {k: v for k, v in self.available_data_analysis_recipes.items() if k != name}
+            advices = {k: v for k, v in self.data_analysis_recipe_advices.items() if k != name}
+            rejected = dict(self.rejected_data_analysis_recipes)
+            rejected[name] = {"problems": [str(p) for p in problems], "contact": self._contact_of(path), "when": "opening"}
+            self._opening_watch[name] = self._data_stat_signature(data_files)
+            self._gate_state[name] = self._watch(path)
+            self.available_data_analysis_recipes = available
+            self.rejected_data_analysis_recipes = rejected
+            self.data_analysis_recipe_advices = advices
+            self.data_analysis_recipe_gate_version += 1
 
     def get_session_import_limits(self):
         """The size limits of an imported session zip, from `session_import:` of the deployment file (D-0283)."""
