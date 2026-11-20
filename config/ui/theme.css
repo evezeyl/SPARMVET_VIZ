@@ -1161,3 +1161,11 @@ body:has(#home_opening_cover) #sidebar_filters,
 body:has(#home_opening_cover) #data_import_ui,
 body:has(#home_opening_cover) #system_tools_ui,
 body:has(#home_opening_cover) #session_management_ui { visibility: hidden; }
+
+/* Narrow panels (190 px left, 170 px right at a 1100 px window; measured in the real app, D-0384): a long unbreakable word (a recipe id) breaks
+   inside its box instead of widening the panel, and the "need reason" note of the audit card moves under the title instead of being squeezed
+   and clipped. The 300 px default of .shiny-input-container (see section 3) is kept: the inputs already follow the panel width. */
+#nav_sidebar .spv-tag-row > span,
+#nav_sidebar .accordion-title { min-width: 0; overflow-wrap: anywhere; }
+#audit_sidebar .spv-audit-card-row { flex-wrap: wrap; }
+#audit_sidebar .spv-audit-card-row > .text-danger { white-space: nowrap; }

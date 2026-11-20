@@ -4,6 +4,7 @@
 # consumes: app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1, included via ui.tags.script)
 # consumes: app/src/www/export_ready.js (D-0270, included via ui.tags.script)
 # consumes: app/src/www/gallery_select_all.js (GALLERY-CHECK-1, included via ui.tags.script, only with gallery_enabled)
+# consumes: app/modules/frame_widths.py (the widths of the side panels, D-0375, D-0386)
 # consumed_by: app.src.main
 # doc: ADR-027, ADR-029a, ADR-030, ADR-039, ADR-052
 # @end_deps
@@ -11,6 +12,7 @@
 from pathlib import Path
 from shiny import ui
 from app.src.bootloader import bootloader
+from app.modules import frame_widths
 
 print("--- LOADING UI VERSION V5.1 (Aggressive Centering) ---")
 # 1. System Aesthetics (ADR-027, ADR-030)
@@ -361,7 +363,7 @@ window.cyFit     = cyFit;
                 class_="h-100 w-100 d-flex flex-column"
             ),
             class_="sidebar-content p-0",
-            width="340px",
+            width=frame_widths.css_width(frame_widths.LEFT),
             id="nav_sidebar"
         ),
         # 3. Right sidebar — excluded from DOM when not visible (ADR-073).
@@ -381,7 +383,7 @@ window.cyFit     = cyFit;
                     ui.output_ui("right_sidebar_content_ui"),
                     id="audit_sidebar",
                     bg="#c0c0c0",
-                    width="340px",
+                    width=frame_widths.css_width(frame_widths.RIGHT),
                     position="right"
                 ),
                 # 2. Central Theater (Center)
