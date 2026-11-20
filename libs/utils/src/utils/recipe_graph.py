@@ -56,9 +56,9 @@ Consumed by: libs/utils/tests/test_recipe_graph.py. The checker takes the graph 
 If deleted: nothing runs yet; the rebuild of those callers needs it.
 
 # @deps
-# provides: function:build_graph, function:source_tables_of_plot, function:source_tables_of_table, class:RecipeGraph, class:RecipeGraphError, class:GraphProblem, class:Node, class:ColumnInfo
+# provides: function:build_graph, function:source_tables_of_plot, function:source_tables_of_table, class:RecipeGraph, class:RecipeGraphError, class:GraphProblem, class:Node, class:ColumnInfo, method:RecipeGraph.declared_entity_keys
 # consumes: libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/join_keys.py, libs/utils/src/utils/action_names.py
-# consumed_by: libs/utils/tests/test_recipe_graph.py, app/tests/test_read_source.py (source_tables_of_plot: the source tables that feed a plot, for the Source view of HOME, D-0310)
+# consumed_by: libs/utils/tests/test_recipe_graph.py, libs/utils/src/utils/lineage_walk.py (declared_entity_keys, key_family_of, lineage_forward), app/tests/test_read_source.py (source_tables_of_plot: the source tables that feed a plot, for the Source view of HOME, D-0310)
 # doc: .claude/knowledge/architecture_decisions.md#adr-099, .claude/knowledge/architecture_decisions.md#adr-101, .claude/design/home_stage2_mechanism_spec.md (sections 1 to 3, P3), .claude/design/home_audit_steps.md (D1, 5a points 3, 8, 18)
 # @end_deps
 """
@@ -418,6 +418,16 @@ class RecipeGraph:
             groups.setdefault(find(name), []).append(name)
         families = [tuple(sorted(group)) for group in groups.values() if declared & set(group)]
         return sorted(families)
+
+    def declared_entity_keys(self, table_id: str) -> Tuple[str, ...]:
+        """The columns a schema declares `is_entity_key` in its `input_fields`, in the order written; empty for a join or for a schema
+        that declares none. KeyError for an id that is not a table of the recipe. The declaration only: the name is never guessed."""
+        if table_id not in self._bodies:
+            raise KeyError(f"no table {table_id!r} in the recipe graph")
+        if self._nodes[f"T1:{table_id}"].collection_kind != "schema":
+            return ()
+        fields = self._bodies[table_id].get("input_fields")
+        return tuple(name for name, field in fields.items() if isinstance(field, dict) and field.get("is_entity_key") is True) if isinstance(fields, dict) else ()
 
     def key_family_of(self, column: str) -> Optional[Tuple[str, ...]]:
         """The key family a column belongs to, or None."""
