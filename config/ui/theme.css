@@ -26,6 +26,7 @@
  *  17. Educational Guidance Pane Content  ← edit here to restyle guidance markdown
  *  24. Blueprint IDE — Enum Preview Legend (BP-ENUM-PREVIEW-1)
  *  25. Blueprint IDE — Expression Widget Autocomplete (BP-EXPR-EDITOR-1)
+ *  26. Side panel drag handle (D-0375, D-0381)
  */
 
 /* ── 1. Layout & Backgrounds ────────────────────────────────────────────── */
@@ -1161,6 +1162,17 @@ body:has(#home_opening_cover) #sidebar_filters,
 body:has(#home_opening_cover) #data_import_ui,
 body:has(#home_opening_cover) #system_tools_ui,
 body:has(#home_opening_cover) #session_management_ui { visibility: hidden; }
+
+/* ── 26. Side panel drag handle (D-0375, D-0381) ────────────────────────── */
+/* bslib draws the handle of each side panel (class .bslib-sidebar-resize-handle); by default a 2 px bar at 10 % opacity that nobody finds.
+   Here: a wider area to grab, the resize cursor and a grip that is always visible in the middle of the panel's edge (muted grey, brand blue
+   when pointed at or dragged). The tooltip is set by app/src/www/panel_widths.js. PROVISIONAL look (D-0386): the owner judges it. */
+.bslib-sidebar-layout { --bslib-sidebar-resize-handle-width: 16px; }
+.bslib-sidebar-layout > .bslib-sidebar-resize-handle { cursor: ew-resize; }
+.bslib-sidebar-layout > .bslib-sidebar-resize-handle .resize-indicator { width: 4px; height: 48px; background-color: #6c757d; opacity: 1; border-radius: 2px; }
+.bslib-sidebar-layout > .bslib-sidebar-resize-handle:hover .resize-indicator,
+.bslib-sidebar-layout > .bslib-sidebar-resize-handle:focus .resize-indicator,
+.bslib-sidebar-layout > .bslib-sidebar-resize-handle:active .resize-indicator { background-color: #345beb; width: 5px; height: 56px; }
 
 /* Narrow panels (190 px left, 170 px right at a 1100 px window; measured in the real app, D-0384): a long unbreakable word (a recipe id) breaks
    inside its box instead of widening the panel, and the "need reason" note of the audit card moves under the title instead of being squeezed
