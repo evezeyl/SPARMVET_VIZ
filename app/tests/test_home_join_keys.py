@@ -70,8 +70,9 @@ def test_the_demo_recipe_gives_its_join_keys():
 class Session:
     """What the two handlers need from the app: notifications, the propagation dialog and the scratch they fill."""
 
-    def __init__(self, keys, frame, raw=None):
+    def __init__(self, keys, frame, raw=None, plans=None):
         self.notes, self.opened = [], []
+        self.plans = plans
         self.scratch = Val()
         self.raw = raw
         self.state = Val({"primary_keys": keys, "active_plot_subtab": f"subtab_{DEMO_PLOT}"})
@@ -80,7 +81,7 @@ class Session:
     def stand_ins(self, **extra):
         base = dict(
             bootloader=SimpleNamespace(is_enabled=lambda flag: True),
-            home_state=self.state, active_home_subtab=Val(f"subtab_{DEMO_PLOT}"), recipe_raw=(lambda: self.raw) if self.raw is not None else None,
+            home_state=self.state, active_home_subtab=Val(f"subtab_{DEMO_PLOT}"), recipe_raw=(lambda: self.raw) if self.raw is not None else None, recipe_plans=lambda: self.plans,
             _notify=lambda message, **kw: self.notes.append((message, kw.get("type"))),
             _propagation_scratch=self.scratch,
             _open_propagation_modal=lambda nodes, subtab, kind: self.opened.append((nodes, kind)),
@@ -127,6 +128,23 @@ def test_the_handler_asks_the_rule_with_the_place_of_the_open_plot_and_follows_i
     assert s.opened == [] and s.scratch.get() is None and s.notes == [("⛔ STAND-IN refusal", "error")]
 
 
+def test_the_handler_gives_the_rule_the_engine_plan_of_the_open_recipe(monkeypatch):
+    """LBFB step 0b: the column box asks the rule with `recipe_plans()` (MUTATION PC8: the plan is not passed)."""
+    given = []
+    real = key_drop.DropGate.__init__
+
+    def init(self, raw, plans=None):
+        given.append(plans)
+        real(self, raw, plans)
+    monkeypatch.setattr(key_drop.DropGate, "__init__", init)
+    from utils.declared_plans import declared_plan_book
+    from utils.recipe_graph import build_graph
+    sentinel = declared_plan_book(build_graph(demo_raw()))      # any real plan book: the test is about which one the rule gets
+    s = Session(demo_keys(), FRAME, demo_raw(), plans=sentinel)
+    drop(s, kept=["year", "source"])
+    assert given == [sentinel]
+
+
 def test_dropping_a_column_that_is_not_a_key_goes_to_the_dialog():
     s = Session(demo_keys(), FRAME, demo_raw())
     drop(s, kept=["sample_id", "Gene_name", "VF_gene", "source"])   # `year` is deselected
@@ -164,3 +182,16 @@ def test_a_filter_on_another_column_carries_no_warning_and_a_mixed_send_marks_on
                      {"column": "VF_gene", "op": "ne", "value": "z", "dtype": "String"}])
     (nodes, _), = s.opened
     assert [(n["params"]["column"], n.get("primary_key_warning", False)) for n in nodes] == [("year", False), ("VF_gene", True)]
+
+
+def test_the_handler_writes_nothing_when_the_composer_has_a_bug():
+    """A bug of the plan composer is not "cannot tell": the handler opens no dialog and writes no step (the notice is shown by `recipe_plans`)."""
+    from app.modules.plan_composer import PlanComposerBug
+
+    def broken():
+        raise PlanComposerBug("bug")
+    s = Session(demo_keys(), FRAME, demo_raw())
+    s.state.set(dict(s.state.get()))
+    stand = s.stand_ins(input={"preview_col_selector": ["year", "source"]}, recipe_plans=broken)
+    closure("_col_drop_to_audit", **stand)()
+    assert s.opened == [] and s.scratch.get() is None and s.notes == []

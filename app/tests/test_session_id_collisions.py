@@ -85,6 +85,7 @@ def test_deleting_one_of_two_colliding_sessions_leaves_the_other(tmp_path, monke
         await _flush(4)
         live.input.set(f"session_delete_{parts[X]}", 1)
         await _flush(6)
+        await live.confirm_delete()
         assert not (live.manager.root / X).exists()
         assert (live.manager.root / Y).exists(), "the other session was deleted by the same click"
         assert (live.manager.root / KEY_A).exists()

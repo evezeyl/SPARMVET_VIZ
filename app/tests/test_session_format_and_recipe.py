@@ -197,7 +197,7 @@ def test_the_panel_deletes_a_refused_session(tmp_path, monkeypatch):
     screen = Screen(tmp_path, monkeypatch, {f"session_delete_{old_key.replace(':', '_')}": 1})
     _put(screen.manager, old_key, "assembly.json", _assembly(key=old_key, version=None))
     assert session_input_id_parts([old_key, KEY])[old_key] == old_key.replace(":", "_")
-    screen.run("_handle_session_actions")
+    screen.delete_confirmed()      # D-0378: a refused session is deleted after the same confirmation
     assert not (screen.manager.root / old_key).exists()
     assert (screen.manager.root / KEY).exists()
 

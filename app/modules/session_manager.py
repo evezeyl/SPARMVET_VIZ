@@ -135,7 +135,7 @@ def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
     return join_keys.recipe_join_keys(data_analysis_recipe_raw_config)
 
 
-def split_key_drops(by_plot: dict[str, list[dict]], recipe_raw: Any) -> tuple[dict[str, list[dict]], list[dict]]:
+def split_key_drops(by_plot: dict[str, list[dict]], recipe_raw: Any, plans: Any = None) -> tuple[dict[str, list[dict]], list[dict]]:
     """Separate the stored `drop_column` steps that the rule of a key drop refuses AT THEIR PLACE from the rest of the per-plot audit stacks.
 
     WHY: the audit refuses to drop a column that a join step later reads as a key, by place (D-0358, which modulates D-0297; `utils.key_drop`), but a session saved
@@ -144,9 +144,10 @@ def split_key_drops(by_plot: dict[str, list[dict]], recipe_raw: Any) -> tuple[di
     steps are kept; the question is still asked, so that a step stored at another place is judged the same way. Returns `(kept, refused)`: `kept` is a copy of
     `by_plot` without the refused steps (every other step, in its order, plots that become empty stay as empty lists); `refused` lists them, one entry per step copy
     as `{"plot", "id", "column", "reason", "problem"}` (`reason` is what the user wrote, `problem` the sentence of the rule). Without a recipe nothing is judged. The
-    argument is not changed.
+    argument is not changed. `plans`: the engine's plan book of the open recipe (`app/modules/plan_composer.py`); without it the rule reads only the names the recipe declares and
+    a drop it cannot follow is refused (PROVISIONAL, see `utils.key_drop`).
     """
-    gate = key_drop.DropGate(recipe_raw) if isinstance(recipe_raw, dict) else None
+    gate = key_drop.DropGate(recipe_raw, plans) if isinstance(recipe_raw, dict) else None
     kept: dict[str, list[dict]] = {}
     refused: list[dict] = []
     for plot, nodes in (by_plot or {}).items():

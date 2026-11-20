@@ -396,6 +396,7 @@ class ResolvedRecipe:
     # None for a copy built without its original, which the engine refuses
     original_raw: Optional[dict] = None
     verdict: dict = field(default_factory=dict, compare=False, repr=False)   # the answer of `integrity_errors` and the content it judged
+    plans: Optional[Any] = field(default=None, compare=False, repr=False)   # the engine's plan book of the ORIGINAL (`plan_composer`), for the rule of a key drop; None: the names the recipe declares
 
     def integrity_problems(self) -> list:
         """What `utils.audit_copy.integrity_errors` says of the copy against its original; None-original gives the one sentence that says why.
@@ -405,20 +406,23 @@ class ResolvedRecipe:
         judged = (canonical_hash(self.raw_config), None if self.original_raw is None else canonical_hash(self.original_raw))
         if self.verdict.get("judged") != judged:
             self.verdict["problems"] = (["the copy was built without the recipe it was made from, so it cannot be checked"] if self.original_raw is None
-                                        else integrity_errors(self.raw_config, self.original_raw))
+                                        else integrity_errors(self.raw_config, self.original_raw, self.plans))
             self.verdict["judged"] = judged
         return self.verdict["problems"]
 
 
-def loaded_from_resolved(original: LoadedDataAnalysisRecipe, raw: dict) -> LoadedDataAnalysisRecipe:
+def loaded_from_resolved(original: LoadedDataAnalysisRecipe, raw: dict, plans: Optional[Any] = None) -> LoadedDataAnalysisRecipe:
     """The recipe `raw` (an audit copy of the original, `utils.audit_copy`) in the form the engine reads, with the key parts of that very dictionary.
 
     The path, the files and their signature are the original's: the copy has no file of its own, the original's names it (its id, its data
     location). `data_analysis_recipe_sha256` is the hash of the resolved dictionary, NOT of a file set (there is none): PROVISIONAL, the identity of
-    an audit copy that is written to a file is not decided. The original is not changed."""
+    an audit copy that is written to a file is not decided. The original is not changed.
+
+    `plans`: the engine's plan book of the ORIGINAL recipe (`app/modules/plan_composer.compose_plan_book`), kept for the engine's own check of the copy (the rule of a key drop,
+    `utils.key_drop`): without it that check reads only the names the recipe declares and a drop it cannot follow is not run."""
     table_parts, coarse_parts = table_key_parts(raw)
     return LoadedDataAnalysisRecipe(
-        path=original.path, config=ResolvedRecipe(raw, original_raw=original.raw), files=original.files, signature=original.signature,
+        path=original.path, config=ResolvedRecipe(raw, original_raw=original.raw, plans=plans), files=original.files, signature=original.signature,
         data_analysis_recipe_sha256=canonical_hash(raw), table_parts=table_parts, coarse_parts=coarse_parts)
 
 

@@ -20,7 +20,7 @@ from __future__ import annotations
 # @deps
 # provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3, output:processing_issues_ui, output:aesthetic_style_panel_ui (22-J-10)
 # consumes: app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
-#           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-T3APPLY-1)
+#           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-T3APPLY-1), home_mode (the reactive value of app/src/server.py: the badge and Apply are shown in Audit mode only, D-0377)
 # consumed_by: app/src/server.py
 # doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen, processing_issues_ui shows fix/who)
 # @end_deps
@@ -124,7 +124,7 @@ def plot_target_dataset(raw_config: dict, p_id: str) -> str | None:
 
 def define_server(input, output, session, *,
                   wrangle_studio, audit_pending, snapshot_steps,
-                  active_cfg, active_collection_id,
+                  active_cfg, active_collection_id, home_mode,
                   home_state=None, session_manager=None,
                   notification_log=None, bootloader=None,
                   session_processing_issues=None):
@@ -276,7 +276,8 @@ def define_server(input, output, session, *,
     @output
     @render.ui
     def audit_pending_badge_ui():
-        if audit_pending.get():
+        # D-0377: in Exploration the badge does nothing, so it is not shown; `audit_pending` itself is not touched by the mode switch.
+        if home_mode.get() == "audit" and audit_pending.get():
             return ui.div("⏳ Pending", class_="audit-pending-badge text-center")
         return ui.div()
 
@@ -634,6 +635,10 @@ def define_server(input, output, session, *,
     @output
     @render.ui
     def audit_stack_tools_ui():
+        # D-0377: the Apply button writes audit steps, which Exploration never does: it is shown in Audit mode only.
+        # The slot stays mounted (shell stability); only its content changes with the mode.
+        if home_mode.get() != "audit":
+            return ui.div()
         if home_state is None:
             return ui.div(
                 ui.input_action_button("btn_apply", "Apply", class_="btn-primary w-100"),

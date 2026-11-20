@@ -16,4 +16,4 @@ Compares a numeric value across combinations of two categorical variables. Best 
 Each cluster of bars represents one species. Within each cluster, bars show resistance to each drug class. Useful for spotting which drug-species combinations have highest resistance and comparing resistance profiles across organisms.
 
 ### R Graph Gallery
-[Grouped Bar Chart](https://r-graph-gallery.com/grouped-barplot.html)
+[Grouped Bar Chart](https://r-graph-gallery.com/48-grouped-barplot-with-ggplot2.html)

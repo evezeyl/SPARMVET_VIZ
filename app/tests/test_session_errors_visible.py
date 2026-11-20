@@ -59,10 +59,13 @@ class Screen:
         monkeypatch.setattr(render, "ui", lambda fn: self.functions.setdefault(fn.__name__, fn))
         monkeypatch.setattr(render, "download", lambda *a, **k: (lambda fn: fn))
         monkeypatch.setattr(ui, "notification_show", lambda message, **kw: self.notes.append((kw.get("type"), str(message))))
+        self.modals = []
+        monkeypatch.setattr(ui, "modal_show", lambda modal, **kw: self.modals.append(str(modal)))   # D-0378: Delete asks first
+        monkeypatch.setattr(ui, "modal_remove", lambda *a, **k: None)
         monkeypatch.setattr(session_handlers, "bootloader", SimpleNamespace(is_enabled=lambda flag: True))
         self.manager = SessionManager(tmp_path / "user")
         self.manager.write_assembly_ghost(KEY, "tiny", "a" * 64, "b" * 64, {}, {})
-        self.input = FakeInput(session_import_upload=None, session_delete_all_btn=None, session_delete_all_confirm=None,
+        self.input = FakeInput(session_import_upload=None, session_delete_all_btn=None, session_delete_all_confirm=None, session_delete_one_confirm=None,
                                **(input_values or {}))
         self.home_state = reactive.Value({"data_analysis_recipe_sha256": "a" * 64, "data_batch_hash": "b" * 64})
         self.log = reactive.Value([])
@@ -77,6 +80,12 @@ class Screen:
     def run(self, name):
         with reactive.isolate():
             return self.functions[name]()
+
+    def delete_confirmed(self):
+        """The click on a card's Delete (the scan), then the "Delete" button of the confirmation (D-0378)."""
+        self.run("_handle_session_actions")
+        assert self.modals, "Delete must ask before it deletes"
+        return self.run("_handle_delete_one_confirmed")
 
     def texts(self, kind=None):
         return [m for t, m in self.notes if kind is None or t == kind]
@@ -102,7 +111,7 @@ def test_a_delete_that_fails_is_told_and_the_session_stays(tmp_path, monkeypatch
     """MUTATION S2 fails here."""
     screen = Screen(tmp_path, monkeypatch, {DELETE: 1})
     monkeypatch.setattr(screen.manager, "delete_session", lambda key: (_ for _ in ()).throw(PermissionError("folder is locked")))
-    screen.run("_handle_session_actions")
+    screen.delete_confirmed()
     errors = screen.texts("error")
     assert len(errors) == 1 and "delete" in errors[0].lower() and "folder is locked" in errors[0], screen.notes
     _suggestion_form(errors[0])
@@ -140,21 +149,46 @@ def test_the_same_failure_is_told_once_per_click_not_at_every_re_run(tmp_path, m
     the same failure of the same click is not told again; a new click is told again."""
     screen = Screen(tmp_path, monkeypatch, {DELETE: 1})
     monkeypatch.setattr(screen.manager, "delete_session", lambda key: (_ for _ in ()).throw(PermissionError("folder is locked")))
-    screen.run("_handle_session_actions")
-    screen.run("_handle_session_actions")
-    assert len(screen.texts("error")) == 1, screen.notes
+    screen.delete_confirmed()
+    screen.run("_handle_session_actions")      # a re-run of the scan with the same click count asks nothing again
+    assert len(screen.modals) == 1 and len(screen.texts("error")) == 1, screen.notes
     screen.input.values[DELETE] = 2
-    screen.run("_handle_session_actions")
+    screen.delete_confirmed()
     assert len(screen.texts("error")) == 2, screen.notes
 
 
 def test_a_delete_that_works_still_works_and_says_so(tmp_path, monkeypatch):
     """The control: the success path is unchanged."""
     screen = Screen(tmp_path, monkeypatch, {DELETE: 1})
-    screen.run("_handle_session_actions")
+    screen.delete_confirmed()
     assert screen.texts("error") == []
     assert [m for t, m in screen.notes if "Session deleted" in m]
     assert not (screen.manager.root / KEY).exists()
+
+
+def test_delete_asks_first_and_deletes_nothing_until_confirmed(tmp_path, monkeypatch):
+    """D-0378: the click on Delete only opens the question; the folder is deleted by the Delete button of the question."""
+    screen = Screen(tmp_path, monkeypatch, {DELETE: 1})
+    screen.run("_handle_session_actions")
+    assert len(screen.modals) == 1 and "Delete this session? It cannot be undone." in screen.modals[0] and KEY in screen.modals[0]
+    assert (screen.manager.root / KEY).exists() and not [m for t, m in screen.notes if "deleted" in m]
+    screen.run("_handle_session_actions")      # Cancel sends nothing: a re-run of the scan changes nothing
+    assert (screen.manager.root / KEY).exists() and len(screen.modals) == 1
+    screen.run("_handle_delete_one_confirmed")
+    assert not (screen.manager.root / KEY).exists()
+
+
+def test_the_modal_shows_the_label_of_the_session_when_it_has_one(tmp_path, monkeypatch):
+    screen = Screen(tmp_path, monkeypatch, {DELETE: 1})
+    screen.manager.set_session_label(KEY, "run of March")
+    screen.run("_handle_session_actions")
+    assert "run of March" in screen.modals[0]
+
+
+def test_confirm_without_a_question_deletes_nothing(tmp_path, monkeypatch):
+    screen = Screen(tmp_path, monkeypatch, {})
+    screen.run("_handle_delete_one_confirmed")
+    assert (screen.manager.root / KEY).exists()
 
 
 def test_a_label_that_is_saved_is_not_told(tmp_path, monkeypatch):

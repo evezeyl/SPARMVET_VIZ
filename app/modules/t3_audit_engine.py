@@ -12,7 +12,7 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:rows_built_on, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:view_key, function:view_change_notice, function:column_is_in_frame, class:AuditStepError
+# provides: function:refuse_decimal_for_whole_numbers, function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:rows_built_on, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:view_key, function:view_change_notice, function:column_is_in_frame, class:AuditStepError
 # consumes: polars, app/modules/orchestrator.py (TIER1_KEY_META, TIER2_KEY_META, tier2_path_for), libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_step_order.py, app/tests/test_removed_audit_step_type.py, app/tests/test_audit_error_names_the_plot.py, app/tests/test_filters_cleared_on_recipe_change.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
@@ -258,6 +258,31 @@ def number_range(lf, column: str):
     return None if row[0] is None else (row[0], row[1])
 
 
+def refuse_decimal_for_whole_numbers(value, dtype) -> None:
+    """HOME filter rule (D-0376): a column of an integer type takes whole numbers only, for every operator and both ends of between.
+
+    Raises the plain `FilterValueError` "This column holds whole numbers (Int64); type a whole number." (PROVISIONAL sentence) when a
+    value (or one of a list) is a decimal. "12.0" is read as 12 (PROVISIONAL). Text that is not a number, an empty value and a
+    value for another type are not judged here: `read_filter_value` says what is wrong with them. A float column is untouched.
+    Called only where a value is ENTERED (`typed_operand`, used by `dialog_value`, and the live line of the form); rows already stored are read by
+    `_apply_filter_rows` as before (what a stored decimal on an integer column should do is not decided). The recipe action `modif_filter` keeps its own rule.
+    """
+    if kind_of(dtype) != "int":
+        return
+    for item in (value if isinstance(value, (list, tuple)) else [value]):
+        if isinstance(item, bool) or item is None:
+            continue
+        try:
+            text = item.strip() if isinstance(item, str) else None
+            if text is not None and re.fullmatch(r"[+-]?\d+,\d+", text):
+                text = text.replace(",", ".")   # a decimal comma gets the same whole-number line as a decimal point
+            number = float(text) if text is not None else float(item)
+        except (ValueError, TypeError, OverflowError):
+            continue
+        if not number.is_integer():
+            raise FilterValueError(f"This column holds whole numbers ({dtype}); type a whole number.")
+
+
 def typed_operand(raw, dtype):
     """What a control gave, in the type of the column, as the panel stores it (ADR-104 point 7).
 
@@ -265,6 +290,7 @@ def typed_operand(raw, dtype):
     boolean, a date its year-month-day text (a session file holds no date object; the export types it from the dtype), a
     date and time, a time of day and a duration their exact text. A value that cannot be read is a `FilterValueError`.
     """
+    refuse_decimal_for_whole_numbers(raw, dtype)
     value = read_filter_value(raw, dtype)
     return value.isoformat() if kind_of(dtype) == "date" else value
 

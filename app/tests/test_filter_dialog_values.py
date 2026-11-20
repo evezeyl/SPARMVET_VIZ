@@ -202,10 +202,22 @@ def test_the_widget_follows_the_type_and_the_operator(dtype, op, widget):
 
 # -- a number from the number box has the type of the column
 
-@pytest.mark.parametrize("raw, dtype, expected", [(1998, pl.Int64, 1998), (1998.0, pl.Int64, 1998), (90.5, pl.Int64, 90.5), (90, pl.Float64, 90.0)])
+@pytest.mark.parametrize("raw, dtype, expected", [(1998, pl.Int64, 1998), (1998.0, pl.Int64, 1998), (90.5, pl.Float64, 90.5), (90, pl.Float64, 90.0), ("12.0", pl.Int64, 12)])
 def test_a_number_of_the_box_is_typed_from_the_schema(raw, dtype, expected):
     got = typed_operand(raw, dtype)
     assert got == expected and type(got) is type(expected)
+
+
+def test_a_decimal_entered_for_an_integer_column_is_refused_at_entry_D0376():
+    with pytest.raises(FilterValueError, match="whole number"):
+        typed_operand(90.5, pl.Int64)
+
+
+def test_a_STORED_decimal_value_for_an_integer_column_is_still_read_as_a_number():
+    # the reader of stored values is unchanged by D-0376 (what a stored decimal should do is not decided)
+    from utils.filter_values import read_filter_value
+    got = read_filter_value(90.5, pl.Int64)
+    assert got == 90.5 and type(got) is float
 
 
 def test_an_empty_number_box_is_reported():

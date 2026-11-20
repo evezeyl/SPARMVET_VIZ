@@ -153,8 +153,9 @@ class Result:
 
 
 class _Check:
-    def __init__(self, raw, profile, file_stem, catalogs, graph, roots, base, bundle_dir) -> None:
+    def __init__(self, raw, profile, file_stem, catalogs, graph, roots, base, bundle_dir, plans=None) -> None:
         self.raw = raw
+        self.plans = plans   # the engine's plan book of the recipe without its audit steps, for AU04 (None: the names the recipe declares)
         self.profile = profile
         self.file_stem = file_stem
         self.catalogs = catalogs
@@ -570,7 +571,7 @@ class _Check:
                      "(a removal by key is the filter on the key column)", f"use one of {', '.join(AUDIT_ACTIONS)}")
         if action == action_names.DROP:
             if self._drop_gate is None:
-                self._drop_gate = key_drop.DropGate(self.raw)
+                self._drop_gate = key_drop.DropGate(self.raw, self.plans)
             place = self._drop_gate.place_of_steps_path(where.rsplit(f".{recipe_tiers.AUDIT_STEPS}[", 1)[0] + ".steps")
             problem = self._drop_gate.problem(place, step.get("columns")) if place else None   # D-0358, D-0297: ONE rule, BY PLACE, shared with the audit copy
             if problem:
@@ -1312,8 +1313,11 @@ def _as_list(value: Any) -> list:
 
 
 def check_recipe(raw: Any, profile: str = "run", *, file_stem: Optional[str] = None, catalogs: Optional[dict] = None,
-                 graph: Any = None, roots: Optional[Iterable] = None, base: Any = None, bundle_dir: Any = None) -> Result:
-    """Judge one recipe (a dictionary) in a profile; see the module text for the arguments and the spec for the checks."""
+                 graph: Any = None, roots: Optional[Iterable] = None, base: Any = None, bundle_dir: Any = None, plans: Any = None) -> Result:
+    """Judge one recipe (a dictionary) in a profile; see the module text for the arguments and the spec for the checks.
+
+    `plans`: the engine's plan book of the recipe WITHOUT its audit steps (a `utils.plan_book.PlanBook`), for AU04, the rule of a key drop (`utils.key_drop`); the audit
+    profile is the only one that reads it. Without it the rule reads only the names the recipe declares."""
     if profile not in PROFILES:
         raise ValueError(f"profile {profile!r} is not one of {PROFILES}")
-    return _Check(raw, profile, file_stem, catalogs, graph, roots, base, bundle_dir).run()
+    return _Check(raw, profile, file_stem, catalogs, graph, roots, base, bundle_dir, plans).run()
