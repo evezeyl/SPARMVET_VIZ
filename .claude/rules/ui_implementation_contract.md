@@ -1,10 +1,10 @@
-**Status:** FINALIZED / ARCHITECTURAL LOCK — Phase 25 complete. Last update: 2026-05-09 (ADR-073: sidebar slot registry — §11 replaced; REVIEW decisions closed).
+**Status:** FINALIZED / ARCHITECTURAL LOCK — Phase 25 complete. Last update: 2026-05-09 (ADR-073: sidebar slot registry — §11 replaced; REVIEW decisions closed). Updated 2026-11-20 to Eve's decisions (ledger D-0350): the HOME mode and data choice, filters, sessions and the audit (§1, §2, §4, §5, §7, §8, §12, §13); what is decided but not built is marked "DECIDED, not built".
 
 # UI Implementation contract
 
 ## 1. The Tier 3 "Branching & Blueprint" Logic
 
-Tier 3 is a sandbox branch of Tier 1. It pre-populates by copying the Tier 2 "Blueprint" audit trail.
+Tier 3 is the plot's own stage: T1 feeds T2 feeds T3 feeds the plot (D-0179). T3 is T2 plus the plot's own tier 3 steps of the recipe; with no such steps T3 equals T2 (D-0343). An audit adds steps to a copy of the recipe and never changes the recipe's own steps (D-0021, D-0102).
 
 - **Node Inheritance**: Copied T2 nodes are **Violet** (#f3e5f5). New user nodes are **Yellow** (#fffde7).
 - **Position Awareness**:
@@ -14,7 +14,7 @@ Tier 3 is a sandbox branch of Tier 1. It pre-populates by copying the Tier 2 "Bl
   - **Disable (Strikethrough)**: A "Power" icon allows the user to toggle a node off. The node remains in the UI with a strikethrough effect but is ignored by the Polars engine. **Not implemented (2026-11-07, finding F-07):** `audit_stack.py` reads `node.get("active", True)` to render the strikethrough style, but nothing in the running app ever sets `active` to `False` — there is no Power-icon control wired up. Tracked as task STM-NODE.
   - **Trash (Permanent)**: A trash icon allows for removal. If the node is **Violet**, a modal triggers: _"CRITICAL: Removing a blueprint step may break the intended visualization. Are you sure?"_ **As built:** deletion is real list removal (`audit_stack.py:585`, `[n for n in nodes if n.get("id") not in ids_to_delete]`), not a soft `active: false` mark — see §12c below, which this contradicted until F-07.
 
-- **The Revert Protocol**: The **btn_revert** performs a **Full Wipe**. It clears all user nodes and restores the Tier 3 stack to the exact state of the Tier 2 blueprint.
+- **Removing an audit step** (D-0314): the audit offers ONE undo control, "Remove step": the user picks any step in the list and removes it; there is no "remove last" and no "remove all" (no Full Wipe, no `btn_revert`). **As built:** each committed step has a trash button (`audit_stack.py`, `t3_delete_<id>`) that removes that step and its linked copies; no revert control exists in `app/`.
 - **Direct Pass-Through**: If the T2 data analysis recipe contains zero transformation steps (T2=T1), the audit steps starts **Empty**.
 
 ## 2. Shell Architecture (The 3-Zone Navigator) — Updated ADR-043/ADR-044 (2026-04-23)
@@ -25,37 +25,36 @@ The UI implements a high-density **3-column nested shell** to maximize screen re
 - **Home Theater (Center)**: The primary workspace. Structure (post-ADR-043):
   - Top-level tabs are **exclusively** driven by data analysis recipe `analysis_groups` — no hardcoded tabs (Inspector removed).
   - Each group tab contains `navset_underline` sub-tabs (one per declared plot), wrapped in a **collapsible accordion panel**.
-  - A **separate collapsible accordion panel** below shows the data preview (T1/T2 table or T3 sandbox table).
-  - A header strip with two independent, labelled choices (ADR-086): **Data to show** (Raw T1 / Result T2 / My view) controls the data preview; **Plot to show** (Result T2 / My view / Compare Result vs My view) controls the plots.
+  - A **separate collapsible accordion panel** below shows the data preview (the table chosen in "Table to view").
+  - A header strip with the mode switch **Mode: Exploration | Audit** and the data choice **Table to view: Source | T1 | T2 | T3** (D-0016, D-0310). The data choice controls the data preview; the plot follows the mode (D-0019, D-0327). Details below.
   - Uses a Neutral Grey (#d1d1d1) background.
 - **Pipeline Audit (Right)**: Audit trail for T2 blueprint and T3 sandbox transitions. **Visible only for ≥ `pipeline-exploration-advanced`**. When hidden, the theater column expands to fill the full layout width — the layout element itself is excluded, not merely hidden via CSS. Uses a Dark Grey (#c0c0c0) background.
 
 **Data analysis recipe-Driven Tab Rule**: Home tabs and sub-tabs MUST derive exclusively from `analysis_groups` in the active data analysis recipe. No hardcoded tab names or fallback tabs are permitted (ADR-003/ADR-004 compliance).
 
-**Header strip: "Data to show" and "Plot to show" (ADR-086, 2026-11-05).**
+**Header strip: the mode and the data choice (D-0016, D-0019, D-0310, D-0311, D-0327; built 2026-11-20, slice B).**
 
-> **Implementation status:** implemented 2026-11-05 (fork issue evezeyl/SPARMVET_VIZ#3). The panel-title
-> badge is not built yet. The strip is absent when `interactivity_enabled: false` (both panels show T2).
+The two choices "Data to show" and "Plot to show" of ADR-086, the view "My view" and Compare as a third plot value are gone (D-0179, D-0180). There is no "My view" any more.
 
-| Data to show | Data pane | Gate |
+> **Implementation status:** built (`app/handlers/home_theater.py`, the strip in `dynamic_tabs`; `home_mode` and `data_view` in `app/src/server.py`). The strip exists only with `interactivity_enabled`. Without it there is no strip: the plots show the Result and the table shows T3 (as built; the choice of T3 there is the builder's, not a decision).
+
+| Table to view | Data pane | Gate |
 |---|---|---|
-| **Raw (T1)** | T1 anchor table (read-only) | All |
-| **Result (T2)** | T2 branch table (read-only) | All |
-| **My view** | T2 plus exploration filters and drops, plus audited nodes when `t3_sandbox_enabled` (sandbox table) | `interactivity_enabled` |
+| **Source** | A source table as read from the file; the list "Source table" (shown only while Source is chosen) picks which one | `interactivity_enabled` |
+| **T1** | The plot's table after tier 1 | `interactivity_enabled` |
+| **T2** | After tier 2 (T2 equals T1 when there are no tier 2 steps) | `interactivity_enabled` |
+| **T3** | The table the plot is drawn from: T2 plus the plot's own tier 3 steps (T3 equals T2 when there are none; D-0310, D-0343) | `interactivity_enabled` |
 
-| Plot to show | Plot pane | Gate |
+| Mode | What the user sees | Gate |
 |---|---|---|
-| **Result (T2)** | T2 reference plot, always pure (read-only). Plots never show T1. | All |
-| **My view** | T2 plus exploration filters, plus audited nodes (Apply-gated) when `t3_sandbox_enabled` | `interactivity_enabled` |
-| **Compare Result vs My view** | Two panes: T2 left, My view right | `comparison_mode_enabled` |
+| **Exploration** | One plot, the Result: the recipe's plot, drawn from T3; an exploration filter never changes it (D-0019, D-0180, D-0327). The data table shows the chosen table; filters are built on it and change only it (D-0178, D-0310). No "Send to Audit", no column drop. Nothing here is saved or exported. | `interactivity_enabled` |
+| **Audit** | The audited plot. A **Compare** switch shows "Original" and "Audited" side by side. Under T3 the table is the audited table; Source, T1 and T2 show the originals. "Send to Audit" and the column drop are offered only while T3 is viewed; no preview Apply. | `t3_sandbox_enabled` (Compare: `comparison_mode_enabled`) |
 
-Defaults: both choices start on Result. "Send to Audit" is offered when either choice is My view and `t3_sandbox_enabled` is on.
-Each panel title carries a badge stating what it shows, with "identical to" lines (e.g. "T2 identical to T1" when the dataset has no tier-2 steps). The badge is never part of an exported plot image.
+Defaults, as built (`app/src/server.py:140-141`): the mode starts on Exploration, the data choice on T3 (PROVISIONAL P-B1, `server.py:138-139`). D-0310 offers the four data choices and says what a T3 plot is drawn from; it does not state the default: the data choice default is PROVISIONAL, and the mode default is not decided: PROVISIONAL. Without `t3_sandbox_enabled` the mode switch is absent and the app is always in Exploration. A restored session that holds audit steps opens in Audit mode. The Reshuffle button of a plot with a random layer is offered only in Audit mode (D-0341).
+When the viewed table changes, the exploration filters are removed, with a notice; they are not kept, not checked and not carried (DECIDED: D-0311; D-0178 says the same for the view). Clearing on a plot-tab change, on a mode switch and on a recipe change is as built and PROVISIONAL (the builder's choice, `app/handlers/filter_and_audit_handlers.py:168-174`); it is not decided by the owner, and `home_preview_filters.md` point 8 says the opposite for a mode switch.
+Each panel title carries a badge stating what it shows ("Viewing: T2", "Plot: Result", "Plot: Audited"), with "identical to" lines (e.g. "T2 identical to T1" when the dataset has no tier-2 steps; `app/modules/view_badge.py`). The badge is never part of an exported plot image.
 
-**Comparison Mode** is the third value of "Plot to show" (ADR-086), flag-gated by `comparison_mode_enabled`:
-
-- The theater splits into 2 plot columns: left = T2 reference (always, it does not follow "Data to show"), right = My view.
-- It replaces the former separate "Compare T2 vs T3" switch (which kept a hidden state) and the previous `is_comparison` + `is_triple` flag system.
+**DECIDED, not built:** an audit step written at T1 or T2 of a table, chosen in the audit dialog by tick lines (only distinct tables are lines, each with its reach) found by a walk of the lineage (D-0022, D-0316, D-0318, D-0337, D-0346, D-0347). Today an audit step is written at T3 of the plot, and the strip says so ("Audit steps apply to the plot's table (T3) for now.").
 
 **Collapsibility Rules**:
 
@@ -85,58 +84,44 @@ Reactivity in the Active Leaf (Right side) is strictly gated by documentation to
 | **Col Drop in Active T3 Table** | `df.drop_columns()` in T3.         | Automatic Yellow Node   |
 | **(Advanced Filter) in active T3 Table**        | Filter cols in T3 data. | Automatic Yellow Node   |
 | **Drag Node**                | Reorder Polars operation sequence. | Update `audit_pending` |
-| **Filters panel "Apply"** — commits to `applied_filters` | Changes the data table on every view; changes PLOTS only on My view (ADR-098). Never written to Parquet, never exported. Compare's left pane ignores it. | **NONE** (Transient) |
-| **Filters panel "Send to Audit"** — T3 + `t3_sandbox_enabled` only | Promotes staged rows via the propagation modal. | Automatic Yellow Node (reason-gated) |
-| **Filter** in Tier 1 or Tier 2 Table (same Filters panel)         | Preview for inspection (ADR-098). | **NONE** (Transient)    |
+| **Filters panel "Apply"** (Exploration) — commits to `applied_filters` | Changes only the data table viewed (Source, T1, T2 or T3), never a plot (D-0327). Never written to Parquet, never saved, never exported. Removed when the viewed table changes (D-0311). | **NONE** (Transient) |
+| **Filters panel "Send to Audit"** — Audit mode, T3 viewed, `t3_sandbox_enabled` | Promotes staged rows via the propagation modal. | Automatic Yellow Node (reason-gated) |
 | **Ref Table Drop**  in Tier 1 or Tier 2 Table              | Visual-only drop for inspection. | **NONE** (Transient) |
 
-> **SUPERSEDED in part (ADR-098, 2026-11-11, issue #56):** exploration filters (`applied_filters`) now change the data table on every view and the plots only on My view; audit-committed nodes stay confined to My view. The paragraph below is kept for the audit-node rule.
-
-**ADR-085 (2026-08-10) — T1/T2 tier isolation invariant.** T1 and T2 are permanently pure in every
-configuration: no exploration filter (`applied_filters`) and no audit-committed node
-(`_t3_filter_rows()`/`_t3_drop_columns()`) may ever render there. Both are only applied when
-`tier_toggle.get() == "T3"`. Any new render function that reads either of these MUST apply the same gate —
-see `app/handlers/home_theater.py` `_group_plot_handler` / `home_data_preview` for the reference pattern.
+**Exploration filters and audit steps (D-0016, D-0178, D-0311, D-0327; built 2026-11-20, slice B).** An exploration filter (`applied_filters`) is built on the table viewed and carries the key of that view; it changes only that table and is never applied to a plot, to a stored table or to the export (D-0327). A filter built on another view is not applied (`t3_audit_engine.rows_built_on`, `home_theater._applied_for_view`). Audit-committed nodes (`_t3_filter_rows()`/`_t3_drop_columns()`) are applied only in Audit mode, on top of the T3 table; Source, T1 and T2 always show the originals (D-0021). Any new render function that reads either list MUST apply the same gates. This replaces the `tier_toggle` gate of ADR-085 and the rule of ADR-098 that exploration filters change the plots on My view (D-0179, D-0327).
 
 ## 5. The Theater Layout Model (Updated ADR-043, 2026-04-23; ADR-085, 2026-08-10)
 
-The theater layout is controlled by two independent choices (ADR-086): **Data to show** (data preview) and **Plot to show** (plots, including Comparison Mode).
+The theater layout is controlled by the mode (Exploration or Audit, which decides the plot) and the data choice "Table to view" (which decides the data preview) (D-0016, D-0310; built 2026-11-20, slice B). There is no "My view" any more (D-0179); see §2 for the strip.
 
-**"My view" is decoupled from audit capability (ADR-085).** The third option of both "Data to show" and "Plot to show" — labelled "My
-view" in the UI — is available whenever the Filters panel exists (`interactivity_enabled`), not only when
-`t3_sandbox_enabled` is on. Without `t3_sandbox_enabled` it is a pure scratchpad: filters render there for
-the session, but there is no "Send to Audit" button, no propagation modal, and no right sidebar. The table
-below uses "T3 / My view" interchangeably with the historical "T3 Wrangling" / "T3 Plot" states.
+**Plot area** (driven by the mode):
 
-**Plot area** (driven by "Plot to show", ADR-086):
-
-| Plot to show | Plot Area |
+| Mode | Plot Area |
 |---|---|
-| Result | T2 Reference Plot, always pure (read-only) |
-| My view | Active Plot, reflects exploration filters + (if `t3_sandbox_enabled`) Apply-gated audit nodes |
-| Compare | Two panes, see below |
+| Exploration | The Result: the recipe's plot, drawn from T3; never changed by an exploration filter (D-0019, D-0327) |
+| Audit | The audited plot: T3 plus the audit steps applied with a reason; with Compare on, two panes, see below |
 
-**Data area** (driven by "Data to show"; collapsible):
+**Data area** (driven by "Table to view"; collapsible):
 
-| Data to show | Data Area |
+| Table to view | Data Area |
 |---|---|
-| Raw | T1 Anchor table (read-only) |
-| Result | T2 Branch table (read-only) |
-| My view | Sandbox table |
+| Source | A source table as read from the file |
+| T1 | The table after tier 1 |
+| T2 | The table after tier 2 |
+| T3 | The table the plot is drawn from (in Audit mode, the audited table) |
 
-*"My view" states hidden entirely only when `interactivity_enabled: false` (no Filters panel at all). The
-"Send to Audit" action within "My view" additionally requires `t3_sandbox_enabled` — see §4.
+*The strip is absent only when `interactivity_enabled: false`. The mode switch, and so Audit mode and "Send to Audit", additionally require `t3_sandbox_enabled` — see §4.
 
-**Comparison Mode** (ON — ≥ `pipeline-exploration-advanced`):
+**Comparison Mode** (Audit mode with the Compare switch on; gate `comparison_mode_enabled`, which requires `t3_sandbox_enabled`, D-0018):
 
 ```
 ┌──────────────────────┬──────────────────────┐
-│  T2 Reference Plot   │  My view Plot         │  ← Plot accordion (collapsible)
+│  Original            │  Audited              │  ← Plot accordion (collapsible)
 └──────────────────────┴──────────────────────┘
 ```
 
-- The left pane is always T2 (ADR-086); it does not follow "Data to show".
-- The data preview below stays a single table that follows "Data to show".
+- The left pane is the original plot (the Result); it does not follow "Table to view".
+- The data preview below stays a single table that follows "Table to view".
 - Plot and data accordions are independently collapsible.
 - The previous `theater_grid` toggle, `btn_max_plot`, `btn_max_table`, and `btn_reset_theater` controls are **removed** (superseded by this model).
 
@@ -160,10 +145,12 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 
 **What is saved per session:**
 - Active `t3_audit_steps` (all Yellow nodes and their comment fields)
-- `applied_filters` (committed filter rows)
-- Active sub-tab and tier toggle state
 - Reference to the active data analysis recipe and data source (so the session knows which pipeline run it belongs to)
 - If metadata was replaced (see §9): reference to the uploaded metadata filename
+
+Not saved: exploration filters (`applied_filters`; they are never saved or exported, D-0005, D-0327), the mode, the data choice and the open tab (as built: the T3 ghost holds no `tier_toggle` and no view choice, `app/modules/session_manager.py` `write_t3_ghost`). Every session file carries a format number; a file saved by an older version (it holds "My view") is refused with a plain line and is not converted (D-0312; built, `SESSION_FORMAT_VERSION`).
+
+**DECIDED, not built:** the log of added and removed audit steps (date, initials, reason) is always written in the session (D-0315); the audit recipe and its audit record live in an audit folder inside the session's folder, in the user's own directory of the deployment (D-0319, D-0340, D-0333).
 
 **Session model:**
 - Each session lives under `{location_4}/_sessions/{session_key}/` (`session_key` = `data_analysis_recipe_sha256[:12] + ":" + data_batch_hash[:12]`, see §12d).
@@ -172,7 +159,7 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 
 **Ghost save (see §12d for the authoritative two-slot spec):**
 - T1/T2 Ghost (`assembly.json`) — written once per assembly, rewritten when data analysis recipe or source data changes.
-- T3 Ghost (`t3_{timestamp}.json`) — written on every `btn_apply` press and on every panel switch away from Home. Each save is a new timestamped file, not an overwrite — the session panel lets the user pick which T3 snapshot to restore.
+- T3 Ghost (`t3_{timestamp}.json`) — written on every `btn_apply` press: only audited steps applied with a reason are saved; pending steps are not; there is no save on a panel switch (D-0302). Each save is a new timestamped file, not an overwrite — the session panel lets the user pick which T3 snapshot to restore.
 - Restored automatically via the T1/T2 "Prepped Chef" check at startup, matching on `session_key`.
 
 **Save location:** `user_data` (Location 4) from the active deployment. This path is deployment-specific — on Galaxy it maps to a Galaxy-accessible path; on a local machine it is a local directory. Users only have write access to Location 4 — they cannot choose an arbitrary path.
@@ -199,9 +186,11 @@ To ensure a clean separation between "Working State" and "Final Provenance," the
 **Export rules (2026-11-06, issue #10, EXPORT-KEYCHECK-1, EXPORT-T3-1) — science must be correct. The export holds the Result plus what the user validated with an audit step; exploration is never exported.**
 
 1. **Key check.** The export compares the keys the open view was built on (`_data_analysis_recipe_keys`) with the keys computed now. If the data analysis recipe file set or the data changed, nothing is exported: an error notification explains it and the download holds only `EXPORT_NOT_CREATED.txt` (what changed, what it means, reload with F5, check, export again, both sets of keys). Never export silently from different files than the user looked at.
-2. **Data source.** T1, T2 and the plots are read through `DataOrchestrator.materialize_tier1/2` with the session keys (key-checked). Plots are rendered from T2 (plots never show T1, ADR-086), the same base as HOME. Reusing an anchor by file name is forbidden (ADR-089 point 7).
-3. **Build rule T3 > T2 > T1.** My view data is the stored T2 (T1 when the join has no tier2 steps) plus the plot's filter rows and column drops, built by `export_handlers.audited_frame`, the same steps and order as the HOME data preview.
-4. **The export is the Result plus the audited steps; exploration is never exported** (issue #25, Eve 2026-11-06). Audited T3 steps (`filter_row`, `exclusion_row`, `drop_column`, `aesthetic_override`, committed with a reason, for example to remove poor quality data) are the user's decision for the publication: they are ALWAYS applied to the exported plot of that plot and to its `T3_data_<plot>.tsv`, from any view, and recorded (T3 trail in the report, `data_analysis_recipes/t3_steps.yaml`). Exploration filters (`applied_filters`: what the user tries in T1, T2 or My view to understand the data, not sent to audit) are a sandbox and are NEVER exported, from any view; there is no checkbox to include them and no `FILTERS.txt`. A reminder tells the user so: under the Filters buttons in My view ("Sandbox: only steps sent to audit are exported.") and in the Export panel. The pure rule is `export_handlers.plot_content_rules(audited_rows, audited_drops)`: exploration is not even an argument.
+2. **Data source.** T1, T2 and the plots are read through `DataOrchestrator.materialize_tier1/2/3` with the session keys (key-checked). Plots are rendered from the table the plot reads (`materialize_tier3`: the stored T2 plus the plot's own tier 3 steps; T3 equals T2 when there are none), the same base as HOME (D-0310, D-0343). Reusing an anchor by file name is forbidden (ADR-089 point 7).
+3. **Build rule T3 > T2 > T1.** The audited data of a plot is the table the plot reads (`materialize_tier3`) plus the plot's audited filter rows and column drops, built by `export_handlers.audited_frame`, the same steps and order as the HOME data preview in Audit mode.
+4. **The export is the Result plus the audited steps; exploration is never exported** (issue #25, Eve 2026-11-06; D-0005, D-0327). Audited T3 steps (`filter_row`, `exclusion_row`, `drop_column`, `aesthetic_override`, committed with a reason, for example to remove poor quality data) are the user's decision for the publication: they are ALWAYS applied to the exported plot of that plot and to its `T3_data_<plot>.tsv`, whatever the screen shows, and recorded (T3 trail in the report, `data_analysis_recipes/t3_steps.yaml`). Exploration filters (`applied_filters`: what the user tries in Exploration on Source, T1, T2 or T3 to understand the data, not sent to audit) are a sandbox and are NEVER exported; there is no checkbox to include them and no `FILTERS.txt`. A reminder tells the user so: under the Filters buttons in Exploration ("Exploration: filters change this table only, never a plot. Nothing here is exported.") and in the Export panel. The pure rule is `export_handlers.plot_content_rules(audited_rows, audited_drops)`: exploration is not even an argument.
+
+**DECIDED, not built (D-0324, D-0333, D-0315, D-0345):** when audit steps have been added, the export holds the audit recipe as the recipe that produced the figures; it replaces today's export copy that writes the audit steps into a copy of a join's tier 2. The original recipe may be added as the baseline, saying plainly which file is which. An audit record (with the hash of the audit recipe) is always written beside the audit recipe in every bundle of an audit; the hash is also in the run file of the bundle; the README says in one sentence which file is the audit recipe and which the baseline; the audit history (who, when, steps added and removed) is in the bundle only when the user ticks it. The old name `decision_hash` is retired with the bundle texts when the export of an audit is built.
 5. **Traceability.** README, `report.qmd` and PNG/SVG metadata record `data_analysis_recipe_sha256` (file set), `data_batch_hash`, and per dataset `tier1_key` and `tier2_key` (empty when T2 equals T1).
 6. **Tests.** `app/tests/test_export_provenance.py`, `test_export_view_consistency.py` (headless) and `test_export_download.py` (real download, qa app features).
 
@@ -259,22 +248,17 @@ The "Active plot" scope option in the 3-way scope toggle (§7.2) replaces this p
 
 ## 8. Filter builder (Phase 21-F — Left Sidebar, 2026-04-23; ADR-085, 2026-08-10)
 
-Row filters live in the left sidebar (Home mode only). They affect the "My view" (T3) plot and data preview
-**only** — T1 and T2 never reflect `applied_filters` or any T3 audit node (ADR-085 tier-isolation invariant,
-§4/§5 above).
+Row filters live in the left sidebar (Home mode only). In Exploration they are built on the table viewed (Source, T1, T2 or T3) and change only that data table, never a plot (D-0178, D-0310, D-0327); in Audit mode they become audit steps (§4/§5 above; built 2026-11-20, slice B).
 
 **State model:**
 - `_pending_filters`: staging area (`reactive.Value[list]`) — rows added by user, not yet applied.
-- `applied_filters`: committed (`reactive.Value[list]`) — exploration only, never audited. Consumed by
-  `@render.plot` handlers and `home_data_preview`, but only when `tier_toggle.get() == "T3"` ("My view").
+- `applied_filters`: committed (`reactive.Value[list]`) — exploration only, never audited, never saved, never exported. Each row carries the key of the view it was built on; consumed only by `home_data_preview` (and its badge) for that view (`_applied_for_view`). Both lists are emptied, with a notice, when the viewed table changes (D-0311; `_clear_filters_on_view_change`).
 
-**Two distinct actions on the staged rows (ADR-085 — do not merge back into one button):**
-- **`filter_apply`** — always commits `_pending_filters` → `applied_filters`. Renders on every tier's
-  button bar, but only has a visible effect on "My view" per the tier-isolation invariant.
-- **`filter_send_to_audit`** — rendered only when `tier_toggle == "T3"` **and** `t3_sandbox_enabled`.
+**Two distinct actions on the staged rows (do not merge back into one button):**
+- **`filter_apply`** — Exploration only: commits `_pending_filters` → `applied_filters`.
+- **`filter_send_to_audit`** — rendered only in Audit mode while T3 is viewed (`t3_sandbox_enabled`).
   Promotes the staged rows into the audit steps via the propagation modal (primary-key stamping, this-plot /
-  all-plots / all-except scope choice). Without `t3_sandbox_enabled`, "My view" has no equivalent action —
-  it is a pure scratchpad (see §5).
+  all-plots / all-except scope choice). In Audit mode on Source, T1 or T2 the panel says "To create an audit step, view T3."
 
 **Each row:** `{column: str, op: "eq"|"ne"|"gt"|"ge"|"lt"|"le"|"in"|"not_in"|"between", value: the real value in the type of the column (number, True/False, text; a date as year-month-day text), or a list of them (for between: [low, high]), dtype: str, na: "keep"|"remove", closed: "both"|"left"|"right"|"none" (between only)}`. `na` is the tick of the dialog (keep the rows with no value in the column; preselected `keep` for `!=` and none-of, `remove` otherwise, NA-RULE-63); a row or audit step without it is read as `remove`, and an audit step is never written without it. `closed` says which ends of a `between` are included (`both`, the default, `left` = the lower end only, `right` = the upper end only, `none`); "Send to Audit" carries `na` and `closed` exactly as chosen, and the export writes them into the `modif_filter` step.
 
@@ -282,7 +266,7 @@ Row filters live in the left sidebar (Home mode only). They affect the "My view"
 
 **Value type rule (ADR-104 point 7):** the panel keeps a map from the text shown in a list to the real value and stores the real value (`dialog_value`): a number for a number column (also on a discrete axis), True/False for a true/false column, text for text; a date is kept as year-month-day text because a session file holds no date object, and is typed at export from the dtype. `utils.filter_values.filter_condition` builds the condition for the HOME table and the plot (an old value held as text is read from the dtype; a value that cannot be read gives a plain error) and, strict, for the recipe action `modif_filter` (a value of another type gives a plain error, nothing is converted). The export types an old step's value from the `dtype` it carries. `eq`/`ne` with a list mean `in`/`not_in`.
 
-**VizFactory predicate pushdown:** `applied_filters` are injected into `plot_config["filters"]` (without `dtype`) before `viz_factory.render()`, gated on "My view" per ADR-085. VizFactory supports: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in`, `not_in`.
+**VizFactory predicate pushdown:** HOME does not inject `applied_filters` into `plot_config["filters"]`: an exploration filter never reaches a plot (D-0327; built, no such injection in `app/handlers/`). The audited filters and drops of Audit mode are applied to the T3 frame before it is drawn. VizFactory itself still accepts a `filters` key: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in`, `not_in`.
   
 ## 9. Metadata Ingestion (Data Import Panel — Left Sidebar)
 
@@ -442,10 +426,12 @@ Shared sidebar configs live in `config/ui/sidebars/` and are referenced via `!in
 
 ### 12a. Scope Lock
 
-**ADR-085 note:** this section describes the **audited** layer of "My view" (T3) — the AuditStep types
+**Note (D-0016, D-0179):** this section describes the **audit** (Audit mode) — the AuditStep types
 below only ever exist once `t3_sandbox_enabled` is on and something has been explicitly Sent to Audit. The
-plain exploration layer (`applied_filters`, transient, no reason, no AuditStep) exists independently and
-is available in "My view" even without `t3_sandbox_enabled` — see §5, §8.
+plain exploration layer (`applied_filters`, transient, no reason, no AuditStep) exists independently in
+Exploration, also without `t3_sandbox_enabled` — see §5, §8. There is no "My view" any more.
+
+**DECIDED, not built (D-0322, D-0329, D-0332):** the check of an audit recipe refuses any audit step that is not a filter, a column drop or a removal by key, with a plain line; the list of allowed steps is kept in one place. The reason of an audit step is a separate step key, `audit_comment`; in an audit recipe each tier keeps the author's `steps` untouched and has a second list `audit_steps`, run after `steps`. On `dev` today the audit copy, in memory only (`libs/utils/src/utils/audit_copy.py`, slice A), adds a marked step (`id: audit_<8 hex>_<k>`) at the end of a tier list with its reason in `comment`, and HOME writes audit steps at T3 of a plot; the `audit_steps` / `audit_comment` form is on a branch, not merged. An audit recipe is a recipe of format 1: the format number stays 1; `audit_steps`, `audit_comment` and `info.audit_of` are legal only in an audit recipe and refused in every other recipe (DECIDED, not built: the keys are not read from a file yet; D-0354).
 
 T3 is a **Publication Finisher**, not a wrangling sandbox. Its scope is permanently locked to five node types (four of which gate `btn_apply` on a mandatory reason — `aesthetic_override` is the exception, see the Gatekeeper rule below):
 
@@ -518,7 +504,7 @@ Using content hashes (not IDs or names) means the key is invariant to data analy
 | Slot | File | Written when | Content |
 |---|---|---|---|
 | **T1/T2 Ghost** | `_sessions/{session_key}/assembly.json` | Once on first assembly; re-written when data analysis recipe or source data changes | Data analysis recipe ID + SHA256, source files + per-file SHA256, `data_batch_hash`, assembled Parquet paths, assembly timestamp |
-| **T3 Ghost** | `_sessions/{session_key}/t3_{timestamp}.json` | On every `btn_apply`; on every panel switch away from Home | Full audit steps YAML + `t3_plot_overrides` + tier toggle + `session_key` + `saved_at` |
+| **T3 Ghost** | `_sessions/{session_key}/t3_{timestamp}.json` | On every `btn_apply` (no save on a panel switch, D-0302) | Full audit steps YAML + `t3_plot_overrides` + `session_key` + `saved_at` + `schema_version` (no tier toggle) |
 
 Both slots live under `{Location_4}/_sessions/{session_key}/`. All ghost files for a session are co-located, making it easy to archive, share, or delete a full session as a unit.
 
@@ -567,15 +553,22 @@ T1/T2 state is always self-healing: lost Parquet is recovered automatically from
   "data_batch_hash": "c4d29e1a3f80...",
   "saved_at": "2026-04-24T14:30:12",
   "label": "",
-  "tier_toggle": "T3",
+  "schema_version": 3,
   "t3_audit_steps": [],
-  "t3_plot_overrides": {}
+  "t3_audit_steps_by_plot": {},
+  "t3_plot_overrides": {},
+  "notification_log": [],
+  "t3_audit_steps_sha256": "..."
 }
 ```
 
 `label` is an optional user-supplied name (e.g., "batch-A final filters"). Empty by default; editable from the session panel.
 
-**Data analysis recipe SHA256 mismatch on restore:** If the saved `data_analysis_recipe_sha256` differs from the current data analysis recipe, the UI warns: *"This session was saved against a different data analysis recipe version. Audit step referencing renamed or removed columns may fail. Proceed with caution."* The user can still restore but is not blocked.
+There is no `tier_toggle` any more (built: `session_manager.write_t3_ghost`). `schema_version` is the format number of every session file (`SESSION_FORMAT_VERSION`, 3 today): a file with no number, a lower or a higher one is refused as a whole with a plain line ("... was saved by an older version of the app and cannot be opened. Delete it and start a new session."), nothing is converted; a refused session can be deleted from the panel (D-0312; built). All old session files are removed: session files only, never recipes or data; the list is stated first and what was removed is reported (D-0312).
+
+**Session of another recipe:** Restore of a session saved against another recipe is refused with a plain line (it belongs to another recipe; open that recipe first); nothing is applied (D-0317; built, `session_manager.session_recipe_refusal`, compared by recipe id).
+
+**Data analysis recipe SHA256 mismatch on restore:** If the recipe id is the same but the saved `data_analysis_recipe_sha256` differs from the current data analysis recipe, the UI warns (as built: *"Session was saved against a different data analysis recipe version. Audit step may not match current columns."*). The user can still restore but is not blocked. D-0317 keeps the continue-warning "only for the same recipe with a different data batch"; whether an edited recipe with the same id counts as "a different recipe" is not stated there (open reading, reported).
 
 **Data batch mismatch on restore:** If `data_batch_hash` differs (user loaded a different data batch), the UI warns: *"This session was saved against a different data batch. Row filters and exclusions may match different or no rows."* Again, non-blocking — user confirms.
 
@@ -597,7 +590,7 @@ Accessible from the **Session Management** accordion panel in the left sidebar (
 - **Import session** — accepts a `.zip` exported by another user or machine. Validates `session_key`, checks source file availability, registers in the local `_sessions/` store.
 - **Delete session** — removes the session directory and all its ghosts. Confirmation required.
 
-T3 ghost is never written on intermediate filter edits — only on apply or panel leave. Restoring a T3 ghost triggers the T1/T2 restore logic first (steps 1–6 above) to ensure the Parquet base is valid before applying T3 nodes.
+T3 ghost is never written on intermediate filter edits — only on apply (D-0302). Restoring a T3 ghost triggers the T1/T2 restore logic first (steps 1–6 above) to ensure the Parquet base is valid before applying T3 nodes.
 
 ### 12e. Gallery → T3 Transplant Rules
 
@@ -679,17 +672,20 @@ The "primary keys" set is the union of every join key declared in any assembly s
 ```yaml
 joins:
   bigtable:
-    steps:
-      - action: join
-        on: sample_id           # → {sample_id} added
-      - action: join
-        left_on: sample_id
-        right_on: sample_id     # → already in set
-      - action: join
-        on: [sample_id, gene_id]  # → {sample_id, gene_id} added
+    tier1:
+      steps:
+        - action: polars_join
+          'on': [sample_id]           # → {sample_id} added
+        - action: polars_join
+          left_on: sample_id
+          right_on: sample_id         # → already in set
+        - action: polars_join
+          'on': [sample_id, gene_id]  # → {sample_id, gene_id} added
 ```
 
 Both true primary keys (`sample_id`) and secondary/accessory keys used in long-format joins (`gene_id` in Resfinder-style tables) qualify. The set is computed once per session and recomputed on data analysis recipe reassembly.
+
+**DECIDED, not built as described here (D-0313, D-0082):** both lists exist and are named differently: "the entity key" (declared in the recipe with `is_entity_key`; it drives the key warning and "remove from all tables") and "columns used to join" (the set above, shown as information). As built, the set above is what `primary_key_warning` uses (`session_manager.extract_primary_keys`).
 
 #### 12g.3. Authoring rules — column targeting
 
@@ -719,6 +715,8 @@ Three scope options:
 3. **All plots except…** — multiselect picker showing every other plot subtab. Node copied into selected plots only. Captures "Case A" (exclude S2 from analysis but keep visible on the QC contamination plot).
 
 **S3b — column-presence check at propagation**: when copying to other plots, skip plots whose data schema lacks the targeted column. Show a notification listing skipped plots. The audit accurately reflects which plots actually had the column to act on.
+
+**DECIDED, not built: the Create audit step dialog that replaces this one (D-0316, D-0318, D-0325, D-0337, D-0346, D-0347).** Every place the step can reach is ticked when the dialog opens; the user unticks what she does not want; the dialog shows the rows and plots affected before she confirms. Only distinct tables are lines (an empty tier is not a separate place: the line is the lowest level of the lineage that really has steps), each with its reach (how many tables and plots depend on it), plus a line for one plot only; a join that no plot reads is not offered. The places are found by asking the engine for the plan of every place (names and types) and by a walk of the lineage back, forward and back again; a place where the column has another type starts ticked and its line says what the type is there. The walk may read, beside the engine's plan, a short fixed list of what a step itself writes (the mapping of a rename, the keys and the suffix of a join, the columns of a drop or a select); each reading is checked against the plan; when they disagree the column is shown grey with the reason, never guessed, and a test on every shipped recipe fails; the plan stays the authority for what exists and its type (D-0351). A column is judged at the tier it is on: when both renames are within the same tier it is the same column (D-0352). [not decided: a rename across two tiers] A column recomputed under its own name (for example a mean per group that keeps the name, values recoded in place) is the same column, with a note: its place is offered and ticked and its line says plainly what happened there (for example one row per group after this step); the rows affected are shown per line before she confirms (D-0353). Each affected plot reads "table changed" and, separately, "picture changed". The three scope options above are what is built today.
 
 #### 12g.5. AuditStep schema additions
 
@@ -802,14 +800,14 @@ The Appendix ("Decisions Considered and Discarded") similarly marks deleted-but-
 
 ## 13. Home Module State Object
 
-The Home module state object is a `reactive.Value` dict that **survives all panel switches** (Home → Gallery → Blueprint → Home). It is serialized to the T3 Ghost on apply and on panel leave.
+The Home module state object is a `reactive.Value` dict that **survives all panel switches** (Home → Gallery → Blueprint → Home). Its audit steps and plot overrides are serialized to the T3 Ghost on apply (D-0302).
 
 ```python
 home_state = reactive.Value({
     # Navigation
     "active_group_tab": None,          # str: active analysis_group tab id
     "active_plot_subtab": None,        # str: active plot sub-tab id within the group
-    "tier_toggle": "T2",               # "T1" | "T2" | "T3"
+    # (no tier_toggle: the mode and the data choice are the reactive values home_mode, data_view and source_table of server.py)
 
     # Accordion collapse states (True = expanded)
     "accordion_plots_expanded": True,
@@ -817,7 +815,7 @@ home_state = reactive.Value({
 
     # Filter state (left sidebar)
     "_pending_filters": [],            # list of {column, op, value} — staged, not yet applied
-    "applied_filters": [],             # list of {column, op, value} — committed on btn_apply
+    "applied_filters": [],             # list of {column, op, value, ...} — exploration rows applied on filter_apply, for the view they were built on
 
     # audit steps (wrangling nodes — filter, exclusion, drop_column, developer_raw_yaml)
     # Phase 22-J: per-plot stacks. Replaces the flat t3_audit_steps list. See §12g.
@@ -838,21 +836,22 @@ home_state = reactive.Value({
 })
 ```
 
-**Panel independence rule:** Every top-level panel (Home, Gallery, Blueprint Architect, Test Lab) maintains its own independent state object. Switching panels never resets another panel's state. Gallery sub-tab position, Blueprint selected node, and Home tier toggle are all independently preserved.
+**Panel independence rule:** Every top-level panel (Home, Gallery, Blueprint Architect, Test Lab) maintains its own independent state object. Switching panels never resets another panel's state. Gallery sub-tab position, Blueprint selected node, and the Home mode and data choice are all independently preserved.
 
-**State persistence:** On every `btn_apply`, `home_state` is serialized to `_autosave_t3.json` (T3 Ghost slot). On panel switch away from Home, only `t3_audit_steps`, `_pending_t3_nodes`, `t3_plot_overrides`, `tier_toggle`, and the two accordion states are written (not filter state, which is already committed).
+**State persistence:** On every `btn_apply` a T3 Ghost `t3_{timestamp}.json` is written (§12d). It holds the audit steps, `t3_plot_overrides` and the notification log; no mode, data choice or filter state (exploration filters are never saved, D-0327).
 
 **Reactive dependency graph:**
 
 ```
-active_group_tab ──► active_plot_subtab ──► tier_toggle
+active_group_tab ──► active_plot_subtab ──► T3 table of the plot
                                           │
-                        applied_filters ──►│──► plot render
-                        t3_audit_steps       ──►│
-                        t3_plot_overrides ►│
+                        home_mode ───────►│──► plot render (Exploration: the Result; Audit: + audit steps)
+                        t3_audit_steps ──►│
+                        t3_plot_overrides►│
+data_view, source_table, applied_filters ──► data preview only
 ```
 
-Tab changes clear `_pending_filters` and `_pending_t3_nodes` but never touch `applied_filters` or `t3_audit_steps` (committed state is never cleared by navigation).
+A change of the viewed table clears `_pending_filters` and `applied_filters` with a notice (DECIDED: D-0311). Clearing on a plot-tab change, a mode switch or a recipe change is as built and PROVISIONAL (the builder's choice, `app/handlers/filter_and_audit_handlers.py:168-174`), not decided by the owner; `home_preview_filters.md` point 8 says the opposite for a mode switch. `t3_audit_steps` are never cleared by navigation.
 
 ---
 

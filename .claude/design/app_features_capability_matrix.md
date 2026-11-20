@@ -1,6 +1,8 @@
 # Deployment Configuration Matrix
 
 > **HISTORICAL NOTE (2026-11-06):** the `audit_report_enabled` flag was removed (LEGACY-AUDIT-FLAG-1, 2026-05-22): the T3 audit trail is part of every export. Rows and text below that mention it describe the earlier design. Current flags: `.claude/rules/rules_app_features_flags.md`.
+>
+> **HISTORICAL NOTE (2026-11-20, ledger D-0350):** the flags `tier_toggle_t1t2_enabled` and `tier_toggle_t3_enabled` below are not flags of any shipped app features file. The HOME header strip is built as the mode switch (Exploration | Audit, gated by `t3_sandbox_enabled`) and the data choice (Source | T1 | T2 | T3, gated by `interactivity_enabled`) (D-0016, D-0310); there is no "My view" (D-0179). The audit requires comparison, sessions and export, and comparison requires the audit (D-0018, a fatal check). Rows and text below about a tier toggle, "My view" or a T2 vs T3 comparison describe the earlier design.
 
 **Last updated:** 2026-05-05 (Session 18)
 **Companion guide:** `app_features_scoping_guide.md` (flag reference, dependency rules)

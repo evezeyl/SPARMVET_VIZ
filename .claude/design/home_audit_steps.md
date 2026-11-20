@@ -97,7 +97,7 @@ Audit mode is not a new central page. It reuses what HOME already has, so very l
     descriptions every action already has); the "population statistics" flags come from the guard-rail registry in
     `app/` (the library cannot import `transformer`). Blueprint is not modified, so the two maps cannot drift.
   - *No handoff:* no "edit this step" button (user-space independence); the text points to Blueprint for recipe changes.
-- **Plots are not rebuilt in a new place.** The central plot and table handlers are the ones used today (My view
+- **Plots are not rebuilt in a new place.** [HISTORICAL, 2026-11-20: My view is gone (slice B); the term is kept as written] The central plot and table handlers are the ones used today (My view
   already reads another data source for the same plots; Compare already has two panes). Only the data source
   changes to the audit data.
 
@@ -372,18 +372,20 @@ step, edit a step (= replace it).
 
 ## 13. What exists today vs target
 
+The column "Today" was brought up to date on 2026-11-20 (slices A and B merged on `dev`; D-0350).
+
 | Item | Today | Target |
 |---|---|---|
 | Plot-level filter/drop steps | per plot, dialog "this / all / all except" [built] | level 3, reach "only this plot" or "these plots (pick)" |
 | Concerned plots | checked on the data view (#58, closed: superseded by #60) | checked on the plot's audit T2 |
 | Exclude by key | not built; a `sample_id` filter on a plot lacking the column is skipped | levels 0-1, exact at the sources |
 | Dataset-level step (shared T2) | not built | level 2 |
-| Audit mode, chain drawing, project overview, coverage check | not built | build |
-| Draft / staged lists in audit | preview filters shown in My view | none: validated step + undo |
-| My view without sandbox flag | offered (ADR-085) | not offered |
-| `comparison_mode_enabled` | independent flag | child of the sandbox flag |
+| Audit mode, chain drawing, project overview, coverage check | Audit mode built (switch, audited plot, Compare; slice B); chain drawing, overview, coverage check not built | build |
+| Draft / staged lists in audit | staged rows wait to be sent; there is no My view (slice B) | none: validated step + undo |
+| My view without sandbox flag | gone: without the sandbox flag only Exploration exists (slice B) | not offered |
+| `comparison_mode_enabled` | child of the sandbox flag, fatal check both ways (D-0018, built) | child of the sandbox flag |
 | Export | steps, T2, T3 data | + original T1/T2, audit T1/T2, attrition table, coverage, audit keys, forked recipe |
-| Filters panel | one form, one global list | same form, two actions (preview / audit step) |
+| Filters panel | one form, two actions by mode (Apply in Exploration; Send to Audit in Audit mode while T3 is viewed); rows carry the key of their view (slice B) | same form, two actions (preview / audit step) |
 | `t3_translator` | plot-private fork, appends to tier-2 | + shared late insertion, + early source insertion |
 
 ## 14. Impact of the change and what must be retested
@@ -431,7 +433,7 @@ practice" page (section 7.8), the HOME test plan items about My view and Compare
 **Older UML elements that describe today's behaviour (kept as built, replaced when the change is built)**
 
 `UC-HOME` use cases "My view: filter and hide columns, sandbox", "Compare Result and My view", "Apply audit steps",
-"Send a filter or drop to audit" (new planned use cases are added); `SEQ-AUDIT`; `COM-REACTIVE` (tier_toggle,
+"Send a filter or drop to audit" (new planned use cases are added); `SEQ-AUDIT`; `COM-REACTIVE` ([HISTORICAL, 2026-11-20: tier_toggle is gone; the mode and the data choice are now `home_mode` and `data_view`] tier_toggle,
 applied_filters, audit_pending); `C4-COMP-HOME`; `STM-STAGE` (gains an audit-stage companion); `SEQ-EXPORT`;
 `UI-HOME The screen as built today` (kept deliberately).
 

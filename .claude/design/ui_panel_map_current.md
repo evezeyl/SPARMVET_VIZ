@@ -13,7 +13,7 @@
 |---|---|---|
 | Banner | `.sparmvet-banner` | "top banner" |
 | View title banner | `.view-title-banner` | "view-title banner" — Blueprint/Gallery/TestLab header strip |
-| Theater header strip | `.theater-header-strip` | "tier toggle area" — contains T1/T2/T3 radio buttons |
+| Theater header strip | `.theater-header-strip` | "header strip" — the mode switch **Mode: Exploration | Audit** and the data choice **Table to view: Source | T1 | T2 | T3** (built 2026-11-20, slice B; D-0016, D-0310). Before slice B it was the tier toggle with T1/T2/T3 radio buttons |
 | Nav pills strip | `#nav_sidebar .flex-column > .bg-white` | "navigation" — Home · Blueprint · Test Lab · Gallery pills |
 | Left sidebar | `#nav_sidebar` | "left sidebar" |
 | Right sidebar | `#audit_sidebar` | "right sidebar" / "audit sidebar" |
@@ -30,7 +30,7 @@
 |---|---|---|
 | Sidebar title | `[P] ui_branding.title` | Title shown in sidebar instead of (or above) data analysis recipe selector |
 | Hide nav pills entirely | `[P] show_navigation: false` | Hides Home · Blueprint · etc. pill strip |
-| T1/T2 toggle visibility | `[P] tier_toggle_enabled` | Theater header strip — hide the radio buttons |
+| Mode switch and data choice visibility | `interactivity_enabled` (strip and "Table to view"); `t3_sandbox_enabled` ("Mode:" switch) | Theater header strip (built 2026-11-20, D-0016, D-0310) |
 | Default tier on load | `[P] default_tier` | T1 or T2 shown without user action |
 | Ephemeral filter panel | `[P] passive_filter_enabled` | Filters accordion — view only, no audit, no T3 branch |
 
@@ -68,7 +68,7 @@
 │ ╔═══════════════════════╗ │ ┌───────────────────────────────────────┐ │ ┌───────────────────┐ │
 │ ║  Nav Pills Strip      ║ │ │  Theater Header Strip                 │ │ │  Pipeline Audit   │ │
 │ ║  Home · Blueprint ·   ║ │ │  div.theater-header-strip             │ │ │  card             │ │
-│ ║  Test Lab · Gallery   ║ │ │  "Data to show:" + T1/T2/T3 toggle    │ │ │  #audit_sidebar   │ │
+│ ║  Test Lab · Gallery   ║ │ │  "Mode:" + "Table to view:" SRC..T3   │ │ │  #audit_sidebar   │ │
 │ ║  #nav_sidebar .flex-  ║ │ └───────────────────────────────────────┘ │ │  .card            │ │
 │ ║  column > .bg-white   ║ │                                           │ │                   │ │
 │ ╚═══════════════════════╝ │ ┌───────────────────────────────────────┐ │ │  ── card-header ──│ │
@@ -111,7 +111,7 @@
 | Nav pills strip | `#nav_sidebar .flex-column > .bg-white` | Home/Blueprint/… pill bar |
 | Any sidebar accordion header | `#nav_sidebar .accordion-button` | bg `#a0a0a0`, 0.85rem/700 |
 | Any sidebar accordion body | `#nav_sidebar .accordion-body` | bg `#c0c0c0` |
-| Theater header strip | `.theater-header-strip` | "Data to show:" + tier toggle |
+| Theater header strip | `.theater-header-strip` | "Mode: Exploration / Audit" + "Table to view: Source / T1 / T2 / T3" (+ "Source table", and "Compare" in Audit mode) |
 | Groups nav wrapper | `.theater-container-main .spv-panel` | `div.spv-panel` around pill nav |
 | Groups pill nav | `#home_groups_nav` | `navset_pill` — group tab bar |
 | Active group content | `#home_groups_nav .active` | Active group panel |

@@ -2,7 +2,7 @@
 trigger: always_on
 deps:
   provides: [rule:artist_pillar, rule:plotnine_parity, rule:core_geoms_standard]
-  documents: [libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/themes/core.py, libs/viz_factory/src/viz_factory/registry.py]
+  documents: [libs/viz_factory/src/viz_factory/viz_factory.py, libs/viz_factory/src/viz_factory/geoms/core.py, libs/viz_factory/src/viz_factory/themes/core.py, libs/viz_factory/src/viz_factory/registry.py, libs/viz_factory/src/viz_factory/engine_python_plotnine.py, libs/viz_factory/src/viz_factory/plot_config_resolver.py]
   consumed_by: [.claude/rules/rules_agent_role_bioscientist.md, .claude/knowledge/dependency_index.md]
 ---
 
@@ -51,7 +51,7 @@ No visual component is considered verified without:
 
 ## 4. Predicate Pushdown — UI Filter Contract
 
-`VizFactory.render()` accepts a `filters` key in the plot config dict. This is the Tier 3 predicate pushdown interface (ADR-024). Filters are applied to the Polars LazyFrame before Pandas hand-off.
+`VizFactory.render()` accepts a `filters` key in the plot config dict. This is the Tier 3 predicate pushdown interface (ADR-024). Filters are applied to the Polars LazyFrame before Pandas hand-off. HOME passes no exploration filter here: an exploration filter never changes a plot (D-0327; built, no such injection in `app/handlers/`).
 
 **Authoritative op list:** `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in`, `not_in`, `between`.
 
@@ -85,13 +85,13 @@ plot_defaults:
   palette: nvi_official      # applies to ALL plots in the data analysis recipe
   # Full plot_defaults schema → rules_data_analysis_recipe_structure.md §10
 
-# Per-plot override (inside analysis_groups plot spec):
+# Per-plot override (in the plot entry of analysis_groups):
 palette: sparmvet_brand      # overrides plot_defaults.palette for this plot
 ```
 
 Resolution order: **plot-level `palette:` > `plot_defaults.palette` > none (matplotlib default)**.
 
-`palette` is one of several `plot_defaults` keys. The authoritative schema (palette, theme, default_font_family, facet_panel_spacing, legend_position, optimisation toggles) is documented at `rules_data_analysis_recipe_structure.md §10`. Unknown keys emit `PipelineError(severity: warning, who: data_analysis_recipe_author, surface: notification)`.
+`palette` is one of several `plot_defaults` keys. The authoritative schema (palette, theme, layers, random_state) is documented at `rules_data_analysis_recipe_structure.md §10`. `default_font_family`, `facet_panel_spacing`, `legend_position` and `optimisation` were removed (D-0220, D-0242). An unknown key is refused by the checker (PD01; D-0033); a removed key is refused with a tombstone text (PD02).
 
 ### 6c. Scale injection rules
 
@@ -115,19 +115,20 @@ Plot configuration resolves through a **five-tier priority cascade** at one merg
 | Tier | Source | Modifiable by |
 |---|---|---|
 | **L5** | T3 `aesthetic_override` for the active plot | Analyst (T3 sandbox) |
-| **L4** | Plot `spec:` (`analysis_groups.<grp>.plots.<id>.spec`) | Data analysis recipe author |
-| **L3** | Optimisation layer (computed from data + spec) — **visual/aesthetic only** | None — emitted by VizFactory |
+| **L4** | The plot entry (`analysis_groups.<grp>.plots.<id>`; the entry has no `spec:` key, D-0237) | Data analysis recipe author |
+| **L3** | Optimisation layer (computed from data + the plot entry) — **visual/aesthetic only** | None — emitted by VizFactory |
 | **L2** | Data analysis recipe `plot_defaults:` block | Data analysis recipe author |
-| **L1** | VizFactory built-in defaults | Developer |
+| **L1** | VizFactory built-in defaults (`coord_cartesian`, `facet_null`; no theme: a plot with no theme written is drawn with plotnine's own default, `theme_gray`, D-0258) | Developer |
 
-- **Names in the cascade (DECIDED, not built, D-0218)**: the `theme:` key of a plot spec and of `plot_defaults` changes, because it is a component call (D-0214). Names written as values stay plotnine's own (D-0214). It must be tested thoroughly; on an error, investigate and propose solutions (D-0214).
+- **Names in the cascade (DECIDED, not built, D-0218)**: the `theme:` key of a plot entry and of `plot_defaults` changes, because it is a component call (D-0214). Names written as values stay plotnine's own (D-0214). It must be tested thoroughly; on an error, investigate and propose solutions (D-0214).
 
 **Resolution rule:** higher tier wins per key (winner-takes-all, no value merging). The `layers:` list is the exception — append-then-deduplicate by `(layer_kind, target)` keeping LAST occurrence (so L5 wins on theme/coord/facet/scale/element_text). `geom_*`/`stat_*` layers never deduplicated.
 
 **Key constraints from the design:**
 - L3 (optimisation) is **purely visual/aesthetic** — MUST NOT change `mapping`, `layers`, `geom_*`, `filters`, or `palette`. Allowed: axis text rotation/size, panel spacing, density-aware positions.
 - L5 `aesthetic_override` has a **fixed schema** (design §6): `fill_color` ⊕ `fill_palette` (mutex with warning), `color`, `alpha`, `shape`, `size`, `theme`. `plot_scope` MUST be a single plot_id (never `__all__`).
-- Unknown keys in `plot_defaults` emit `PipelineError(severity: warning, who: data_analysis_recipe_author, surface: notification)` per ADR-079. Non-fatal.
+- Unknown keys in `plot_defaults` are refused by the checker (PD01; D-0033, DEC02; built); the four removed keys are refused with a tombstone text (PD02).
+- **The engine (D-0238, D-0239, D-0240; built):** the engine of a component is a field of its registry entry (`python-plotnine` for every component today, `registry.py:49`); the plot library is chosen by the `plot_engine` of the plot entry, else of the data analysis recipe (`app/modules/engine_registry.py`); an engine the app has no library for is refused with "no library for this engine in this app". The plot engine is in no table cache key.
 - §6 above describes today's `_apply_palette` behaviour — under the cascade it remains the renderer for the resolved `palette:` key (now produced by the cascade resolver, not read directly from the data analysis recipe dict). Behaviour rules in §6c are unchanged.
 
 **Full design specification:** [.claude/design/plot_config_cascade.md](../design/plot_config_cascade.md). Implementation tasks: ~~VIZFAC-RESOLVER-1~~ ✓, ~~VIZFAC-DEFAULTS-DOCS-1~~ ✓, ~~VIZFAC-RENDER-WIRE-1~~ ✓, VIZFAC-T3-OVERRIDE-1, VIZFAC-T3-EXPORT-1, VIZFAC-BLUEPRINT-FORM-1.
@@ -140,5 +141,6 @@ The same data and the same data analysis recipe must give the same picture. Ever
 - A layer sets its own with `random_state` (for example `position_jitter` with `random_state: 123`); a seed set on the layer wins over the factory's.
 - `VizFactory(random_state=...)` changes the default for the whole factory. This is the way to fix or vary the seed in tests.
 - The seed is handed to plotnine as a numpy generator, never as a bare number: plotnine treats `random_state=0` as "no seed" (it checks `if not random_state`).
-- The seed is a default, not a rule: `random_state: null` (or `random`) on a layer, or `VizFactory(random_state=None)`, gives a different arrangement on every render.
+- A seed is a number: `random_state: null` or the word `random` on a random layer or in `plot_defaults` is refused by the checker (PS04, PD01) and by the render (`viz_factory._refuse_unseeded_layer`), because the same recipe must give the same picture; every seed that is used is written in the recipe or the audit recipe (D-0056; D-0004 is replaced on this point; built, refusal wording provisional). `VizFactory(random_state=None)` stays only as the handle of a test. A seed fixed in the recipe holds; the app does not overwrite it (D-0052; built: Reshuffle is hidden when the recipe fixes a seed, `plot_config_resolver.fixed_seed_of`).
+- The Reshuffle button of a plot with a random layer is offered only in Audit mode (D-0341; built). How a reshuffle is written down as an audit step at the right place, and whether registered components carry a field that marks a seed requirement, is not decided (D-0341).
 - A new random component must be seeded in `_seed_random_components`, and `libs/viz_factory/tests/test_reproducible_render.py` must cover it.

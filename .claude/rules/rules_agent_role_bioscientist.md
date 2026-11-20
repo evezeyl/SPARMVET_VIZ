@@ -16,10 +16,10 @@ deps:
 
 ## ⛔ ABSOLUTE PROHIBITIONS (read before anything else)
 
-1. **NEVER use shorthand YAML syntax for wrangling or assembly steps.** Every step MUST use the `action:` key. Shorthand like `- join: {...}` or `- mutate: [...]` is silently ignored by the engine and produces wrong data with no error. See §7 of `rules_data_analysis_recipe_structure.md` for the full canonical format.
+1. **NEVER use shorthand YAML syntax for wrangling or assembly steps.** Every step MUST use the `action:` key with a registered action name (`polars_<name>`, `modif_<name>`, `step_<name>`; D-0036). Shorthand like `- join: {...}` or `- mutate: [...]` is refused by the checker (ST01), and an old name without its prefix is refused with the new name (ST02). See §7 of `rules_data_analysis_recipe_structure.md` for the full canonical format.
 2. **NEVER use `dataset_id:` as a join key.** The correct key is `right_ingredient:`.
 3. **NEVER use bare `on:` as a YAML key.** `on` is a YAML boolean (`True`). Always write it as `'on':` (quoted single-tick, or double-quoted).
-4. **NEVER write multiple column expressions in a single `mutate` step.** Each column gets its own step: `- action: mutate`, `column: col_name`, `expression: "pl.expr"`.
+4. **NEVER write multiple column expressions in a single `polars_with_columns` step.** Each column gets its own step: `- action: polars_with_columns`, `named_exprs: {col_name: "pl.expr"}` (the old `mutate` is refused with the new name).
 5. **NEVER use `position:` or `labels:` as flat plot spec keys.** They must appear as named entries in the `layers:` list. See §8 of `rules_data_analysis_recipe_structure.md`.
 6. **NEVER modify any `.py` file** — not even to fix a typo, add a comment, or change an import. All Python changes go through a `@dasharch` handoff (see §4-B). No exceptions.
 7. **NEVER generate YAML until the Scientist-First Interview is complete** (see §2).
@@ -68,7 +68,7 @@ Before writing any data analysis recipe, verify compliance with ALL of these:
 
 | File | What it governs |
 |---|---|
-| `.claude/rules/rules_data_analysis_recipe_structure.md` | **Primary authority.** Directory layout, basename mirroring, `assembly/`, `analysis_groups` structure, canonical steps syntax (§7), plot spec format (§8), `final_contract` whitelist (§5). |
+| `.claude/rules/rules_data_analysis_recipe_structure.md` | **Primary authority.** Directory layout, basename mirroring, `assembly/`, `analysis_groups` structure, canonical steps syntax (§7), plot entry format (§8), the published columns (§5: the last `polars_select`; `final_contract` is removed, D-0034). |
 | `.claude/rules/rules_data_engine.md` | 3-Tier lifecycle, wrangling block structure (`tier1:`/`tier2:` mandatory), Decorator standards, Polars parity. |
 | `.claude/knowledge/project_conventions.md` | **Quick reference.** File registry (what every script does), verification protocol, path authority, tiered data lifecycle, data analysis recipe construction summary, action registry. Cross-check against this when you are unsure which script to run or which path to use. |
 | `docs/appendix/data_analysis_recipe_structure.yaml` | Physical reference: directory layout, YAML resilience (boolean traps), constructor standard. |
@@ -86,7 +86,7 @@ The agent MUST NOT generate YAML until the following parameters are clarified:
 - **Visual Mapping**: X/Y axes, color/fill variables, facet requirements.
 - **Cleaning Requirements**: Known malformed strings or nulls requiring Tier 1 intervention.
 - **Assembly strategy**: Which datasets need to be joined, on what keys, in what order?
-- **Column carry-over policy**: Which identity columns (sample_id, gene, accession) must be retained through to the `final_contract`?
+- **Column carry-over policy**: Which identity columns (sample_id, gene, accession) must be retained through to the last `polars_select` of the collection (there is no `final_contract` any more, D-0034)?
 
 ---
 
@@ -97,51 +97,61 @@ The agent MUST NOT generate YAML until the following parameters are clarified:
 Always tiered. `tier1:` is mandatory (even if empty):
 
 ```yaml
-wrangling:
-  tier1:
-    - action: filter_range
-      columns: [identity]
-      min: 90
-    - action: cast
+tier1:
+  steps:
+    - action: modif_filter
+      column: identity
+      op: ge
+      value: 90
+      na: remove
+    - action: polars_cast
       columns: [Year]
       dtype: String
-  tier2: []   # Optional; omit if empty
+tier2:
+  steps: []   # Optional; omit if empty
 ```
 
-**Silent Skip Warning**: If an `input_fields` slug does not match any column name in the source TSV, the engine silently skips it — no error, no warning. Before writing wrangling steps that reference a field, verify the column name exists in the actual TSV file. Use `head -1 <tsv_file>` to inspect the raw headers.
+A tier is its own key, with an optional `data_engine` and `steps` (D-0250); in a file it is included as `tier1: !include <file>`.
+
+**Strict import**: an `input_fields` slug that does not match a column of the source TSV makes the dataset fail to load, with a message that names it (D-0034, DEC24; built: the load gate and the data check report it). Before writing wrangling steps that reference a field, verify the column name exists in the actual TSV file. Use `head -1 <tsv_file>` to inspect the raw headers.
 
 ### 3-B. Assembly steps (in `assembly/<name>.yaml`)
 
 One canonical step per action. Use `right_ingredient:` (not `dataset_id:`). Quote `'on'`. **Column ordering matters**: you can only reference a column in a step if it exists at that point in the pipeline. Columns from a right ingredient are only available AFTER the join step that brings them in.
 
 ```yaml
+# the file is included as `tier1: !include <file>`: it holds the tier's `steps` (D-0250)
 steps:
-  - action: mutate
-    column: predicted_phenotype_clean
-    expression: "pl.col('predicted_phenotype').str.strip_chars().str.to_lowercase()"
-  - action: join
+  - action: polars_with_columns
+    named_exprs:
+      predicted_phenotype_clean: pl.col('predicted_phenotype').cast(pl.String).str.strip_chars().str.to_lowercase()
+  - action: polars_join
     right_ingredient: metadata_schema
-    'on': sample_id
+    'on': [sample_id]
     how: inner
+    maintain_order: left_right
   # Year arrives from metadata_schema — cast AFTER the join, not before
-  - action: cast
+  - action: polars_cast
     columns: [Year]
     dtype: Int64
-  - action: cast
+  - action: polars_cast
     columns: [Year]
     dtype: String
-  - action: mutate
-    column: Multiresistant
-    expression: "pl.when(pl.col('is_multi_resistant_bool')).then(pl.lit('Yes')).otherwise(pl.lit('No'))"
-  - action: sort
-    columns: [Year, Source, Country]
+  - action: polars_with_columns
+    named_exprs:
+      Multiresistant: pl.when(pl.col('is_multi_resistant_bool')).then(pl.lit('Yes')).otherwise(pl.lit('No'))
+  - action: polars_sort
+    by: [Year, Source, Country]
+    maintain_order: true
+  - action: polars_select
+    exprs: ["Year", "Source", "Country", "gene", "predicted_phenotype_clean", "sample_id", "accession", "Multiresistant"]
 ```
 
-**Never batch multiple columns into one `mutate` step.**
+**Never batch multiple columns into one `polars_with_columns` step.**
 
 **Two-step cast for integer-as-category**: TSV files infer numeric columns (e.g. Year) as `Float64` because TSV has no native integer type. Casting `Float64 → String` directly gives `"2022.0"` not `"2022"`. Always cast `Float64 → Int64 → String` in two separate steps. This applies to any column used as a discrete category in a plot (Year, Sequence Type, Tier rank, etc.).
 
-**Join key dtype mismatch**: If a join fails with a `SchemaError`, both sides of the join key must share the same dtype. The engine handles most cases automatically, but if the key is a numeric ID in one source and a string in another, add an explicit `cast` step before the join on the side that needs normalisation.
+**Join key dtype mismatch**: If a join fails with a `SchemaError`, both sides of the join key must share the same dtype. The engine handles most cases automatically, but if the key is a numeric ID in one source and a string in another, add an explicit `polars_cast` step before the join on the side that needs normalisation.
 
 ### 3-C. Plot specs (in `plots/<plot_id>.yaml`)
 
@@ -153,23 +163,23 @@ steps:
 Use grammar-of-graphics format (ADR-083): explicit `geom_*` layer first, all aesthetics under `mapping:`.
 
 ```yaml
-spec:
-  target_dataset: AMR_Profile_Joint
-  mapping:
-    x: Year
-    fill: Multiresistant
-    facet_by: Country
-  theme: theme_light
-  layers:
-    - name: geom_bar
-      params: {}
-    - name: position_dodge
-      params: {}
-    - name: labs
-      params:
-        title: "Multi-Resistance by Country"
-        fill: "Multiresistant"
-        x: "Year"
+ui_label: "Multi-Resistance by Country"   # the short name of the tab (there is no `spec:` key, D-0237, D-0253)
+target_dataset: AMR_Profile_Joint
+mapping:
+  x: Year
+  fill: Multiresistant
+  facet_by: Country
+theme: theme_light
+layers:
+  - name: geom_bar
+    params: {}
+  - name: position_dodge
+    params: {}
+  - name: labs
+    params:
+      title: "Multi-Resistance by Country"
+      fill: "Multiresistant"
+      x: "Year"
 ```
 
 **`position` and `labels` as flat keys are NOT supported.** They must appear as named layers. See registered components in `libs/viz_factory/src/viz_factory/`.
@@ -181,31 +191,19 @@ spec:
 ```yaml
 analysis_groups:
   AMR_Insight:
-    label: "AMR Profiling Insight"
+    ui_label: "AMR Profiling Insight"
     plots:
-      multi_resistance_by_country:
-        label: "Multi-Resistance by Country"
-        spec: !include 2_test_data_ST22_dummy/plots/multi_resistance_by_country.yaml
+      multi_resistance_by_country: !include 2_test_data_ST22_dummy/plots/multi_resistance_by_country.yaml   # the file holds the whole plot entry
 ```
 
 - `group_id` and `plot_id`: snake_case only, no spaces, no emoji.
 - `plot_id` must be **unique across ALL data analysis recipes** (globally registered at app startup).
 
-### 3-E. `final_contract` whitelist
+### 3-E. The published columns: the last `polars_select`
 
-List ONLY the columns that should appear in the final Parquet output. Intermediate columns (e.g., `is_multi_resistant_bool`) must NOT appear here — they are automatically dropped. Identity/traceability columns (`sample_id`, `gene`, `Accession`) SHOULD be retained unless explicitly agreed to drop them.
+`final_contract` is removed (D-0034, DEC23; built: the checker refuses it and names the replacement). The last step of the collection's tier 1 is a plain `polars_select` (see the example of 3-B) that lists ONLY the columns that should appear in the output, in their order. Intermediate columns (e.g., `is_multi_resistant_bool`) must NOT appear there. Identity/traceability columns (`sample_id`, `gene`, `Accession`) SHOULD be retained unless explicitly agreed to drop them. Display names of computed columns go in a `labels: {column: text}` mapping on the collection.
 
-```yaml
-final_contract:
-  Year: string
-  Source: string
-  Country: string
-  predicted_phenotype_clean: string
-  sample_id: string
-  Multiresistant: string
-```
-
-Types MUST match what the assembly steps produces (`cast` → verify dtype). If a column appears in `final_contract` but was not produced by the step list, the assembler will raise a `ColumnNotFoundError`.
+Types come from the steps (`polars_cast` → verify dtype). If the `polars_select` names a column that the step list did not produce, the step fails with a `ColumnNotFoundError`.
 
 ---
 
@@ -224,7 +222,7 @@ Step 3 — Write Tier 1 wrangling for next data_schema (repeat per schema)
          ↓ GATE: same as step 2
 Step 4 — Write assembly steps (joins + derived columns)
          ↓ GATE: run debug_assembler.py, inspect contracted TSV, confirm join integrity
-Step 5 — Write final_contract
+Step 5 — Write the last polars_select (the published columns)
          ↓ GATE: re-run debug_assembler.py, confirm exactly the right columns and types appear
 Step 6 — Write plot specs
          ↓ GATE: run debug_gallery.py, open PNGs, confirm plot renders correctly
@@ -236,7 +234,7 @@ Step 7 — Add to analysis_groups in master data analysis recipe
 
 - **One step per response.** Do not write Tier 1 wrangling and an assembly steps in the same response. Propose one, halt, wait for the user to confirm the debug output before proceeding.
 - **State what you expect before running.** Before proposing a step, state: "After this step I expect the output to have X columns, Y rows, and Z values in column C." This makes mismatches obvious.
-- **State the consequence of each decision.** When proposing a transformation (e.g., `filter_range identity min: 90`), explicitly state: "This will drop rows where identity < 90. Based on the source data, this may reduce the row count from ~N to ~M. Rows dropped here will not be recoverable downstream."
+- **State the consequence of each decision.** When proposing a transformation (e.g., `modif_filter` with `column: identity`, `op: ge`, `value: 90`), explicitly state: "This will drop rows where identity < 90. Based on the source data, this may reduce the row count from ~N to ~M. Rows dropped here will not be recoverable downstream."
 - **If a gate fails, diagnose before proposing a fix.** Do not immediately propose a revised data analysis recipe on a failure. First read the error, state what caused it, and explain the fix before writing new YAML.
 - **Never propose the next step while waiting for gate confirmation.** If you have written a wrangling fragment and are waiting for the debug output to be shared, do not proceed to the assembly steps. Ask the user to share the output.
 
@@ -246,7 +244,7 @@ Step 7 — Add to analysis_groups in master data analysis recipe
 |---|---|
 | Tier 1 wrangling | TSV column names match `input_fields` slugs; row count is plausible; no unexpected nulls in critical columns |
 | Assembly steps | Row count matches expectation (no Cartesian product); join-sourced columns have non-null values; derived columns (`Multiresistant`, etc.) contain expected values |
-| `final_contract` | Exactly the declared columns appear in the TSV; no `"2022.0"` for year columns; all types match |
+| Last `polars_select` | Exactly the selected columns appear in the TSV; no `"2022.0"` for year columns; all types match |
 | Plot specs | PNG renders without error; axes, fill, and facets display correctly; no blank panels |
 
 ---
@@ -305,7 +303,7 @@ Every data analysis recipe proposal MUST include a Logic Breakdown:
 
 - **Join Strategy**: Why specific keys were used, which dataset is base vs. right_ingredient.
 - **Transformation Chain**: The scientific reason for each Tier 1 and assembly step.
-- **`final_contract` justification**: Which columns are retained and why (including identity/traceability columns).
+- **Published columns justification** (the last `polars_select`): Which columns are retained and why (including identity/traceability columns).
 - **Plot mapping rationale**: Why each aesthetic (x, y, fill, facet) was chosen.
 
 ---
@@ -317,14 +315,14 @@ Before declaring a data analysis recipe complete:
 - [ ] All wrangling/assembly steps use `action:` key (not shorthand).
 - [ ] No `dataset_id:` join keys (use `right_ingredient:`).
 - [ ] `on:` is quoted as `'on':` in all join steps.
-- [ ] Each `mutate` step has exactly one `column:` and one `expression:`.
+- [ ] Each `polars_with_columns` step has exactly one entry in `named_exprs`.
 - [ ] Column ordering: no step references a column before the step that creates it (especially join-sourced columns).
 - [ ] Two-step cast applied when casting TSV-inferred numeric columns to String (Int64 first).
 - [ ] TSV column headers inspected: all `input_fields` slugs match actual column names in source files.
 - [ ] All action names verified against §8 of this file (or `libs/transformer/src/transformer/actions/`).
 - [ ] All component names in `layers:` verified against `libs/viz_factory/src/viz_factory/`.
 - [ ] `position` and `labels` appear in `layers:`, NOT as flat keys.
-- [ ] `final_contract` contains only columns that exist after all steps.
+- [ ] The last `polars_select` names only columns that exist after all steps.
 - [ ] All `plot_id`s are snake_case and globally unique across the project.
 - [ ] Directory structure follows basename mirroring mandate (`rules_data_analysis_recipe_structure.md §1`).
 - [ ] `assembly/` subdirectory used for assembly steps files.
@@ -351,7 +349,7 @@ tmp/2026-04-23/2_test_data_ST22_dummy/
 
 ### Step 1 — Assemble data
 
-Validates ingestion, wrangling, assembly, and `final_contract`. Writes three output files:
+Validates ingestion, wrangling, assembly, and the published columns (the last `polars_select`). Writes three output files:
 
 ```bash
 ./.venv/bin/python libs/transformer/tests/debug_assembler.py \
@@ -380,7 +378,7 @@ Outputs:
 
 ### What to check in the TSV output
 
-- Correct number of columns (matches `final_contract` keys exactly)
+- Correct number of columns (matches the last `polars_select` exactly)
 - No `"2022.0"` — year must be `"2022"` (two-step cast worked)
 - No unexpected null/missing values in join-sourced columns (indicates a join key mismatch or missing field in source)
 - All derived columns (`Multiresistant`, `predicted_phenotype_clean`) contain expected values
@@ -391,12 +389,12 @@ Outputs:
 | Error | Cause | Fix |
 |---|---|---|
 | `ColumnNotFoundError` | Step references a column not yet in the frame | Check step ordering relative to the join that creates the column |
-| `SchemaError` on join | Join key dtype mismatch between ingredients | Add `cast` step before join on the mismatched side |
+| `SchemaError` on join | Join key dtype mismatch between ingredients | Add a `polars_cast` step before the join on the mismatched side |
 | `FileNotFoundError` | Source file path wrong | Check `source: path:` in `data_schemas` |
-| Column missing from TSV output | Column not in `final_contract` whitelist | Add it to `final_contract` |
-| Column in `final_contract` but missing from output | Column was never produced by the step list | Check wrangling/assembly step that should create it |
+| Column missing from TSV output | Column not in the last `polars_select` | Add it to that `polars_select` |
+| Column in the last `polars_select` but missing from output | Column was never produced by the step list | Check wrangling/assembly step that should create it |
 | Row explosion (count >> expected) | Cartesian product on join | Verify join key uniqueness in both ingredients |
-| Plot renders but values look wrong | `final_contract` dtype mismatch | Verify cast steps match declared types |
+| Plot renders but values look wrong | dtype not as expected | Verify the `polars_cast` steps |
 
 **If a debug script itself has a bug** (not a data analysis recipe error): file a `@dasharch` handoff per §4-B. Do NOT attempt to fix the script.
 
@@ -408,18 +406,12 @@ Outputs:
 
 **Documentation standard (ADR-075 §1):** Every entry in this list is expected to carry `description` + `yaml_example` in its `ui_schema`, and `wraps` for all 1:1 Polars wrappers. The Blueprint IDE help panel and `help_registry.py` surface these fields. If you notice an action is missing `description` or `yaml_example`, file a task (BP-HELP-TRANSFORMER-1 scope).
 
-**Cleaning:** `fill_nulls`, `drop_nulls`, `replace_values`, `rename`, `drop_duplicates`, `unique_rows`, `recode_values`, `sanitize_column_names`, `keep_columns`, `drop_columns`, `strip_whitespace`, `round_numeric`, `filter_range`, `add_constant`, `filter_eq`, `filter_ne`, `filter_gt`, `filter_lt`, `rename_columns`, `unique`
+The names carry a prefix (D-0036, DEC31-42; built): `polars_<name>` is exactly the Polars call; `modif_<name>` is a Polars idea with a documented change; `step_<name>` is several calls. An old name without a prefix is refused with the new name. The 68 actions registered on 2026-11-20 (read from the registry):
 
-**Expressions:** `regex_extract`, `cast`, `coalesce`, `label_if`, `mutate`, `regex_replace`, `null_if`
+**`polars_`:** `polars_all_horizontal`, `polars_any_horizontal`, `polars_bottom_k`, `polars_cast`, `polars_coalesce`, `polars_count`, `polars_cum_count`, `polars_cum_sum`, `polars_describe`, `polars_drop`, `polars_drop_nans`, `polars_drop_nulls`, `polars_dt_truncate`, `polars_explode`, `polars_fill_nan`, `polars_fill_null`, `polars_first`, `polars_gather_every`, `polars_group_by`, `polars_group_by_dynamic`, `polars_head`, `polars_interpolate`, `polars_join`, `polars_join_asof`, `polars_last`, `polars_limit`, `polars_list_join`, `polars_list_slice`, `polars_max`, `polars_max_horizontal`, `polars_mean`, `polars_mean_horizontal`, `polars_median`, `polars_min`, `polars_min_horizontal`, `polars_null_count`, `polars_pivot`, `polars_quantile`, `polars_rank`, `polars_remove`, `polars_rename`, `polars_reverse`, `polars_rolling`, `polars_round`, `polars_sample`, `polars_select`, `polars_shift`, `polars_slice`, `polars_sort`, `polars_std`, `polars_str_extract`, `polars_str_replace_all`, `polars_str_split`, `polars_str_splitn`, `polars_str_strip_chars`, `polars_sum`, `polars_sum_horizontal`, `polars_tail`, `polars_top_k`, `polars_unique`, `polars_unnest`, `polars_unpivot`, `polars_var`, `polars_with_columns`, `polars_with_row_index`
 
-**Analytical:** `top_n_other`, `window_agg`, `shift`, `fill_nulls_direction`, `sort`, `sample`, `cum_sum`, `cum_count`, `date_extract`, `date_truncate`, `list_slice`, `list_join`, `is_in`, `not_in`, `z_score`, `percentile`, `value_counts`, `describe_stats`, `select_by_pattern`, `horizontal_stats`, `any_horizontal`, `all_horizontal`, `interpolate`
+**`modif_`:** `modif_filter` (the filter: column, operator, typed value, `na`), `modif_join_where`
 
-**Advanced:** `split_and_explode`, `derive_categories`, `split_column_to_parts`, `divide_columns`, `split_column`
+**`step_`:** `step_top_n_other`
 
-**Reshaping:** `unpivot`, `explode`, `unnest`, `split_to_list`, `to_struct`, `pivot`
-
-**Performance:** `summarize`, `count_by_group`
-
-**Relational:** `join`, `join_filter`
-
-**Persistence (engine-internal — do not write manually):** `sink_parquet`, `scan_parquet`
+**Engine-internal (do not write in a recipe):** reading and writing Parquet (scan and sink) are done by the engine only (D-0036).

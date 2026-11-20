@@ -38,26 +38,20 @@ No dependencies. Safe to enable in any app features.
 ```
 interactivity_enabled: true/false   ← MASTER GATE for all below
   │
-  ├─ (tier toggle "My view" option) ← ADR-085: gated on interactivity_enabled ALONE, not t3_sandbox_enabled
-  ├─ t3_sandbox_enabled             ← Send-to-Audit button + right sidebar audit panel only (NOT the tier itself)
-  ├─ comparison_mode_enabled        ← "Compare Result vs My view" choice of "Plot to show" (ADR-086)
+  ├─ (header strip: "Table to view" Source/T1/T2/T3 + Exploration)  ← gated on interactivity_enabled alone
+  ├─ t3_sandbox_enabled             ← the audit: "Mode: Exploration | Audit" switch, Send to Audit, right sidebar audit panel
+  │                                    REQUIRES comparison_mode_enabled, session_management_enabled, export_enabled (FATAL, D-0018)
+  ├─ comparison_mode_enabled        ← the Compare switch of Audit mode ("Original" | "Audited"); REQUIRES t3_sandbox_enabled (FATAL, D-0018)
   └─ session_management_enabled     ← Session Save/Import + ghost save
 ```
 
-**ADR-085 (2026-08-10) — "My view" (T3) is a view, not an audit-gated feature.** The tier toggle's third
-option (labelled "My view" in the UI) is now shown whenever the Filters panel exists at all
-(`interactivity_enabled`), regardless of `t3_sandbox_enabled`. `t3_sandbox_enabled` gates only the
-capability to make a change permanent: the "Send to Audit" button, the propagation modal, and the right
-sidebar Pipeline Audit panel. Without `t3_sandbox_enabled`, "My view" is a pure scratchpad — filters apply
-and render there for the session, but there is no way to write them to an audit trail. T1 and T2 are always
-pure references in every configuration: neither exploration filters nor audit-committed filters/drops ever
-render there (see `_group_plot_handler` / `home_data_preview` in `app/handlers/home_theater.py`).
+**Exploration and Audit (D-0016, D-0019, D-0179, D-0310, D-0327; built 2026-11-20, slice B).** There is no "My view" any more. With `interactivity_enabled` the header strip shows the data choice "Table to view: Source | T1 | T2 | T3" and the Filters panel: this is Exploration, one plot (the Result), filters that change only the table viewed and never a plot. `t3_sandbox_enabled` adds the mode switch "Mode: Exploration | Audit": Audit mode holds the "Send to Audit" button, the propagation modal, the right sidebar Pipeline Audit panel and the audited plot; `comparison_mode_enabled` adds its Compare switch. Without `t3_sandbox_enabled` the app is always in Exploration and nothing can be written to an audit trail. Source, T1 and T2 always show the originals: neither exploration filters on another view nor audit-committed filters/drops ever render there (`home_theater._applied_for_view`, `_in_audit`).
 
-**Dependency rule:** `bootloader` ignores `comparison_mode_enabled` and `session_management_enabled` when `interactivity_enabled: false`. Setting them to `true` in a static app features produces no UI effect and logs a warning.
+**Dependency rule:** `bootloader` ignores `t3_sandbox_enabled`, `comparison_mode_enabled` and `session_management_enabled` when `interactivity_enabled: false` (`bootloader.py:760-769`). Setting them to `true` in a static app features produces no UI effect and logs a warning.
 
 **`export_enabled` is NOT in this group.** Export is independent of interactivity — even a static (read-only) app features can produce an export bundle. It belongs in Group A.
 
-**Structural consequence:** When `interactivity_enabled: false`, the Tier Toggle strip is absent entirely (no T1/T2/"My view" radios at all) — there is no partial state where the toggle exists but "My view" is missing; that split only happens when `interactivity_enabled: true` and `t3_sandbox_enabled: false` (My view present, audit capability absent).
+**Structural consequence:** When `interactivity_enabled: false`, the header strip is absent entirely (no mode switch, no "Table to view"); the plots show the Result and the table shows T3. When `interactivity_enabled: true` and `t3_sandbox_enabled: false` (the simple and web-demo setups), the strip has the data choice but no mode switch (built 2026-11-20).
 
 **Filters accordion absent:** When `interactivity_enabled: false`, the Filters accordion panel is **not created** in the left sidebar — it is absent entirely. Previously it showed a static message; as of 2026-05-02 `home_theater.py` gates the accordion on `bootloader.is_enabled("interactivity_enabled")`.
 
@@ -170,6 +164,7 @@ All 8 app features files declare `data_import_panel_visible: true` (6 app featur
 `Bootloader._load_app_features_config` applies these resolution rules immediately after reading the YAML, before caching the config. `AppFeaturesValidator.validate()` warns about the same violations at startup (Rule 5). All call sites see already-resolved flags via `bootloader.is_enabled(flag)`.
 
 1. If `interactivity_enabled == False`:
+   - Force `t3_sandbox_enabled = False` (as built, `bootloader.py:760-769`)
    - Force `comparison_mode_enabled = False`
    - Force `session_management_enabled = False`
    - Print `[Bootloader] WARNING: <flag>=True ignored — interactivity_enabled=False` for each overridden flag.
@@ -192,9 +187,13 @@ All 8 app features files declare `data_import_panel_visible: true` (6 app featur
    - `AppFeaturesValidator` Rule 7 raises a fatal error: `'blueprint_agent_enabled=True' requires 'blueprint_enabled=True'`.
    - **No silent suppression in the bootloader.** Source: ADR-076 §6 + ADR-077.
 
-6. Right sidebar suppression: enforced structurally via `bootloader.get_sidebar_config("home", "right").visible` (ADR-073, see Group B above) — not by an app features name/level string comparison. The earlier ADR-053 violation (a string comparison in `ui.py`) was fixed by SIDEBAR-REGISTRY-1; `grep -rn 'app features\s*==\|app features\s+in\s*\('` over `app/src/ui.py` and `app/src/server.py` returns zero hits.
+6. **FATAL — the audit and comparison (D-0018; built, `AppFeaturesValidator` Rule 6).** If `t3_sandbox_enabled == True` and any of `comparison_mode_enabled`, `session_management_enabled`, `export_enabled` is `False`, or if `comparison_mode_enabled == True` and `t3_sandbox_enabled == False`:
+   - `AppFeaturesValidator` raises a fatal error naming the two flags ("the audit requires comparison, sessions and export" / "comparison requires the audit"). The flags checked are those of the file together with the deployment's `app_features_override`; the error says which came from the override.
+   - **No silent suppression.** The app refuses to start until the template (or the override) is corrected.
 
-**Soft cascades vs fatal cascades.** §1–3 above are **soft cascades**: the bootloader silently forces the child flag to false and prints a warning. They cover Group B (interactivity) and Group C (import_helper) where many existing templates have inherited inconsistencies; converting them to fatal would break legacy configurations. §4–5 are **fatal cascades** for Group D (advanced/IDE features added in Phase 31): the principle "if off it's off, if on it's on" is enforced at validation time so the YAML state and runtime state never diverge silently. See ADR-077 for the full rationale and the migration path for converting more cascades to fatal in future.
+7. Right sidebar suppression: enforced structurally via `bootloader.get_sidebar_config("home", "right").visible` (ADR-073, see Group B above) — not by an app features name/level string comparison. The earlier ADR-053 violation (a string comparison in `ui.py`) was fixed by SIDEBAR-REGISTRY-1; `grep -rn 'app features\s*==\|app features\s+in\s*\('` over `app/src/ui.py` and `app/src/server.py` returns zero hits.
+
+**Soft cascades vs fatal cascades.** §1–3 above are **soft cascades**: the bootloader silently forces the child flag to false and prints a warning. They cover Group B (interactivity) and Group C (import_helper) where many existing templates have inherited inconsistencies; converting them to fatal would break legacy configurations. §4–6 are **fatal cascades**: §4–5 for Group D (advanced/IDE features added in Phase 31): the principle "if off it's off, if on it's on" is enforced at validation time so the YAML state and runtime state never diverge silently; §6 for the audit of Group B (D-0018). See ADR-077 for the full rationale and the migration path for converting more cascades to fatal in future.
 
 **All effective (resolved) flags are accessible via `bootloader.is_enabled(flag_name: str) -> bool`.**
 
@@ -231,7 +230,8 @@ Should return zero hits (only docstrings/comments allowed).
 
 | Misconfiguration | Symptom | Fix |
 |---|---|---|
-| `comparison_mode_enabled: true` with `interactivity_enabled: false` | Comparison Mode toggle absent (silently suppressed). No error shown to user. | Bootloader resolves and logs warning. Fix the template. |
+| `comparison_mode_enabled: true` with `interactivity_enabled: false` | **FATAL** when `t3_sandbox_enabled` is false (comparison requires the audit, D-0018); otherwise the Compare switch is absent (silently suppressed) and the bootloader logs a warning. | Fix the template. |
+| `t3_sandbox_enabled: true` with `comparison_mode_enabled`, `session_management_enabled` or `export_enabled` false | **FATAL** — startup blocked; `AppFeaturesValidator` Rule 6 names the two flags (D-0018). | Set the companion flag true, or the audit flag false. |
 | `data_ingestion_enabled: true` with `import_helper_enabled: false` | Data ingestion UI absent. No Excel converter. | Bootloader resolves and logs warning. Fix the template. |
 | `blueprint_agent_enabled: true` with `blueprint_enabled: false` | **FATAL** — startup blocked. `AppFeaturesValidator` Rule 7 raises a clear error. The flag is NOT silently rewritten. | Fix the template — set `blueprint_agent_enabled: false` or enable `blueprint_enabled`. (ADR-077.) |
 | `data_analysis_recipe_edit_enabled: true` with `blueprint_enabled: false` | **FATAL** — startup blocked. Same as above. | Fix the template. (ADR-077.) |
