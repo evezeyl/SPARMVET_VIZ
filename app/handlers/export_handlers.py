@@ -1150,7 +1150,7 @@ def define_export_server(input, output, session, *,
             plot_keys = {_p: export_keys.plot_key_of(_p) for _p, _spec in all_plots
                          if _spec.get("target_dataset") and tier3_steps(cfg.raw_config, _p)}
 
-            tiers_exported = exported_tiers(has_t2=any(tier2_steps(cfg.raw_config, _ds) for _ds in stage_keys), has_t3=bool(t3_table_plots))
+            tiers_exported = exported_tiers(has_t2=any(_k["tier2_key"] for _k in stage_keys.values()), has_t3=bool(t3_table_plots))
             anchor_dir = bootloader.get_location("user_data") / "anchors"
 
             prov = build_export_provenance(
