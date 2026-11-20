@@ -56,11 +56,12 @@ def test_badge_and_apply_only_in_audit_mode_and_pending_nodes_survive(page: Page
     _wait_shiny(page)
     expect(page.locator('input[id^="t3_reason_"]')).to_have_count(1, timeout=15_000)
 
-    # back to Exploration: the controls are gone; the pending node is not lost
+    # back to Exploration: the controls are gone, and so is the whole audit panel (D-0383: the right panel is empty in Exploration, it closes
+    # again with the mode, D-0385); the pending node is not lost: it is in the state and comes back with the panel
     set_mode(page, "exploration")
     expect(page.locator("#btn_apply")).to_have_count(0, timeout=10_000)
     expect(page.locator(".audit-pending-badge")).to_have_count(0)
-    expect(page.locator('input[id^="t3_reason_"]')).to_have_count(1)
+    expect(page.locator('input[id^="t3_reason_"]')).to_have_count(0)
 
     # and back to Audit: the node, the badge and the Apply button are there
     set_mode(page, "audit")

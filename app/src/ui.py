@@ -384,7 +384,9 @@ window.cyFit     = cyFit;
                     id="audit_sidebar",
                     bg="#c0c0c0",
                     width=frame_widths.css_width(frame_widths.RIGHT),
-                    position="right"
+                    position="right",
+                    # HOME starts in Exploration: closed; the server opens it with the mode (D-0375, D-0385)
+                    open="closed"
                 ),
                 # 2. Central Theater (Center)
                 ui.div(
