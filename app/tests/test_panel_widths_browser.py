@@ -253,6 +253,55 @@ def test_a_control_at_the_right_edge_of_the_left_panel_is_clickable_at_1100(page
     # a pop-up reaching the edge is above the handle: the stacking order of the handle is lower than the pop-ups (the date calendar has 10)
     z = page.evaluate("() => parseInt(getComputedStyle(document.querySelector('.bslib-sidebar-resize-handle')).zIndex)")
     assert z < 10                       # the date calendar (z-index 10) and Bootstrap's drop-downs (1000) are above it
+    # and really: an element with z-index 10 placed over the handle is the top element there
+    top = page.evaluate("""() => { const h = document.querySelector('.bslib-sidebar-resize-handle').getBoundingClientRect(); const d = document.createElement('div');
+      d.id = 'probe_popup'; d.style.cssText = 'position:fixed;z-index:10;background:#fff;left:' + (h.left - 5) + 'px;top:' + (h.top + 100) + 'px;width:20px;height:20px';
+      document.body.appendChild(d); const e = document.elementFromPoint(h.left + 2, h.top + 110); d.remove(); return e && e.id; }""")
+    assert top == "probe_popup", top
+
+
+NEAREST = """([side]) => { const handles = [...document.querySelectorAll('.bslib-sidebar-resize-handle')].map(h => h.getBoundingClientRect()).filter(b => b.width > 0);
+  const aside = document.getElementById(side === 'left' ? 'nav_sidebar' : 'audit_sidebar').getBoundingClientRect();
+  const h = handles.find(b => side === 'left' ? Math.abs(b.left - aside.right) < 15 : Math.abs(b.right - aside.left) < 15);
+  const main = document.querySelector('.central-theater'); const sel = 'a, button, input, select, textarea, label, .nav-link, .accordion-button, .selectize-control';
+  const els = [...main.querySelectorAll(sel)].filter(e => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 && b.bottom > 0 && b.top < window.innerHeight; });
+  const near = els.map(e => ({e, b: e.getBoundingClientRect()})).filter(o => o.b.bottom > h.top && o.b.top < h.bottom).sort((x, y) => side === 'left' ? x.b.left - y.b.left : y.b.right - x.b.right)[0];
+  if (!near) return null; const b = near.b;
+  return {handle: [h.left, h.right], control: [b.left, b.right], y: (b.top + b.bottom) / 2, name: near.e.tagName + '#' + near.e.id + ' ' + (near.e.textContent || '').trim().slice(0, 30),
+          x: side === 'left' ? b.left + 3 : b.right - 3}; }"""
+
+
+@pytest.mark.parametrize("width", [1100, 1366])
+@pytest.mark.parametrize("space", ["Home", "Gallery", "Blueprint Architect", "Test Lab"])
+def test_the_handles_cover_no_first_control_in_every_user_space(page: Page, shiny_app: ShinyAppProc, space, width):
+    """Real mouse click on the control nearest to each handle: the handle is not the element under the pointer, in HOME, GALLERY, BLUEPRINT and TEST_LAB."""
+    _open_app(page, shiny_app.url, width)
+    if space == "Home":
+        _load_data_analysis_recipe(page, shiny_app.url)
+        set_mode(page, "audit")
+        _wait_right(page, True)
+    else:
+        page.locator("#sidebar_nav").get_by_text(space, exact=True).first.click()
+    page.wait_for_timeout(3000)
+    for side in ("left", "right"):
+        got = page.evaluate(NEAREST, [side])
+        if got is None:
+            continue
+        if side == "left":
+            assert got["control"][0] >= got["handle"][1] - 0.5, (space, width, side, got)
+        else:
+            assert got["control"][1] <= got["handle"][0] + 0.5, (space, width, side, got)
+        top = page.evaluate("([x, y]) => { const e = document.elementFromPoint(x, y); return e && e.closest('.bslib-sidebar-resize-handle') ? 'handle' : 'ok'; }", [got["x"], got["y"]])
+        assert top == "ok", (space, width, side, got)
+    if space == "Blueprint Architect":
+        # the first tab opens after a click at its left edge + 3 px
+        page.locator("#architect_internal_tabs .nav-link").nth(1).click()
+        wait_shiny(page)
+        first = page.locator("#architect_internal_tabs .nav-link").first
+        box = first.bounding_box()
+        page.mouse.click(box["x"] + 3, box["y"] + box["height"] / 2)
+        wait_shiny(page)
+        expect(first).to_have_class(__import__("re").compile(r"active"))
 
 
 @pytest.mark.parametrize("space", ["Blueprint Architect", "Test Lab", "Gallery", "Home"])
