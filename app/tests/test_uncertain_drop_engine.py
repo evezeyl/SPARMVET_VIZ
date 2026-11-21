@@ -39,6 +39,7 @@ from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.tests.test_plan_composer import ABROMICS, DEMO, shipped
 from app.tests.uncertain_drop_world import World, author_version, build_all, changed_tables, lost_and_rest, step_drop, tsv_frame, with_author_step
 from utils import key_drop
+from utils.lineage_records import PLOT_USES_COLUMN
 from utils.audit_copy import AuditCopyError, AuditStep, add_step, remove_step, start_audit, with_audit_steps
 from utils.recipe_tiers import AUDIT_COMMENT
 
@@ -454,3 +455,143 @@ def test_the_run_of_a_shipped_recipe_without_audit_steps_still_reuses_the_origin
     orch, loaded, book, _ = uncertain_places(DEMO, with_plan=True)
     run = run_audit(orch, DEMO, start_audit(loaded.raw, "1a2b3c4d").recipe, tmp_path / "orig", tmp_path / "aud")
     assert run.affected_plots == [] and run.built_tables == []
+
+
+# ------------------------------------------------------------------------------------------------------------------- the way out the refusal offers is built from facts (round 3, review 2 of 2026-11-21)
+
+def suggestion_of(said: str) -> str:
+    """The remedy part of a refusal: the text after the label."""
+    assert said.count("Suggestion:") == 1 and said.endswith("."), said
+    return said.split("Suggestion:", 1)[1]
+
+
+def offered_places(w, place: str, column: str, *, blind: bool = False):
+    """The places the gate names as a way out for the refused drop (`DropGate.ways_out`)."""
+    return key_drop.DropGate(w.original.raw, None if blind else w.plans).ways_out(place, column).places
+
+
+def assert_every_way_out_is_written_and_builds(w, place: str, column: str, *, blind: bool = False):
+    """The sentence may never again advise a step that fails: each offered place takes the drop (`add_step`, with or without the engine's plan) and the engine builds the table meant,
+    with the column gone there and every other column of every table as before."""
+    ways = offered_places(w, place, column, blind=blind)
+    assert ways, "the case needs a way out"
+    before = w.original_built()
+    for way in ways:
+        audit = start_audit(w.original.raw, "1a2b3c4d")
+        add_step(audit, way, step_drop(column), "because", plans=None if blind else w.plans)
+        assert audit.created == 1
+        after = w.audit_built(audit)
+        assert not after.error, (way, after.error)
+        lost, gained, rest_same = lost_and_rest(before.tables[way], after.tables[way])
+        assert (lost, gained, rest_same) == ({column}, set(), True), (way, lost, gained, rest_same)
+    return ways
+
+
+def test_the_refusal_of_a_melted_column_offers_no_later_place_and_not_the_plots_table_where_a_drop_ends_as_an_engine_error(tmp_path):
+    """Review 2, case 1: `a` is melted by the unpivot of the tier 2, so after it `a` is a value of `variable`, not a column. No later place exists for it, and a drop at the plot's own
+    table is an engine error (the premise, run here), so the sentence offers neither; it says what is true. The label "Suggestion:" is before the remedy."""
+    w = world(tmp_path, {"T": T, "B": B}, {"T": {"tier1": [], "tier2": [unpivot(["a", "b"], ["sample_id", "c"])]}, "B": {}}, {}, {"Q": plot("T")})
+    assert offered_places(w, "T1:T", "a") == ()
+    built = w.drop_built("T3:Q", "a")
+    assert built.error and '"a" not found' in built.error, "the premise: a drop of a melted column at the plot's table fails"
+    said = refusal(w, "T1:T", "a")
+    advice = suggestion_of(said)
+    assert "T3:Q" not in advice and "plot's own table" not in advice and "T2:T" not in advice
+    assert "no longer a column" in advice and "YET" in advice and "for now" in advice
+    assert "cannot be drawn" not in said and "row filter" not in said
+
+
+def test_the_refusal_of_a_column_that_survives_offers_the_later_place_and_a_drop_there_is_written_and_builds(tmp_path):
+    """Review 2, case c: `q2` is refused at T1:T because the unpivot of plot R is not read, but it still exists in the table of plot P, which nothing is built after. That place is named;
+    the drop is written there and the engine builds the table meant. The place of R, the table T2:T (R is built from it) and the origin are not offered (the gate refuses them as well)."""
+    w = world(tmp_path, {"T": NUMBERS, "B": B}, {"T": {"tier1": [], "tier2": [TOTAL]}, "B": {}}, {},
+              {"P": plot("T"), "R": plot("T", tier3=[unpivot(["q1"], ["sample_id"])])})
+    ways = assert_every_way_out_is_written_and_builds(w, "T1:T", "q2")
+    assert ways == ("T3:P",)
+    advice = suggestion_of(refusal(w, "T1:T", "q2"))
+    assert "T3:P" in advice and "still exists" in advice and "T3:R" not in advice and "no longer" not in advice
+
+
+def test_the_refusal_without_the_engines_plan_offers_the_plots_table_when_the_recipe_itself_shows_the_column_there(tmp_path):
+    """Review 2, case 3 (blind): the plan declared by the recipe has the column at the other plot's table, so that is the one place offered, and it is written and builds."""
+    w = world(tmp_path, {"T": NUMBERS, "B": B}, {"T": {"tier1": [], "tier2": [TOTAL]}, "B": {}}, {},
+              {"P": plot("T"), "R": plot("T", tier3=[unpivot(["q1"], ["sample_id"])])})
+    assert assert_every_way_out_is_written_and_builds(w, "T1:T", "q2", blind=True) == ("T3:P",)
+    assert "T3:P" in suggestion_of(refusal(w, "T1:T", "q2", blind=True))
+
+
+def test_the_refusal_without_the_plan_behind_an_unread_step_offers_nothing_it_cannot_know(tmp_path):
+    """Review 2, case 3 (blind) with a step the recipe does not describe before the join: no later plan is known, so no place is offered and the sentence says the app cannot tell."""
+    w = join_world(tmp_path, [FILL])
+    assert offered_places(w, "T1:T", "a", blind=True) == ()
+    advice = suggestion_of(refusal(w, "T1:T", "a", blind=True))
+    assert "cannot tell where else" in advice and "T3:P" not in advice and "T1:J" not in advice and "plot's own table" not in advice
+
+
+def test_a_place_that_would_fail_at_the_build_is_not_offered(tmp_path):
+    """A later place where the column is still named by a step the walk reads, or drawn by a plot, is no way out: the drop there would stop the build."""
+    w = world(tmp_path, {"T": NUMBERS, "B": B}, {"T": {"tier1": [], "tier2": [TOTAL]}, "B": {}}, {},
+              {"P": plot("T", x="q2"), "R": plot("T", tier3=[unpivot(["q1"], ["sample_id"])])})
+    assert offered_places(w, "T1:T", "q2") == (), "P draws q2"
+    assert any(c.code == PLOT_USES_COLUMN for c in key_drop.DropGate(w.original.raw, w.plans)._index.drop_consequences("T3:P", "q2")), "the walk reads the plot that draws it"
+
+
+def test_every_way_out_of_every_refusal_of_the_demo_recipe_is_taken_by_the_gate(tmp_path):
+    """The shipped demo recipe, with the engine's plan: for each column the gate refuses as not followed, every place the sentence offers takes the drop (written, one step)."""
+    orch, loaded, book, found = uncertain_places(DEMO, with_plan=True)
+    assert found
+    gate = key_drop.DropGate(loaded.raw, book)
+    offered = 0
+    for place, column in found:
+        for way in gate.ways_out(place, column).places:
+            audit = start_audit(loaded.raw, "1a2b3c4d")
+            add_step(audit, way, step_drop(column), "because", plans=book)
+            assert audit.created == 1
+            offered += 1
+    print("demo: ways out offered", offered)
+
+
+# ------------------------------------------------------------------------------------------------------------------- a plot broken by an audit step upstream (review 2, finding F1)
+
+SELECT_C = {"action": "polars_select", "exprs": ["sample_id", "c"]}
+
+
+def assert_one_line_without_plan(text: str):
+    assert "\n" not in text and "Resolved plan" not in text and "SCAN" not in text and "PROJECT" not in text and "Traceback" not in text, text
+
+
+def test_a_plot_broken_by_an_audit_step_of_its_tables_gives_the_plain_line_that_names_the_step_the_place_the_plot_and_the_column(tmp_path):
+    """The plot Q has its own tier 3 step that selects `c`; an audit step at T2:T drops `c`. The plot's table then fails when it is collected. The run says which audit step caused it, in
+    one line, as it does for a table (before this round the plot passed only its own place, so the step was not found and the engine's text, with its plan, was raised).
+    MUTATION RF1 (the plot passes only [T3:Q] again) fails here."""
+    w = world(tmp_path, {"T": T, "B": B}, {"T": {"tier1": [], "tier2": [with_columns(z="pl.lit(1)")]}, "B": {}}, {}, {"Q": plot("T", tier3=[SELECT_C])})
+    audit = w.copy_with("T2:T", step_drop("c"))
+    error = run_error(w, audit)
+    text = str(error)
+    assert isinstance(error, AuditRunError) and error.step_id == "audit_1a2b3c4d_1" and error.place == "T2:T"
+    assert text.startswith("The audit step audit_1a2b3c4d_1 at T2:T cannot be applied: ") and "plot 'Q'" in text and '"c"' in text, text
+    assert_one_line_without_plan(text)
+
+
+def test_a_plot_that_fails_on_its_own_step_names_the_plot_and_that_step_and_blames_no_audit_step(tmp_path):
+    """The author's own tier 3 step names a column that does not exist; an unrelated audit step (a row filter at T1:T) changes the plot's key so the plot is built. The failure is the author's:
+    the message names the plot and the step, in one line without the plan, and no audit step."""
+    w = world(tmp_path, {"T": T, "B": B}, {"T": {"tier1": [], "tier2": [with_columns(z="pl.lit(1)")]}, "B": {}}, {},
+              {"Q": plot("T", tier3=[{"action": "polars_select", "exprs": ["sample_id", "nope"]}])})
+    error = run_error(w, w.copy_with("T1:T", {"action": "modif_filter", "column": "a", "op": "ne", "value": "zz", "na": "keep"}))
+    text = str(error)
+    assert "plot 'Q'" in text and "polars_select" in text and '"nope"' in text, text
+    assert "audit_1a2b3c4d" not in text and "audit step" not in text and error.step_id is None, text
+    assert_one_line_without_plan(text)
+
+
+def test_the_refusal_sentence_carries_the_engines_plain_sentence_without_its_plan(tmp_path):
+    """When the engine's plan of a place failed, the refusal quotes the engine's own sentence but never its plan dump (several lines of `SCAN` and `PROJECT`)."""
+    w = world(tmp_path, {"T": T, "B": B}, {"T": {"tier1": [], "tier2": [with_columns(z="pl.lit(1)")]}, "B": {}}, {},
+              {"Q": plot("T", tier3=[{"action": "polars_select", "exprs": ["sample_id", "nope"]}])})
+    audit = start_audit(w.original.raw, "1a2b3c4d")
+    with pytest.raises(AuditCopyError) as raised:
+        add_step(audit, "T1:T", step_drop("b"), "because", plans=w.plans)
+    text = str(raised.value)
+    assert text.startswith("The app cannot YET follow") and '"nope"' in text
+    assert_one_line_without_plan(text)
