@@ -992,9 +992,12 @@ class TestPreviewFiltersOnReferenceViews:
         self._wait_grid(page, before, same=True)
 
     def test_a_preview_filter_never_changes_the_plot(self, page: Page, shiny_app: ShinyAppProc):
-        """GUARDED (Eve, 2026-11-11; slice B, D-0019, D-0311): Apply changes the table of the view shown, never a plot.
-        Exploration has one plot, the Result. Switching to Audit mode removes the filters (with a notice); the audited plot
-        of a plot with no audited step is the Result."""
+        """GUARDED (Eve, 2026-11-11; slice B, D-0019, D-0311, D-0327): Apply changes the table of the view shown, never a plot.
+        Exploration has one plot, the Result. What protects "an exploration filter never changes the plot" are the picture asserts
+        at one width (Exploration, every view). Switching to Audit mode removes the filters (with a notice, D-0311); the tail checks
+        that nothing of the filter is left and that no audit step exists. The picture is not compared ACROSS the mode switch in this
+        test only (the right panel opens, the width changes, so `src` differs for the same data; D-0465, D-0466); elsewhere a test
+        that goes up to the plot compares the picture."""
         _load_data_analysis_recipe(page, shiny_app.url)
         _open_filters_panel(page)
         page.locator(".nav-link:has-text('QC Reads Horizontal Barplot')").first.click()
@@ -1002,6 +1005,7 @@ class TestPreviewFiltersOnReferenceViews:
         img = page.locator(".shiny-plot-output img").first
         expect(img).to_be_visible(timeout=15_000)
         src_before = img.get_attribute("src")
+        page.wait_for_selector("#home_data_preview tbody tr", timeout=15_000)
         page.locator("#fb_col").select_option(index=1)
         _wait_shiny(page)
         page.locator("#fb_op").select_option("ne")
@@ -1020,8 +1024,14 @@ class TestPreviewFiltersOnReferenceViews:
                 assert page.locator(".shiny-plot-output img").first.get_attribute("src") == src_before, view
             set_mode(page, "audit")                  # the filters do not exist in Audit mode: they are removed, and the user is told
             expect(page.locator("#shiny-notification-panel")).to_contain_text("The filters were removed", timeout=15_000)
-            page.wait_for_timeout(1_500)
-            assert page.locator(".shiny-plot-output img").first.get_attribute("src") == src_before
+            # Not compared with the Exploration picture (other width; D-0465, D-0375, D-0385). After the switch: no filter row is
+            # left (D-0311), no audit step exists (badge "Plot: Audited", "identical to the Result"). The picture is not compared
+            # here (D-0466, this test only; an Audit baseline at the same width was tried and failed 1 run in 8, so it was dropped).
+            # The table text is NOT asserted: the grid is virtualised (24 row elements of the 42 rows in the page), so its text cannot
+            # show the plot's table.
+            expect(page.locator("#filter_remove_0")).to_have_count(0)
+            expect(page.locator("[id^='plot_badge_'] .spv-view-badge").first).to_have_text("Plot: Audited", timeout=15_000)
+            expect(page.locator("[id^='plot_badge_'] .spv-view-note").first).to_contain_text("identical to the Result", timeout=15_000)
         finally:
             set_mode(page, "exploration")
             set_view(page, "T3")
