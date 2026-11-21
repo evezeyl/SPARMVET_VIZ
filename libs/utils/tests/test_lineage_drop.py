@@ -16,6 +16,7 @@ import lineage_oracle as O
 import pytest
 from lineage_support import TIERS, places, run, setup, ticked
 
+from utils import key_drop
 from utils.lineage_records import (
     BUILD_FAILS, CLASH_NO_LONGER, CONSEQUENCE_DISAGREES, FROM_PLAN, FROM_READING, KEY_NEEDED_LATER, NOTE_DECLARED_ENTITY_KEY, PLAN_FAILED, PLOT_USES_COLUMN, STEP_NAMES_COLUMN, Start,
 )
@@ -190,8 +191,8 @@ def test_a_key_dropped_after_the_last_join_that_reads_it_is_allowed():
     assert line(lab, "T1:J").refusal is None and line(lab, "T3:P").refusal is None
 
 
-def test_L029_a_declared_entity_key_that_no_later_join_reads_is_not_refused_PROVISIONAL():
-    """D-0297 names JOIN keys, D-0358 says by place: a key a table declares (`is_entity_key`) is no reason to refuse by itself; the line says it is a declared key (information)."""
+def test_L029_a_declared_entity_key_that_no_later_join_reads_is_not_refused_for_being_declared():
+    """Decided (D-0448, "Her answer: B"): D-0297 names JOIN keys, D-0358 says by place: a key a table declares (`is_entity_key`) is no reason to refuse by itself; the line says it is a declared key (information)."""
     recipe, tables = F.tiers(u_declares_key=True, u_plot=True)
     walk = run(recipe, tables, "T1:U", "sample_id", kind="drop")
     assert line(walk, "T1:U").refusal is None and line(walk, "T1:U").state == "tick"
@@ -360,9 +361,9 @@ def test_a_place_where_the_column_is_already_gone_is_the_gone_note_and_the_table
     assert drop.gone and all(g.table_changes for g in filt.gone)                        # a filter still removes rows there; a drop of a column that is not there changes nothing
 
 
-def test_a_plan_failure_downstream_makes_the_line_grey_and_is_not_a_refusal_PROVISIONAL():
-    """The engine could not give the plan of J: the walk cannot say whether a later join needs the column. The line is grey with the engine's sentence; the gate
-    (`key_drop`) does not refuse it (the build would say, an error and never a silent result)."""
+def test_a_plan_failure_downstream_makes_the_line_grey_without_a_key_need_and_the_gate_refuses_it_as_not_followed():
+    """The engine could not give the plan of J: the walk cannot say whether a later join needs the column. The line is grey with the engine's sentence and no key refusal; the gate
+    (`key_drop`) refuses the drop too, as a column the app cannot YET follow (D-0460: red and not tickable, no step is written): the line and the gate agree."""
     recipe, tables = F.chain()
     graph, plans = setup(recipe, tables)
     book = {(n, k): plans.get(n, k) for n in graph.nodes() for k in range(len(graph.node(n).steps) + 1)}
@@ -373,6 +374,8 @@ def test_a_plan_failure_downstream_makes_the_line_grey_and_is_not_a_refusal_PROV
     walk = LineageIndex(graph, PlanBook.of(book)).walk(Start("T1:A", "val"), levels=TIERS, kind="drop")
     x = line(walk, "T1:A")
     assert x.state == "grey" and x.refusal is None and x.reason.code == PLAN_FAILED and "could not plan" in x.reason.get("sentence")
+    refusal = key_drop.DropGate(recipe, PlanBook.of(book)).problem("T1:A", ["val"])
+    assert refusal and refusal.startswith("The app cannot YET follow the column 'val' at T1:A") and "could not plan this join" in refusal
 
 
 # ----------------------------------------------------------------------------------------------------------------------------- I6: the proof against plain Polars, on every column of every fixture
@@ -517,9 +520,10 @@ def test_L029_the_walk_and_add_step_agree_on_every_place_of_every_fixture():
     assert compared > 150
 
 
-def test_a_key_that_a_join_reads_only_through_a_link_the_plan_contradicts_is_grey_not_refused_PROVISIONAL():
+def test_a_key_that_a_join_reads_only_through_a_link_the_plan_contradicts_is_grey_without_a_key_refusal_and_the_gate_refuses_it_as_not_followed():
     """J reads `lab` (which came from B) as the key of its second join. The plan of the first join contradicts the reading (a type differs), so the walk cannot prove that B's
-    `lab` is the column the second join reads: the line is grey with the reason, the need is listed as uncertain, and the gate does not refuse (the build would say)."""
+    `lab` is the column the second join reads: the line is grey with the reason, the need is listed as uncertain, and the gate refuses the drop as a column the app cannot YET
+    follow, naming the join that may read it as a key (D-0460)."""
     recipe, tables = two_joins()
     graph, plans = setup(recipe, tables)
     book = {(n, k): plans.get(n, k) for n in graph.nodes() for k in range(len(graph.node(n).steps) + 1)}
@@ -531,3 +535,5 @@ def test_a_key_that_a_join_reads_only_through_a_link_the_plan_contradicts_is_gre
     assert ("T1:J", 2, "base", False) in maybe and not facts.refused and facts.uncertain
     x = line(index.walk(Start("T1:B", "lab"), levels=TIERS, kind="drop"), "T1:B")
     assert x.refusal is None and x.state == "grey" and x.reason.get("node") == "T1:J" and x.reason.get("step") == 2
+    refusal = key_drop.DropGate(recipe, PlanBook(book)).problem("T1:B", ["lab"])
+    assert refusal and refusal.startswith("The app cannot YET follow the column 'lab' at T1:B") and "step 2 of T1:J may read it as a join key" in refusal

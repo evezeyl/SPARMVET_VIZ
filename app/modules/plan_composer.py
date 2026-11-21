@@ -67,7 +67,7 @@ def plan_book_for_the_gate(compose: Any, tell: Any) -> Optional[PlanBook]:
     """The plan book `compose()` makes, for the rule of a key drop, or None when there is truly no plan.
 
     None only when no plan is possible for a reason the user or the recipe owns: no recipe is open (a `RuntimeError` of the caller), a recipe that cannot be read
-    (`RecipeLoadError`) or drawn as a graph (`RecipeGraphError`), a file that cannot be read (`OSError`). The rule then reads only the names the recipe declares (a drop it cannot follow is allowed with a warning, D-0449). A `PlanComposerBug` is a fault of
+    (`RecipeLoadError`) or drawn as a graph (`RecipeGraphError`), a file that cannot be read (`OSError`). The rule then reads only the names the recipe declares: a drop it cannot follow is refused, "The app cannot YET follow ..." (D-0460). A `PlanComposerBug` is a fault of
     the app: it is logged with its cause, `tell(BUG_NOTICE)` shows the plain notice, and the bug is raised again, never shown as "cannot tell"."""
     try:
         return compose()

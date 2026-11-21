@@ -199,7 +199,7 @@ class _Run:
         if not candidates:
             raise error
         culprit = candidates[0] if len(candidates) == 1 else self.first_failing(candidates, attempt)
-        why = short_engine_text(error, limit=900) + (f" ({error.tip})" if getattr(error, "tip", None) else "")   # one line, without the engine's plan (D-0449: a drop ends as a plain error)
+        why = short_engine_text(error, limit=900) + (f" ({error.tip})" if getattr(error, "tip", None) else "")   # one line, without the engine's plan (D-0450: a step that cannot be applied ends as a plain error)
         if culprit is None:
             ids = ", ".join(f"{m.step_id} at {m.place}" for m in candidates)
             raise AuditRunError(f"An audit step cannot be applied; it is one of these, which together cannot be applied: {ids}. The engine says: {why}") from error

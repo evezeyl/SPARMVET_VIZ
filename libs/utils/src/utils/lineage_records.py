@@ -75,7 +75,7 @@ NOTE_CODES = (NOTE_UNREAD_STEP_PASSED, NOTE_DECLARED_ENTITY_KEY) + VALUE_NOTES
 # What dropping a column breaks later, as data (D-0358: "the dependent steps wont work and there will be error / no plot"). `source` says where the fact comes from:
 # the steps the walk reads (`reading`) or the engine's plan of the candidate recipe (`plan`).
 STEP_NAMES_COLUMN = "step_names_column"        # a later step names the column in an argument the walk reads (a rename, a drop, a select, a cast, a group column): the step fails
-PLOT_USES_COLUMN = "plot_uses_column"          # a plot draws the column (its mapping, facet or filter): the plot cannot be drawn
+PLOT_USES_COLUMN = "plot_uses_column"          # a plot draws the column (its mapping, facet or filter): whether it still draws depends on what the name means after the drop (a same-named column of a join is drawn instead)
 CLASH_NO_LONGER = "clash_no_longer"            # the dropped column was the one a join's suffix kept the other table's same-named column apart from: that column now keeps its own name there
 BUILD_FAILS = "build_fails"                    # the candidate plan fails here (the engine's sentence is a parameter) where the recipe as it is builds
 CONSEQUENCE_CODES = (STEP_NAMES_COLUMN, PLOT_USES_COLUMN, CLASH_NO_LONGER, BUILD_FAILS)

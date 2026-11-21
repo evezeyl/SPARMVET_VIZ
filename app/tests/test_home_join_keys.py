@@ -71,16 +71,12 @@ class Session:
     """What the two handlers need from the app: notifications, the propagation dialog and the scratch they fill."""
 
     def __init__(self, keys, frame, raw=None, plans=None):
-        self.notes, self.opened, self.warnings = [], [], []
+        self.notes, self.opened = [], []
         self.plans = plans
         self.scratch = Val()
         self.raw = raw
         self.state = Val({"primary_keys": keys, "active_plot_subtab": f"subtab_{DEMO_PLOT}"})
         self.frame = frame
-
-    def open_modal(self, nodes, subtab, kind, warning=None):
-        self.opened.append((nodes, kind))
-        self.warnings.append(warning)
 
     def stand_ins(self, **extra):
         base = dict(
@@ -88,7 +84,7 @@ class Session:
             home_state=self.state, active_home_subtab=Val(f"subtab_{DEMO_PLOT}"), recipe_raw=(lambda: self.raw) if self.raw is not None else None, recipe_plans=lambda: self.plans,
             _notify=lambda message, **kw: self.notes.append((message, kw.get("type"))),
             _propagation_scratch=self.scratch,
-            _open_propagation_modal=self.open_modal,
+            _open_propagation_modal=lambda nodes, subtab, kind: self.opened.append((nodes, kind)),
             _clear_exploration_filters=lambda: (0, 0),
             _can_write_audit_step=lambda: True,
             _resolve_active_spec=lambda p_id: {}, _resolve_active_lf=lambda spec, tier=None: (self.frame.lazy() if tier == "T3" else pytest.fail(f"read tier {tier!r}, not T3: an audit step is written at the plot's table")),

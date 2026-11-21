@@ -366,7 +366,7 @@ def define_server(input, output, session, *,
         """The engine's plan book of the open recipe (the original, without audit steps), for the rule of a key drop (`utils.key_drop`, by place, D-0358): what every
         place of the recipe has as columns, asked of the engine's own plan without building anything (`plan_composer`, D-0325). Composed once per recipe, files and data (the
         handlers that ask it run on an event; no reactive dependency). None when the recipe cannot be drawn: the rule then reads the names the recipe declares and
-        a drop it cannot follow is allowed with a warning (D-0449, `utils.key_drop`), and a key that a join reads behind a step it cannot read is not seen. A `PlanComposerBug` is not that case: it is notified and raised (`plan_book_for_the_gate`)."""
+        a drop it cannot follow is refused, "The app cannot YET follow ..." (D-0460, `utils.key_drop`), and a key that a join reads behind a step it cannot read is named only when the plan is there. A `PlanComposerBug` is not that case: it is notified and raised (`plan_book_for_the_gate`)."""
         def _compose():
             recipe_id = _open_recipe_id()
             loaded = load_data_analysis_recipe(orchestrator.data_analysis_recipes_dir / f"{recipe_id}.yaml")

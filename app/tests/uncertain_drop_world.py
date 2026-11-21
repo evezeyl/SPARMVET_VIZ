@@ -1,12 +1,15 @@
-"""A small recipe on disk for the tests of a drop the walk cannot follow (D-0449): tables written as files, a recipe written as YAML, the real engine, no shipped file.
+"""A small recipe on disk for the tests of a drop the walk cannot follow (D-0449 built them, D-0460 turned the rule round): tables written as files, a recipe written as YAML, the real
+engine, no shipped file.
 
-`World` writes the tables of a recipe that a test describes (columns, tier steps, joins, plots), composes the engine's plan of it, and answers the two questions of D-0449:
-what does the gate say about a drop (the facts, the refusal, the warning), and what does the real engine build when the drop is written (`built`: every table of the original
-and of the copy, read through `DataOrchestrator`, or the plain error). Nothing is stubbed: the copy is run by `run_audit` and the tables are built by the same
-`materialize_tier1`, `materialize_tier2` and `materialize_tier3` as the app.
+`World` writes the tables of a recipe that a test describes (columns, tier steps, joins, plots), composes the engine's plan of it, and answers the two questions:
+what does the gate say about a drop (the facts, the refusal), and what does the real engine build WITH the drop (`drop_built`: the drop written as a step of the recipe's own author,
+the only way to ask the engine, because the gate refuses to write it as an audit step: D-0460). Nothing is stubbed: the tables are built by the same `materialize_tier1`,
+`materialize_tier2` and `materialize_tier3` as the app, and an audit copy that the gate lets through is run by `run_audit`.
 """
 from __future__ import annotations
 
+import copy
+import dataclasses
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -16,12 +19,14 @@ import polars as pl
 import yaml
 
 from app.modules.audit_run import AuditRunError, run_audit
-from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe, loaded_from_resolved
+from app.modules.cache_keys import ResolvedRecipe, clear_data_analysis_recipe_cache, load_data_analysis_recipe, loaded_from_resolved
 from app.modules.orchestrator import DataOrchestrator
 from app.modules.plan_composer import compose_plan_book
 from utils import key_drop
-from utils.audit_copy import add_step, start_audit
+from utils.audit_copy import AuditStep, add_step, start_audit, with_audit_steps
+from utils.recipe_tiers import AUDIT_COMMENT, collection_bodies, plot_entries
 from utils.plan_book import PlanBook
+from utils.recipe_graph import build_graph
 
 RID = "tiny"
 AUD = "1a2b3c4d"
@@ -68,22 +73,7 @@ class World:
     # -- what the engine builds
     def build(self, loaded, out: Path) -> Built:
         """Every table of a recipe (the original or a copy) built by the engine's own functions, into the folder `out`; a plot's table is named `T3:<plot>`."""
-        out.mkdir(parents=True, exist_ok=True)
-        result = Built()
-        try:
-            keys = self.orch.compute_data_analysis_recipe_keys(RID, loaded=loaded)
-            graph_tables = list(loaded.raw["data_schemas"]) + list(loaded.raw.get("joins") or {})
-            for table in graph_tables:
-                path = out / f"{table}.parquet"
-                result.tables[f"T1:{table}"] = self.orch.materialize_tier1(RID, table, path, keys=keys, loaded=loaded).collect()
-                result.tables[f"T2:{table}"] = self.orch.materialize_tier2(RID, table, path, keys=keys, loaded=loaded).collect()
-            for group in loaded.raw["analysis_groups"].values():
-                for plot_id in group["plots"]:
-                    result.tables[f"T3:{plot_id}"] = self.orch.materialize_tier3(RID, plot_id, out, keys=keys, loaded=loaded).collect()
-        except Exception as error:   # noqa: BLE001 - the sentence is the data
-            tip = getattr(error, "tip", None)
-            result.error = str(error).strip() + (f" ({tip})" if tip else "")
-        return result
+        return build_all(self.orch, RID, loaded, out)
 
     def original_built(self) -> Built:
         return self.build(self.original, self.root / "built_original")
@@ -94,12 +84,65 @@ class World:
         add_step(audit, place, step, "because", plans=None if blind else self.plans)
         return audit
 
+    def hand_made_audit(self, place: str, step: dict):
+        """An audit copy with the step written by hand, past the gate (what a file or an old session could hold): for the tests that ask what the engine and the run say to it."""
+        audit = start_audit(self.original.raw, AUD)
+        step_id = f"audit_{AUD}_1"
+        audit.recipe = with_audit_steps(self.original.raw, [AuditStep(place, step_id, {**step, "id": step_id, AUDIT_COMMENT: "because"})])
+        audit.created = 1
+        return audit
+
     def audit_built(self, audit) -> Built:
         return self.build(loaded_from_resolved(self.original, audit.recipe, self.plans), self.root / "built_audit")
+
+    def drop_built(self, place: str, *columns: str) -> Built:
+        """What the engine builds if the drop were written: the drop is a step of the recipe's own author at the end of the list of `place` (an audit step cannot be written there:
+        the gate refuses it, D-0460)."""
+        return self.build(author_version(self.original, with_author_step(self.original.raw, place, step_drop(*columns))), self.root / "built_drop")
 
     def run(self, audit):
         """The run of the copy as HOME runs it (`run_audit`): the run, or the AuditRunError."""
         return run_audit(self.orch, RID, audit.recipe, self.root / "run_original", self.root / "run_audit")
+
+
+def build_all(orch: DataOrchestrator, rid: str, loaded, out: Path) -> Built:
+    """Every table of `loaded` (T1 and T2 of each table and join, T3 of each plot) built by `materialize_tier1/2/3`, or the sentence of the first that cannot be built."""
+    out.mkdir(parents=True, exist_ok=True)
+    result = Built()
+    try:
+        keys = orch.compute_data_analysis_recipe_keys(rid, loaded=loaded)
+        for table in build_graph(loaded.raw).collections():
+            path = out / f"{table}.parquet"
+            result.tables[f"T1:{table}"] = orch.materialize_tier1(rid, table, path, keys=keys, loaded=loaded).collect()
+            result.tables[f"T2:{table}"] = orch.materialize_tier2(rid, table, path, keys=keys, loaded=loaded).collect()
+        for group in loaded.raw["analysis_groups"].values():
+            for plot_id in group["plots"]:
+                result.tables[f"T3:{plot_id}"] = orch.materialize_tier3(rid, plot_id, out, keys=keys, loaded=loaded).collect()
+    except Exception as error:   # noqa: BLE001 - the sentence is the data
+        tip = getattr(error, "tip", None)
+        result.error = str(error).strip() + (f" ({tip})" if tip else "")
+    return result
+
+
+def with_author_step(raw: dict, place: str, step: dict) -> dict:
+    """A deep copy of the recipe with `step` added at the END of the author's list of steps of `place` (`T1:<table>`, `T2:<table>` or `T3:<plot>`)."""
+    out = copy.deepcopy(raw)
+    tier, _, name = place.partition(":")
+    body = plot_entries(out)[name] if tier == "T3" else collection_bodies(out)[name]
+    body.setdefault({"T1": "tier1", "T2": "tier2", "T3": "tier3"}[tier], {"steps": []}).setdefault("steps", []).append(copy.deepcopy(step))
+    return out
+
+
+def author_version(original, raw: dict):
+    """The engine's form of the recipe `raw` taken as its own original (no audit steps): the author's version, test only. The engine would refuse an audit copy that differs from
+    its original outside the audit steps; here nothing is audit."""
+    return dataclasses.replace(loaded_from_resolved(original, raw), config=ResolvedRecipe(raw, original_raw=raw))
+
+
+def changed_tables(before: Built, after: Built) -> set:
+    """The names of the tables that differ between two builds (a table that is only in one of them counts)."""
+    return {n for n in set(before.tables) | set(after.tables) if n not in before.tables or n not in after.tables or not before.tables[n].equals(after.tables[n])}
+
 
 
 def tsv_frame(**columns: Sequence) -> pl.DataFrame:

@@ -1,29 +1,30 @@
-"""A drop the walk cannot follow to the end is ALLOWED with a warning (D-0449, "Right now od go for B"); the real engine says what each such drop does (D-0449's condition, her words:
-"do not get wrong results because we did not select the correct scope"): the outcome is the table the user meant, or a plain error, never a different table with no word.
+"""A drop the walk cannot follow to the end is REFUSED, red and not tickable (D-0460; it replaces D-0449, which allowed it with a warning). These tests keep what the real engine
+says about each such drop, as facts, so that the owner can decide later which steps the app learns to follow (the catalogue she ordered): the drop is written as a step of the recipe's
+own author (`World.drop_built`, the only way to ask the engine, since the gate no longer writes it as an audit step), and the engine's tables are compared with the recipe's own.
+Her condition stays (D-0450, "do not get wrong results because we did not select the correct scope"): the refusal is the answer; these tests record what would have happened.
 
-Every case below is a small recipe written to disk by `uncertain_drop_world.World`, the audit copy made by `add_step` (the engine's plan handed to the gate, as HOME does), run by
-`run_audit` and built by the app's own `materialize_tier1/2/3`. Nothing is stubbed and no shipped recipe changes (D-0373). Each case is classified:
+Every case is a small recipe written to disk by `uncertain_drop_world.World` (no shipped recipe changes, D-0373) and built by the app's own `materialize_tier1/2/3`. Each case is classified:
 
   INTENDED   the table the user meant: the column is gone where it was dropped, every other column holds the same values;
-  PLAIN      the build stops with an error that names the audit step, the table, the tier, the step that needs the column and the column, in one line, with no dump of the engine's plan;
-  MESSAGE    a different table than the one before, WITH a word: the warning names it before the user confirms;
-  SILENT     a different table with no word: the one class the gate cannot see (a formula is never read, D-0356). Pinned here with its evidence, and the warning's standing sentence
-             says it. It exists for every drop at every place, the ones the walk follows included (it is not new with D-0449).
+  PLAIN      the build stops with an error that names the column and the step that needs it;
+  MESSAGE    a different table than the one before, which the refusal sentence names before anything is written (a same-named column of a join);
+  SILENT     a different table with no word: the one class the gate cannot see (a formula is never read, D-0356). Pinned here as KNOWN OPEN BEHAVIOUR, not approved behaviour (the
+             catalogue study of the uncertainties decides what to do): it exists today for every drop the app CAN follow too (it is not new).
 
-| case                                                                    | place        | uncertain | outcome                                   |
-|-------------------------------------------------------------------------|--------------|-----------|-------------------------------------------|
-| a  drop after an unpivot (the column is no longer a column there)       | T1:T         | no        | PLAIN ("a" not found)                     |
-| b  drop before an unpivot that names the column                          | T1:T         | yes       | PLAIN                                     |
-| b2 drop before an unpivot that does not name it (it vanishes there)       | T1:T         | yes       | INTENDED (no table after it changes)      |
-| c1 reshape back to wide, the column is back, drop it                      | T2:T         | no        | INTENDED                                  |
-| c2 the same column dropped before the reshape back                        | T1:T         | no        | PLAIN                                     |
-| c4 drop before an unpivot, a pivot after it (plot's own steps)            | T1:T         | yes       | PLAIN                                     |
-| d  a later formula, select, join on the column                            | T1:T         | no / yes  | PLAIN (the join: refused with the plan)   |
-| e  the steps the walk does not read (unpivot, str_split, explode, fill, describe, pivot) | T1:T | yes   | PLAIN or INTENDED, per step               |
-| f  the shipped recipes: 8 places only blind, 15 uncertain with the plan    | T1:*         | yes       | refused with the plan / 6 INTENDED / 9 PLAIN |
-| h  a same-named column of a join that changes meaning                    | T1:T         | yes       | MESSAGE (the warning names it)            |
-| i  a formula that takes every column (pl.all())                          | T1:T         | yes       | SILENT (the standing sentence only)       |
-| g  every INTENDED case: the other columns hold the same values            |              |           | asserted in each                          |
+| case                                                                    | place        | uncertain | what the engine does with the drop       | the drop           |
+|-------------------------------------------------------------------------|--------------|-----------|------------------------------------------|--------------------|
+| a  drop after an unpivot (the column is no longer a column there)       | T1:T         | no        | PLAIN ("a" not found)                    | written, plain run |
+| b  drop before an unpivot that names the column                          | T1:T         | yes       | PLAIN                                    | refused            |
+| b2 drop before an unpivot that does not name it (it vanishes there)       | T1:T         | yes       | INTENDED (no table after it changes)     | refused            |
+| c1 reshape back to wide, the column is back, drop it                      | T2:T         | no        | INTENDED                                 | written            |
+| c2 the same column dropped before the reshape back                        | T1:T         | no        | PLAIN                                    | written, plain run |
+| c4 drop before an unpivot, a pivot after it (plot's own steps)            | T1:T         | yes       | PLAIN                                    | refused            |
+| d  a later formula, select, join on the column                            | T1:T         | no / yes  | PLAIN (the join: refused with the plan)  | written / refused  |
+| e  the steps the walk does not read (unpivot, str_split, explode, fill, describe, pivot) | T1:T | yes | PLAIN or INTENDED, per step              | refused            |
+| f  the shipped recipes: 8 places only blind, 15 uncertain with the plan   | T1:*         | yes       | refused with the plan / 6 INTENDED / 9 PLAIN | refused        |
+| h  a same-named column of a join that changes meaning                    | T1:T         | yes       | MESSAGE (the refusal names it)           | refused            |
+| i  a formula that takes every column (pl.all())                          | T1:T         | yes / no  | SILENT                                   | refused / written  |
+| g  every INTENDED case: the other columns hold the same values            |              |           | asserted in each                         |                    |
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_uncertain_drop_engine.py -q
 """
@@ -36,9 +37,10 @@ import pytest
 from app.modules.audit_run import AuditRunError, run_audit
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.tests.test_plan_composer import ABROMICS, DEMO, shipped
-from app.tests.uncertain_drop_world import World, lost_and_rest, step_drop, tsv_frame
+from app.tests.uncertain_drop_world import World, author_version, build_all, changed_tables, lost_and_rest, step_drop, tsv_frame, with_author_step
 from utils import key_drop
-from utils.audit_copy import AuditCopyError, add_step, remove_step, start_audit
+from utils.audit_copy import AuditCopyError, AuditStep, add_step, remove_step, start_audit, with_audit_steps
+from utils.recipe_tiers import AUDIT_COMMENT
 
 T = tsv_frame(sample_id=["s1", "s2", "s3"], a=["a1", "a2", "a3"], b=["b1", "b2", "b3"], c=["c1", "c2", "c3"])
 B = tsv_frame(sample_id=["s1", "s2", "s3"], lab=["X", "Y", "Z"])
@@ -92,6 +94,27 @@ def run_error(w, audit) -> AuditRunError:
     return raised.value
 
 
+def refusal(w, place: str, column: str, *, blind: bool = False) -> str:
+    """The sentence the gate gives for the drop, through the way every caller writes a step (`add_step`): the red line, nothing written. With and without the engine's plan the text holds the
+    capital YET, and the copy stays as it was."""
+    audit = start_audit(w.original.raw, "1a2b3c4d")
+    with pytest.raises(AuditCopyError) as raised:
+        add_step(audit, place, step_drop(column), "because", plans=None if blind else w.plans)
+    text = str(raised.value)
+    assert text.startswith(f"The app cannot YET follow the column {column!r} at {place} to the end"), text
+    assert "the drop is not written" in text and "may fail" not in text and "Warning" not in text
+    assert audit.created == 0 and audit.recipe == w.original.raw, "a refused call changes nothing"
+    assert w.hand_made_audit(place, step_drop(column)).created == 1
+    return text
+
+
+def the_run_refuses_a_hand_made_drop(w, place: str, column: str) -> str:
+    """What `run_audit` says to a drop that a file or an old session holds past the gate: the same refusal, before anything is built."""
+    error = str(run_error(w, w.hand_made_audit(place, step_drop(column))))
+    assert "cannot YET follow" in error and "\n" not in error and "Resolved plan" not in error, error
+    return error
+
+
 # ------------------------------------------------------------------------------------------------------------------- a and b: the place of the drop against the unpivot
 
 def test_a_drop_after_an_unpivot_names_a_column_that_is_no_longer_there_and_ends_as_a_plain_error(tmp_path):
@@ -106,34 +129,44 @@ def test_a_drop_after_an_unpivot_names_a_column_that_is_no_longer_there_and_ends
     assert_plain(error, '"a" not found') and "T1:T" in str(error) and "polars_drop" in str(error)
 
 
-def test_a_drop_before_an_unpivot_that_names_the_column_is_allowed_with_a_warning_and_ends_as_a_plain_error(tmp_path):
-    """Case b: the unpivot is in tier 2 and names `a`; the drop (end of tier 1) is before it. The walk cannot read the unpivot: the drop is allowed, the warning says where it
-    lost the column, the build says which step needs it."""
+def test_the_error_of_a_failed_audit_step_is_one_line_without_the_engines_plan_while_the_engine_itself_prints_its_plan(tmp_path):
+    """Review point 3 of 2026-11-21, a direct test with the real engine: an audit step written at a plot (where HOME writes a drop) that names a column the plot's table does not have fails
+    when the plot's table is collected, and the engine's own text then holds its plan on several lines. The error the run gives (`short_engine_text` in `audit_run`) is the step, the
+    place and the column, in one line. MUTATION AR1 (the run puts `str(error)` back) fails here."""
+    w = world(tmp_path, {"T": T, "B": B}, {"T": {"tier1": []}, "B": {}}, {}, {"Q": plot("T")})
+    assert w.facts("T3:Q", "nope") is not None and not w.facts("T3:Q", "nope").uncertain, "a plot is never refused: the engine says the column is missing"
+    audit = w.copy_with("T3:Q", step_drop("nope"))
+    engine_text = w.audit_built(audit).error
+    assert engine_text and "Resolved plan" in engine_text and "\n" in engine_text, "the premise: the engine's own text carries its plan"
+    text = str(run_error(w, audit))
+    assert text.startswith("The audit step audit_1a2b3c4d_1 at T3:Q cannot be applied: ") and '"nope"' in text
+    assert "Resolved plan" not in text and "\n" not in text and len(text) < 600, text
+
+
+def test_a_drop_before_an_unpivot_that_names_the_column_is_refused_and_the_engine_would_have_stopped_with_a_plain_error(tmp_path):
+    """Case b: the unpivot is in tier 2 and names `a`; the drop (end of tier 1) is before it. The walk cannot read the unpivot: the drop is refused, the sentence says where it lost the
+    column; had it been written, the build would have said which step needs it."""
     w = world(tmp_path, {"T": T, "B": B}, {"T": {"tier1": [], "tier2": [unpivot(["a", "b"], ["sample_id", "c"])]}, "B": {}}, {}, {"Q": plot("T")})
     facts = w.facts("T1:T", "a")
     assert facts.uncertain and [(r.code, r.get("action")) for r in facts.unfollowed] == [("step_not_read", "polars_unpivot")]
-    assert key_drop.key_drop_problem(w.original.raw, "T1:T", ["a"], w.plans) is None
-    said = key_drop.key_drop_warning(w.original.raw, "T1:T", ["a"], w.plans)
-    assert "step 1 of T2:T (polars_unpivot)" in said and "may fail" in said
-    audit = w.copy_with("T1:T", step_drop("a"))
-    assert audit.created == 1
-    error = run_error(w, audit)
-    assert_plain(error, '"a" not found') and "tier 2 of the table 'T'" in str(error) and "polars_unpivot" in str(error)
+    said = key_drop.key_drop_problem(w.original.raw, "T1:T", ["a"], w.plans)
+    assert "it reaches step 1 of T2:T (polars_unpivot), a step the app cannot read" in said and "'a'" in said
+    assert refusal(w, "T1:T", "a") == said
+    the_run_refuses_a_hand_made_drop(w, "T1:T", "a")
+    built = w.drop_built("T1:T", "a")
+    assert built.error and '"a" not found' in built.error
 
 
-def test_a_drop_before_an_unpivot_that_does_not_name_the_column_is_the_intended_table_and_changes_nothing_else(tmp_path):
-    """Case b2: `a` is neither in `on` nor in `index`, so the unpivot drops it anyway. The drop is uncertain for the walk and harmless for the data: the table of tier 1 loses `a`,
-    every table after the unpivot is the same as before, no plot changes, no other column changes (case g)."""
+def test_a_drop_before_an_unpivot_that_does_not_name_the_column_is_refused_and_the_engine_would_have_given_the_intended_table(tmp_path):
+    """Case b2: `a` is neither in `on` nor in `index`, so the unpivot drops it anyway. The drop is uncertain for the walk and harmless for the data: the table of tier 1 loses `a`, every
+    table after the unpivot is the same as before, no plot changes, no other column changes (case g). The app still cannot say so, so the line is red: it is the price of not guessing."""
     w = world(tmp_path, {"T": T, "B": B}, {"T": {"tier1": [], "tier2": [unpivot(["b"], ["sample_id", "c"])]}, "B": {}}, {}, {"Q": plot("T")})
     assert w.facts("T1:T", "a").uncertain
-    audit = w.copy_with("T1:T", step_drop("a"))
-    before, after = w.original_built(), w.audit_built(audit)
+    refusal(w, "T1:T", "a")
+    before, after = w.original_built(), w.drop_built("T1:T", "a")
     assert not before.error and not after.error
-    lost, gained, same = lost_and_rest(before.tables["T1:T"], after.tables["T1:T"])
-    assert (lost, gained, same) == ({"a"}, set(), True)
-    for table in ("T2:T", "T3:Q", "T1:B"):
-        assert before.tables[table].equals(after.tables[table]), table
-    assert w.run(audit).affected_plots == []
+    assert lost_and_rest(before.tables["T1:T"], after.tables["T1:T"]) == ({"a"}, set(), True)
+    assert changed_tables(before, after) == {"T1:T"}, "no table after the unpivot, no plot, no other table changes"
 
 
 # ------------------------------------------------------------------------------------------------------------------- c: reshape back to wide
@@ -148,7 +181,7 @@ def test_after_a_reshape_back_to_wide_the_column_is_a_column_again_and_its_drop_
     w = wide_world(tmp_path, tier2=[pivot(["sample_id", "c"])])
     before = w.original_built()
     assert before.tables["T2:T"].columns == ["sample_id", "c", "a", "b"]
-    assert not w.facts("T2:T", "a").uncertain and key_drop.key_drop_warning(w.original.raw, "T2:T", ["a"], w.plans) is None
+    assert not w.facts("T2:T", "a").uncertain and key_drop.key_drop_problem(w.original.raw, "T2:T", ["a"], w.plans) is None
     audit = w.copy_with("T2:T", step_drop("a"))
     after = w.audit_built(audit)
     assert not after.error
@@ -166,13 +199,14 @@ def test_the_same_column_dropped_before_the_reshape_is_not_a_column_there_and_en
     assert_plain(error, '"a" not found') and "tier 1 of the table 'T'" in str(error)
 
 
-def test_a_drop_before_an_unpivot_that_a_pivot_in_the_plots_own_steps_undoes_ends_as_a_plain_error(tmp_path):
+def test_a_drop_before_an_unpivot_that_a_pivot_in_the_plots_own_steps_undoes_is_refused_and_the_engine_would_stop_with_a_plain_error(tmp_path):
     """Case c4: unpivot in tier 2, pivot in the plot's tier 3: the plot would show `a` as a column again, but the unpivot needs it first: the build stops at the unpivot."""
     w = world(tmp_path, {"T": T, "B": B}, {"T": {"tier1": [], "tier2": [unpivot(["a", "b"], ["sample_id", "c"])]}, "B": {}}, {}, {"Q": plot("T", tier3=[pivot(["sample_id", "c"])])})
     assert w.original_built().tables["T3:Q"].columns == ["sample_id", "c", "a", "b"]
     assert w.facts("T1:T", "a").uncertain
-    error = run_error(w, w.copy_with("T1:T", step_drop("a")))
-    assert_plain(error, '"a" not found') and "polars_unpivot" in str(error)
+    refusal(w, "T1:T", "a")
+    built = w.drop_built("T1:T", "a")
+    assert built.error and '"a" not found' in built.error
 
 
 # ------------------------------------------------------------------------------------------------------------------- d: a later step needs the column
@@ -195,18 +229,18 @@ def join_world(tmp_path, left_steps, key="k"):
 FILL = {"action": "polars_fill_null", "columns": ["a"], "value": "zz"}
 
 
-def test_a_join_key_behind_a_step_the_walk_cannot_read_is_refused_with_the_plan_and_allowed_blind_then_refused_by_the_run(tmp_path):
+def test_a_join_key_behind_a_step_the_walk_cannot_read_is_refused_as_a_key_with_the_plan_and_as_not_followed_blind_and_the_run_refuses_a_hand_made_one(tmp_path):
     """Case d, the join: the key `k` of the join in J, the table T has a step the walk does not read before it (a fill). With the engine's plan: refused, by the join that needs it.
-    Blind (no engine): the walk cannot follow, so the drop is allowed with a warning; the run composes the plan itself and refuses it before building anything: a plain refusal."""
+    Blind (no engine): the walk cannot follow, so the drop is refused as not followed (D-0460); a copy that holds it past the gate is refused by the run, which composes the plan
+    itself: before anything is built, by the join that reads the key."""
     w = join_world(tmp_path, [FILL])
     assert w.facts("T1:T", "k").refused
     with pytest.raises(AuditCopyError, match="read as a join key by step 1 of T1:J"):
         w.copy_with("T1:T", step_drop("k"))
     blind = key_drop.DropGate(w.original.raw).facts("T1:T", "k")
     assert blind.uncertain and not blind.refused
-    audit = w.copy_with("T1:T", step_drop("k"), blind=True)
-    assert audit.created == 1
-    error = run_error(w, audit)
+    refusal(w, "T1:T", "k", blind=True)
+    error = run_error(w, w.hand_made_audit("T1:T", step_drop("k")))
     assert "read as a join key by step 1 of T1:J" in str(error) and "Resolved plan" not in str(error) and "\n" not in str(error)
     assert not (w.root / "run_audit").exists() or list((w.root / "run_audit").glob("*.parquet")) == [], "nothing was built"
 
@@ -226,98 +260,114 @@ def test_a_drop_of_a_column_a_join_does_not_read_keeps_the_joined_table_and_chan
 NUMBERS = tsv_frame(sample_id=["s1", "s2", "s3"], q1=[1, 2, 3], q2=[10, 20, 30], q3=[100, 200, 300])
 
 
-@pytest.mark.parametrize("name, tier1, tier2, dropped, needs_it", [
-    ("unpivot", [], [unpivot(["a", "b"], ["sample_id", "c"])], "a", True),
-    ("unpivot_index", [], [unpivot(["b"], ["sample_id", "c"])], "c", True),
-    ("str_split", [], [{"action": "polars_str_split", "columns": ["a"], "by": "1"}], "a", True),
-    ("explode", [{"action": "polars_str_split", "columns": ["a"], "by": "1"}], [{"action": "polars_explode", "columns": ["a"]}], "a", True),
-    ("fill_null", [], [{"action": "polars_fill_null", "columns": ["a"], "value": "zz"}], "a", True),
-    ("fill_null_other", [], [{"action": "polars_fill_null", "columns": ["a"], "value": "zz"}], "b", False),
+@pytest.mark.parametrize("name, tier1, tier2, dropped, needs_it, unsure", [
+    ("unpivot", [], [unpivot(["a", "b"], ["sample_id", "c"])], "a", True, True),
+    ("unpivot_index", [], [unpivot(["b"], ["sample_id", "c"])], "c", True, False),
+    ("str_split", [], [{"action": "polars_str_split", "columns": ["a"], "by": "1"}], "a", True, False),
+    ("explode", [{"action": "polars_str_split", "columns": ["a"], "by": "1"}], [{"action": "polars_explode", "columns": ["a"]}], "a", True, False),
+    ("fill_null", [], [{"action": "polars_fill_null", "columns": ["a"], "value": "zz"}], "a", True, False),
+    ("fill_null_other", [], [{"action": "polars_fill_null", "columns": ["a"], "value": "zz"}], "b", False, False),
 ])
-def test_the_steps_the_walk_does_not_read_end_as_a_plain_error_where_they_need_the_column_and_as_the_intended_table_where_they_do_not(tmp_path, name, tier1, tier2, dropped, needs_it):
-    """Case e. An unread step that NAMES the dropped column stops the build, named; one that does not name it passes the drop through: the column is gone, the rest holds."""
+def test_the_steps_after_a_drop_end_as_a_plain_error_where_they_need_the_column_and_as_the_intended_table_where_they_do_not_and_the_unread_one_is_refused(
+        tmp_path, name, tier1, tier2, dropped, needs_it, unsure):
+    """Case e. A step after the drop that NAMES the dropped column stops the build, named; one that does not name it passes the drop through: the column gone, the rest holds. Of these
+    steps only the unpivot is one the walk does not follow for the column: its drop is refused (the engine's answer is kept through `drop_built`); the others are followed (the column is
+    found through them), so the drop is written and the run says the same plain thing."""
     w = world(tmp_path, {"T": T, "B": B}, {"T": {"tier1": tier1, "tier2": tier2}, "B": {}}, {}, {"Q": plot("T")})
-    audit = w.copy_with("T1:T", step_drop(dropped))
+    assert w.facts("T1:T", dropped).uncertain is unsure
+    before = w.original_built()
+    if unsure:
+        refusal(w, "T1:T", dropped)
+        after = w.drop_built("T1:T", dropped)
+    else:
+        audit = w.copy_with("T1:T", step_drop(dropped))
+        after = w.audit_built(audit)
+        if needs_it:
+            assert_plain(run_error(w, audit), dropped)
     if needs_it:
-        error = run_error(w, audit)
-        assert_plain(error, dropped)
+        assert after.error and f'"{dropped}"' in after.error, after.error
         return
-    before, after = w.original_built(), w.audit_built(audit)
     assert not after.error
     assert lost_and_rest(before.tables["T2:T"], after.tables["T2:T"]) == ({dropped}, set(), True)
-    assert w.run(audit).affected_plots == ["Q"]
+    assert "T3:Q" in changed_tables(before, after)
 
 
-def test_a_describe_after_a_drop_is_the_intended_table_with_the_column_gone_from_the_statistics(tmp_path):
-    """Case e, describe: the step turns every column into statistics (the types change, so the walk is unsure). The statistics of the dropped column are gone and those of the other
-    columns are the same numbers."""
+def test_a_describe_after_a_drop_is_followed_and_gives_the_intended_table_with_the_column_gone_from_the_statistics(tmp_path):
+    """Case e, describe: the step turns every column into statistics (the types change). The walk follows the column through it: the drop is written; the statistics of the dropped column
+    are gone and those of the other columns are the same numbers."""
     w = world(tmp_path, {"T": NUMBERS, "B": B}, {"T": {"tier1": [], "tier2": [{"action": "polars_describe"}]}, "B": {}}, {}, {"P": plot("T")})
-    audit = w.copy_with("T1:T", step_drop("q2"))
-    before, after = w.original_built().tables["T2:T"], w.audit_built(audit).tables["T2:T"]
+    assert not w.facts("T1:T", "q2").uncertain
+    before, after = w.original_built().tables["T2:T"], w.audit_built(w.copy_with("T1:T", step_drop("q2"))).tables["T2:T"]
     assert lost_and_rest(before, after) == ({"q2"}, set(), True)
 
 
-def test_a_pivot_after_an_unpivot_needs_the_column_the_index_names_and_ends_as_a_plain_error(tmp_path):
+def test_a_pivot_after_an_unpivot_needs_the_column_the_index_names_and_the_drop_is_refused_with_a_plain_error_behind_it(tmp_path):
     w = world(tmp_path, {"T": T, "B": B}, {"T": {"tier1": [unpivot(["a", "b"], ["sample_id", "c"])], "tier2": [pivot(["sample_id", "c"])]}, "B": {}}, {}, {"Q": plot("T")})
-    audit = w.copy_with("T1:T", step_drop("variable"))
-    error = run_error(w, audit)
-    assert_plain(error, "variable")
+    refusal(w, "T1:T", "variable")
+    built = w.drop_built("T1:T", "variable")
+    assert built.error and "variable" in built.error
 
 
-# ------------------------------------------------------------------------------------------------------------------- the warning is shown before the user confirms; the audit is undone by removing the step
+# ------------------------------------------------------------------------------------------------------------------- the refusal names the columns it could not follow; the audit is undone by removing the step
 
-def test_removing_the_audit_step_gives_the_recipe_and_its_tables_back(tmp_path):
+def test_removing_a_written_audit_step_gives_the_recipe_and_its_tables_back(tmp_path):
+    """A drop the app CAN follow (the column `c` passes the unpivot as an index) is written; removing the step gives the recipe back unchanged."""
     w = world(tmp_path, {"T": T, "B": B}, {"T": {"tier1": [], "tier2": [unpivot(["b"], ["sample_id", "c"])]}, "B": {}}, {}, {"Q": plot("T")})
     audit = start_audit(w.original.raw, "1a2b3c4d")
-    step_id = add_step(audit, "T1:T", step_drop("a"), "because", plans=w.plans)
+    assert not w.facts("T1:T", "c").uncertain
+    step_id = add_step(audit, "T1:T", step_drop("c"), "because", plans=w.plans)
     assert audit.recipe != w.original.raw
     remove_step(audit, step_id)
     assert audit.recipe == w.original.raw
     assert w.audit_built(audit).tables["T1:T"].equals(w.original_built().tables["T1:T"])
 
 
-def test_a_drop_of_two_columns_judges_each_and_the_warning_names_only_the_unsure_one(tmp_path):
+def test_a_drop_of_two_columns_names_only_the_one_the_app_cannot_follow(tmp_path):
     w = world(tmp_path, {"T": T, "B": B}, {"T": {"tier1": [], "tier2": [unpivot(["a"], ["sample_id", "c"])]}, "B": {}}, {}, {"Q": plot("T")})
-    said = key_drop.key_drop_warning(w.original.raw, "T1:T", ["a", "c"], w.plans)
+    said = key_drop.key_drop_problem(w.original.raw, "T1:T", ["a", "c"], w.plans)
     assert said and "the column 'a' at T1:T" in said and "'c'" not in said, "c passes the unpivot as an index: it is followed"
 
 
 # ------------------------------------------------------------------------------------------------------------------- h and i: what changes without an error
 
-def test_a_same_named_column_of_a_join_changes_meaning_after_the_drop_and_the_warning_says_so_before_the_user_confirms(tmp_path):
+def test_a_same_named_column_of_a_join_changes_meaning_after_the_drop_and_the_refusal_says_so_before_anything_is_written(tmp_path):
     """Case h, the one that a build does not stop on: A and B both have `lab`; the join gave B's the suffix `_right`. Dropped from A, B's `lab` keeps its name, and a plot that draws
-    `lab` now draws B's values. Here the walk is unsure too (an unpivot of another column in tier 2 of A), so the drop is only allowed because the warning names the clash."""
+    `lab` now draws B's values (the plot IS drawn). Here the walk is unsure too (an unpivot of another column in tier 2 of A), so the drop is refused and the sentence names the clash:
+    a plot would read the other table's column under the same name, never that the plot cannot be drawn (the review of 2026-11-21 found that false sentence)."""
     left = tsv_frame(sample_id=["s1", "s2", "s3"], lab=["A1", "A2", "A3"], x=["x1", "x2", "x3"])
     right = tsv_frame(sample_id=["s1", "s2", "s3"], lab=["B1", "B2", "B3"])
     w = world(tmp_path, {"T": left, "B": right}, {"T": {"tier1": [], "tier2": [unpivot(["x"], ["sample_id"])]}, "B": {}},
               {"J": join_of("T", "B", steps=[join_step("B")])}, {"P": plot("J", x="lab"), "Q": plot("T")})
     assert w.facts("T1:T", "lab").uncertain
-    said = key_drop.key_drop_warning(w.original.raw, "T1:T", ["lab"], w.plans)
-    assert "'lab_right'" in said and "keeps the name 'lab'" in said and "reads the column of B, with no error" in said
-    audit = w.copy_with("T1:T", step_drop("lab"))
-    before, after = w.original_built().tables["T3:P"], w.audit_built(audit).tables["T3:P"]
+    said = refusal(w, "T1:T", "lab")
+    assert "'lab_right'" in said and "table B" in said and "under the name 'lab'" in said and "the plot 'P' draws 'lab'" in said
+    assert "cannot be drawn" not in said and "with no error" not in said
+    before, after = w.original_built().tables["T3:P"], w.drop_built("T1:T", "lab").tables["T3:P"]
     assert before["lab"].to_list() == ["A1", "A2", "A3"] and "lab_right" in before.columns
-    assert after["lab"].to_list() == ["B1", "B2", "B3"] and "lab_right" not in after.columns, "a different table with the same column name: the word is in the warning above"
+    assert after["lab"].to_list() == ["B1", "B2", "B3"] and "lab_right" not in after.columns, "a plot that draws lab is still drawn, with the other table's values: that is what the sentence says"
 
 
 TOTAL = with_columns(total="pl.sum_horizontal(pl.all().exclude('sample_id'))")
 
 
-def test_SILENT_a_formula_that_takes_every_column_computes_on_one_column_less_with_no_error_and_only_the_standing_sentence_says_it(tmp_path):
+def test_KNOWN_OPEN_BEHAVIOUR_a_formula_that_takes_every_column_computes_on_one_column_less_with_no_error_for_a_drop_the_app_can_follow(tmp_path):
     """Case i, the class the gate cannot see: a formula is never read (D-0356). `pl.all()`, `pl.exclude(..)` and `pl.col(<type>)` take the columns that exist when the step runs,
-    so the total of three columns becomes the total of two, and nothing fails. It is true for a drop at ANY place whatever the walk knows (it is not new with D-0449): the certain
-    drop below does it too. The warning of an unsure drop says it in a standing sentence; it cannot say which formula, because it does not read formulas. Reported to the owner."""
+    so the total of three columns becomes the total of two, and nothing fails. It is true for a drop at ANY place whatever the walk knows (it is not new): the drop below is one
+    the app CAN follow, it is written, and the total changes with no error and no word. KNOWN OPEN BEHAVIOUR, NOT APPROVED: it is pinned here with its evidence for the catalogue study
+    of the uncertainties (D-0460); no warning is added for a drop the app can follow (not decided)."""
     certain = world(tmp_path / "certain", {"T": NUMBERS, "B": B}, {"T": {"tier1": [], "tier2": [TOTAL]}, "B": {}}, {}, {"P": plot("T")})
-    assert not certain.facts("T1:T", "q2").uncertain and key_drop.key_drop_warning(certain.original.raw, "T1:T", ["q2"], certain.plans) is None
+    assert not certain.facts("T1:T", "q2").uncertain and key_drop.key_drop_problem(certain.original.raw, "T1:T", ["q2"], certain.plans) is None
     before, after = certain.original_built().tables["T2:T"], certain.audit_built(certain.copy_with("T1:T", step_drop("q2"))).tables["T2:T"]
-    assert before["total"].to_list() == [111, 222, 333] and after["total"].to_list() == [101, 202, 303], "a certain drop: the total changes, no error, no word (exists today)"
+    assert before["total"].to_list() == [111, 222, 333] and after["total"].to_list() == [101, 202, 303], "a followed drop: the total changes, no error, no word (exists today)"
+
+
+def test_a_formula_that_takes_every_column_after_a_drop_the_app_cannot_follow_is_refused_and_would_have_changed_the_same_way(tmp_path):
     unsure = world(tmp_path / "unsure", {"T": NUMBERS, "B": B}, {"T": {"tier1": [], "tier2": [TOTAL]}, "B": {}}, {},
                    {"P": plot("T"), "R": plot("T", tier3=[unpivot(["q1"], ["sample_id"])])})
     assert unsure.facts("T1:T", "q2").uncertain, "q2 also flows into the plot R, whose unpivot the walk does not read"
-    said = key_drop.key_drop_warning(unsure.original.raw, "T1:T", ["q2"], unsure.plans)
-    assert "pl.all()" in said and "with no error" in said
-    after = unsure.audit_built(unsure.copy_with("T1:T", step_drop("q2"))).tables["T2:T"]
-    assert after["total"].to_list() == [101, 202, 303]
+    said = refusal(unsure, "T1:T", "q2")
+    assert "step 1 of T3:R (polars_unpivot)" in said
+    assert unsure.drop_built("T1:T", "q2").tables["T2:T"]["total"].to_list() == [101, 202, 303]
 
 
 # ------------------------------------------------------------------------------------------------------------------- f: the shipped recipes
@@ -349,17 +399,21 @@ def blind_only_places():
     return out
 
 
-def test_the_places_of_the_shipped_recipes_that_the_walk_cannot_follow_without_the_plan_are_eight_and_the_run_refuses_each_as_a_join_key(tmp_path):
-    """Case f, part 1: the five of the review of 2026-11-20 and three more of `1_Abromics_general_pipeline`. Blind, the gate allows each with a warning; the run composes the plan and
-    refuses it before building anything, with the join that reads the key: never a table, always a plain sentence."""
+def test_the_places_of_the_shipped_recipes_that_the_walk_cannot_follow_without_the_plan_are_eight_refused_blind_and_refused_as_join_keys_by_the_run(tmp_path):
+    """Case f, part 1: the five of the review of 2026-11-20 and three more of `1_Abromics_general_pipeline`. Blind, the gate refuses each as a column the app cannot follow; a copy that
+    holds it past the gate is refused by the run, which composes the plan and says the join that reads the key, before building anything: always a plain sentence, never a table."""
     places = blind_only_places()
     assert len(places) == 8 and {r for r, _, _ in places} == {DEMO, ABROMICS, "1_Abromics_general_pipeline"}
     for index, (recipe_id, place, column) in enumerate(places):
         orch, loaded, book, _ = uncertain_places(recipe_id, with_plan=False)
         audit = start_audit(loaded.raw, "1a2b3c4d")
-        add_step(audit, place, step_drop(column), "because")                         # blind: written (D-0449)
+        with pytest.raises(AuditCopyError, match=f"The app cannot YET follow the column '{column}' at {place}"):
+            add_step(audit, place, step_drop(column), "because")
+        assert audit.created == 0
+        held = start_audit(loaded.raw, "1a2b3c4d")
+        held.recipe = with_audit_steps(loaded.raw, [AuditStep(place, "audit_1a2b3c4d_1", {**step_drop(column), "id": "audit_1a2b3c4d_1", AUDIT_COMMENT: "because"})])
         with pytest.raises(AuditRunError) as raised:
-            run_audit(orch, recipe_id, audit.recipe, tmp_path / recipe_id / "orig", tmp_path / recipe_id / f"aud{index}")
+            run_audit(orch, recipe_id, held.recipe, tmp_path / recipe_id / "orig", tmp_path / recipe_id / f"aud{index}")
         text = str(raised.value)
         assert "read as a join key by" in text and f"the column {column!r} at {place}" in text and "Resolved plan" not in text and "\n" not in text, text
 
@@ -369,26 +423,29 @@ def test_the_places_of_the_shipped_recipes_that_the_walk_cannot_follow_without_t
 INTENDED = {("T1:Summary_quality", c) for c in ("quality_module", "taxon", "genotype", "phenotype", "cge_phenotype", "plasmid")}
 
 
-def test_the_fifteen_places_of_the_demo_recipe_that_stay_unsure_with_the_plan_are_six_intended_tables_and_nine_plain_errors(tmp_path):
-    """Case f, part 2, on the shipped demo recipe and its data, read only (the anchors and the audit folders are in `tmp_path`)."""
+def test_the_fifteen_places_of_the_demo_recipe_that_stay_unsure_with_the_plan_are_all_refused_and_the_engine_would_give_six_intended_tables_and_nine_plain_errors(tmp_path):
+    """Case f, part 2, on the shipped demo recipe and its data, read only (the stored tables of each build are in `tmp_path`). Each place is refused by `add_step` with the plan; the engine's
+    verdict on the drop, written as a step of the author in a copy of the recipe held in memory, is kept as a fact: six drops vanish at the unpivot and change nothing after it, nine
+    are named by an unpivot or a later step and stop the build."""
     orch, loaded, book, places = uncertain_places(DEMO, with_plan=True)
     assert len(places) == 15 and INTENDED <= set(places)
+    before = build_all(orch, DEMO, loaded, tmp_path / "orig")
+    assert not before.error
     intended, plain = [], []
     for index, (place, column) in enumerate(places):
         audit = start_audit(loaded.raw, "1a2b3c4d")
-        add_step(audit, place, step_drop(column), "because", plans=book)
-        assert key_drop.key_drop_warning(loaded.raw, place, [column], book), (place, column)
-        try:
-            run = run_audit(orch, DEMO, audit.recipe, tmp_path / "orig", tmp_path / f"aud{index}")
-        except AuditRunError as error:
-            text = str(error)
-            assert text.startswith("The audit step audit_1a2b3c4d_1 at ") and column in text and "Resolved plan" not in text and "\n" not in text, text
+        with pytest.raises(AuditCopyError, match=f"The app cannot YET follow the column '{column}' at {place}"):
+            add_step(audit, place, step_drop(column), "because", plans=book)
+        assert audit.created == 0 and audit.recipe == loaded.raw
+        after = build_all(orch, DEMO, author_version(loaded, with_author_step(loaded.raw, place, step_drop(column))), tmp_path / f"drop{index}")
+        if after.error:
+            assert column in after.error, (place, column, after.error)
             plain.append((place, column))
             continue
         table = place.split(":", 1)[1]
-        original, after = (pl.read_parquet(tmp_path / "orig" / f"{table}.parquet"), pl.read_parquet(run.tables[table].t1_path))
-        assert lost_and_rest(original, after) == ({column}, set(), True), (place, column)
-        assert run.affected_plots == [], "the unpivot takes the column away anyway: no plot differs"
+        changed = changed_tables(before, after)
+        assert f"T1:{table}" in changed and not any(name.startswith("T3:") for name in changed), (place, column, changed)
+        assert all(lost_and_rest(before.tables[name], after.tables[name]) == ({column}, set(), True) for name in changed), (place, column, changed)
         intended.append((place, column))
     assert set(intended) == INTENDED and len(plain) == 9
 
