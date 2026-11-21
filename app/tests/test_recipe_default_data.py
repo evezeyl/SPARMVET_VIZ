@@ -11,16 +11,17 @@ imported from a bundle reads the folder of its import instead (`import_data_dir`
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_recipe_default_data.py -q
 """
-from collections import Counter
 from pathlib import Path
 from textwrap import dedent
 
 import polars as pl
+from polars.testing import assert_frame_equal
 import pytest
 
 from app.modules.data_analysis_recipe_validator import find_data_analysis_recipes, validate_data_analysis_recipe_data
 from app.modules.orchestrator import DataOrchestrator
 from app.modules.cache_keys import load_data_analysis_recipe
+from ingestion.ingestor import ingest_file
 from utils.errors import IngestionError
 
 REPO = Path(__file__).resolve().parents[2]
@@ -29,7 +30,7 @@ RECIPES_DIR = REPO / "config" / "data_analysis_recipes" / "pipelines"
 SHIPPED = find_data_analysis_recipes(RECIPES_DIR)
 DEMO = "1_test_data_ST22_dummy"
 # Recipes that are broken on purpose are not in this folder (the retest recipes have their own folder and tests,
-# test_retest_data_analysis_recipes.py); a shipped recipe that the load gate rejects is skipped below with the gate's reason.
+# test_retest_data_analysis_recipes.py); a shipped recipe that the load gate rejects fails the per-recipe test below, with the gate's reason.
 
 
 @pytest.fixture(scope="module")
@@ -100,18 +101,25 @@ def test_each_table_reads_the_file_its_source_path_names(local, recipe_path):
     assert declared_tables, f"'{recipe_id}': no table declares a source.path"
 
 
-def _first_text_column(schema: dict):
-    """(slug, name in the file) of the first declared column of a text type, the key to compare values by; None when there is none."""
+def _text_fields(schema: dict) -> list[tuple[str, str, list]]:
+    """(slug, name in the file, the texts that mean missing) of every declared field of a text type, in declared order."""
+    out = []
     for slug, spec in (schema.get("input_fields") or {}).items():
         spec = spec or {}
         if spec.get("type") in ("String", "Categorical"):
-            return slug, spec.get("original_name") or slug
-    return None
+            missing = spec.get("null_values", schema.get("null_values")) or []
+            out.append((slug, spec.get("original_name") or slug, list(missing)))
+    return out
 
 
 @pytest.mark.parametrize("recipe_path", SHIPPED, ids=lambda p: p.stem)
 def test_each_table_reads_the_rows_of_its_declared_file(local, recipe_path):
-    """Content, not only paths: the rows the app reads (`read_source`, the read of the build) are those of the declared file."""
+    """Content, not only paths: what the app reads for a table IS the declared file, on every declared column, in row order.
+
+    Two comparisons that do not share their reading: (1) the table `read_source` returns equals the table the ingestion's own reader
+    (`ingest_file`) gives from the declared path with the same declared fields (all columns, all rows, in order); (2) independent of the
+    ingestion: the column names read are the declared ones, and up to three text columns equal the plain text read of the file, row by row,
+    wherever the file's value is not one of the field's declared missing-value texts."""
     _, orchestrator = local
     recipe_id = recipe_path.stem
     compared = 0
@@ -119,23 +127,29 @@ def test_each_table_reads_the_rows_of_its_declared_file(local, recipe_path):
         declared = ((schema or {}).get("source") or {}).get("path")
         if not declared:
             continue
-        direct = pl.read_csv(REPO / declared, separator="\t", infer_schema=False)
+        path = REPO / declared
         got = orchestrator.read_source(recipe_id, table).collect()
+        # (1) the ingestion's reader, called on the declared path
+        reference = ingest_file(path, table, schema).collect()
+        try:
+            assert_frame_equal(got, reference)
+        except AssertionError as error:
+            raise AssertionError(f"{recipe_id}/{table}: the table read is not the table the ingestion reads from {declared}: {error}") from None
+        # (2) independent of the ingestion
+        assert sorted(got.columns) == sorted((schema.get("input_fields") or {})), (
+            f"{recipe_id}/{table}: columns read {got.columns} are not the declared fields")
+        direct = pl.read_csv(path, separator="\t", infer_schema=False)
         assert got.height == direct.height, f"{recipe_id}/{table}: {got.height} rows read, {direct.height} in {declared}"
-        key = _first_text_column(schema)
-        if key is None:
-            continue
-        slug, column = key
-        want = direct[column].cast(pl.String)
-        if schema.get("strip"):
-            want = want.str.strip_chars()
-        # A field may declare texts that mean "missing" (a dash, empty quotes): those rows read as missing, so the check is that every value that
-        # was read is a value of the declared file's column, as many times as the file has it, and that nothing else was added.
-        read_values = Counter(v for v in got[slug].cast(pl.String).to_list() if v)
-        assert not read_values - Counter(want.drop_nulls().to_list()), (
-            f"{recipe_id}/{table}: the values of '{slug}' are not those of column '{column}' of {declared}")
-        assert sum(read_values.values()) >= 1, f"{recipe_id}/{table}: no value of '{slug}' was read"
-        compared += 1
+        for slug, column, missing in _text_fields(schema)[:3]:
+            want = direct[column]
+            if schema.get("strip"):
+                want = want.str.strip_chars()
+            for row, (read, text) in enumerate(zip(got[slug].cast(pl.String).to_list(), want.to_list())):
+                if text is None or text == "" or text in missing:
+                    continue
+                assert read == text, f"{recipe_id}/{table}: row {row}, '{slug}': read {read!r}, the file has {text!r} ({declared})"
+            compared += 1
+        # a table with no text column is compared by (1) and by the names and row count above only
     assert compared, f"{recipe_id}: no table had a text column to compare values by"
 
 
