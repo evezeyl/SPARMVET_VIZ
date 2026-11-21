@@ -18,7 +18,7 @@ With --apply the new `preview_plot.png` and `preview_thumb.png` are written into
 pictures whose content did not change (identical, size only) and for new ones. A picture whose content differs is
 written only with --changed as well: look at it first, a figure must never change without a person seeing it.
 
-Key of the picture (D-0400, built on branch): every picture that is kept or written also gets `preview_plot.picture_key.json`, the key
+Key of the picture (D-0400, built): every picture that is kept or written also gets `preview_plot.picture_key.json`, the key
 of its recipe, its data and the plotnine version (`viz_gallery.picture_key`); the app compares it at start. This script is the only writer.
 A differing picture that is not applied keeps its old key and so stays "not current".
 

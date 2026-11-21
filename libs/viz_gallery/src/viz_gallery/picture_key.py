@@ -1,4 +1,4 @@
-"""The key that says whether the stored picture of a Gallery example is current (D-0400, built on branch).
+"""The key that says whether the stored picture of a Gallery example is current (D-0400, built).
 
 The picture `preview_plot.png` of an example is drawn by `assets/scripts/gallery_previews.py`. At the moment that script
 draws (or confirms) a picture it writes a small file beside it, `preview_plot.picture_key.json`, that holds the key of

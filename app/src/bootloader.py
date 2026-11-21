@@ -241,7 +241,7 @@ class Bootloader:
             print(f"[Bootloader] WARNING: the gallery check could not run: {error}")
             return
         self.rejected_gallery_examples = examples.rejected
-        # D-0400 (built on branch): the stored key of each picture against the files now; the picture is not drawn nor compared
+        # D-0400 (built): the stored key of each picture against the files now; the picture is not drawn nor compared
         from viz_gallery.picture_key import stale_pictures
         self.stale_gallery_pictures = stale_pictures(self.get_location("gallery"), examples.accepted)
         for name, reason in self.stale_gallery_pictures.items():

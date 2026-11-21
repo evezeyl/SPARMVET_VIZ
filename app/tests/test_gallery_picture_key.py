@@ -1,4 +1,4 @@
-"""The key that proves the stored picture of a Gallery example is current (D-0400, built on branch).
+"""The key that proves the stored picture of a Gallery example is current (D-0400, built).
 
 Headless, no drawing. Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_gallery_picture_key.py -q
 """
