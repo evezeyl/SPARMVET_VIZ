@@ -1,3 +1,4 @@
+# engine: python-polars (the join kinds and the row actions of Polars that keep or lose a key)
 """The rule of a join's keys, written once (JOIN-KEY-ONE-1, Eve 2026-11-15, ADR-102).
 
 A join keeps the types the tables have (JOIN-KEY-TYPES-1). It cannot be built when the two lists of key columns differ

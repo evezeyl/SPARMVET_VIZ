@@ -1,3 +1,4 @@
+# engine: python-polars (runs the steps of a tier on a Polars LazyFrame)
 # @deps
 # provides: class:DataWrangler, method:tier_steps, method:run
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)

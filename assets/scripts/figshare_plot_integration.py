@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# engine: python-plotnine+python-polars (a script that draws with plotnine and pandas directly, outside the engine registry)
 # @deps
 # provides: script:figshare_plot_integration
 # consumes: tmp/integration/figshare_join_check.tsv (written by assets/scripts/figshare_triple_integration.py), tmp/integration/ (writes plots)

@@ -1,3 +1,4 @@
+# engine: python-plotnine+python-polars (draws with plotnine; takes a Polars table and hands plotnine a pandas copy)
 import pandas as pd
 import polars as pl
 from plotnine import ggplot, aes

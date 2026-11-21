@@ -1,3 +1,4 @@
+# engine: python-polars (applies audit filters and drops with Polars casts and expressions)
 """app/modules/t3_audit_engine.py
 Pure helpers extracted from home_theater.py (Phase 24-A, ADR-051).
 

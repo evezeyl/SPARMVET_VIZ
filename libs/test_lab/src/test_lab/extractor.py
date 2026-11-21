@@ -1,3 +1,4 @@
+# engine: python-polars (extracts tables from workbooks into Polars)
 # @deps
 # provides: XlsxExtractor class (extract) — reads multi-sheet XLSX and writes normalized TSVs
 # consumes: polars, pathlib, typing, yaml (stdlib/third-party)

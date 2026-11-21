@@ -1,3 +1,4 @@
+# engine: python-plotnine+python-polars (builds the tables as LazyFrames and closes the matplotlib figure of each drawing proof)
 """
 @deps
 provides: function:plan_places, function:build_plan, function:collections_of, function:run_opening, function:plot_render_recipe, function:draw_plot_proof, function:progress_text, function:opening_signature, function:large_plot_warning, function:check_store, function:stopped_text, function:orphan_tier3_files, function:sweep_orphan_tier3, class:BuildItem, class:OpeningResult, constant:LARGE_PLOT_ROWS

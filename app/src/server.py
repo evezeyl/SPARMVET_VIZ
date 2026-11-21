@@ -1,3 +1,4 @@
+# engine: python-polars (reads the stored tier 1 table with a Polars Parquet scan)
 # @deps
 # provides: server (Shiny server function)
 # consumes: shiny, polars, pathlib, app.src.bootloader, app.modules.orchestrator, app.modules.orchestrator_helpers, app.modules.session_manager, utils.config_loader, app.modules.engine_registry (PlotEngines: the plot engine chosen per plot), app.modules.wrangle_studio (gated: blueprint_enabled or t3_sandbox_enabled), app.modules.test_lab_studio (gated: test_lab_enabled), app.modules.gallery_viewer, app.modules.app_features_validator, app.modules.sidebar_validator, app.modules.deployment_error, app.handlers.home_theater, app.handlers.audit_stack, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers

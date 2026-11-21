@@ -1,3 +1,4 @@
+# engine: python-plotnine (builds a pandas table for the help grid of the interface; no plot is drawn here)
 # Clean package imports via editable install (ADR-016). sys.path hacks are PROHIBITED.
 # @deps
 # provides: module:help_registry_ui, module:help_registry_server

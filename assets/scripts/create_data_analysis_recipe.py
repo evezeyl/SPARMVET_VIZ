@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# engine: python-polars (a script that reads data files with Polars to write a recipe)
 """Scaffold a data analysis recipe in recipe format 1 from tab-separated data files.
 
 For every data file the script reads the header and the values, and writes:

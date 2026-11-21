@@ -1,3 +1,4 @@
+# engine: python-polars (reads the Polars select and drop actions to know the columns of a table)
 """The recipe graph: one model of a data analysis recipe, built once from the resolved recipe (ADR-099 point 16(d), 16(i); ADR-101 point 3).
 
 It serves HOME's audit (where does a field exist, which plots read a table), Blueprint's lineage, the checker (J08, X7)

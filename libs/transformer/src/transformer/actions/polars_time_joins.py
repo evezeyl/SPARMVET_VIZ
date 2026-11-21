@@ -1,3 +1,4 @@
+# engine: python-polars (the polars_ rank, time and special join actions, each one a Polars call)
 """The `polars_` actions of the group "rank, time and special joins": rank, join_asof, join_where, group_by_dynamic, rolling.
 
 Why this module exists: these Polars methods depend on row order or on sorted keys, so each one states what it needs

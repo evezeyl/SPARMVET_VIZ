@@ -1,3 +1,4 @@
+# engine: python-polars (checks recipe formulas against the Polars expression grammar)
 """The formula check: a recipe formula may build a Polars expression and nothing else (check ST06).
 
 A recipe formula (`polars_with_columns`, ID reconciliation `mutate`) and a plot function string (`stat_function`) were

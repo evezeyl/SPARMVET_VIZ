@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# engine: python-polars (a script that writes the Data Import test files with Polars)
 """Create the Data Import test files from the shipped test data.
 
 Writes a small set of valid and deliberately broken upload files to a folder, so the Data

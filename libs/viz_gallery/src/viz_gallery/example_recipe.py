@@ -1,3 +1,4 @@
+# engine: python-polars (builds a gallery example recipe and reads its data with Polars)
 """A gallery example written as a standard recipe (format 1): build it, write it as text, generate its data contract.
 
 A gallery example is a standard recipe with one schema, one group and one plot (spec section 9, D1). Two writers need

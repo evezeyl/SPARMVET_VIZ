@@ -1,3 +1,4 @@
+# engine: python-polars (shows a Polars table with the error when an example cannot load)
 """app/handlers/gallery_handlers.py
 Gallery Shiny wiring (ADR-037 / ADR-045).
 

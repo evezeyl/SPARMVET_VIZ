@@ -1,3 +1,4 @@
+# engine: python-plotnine (the registry of plot components and their plotnine field, with names of plotnine objects)
 import functools
 import logging
 from typing import Callable, Dict, Any, Optional

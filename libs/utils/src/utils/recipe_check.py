@@ -1,3 +1,4 @@
+# engine: python-polars (the recipe checker; holds a Polars type check and a Polars row-order rule)
 """`check_recipe`: the one function that judges a recipe in format version 1 (spec sections 3 to 11).
 
 Pure: it reads the recipe (a dictionary) and the data of the specification file `recipe_spec.yaml`, and never the data

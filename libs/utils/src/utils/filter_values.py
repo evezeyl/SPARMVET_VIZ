@@ -1,3 +1,4 @@
+# engine: python-polars (builds Polars conditions for filters; the HOME table, the plot and the recipe action share it)
 """A filter value has the type of its column: one reading and one condition for the HOME table, the plot and the recipe action.
 
 ADR-104 point 7 (Eve, 2026-11-14). The HOME filter panel stores the real value (a number for a number column, true or

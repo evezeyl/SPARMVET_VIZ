@@ -1,3 +1,4 @@
+# engine: python-plotnine (the plot components of the scale family, wrapping plotnine; uses a matplotlib tick locator)
 import math
 from typing import Dict, Any
 from matplotlib.ticker import MaxNLocator

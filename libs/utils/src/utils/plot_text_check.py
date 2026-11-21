@@ -1,3 +1,4 @@
+# engine: python-plotnine (reads the texts that plotnine evaluates: facet formulas and stat functions)
 """The texts of a plot layer that something evaluates as Python, and the check that keeps a recipe from running code (PS06).
 
 plotnine evaluates three kinds of text that a recipe can write in a layer:

@@ -1,3 +1,4 @@
+# engine: python-polars (reads stored tables with Polars and names Polars dtypes)
 # app/modules/wrangle_studio.py
 
 # @deps

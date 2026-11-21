@@ -1,3 +1,4 @@
+# engine: python-polars (runs a plan on one row and catches Polars errors)
 """
 @deps
 provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:checker_advices, const:SHOWN_ADVICES, function:home_advice_entries, function:validate_advice_entries, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, function:rejected_recipe_text (GATE-GAP-1), class:DataAnalysisRecipeProblem

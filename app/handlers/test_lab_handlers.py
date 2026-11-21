@@ -1,3 +1,4 @@
+# engine: python-polars (reads uploaded files with Polars for the TEST_LAB tools)
 # @deps
 # provides: function:define_server (test_lab_handlers)
 # consumes: app/modules/test_lab_studio.py (scaffold_from_uploads), app/modules/error_notice.py (notice — VERIF-FIX-2), shiny, libs/test_lab/src/test_lab/reformatter.py, libs/test_lab/src/test_lab/aqua_synthesizer.py, libs/test_lab/src/test_lab/anonymiser.py, libs/id_reconciliation/

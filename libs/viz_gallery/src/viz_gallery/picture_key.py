@@ -1,3 +1,4 @@
+# engine: python-plotnine (puts the installed plotnine version into the key of a gallery picture)
 """The key that says whether the stored picture of a Gallery example is current (D-0400, built).
 
 The picture `preview_plot.png` of an example is drawn by `assets/scripts/gallery_previews.py`. At the moment that script

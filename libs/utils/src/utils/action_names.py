@@ -1,3 +1,4 @@
+# engine: python-polars (the names of the Polars actions that code outside the registry spells)
 """The names of registered actions that code outside the registry has to spell (spec R4, decision DEC31).
 
 An action name written as a string in a consumer (the audit translator, the assembler, the bootstrapper, the checker) goes

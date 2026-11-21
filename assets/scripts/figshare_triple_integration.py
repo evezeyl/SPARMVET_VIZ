@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# engine: python-polars (a script that reads and joins downloaded tables with Polars)
 # @deps
 # provides: script:figshare_triple_integration
 # consumes: assets/test_data/figshare.21737288/csv/, libs/transformer/tests/data/ (writes TSVs), tmp/integration/ (writes join output)

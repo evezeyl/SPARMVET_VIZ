@@ -1,3 +1,4 @@
+# engine: python-polars (matches the IDs of two Polars LazyFrames)
 from __future__ import annotations
 
 import re

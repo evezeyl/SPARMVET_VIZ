@@ -1,3 +1,4 @@
+# engine: python-polars (makes synthetic Polars tables)
 # @deps
 # provides: AquaSynthesizer class (propose_config, generate, save_config, load_config, list_scenarios)
 #           module helpers: clean_header, generate_fake_column, introduce_missing_values

@@ -1,3 +1,4 @@
+# engine: python-polars (reads the column plan from a Polars LazyFrame with its schema call)
 """The plan of every place of a recipe, composed by the build's own code and never built or stored (LBFB step 0b, D-0325).
 
 D-0325: "the list of places where a column exists is found by asking the engine for the plan of every place (names and types), in HOME and in the audit". This

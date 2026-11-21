@@ -1,3 +1,4 @@
+# engine: python-polars (infers the input fields of a recipe from Polars tables)
 # @deps
 # provides: DataAnalysisRecipeScaffolder class (scaffold, dataset_id, column_slug, field_slugs) — generates a data
 #           analysis recipe ZIP with data analysis recipe fragments (input_fields, a tier file per table and per join) and a master YAML.

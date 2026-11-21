@@ -1,3 +1,4 @@
+# engine: python-polars (the polars_ actions that wrap one Polars call each)
 """The `polars_` actions: each one is a Polars call, exposed with Polars' parameter names and defaults (W6).
 
 Why this module exists: the recipe reads like Polars code, and a name that starts with `polars_` means

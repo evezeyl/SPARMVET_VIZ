@@ -1,3 +1,4 @@
+# engine: python-polars (checks the gallery examples and reads their data with Polars)
 """GalleryManager: checks the gallery examples, builds the index the viewer reads, and writes a new example.
 
 A gallery example is a folder of `assets/gallery_data/` holding a standard recipe (`data_analysis_recipe.yaml`, format

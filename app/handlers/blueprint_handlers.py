@@ -1,3 +1,4 @@
+# engine: python-polars (the BLUEPRINT handlers; catches Polars errors and scans stored tables)
 """app/handlers/blueprint_handlers.py
 Blueprint Architect Shiny wiring (ADR-039 / ADR-045).
 

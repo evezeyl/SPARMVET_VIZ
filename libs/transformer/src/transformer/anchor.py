@@ -1,3 +1,4 @@
+# engine: python-polars (the stored tier tables, written and read as Parquet through Polars)
 """Tier 1 and Tier 2 anchors on disk: written and read by the engine, never named in a recipe.
 
 `sink_parquet` and `scan_parquet` used to be recipe actions. A recipe that writes to a path of its choice is a way to

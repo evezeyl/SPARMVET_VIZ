@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# engine: python-polars (reads Excel sheets into Polars tables)
 # libs/ingestion/src/ingestion/excel_handler.py
 import argparse
 import polars as pl

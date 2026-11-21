@@ -1,3 +1,4 @@
+# engine: python-polars (reads Parquet metadata; it imports Polars but does not use it)
 import hashlib
 import json
 from typing import Any, Dict, List

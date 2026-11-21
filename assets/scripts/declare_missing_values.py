@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# engine: python-polars (a script that reads the data with Polars to declare the missing-value texts)
 """Declare the missing-value texts where they really occur: per table, per field (format 1, Eve 2026-11-14).
 
 The migration to format 1 wrote the 14 texts of the old hidden sanitiser (`NA`, `N/A`, `-`, `None`, ...) into the

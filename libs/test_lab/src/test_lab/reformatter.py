@@ -1,3 +1,4 @@
+# engine: python-polars (converts file formats through Polars)
 """
 DataReformatter — headless file format conversion for TEST_LAB.
 

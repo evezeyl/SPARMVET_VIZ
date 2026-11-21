@@ -1,3 +1,4 @@
+# engine: python-polars (reads data files into Polars tables with the declared types)
 # @deps
 # provides: class:DataIngestor, method:ingest, method:find_file, function:find_dataset_file, function:read_as_declared, function:ingest_file, function:file_kind
 # consumes: libs/ingestion/src/ingestion/declared.py

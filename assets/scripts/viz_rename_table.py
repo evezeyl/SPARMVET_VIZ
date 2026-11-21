@@ -1,3 +1,4 @@
+# engine: python-plotnine (the table of old plot component names and the plotnine names that replace them)
 """The rename table of the plot components, a dry count of what the rename would touch, and the code that reads the shape of a name.
 
 Decision of Eve (2026-11-15, same as the Polars names, ADR-106 V1-B): a component that is exactly a plotnine object is

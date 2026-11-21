@@ -1,3 +1,4 @@
+# engine: python-polars (the entry file of the engine python-polars; it names the engine and imports no library)
 """The entry of the data engine `python-polars`: the one small file that names the engine and exposes `ENTRY` (D-0247).
 
 The app (`app/modules/engine_registry.py`) imports this file and nothing else of the library to choose the engine of a tier:
