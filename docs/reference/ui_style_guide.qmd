@@ -40,9 +40,15 @@ except for **three classes of inline style that must never be moved to CSS**:
 │  LEFT SIDEBAR   │  CENTRAL THEATER             │  RIGHT SIDEBAR        │
 │  #nav_sidebar   │  .central-theater            │  #audit_sidebar       │
 │  (aside.sidebar)│  output_ui("dynamic_tabs")   │  (flag-gated)      │
-│  ~340 px fixed  │  → per-view HTML rendered    │  ~340 px fixed        │
+│  share of the   │  → per-view HTML rendered    │  share of the         │
+│  window (1)     │                              │  window (1)           │
 └─────────────────┴──────────────────────────────┴───────────────────────┘
 ```
+
+(1) The side panels follow the window width and the user can drag them: left about 17 % (190 to 340 px), right about 15 % (170 to 340 px), the
+centre at least half of the window after a drag. In HOME the right panel is closed in Exploration and opens in Audit mode. These values are
+provisional (the owner's manual test judges them); they are named in one place, `app/modules/frame_widths.py`
+(`.claude/rules/rules_css_style_spec.md` section 12).
 
 The three-column layout is a **bslib `layout_sidebar`** (left) wrapping a second
 `layout_sidebar` (right) inside the main content area.
