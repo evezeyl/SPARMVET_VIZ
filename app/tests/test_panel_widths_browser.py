@@ -255,6 +255,26 @@ def test_a_control_at_the_right_edge_of_the_left_panel_is_clickable_at_1100(page
     assert z < 10                       # the date calendar (z-index 10) and Bootstrap's drop-downs (1000) are above it
 
 
+@pytest.mark.parametrize("space", ["Blueprint Architect", "Test Lab", "Gallery", "Home"])
+def test_the_toggle_of_the_right_panel_lies_over_no_content_and_no_accordion_button_is_clipped_at_1100(page: Page, shiny_app: ShinyAppProc, space):
+    _open_app(page, shiny_app.url, 1100)
+    if space == "Home":
+        _load_data_analysis_recipe(page, shiny_app.url)
+        set_mode(page, "audit")
+        _wait_right(page, True)
+    else:
+        page.locator("#sidebar_nav").get_by_text(space, exact=True).first.click()
+    page.wait_for_timeout(2500)
+    got = page.evaluate("""() => { const a = document.getElementById('audit_sidebar'); const t = a.closest('.bslib-sidebar-layout').querySelector(':scope > .collapse-toggle').getBoundingClientRect();
+      const first = [...a.querySelectorAll('.sidebar-content *')].find(e => e.getClientRects().length && e.getBoundingClientRect().height > 0 && !e.matches('div:empty'));
+      const clipped = [...a.querySelectorAll('.accordion-button')].filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent.trim().slice(0, 30));
+      const inside = [...a.querySelectorAll('.accordion-button')].filter(b => b.getBoundingClientRect().right > a.getBoundingClientRect().right + 1).map(b => b.textContent.trim().slice(0, 30));
+      const overlapping = [...a.querySelectorAll('.sidebar-content *')].filter(e => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 && b.top < t.bottom && b.bottom > t.top && b.left < t.right && b.right > t.left && e.children.length === 0 && (e.textContent || '').trim() !== ''; }).map(e => e.textContent.trim().slice(0, 30));
+      return {overlapping, clipped, inside}; }""")
+    assert got["overlapping"] == [], got           # no text under the toggle
+    assert got["clipped"] == [] and got["inside"] == [], got
+
+
 @pytest.mark.parametrize("stored", ["not json {", '{"left": "abc"}', '{"left": -0.3}', '{"left": 5}', '{"left": 0.9, "right": null}', "[1, 2]"])
 def test_a_broken_stored_value_gives_the_default(page: Page, shiny_app: ShinyAppProc, stored):
     _open_app(page, shiny_app.url, 1366, stored=stored)
