@@ -4,9 +4,11 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
-## OPEN STATE 2026-11-21, 03:25
+## OPEN STATE 2026-11-21, 04:35
 
-- dev head `52c4bcfa` (BLUEPRINT review merged as documents: `2c70694e` and `52c4bcfa`), plus the records commit that follows this block. Not pushed: the owner pushes. Ledger ends at D-0396.
+- dev head `ff8205e8` (Test Lab review merged as documents), plus the records commit that follows this block. Both fallback reviews are complete as documents: BLUEPRINT `.claude/design/blueprint_revision/GUIDE.md` (merged `52c4bcfa`), Test Lab `.claude/design/lab_revision/GUIDE.md` (merged `ff8205e8`). Remains for both: the owner's reading and the verifications of section 3 of each guide.
+- RUNNING at 04:35: the Data Import fix (HOME, points 1 to 4 of task HOME-DATA-IMPORT-FORMAT-CHECK), builder in worktree `.claude/worktrees/data-import-format`, branch `task/data-import-format`. When it reports: a reviewer reviews the diff and runs the full controls on the branch, then merge. Point 5 (the overwrite) is not built: it waits for the owner (DATA-IMPORT-OVERWRITE).
+- Earlier state, 03:25, follows. Former text, kept: dev head `52c4bcfa` (BLUEPRINT review merged as documents: `2c70694e` and `52c4bcfa`), plus the records commit that follows this block. Not pushed: the owner pushes. Ledger ends at D-0396.
 - Merged today after 16:50 (one line each):
   - `e6ae8d0f` HOME fixes of the browser walk: the screen cleared while a recipe opens; the header strip in a narrow window; the filter form cleared with the filters; the README tiers line; the help page; a test that no view rebuilds a stored table.
   - `cdbef5ff` lineage walk, step 0b: the plan of every place composed from the build's own code; the audit's key-drop gate given the plan; an app error no longer shown as "cannot tell". PROVISIONAL: a drop the walk cannot follow is not written (owner's choice open: allow with a warning, or refuse).
@@ -44,7 +46,7 @@
 - BLUEPRINT review complete as documents (guide: `.claude/design/blueprint_revision/GUIDE.md`; remains: the owner's reading and the browser checks of its section 3). Test Lab review running (branch `task/lab-review`, worktree `.claude/worktrees/lab-review`).
 - Fallback reviews:
   - BLUEPRINT review: step 1 done; resume at step 2 (`.claude/design/blueprint_revision/SUBTASKS.md`).
-  - Test Lab review: not started.
+  - Test Lab review: complete as documents (merged `ff8205e8`; guide `.claude/design/lab_revision/GUIDE.md`; 40 defects listed, none fixed; nothing decided).
 - Channel: last block of the coordinator M420; next free M424 (the review session used M421 to M423).
 
 ## OPEN STATE 2026-11-20, 16:50 (older)
