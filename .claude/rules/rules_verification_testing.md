@@ -72,6 +72,7 @@ Two distinct temporary directories exist at the project root. Their purposes are
 - `./tmp/` is **reserved exclusively for `@verify` outputs** — results the agent declares to the user as ready for inspection. Writing agent-internal scratch to `./tmp/` is a protocol violation.
 - Both directories are persistent and git-ignored. Neither is scanned by the embedding engine.
 - When promoting an agent-internal result to user-review status (i.e., the test passed headlessly and is ready for `@verify`), the agent MUST copy the artifact from `./tmpAI/` to `./tmp/` and then declare the `./tmp/` path per section 3.
+- **No permanent document stays only in `tmpAI/` or `tmp/`** (Eve, 2026-11-21, ledger `D-0419`; her words: "no document that is permanent should be left in tmp"). Both folders are scratch and are not in git. [ADDED by an agent, not Eve's words: a document is permanent when a decision rests on it or when a task or a ledger line names it as its source; where each such document belongs (the design, the knowledge, an archive of the study) is being listed for her; nothing is moved before she has seen the list.]
 
 ## 7. Failure Test Mandate (ADR-034)
 
