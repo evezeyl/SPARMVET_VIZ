@@ -4,6 +4,14 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
+## OPEN STATE 2026-11-21, 07:30
+
+- HOME Data Import format check merged into `dev` (two reviews). Controls on head `076dae89`: 13,406 headless passed; 453 browser passed with 1 known failure (also fails on `dev`) and 1 load flake (passed alone twice); 9/9 app features start.
+- `dependency_index.md` to regenerate (not yet done).
+- Provisional points of the merge (not the owner's decisions): the refusal for a recipe imported from a bundle; the refusal in a deployment that finds data files by table name (`by_dataset_id`); the refusal by file name; the wording of the messages.
+- Waits for the owner: DATA-IMPORT-OVERWRITE (an upload replaces the data file with no copy of the old one); the three provisional refusals above; the message wording (HOME-DATA-IMPORT-MESSAGES-WORDS).
+- New open entries in `tasks.md`: HOME-DATA-IMPORT-MESSAGES-WORDS, HOME-DATA-IMPORT-HANDLER-TEST, HOME-SMOKE-PREVIEW-FILTER-FAILS (the browser test `test_a_preview_filter_never_changes_the_plot` fails alone on `dev` `a9ec41dd` and on the branch; cause not investigated).
+
 ## OPEN STATE 2026-11-21, 04:35
 
 - dev head `ff8205e8` (Test Lab review merged as documents), plus the records commit that follows this block. Both fallback reviews are complete as documents: BLUEPRINT `.claude/design/blueprint_revision/GUIDE.md` (merged `52c4bcfa`), Test Lab `.claude/design/lab_revision/GUIDE.md` (merged `ff8205e8`). Remains for both: the owner's reading and the verifications of section 3 of each guide.

@@ -8,7 +8,7 @@ for data by name, and these files must never be found by that search.
 
 ## Before you start
 
-A **successful** import overwrites the data file named in the data analysis recipe (`source.path`), which is a
+A **successful** import overwrites the data file the app reads for that dataset (the recipe's `source.path` in this setup), which is a
 tracked file in `assets/test_data/1_test_data_ST22_dummy/`. After testing, restore the data:
 
 ```bash
@@ -17,6 +17,8 @@ git restore assets/test_data/
 
 Use the `developer.yaml` configuration and the data analysis recipe `1_test_data_ST22_dummy`.
 
+The check is the ingestion's own read of the file (the exact column headers of the recipe, then the declared types). Several files in one Apply are checked first: if one is refused, none is written. CSV and Excel files are refused with a plain line (convert them to a tab-separated file first).
+
 ## The files
 
 | File | Assign to dataset | What should happen today |
@@ -24,11 +26,11 @@ Use the `developer.yaml` configuration and the data analysis recipe `1_test_data
 | `FastP_valid_changed.tsv` | FastP | **Accepted.** Every `total_reads` becomes 1,000,000; plots that use FastP data change. (HOM-34) |
 | `Bracken_valid_changed.tsv` | Bracken | **Accepted.** Every `proportion_1` becomes 25.0. Upload together with the FastP file for HOM-36 (two files, two dropdowns, both apply). |
 | `FastP_ok_extra_column.tsv` | FastP | **Accepted.** An extra column is ignored. |
-| `FastP_error_missing_column.tsv` | FastP | **Rejected**: "Missing columns: ['total_reads']", hint "Did you mean ['total_reads_after']?". Nothing is written. (HOM-35) |
-| `FastP_error_misspelled_header.tsv` | FastP | **Rejected**: `total_reads` is spelled `total_readx`; hint suggests the name. Nothing is written. (HOM-35) |
-| `FastP_error_wrong_delimiter.tsv` | FastP | **Rejected**: commas instead of tabs, so almost every column is "missing". Nothing is written. (HOM-35) |
-| `FastP_error_no_header.tsv` | FastP | **Rejected**: the first data row is read as the header. Nothing is written. (HOM-35) |
-| `FastP_gap_text_in_numeric_column.tsv` | FastP | **Rejected**: text ("abc") in `total_reads`, which the data analysis recipe declares numeric: "Values do not match the data analysis recipe types. column 'total_reads' (numeric): 'abc'". Nothing is written. (issue #11) Numbers written as text are still accepted for `categorical` and `utf8` columns. |
+| `FastP_error_missing_column.tsv` | FastP | **Rejected**, with the ingestion's own reason: "Column(s) ['total_reads'] declared in input_fields for 'FastP' not found in the source file (expected file headers: ['total_reads'])". Nothing is written. (HOM-35) |
+| `FastP_error_misspelled_header.tsv` | FastP | **Rejected**: `total_reads` is spelled `total_readx`; the same reason as above (expected file headers: ['total_reads']). Nothing is written. (HOM-35) |
+| `FastP_error_wrong_delimiter.tsv` | FastP | **Rejected**: commas instead of tabs, so the whole header is one column and every declared column is "not found" (the reason lists them and the headers expected). Nothing is written. (HOM-35) |
+| `FastP_error_no_header.tsv` | FastP | **Rejected**: the first data row is read as the header, so the declared columns are "not found". Nothing is written. (HOM-35) |
+| `FastP_gap_text_in_numeric_column.tsv` | FastP | **Rejected**: text ("abc") in `total_reads`, which the data analysis recipe declares `Float64`: "The column 'total_reads' is declared as Float64. The data holds the value 'abc', which cannot be read as that type." Nothing is written. (issue #11) |
 
 ## Which plots should change after a valid import
 

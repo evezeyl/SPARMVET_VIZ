@@ -114,7 +114,7 @@ class ConfigManager:
             #   Without unnesting → data_schemas.amr_data.input_fields.input_fields: {...}  ← wrong
             #   With unnesting    → data_schemas.amr_data.input_fields: {...}               ← correct
             # This is WHY data analysis recipes work even when fragment files have wrapper keys.
-            # The ingestor, MetadataValidator, and DataWrangler all rely on this
+            # The ingestor and DataWrangler both rely on this
             # behaviour — do NOT remove it without updating those layers.
             # `wrangling` and `spec` are not keys of a recipe any more (D-0250, D-0237): a fragment under them is no longer unwrapped.
             # `steps` is not in the list: a tier file `steps: [...]` included under `tier1` holds the content of the tier (D-0250).

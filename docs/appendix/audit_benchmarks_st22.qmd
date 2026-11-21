@@ -66,8 +66,8 @@ Following the **Background Mandate (2026-04-17)**, all future script executions 
 ### Malformed Data Gatekeeping (ADR-034)
 The diagnostic layer now proactively validates incoming raw data against the `input_fields` contract.
 
-- **Gatekeeper:** `MetadataValidator (metadata_validator.py)` traps missing columns and provides heuristic suggestions using Levenshtein distance.
-- **Example Fix:** A typo like `sample_idd` in the data analysis recipe now triggers a `DataAnalysisRecipeError` with the hint: *"Did you mean ['sample_id']?"*
+- **Gatekeeper:** `DataIngestor (ingestor.py)` reads only the declared columns, found by the exact `original_name` (the slug when none is given), and fails when one is missing, naming the expected file headers. The Data Import panel runs this same read on an uploaded file before anything is written (`ingest_file`).
+- **Example Fix:** A typo like `sample_idd` in the file header now triggers an `IngestionError`: *"Column(s) ['sample_id'] declared in input_fields for 'X' not found in the source file (expected file headers: ['sample_id'])"*. (The earlier `MetadataValidator` and its "Did you mean" hint are removed.)
 
 ---
 

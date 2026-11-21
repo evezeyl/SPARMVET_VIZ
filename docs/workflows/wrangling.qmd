@@ -241,7 +241,6 @@ The full list of atomic decorators (68 on 2026-11-15, read from the registry; it
 | Component | Role | Input | Output | Location |
 | --- | --- | --- | --- | --- |
 | `DataWrangler (data_wrangler.py)` | Main function that takes raw data and metadata, applies the data contract, reads the YAML `data_wrangling` dictionary, and returns a tidy Polars DataFrame by executing those rules (e.g., `polars_str_split` followed by `polars_explode`). | Raw data (e.g., TSV files) and metadata (e.g., YAML config) | Tidy Polars DataFrame following the data contract | `transformer/data_wrangler.py` |
-| `MetadataValidator (metadata_validator.py)` | Validates the user-uploaded metadata against the data contract and applies any `metadata_wrangling` rules defined in the schema. | Metadata that doesn't meet the contract is rejected with an error message. | User-uploaded metadata (e.g., TSV) that is validated, wrangled, and ready for joining. | `transformer/metadata_validator.py` |
 | `DataAssembler (data_assembler.py)` | Orchestrates Phase 4 Relational Joins. Connects wrangled datasets (ingredients) using assembly steps. | Multiple wrangled LazyFrames | A unified Polars DataFrame with the columns published by the last step of the join's tier 1. | `transformer/data_assembler.py` |
 
 

@@ -55,6 +55,7 @@ app/
 │   ├── app_features_validator.py # AppFeaturesValidator — startup check of the flags.
 │   ├── data_analysis_recipe_info.py # info_lines() — renders a data analysis recipe's info: block.
 │   ├── data_analysis_recipe_validator.py # validate_data_analysis_recipe[_data]() — headless checks.
+│   ├── data_import_check.py    # Data Import: a file is accepted iff the ingestion reads it; all files or none; writes where the orchestrator reads (no Shiny).
 │   ├── t3_audit_engine.py      # Pure helpers for T3 (filter/drop application). No Shiny.
 │   ├── view_badge.py           # What a data/plot panel shows (e.g. "T2 identical to T1").
 │   ├── notification_utils.py   # make_notifier() — shared notification/alert helper.

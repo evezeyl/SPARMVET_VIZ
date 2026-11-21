@@ -1,5 +1,5 @@
 # @deps
-# provides: function:tier2_parts, function:tier3_parts, function:tier3_frames, class:JoinParts, method:ingredient_parts, method:join_parts (the engine, the steps and the assembler of a tier: read by the build and by the plan of every place), pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3 (stores the table of a plot with tier-3 steps by its key, D-0343), function:tier3_path_for, constant:TIER3_KEY_META, function:plot_read_error_text, method:prepare_ingredient, method:read_source, method:locate_dataset_file, method:get_source_files, function:compute_data_analysis_recipe_keys, method:_plot_key_now (the key of the table of a plot now, reading only the data files that table reads: the last check of a Tier 3 store)
+# provides: function:tier2_parts, function:tier3_parts, function:tier3_frames, class:JoinParts, method:ingredient_parts, method:join_parts (the engine, the steps and the assembler of a tier: read by the build and by the plan of every place), pipeline:materialize_tier1, pipeline:materialize_tier2, pipeline:materialize_tier3 (stores the table of a plot with tier-3 steps by its key, D-0343), function:tier3_path_for, constant:TIER3_KEY_META, function:plot_read_error_text, method:prepare_ingredient, method:read_source, method:locate_dataset_file, method:file_place (where Data Import writes a dataset file: the place locate_dataset_file reads), method:get_source_files, function:compute_data_analysis_recipe_keys, method:_plot_key_now (the key of the table of a plot now, reading only the data files that table reads: the last check of a Tier 3 store)
 # mirrors: libs/transformer/tests/debug_assembler.py
 # consumes: app/modules/build_failure.py (the plain error of a build that failed: table, tier, step), libs/ingestion/src/ingestion/ingestor.py, libs/utils/src/utils/recipe_tiers.py (collection_body, audit_step_places), app/modules/engine_registry.py (data_entry: the engine that runs a tier, D-0219), libs/utils/src/utils/recipe_tiers.py (plot_entry, tier3_steps), libs/transformer/src/transformer/anchor.py, app/modules/cache_keys.py (collection_tier2_key: the one place that makes the tier-2 key; ENGINE_CACHE_VERSION: the mark written into each stored table; DataAnalysisRecipeKeys.tier1_key_of: the key of each stored table, ADR-101; dataset_file_hashes)
 # consumed_by: app/modules/plan_composer.py (ingredient_parts, join_parts, tier2_parts, tier3_parts, tier3_frames: the plan of every place composed from the build's own functions, LBFB step 0b), app/modules/opening_build.py (materialize_tier1/2/3: the opening of a recipe), app/tests/test_read_source.py (read_source: one source table as the ingestion reads it, for the Source view of HOME, D-0310), app/src/server.py, app/handlers/home_theater.py (materialize_tier3: the plot and T3 table base; plot_read_error_text: the plot name on a read failure), app/handlers/export_handlers.py (materialize_tier3), app/modules/gallery_examples.py, assets/scripts/golden_baseline.py, assets/scripts/recipe_pictures.py, app/handlers/blueprint_handlers.py, app/modules/bundle_importer.py, app/modules/data_analysis_recipe_validator.py, app/tests/test_tier3_store.py, app/tests/test_build_failure_names.py, app/modules/audit_run.py (materialize_tier1/2/3 with a handed recipe: the audit copy)
@@ -182,11 +182,31 @@ class DataOrchestrator:
         imported = self.import_data_dir(data_analysis_recipe_id)
         if imported is not None:
             return find_dataset_file(imported, ds_id)
-        source = ds_schema.get("source") or {}
-        if not self.discover_by_dataset_id and source.get("type") in ("local_tsv", "local_parquet") and source.get("path"):
-            declared = Path(source["path"])
+        declared = self._declared_path(ds_schema)
+        if declared is not None:
             return declared if declared.exists() else None
         return find_dataset_file(self.raw_data_dir, ds_id)
+
+    def _declared_path(self, ds_schema: dict) -> Path | None:
+        """The `source.path` of a schema when the lookup follows the recipe's path (development), else None."""
+        source = ds_schema.get("source") or {}
+        if not self.discover_by_dataset_id and source.get("type") in ("local_tsv", "local_parquet") and source.get("path"):
+            return Path(source["path"])
+        return None
+
+    def file_place(self, data_analysis_recipe_id: str | None, ds_id: str, ds_schema: dict) -> Path | None:
+        """Where the file of a dataset is, or where a file must be written so that `locate_dataset_file` finds it: the Data Import panel writes
+        exactly here, so what it writes is what the app reads (never a second rule for the place).
+
+        The file `locate_dataset_file` names when there is one; else the recipe's `source.path` (development lookup); else `<dataset id>.tsv` in
+        `raw_data`. None for a recipe imported from a bundle: the data of an import is only what its bundle carried (see `_read_source`).
+        Raises IngestionError when one id has both a .tsv and a .parquet."""
+        if self.import_data_dir(data_analysis_recipe_id) is not None:
+            return None
+        located = self.locate_dataset_file(data_analysis_recipe_id, ds_id, ds_schema)
+        if located is not None:
+            return located
+        return self._declared_path(ds_schema) or Path(self.raw_data_dir) / f"{ds_id}.tsv"
 
     def compute_data_analysis_recipe_keys(self, data_analysis_recipe_id: str,
                                           loaded: LoadedDataAnalysisRecipe | None = None) -> DataAnalysisRecipeKeys:

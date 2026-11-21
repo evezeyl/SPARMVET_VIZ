@@ -46,7 +46,7 @@
 | `pipeline/*.yaml` | Master configurations and nested data contracts | (Defs) → Pipeline state | `input_fields`, `tier1`, `tier2` |
 | `libs/*/src/*/registry.py` | Authority for valid Wrangling and Viz actions | Registry → Validation | `@register_action`, `@register_geom` |
 
-| `libs/transformer/tests/debug_assembler.py` | Assembly debug runner — mirrors orchestrator exactly | Data analysis recipe → `tmp/EVE_contracted_*.parquet` + `.tsv` | `DataWrangler.tier_steps`, `MetadataValidator`, join dtype norm |
+| `libs/transformer/tests/debug_assembler.py` | Assembly debug runner — mirrors orchestrator exactly | Data analysis recipe → `tmp/EVE_contracted_*.parquet` + `.tsv` | `DataWrangler.tier_steps`, join dtype norm |
 | `libs/viz_factory/tests/debug_gallery.py` | Headless plot renderer for data analysis recipe audit | Contracted parquet → PNG | Reads `tmp/EVE_contracted_*.parquet`; `VizFactory.render()` |
 | `.claude/knowledge/dependency_index.md` | **Forward/backward dependency map** for all tightly-coupled files | — | Check before modifying any indexed file; lists `provides` / `consumed_by` / sync risk pairs |
 
@@ -257,25 +257,10 @@ Do NOT call `reactive.invalidate()` directly or attempt to re-trigger individual
 
 ---
 
-## 13. MetadataValidator — Canonical dtype_map
+## 13. MetadataValidator (removed)
 
-`libs/transformer/src/transformer/metadata_validator.py` maps YAML `type:` string values to polars dtypes. The canonical map (as of 2026-05-02):
-
-```python
-dtype_map = {
-    "string": pl.Utf8, "numeric": pl.Float64, "categorical": pl.Categorical,
-    "date": pl.Date, "utf8": pl.Utf8, "character": pl.Utf8,
-    "float": pl.Float64, "int": pl.Int64, "integer": pl.Int64,
-    "bool": pl.Boolean, "boolean": pl.Boolean,
-    # PascalCase (polars canonical names, used in some data analysis recipes)
-    "Int64": pl.Int64, "Float64": pl.Float64, "String": pl.Utf8,
-    "Boolean": pl.Boolean, "Date": pl.Date, "Categorical": pl.Categorical,
-}
-```
-
-An unrecognised type string triggers `warnings.warn` — it does NOT silently default to string.
-
-**Do not add `.lower()` before lookup.** The map includes both lowercase aliases and PascalCase names explicitly. Lowercasing would break `"Int64"` → `"int64"` (not in map) and similar.
+> **REMOVED (2026-11-21, task data-import-format):** `libs/transformer/src/transformer/metadata_validator.py` and its `dtype_map` are gone. Types come from the recipe's declared Polars dtypes, applied by `ingestion.declared.apply_declared`; the Data Import panel checks an uploaded file with the ingestion's own read (`ingestion.ingestor.ingest_file`, `app/modules/data_import_check.py`).
+> **Tombstone expires:** Phase 38 (delete this block after two phases; task TOMBSTONE-METADATAVALIDATOR in `.claude/tasks/tasks.md`).
 
 ---
 

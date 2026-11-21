@@ -162,7 +162,7 @@ At the end of every session in which code, rule files, or data analysis recipes 
 
 Annotate files where a change has non-obvious ripple effects:
 - All Python modules that register actions or components (`@register_action`, `@register_plot_component`)
-- All core library modules (`data_assembler.py`, `data_wrangler.py`, `ingestor.py`, `orchestrator.py`, `metadata_validator.py`)
+- All core library modules (`data_assembler.py`, `data_wrangler.py`, `ingestor.py`, `orchestrator.py`)
 - All debug scripts that mirror production logic
 - All rule files (`.claude/rules/*.md`)
 - All assembly steps files (`assembly/*.yaml`)

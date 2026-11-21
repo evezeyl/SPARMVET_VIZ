@@ -82,7 +82,7 @@ Each library is independently installable and usable without the UI layer. If yo
 
 **Dependency model:** `libs/utils/` is the base layer (shared utilities; no cross-lib deps of its own). All other domain libraries must not import from each other — only from `libs/utils/` (declared explicitly in their `pyproject.toml`). See [Library Dependency Model](./docs/foundations/core_architecture_code.qmd#library-dependency-model) for details.
 
-- [**ingestion**](./libs/ingestion/): TSV/Excel discovery, schema normalization, MetadataValidator gatekeeper.
+- [**ingestion**](./libs/ingestion/): TSV/Excel discovery, schema normalization; `ingest_file` is the one read that also checks a file before Data Import replaces a data file.
 - [**transformer**](./libs/transformer/): The central wrangling and assembly engine (DataWrangler, DataAssembler).
 - [**viz_factory**](./libs/viz_factory/): Graphical composition and Plotnine orchestration.
 - [**viz_gallery**](./libs/viz_gallery/): Gallery persistence layer — bundles, index, example governance.

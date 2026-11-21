@@ -27,17 +27,16 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_data_import_server, function:import_error_block, output:data_import_ui, output:data_import_assignment_ui
-# consumes: app/modules/orchestrator.py, app/src/bootloader.py, transformer.metadata_validator, shiny
+# consumes: app/modules/orchestrator.py, app/modules/data_import_check.py (the check and the write; refreshes every table of the files replaced), app/src/bootloader.py, shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-052
 # @end_deps
 
-import shutil
 from pathlib import Path
 
-import polars as pl
 from shiny import reactive, render, ui
 
+from app.modules.data_import_check import Candidate, apply_import, refresh_replaced
 from app.src.bootloader import bootloader
 
 
@@ -45,8 +44,8 @@ from app.src.bootloader import bootloader
 def import_error_block(error: str):
     """Readable banner for a rejected import file (issue #14).
 
-    The validator joins the message and its hint with " — "; show them on separate lines so the
-    missing columns and the suggestion are easy to tell apart. Style: .spv-import-error.
+    The check joins the reason and the way out with " — "; show them on separate lines so the
+    reason and the suggestion are easy to tell apart. Style: .spv-import-error.
     """
     message, _, hint = error.partition(" — ")
     parts = [ui.div(message, class_="spv-import-error-message")]
@@ -152,7 +151,7 @@ def define_data_import_server(input, output, session, *,
             hint = (
                 "💡 Hold Ctrl (Windows/Linux) or ⌘ Cmd (Mac) to select multiple files."
                 if multi else
-                "Select a TSV/CSV metadata file to replace the active data analysis recipe source."
+                "Select a tab-separated (.tsv) file to replace the active data analysis recipe source."
             )
             upload_blocks.append(
                 ui.div(
@@ -165,6 +164,11 @@ def define_data_import_server(input, output, session, *,
                         accept=accept, multiple=multi,
                     ),
                     ui.tags.small(hint, class_="text-muted d-block spv-text-micro"),
+                    ui.tags.small(
+                        "The file must have the column headers the recipe reads from its data file. "
+                        "CSV and Excel files are refused: convert them to a tab-separated file first.",
+                        class_="text-muted d-block spv-text-micro",
+                    ),
                     # Assignment table + Apply rendered separately (stable DOM node)
                     ui.output_ui("data_import_assignment_ui"),
                     class_="mb-2 px-2",
@@ -260,110 +264,44 @@ def define_data_import_server(input, output, session, *,
             return
 
         _notify(
-            f"⏳ Validating and importing {len(pending)} file(s) — please wait…",
+            f"⏳ Checking {len(pending)} file(s) — please wait…",
             type="message", duration=8,
         )
 
-        cfg = active_cfg()
-        raw = cfg.raw_config
         data_analysis_recipe_id = safe_input(input, "data_analysis_recipe_id", bootloader.get_default_data_analysis_recipe())
         anchor_dir = bootloader.get_location("user_data") / "anchors"
 
-        from ingestion.declared import apply_declared
-        from transformer.metadata_validator import MetadataValidator
-        validator = MetadataValidator()
+        # The check is the ingestion's own read of each file, for its dataset, at the place the orchestrator reads
+        # (app/modules/data_import_check.py); every file is checked before any is written.
+        candidates = [
+            Candidate(name=entry["name"], tmp_path=Path(entry["tmp_path"]), ds_id=safe_input(input, f"data_import_assign_{i}", ""))
+            for i, entry in enumerate(pending)
+        ]
+        outcome = apply_import(orchestrator, data_analysis_recipe_id, candidates)
+        verdicts = outcome.verdicts
+        updated = [dict(entry, ds_id=v.ds_id, error=v.error) for entry, v in zip(pending, verdicts)]
 
-        any_error = False
-        updated = []
-
-        for i, entry in enumerate(pending):
-            ds_id = safe_input(input, f"data_import_assign_{i}", "")
-            entry = dict(entry, ds_id=ds_id, error="")
-
-            if not ds_id:
-                entry["error"] = "No dataset selected."
-                any_error = True
-                updated.append(entry)
-                continue
-
-            # Resolve input_fields contract for this dataset
-            all_schemas = {}
-            all_schemas.update(raw.get("data_schemas", {}))
-            if "metadata_schema" in raw:
-                all_schemas["metadata_schema"] = raw["metadata_schema"]
-            ds_schema = all_schemas.get(ds_id, {})
-            input_fields = ds_schema.get("input_fields", {})
-
-            # Read uploaded file
-            tmp = Path(entry["tmp_path"])
-            try:
-                name_lower = entry["name"].lower()
-                # Read as text: the declared types of the recipe are applied by `apply_declared` below, as at ingestion.
-                if name_lower.endswith((".xlsx", ".xls")):
-                    lf = pl.read_excel(tmp).lazy().with_columns(pl.all().cast(pl.String))
-                else:
-                    sep = "\t" if name_lower.endswith(".tsv") else ","
-                    lf = pl.scan_csv(tmp, separator=sep, infer_schema=False)
-            except Exception as e:
-                entry["error"] = f"Could not read file: {e}"
-                any_error = True
-                updated.append(entry)
-                continue
-
-            # Validate against contract
-            try:
-                validator.validate(lf, input_fields, context=f"[{ds_id}]")
-                apply_declared(lf, ds_id, ds_schema, input_fields)
-            except Exception as e:
-                tip = getattr(e, "tip", "")
-                entry["error"] = str(e) + (f" — {tip}" if tip else "")
-                any_error = True
-                updated.append(entry)
-                continue
-
-            # Determine target write path
-            source = ds_schema.get("source", {})
-            source_path = source.get("path")
-            if source_path:
-                target = Path(source_path)
-            else:
-                raw_data_dir = bootloader.get_location("raw_data")
-                ext = Path(entry["name"]).suffix or ".tsv"
-                target = raw_data_dir / f"{ds_id}{ext}"
-
-            try:
-                target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(tmp, target)
-            except Exception as e:
-                entry["error"] = f"Could not write to {target}: {e}"
-                any_error = True
-                updated.append(entry)
-                continue
-
-            # Bust the parquet cache so next render re-materializes
-            parquet_cache = anchor_dir / f"{ds_id}.parquet"
-            if parquet_cache.exists():
-                parquet_cache.unlink()
-            bootloader.set_cached_asset(data_analysis_recipe_id, ds_id, "anchor", "lf", None)
-
-            entry["error"] = ""
-            updated.append(entry)
-
-        _import_pending.set(updated)
-
-        if any_error:
-            n_err = sum(1 for e in updated if e.get("error"))
+        if not outcome.ok:
+            _import_pending.set(updated)
+            n_err = sum(1 for v in verdicts if not v.ok)
             _notify(
-                f"⚠️ {n_err} file(s) failed validation — see errors above. "
-                "Fix and re-upload the failing files.",
+                f"⚠️ Nothing was imported: {n_err} of {len(verdicts)} file(s) cannot be used — see the reasons above. "
+                "Fix or re-assign the files and apply again.",
                 type="warning", duration=8,
             )
-        else:
-            n = len(updated)
-            _import_pending.set([])
-            if data_refresh_trigger is not None:
-                data_refresh_trigger.set(data_refresh_trigger.get() + 1)
-            _notify(
-                f"✅ {n} file(s) imported — plots are refreshing now.",
-                type="success", duration=6,
-            )
+            return
+
+        # A file is replaced for every table that reads it, also when a later file could not be written: what changed is refreshed
+        if refresh_replaced(outcome, data_analysis_recipe_id, anchor_dir, bootloader.set_cached_asset) and data_refresh_trigger is not None:
+            data_refresh_trigger.set(data_refresh_trigger.get() + 1)
+
+        if outcome.write_error:
+            _notify(f"⚠️ {outcome.write_error}", type="warning", duration=10)
+            return
+
+        _import_pending.set([])
+        names = "; ".join(f"{v.name} -> {', '.join(v.tables)} ({path})" for v, path in zip(verdicts, outcome.written))
+        _notify(
+            f"✅ {len(outcome.written)} file(s) imported — plots are refreshing now. {names}",
+            type="success", duration=10,
+        )

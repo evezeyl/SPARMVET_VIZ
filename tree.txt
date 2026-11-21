@@ -22,6 +22,7 @@
 │   │   ├── app_features_validator.py
 │   │   ├── cache_keys.py
 │   │   ├── data_analysis_recipe_validator.py
+│   │   ├── data_import_check.py
 │   │   ├── deployment_error.py
 │   │   ├── exporter.py
 │   │   ├── gallery_viewer.py
@@ -61,7 +62,6 @@
 │   └── tests
 │       ├── audit_export_bundle.py
 │       ├── conftest.py
-│       ├── debug_data_import.py
 │       ├── debug_home_theater.py
 │       ├── debug_pipeline_connector.py
 │       ├── debug_session_flow.py
@@ -736,7 +736,6 @@
 │   │   │       ├── data_assembler.py
 │   │   │       ├── data_wrangler.py
 │   │   │       ├── __init__.py
-│   │   │       ├── metadata_validator.py
 │   │   │       ├── pipeline.py
 │   │   │       ├── registry.py
 │   │   │       └── utils

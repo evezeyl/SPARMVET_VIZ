@@ -6,7 +6,7 @@ carries a current @deps annotation block (ADR Session Law, workspace_standard.md
 
 A file is considered "load-bearing" if it contains @register_action,
 @register_plot_component, or is a core module (data_assembler.py,
-data_wrangler.py, ingestor.py, orchestrator.py, metadata_validator.py,
+data_wrangler.py, ingestor.py, orchestrator.py,
 data_analysis_recipe_navigator.py, schema_registry.py, bootloader.py, sidebar_registry.py).
 
 Usage:
@@ -24,7 +24,6 @@ CORE_MODULES = {
     "data_wrangler.py",
     "ingestor.py",
     "orchestrator.py",
-    "metadata_validator.py",
     "data_analysis_recipe_navigator.py",
     "schema_registry.py",
     "bootloader.py",

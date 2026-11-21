@@ -79,3 +79,6 @@ Chats_review_notes.md
 
 # Local issue drafts (read by Claude, never pushed)
 issue-drafts/
+
+# Data Import: a copy that was being written when it stopped
+*.import-tmp
