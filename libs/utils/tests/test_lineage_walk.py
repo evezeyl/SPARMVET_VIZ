@@ -613,3 +613,36 @@ def test_L006_a_tier_2_no_plot_reads_is_applied_nowhere_and_is_not_a_place():
     walk = run(recipe, tables, "T3:Pd", "sample_id")
     assert "T2:JU" not in walk.accounted and "T2:M" not in walk.accounted and [u.place for u in walk.unread] == ["T1:JU"]
     assert places(walk) == places(run(*F.tiers(), "T3:Pd", "sample_id"))
+
+
+# ----------------------------------------------------------------------------------------------------------------------------- the public accessor of how certain a link is
+
+def test_the_public_accessor_gives_certainty_notes_and_uncertain_ends_of_the_columns_linked_to_seeds():
+    """`LineageIndex.certainty_from` and `uncertain_ends` (the questions `utils.remove_from_all` asks; they replace its reading of the walk's protected members): for the
+    columns linked to some seeds, how many uncertain links lie on the best path, why, and which notes lie on it; and the columns a step the walk cannot read leaves."""
+    tables = {"A": F.table(sample_id=["S1", "S2"], v=["1", "2"])}
+    for step, cost, notes in ((F.with_columns(sample_id="pl.col('sample_id').str.to_lowercase()"), 0, ["recomputed_here"]), (F.str_split(["sample_id"], "-"), 1, []), (F.drop("v"), 0, [])):
+        recipe = F.recipe({"A": F.schema(["sample_id", "v"], [step], keys=["sample_id"])}, {}, {"P": F.plot("A")})
+        graph, plans = setup(recipe, tables)
+        index = LineageIndex(graph, plans)
+        seed = ("DS:A", 0, "sample_id")
+        within = index.component([seed])
+        result = index.certainty_from([seed], within)
+        assert set(result) == within and result[seed].cost == 0 and result[seed].certain and result[seed].notes == ()
+        end = ("T1:A", 1, "sample_id")
+        if cost == 0:
+            assert result[end].certain and [n.code for n in result[end].notes] == notes and result[end].reason is None
+            assert index.uncertain_ends(within) == []
+        else:
+            assert end in result and result[end].cost == 1 and not result[end].certain and result[end].reason.code == STEP_NOT_READ
+            assert index.uncertain_ends(within) == [], "the column is still there: its link is uncertain, it did not die"
+
+
+def test_the_public_accessor_names_the_uncertain_end_when_a_step_the_walk_cannot_read_makes_the_key_leave():
+    tables = {"A": F.table(sample_id=["S1", "S2"], v=["1", "2"])}
+    recipe = F.recipe({"A": F.schema(["sample_id", "v"], [F.unpivot(["sample_id"], ["v"])], keys=["sample_id"])}, {}, {"P": F.plot("A")})
+    graph, plans = setup(recipe, tables)
+    index = LineageIndex(graph, plans)
+    seed = ("DS:A", 0, "sample_id")
+    ends = index.uncertain_ends(index.component([seed]))
+    assert len(ends) == 1 and ends[0].in_node == "T1:A" and ends[0].reason.code == STEP_NOT_READ and ends[0].occ[2] == "sample_id"

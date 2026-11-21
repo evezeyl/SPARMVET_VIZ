@@ -54,7 +54,7 @@ class Demo:
         every = [pl.read_parquet(self.untouched.tables[p.table].t1_path)["sample_id"].unique().to_list() for p in self.option.places]
         self.victims = sorted(set.intersection(*[set(x) for x in every]))[:2]       # two ids: a list of values, not one
         self.audit = start_audit(self.loaded.raw, AUD)
-        self.written = rfa.apply(self.audit, self.option, self.victims, "resequenced: its results come later", plans=self.plans)
+        self.applied = rfa.apply(self.audit, self.option, self.victims, "resequenced: its results come later", plans=self.plans)
         self.run = run_audit(self.orch, RECIPE_ID, self.audit.recipe, self.anchors, root / "audit")
 
     def tables(self, run, table):
@@ -83,6 +83,19 @@ def test_places_that_the_key_reaches_through_steps_the_app_cannot_read_or_groups
     notes = {p.table: [n.code for n in p.notes] for p in demo.option.places if p.notes}
     assert set(notes["Summary"]) == {"unread_step_passed"} and notes["Summary_quality"][-1] == "one_row_per_group_after_this_step"
     assert all(not p.notes for p in demo.option.places if p.table in ("Quality_metrics", "FastP", "metadata_schema"))
+
+
+SELECTION_MAY_STAY = ["Summary", "Summary_quality", "Detailed_summary", "Quast_with_metadata", "Summary_phenotype_length_fragmentation", "QA_ST_with_NA"]
+
+
+def test_the_explicit_list_names_exactly_the_tables_where_the_key_passes_a_step_the_app_cannot_read_before_and_after_apply(demo):
+    """F1: on the demo the removal is PROVED to work only where the key passes steps the app reads; in these 6 tables it passes a step it cannot read (its plan shows the same name
+    and type, nothing more), so the list says "values may differ". The test of the data above shows that here the sample IS gone: the list is a statement of what is proved, not a failure."""
+    assert [m.table for m in demo.option.may_stay] == SELECTION_MAY_STAY
+    assert all(m.written and m.code == rfa.VALUES_UNPROVED and m.notes for m in demo.option.may_stay)
+    assert demo.option.unsure == ()
+    assert demo.applied.not_written == () and [m.table for m in demo.applied.may_differ] == SELECTION_MAY_STAY
+    assert all(rfa.may_stay_sentence(m) for m in demo.option.may_stay)
 
 
 def test_the_column_is_offered_only_when_it_is_the_declared_key_not_for_the_join_columns_of_the_recipe(demo):
@@ -130,7 +143,7 @@ def test_the_table_that_does_not_hold_the_key_is_what_it_was_and_the_originals_s
 
 def test_the_steps_are_one_per_reached_table_at_tier_1_in_the_audit_list_and_the_originals_lists_are_untouched(demo):
     steps = audit_copy.all_audit_steps(demo.audit.recipe)
-    assert [s.place for s in steps] == [p.place for p in demo.option.places] and list(demo.written) == [s.step_id for s in steps]
+    assert [s.place for s in steps] == [p.place for p in demo.option.places] and list(demo.applied.step_ids) == [s.step_id for s in steps]
     assert all(s.step["op"] == "not_in" and s.step["value"] == demo.victims and s.step["na"] == "keep" for s in steps)
     assert audit_copy.integrity_errors(demo.audit.recipe, demo.loaded.raw, demo.plans) == []
     assert demo.audit.recipe["data_schemas"]["Summary"]["tier1"]["steps"] == demo.loaded.raw["data_schemas"]["Summary"]["tier1"]["steps"]

@@ -57,9 +57,9 @@ Consumed by: libs/utils/src/utils/key_drop.py (the gate of a drop), libs/utils/t
 If deleted: the audit dialog has no way to list its places.
 
 # @deps
-# provides: function:walk, function:LineageIndex.drop_facts, class:LineageIndex, class:LineageError, class:ColumnNotFound, class:StartPlanFailed
+# provides: function:walk, function:LineageIndex.drop_facts, function:LineageIndex.certainty_from, function:LineageIndex.uncertain_ends, class:LineageIndex, class:LineageError, class:ColumnNotFound, class:StartPlanFailed
 # consumes: libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/step_effects.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/lineage_records.py
-# consumed_by: libs/utils/src/utils/key_drop.py, libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py, libs/utils/tests/test_lineage_walk_properties.py, libs/utils/tests/test_lineage_drop.py
+# consumed_by: libs/utils/src/utils/key_drop.py, libs/utils/src/utils/remove_from_all.py (certainty_from, uncertain_ends), libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py, libs/utils/tests/test_lineage_walk_properties.py, libs/utils/tests/test_lineage_drop.py
 # doc: .claude/knowledge/decision_ledger.md (D-0347, D-0346, D-0351, D-0195, D-0353, D-0352, D-0357, D-0337, D-0356, D-0355, D-0358, D-0297), .claude/design/home_audit_steps.md
 # @end_deps
 """
@@ -73,7 +73,7 @@ from typing import Any, Dict, FrozenSet, Iterable, List, Mapping, Optional, Sequ
 
 from utils import action_names, join_keys, step_effects as fx
 from utils.lineage_records import (
-    AGGREGATED, CANNOT_FOLLOW, CAST, CONSEQUENCE_DISAGREES, CREATED, FROM_PLAN, FROM_READING, GREY, GROUPED, JOIN_LINKED, KEY_NEEDED_LATER, LEVELS, LINEAGE,
+    Certainty, AGGREGATED, CANNOT_FOLLOW, CAST, CONSEQUENCE_DISAGREES, CREATED, FROM_PLAN, FROM_READING, GREY, GROUPED, JOIN_LINKED, KEY_NEEDED_LATER, LEVELS, LINEAGE,
     BUILD_FAILS, CLASH_NO_LONGER, NO_STEP_LIST, NOTE_AGGREGATED, NOTE_ANOTHER_TYPE, NOTE_DECLARED_ENTITY_KEY, NOTE_ONE_ROW_PER_GROUP, NOTE_RECOMPUTED, NOTE_UNREAD_STEP_PASSED,
     PLAN_FAILED, PLOT_USES_COLUMN, READING_DISAGREES, RE_CREATED, RECOMPUTED, RENAMED, SEVERAL_COLUMNS, SOURCE, STEP_NAMES_COLUMN, STEP_NOT_READ, T1, T2, T3,
     TICK, UNCHANGED, UNKNOWN, WHY_DECLARED_KEY_NOT_REACHED, Consequence, DropFacts, Gone, Hop, KeyNeed, Line, Note, Occurrence, Outside, Reach, Reason, SourceColumn,
@@ -410,6 +410,26 @@ class LineageIndex:
                     best[other] = (step, link, occ)
                     heapq.heappush(heap, (step, self._sort_key(other), other))
         return best
+
+    def certainty_from(self, seeds: Iterable[Occ], within: Set[Occ]) -> Dict[Occ, Certainty]:
+        """For every column of `within` that is linked to a seed: how surely (`Certainty`: the fewest uncertain links on the best path from any seed, the reason of the first uncertain link,
+        the notes on that path). The same costs and paths as the walk uses for its lines; a public question so that a caller (`utils.remove_from_all`) need not read the protected
+        members. `within` is a set of columns the caller got from `component` or `lineage_set`; a column outside it is not asked about. Changes nothing."""
+        best: Dict[Occ, Certainty] = {}
+        for seed in seeds:
+            costs = self._costs(seed, within)
+            for occ, (cost, _link, _before) in costs.items():
+                if occ in best and best[occ].cost <= cost:
+                    continue
+                path = self._path(occ, costs)
+                reason = next((l.reason for l, _ in path if not l.certain and l.reason is not None), None) if cost else None
+                notes = tuple(Note(l.note.code, l.note.params + (("direction", "forward" if forward else "backward"),)) for l, forward in path if l.note is not None)
+                best[occ] = Certainty(cost, reason, notes)
+        return best
+
+    def uncertain_ends(self, within: Set[Occ]) -> List[_Dead]:
+        """The columns of `within` that a step the walk cannot read leaves without saying where they went (a column that vanishes with no certain cause): the walk cannot follow them further."""
+        return [d for d in self._dead if d.occ in within and not d.certain]
 
     # ------------------------------------------------------------------ the trail of an occurrence
     def _trail(self, occ: Occ, within: Set[Occ]) -> Tuple[str, Tuple[Hop, ...], Tuple[SourceColumn, ...]]:

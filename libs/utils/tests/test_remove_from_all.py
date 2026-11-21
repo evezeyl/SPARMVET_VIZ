@@ -182,6 +182,7 @@ def test_a_table_that_loses_the_key_in_its_tier_1_is_not_reached_and_the_reason_
                         "G": fx.schema(["sample_id", "n"], [fx.group_by(["n"], c="pl.col('sample_id').count()")], keys=["sample_id"])}, {}, {"P": fx.plot("A"), "Pg": fx.plot("G")})
     option = describe(recipe, tables)
     assert places_of(option) == ["T1:A"] and not_reached(option) == {"G": rfa.KEY_GONE_AT_TIER1}
+    assert [m.table for m in option.may_stay] == ["G"] and option.may_stay[0].written is False, "the sample may stay in G: said in the explicit list (F1)"
 
 
 def test_a_key_that_a_rename_changes_is_followed_and_each_place_has_its_own_name():
@@ -213,6 +214,7 @@ def test_a_key_recreated_under_another_name_by_a_computed_column_is_not_followed
                         "E": fx.schema(["sample_id", "g"], keys=["sample_id"])}, {}, {"P": fx.plot("A"), "Pe": fx.plot("E")})
     option = describe(recipe, tables)
     assert places_of(option) == ["T1:E"] and not_reached(option) == {"A": rfa.KEY_GONE_AT_TIER1}
+    assert [n.table for n in option.unsure] == ["A"], "a doubt, not information (F1 a)"
 
 
 def test_a_table_the_engine_cannot_plan_is_listed_as_unsure_never_guessed():
@@ -258,6 +260,82 @@ def test_a_table_that_recomputes_the_key_carries_the_note_so_the_user_knows_the_
     assert [n.code for n in {p.table: p for p in grouped.places}["A"].notes] == ["one_row_per_group_after_this_step"]
 
 
+# ---- F1 (review of 2026-11-21): a table where the values given may stay is in ONE explicit list, before and after `apply` ----
+
+
+def _copied_key():
+    """The reviewer's case 4a: table A copies the key into `sid` with a computed column and drops `sample_id`; E keeps it."""
+    tables = {"A": fx.table(sample_id=["S1", "S2"], v=[1, 2]), "E": fx.table(sample_id=["S1", "S2"], g=[1, 2])}
+    return fx.recipe({"A": fx.schema(["sample_id", "v"], [fx.with_columns(sid="pl.col('sample_id')"), fx.drop("sample_id")], keys=["sample_id"]),
+                      "E": fx.schema(["sample_id", "g"], keys=["sample_id"])}, {}, {"P": fx.plot("A"), "Pe": fx.plot("E")}), tables
+
+
+def _lowercased_key():
+    """The reviewer's case 4b: A recomputes the key under its own name (lower case): a step is written there and `S2` matches nothing."""
+    tables = {"A": fx.table(sample_id=["S1", "S2"], v=[1, 2])}
+    return fx.recipe({"A": fx.schema(["sample_id", "v"], [fx.with_columns(sample_id="pl.col('sample_id').str.to_lowercase()")], keys=["sample_id"])}, {}, {"P": fx.plot("A")}), tables
+
+
+def test_a_copied_key_is_in_the_explicit_list_before_and_in_what_apply_returns_and_the_sample_really_stays():
+    recipe, tables = _copied_key()
+    option = describe(recipe, tables)
+    assert places_of(option) == ["T1:E"]
+    assert [(m.table, m.place, m.code, m.written) for m in option.may_stay] == [("A", "T1:A", rfa.KEY_GONE_AT_TIER1, False)], "named before apply"
+    assert [n.table for n in option.unsure] == ["A"], "a doubt, so `unsure` holds it too"
+    audit = start_audit(recipe, AUD)
+    applied = rfa.apply(audit, option, ["S2"], "r", plans=oracle.replay(recipe, tables).plans)
+    assert [(m.table, m.written) for m in applied.not_written] == [("A", False)] and applied.may_differ == (), "named in what apply returns"
+    after = oracle.replay(folded(audit.recipe), tables)
+    assert "S2" in after.end("T1:A")["sid"].to_list() and "S2" not in after.end("T1:E")["sample_id"].to_list(), "the table in the list is really the one that kept the sample"
+
+
+def test_a_recomputed_key_is_in_the_explicit_list_as_written_but_unproved_and_the_sample_really_stays():
+    recipe, tables = _lowercased_key()
+    option = describe(recipe, tables)
+    assert places_of(option) == ["T1:A"], "the step is written there"
+    assert [(m.table, m.code, m.written) for m in option.may_stay] == [("A", rfa.VALUES_UNPROVED, True)]
+    assert [n.code for n in option.may_stay[0].notes] == ["recomputed_here"] and option.unsure == ()
+    audit = start_audit(recipe, AUD)
+    applied = rfa.apply(audit, option, ["S2"], "r", plans=oracle.replay(recipe, tables).plans)
+    assert applied.not_written == () and [(m.table, m.written) for m in applied.may_differ] == [("A", True)] and len(applied.step_ids) == 1
+    assert oracle.replay(folded(audit.recipe), tables).end("T1:A")["sample_id"].to_list() == ["s1", "s2"], "nothing was removed: the list told the truth"
+
+
+@pytest.mark.parametrize("step, note", [
+    (fx.with_columns(sample_id="pl.col('sample_id').str.to_uppercase()"), "recomputed_here"),
+    (fx.group_by(["v"], sample_id="pl.col('sample_id').first()"), "aggregated_here"),
+])
+def test_every_note_that_says_the_values_there_may_differ_puts_the_table_in_the_list(step, note):
+    option = _with_one_step_in_a([step])
+    assert [(m.table, m.written) for m in option.may_stay] == [("A", True)] and note in [n.code for n in option.may_stay[0].notes]
+
+
+def test_a_table_the_app_could_not_follow_or_plan_is_in_the_list_as_not_written():
+    for steps, code in (([fx.str_split(["sample_id"], "-")], rfa.UNCERTAIN_LINK), ([fx.unpivot(["sample_id"], ["v"])], rfa.NOT_FOLLOWED)):
+        option = _with_one_step_in_a(steps)
+        assert [(m.table, m.code, m.written) for m in option.may_stay] == [("A", code, False)], code
+
+
+def test_the_list_is_empty_when_every_value_is_proved_and_it_is_in_graph_order_when_not():
+    recipe, tables = fx.tiers(u_declares_key=True)
+    option = describe(recipe, tables)
+    assert option.may_stay == () and rfa.apply(start_audit(recipe, AUD), option, ["S2"], "r", plans=oracle.replay(recipe, tables).plans).may_differ == ()
+    plain = describe(*fx.chain())
+    assert plain.may_stay == ()
+    tables = {"A": fx.table(sample_id=["S1"], v=[1]), "B": fx.table(sample_id=["S1"], w=[1]), "C": fx.table(sample_id=["S1"], x=[1])}
+    recipe = fx.recipe({"A": fx.schema(["sample_id", "v"], [fx.with_columns(sample_id="pl.col('sample_id').str.to_lowercase()")], keys=["sample_id"]), "B": fx.schema(["sample_id", "w"], keys=["sample_id"]),
+                        "C": fx.schema(["sample_id", "x"], [fx.with_columns(sample_id="pl.col('sample_id').str.to_lowercase()")], keys=["sample_id"])}, {}, {"P": fx.plot("A")})
+    assert [m.table for m in describe(recipe, tables).may_stay] == ["A", "C"]
+
+
+def test_the_sentences_for_the_list_say_where_and_why_in_plain_words():
+    for build in (_copied_key, _lowercased_key):
+        recipe, tables = build()
+        item = describe(recipe, tables).may_stay[0]
+        sentence = rfa.may_stay_sentence(item)
+        assert item.table in sentence and "may stay" in sentence and sentence[0].isupper() and "None" not in sentence
+
+
 def test_a_key_in_two_columns_of_one_table_is_unsure_never_guessed():
     """B declares `sample_id` as its key and a join equates A's key with B's `ref`: the key family has two columns in B, and in the join (`sample_id`, `sample_id_right`).
     Which one a removal should name is not decided by the recipe: both tables are listed as unsure and not written."""
@@ -292,7 +370,7 @@ def _resequenced(recipe, tables, ids=("S2",), comment="resequenced: results come
 def test_a_resequenced_sample_is_gone_from_every_reached_table_and_every_table_built_from_them_and_nothing_else_changed():
     recipe, tables = fx.tiers(u_declares_key=True)
     option, audit, written = _resequenced(recipe, tables)
-    assert written == tuple(f"audit_{AUD}_{k}" for k in range(1, len(option.places) + 1))
+    assert written.step_ids == tuple(f"audit_{AUD}_{k}" for k in range(1, len(option.places) + 1))
     before, after = oracle.replay(recipe, tables), oracle.replay(folded(audit.recipe), tables)
     nodes = sorted({n for (n, _) in before.frames if not n.startswith("DS:")})
     assert nodes, "the oracle replayed tables"
@@ -422,7 +500,7 @@ def test_apply_twice_gives_two_sets_of_steps_with_their_own_ids_never_a_silent_m
     option, audit = describe(recipe, tables), start_audit(recipe, AUD)
     first = rfa.apply(audit, option, ["S2"], "r1", plans=plans)
     second = rfa.apply(audit, option, ["S3"], "r2", plans=plans)
-    assert len(first) == len(second) == 3 and set(first).isdisjoint(second)
+    assert len(first.step_ids) == len(second.step_ids) == 3 and set(first.step_ids).isdisjoint(second.step_ids)
     assert len(audit_copy.all_audit_steps(audit.recipe)) == 6
 
 
@@ -430,7 +508,7 @@ def test_a_single_table_recipe():
     tables = {"A": fx.table(sample_id=["S1", "S2"], v=[1, 2])}
     recipe = fx.recipe({"A": fx.schema(["sample_id", "v"], keys=["sample_id"])}, {}, {"P": fx.plot("A")})
     option, audit, written = _resequenced(recipe, tables, ("S1",))
-    assert places_of(option) == ["T1:A"] and len(written) == 1
+    assert places_of(option) == ["T1:A"] and len(written.step_ids) == 1
     assert oracle.replay(folded(audit.recipe), tables).end("T1:A")["sample_id"].to_list() == ["S2"]
 
 

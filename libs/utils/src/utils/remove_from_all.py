@@ -23,6 +23,12 @@ What this module answers, for a recipe and a column (`describe`):
    `na: keep` (a row with no key is not the sample removed: the rule of the filter dialog for "none of", `utils.na_choice.default_na`), in the second list `audit_steps`.
    It is all or nothing: a value that does not fit the type of the key in one table refuses the whole apply and names that table.
    `describe` never applies anything: the option is off until an explicit call of `apply`.
+5. What the logic cannot prove (F1, review of 2026-11-21): `RemoveFromAll.may_stay` is the ONE explicit list of every table where the values given may stay after the removal, in graph
+   order: a table where nothing is written (the key is not followed, not planned, in several columns or gone at the end of tier 1: copied under another name, dropped, grouped away)
+   and a table where a step IS written but the key passes a step that rewrites values (a recompute, an aggregate) or a step the app cannot read, so the typed values may not match the
+   values there. No formula is evaluated: the logic says it cannot prove it. `apply` returns the same list split in `Applied.not_written` and `Applied.may_differ`, beside the step ids.
+   Why one list and not only `unsure`: a doubt that writes nothing and a step that may remove nothing are the same fact for the user ("the selection may stay in this table"); the
+   screen shows one list before and after, with the plain sentence of `may_stay_sentence` (PROVISIONAL words).
 
 NOT decided, therefore not done here: whether the option also reaches a source FILE that no recipe table reads (D-0416: "asked only if the build meets it"; a file the
 recipe does not declare is invisible to this logic; a declared table that nothing reads IS reached); whether the user can untick one table of the list in this option
@@ -43,8 +49,8 @@ Consumed by: libs/utils/tests/test_remove_from_all.py, app/tests/test_remove_fro
 If deleted: HOME has no way to offer "remove from all the data".
 
 # @deps
-# provides: function:describe, function:apply, function:removal_step, function:not_offered_sentence, class:RemoveFromAll, class:KeyPlace, class:NotReached, constant:WARNING, constant:NOT_OFFERED_CODES, constant:NOT_REACHED_CODES
-# consumes: libs/utils/src/utils/lineage_walk.py (LineageIndex: the links between the columns), libs/utils/src/utils/recipe_graph.py (key_families, declared_entity_keys, plots_reading), libs/utils/src/utils/declared_plans.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/audit_copy.py (add_step, remove_step), libs/utils/src/utils/filter_values.py (check_filter), libs/utils/src/utils/na_choice.py (default_na), libs/utils/src/utils/recipe_tiers.py (without_audit_steps), libs/utils/src/utils/lineage_records.py (Reason)
+# provides: function:describe, function:apply, function:removal_step, function:not_offered_sentence, function:may_stay_sentence, class:RemoveFromAll, class:KeyPlace, class:NotReached, class:MayStay, class:Applied, constant:WARNING, constant:NOT_OFFERED_CODES, constant:NOT_REACHED_CODES, constant:VALUES_UNPROVED
+# consumes: libs/utils/src/utils/lineage_walk.py (LineageIndex: the links between the columns; certainty_from and uncertain_ends), libs/utils/src/utils/recipe_graph.py (key_families, declared_entity_keys, plots_reading), libs/utils/src/utils/declared_plans.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/audit_copy.py (add_step, remove_step), libs/utils/src/utils/filter_values.py (check_filter), libs/utils/src/utils/na_choice.py (default_na), libs/utils/src/utils/recipe_tiers.py (without_audit_steps), libs/utils/src/utils/lineage_records.py (Reason)
 # consumed_by: libs/utils/tests/test_remove_from_all.py, app/tests/test_remove_from_all_demo.py
 # doc: .claude/knowledge/decision_ledger.md (D-0415, D-0416, D-0313, D-0082, D-0355, D-0351), .claude/rules/ui_implementation_contract.md (section 8: the filter row and the value type rule), .claude/design/home_audit_steps.md
 # @end_deps
@@ -58,7 +64,7 @@ from utils import audit_copy, na_choice, recipe_tiers
 from utils.action_names import FILTER
 from utils.declared_plans import declared_plan_book
 from utils.filter_values import FilterValueError, check_filter
-from utils.lineage_records import PLAN_FAILED as WALK_PLAN_FAILED, Note, Reason
+from utils.lineage_records import Certainty, NOTE_AGGREGATED, NOTE_RECOMPUTED, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED as WALK_PLAN_FAILED, Note, Reason
 from utils.lineage_walk import LineageIndex, Occ
 from utils.plan_book import Plan, PlanBook, PlanFailure
 from utils.recipe_graph import RecipeGraph, RecipeGraphError, build_graph
@@ -82,7 +88,15 @@ NOT_FOLLOWED = "not_followed"                         # a step the app cannot re
 UNCERTAIN_LINK = "uncertain_link"                     # the key is linked to a column of this table only by a link the walk cannot prove
 SEVERAL_COLUMNS = "several_columns"                   # the key is in this table more than once (a table joined with itself)
 NOT_REACHED_CODES = (KEY_GONE_AT_TIER1, SAME_NAME_NOT_LINKED, PLAN_FAILED, NOT_FOLLOWED, UNCERTAIN_LINK, SEVERAL_COLUMNS)
-UNSURE_CODES = (PLAN_FAILED, NOT_FOLLOWED, UNCERTAIN_LINK, SEVERAL_COLUMNS)
+# The doubts: a table where the logic cannot say the key is there to be removed from. `KEY_GONE_AT_TIER1` is one (review of 2026-11-21, F1): a table built from one that holds the key
+# and that no longer has it at the end of its tier 1 (copied under another name, grouped away, dropped) may still hold the sample in another form. `SAME_NAME_NOT_LINKED` is not one
+# here: whether a same-named column with no declaration and no join is "the key" is the owner's question (P7), so it stays information.
+UNSURE_CODES = (PLAN_FAILED, NOT_FOLLOWED, UNCERTAIN_LINK, SEVERAL_COLUMNS, KEY_GONE_AT_TIER1)
+
+# A reached table where a step IS written and the logic still cannot prove that the values given will match the values there: the key passes a step that rewrites values under its own name
+# (a recompute, an aggregate) or a step the walk cannot read (its plan shows the name and type unchanged, nothing more). It is the one code of `MayStay` with `written` True.
+VALUES_UNPROVED = "values_unproved"
+UNPROVING_NOTES = (NOTE_RECOMPUTED, NOTE_AGGREGATED, NOTE_UNREAD_STEP_PASSED)
 
 
 @dataclass(frozen=True)
@@ -112,10 +126,34 @@ class NotReached:
 
 
 @dataclass(frozen=True)
+class MayStay:
+    """A table where the selection MAY STAY after the removal: the one explicit list that a caller must show before and after (`RemoveFromAll.may_stay`, `Applied`). `written` False: no step
+    is written there (the key is not followed or is gone: `code` is a code of `UNSURE_CODES`); `written` True: a step is written and the values there may differ from the values given
+    (`code` is `VALUES_UNPROVED`, `notes` say why: a recompute, an aggregate or a step the app cannot read). `reason` is the walk's reason as data (None when none)."""
+    table: str
+    place: str
+    code: str
+    written: bool
+    reason: Optional[Reason] = None
+    notes: Tuple[Note, ...] = ()
+
+
+@dataclass(frozen=True)
+class Applied:
+    """What `apply` did: the ids of the steps written (in the order of `option.places`), the tables where NOTHING was written and the selection may stay (`not_written`), and the tables
+    where a step was written but the values there may differ from the values given (`may_differ`). Both lists are the `may_stay` list of the option, split by `written`."""
+    step_ids: Tuple[str, ...]
+    not_written: Tuple[MayStay, ...]
+    may_differ: Tuple[MayStay, ...]
+
+
+@dataclass(frozen=True)
 class RemoveFromAll:
     """The option, described and not applied. `offered` False: `not_offered` says why and `places` is empty. `default_on` is always False (D-0416 point 2). `key_names` are the
     names of the entity key family (a declared key and the columns joins equate with it). `places` is the list of the tables it reaches, known before anything is applied
-    (D-0416 point 3); `not_reached` the tables it does not reach and the reason; `place_asked` the place the column was asked at (None: judged by name)."""
+    (D-0416 point 3); `not_reached` the tables it does not reach and the reason; `place_asked` the place the column was asked at (None: judged by name). `may_stay` is the ONE explicit
+    list of every table where the logic cannot prove that the values given will be removed (a doubt that writes nothing, or a step written where the values may differ), in graph order:
+    a caller shows it before the user confirms and after `apply` (F1 of the review of 2026-11-21)."""
     column: str
     place_asked: Optional[str]
     offered: bool
@@ -125,6 +163,7 @@ class RemoveFromAll:
     key_names: Tuple[str, ...]
     places: Tuple[KeyPlace, ...]
     not_reached: Tuple[NotReached, ...]
+    may_stay: Tuple[MayStay, ...] = ()
 
     @property
     def unsure(self) -> Tuple[NotReached, ...]:
@@ -163,29 +202,6 @@ def _refused(column: str, place: Optional[str], code: str, params: Tuple[Tuple[s
     return RemoveFromAll(column, place, False, Reason(code, params), WARNING, False, (), (), ())
 
 
-class _Index(LineageIndex):
-    """The lineage links of a recipe, with the two questions this option needs that `LineageIndex` keeps to itself: how certain is the link from the key to a column, and which
-    uncertain ends there are. A subclass, because they read its protected state (`_costs`, `_path`, `_dead`); the links themselves are the walk's, never rebuilt."""
-
-    def reached(self, seeds: Sequence[Occ], allowed: Set[Occ]) -> Dict[Occ, Tuple[int, Optional[Reason], Tuple[Note, ...]]]:
-        """For every column linked to a seed: (the fewest uncertain links on a path from a seed, the reason of the first uncertain link of that path or None, the notes on that path)."""
-        best: Dict[Occ, Tuple[int, Optional[Reason], Tuple[Note, ...]]] = {}
-        for seed in seeds:
-            costs = self._costs(seed, allowed)
-            for occ, (cost, _link, _before) in costs.items():
-                if occ in best and best[occ][0] <= cost:
-                    continue
-                path = self._path(occ, costs)
-                reason = next((link.reason for link, _ in path if not link.certain and link.reason is not None), None) if cost else None
-                notes = tuple(Note(link.note.code, link.note.params + (("direction", "forward" if forward else "backward"),)) for link, forward in path if link.note is not None)
-                best[occ] = (cost, reason, notes)
-        return best
-
-    def uncertain_ends(self, allowed: Set[Occ]) -> List[Any]:
-        """The columns of `allowed` that a step the walk cannot read leaves: it cannot say where the key went."""
-        return [d for d in self._dead if d.occ in allowed and not d.certain]
-
-
 def _drawn(raw: Any) -> Tuple[Optional[RecipeGraph], Optional[str]]:
     try:
         return build_graph(recipe_tiers.without_audit_steps(raw) if isinstance(raw, dict) else raw), None
@@ -209,7 +225,7 @@ def describe(recipe: Any, column: str, *, plans: Optional[PlanBook] = None, plac
     if not any(declared.values()):
         return _refused(column, place, NO_ENTITY_KEY_DECLARED)
     every_declared = tuple(sorted({name for names in declared.values() for name in names}))
-    index = _Index(graph, plans if plans is not None else declared_plan_book(graph))
+    index = LineageIndex(graph, plans if plans is not None else declared_plan_book(graph))
     not_key = _refused(column, place, NOT_THE_ENTITY_KEY, (("column", column), ("declared", every_declared)))
 
     if place is None:
@@ -240,7 +256,7 @@ def describe(recipe: Any, column: str, *, plans: Optional[PlanBook] = None, plac
                 if isinstance(plan, Plan) and plan.has(name):
                     seeds.append((f"DS:{table}", 0, name))
     component = index.component(seeds)
-    certainty = index.reached(seeds, component)
+    certainty = index.certainty_from(seeds, component)
     ends = index.uncertain_ends(component)
 
     places: List[KeyPlace] = []
@@ -255,11 +271,11 @@ def describe(recipe: Any, column: str, *, plans: Optional[PlanBook] = None, plac
             continue
         held = [(node, k, name) for name in plan.names if (node, k, name) in component]
         if len(held) == 1:
-            cost, reason, notes = certainty.get(held[0], (1, None, ()))
-            if cost == 0:
-                places.append(KeyPlace(t1, table, "T1", held[0][2], plan.type_of(held[0][2]) or "", tuple(graph.plots_reading(t1)), notes))
+            how = certainty.get(held[0]) or Certainty(1)
+            if how.certain:
+                places.append(KeyPlace(t1, table, "T1", held[0][2], plan.type_of(held[0][2]) or "", tuple(graph.plots_reading(t1)), how.notes))
             else:
-                left.append(NotReached(table, t1, UNCERTAIN_LINK, reason))
+                left.append(NotReached(table, t1, UNCERTAIN_LINK, how.reason))
             continue
         if held:
             left.append(NotReached(table, t1, SEVERAL_COLUMNS, Reason(SEVERAL_COLUMNS, (("names", tuple(h[2] for h in held)),))))
@@ -272,7 +288,35 @@ def describe(recipe: Any, column: str, *, plans: Optional[PlanBook] = None, plac
             left.append(NotReached(table, t1, SAME_NAME_NOT_LINKED, Reason(SAME_NAME_NOT_LINKED, (("names", tuple(n for n in plan.names if n in names)),))))
         elif t1 in downstream:
             left.append(NotReached(table, t1, KEY_GONE_AT_TIER1))
-    return RemoveFromAll(column, place, True, None, WARNING, False, tuple(sorted(names)), tuple(places), tuple(left))
+    return RemoveFromAll(column, place, True, None, WARNING, False, tuple(sorted(names)), tuple(places), tuple(left), _may_stay(tables, places, left))
+
+
+def _may_stay(tables: Sequence[str], places: Sequence[KeyPlace], left: Sequence[NotReached]) -> Tuple[MayStay, ...]:
+    """The one explicit list (F1): every table where the logic cannot prove that the values given will be removed, in graph order. A table that is not reached and is a doubt
+    (`UNSURE_CODES`) is `written` False; a reached table whose key passes a step that may change its values (`UNPROVING_NOTES`) is `written` True with `VALUES_UNPROVED`. Notes are
+    never evaluated: the logic does not run a formula to see whether the typed value would still match (it says it cannot prove it)."""
+    found: Dict[str, MayStay] = {}
+    for n in left:
+        if n.code in UNSURE_CODES:
+            found[n.table] = MayStay(n.table, n.place, n.code, False, n.reason)
+    for p in places:
+        unproving = tuple(note for note in p.notes if note.code in UNPROVING_NOTES)
+        if unproving:
+            found[p.table] = MayStay(p.table, p.place, VALUES_UNPROVED, True, None, unproving)
+    return tuple(found[t] for t in tables if t in found)
+
+
+def may_stay_sentence(item: MayStay) -> str:
+    """The plain sentence for one table of the list: where, and why the selection may stay there. PROVISIONAL words (the owner reads them)."""
+    where = f"In the table {item.table!r}"
+    if item.code == VALUES_UNPROVED:
+        what = ", ".join(sorted({{NOTE_RECOMPUTED: "recomputed", NOTE_AGGREGATED: "aggregated", NOTE_UNREAD_STEP_PASSED: "passed through a step the app cannot read"}[n.code] for n in item.notes}))
+        return (f"{where} the key is {what} before the removal is written, so the values given may not match the values there: the selection may stay in this table. "
+                "Check the table after the removal.")
+    why = {KEY_GONE_AT_TIER1: "no longer holds the key at the end of its first step list (it was copied under another name, dropped or grouped away)",
+           PLAN_FAILED: "could not be planned by the engine", NOT_FOLLOWED: "has a step the app cannot read, and the key is not found after it",
+           UNCERTAIN_LINK: "has a column that may be the key, but the app cannot prove it", SEVERAL_COLUMNS: "has the key in more than one column"}.get(item.code, item.code)
+    return f"{where} {why}, so nothing is removed there and the selection may stay in this table."
 
 
 def removal_step(column: str, values: Sequence[Any]) -> dict:
@@ -290,8 +334,9 @@ def _refuse_values(values: Any) -> List[Any]:
     return list(values)
 
 
-def apply(audit: audit_copy.AuditCopy, option: RemoveFromAll, values: Sequence[Any], comment: str, plans: Optional[PlanBook] = None) -> Tuple[str, ...]:
-    """Write the removal in the audit copy at tier 1 of every table of `option.places`, and return the ids of the steps in the order of `option.places`.
+def apply(audit: audit_copy.AuditCopy, option: RemoveFromAll, values: Sequence[Any], comment: str, plans: Optional[PlanBook] = None) -> Applied:
+    """Write the removal in the audit copy at tier 1 of every table of `option.places`, and return `Applied`: the ids of the steps (in the order of `option.places`), the tables where nothing
+    was written and the selection may stay, and the tables where a step was written but the values there may differ (the `may_stay` list of the option, split by `written`).
 
     ALL OR NOTHING: the values are checked against the type of the key in every table, and the option against the original of the copy, before the first write; a step that
     cannot be written takes back the ones already written (and the counter), so that a refused call changes nothing. `option` must be an offered option described for the
@@ -320,4 +365,4 @@ def apply(audit: audit_copy.AuditCopy, option: RemoveFromAll, values: Sequence[A
             audit_copy.remove_step(audit, step_id)
         audit.created = created
         raise
-    return tuple(written)
+    return Applied(tuple(written), tuple(m for m in option.may_stay if not m.written), tuple(m for m in option.may_stay if m.written))
