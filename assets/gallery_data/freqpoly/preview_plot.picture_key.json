@@ -1,0 +1,8 @@
+{
+  "key": "deb1e03eb354747f65fee4737f76c5dc7e30de76106b8373a5503cb877f4857d",
+  "parts": {
+    "data": "a90dee4d872d05d86237fb13925bbef8139e7f49da0b1b951bb546cd6cfc20a7",
+    "plotnine": "0.15.4",
+    "recipe": "4a6632d73a90922c9c2d89a9994d0354e35512d7717a4127969f5526172aa581"
+  }
+}
