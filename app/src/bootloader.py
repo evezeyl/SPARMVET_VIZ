@@ -1,5 +1,5 @@
 # @deps
-# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_imports_dir (IMPORT-PATH-1), method:get_agent_adapter, method:get_palettes, method:get_contact, method:get_session_import_limits (D-0283), attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), attr:data_analysis_recipe_advices (J12/J13, never reject), method:reject_after_opening (a recipe that fails when it is opened is rejected like the gate rejects one, D-0326/D-0327), method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate), attr:rejected_gallery_examples, attr:gallery_index_status (gallery check at start, DEC48), method:take_stored_tables_notice (the one notice of the cache version sweep)
+# provides: Bootloader (class), bootloader (global singleton instance), SidebarConfig (dataclass), method:get_agent_config, method:get_imports_dir (IMPORT-PATH-1), method:get_agent_adapter, method:get_palettes, method:get_contact, method:get_session_import_limits (D-0283), attr:available_data_analysis_recipes, attr:rejected_data_analysis_recipes (ADR-094 HOME load gate), attr:data_analysis_recipe_advices (J12/J13, never reject), method:reject_after_opening (a recipe that fails when it is opened is rejected like the gate rejects one, D-0326/D-0327), method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1), method:get_default_data_analysis_recipe_or_none, attr:has_usable_data_analysis_recipe (issue #38 empty-state gate), attr:rejected_gallery_examples, attr:stale_gallery_pictures (D-0400), attr:gallery_index_status (gallery check at start, DEC48), method:take_stored_tables_notice (the one notice of the cache version sweep)
 # consumes: yaml, os, pathlib, typing, dataclasses, connector (get_connector), app.modules.cache_keys (CACHE_VERSION_META, ENGINE_CACHE_VERSION, STORED_TABLES_REBUILT_NOTICE: the sweep of stored tables of another cache version at start, D-0240), libs/transformer/src/transformer/anchor.py (remove_tables_of_other_version, deferred import), app.modules.deployment_error, blueprint_arch.agent_adapter (deferred import), app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe, validate_data_analysis_recipe_data, checker_advices, read_data_analysis_recipe_header, resolve_contact — ADR-094), app.modules.gallery_examples (check_gallery_at_start, deferred import), app.modules.renamed_keys, app.modules.session_manager (session_import_limits_from, deferred import), utils.path_expansion
 # consumed_by: app.src.server, app.src.ui, app.handlers.home_theater, app.handlers.blueprint_handlers, app.handlers.gallery_handlers, app.handlers.ingestion_handlers, app.modules.sidebar_registry
 # doc: ADR-031, ADR-026, ADR-048, ADR-073, ADR-076, ADR-078, ADR-087, ADR-094 (issue #38 closure note), project_conventions.md §"Deployment Resolution"
@@ -226,6 +226,7 @@ class Bootloader:
     def _check_gallery_if_enabled(self) -> None:
         """ADR-071: the gallery is touched only when `gallery_enabled` is on."""
         self.rejected_gallery_examples: dict[str, list[str]] = {}
+        self.stale_gallery_pictures: dict[str, str] = {}
         self.gallery_index_status = "not_run"
         if self.is_enabled("gallery_enabled"):
             self._check_gallery_examples()
@@ -240,6 +241,11 @@ class Bootloader:
             print(f"[Bootloader] WARNING: the gallery check could not run: {error}")
             return
         self.rejected_gallery_examples = examples.rejected
+        # D-0400 (built on branch): the stored key of each picture against the files now; the picture is not drawn nor compared
+        from viz_gallery.picture_key import stale_pictures
+        self.stale_gallery_pictures = stale_pictures(self.get_location("gallery"), examples.accepted)
+        for name, reason in self.stale_gallery_pictures.items():
+            print(f"[Bootloader] WARNING: gallery example '{name}': {reason}")
         for name, reasons in examples.rejected.items():
             print(f"[Bootloader] WARNING: gallery example '{name}' is left out: {'; '.join(reasons)}")
 

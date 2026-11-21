@@ -18,6 +18,10 @@ With --apply the new `preview_plot.png` and `preview_thumb.png` are written into
 pictures whose content did not change (identical, size only) and for new ones. A picture whose content differs is
 written only with --changed as well: look at it first, a figure must never change without a person seeing it.
 
+Key of the picture (D-0400, built on branch): every picture that is kept or written also gets `preview_plot.picture_key.json`, the key
+of its recipe, its data and the plotnine version (`viz_gallery.picture_key`); the app compares it at start. This script is the only writer.
+A differing picture that is not applied keeps its old key and so stays "not current".
+
 When the recipe or the data of an example change while its table is being built, the picture could mix the two states: that
 example gets no picture, the command prints "While a table was being built, ...changed... Suggestion: run the command again when
 the files are stable" in its row, and the command exits with 1 (like any example that cannot be drawn). Nothing is written, also with --apply.
@@ -42,6 +46,7 @@ from PIL import Image
 
 from app.modules.gallery_examples import PREVIEW_SIZE, check_gallery, render_example
 from viz_gallery.gallery_manager import PREVIEW_FILE, THUMB_FILE
+from viz_gallery.picture_key import picture_key_parts, write_picture_key
 
 THUMB_BOX = (100, 75)
 
@@ -53,6 +58,7 @@ class Row:
     verdict: str            # identical, size only, differs, new, error
     detail: str = ""
     new_picture: Optional[Path] = None
+    key_parts: Optional[dict] = None   # the key parts taken before the picture was drawn (D-0400)
 
     @property
     def content_unchanged(self) -> bool:
@@ -127,8 +133,12 @@ def run(gallery: Path, out: Path, only: Optional[List[str]] = None, apply: bool 
             return render_example(folder, work, path, size=size)
 
         try:
+            parts = picture_key_parts(folder)
             new_picture = render_example(folder, work, out / f"{name}.png")
+            if picture_key_parts(folder) != parts:
+                raise RuntimeError("the recipe or the data changed while the picture was drawn, so no key is recorded. Suggestion: run the command again when the files are stable")
             row = compare(name, new_picture, folder / PREVIEW_FILE, redraw)
+            row.key_parts = parts
         except Exception as error:  # noqa: BLE001 - one example that cannot be drawn must not stop the others
             row = Row(name, "error", f"not drawn: {type(error).__name__}: {' '.join(str(error).split())[:300]}")
         if apply and row.new_picture is not None and (row.content_unchanged or changed):
@@ -136,7 +146,11 @@ def run(gallery: Path, out: Path, only: Optional[List[str]] = None, apply: bool 
                 shutil.copyfile(row.new_picture, folder / PREVIEW_FILE)
             if row.verdict != "identical" or not (folder / THUMB_FILE).is_file():
                 write_thumb(folder / PREVIEW_FILE, folder / THUMB_FILE)
-            row.detail = (row.detail + "; " if row.detail else "") + ("kept" if row.verdict == "identical" else "written")
+            # The key is written here and nowhere else, only for a picture that is the drawing of these inputs: a kept
+            # picture is proven identical to the drawing, a written one is the drawing. A differing picture that was not
+            # applied keeps the old key, so it stays "not current" until a person has looked at it and applied it.
+            write_picture_key(folder, row.key_parts)
+            row.detail = (row.detail + "; " if row.detail else "") + ("kept" if row.verdict == "identical" else "written") + ", key recorded"
         rows.append(row)
     return rows
 

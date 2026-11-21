@@ -21,7 +21,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (gallery_handlers)
-# consumes: app/src/bootloader.py (rejected_gallery_examples, gallery_index_status), app/modules/gallery_examples.py (example_sample), app/modules/gallery_listing.py, libs/viz_gallery/src/viz_gallery/taxonomy.py (display_axes, filter_panels)
+# consumes: app/src/bootloader.py (rejected_gallery_examples, gallery_index_status, stale_gallery_pictures), app/modules/gallery_examples.py (example_sample), app/modules/gallery_listing.py, libs/viz_gallery/src/viz_gallery/taxonomy.py (display_axes, filter_panels)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-037, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/rules/rules_ui_dashboard.md#5
 # @end_deps
@@ -59,7 +59,8 @@ def define_server(input, output, session, *,
     def _listing() -> GalleryListing:
         """What the gallery lists: the stored index minus the examples that failed the check (flags G-a, G-b)."""
         return read_listing(bootloader.get_location("gallery"),
-                            bootloader.rejected_gallery_examples, bootloader.gallery_index_status)
+                            bootloader.rejected_gallery_examples, bootloader.gallery_index_status,
+                            bootloader.stale_gallery_pictures)
 
     def _remember(**changes):
         """Merge changes into the Gallery state; idempotent (rule R3), and reads without taking a dependency."""
@@ -269,11 +270,11 @@ def define_server(input, output, session, *,
         if not notice:
             return None
         # The title line exists only when examples were rejected; a lone note (failed check) has none.
-        header, rest = (notice[0], notice[1:]) if notice[0] not in NOTE_LINES else (None, notice)
+        # a line that ends with a colon is a title of a block (examples left out, pictures not current)
         return ui.div(
-            *([ui.div(header, class_="gallery-left-out-title")] if header else []),
-            *[ui.div(line, class_="gallery-left-out-line" + (" gallery-left-out-note" if line in NOTE_LINES else ""))
-              for line in rest],
+            *[ui.div(line, class_="gallery-left-out-title" if line.endswith(":") else
+                     "gallery-left-out-line" + (" gallery-left-out-note" if line in NOTE_LINES else ""))
+              for line in notice],
             class_="gallery-left-out",
         )
 

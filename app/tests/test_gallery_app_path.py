@@ -144,3 +144,22 @@ def test_apply_writes_only_the_pictures_whose_content_did_not_change(tmp_path, m
     assert row.verdict == "error" and "GP05" in row.detail          # no picture: the example fails the check, nothing is drawn
     with pytest.raises(ValueError, match="no such example folder"):
         previews.run(gallery, out, only=["missing"])
+
+
+def test_the_picture_key_is_written_only_when_a_picture_is_kept_or_written(tmp_path, monkeypatch):
+    """D-0400: the drawing script writes the key; a dry run, and a differing picture that is not applied, leave the key alone."""
+    from viz_gallery.picture_key import KEY_FILE, picture_status
+
+    folder = _project_with_example(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    (folder / KEY_FILE).unlink()                                  # the copy of the shipped example carries its key
+    gallery, out = Path("assets/gallery_data"), tmp_path / "out"
+    previews.run(gallery, out)
+    assert not (folder / KEY_FILE).exists()                       # a dry run writes no key
+    _picture(folder / "preview_plot.png", size=(960, 600))        # another content: the picture is not the drawing
+    previews.run(gallery, out, apply=True)
+    assert not (folder / KEY_FILE).exists()                       # not applied: no key, the picture is "not current"
+    previews.run(gallery, out, apply=True, changed=True)
+    assert picture_status(folder)[0] is True                      # written: the key of what was drawn
+    (folder / "example_data.tsv").write_bytes((folder / "example_data.tsv").read_bytes() + b"\n")
+    assert picture_status(folder)[0] is False

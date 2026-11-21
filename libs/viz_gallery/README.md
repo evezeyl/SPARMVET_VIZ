@@ -25,6 +25,12 @@ After adding or changing an example's data analysis recipe or data, regenerate i
 ./.venv/bin/python libs/viz_gallery/assets/generate_previews.py [--only <name> ...] [--force]
 ```
 
+## The key of a picture (D-0400, built on branch)
+
+`gallery_previews.py --apply` writes `preview_plot.picture_key.json` beside each picture it keeps or writes: the key of the recipe,
+the data and the plotnine version (`viz_gallery.picture_key`). At app start the Gallery compares it with the files now and lists
+an example whose picture is not current in its notice. Nothing is drawn or compared pixel by pixel at start.
+
 ## Governance (Mandatory Triplet — ADR-061, ADR-063)
 
 Every gallery bundle folder MUST contain all four files:
