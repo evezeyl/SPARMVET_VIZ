@@ -260,7 +260,7 @@ Do NOT call `reactive.invalidate()` directly or attempt to re-trigger individual
 ## 13. MetadataValidator (removed)
 
 > **REMOVED (2026-11-21, task data-import-format):** `libs/transformer/src/transformer/metadata_validator.py` and its `dtype_map` are gone. Types come from the recipe's declared Polars dtypes, applied by `ingestion.declared.apply_declared`; the Data Import panel checks an uploaded file with the ingestion's own read (`ingestion.ingestor.ingest_file`, `app/modules/data_import_check.py`).
-> **Tombstone expires:** Phase 38 (delete this block after two phases; the tasks.md entry for it is still to be added by the coordinator's scribe).
+> **Tombstone expires:** Phase 38 (delete this block after two phases; task TOMBSTONE-METADATAVALIDATOR in `.claude/tasks/tasks.md`).
 
 ---
 
