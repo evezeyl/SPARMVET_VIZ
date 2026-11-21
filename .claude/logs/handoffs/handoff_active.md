@@ -4,6 +4,14 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
+## PARKED 2026-11-21, 08:15 (owner's order, to refresh the session for StarUML)
+
+- Nothing is running. No worker was stopped. `dev` = 7022ac9f plus one records commit for this park; clean; not pushed (the owner pushes).
+- No worktree holds uncommitted work of a running task. The older worktrees are unchanged (see the coordinator note).
+- First task after the restart: HOME-SMOKE-PREVIEW-FILTER-FAILS (find the cause with evidence; report to the owner before any fix).
+- New low-priority task: TESTLAB-REFORMAT-CONVERSION (plan only).
+- Restart: read `tmpAI/coordinator/progress_2026-11-14_session3.md` (top block), then `tmpAI/agent_channel.md` (grep `### M42`, the file is large), then the block below.
+
 ## OPEN STATE 2026-11-21, 07:30
 
 - HOME Data Import format check merged into `dev` (two reviews). Controls on head `076dae89`: 13,406 headless passed; 453 browser passed with 1 known failure (also fails on `dev`) and 1 load flake (passed alone twice); 9/9 app features start.
