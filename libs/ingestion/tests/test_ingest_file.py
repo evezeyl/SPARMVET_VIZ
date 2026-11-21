@@ -1,4 +1,4 @@
-"""`ingest_file`: the read of one candidate file, the same read as `DataIngestor.ingest` (the Data Import check, D-0034, DEC24, DEC25).
+"""`ingest_file`: the read of one candidate file, the same read as `DataIngestor.ingest`, followed by one full read (the Data Import check, D-0034, DEC24, DEC25, D-0050).
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/ingestion/tests/test_ingest_file.py -q
 """
@@ -63,3 +63,50 @@ def test_the_kind_decides_the_read_not_the_name_of_a_temporary_file(tmp_path):
     assert got.collect()["score"].to_list() == [3]
     with pytest.raises(IngestionError):
         ingest_file(f, "S", SCHEMA)          # read as text: not a table
+
+
+TEXT_SCHEMA = {"null_values": [], "strip": False, "input_fields": {"id": {"type": "String"}, "v": {"type": "String"}}}
+
+DAMAGED = [
+    ("extra field, String-only", TEXT_SCHEMA, b"id\tv\na\tb\nc\td\textra\n"),
+    ("extra field, typed", SCHEMA, b"Sample ID\tscore\ns1\t5\ns2\t7\textra\n"),
+    ("not UTF-8, String-only", TEXT_SCHEMA, b"id\tv\na\tb\xff\n"),
+    ("not UTF-8, typed (a String column)", SCHEMA, b"Sample ID\tscore\ns\xff\t5\n"),
+    ("unterminated quote, String-only", TEXT_SCHEMA, b'id\tv\na\t"b\nc\td\n'),
+    ("unterminated quote, typed", SCHEMA, b'Sample ID\tscore\n"s1\t5\ns2\t7\n'),
+]
+
+
+@pytest.mark.parametrize("label,schema,content", DAMAGED, ids=[d[0] for d in DAMAGED])
+def test_the_whole_file_is_read_so_damage_outside_the_header_and_the_typed_columns_is_refused(tmp_path, label, schema, content):
+    f = tmp_path / "x.tsv"
+    f.write_bytes(content)
+    with pytest.raises(IngestionError) as err:
+        ingest_file(f, "D", schema, file_name="my_upload.tsv")
+    assert "my_upload.tsv" in str(err.value) and "cannot be read in full" in str(err.value)
+    assert "ComputeError" not in str(err.value) and "Failed to read" not in str(err.value)
+    assert "UTF-8" in err.value.tip and "tab-separated fields" in err.value.tip
+
+
+def test_the_engines_own_ingest_is_unchanged_it_stays_lazy_and_fails_only_when_the_table_is_collected(tmp_path):
+    f = tmp_path / "x.tsv"
+    f.write_bytes(b"id\tv\na\tb\nc\td\textra\n")
+    lf, _ = DataIngestor(str(tmp_path)).ingest("D", {**TEXT_SCHEMA, "source": {"type": "local_tsv", "path": str(f)}})
+    with pytest.raises(Exception, match="more fields"):
+        lf.collect()
+
+
+def test_a_rule_of_the_recipe_keeps_its_own_text_and_a_readable_file_returns_a_lazy_table(tmp_path):
+    f = write(tmp_path / "S.tsv", "Sample ID\tscore\ns1\tfive\n")
+    with pytest.raises(IngestionError) as err:
+        ingest_file(f, "S", SCHEMA)
+    assert "cannot be read in full" not in str(err.value) and "values that do not fit the declared type" in str(err.value)
+    g = write(tmp_path / "G.tsv", "Sample ID\tscore\ns1\t5\n")
+    assert isinstance(ingest_file(g, "S", SCHEMA), pl.LazyFrame)
+
+
+def test_an_empty_file_is_empty_in_plain_words(tmp_path):
+    f = write(tmp_path / "0.tsv", "")
+    with pytest.raises(IngestionError) as err:
+        ingest_file(f, "S", SCHEMA, file_name="my_upload.tsv")
+    assert str(err.value) == "The file 'my_upload.tsv' is empty: it has no header line and no rows." and "NoDataError" not in str(err.value)

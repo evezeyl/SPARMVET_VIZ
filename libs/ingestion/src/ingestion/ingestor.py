@@ -107,16 +107,30 @@ def file_kind(path: Path) -> str:
     return "parquet" if Path(path).suffix == ".parquet" else "tsv"
 
 
+def _unreadable(shown: str, exc: BaseException) -> IngestionError:
+    """The plain reason a file cannot be read at all (no header line, a row with more fields than the header, a quote never closed, a byte
+    that is not UTF-8): the words of the reader without its class name, and what to check. For the Data Import panel (PROVISIONAL wording)."""
+    if type(exc).__name__ == "NoDataError":
+        return IngestionError(f"The file '{shown}' is empty: it has no header line and no rows.",
+                              tip="Upload a tab-separated file with a header line and the data rows.")
+    text = " ".join(str(exc).split("\n\n")[0].split())[:200]
+    return IngestionError(f"The file '{shown}' cannot be read in full: {text}.",
+                          tip="Check that every row has as many tab-separated fields as the header line, that every quote is closed, "
+                              "and that the file is saved as UTF-8 text.")
+
+
 def ingest_file(path: Path, dataset_name: str, dataset_schema: Dict[str, Any], kind: Optional[str] = None,
                 file_name: Optional[str] = None) -> pl.LazyFrame:
-    """The table the ingestion would read from THIS file for this dataset, whatever the `source` of the schema says.
+    """The table the ingestion reads from THIS file for this dataset, whatever the `source` of the schema says; the WHOLE file is read once.
 
-    Used to check a candidate file before it replaces a dataset's file (the Data Import panel): same text read, same
-    exact headers, same declared types as `DataIngestor.ingest`, so a file is accepted if and only if the engine
-    reads it. `kind` ("tsv" or "parquet", default `file_kind(path)`) is how the file will be read where it is stored;
-    `file_name` is the name shown in a message when the path is a temporary one. Raises IngestionError with the
-    ingestion's own reason; nothing is written. A file that cannot be opened at all (empty, not a table) raises
-    IngestionError too."""
+    Used to check a candidate file before it replaces a dataset's file (the Data Import panel). It is the same read as
+    `DataIngestor.ingest` (same text read, same exact headers, same declared types), followed by one full read of the table as the ingestion
+    reads it, so that what the engine will meet when it builds (a row with more fields than the header, a quote never closed, a byte that is
+    not UTF-8, a value that does not fit its declared type) is met here, before anything is written. What this function does not decide is the
+    name or format of the file (`.tsv` or `.parquet`): that is checked by the caller against the file that is stored. `kind` ("tsv" or
+    "parquet", default `file_kind(path)`) is how the file will be read where it is stored; `file_name` is the name shown in a message when
+    the path is a temporary one. Raises IngestionError with the ingestion's own reason (a failure of the reading itself in plain words, a rule
+    of the recipe with the rule's own text); nothing is written. The table is read and dropped: the returned frame is lazy."""
     path = Path(path)
     shown = file_name or path.name
     kind = kind or file_kind(path)
@@ -127,10 +141,18 @@ def ingest_file(path: Path, dataset_name: str, dataset_schema: Dict[str, Any], k
             lf = pl.scan_csv(path, separator="\t", infer_schema=False)
         lf.collect_schema()
     except Exception as exc:  # noqa: BLE001
-        raise IngestionError(f"Failed to read '{shown}': {type(exc).__name__}: {str(exc)[:200]}",
-                             tip="Check that the file is a non-empty tab-separated file with a header line") from exc
-    lf = read_as_declared(lf, dataset_name, dataset_schema, shown)
-    lf.collect_schema()
+        raise _unreadable(shown, exc) from exc
+    try:
+        lf = read_as_declared(lf, dataset_name, dataset_schema, shown)
+    except IngestionError as err:
+        # a rule of the recipe (headers, types) has no cause and is kept as it is; a failure of the reading has the reader's error as cause
+        if err.__cause__ is not None:
+            raise _unreadable(shown, err.__cause__) from err.__cause__
+        raise
+    try:
+        lf.collect()
+    except Exception as exc:  # noqa: BLE001
+        raise _unreadable(shown, exc) from exc
     return lf
 
 

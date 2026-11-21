@@ -27,7 +27,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_data_import_server, function:import_error_block, output:data_import_ui, output:data_import_assignment_ui
-# consumes: app/modules/orchestrator.py, app/modules/data_import_check.py (the check and the write), app/src/bootloader.py, shiny
+# consumes: app/modules/orchestrator.py, app/modules/data_import_check.py (the check and the write; refreshes every table of the files replaced), app/src/bootloader.py, shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-052
 # @end_deps
@@ -36,7 +36,7 @@ from pathlib import Path
 
 from shiny import reactive, render, ui
 
-from app.modules.data_import_check import Candidate, DataImportWriteError, apply_import
+from app.modules.data_import_check import Candidate, apply_import, refresh_replaced
 from app.src.bootloader import bootloader
 
 
@@ -277,11 +277,7 @@ def define_data_import_server(input, output, session, *,
             Candidate(name=entry["name"], tmp_path=Path(entry["tmp_path"]), ds_id=safe_input(input, f"data_import_assign_{i}", ""))
             for i, entry in enumerate(pending)
         ]
-        try:
-            outcome = apply_import(orchestrator, data_analysis_recipe_id, candidates)
-        except DataImportWriteError as exc:
-            _notify(f"⚠️ {exc}", type="warning", duration=10)
-            return
+        outcome = apply_import(orchestrator, data_analysis_recipe_id, candidates)
         verdicts = outcome.verdicts
         updated = [dict(entry, ds_id=v.ds_id, error=v.error) for entry, v in zip(pending, verdicts)]
 
@@ -295,17 +291,16 @@ def define_data_import_server(input, output, session, *,
             )
             return
 
-        for v in verdicts:
-            # Bust the parquet cache so next render re-materializes
-            parquet_cache = anchor_dir / f"{v.ds_id}.parquet"
-            if parquet_cache.exists():
-                parquet_cache.unlink()
-            bootloader.set_cached_asset(data_analysis_recipe_id, v.ds_id, "anchor", "lf", None)
+        # A file is replaced for every table that reads it, also when a later file could not be written: what changed is refreshed
+        if refresh_replaced(outcome, data_analysis_recipe_id, anchor_dir, bootloader.set_cached_asset) and data_refresh_trigger is not None:
+            data_refresh_trigger.set(data_refresh_trigger.get() + 1)
+
+        if outcome.write_error:
+            _notify(f"⚠️ {outcome.write_error}", type="warning", duration=10)
+            return
 
         _import_pending.set([])
-        if data_refresh_trigger is not None:
-            data_refresh_trigger.set(data_refresh_trigger.get() + 1)
-        names = "; ".join(f"{v.name} -> {v.ds_id} ({path})" for v, path in zip(verdicts, outcome.written))
+        names = "; ".join(f"{v.name} -> {', '.join(v.tables)} ({path})" for v, path in zip(verdicts, outcome.written))
         _notify(
             f"✅ {len(outcome.written)} file(s) imported — plots are refreshing now. {names}",
             type="success", duration=10,
