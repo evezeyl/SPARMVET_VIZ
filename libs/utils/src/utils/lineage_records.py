@@ -13,8 +13,8 @@ Consumed by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_lineage
 If deleted: the walk has nothing to return.
 
 # @deps
-# provides: class:Walk, class:Line, class:Gone, class:Unread, class:Outside, class:Occurrence, class:Hop, class:StepRef, class:SourceColumn, class:Reach, class:Reason, class:Note, class:Start, class:SortedSet, class:KeyNeed, class:Consequence, class:DropFacts, constant:GROUPS, constant:LEVELS, constant:HOW_VALUES, constant:REASON_CODES, constant:NOTE_CODES, constant:VALUE_NOTES, constant:CONSEQUENCE_CODES
-# consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py
+# provides: class:Walk, class:Line, class:Gone, class:Unread, class:Outside, class:Occurrence, class:Hop, class:StepRef, class:SourceColumn, class:Reach, class:Reason, class:Note, class:Start, class:SortedSet, class:KeyNeed, class:Consequence, class:DropFacts, class:Certainty, constant:GROUPS, constant:LEVELS, constant:HOW_VALUES, constant:REASON_CODES, constant:NOTE_CODES, constant:VALUE_NOTES, constant:CONSEQUENCE_CODES
+# consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/src/utils/remove_from_all.py, libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py
 # doc: .claude/knowledge/decision_ledger.md (D-0346, D-0347, D-0195, D-0351, D-0353, D-0337, D-0357, D-0358, D-0297)
 # @end_deps
 """
@@ -175,6 +175,19 @@ class Consequence:
 
     def get(self, key: str, default: Any = None) -> Any:
         return next((v for k, v in self.params if k == key), default)
+
+
+@dataclass(frozen=True)
+class Certainty:
+    """How surely a column is linked to the seeds it was asked from (`LineageIndex.certainty_from`): the fewest uncertain links on the best path (`cost`; 0 is certain), the
+    reason of the first uncertain link of that path (None when certain) and the notes on it (a recompute, a cast, a group key, an unread step passed), as data."""
+    cost: int
+    reason: Optional[Reason] = None
+    notes: Tuple[Note, ...] = ()
+
+    @property
+    def certain(self) -> bool:
+        return self.cost == 0
 
 
 @dataclass(frozen=True)
