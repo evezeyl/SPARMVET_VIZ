@@ -44,7 +44,7 @@ These tests verify that external data is handled securely and that "dirty data" 
 `libs/ingestion/tests/` has no `pytest` tests of its own today — only the headless
 `ingestion_integrity_suite.py` and `debug_ingestor.py` CLI runners (`./.venv/bin/python
 libs/ingestion/tests/ingestion_integrity_suite.py`). The pytest-collected ingestion check is
-`app/tests/test_import_test_files.py`, which exercises `DataIngestor`/`MetadataValidator`
+`app/tests/test_import_test_files.py`, which exercises `DataIngestor`/`ingest_file` (the check of the Data Import panel)
 against the shipped test uploads:
 
 Run command: `PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_import_test_files.py`
