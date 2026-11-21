@@ -682,6 +682,13 @@
 - **consumes:** `libs/viz_factory/tests/test_data/ (writes bootstrapped YAML test data analysis recipes)`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-041`
 
+## `assets/scripts/engine_map_table.py`
+- **Role:** `info`
+- **provides:** `script:engine_map_table`
+- **consumes:** `libs/utils/src/utils/engine_boundary.py (PLACES`, `KINDS)`
+- **consumed_by:** `libs/utils/tests/test_engine_map_table.py`, `.claude/design/engine_boundary_map.md`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0455`, `D-0458)`
+
 ## `assets/scripts/figshare_plot_integration.py`
 - **Role:** `info`
 - **provides:** `script:figshare_plot_integration`
@@ -1114,6 +1121,12 @@
 - **consumed_by:** `app/modules/deployment_error.py (re-export shim)`, `app/modules/app_features_validator.py`, `app/modules/sidebar_validator.py`, `app/src/bootloader.py`, `app/src/server.py`, `scripts/validate_app_features_config.py`, `libs/connector/src/connector/irida.py`, `libs/connector/src/connector/filesystem.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-078`
 
+## `libs/utils/src/utils/engine_boundary.py`
+- **Role:** `ref`
+- **provides:** `constant:PLACES`, `constant:LIBRARY_ENGINE`, `constant:KINDS`, `class:EnginePlace`
+- **consumed_by:** `libs/utils/tests/test_engine_boundary.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0455`, `D-0458)`
+
 ## `libs/utils/src/utils/engine_keys_migration.py`
 - **Role:** `ref`
 - **provides:** `function:migrate`, `class:Result`, `class:Event`
@@ -1328,6 +1341,16 @@
 - **provides:** `constant:WIDGETS`, `function:expected_shape`, `function:shape_problem`, `function:step_problems`, `function:schema_declaration_problems`, `class:StepProblem`
 - **consumed_by:** `libs/utils/tests/test_step_problems.py`, `libs/transformer/tests/test_ui_schemas.py`, `libs/transformer/tests/test_action_schema_examples.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py`, `libs/blueprint_arch/tests/test_schema_registry.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 8; checks ST03`, `ST04`, `ST07`, `ST09`, `ST10`, `ST11; R3)`, `.claude/knowledge/architecture_decisions.md (ADR-075)`
+
+## `libs/utils/tests/test_engine_boundary.py`
+- **Role:** `ref`
+- **consumes:** `libs/utils/src/utils/engine_boundary.py`, `libs/utils/src/utils/engines.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0455`, `D-0458)`
+
+## `libs/utils/tests/test_engine_map_table.py`
+- **Role:** `ref`
+- **consumes:** `assets/scripts/engine_map_table.py`, `.claude/design/engine_boundary_map.md`, `libs/utils/src/utils/engine_boundary.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0458)`
 
 ## `libs/utils/tests/test_engine_table.py`
 - **Role:** `ref`

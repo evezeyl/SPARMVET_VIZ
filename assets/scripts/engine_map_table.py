@@ -1,3 +1,9 @@
+# @deps
+# provides: script:engine_map_table
+# consumes: libs/utils/src/utils/engine_boundary.py (PLACES, KINDS)
+# consumed_by: libs/utils/tests/test_engine_map_table.py, .claude/design/engine_boundary_map.md
+# doc: .claude/knowledge/decision_ledger.md (D-0455, D-0458)
+# @end_deps
 """Print the table of engine places per engine and kind, generated from the list `utils.engine_boundary.PLACES`.
 
 The one-page engine map (`.claude/design/engine_boundary_map.md`) holds this table between two marker lines; a test

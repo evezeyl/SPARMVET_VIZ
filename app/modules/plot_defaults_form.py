@@ -1,3 +1,4 @@
+# engine: python-plotnine (the plotnine theme names that the plot defaults form offers, and the plotnine default when none is chosen)
 # @deps
 # provides: function:form_values, function:theme_choices, function:merged_plot_defaults, constant:FORM_KEYS, constant:NO_THEME
 # consumes: libs/utils/src/utils/recipe_check.py (plot_defaults_keys: the keys the checker accepts)

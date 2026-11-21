@@ -1,4 +1,4 @@
-# engine: python-plotnine (the plot settings cascade; imports pandas for column type checks)
+# engine: python-plotnine (the plot settings cascade on plain dicts; it imports no plotnine and imports pandas only inside a function, for column type checks)
 # @deps
 # provides: function:resolve_plot_config, function:compute_optimisation_layer,
 #           function:_dedupe_layers, constant:_BUILTIN_DEFAULTS,

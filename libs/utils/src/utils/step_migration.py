@@ -1,4 +1,4 @@
-# engine: python-polars (the table of old action names and the Polars action that replaces each)
+# engine: python-polars (the table of old action names and the Polars action that replaces each, held as text; it imports no engine library)
 """Old action steps to the steps of recipe format 1 (migration run A, names and parameters).
 
 One function per old action. Each reads the step as an old recipe wrote it (with the column aliases the old wrangler

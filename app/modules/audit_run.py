@@ -1,4 +1,4 @@
-# engine: python-polars (hands out the Polars table of a plot of the audit copy)
+# engine: python-polars (hands out the table of a plot of the audit copy; Polars appears only in a type annotation)
 """A run of an audit copy without a screen: which tables and plots of the copy are the original's and which are rebuilt (piece A5 of slice A, changed over to the second list `audit_steps` in piece C-1 of slice C of the HOME audit redesign).
 
 Serves the audit that the next slices put on the screen. Nothing a user sees is wired to it yet.

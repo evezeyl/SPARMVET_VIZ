@@ -1,3 +1,4 @@
+# engine: python-plotnine (maps the old plot shorthand to plotnine geom layer names and writes them into recipes)
 """
 Migrate legacy plot specs to canonical grammar-of-graphics format.
 
