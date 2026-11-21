@@ -4,6 +4,12 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
+## OPEN STATE 2026-11-21, 09:50 by the clock (note: the time '09:30' of the block below was written about 45 minutes ahead of the clock)
+- Nothing is running. `dev` is clean and not pushed; last commits: the ledger lines D-0397, D-0398, D-0399 (Gallery questions Q1, Q2, Q3 decided by the owner) and the UML commit.
+- Ready for the owner to read: the deployment study table (`tmpAI/panel/deployment_io/TABLE_FOR_THE_OWNER.md`); the Gallery drafts for Q1 and Q2 (`tmpAI/panel/gallery_study/Q1_NAMES_AND_HEADINGS_DRAFT.md`, `Q2_CHART_TYPE_DRAFT.md`); the Data Import message texts (`tmpAI/panel/data_import_words/TABLE_FOR_THE_OWNER.md`) and facts (`tmpAI/coordinator/data_import_questions/ANSWERS_A_AND_B.md`); the cause of the failing HOME browser test (`tmpAI/coordinator/smoke_preview_filter/REPORT.md`: the test is out of date; she chooses the repair).
+- She answers the Gallery questions one at a time (Q4 to Q9 are open). No recipe, name, heading or spec is changed before she has read the drafts.
+- Her standing rule of 2026-11-21: an option is judged on merit; 'it reopens a decision' is information in its own column, never an argument. Every panel brief carries it.
+
 ## OPEN STATE 2026-11-21, 09:30 (resumed after the session refresh)
 - Nothing is running. `dev` holds the UML commit and one records commit after it; clean; not pushed.
 - Done since the park: the cause of the failing HOME browser test (the test is out of date; no fix yet); the facts for the owner's Data Import questions a and b; the table of message texts (question c); the UML of the library tiers, the app frame and the Gallery.
