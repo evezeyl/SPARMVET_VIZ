@@ -994,7 +994,8 @@ class TestPreviewFiltersOnReferenceViews:
     def test_a_preview_filter_never_changes_the_plot(self, page: Page, shiny_app: ShinyAppProc):
         """GUARDED (Eve, 2026-11-11; slice B, D-0019, D-0311): Apply changes the table of the view shown, never a plot.
         Exploration has one plot, the Result. Switching to Audit mode removes the filters (with a notice); the audited plot
-        of a plot with no audited step is the Result."""
+        of a plot with no audited step is the Result, drawn from the same unfiltered T3 table (compared by badge and table text,
+        not by picture: the width changes with the right panel)."""
         _load_data_analysis_recipe(page, shiny_app.url)
         _open_filters_panel(page)
         page.locator(".nav-link:has-text('QC Reads Horizontal Barplot')").first.click()
@@ -1002,6 +1003,8 @@ class TestPreviewFiltersOnReferenceViews:
         img = page.locator(".shiny-plot-output img").first
         expect(img).to_be_visible(timeout=15_000)
         src_before = img.get_attribute("src")
+        page.wait_for_selector("#home_data_preview tbody tr", timeout=15_000)
+        grid_before = page.locator("#home_data_preview").inner_text()    # the T3 table, before any filter
         page.locator("#fb_col").select_option(index=1)
         _wait_shiny(page)
         page.locator("#fb_op").select_option("ne")
@@ -1020,8 +1023,15 @@ class TestPreviewFiltersOnReferenceViews:
                 assert page.locator(".shiny-plot-output img").first.get_attribute("src") == src_before, view
             set_mode(page, "audit")                  # the filters do not exist in Audit mode: they are removed, and the user is told
             expect(page.locator("#shiny-notification-panel")).to_contain_text("The filters were removed", timeout=15_000)
-            page.wait_for_timeout(1_500)
-            assert page.locator(".shiny-plot-output img").first.get_attribute("src") == src_before
+            # The picture is NOT compared here: Audit mode opens the right panel, the plot is redrawn at another width and its
+            # `src` differs for the same data (ledger D-0465, D-0375, D-0385). What the data says is compared instead: the
+            # filter is gone, no audited step exists, so the plot is the Result and the T3 table is the unfiltered one.
+            expect(page.locator("#filter_remove_0")).to_have_count(0)
+            expect(page.locator("[id^='plot_badge_'] .spv-view-badge").first).to_have_text("Plot: Audited", timeout=15_000)
+            expect(page.locator("[id^='plot_badge_'] .spv-view-note").first).to_contain_text("identical to the Result", timeout=15_000)
+            page.wait_for_function(
+                "([sel, before]) => document.querySelector(sel).innerText === before",
+                arg=["#home_data_preview", grid_before], timeout=15_000)
         finally:
             set_mode(page, "exploration")
             set_view(page, "T3")
