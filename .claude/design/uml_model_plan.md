@@ -56,6 +56,7 @@ section, so a planned-but-not-built diagram would show here, not in the "Later" 
 | C4-CONT | What runs, and which files and folders does it use? | C4 container | logical, physical | ✅ |
 | PKG-TIERS | Which library may import which? | Package | development | ✅ |
 | DEP-APP | How does the app run on one machine: process, folders, launch variables? | Deployment | physical | ✅ |
+| UI-FRAME | What frame do the four user spaces share: left panel, centre, right panel, the drag handle, the stored width, the right panel in HOME by mode (D-0375, D-0381, D-0385)? | Wireframe | scenarios, for users and developers | ✅ (2026-11-21) |
 | C4-COMP-APP | Inside the Shiny app: which handler and module serves which user space? | C4 component | logical | ✅ |
 | **HOME** — what the user does, then the screen, then how it works | | | | |
 | UC-HOME | What can a user do, under which flag? | Use case | scenarios | ✅ |
@@ -72,6 +73,7 @@ section, so a planned-but-not-built diagram would show here, not in the "Later" 
 | UI-GALLERY | What is on the screen, same detail as UI-HOME | Wireframe | scenarios, for users and developers | ✅ |
 | C4-COMP-GALLERY | Which handler and module owns what, same detail as C4-COMP-HOME | C4 component | logical | ✅ |
 | COM-REACTIVE-GALLERY | Which output reads which reactive value, in GALLERY? | Flowchart | process | ✅ |
+| GALLERY-BUNDLE | What does an example folder hold, how is it checked and indexed, and who reads each file? (added 2026-11-21, D-0388) | Flowchart | logical, process | ✅ |
 | **BLUEPRINT** — what the user does, then the screen, then how it works | | | | |
 | UC-BLUEPRINT | What can a user do, under which flag? Includes branching (ADR-082 §Q3), added 2026-11-08 | Use case | scenarios | ✅ |
 | UI-BLUEPRINT | What is on the screen, in plain language — redrawn 2026-11-08 for users, unlike UI-HOME it carries no code/flag tags | Wireframe | scenarios, for users | ✅ |
