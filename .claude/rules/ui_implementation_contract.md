@@ -279,17 +279,20 @@ Row filters live in the left sidebar (Home mode only). In Exploration they are b
 **App features gate:** Gate: `metadata_ingestion_enabled`. Available from `pipeline-exploration-advanced` and above. Hidden for `pipeline-static` and `pipeline-exploration-simple`.
 
 **Flow:**
-1. User uploads a TSV/CSV metadata file via file input in the Data Import panel.
-2. `MetadataValidator` gates the upload: validates that required columns (defined in `input_fields` contract for the metadata schema) are present. Uses fuzzy matching to suggest corrections if columns are missing.
-3. If validation passes: the uploaded file is written to Location 1 (`raw_data`) as the new metadata source, **replacing** the previous file. The original filename is recorded (for provenance).
-4. T1 rebuild is triggered automatically — the DataOrchestrator re-runs ingestion and assembly. A "Recalculating..." overlay is shown.
-5. On completion: T2 and all plots update. A notification confirms: "Metadata updated from `<filename>`. T1 rebuilt."
+1. User uploads one or more files via the file input in the Data Import panel and assigns each to a dataset.
+2. **The check (as built; D-0034, DEC24, DEC25).** On Apply, every file is checked BEFORE anything is written, by the ingestion's own read of the candidate file for that dataset of that recipe (`ingestion.ingestor.ingest_file`, called by `app/modules/data_import_check.py`; the handler only wires it): the declared columns are found by their exact `original_name` (the slug when none is given), then `strip`, `null_values` and the declared Polars types are applied. A file is accepted if and only if the engine would read it; there is no second definition of the format (the slug-based `MetadataValidator` is removed). The refusal is the ingestion's own plain reason (which headers are expected, which value does not fit its type). An undeclared extra column is accepted, as the ingestion does (it is not imported).
+3. **The format of the stored file.** The file must have the format of the file the orchestrator reads for that dataset: `.tsv` for a tab-separated dataset, `.parquet` for a Parquet one. A comma-separated or Excel file is refused with a plain line that says why and what to do (convert it to a tab-separated file first). Converting a file for the user is NOT decided and is not built.
+4. **All files or none.** If any file of the Apply is refused, none is written and each file shows its own reason; two files assigned to one dataset are both refused. When all pass, each file is copied next to its place and put in place together.
+5. **The place is the orchestrator's** (`DataOrchestrator.file_place`, built on `locate_dataset_file`): the file the orchestrator reads for the dataset; else the recipe's `source.path` (`data_lookup: data_analysis_recipe_paths`) or `<dataset id>.tsv` in `raw_data` (`by_dataset_id`). **PROVISIONAL (an agent's choice, not Eve's):** a recipe imported from a bundle reads only the folder of its import ("the data of an import is only what its bundle carried"), so Data Import refuses to replace its data, with a plain line; options for the owner: keep the refusal, replace the file in the import's folder (it would no longer be what the bundle's hashes verified), or store uploads in a place of their own that the orchestrator reads, with a record.
+6. The success notice names each file, its dataset and the place written; it is shown only when what the app reads has changed.
+7. T1 rebuild is triggered automatically — the DataOrchestrator re-runs ingestion and assembly. A "Recalculating..." overlay is shown.
+8. On completion: T2 and all plots update. A notification confirms: "Metadata updated from `<filename>`. T1 rebuilt."
 
-**Provenance obligation:** The original uploaded filename (not just its path) is stored in a sidecar file (e.g., `metadata_provenance.yaml` in Location 1) so that exports and session files can reference it. This filename is included in `README.txt` and `report.qmd` of any subsequent export bundle.
+**Provenance obligation (NOT built; waits for the owner, task DATA-IMPORT-OVERWRITE, together with the overwrite of the recipe's data file with no copy of the old one):** The original uploaded filename (not just its path) is stored in a sidecar file (e.g., `metadata_provenance.yaml` in Location 1) so that exports and session files can reference it. This filename is included in `README.txt` and `report.qmd` of any subsequent export bundle.
 
 **What is NOT replaced:** Raw instrument data (sequencing results, VCF files, etc.) — only the metadata source. The data analysis recipe's `input_fields` contract determines which file is considered "metadata" for validation purposes.
 
-**Status:** Deferred to Phase 22+. UI stub (greyed file input + label) present in Data Import panel when app features allows. Validation and rebuild flow designed here; implementation pending.
+**Status:** the check, the format refusal, the all-or-nothing Apply and the place are built (steps 2 to 6 above). Not built: the record of the original file name and the keeping of the replaced file (task DATA-IMPORT-OVERWRITE), the conversion of a comma-separated or Excel file.
 
 ---
 
@@ -303,7 +306,7 @@ Row filters live in the left sidebar (Home mode only). In Exploration they are b
 
 **Supported ingestion types:**
 - **Raw data** — TSV/CSV instrument output
-- **Metadata** — sample annotation files (goes through MetadataValidator gate, same as §9)
+- **Metadata** — sample annotation files (goes through the same check as §9: the ingestion's own read of the file)
 - **Extra data** — supplementary tables (e.g., reference databases, additional annotation layers)
 
 **Data analysis recipe association:** When uploading, the user must associate the file with a data analysis recipe schema (dropdown of known schemas from `locations.data_analysis_recipes`). This tells the DataOrchestrator which `input_fields` contract to validate against and which pipeline slot the file fills.

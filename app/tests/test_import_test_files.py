@@ -1,7 +1,7 @@
 """The Data Import test files (assets/test_uploads/) behave as their README says.
 
-Uses the same checks the Data Import panel runs (MetadataValidator: column names, then the declared Polars types
-of the recipe applied as ingestion does: `ingestion.declared.apply_declared`), and checks that the files are exactly what the generating script
+Uses the same check the Data Import panel runs: the ingestion's own read of the file for that dataset
+(`ingestion.ingestor.ingest_file`: the exact headers, then the declared Polars types of the recipe), and checks that the files are exactly what the generating script
 produces, so the set cannot drift away from the data.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_import_test_files.py -q
@@ -13,8 +13,7 @@ import polars as pl
 import pytest
 
 from ingestion.declared import apply_declared
-from ingestion.ingestor import DataIngestor
-from transformer.metadata_validator import MetadataValidator
+from ingestion.ingestor import DataIngestor, ingest_file
 from utils.config_loader import ConfigManager
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -42,9 +41,7 @@ def schemas():
 
 def _column_check_accepts(path: Path, schema: dict) -> bool:
     try:
-        lf = pl.scan_csv(path, separator="\t", infer_schema=False)
-        MetadataValidator().validate(lf, schema["input_fields"], context="[test]")
-        apply_declared(lf, "[test]", schema, schema["input_fields"])
+        ingest_file(path, "[test]", schema)
         return True
     except Exception:
         return False
