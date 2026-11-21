@@ -4,6 +4,10 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
+## OPEN STATE 2026-11-21, afternoon (time not read from the clock by the writer)
+- Recorded 2026-11-21: D-0409 (names question 4, option B, widened: `ui_label` for every name, the export included; the open point on `info.ui_title` waits for her); new task NAMES-UI-LABEL-EVERYWHERE in `tasks.md` (not started; built with the one pass of D-0407).
+- Running 2026-11-21 afternoon: a builder on the key per Gallery picture (D-0400), worktree `.claude/worktrees/gallery-picture-key`, branch `task/gallery-picture-key` (adds only the key and the notice; no recipe, picture, name or spec change; to be reviewed before any merge); a reviewer on the unverified points of the help study (`tmpAI/panel/help_beside/RUN_FACTS_2.md`). Back: `tmpAI/coordinator/home_plot_width/REPORT.md` (HOME: after leaving Audit mode the plot is redrawn at full width by itself within 0.5 to 5 s; not a permanent defect), `tmpAI/coordinator/testlab_conversion/FACTS_AND_PLAN.md` (Test Lab conversion: facts and ten questions for the owner).
+
 ## OPEN STATE 2026-11-21, late morning (the owner is on a break; the time is not written here because it was not read from the clock by the writer)
 - Decided by the owner today and recorded: D-0397 to D-0405 (Gallery questions Q1 to Q7 and Q9; a tag mismatch is an advice). Gallery Q8 comes to her with the table of name fields.
 - Tables ready for her, all under `tmpAI/panel/`: `deployment_io/` (reading and writing recipes and data per deployment; fonts added as choice 14), `gallery_verify/` (the 34 examples verified; tag advices), `gallery_taxonomy/` (review of the taxonomy), `gallery_study/Q1_NAMES_AND_HEADINGS_DRAFT.md` and `Q2_CHART_TYPE_DRAFT.md`, `name_fields/` (the purpose of each name field), `help_beside/` (help that stays open beside the screen), `data_import_words/`. Each folder holds `TABLE_FOR_THE_OWNER.md` unless named otherwise.
