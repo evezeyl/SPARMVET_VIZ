@@ -1,3 +1,4 @@
+# engine: python-polars (the Polars dtype names a text file can hold, read from the installed Polars)
 """The Polars dtypes that a text file can hold, read from the installed Polars by trying each one on the CSV reader.
 
 A recipe declares the type of a column with a Polars dtype name, and the declared dtype is handed to the CSV reader (spec

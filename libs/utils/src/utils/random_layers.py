@@ -1,3 +1,4 @@
+# engine: python-plotnine (the plotnine geoms, positions and stats that draw random numbers)
 """Which layers of a plot are random (SEED-HOLDS-1, ADR-104).
 
 One rule for two readers: the plot factory seeds exactly these layers, and the recipe checker accepts the argument

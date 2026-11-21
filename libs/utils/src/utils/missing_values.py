@@ -1,3 +1,4 @@
+# engine: python-polars (the Polars rules for missing and not-a-number values in filters)
 """Count the missing values of a column and say, in plain words, what a filter does with them (NA-RULE-63).
 
 Decided by Eve on 2026-11-14: the engine follows Polars, so every comparison removes a row with a missing value (null);

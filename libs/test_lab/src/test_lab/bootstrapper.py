@@ -1,3 +1,4 @@
+# engine: python-polars (reads data files with Polars to write a first recipe)
 # @deps
 # provides: DataAnalysisRecipeBootstrapper class (bootstrap, id_cleaning_steps) — infers TSV schemas
 #           and writes data analysis recipe YAML fragments (analysis_groups, joins, a tier file per table: tier1: !include, D-0250)

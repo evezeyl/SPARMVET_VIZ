@@ -1,3 +1,4 @@
+# engine: python-polars (runs Polars on purpose to show that the migrated recipe gives the same table)
 """Convert data analysis recipes from format 0 (unversioned) to format 1 (spec_version: 1), run A.
 
 What run A does: adds spec_version and the engine lines; renames display_name, is_primary_key and source_name;

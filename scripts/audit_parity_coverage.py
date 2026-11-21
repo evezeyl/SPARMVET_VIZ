@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# engine: python-polars+python-plotnine (compares the Polars and plotnine public names with the registered ones)
 """Audit: Parity mandate coverage (ADR-035 Polars, ADR-036 Plotnine).
 
 Two checks:

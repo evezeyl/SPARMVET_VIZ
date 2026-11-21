@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# engine: python-polars+python-plotnine (names Polars and plotnine as the packages that carry a parity rule)
 """Audit: Package dependency health check.
 
 Reports the health of all installed dependencies from three angles:

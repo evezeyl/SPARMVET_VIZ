@@ -1,3 +1,4 @@
+# engine: python-polars (reads the Polars drop action to refuse a drop of a join key)
 """The audit copy of a recipe, in memory: a copy that only ADDS audit steps, each in the second list `audit_steps` of its tier (piece C-1 of slice C of the
 HOME audit redesign; slice A built the first form, with the steps at the end of `steps`).
 

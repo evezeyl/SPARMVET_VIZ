@@ -1,3 +1,4 @@
+# engine: python-plotnine+python-polars (builds the tables and pictures of every shipped recipe for the baseline; sets the matplotlib backend)
 """Golden baseline of the shipped data analysis recipes (GOLDEN-BASELINE-1, P0).
 
 Records, for every recipe, what the engine produces today: the Tier 1 table, the Tier 2 table and the

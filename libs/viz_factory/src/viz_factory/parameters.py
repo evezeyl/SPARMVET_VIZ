@@ -1,3 +1,4 @@
+# engine: python-plotnine (reads the parameter list of an exact plot component from plotnine)
 """The parameter list of an `exact` plot component, read from plotnine at registration (VIZ-STANDARD-1, ADR-106 V3).
 
 An `exact` component only passes its parameters to the plotnine object of the same name, so its list is not written by

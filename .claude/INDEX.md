@@ -42,6 +42,7 @@ HISTORY: 7 files kept for the record (`.claude/conversations/archive/`). Task ar
 | `app_features_scoping_guide.md` | AS BUILT / reference | 2026-11-07 | Deployment Configuration Guide |
 | `design_t3_export_threading.md` | AS BUILT (cleaned 2026-11-13: what the export does with T3 today); replaced when audit mode is built (ADR-099) | 2026-11-13 | T3 in the export bundle and the lineage trail: as built |
 | `developer_workflow.md` | AS BUILT / reference | 2026-11-08 | Developer Workflow — End-to-End Producer Journey |
+| `engine_boundary_map.md` | AS BUILT (stage 0 of the engine boundary) | 2026-11-21 | Engine boundary map: the marks, the list, the test, the seams, the ten hardest places |
 | `export_specification.md` | AS BUILT (cleaned 2026-11-13); extended by the audit redesign (ADR-099) | 2026-11-13 | Export Specification |
 | `functionality_dependency_map.md` | AS BUILT / reference | 2026-11-07 | Functionality Dependency Map |
 | `home_audit_reading_guide.md` | RECENT (redesign) | 2026-11-13 | HOME filters and audit: reading guide (start here) |

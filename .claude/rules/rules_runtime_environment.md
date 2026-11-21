@@ -86,6 +86,13 @@ other than `test_lab`, and must always be declared in `pyproject.toml` using the
 name `"utils"`. `test_lab`'s named exception above is the one documented case of a
 non-`utils` cross-lib dependency.
 
+### Engine marks (stage 0, ledger D-0458)
+
+- A source file that imports `polars`, `plotnine`, `matplotlib`, `pandas` or `mizani`, or that holds an engine's own names as data, carries the mark line `# engine: <engine> (<what>)` near its top and is listed in `libs/utils/src/utils/engine_boundary.py`. The test `libs/utils/tests/test_engine_boundary.py` fails otherwise (it walks the source tree and reads imports with `ast`; `tests/` folders are not walked).
+- New code reads the names of actions from `libs/utils/src/utils/action_names.py` and the join kinds and per-step readings from `READINGS` and `FOLLOWED_JOINS` in `libs/utils/src/utils/step_effects.py`. It does not spell Polars or plotnine names in a new place.
+- The map of what exists: `.claude/design/engine_boundary_map.md`.
+- DECIDED, built: the marks, the list, the test. The form of the mark is PROVISIONAL. NOT decided: the stages that move the listed places (the demo comes first).
+
 ## 5. Python Interpreter Authority
 
 - The path to the active Python interpreter MUST be defined in the deployment file in config/deployment/ (e.g., `runtime: {python_interpreter: "./.venv/bin/python"}`).

@@ -1,3 +1,4 @@
+# engine: python-polars (reads the declared types and missing-value texts into Polars)
 """Declared types and explicit missing values: what a data schema says is what is read (W5, DEC27, DEC28).
 
 The file is read as text (nothing is inferred). For every declared field the recipe states, in the schema and optionally

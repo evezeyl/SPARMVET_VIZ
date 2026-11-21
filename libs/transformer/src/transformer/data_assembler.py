@@ -1,3 +1,4 @@
+# engine: python-polars (runs the join steps of a collection on Polars LazyFrames)
 # @deps
 # provides: class:DataAssembler, method:assemble
 # consumes: libs/transformer/src/transformer/actions/ (all registered actions via registry)

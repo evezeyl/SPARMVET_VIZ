@@ -1,3 +1,4 @@
+# engine: python-plotnine+python-polars (builds a gallery example as a LazyFrame and sets the matplotlib backend to draw it)
 """Gallery examples in the app layer: check them with the registries, and draw one through the app's own path.
 
 A gallery example is a standard recipe (spec section 9). Two things need the app layer, because only this layer may

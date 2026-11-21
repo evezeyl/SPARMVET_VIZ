@@ -1,3 +1,4 @@
+# engine: python-polars (the action registry and its engine field; every action is a function on a Polars LazyFrame)
 from typing import Callable, Dict, Any, List, Optional, Union
 import polars as pl
 import logging

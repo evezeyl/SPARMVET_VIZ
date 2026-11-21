@@ -1,3 +1,4 @@
+# engine: python-plotnine+python-polars (the HOME handlers; draws placeholder figures with matplotlib itself and holds Polars tables)
 """app/handlers/home_theater.py
 Home Theater Shiny wiring (ADR-043 / ADR-044 / ADR-045).
 

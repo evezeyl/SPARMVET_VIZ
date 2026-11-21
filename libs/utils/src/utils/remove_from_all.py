@@ -1,3 +1,4 @@
+# engine: python-polars (writes the Polars filter action that removes values from a table)
 """The option "remove from all the data" of the HOME audit, as pure logic (task AUDIT-REMOVE-FROM-ALL-DATA, step 1; D-0415 part B, D-0416, D-0313).
 
 The owner's case (D-0415): a sample is so bad that it will be resequenced; its results come later and not in this run; she wants it removed everywhere. The option is

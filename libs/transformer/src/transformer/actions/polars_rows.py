@@ -1,3 +1,4 @@
+# engine: python-polars (the polars_ actions on rows, each one a Polars call)
 """The `polars_` actions of the group "rows": pick, cut, number and drop rows (Polars 1.40.1 LazyFrame methods).
 
 Why this module exists: a recipe maker needs the table-step methods that choose rows by position or by rank

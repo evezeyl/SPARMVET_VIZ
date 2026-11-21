@@ -1,3 +1,4 @@
+# engine: python-polars (the bridge to the action registry; it imports Polars but does not use it)
 # ==========================================
 # The Central Action Registry Interface
 # ==========================================

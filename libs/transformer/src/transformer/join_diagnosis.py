@@ -1,3 +1,4 @@
+# engine: python-polars (plain words for a join that Polars refuses)
 """Plain words for a join whose `validate` Polars refuses (D35b, PROVISIONAL).
 
 Polars checks `validate` when the plan runs and answers "join keys did not fulfill 1:1 validation". POLARS decides whether the

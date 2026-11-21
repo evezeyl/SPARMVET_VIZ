@@ -1,3 +1,4 @@
+# engine: python-polars (writes the Polars filter and drop actions of an audit step)
 """
 T3 -> recipe-action translator (ADR-097 decision 4, REPRO-TRANSLATOR-1, issue #47).
 

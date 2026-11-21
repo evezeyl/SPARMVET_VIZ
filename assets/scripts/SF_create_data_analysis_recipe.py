@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# engine: python-polars (a script that reads one data file with Polars to write a recipe)
 """Simpler variant of create_data_analysis_recipe.py: infer `input_fields` of ONE tab-separated or comma-separated file.
 
 Writes recipe format 1 (D-0250: a table has `label`, `source`, `null_values`, `strip`, `input_fields` and `tier1: {steps: []}`):

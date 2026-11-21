@@ -1,3 +1,4 @@
+# engine: python-polars (the step_ actions: several Polars calls kept as one step)
 """The `step_` actions: more than one Polars call, kept because a single step is simpler to read (W6, DEC36, R7).
 
 One old action stays a composite: `step_top_n_other` (about eight Polars calls, the tie rule of ADR-090, a port of the R

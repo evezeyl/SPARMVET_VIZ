@@ -1,3 +1,4 @@
+# engine: python-polars (matches ID lists with plain Python; it imports Polars but does not use it)
 from __future__ import annotations
 
 import re

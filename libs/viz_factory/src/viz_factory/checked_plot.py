@@ -1,3 +1,4 @@
+# engine: python-plotnine (the checked call that draws a plotnine plot and explains its failure; uses matplotlib figures)
 """A plot that explains its own failure: the plot the factory builds, and the one checked call that draws it (VIZ-STANDARD-1, V7).
 
 # @deps

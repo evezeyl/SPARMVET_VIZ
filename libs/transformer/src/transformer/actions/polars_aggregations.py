@@ -1,3 +1,4 @@
+# engine: python-polars (the polars_ table aggregations, each one a Polars call)
 """The `polars_` table aggregations: the whole table in, one row out (W6, Eve's yes 2026-11-14).
 
 Why this module exists: Polars `LazyFrame` has twelve methods that summarise every column of the table into one row

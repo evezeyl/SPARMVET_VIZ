@@ -1,3 +1,4 @@
+# engine: python-polars (catches Polars errors of a computed table and cuts the query plan from their text)
 """
 @deps
 provides: function:short_engine_text, function:computed_failure, function:first_failing_step, function:step_failure_error, function:table_failure_error, function:failure_kind, constant:RECIPE_FAULT_TYPES, constant:MACHINE_ERRNOS

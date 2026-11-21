@@ -1,3 +1,4 @@
+# engine: python-polars (writes Polars action names and Polars expression text into recipes)
 """The steps of an IdTransformation, written as steps of a data analysis recipe (recipe format 1).
 
 This library has its own small step language, run by `apply_recode_step`: `lowercase`, `regex_replace`,

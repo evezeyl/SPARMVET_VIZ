@@ -1,3 +1,4 @@
+# engine: python-polars (what each Polars action writes or keeps, by action name and join kind)
 """What the lineage walk may read from a step itself: the closed list of D-0351, in one place (LBFB step 0c, limited).
 
 The owner decided (D-0351): besides the engine's plan, the walk may read "a short fixed list of what a step itself writes" and check each reading

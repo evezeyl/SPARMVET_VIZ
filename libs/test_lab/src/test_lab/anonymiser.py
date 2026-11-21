@@ -1,3 +1,4 @@
+# engine: python-polars (anonymises the IDs of Polars tables)
 """
 Anonymiser — reversible ID anonymisation for TEST_LAB (headless, Shiny-free).
 
