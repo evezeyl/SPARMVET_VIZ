@@ -1,6 +1,6 @@
 """
 @deps
-provides: function:css_width, function:data_attributes, function:right_panel_open, function:clamp_width, constant:LEFT, constant:RIGHT, constant:MAIN_MIN_SHARE
+provides: function:css_width, function:data_attributes, function:right_panel_open, constant:LEFT, constant:RIGHT, constant:MAIN_MIN_SHARE
 consumes: none
 consumed_by: app/src/ui.py, app/handlers/home_theater.py, app/tests/test_frame_widths.py, app/tests/test_panel_widths_browser.py
 doc: .claude/rules/rules_css_style_spec.md#12, .claude/rules/ui_implementation_contract.md#2
@@ -11,7 +11,9 @@ The widths of the two side panels of the app frame, in ONE place (D-0386). Pure 
 All four user spaces share the frame (`app/src/ui.py`): a left panel, a main panel and a right panel. The side panels follow the window
 (D-0375): their default width is a share of the window between a floor and a ceiling (a CSS `clamp()`), so the main panel keeps about two thirds
 of the window at every width from 1100 to 1920 px. The user may drag a panel wider or narrower (D-0381); a dragged width is kept in the browser as a
-share of the window (D-0382) and the main panel never goes below half of the window (D-0384).
+share of the window (D-0382) and the main panel never goes below half of the window (D-0384). That limit is applied by the page script
+(`panel_widths.js`) only, from `MAIN_MIN_SHARE` and the floors read from the data attributes: there is no second copy of the rule in Python, and the browser
+tests (`app/tests/test_panel_widths_browser.py`) guard it.
 
 PROVISIONAL (D-0386: "Her manual test will judge the visuals", the values are expected to change): every number below. They are the architect's
 starting values of the study `tmpAI/panel/panel_widths/`, then adjusted by measurement in the real app (see the report of the task).
@@ -62,17 +64,6 @@ def data_attributes() -> dict:
 def default_px(panel: PanelWidth, window_px: float) -> float:
     """What the CSS `clamp()` of the default width gives at this window width."""
     return min(max(panel.share * window_px, panel.floor), panel.ceiling)
-
-
-def clamp_width(side: str, wanted_px: float, window_px: float, other_px: float) -> float:
-    """The width a drag or a stored share may take: not below the floor, and the two panels together at most one minus `MAIN_MIN_SHARE` of the window.
-
-    `other_px` is the width of the other side panel (counted open or closed, so that opening it later cannot break the rule). When the floors alone
-    are wider than the rule allows (a very narrow window) the floor wins: a panel is never made narrower than it can be used.
-    """
-    panel = PANELS[side]
-    most = window_px * (1 - MAIN_MIN_SHARE) - other_px
-    return max(panel.floor, min(wanted_px, most))
 
 
 def right_panel_open(user_space: str, mode: str, audit_available: bool) -> bool:

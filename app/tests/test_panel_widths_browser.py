@@ -290,6 +290,14 @@ def test_a_stored_share_is_applied_again_when_the_window_changes(page: Page, shi
     assert abs(widths(page)["left"] - 0.25 * 1600) < 2
 
 
+def test_the_floors_win_when_the_window_is_too_narrow_for_the_half_rule(page: Page, shiny_app: ShinyAppProc):
+    """The half rule of the script (the one copy of it) cannot push a panel under its floor: at 600 px with 0.5 stored for both panels."""
+    _open_app(page, shiny_app.url, 600, stored='{"left": 0.5, "right": 0.5}')
+    got = widths(page)
+    assert got["left"] >= fw.LEFT.floor - 1, got
+    assert got["left"] <= 600 * (1 - fw.MAIN_MIN_SHARE) + 1, got
+
+
 def test_the_right_panel_can_be_dragged_too(page: Page, shiny_app: ShinyAppProc):
     _open_recipe(page, shiny_app.url, 1366)
     set_mode(page, "audit")

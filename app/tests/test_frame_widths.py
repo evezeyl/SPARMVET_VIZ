@@ -54,27 +54,6 @@ def test_the_script_holds_no_copy_of_the_numbers():
     assert "localStorage" in text and "try" in text
 
 
-def test_a_drag_cannot_take_the_main_panel_under_half():
-    window = 1366
-    other = fw.default_px(fw.RIGHT, window)
-    wide = fw.clamp_width("left", 5000, window, other)
-    assert wide == window * (1 - fw.MAIN_MIN_SHARE) - other
-    assert (window - wide - other) / window == pytest.approx(fw.MAIN_MIN_SHARE)
-
-
-def test_a_drag_cannot_go_under_the_floor():
-    assert fw.clamp_width("left", 10, 1366, 200) == fw.LEFT.floor
-    assert fw.clamp_width("right", -5, 1366, 200) == fw.RIGHT.floor
-
-
-def test_the_floor_wins_when_the_window_is_too_narrow_for_the_half_rule():
-    assert fw.clamp_width("left", 400, 500, 170) == fw.LEFT.floor
-
-
-def test_a_width_inside_the_limits_is_kept():
-    assert fw.clamp_width("left", 250, 1600, 240) == 250
-
-
 @pytest.mark.parametrize("space,mode,audit,expected", [
     ("Home", "exploration", True, False),     # closed in Exploration (D-0375)
     ("Home", "audit", True, True),            # open in Audit mode
