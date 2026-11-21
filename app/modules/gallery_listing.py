@@ -11,7 +11,7 @@ If deleted: the viewer would list whatever the stored index lists, failed exampl
 
 # @deps
 # provides: function:matching_examples, constant:FILTER_AXES, constant:NO_MATCH_TEXT, constant:APPLY_RULE_TEXT, function:external_links_new_tab, function:build_listing, function:read_listing, class:GalleryListing, constant:READ_ONLY_LINE, constant:FAILED_LINE, constant:NOTE_LINES
-# consumes: app/src/bootloader.py (rejected_gallery_examples, gallery_index_status, as data given by the caller)
+# consumes: app/src/bootloader.py (rejected_gallery_examples, gallery_index_status, stale_gallery_pictures, as data given by the caller)
 # consumed_by: app/handlers/gallery_handlers.py, app/tests/test_gallery_listing.py
 # doc: .claude/design/recipe_format_spec.md (section 9: D4, DEC48), .claude/design/decisions_2026-11-14/proposals_for_eve.md (G-a, G-b)
 # @end_deps
@@ -21,7 +21,7 @@ import re
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 READ_ONLY_LINE = "The gallery folder is read-only, so the list was not rewritten."
 FAILED_LINE = "The gallery check could not run, so the list may be out of date."
@@ -35,28 +35,40 @@ class GalleryListing:
     registry: dict = field(default_factory=dict)
     pivot: dict = field(default_factory=dict)
     notice: list = field(default_factory=list)
+    # The same lines in blocks, `(title, lines)`; `title` is None for a lone note. The handler styles what is marked here.
+    blocks: list = field(default_factory=list)
 
 
-def build_listing(index: dict, rejected: dict, status: str) -> GalleryListing:
-    """Filter the index by the rejected examples and build the lines to show; the given index is not changed."""
+def build_listing(index: dict, rejected: dict, status: str, stale: Optional[dict] = None) -> GalleryListing:
+    """Filter the index by the rejected examples and build the lines to show; the given index is not changed.
+
+    `stale` is `{name: reason}` for the examples whose stored picture is not current (D-0400). Such an
+    example stays listed and shown; the notice only says that its picture may not match its recipe and data.
+    A name that is also rejected is not repeated here.
+    """
     registry = {name: entry for name, entry in index.get("registry", {}).items() if name not in rejected}
     pivot = {
         axis: {term: kept for term, names in terms.items() if (kept := [n for n in names if n not in rejected])}
         for axis, terms in deepcopy(index.get("pivot", {})).items()
     }
-    notice: list = []
+    blocks: list = []
     if rejected:
-        notice.append(f"{len(rejected)} example(s) not shown, failed the check:")
-        for name, reasons in sorted(rejected.items()):
-            notice.append(f"{name}, {reasons[0] if reasons else 'no reason recorded'}.")
+        lines = [f"{name}, {reasons[0] if reasons else 'no reason recorded'}." for name, reasons in sorted(rejected.items())]
         if status == "not_writable":
-            notice.append(READ_ONLY_LINE)
+            lines.append(READ_ONLY_LINE)
+        blocks.append((f"{len(rejected)} example(s) not shown, failed the check:", lines))
+    stale_shown = {name: reason for name, reason in sorted((stale or {}).items()) if name not in rejected}
+    if stale_shown:
+        # wording PROVISIONAL (plain words; the owner may change it)
+        blocks.append((f"{len(stale_shown)} example(s) shown with a picture that is not current:",
+                       [f"{name}: the picture is not current ({reason})." for name, reason in stale_shown.items()]))
     if status == "failed":
-        notice.append(FAILED_LINE)
-    return GalleryListing(registry, pivot, notice)
+        blocks.append((None, [FAILED_LINE]))
+    notice = [line for title, lines in blocks for line in ([title] if title else []) + lines]
+    return GalleryListing(registry, pivot, notice, blocks)
 
 
-def read_listing(gallery_dir: Union[str, Path], rejected: dict, status: str) -> GalleryListing:
+def read_listing(gallery_dir: Union[str, Path], rejected: dict, status: str, stale: Optional[dict] = None) -> GalleryListing:
     """Read `gallery_index.json` (the only source of what is listed, rules_gallery_standards.md section 5) and filter it.
 
     A missing or unreadable index gives an empty listing of the stored examples, but the lines about rejected
@@ -66,7 +78,7 @@ def read_listing(gallery_dir: Union[str, Path], rejected: dict, status: str) -> 
         index = json.loads((Path(gallery_dir) / "gallery_index.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         index = {}
-    return build_listing(index if isinstance(index, dict) else {}, rejected, status)
+    return build_listing(index if isinstance(index, dict) else {}, rejected, status, stale)
 
 
 # The six taxonomy groups, as the ids of the filter inputs write them (gallery_filter_<axis>); the index pivot calls them by_<axis>.
