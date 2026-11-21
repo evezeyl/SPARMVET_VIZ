@@ -40,7 +40,7 @@ What changes a result silently, hides a step from the user, or reconsiders a dec
 
 | # | Tool | What | Evidence | Label |
 |---|---|---|---|---|
-| H1 | Anonymisation | The id column is renamed `anon_<column>` and moved first; the screen does not say so, and a recipe that declares the old name will not find it. | `AN:119-120`, `AN:304-310` | read now; the refusal by HOME: reasoned, not run (`04` V4) |
+| H1 | Anonymisation | The id column is renamed `anon_<column>` and moved first; the screen does not say so, and a recipe that declares the old name will not find it. | `AN:119-120`, `AN:302-309` | read now; the refusal by HOME: reasoned, not run (`04` V4) |
 | H2 | ID reconciliation | Fuzzy matches are not written as steps and the screen does not say so. | `03` item 14 | as reported |
 | H3 | Synthetic data | No list of the planted errors is returned; the user cannot tell what the test covered. Planted type errors are refused at ingestion and never reach the recipe's steps. | architect 1.2 (`AQ:220-300`; a run of `apply_declared`) | as reported; the refusal: ran (viewpoint) |
 | H4 | Synthetic and reformatted files in HOME | Once HOME's Data Import has copied a Test Lab file over a recipe's data file, nothing marks it as synthetic (see "Found on the way, about HOME"). | architect 3.A cons | reasoned (viewpoint) |
