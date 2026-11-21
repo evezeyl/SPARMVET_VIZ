@@ -16,7 +16,7 @@ from utils.recipe_check import check_recipe, spec
 from utils.recipe_loader import check_recipe_file
 from viz_gallery.example_recipe import data_contract, dump_example, example_recipe
 from viz_gallery.gallery_manager import GalleryManager
-from viz_gallery.taxonomy import (display_axes, example_taxonomy, filter_panels, first_geom, tag_strip, the_plot,
+from viz_gallery.taxonomy import (display_axes, example_name, example_taxonomy, filter_panels, first_geom, tag_strip, the_plot,
                                   with_tag_strip)
 
 RECIPE = "data_analysis_recipe.yaml"
@@ -315,3 +315,148 @@ def test_a_check_that_did_not_cover_the_actions_and_the_components_is_refused(tm
     with pytest.raises(ValueError, match="was not checked against"):
         _submit(manager, tmp_path, catalogs=catalogs)
     assert list(Path("assets/gallery_data").iterdir()) == []
+
+
+# ---- the name of an example is the ui_label of its plot entry (D-0387) -------------------------------------------------
+
+def test_the_name_is_the_ui_label_of_the_plot_entry_not_info_label(tmp_path):
+    folder = _write_example(tmp_path, "my_plot")
+    recipe = _recipe("my_plot")
+    recipe["info"]["label"] = "Name for the recipe maker"
+    the_plot(recipe)[1]["ui_label"] = "Name for the user"
+    (folder / RECIPE).write_text(dump_example(recipe))
+    manager = GalleryManager(str(tmp_path))
+    index = manager.rebuild_index(CATALOGS)
+    assert index["registry"]["my_plot"]["name"] == "Name for the user"
+    assert example_name(recipe) == "Name for the user"
+
+
+def test_a_plot_entry_without_ui_label_is_refused_by_the_check_and_has_no_name(tmp_path):
+    folder = _write_example(tmp_path, "my_plot")
+    recipe = _recipe("my_plot")
+    del the_plot(recipe)[1]["ui_label"]
+    (folder / RECIPE).write_text(dump_example(recipe))
+    examples = GalleryManager(str(tmp_path)).check_examples(CATALOGS)
+    assert "my_plot" in examples.rejected and any("ui_label" in text for text in examples.rejected["my_plot"])
+    with pytest.raises(ValueError, match="ui_label"):
+        example_name(recipe)
+
+
+# ---- the index at start follows the examples (the six cases of the Gallery study, architect section 7) ---------------
+
+def _synced_gallery(tmp_path, *names):
+    for name in names or ("my_plot",):
+        _write_example(tmp_path, name, label=f"Plot {name}")   # one name each: a repeated name is left out
+    manager = GalleryManager(str(tmp_path))
+    manager.rebuild_index(CATALOGS)
+    return manager
+
+
+def _rewrite_recipe(tmp_path, name, change):
+    recipe = _recipe(name, label=f"Plot {name}")
+    change(recipe)
+    (tmp_path / name / RECIPE).write_text(dump_example(recipe))
+
+
+def _index(tmp_path):
+    return json.loads((tmp_path / "gallery_index.json").read_text(encoding="utf-8"))
+
+
+def test_sync_of_an_unchanged_gallery_does_not_touch_the_file(tmp_path):
+    manager = _synced_gallery(tmp_path)
+    before = (tmp_path / "gallery_index.json").stat()
+    content = (tmp_path / "gallery_index.json").read_bytes()
+    _, outcome = manager.sync_index(CATALOGS)
+    after = (tmp_path / "gallery_index.json").stat()
+    assert outcome == "unchanged"
+    assert (tmp_path / "gallery_index.json").read_bytes() == content and after.st_mtime_ns == before.st_mtime_ns
+
+
+def test_sync_rewrites_the_index_when_a_name_changed(tmp_path):
+    manager = _synced_gallery(tmp_path)
+    _rewrite_recipe(tmp_path, "my_plot", lambda r: the_plot(r)[1].update(ui_label="A new name"))
+    _, outcome = manager.sync_index(CATALOGS)
+    assert outcome == "rewritten"
+    assert _index(tmp_path)["registry"]["my_plot"]["name"] == "A new name"
+
+
+def test_sync_rewrites_the_index_when_a_taxonomy_value_changed(tmp_path):
+    manager = _synced_gallery(tmp_path)
+    _rewrite_recipe(tmp_path, "my_plot", lambda r: the_plot(r)[1]["taxonomy"].update(family="Comparison"))
+    _, outcome = manager.sync_index(CATALOGS)
+    index = _index(tmp_path)
+    assert outcome == "rewritten"
+    assert index["registry"]["my_plot"]["taxonomy"]["family"] == "Comparison"
+    assert index["pivot"]["by_family"] == {"Comparison": ["my_plot"]}
+
+
+def test_sync_rewrites_the_index_when_the_thumbnail_appears(tmp_path):
+    # a missing preview_plot.png makes the example fail the check (GP05), so the picture flag that can change alone is the thumbnail
+    manager = _synced_gallery(tmp_path)
+    assert _index(tmp_path)["registry"]["my_plot"]["has_thumb"] is False
+    (tmp_path / "my_plot" / "preview_thumb.png").write_bytes(PNG)
+    assert manager.sync_index(CATALOGS)[1] == "rewritten"
+    assert _index(tmp_path)["registry"]["my_plot"]["has_thumb"] is True
+
+
+def test_sync_rewrites_the_index_when_an_example_is_added(tmp_path):
+    manager = _synced_gallery(tmp_path)
+    _write_example(tmp_path, "second_plot", label="Plot second_plot")
+    assert manager.sync_index(CATALOGS)[1] == "rewritten"
+    assert set(_index(tmp_path)["registry"]) == {"my_plot", "second_plot"}
+
+
+def test_sync_rewrites_the_index_when_an_example_is_removed(tmp_path):
+    import shutil
+    manager = _synced_gallery(tmp_path, "my_plot", "second_plot")
+    shutil.rmtree(tmp_path / "second_plot")
+    assert manager.sync_index(CATALOGS)[1] == "rewritten"
+    assert set(_index(tmp_path)["registry"]) == {"my_plot"}
+
+
+def test_sync_leaves_out_an_example_that_fails_the_check_with_its_reason(tmp_path):
+    manager = _synced_gallery(tmp_path, "my_plot", "second_plot")
+    _rewrite_recipe(tmp_path, "second_plot", lambda r: the_plot(r)[1].pop("ui_label"))
+    examples, outcome = manager.sync_index(CATALOGS)
+    index = _index(tmp_path)
+    assert outcome == "rewritten" and "second_plot" in examples.rejected
+    assert set(index["registry"]) == {"my_plot"}
+    assert any("ui_label" in text for text in index["metadata"]["rejected"]["second_plot"])
+    assert manager.sync_index(CATALOGS)[1] == "unchanged"
+
+
+def test_build_index_is_pure_and_the_write_is_separate(tmp_path):
+    manager = _synced_gallery(tmp_path)
+    before = (tmp_path / "gallery_index.json").read_bytes()
+    built = manager.build_index(manager.check_examples(CATALOGS))
+    assert built["registry"] == _index(tmp_path)["registry"] and built["pivot"] == _index(tmp_path)["pivot"]
+    assert (tmp_path / "gallery_index.json").read_bytes() == before
+
+
+# ---- a name or a plot id repeated across examples (the set check) -------------------------------------------------------
+
+def test_a_later_example_with_the_same_name_is_left_out_with_its_reason(tmp_path):
+    _write_example(tmp_path, "a_first")
+    _write_example(tmp_path, "b_second")   # both are called "My Plot"
+    examples = GalleryManager(str(tmp_path)).check_examples(CATALOGS)
+    assert set(examples.accepted) == {"a_first"}
+    assert any("My Plot" in text and "a_first" in text for text in examples.rejected["b_second"])
+
+
+def test_a_later_example_with_the_same_plot_id_is_left_out_with_its_reason(tmp_path):
+    _write_example(tmp_path, "a_first", plot_id="shared_id", label="First")
+    _write_example(tmp_path, "b_second", plot_id="shared_id", label="Second")
+    examples = GalleryManager(str(tmp_path)).check_examples(CATALOGS)
+    assert set(examples.accepted) == {"a_first"}
+    assert any("X5" in text and "shared_id" in text for text in examples.rejected["b_second"])
+
+
+def test_examples_with_their_own_name_and_plot_id_are_all_kept_and_the_reason_reaches_the_index(tmp_path):
+    _write_example(tmp_path, "a_first", label="First")
+    _write_example(tmp_path, "b_second", label="Second")
+    _write_example(tmp_path, "c_third")
+    _write_example(tmp_path, "d_fourth")   # "My Plot" again, repeats c_third
+    manager = GalleryManager(str(tmp_path))
+    index = manager.rebuild_index(CATALOGS)
+    assert set(index["registry"]) == {"a_first", "b_second", "c_third"}
+    assert "d_fourth" in index["metadata"]["rejected"]

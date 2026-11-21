@@ -4,7 +4,49 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
-## OPEN STATE 2026-11-20, 16:50
+## OPEN STATE 2026-11-20, 22:30
+
+- dev head `0c17fff8`. Not pushed: the owner pushes. Ledger ends at D-0396.
+- Merged today after 16:50 (one line each):
+  - `e6ae8d0f` HOME fixes of the browser walk: the screen cleared while a recipe opens; the header strip in a narrow window; the filter form cleared with the filters; the README tiers line; the help page; a test that no view rebuilds a stored table.
+  - `cdbef5ff` lineage walk, step 0b: the plan of every place composed from the build's own code; the audit's key-drop gate given the plan; an app error no longer shown as "cannot tell". PROVISIONAL: a drop the walk cannot follow is not written (owner's choice open: allow with a warning, or refuse).
+  - `7a8369e2` ledger history test redone (D-0380).
+  - `84163a1b`, `a7dfc724` step 1 of the BLUEPRINT review (D-0395); the earlier studies kept in git.
+  - `211270e2` the Export test under the opening cover.
+  - `b429c632` three HOME fixes: whole numbers only for an integer column at entry (D-0376); Pending badge and Apply shown in Audit mode only (D-0377); confirmation before Delete Session (D-0378).
+  - `3c66e790` Gallery: four dead links replaced, three without a page left as they are (ecdf, freqpoly, qq_plot; D-0379); "Clear all ticks" button.
+  - `0c17fff8` Gallery: the name read from `ui_label` (D-0387); the index rebuilt at start and never holding a machine-dependent path; a repeated name left out with its reason (PROVISIONAL: the first in folder-name order is kept); the data sample read by the picture's path (no decision number given in the brief).
+- Running at 22:30:
+  - Reviewer `dev_control_night` (agent): full control of dev at `0c17fff8`; output `tmpAI/coordinator/dev_control_night/`. Nothing is merged while it runs tests in the main tree.
+  - Builder: panel widths on branch `task/panel-widths`, worktree `.claude/worktrees/panel-widths` (FRAME-PANEL-WIDTHS; D-0375, D-0381 to D-0386). Not merged; to merge after review.
+- Next, in order:
+  1. Merge the panel widths after review and the control.
+  2. Gallery: UML brought up to date (needs StarUML running; GALLERY-STUDY part b); ADR notes (part e).
+  3. Gallery content corrections after the owner's choices (GALLERY-CONTENT-CORRECTIONS, GALLERY-PICTURE-PROOF).
+  4. The four safe steps of the recipe places study (RECIPE-PLACES-SAFE-STEPS), after the owner confirms.
+  5. SESSION-REFUSED-AFTER-RECIPE-EDIT waits for the recipe-names choices (recipe c and e).
+  6. Lineage walk, next step: rows per line; reshape steps.
+  7. The audit recipe as a file; the dialog "Create audit step".
+- Studies ready for the owner (tables; she decides when she is home):
+  - `tmpAI/panel/gallery_study/TABLE_FOR_THE_OWNER.md` (9 questions; three examples teach something wrong: heatmap_correlation, tile_simple, dumbbell; tags unreliable).
+  - `tmpAI/panel/recipe_places/TABLE_FOR_THE_OWNER.md` (11 questions P1 to P11; M1 then M2 recommended).
+  - `tmpAI/panel/recipe_versions/TABLE_FOR_THE_OWNER.md`.
+  - `tmpAI/panel/adr_history/TABLE_FOR_THE_OWNER.md`.
+  - `tmpAI/panel/panel_widths/`.
+- Open with the owner (none blocks):
+  - HOME audit: a column drop the walk cannot check: allow with a warning, or refuse.
+  - HOME filters: a marker "applied / not applied yet" on each row; several filters combined with AND, or one at a time.
+  - HOME: the Pending badge shown only when a step really waits (today it shows from the first screen in Audit mode).
+  - An OLD saved audit step or a recipe's own filter step with a decimal on an integer column: keep comparing as a number (as built), or refuse everywhere.
+  - Gallery: the three links without a page (remove, link to the plotnine reference, or leave).
+  - Gallery: of two examples with the same name, keep the first by folder name (as built, provisional) or leave both out.
+  - Gallery study Q1 to Q9; recipes P1 to P11 (places), the selector and old versions, what counts as modified; the ADR history table; what the column field `label` is for; the seed step.
+- Fallback reviews:
+  - BLUEPRINT review: step 1 done and parked. `.claude/design/blueprint_revision/SUBTASKS.md` says where to resume.
+  - Test Lab review: not started.
+- Channel: last block of the coordinator M420; next free M424 (the review session used M421 to M423).
+
+## OPEN STATE 2026-11-20, 16:50 (older)
 
 - dev head `8772f368`. Not pushed: the owner pushes. Merged since 15:20: `9b22a67d` (the build at the opening of a recipe; controls identical, 334 keys; headless 12900 passed, browser 273 passed) and `8772f368` (the lineage walk, step 4: a key drop refused by place; tests `app/tests/test_author_drops.py`). Ledger: `D-0370` to `D-0373` added (demo in about two weeks, day to confirm; key-drop rule refined; HOME clears the screen while a recipe opens, not built; the demo recipe not changed by agents). Total 373, EVE 366.
 - Running: builder `task/home-walk-fixes` (`.claude/worktrees/home-walk-fixes`): findings of the HOME browser walk; builder `task/lbfb` (`.claude/worktrees/lbfb`): lineage step 0b and the gate given the plan.

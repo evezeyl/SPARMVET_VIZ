@@ -87,13 +87,13 @@ def test_the_full_check_refuses_a_wrong_argument_and_a_wrong_theme(tmp_path):
     assert list(index["registry"]) == ["bar_simple"] and set(index["metadata"]["rejected"]) == {"bar_colr", "bar_theme"}
 
 
-def test_the_committed_index_is_the_index_rebuilt_from_the_examples(tmp_path):
+def test_the_committed_index_is_the_index_rebuilt_from_the_examples(tmp_path, monkeypatch):
     work = tmp_path / "assets" / "gallery_data"
     shutil.copytree(SHIPPED, work)
+    monkeypatch.chdir(tmp_path)  # the paths of the index are relative to the folder the program runs from
     committed = json.loads((SHIPPED / "gallery_index.json").read_text())
     rebuilt = rebuild_gallery_index(work)
-    relative = {name: {**entry, "path": f"assets/gallery_data/{name}/{RECIPE}"} for name, entry in rebuilt["registry"].items()}
-    assert committed["registry"] == relative
+    assert committed["registry"] == rebuilt["registry"]
     assert committed["pivot"] == rebuilt["pivot"]
     assert committed["metadata"]["count"] == rebuilt["metadata"]["count"] == len(rebuilt["registry"])
     assert committed["metadata"]["rejected"] == rebuilt["metadata"]["rejected"] and set(committed["metadata"]["rejected"]) == WAITING

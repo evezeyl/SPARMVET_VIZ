@@ -13,15 +13,16 @@ No Shiny import. App features gate: none here; the Gallery panel itself is gated
 If deleted: the examples are checked for structure only and the previews cannot be regenerated.
 
 # @deps
-# provides: function:check_gallery, function:check_gallery_at_start, function:rebuild_gallery_index, function:render_example, function:example_table, constant:PREVIEW_SIZE
+# provides: function:check_gallery, function:check_gallery_at_start, function:rebuild_gallery_index, function:render_example, function:example_table, function:example_sample, constant:PREVIEW_SIZE
 # consumes: app/modules/data_analysis_recipe_validator.py (checker_catalogs), libs/viz_gallery/src/viz_gallery/gallery_manager.py, libs/viz_gallery/src/viz_gallery/taxonomy.py, app/modules/orchestrator.py, app/modules/cache_keys.py, libs/utils/src/utils/config_loader.py, app/modules/engine_registry.py (PlotEngines), libs/viz_factory/src/viz_factory/arguments.py, libs/viz_factory/src/viz_factory/registry.py, libs/transformer/src/transformer/actions/base.py
-# consumed_by: app/src/bootloader.py, assets/scripts/refresh_gallery.py, assets/scripts/gallery_previews.py, app/tests/test_gallery_app_path.py
+# consumed_by: app/src/bootloader.py, app/handlers/gallery_handlers.py, assets/scripts/refresh_gallery.py, assets/scripts/gallery_previews.py, app/tests/test_gallery_app_path.py
 # doc: .claude/design/recipe_format_spec.md (section 9: G2, G3, D4, D5; section 14)
 # @end_deps
 """
 import contextlib
 import io
 import shutil
+import tempfile
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
@@ -43,7 +44,7 @@ def check_gallery(gallery_dir: Union[str, Path]) -> Examples:
 def check_gallery_at_start(gallery_dir: Union[str, Path]) -> Tuple[Examples, str]:
     """The check at app start (DEC48): the full check of every example, the index fixed if it disagrees with it.
 
-    The same function as the rebuild (`GalleryManager.sync_index` calls `rebuild_index`). It never raises for an
+    The same check and the same build of the index as the rebuild (`GalleryManager.sync_index` builds the index with `build_index` and writes it with `write_index` only when it differs from the file). It never raises for an
     example: one that fails is left out of the index and its reasons are in `metadata.rejected`.
     """
     return GalleryManager(str(gallery_dir)).sync_index(checker_catalogs())
@@ -98,6 +99,16 @@ def example_table(example_dir: Union[str, Path], work_dir: Union[str, Path]) -> 
     """The table the plot of an example reads, built by the app's path (the source path is relative to the current folder)."""
     with contextlib.redirect_stdout(io.StringIO()):
         return _build(Path(example_dir), Path(work_dir), Path("."))[2].collect()
+
+
+def example_sample(example_dir: Union[str, Path]) -> pl.DataFrame:
+    """The data sample the Gallery shows for an example: the table its plot is drawn from (`example_table`), never the file read plainly.
+
+    The file is read through the declared types of the recipe, so a number kept as text, or a column the recipe
+    changes in tier 1, shows as the plot sees it. The work files go to a temporary folder that is removed.
+    """
+    with tempfile.TemporaryDirectory(prefix="gallery_sample_") as work_dir:
+        return example_table(example_dir, work_dir)
 
 
 def render_example(example_dir: Union[str, Path], work_dir: Union[str, Path], out_path: Union[str, Path],
