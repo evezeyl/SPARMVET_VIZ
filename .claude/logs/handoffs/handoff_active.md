@@ -4,6 +4,13 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
+## OPEN STATE 2026-11-21, late morning (the owner is on a break; the time is not written here because it was not read from the clock by the writer)
+- Decided by the owner today and recorded: D-0397 to D-0405 (Gallery questions Q1 to Q7 and Q9; a tag mismatch is an advice). Gallery Q8 comes to her with the table of name fields.
+- Tables ready for her, all under `tmpAI/panel/`: `deployment_io/` (reading and writing recipes and data per deployment; fonts added as choice 14), `gallery_verify/` (the 34 examples verified; tag advices), `gallery_taxonomy/` (review of the taxonomy), `gallery_study/Q1_NAMES_AND_HEADINGS_DRAFT.md` and `Q2_CHART_TYPE_DRAFT.md`, `name_fields/` (the purpose of each name field), `help_beside/` (help that stays open beside the screen), `data_import_words/`. Each folder holds `TABLE_FOR_THE_OWNER.md` unless named otherwise.
+- Running when this was written: the writer of `names_whole_app/TABLE_FOR_THE_OWNER.md`.
+- Waits for her: her 'yes' for the statistician agent (task PANEL-STATISTICIAN-AGENT); the repair of the out-of-date HOME browser test; every table above. No recipe, name, heading, tag, spec or screen is changed before she has read them.
+- Her standing rule of today: an option is judged on merit; 'it reconsiders a decision' is information in its own column, never an argument.
+
 ## OPEN STATE 2026-11-21, 09:50 by the clock (note: the time '09:30' of the block below was written about 45 minutes ahead of the clock)
 - Nothing is running. `dev` is clean and not pushed; last commits: the ledger lines D-0397, D-0398, D-0399 (Gallery questions Q1, Q2, Q3 decided by the owner) and the UML commit.
 - Ready for the owner to read: the deployment study table (`tmpAI/panel/deployment_io/TABLE_FOR_THE_OWNER.md`); the Gallery drafts for Q1 and Q2 (`tmpAI/panel/gallery_study/Q1_NAMES_AND_HEADINGS_DRAFT.md`, `Q2_CHART_TYPE_DRAFT.md`); the Data Import message texts (`tmpAI/panel/data_import_words/TABLE_FOR_THE_OWNER.md`) and facts (`tmpAI/coordinator/data_import_questions/ANSWERS_A_AND_B.md`); the cause of the failing HOME browser test (`tmpAI/coordinator/smoke_preview_filter/REPORT.md`: the test is out of date; she chooses the repair).
