@@ -4,9 +4,9 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
-## OPEN STATE 2026-11-20, 22:30
+## OPEN STATE 2026-11-21, 03:25
 
-- dev head `0c17fff8`. Not pushed: the owner pushes. Ledger ends at D-0396.
+- dev head `8cd699f7` (the panel widths merged on top of `0c17fff8`), plus the records commit that follows this block. Not pushed: the owner pushes. Ledger ends at D-0396.
 - Merged today after 16:50 (one line each):
   - `e6ae8d0f` HOME fixes of the browser walk: the screen cleared while a recipe opens; the header strip in a narrow window; the filter form cleared with the filters; the README tiers line; the help page; a test that no view rebuilds a stored table.
   - `cdbef5ff` lineage walk, step 0b: the plan of every place composed from the build's own code; the audit's key-drop gate given the plan; an app error no longer shown as "cannot tell". PROVISIONAL: a drop the walk cannot follow is not written (owner's choice open: allow with a warning, or refuse).
@@ -16,11 +16,11 @@
   - `b429c632` three HOME fixes: whole numbers only for an integer column at entry (D-0376); Pending badge and Apply shown in Audit mode only (D-0377); confirmation before Delete Session (D-0378).
   - `3c66e790` Gallery: four dead links replaced, three without a page left as they are (ecdf, freqpoly, qq_plot; D-0379); "Clear all ticks" button.
   - `0c17fff8` Gallery: the name read from `ui_label` (D-0387); the index rebuilt at start and never holding a machine-dependent path; a repeated name left out with its reason (PROVISIONAL: the first in folder-name order is kept); the data sample read by the picture's path (no decision number given in the brief).
-- Running at 22:30:
-  - Reviewer `dev_control_night` (agent): full control of dev at `0c17fff8`; output `tmpAI/coordinator/dev_control_night/`. Nothing is merged while it runs tests in the main tree.
-  - Builder: panel widths on branch `task/panel-widths`, worktree `.claude/worktrees/panel-widths` (FRAME-PANEL-WIDTHS; D-0375, D-0381 to D-0386). Not merged; to merge after review.
-- Next, in order:
-  1. Merge the panel widths after review and the control.
+- Running at 03:25: nothing. Worktree `.claude/worktrees/panel-widths` and branch `task/panel-widths` removed.
+  - Panel widths (FRAME-PANEL-WIDTHS; D-0375, D-0381 to D-0386) merged as `8cd699f7`: all user spaces; side panels follow the window (left 17 %, 190..340 px; right 15 %, 170..340 px), the main panel keeps at least half, the grip drag, double click resets; HOME right panel closed and empty in Exploration, opens with Audit mode. Values provisional in `app/modules/frame_widths.py` until her test (D-0386). Reviews: `tmpAI/coordinator/panel_widths_review/`, `panel_widths_review2/`, `panel_widths_review3/`. Controls: 13,565 headless passed; 432 browser passed (4 load flakes passed alone); 9 of 9 app features start.
+  - Open for her test, none blocking: HOME right panel blank 1 to 3 s when Audit mode opens; HOME: text typed in a reason box while the list is redrawn is lost; HOME: Apply commits the waiting steps of every plot; HOME/GALLERY: a right panel closed by hand stays closed in the Gallery; BLUEPRINT: right panel cramped at 170 px, tab strip overhangs its card by 8 px. Not covered by the controls: other browsers, touch, windows under 1000 px.
+- Next, in order (item 1 is done):
+  1. Done 03:25: the panel widths merged.
   2. Gallery: UML brought up to date (needs StarUML running; GALLERY-STUDY part b); ADR notes (part e).
   3. Gallery content corrections after the owner's choices (GALLERY-CONTENT-CORRECTIONS, GALLERY-PICTURE-PROOF).
   4. The four safe steps of the recipe places study (RECIPE-PLACES-SAFE-STEPS), after the owner confirms.
@@ -41,8 +41,9 @@
   - Gallery: the three links without a page (remove, link to the plotnine reference, or leave).
   - Gallery: of two examples with the same name, keep the first by folder name (as built, provisional) or leave both out.
   - Gallery study Q1 to Q9; recipes P1 to P11 (places), the selector and old versions, what counts as modified; the ADR history table; what the column field `label` is for; the seed step.
+- Remaining night work: only the fallback reviews BLUEPRINT-REVIEW-1 (resume at step 2, `.claude/design/blueprint_revision/SUBTASKS.md`) and TESTLAB-REVIEW-1.
 - Fallback reviews:
-  - BLUEPRINT review: step 1 done and parked. `.claude/design/blueprint_revision/SUBTASKS.md` says where to resume.
+  - BLUEPRINT review: step 1 done; resume at step 2 (`.claude/design/blueprint_revision/SUBTASKS.md`).
   - Test Lab review: not started.
 - Channel: last block of the coordinator M420; next free M424 (the review session used M421 to M423).
 
