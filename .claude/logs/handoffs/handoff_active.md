@@ -5,7 +5,8 @@
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
 ## OPEN STATE 2026-11-21, afternoon (time not read from the clock by the writer)
-- Recorded 2026-11-21: D-0409 (names question 4, option B, widened: `ui_label` for every name, the export included; the open point on `info.ui_title` waits for her); new task NAMES-UI-LABEL-EVERYWHERE in `tasks.md` (not started; built with the one pass of D-0407).
+- Recorded 2026-11-21: D-0409 (names question 4, option B, widened: `ui_label` for every name, the export included; the open point on `info.ui_title` is answered by D-0410); new task NAMES-UI-LABEL-EVERYWHERE in `tasks.md` (not started; built with the one pass of D-0407).
+- Recorded 2026-11-21: D-0410 (names question 5, option A: the recipe banner uses `info.ui_label`; `ui_title` leaves the recipe format; longer text in `info.description`; replaces the key `info.ui_title` of D-0408; the app features `ui_title` is still open). Folded into NAMES-UI-LABEL-EVERYWHERE; not started.
 - Running 2026-11-21 afternoon: a builder on the key per Gallery picture (D-0400), worktree `.claude/worktrees/gallery-picture-key`, branch `task/gallery-picture-key` (adds only the key and the notice; no recipe, picture, name or spec change; to be reviewed before any merge); a reviewer on the unverified points of the help study (`tmpAI/panel/help_beside/RUN_FACTS_2.md`). Back: `tmpAI/coordinator/home_plot_width/REPORT.md` (HOME: after leaving Audit mode the plot is redrawn at full width by itself within 0.5 to 5 s; not a permanent defect), `tmpAI/coordinator/testlab_conversion/FACTS_AND_PLAN.md` (Test Lab conversion: facts and ten questions for the owner).
 
 ## OPEN STATE 2026-11-21, late morning (the owner is on a break; the time is not written here because it was not read from the clock by the writer)
