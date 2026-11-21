@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# engine: python-plotnine+python-polars (draws the plots of the recipes through the app path and stores the pictures; sets the matplotlib backend; its Polars import is not used)
+# engine: python-plotnine+python-polars (draws the plots of the recipes through the app path and stores the pictures; sets the matplotlib backend; it imports Polars but does not use it)
 """Draw every plot of every recipe by the app's own path, store the pictures, and later prove they did not change.
 
 Why: a change of the recipe format must leave every picture identical. The golden baseline compares tables and the data

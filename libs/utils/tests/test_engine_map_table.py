@@ -36,7 +36,8 @@ def test_the_table_in_the_page_equals_the_script_output():
 
 def test_a_changed_count_in_the_page_is_found():
     text = PAGE.read_text(encoding="utf-8")
-    broken = text.replace("| All | 18 |", "| All | 19 |", 1)
+    first = script_lines()[-1].split("|")[2].strip()   # the first count of the totals row, whatever it is today
+    broken = text.replace(f"| All | {first} |", f"| All | {int(first) + 1} |", 1)
     assert broken != text
     assert page_lines(broken) != script_lines()
 

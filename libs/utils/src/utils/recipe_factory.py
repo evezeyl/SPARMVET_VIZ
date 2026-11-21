@@ -1,3 +1,4 @@
+# engine: python-plotnine (writes a plot entry whose default layer is the plotnine geom_bar)
 """A minimal valid recipe in format version 1, and the one way to write recipe text (work order W8).
 
 Two uses:

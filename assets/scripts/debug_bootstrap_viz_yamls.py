@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# engine: python-plotnine (writes plotnine layer names, such as geoms, scales, coords, guides and theme elements, into the test recipes it makes)
 # @deps
 # provides: script:debug_bootstrap_viz_yamls
 # consumes: libs/viz_factory/tests/test_data/ (writes bootstrapped YAML test data analysis recipes)
