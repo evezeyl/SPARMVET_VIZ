@@ -30,6 +30,7 @@ The following paths in the project root are the **ONLY Authorized** core operati
 - **`./.claude/tasks/`**: `tasks.md` (Sole execution status authority).
 - **`./.claude/knowledge/`**: Persistent codebase intelligence logs and KIs.
 - **`./.claude/logs/`**: **Log Authority**. ALL session audits and daily logs MUST be stored in `./.claude/logs/audit_{YYYY-MM-DD}.md`. Content in these logs is **APPEND-ONLY**; deleting or replacing previous session entries is strictly FORBIDDEN. The creation of log files in the project root or `EVE_WORK/` is strictly FORBIDDEN.
+- **`./.claude/design/studies/`**: studies (a subfolder per study) that are ongoing or that a decision rests on; a study whose result becomes definitive design is moved to `./.claude/design/` (Eve, 2026-11-21, ledger `D-0419`, `D-0421`). `./tmpAI/` and `./tmp/` are scratch: no permanent document stays only there. [DECIDED, not built: the folder is created when the first study is moved, after her reading of the list.]
 - **`./docs/`**: The absolute single source of truth for all human-facing project knowledge, diagrams, and API boundaries.
 - **Zero-Discovery Rule**: The agent must NOT perform "exploratory" reads. If a file is not in `tree.txt` or the `Master Index`, halt and ask the user.
 - **Context Loading**: Upon initialization, the agent MUST read the `Master Index` (workspace_standard.md) before any other action.
