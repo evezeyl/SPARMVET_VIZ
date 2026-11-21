@@ -66,7 +66,9 @@ def test_the_tick_is_preselected_by_operator_and_flipping_it_changes_the_rows(pa
     page.locator("#filter_apply").click()
     _wait_shiny(page)
     _wait_rows(page, 25)
-    expect(page.locator("#filter_inventory_ui")).to_contain_text("no value: removed")
+    # D-0383: the right panel is empty in Exploration; the applied filter is read in the LEFT panel, in its row
+    expect(page.locator("#filter_rows_ui")).to_contain_text("rows with no value removed")
+    assert page.locator("#filter_inventory_ui").count() == 0
     page.locator("#filter_remove_0").click()
     _wait_shiny(page)
     _wait_rows(page, 27)
@@ -81,6 +83,6 @@ def test_the_tick_is_preselected_by_operator_and_flipping_it_changes_the_rows(pa
     # 25 rows equal 2024, 2 have no value: keep adds those 2, so the filter leaves all 27 and the badge says a filter is on
     expect(page.locator("#home_data_preview_badge .spv-view-note", has_text="preview filter")).to_be_visible(timeout=15_000)
     assert _rows_in_grid(page) == 27
-    expect(page.locator("#filter_inventory_ui")).to_contain_text("no value: kept")
+    expect(page.locator("#filter_rows_ui")).to_contain_text("rows with no value kept")
     page.locator("#filter_remove_0").click()
     _wait_shiny(page)

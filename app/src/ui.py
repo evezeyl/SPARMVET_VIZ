@@ -4,6 +4,7 @@
 # consumes: app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1, included via ui.tags.script)
 # consumes: app/src/www/export_ready.js (D-0270, included via ui.tags.script)
 # consumes: app/src/www/gallery_select_all.js (GALLERY-CHECK-1, included via ui.tags.script, only with gallery_enabled)
+# consumes: app/src/www/panel_widths.js (D-0381, D-0382, D-0384: the drag of the side panels), app/modules/frame_widths.py (the widths)
 # consumed_by: app.src.main
 # doc: ADR-027, ADR-029a, ADR-030, ADR-039, ADR-052
 # @end_deps
@@ -11,6 +12,7 @@
 from pathlib import Path
 from shiny import ui
 from app.src.bootloader import bootloader
+from app.modules import frame_widths
 
 print("--- LOADING UI VERSION V5.1 (Aggressive Centering) ---")
 # 1. System Aesthetics (ADR-027, ADR-030)
@@ -82,6 +84,17 @@ def export_ready_script_tags() -> list:
     return [ui.tags.script(src=_versioned("/export_ready.js"))]
 
 
+def panel_widths_script_tags() -> list:
+    """The drag of the side panels: limit, keep and restore the widths in the browser (D-0381, D-0382, D-0384). The numbers come from
+    `app/modules/frame_widths.py` as data attributes of a hidden element, never from a string built into a style."""
+    return [ui.tags.script(src=_versioned("/panel_widths.js"))]
+
+
+def panel_widths_data() -> object:
+    """The hidden element that carries the numbers of `panel_widths_script_tags` (in the body: a head cannot hold a div)."""
+    return ui.div(id="spv_frame_widths", hidden=True, **frame_widths.data_attributes())
+
+
 def gallery_script_tags() -> list:
     """The script of the Gallery filter groups, only where the Gallery can exist (ADR-071 rule 2: positive inclusion)."""
     if not bootloader.is_enabled("gallery_enabled"):
@@ -105,6 +118,7 @@ app_ui = ui.page_fillable(
         *export_ready_script_tags(),
         # [GALLERY-CHECK-1] "Select all" of a Gallery filter group is done in the page, not by a server answer that can arrive late.
         *gallery_script_tags(),
+        *panel_widths_script_tags(),
         # [ADR-039] Cytoscape.js Tube-Map Integration (replaces Mermaid + svg-pan-zoom)
         # Cytoscape core + dagre layout plugin for ranked-LR hierarchical DAG.
         ui.tags.script(src=_versioned("/vendor/cytoscape.min.js")),
@@ -344,6 +358,8 @@ window.cyFit     = cyFit;
         class_="sparmvet-banner",
     )] if bootloader.get_ui_banner() else []),
 
+    panel_widths_data(),
+
     # 3-Zone Shell (ADR-029a)
     ui.layout_sidebar(
         # 1. Navigation Panel (Left)
@@ -361,7 +377,7 @@ window.cyFit     = cyFit;
                 class_="h-100 w-100 d-flex flex-column"
             ),
             class_="sidebar-content p-0",
-            width="340px",
+            width=frame_widths.css_width(frame_widths.LEFT),
             id="nav_sidebar"
         ),
         # 3. Right sidebar — excluded from DOM when not visible (ADR-073).
@@ -381,8 +397,10 @@ window.cyFit     = cyFit;
                     ui.output_ui("right_sidebar_content_ui"),
                     id="audit_sidebar",
                     bg="#c0c0c0",
-                    width="340px",
-                    position="right"
+                    width=frame_widths.css_width(frame_widths.RIGHT),
+                    position="right",
+                    # HOME starts in Exploration: closed; the server opens it with the mode (D-0375, D-0385)
+                    open="closed"
                 ),
                 # 2. Central Theater (Center)
                 ui.div(

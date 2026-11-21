@@ -56,14 +56,69 @@ def test_badge_and_apply_only_in_audit_mode_and_pending_nodes_survive(page: Page
     _wait_shiny(page)
     expect(page.locator('input[id^="t3_reason_"]')).to_have_count(1, timeout=15_000)
 
-    # back to Exploration: the controls are gone; the pending node is not lost
+    # back to Exploration: the controls are gone, and so is the whole audit panel (D-0383: the right panel is empty in Exploration, it closes
+    # again with the mode, D-0385); the pending node is not lost: it is in the state and comes back with the panel
     set_mode(page, "exploration")
     expect(page.locator("#btn_apply")).to_have_count(0, timeout=10_000)
     expect(page.locator(".audit-pending-badge")).to_have_count(0)
-    expect(page.locator('input[id^="t3_reason_"]')).to_have_count(1)
+    expect(page.locator('input[id^="t3_reason_"]')).to_have_count(0)
 
     # and back to Audit: the node, the badge and the Apply button are there
     set_mode(page, "audit")
     expect(page.locator('input[id^="t3_reason_"]')).to_have_count(1, timeout=10_000)
     expect(page.locator(".audit-pending-badge")).to_have_count(1, timeout=10_000)
     expect(page.locator("#btn_apply")).to_have_count(1, timeout=10_000)
+
+
+def _a_step_with_a_typed_reason(page: Page, url: str, reason: str) -> None:
+    """A step sent to audit in Audit mode, its reason typed and NOT applied (in a new session: the page of this module is shared by its tests)."""
+    page.goto(url)
+    page.wait_for_selector("#nav_sidebar", timeout=60_000)
+    _load_data_analysis_recipe(page, url)
+    _open_filters_panel(page)
+    _navigate_to_mlst_plot(page)
+    set_mode(page, "audit")
+    set_view(page, "T3")
+    _choose_column_firmly(page, "year")
+    _choose_fb_op(page, "gt")
+    _wait_shiny(page)
+    page.locator("#fb_value").fill("2000")
+    page.wait_for_timeout(200)
+    page.locator("#filter_add_row").click()
+    _wait_shiny(page)
+    page.locator("#filter_send_to_audit").click()
+    expect(page.locator("#propagation_confirm")).to_be_visible(timeout=10_000)
+    page.locator("#propagation_confirm").click()
+    _wait_shiny(page)
+    box = page.locator('input[id^="t3_reason_"]')
+    expect(box).to_have_count(1, timeout=15_000)
+    expect(page.locator("#btn_apply")).to_be_disabled(timeout=10_000)         # no reason yet
+    box.fill(reason)
+    box.press("Tab")                                                           # the box sends its text when it is left
+    _wait_shiny(page)
+    expect(page.locator("#btn_apply")).to_be_enabled(timeout=10_000)
+
+
+def test_a_reason_typed_and_not_applied_is_kept_when_the_user_goes_to_exploration_and_back(page: Page, shiny_app: ShinyAppProc):
+    """The panel is empty in Exploration (its boxes leave the page): the text the user typed must not be dropped silently (review 2026-11-21)."""
+    _a_step_with_a_typed_reason(page, shiny_app.url, "poor quality, notebook 12")
+    set_mode(page, "exploration")
+    expect(page.locator('input[id^="t3_reason_"]')).to_have_count(0, timeout=10_000)
+    set_mode(page, "audit")
+    box = page.locator('input[id^="t3_reason_"]')
+    expect(box).to_have_count(1, timeout=10_000)
+    expect(box).to_have_value("poor quality, notebook 12", timeout=10_000)
+    expect(page.locator("#btn_apply")).to_be_enabled(timeout=10_000)
+
+
+def test_a_reason_typed_and_not_applied_is_kept_when_the_user_goes_to_the_gallery_and_back(page: Page, shiny_app: ShinyAppProc):
+    _a_step_with_a_typed_reason(page, shiny_app.url, "outlier, see log")
+    page.locator("#sidebar_nav").get_by_text("Gallery", exact=True).first.click()
+    _wait_shiny(page)
+    expect(page.locator('input[id^="t3_reason_"]')).to_have_count(0, timeout=10_000)
+    page.locator("#sidebar_nav").get_by_text("Home", exact=True).first.click()
+    _wait_shiny(page)
+    box = page.locator('input[id^="t3_reason_"]')
+    expect(box).to_have_count(1, timeout=15_000)
+    expect(box).to_have_value("outlier, see log", timeout=10_000)
+    expect(page.locator("#btn_apply")).to_be_enabled(timeout=10_000)

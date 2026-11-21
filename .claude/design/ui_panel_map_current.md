@@ -50,7 +50,9 @@
 │  LEFT SIDEBAR        │  CENTRAL THEATER               │  RIGHT SIDEBAR            │
 │  #nav_sidebar        │  .central-theater              │  #audit_sidebar           │
 │  (aside.sidebar)     │  output_ui("dynamic_tabs")     │  (flag-gated)          │
-│  width: ~340px       │  → renders view-specific HTML  │  width: ~340px            │
+│  17% of window,      │  → renders view-specific HTML  │  15% of window,           │
+│  190-340 px          │                                │  170-340 px (closed in    │
+│                      │                                │  HOME Exploration)        │
 └──────────────────────┴────────────────────────────────┴───────────────────────────┘
 ```
 

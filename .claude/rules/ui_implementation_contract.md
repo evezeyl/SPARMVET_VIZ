@@ -28,7 +28,7 @@ The UI implements a high-density **3-column nested shell** to maximize screen re
   - A **separate collapsible accordion panel** below shows the data preview (the table chosen in "Table to view").
   - A header strip with the mode switch **Mode: Exploration | Audit** and the data choice **Table to view: Source | T1 | T2 | T3** (D-0016, D-0310). The data choice controls the data preview; the plot follows the mode (D-0019, D-0327). Details below.
   - Uses a Neutral Grey (#d1d1d1) background.
-- **Pipeline Audit (Right)**: Audit trail for T2 blueprint and T3 sandbox transitions. **Visible only for ≥ `pipeline-exploration-advanced`**. When hidden, the theater column expands to fill the full layout width — the layout element itself is excluded, not merely hidden via CSS. Uses a Dark Grey (#c0c0c0) background.
+- **Pipeline Audit (Right)**: Audit trail for T2 blueprint and T3 sandbox transitions. **Visible only for ≥ `pipeline-exploration-advanced`**. When hidden, the theater column expands to fill the full layout width — the layout element itself is excluded, not merely hidden via CSS. Uses a Dark Grey (#c0c0c0) background. In HOME the panel is closed in Exploration (it is empty if the user opens it by hand, D-0383) and opens in Audit mode, closing again when the user leaves it (D-0375, D-0385); in the other user spaces it is open (D-0381). As built; the widths and the drag are in `rules_css_style_spec.md` section 12 (values PROVISIONAL, D-0386).
 
 **Data analysis recipe-Driven Tab Rule**: Home tabs and sub-tabs MUST derive exclusively from `analysis_groups` in the active data analysis recipe. No hardcoded tab names or fallback tabs are permitted (ADR-003/ADR-004 compliance).
 

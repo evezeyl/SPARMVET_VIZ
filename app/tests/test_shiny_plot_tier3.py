@@ -149,6 +149,18 @@ def _plot_mode(page: Page, mode: str) -> None:
         set_compare(page, mode == "compare")
 
 
+def _right_panel_open_by_hand(page: Page) -> None:
+    """The right panel is closed in Exploration and open in Audit mode, so the main panel (and the picture of a plot, which follows its width) is
+    wider in Exploration. To compare pictures of the modes the user opens the panel by hand in Exploration (it is empty there, D-0383): the
+    two panes then have the same width."""
+    width = "() => { const e = document.getElementById('audit_sidebar'); return e ? e.getBoundingClientRect().width : 0; }"
+    if page.evaluate(width) < 1:
+        page.locator(".bslib-sidebar-layout:has(> #audit_sidebar) > .collapse-toggle").click()
+    page.wait_for_function(f"() => ({width})() > 50", timeout=15_000)
+    page.wait_for_timeout(800)                           # the plot is drawn again for its new width
+    _wait_shiny(page, 30_000)
+
+
 def _picture(page: Page, output_id: str) -> Image.Image:
     """The image the output shows now: the image itself (a notification can lie over a screenshot), after Shiny is idle."""
     _wait_shiny(page, 30_000)
@@ -192,6 +204,7 @@ def test_every_plot_is_drawn_from_its_own_table_in_exploration_in_audit_mode_and
     pictures = {}
     for view in ("exploration", "audit"):
         _plot_mode(page, view)
+        _right_panel_open_by_hand(page)                  # the same pane width in both modes: pictures of different widths are never the same picture
         for plot_id in (KEPT, FULL):
             _plot_tab(page, plot_id)
             pictures[(view, plot_id)] = _picture(page, f"plot_group_{plot_id}")

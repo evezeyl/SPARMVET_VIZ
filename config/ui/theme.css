@@ -26,6 +26,7 @@
  *  17. Educational Guidance Pane Content  ← edit here to restyle guidance markdown
  *  24. Blueprint IDE — Enum Preview Legend (BP-ENUM-PREVIEW-1)
  *  25. Blueprint IDE — Expression Widget Autocomplete (BP-EXPR-EDITOR-1)
+ *  26. Side panel drag handle (D-0375, D-0381)
  */
 
 /* ── 1. Layout & Backgrounds ────────────────────────────────────────────── */
@@ -1170,3 +1171,43 @@ body:has(#home_opening_cover) #sidebar_filters,
 body:has(#home_opening_cover) #data_import_ui,
 body:has(#home_opening_cover) #system_tools_ui,
 body:has(#home_opening_cover) #session_management_ui { visibility: hidden; }
+
+/* ── 26. Side panel drag handle (D-0375, D-0381) ────────────────────────── */
+/* bslib draws the handle of each side panel (class .bslib-sidebar-resize-handle); by default a 2 px bar at 10 % opacity that nobody finds.
+   Here: a wider area to grab, the resize cursor and a grip that is always visible in the middle of the panel's edge (muted grey, brand blue
+   when pointed at or dragged). The tooltip is set by app/src/www/panel_widths.js. PROVISIONAL look (D-0386): the owner judges it. */
+/* The grab area lies in the 10 px gap between a panel and the main area (rules_css_style_spec.md section 3c), never over the panel's content: bslib
+   puts it over the panel's edge, where it covered the last pixels of the controls (a day of the date calendar could not be clicked). Its z-index
+   is below the pop-ups of the panel (the date calendar has z-index 10, Bootstrap dropdowns 1000), so a pop-up that reaches the edge is above it. PROVISIONAL (D-0386). */
+.bslib-sidebar-layout { --bslib-sidebar-resize-handle-width: 10px; }
+.bslib-sidebar-layout > .bslib-sidebar-resize-handle { z-index: 5; }
+.bslib-sidebar-layout:has(> #nav_sidebar) > .bslib-sidebar-resize-handle { transform: translateX(calc(var(--bslib-sidebar-resize-handle-width) + 2px)); }
+.bslib-sidebar-layout:has(> #audit_sidebar) > .bslib-sidebar-resize-handle { transform: translateX(calc(-1 * (var(--bslib-sidebar-resize-handle-width) + 2px))); }
+/* bslib adds an invisible hit area (::before) that reaches 12 px beyond the handle, over the first controls of the panel or of the main area (a real click at
+   x=203 hit the handle in GALLERY, BLUEPRINT and TEST_LAB at 1100 px): it is cut to the handle's own 10 px. */
+.bslib-sidebar-layout > .bslib-sidebar-resize-handle::before { right: 0; }
+.bslib-sidebar-layout > .bslib-sidebar-resize-handle { cursor: ew-resize; }
+.bslib-sidebar-layout > .bslib-sidebar-resize-handle .resize-indicator { width: 4px; height: 48px; background-color: #6c757d; opacity: 1; border-radius: 2px; }
+.bslib-sidebar-layout > .bslib-sidebar-resize-handle:hover .resize-indicator,
+.bslib-sidebar-layout > .bslib-sidebar-resize-handle:focus .resize-indicator,
+.bslib-sidebar-layout > .bslib-sidebar-resize-handle:active .resize-indicator { background-color: #345beb; width: 5px; height: 56px; }
+
+/* BLUEPRINT: Bootstrap's .card-header-pills pulls the tab strip 8 px to the left of its card (margin-left -0.5rem), so the first tab ("1. Focus (Logic)")
+   started at x=192, under the 10 px drag handle of the left panel (x=190 to 200). Without the pull the tab starts at the card's edge (x=200), in line with
+   the first control of HOME, GALLERY and TEST_LAB (D-0375, D-0381). */
+#architect_internal_tabs.card-header-pills { margin-left: 0; }
+
+/* Narrow panels (190 px left, 170 px right at a 1100 px window; measured in the real app, D-0384): a long unbreakable word (a recipe id) breaks
+   inside its box instead of widening the panel, and the "need reason" note of the audit card moves under the title instead of being squeezed
+   and clipped. The 300 px default of .shiny-input-container (see section 3) is kept: the inputs already follow the panel width. */
+#nav_sidebar .spv-tag-row > span,
+#nav_sidebar .accordion-title { min-width: 0; overflow-wrap: anywhere; }
+#audit_sidebar .spv-audit-card-row { flex-wrap: wrap; }
+#audit_sidebar .spv-audit-card-row > .text-danger { white-space: nowrap; }
+
+/* The right panel's toggle (the small chevron at its top left) takes a strip of its own, so that it never lies over the first title; the buttons of
+   an accordion in it are made narrower in padding so that their chevron stays inside a 170 px panel (seen in BLUEPRINT and TEST_LAB at a 1100 px
+   window, review of 2026-11-21). PROVISIONAL values (D-0386). */
+#audit_sidebar > .sidebar-content { padding-top: 26px !important; }   /* the layout classes of the panels set p-0 with !important */
+#audit_sidebar .accordion-button { padding-left: 0.3rem; padding-right: 0.2rem; gap: 0.15rem; }
+#audit_sidebar .accordion-button::after { margin-left: auto; flex-shrink: 0; width: 1rem; height: 1rem; background-size: 1rem; }

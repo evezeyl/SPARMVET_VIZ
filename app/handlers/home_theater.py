@@ -30,9 +30,10 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_open_audit_mode_after_restore, constant:LEGACY_RECORD_NOTICE
+# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, constant:LEGACY_RECORD_NOTICE
 # consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
+# consumes: app/modules/frame_widths.py (right_panel_open: the right panel follows the mode, D-0375, D-0385)
 # consumes: app/handlers/opening_handlers.py (define_server: the opening of the recipe; opening_waits), app/modules/opening_build.py (opening_signature, plot_render_recipe: the recipe handed to the plot engine, D-0237, D-0239), libs/utils/src/utils/engines.py (plot_engine_slot, through it)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/knowledge/architecture_decisions.md#ADR-097, .claude/knowledge/architecture_decisions.md#ADR-099, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
@@ -46,6 +47,7 @@ import polars as pl
 from shiny.types import SilentException
 from shiny import reactive, render, ui
 from shiny.session import session_context
+from app.modules import frame_widths
 from app.modules.error_notice import notice
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_change_notice import inputs_changed_during_build_notice, notice_after_data_change
@@ -1395,6 +1397,26 @@ def define_server(input, output, session, *,
             if compare is not None and _audit_compare.get() != bool(compare):
                 _audit_compare.set(bool(compare))
 
+    # The right panel follows the mode in HOME (D-0375, D-0385): closed in Exploration, open in Audit mode, closed again when the user leaves
+    # Audit mode. The other user spaces keep it open (D-0381). The rule is the pure function `frame_widths.right_panel_open`. The effect
+    # follows the user space and the mode only; it sends a change only when the answer differs from the one it sent last (R3), so a panel the
+    # user opened by hand stays as she left it until the mode or the user space changes. Where the panel is not in the page (ADR-044) there
+    # is nothing to drive.
+    _right_panel_sent = {"open": None}
+
+    @reactive.Effect
+    def _drive_right_panel():
+        space = safe_input(input, "sidebar_nav", frame_widths.HOME)
+        mode = home_mode.get()
+        if not bootloader.get_sidebar_config("home", "right").visible:
+            return
+        wanted = frame_widths.right_panel_open(space, mode, _audit_available())
+        with reactive.isolate():
+            if _right_panel_sent["open"] is wanted:
+                return
+            _right_panel_sent["open"] = wanted
+        ui.update_sidebar("audit_sidebar", show=wanted)
+
     # P-B5 (PROVISIONAL, the coordinator's choice): a restored session that holds audit steps opens Audit mode, so that the user sees the
     # audited plot the steps were made for. The restore (`session_handlers._restore_session`) writes `t3_ghost_file` into `home_state`, and
     # only a restore does; this effect follows a change of it. A second restore of the same file does not change it, so it opens nothing.
@@ -2322,7 +2344,9 @@ def define_server(input, output, session, *,
 
         # --- Home Theater (ADR-043 / ADR-044 / ADR-073) ---
         if active_sidebar in ("Home", None, ""):
-            parts = _build_right_sidebar("home")
+            # D-0383: in Exploration the right panel (open by hand) is EMPTY: nothing of the audit panel is rendered there, not the
+            # filter summary either. The panel renders again when Audit mode is chosen (it reads the mode, so it is rebuilt then).
+            parts = _build_right_sidebar("home") if _in_audit() else []
             if not parts:
                 return ui.div(class_="sidebar-content p-0")
             return ui.div(*parts, class_="sidebar-content p-0 d-flex flex-column h-100")

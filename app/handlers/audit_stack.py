@@ -19,7 +19,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3, output:processing_issues_ui, output:aesthetic_style_panel_ui (22-J-10)
-# consumes: app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
+# consumes: app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-T3APPLY-1), home_mode (the reactive value of app/src/server.py: the badge and Apply are shown in Audit mode only, D-0377)
 # consumed_by: app/src/server.py
 # doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen, processing_issues_ui shows fix/who)
@@ -33,6 +33,7 @@ from utils.fix_text import fix_label
 from app.modules.error_notice import notice
 from utils.na_choice import na_of, no_value_text
 from utils.pipeline_error import PipelineError
+from app.modules import frame_widths
 from app.modules.cache_keys import tier2_steps
 from app.modules.session_manager import (
     make_audit_step,
@@ -137,6 +138,49 @@ def define_server(input, output, session, *,
     )
 
     # ------------------------------------------------------------------
+    # Reasons typed and not yet applied are kept when the panel's content is removed (the mode leaves Audit, or another user space is
+    # shown: the reason boxes leave the page and their values with them). A plain dict, not a reactive value: it is written only by the
+    # effect below (idempotent: the same text gives the same dict) and read, never written, by the renders (ui_implementation_contract.md
+    # section 14, R1 to R4). PROVISIONAL (the builder's choice of where the text is kept; the decision asks only that typed text is not lost).
+    # ------------------------------------------------------------------
+    kept_reasons: dict[str, str] = {}
+    last_read: dict[str, str] = {}          # the last raw value of each box, to tell a change of the user from what the page reports
+
+    @reactive.Effect
+    def _keep_typed_reasons():
+        """Remember the text of every reason box; a box that left the page keeps its last text.
+
+        When the panel leaves the page (Exploration, another user space) Shiny reports each of its boxes as empty text, and the
+        stale empty value is still there when the panel comes back: only a raw value that CHANGED while the panel is on the page
+        is the user's, so only that one is kept.
+        """
+        if home_state is None:
+            return
+        state = home_state.get()
+        try:
+            space = input.sidebar_nav()
+        except Exception:
+            space = frame_widths.HOME
+        panel_on_page = home_mode.get() == "audit" and space == frame_widths.HOME
+        nodes = [n for v in (state.get("t3_audit_steps_by_plot", {}) or {}).values() for n in v] + list(state.get("_pending_t3_nodes", []))
+        ids = {n.get("id", "") for n in nodes if n.get("id")}
+        for stale in [k for k in kept_reasons if k not in ids]:
+            del kept_reasons[stale]
+        for stale in [k for k in last_read if k not in ids]:
+            del last_read[stale]
+        for nid in ids:
+            try:
+                val = getattr(input, f"t3_reason_{_safe_input_suffix(nid)}")()
+            except Exception:
+                continue                               # the box has never been on the page
+            if val is None:
+                continue
+            changed = last_read.get(nid) != val
+            last_read[nid] = val
+            if panel_on_page and changed:
+                kept_reasons[nid] = val
+
+    # ------------------------------------------------------------------
     # btn_apply: commit audit steps, ghost save, release gatekeeper
     # ------------------------------------------------------------------
 
@@ -177,7 +221,8 @@ def define_server(input, output, session, *,
                 if val is not None:
                     node["reason"] = val
             except Exception:
-                pass
+                if kept_reasons.get(nid) and not (node.get("reason") or "").strip():
+                    node["reason"] = kept_reasons[nid]       # the box is not on the page: the text typed before is used
 
         # Linked-id reason fan-out: if the user typed a reason on one copy,
         # propagate it to every copy sharing the id (so the user doesn't have
@@ -365,6 +410,14 @@ def define_server(input, output, session, *,
                 ))
             return ui.div(*nodes)
 
+        # The cards are drawn again each time the panel comes back (the mode returns to Audit, the user space returns to HOME): the page
+        # holds the cards of the last drawing, with the reason boxes as they were drawn then, and the text typed since is in `kept_reasons`.
+        # These two reads are the only reason for the dependency; no input of a reason box is read here (R4).
+        home_mode.get()
+        try:
+            input.sidebar_nav()
+        except Exception:
+            pass
         state = home_state.get()
         # Phase 22-J: per-plot view. Show only the active plot's committed
         # stack plus pending nodes targeting this plot (or any plot — pending
@@ -427,7 +480,7 @@ def define_server(input, output, session, *,
             nt = node.get("node_type", "unknown")
             icon, label = _NODE_META.get(nt, ("❓", nt))
             summary = _params_summary(node)
-            reason = node.get("reason", "")
+            reason = node.get("reason", "") or kept_reasons.get(nid, "")
             needs_reason = nt in _REASON_REQUIRED
             reason_empty = needs_reason and not reason.strip()
             pk_warn = bool(node.get("primary_key_warning"))
@@ -549,6 +602,8 @@ def define_server(input, output, session, *,
                 if val is not None and (val or "").strip():
                     live_reason_by_id[nid] = val
             except Exception:
+                if (kept_reasons.get(nid) or "").strip():
+                    live_reason_by_id[nid] = kept_reasons[nid]     # the box is not on the page now: the text typed before counts
                 continue
         # Second pass: build the merged overlay.
         for n in flat_committed + list(state.get("_pending_t3_nodes", [])):

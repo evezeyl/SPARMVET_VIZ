@@ -433,3 +433,22 @@ When adding a new `/* ── N. Section Name ── */` block to `config/ui/them
    grep -oE '#[0-9a-fA-F]{6}' config/ui/theme.css | sort -u
    ```
    Compare output against §1. Any unlisted hex is a candidate violation.
+
+---
+
+## 12. Side panel widths and drag handle (D-0375, D-0381 to D-0386; built 2026-11-20)
+
+All four user spaces share the frame (`app/src/ui.py`): left panel (`#nav_sidebar`), centre, right panel (`#audit_sidebar`). The side panels follow the
+window. **PROVISIONAL values** (her manual test will judge the visuals, D-0386); they are named in ONE place, `app/modules/frame_widths.py`, and read from there by
+`ui.py`, `app/src/www/panel_widths.js` (as data attributes) and the tests; this table only says what they are today.
+
+| Panel | Default width | Floor | Ceiling |
+|---|---|---|---|
+| Left | 17 % of the window (`clamp(190px, 17vw, 340px)`) | 190 px | 340 px |
+| Right | 15 % of the window (`clamp(170px, 15vw, 340px)`) | 170 px | 340 px |
+
+- The centre has about two thirds of the window from 1100 to 1920 px (67 % at 1100 px, 68 % at 1920 px, both panels open). After a drag it never goes below half of the window (`MAIN_MIN_SHARE`, D-0384).
+- In HOME the right panel is closed in Exploration and open in Audit mode; in the other user spaces it is open (D-0375, D-0381, D-0385).
+- Drag handle: bslib's own (`.bslib-sidebar-resize-handle`, a child of the layout). Restyled in `config/ui/theme.css` section 26: a 10 px wide grab area that lies in the 10 px gap between the panel and the main area (section 3c), never over a control of the panel or of the main area (bslib's invisible extra hit area `::before` is cut to the handle; the first tab of BLUEPRINT starts at the card's edge, not 8 px to the left; a browser test clicks the control nearest to each handle in HOME, GALLERY, BLUEPRINT and TEST_LAB), with a z-index (5) below the pop-ups of the panel (the date calendar has 10), resize cursor, a grip always visible in the middle of the edge (4 x 48 px, `#6c757d`; `#345beb` on hover, focus and drag), tooltip "Drag to change the panel width. Double-click to reset." (PROVISIONAL words). The right panel's toggle has a 26 px strip of its own at the top of the panel, and the accordion buttons in the right panel use narrower padding so that their chevron stays inside a 170 px panel (PROVISIONAL values).
+- A dragged width is stored in the browser's local storage (`spv.panel_widths.v1`) as a share of the window, one value per side (D-0382); a missing or broken value gives the default silently; a double click on the handle removes it. Nothing is sent to the server.
+- The 300 px default of `.shiny-input-container` (`theme.css` section 3) is kept: measured at 1100 px, the inputs already follow the panel width.
