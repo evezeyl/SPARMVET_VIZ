@@ -646,3 +646,35 @@ def test_the_public_accessor_names_the_uncertain_end_when_a_step_the_walk_cannot
     seed = ("DS:A", 0, "sample_id")
     ends = index.uncertain_ends(index.component([seed]))
     assert len(ends) == 1 and ends[0].in_node == "T1:A" and ends[0].reason.code == STEP_NOT_READ and ends[0].occ[2] == "sample_id"
+
+
+def test_the_public_accessor_with_two_seeds_gives_the_columns_of_each_and_the_best_certainty():
+    """Two unlinked tables A and E, one seed in each: the result holds the columns reached from either seed, whatever the order of the seeds; a column the second seed
+    reaches certainly is not made uncertain by the first (the fewest uncertain links over the seeds)."""
+    tables = {"A": F.table(sample_id=["S1", "S2"], v=["1", "2"]), "E": F.table(sample_id=["S1", "S2"], g=["1", "2"])}
+    recipe = F.recipe({"A": F.schema(["sample_id", "v"], [F.str_split(["sample_id"], "-")], keys=["sample_id"]), "E": F.schema(["sample_id", "g"], keys=["sample_id"])}, {}, {"P": F.plot("A"), "Pe": F.plot("E")})
+    graph, plans = setup(recipe, tables)
+    index = LineageIndex(graph, plans)
+    seed_a, seed_e = ("DS:A", 0, "sample_id"), ("DS:E", 0, "sample_id")
+    within = index.component([seed_a, seed_e])
+    both = index.certainty_from([seed_a, seed_e], within)
+    assert set(both) == within and {o[0] for o in both} >= {"DS:A", "T1:A", "DS:E", "T1:E"}
+    assert both == index.certainty_from([seed_e, seed_a], within), "the order of the seeds does not matter"
+    only_a = index.certainty_from([seed_a], within)
+    assert ("T1:E", 0, "sample_id") not in only_a and ("T1:A", 1, "sample_id") in only_a, "E is not linked to A: it is reached only from its own seed"
+    assert not both[("T1:A", 1, "sample_id")].certain and both[("T1:E", 0, "sample_id")].certain
+
+
+def test_the_public_accessor_never_leaves_the_set_it_is_given():
+    tables = {"A": F.table(sample_id=["S1", "S2"], v=["1", "2"]), "B": F.table(sample_id=["S1", "S2"], w=["3", "4"])}
+    recipe = F.recipe({"A": F.schema(["sample_id", "v"], keys=["sample_id"]), "B": F.schema(["sample_id", "w"], keys=["sample_id"])}, {"J": F.join(["A", "B"], [F.join_step("B")])}, {"P": F.plot("J")})
+    graph, plans = setup(recipe, tables)
+    index = LineageIndex(graph, plans)
+    seed = ("DS:A", 0, "sample_id")
+    full = index.component([seed])
+    assert any(o[0] == "T1:J" for o in full)
+    limited = {o for o in full if o[0] != "T1:J"}
+    unlimited, result = index.certainty_from([seed], full), index.certainty_from([seed], limited)
+    assert any(o[0] == "T1:J" for o in unlimited), "without the limit the join's column is reached"
+    assert set(result) <= limited and not any(o[0] == "T1:J" for o in result) and seed in result, "with the limit it is not asked about"
+    assert index.uncertain_ends(set()) == [], "an empty set holds no end"

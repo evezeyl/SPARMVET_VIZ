@@ -328,12 +328,52 @@ def test_the_list_is_empty_when_every_value_is_proved_and_it_is_in_graph_order_w
     assert [m.table for m in describe(recipe, tables).may_stay] == ["A", "C"]
 
 
-def test_the_sentences_for_the_list_say_where_and_why_in_plain_words():
+NOT_WRITTEN_TEXT = {
+    rfa.KEY_GONE_AT_TIER1: "In the table 'T' nothing is removed: the key column is no longer in it at the end of its first step list (it was copied under another name, dropped or grouped away). The selection may stay there.",
+    rfa.PLAN_FAILED: "In the table 'T' nothing is removed: the engine could not work out its columns. The selection may stay there.",
+    rfa.NOT_FOLLOWED: "In the table 'T' nothing is removed: a step the app cannot read comes before the end of its first step list, and the key is not found after it. The selection may stay there.",
+    rfa.UNCERTAIN_LINK: "In the table 'T' nothing is removed: it has a column that may be the key, but the app cannot prove it. The selection may stay there.",
+    rfa.SEVERAL_COLUMNS: "In the table 'T' nothing is removed: the key is in more than one of its columns. The selection may stay there.",
+}
+
+
+@pytest.mark.parametrize("code", rfa.UNSURE_CODES)
+def test_the_sentence_of_a_table_where_nothing_is_written_is_the_expected_full_text(code):
+    assert rfa.may_stay_sentence(rfa.MayStay("T", "T1:T", code, False)) == NOT_WRITTEN_TEXT[code]
+
+
+@pytest.mark.parametrize("notes, kinds", [
+    (["recomputed_here"], "recomputed"), (["aggregated_here"], "aggregated"), (["unread_step_passed"], "passed through a step the app cannot read"),
+    (["unread_step_passed", "recomputed_here", "unread_step_passed"], "passed through a step the app cannot read and recomputed"),
+])
+def test_the_sentence_of_a_table_where_a_step_is_written_but_unproved_is_the_expected_full_text(notes, kinds):
+    item = rfa.MayStay("T", "T1:T", rfa.VALUES_UNPROVED, True, None, tuple(rfa.Note(code) for code in notes))
+    assert rfa.may_stay_sentence(item) == (f"In the table 'T' a removal step is written, but the app cannot prove that the values there match your selection: "
+                                           f"the key is {kinds} before that step. The selection may stay there.")
+
+
+def test_every_sentence_names_the_table_first_the_two_kinds_differ_and_the_real_items_have_one():
+    texts = {code: rfa.may_stay_sentence(rfa.MayStay("A", "T1:A", code, False)) for code in rfa.UNSURE_CODES}
+    unproved = rfa.may_stay_sentence(rfa.MayStay("A", "T1:A", rfa.VALUES_UNPROVED, True, None, (rfa.Note("recomputed_here"),)))
+    assert all(t.startswith("In the table 'A' nothing is removed: ") for t in texts.values()) and unproved.startswith("In the table 'A' a removal step is written, but")
+    assert len(set(texts.values())) == len(rfa.UNSURE_CODES), "one text per code"
     for build in (_copied_key, _lowercased_key):
         recipe, tables = build()
         item = describe(recipe, tables).may_stay[0]
-        sentence = rfa.may_stay_sentence(item)
-        assert item.table in sentence and "may stay" in sentence and sentence[0].isupper() and "None" not in sentence
+        assert rfa.may_stay_sentence(item).startswith(f"In the table {item.table!r} ") and "None" not in rfa.may_stay_sentence(item)
+
+
+@pytest.mark.parametrize("reason, text", [
+    (rfa.Reason(rfa.NO_ENTITY_KEY_DECLARED), "This recipe does not say which column is the entity key (the id of a sample), so removing from all the data is not offered. Declare the key in the recipe (is_entity_key)."),
+    (rfa.Reason(rfa.NOT_THE_ENTITY_KEY, (("column", "x"), ("declared", ("sample_id",)))),
+     "The column 'x' is not the entity key of this recipe (the entity key is: sample_id), so removing from all the data is not offered for it. Use a filter on this column instead."),
+    (rfa.Reason(rfa.RECIPE_CANNOT_BE_DRAWN, (("sentence", "a join has no table."),)), "The recipe cannot be read as a whole, so removing from all the data is not offered: a join has no table."),
+    (rfa.Reason(rfa.UNKNOWN_PLACE, (("place", "T1:z"),)), "The recipe has no place 'T1:z'."),
+    (rfa.Reason(rfa.COLUMN_NOT_AT_PLACE, (("column", "x"), ("place", "T1:A"))),
+     "The column 'x' is not in T1:A (or the engine could not give its columns), so removing from all the data is not offered for it there."),
+])
+def test_the_not_offered_sentences_are_whole_sentences_with_a_subject_and_these_exact_words(reason, text):
+    assert rfa.not_offered_sentence(reason) == text
 
 
 def test_a_key_in_two_columns_of_one_table_is_unsure_never_guessed():

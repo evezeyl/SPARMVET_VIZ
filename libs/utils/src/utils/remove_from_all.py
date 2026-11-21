@@ -306,17 +306,27 @@ def _may_stay(tables: Sequence[str], places: Sequence[KeyPlace], left: Sequence[
     return tuple(found[t] for t in tables if t in found)
 
 
+# The words of the `may_stay` list, in ONE place. PROVISIONAL (the owner reads them). Two kinds, clearly different:
+# (a) nothing is written in the table (`MayStay.written` False): "In the table 'T' nothing is removed: <reason>. The selection may stay there."
+# (b) a step IS written in the table but the app cannot prove the values there match the selection (`VALUES_UNPROVED`): "In the table 'T' a removal step is written, but the app cannot
+#     prove that the values there match your selection: the key is <kinds> before that step. The selection may stay there."
+NOT_WRITTEN_REASONS = {
+    KEY_GONE_AT_TIER1: "the key column is no longer in it at the end of its first step list (it was copied under another name, dropped or grouped away)",
+    PLAN_FAILED: "the engine could not work out its columns",
+    NOT_FOLLOWED: "a step the app cannot read comes before the end of its first step list, and the key is not found after it",
+    UNCERTAIN_LINK: "it has a column that may be the key, but the app cannot prove it",
+    SEVERAL_COLUMNS: "the key is in more than one of its columns",
+}
+UNPROVED_KINDS = {NOTE_RECOMPUTED: "recomputed", NOTE_AGGREGATED: "aggregated", NOTE_UNREAD_STEP_PASSED: "passed through a step the app cannot read"}
+
+
 def may_stay_sentence(item: MayStay) -> str:
-    """The plain sentence for one table of the list: where, and why the selection may stay there. PROVISIONAL words (the owner reads them)."""
+    """The plain sentence for one table of the list: always a whole sentence that starts with "In the table '<name>'" and says the fact. PROVISIONAL words (see `NOT_WRITTEN_REASONS`)."""
     where = f"In the table {item.table!r}"
     if item.code == VALUES_UNPROVED:
-        what = ", ".join(sorted({{NOTE_RECOMPUTED: "recomputed", NOTE_AGGREGATED: "aggregated", NOTE_UNREAD_STEP_PASSED: "passed through a step the app cannot read"}[n.code] for n in item.notes}))
-        return (f"{where} the key is {what} before the removal is written, so the values given may not match the values there: the selection may stay in this table. "
-                "Check the table after the removal.")
-    why = {KEY_GONE_AT_TIER1: "no longer holds the key at the end of its first step list (it was copied under another name, dropped or grouped away)",
-           PLAN_FAILED: "could not be planned by the engine", NOT_FOLLOWED: "has a step the app cannot read, and the key is not found after it",
-           UNCERTAIN_LINK: "has a column that may be the key, but the app cannot prove it", SEVERAL_COLUMNS: "has the key in more than one column"}.get(item.code, item.code)
-    return f"{where} {why}, so nothing is removed there and the selection may stay in this table."
+        kinds = " and ".join(sorted({UNPROVED_KINDS[n.code] for n in item.notes}))
+        return f"{where} a removal step is written, but the app cannot prove that the values there match your selection: the key is {kinds} before that step. The selection may stay there."
+    return f"{where} nothing is removed: {NOT_WRITTEN_REASONS.get(item.code, item.code)}. The selection may stay there."
 
 
 def removal_step(column: str, values: Sequence[Any]) -> dict:
