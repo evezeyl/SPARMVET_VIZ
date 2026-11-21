@@ -11,6 +11,7 @@ imported from a bundle reads the folder of its import instead (`import_data_dir`
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_recipe_default_data.py -q
 """
+from collections import Counter
 from pathlib import Path
 from textwrap import dedent
 
@@ -69,9 +70,11 @@ def test_the_local_deployment_follows_the_recipe_paths(local):
 def test_each_table_reads_the_file_its_source_path_names(local, recipe_path):
     boot, orchestrator = local
     recipe_id = recipe_path.stem
+    # No recipe of the shipped pipelines/ folder is marked broken on purpose (the broken ones are the retest recipes, in their own folder
+    # with their own tests): a shipped recipe that the load gate rejects here is a failure of D-0425, never a skip.
     if recipe_id in boot.rejected_data_analysis_recipes:
-        reason = "; ".join(str(p) for p in boot.rejected_data_analysis_recipes[recipe_id]["problems"][:2])
-        pytest.skip(f"the load gate rejects '{recipe_id}': {reason}")
+        reason = "; ".join(str(p) for p in boot.rejected_data_analysis_recipes[recipe_id]["problems"][:3])
+        pytest.fail(f"the load gate rejects the shipped recipe '{recipe_id}' with the local development deployment: {reason}")
     schemas = orchestrator.dataset_schemas(recipe_id)
     assert schemas, f"'{recipe_id}' has no table"
     declared_tables = 0
@@ -95,6 +98,54 @@ def test_each_table_reads_the_file_its_source_path_names(local, recipe_path):
         # the place where Data Import writes is that same file
         assert Path(orchestrator.file_place(recipe_id, table, schema)).resolve() == expected
     assert declared_tables, f"'{recipe_id}': no table declares a source.path"
+
+
+def _first_text_column(schema: dict):
+    """(slug, name in the file) of the first declared column of a text type, the key to compare values by; None when there is none."""
+    for slug, spec in (schema.get("input_fields") or {}).items():
+        spec = spec or {}
+        if spec.get("type") in ("String", "Categorical"):
+            return slug, spec.get("original_name") or slug
+    return None
+
+
+@pytest.mark.parametrize("recipe_path", SHIPPED, ids=lambda p: p.stem)
+def test_each_table_reads_the_rows_of_its_declared_file(local, recipe_path):
+    """Content, not only paths: the rows the app reads (`read_source`, the read of the build) are those of the declared file."""
+    _, orchestrator = local
+    recipe_id = recipe_path.stem
+    compared = 0
+    for table, schema in orchestrator.dataset_schemas(recipe_id).items():
+        declared = ((schema or {}).get("source") or {}).get("path")
+        if not declared:
+            continue
+        direct = pl.read_csv(REPO / declared, separator="\t", infer_schema=False)
+        got = orchestrator.read_source(recipe_id, table).collect()
+        assert got.height == direct.height, f"{recipe_id}/{table}: {got.height} rows read, {direct.height} in {declared}"
+        key = _first_text_column(schema)
+        if key is None:
+            continue
+        slug, column = key
+        want = direct[column].cast(pl.String)
+        if schema.get("strip"):
+            want = want.str.strip_chars()
+        # A field may declare texts that mean "missing" (a dash, empty quotes): those rows read as missing, so the check is that every value that
+        # was read is a value of the declared file's column, as many times as the file has it, and that nothing else was added.
+        read_values = Counter(v for v in got[slug].cast(pl.String).to_list() if v)
+        assert not read_values - Counter(want.drop_nulls().to_list()), (
+            f"{recipe_id}/{table}: the values of '{slug}' are not those of column '{column}' of {declared}")
+        assert sum(read_values.values()) >= 1, f"{recipe_id}/{table}: no value of '{slug}' was read"
+        compared += 1
+    assert compared, f"{recipe_id}: no table had a text column to compare values by"
+
+
+def test_every_discovered_recipe_is_available_to_the_checks(local):
+    """The number of recipes the per-recipe cases go through equals the number discovered: none is rejected by the load gate, none is empty."""
+    boot, orchestrator = local
+    discovered = [p.stem for p in SHIPPED]
+    checked = [r for r in discovered if r not in boot.rejected_data_analysis_recipes and orchestrator.dataset_schemas(r)]
+    assert checked == discovered, f"left out: {sorted(set(discovered) - set(checked))}"
+    print(f"recipes discovered {len(discovered)}, checked {len(checked)}")
 
 
 def test_two_tables_that_name_the_same_file_read_the_same_file(local):
@@ -230,7 +281,7 @@ def test_the_load_gate_rejects_a_recipe_whose_declared_file_is_missing_and_names
     assert "A" in text and declared.name in text, text
 
 
-def test_the_demo_recipe_in_the_shipped_folder_has_every_file_it_names(local):
+def test_every_shipped_recipe_has_every_file_it_names(local):
     """The count the report quotes: tables with a declared path, over every shipped recipe, all exist."""
     _, orchestrator = local
     missing = []
