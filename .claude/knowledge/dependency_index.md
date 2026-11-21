@@ -133,7 +133,7 @@
 ## `app/handlers/gallery_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (gallery_handlers)`
-- **consumes:** `app/src/bootloader.py (rejected_gallery_examples`, `gallery_index_status)`, `app/modules/gallery_examples.py (example_sample)`, `app/modules/gallery_listing.py`, `libs/viz_gallery/src/viz_gallery/taxonomy.py (display_axes`, `filter_panels)`
+- **consumes:** `app/src/bootloader.py (rejected_gallery_examples`, `gallery_index_status`, `stale_gallery_pictures)`, `app/modules/gallery_examples.py (example_sample)`, `app/modules/gallery_listing.py`, `libs/viz_gallery/src/viz_gallery/taxonomy.py (display_axes`, `filter_panels)`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-037`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/rules/rules_ui_dashboard.md#5`
 
@@ -299,7 +299,7 @@
 ## `app/modules/gallery_listing.py`
 - **Role:** `ref`
 - **provides:** `function:matching_examples`, `constant:FILTER_AXES`, `constant:NO_MATCH_TEXT`, `constant:APPLY_RULE_TEXT`, `function:external_links_new_tab`, `function:build_listing`, `function:read_listing`, `class:GalleryListing`, `constant:READ_ONLY_LINE`, `constant:FAILED_LINE`, `constant:NOTE_LINES`
-- **consumes:** `app/src/bootloader.py (rejected_gallery_examples`, `gallery_index_status`, `as data given by the caller)`
+- **consumes:** `app/src/bootloader.py (rejected_gallery_examples`, `gallery_index_status`, `stale_gallery_pictures`, `as data given by the caller)`
 - **consumed_by:** `app/handlers/gallery_handlers.py`, `app/tests/test_gallery_listing.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 9: D4`, `DEC48)`, `.claude/design/decisions_2026-11-14/proposals_for_eve.md (G-a`, `G-b)`
 
@@ -437,7 +437,7 @@
 
 ## `app/src/bootloader.py`
 - **Role:** `ref`
-- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_imports_dir (IMPORT-PATH-1)`, `method:get_agent_adapter`, `method:get_palettes`, `method:get_contact`, `method:get_session_import_limits (D-0283)`, `attr:available_data_analysis_recipes`, `attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)`, `attr:data_analysis_recipe_advices (J12/J13`, `never reject)`, `method:reject_after_opening (a recipe that fails when it is opened is rejected like the gate rejects one`, `D-0326/D-0327)`, `method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1)`, `method:get_default_data_analysis_recipe_or_none`, `attr:has_usable_data_analysis_recipe (issue #38 empty-state gate)`, `attr:rejected_gallery_examples`, `attr:gallery_index_status (gallery check at start`, `DEC48)`, `method:take_stored_tables_notice (the one notice of the cache version sweep)`
+- **provides:** `Bootloader (class)`, `bootloader (global singleton instance)`, `SidebarConfig (dataclass)`, `method:get_agent_config`, `method:get_imports_dir (IMPORT-PATH-1)`, `method:get_agent_adapter`, `method:get_palettes`, `method:get_contact`, `method:get_session_import_limits (D-0283)`, `attr:available_data_analysis_recipes`, `attr:rejected_data_analysis_recipes (ADR-094 HOME load gate)`, `attr:data_analysis_recipe_advices (J12/J13`, `never reject)`, `method:reject_after_opening (a recipe that fails when it is opened is rejected like the gate rejects one`, `D-0326/D-0327)`, `method:recheck_changed_data_analysis_recipes + attr:data_analysis_recipe_gate_version + attr:discovered_data_analysis_recipes (GATE-GAP-1)`, `method:get_default_data_analysis_recipe_or_none`, `attr:has_usable_data_analysis_recipe (issue #38 empty-state gate)`, `attr:rejected_gallery_examples`, `attr:stale_gallery_pictures (D-0400)`, `attr:gallery_index_status (gallery check at start`, `DEC48)`, `method:take_stored_tables_notice (the one notice of the cache version sweep)`
 - **consumes:** `yaml`, `os`, `pathlib`, `typing`, `dataclasses`, `connector (get_connector)`, `app.modules.cache_keys (CACHE_VERSION_META`, `ENGINE_CACHE_VERSION`, `STORED_TABLES_REBUILT_NOTICE: the sweep of stored tables of another cache version at start`, `D-0240)`, `libs/transformer/src/transformer/anchor.py (remove_tables_of_other_version`, `deferred import)`, `app.modules.deployment_error`, `blueprint_arch.agent_adapter (deferred import)`, `app.modules.data_analysis_recipe_validator (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data`, `checker_advices`, `read_data_analysis_recipe_header`, `resolve_contact — ADR-094)`, `app.modules.gallery_examples (check_gallery_at_start`, `deferred import)`, `app.modules.renamed_keys`, `app.modules.session_manager (session_import_limits_from`, `deferred import)`, `utils.path_expansion`
 - **consumed_by:** `app.src.server`, `app.src.ui`, `app.handlers.home_theater`, `app.handlers.blueprint_handlers`, `app.handlers.gallery_handlers`, `app.handlers.ingestion_handlers`, `app.modules.sidebar_registry`
 - **doc:** `ADR-031`, `ADR-026`, `ADR-048`, `ADR-073`, `ADR-076`, `ADR-078`, `ADR-087`, `ADR-094 (issue #38 closure note)`, `project_conventions.md §"Deployment Resolution`
@@ -1180,15 +1180,15 @@
 
 ## `libs/utils/src/utils/lineage_records.py`
 - **Role:** `ref`
-- **provides:** `class:Walk`, `class:Line`, `class:Gone`, `class:Unread`, `class:Outside`, `class:Occurrence`, `class:Hop`, `class:StepRef`, `class:SourceColumn`, `class:Reach`, `class:Reason`, `class:Note`, `class:Start`, `class:SortedSet`, `class:KeyNeed`, `class:Consequence`, `class:DropFacts`, `constant:GROUPS`, `constant:LEVELS`, `constant:HOW_VALUES`, `constant:REASON_CODES`, `constant:NOTE_CODES`, `constant:VALUE_NOTES`, `constant:CONSEQUENCE_CODES`
-- **consumed_by:** `libs/utils/src/utils/lineage_walk.py`, `libs/utils/tests/test_lineage_walk.py`, `libs/utils/tests/test_lineage_walk_follow.py`
+- **provides:** `class:Walk`, `class:Line`, `class:Gone`, `class:Unread`, `class:Outside`, `class:Occurrence`, `class:Hop`, `class:StepRef`, `class:SourceColumn`, `class:Reach`, `class:Reason`, `class:Note`, `class:Start`, `class:SortedSet`, `class:KeyNeed`, `class:Consequence`, `class:DropFacts`, `class:Certainty`, `constant:GROUPS`, `constant:LEVELS`, `constant:HOW_VALUES`, `constant:REASON_CODES`, `constant:NOTE_CODES`, `constant:VALUE_NOTES`, `constant:CONSEQUENCE_CODES`
+- **consumed_by:** `libs/utils/src/utils/lineage_walk.py`, `libs/utils/src/utils/remove_from_all.py`, `libs/utils/tests/test_lineage_walk.py`, `libs/utils/tests/test_lineage_walk_follow.py`
 - **doc:** `.claude/knowledge/decision_ledger.md (D-0346`, `D-0347`, `D-0195`, `D-0351`, `D-0353`, `D-0337`, `D-0357`, `D-0358`, `D-0297)`
 
 ## `libs/utils/src/utils/lineage_walk.py`
 - **Role:** `ref`
-- **provides:** `function:walk`, `function:LineageIndex.drop_facts`, `class:LineageIndex`, `class:LineageError`, `class:ColumnNotFound`, `class:StartPlanFailed`
+- **provides:** `function:walk`, `function:LineageIndex.drop_facts`, `function:LineageIndex.certainty_from`, `function:LineageIndex.uncertain_ends`, `class:LineageIndex`, `class:LineageError`, `class:ColumnNotFound`, `class:StartPlanFailed`
 - **consumes:** `libs/utils/src/utils/recipe_graph.py`, `libs/utils/src/utils/join_keys.py (JOIN_ACTIONS`, `key_columns)`, `libs/utils/src/utils/step_effects.py`, `libs/utils/src/utils/plan_book.py`, `libs/utils/src/utils/lineage_records.py`
-- **consumed_by:** `libs/utils/src/utils/key_drop.py`, `libs/utils/tests/test_lineage_walk.py`, `libs/utils/tests/test_lineage_walk_follow.py`, `libs/utils/tests/test_lineage_walk_properties.py`, `libs/utils/tests/test_lineage_drop.py`
+- **consumed_by:** `libs/utils/src/utils/key_drop.py`, `libs/utils/src/utils/remove_from_all.py (certainty_from`, `uncertain_ends)`, `libs/utils/tests/test_lineage_walk.py`, `libs/utils/tests/test_lineage_walk_follow.py`, `libs/utils/tests/test_lineage_walk_properties.py`, `libs/utils/tests/test_lineage_drop.py`
 - **doc:** `.claude/knowledge/decision_ledger.md (D-0347`, `D-0346`, `D-0351`, `D-0195`, `D-0353`, `D-0352`, `D-0357`, `D-0337`, `D-0356`, `D-0355`, `D-0358`, `D-0297)`, `.claude/design/home_audit_steps.md`
 
 ## `libs/utils/src/utils/missing_values.py`
@@ -1283,6 +1283,13 @@
 - **provides:** `constant:AUDIT_STEPS`, `constant:AUDIT_COMMENT`, `constant:AUDIT_ID`, `function:author_steps`, `function:audit_steps_of`, `function:tier2_parts`, `function:tier3_parts`, `function:without_audit_steps`, `function:audit_step_places`, `function:collection_body`, `function:tier2_steps`, `function:step_list`, `function:plot_entries`, `function:plot_entry`, `function:tier3_steps`, `function:plot_targets`, `function:unapplied_schema_tier2`, `function:unapplied_join_tier2`, `function:without_tier2`, `function:without_data_engines`, `function:collection_bodies`, `function:schema_bodies`
 - **consumed_by:** `app/modules/cache_keys.py`, `app/modules/engine_record.py (collection_body`, `step_list)`, `app/modules/orchestrator.py (plot_entry`, `tier3_steps; collection_body)`, `libs/utils/src/utils/recipe_check.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/utils/tests/test_recipe_tiers.py`, `app/tests/test_schema_tier2.py`
 - **doc:** `.claude/design/recipe_format_spec.md (DEC16`, `line 357`, `S07`, `X4)`, `.claude/knowledge/architecture_decisions.md#adr-089`
+
+## `libs/utils/src/utils/remove_from_all.py`
+- **Role:** `ref`
+- **provides:** `function:describe`, `function:apply`, `function:removal_step`, `function:not_offered_sentence`, `function:may_stay_sentence`, `class:RemoveFromAll`, `class:KeyPlace`, `class:NotReached`, `class:MayStay`, `class:Applied`, `constant:WARNING`, `constant:NOT_OFFERED_CODES`, `constant:NOT_REACHED_CODES`, `constant:VALUES_UNPROVED`
+- **consumes:** `libs/utils/src/utils/lineage_walk.py (LineageIndex: the links between the columns; certainty_from and uncertain_ends)`, `libs/utils/src/utils/recipe_graph.py (key_families`, `declared_entity_keys`, `plots_reading)`, `libs/utils/src/utils/declared_plans.py`, `libs/utils/src/utils/plan_book.py`, `libs/utils/src/utils/audit_copy.py (add_step`, `remove_step)`, `libs/utils/src/utils/filter_values.py (check_filter)`, `libs/utils/src/utils/na_choice.py (default_na)`, `libs/utils/src/utils/recipe_tiers.py (without_audit_steps)`, `libs/utils/src/utils/lineage_records.py (Reason)`
+- **consumed_by:** `libs/utils/tests/test_remove_from_all.py`, `app/tests/test_remove_from_all_demo.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0415`, `D-0416`, `D-0313`, `D-0082`, `D-0355`, `D-0351)`, `.claude/rules/ui_implementation_contract.md (section 8: the filter row and the value type rule)`, `.claude/design/home_audit_steps.md`
 
 ## `libs/utils/src/utils/signature_params.py`
 - **Role:** `ref`
@@ -1573,6 +1580,13 @@
 - **consumes:** `libs/utils/src/utils/recipe_loader.py (check_recipe_file`, `load_recipe)`, `libs/utils/src/utils/recipe_check.py (check_recipe`, `check_recipe_set)`, `libs/utils/src/utils/legacy_keys.py`, `libs/viz_gallery/src/viz_gallery/taxonomy.py`, `libs/viz_gallery/src/viz_gallery/example_recipe.py`
 - **consumed_by:** `app/modules/gallery_examples.py`, `assets/scripts/gallery_previews.py`, `assets/scripts/convert_gallery_examples.py`, `libs/viz_gallery/tests/test_gallery_bundle.py`
 - **doc:** `.claude/design/recipe_format_spec.md (section 9)`
+
+## `libs/viz_gallery/src/viz_gallery/picture_key.py`
+- **Role:** `info`
+- **provides:** `function:picture_key_parts`, `function:write_picture_key`, `function:picture_status`, `function:stale_pictures`, `constant:KEY_FILE`
+- **consumes:** `libs/viz_gallery/src/viz_gallery/example_recipe.py (DATA_FILE)`
+- **consumed_by:** `assets/scripts/gallery_previews.py`, `app/src/bootloader.py`, `app/modules/gallery_listing.py`, `app/tests/test_gallery_picture_key.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0400)`, `.claude/rules/rules_gallery_standards.md (section 6)`
 
 ## `libs/viz_gallery/src/viz_gallery/taxonomy.py`
 - **Role:** `info`
