@@ -4,6 +4,11 @@
 **Working tree:** clean (all changes committed)  
 **Status:** Session focus: Audit-driven quick wins. Completed 3 library/dependency tasks.
 
+## OPEN STATE 2026-11-21, 09:30 (resumed after the session refresh)
+- Nothing is running. `dev` holds the UML commit and one records commit after it; clean; not pushed.
+- Done since the park: the cause of the failing HOME browser test (the test is out of date; no fix yet); the facts for the owner's Data Import questions a and b; the table of message texts (question c); the UML of the library tiers, the app frame and the Gallery.
+- Waits for the owner: the repair of the HOME test; the Data Import points S1 to S14 and the message texts; the two provisional refusals of Data Import (bundle-imported recipe: refused by choice, not by failure; deployment that finds data by table name: only the pipeline test deployment uses it); the Connect template; the new small tasks above in `tasks.md`.
+
 ## PARKED 2026-11-21, 08:15 (owner's order, to refresh the session for StarUML)
 
 - Nothing is running. No worker was stopped. `dev` = 7022ac9f plus one records commit for this park; clean; not pushed (the owner pushes).
