@@ -15,12 +15,16 @@ step never changes which join reads which column; a plan composed with audit ste
 (`declared_plans.declared_plan_book`: names only): then a place behind a step the walk does not read (an unpivot, a fill of missing values, an explode: five places of the shipped
 recipes, the review of 2026-11-20, finding F2) cannot be followed.
 
-PROVISIONAL (the builder's, not decided by the owner; it replaces the earlier P16 "allow when the walk cannot follow"): where the walk cannot follow the column to the end
-(`DropFacts.uncertain`: a step it does not read, a plan failure, a join it reaches only by an uncertain link) the drop is NOT written and the sentence says so and why, in plain words:
-no silent allow ("The software informs the user and does not choose for the user": the user is told the app could not follow the column, and what to do). The safe side is the one
-that writes nothing. The wording of both sentences is the builder's: the first keeps the meaning of the sentence of D-0297 and adds which join needs the column.
+A drop the walk cannot follow to the end (`DropFacts.uncertain`: a step it does not read, a plan failure, a join it reaches only by an uncertain link) is ALLOWED, with a warning
+(D-0449: "Right now od go for B"; it replaces the earlier P16 "the drop is not written", which was the builder's choice, never the owner's). Her condition is the gate (D-0449,
+her words "do not get wrong results because we did not select the correct scope"): the outcome is the table the user meant, or a plain error, never a different table with no word.
+So `problem` refuses only a CERTAIN need (a join reads the column as a key), and `warning` is the sentence the caller shows BEFORE the user confirms: where the walk lost the column and
+why, what it can still read downstream (a step that names the column, a plot that draws it, a same-named column of a join that changes meaning, `LineageIndex.drop_consequences`), that
+the build may fail, and what the walk cannot see at all (a formula is never read, D-0356). The wording of the warning is PROVISIONAL (the builder's; the owner reads it, D-0297: plain
+words). Proved on small recipes run by the real engine and on the shipped recipes in `app/tests/test_uncertain_drop_engine.py`.
 
-A declared entity key (`is_entity_key`) is not refused for being declared (D-0297 names join keys, D-0358 says by place); the facts carry it as information.
+A declared entity key (`is_entity_key`) is not refused for being declared: it is dropped by place like any key, refused only where a later join reads it (D-0448, "Her answer: B"; D-0297
+names join keys, D-0358 says by place); the facts carry it as information.
 
 Pure: a recipe dictionary in, facts or a sentence out. No file, no data, no engine.
 
@@ -28,19 +32,20 @@ Consumed by: libs/utils/src/utils/audit_copy.py, libs/utils/src/utils/recipe_che
 If deleted: no caller can refuse the drop of a key column by place.
 
 # @deps
-# provides: function:key_drop_problem, function:drop_facts, function:key_drop_sentence, function:key_drop_unfollowed_sentence, function:place_of_steps_path, class:DropGate
+# provides: function:key_drop_problem, function:drop_facts, function:key_drop_sentence, function:key_drop_warning, function:key_drop_warning_sentence, function:place_of_steps_path, class:DropGate
 # consumes: libs/utils/src/utils/lineage_walk.py (LineageIndex.drop_facts), libs/utils/src/utils/declared_plans.py, libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/recipe_tiers.py (without_audit_steps)
 # consumed_by: libs/utils/src/utils/audit_copy.py, libs/utils/src/utils/recipe_check.py, app/modules/session_manager.py, app/handlers/filter_and_audit_handlers.py, libs/utils/tests/test_key_drop.py
-# doc: .claude/knowledge/decision_ledger.md (D-0358, D-0297, D-0322), .claude/design/home_audit_steps.md
+# doc: .claude/knowledge/decision_ledger.md (D-0358, D-0297, D-0322, D-0448, D-0449), .claude/design/home_audit_steps.md
 # @end_deps
 """
 from __future__ import annotations
 
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Tuple
 
 from utils import recipe_tiers
 from utils.declared_plans import declared_plan_book
-from utils.lineage_records import DropFacts, KeyNeed, PLAN_FAILED, STEP_NOT_READ
+from utils.lineage_records import (
+    CLASH_NO_LONGER, Consequence, DropFacts, KeyNeed, PLAN_FAILED, PLOT_USES_COLUMN, STEP_NOT_READ, STEP_NAMES_COLUMN)
 from utils.lineage_walk import LineageIndex
 from utils.plan_book import PlanBook
 from utils.recipe_graph import RecipeGraph, RecipeGraphError, build_graph
@@ -78,17 +83,22 @@ class DropGate:
         return self._index.drop_facts(place, column)
 
     def problem(self, place: str, columns: Any) -> Optional[str]:
-        """None, or the plain sentence that says why the audit may not drop these columns at this place: a join step later reads one as a key (`key_drop_sentence`), or the
-        walk cannot follow one to the end (`key_drop_unfollowed_sentence`, PROVISIONAL: not written). `columns` is the list of a `polars_drop` step; anything that is not a list of
-        names is not judged here (the checker reports it)."""
+        """None, or the plain sentence that says why the audit may not drop these columns at this place: a join step later reads one as a key (`key_drop_sentence`). A column the
+        walk cannot follow to the end is NOT refused (D-0449): see `warning`. `columns` is the list of a `polars_drop` step; anything that is not a list of names is not judged here
+        (the checker reports it)."""
         if not isinstance(columns, list):
             return None
-        every = [f for f in (self.facts(place, c) for c in columns if isinstance(c, str)) if f is not None]
-        found = [f for f in every if f.refused]
-        if found:
-            return key_drop_sentence(found)
-        unsure = [f for f in every if f.uncertain]
-        return key_drop_unfollowed_sentence(unsure) if unsure else None
+        found = [f for f in (self.facts(place, c) for c in columns if isinstance(c, str)) if f is not None and f.refused]
+        return key_drop_sentence(found) if found else None
+
+    def warning(self, place: str, columns: Any) -> Optional[str]:
+        """None, or the plain warning for the columns of this drop that the walk cannot follow to the end (D-0449): the drop is allowed, and the caller shows this sentence before the
+        user confirms. A refused column is not a warning (`problem` says it); a place nothing is built from (a plot) never has one."""
+        if not isinstance(columns, list):
+            return None
+        found = [(f, self._index.drop_consequences(place, f.column) if self._index is not None else []) for f in
+                 (self.facts(place, c) for c in columns if isinstance(c, str)) if f is not None and f.uncertain]
+        return key_drop_warning_sentence(found) if found else None
 
 
 def drop_facts(raw: Any, place: str, column: str, plans: Optional[PlanBook] = None) -> Optional[DropFacts]:
@@ -100,6 +110,11 @@ def key_drop_problem(raw: Any, place: str, columns: Any, plans: Optional[PlanBoo
     """None, or the plain sentence that says why a drop of these columns at `place` is refused: a join step later reads one of them as a key (D-0358, D-0297: "dropping a
     column that is a join key through the audit is refused, and the app says why in plain words", by place)."""
     return DropGate(raw, plans).problem(place, columns)
+
+
+def key_drop_warning(raw: Any, place: str, columns: Any, plans: Optional[PlanBook] = None) -> Optional[str]:
+    """None, or the warning that goes with a drop of these columns at `place` that the walk cannot follow to the end (D-0449: allowed, with this sentence shown before the user confirms)."""
+    return DropGate(raw, plans).warning(place, columns)
 
 
 def _where(need: KeyNeed) -> str:
@@ -124,19 +139,40 @@ def _why_not_followed(facts: DropFacts) -> str:
             said = str(reason.get("sentence", "")).strip()
             parts.append(f"the engine could not give the columns of {reason.get('node', facts.place)}" + (f" ({said})" if said else ""))
         elif reason.code == STEP_NOT_READ:
-            parts.append(f"step {reason.get('step', '?')} of {reason.get('node', '?')} ({reason.get('action', 'an unknown action')}) is a step the app cannot follow")
+            parts.append(f"it reaches step {reason.get('step', '?')} of {reason.get('node', '?')} ({reason.get('action', 'an unknown action')}), a step the app cannot read")
         else:
             parts.append(f"the app could not follow it ({reason.code})")
     parts += [f"step {n.step.step} of {n.step.node} may read it as a join key" for n in facts.needs if not n.certain]
     return "; ".join(dict.fromkeys(parts)) or "the app could not follow it"
 
 
-def key_drop_unfollowed_sentence(found: Sequence[DropFacts]) -> str:
-    """The plain sentence for a drop the app cannot follow to the end: the column, the place, why, and that nothing is written. PROVISIONAL wording (the owner reads it): the
-    safe side, no silent allow."""
-    parts = [f"the column {f.column!r} at {f.place}: {_why_not_followed(f)}" for f in found]
-    return ("Cannot tell whether a join later needs " + "; ".join(parts) + ". The drop is not written, because it may remove a key that a join reads. "
-            "Suggestion: use a row filter or a removal by key instead, or drop the column in a plot's own steps (after every join).")
+def _consequence_sentence(found: Consequence) -> str:
+    """One consequence the walk can read, in plain words (PROVISIONAL wording)."""
+    name = found.get("name")
+    if found.code == STEP_NAMES_COLUMN:
+        return f"step {found.step.step} of {found.step.node} ({found.step.action}) names {name!r}: it will stop with an error"
+    if found.code == PLOT_USES_COLUMN:
+        return f"the plot {found.get('plot')!r} draws {name!r}: it cannot be drawn"
+    if found.code == CLASH_NO_LONGER:
+        return (f"in step {found.step.step} of {found.step.node} the column {name!r} of the table {found.get('table')} was called {found.get('was_called')!r} because this column was there; "
+                f"after the drop it keeps the name {name!r}, so a step or a plot that reads {name!r} there reads the column of {found.get('table')}, with no error")
+    return f"the app reads this consequence: {found.code}"
+
+
+def key_drop_warning_sentence(found: Sequence[Tuple[DropFacts, Sequence[Consequence]]]) -> str:
+    """The plain warning for a drop the walk cannot follow to the end: the column, the place, where the app lost it and why, what it can still read downstream, that the build may
+    fail, what it cannot see (a formula), and how to undo. PROVISIONAL wording (the owner reads it; D-0449 asks for exactly these facts)."""
+    parts: List[str] = []
+    for facts, consequences in found:
+        text = f"{facts.column!r}: {_why_not_followed(facts)}"
+        if consequences:
+            text += ". The app can read this about it: " + "; ".join(dict.fromkeys(_consequence_sentence(c) for c in consequences))
+        parts.append(text)
+    named = " and ".join(f"the column {f.column!r} at {f.place}" for f, _ in found)
+    return (f"Warning: the app cannot follow {named} to the end. " + ". ".join(parts) + ". "
+            "If you confirm, the step is written and the app does not know what the tables after that step do with the column. If a later step needs it, the build may fail: the error names the step, "
+            "and removing the audit step gives the recipe back unchanged. A formula is not read: one that takes columns by type or all of them (for example pl.all()) will compute on "
+            "one column less, with no error. Check the tables after the drop.")
 
 
 def place_of_steps_path(raw: Any, steps_path: str) -> Optional[str]:

@@ -139,12 +139,16 @@ class Box:
     """What `_col_drop_to_audit` needs from the app."""
 
     def __init__(self, raw, columns, plans=None):
-        self.notes, self.opened = [], []
+        self.notes, self.opened, self.warnings = [], [], []
         self.scratch = Val()
         self.raw = raw
         self.plans = plans
         self.state = Val({"active_plot_subtab": "subtab_p1"})
         self.frame = pl.DataFrame({c: ["x"] for c in columns})
+
+    def open_modal(self, nodes, subtab, kind, warning=None):
+        self.opened.append((nodes, kind))
+        self.warnings.append(warning)
 
     def drop(self, kept):
         closure(
@@ -153,7 +157,7 @@ class Box:
             active_home_subtab=Val("subtab_p1"),
             _notify=lambda message, **kw: self.notes.append((message, kw.get("type"))),
             _propagation_scratch=self.scratch,
-            _open_propagation_modal=lambda nodes, subtab, kind: self.opened.append((nodes, kind)),
+            _open_propagation_modal=self.open_modal,
             _resolve_active_spec=lambda p_id: {}, _resolve_active_lf=lambda spec, tier=None: (self.frame.lazy() if tier == "T3" else pytest.fail(f"read tier {tier!r}, not T3: an audit step is written at the plot's table")),
             _t3_drop_columns=lambda: [], safe_input=lambda i, k, d=None: i.get(k, d), input={"preview_col_selector": kept},
             ui=SimpleNamespace(update_selectize=lambda *a, **k: None), recipe_raw=lambda: self.raw, recipe_plans=lambda: self.plans,
@@ -199,6 +203,38 @@ def test_the_handler_asks_the_rule_with_the_place_of_the_plot_and_follows_its_re
     assert asked == [("T3:p1", ["sample_id", "year"])]
     assert box.opened == [] and box.scratch.get() is None
     assert box.notes == [("⛔ STAND-IN: the join at step 1 of T1:J reads sample_id.", "error")]
+
+
+def test_the_handler_passes_the_warning_of_a_drop_the_walk_cannot_follow_to_the_dialog_before_the_user_confirms(monkeypatch):
+    """D-0449: a drop the walk cannot follow is allowed; the sentence of `DropGate.warning` goes to the dialog with the nodes. The real rule has nothing to say at a plot (nothing is
+    built from it), so the answer is a stand-in, as for the refusal above. A refusal still wins: no dialog, no warning."""
+    asked = []
+
+    def answer(self, place, columns):
+        asked.append((place, list(columns)))
+        return "STAND-IN warning: the app cannot follow the column to the end."
+    monkeypatch.setattr(key_drop.DropGate, "warning", answer)
+    box = Box(COMPOSITE_RECIPE, COLUMNS)
+    box.drop(kept=[c for c in COLUMNS if c != "year"])
+    assert asked == [("T3:p1", ["year"])] and box.notes == []
+    assert box.warnings == ["STAND-IN warning: the app cannot follow the column to the end."] and len(box.opened) == 1
+    monkeypatch.setattr(key_drop.DropGate, "problem", lambda self, place, columns: "STAND-IN refusal")
+    refused = Box(COMPOSITE_RECIPE, COLUMNS)
+    refused.drop(kept=[c for c in COLUMNS if c != "year"])
+    assert refused.opened == [] and refused.warnings == [] and refused.notes == [("⛔ STAND-IN refusal", "error")]
+
+
+def test_the_dialog_shows_the_warning_above_the_choices_and_shows_nothing_extra_without_one(monkeypatch):
+    """The modal itself, built by the real function with the real `ui`: the warning is in the dialog the user reads before pressing "Add to audit pipeline"."""
+    shown = []
+    monkeypatch.setattr(handlers.ui, "modal_show", lambda m: shown.append(str(m)))
+    nodes = [make_audit_step("drop_column", {"column": "year"}, plot_scope="subtab_p1", reason="")]
+    stand = dict(_all_plot_subtab_ids=lambda: ["subtab_p1"], _plot_label=lambda sub: sub, _column_presence_per_plot=lambda n, subs: {s: "present" for s in subs})
+    opener = closure("_open_propagation_modal", **stand)
+    opener(nodes, "subtab_p1", kind="drop", warning="SENTENCE OF THE WARNING")
+    opener(nodes, "subtab_p1", kind="drop")
+    assert "SENTENCE OF THE WARNING" in shown[0] and shown[0].index("SENTENCE OF THE WARNING") < shown[0].index("Add to audit pipeline")
+    assert "SENTENCE OF THE WARNING" not in shown[1] and "alert-warning" in shown[0] and "alert-warning" not in shown[1]
 
 
 def test_without_a_recipe_the_handler_judges_nothing_and_sends_the_drop_to_the_dialog():

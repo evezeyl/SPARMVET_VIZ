@@ -873,14 +873,17 @@ def define_filter_audit_server(input, output, session, *,
             return
 
         # A column a join step later reads as a key is refused BY PLACE (D-0358, which modulates D-0297 and §12g.4): this drop is written in the plot's own steps (the
-        # place `T3:<plot>`), after every join, so the rule finds nothing to refuse there today; it is asked all the same, with the place the step has.
+        # place `T3:<plot>`), after every join, so the rule finds nothing to refuse there today; it is asked all the same, with the place the step has. A column the walk
+        # cannot follow to the end is allowed with a warning that the dialog shows before the user confirms (D-0449); nothing is built from a plot, so none arises here today.
         try:
-            problem = key_drop.DropGate(recipe_raw(), recipe_plans() if recipe_plans is not None else None).problem(f"T3:{p_id}", to_drop) if recipe_raw is not None and p_id else None
+            gate = key_drop.DropGate(recipe_raw(), recipe_plans() if recipe_plans is not None else None) if recipe_raw is not None and p_id else None
         except PlanComposerBug:
             return      # the plain notice was shown by `recipe_plans` (an error of the app): nothing is written
+        problem = gate.problem(f"T3:{p_id}", to_drop) if gate else None
         if problem:
             _notify(f"⛔ {problem}", type="error", duration=8)
             return
+        warning = gate.warning(f"T3:{p_id}", to_drop) if gate else None
 
         from app.modules.session_manager import make_audit_step
         active_subtab = state.get("active_plot_subtab") or active_home_subtab.get() or ""
@@ -893,7 +896,7 @@ def define_filter_audit_server(input, output, session, *,
             for col in to_drop
         ]
         _propagation_scratch.set({"nodes": scratch_nodes, "kind": "drop"})
-        _open_propagation_modal(scratch_nodes, active_subtab, kind="drop")
+        _open_propagation_modal(scratch_nodes, active_subtab, kind="drop", warning=warning)
 
         # Reset selectize to the kept columns so the user starts clean.
         remaining = [c for c in choosable if c in vis_set]
@@ -948,7 +951,8 @@ def define_filter_audit_server(input, output, session, *,
 
     def _open_propagation_modal(scratch_nodes: list[dict],
                                 active_subtab: str,
-                                kind: str) -> None:
+                                kind: str,
+                                warning: str | None = None) -> None:
         """Open a modal asking the user to choose propagation scope.
 
         Choices:
@@ -959,6 +963,8 @@ def define_filter_audit_server(input, output, session, *,
         On confirm, `_handle_propagation_confirm` reads the radio + multiselect
         and resolves the scratch nodes into one AuditStep per target plot
         (sharing `id`), then appends them to home_state._pending_t3_nodes.
+
+        `warning`: the warning of a drop the walk cannot follow to the end (`utils.key_drop`, D-0449), shown above the choices so that the user reads it before confirming.
         """
         all_subtabs = _all_plot_subtab_ids()
         others = [s for s in all_subtabs if s != active_subtab]
@@ -982,6 +988,13 @@ def define_filter_audit_server(input, output, session, *,
             warn = ui.div(
                 "⚠️ One or more nodes target a join key. "
                 "Removing rows here changes which samples appear in joined plots.",
+                class_="alert alert-warning py-1 px-2 mb-2 spv-text-sm",
+            )
+
+        follow_warn = ui.span()
+        if warning:
+            follow_warn = ui.div(
+                "⚠️ " + warning,
                 class_="alert alert-warning py-1 px-2 mb-2 spv-text-sm",
             )
 
@@ -1030,6 +1043,7 @@ def define_filter_audit_server(input, output, session, *,
 
         m = ui.modal(
             warn,
+            follow_warn,
             propagation_preview,
             ui.tags.small(summary, class_="text-muted d-block mb-2"),
             ui.input_radio_buttons(

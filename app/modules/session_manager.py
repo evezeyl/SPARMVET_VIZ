@@ -145,7 +145,7 @@ def split_key_drops(by_plot: dict[str, list[dict]], recipe_raw: Any, plans: Any 
     `by_plot` without the refused steps (every other step, in its order, plots that become empty stay as empty lists); `refused` lists them, one entry per step copy
     as `{"plot", "id", "column", "reason", "problem"}` (`reason` is what the user wrote, `problem` the sentence of the rule). Without a recipe nothing is judged. The
     argument is not changed. `plans`: the engine's plan book of the open recipe (`app/modules/plan_composer.py`); without it the rule reads only the names the recipe declares and
-    a drop it cannot follow is refused (PROVISIONAL, see `utils.key_drop`).
+    a drop it cannot follow is kept (allowed with a warning, D-0449, `utils.key_drop`); a key that a join reads behind a step it cannot read is then not seen.
     """
     gate = key_drop.DropGate(recipe_raw, plans) if isinstance(recipe_raw, dict) else None
     kept: dict[str, list[dict]] = {}

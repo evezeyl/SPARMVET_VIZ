@@ -30,7 +30,7 @@ Consumed by: app/tests/test_audit_run.py. If deleted: nothing runs a copy yet; t
 
 # @deps
 # provides: function:run_audit, class:AuditRun, class:TableRun, class:PlotRun, class:AuditRunError
-# consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the original, handed to the check of every copy), app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3 with a handed recipe), app/modules/cache_keys.py (loaded_from_resolved, load_data_analysis_recipe), libs/utils/src/utils/audit_copy.py, libs/utils/src/utils/recipe_graph.py, libs/transformer/src/transformer/anchor.py (read_anchor_if_key)
+# consumes: app/modules/build_failure.py (short_engine_text: the sentence of an audit step that cannot be applied has no plan of the engine), app/modules/plan_composer.py (compose_plan_book: the engine's plan of the original, handed to the check of every copy), app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3 with a handed recipe), app/modules/cache_keys.py (loaded_from_resolved, load_data_analysis_recipe), libs/utils/src/utils/audit_copy.py, libs/utils/src/utils/recipe_graph.py, libs/transformer/src/transformer/anchor.py (read_anchor_if_key)
 # consumed_by: app/tests/test_audit_run.py
 # doc: .claude/knowledge/architecture_decisions.md#adr-101, .claude/knowledge/architecture_decisions.md#adr-105, .claude/design/home_audit_steps.md (section 7.1)
 # @end_deps
@@ -44,6 +44,7 @@ from typing import Callable, Dict, List, Optional
 
 import polars as pl
 
+from app.modules.build_failure import short_engine_text
 from app.modules.cache_keys import (
     DataAnalysisRecipeKeys, LoadedDataAnalysisRecipe, load_data_analysis_recipe, loaded_from_resolved, tier2_steps)
 from app.modules.plan_composer import compose_plan_book
@@ -198,7 +199,7 @@ class _Run:
         if not candidates:
             raise error
         culprit = candidates[0] if len(candidates) == 1 else self.first_failing(candidates, attempt)
-        why = str(error).strip() + (f" ({error.tip})" if getattr(error, "tip", None) else "")
+        why = short_engine_text(error, limit=900) + (f" ({error.tip})" if getattr(error, "tip", None) else "")   # one line, without the engine's plan (D-0449: a drop ends as a plain error)
         if culprit is None:
             ids = ", ".join(f"{m.step_id} at {m.place}" for m in candidates)
             raise AuditRunError(f"An audit step cannot be applied; it is one of these, which together cannot be applied: {ids}. The engine says: {why}") from error

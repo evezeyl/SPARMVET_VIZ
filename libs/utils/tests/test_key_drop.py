@@ -144,21 +144,68 @@ def test_the_gate_with_the_declared_plan_gives_the_verdict_of_the_walk_with_the_
     assert compared > 150 and refused >= 8
 
 
-def test_PROVISIONAL_where_the_recipe_cannot_say_what_a_step_does_the_drop_is_not_written_and_the_sentence_says_why():
-    """An unread step (a fill of missing values) between the table and the place: the recipe alone cannot say which column is which after it. The gate does not claim the
-    column is a key (it would be a guess: `refused` is False, the facts say `uncertain`) and does NOT write the drop either: no silent allow (LBFB step 0b, the review of
-    2026-11-20 finding F2, replaces the earlier P16 that allowed it). The sentence says that the app could not follow the column and why, in plain words. The engine's plan says the
-    truth and the same rule refuses by the join that needs the key. PROVISIONAL: the owner has not decided this case."""
+def test_where_the_recipe_cannot_say_what_a_step_does_the_drop_is_allowed_with_a_warning_and_the_plan_still_refuses_the_key():
+    """D-0449 ("for now, B"; it replaces the earlier P16 "not written", itself the builder's): an unread step (a fill of missing values) between the table and the place: the
+    recipe alone cannot say which column is which after it. The gate does not claim the column is a key (it would be a guess: `refused` is False, the facts say `uncertain`) and does
+    NOT refuse: `problem` is None and `warning` says, in plain words, what the app could not follow. With the engine's plan the same rule refuses by the join that needs the
+    key (certain), and says no warning. What the build does with the allowed drop is an error (the replay raises at the join), never a table that differs without a word."""
     recipe, tables = F.chain(a_steps=[F.keep("val", "gt", 0.0), F.fill_null(["val"], 0.0)])
     blind = key_drop.DropGate(recipe).facts("T1:A", "sample_id")
     assert not blind.refused and blind.uncertain and blind.unfollowed
-    unsure = key_drop.key_drop_problem(recipe, "T1:A", ["sample_id"])
-    assert unsure and unsure.startswith("Cannot tell whether a join later needs the column 'sample_id' at T1:A") and "The drop is not written" in unsure and "read as a join key" not in unsure
+    assert key_drop.key_drop_problem(recipe, "T1:A", ["sample_id"]) is None
+    said = key_drop.key_drop_warning(recipe, "T1:A", ["sample_id"])
+    assert said and said.startswith("Warning: the app cannot follow the column 'sample_id' at T1:A to the end.") and "read as a join key" not in said
+    assert "may fail" in said and "If you confirm" in said and "pl.all()" in said and "removing the audit step" in said.lower()      # what the build may do, the formulas it does not read, how to undo
     _, real = setup(recipe, tables)
     assert key_drop.DropGate(recipe, real).facts("T1:A", "sample_id").refused
     certain = key_drop.key_drop_problem(recipe, "T1:A", ["sample_id"], real)
     assert certain and "it is read as a join key by" in certain and "Cannot tell" not in certain
-    assert O.replay(O.with_audit_drop(recipe, "T1:A", "sample_id"), tables).failures      # what the build does with the drop: an error, so refusing it is right
+    assert key_drop.key_drop_warning(recipe, "T1:A", ["sample_id"], real) is None                        # a refusal is not a warning
+    assert O.replay(O.with_audit_drop(recipe, "T1:A", "sample_id"), tables).failures      # what the build does with the drop: an error, so the user sees it
+
+
+def test_the_audit_copy_writes_a_drop_the_walk_cannot_follow_and_refuses_it_with_the_plan_when_a_join_needs_it():
+    recipe, tables = F.chain(a_steps=[F.keep("val", "gt", 0.0), F.fill_null(["val"], 0.0)])
+    audit = start_audit(recipe, "1a2b3c4d")
+    step_id = add_step(audit, "T1:A", {"action": "polars_drop", "columns": ["sample_id"]}, "why")      # blind: written
+    assert step_id == "audit_1a2b3c4d_1" and audit.created == 1
+    _, real = setup(recipe, tables)
+    other = start_audit(recipe, "1a2b3c4d")
+    with pytest.raises(AuditCopyError, match="read as a join key"):
+        add_step(other, "T1:A", {"action": "polars_drop", "columns": ["sample_id"]}, "why", plans=real)
+    assert other.created == 0 and other.recipe == recipe
+
+
+def test_the_warning_is_none_where_nothing_is_uncertain_and_for_columns_that_are_not_judged():
+    recipe, _ = F.chain()
+    assert key_drop.key_drop_warning(recipe, "T1:A", ["val"]) is None and key_drop.key_drop_warning(recipe, "T1:A", ["sample_id"]) is None      # certain: allowed or refused
+    assert key_drop.key_drop_warning(recipe, "T1:NOPE", ["val"]) is None and key_drop.key_drop_warning(recipe, "T1:A", "val") is None
+    assert key_drop.key_drop_warning("not a recipe", "T1:A", ["val"]) is None
+    blind, _ = F.chain(a_steps=[F.keep("val", "gt", 0.0), F.fill_null(["val"], 0.0)])
+    assert key_drop.key_drop_warning(blind, "T3:P2", ["sample_id"]) is None                                    # a plot: nothing is built from it
+
+
+def test_the_warning_names_every_column_it_could_not_follow_and_only_those():
+    recipe, _ = F.chain(a_steps=[F.keep("val", "gt", 0.0), F.fill_null(["val"], 0.0)])
+    said = key_drop.key_drop_warning(recipe, "T1:A", ["country", "year"])
+    assert "'country'" in said and "'year'" in said and said.count("Warning:") == 1
+    assert "'val'" not in said
+
+
+def test_the_warning_tells_what_the_walk_can_read_downstream_a_same_named_column_of_a_join_that_changes_with_no_error():
+    """The case that a build does NOT stop on: the dropped column had the same name as a column of the other table of a join, the join had given that one a suffix; with the drop it
+    keeps its own name, and a step or a plot that reads the name now reads the other table's column. The warning says it, with the names (D-0449: never a different table with no word)."""
+    recipe = F.recipe({"A": F.schema(["sample_id", "lab", "x"], [], [F.unpivot(["x"], ["sample_id"])], keys=["sample_id"]), "B": F.schema(["sample_id", "lab"], keys=["sample_id"])},
+                      {"J": F.join(["A", "B"], [F.join_step("B")])}, {"P": F.plot("J"), "Q": F.plot("A")})
+    tables = {"A": F.table(sample_id=F.IDS, lab=["a1", "a2", "a3", "a4", "a5"], x=["x1", "x2", "x3", "x4", "x5"]), "B": F.table(sample_id=F.IDS, lab=["b1", "b2", "b3", "b4", "b5"])}
+    _, real = setup(recipe, tables)
+    facts = key_drop.DropGate(recipe, real).facts("T1:A", "lab")
+    assert facts.uncertain and not facts.refused
+    said = key_drop.key_drop_warning(recipe, "T1:A", ["lab"], real)
+    assert "'lab_right'" in said and "keeps the name 'lab'" in said and "with no error" in said and "table B" in said and "step 1 of T1:J" in said
+    built_before, built_after = O.replay(recipe, tables).end("T1:J"), O.replay(O.with_audit_drop(recipe, "T1:A", "lab"), tables).end("T1:J")
+    assert built_before.columns == ["sample_id", "lab", "x", "lab_right"] and built_after.columns == ["sample_id", "x", "lab"]
+    assert built_after["lab"].to_list() == ["b1", "b2", "b3", "b4", "b5"], "the column named lab is now the other table's: that is what the warning says"
 
 
 def test_a_plot_is_never_refused_even_when_nothing_is_known_about_its_table():
