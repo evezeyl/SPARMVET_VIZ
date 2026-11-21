@@ -6,7 +6,7 @@
 
 ## OPEN STATE 2026-11-21, 03:25
 
-- dev head `8cd699f7` (the panel widths merged on top of `0c17fff8`), plus the records commit that follows this block. Not pushed: the owner pushes. Ledger ends at D-0396.
+- dev head `52c4bcfa` (BLUEPRINT review merged as documents: `2c70694e` and `52c4bcfa`), plus the records commit that follows this block. Not pushed: the owner pushes. Ledger ends at D-0396.
 - Merged today after 16:50 (one line each):
   - `e6ae8d0f` HOME fixes of the browser walk: the screen cleared while a recipe opens; the header strip in a narrow window; the filter form cleared with the filters; the README tiers line; the help page; a test that no view rebuilds a stored table.
   - `cdbef5ff` lineage walk, step 0b: the plan of every place composed from the build's own code; the audit's key-drop gate given the plan; an app error no longer shown as "cannot tell". PROVISIONAL: a drop the walk cannot follow is not written (owner's choice open: allow with a warning, or refuse).
@@ -41,7 +41,7 @@
   - Gallery: the three links without a page (remove, link to the plotnine reference, or leave).
   - Gallery: of two examples with the same name, keep the first by folder name (as built, provisional) or leave both out.
   - Gallery study Q1 to Q9; recipes P1 to P11 (places), the selector and old versions, what counts as modified; the ADR history table; what the column field `label` is for; the seed step.
-- Remaining night work: only the fallback reviews BLUEPRINT-REVIEW-1 (resume at step 2, `.claude/design/blueprint_revision/SUBTASKS.md`) and TESTLAB-REVIEW-1.
+- BLUEPRINT review complete as documents (guide: `.claude/design/blueprint_revision/GUIDE.md`; remains: the owner's reading and the browser checks of its section 3). Test Lab review running (branch `task/lab-review`, worktree `.claude/worktrees/lab-review`).
 - Fallback reviews:
   - BLUEPRINT review: step 1 done; resume at step 2 (`.claude/design/blueprint_revision/SUBTASKS.md`).
   - Test Lab review: not started.
