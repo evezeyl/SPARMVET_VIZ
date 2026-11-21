@@ -35,12 +35,14 @@ class GalleryListing:
     registry: dict = field(default_factory=dict)
     pivot: dict = field(default_factory=dict)
     notice: list = field(default_factory=list)
+    # The same lines in blocks, `(title, lines)`; `title` is None for a lone note. The handler styles what is marked here.
+    blocks: list = field(default_factory=list)
 
 
 def build_listing(index: dict, rejected: dict, status: str, stale: Optional[dict] = None) -> GalleryListing:
     """Filter the index by the rejected examples and build the lines to show; the given index is not changed.
 
-    `stale` is `{name: reason}` for the examples whose stored picture is not current (D-0400, built on branch). Such an
+    `stale` is `{name: reason}` for the examples whose stored picture is not current (D-0400). Such an
     example stays listed and shown; the notice only says that its picture may not match its recipe and data.
     A name that is also rejected is not repeated here.
     """
@@ -49,21 +51,21 @@ def build_listing(index: dict, rejected: dict, status: str, stale: Optional[dict
         axis: {term: kept for term, names in terms.items() if (kept := [n for n in names if n not in rejected])}
         for axis, terms in deepcopy(index.get("pivot", {})).items()
     }
-    notice: list = []
+    blocks: list = []
     if rejected:
-        notice.append(f"{len(rejected)} example(s) not shown, failed the check:")
-        for name, reasons in sorted(rejected.items()):
-            notice.append(f"{name}, {reasons[0] if reasons else 'no reason recorded'}.")
+        lines = [f"{name}, {reasons[0] if reasons else 'no reason recorded'}." for name, reasons in sorted(rejected.items())]
         if status == "not_writable":
-            notice.append(READ_ONLY_LINE)
+            lines.append(READ_ONLY_LINE)
+        blocks.append((f"{len(rejected)} example(s) not shown, failed the check:", lines))
     stale_shown = {name: reason for name, reason in sorted((stale or {}).items()) if name not in rejected}
     if stale_shown:
         # wording PROVISIONAL (plain words; the owner may change it)
-        notice.append(f"{len(stale_shown)} example(s) shown with a picture that is not current:")
-        notice.extend(f"{name}, {reason}." for name, reason in stale_shown.items())
+        blocks.append((f"{len(stale_shown)} example(s) shown with a picture that is not current:",
+                       [f"{name}: the picture is not current ({reason})." for name, reason in stale_shown.items()]))
     if status == "failed":
-        notice.append(FAILED_LINE)
-    return GalleryListing(registry, pivot, notice)
+        blocks.append((None, [FAILED_LINE]))
+    notice = [line for title, lines in blocks for line in ([title] if title else []) + lines]
+    return GalleryListing(registry, pivot, notice, blocks)
 
 
 def read_listing(gallery_dir: Union[str, Path], rejected: dict, status: str, stale: Optional[dict] = None) -> GalleryListing:

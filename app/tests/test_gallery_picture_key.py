@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from app.modules.gallery_listing import build_listing
+from app.modules.gallery_listing import FAILED_LINE, build_listing
 from viz_gallery.picture_key import (KEY_FILE, key_of, picture_key_parts, picture_status, stale_pictures,
                                      write_picture_key)
 
@@ -37,14 +37,14 @@ def test_a_changed_recipe_makes_it_not_current(example):
     recipe = example / "data_analysis_recipe.yaml"
     recipe.write_text(recipe.read_text(encoding="utf-8") + "\n# edited\n", encoding="utf-8")
     current, reason = picture_status(example, plotnine="1.0")
-    assert not current and "recipe" in reason and "data)" not in reason
+    assert not current and "recipe" in reason and "data" not in reason
 
 
 def test_changed_data_makes_it_not_current(example):
     data = example / "example_data.tsv"
     data.write_bytes(data.read_bytes() + b"\n")
     current, reason = picture_status(example, plotnine="1.0")
-    assert not current and "(data)" in reason
+    assert not current and "data" in reason and "recipe" not in reason
 
 
 def test_another_plotnine_version_makes_it_not_current(example):
@@ -100,10 +100,12 @@ def test_no_shipped_recipe_includes_another_file():
 
 def test_the_notice_names_a_stale_example_and_keeps_it_listed():
     index = {"registry": {"a": {"name": "A"}, "b": {"name": "B"}}, "pivot": {}}
-    stale = {"b": "the picture is not current: the recipe, the data or the plot library changed since it was drawn (data)"}
+    stale = {"b": "the data changed since it was drawn"}
     listing = build_listing(index, {}, "unchanged", stale)
     assert set(listing.registry) == {"a", "b"}
-    assert listing.notice == ["1 example(s) shown with a picture that is not current:", "b, " + stale["b"] + "."]
+    assert listing.notice == ["1 example(s) shown with a picture that is not current:",
+                              "b: the picture is not current (the data changed since it was drawn)."]
+    assert listing.blocks == [("1 example(s) shown with a picture that is not current:", [listing.notice[1]])]
 
 
 def test_no_stale_picture_no_extra_line_and_a_rejected_example_is_not_repeated():
@@ -119,3 +121,13 @@ def test_stale_pictures_finds_the_changed_one_in_a_real_folder(tmp_path):
         shutil.copytree(SHIPPED / name, gallery / name)
     (gallery / "dumbbell" / "example_data.tsv").write_bytes((gallery / "dumbbell" / "example_data.tsv").read_bytes() + b"\n")
     assert list(stale_pictures(gallery, ["bar_simple", "dumbbell"])) == ["dumbbell"]
+
+
+def test_a_line_that_ends_with_a_colon_is_not_a_title():
+    index = {"registry": {"a": {"name": "A"}}, "pivot": {}}
+    listing = build_listing(index, {"bad": ["unexpected value:"]}, "unchanged")
+    (title, lines), = listing.blocks
+    assert title == "1 example(s) not shown, failed the check:"
+    assert lines == ["bad, unexpected value:."] and lines[0].endswith(":.") is True
+    lone = build_listing(index, {}, "failed").blocks
+    assert lone == [(None, [FAILED_LINE])]

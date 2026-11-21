@@ -266,17 +266,17 @@ def define_server(input, output, session, *,
 
         Reads only bootloader data fixed at start; it does not read the inputs it sits next to (ui_implementation_contract.md section 14).
         """
-        notice = _listing().notice
-        if not notice:
+        blocks = _listing().blocks
+        if not blocks:
             return None
-        # The title line exists only when examples were rejected; a lone note (failed check) has none.
-        # a line that ends with a colon is a title of a block (examples left out, pictures not current)
-        return ui.div(
-            *[ui.div(line, class_="gallery-left-out-title" if line.endswith(":") else
-                     "gallery-left-out-line" + (" gallery-left-out-note" if line in NOTE_LINES else ""))
-              for line in notice],
-            class_="gallery-left-out",
-        )
+        # The title of a block is marked by the listing (`(title, lines)`), not guessed from the text of a line.
+        children = []
+        for title, lines in blocks:
+            if title:
+                children.append(ui.div(title, class_="gallery-left-out-title"))
+            children.extend(ui.div(line, class_="gallery-left-out-line" + (" gallery-left-out-note" if line in NOTE_LINES else ""))
+                            for line in lines)
+        return ui.div(*children, class_="gallery-left-out")
 
     @output
     @render.ui

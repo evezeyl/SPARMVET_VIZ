@@ -32,7 +32,7 @@ import hashlib
 import json
 from importlib import metadata
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Dict, Iterable, Optional, Tuple, Union
 
 from viz_gallery.example_recipe import DATA_FILE
 
@@ -77,25 +77,25 @@ def write_picture_key(example_dir: Union[str, Path], parts: Dict[str, str]) -> P
 
 
 def picture_status(example_dir: Union[str, Path], plotnine: Optional[str] = None) -> Tuple[bool, str]:
-    """`(current, reason)` of one picture; `reason` is a plain sentence, empty when current. Never raises."""
+    """`(current, reason)` of one picture; `reason` is a plain phrase (wording PROVISIONAL), empty when current. Never raises."""
     folder = Path(example_dir)
     try:
         stored = json.loads((folder / KEY_FILE).read_text(encoding="utf-8"))
     except FileNotFoundError:
-        return False, "the picture is not current: no key is stored with it, so it cannot be shown to be current"
+        return False, "no key is stored with it"
     except (OSError, ValueError):
-        return False, "the picture is not current: the key stored with it cannot be read"
+        return False, "the key stored with it cannot be read"
     stored_parts = stored.get("parts") if isinstance(stored, dict) else None
     if not isinstance(stored_parts, dict) or not isinstance(stored.get("key"), str) or key_of(stored_parts) != stored["key"]:
-        return False, "the picture is not current: the key stored with it cannot be read"
+        return False, "the key stored with it cannot be read"
     try:
         now = picture_key_parts(folder, plotnine)
     except OSError:
-        return False, "the picture is not current: the recipe or the data of the example cannot be read"
+        return False, "the recipe or the data cannot be read"
     if set(stored_parts) == set(now) and key_of(now) == stored["key"]:
         return True, ""
     changed = [PART_WORDS[name] for name in now if stored_parts.get(name) != now[name]] or ["inputs"]
-    return False, f"the picture is not current: the recipe, the data or the plot library changed since it was drawn ({' and '.join(changed)})"
+    return False, f"the {' and '.join(changed)} changed since it was drawn"
 
 
 def stale_pictures(gallery_dir: Union[str, Path], names: Iterable[str]) -> Dict[str, str]:
