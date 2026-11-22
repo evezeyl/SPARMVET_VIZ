@@ -61,7 +61,7 @@ Consumed by: libs/utils/tests/test_recipe_graph.py. The checker takes the graph 
 If deleted: nothing runs yet; the rebuild of those callers needs it.
 
 # @deps
-# provides: function:build_graph, function:source_tables_of_plot, function:source_tables_of_table, function:key_candidates_for, function:key_candidate_sources, constant:RESULT_KEY, class:RecipeGraph, class:RecipeGraphError, class:GraphProblem, class:Node, class:ColumnInfo, method:RecipeGraph.declared_entity_keys
+# provides: function:build_graph, function:source_tables_of_plot, function:source_tables_of_table, function:key_candidates_for, function:key_candidate_sources, class:RecipeGraph, class:RecipeGraphError, class:GraphProblem, class:Node, class:ColumnInfo, method:RecipeGraph.declared_entity_keys
 # consumes: libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/join_keys.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/step_effects.py (effect_of, for the key candidates)
 # consumed_by: libs/utils/tests/test_recipe_graph.py, libs/utils/tests/test_key_candidates.py (key_candidates_for), libs/utils/src/utils/lineage_walk.py (declared_entity_keys, key_family_of, lineage_forward, plot_columns), libs/utils/src/utils/declared_plans.py (column_info, parents), libs/utils/src/utils/key_drop.py (build_graph), app/tests/test_read_source.py (source_tables_of_plot: the source tables that feed a plot, for the Source view of HOME, D-0310)
 # doc: .claude/knowledge/architecture_decisions.md#adr-099, .claude/knowledge/architecture_decisions.md#adr-101, .claude/design/home_stage2_mechanism_spec.md (sections 1 to 3, P3), .claude/design/home_audit_steps.md (D1, 5a points 3, 8, 18)
@@ -465,25 +465,21 @@ def source_tables_of_table(graph: "RecipeGraph", table_id: str) -> List[str]:
     return [graph.node(n).name for n in graph.source_tables(f"T1:{table_id}")]
 
 
-# PROVISIONAL (an agent's choice, not the owner's; the format, the spec and the checker do not know it yet, D-0489): the key of a table body (a join or a schema)
-# in which the recipe author DECLARES the columns that identify one row of that table's result, as a list of column names (optional; good practice, because
-# only the author knows the key of a long table). Today no shipped recipe holds it and the checker would refuse it as an unknown key.
-RESULT_KEY = "result_key"
-
 SOURCE_DECLARED = "declared in the recipe"
 SOURCE_GROUP_BY = "group-by columns of the last aggregation"
 SOURCE_ENTITY_KEY = "entity key declared on an ingredient"
 
 
-def _declared_result_key(body: Any, entry_id: str) -> Optional[Tuple[str, ...]]:
-    """The columns the author declared under RESULT_KEY, or None when the recipe declares none. A declaration that is not a text or a non-empty list of
-    texts is refused with a plain message: an ignored declaration would be a silent failure."""
-    if not isinstance(body, dict) or RESULT_KEY not in body:
+def _declared_key(declared: Any, entry_id: str) -> Optional[Tuple[str, ...]]:
+    """The declared key the CALLER gives (a column name, a non-empty list of column names, or None when none is declared). The library reads no recipe key
+    for it: the name and place of that key in the recipe are NOT decided (D-0489; the owner decided only that an author MAY declare one), and the caller
+    will read it once the format has it. A declaration that is not a text or a non-empty list of texts is refused with a plain message: an ignored
+    declaration would be a silent failure."""
+    if declared is None:
         return None
-    value = body[RESULT_KEY]
-    names = (value,) if isinstance(value, str) else (tuple(value) if isinstance(value, list) else None)
+    names = (declared,) if isinstance(declared, str) else (tuple(declared) if isinstance(declared, (list, tuple)) else None)
     if not names or not all(isinstance(n, str) and n for n in names):
-        raise ValueError(f"{RESULT_KEY} of the table {entry_id!r} must be a column name or a non-empty list of column names, got {value!r}.")
+        raise ValueError(f"The declared key of the table {entry_id!r} must be a column name or a non-empty list of column names, got {declared!r}.")
     return names
 
 
@@ -504,9 +500,9 @@ def _carry(columns: Tuple[str, ...], step: Any) -> Optional[Tuple[str, ...]]:
     return columns
 
 
-def key_candidate_sources(raw: Any, entry_id: str) -> List[Tuple[Tuple[str, ...], str]]:
+def key_candidate_sources(raw: Any, entry_id: str, declared: Any = None) -> List[Tuple[Tuple[str, ...], str]]:
     """The columns that may identify one row of the result of a table (a schema or a join), each with where it comes from, in this order:
-    1. the key the recipe DECLARES for the table (RESULT_KEY, PROVISIONAL);
+    1. the key the author DECLARED for the table, given by the caller as `declared` (None: none; its name and place in the recipe are not decided, D-0489);
     2. the group columns of the LAST aggregation among the steps of its tier 1 and tier 2 (read through `step_effects.effect_of`), followed through the
        later steps;
     3. the entity key declared (`is_entity_key`) on each ingredient, followed through all the steps.
@@ -515,7 +511,11 @@ def key_candidate_sources(raw: Any, entry_id: str) -> List[Tuple[Tuple[str, ...]
 
     These are only CANDIDATES, read from the recipe by names: `table_compare.compare` verifies each one on the data (present, same type, no missing value,
     unique in both tables) and refuses what fails, so nothing here is a guess that the result depends on. KeyError for an id that is not a table of the
-    recipe; ValueError for a declaration that is wrongly written."""
+    recipe; ValueError for a declaration that is wrongly written.
+
+    `entry_id` is the id of a TABLE or JOIN (a schema or a join of the recipe), never a plot id. The steps read are the tier 1 and tier 2 steps of that table:
+    a plot's own tier 3 steps are NOT taken into account, so a caller that compares a plot's result must know that a tier 3 step that drops or changes a
+    key column is not seen here (the comparison then rejects the candidate on the data, as it does for any candidate)."""
     graph = build_graph(raw)
     if not graph.has_node(f"T1:{entry_id}"):
         raise KeyError(f"The recipe has no table or join '{entry_id}'.")
@@ -525,7 +525,7 @@ def key_candidate_sources(raw: Any, entry_id: str) -> List[Tuple[Tuple[str, ...]
         if columns and columns not in [known for known, _ in found]:
             found.append((columns, source))
 
-    add(_declared_result_key(recipe_tiers.collection_body(raw, entry_id), entry_id), SOURCE_DECLARED)
+    add(_declared_key(declared, entry_id), SOURCE_DECLARED)
     steps = list(graph.node(f"T1:{entry_id}").steps) + list(graph.node(f"T2:{entry_id}").steps)
     last_group = next((i for i in range(len(steps) - 1, -1, -1) if step_effects.effect_of(steps[i]).kind == step_effects.GROUP), None)
     if last_group is not None:
@@ -541,9 +541,11 @@ def key_candidate_sources(raw: Any, entry_id: str) -> List[Tuple[Tuple[str, ...]
     return found
 
 
-def key_candidates_for(raw: Any, entry_id: str) -> List[Tuple[str, ...]]:
-    """`key_candidate_sources` without the sources: the ordered column tuples to hand to `table_compare.compare` as `key_candidates`."""
-    return [columns for columns, _ in key_candidate_sources(raw, entry_id)]
+def key_candidates_for(raw: Any, entry_id: str, declared: Any = None) -> List[Tuple[str, ...]]:
+    """`key_candidate_sources` without the sources: the ordered column tuples to hand to `table_compare.compare` as `key_candidates`.
+    `entry_id` is a table or join id (a plot's own tier 3 steps are NOT taken into account); `declared` is the key the caller read from the recipe
+    (None when none)."""
+    return [columns for columns, _ in key_candidate_sources(raw, entry_id, declared)]
 
 
 def build_graph(raw: Any, *, columns_provider: Optional[ColumnsProvider] = None) -> RecipeGraph:

@@ -16,7 +16,7 @@ same inputs. A list may be cut by `limit`; the record then holds the first rows 
 
 Layer 3, the paired view (only with a VERIFIED key): `key_candidates` is an ordered list of column tuples that the CALLER gives (it reads them from the
 recipe; this module knows nothing of recipes). A candidate is usable only when every key column exists in both tables, has the same type in both, is not
-a nested type, has no missing value in either table and is unique in EACH table. The first usable candidate is used; every candidate that fails is
+a nested type, has no missing value and no NaN in either table (a NaN key is refused, never paired or guessed) and is unique in EACH table. The first usable candidate is used; every candidate that fails is
 returned with the plain reason and a count. No usable candidate: no pairing, and layers 1 and 2 are still returned. The module never searches for a key,
 never pairs by position and never pairs rows that "differ in one column" (the trials' S5 did, wrongly on a constructed case: it is not built).
 
@@ -46,7 +46,7 @@ If deleted: nothing uses it yet; the three places above would each compare two t
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Iterable, List, Optional, Sequence, Tuple, Union
 
 import polars as pl
 
@@ -60,11 +60,13 @@ KEY_NO_CANDIDATES = "no_candidates"
 KEY_NOT_COMPUTED = "not_computed"
 # Which check a candidate key failed.
 CHECK_EMPTY = "empty"
+CHECK_DUPLICATED_COLUMN = "duplicated_column"
 CHECK_MISSING = "missing"
 CHECK_TYPE_DIFFERS = "type_differs"
 CHECK_NESTED = "nested_type"
 CHECK_HAS_NULL = "has_null"
 CHECK_NOT_UNIQUE = "not_unique"
+CHECK_HAS_NAN = "has_nan"
 
 
 @dataclass(frozen=True)
@@ -128,12 +130,19 @@ class CellChanges:
 @dataclass(frozen=True)
 class ColumnChange:
     """For one non-key compared column: how many of the `n_paired` rows changed in it, and, for a numeric column, the smallest and largest change
-    (audited minus original, as floats, over the finite changes; None when nothing changed, when the column is not numeric or when no change is finite)."""
+    (audited minus original). A whole-number column is computed exactly in whole numbers (never through a decimal number) and returns Python ints, so
+    `2**62 -> 2**62 + 1` is 1; a decimal column returns floats. The range covers the changes where both values are present and finite. It is None when no
+    change has a range, when the column is not numeric, and for the 128-bit whole-number types (the range could overflow: a missing range is better than a
+    wrong one). `n_to_or_from_null` counts changed rows where either value is missing; `n_to_or_from_non_finite` counts the changed rows of a decimal column
+    where either value is NaN or infinite and neither is missing (the two counts do not overlap), so `n_changed` is explained: for a numeric column
+    n_changed = rows with a range + n_to_or_from_null + n_to_or_from_non_finite."""
     column: str
     n_changed: int
     n_paired: int
-    smallest_change: Optional[float]
-    largest_change: Optional[float]
+    smallest_change: Optional[Union[int, float]]
+    largest_change: Optional[Union[int, float]]
+    n_to_or_from_null: int = 0
+    n_to_or_from_non_finite: int = 0
 
 
 @dataclass(frozen=True)
@@ -156,7 +165,9 @@ class Comparison:
 
     Layer 1 (always): `n_rows_original`, `n_rows_audited`, `n_columns_original`, `n_columns_audited`; `columns_only_in_original` (dropped),
     `columns_only_in_audited` (added); `common_columns`; `type_changes`; `compared_columns` (the common columns with the same type: the ones whose values
-    are compared); `equal` (the same columns in the same order with the same types and the same rows in the same order).
+    are compared); `equal` (the same columns in the same order with the same types and the same rows in the same order); `column_order_same` (the columns both
+    tables hold are in the same order in both). When only the column order differs, `equal` and `column_order_same` are False and nothing else
+    differs. Whether a changed column order counts as a difference of the RESULT is NOT decided: the record states it and decides nothing.
     Layer 2 (None when `not_computed` is set): `row_order_same` (the rows both tables hold, in the same order in both?), `only_in_original`,
     `only_in_audited` (a RowList each, on `compared_columns`; their `total` is the number of rows only in one table).
     Layer 3: `key_status` (KEY_USED, KEY_NONE_USABLE, KEY_NO_CANDIDATES, KEY_NOT_COMPUTED), `key_used`, `key_rejections` (every failed candidate before the
@@ -173,6 +184,7 @@ class Comparison:
     type_changes: Tuple[TypeChange, ...]
     compared_columns: Tuple[str, ...]
     equal: bool
+    column_order_same: bool
     row_order_same: Optional[bool]
     only_in_original: Optional[RowList]
     only_in_audited: Optional[RowList]
@@ -211,6 +223,10 @@ CANNOT_CATCH: Tuple[Limitation, ...] = (
     Limitation("a_column_whose_type_changed_is_not_compared_by_value",
                "A column whose type changed (a whole number that became a decimal number, a number that became text) is named, but its values are not compared, "
                "so a value that changed inside it is not listed."),
+    Limitation("zero_and_negative_zero_are_equal",
+               "The comparison is exact to the value, not to the bit: 0.0 and -0.0 are equal, so a change of the sign of zero leaves no trace."),
+    Limitation("a_change_to_a_non_finite_value_has_no_size",
+               "A change to or from NaN or infinity is counted in its column but has no size: the smallest and largest change cover finite changes only."),
     Limitation("a_renamed_column_is_a_drop_and_an_add",
                "A renamed column is shown as a dropped column and an added column; the comparison does not link the two."),
 )
@@ -250,6 +266,9 @@ def _key_problem(original: pl.DataFrame, audited: pl.DataFrame, key: Tuple[str, 
     """None when the candidate passes every check, else the first check it fails (the order: empty, missing, type, nested, missing values, unique)."""
     if not key:
         return KeyRejection(key, CHECK_EMPTY, "both", None, "The candidate names no column.")
+    if len(set(key)) != len(key):
+        repeated = sorted({c for c in key if key.count(c) > 1})
+        return KeyRejection(key, CHECK_DUPLICATED_COLUMN, "both", len(repeated), f"The candidate names the column(s) {repeated} more than once.")
     missing_o = [c for c in key if c not in original.columns]
     missing_a = [c for c in key if c not in audited.columns]
     if missing_o or missing_a:
@@ -261,9 +280,14 @@ def _key_problem(original: pl.DataFrame, audited: pl.DataFrame, key: Tuple[str, 
             return KeyRejection(key, CHECK_TYPE_DIFFERS, "both", 1, f"The key column {c!r} is {original.schema[c]} in the original and {audited.schema[c]} in the audited table.")
         if original.schema[c].is_nested():
             return KeyRejection(key, CHECK_NESTED, "both", 1, f"The key column {c!r} holds lists or groups of values ({original.schema[c]}) and cannot identify a row.")
+    floats = [c for c in key if original.schema[c].is_float()]
+    nan_rows = lambda df: int(df.select(pl.any_horizontal([pl.col(c).is_nan() for c in floats]).sum()).item()) if floats else 0
+    # NaN is a value that equals itself here, so a NaN key passes the null and unique checks, but a lone NaN row pairs with nothing in the joins and a real
+    # change would be hidden: a key with NaN is refused, never guessed (D-0050). Pairing NaN with NaN is the owner's choice and is not built.
     for check, text, count_of in (
         (CHECK_HAS_NULL, "rows have a missing value in the key", lambda df: int(df.select(pl.any_horizontal(pl.col(list(key)).is_null()).sum()).item())),
         (CHECK_NOT_UNIQUE, "rows share a key value with another row", lambda df: int(df.select(list(key)).is_duplicated().sum())),
+        (CHECK_HAS_NAN, "rows have NaN (not a number) in the key", nan_rows),
     ):
         n_o, n_a = count_of(original), count_of(audited)
         if n_o or n_a:
@@ -297,11 +321,28 @@ def _paired_view(original: pl.DataFrame, audited: pl.DataFrame, key: Tuple[str, 
         n_changed = changed.height
         total_cells += n_changed
         smallest = largest = None
-        if n_changed and original.schema[c].is_numeric():
-            delta = (pl.col(c + suffix).cast(pl.Float64) - pl.col(c).cast(pl.Float64))
-            bounds = changed.select(delta.filter(delta.is_finite()).min().alias("lo"), delta.filter(delta.is_finite()).max().alias("hi")).row(0)
-            smallest, largest = bounds
-        columns.append(ColumnChange(c, n_changed, both.height, smallest, largest))
+        n_null = n_nonfinite = 0
+        if n_changed:
+            dtype = original.schema[c]
+            old, new = pl.col(c), pl.col(c + suffix)
+            either_null = old.is_null() | new.is_null()
+            n_null = int(changed.select(either_null.sum()).item())
+            if dtype.is_float():
+                n_nonfinite = int(changed.select((~either_null & (~old.is_finite() | ~new.is_finite())).sum()).item())
+                sized = changed.filter(~either_null & old.is_finite() & new.is_finite())
+                if sized.height:
+                    smallest, largest = sized.select((new - old).min().alias("lo"), (new - old).max().alias("hi")).row(0)
+            elif dtype.is_integer() and dtype not in (pl.Int128, pl.UInt128):
+                # in a wider whole-number type, so that no change wraps or loses a digit: Int128 holds the difference of any two 64-bit values
+                sized = changed.filter(~either_null)
+                if sized.height:
+                    diff = new.cast(pl.Int128) - old.cast(pl.Int128)
+                    smallest, largest = sized.select(diff.min().alias("lo"), diff.max().alias("hi")).row(0)
+            elif dtype.is_numeric() and dtype not in (pl.Int128, pl.UInt128):
+                sized = changed.filter(~either_null)                  # Decimal: the difference in the column's own type
+                if sized.height:
+                    smallest, largest = sized.select((new - old).min().alias("lo"), (new - old).max().alias("hi")).row(0)
+        columns.append(ColumnChange(c, n_changed, both.height, smallest, largest, n_null, n_nonfinite))
         shown = changed if limit is None else changed.head(limit)
         for row in shown.select([pos] + keycols + [c, c + suffix]).iter_rows():
             cells.append((row[0], index, CellChange(tuple(row[1:1 + len(keycols)]), c, row[-2], row[-1])))
@@ -329,6 +370,7 @@ def compare(original: pl.DataFrame, audited: pl.DataFrame, key_candidates: Seque
     type_changes = tuple(TypeChange(c, str(original.schema[c]), str(audited.schema[c])) for c in common if original.schema[c] != audited.schema[c])
     compared = tuple(c for c in common if original.schema[c] == audited.schema[c])
     same_shape_of_columns = o_cols == a_cols and not type_changes
+    column_order_same = common == tuple(c for c in a_cols if c in o_cols)
 
     cells = max(original.height * original.width, audited.height * audited.width)
     not_computed: Optional[NotComputed] = None
@@ -363,5 +405,5 @@ def compare(original: pl.DataFrame, audited: pl.DataFrame, key_candidates: Seque
     return Comparison(
         n_rows_original=original.height, n_rows_audited=audited.height, n_columns_original=original.width, n_columns_audited=audited.width,
         columns_only_in_original=only_o_cols, columns_only_in_audited=only_a_cols, common_columns=common, type_changes=type_changes,
-        compared_columns=compared, equal=bool(equal), row_order_same=row_order_same, only_in_original=only_in_original, only_in_audited=only_in_audited,
+        compared_columns=compared, equal=bool(equal), column_order_same=column_order_same, row_order_same=row_order_same, only_in_original=only_in_original, only_in_audited=only_in_audited,
         key_status=key_status, key_used=key_used, key_rejections=tuple(rejections), paired=paired, not_computed=not_computed)
