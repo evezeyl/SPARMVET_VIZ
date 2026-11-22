@@ -282,7 +282,9 @@ def test_the_handles_cover_no_first_control_in_every_user_space(page: Page, shin
         _wait_right(page, True)
     else:
         page.locator("#sidebar_nav").get_by_text(space, exact=True).first.click()
-    page.wait_for_timeout(3000)
+    # The right panel opens when the server says so (0.5 to 3 s on a busy machine) and slides open; its handle has no width until the slide ends. A fixed
+    # sleep raced it: NEAREST then found no handle ("reading 'top'"). Wait for both handles instead.
+    page.wait_for_function("() => [...document.querySelectorAll('.bslib-sidebar-resize-handle')].filter(h => h.getBoundingClientRect().width > 0).length === 2", timeout=30_000)
     for side in ("left", "right"):
         got = page.evaluate(NEAREST, [side])
         if got is None:
