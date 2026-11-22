@@ -2166,7 +2166,7 @@ def define_export_server(input, output, session, *,
             )
             # Tables that no plot reads (D-0457), for README. PROVISIONAL wording (not decided).
             unread_block = ([
-                "Tables that no plot reads (PROVISIONAL wording)", "-" * 20,
+                "Tables that no plot reads", "-" * 20,
                 "These tables are read by no plot of this recipe: their Tier 1 data is in the bundle, no figure is drawn from them.",
                 *[f"  {_t}: " + (f"{_r['folder']}/T1_data.tsv ({_r['rows']} rows x {_r['columns']} columns)" if _r["error"] is None
                                   else f"NOT WRITTEN, see {_r['folder']}/T1_data_ERROR.txt")

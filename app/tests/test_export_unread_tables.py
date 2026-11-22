@@ -199,6 +199,9 @@ def test_readme_and_report_record_the_keys_of_the_new_tables_and_say_that_no_plo
         assert f"Tier 1 key ({table})" in report and key in report, table
     assert "  C: tier1_key=" in readme, "the plotted table is recorded as before"
     assert "Tables that no plot reads" in readme and "Tables that no plot reads" in report
+    import re
+    for text in (readme, report):
+        assert "PROVISIONAL" not in text and not re.search(r"D-0\d+", text), "no internal marker in the written text"
     sentence = [ln for ln in readme.splitlines() if "read by no plot" in ln]
     assert sentence, "one plain line says that these tables are read by no plot"
     for table in ("T", "U", "V", "D"):
