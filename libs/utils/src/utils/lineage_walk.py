@@ -28,12 +28,17 @@ PROVISIONAL behaviour (the owner has not decided; each place is marked in the co
   a group key (`one_row_per_group_after_this_step`). A column such a step does not name is untouched: it passes, with no note. PROVISIONAL (not stated by the owner): a recompute
   or an aggregate under the same name is ticked also when its values come from ANOTHER column, because the walk reads names only (D-0356) and cannot tell; the note says
   `knows_source_of_values` False. A cast to the type the column already has gives the hop but no note (no other type there).
-- P4 (O7) a place no plot reads is not a line; it is returned in `Walk.unread`, counted apart (D-0346 says it of a join; the same for a source).
+- P4 (D-0451, her words: "tables that no plot reads are also part of a lineage") a place no plot reads that the walk reaches is a line, like every other place: it carries what a line carries
+  (the column's name and type there by the plan, the notes, the reach as sets) and `Line.no_plot_reads` (derived from the reach) says that no plot reads it. D-0346's sentence "A join that no
+  plot reads is not offered" is changed in this part by D-0451; the same holds for a source. A table that no join links to the lineage is not reached by the walk and is not a line (D-0415 stays;
+  `Walk.outside` lists those that declare the key). NOT decided (D-0451): whether such a line is ticked when the dialog opens (`state` here is the walk's own proof, the same as for every line:
+  PROVISIONAL, not decided, D-0451 reading to be confirmed); what the line says; the words of its reach; the two routes to one place (a tick, and "remove from all the data").
 - P4b the record allows a rename in one tier and back in a later one as ONE column named as in each table (each occurrence has its own name; owner 2026-11-20).
 - P5 (O4) a place of the reach where the column no longer exists is a `Gone` note, distinct from grey (the three viewpoints agree; not confirmed).
 - P6 (Q4) a table whose tier 2 is empty is one place with its tier 1, also when plots read the table directly and joins read it too (D-0346 as written).
 - P7 (O8) a column that exists twice at a place (a table joined with itself) is grey; joins that are not left or inner are not read.
-- P8 (O3) an empty tier 2 or tier 2 of a table no plot reads is not a place; a tier 3 is always a line ("only this plot", D-0346).
+- P8 (O3) an empty tier 2 or tier 2 of a table no plot reads is not a place (it is the tier 1 of the table, D-0346; the recipe checks S07 and J14 refuse a tier 2 on such a table, so only its tier 1 can
+  be a line: NOT decided whether that should change, D-0451); a tier 3 is always a line ("only this plot", D-0346).
 - P9 a line is ticked when ANY path from the chosen place to it is certain (the path with the fewest uncertain links is taken); grey only when every path is uncertain.
 - P10 the GROUP of a place (lineage, join_linked) is the smallest group that reaches it, so the split depends on where the user looked from; the union of the groups does not.
 - P11 `Gone.removed_by` is the FIRST removing step in data-flow order (graph order of the node, then the step number) among the steps that removed the column on the way to the place.
@@ -60,7 +65,7 @@ If deleted: the audit dialog has no way to list its places.
 # provides: function:walk, function:LineageIndex.drop_facts, function:LineageIndex.drop_consequences, function:LineageIndex.plot_places, function:LineageIndex.certainty_from, function:LineageIndex.uncertain_ends, class:LineageIndex, class:LineageError, class:ColumnNotFound, class:StartPlanFailed
 # consumes: libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/step_effects.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/lineage_records.py
 # consumed_by: libs/utils/src/utils/key_drop.py, libs/utils/src/utils/remove_from_all.py (certainty_from, uncertain_ends), libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py, libs/utils/tests/test_lineage_walk_properties.py, libs/utils/tests/test_lineage_drop.py
-# doc: .claude/knowledge/decision_ledger.md (D-0347, D-0346, D-0351, D-0195, D-0353, D-0352, D-0357, D-0337, D-0356, D-0355, D-0358, D-0297), .claude/design/home_audit_steps.md
+# doc: .claude/knowledge/decision_ledger.md (D-0347, D-0346, D-0351, D-0195, D-0353, D-0352, D-0357, D-0337, D-0356, D-0355, D-0358, D-0297, D-0451), .claude/design/home_audit_steps.md
 # @end_deps
 """
 from __future__ import annotations
@@ -77,7 +82,7 @@ from utils.lineage_records import (
     BUILD_FAILS, CLASH_NO_LONGER, NO_STEP_LIST, NOTE_AGGREGATED, NOTE_ANOTHER_TYPE, NOTE_DECLARED_ENTITY_KEY, NOTE_ONE_ROW_PER_GROUP, NOTE_RECOMPUTED, NOTE_UNREAD_STEP_PASSED,
     PLAN_FAILED, PLOT_USES_COLUMN, READING_DISAGREES, RE_CREATED, RECOMPUTED, RENAMED, SEVERAL_COLUMNS, SOURCE, STEP_NAMES_COLUMN, STEP_NOT_READ, T1, T2, T3,
     TICK, UNCHANGED, UNKNOWN, WHY_DECLARED_KEY_NOT_REACHED, Consequence, DropFacts, Gone, Hop, KeyNeed, Line, Note, Occurrence, Outside, Reach, Reason, SourceColumn,
-    Start, StepRef, Unread, Walk,
+    Start, StepRef, Walk,
 )
 from utils.plan_book import Plan, PlanBook, PlanFailure
 from utils.recipe_graph import Node, RecipeGraph
@@ -508,20 +513,16 @@ class LineageIndex:
 
         lines: List[Line] = []
         gone: List[Gone] = []
-        unread: List[Unread] = []
         for place in [p for p in self.place_order if p in region]:
             reach = self.reach_of(place)
             covers = tuple(self.place_covers[place])
-            if not reach.plots:
-                unread.append(Unread(place, covers, bool(self.at_end(place, linked)), reach, region[place]))
-                continue
             line = self._classify(place, covers, reach, linked, lineage, linked, costs, start_place, region[place])
             if kind == "drop" and isinstance(line, Line) and len(line.occurrences) == 1 and line.tier != "DS":
                 line = self._drop_line(line, self.at_end(place, linked)[0], (candidates or {}).get(place))
             (lines if isinstance(line, Line) else gone).append(line)  # type: ignore[arg-type]
         gone = [Gone(x.place, x.covers, x.removed_by, tuple(l.place for l in lines if self._reaches(l.reach, x.place)), kind, kind == "filter", x.reach, x.scope_group) for x in gone]
         held = {LEVEL_OF_KIND[g.node(n).kind] for p in self._region_groups(lineage, linked) if self.at_end(p, linked) for n in self.place_covers[p]}
-        return Walk(start, kind, chosen_levels, tuple(lines), tuple(gone), tuple(unread), self._outside(linked), start_type=plan.type_of(start.column) or "",
+        return Walk(start, kind, chosen_levels, tuple(lines), tuple(gone), self._outside(linked), start_type=plan.type_of(start.column) or "",
                     held_at_levels=tuple(level for level in LEVELS if level in held))
 
     def _region_groups(self, lineage: Set[Occ], linked: Set[Occ]) -> Dict[str, str]:
@@ -822,5 +823,5 @@ def walk(graph: RecipeGraph, plans: PlanBook, start: Start, *, levels: Iterable[
     `levels` (some of `LEVELS`: source, T1, T2, T3) has no default: the user chooses which levels are offered (owner, D-0355). A place that covers several
     tiers (an empty tier is no place) belongs to each of them. `kind` is `filter` or `drop` (a drop adds the refusal by place and the consequences; `candidates` maps a place to the plan book of the candidate recipe, drop only). Raises
     `ColumnNotFound` for a column the node does not have and `StartPlanFailed` when the engine could not give the plan of the node; every place of the
-    chosen levels that the lineage reaches is a line, a note under a line, or a place no plot reads. For many walks on one recipe build `LineageIndex` once."""
+    chosen levels that the lineage reaches is a line or a note under a line (a table no plot reads is a line, D-0451). For many walks on one recipe build `LineageIndex` once."""
     return LineageIndex(graph, plans).walk(start, levels=levels, kind=kind, candidates=candidates)

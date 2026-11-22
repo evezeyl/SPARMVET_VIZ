@@ -1,8 +1,8 @@
 """The records the lineage walk returns (LBFB step 0a): plain frozen data, no behaviour but derived counts.
 
-One `Walk` holds, for one column the user looks at, a record per place where a step could be written (`Line`), a record per
-place of the reach where the column no longer exists (`Gone`, a note under the lines that reach it), the places that no plot
-reads (`Unread`, counted apart) and the tables that hold the same key and were not reached (`Outside`). Sentences are never
+One `Walk` holds, for one column the user looks at, a record per place where a step could be written (`Line`; a table that no plot reads but that the
+walk reaches is a line too, D-0451), a record per place of the reach where the column no longer exists (`Gone`, a note under the lines that reach it)
+and the tables that hold the same key and were not reached (`Outside`). Sentences are never
 built here: a reason or a note is a code with its parameters (the words are another pure function, built later, so the owner
 can approve them apart from the logic).
 
@@ -13,9 +13,9 @@ Consumed by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_lineage
 If deleted: the walk has nothing to return.
 
 # @deps
-# provides: class:Walk, class:Line, class:Gone, class:Unread, class:Outside, class:Occurrence, class:Hop, class:StepRef, class:SourceColumn, class:Reach, class:Reason, class:Note, class:Start, class:SortedSet, class:KeyNeed, class:Consequence, class:DropFacts, class:Certainty, constant:GROUPS, constant:LEVELS, constant:HOW_VALUES, constant:REASON_CODES, constant:NOTE_CODES, constant:VALUE_NOTES, constant:CONSEQUENCE_CODES
+# provides: class:Walk, class:Line, class:Gone, class:Outside, class:Occurrence, class:Hop, class:StepRef, class:SourceColumn, class:Reach, class:Reason, class:Note, class:Start, class:SortedSet, class:KeyNeed, class:Consequence, class:DropFacts, class:Certainty, constant:GROUPS, constant:LEVELS, constant:HOW_VALUES, constant:REASON_CODES, constant:NOTE_CODES, constant:VALUE_NOTES, constant:CONSEQUENCE_CODES
 # consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/src/utils/remove_from_all.py, libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py
-# doc: .claude/knowledge/decision_ledger.md (D-0346, D-0347, D-0195, D-0351, D-0353, D-0337, D-0357, D-0358, D-0297)
+# doc: .claude/knowledge/decision_ledger.md (D-0346, D-0347, D-0195, D-0351, D-0353, D-0337, D-0357, D-0358, D-0297, D-0451, D-0447)
 # @end_deps
 """
 from __future__ import annotations
@@ -30,7 +30,7 @@ from typing import Any, FrozenSet, Optional, Tuple
 SOURCE, T1, T2, T3 = "source", "T1", "T2", "T3"
 LEVELS = (SOURCE, T1, T2, T3)
 
-# The GROUPS of places (the user ticks; which groups are offered is PROVISIONAL). A line, a note or a place no plot reads carries the smallest group that holds it:
+# The GROUPS of places (the user ticks; which groups are offered is PROVISIONAL). A line or a note carries the smallest group that holds it (a table no plot reads that the walk reaches is a line like any other, D-0451):
 LINEAGE = "lineage"          # above and below the chosen place: back to its sources, then forward from them (D-0347 as written)
 JOIN_LINKED = "join_linked"  # also the tables a join on the same column links to it (the key of a join that both sides equate)
 # There is no group for "the same key, no join links it" (owner, D-0355): a column is never matched by its name alone.
@@ -81,7 +81,7 @@ BUILD_FAILS = "build_fails"                    # the candidate plan fails here (
 CONSEQUENCE_CODES = (STEP_NAMES_COLUMN, PLOT_USES_COLUMN, CLASH_NO_LONGER, BUILD_FAILS)
 FROM_READING, FROM_PLAN = "reading", "plan"
 
-# Why a walk holds no line, no note and no place no plot reads (never a silent empty result, D-0195).
+# Why a walk holds no line and no note (never a silent empty result, D-0195).
 NO_PLACE_AT_THE_LEVELS = "no_place_at_the_chosen_levels"   # parameters: the chosen levels, the levels where the column exists in the lineage, the group
 
 # Why a table is listed as not reached.
@@ -232,7 +232,11 @@ class Occurrence:
 @dataclass(frozen=True)
 class Reach:
     """What a step written at a place reaches, as SETS of place ids (`T1:J`, `T2:J`): the tables that a plot reads (directly or through a join),
-    the stored tables that no plot reads, and the plots (their ids). A count is the length of a set and is never stored."""
+    the stored tables that no plot reads, and the plots (their ids). A count is the length of a set and is never stored.
+
+    The reach of a line for a table that no plot reads (D-0451) is `tables_with_plot` empty, `plots` empty, and `tables_no_plot` holding that table and every table
+    built from it (so `n_tables` is 0, `n_plots` is 0 and `n_tables_no_plot` is at least 1, the table itself included). No sentence is built here. The words the dialog
+    says for such a line ("N tables you can open" does not fit N = 0 and no plot) are NOT decided (D-0447 words PROVISIONAL, D-0451: what the line says is not decided)."""
     tables_with_plot: FrozenSet[str]
     tables_no_plot: FrozenSet[str]
     plots: FrozenSet[str]
@@ -260,7 +264,12 @@ class Line:
 
     `covers`: the nodes collapsed into the place (an empty tier is not a place). `occurrences`: the column there (a list). `state`: `tick`
     (the column is the same one, proved by the plan and the readings) or `grey` (cannot be decided; `reason` says why). `scope_group`: the
-    smallest scope that holds the line (`GROUPS`). `reach`: what a step here reaches, whether or not the column survives."""
+    smallest scope that holds the line (`GROUPS`). `reach`: what a step here reaches, whether or not the column survives.
+
+    A table that no plot reads but that the walk reaches is a line like the others (D-0451); `no_plot_reads` says so, derived from the reach so that it cannot disagree with it
+    (D-0195). Which tiers such a line can have (only tier 1 can exist: the checks S07 and J14 refuse a tier 2 on a table no plot reads, and a tier 3 is a plot), whether it
+    is ticked when the dialog opens, what it says and how its reach is worded are NOT decided; `state` is the walk's own proof (the plan and the readings), the same as for
+    every line (PROVISIONAL, not decided: D-0451 reading to be confirmed)."""
     place: str
     covers: Tuple[str, ...]
     tier: str
@@ -277,6 +286,11 @@ class Line:
     consequences: Tuple[Consequence, ...] = ()   # a drop: what it breaks downstream (D-0358); empty for a filter and for a drop that breaks nothing the walk could see
     consequences_checked: bool = False          # a drop: True when the engine's plan of the candidate recipe was given for this line, False when only the steps the walk reads were looked at
 
+    @property
+    def no_plot_reads(self) -> bool:
+        """True for a place that no plot reads: no plot is below it (D-0451). A plot's own line always holds its plot, so it is never True there."""
+        return not self.reach.plots
+
 
 @dataclass(frozen=True)
 class Gone:
@@ -289,16 +303,6 @@ class Gone:
     reached_by: Tuple[str, ...]
     step_kind: str
     table_changes: bool
-    reach: Reach
-    scope_group: str = LINEAGE
-
-
-@dataclass(frozen=True)
-class Unread:
-    """A place no plot reads: not offered as a line (D-0346), counted apart. `holds` says whether the column is there by the plan."""
-    place: str
-    covers: Tuple[str, ...]
-    holds: bool
     reach: Reach
     scope_group: str = LINEAGE
 
@@ -323,7 +327,6 @@ class Walk:
     levels: Tuple[str, ...]                      # the levels the caller chose (`LEVELS`); the places of the others are not offered
     lines: Tuple[Line, ...]
     gone: Tuple[Gone, ...]
-    unread: Tuple[Unread, ...]
     outside: Tuple[Outside, ...]
     key_basis: str = "declared entity keys (is_entity_key) and the key pairs of the joins of the recipe; never the column name alone"
     start_type: str = ""                         # the engine type of the column at the place the user chose: each line holds its own, the difference is the note
@@ -331,9 +334,9 @@ class Walk:
 
     @property
     def nothing(self) -> Optional[Reason]:
-        """Why the walk holds nothing, or None. Derived, never stored: no line, no note under a line and no place no plot reads means the chosen levels select no
+        """Why the walk holds nothing, or None. Derived, never stored: no line and no note under a line means the chosen levels select no
         place of the lineage; the reason says which levels were chosen and at which levels the column exists (D-0195: no silent empty result)."""
-        if self.lines or self.gone or self.unread:
+        if self.lines or self.gone:
             return None
         return Reason(NO_PLACE_AT_THE_LEVELS, (("levels", self.levels), ("held_at_levels", self.held_at_levels)))
 
@@ -352,12 +355,13 @@ class Walk:
 
     @property
     def accounted(self) -> Tuple[str, ...]:
-        """Every place the walk accounts for: lines, notes and places no plot reads. Each candidate place is in exactly one."""
-        return tuple(x.place for x in self.lines) + tuple(x.place for x in self.gone) + tuple(x.place for x in self.unread)
+        """Every place the walk accounts for: lines (a table no plot reads is one, D-0451) and notes. Each candidate place is in exactly one. The tables the walk does not
+        reach (no join links them to the lineage) are not places of the walk: `outside` lists those that declare the key."""
+        return tuple(x.place for x in self.lines) + tuple(x.place for x in self.gone)
 
     def within(self, group: str) -> "Walk":
         """The walk restricted to the places of this group and the narrower ones (what a caller that offers only some groups shows)."""
         keep = group_rank(group)
         return Walk(self.start, self.step_kind, self.levels, tuple(x for x in self.lines if group_rank(x.scope_group) <= keep), tuple(x for x in self.gone if group_rank(x.scope_group) <= keep),
-                    tuple(x for x in self.unread if group_rank(x.scope_group) <= keep), self.outside, self.key_basis,
+                    self.outside, self.key_basis,
                     self.start_type, self.held_at_levels)
