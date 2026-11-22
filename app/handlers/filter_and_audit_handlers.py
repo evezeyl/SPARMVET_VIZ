@@ -177,8 +177,8 @@ def define_filter_audit_server(input, output, session, *,
     # WHY: ADR-099 point 1 - exploration filters are cleared on a recipe change; a filter built on recipe A would
     # silently filter recipe B when it has a column of the same name (found 2026-11-18, switch check).
     # Slice B (D-0311, D-0178): a filter is built on the table of the view shown, so it is cleared, with a notice, when that table changes:
-    # the data choice, the source table, the open plot (P-B2, PROVISIONAL: it changes the table viewed), the mode (exploration filters do not
-    # exist in Audit mode) and the recipe. One view key (`view_key`) says what the view is; the notice names the first cause that changed.
+    # the data choice, the source table, the table the open plot reads (D-0505, D-0506: the filter belongs to the table, so a plot on the same table
+    # clears nothing), the mode (D-0361; exploration filters do not exist in Audit mode) and the recipe. One view key (`view_key`) says what the view is; the notice names the first cause that changed.
     # Idempotent guard: only a real change of the key clears; the selector input is re-created when the user returns to
     # HOME from another space and then reports the same id again, which must not clear anything or notify.
     _seen_view = {"key": None}

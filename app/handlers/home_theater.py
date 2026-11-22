@@ -32,7 +32,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, effect:_sync_active_space (the open user space as a value of its own, D-0502), constant:LEGACY_RECORD_NOTICE
-# consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, viewed_table, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumes: app/src/www/preview_switch.js (the "All rows" switch it mounts in the header of the data panel needs this script so that a click does not fold the panel; mounted by app/src/ui.py)
 # consumes: app/modules/frame_widths.py (right_panel_open: the right panel follows the mode, D-0375, D-0385; HOME, BLUEPRINT: the nav values)
@@ -65,7 +65,7 @@ from viz_factory.viz_factory import show_draw_errors
 
 from app.modules.t3_audit_engine import (
     AuditStepError, _apply_filter_rows, audited_frame, filter_rows_from_nodes, rows_built_on, source_table_identity, stored_table_identity,
-    view_key)
+    view_key, viewed_table)
 from utils.recipe_graph import build_graph, source_tables_of_plot
 from utils.na_choice import na_of, no_value_text
 from app.modules.sidebar_registry import is_panel_active
@@ -437,14 +437,17 @@ def define_server(input, output, session, *,
             return None
 
     def _current_view_key():
-        """The view key of the view on screen (`view_key`: recipe, mode, data choice, source table, open plot); None without an open recipe. The ONE
+        """The view key of the view on screen (`view_key`: recipe, mode, data choice, source table, the table the open plot reads); None without an open recipe. The ONE
         definition: the clearing effect, the rows an exploration filter is stamped with and the preview all read it."""
         recipe_id = safe_input(input, "data_analysis_recipe_id", None)
         if recipe_id is None:
             return None
         view = data_view.get()
-        return view_key(recipe_id, "audit" if _in_audit() else "exploration", view, _view_source_table() if view == "SRC" else None,
-                        active_home_subtab.get())
+        p_id = _open_plot_id()
+        spec = _resolve_active_spec(p_id) if view != "SRC" else None
+        # D-0505, D-0506: the key holds the table the open plot reads, not the plot: two plots on one table share it
+        table = viewed_table(view, (spec or {}).get("target_dataset"), p_id, has_plot_steps(active_cfg().raw_config, p_id)) if view != "SRC" else None
+        return view_key(recipe_id, "audit" if _in_audit() else "exploration", view, _view_source_table() if view == "SRC" else None, table)
 
     def _applied_for_view() -> list:
         """The applied exploration filters that were built on the view on screen: all the data preview and the badges may count (review F3)."""

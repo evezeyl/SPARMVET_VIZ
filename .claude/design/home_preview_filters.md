@@ -48,6 +48,7 @@ never saved, never exported and never changes a plot. To change what a plot show
    ("3 preview filters cleared, you changed view"). [built 2026-11-20: the data choice, the source table, the plot tab, the mode and the recipe each clear them with a notice; D-0311]
 6. **A change of recipe** clears them. [built]
 7. Never saved in sessions, never exported. [built]
+> **HISTORICAL (superseded by ledger D-0361, 2026-11-20):** the exploration filters are cleared on a switch between Exploration and Audit mode; current rule: `.claude/rules/ui_implementation_contract.md` section 4.
 8. Switching between Exploration and audit mode is **not** a view change: the lists are kept, and not applied while
    audit mode is on. [NOT as built: slice B clears the lists on a mode switch, with the notice (a provisional choice of the builder); this point and the code differ, reported for Eve]
    [as built, slice B clears them on a mode switch: PROVISIONAL, open for the owner]

@@ -209,7 +209,7 @@ def test_true_false_is_two_choices_equal_and_not_equal(page: Page, typed_app):
     _add_and_apply(page, "flag ≠ False", 3)                      # s1, s3, and the row with no value (the tick of "not equal" keeps it)
 
 
-def test_a_time_is_three_boxes_that_start_at_the_exact_smallest_and_largest_time(page: Page, typed_app):
+def test_a_time_is_three_boxes_the_single_box_starts_at_the_smallest_time_and_the_between_ends_start_empty(page: Page, typed_app):
     _open_dialog(page, typed_app, "clock")
     expect(page.locator("#fb_col_type")).to_have_text("clock holds times of day (Time).", timeout=10_000)
     assert _ops(page) == COMPARE
