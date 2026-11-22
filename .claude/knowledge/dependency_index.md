@@ -1197,16 +1197,16 @@
 
 ## `libs/utils/src/utils/lineage_records.py`
 - **Role:** `ref`
-- **provides:** `class:Walk`, `class:Line`, `class:Gone`, `class:Unread`, `class:Outside`, `class:Occurrence`, `class:Hop`, `class:StepRef`, `class:SourceColumn`, `class:Reach`, `class:Reason`, `class:Note`, `class:Start`, `class:SortedSet`, `class:KeyNeed`, `class:Consequence`, `class:DropFacts`, `class:Certainty`, `constant:GROUPS`, `constant:LEVELS`, `constant:HOW_VALUES`, `constant:REASON_CODES`, `constant:NOTE_CODES`, `constant:VALUE_NOTES`, `constant:CONSEQUENCE_CODES`
+- **provides:** `class:Walk`, `class:Line`, `class:Gone`, `class:Outside`, `class:Occurrence`, `class:Hop`, `class:StepRef`, `class:SourceColumn`, `class:Reach`, `class:Reason`, `class:Note`, `class:Start`, `class:SortedSet`, `class:KeyNeed`, `class:Consequence`, `class:DropFacts`, `class:Certainty`, `constant:GROUPS`, `constant:LEVELS`, `constant:HOW_VALUES`, `constant:REASON_CODES`, `constant:NOTE_CODES`, `constant:VALUE_NOTES`, `constant:CONSEQUENCE_CODES`
 - **consumed_by:** `libs/utils/src/utils/lineage_walk.py`, `libs/utils/src/utils/remove_from_all.py`, `libs/utils/tests/test_lineage_walk.py`, `libs/utils/tests/test_lineage_walk_follow.py`
-- **doc:** `.claude/knowledge/decision_ledger.md (D-0346`, `D-0347`, `D-0195`, `D-0351`, `D-0353`, `D-0337`, `D-0357`, `D-0358`, `D-0297)`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0346`, `D-0347`, `D-0195`, `D-0351`, `D-0353`, `D-0337`, `D-0357`, `D-0358`, `D-0297`, `D-0451`, `D-0447)`
 
 ## `libs/utils/src/utils/lineage_walk.py`
 - **Role:** `ref`
 - **provides:** `function:walk`, `function:LineageIndex.drop_facts`, `function:LineageIndex.drop_consequences`, `function:LineageIndex.plot_places`, `function:LineageIndex.certainty_from`, `function:LineageIndex.uncertain_ends`, `class:LineageIndex`, `class:LineageError`, `class:ColumnNotFound`, `class:StartPlanFailed`
 - **consumes:** `libs/utils/src/utils/recipe_graph.py`, `libs/utils/src/utils/join_keys.py (JOIN_ACTIONS`, `key_columns)`, `libs/utils/src/utils/step_effects.py`, `libs/utils/src/utils/plan_book.py`, `libs/utils/src/utils/lineage_records.py`
 - **consumed_by:** `libs/utils/src/utils/key_drop.py`, `libs/utils/src/utils/remove_from_all.py (certainty_from`, `uncertain_ends)`, `libs/utils/tests/test_lineage_walk.py`, `libs/utils/tests/test_lineage_walk_follow.py`, `libs/utils/tests/test_lineage_walk_properties.py`, `libs/utils/tests/test_lineage_drop.py`
-- **doc:** `.claude/knowledge/decision_ledger.md (D-0347`, `D-0346`, `D-0351`, `D-0195`, `D-0353`, `D-0352`, `D-0357`, `D-0337`, `D-0356`, `D-0355`, `D-0358`, `D-0297)`, `.claude/design/home_audit_steps.md`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0347`, `D-0346`, `D-0351`, `D-0195`, `D-0353`, `D-0352`, `D-0357`, `D-0337`, `D-0356`, `D-0355`, `D-0358`, `D-0297`, `D-0451)`, `.claude/design/home_audit_steps.md`
 
 ## `libs/utils/src/utils/missing_values.py`
 - **Role:** `ref`
