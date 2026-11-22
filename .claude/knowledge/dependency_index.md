@@ -181,7 +181,7 @@
 ## `app/modules/audit_run.py`
 - **Role:** `ref`
 - **provides:** `function:run_audit`, `class:AuditRun`, `class:TableRun`, `class:PlotRun`, `class:AuditRunError`
-- **consumes:** `app/modules/plan_composer.py (compose_plan_book: the engine's plan of the original`, `handed to the check of every copy)`, `app/modules/orchestrator.py (materialize_tier1`, `materialize_tier2`, `materialize_tier3 with a handed recipe)`, `app/modules/cache_keys.py (loaded_from_resolved`, `load_data_analysis_recipe)`, `libs/utils/src/utils/audit_copy.py`, `libs/utils/src/utils/recipe_graph.py`, `libs/transformer/src/transformer/anchor.py (read_anchor_if_key)`
+- **consumes:** `app/modules/build_failure.py (short_engine_text: the sentence of an audit step that cannot be applied has no plan of the engine)`, `app/modules/plan_composer.py (compose_plan_book: the engine's plan of the original`, `handed to the check of every copy)`, `app/modules/orchestrator.py (materialize_tier1`, `materialize_tier2`, `materialize_tier3 with a handed recipe)`, `app/modules/cache_keys.py (loaded_from_resolved`, `load_data_analysis_recipe)`, `libs/utils/src/utils/audit_copy.py`, `libs/utils/src/utils/recipe_graph.py`, `libs/transformer/src/transformer/anchor.py (read_anchor_if_key)`
 - **consumed_by:** `app/tests/test_audit_run.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-101`, `.claude/knowledge/architecture_decisions.md#adr-105`, `.claude/design/home_audit_steps.md (section 7.1)`
 
@@ -1186,10 +1186,10 @@
 
 ## `libs/utils/src/utils/key_drop.py`
 - **Role:** `ref`
-- **provides:** `function:key_drop_problem`, `function:drop_facts`, `function:key_drop_sentence`, `function:key_drop_unfollowed_sentence`, `function:place_of_steps_path`, `class:DropGate`
+- **provides:** `function:DropGate.ways_out`, `function:key_drop_problem`, `function:drop_facts`, `function:key_drop_sentence`, `function:key_drop_unfollowed_sentence`, `function:place_of_steps_path`, `class:DropGate`
 - **consumes:** `libs/utils/src/utils/lineage_walk.py (LineageIndex.drop_facts)`, `libs/utils/src/utils/declared_plans.py`, `libs/utils/src/utils/recipe_graph.py`, `libs/utils/src/utils/recipe_tiers.py (without_audit_steps)`
 - **consumed_by:** `libs/utils/src/utils/audit_copy.py`, `libs/utils/src/utils/recipe_check.py`, `app/modules/session_manager.py`, `app/handlers/filter_and_audit_handlers.py`, `libs/utils/tests/test_key_drop.py`
-- **doc:** `.claude/knowledge/decision_ledger.md (D-0358`, `D-0297`, `D-0322)`, `.claude/design/home_audit_steps.md`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0358`, `D-0297`, `D-0322`, `D-0448`, `D-0460`, `D-0454`, `D-0450)`, `.claude/design/home_audit_steps.md`
 
 ## `libs/utils/src/utils/lineage_records.py`
 - **Role:** `ref`
@@ -1199,7 +1199,7 @@
 
 ## `libs/utils/src/utils/lineage_walk.py`
 - **Role:** `ref`
-- **provides:** `function:walk`, `function:LineageIndex.drop_facts`, `function:LineageIndex.certainty_from`, `function:LineageIndex.uncertain_ends`, `class:LineageIndex`, `class:LineageError`, `class:ColumnNotFound`, `class:StartPlanFailed`
+- **provides:** `function:walk`, `function:LineageIndex.drop_facts`, `function:LineageIndex.drop_consequences`, `function:LineageIndex.plot_places`, `function:LineageIndex.certainty_from`, `function:LineageIndex.uncertain_ends`, `class:LineageIndex`, `class:LineageError`, `class:ColumnNotFound`, `class:StartPlanFailed`
 - **consumes:** `libs/utils/src/utils/recipe_graph.py`, `libs/utils/src/utils/join_keys.py (JOIN_ACTIONS`, `key_columns)`, `libs/utils/src/utils/step_effects.py`, `libs/utils/src/utils/plan_book.py`, `libs/utils/src/utils/lineage_records.py`
 - **consumed_by:** `libs/utils/src/utils/key_drop.py`, `libs/utils/src/utils/remove_from_all.py (certainty_from`, `uncertain_ends)`, `libs/utils/tests/test_lineage_walk.py`, `libs/utils/tests/test_lineage_walk_follow.py`, `libs/utils/tests/test_lineage_walk_properties.py`, `libs/utils/tests/test_lineage_drop.py`
 - **doc:** `.claude/knowledge/decision_ledger.md (D-0347`, `D-0346`, `D-0351`, `D-0195`, `D-0353`, `D-0352`, `D-0357`, `D-0337`, `D-0356`, `D-0355`, `D-0358`, `D-0297)`, `.claude/design/home_audit_steps.md`
