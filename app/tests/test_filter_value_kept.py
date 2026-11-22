@@ -131,7 +131,7 @@ def test_a_change_of_operator_after_typing_keeps_the_typed_value(page: Page, sta
 
 
 def test_a_change_of_kind_shows_the_new_boxes_and_adds_nothing(page: Page, staged_app):
-    """From one value (>= 100 typed) to between: two boxes at the range of the column (the typed value is not carried), no row until the user adds one."""
+    """From one value (>= 100 typed) to between: two EMPTY boxes (the typed value is not carried, D-0503; no default is a value, D-0504), no row until the user adds one."""
     _open_the_filter_form(page, staged_app)
     page.locator("#fb_op").select_option("ge")
     page.locator("#fb_value").fill(str(THRESHOLD))
@@ -140,8 +140,8 @@ def test_a_change_of_kind_shows_the_new_boxes_and_adds_nothing(page: Page, stage
     page.locator("#fb_op").select_option("between")
     page.wait_for_selector("#fb_value_lo", timeout=15_000)
     _wait_shiny(page)
-    expect(page.locator("#fb_value_lo")).to_have_value("1")
-    expect(page.locator("#fb_value_hi")).to_have_value("5")
+    expect(page.locator("#fb_value_lo")).to_have_value("")
+    expect(page.locator("#fb_value_hi")).to_have_value("")
     assert page.locator("#fb_value").count() == 0, "the one-value box is gone: another kind of box is mounted"
     assert "value" not in _rows(page), "nothing is added until the user presses + Add row"
     # and back: the one-value box is a new box at the column's smallest value, visibly

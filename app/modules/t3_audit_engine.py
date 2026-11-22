@@ -13,7 +13,7 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:refuse_decimal_for_whole_numbers, function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:rows_built_on, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:view_key, function:view_change_notice, function:column_is_in_frame, function:value_box_kind, class:AuditStepError
+# provides: function:refuse_decimal_for_whole_numbers, function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:rows_built_on, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:view_key, function:view_change_notice, function:column_is_in_frame, function:value_box_kind, function:between_ends, class:EmptyBox, class:BetweenIncomplete, constant:BETWEEN_INCOMPLETE_LINE, class:AuditStepError
 # consumes: polars, app/modules/orchestrator.py (TIER1_KEY_META, TIER2_KEY_META, tier2_path_for), libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_step_order.py, app/tests/test_removed_audit_step_type.py, app/tests/test_audit_error_names_the_plot.py, app/tests/test_filters_cleared_on_recipe_change.py, app/tests/test_filter_value_kept.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
@@ -371,8 +371,40 @@ def value_box_kind(dtype, discrete_axis: bool, op) -> str | None:
 
 # -- what the boxes of a time, a date and time and a duration write (one place, so that the stored text is the one the rule reads)
 
+class EmptyBox(FilterValueError):
+    """A control of a filter value that holds nothing (an empty box); `between` reads it as "this end is not given" (D-0504)."""
+
+
+class BetweenIncomplete(FilterValueError):
+    """The operator `between` without both ends given: the row is not added and the line says why (D-0504, D-0050)."""
+
+
+BETWEEN_INCOMPLETE_LINE = "Give both values for 'between': the lower and the upper. Nothing was added."   # wording PROVISIONAL
+
+
+def between_ends(read_low, read_high):
+    """The two ends of a `between` as the user gave them, or a refusal: (low, high), never a default the user did not choose (D-0504).
+
+    `read_low` and `read_high` are callables that read one end; an end that is empty raises `EmptyBox` (or gives None). A refusal
+    for another reason (a date that does not exist, a decimal in a whole-number box) is raised first, as it was: the user fixes that
+    value. Only when no end is wrong and an end is empty is `BetweenIncomplete` raised. The rule is on the operator, so it covers every
+    kind of column that offers `between`.
+    """
+    ends, empty = [], False
+    for read in (read_low, read_high):
+        try:
+            value = read()
+        except EmptyBox:
+            value = None
+        ends.append(value)
+        empty = empty or value is None
+    if empty:
+        raise BetweenIncomplete(BETWEEN_INCOMPLETE_LINE)
+    return ends[0], ends[1]
+
+
 def _incomplete(what: str, missing: str):
-    return FilterValueError(f"{what} is not complete: {missing}, so no filter is added", "fill every box of it (0 is a value)")
+    return EmptyBox(f"{what} is not complete: {missing}, so no filter is added", "fill every box of it (0 is a value)")
 
 
 def _plain_number(value) -> str:
@@ -414,7 +446,7 @@ def compose_date(date, typed=None):
     if typed is not None:
         text = typed.strip()
         if text == "":
-            raise FilterValueError("No date is chosen, so no filter is added", "choose a date")
+            raise EmptyBox("No date is chosen, so no filter is added", "choose a date")
         m = _TYPED_DATE.match(text)
         if m is None:
             raise FilterValueError(f"The text {text!r} in the date box is not a date written as year-month-day, so no filter is added",
@@ -428,7 +460,7 @@ def compose_date(date, typed=None):
                                    _DATE_SUGGESTION)
         return read
     if date is None or date == "":
-        raise FilterValueError("No date is chosen, so no filter is added", "choose a date")
+        raise EmptyBox("No date is chosen, so no filter is added", "choose a date")
     return date
 
 
@@ -544,12 +576,8 @@ def dialog_value(lf, column: str, dtype, discrete_axis: bool, op: str, *, picked
     ends = closed if closed in CLOSED_CHOICES else "both"
     if widget == "range" or widget.endswith("_range"):
         if kind == "date":
-            compose_date(low), compose_date(high)
-        if kind not in ("int", "float") and (low is None or high is None):
-            raise FilterValueError(f"No {type_words(dtype)[:-1]} is chosen in one of the two boxes of between, so no filter is added",
-                                   "choose both ends")
-        if low is None or high is None:
-            return None
+            between_ends(lambda: compose_date(low), lambda: compose_date(high))   # validates only; the values stay as given
+        low, high = between_ends(lambda: low, lambda: high)   # D-0504: both ends given by the user, never a default; no silent "nothing chosen"
         low, high = typed_operand(low, dtype), typed_operand(high, dtype)
         swap = _order_key(kind, low) > _order_key(kind, high)
         value = [high, low] if swap else [low, high]

@@ -10,6 +10,7 @@ import polars as pl
 import pytest
 
 from app.modules.t3_audit_engine import (
+    BetweenIncomplete,
     CLOSED_CHOICES, between_prose, closed_phrase, column_type_line, column_types, describe_filter, number_range,
     LIST_ON_DEMAND_FROM, column_bounds, compose_date, compose_datetime, list_note, compose_duration, compose_time, ops_for_column, pick_values, typed_operand, value_choices,
     value_widget_for,
@@ -336,7 +337,8 @@ def test_an_unknown_end_is_both():
 def test_nothing_chosen_stores_nothing():
     assert stored("t", "in", False, picked=[]) is None
     assert stored("year", "gt", False, operand=None) is None
-    assert stored("year", "between", False, low=None, high=2) is None
+    with pytest.raises(BetweenIncomplete):   # D-0504: a between with an end missing is refused with a line, no longer a silent "nothing"
+        stored("year", "between", False, low=None, high=2)
 
 
 def test_a_pick_that_is_not_in_the_column_is_reported():
@@ -400,8 +402,10 @@ def test_a_date_list_still_stores_the_text_of_the_dates_picked():
 def test_a_cleared_date_box_is_no_date_chosen_never_a_date_filled_in(cleared):
     """Eve 2026-11-15: a filter that lacks its value is refused, never filled in. The value the handler gets from an empty box is None
     (or an empty text): the row cannot be added, the message says what happened and what to do."""
+    for between in (lambda: stored2("d", "between", low=cleared, high=D(2020, 1, 3)), lambda: stored2("d", "between", low=D(2020, 1, 1), high=cleared)):
+        with pytest.raises(BetweenIncomplete):   # D-0504: an end of between left empty is the one line about both ends
+            between()
     for call in (lambda: compose_date(cleared), lambda: stored2("d", "gt", operand=cleared),
-                 lambda: stored2("d", "between", low=cleared, high=D(2020, 1, 3)), lambda: stored2("d", "between", low=D(2020, 1, 1), high=cleared),
                  lambda: compose_datetime(cleared, 10, 30, 0)):
         with pytest.raises(FilterValueError) as exc:
             call()

@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, output:filter_whole_number_ui (D-0376), effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change, slice B), output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, value_box_kind, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, dialog_schema_signature, dialog_rows_signature, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/key_drop.py (DropGate: the drop of a key column by place, D-0358), libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, value_box_kind, between_ends, BetweenIncomplete, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, dialog_schema_signature, dialog_rows_signature, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/key_drop.py (DropGate: the drop of a key column by place, D-0358), libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -31,7 +31,7 @@ from app.modules.plan_composer import PlanComposerBug
 from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
-    dialog_value, not_offered_line, value_box_kind, value_choices, value_widget_for, AuditStepError, dialog_frame, dialog_rows_signature, dialog_schema_signature,
+    dialog_value, not_offered_line, between_ends, BetweenIncomplete, value_box_kind, value_choices, value_widget_for, AuditStepError, dialog_frame, dialog_rows_signature, dialog_schema_signature,
     column_bounds, column_is_in_frame, refuse_decimal_for_whole_numbers, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
 from utils import key_drop
@@ -75,7 +75,7 @@ _DATE_RAW_SCRIPT = """
 """
 
 
-def _date_picker(id_: str, value):
+def _date_picker(id_: str, value, empty: bool = False):
     """A date picker that never chooses a date for the user.
 
     The widget (bootstrap-datepicker) repairs what is typed: Enter in an empty box chooses the highlighted day (today), and with the
@@ -86,7 +86,8 @@ def _date_picker(id_: str, value):
 
     PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 8: keep the calendar and read the typed text strictly (option: a plain text box with the calendar only as a helper).
     """
-    tag = ui.input_date(id_, label=None, value=value, format="yyyy-mm-dd")
+    # `empty` (an end of between): value "" writes an empty initial date; with None the widget fills in today, a date the user did not choose (D-0504)
+    tag = ui.input_date(id_, label=None, value="" if empty else value, format="yyyy-mm-dd")
     for child in tag.children:
         if getattr(child, "name", None) == "input":
             child.attrs["data-date-keyboard-navigation"] = "false"
@@ -94,13 +95,17 @@ def _date_picker(id_: str, value):
     return ui.TagList(tag, ui.tags.script(ui.HTML(_DATE_RAW_SCRIPT)))
 
 
+# The ends of `between` start empty (D-0504): no default is a value the user chose. The keys are present with None so that the boxes read it.
+_EMPTY_END = {"date": None, "h": None, "min": None, "s": None, "number": None}
+
+
 def _control(kind: str, suffix: str, d: dict):
     """The control of one value of a date, date and time, time of day or duration; `suffix` is "" (one value), "_lo" or "_hi" (between)."""
     if kind == "date":
-        return _date_picker(f"fb_value{suffix}", d.get("date"))
+        return _date_picker(f"fb_value{suffix}", d.get("date"), empty=suffix != "")
     if kind == "datetime":
         # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 5: a date and time is a date picker plus the three boxes of a time.
-        return ui.div(_date_picker(f"fb_value{suffix}", d.get("date")), _time_boxes(suffix, d))
+        return ui.div(_date_picker(f"fb_value{suffix}", d.get("date"), empty=suffix != ""), _time_boxes(suffix, d))
     if kind == "time":
         return _time_boxes(suffix, d)
     # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 4: a duration is a number with a choice of 8 units (ns, us, ms, s, min, h, d, w).
@@ -406,7 +411,8 @@ def define_filter_audit_server(input, output, session, *,
             ui.output_ui("filter_type_ui"),
             ui.div(
                 ui.output_ui("filter_op_ui"),
-                ui.div(ui.output_ui("filter_value_ui"), ui.output_ui("filter_whole_number_ui"), class_="spv-flex-1"),
+                ui.div(ui.output_ui("filter_value_ui"), ui.output_ui("filter_whole_number_ui"),
+                       ui.output_ui("filter_add_reason_ui"), class_="spv-flex-1"),
                 class_="d-flex gap-1 align-items-center"
             ),
             class_="mt-2 pt-2 border-top spv-text-sm",
@@ -492,6 +498,8 @@ def define_filter_audit_server(input, output, session, *,
                 bounds = None
             lo, hi = bounds if bounds is not None else ({}, {})
             hint = control_hint(dtype)
+            if widget.endswith("_range"):
+                lo = hi = _EMPTY_END   # D-0504: the two ends of between start empty; the user gives both
             hint_ui = ui.tags.small(hint, class_="text-muted fst-italic d-block spv-text-meta") if hint else ui.div()
             if not widget.endswith("_range"):
                 return ui.div(_control(kind, "", lo), hint_ui)
@@ -517,11 +525,13 @@ def define_filter_audit_server(input, output, session, *,
             return ui.div(
                 ui.div(
                     ui.div(ui.tags.small("min", class_="text-muted"),
-                           ui.input_numeric("fb_value_lo", label=None, value=col_min, step=step), class_="spv-flex-1"),
+                           ui.input_numeric("fb_value_lo", label=None, value=None, step=step), class_="spv-flex-1"),
                     ui.div(ui.tags.small("max", class_="text-muted"),
-                           ui.input_numeric("fb_value_hi", label=None, value=col_max, step=step), class_="spv-flex-1"),
+                           ui.input_numeric("fb_value_hi", label=None, value=None, step=step), class_="spv-flex-1"),
                     class_="d-flex gap-1",
                 ),
+                # D-0504: the ends start empty; the range of the column is information beside them, never a value in them
+                ui.tags.small(f"The column runs from {col_min} to {col_max}.", class_="text-muted fst-italic d-block spv-text-meta"),
                 ui.input_radio_buttons("fb_closed", label=None, choices=CLOSED_CHOICES, selected="both"),
                 ui.output_ui("filter_closed_text_ui"),
             )
@@ -548,6 +558,29 @@ def define_filter_audit_server(input, output, session, *,
                 except FilterValueError as exc:
                     return ui.tags.small(str(exc), class_="d-block spv-text-meta spv-field-error", id="fb_whole_number_line")
         return ui.div(id="fb_whole_number_line")
+
+    # The reason "+ Add" added nothing for a `between` (D-0504, D-0050). A Value written by the add effect and by the Effect that
+    # clears it; the line reads only it, so showing it never mounts a box again (section 14, R4).
+    _add_reason = reactive.Value("")
+
+    @output
+    @render.ui
+    def filter_add_reason_ui():
+        """The plain line near the value boxes when "+ Add" refused a `between` without both ends; empty otherwise."""
+        text = _add_reason.get()
+        if not text:
+            return ui.div(id="fb_add_reason")
+        return ui.tags.small(text, class_="d-block spv-text-meta spv-field-error", id="fb_add_reason", role="alert")
+
+    @reactive.Effect
+    def _clear_add_reason():
+        """The line goes when the user changes what it is about: the column, the operator or an end (R3: idempotent)."""
+        _selected = (safe_input(input, "fb_col", None), safe_input(input, "fb_op", None),
+                     safe_input(input, "fb_value_lo", None), safe_input(input, "fb_value_hi", None),
+                     safe_input(input, "fb_value_lo_raw", None), safe_input(input, "fb_value_hi_raw", None))
+        with reactive.isolate():
+            if _add_reason.get():
+                _add_reason.set("")
 
     @output
     @render.ui
@@ -743,10 +776,12 @@ def define_filter_audit_server(input, output, session, *,
         try:
             if widget != "list" and kind in ("bool", "date", "datetime", "time", "duration"):
                 ranged = widget.endswith("_range")
+                low = high = None
+                if ranged:
+                    low, high = between_ends(lambda: _boxes("_lo"), lambda: _boxes("_hi"))   # D-0504: both ends from the user, or the line
                 chosen = dialog_value(
                     lf, col, dtype, discrete_axis, op,
-                    operand=None if ranged else _boxes(""), low=_boxes("_lo") if ranged else None,
-                    high=_boxes("_hi") if ranged else None, closed=safe_input(input, "fb_closed", "both"),
+                    operand=None if ranged else _boxes(""), low=low, high=high, closed=safe_input(input, "fb_closed", "both"),
                 )
             else:
                 chosen = dialog_value(
@@ -756,9 +791,13 @@ def define_filter_audit_server(input, output, session, *,
                     low=safe_input(input, "fb_value_lo", None), high=safe_input(input, "fb_value_hi", None),
                     closed=safe_input(input, "fb_closed", "both"), text=raw if isinstance(raw, str) else "",
                 )
+        except BetweenIncomplete as exc:
+            _add_reason.set(str(exc))   # the line near the boxes says why nothing was added; no row (D-0504, D-0050)
+            return
         except FilterValueError as exc:
             _notify(str(exc), type="error", duration=8)
             return
+        _add_reason.set("")
         if chosen is None:
             return  # nothing chosen yet: do not add an empty filter
         op, value, bt_closed = chosen

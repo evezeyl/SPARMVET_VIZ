@@ -116,6 +116,7 @@ def test_between_refuses_a_decimal_end(page: Page, whole_app):
     _open_form(page, whole_app, "n")
     page.locator("#fb_op").select_option("between")
     _wait_shiny(page)
+    _type(page, "#fb_value_hi", "20")   # D-0504: both ends are typed, so the decimal is the only reason for the refusal
     _type(page, "#fb_value_lo", "11.5")
     expect(page.locator("#fb_whole_number_line")).to_have_text(LINE, timeout=5_000)
     page.locator("#filter_add_row").click()
