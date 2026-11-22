@@ -24,7 +24,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
-from app.tests.browser_view import set_mode, set_view
+from app.tests.browser_view import preview_rows, set_mode, set_view, wait_preview_rows, wait_preview_rows_below
 from app.tests.conftest import shiny_app  # noqa: F401 — re-exports fixture
 
 _LAUNCH_APP_FEATURES = os.environ.get("SPARMVET_APP_FEATURES", "developer")
@@ -930,19 +930,11 @@ class TestPreviewFiltersOnReferenceViews:
 
     GRID_ROWS = "#home_data_preview tbody tr"
 
-    def _grid_rows(self, page: Page) -> str:
-        """The grid text. The grid shows a window of rows, so its row count cannot tell a filter
-        applied from none; the removed value's rows do change the text."""
+    def _rows(self, page: Page) -> int:
+        """The number of rows the preview says its table has (the badge, D-0488). The grid shows a window of at most 100 rows and has no
+        summary line, so neither its row count nor its text can tell a filter applied from none; the badge's count can."""
         page.wait_for_selector(self.GRID_ROWS, timeout=15_000)
-        return page.locator("#home_data_preview").inner_text()
-
-    def _wait_grid(self, page: Page, before: str, *, same: bool) -> None:
-        """Wait until the grid text equals (same=True) or differs from (same=False) `before`; fails on timeout."""
-        page.wait_for_function(
-            "([sel, before, same]) => (document.querySelector(sel).innerText === before) === same",
-            arg=["#home_data_preview", before, same],
-            timeout=15_000,
-        )
+        return preview_rows(page)
 
     def test_filter_shrinks_the_result_preview_and_reset_restores_it(
             self, page: Page, shiny_app: ShinyAppProc):
@@ -950,7 +942,7 @@ class TestPreviewFiltersOnReferenceViews:
         _open_filters_panel(page)
         page.locator(".nav-link:has-text('QC Reads Horizontal Barplot')").first.click()
         _wait_shiny(page)
-        before = self._grid_rows(page)
+        before = self._rows(page)
         page.locator("#fb_col").select_option(index=1)
         _wait_shiny(page)
         page.locator("#fb_op").select_option("ne")
@@ -962,11 +954,13 @@ class TestPreviewFiltersOnReferenceViews:
         expect(page.locator("#home_data_preview_badge .spv-view-note", has_text="preview filter")).to_contain_text(
             "preview filter(s) on, not saved", timeout=15_000)
         try:
-            self._wait_grid(page, before, same=False)
+            wait_preview_rows_below(page, before)
+            assert 0 < preview_rows(page) < before
         finally:
             # trash, not Reset: Reset also clears the value widget, which the next test needs
             page.locator("#filter_remove_0").click()
             _wait_shiny(page)
+        wait_preview_rows(page, before)   # removed: back to the first count
 
     def test_removing_an_applied_row_updates_the_view_without_apply(
             self, page: Page, shiny_app: ShinyAppProc):
@@ -975,7 +969,7 @@ class TestPreviewFiltersOnReferenceViews:
         _open_filters_panel(page)
         page.locator(".nav-link:has-text('QC Reads Horizontal Barplot')").first.click()
         _wait_shiny(page)
-        before = self._grid_rows(page)
+        before = self._rows(page)
         page.locator("#fb_col").select_option(index=1)
         _wait_shiny(page)
         page.locator("#fb_op").select_option("ne")
@@ -989,7 +983,7 @@ class TestPreviewFiltersOnReferenceViews:
         page.locator("#filter_remove_0").click()
         _wait_shiny(page)
         expect(note).to_have_count(0, timeout=15_000)
-        self._wait_grid(page, before, same=True)
+        wait_preview_rows(page, before)
 
     def test_a_preview_filter_never_changes_the_plot(self, page: Page, shiny_app: ShinyAppProc):
         """GUARDED (Eve, 2026-11-11; slice B, D-0019, D-0311, D-0327): Apply changes the table of the view shown, never a plot.
