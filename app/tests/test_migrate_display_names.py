@@ -1147,4 +1147,53 @@ def test_the_summary_counts_the_differing_and_missing_titles_as_cases_to_read_an
     tool.main(["--root", str(root)])
     out = capsys.readouterr().out
     assert "0 listed place(s) in 0 open case(s)" in out.split("Summary")[1].split("\n")[1]
-    assert "1 plot title(s) removed: 1 same as the figure title, 0 differ, 0 plot(s) have no figure title" in out
+    assert "1 plot title(s) removed: 1 same as the figure title, 0 same except spaces, 0 differ, 0 plot(s) have no figure title" in out
+
+
+def test_a_plain_name_key_inside_a_nested_mapping_of_an_app_features_file_stays(tmp_path):
+    root = tmp_path / "copy"
+    features = write(root, "config/app_features/f.yaml", "name: f\nflags:\n  name: keep\n  deeper:\n    name: keep too\n")
+    plan = tool.build_plan(root)
+    after = plan.texts[features]
+    assert "name: keep\n" in after and "name: keep too" in after and not after.startswith("name:")
+    assert [c.rule for c in plan.changes if c.file.endswith("f.yaml")].count("R16") == 1
+
+
+# -- exact comparison of the removed plot title; what the pass does not read (D-0484) --------------------------------------------
+
+@pytest.mark.parametrize("removed, figure", [("Title C ", "Title C"), ("Title  C", "Title C"), ("Title\tC", "Title C")])
+def test_a_title_equal_only_after_spaces_are_collapsed_is_its_own_visible_result(tmp_path, capsys, removed, figure):
+    root = tmp_path / "copy"
+    body = "ui_label: P\nui_title: \"" + removed.replace("\t", "\\t") + "\"\n" + LABS.format(t=figure)
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe(body))
+    plan = tool.build_plan(root)
+    assert not cases_of(plan, "OC20") and not cases_of(plan, "OC18")
+    found = cases_of(plan, "OC21")
+    assert len(found) == 1 and "same except spaces" in found[0].detail
+    assert f'"{removed}"' in found[0].detail and f'"{figure}"' in found[0].detail
+    assert any(c.rule == "R05" for c in plan.changes)
+    tool.main(["--root", str(root)])
+    assert "1 same except spaces" in capsys.readouterr().out
+
+
+def test_an_exactly_equal_title_is_still_the_same(tmp_path):
+    root = tmp_path / "copy"
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe('ui_label: P\nui_title: "Title C"\n' + LABS.format(t="Title C")))
+    plan = tool.build_plan(root)
+    assert len(cases_of(plan, "OC20")) == 1 and not cases_of(plan, "OC21")
+
+
+def test_a_plot_with_only_a_ggtitle_layer_says_no_figure_title_in_a_labs_layer_and_names_the_ggtitle(tmp_path):
+    root = tmp_path / "copy"
+    body = 'ui_label: P\nui_title: "T"\nlayers:\n  - name: geom_bar\n  - name: ggtitle\n    params:\n      label: "T"\n'
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe(body))
+    found = cases_of(tool.build_plan(root), "OC19")
+    assert len(found) == 1 and "no figure title in a labs layer" in found[0].detail
+    assert "the plot has a ggtitle layer, which this pass does not read: its text is not compared" in found[0].detail
+
+
+def test_a_plot_without_a_ggtitle_layer_does_not_mention_it(tmp_path):
+    root = tmp_path / "copy"
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe('ui_label: P\nui_title: "T"\nlayers:\n  - name: geom_bar\n'))
+    found = cases_of(tool.build_plan(root), "OC19")
+    assert "no figure title in a labs layer" in found[0].detail and "ggtitle" not in found[0].detail

@@ -191,7 +191,9 @@ OPEN_CASES["OC19"] = {"title": "A plot with no figure title (no `labs` title): N
 OPEN_CASES["OC20"] = {"title": "DECIDED: a removed plot `ui_title` that is the same as the figure title",
                       "words": "D-0484: the text is removed and copied nowhere, because the `labs` layer of the plot already holds it (exact text equal)."}
 # the order of the sections; the decided ones, the advice and the notes are not open
-CASE_ORDER = ["OC18", "OC19", "OC16", "OC17", "OC15", "OC09", "OC11", "OC13", "OC14", "CONFLICT", "OC05", "OC10", "OC01", "OC02", "OC03", "OC04", "OC20"]
+OPEN_CASES["OC21"] = {"title": "A removed plot `ui_title` that is the same as the figure title except spaces (leading, trailing, doubled or a tab)",
+                      "words": "D-0484: the comparison is exact. Texts equal only after collapsing and trimming whitespace are shown in full between quotation marks; the removal stays applied."}
+CASE_ORDER = ["OC18", "OC21", "OC19", "OC16", "OC17", "OC15", "OC09", "OC11", "OC13", "OC14", "CONFLICT", "OC05", "OC10", "OC01", "OC02", "OC03", "OC04", "OC20"]
 DECIDED_CASES = ("OC02", "OC03", "OC04", "OC20")
 ADVICE_CASES = ("OC01",)
 BLOCKING_CASES = ("CONFLICT", "OC13", "OC15")
@@ -305,6 +307,13 @@ def after_line(text: str, i: int) -> int:
 def scalar_value(node) -> Optional[str]:
     if isinstance(node, yaml.ScalarNode) and node.tag != INCLUDE_TAG and node.value not in ("", "~", "null"):
         return re.sub(r"\s+", " ", node.value).strip()
+    return None
+
+
+def raw_value(node) -> Optional[str]:
+    """The text of a scalar exactly as written (no space collapsing): the plot title comparison of D-0484 is exact."""
+    if isinstance(node, yaml.ScalarNode) and node.tag != INCLUDE_TAG and node.value not in ("", "~", "null"):
+        return node.value
     return None
 
 
@@ -451,7 +460,7 @@ class Builder:
                         continue
                     self.edit(doc, span[0], span[1], "")
                     if r.id == "R05":
-                        self.figure_title(doc, mapping, k, scalar_value(v), where)
+                        self.figure_title(doc, mapping, k, raw_value(v), where)
                     if r.id == "R04":
                         label = present.get("ui_label")
                         old_text, label_text = scalar_value(v), scalar_value(label[1]) if label else None
@@ -488,15 +497,20 @@ class Builder:
                 if name is not None and scalar_value(name[1]) == "labs":
                     params = find(item, "params")
                     title = find(params[1], "title") if params and isinstance(params[1], yaml.MappingNode) else None
-                    titles.append(scalar_value(title[1]) if title else None)
+                    titles.append(raw_value(title[1]) if title else None)
         given = [t for t in titles if t]
         text = old_text or ""
+        has_ggtitle = isinstance(seq, yaml.SequenceNode) and any(
+            isinstance(i, yaml.MappingNode) and (find(i, "name") is not None) and scalar_value(find(i, "name")[1]) == "ggtitle" for i in seq.value)
+        gg = "; the plot has a ggtitle layer, which this pass does not read: its text is not compared" if has_ggtitle else ""
         count = f" ({len(titles)} labs layers; the last title counts)" if len(titles) > 1 else ""
         if not given:
             why = "the plot has a labs layer with no title" if titles else "the plot has no labs layer"
-            self.case("OC19", doc, k, f"{where}.ui_title \"{text}\" is removed; the plot has no figure title ({why}); the removed text is copied nowhere; not an error: a recipe may leave the title out on purpose")
+            self.case("OC19", doc, k, f"{where}.ui_title \"{text}\" is removed; the plot has no figure title in a labs layer ({why}){gg}; the removed text is copied nowhere; not an error: a recipe may leave the title out on purpose")
         elif given[-1] == text:
             self.case("OC20", doc, k, f"{where}.ui_title is the same as the figure title: \"{text}\"{count}")
+        elif re.sub(r"\s+", " ", given[-1]).strip() == re.sub(r"\s+", " ", text).strip():
+            self.case("OC21", doc, k, f"{where}.ui_title is the same except spaces: removed text \"{text}\"; figure title (labs) \"{given[-1]}\"{count}; the removal is applied")
         else:
             self.case("OC18", doc, k, f"{where}.ui_title DIFFERS from the figure title{count}: removed text \"{text}\"; figure title (labs) \"{given[-1]}\"; the removal is applied, the removed text is lost unless the owner moves it")
 
@@ -919,7 +933,8 @@ def lines_of(plan: Plan, md: bool, header: str) -> List[str]:
                f"{len(cases_by.get('CONFLICT', []))} conflict(s); {len(cases_by.get('OC13', []))} change(s) the script cannot place; "
                f"{len([e for e in cases_by.get('OC01', []) if e.file])} recipe(s) would get the advice (no name).")
     same, differ, none = (len(cases_by.get(c, [])) for c in ("OC20", "OC18", "OC19"))
-    out.append(f"{same + differ + none} plot title(s) removed: {same} same as the figure title, {differ} differ, {none} plot(s) have no figure title (D-0484)")
+    spaces = len(cases_by.get("OC21", []))
+    out.append(f"{same + differ + none + spaces} plot title(s) removed: {same} same as the figure title, {spaces} same except spaces, {differ} differ, {none} plot(s) have no figure title in a labs layer (D-0484)")
     out.append("")
     if md:
         out += ["| kind of file | files read | changes |", "|---|---:|---:|"]
