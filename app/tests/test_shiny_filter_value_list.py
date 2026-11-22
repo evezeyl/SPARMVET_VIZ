@@ -22,6 +22,7 @@ import pytest
 import yaml
 from playwright.sync_api import Page, expect
 
+from app.tests.browser_view import wait_preview_rows
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
 from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
@@ -140,9 +141,7 @@ def test_a_list_of_100000_values_is_served_on_demand_and_every_value_is_found(pa
     expect(page.locator("#filter_rows_ui")).to_contain_text("name = name_099999", timeout=10_000)
     page.locator("#filter_apply").click()
     _wait_shiny(page, 60_000)
-    page.wait_for_function(
-        "() => (document.querySelector('#home_data_preview .shiny-data-grid-summary')?.innerText || '').includes(' of 1') ||"
-        " document.querySelectorAll('#home_data_preview tbody tr').length === 1", timeout=30_000)
+    wait_preview_rows(page, 1, 30_000)
     expect(page.locator("#home_data_preview")).to_contain_text("name_099999")
 
 

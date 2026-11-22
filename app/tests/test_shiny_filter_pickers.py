@@ -26,6 +26,7 @@ import pytest
 import yaml
 from playwright.sync_api import Page, expect
 
+from app.tests.browser_view import wait_preview_rows
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
 from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
@@ -98,15 +99,8 @@ def typed_app():
 
 
 def _expect_rows(page: Page, n: int) -> None:
-    """The data table holds n rows: a retrying assertion on the app's state (its summary says "of n" when it pages, else the rows are counted)."""
-    page.wait_for_function(
-        """(n) => {
-            const grid = document.querySelector('#home_data_preview');
-            if (!grid) return false;
-            const summary = grid.querySelector('.shiny-data-grid-summary');
-            if (summary) return summary.innerText.includes('of ' + n);
-            return grid.querySelectorAll('tbody tr').length === n;
-        }""", arg=n, timeout=20_000)
+    """The data table holds n rows: a retrying assertion on the app's state (its badge says how many rows the table has, D-0488)."""
+    wait_preview_rows(page, n)
 
 
 def _open_dialog(page: Page, url: str, column: str) -> None:

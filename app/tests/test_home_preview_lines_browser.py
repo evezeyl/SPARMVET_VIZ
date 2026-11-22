@@ -49,6 +49,16 @@ def _find_big_table(page: Page) -> int:
     raise AssertionError("no table of more than 100 rows on the demo recipe")
 
 
+def _switch_all_rows(page: Page, on: bool) -> None:
+    """Flip the "All rows" switch with a plain click event and wait until it holds the wanted state and Shiny is idle: Playwright's own
+    set_checked reports "did not change its state" when the header re-renders around the click."""
+    wait_shiny(page, 30_000)
+    if page.locator("#preview_all_rows").is_checked() != on:
+        page.locator("#preview_all_rows").evaluate("e => e.click()")
+    page.wait_for_function("(on) => document.getElementById('preview_all_rows').checked === on", arg=on, timeout=10_000)
+    wait_shiny(page, 30_000)
+
+
 def test_rows_all_rows_and_hidden_columns(page: Page, shiny_app: ShinyAppProc):
     _load_data_analysis_recipe(page, shiny_app.url)
     n = _find_big_table(page)
@@ -59,19 +69,22 @@ def test_rows_all_rows_and_hidden_columns(page: Page, shiny_app: ShinyAppProc):
     assert "Viewing rows" not in body
     assert not re.search(r"\b(of|total)\s+100\b(?! rows)", body.replace(f"Showing 100 of {n} rows", "")), "a second total on screen"
     # All rows: the sentence is the size
-    page.locator("#preview_all_rows").set_checked(True, force=True)
-    wait_shiny(page, 30_000)
+    _switch_all_rows(page, True)
     expect(page.locator(BADGE)).to_contain_text(f"{n} rows")
     assert "Showing" not in page.locator(BADGE).inner_text()
-    page.locator("#preview_all_rows").set_checked(False, force=True)
-    wait_shiny(page, 30_000)
+    _switch_all_rows(page, False)
     expect(page.locator(BADGE)).to_contain_text(f"Showing 100 of {n} rows")
     # no hidden column at the start; take one out: the count appears and the chooser keeps the user's choice
     assert "hidden" not in page.locator(BADGE).inner_text()
     items = page.locator("#preview_col_selector + .selectize-control .item")
+    if not items.first.is_visible():
+        # a click on the switch in the accordion header can also fold the panel (the header is one button): open it again
+        page.locator("#acc_home_data .accordion-button").first.click()
+        expect(items.first).to_be_visible(timeout=10_000)
     before = items.count()
     assert before >= 2
-    items.last.locator(".remove").click()
+    items.first.hover()   # the remove link of a selectize item shows on hover
+    items.first.locator(".remove").click()
     wait_shiny(page, 30_000)
     expect(page.locator(BADGE)).to_contain_text("1 column hidden; add it back in the column chooser")
     page.wait_for_timeout(500)   # a re-mounted chooser would snap back after the busy flag clears; the absence of a change needs a window

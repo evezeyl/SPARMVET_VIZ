@@ -39,7 +39,7 @@ import yaml
 from PIL import Image
 from playwright.sync_api import Page, expect
 
-from app.tests.browser_view import set_mode, set_view
+from app.tests.browser_view import set_mode, set_view, wait_preview_rows
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
 from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
@@ -109,7 +109,7 @@ def _table_text(page: Page) -> str:
 
 def _expect_rows(page: Page, n: int) -> None:
     """The data table says it holds n rows ("Viewing rows 1 through 15 of 15"): a retrying assertion on the app's state."""
-    expect(page.locator("#home_data_preview .shiny-data-grid-summary")).to_contain_text(f" of {n}", timeout=20_000)
+    wait_preview_rows(page, n)
 
 
 def _plot_image(page: Page) -> Image.Image:

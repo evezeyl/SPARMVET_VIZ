@@ -26,7 +26,7 @@ import pytest
 import yaml
 from playwright.sync_api import Page, expect
 
-from app.tests.browser_view import set_view
+from app.tests.browser_view import set_view, wait_preview_rows
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
 from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
@@ -34,7 +34,7 @@ from utils.recipe_factory import minimal_plot, minimal_recipe, minimal_schema
 REPO = Path(__file__).resolve().parents[2]
 WORK = REPO / "tmpAI" / "browser_typed_values"
 YEARS = [1950 + i % 100 for i in range(599)] + [1900]
-PREVIEW = 100  # the data preview shows at most 100 rows
+ALL_ROWS = len(YEARS)  # rows of the whole table; the preview shows 100 of them and says "Showing 100 of N rows" (D-0488)
 
 
 def _free_port() -> int:
@@ -88,15 +88,8 @@ def typed_app():
 
 
 def _wait_rows(page: Page, n: int) -> None:
-    """Wait until the data preview shows n rows: its summary says "of n" when it pages, else the rows are counted."""
-    page.wait_for_function(
-        """([sel, n]) => {
-            const grid = document.querySelector(sel);
-            if (!grid) return false;
-            const summary = grid.querySelector('.shiny-data-grid-summary');
-            if (summary) return summary.innerText.includes('of ' + n);
-            return grid.querySelectorAll('tbody tr').length === n;
-        }""", arg=["#home_data_preview", n], timeout=15_000)
+    """Wait until the data preview says it holds n rows (its badge, D-0488)."""
+    wait_preview_rows(page, n, 15_000)
 
 
 def _set_number(page: Page, selector: str, value: int) -> None:
@@ -118,7 +111,7 @@ def _open_dialog(page: Page, url: str) -> None:
 
 def test_the_dialog_shows_the_type_lists_the_late_value_and_compares_on_a_discrete_year(page: Page, typed_app):
     _open_dialog(page, typed_app)
-    _wait_rows(page, PREVIEW)
+    _wait_rows(page, ALL_ROWS)
 
     # the type is shown next to the column, in plain words
     expect(page.locator("#fb_col_type")).to_have_text("year holds whole numbers (Int64).", timeout=10_000)
@@ -138,7 +131,7 @@ def test_the_dialog_shows_the_type_lists_the_late_value_and_compares_on_a_discre
     _wait_rows(page, 1)
     page.locator("#filter_remove_0").click()
     _wait_shiny(page)
-    _wait_rows(page, PREVIEW)
+    _wait_rows(page, ALL_ROWS)
 
     # "> 1999 and < 2003" on the discrete year: number boxes, the right rows
     page.locator("#fb_op").select_option("gt")
@@ -159,7 +152,7 @@ def test_the_dialog_shows_the_type_lists_the_late_value_and_compares_on_a_discre
     _wait_shiny(page)
     page.locator("#filter_remove_0").click()
     _wait_shiny(page)
-    _wait_rows(page, PREVIEW)
+    _wait_rows(page, ALL_ROWS)
 
 
 def test_between_offers_the_four_ends_and_each_gives_its_rows(page: Page, typed_app):
@@ -180,7 +173,7 @@ def test_between_offers_the_four_ends_and_each_gives_its_rows(page: Page, typed_
         _wait_rows(page, sum(1 for y in YEARS if lo <= y <= hi))
         page.locator("#filter_remove_0").click()
         _wait_shiny(page)
-        _wait_rows(page, PREVIEW)
+        _wait_rows(page, ALL_ROWS)
 
 
 def test_on_a_discrete_year_equal_picks_from_the_list_and_greater_than_uses_the_number_box(page: Page, typed_app):
