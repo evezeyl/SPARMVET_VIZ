@@ -3,7 +3,38 @@
 Date 2026-11-22. Branch `study/goals-review-sonnet`, from `dev` `31034158`. Read-only study: nothing is built from it.
 Order: ledger `D-0528`, `D-0529`, `D-0530`, `D-0531`, `D-0532`.
 
-<!-- SUMMARY_FOR_HER_PLACEHOLDER: written at the end -->
+## Summary for her (two screens)
+
+I wrote my own path to your goals first, without the Opus overview (commit `a36bd0e5`). Then I compared, then I tried to break every KEEP of the match list. I ran the demo myself: one entity removed at one place, then every table and plot rebuilt (about 6 seconds). Same demo, same entity as the Opus runs, so the numbers are comparable.
+
+**What we agree on (so you can trust it).** The scope stays yours. The effect of a choice cannot be read from the recipe; it has to be measured by a run before you confirm. Removing an entity "at the start" can leave it in 7 of 17 plots, 3 of them with source, year and country erased: I got the same numbers as Opus. The audit that is built today (a filter on the plot's finished table) must be replaced by the audit recipe plus a rerun. I measured why: for the plot `qa_population_zscore`, a filter on the finished table leaves all 41 other samples with a z-score that still includes the removed sample; a rerun without it changes all 41 (largest change 0.064). Remove step, the reason gate, the fingerprint, the audit copy and the run are sound and are used by my runs.
+
+### 1. Where I disagree with the Opus agent: you decide
+
+1. **Column drops in the audit (its question 29).** Opus recommends: no drops in the audit; the recipe author removes a column. I recommend: keep the drop, but only in the table a plot reads, recorded with a reason. Why: you said the user may not be the author. A user who must publish a table without one column will otherwise edit the exported file by hand. That is outside every record. Opus's argument "the check of key columns is no longer needed" is an argument by less code, which is not an argument by your rule. This is reasoning, not a run.
+2. **The Reshuffle (its question 17).** Opus recommends: remove it. I say: both are defensible, and I do not rank them. Opus is right that the seed has no home once the join fork of the export is removed (`bake_plot_seeds` writes into the recipe copy). But the seed is already written in `effective_run.yaml`, so a home exists. Your words of D-0341 are on the other side; Opus shows them.
+3. **Your case "keep the poor-quality sample in the quality results" (D-0499).** The Opus text (4.4) says: with "remove from all the data" and two tables unticked, the sample stays in exactly the 3 quality plots with its metadata. I ran the option as decided and built: it stays in none, and all 17 plots change, because the source tables are still ticked. To keep it in the quality plots you must also untick `FastP`, `Quast`, `Bracken` and the metadata. The Opus run used a 19-place variant that you did not decide (D-0416 says every table that holds the key). Please do not rely on that sentence.
+4. **Ten questions answered "by my reading unless you object" (its 10-12, 16, 18-22, 24, 25).** I would not let silence count as a yes. A default is not a decision (rule G). Ask you for one explicit yes to the block.
+5. **The bundle (not seen by Opus).** The export writes `T1_data.tsv` and `T2_data.tsv` from the ORIGINAL tables; only `T3_data_<plot>.tsv` is audited. Someone who takes the T2 file publishes the sample you removed. The audited part of the bundle must hold audited tables, or say loudly which file is which.
+
+**A correction of mine.** In part A I recommended turning the "every join in tier 1" rule into an advice. I withdraw it: the rule (ST05) is wider than your decision (it covers every join, not only the metadata), but it makes the end of tier 1 of a joined table one clear place, and Opus is right that your question 27 is the place to decide the breadth.
+
+### 2. The KEEP items that survive my attempt to break them
+
+- Merge the branch `task/home-filter-follows-table` (its 5 test files: 88 passed). Does not depend on any open question.
+- `remove from all the data` writing only at the places left ticked (`apply(..., ticked=)`, 125 tests pass), without the sentences about unticked tables. Keep it a library step: the measured map must follow, or you never learn where the sample stays.
+- The audit recipe, the one list `audit_steps`, "Remove step", the reason gate, the fingerprint, the log, the two export parts, the dialog of places with their reach, the opening build, Exploration as built, `table_compare` (it already gives "41 rows changed, 1 removed"), `audit_run`, `audit_copy`, the refusal of a result id written twice, the good-practice page for the gotchas, the naming rule and the limits.
+
+Not sure, as in the match list, plus three more: D-0501 "no per-table warnings" (the measured line about other samples reopens it in part, so it is not a plain KEEP); D-0203 against D-0501 (they pull); the `audit/` folder in a deployment with no writable place (never decided).
+
+### 3. What neither of us verified
+
+- The dialog does not exist: nobody has used it. Every "what you would see" is described.
+- One recipe (the demo), one entity (`10668076`), a few places chosen by hand. Not a filter on a value other than the key; not the join kinds anti, right, full, cross (the demo has none); not a large recipe (speed).
+- BLUEPRINT, the documentation pages and the Gallery were not read by me. The Opus claim about a summary table made from a join (a new group with empty country and year) I did not reproduce.
+- The full suites were not run. For the two branches I ran only the test files of the change.
+
+---
 
 ---
 
@@ -290,5 +321,212 @@ Only questions that change what is built. Each: the situation, what the app does
 - The recipe format part (`recipe_spec.yaml`, names pass): not studied beyond the collection.
 - Whether the sessions of other users or the Compare pane share one run: not checked.
 - `table_compare` semantic details (layers, tolerance) were not read beyond its header in the collection.
+
+---
+
+# PART B. Comparison with the Opus overview
+
+**Part A was committed before part B was written: commit `a36bd0e5` ("docs(design): independent goals review, blind part A").** I opened the Opus files only after that commit. I have not changed part A. Where part A was wrong or incomplete, I say so below.
+
+Opus files read (branch `study/whole-picture-goals`, commit `122334a3`): `WHOLE_PICTURE.md` part 0 and part 8 (questions 28, 29, 1, 2, 27, 4, 17, and the table at the start of part 8), `GOALS_REVIEW.md` (all), `DIFFERENCES.md` section C1 (to check its runs). I read no other file of that folder in this step.
+
+What I ran in part B (read-only, same method as E1; `tmpAI/exp/e1.py`):
+- **E3**: places `T1:MLST` and `T1:metadata_schema` (Opus's reading (a) of the default for a removal started from `mlst_bar`).
+- **E4**: (i) the 13 tables that join the metadata (Opus's reading (b)); (ii) "remove from all the data" as built (every table holding the key at tier 1) with `QC_Reads_Anchor` and `Quast_with_metadata` unticked.
+- A check of 36 `file:line` references of `GOALS_REVIEW.md` against the code, and a scan of ~120 quotes of hers (a quote followed by a D-number within 60 characters) against the evidence field of that ledger line (script `tmpAI/exp/quotes.py`).
+- `table_compare.compare` on the E2 tables (`tmpAI/exp/out2`).
+- The tests of the two branches (in their worktrees, with the main `.venv`).
+
+## B1. Where we AGREE
+
+1. The goals: the same G1 to G6 in substance. Both list the same companion goals (nothing silent, data agnostic, two kinds of person).
+2. The scope is the user's (D-0531). Both reject the app choosing places. Both keep the dialog of places with ticks.
+3. The central finding: **the effect at a place does not tell the effect at the results.** Both found it with runs. My E3 reproduces their numbers exactly: with `T1:MLST` + `T1:metadata_schema`, 13 plots change and the entity stays in 7: 4 unchanged, 3 with source, year and country emptied (`miaou`, `assembly_quality_dotplot`, `qc_reads_horizontal_barplot`). My E4 (i) reproduces their (b): the 13 tables that join the metadata, 13 plots change, nothing emptied, the entity stays in the 4 plots that never meet the metadata.
+4. A reading of the recipe cannot say what happens in a table where no step is written; only a run can. Both say so; both hold the untick branch's sentences as false.
+5. The measured effect before Confirm (their Q28 (a), my Q7 C and A3 step 4). Their (a) is my proposal.
+6. What to keep, change, replace, remove in the built code: the same list in substance: replace the T3-only node store and `audited_frame`, replace the propagation modal, replace the trash icon by "Remove step", remove the join fork of mode 2, wire `walk`, `audit_copy`, `audit_run`, `table_compare`, keep the opening build, the reason gate, the key check at export.
+7. The audit at T3 only is wrong for a computation over all entities. They reasoned it ("a removed entity still counts in a mean computed earlier"). I measured it (E2).
+8. Both hold that `task/remove-from-all-ticked` must not be merged as it is and that `apply(..., ticked=)` is the part to take.
+9. Both put the BLUEPRINT and documentation items after HOME; both point out that old texts and rule labels are stale.
+
+## B2. Where we DIFFER
+
+For each: the two positions, who is right, the evidence. "Right" means on the evidence I have.
+
+### B2.1 The claim in `GOALS_REVIEW.md` 4.4 about her case of D-0499
+- **Opus** (4.4, last bullet): with "remove from all the data" and the places of the 3 quality plots unticked (`QC_Reads_Anchor`, `Quast_with_metadata`), "the entity stays in exactly those 3 plots, with its metadata, and 14 plots change".
+- **Me** (E4 ii): with "remove from all the data" **as built and decided** (a step at tier 1 of every table that holds the key, 27 tables) and those two places unticked, the entity is in **none** of the plots and **all 17** change, because the source tables `FastP`, `Quast`, `Bracken`, `metadata_schema` are still ticked and their left joins no longer have the row. `QC_Reads_Anchor` and `Quast_with_metadata` hold 0 rows for the entity.
+- **Why the two differ:** `DIFFERENCES.md` C1 shows their run used a different list: under their reading (B), "remove from all" is **19** places (the 13 joins and the first table of 6 branches), and the 8 original tables "still hold it at tier 1". That is not the option of `D-0416` point 1 ("It reaches every table that holds the key column, also a table no plot reads": "1. yes") and not the library (`remove_from_all.describe` reaches 27). So the sentence in 4.4 is true only for a variant that nobody decided.
+- **Right:** me, for the option as decided and built. For her case under the decided option she must also untick the upstream sources (and then, in their own (A) run, the entity stays in 9 plots). A reader of 4.4 would believe that two unticks give her case. They do not. This matters: it is the one case she gave in her words (`D-0499`).
+- Label: verified by run (E4 ii). One entity, one list of places.
+
+### B2.2 Column drops (their question 29)
+- **Opus:** (a) no: the audit removes observations only; a column that must not appear is removed by the recipe author. Reasons given: G4; the check of key columns is no longer needed.
+- **Me** (A6 question 3): keep the drop, but only at the table a plot reads (what is built), recorded with a reason.
+- **Argument (why and how, D-0532):** `D-0500`: "the user might not be the author". A user who may not touch the recipe and who must publish a table without a column (a name, an internal id) has two ways under (a): ask the author, or open the exported TSV and delete the column by hand. The second is outside every record: not reproducible, not transparent (G1), and it is the exact kind of silent change the app exists to prevent. Under (b) the drop is a recorded step with a reason. A drop at the plot's own table cannot break a later join, so the large machinery of the drop gate (`key_drop.py`, red lines of D-0460) is not needed for it. Opus's "For (a)" includes that the check "is no longer needed": that is an argument from less code, which is not an argument by her rule.
+- **Right:** I think the merit is on my side, but this is a real choice and the evidence is reasoning, not a run. Opus did show her words against its own recommendation (it lists `D-0322` under "Reopens").
+- Label: reasoned.
+
+### B2.3 The Reshuffle (their question 17)
+- **Opus:** (c) remove it from HOME. Two reasons: a new arrangement removes no observation (G4); a reader cannot tell it was picked among several (G3). A technical fact: `bake_plot_seeds` writes the seed into the plot's layers of the exported recipe copy, which the decided audit recipe forbids (D-0332, D-0040).
+- **Me:** record the seed in the audit record without a reason (A6 question 4).
+- **What I checked:** the technical fact is correct: `app/modules/plot_seeds.py:156` `bake_plot_seeds` writes into `layers`; it is called at `app/handlers/export_handlers.py:1567`, inside `if wants_mode2` (`:1559`). I missed it in part A. But the seed also has another carrier today: `effective_run.yaml` holds `seeds_per_plot` and `seeds_per_layer` (`export_handlers.py:1675-1677`). So "an audited reshuffle cannot be re-run" is a consequence of removing the fork, not a hard blocker: the seed can live in the audit record or the run file and be read at the re-run.
+- **Right:** neither is proven. Opus is right that a home for the seed must be decided before the fork is removed; I do not agree that this forces option (c). Her words (`D-0341`: "A - but then we need to be able to add it as a step at the correct place in audit"; "not critical for now") are on the other side; Opus shows them. I would put it to her as the choice it is and not rank it.
+- Label: read at the lines named; the rest reasoned.
+
+### B2.4 The default ticks (their question 1)
+- **Opus:** recommends (b): the end of tier 1 of each table that joins the metadata (13 lines on the demo). I verified its numbers (E4 i).
+- **Me** (A6 Q1): B (a named starting point) with the measured map, or "neither".
+- **Where we really differ:** a little. (b) is a rule of the structure of the recipe ("tables that join the metadata"; on a branch that never meets the metadata, "the first table its results read", a second rule). (a) is a rule of the structure of the lineage. Both are defaults of the app. E3 and E4 (i) show that on the demo (b) is the safer start (nothing emptied) and that under (b) 4 plots still show the entity: so under either default only the measured map tells the user the truth. I accept (b) as the recommendation if the screen names it as a default and shows the map, as Opus says.
+- **One thing to add:** under (b) the audit recipe holds the same step 13 times; Opus shows this as "Against". Under D-0531, the user may think that "13 places" is the app's decision. The screen text must say "starting point".
+- **Right:** no real conflict. Label: verified by run for the numbers.
+
+### B2.5 The rule that every join is tier 1 (ST05, D-0510, their question 27)
+- **Opus:** the recipe check already refuses every join outside tier 1 (ST05); the ledger fact put to her in D-0510 ("the check has no such rule") was wrong. Question 27 stays open, no recommendation.
+- **Me (part A):** I treated D-0510 as "enforced for now" and, in A5.4 and A6 Q5, argued the refusal should be an advice, because the audit's reach comes from the walk, not from where the join sits.
+- **What I checked:** Opus is right. `libs/utils/src/utils/recipe_check.py:714-715` gives `ST05` for any action of `TIER1_ONLY` (`libs/utils/src/utils/action_names.py:66`: `JOIN`, `JOIN_ASOF`, `JOIN_WHERE`) in tier 2 or tier 3. It covers every table, not only the metadata.
+- **Correction of my part A:** I **withdraw my recommendation to make the rule an advice (A6 Q5 and A4)**. I wrote it without knowing the rule's breadth. With every join in tier 1, "the end of tier 1 of a joined table" is one unambiguous place that has the metadata and every join of the table: this is what E4 (i) relied on, and it is a real argument for the rule (it keeps the places of the lineage few and clear). The rule still goes further than her words: she decided it for the metadata join (D-0510), and wrote "other joins could be used after" and "the other data tables can be used in later joins" (D-0523). That is their question 27. I agree it needs no recommendation now.
+- Label: verified at `recipe_check.py:714`.
+
+### B2.6 Things Opus did not state that I found
+- **The bundle holds unaudited tables.** `export_handlers.py:1409` writes `<table>/T1_data.tsv` and `:1431` `T2_data.tsv` from the stored ORIGINAL tables; only `T3_data_<plot>.tsv` is audited (`:1467`). The README line says what each is (`:1914`), but a reader who takes the T2 file publishes the observation the user removed. `GOALS_REVIEW.md` G3 point 2 says "yes" for what the screen shows is what the export holds; it considers plots and the T3 file, not these files. Their path (step 10) speaks of "the audited results" and does not say the tables of the audited part follow the audit. This is a condition for G3 ("tables it can trust").
+- **A measured number for the computation over all entities** (E2: 41 of 41 other samples differ; max 0.064 on a z-score near 1.8) where Opus has an argument. It does not change a recommendation; it makes the evidence harder.
+- **`table_compare.compare` already gives the line they propose.** On the E2 tables with the key `sample_id`: `paired.n_paired=41, n_rows_changed=41`, one row removed (`sample_id 10668076`). So "the values of other observations change here" can be read from the library that exists; no new method is needed (their 4.4 says it uses layers 1 and 3).
+
+### B2.7 Their pre-answers to ten questions
+- **Opus:** "my reading of your goals answers questions 10 to 12, 16, 18 to 22, 24 and 25 (you may object)" (part 0.5, table of part 8). In the match list and the build order a build may then follow.
+- **Me:** this turns silence into consent. `decision_compliance.md` rule G: "a default is never a decision". The text says "you may object" and "my reading", so nothing is claimed as decided, but the structure asks her to object to ten things to keep them from being built, in a document where she is already asked for five questions first. I would list them as a short block "I propose to build these ten as written unless you say no, and nothing is built until you say yes".
+- **Right:** a matter of form. I label it a risk, not an error.
+
+### B2.8 Question 28: "withdrawn" and still an option
+- Part 8 says: the first version proposed the app choose the places from the results; "Your words of D-0531 rule it out... It is not an option any more." The same question lists as option (b): "Results first: the app proposes places that you see and change". It is a softer form of the withdrawn thing: the app picks the ticked places; the user may change them.
+- Does every option leave the scope to the user? (a) yes. (b) yes **if** it is named a proposal and the user can change every place; it is the same status as a default tick in (a) and (b) of question 1. (c) yes. (d) yes. So the options do not break D-0531. But the text that says "not an option any more" contradicts the presence of (b); a reader will not know which is true. The "Reopens" list of (b) is complete by my reading (D-0508, D-0194, D-0316, D-0415 A, D-0022, D-0501/D-0318 as in (a)). The list of (a) is complete: D-0501 second part, D-0508 second part, D-0318 extended.
+- Is any option argued by cost, delay or by her own words? (a) no. (b) "two lists to keep in agreement" is a design argument. (c) "the dialog you decided, with nothing added" argues by her own decision: it is listed as "For", and "Reopens: nothing". An option that is argued "for" because it does not reopen is a use of the "reopens" label as an argument. It is stated, not hidden, and the recommendation is (a). Small.
+- Question 29 (a) "For: ... the check of key columns and its rules are no longer needed": an argument by less code (B2.2). Question 17 (c) "For": the figure a reader sees is the one the recipe fixes: a merit argument.
+
+### B2.9 The use of their runs
+- All their numbers on the demo are three runs, one entity each, places listed by hand. They say so in 0.3, 0.6, Q1 and part 9. I reproduced the numbers for E3 and E4 (i).
+- **Is anything stated as proven beyond that?** Yes, two things:
+  1. The sentence of 4.4 about D-0499 (B2.1): not what the decided option gives.
+  2. Q1 (a), "Also run, on a small part of the demo with a summary table made from a join": it states that the removed entity appears in the summary as a new group with an empty country and year, "10 rows instead of 9, the total still 42, although nobody ticked it". The limits are given ("two joins, the summary table was emulated, because the app does not have it yet"). I did not reproduce it: **not verified by me**. It is the reason for recommending (b) over (a) in the case of derived tables; the recommendation stands on the demo numbers even without it.
+- "Four plots never meet MLST or the metadata": true for `amr_heatmap` (reads `ResFinder`), `phenotype_genome_length_fragmentation`, `qa_l50_integer`, `qa_sequence_type_missing` (E3). Right.
+
+### B2.10 Quotes of hers
+Of ~120 quotes followed by a D-number, ~105 are in the evidence field of the line cited. The others I read one by one: they are names of buttons or labels used inside quotation marks (`table changed`, `picture changed`, `this result only`, `remove from all the data`, `Web Demo (web-demo)`), a quote that Opus itself marks as the review session's report (D-0496: "we can exclude form 4 and I guess 5", in the decision field), a text of the decision field (D-0344), and `"We do not do half fixes."` which Opus marks: "in the goal text that you approved with '1. ok.' (D-0125); who wrote that text is not stated". I found **no quote that is made to say more than her words**, and none taken from a bracket and presented as hers. Quotes were not checked when no D-number follows within 60 characters.
+
+### B2.11 Claims about the code
+Of 36 `file:line` references, the ones I opened are all correct in substance. Line numbers are within 3 to 5 lines of the code, except `t3_audit_engine.py:771-791` for `audited_frame`, which is at `:799` now (28 lines). Claims I checked beyond the lines named: ST05 (B2.5); `bake_plot_seeds` (B2.3); the warning "T3 ghost save failed ... will not survive a page refresh" (`audit_stack.py:1049-1058`) is real; session restore with an edited recipe is a warning and not a refusal (`session_handlers.py:594-602`); the 13 tables that join the metadata (counted in the recipe); the table of 17 plots to targets (the entity stays in 7); the mode-2 fork (`t3_translator.py:197`, `export_handlers.py:1559-1569`); the live parts of the lineage library. None wrong.
+
+### B2.12 Is part 0 readable by her alone?
+Mostly. For: short paragraphs, a table "today you see / as decided you would see / still missing", a drawn dialog, a route of nine steps with what she can do after each, "words used here". Against: about 3000 words; 26 bare codes `G1` to `G6`, `E1` to `E7` in tables she must keep in mind; 15 ledger numbers in the sentences (the earlier reader check asked for none in the sentences; they are mostly after quotes, as a source mark); the questions she must answer are named by number ("question 28", "question 1") and live in part 8, 400 lines further; in part 8 question 28 carries 20 D-numbers in 25 lines. A reader who is not a developer will understand the path and the sketch; she will find the questions harder than the path. The words "tier", "propagation", "reach" are defined before use.
+
+### B2.13 What Opus did not run
+Their `GOALS_REVIEW.md` section 9 says: "Runs: none by me." So the second pass relied on the first pass's runs and the reviews. It states this clearly. My E1 to E4 add runs on the same demo; they agree with theirs on all numbers I could check.
+
+# PART C. The match list, row by row (red team)
+
+I read `MATCH_LIST.md` after part B. For each row I tried to find a reason the verdict is wrong: that it depends on an open question of hers, that it has the app decide the scope, that it breaks a goal, that the code is not what the row says. **SURVIVES** = the verdict stands after the attempt. **DOES NOT SURVIVE** = it should be different (I say what). **NOT SURE** = I cannot decide it from the evidence or it depends on a question of hers that the row does not name.
+
+What I ran or read for part C:
+- Branch `task/home-filter-follows-table` (`7981a569`): its diff read; its 5 test files run in its worktree: **88 passed** (134 s). I did not mutation-test it and did not read all the code.
+- Branch `task/remove-from-all-ticked` (`95b6285e`): the diff of `remove_from_all.py` read in part; `libs/utils/tests/test_remove_from_all.py`, `test_remove_from_all_unticked.py` and `app/tests/test_remove_from_all_demo.py` run there: **125 passed, 1 skipped**. `apply(..., ticked=...)` takes `ticked` as a required keyword (checked in the signature).
+- `table_compare.compare` and `audit_run`/`audit_copy`: run through E1 to E4 and the E2 comparison (all worked on the demo).
+- The check for the duplicate result id: loaded the demo, added a second entry with an existing plot id in another group, ran `check_recipe`: **no new code appears** (the loaded raw already gives T08 for a root `plots` key, because the loader flattens it; so the probe is weak: it shows no code for the duplicate, not that a raw recipe passes). The task text `RESULT-ID-TWICE-NOT-REFUSED` (tasks.md:963) says the same and cites `recipe_tiers.py:152-160`.
+
+## C1. Section 0 of the match list: "KEEP builds that can start or be merged now"
+
+| # | Row | Opus | Mine | Evidence and reason |
+|---|---|---|---|---|
+| 0.1 | Slice 0, the records agree | KEEP | SURVIVES | No code. The records have more drift than listed (rule files say "DECIDED, not built" for the opening build, which is built: `run_opening` is called at `app/handlers/opening_handlers.py:124`; and the D-0363 conflict). Correcting them cannot break a goal. |
+| 0.2 | Merge `task/home-filter-follows-table` | KEEP | SURVIVES | 88 tests pass in its worktree. The key is the table viewed (`viewed_table`), not the plot; two plots on one table share it; a plot with its own tier 3 steps is told apart. It follows `D-0506` ("the filter is associated to the table and not the plot"). It does not depend on an open question. Not mutation-tested by me. The row says KEEP means the decisions match, "not that the code is right": I add that its tests pass. |
+| 0.3 | Refusal of a result id written twice | KEEP | SURVIVES (weakly verified) | My probe found no code for a duplicate id (above). Serves E1 (no silent error). Independent of every open question. Under form 3 (Q2) the rule changes its words, not its need. |
+| 0.4 | Remove from all: write at the ticked places; no sentence about unticked tables; remove the "may stay" sentences | KEEP | SURVIVES as a library step; with one condition | `apply(..., ticked=)` is verified (125 tests). Why not say anything about unticked tables: E1 shows a recipe cannot say it. **The condition:** this must stay a library step. If it is the end of the matter, the user never learns where the entity stays (A5.3). The measured map (A3 step 4) must follow. The row says "no screen yet". |
+| 0.5 | The good-practice page | KEEP | SURVIVES in part | The gotchas, the naming rule, the limits (D-0461, D-0498, D-0508, D-0486) are decided and independent. **The audit-folder paragraph (D-0423) describes a folder that is not built and whose place in a deployment with no writable user place is not decided (D-0422, choice 5).** It should wait for the build. |
+
+## C2. Section 1: the decisions that lead to a build
+
+| Row | Opus | Mine | Evidence and reason |
+|---|---|---|---|
+| Audit recipe: copy, second list, id, reason, `audit_of` (D-0102 ...) | KEEP | SURVIVES | `audit_copy.add_step`, `integrity_errors` run in E1 to E4. Note: "Depends on: —" is not complete: the form (author's parts untouched, D-0332, D-0040) is in tension with `bake_plot_seeds` (B2.3), so Q17 decides where a seed lives. The decision stands; one build detail depends on Q17. |
+| Fingerprint, `audit/` folder in the user's place, a hand edit refused | KEEP | NOT SURE (in part) | Fingerprint and refusal: SURVIVES. The folder "in the user's own place" is not decided for a deployment with no writable place (D-0422 choice 5, my Q6). The row says "—". |
+| Audit log always exported, with what was shown | KEEP | SURVIVES | Existence yes (D-0478). What it holds depends on what the dialog shows (Q28): the row says so. |
+| Export: two ticks, original and audited part, data once, original recipe | KEEP | SURVIVES, with a missing item | The tables of the audited part must follow the audit: `T1_data.tsv`/`T2_data.tsv` are unaudited today (B2.6). Not a reason to change the decision; it is a requirement of it. |
+| Original and corrected plot both in the export (D-0147) | KEEP | SURVIVES | G3. |
+| "Remove step" (D-0314) | KEEP | SURVIVES | `audit_copy.remove_step` exists (`audit_copy.py:245`); no such control in the app (grep). |
+| Sessions of another recipe or older form refused (D-0312, D-0317, D-0362) | KEEP | SURVIVES | Q26 is named. |
+| The user chooses the places; nothing written that is not ticked; one automatic placement (D-0093, D-0355, D-0053, D-0022, D-0531) | KEEP | SURVIVES | It is her rule of D-0531 and D-0355. |
+| The dialog: one line per distinct table with reach; tables no result reads are lines | KEEP | SURVIVES | The walk is PROVISIONAL in its grouping (P1 of `lineage_walk.py`), not a decision of the owner; the list that the walk offers is the app's menu of places. The normal dialog offers lineage and join-linked places; tables with the same key and no join are info only (`Walk.outside`), tickable only in "remove from all" (D-0498). That is her D-0415 A/B split. |
+| "Tick low" and the propagation | NOT SURE | NOT SURE | Agree. |
+| No per-table warnings about downstream effects (D-0501 first part) | KEEP | **NOT SURE** | `D-0501`: "if there is then an aggregation it is normal that the count differs" and "no per-table warnings". Their own recommended dialog (Q28 a) and mine (Q2 B) add a per-result line "the values of other observations change here". Their Q28 (a) says "Reopens: D-0501 in part". A KEEP that "every option of the open questions keeps" (their own definition) is contradicted by their own question. The two readings can be reconciled (a measured difference at the result, no per-table lecture; `D-0501` itself said "show the differences where applied") but that is a choice to confirm with her, not a KEEP. |
+| Count of rows at the plot removed; check where applied (D-0501 second, D-0508) | NOT SURE | NOT SURE | Agree. |
+| "Table changed" and "picture changed" per plot (D-0318) | KEEP | SURVIVES | Needs the run of the audit copy for "picture changed": built (`audit_run.PlotRun.affected`). |
+| Remove from all: off, explicit, list first, data-agnostic words, may untick (D-0415 B, D-0416, D-0499, D-0500, D-0498) | KEEP | SURVIVES | Verified in the demo test: 27 of 28 tables reached; the entity is in none after (the test and E4 ii). Note that Opus's `DIFFERENCES.md` uses a 19-place variant of "remove from all" that D-0416 point 1 does not say (B2.1). |
+| Two lists of keys (D-0313) | KEEP | SURVIVES | Not built (HOME uses join keys only: `session_manager.py:125-135`); independent. |
+| Warning when a value does not match one to one between ticked places (D-0203) | KEEP | NOT SURE | A per-place downstream warning of the kind D-0501 rejects; the row says "between ticked places only" (C14 of their study). The two decisions pull; no later decision says which wins. |
+| The walk: places from the plan, rename followed, red lines YET | KEEP | SURVIVES | The library runs on the demo through `remove_from_all` and the drop check. The row notes `walk()` is called by tests only. Its grouping P1 is a builder's PROVISIONAL choice. |
+| Audit steps: filters, removals by key, column drops (D-0322) | NOT SURE | NOT SURE | Agree. My view: keep the drop only at the table a plot reads (B2.2). |
+| Key column drop refused by place; declared key follows; uncertain drop refused | NOT SURE | NOT SURE | Agree: needed only if drops travel up the lineage. |
+| Reshuffle written as a step (D-0341) | NOT SURE | NOT SURE | Agree (B2.3). |
+| No plot-style change for now (D-0120, D-0145) | KEEP | SURVIVES | Unmounted code (`audit_stack.py`, `home_theater.py:2340` comment) goes with removal. |
+| A table can be a result (D-0485...) | KEEP | SURVIVES | The form is Q2. |
+| Recipe form with derived tables (D-0516...) | NOT SURE | NOT SURE | Agree. |
+| Every join with the metadata in tier 1; the three kinds of table (D-0510, D-0523, D-0513) | KEEP, "Built (ST05)" | NOT SURE for the breadth, SURVIVES for the metadata | ST05 refuses any join in tier 2 or 3 of any table (B2.5), wider than the decision (the metadata join). Her words "other joins could be used after" make the breadth question 27. The match list notes Q27 as "later". It should say the build is wider than D-0510. The demo needs neither. |
+| Opening build, Exploration, "Table to view", filters cleared when the table changes (D-0326 ...) | KEEP | SURVIVES | Code read and used in E1 to E4 (the opening stores the tables `run_audit` reuses). One edge: after `home-filter-follows-table` is merged, "cleared when the table changes" holds and "when the plot changes" does not; the row's words should be updated. |
+| A table no plot reads can be viewed and exported (D-0457) | KEEP | SURVIVES | Export writes `T1_data.tsv` for them (`export_handlers.py:1501`). |
+| The report by groups | NOT SURE | NOT SURE | Agree. |
+| The names pass | KEEP | SURVIVES | Timing after Q2: stated. |
+| BLUEPRINT is an IDE ... never replace by mistake | KEEP | SURVIVES | Decision stands. I did not read the code. |
+| The lineage picker | NOT SURE | NOT SURE | Agree. |
+| Upload of a recipe refused under an existing name... | KEEP | SURVIVES | Not examined beyond the row. |
+| First pass: the app chooses the places from the results | DROP | SURVIVES | Correct. But note Q28 (b) is a softer form (B2.8). |
+
+## C3. Section 2: the builds
+
+| Build | Opus | Mine | Evidence and reason |
+|---|---|---|---|
+| Filters panel (D-0503, D-0504) | KEEP | SURVIVES | Its tests are in the 88 that pass (the between test is among them). |
+| Two sentences of the data preview (D-0488) | KEEP | SURVIVES | Not re-run. |
+| Opening build | KEEP | SURVIVES | Used in E1 to E4. |
+| Export writes every table no plot reads | KEEP | SURVIVES | `export_handlers.py:1501`. |
+| Lineage library | KEEP | SURVIVES | As above. |
+| Drop gate | NOT SURE | NOT SURE | Agree. |
+| `table_compare.py` | KEEP | SURVIVES | Run: `compare(original, audited, [("sample_id",)])` returns `n_rows_changed=41`, one row removed: the measured line exists. |
+| `audit_copy.py` | KEEP | SURVIVES | Run in E1 to E4 (`start_audit`, `add_step`). |
+| `audit_run.py`, `compose_candidate_plan_book` | KEEP | SURVIVES | `run_audit` was run many times in E1 to E4; a base build plus three audit runs took about 6 s on the demo (the first measurement, with `time`). `compose_candidate_plan_book` not run by me. |
+| `remove_from_all.py` library | CHANGE | SURVIVES (CHANGE) | The change is as in C1 row 0.4. |
+| Branch `home-filter-follows-table` | KEEP | SURVIVES | C1 row 0.2. |
+| Branch `remove-from-all-ticked` | CHANGE | SURVIVES (CHANGE) | 125 tests pass; its `_flow` / `unticked_places` sentences are the part two reviews found false. I read the `_flow` code: it decides by the `how` of each join and by the first ingredient only; an inner join on a column that is not the key, and a later row-dropping step, break it (as the evidence file shows on the demo `ST22_Anchor`). |
+
+## C4. The planned slices and the tasks
+
+| Item | Opus | Mine | Reason |
+|---|---|---|---|
+| Slice 0, 1, 11 | KEEP / done | SURVIVES | As above. |
+| Slice 2 (recipe upload code) | NOT SURE | NOT SURE | Not examined. |
+| Slice 3 (one form, HOME's plot and table from the run) | NOT SURE | NOT SURE | Agree, but I add the reason in the evidence: E2. Keeping the T3 filter beside the run would leave two audits that give different numbers. It is needed under every option. The row's dependencies on Q26, Q29, Q17 are right for details only. I would say KEEP for the decision to replace, NOT SURE for the details. |
+| Slice 4 (the dialog), 5 (export of an audit), 6, 7, 8, 9 | NOT SURE | NOT SURE | Agree. Slice 5 must include the audited T1/T2 files (B2.6). |
+| Slice 10 | mixed | SURVIVES in part | As C1 row 0.5. |
+| `AUDIT-VIEW-1`, `AUDIT-REPLACE-1`, `AUDIT-RECIPE-RULE` | KEEP | SURVIVES | E2 is the evidence for the first. |
+| `AUDIT-HISTORY-LOG-1` | CHANGE | SURVIVES | D-0478. |
+| `AUDIT-DIALOG-PREVIEWS`, `AUDIT-WARN`, `AUDIT-ERROR-Q`, `AUDIT-ADVICE` | NOT SURE | NOT SURE | Agree. |
+| `AUDIT-USABILITY-1` | KEEP | SURVIVES | G5. |
+| `AUDIT-PANEL-UNTESTED` | CHANGE | SURVIVES | |
+| `AUDIT-MESSAGES-PLAIN-1` | KEEP | SURVIVES | Not examined. |
+| `EXPORT-MODES`, `EXPORT-RECIPE-REFUSE-1`, `SESSIONS-MANY-DATASETS`, `DATA-IMPORT-OVERWRITE` | KEEP / NOT SURE | SURVIVES / NOT SURE | Not examined. |
+| `BP-COMMENTS-1` | KEEP | SURVIVES | D-0495. Not examined in code. |
+| `ENGINE-T3-READER` | NOT SURE | NOT SURE | Q2. |
+| `RESULT-ID-TWICE-NOT-REFUSED` | KEEP | SURVIVES | C1 row 0.3. |
+| `DEMO-USERS-1`, `DEMO-BRANCH-PLAN-1` | KEEP | SURVIVES | Not examined. |
+
+## C5. What the match list should have judged and did not
+
+1. **The unaudited T1/T2 files of the export** (`export_handlers.py:1409, 1431`): a build that serves G3 badly; no row.
+2. **The join breadth of ST05** against D-0510 (C2).
+3. **The import leg for the audit steps** is always `not_checked` (`bundle_importer.py:186-194`). No row. It is part of G1 reproducible (a bundle that cannot check the audit it carries).
+4. **The deployment with no writable user place** (D-0422 choice 5): a decision not taken that three KEEP rows depend on.
+5. **The built propagation modal** and its `Apply to: This plot only / All plots / All plots except` (`filter_and_audit_handlers.py:1097-1101`): judged in `GOALS_REVIEW.md` ("replace") but not a row.
+6. **D-0203 against D-0501**: two decisions that pull; the list has one KEEP and one NOT SURE and no note that they conflict.
+7. **Screen texts that say "samples" and "for now"** (`home_theater.py:1482`, `filter_and_audit_handlers.py:674-676, 997, 1002-1007`): against D-0512 (data agnostic); in the review text, not in the list.
+8. **`export_include_reproducibility` and the mode-2 fork** as a build to remove: in the review, not a row (only `EXPORT-MODES`).
 
 ---
