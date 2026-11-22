@@ -229,3 +229,27 @@ def test_home_gate_accepts_every_shipped_recipe_as_before():
     """The full catalogues add no error to any shipped recipe (reviewed 2026-11-14: 16 recipes)."""
     bad = {p.name: [str(x) for x in validate_data_analysis_recipe(p)] for p in DATA_ANALYSIS_RECIPES}
     assert {k: v for k, v in bad.items() if v} == {}
+
+
+# --- a plot id in two groups of one recipe (P07): the plain line, not an internal fault ---------------
+
+def _plot_twice(recipe):
+    import copy
+    recipe["analysis_groups"]["h"] = copy.deepcopy(recipe["analysis_groups"]["g"])
+
+
+def test_a_plot_id_in_two_groups_gives_the_plain_p07_line_and_no_internal_fault(tmp_path):
+    problems = _problems(tmp_path, _plot_twice)
+    assert len(problems) == 1, [str(p) for p in problems]
+    text = problems[0].problem
+    assert "[P07]" in text and "'p'" in text and "'g'" in text and "'h'" in text
+    assert "fault of the app" not in text and "fault of the app" not in (problems[0].tip or "")
+    assert "did not cover" not in text
+
+
+def test_the_blueprint_validate_report_shows_the_p07_line(tmp_path):
+    from app.modules.data_analysis_recipe_validator import checker_problems
+    recipe = tiny_recipe()
+    _plot_twice(recipe)
+    path = write_tiny(tmp_path, recipe)
+    assert any("[P07]" in p.problem for p in checker_problems(path))

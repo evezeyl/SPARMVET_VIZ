@@ -142,6 +142,7 @@ analysis_groups:
 
 **Rules:**
 - `plot_id` must be snake_case (ASCII identifier — letters, digits, underscore) and **globally unique across all data analysis recipes** (the app registers `@render.plot` by ID at startup).
+- The same `plot_id` written in two groups of ONE recipe is refused by the recipe check, code P07 (built 2026-11-22; wording PROVISIONAL): one plain line names the id and both groups. Across recipes the id is checked by X5 (`check_recipe_set`).
 - `group_id` (the dict key) is auto-sanitised to a Shiny-safe internal ID via `_safe_id()`. **Spaces, emoji, and punctuation are allowed** — they're stripped from the internal ID but preserved verbatim in the visible label. (Updates ADR-036: previously hardcoded sanitisation; now general regex sanitisation.)
 - Each plot entry written as `!include` points to a file in `plots/` subdirectory.
 - The included plot file holds the whole plot entry (`ui_label`, `target_dataset`, `mapping`, `layers`, ...) and no wrapper key; there is no `spec:` key (D-0237, D-0252; built: `spec` is refused, P01).

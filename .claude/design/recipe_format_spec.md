@@ -721,6 +721,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | P04 | E | `tier3` of a plot entry written wrongly (the same rules as S06); the old container `steps` of a plot entry (removed 2026-11-17) | `tier3: {steps: [...]}`; the rewrite tool |
 | P05 | E | `tier3.steps` is non-empty while the engine does not read it (one constant, switched with the reader; 7.7). **Retired** (built: the engine reads `tier3`, `recipe_check.py:1064`) | |
 | P06 | E | `filters` in a plot entry, once the engine reads `tier3` (R1) | `tier3` |
+| P07 | E | the same plot id written in two groups of one recipe (one line per later entry, naming the id and both groups; built 2026-11-22, `recipe_check.py` `groups`; the wording is PROVISIONAL). Across recipes: X5 | one id per plot |
 | PS01 | - | retired 2026-11-17: an unknown key of the plot entry is P01 | |
 | PS02 | E | `target_dataset` missing or unknown | |
 | PS03 | E | `mapping` or `layers` missing; no geom/stat layer | |

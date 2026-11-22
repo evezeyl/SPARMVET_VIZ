@@ -221,6 +221,7 @@ CASES = [
     ("P04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(tier3=[]), "run"),
     ("P04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(steps={"tier3": {"steps": []}}), "run"),
     ("P06", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(filters=[{"column": "v"}]), "run"),
+    ("P07", "E", lambda r: r["analysis_groups"].update(h=copy.deepcopy(r["analysis_groups"]["g"])), "run"),
     ("ST04", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(tier3={"steps": [{"action": "polars_filter_demo", "columns": ["v"]}]}), "run"),
     ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(family="Ranking"), "run"),
     ("P01", "E", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(labs={}), "run"),
@@ -636,3 +637,45 @@ def test_defaults_layers_valid_block_is_accepted_and_needs_no_geom():
 def test_defaults_layers_that_is_not_a_list_is_reported():
     result = check(_with_defaults_layers({"name": "theme_bw"}), file_stem="r")
     assert [p for p in result.problems if p.path == "plot_defaults.layers"]
+
+
+# --- P07: a plot id written in two groups of one recipe (RESULT-ID-TWICE-NOT-REFUSED, D-0050) ---------
+
+def _second_group(raw, name="h", plot_id="p"):
+    group = copy.deepcopy(raw["analysis_groups"]["g"])
+    group["plots"] = {plot_id: group["plots"].pop("p")} if plot_id != "p" else group["plots"]
+    raw["analysis_groups"][name] = group
+
+
+def test_p07_names_the_id_and_both_groups_in_one_line():
+    found = [p for p in check(mutated(_second_group), file_stem="r").problems if p.code == "P07"]
+    assert len(found) == 1
+    text = found[0].message
+    assert "'p'" in text and "'g'" in text and "'h'" in text
+    assert found[0].path == "analysis_groups.h.plots.p" and found[0].fix
+
+
+def test_p07_three_groups_give_one_line_per_extra_entry_each_naming_the_first_group():
+    def change(raw):
+        _second_group(raw, "h")
+        _second_group(raw, "k")
+    found = [p for p in check(mutated(change), file_stem="r").problems if p.code == "P07"]
+    assert [p.path for p in found] == ["analysis_groups.h.plots.p", "analysis_groups.k.plots.p"]
+    assert all("'g'" in p.message for p in found)
+
+
+def test_p07_does_not_fire_when_the_ids_differ_and_the_recipe_is_unchanged():
+    assert check(mutated(lambda r: _second_group(r, "h", "q")), file_stem="r").problems == []
+    assert check(valid(), file_stem="r").problems == []
+
+
+def test_p07_ids_that_differ_only_by_case_are_different_ids_here_and_p03_refuses_the_capital():
+    codes = check(mutated(lambda r: _second_group(r, "h", "P")), file_stem="r").codes()
+    assert "P07" not in codes and "P03" in codes
+
+
+def test_p07_the_loader_refuses_a_plot_id_twice_in_one_group(tmp_path):
+    from utils.strict_yaml import DuplicateKeyError, load_strict
+    text = "plots:\n  p: {a: 1}\n  p: {a: 2}\n"
+    with pytest.raises(DuplicateKeyError):
+        load_strict(text)
