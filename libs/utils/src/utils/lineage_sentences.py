@@ -13,7 +13,7 @@ Consumed by: libs/utils/src/utils/key_drop.py, libs/utils/src/utils/remove_from_
 If deleted: a red line has no sentence for the user.
 
 # @deps
-# provides: function:join_not_yet_followed_sentence, function:join_phrase
+# provides: function:join_not_yet_followed_sentence, function:join_phrase, function:kinds_named
 # consumes: libs/utils/src/utils/lineage_records.py (Reason), libs/utils/src/utils/step_effects.py (NOT_YET_FOLLOWED_JOINS)
 # consumed_by: libs/utils/src/utils/key_drop.py, libs/utils/src/utils/remove_from_all.py, libs/utils/tests/test_lineage_unfollowed_join.py
 # doc: .claude/knowledge/decision_ledger.md (D-0452, D-0454, D-0460, D-0486)
@@ -26,17 +26,29 @@ from utils.lineage_records import Reason
 
 
 def join_phrase(reason: Reason) -> str:
-    """The join, in words and with its place: "the anti join of step 1 of T1:J, which reads the table 'B'" (a self-join: "the self-join (how: left) of step ..."). PROVISIONAL wording."""
+    """The join, in words and with its place: "the anti join of step 1 of T1:J, which reads the table 'B'". A self-join says what is true for it: the table is not a new one, it is a table the
+    join already holds ("the self-join (how: left) of step 2 of T1:J, a join with the table 'A', which it already holds"). PROVISIONAL wording."""
     kind, step, node, right = reason.get("kind", "?"), reason.get("step", "?"), reason.get("node", "?"), reason.get("right")
-    what = f"the self-join (how: {kind})" if reason.get("self_join") else f"the {kind} join"
+    if reason.get("self_join"):
+        held = f", a join with the table {right!r}, which it already holds" if right else ""
+        return f"the self-join (how: {kind}) of step {step} of {node}{held}"
     reads = f", which reads the table {right!r}" if right else ""
-    return f"{what} of step {step} of {node}{reads}"
+    return f"the {kind} join of step {step} of {node}{reads}"
+
+
+def kinds_named(reason: Reason) -> str:
+    """The kinds the sentence lists: the kinds not yet followed (`step_effects.NOT_YET_FOLLOWED_JOINS`, one list) and the self-join, and the kind at hand when it is none of them (a word the
+    engine does not have), so that what the sentence then names is always in its list."""
+    named = [*fx.NOT_YET_FOLLOWED_JOINS, "self-join"]
+    kind = reason.get("kind")
+    if not reason.get("self_join") and isinstance(kind, str) and kind not in named:
+        named.append(kind)
+    return ", ".join(named[:-1]) + " or " + named[-1]
 
 
 def join_not_yet_followed_sentence(reason: Reason) -> str:
     """The warning for a line that crosses a join the app cannot YET follow: what the app cannot do, which join (kind, step, place, table), that the tables behind it may change in a
     way the app cannot describe, and what to do. The capital YET is decided (D-0454); the rest is PROVISIONAL."""
-    named = ", ".join(fx.NOT_YET_FOLLOWED_JOINS) + " or self-join"
     clause = ": for an anti join, rows may be added instead of removed" if reason.get("kind") == "anti" else ""
-    return (f"The app cannot YET follow this column through this kind of join ({named}). Here it is {join_phrase(reason)}. "
+    return (f"The app cannot YET follow this column through this kind of join ({kinds_named(reason)}). Here it is {join_phrase(reason)}. "
             f"The tables behind it may change in a way the app cannot describe{clause}. Check them before you confirm.")

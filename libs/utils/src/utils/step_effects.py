@@ -28,8 +28,8 @@ The actions that only remove, reorder or pick rows (`join_keys.ROW_STEPS`) need 
 the action says that the columns stay. They are imported, never copied.
 
 A join is read only for `how` = left, inner or semi (`FOLLOWED_JOINS`); a semi join copies no column of the second table (`NO_COPY_JOINS`; D-0486: the owner chose to build it, "if build and
-correctly tested then should not the test detect mistakes"). The kinds anti, right and full are not followed YET (D-0452: "The app cannot YET follow these joins"; `NOT_YET_FOLLOWED_JOINS`), and any other
-kind (cross, an unknown word) is unread too: the walk gives such a line the reason `join_not_yet_followed` and the line cannot be ticked (D-0460: "B; if needed we try to find a solution later";
+correctly tested then should not the test detect mistakes"). The kinds anti, right, full and cross are not followed YET (D-0452: "The app cannot YET follow these joins"; `NOT_YET_FOLLOWED_JOINS`), and any other
+kind (a word the engine does not have) is unread too: the walk gives such a line the reason `join_not_yet_followed` and the line cannot be ticked (D-0460: "B; if needed we try to find a solution later";
 the sentence with YET in capitals, D-0454: `utils.lineage_sentences`). A join of a table with a table it already holds (a self-join, `join_keys.self_join`) is not followed YET either, whatever its
 kind; the walk decides that (it needs the node), not `effect_of`. As-of joins and joins on conditions are other actions: unread, as before.
 
@@ -68,8 +68,9 @@ READINGS: Dict[str, Tuple[str, ...]] = {
 FOLLOWED_JOINS = ("left", "inner", "semi")
 # The kinds whose result holds the first table's columns only: the second table's other columns are not copied and nothing is renamed (proved on the engine in `test_lineage_semi_join.py`).
 NO_COPY_JOINS = ("semi",)
-# The kinds the app cannot YET follow, named to the user (D-0452; D-0454). A kind outside both lists (cross, an unknown word) is not followed either.
-NOT_YET_FOLLOWED_JOINS = ("anti", "right", "full")
+# The kinds the app cannot YET follow, named to the user (D-0452; D-0454): every kind the engine's join action accepts that is not in `FOLLOWED_JOINS` (a test reads the kinds from the action's
+# form and proves that each is in exactly one of the two lists, so the sentence and the behaviour cannot drift apart). A word outside both lists (a kind the engine does not have) is not followed either.
+NOT_YET_FOLLOWED_JOINS = ("anti", "right", "full", "cross")
 
 KEEPS, RENAME, DROP, SELECT, JOIN, WRITES, CAST, GROUP, UNREAD = "keeps", "rename", "drop", "select", "join", "writes", "cast", "group", "unread"
 
@@ -177,8 +178,8 @@ def not_yet_followed(effect: Effect) -> Optional[str]:
 
 def predict(effect: Effect, before: Plan, right: Optional[Plan]) -> Tuple[PredictedColumn, ...]:
     """The columns after a read step, from the columns before (and the right table's, for a join). Polars semantics, stated once:
-    a rename is simultaneous; a select keeps the order written; a left or inner join keeps the table's columns, merges each right key into
-    its left key, and copies the other right columns, with the suffix when the table at this step already has the name (a semi join copies none)."""
+    a rename is simultaneous; a select keeps the order written; a left, inner or semi join keeps the table's columns and merges each right key into
+    its left key; a left or inner join also copies the other right columns, with the suffix when the table at this step already has the name (a semi join copies none)."""
     left = [Source("left", n) for n in before.names]
     if effect.kind == KEEPS:
         return tuple(PredictedColumn(n, (Source("left", n),)) for n in before.names)

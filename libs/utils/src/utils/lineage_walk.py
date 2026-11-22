@@ -49,6 +49,9 @@ PROVISIONAL behaviour (the owner has not decided; each place is marked in the co
   ticked with the note `unread_step_passed`. The rule is the walk's own for every uncertain link (P9: a path is counted, in either direction): seen from a start before the join the places before it stay as
   they are and the places after it are red; seen from a start after it the places before it are red. NOT decided: whether only the places after the join should be red (the owner's question); how a red line is
   shown; the words beyond the capital YET (`utils.lineage_sentences`, PROVISIONAL). A column written under its own name from another column is not told apart from the readable cases (see P3).
+  The KEY columns of such a join (`_join_key_links`, by `on` or by `left_on` and `right_on`) are linked, the first table's and the second table's, by an uncertain link with the same reason: the second table is then a red line
+  in the walk, seen from either side, and a table "remove from all the data" lists (`may_stay`); without the link the second table's key (the same name as the first's) ended at the step and nothing told the user that the
+  sample could stay there (review of 2026-11-22). A join with no readable key (cross) links none; as-of joins and joins on conditions are other actions and are not covered here (they are not read).
 - P13 a source line next to a tier 1 without steps is the same table: it stays grey `no_step_list` and carries `duplicates` (the tier 1 place), so that a caller shows one line.
 - P14 a walk that selects no place says so (`Walk.nothing`); which levels the column exists at is `Walk.held_at_levels`.
 
@@ -250,6 +253,7 @@ class LineageIndex:
             reason = Reason(JOIN_NOT_YET_FOLLOWED, (("node", nid), ("step", k), ("action", action), ("kind", not_followed[0]), ("how", not_followed[0]),
                                                     ("right", step.get("right_ingredient") if isinstance(step, dict) else None), ("self_join", not_followed[1])))
             self._plan_links(nid, k, ref, before, after, right_node, right, reason, passes_certain=False)
+            self._join_key_links(nid, k, ref, step, not_followed[0], before, after, right_node, right, reason)
             return
         reason = Reason(STEP_NOT_READ, (("node", nid), ("step", k), ("action", action), ("why", effect.why)))
         self._plan_links(nid, k, ref, before, after, right_node, right, reason, passes_certain=True)
@@ -266,6 +270,30 @@ class LineageIndex:
         if kind is None and self_join is None:
             return None
         return (kind if kind is not None else str(self_join["how"]), self_join is not None)
+
+    def _join_key_links(self, nid: str, k: int, ref: StepRef, step: Any, how: str, before: Plan, after: Plan, right_node: Optional[str],
+                        right: Optional[PlanOrFailure], reason: Reason) -> None:
+        """The two key columns of a join the app cannot YET follow (D-0460, D-0452): the first table's key and the second table's key, by `on` or by `left_on` and `right_on`, are the
+        column the user means in both tables, and the app cannot say what the join does to the rows behind it. They are linked by an UNCERTAIN link that carries the reason of the join, so
+        that the other table is a red line in the walk (from either side) and a table in "remove from all the data" that the user is told about, never a table that is silently absent.
+        Without it the second table's key, which has the name the first table already has, ended at the step and nothing linked the two tables. The link goes to the key column
+        after the step (the first table's name when it survives, else the second table's); a key that no key group names, or a join with no readable keys (cross), gets none."""
+        left_keys, right_keys = join_keys.key_columns(step)
+        if right_node is None or not isinstance(right, Plan) or not left_keys or len(left_keys) != len(right_keys):
+            return
+        end = self.end(right_node)
+        for lname, rname in zip(left_keys, right_keys):
+            if not before.has(lname) or not right.has(rname):
+                continue
+            kept = lname if after.has(lname) else rname if after.has(rname) else None
+            if kept is None:
+                continue
+            dst = (nid, k, kept)
+            for src, side in (((nid, k - 1, lname), "base"), ((end[0], end[1], rname), "right")):
+                if any(link.dst == dst for link in self._succ.get(src, ())):
+                    continue
+                self._link(_Link(src, dst, False, UNKNOWN, reason, ref, hop=True, join_how=how, join_side=side))
+                self._dead = [d for d in self._dead if not (d.occ == src and d.in_node == nid and d.ref == ref and not d.certain)]
 
     def _record_key_uses(self, nid: str, k: int, ref: StepRef, step: Any) -> None:
         """The key columns a join step reads, whether or not the step can be followed: the left names at the table before the step, the right names at the end of the
