@@ -1,12 +1,13 @@
 # @deps
 # provides: safe_input, blueprint_is_open, DEFAULT_HOME_STATE
-# consumes: —
-# consumed_by: app.src.server
+# consumes: app/modules/frame_widths.py (HOME, BLUEPRINT: the nav values)
+# consumed_by: app.src.server, app/modules/wrangle_studio.py (blueprint_is_open), app/handlers/blueprint_handlers.py (blueprint_is_open)
 # doc: ADR-045 (Two-Category Law §5 — shared utility functions)
 # @end_deps
 """Pure helper functions and constants shared across server.py and all handler modules.
 
-These are dependency-free utilities that carry no Shiny state and no reactive logic.
+These are plain utilities that carry no Shiny state and no reactive logic; the only import is
+`frame_widths` (the nav values), inside `blueprint_is_open`.
 They live here rather than in server.py to keep that file within the 250-line cap.
 """
 

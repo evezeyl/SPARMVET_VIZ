@@ -1,8 +1,8 @@
 """
 @deps
-provides: function:css_width, function:data_attributes, function:right_panel_open, constant:LEFT, constant:RIGHT, constant:MAIN_MIN_SHARE
+provides: function:css_width, function:data_attributes, function:right_panel_open, constant:LEFT, constant:RIGHT, constant:MAIN_MIN_SHARE, constant:HOME, constant:BLUEPRINT
 consumes: none
-consumed_by: app/src/ui.py, app/handlers/home_theater.py, app/tests/test_frame_widths.py, app/tests/test_panel_widths_browser.py
+consumed_by: app/src/ui.py, app/handlers/home_theater.py, app/modules/orchestrator_helpers.py, app/tests/test_frame_widths.py, app/tests/test_panel_widths_browser.py
 doc: .claude/rules/rules_css_style_spec.md#12, .claude/rules/ui_implementation_contract.md#2
 @end_deps
 
