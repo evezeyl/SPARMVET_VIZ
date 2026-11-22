@@ -182,7 +182,6 @@ def test_a_table_that_loses_the_key_in_its_tier_1_is_not_reached_and_the_reason_
                         "G": fx.schema(["sample_id", "n"], [fx.group_by(["n"], c="pl.col('sample_id').count()")], keys=["sample_id"])}, {}, {"P": fx.plot("A"), "Pg": fx.plot("G")})
     option = describe(recipe, tables)
     assert places_of(option) == ["T1:A"] and not_reached(option) == {"G": rfa.KEY_GONE_AT_TIER1}
-    assert [m.table for m in option.may_stay] == ["G"] and option.may_stay[0].written is False, "the sample may stay in G: said in the explicit list (F1)"
 
 
 def test_a_key_that_a_rename_changes_is_followed_and_each_place_has_its_own_name():
@@ -260,7 +259,7 @@ def test_a_table_that_recomputes_the_key_carries_the_note_so_the_user_knows_the_
     assert [n.code for n in {p.table: p for p in grouped.places}["A"].notes] == ["one_row_per_group_after_this_step"]
 
 
-# ---- F1 (review of 2026-11-21): a table where the values given may stay is in ONE explicit list, before and after `apply` ----
+# ---- D-0501: the library reports only what is true by construction (places reached, written, not written); no sentence about a table where no step is written ----
 
 
 def _copied_key():
@@ -276,95 +275,45 @@ def _lowercased_key():
     return fx.recipe({"A": fx.schema(["sample_id", "v"], [fx.with_columns(sample_id="pl.col('sample_id').str.to_lowercase()")], keys=["sample_id"])}, {}, {"P": fx.plot("A")}), tables
 
 
-def test_a_copied_key_is_in_the_explicit_list_before_and_in_what_apply_returns_and_the_sample_really_stays():
+def test_the_library_has_no_may_stay_list_no_sentence_about_an_unwritten_table_and_no_unproved_kind():
+    """D-0501 (no warning about the natural consequences downstream) and D-0531 (the app cannot decide the scope): these names must not exist."""
+    for name in ("MayStay", "may_stay_sentence", "not_reached_sentence", "VALUES_UNPROVED", "UNPROVING_NOTES", "NOT_WRITTEN_REASONS", "UNPROVED_KINDS", "_may_stay"):
+        assert not hasattr(rfa, name), name
     recipe, tables = _copied_key()
     option = describe(recipe, tables)
-    assert places_of(option) == ["T1:E"]
-    assert [(m.table, m.place, m.code, m.written) for m in option.may_stay] == [("A", "T1:A", rfa.KEY_GONE_AT_TIER1, False)], "named before apply"
-    assert [n.table for n in option.unsure] == ["A"], "a doubt, so `unsure` holds it too"
+    assert not hasattr(option, "may_stay")
+    applied = rfa.apply(start_audit(recipe, AUD), option, ["S2"], "r", plans=oracle.replay(recipe, tables).plans)
+    assert not hasattr(applied, "may_differ") and set(applied.__dataclass_fields__) == {"step_ids", "written", "not_written", "ticked_given"}
+
+
+def test_a_copied_key_table_is_data_in_not_reached_and_no_step_is_written_there():
+    recipe, tables = _copied_key()
+    option = describe(recipe, tables)
+    assert places_of(option) == ["T1:E"] and not_reached(option) == {"A": rfa.KEY_GONE_AT_TIER1}
     audit = start_audit(recipe, AUD)
     applied = rfa.apply(audit, option, ["S2"], "r", plans=oracle.replay(recipe, tables).plans)
-    assert [(m.table, m.written) for m in applied.not_written] == [("A", False)] and applied.may_differ == (), "named in what apply returns"
+    assert applied.written == ("T1:E",) and applied.not_written == ()
     after = oracle.replay(folded(audit.recipe), tables)
-    assert "S2" in after.end("T1:A")["sid"].to_list() and "S2" not in after.end("T1:E")["sample_id"].to_list(), "the table in the list is really the one that kept the sample"
+    assert "S2" not in after.end("T1:E")["sample_id"].to_list()
 
 
-def test_a_recomputed_key_is_in_the_explicit_list_as_written_but_unproved_and_the_sample_really_stays():
+def test_a_recomputed_key_table_is_a_written_place_with_the_note_as_data_and_no_sentence():
     recipe, tables = _lowercased_key()
     option = describe(recipe, tables)
-    assert places_of(option) == ["T1:A"], "the step is written there"
-    assert [(m.table, m.code, m.written) for m in option.may_stay] == [("A", rfa.VALUES_UNPROVED, True)]
-    assert [n.code for n in option.may_stay[0].notes] == ["recomputed_here"] and option.unsure == ()
+    assert places_of(option) == ["T1:A"] and [n.code for n in option.places[0].notes] == ["recomputed_here"] and option.not_reached == ()
     audit = start_audit(recipe, AUD)
     applied = rfa.apply(audit, option, ["S2"], "r", plans=oracle.replay(recipe, tables).plans)
-    assert applied.not_written == () and [(m.table, m.written) for m in applied.may_differ] == [("A", True)] and len(applied.step_ids) == 1
-    assert oracle.replay(folded(audit.recipe), tables).end("T1:A")["sample_id"].to_list() == ["s1", "s2"], "nothing was removed: the list told the truth"
+    assert applied.written == ("T1:A",) and len(applied.step_ids) == 1
 
 
-@pytest.mark.parametrize("step, note", [
-    (fx.with_columns(sample_id="pl.col('sample_id').str.to_uppercase()"), "recomputed_here"),
-    (fx.group_by(["v"], sample_id="pl.col('sample_id').first()"), "aggregated_here"),
-])
-def test_every_note_that_says_the_values_there_may_differ_puts_the_table_in_the_list(step, note):
-    option = _with_one_step_in_a([step])
-    assert [(m.table, m.written) for m in option.may_stay] == [("A", True)] and note in [n.code for n in option.may_stay[0].notes]
-
-
-def test_a_table_the_app_could_not_follow_or_plan_is_in_the_list_as_not_written():
+def test_a_table_the_app_could_not_follow_or_plan_is_in_not_reached_with_its_code():
     for steps, code in (([fx.str_split(["sample_id"], "-")], rfa.UNCERTAIN_LINK), ([fx.unpivot(["sample_id"], ["v"])], rfa.NOT_FOLLOWED)):
         option = _with_one_step_in_a(steps)
-        assert [(m.table, m.code, m.written) for m in option.may_stay] == [("A", code, False)], code
-
-
-def test_the_list_is_empty_when_every_value_is_proved_and_it_is_in_graph_order_when_not():
-    recipe, tables = fx.tiers(u_declares_key=True)
-    option = describe(recipe, tables)
-    assert option.may_stay == () and rfa.apply(start_audit(recipe, AUD), option, ["S2"], "r", plans=oracle.replay(recipe, tables).plans).may_differ == ()
-    plain = describe(*fx.chain())
-    assert plain.may_stay == ()
-    tables = {"A": fx.table(sample_id=["S1"], v=[1]), "B": fx.table(sample_id=["S1"], w=[1]), "C": fx.table(sample_id=["S1"], x=[1])}
-    recipe = fx.recipe({"A": fx.schema(["sample_id", "v"], [fx.with_columns(sample_id="pl.col('sample_id').str.to_lowercase()")], keys=["sample_id"]), "B": fx.schema(["sample_id", "w"], keys=["sample_id"]),
-                        "C": fx.schema(["sample_id", "x"], [fx.with_columns(sample_id="pl.col('sample_id').str.to_lowercase()")], keys=["sample_id"])}, {}, {"P": fx.plot("A")})
-    assert [m.table for m in describe(recipe, tables).may_stay] == ["A", "C"]
-
-
-NOT_WRITTEN_TEXT = {
-    rfa.KEY_GONE_AT_TIER1: "In the table 'T' nothing is removed: the key column is no longer in it at the end of its first step list (it was copied under another name, dropped or grouped away). The selection may stay there.",
-    rfa.PLAN_FAILED: "In the table 'T' nothing is removed: the engine could not work out its columns. The selection may stay there.",
-    rfa.NOT_FOLLOWED: "In the table 'T' nothing is removed: a step the app cannot read comes before the end of its first step list, and the key is not found after it. The selection may stay there.",
-    rfa.UNCERTAIN_LINK: "In the table 'T' nothing is removed: it has a column that may be the key, but the app cannot prove it. The selection may stay there.",
-    rfa.SEVERAL_COLUMNS: "In the table 'T' nothing is removed: the key is in more than one of its columns. The selection may stay there.",
-}
-
-
-@pytest.mark.parametrize("code", rfa.UNSURE_CODES)
-def test_the_sentence_of_a_table_where_nothing_is_written_is_the_expected_full_text(code):
-    assert rfa.may_stay_sentence(rfa.MayStay("T", "T1:T", code, False)) == NOT_WRITTEN_TEXT[code]
-
-
-@pytest.mark.parametrize("notes, kinds", [
-    (["recomputed_here"], "recomputed"), (["aggregated_here"], "aggregated"), (["unread_step_passed"], "passed through a step the app cannot read"),
-    (["unread_step_passed", "recomputed_here", "unread_step_passed"], "passed through a step the app cannot read and recomputed"),
-])
-def test_the_sentence_of_a_table_where_a_step_is_written_but_unproved_is_the_expected_full_text(notes, kinds):
-    item = rfa.MayStay("T", "T1:T", rfa.VALUES_UNPROVED, True, None, tuple(rfa.Note(code) for code in notes))
-    assert rfa.may_stay_sentence(item) == (f"In the table 'T' a removal step is written, but the app cannot prove that the values there match your selection: "
-                                           f"the key is {kinds} before that step. The selection may stay there.")
-
-
-def test_every_sentence_names_the_table_first_the_two_kinds_differ_and_the_real_items_have_one():
-    texts = {code: rfa.may_stay_sentence(rfa.MayStay("A", "T1:A", code, False)) for code in rfa.UNSURE_CODES}
-    unproved = rfa.may_stay_sentence(rfa.MayStay("A", "T1:A", rfa.VALUES_UNPROVED, True, None, (rfa.Note("recomputed_here"),)))
-    assert all(t.startswith("In the table 'A' nothing is removed: ") for t in texts.values()) and unproved.startswith("In the table 'A' a removal step is written, but")
-    assert len(set(texts.values())) == len(rfa.UNSURE_CODES), "one text per code"
-    for build in (_copied_key, _lowercased_key):
-        recipe, tables = build()
-        item = describe(recipe, tables).may_stay[0]
-        assert rfa.may_stay_sentence(item).startswith(f"In the table {item.table!r} ") and "None" not in rfa.may_stay_sentence(item)
+        assert not_reached(option) == {"A": code}, code
 
 
 @pytest.mark.parametrize("reason, text", [
-    (rfa.Reason(rfa.NO_ENTITY_KEY_DECLARED), "This recipe does not say which column is the entity key (the id of a sample), so removing from all the data is not offered. Declare the key in the recipe (is_entity_key)."),
+    (rfa.Reason(rfa.NO_ENTITY_KEY_DECLARED), "This recipe does not say which column is the entity key (the id of the thing each row describes), so removing from all the data is not offered. Declare the key in the recipe (is_entity_key)."),
     (rfa.Reason(rfa.NOT_THE_ENTITY_KEY, (("column", "x"), ("declared", ("sample_id",)))),
      "The column 'x' is not the entity key of this recipe (the entity key is: sample_id), so removing from all the data is not offered for it. Use a filter on this column instead."),
     (rfa.Reason(rfa.RECIPE_CANNOT_BE_DRAWN, (("sentence", "a join has no table."),)), "The recipe cannot be read as a whole, so removing from all the data is not offered: a join has no table."),
