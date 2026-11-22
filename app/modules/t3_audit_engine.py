@@ -71,7 +71,9 @@ def viewed_table(data_view: str, target_dataset, plot_id, plot_has_steps: bool) 
 
     "SRC": None (a source table is named by the `source_table` of the key, whatever plot is open). "T1" and "T2": the plot's target table
     (T2 equals T1 when the target has no tier-2 steps, but the data choice stays a part of the key, so a change between them still clears,
-    D-0311). "T3": the target table, plus the plot's own id only when the recipe writes tier-3 steps for it: such a plot reads another table than
+    D-0311). PROVISIONAL (the builder's choice, not a decision of the owner): T1 and T2 of a table without tier-2 steps are the same
+    table, yet the filters are cleared on a change between them, because D-0311 says "when the viewed tier changes". Alternative: keep them, by a
+    literal reading of D-0506 (the filter belongs to the table). "T3": the target table, plus the plot's own id only when the recipe writes tier-3 steps for it: such a plot reads another table than
     its neighbours on the same target, a plot without them reads the table as it is, so two such plots share the table.
     """
     if data_view == "SRC":
