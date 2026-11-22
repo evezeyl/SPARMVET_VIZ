@@ -34,7 +34,7 @@ from __future__ import annotations
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, constant:LEGACY_RECORD_NOTICE
 # consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
-# consumes: app/modules/frame_widths.py (right_panel_open: the right panel follows the mode, D-0375, D-0385)
+# consumes: app/modules/frame_widths.py (right_panel_open: the right panel follows the mode, D-0375, D-0385; HOME, BLUEPRINT: the nav values)
 # consumes: app/handlers/opening_handlers.py (define_server: the opening of the recipe; opening_waits), app/modules/opening_build.py (opening_signature, plot_render_recipe: the recipe handed to the plot engine, D-0237, D-0239), libs/utils/src/utils/engines.py (plot_engine_slot, through it)
 # consumed_by: app/src/server.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-043, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-047, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-073, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/knowledge/architecture_decisions.md#ADR-094, .claude/knowledge/architecture_decisions.md#ADR-097, .claude/knowledge/architecture_decisions.md#ADR-099, .claude/rules/ui_implementation_contract.md#4, .claude/rules/ui_implementation_contract.md#5
@@ -1047,7 +1047,7 @@ def define_server(input, output, session, *,
         p = current_app_features.get()
 
         # 1. Module Routing (ADR-031 Compliance)
-        if active_sidebar == "Wrangle Studio":
+        if active_sidebar == frame_widths.BLUEPRINT:
             return ui.div(wrangle_studio.render_ui(), class_="theater-container-main")
         if active_sidebar == "Test Lab":
             if dev_studio is None:
@@ -1864,7 +1864,7 @@ def define_server(input, output, session, *,
         # — flags like gallery_enabled are documented as INDEPENDENT and can be
         # flipped per app features file in config/app_features/ without touching code here.
         if bootloader.is_enabled("blueprint_enabled"):
-            nav_items.append(ui.nav_panel("Blueprint Architect", value="Wrangle Studio"))
+            nav_items.append(ui.nav_panel("Blueprint Architect", value=frame_widths.BLUEPRINT))
 
         if bootloader.is_enabled("test_lab_enabled"):
             nav_items.append(ui.nav_panel("Test Lab", value="Test Lab"))
@@ -1924,7 +1924,7 @@ def define_server(input, output, session, *,
         ws = safe_input(input, "sidebar_nav", "Home")
         _ws_file_map = {
             "Home": "home.md",
-            "Wrangle Studio": "blueprint.md",
+            frame_widths.BLUEPRINT: "blueprint.md",
             "Gallery": "gallery.md",
             "Test Lab": "test_lab.md",
         }
@@ -1960,7 +1960,7 @@ def define_server(input, output, session, *,
         # Blueprint's left sidebar is now built via _build_left_sidebar("blueprint", ...)
         # further down (issue #42, "blueprint_main" freestanding panel type, content
         # moved to WrangleStudio.build_sidebar_ui()) — see the
-        # `if active_sidebar == "Wrangle Studio":` branch below the registry helper.
+        # `if active_sidebar == frame_widths.BLUEPRINT:` branch below the registry helper.
 
         # Standard Operation Sidebar (Home — ADR-043 / ADR-073)
         # Build data analysis recipe state needed by some panel renderers.
@@ -2163,7 +2163,7 @@ def define_server(input, output, session, *,
         if active_sidebar == "Gallery":
             return _build_left_sidebar("gallery", open_panels=[])
 
-        if active_sidebar == "Wrangle Studio":
+        if active_sidebar == frame_widths.BLUEPRINT:
             return _build_left_sidebar("blueprint", open_panels=[])
 
         _has_data_analysis_recipe = bootloader.get_data_analysis_recipe_selector().get("visible", True)
@@ -2372,7 +2372,7 @@ def define_server(input, output, session, *,
             return parts
 
         # --- Blueprint Architect (Wrangle Studio) ---
-        if active_sidebar == "Wrangle Studio":
+        if active_sidebar == frame_widths.BLUEPRINT:
             return ui.div(*_build_right_sidebar("blueprint"),
                            class_="sidebar-content p-0 d-flex flex-column h-100")
 

@@ -118,8 +118,8 @@
 
 ## `app/handlers/export_handlers.py`
 - **Role:** `ref`
-- **provides:** `constant:EXPORT_READY_TEXTS`, `constant:EXPORT_PANEL_FIELDS`, `constant:EXPORT_WATCHED_FIELDS`, `function:define_export_server`, `output:system_tools_ui`, `output:export_bundle_download`, `output:import_bundle_report`, `function:_build_methods_section`
-- **consumes:** `app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen)`, `app/modules/export_fields_store.py (D-0288`, `D-0291`, `D-0296: the Export fields remembered per session`, `in memory only; defaults D-0294)`, `app/modules/error_notice.py (notice — VERIF-FIX-2)`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1)`, `app/modules/cache_keys.py (canonical_hash`, `engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table`, `the same function the orchestrator uses`, `D-0240; tier2_steps`, `tier3_steps: which tables and plots have steps; DataAnalysisRecipeKeys.plot_key_of: the key of the table a plot reads)`, `app/modules/bundle_importer.py (import_bundle`, `BundleImportError — REPRO-IMPORT-1)`, `app/modules/plot_seeds.py (SEED-HOLDS-1)`, `app/modules/plot_issue_reporter.py (plot_warning_text — D-0269)`, `libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269)`, `polars`, `shiny`, `libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library`, `D-0237)`, `app/modules/engine_record.py (engine_record`, `failed_plot_record: the `engines` part of effective_run.yaml`, `D-0248)`
+- **provides:** `constant:EXPORT_READY_TEXTS`, `constant:EXPORT_PANEL_FIELDS`, `constant:EXPORT_WATCHED_FIELDS`, `function:define_export_server`, `function:tables_no_plot_reads`, `output:system_tools_ui`, `output:export_bundle_download`, `output:import_bundle_report`, `function:_build_methods_section`
+- **consumes:** `app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen)`, `app/modules/export_fields_store.py (D-0288`, `D-0291`, `D-0296: the Export fields remembered per session`, `in memory only; defaults D-0294)`, `app/modules/error_notice.py (notice — VERIF-FIX-2)`, `app/modules/session_manager.py`, `libs/viz_factory/src/viz_factory/viz_factory.py`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1)`, `libs/utils/src/utils/recipe_tiers.py (plot_targets`, `schema_bodies: the tables no plot reads`, `D-0457)`, `app/modules/cache_keys.py (canonical_hash`, `engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table`, `the same function the orchestrator uses`, `D-0240; tier2_steps`, `tier3_steps: which tables and plots have steps; DataAnalysisRecipeKeys.plot_key_of: the key of the table a plot reads)`, `app/modules/bundle_importer.py (import_bundle`, `BundleImportError — REPRO-IMPORT-1)`, `app/modules/plot_seeds.py (SEED-HOLDS-1)`, `app/modules/plot_issue_reporter.py (plot_warning_text — D-0269)`, `libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269)`, `polars`, `shiny`, `libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library`, `D-0237)`, `app/modules/engine_record.py (engine_record`, `failed_plot_record: the `engines` part of effective_run.yaml`, `D-0248)`
 - **consumed_by:** `app/handlers/home_theater.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-094 (plot-render error stub now includes the library's fix text)`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/design/export_specification.md`, `.claude/design/reproducible_export_design.md`
 
@@ -528,6 +528,11 @@
 - **Role:** `info`
 - **consumes:** `app/handlers/export_handlers.py (plot_report_name`, `plot_report_lines`, `_build_methods_section)`, `app/modules/cache_keys.py (load_data_analysis_recipe)`, `app/tests/data/report_names_before_engine_keys.yaml`
 
+## `app/tests/test_export_unread_tables.py`
+- **Role:** `info`
+- **consumes:** `app/handlers/export_handlers.py (export_bundle_download`, `tables_no_plot_reads)`, `app/tests/test_export_download_path.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md#72`
+
 ## `app/tests/test_filter_value_kept.py`
 - **Role:** `info`
 - **consumes:** `app/modules/t3_audit_engine.py (value_widget_for`, `ops_for_column`, `value_box_kind)`, `app/handlers/filter_and_audit_handlers.py (filter_value_ui)`, `app/tests/test_shiny_plot_errors.py (staged_app)`, `app/tests/browser_view.py`
@@ -548,6 +553,12 @@
 ## `app/tests/test_home_reads_the_plot_entry.py`
 - **Role:** `info`
 - **consumes:** `app/handlers/home_theater.py (group_tab_label`, `plot_tab_label`, `plot_list_label`, `_collect_all_group_plot_ids)`, `app/handlers/audit_stack.py (plot_target_dataset)`, `app/modules/session_manager.py (extract_primary_keys)`
+
+## `app/tests/test_migrate_display_names.py`
+- **Role:** `info`
+- **provides:** `-`
+- **consumes:** `assets/scripts/migrate_display_names.py (main`, `build_plan`, `RULES`, `OPEN_CASES)`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0407 to D-0412`, `D-0459)`, `.claude/tasks/tasks.md (NAMES-UI-LABEL-EVERYWHERE)`
 
 ## `app/tests/test_panel_widths_browser.py`
 - **Role:** `info`
@@ -718,6 +729,13 @@
 - **consumes:** `nothing (the values are invented; plain random.Random(seed))`
 - **consumed_by:** `app/tests/test_left_join_lesson.py`
 - **doc:** `.claude/rules/rules_asset_scripts.md`
+
+## `assets/scripts/migrate_display_names.py`
+- **Role:** `info`
+- **provides:** `script:migrate_display_names`
+- **consumes:** `-`
+- **consumed_by:** `app/tests/test_migrate_display_names.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0407 to D-0412`, `D-0459`, `D-0236`, `D-0468 to D-0475`, `D-0479 to D-0484)`, `.claude/tasks/tasks.md (NAMES-UI-LABEL-EVERYWHERE)`, `.claude/rules/rules_asset_scripts.md`
 
 ## `assets/scripts/migrate_recipe_engine_keys.py`
 - **Role:** `info`

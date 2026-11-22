@@ -162,6 +162,10 @@ def followed() -> List[Tuple[str, Recipe, Tables]]:
                                          "B": schema(["country", "lab2"])},
                                         {"J": join(["A", "B"], [join_step("B", on="country")])}, {"P": plot("J"), "Pa": plot("A")}),
                 {"A": table(sample_id=ids, country=["NO", "SE", "NO"], lab=["X", "Y", "X"]), "B": table(country=["NO", "SE"], lab2=["p", "q"])}))
+    out.append(("semi_join_other_key_and_namesake",
+                recipe({"A": schema(["sample_id", "val", "lab"], keys=["sample_id"]), "B": schema(["isolate", "val", "lab", "note"])},
+                       {"J": join(["A", "B"], [join_step("B", on=("sample_id", "isolate"), how="semi")], [keep("lab", "ne", "Q")])}, {"P": plot("J"), "Pb": plot("B")}),
+                {"A": table(sample_id=ids, val=["a1", "a2", "a3"], lab=["L1", "L2", "L3"]), "B": table(isolate=["S1", "S2", "S9"], val=["b1", "b2", "b3"], lab=["M1", "M2", "M3"], note=["n1", "n2", "n3"])}))
     out.append(("rename_in_tier1_cast_in_tier2", recipe({"A": schema(["sample_id", "year"], [rename(year="yr")], [cast(["yr"], "Categorical"), rename(yr="year")], keys=["sample_id"])},
                                                         {}, {"P": plot("A")}), {"A": table(sample_id=ids, year=["2022", "2023", "2024"])}))
     return out

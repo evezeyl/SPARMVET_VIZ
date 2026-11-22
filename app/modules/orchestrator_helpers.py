@@ -1,12 +1,13 @@
 # @deps
-# provides: safe_input, DEFAULT_HOME_STATE
-# consumes: —
-# consumed_by: app.src.server
+# provides: safe_input, blueprint_is_open, DEFAULT_HOME_STATE
+# consumes: app/modules/frame_widths.py (HOME, BLUEPRINT: the nav values)
+# consumed_by: app.src.server, app/modules/wrangle_studio.py (blueprint_is_open), app/handlers/blueprint_handlers.py (blueprint_is_open)
 # doc: ADR-045 (Two-Category Law §5 — shared utility functions)
 # @end_deps
 """Pure helper functions and constants shared across server.py and all handler modules.
 
-These are dependency-free utilities that carry no Shiny state and no reactive logic.
+These are plain utilities that carry no Shiny state and no reactive logic; the only import is
+`frame_widths` (the nav values), inside `blueprint_is_open`.
 They live here rather than in server.py to keep that file within the 250-line cap.
 """
 
@@ -18,6 +19,18 @@ def safe_input(input_obj, key, default):
         return val if val is not None else default
     except Exception:
         return default
+
+
+def blueprint_is_open(input_obj, read=safe_input) -> bool:
+    """True only while BLUEPRINT is the open user space.
+
+    Reads the nav input, so a reactive function that calls it is invalidated when the user space
+    changes and computes again when BLUEPRINT is opened. `read` is the handler's own safe_input. A BLUEPRINT output that reads HOME state
+    (the active recipe, its tables) calls this first: hidden, it must not compute on another recipe's
+    table (its stale error would make the browser drop HOME's whole update; ADR-094, ADR-104).
+    """
+    from app.modules import frame_widths
+    return read(input_obj, "sidebar_nav", frame_widths.HOME) == frame_widths.BLUEPRINT
 
 
 # Default home module state — see ui_implementation_contract.md §13.

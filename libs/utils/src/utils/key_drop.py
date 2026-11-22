@@ -15,7 +15,7 @@ step never changes which join reads which column; a plan composed with audit ste
 (`declared_plans.declared_plan_book`: names only): then a place behind a step the walk does not read (an unpivot, a fill of missing values, an explode: five places of the shipped
 recipes, the review of 2026-11-20, finding F2) cannot be followed.
 
-A drop the walk cannot follow to the end (`DropFacts.uncertain`: a step it does not read, a plan failure, a join it reaches only by an uncertain link) is NOT written: the line is red and
+A drop the walk cannot follow to the end (`DropFacts.uncertain`: a step it does not read, a plan failure, a join it reaches only by an uncertain link, a join the app cannot YET follow: anti, right, full, a self-join; D-0452) is NOT written: the line is red and
 cannot be ticked, and every path that shares this gate refuses it with ONE plain sentence (D-0460: "B of needed we try to.fimd a.solutiom later"; it replaces D-0449, which allowed
 such a drop with a warning, and the review of 2026-11-21 shows why that was not kept: the owner wants no step written at a place the app cannot follow, D-0450: "do not get wrong
 results because we did not select the correct scope"). The user chooses another place; a place becomes tickable when its step kind is followed. The sentence says which column, at
@@ -34,9 +34,9 @@ If deleted: no caller can refuse the drop of a key column by place.
 
 # @deps
 # provides: function:DropGate.ways_out, function:key_drop_problem, function:drop_facts, function:key_drop_sentence, function:key_drop_unfollowed_sentence, function:place_of_steps_path, class:DropGate
-# consumes: libs/utils/src/utils/lineage_walk.py (LineageIndex.drop_facts), libs/utils/src/utils/declared_plans.py, libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/recipe_tiers.py (without_audit_steps)
+# consumes: libs/utils/src/utils/lineage_walk.py (LineageIndex.drop_facts), libs/utils/src/utils/lineage_sentences.py (join_phrase), libs/utils/src/utils/declared_plans.py, libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/recipe_tiers.py (without_audit_steps)
 # consumed_by: libs/utils/src/utils/audit_copy.py, libs/utils/src/utils/recipe_check.py, app/modules/session_manager.py, app/handlers/filter_and_audit_handlers.py, libs/utils/tests/test_key_drop.py
-# doc: .claude/knowledge/decision_ledger.md (D-0358, D-0297, D-0322, D-0448, D-0460, D-0454, D-0450), .claude/design/home_audit_steps.md
+# doc: .claude/knowledge/decision_ledger.md (D-0358, D-0297, D-0322, D-0448, D-0460, D-0454, D-0450, D-0452), .claude/design/home_audit_steps.md
 # @end_deps
 """
 from __future__ import annotations
@@ -46,7 +46,8 @@ from typing import Any, List, Optional, Sequence, Tuple
 from utils import recipe_tiers
 from utils.declared_plans import declared_plan_book
 from utils.lineage_records import (
-    CLASH_NO_LONGER, Consequence, DropFacts, KeyNeed, PLAN_FAILED, PLOT_USES_COLUMN, STEP_NOT_READ, STEP_NAMES_COLUMN)
+    CLASH_NO_LONGER, Consequence, DropFacts, JOIN_NOT_YET_FOLLOWED, KeyNeed, PLAN_FAILED, PLOT_USES_COLUMN, STEP_NOT_READ, STEP_NAMES_COLUMN)
+from utils.lineage_sentences import join_phrase
 from utils.lineage_walk import LineageIndex
 from utils.plan_book import PlanBook
 from utils.recipe_graph import RecipeGraph, RecipeGraphError, build_graph
@@ -154,6 +155,8 @@ def _why_not_followed(facts: DropFacts) -> str:
                 said = said.split(marker, 1)[0]
             said = " ".join(said.split()).rstrip(".")
             parts.append(f"the app could not work out the columns of {reason.get('node', facts.place)}" + (f": {said}" if said else ""))
+        elif reason.code == JOIN_NOT_YET_FOLLOWED:                      # the outer sentence already says the app cannot YET follow it (D-0454): here only which join
+            parts.append(f"it goes through {join_phrase(reason)}, a join the app does not follow")
         elif reason.code == STEP_NOT_READ:
             parts.append(f"it reaches step {reason.get('step', '?')} of {reason.get('node', '?')} ({reason.get('action', 'an unknown action')}), a step the app cannot read")
         else:

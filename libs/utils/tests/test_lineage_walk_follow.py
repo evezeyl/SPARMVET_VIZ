@@ -16,7 +16,7 @@ from lineage_support import TIERS, places, run, setup, ticked
 
 from utils.lineage_records import (
     NO_PLACE_AT_THE_LEVELS, NO_STEP_LIST, NOTE_AGGREGATED, NOTE_ANOTHER_TYPE, NOTE_ONE_ROW_PER_GROUP, NOTE_RECOMPUTED, PLAN_FAILED, READING_DISAGREES,
-    SEVERAL_COLUMNS, STEP_NOT_READ, VALUE_NOTES, JOIN_LINKED, Reach, SortedSet, Start,
+    JOIN_NOT_YET_FOLLOWED, SEVERAL_COLUMNS, STEP_NOT_READ, VALUE_NOTES, JOIN_LINKED, Reach, SortedSet, Start,
 )
 from utils.lineage_walk import LineageIndex, _Dead
 from utils.plan_book import Plan, PlanBook
@@ -99,19 +99,21 @@ def test_a_reading_the_plan_contradicts_is_grey_with_both_facts_never_followed()
     assert "['c']" in problem and "['a']" in problem                                                      # the reading expected `c`; the plan has `a` instead
 
 
-def test_a_join_of_another_kind_is_not_followed_and_says_why_PROVISIONAL():
+def test_a_join_of_another_kind_is_not_followed_and_says_why_D_0452():
     recipe = F.recipe({"A": F.schema(["sample_id", "val"]), "B": F.schema(["isolate", "lab"])},
                       {"J": F.join(["A", "B"], [F.join_step("B", on=("sample_id", "isolate"), how="right")])}, {"P": F.plot("J")})
     tables = {"A": F.table(sample_id=["S1"], val=["a"]), "B": F.table(isolate=["S1"], lab=["X"])}
     walk = run(recipe, tables, "T3:P", "lab")
     assert [(x.place, x.state) for x in walk.lines] == [("T1:B", "grey"), ("T1:J", "tick"), ("T3:P", "tick")]     # the start is after the join: only the table before it is in doubt
-    assert line(walk, "T1:B").reason.code == STEP_NOT_READ and "right" in line(walk, "T1:B").reason.get("why")
+    assert line(walk, "T1:B").reason.code == JOIN_NOT_YET_FOLLOWED and line(walk, "T1:B").reason.get("kind") == "right"      # before D-0452 the reason was step_not_read
 
 
-def test_a_table_joined_with_itself_keeps_two_columns_grey_PROVISIONAL():
+def test_a_table_joined_with_itself_is_not_followed_YET_D_0452():
+    """Before D-0452 this was `several_columns` (the column exists twice: PROVISIONAL); the join of a table with itself is now a join the app cannot YET follow: the table before it is red."""
     recipe = F.recipe({"A": F.schema(["sample_id", "val"], keys=["sample_id"])}, {"J": F.join(["A", "A"], [F.join_step("A")])}, {"P": F.plot("J")})
     walk = run(recipe, {"A": F.table(sample_id=["S1"], val=["a"])}, "T3:P", "val")
-    assert any(x.reason is not None and x.reason.code == SEVERAL_COLUMNS for x in walk.lines)
+    assert line(walk, "T3:P").state == "tick" and line(walk, "T1:J").state == "tick"
+    assert line(walk, "T1:A").state == "grey" and line(walk, "T1:A").reason.code == JOIN_NOT_YET_FOLLOWED and line(walk, "T1:A").reason.get("self_join") is True
 
 
 # ----------------------------------------------------------------------------------------------------------------------------- C. a change of type or values

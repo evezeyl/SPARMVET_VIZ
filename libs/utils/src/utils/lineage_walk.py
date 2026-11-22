@@ -36,13 +36,22 @@ PROVISIONAL behaviour (the owner has not decided; each place is marked in the co
 - P4b the record allows a rename in one tier and back in a later one as ONE column named as in each table (each occurrence has its own name; owner 2026-11-20).
 - P5 (O4) a place of the reach where the column no longer exists is a `Gone` note, distinct from grey (the three viewpoints agree; not confirmed).
 - P6 (Q4) a table whose tier 2 is empty is one place with its tier 1, also when plots read the table directly and joins read it too (D-0346 as written).
-- P7 (O8) a column that exists twice at a place (a table joined with itself) is grey; joins that are not left or inner are not read.
+- P7 (O8) a column that exists twice at a place is grey (`several_columns`). A table joined with a table it already holds is no longer followed (see P12).
 - P8 (O3) an empty tier 2 or tier 2 of a table no plot reads is not a place (it is the tier 1 of the table, D-0346; the recipe checks S07 and J14 refuse a tier 2 on such a table, so only its tier 1 can
   be a line: NOT decided whether that should change, D-0451); a tier 3 is always a line ("only this plot", D-0346).
 - P9 a line is ticked when ANY path from the chosen place to it is certain (the path with the fewest uncertain links is taken); grey only when every path is uncertain.
 - P10 the GROUP of a place (lineage, join_linked) is the smallest group that reaches it, so the split depends on where the user looked from; the union of the groups does not.
 - P11 `Gone.removed_by` is the FIRST removing step in data-flow order (graph order of the node, then the step number) among the steps that removed the column on the way to the place.
-- P12 a join other than left or inner, and a column written under its own name from another column, are not told apart from the readable cases (see P3 and P7).
+- P12 JOINS (D-0452, D-0454, D-0460, D-0486). A semi join is FOLLOWED like inner and left (D-0486): the first table's columns pass, the key of the second table is one column with the first's, the second table's
+  other columns end at the join as certainly gone (`Gone`). A join of kind anti, right or full (`step_effects.NOT_YET_FOLLOWED_JOINS`), any other kind outside `FOLLOWED_JOINS`, and a join of a table with a table it
+  already holds (a self-join, `join_keys.self_join`, in a tier 1 of a join, whatever its kind) are NOT YET followed: every link that crosses such a step is uncertain with the reason `join_not_yet_followed`
+  (the kind, the node and the step, the table read, whether it is a self-join, as data), so a line whose best path crosses it is `grey` and cannot be ticked; before this, a column of the first table was
+  ticked with the note `unread_step_passed`. The rule is the walk's own for every uncertain link (P9: a path is counted, in either direction): seen from a start before the join the places before it stay as
+  they are and the places after it are red; seen from a start after it the places before it are red. NOT decided: whether only the places after the join should be red (the owner's question); how a red line is
+  shown; the words beyond the capital YET (`utils.lineage_sentences`, PROVISIONAL). A column written under its own name from another column is not told apart from the readable cases (see P3).
+  The KEY columns of such a join (`_join_key_links`, by `on` or by `left_on` and `right_on`) are linked, the first table's and the second table's, by an uncertain link with the same reason: the second table is then a red line
+  in the walk, seen from either side, and a table "remove from all the data" lists (`may_stay`); without the link the second table's key (the same name as the first's) ended at the step and nothing told the user that the
+  sample could stay there (review of 2026-11-22). A join with no readable key (cross) links none; as-of joins and joins on conditions are other actions and are not covered here (they are not read).
 - P13 a source line next to a tier 1 without steps is the same table: it stays grey `no_step_list` and carries `duplicates` (the tier 1 place), so that a caller shows one line.
 - P14 a walk that selects no place says so (`Walk.nothing`); which levels the column exists at is `Walk.held_at_levels`.
 
@@ -65,7 +74,7 @@ If deleted: the audit dialog has no way to list its places.
 # provides: function:walk, function:LineageIndex.drop_facts, function:LineageIndex.drop_consequences, function:LineageIndex.plot_places, function:LineageIndex.certainty_from, function:LineageIndex.uncertain_ends, class:LineageIndex, class:LineageError, class:ColumnNotFound, class:StartPlanFailed
 # consumes: libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/step_effects.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/lineage_records.py
 # consumed_by: libs/utils/src/utils/key_drop.py, libs/utils/src/utils/remove_from_all.py (certainty_from, uncertain_ends), libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py, libs/utils/tests/test_lineage_walk_properties.py, libs/utils/tests/test_lineage_drop.py
-# doc: .claude/knowledge/decision_ledger.md (D-0347, D-0346, D-0351, D-0195, D-0353, D-0352, D-0357, D-0337, D-0356, D-0355, D-0358, D-0297, D-0451), .claude/design/home_audit_steps.md
+# doc: .claude/knowledge/decision_ledger.md (D-0347, D-0346, D-0351, D-0195, D-0353, D-0352, D-0357, D-0337, D-0356, D-0355, D-0358, D-0297, D-0451, D-0452, D-0454, D-0460, D-0486), .claude/design/home_audit_steps.md
 # @end_deps
 """
 from __future__ import annotations
@@ -79,7 +88,7 @@ from typing import Any, Dict, FrozenSet, Iterable, List, Mapping, Optional, Sequ
 from utils import action_names, join_keys, step_effects as fx
 from utils.lineage_records import (
     Certainty, AGGREGATED, CANNOT_FOLLOW, CAST, CONSEQUENCE_DISAGREES, CREATED, FROM_PLAN, FROM_READING, GREY, GROUPED, JOIN_LINKED, KEY_NEEDED_LATER, LEVELS, LINEAGE,
-    BUILD_FAILS, CLASH_NO_LONGER, NO_STEP_LIST, NOTE_AGGREGATED, NOTE_ANOTHER_TYPE, NOTE_DECLARED_ENTITY_KEY, NOTE_ONE_ROW_PER_GROUP, NOTE_RECOMPUTED, NOTE_UNREAD_STEP_PASSED,
+    BUILD_FAILS, CLASH_NO_LONGER, JOIN_NOT_YET_FOLLOWED, NO_STEP_LIST, NOTE_AGGREGATED, NOTE_ANOTHER_TYPE, NOTE_DECLARED_ENTITY_KEY, NOTE_ONE_ROW_PER_GROUP, NOTE_RECOMPUTED, NOTE_UNREAD_STEP_PASSED,
     PLAN_FAILED, PLOT_USES_COLUMN, READING_DISAGREES, RE_CREATED, RECOMPUTED, RENAMED, SEVERAL_COLUMNS, SOURCE, STEP_NAMES_COLUMN, STEP_NOT_READ, T1, T2, T3,
     TICK, UNCHANGED, UNKNOWN, WHY_DECLARED_KEY_NOT_REACHED, Consequence, DropFacts, Gone, Hop, KeyNeed, Line, Note, Occurrence, Outside, Reach, Reason, SourceColumn,
     Start, StepRef, Walk,
@@ -218,6 +227,9 @@ class LineageIndex:
         if action in join_keys.JOIN_ACTIONS:
             self._record_key_uses(nid, k, ref, step)
         effect = fx.effect_of(step)
+        not_followed = self._not_yet_followed(node, k, step, effect)          # (kind, self_join) of a join the app cannot YET follow, else None (D-0452)
+        if not_followed is not None and effect.kind != fx.UNREAD:
+            effect = fx.Effect(fx.UNREAD, action, how=not_followed[0], right=effect.right, why="the join reads a table it already holds (a self-join): not followed yet")
         right_node = self._right_of(step) if effect.kind in (fx.JOIN, fx.UNREAD) and action == action_names.JOIN else None
         right: Optional[PlanOrFailure] = self._plan[self.end(right_node)] if right_node else None
         if right_node is None and effect.kind == fx.JOIN:
@@ -237,8 +249,51 @@ class LineageIndex:
             reason = Reason(READING_DISAGREES, (("node", nid), ("step", k), ("action", action), ("problem", problem)))
             self._plan_links(nid, k, ref, before, after, right_node, right, reason, passes_certain=False)
             return
+        if not_followed is not None:                                          # red: no link across this step is certain (D-0460); the reason carries the facts for the sentence (D-0454)
+            reason = Reason(JOIN_NOT_YET_FOLLOWED, (("node", nid), ("step", k), ("action", action), ("kind", not_followed[0]), ("how", not_followed[0]),
+                                                    ("right", step.get("right_ingredient") if isinstance(step, dict) else None), ("self_join", not_followed[1])))
+            self._plan_links(nid, k, ref, before, after, right_node, right, reason, passes_certain=False)
+            self._join_key_links(nid, k, ref, step, not_followed[0], before, after, right_node, right, reason)
+            return
         reason = Reason(STEP_NOT_READ, (("node", nid), ("step", k), ("action", action), ("why", effect.why)))
         self._plan_links(nid, k, ref, before, after, right_node, right, reason, passes_certain=True)
+
+    def _not_yet_followed(self, node: Node, k: int, step: Any, effect: fx.Effect) -> Optional[Tuple[str, bool]]:
+        """`(how, self_join)` when the step is a join the app cannot YET follow (D-0452): a kind outside `FOLLOWED_JOINS`, or a join of a table with a table it already holds (`join_keys.self_join`:
+        the right table is the first table of the join or one an earlier step joined; asked in the tier 1 of a join, as the checker J12 does), whatever its kind. Else None."""
+        kind = fx.not_yet_followed(effect)
+        self_join = None
+        if isinstance(step, dict) and step.get("action") == action_names.JOIN and node.kind == "T1" and node.collection_kind == "join":
+            parents = self.graph.parents(node.id)
+            if parents:
+                self_join = join_keys.self_join(self.graph.node(parents[0]).name, node.steps[:k - 1], step)
+        if kind is None and self_join is None:
+            return None
+        return (kind if kind is not None else str(self_join["how"]), self_join is not None)
+
+    def _join_key_links(self, nid: str, k: int, ref: StepRef, step: Any, how: str, before: Plan, after: Plan, right_node: Optional[str],
+                        right: Optional[PlanOrFailure], reason: Reason) -> None:
+        """The two key columns of a join the app cannot YET follow (D-0460, D-0452): the first table's key and the second table's key, by `on` or by `left_on` and `right_on`, are the
+        column the user means in both tables, and the app cannot say what the join does to the rows behind it. They are linked by an UNCERTAIN link that carries the reason of the join, so
+        that the other table is a red line in the walk (from either side) and a table in "remove from all the data" that the user is told about, never a table that is silently absent.
+        Without it the second table's key, which has the name the first table already has, ended at the step and nothing linked the two tables. The link goes to the key column
+        after the step (the first table's name when it survives, else the second table's); a key that no key group names, or a join with no readable keys (cross), gets none."""
+        left_keys, right_keys = join_keys.key_columns(step)
+        if right_node is None or not isinstance(right, Plan) or not left_keys or len(left_keys) != len(right_keys):
+            return
+        end = self.end(right_node)
+        for lname, rname in zip(left_keys, right_keys):
+            if not before.has(lname) or not right.has(rname):
+                continue
+            kept = lname if after.has(lname) else rname if after.has(rname) else None
+            if kept is None:
+                continue
+            dst = (nid, k, kept)
+            for src, side in (((nid, k - 1, lname), "base"), ((end[0], end[1], rname), "right")):
+                if any(link.dst == dst for link in self._succ.get(src, ())):
+                    continue
+                self._link(_Link(src, dst, False, UNKNOWN, reason, ref, hop=True, join_how=how, join_side=side))
+                self._dead = [d for d in self._dead if not (d.occ == src and d.in_node == nid and d.ref == ref and not d.certain)]
 
     def _record_key_uses(self, nid: str, k: int, ref: StepRef, step: Any) -> None:
         """The key columns a join step reads, whether or not the step can be followed: the left names at the table before the step, the right names at the end of the
@@ -282,6 +337,10 @@ class LineageIndex:
         for name in before.names:
             if name not in used_left:                # dropped, or not selected: the plan and the reading agree that it is gone
                 self._die((nid, k - 1, name), nid, True, None, ref)
+        if is_join and effect.how in fx.NO_COPY_JOINS and right_node and isinstance(right, Plan):
+            for name in right.names:                 # a semi join copies nothing of the second table: its other columns end here, and the plan and the reading agree (D-0486)
+                if name not in effect.right_keys:
+                    self._die((right_end[0], right_end[1], name), nid, True, None, ref)
 
     def _change_note(self, kind_of: Optional[str], nid: str, k: int, ref: StepRef, name_before: str, name_after: str, before: Plan, after: Plan,
                      src: Occ, dst: Occ) -> Optional[Note]:
@@ -683,6 +742,10 @@ class LineageIndex:
                 reason = dead.reason or Reason(CANNOT_FOLLOW, (("node", dead.in_node),))
                 if reason not in stops:
                     stops.append(reason)
+        for other in sorted(reached, key=self._sort_key):         # a column that crosses a join the app cannot YET follow passes it only by an uncertain link: the drop cannot be followed to the end (D-0460)
+            for link in self._succ.get(other, ()):
+                if not link.certain and link.reason is not None and link.reason.code == JOIN_NOT_YET_FOLLOWED and link.reason not in stops:
+                    stops.append(link.reason)
         back = self._reach_set([occ], forward=False, backward=True)
         declared = tuple(sc for sc in self._sources(occ, back) if sc.name in self.graph.declared_entity_keys(sc.table))
         return DropFacts(place, occ[2], tuple(needs), tuple(stops), declared)
@@ -712,7 +775,7 @@ class LineageIndex:
                 if name in self._reads_of(effect):
                     ref = StepRef(nid, k0 + 1, effect.action, f"{node.steps_path}[{k0 + 1}]", step.get("id") if isinstance(step, dict) and isinstance(step.get("id"), str) else None)
                     found.append(Consequence(STEP_NAMES_COLUMN, self.place_of[nid], ref, FROM_READING, (("name", name), ("node", nid), ("step", k0 + 1), ("action", effect.action))))
-                if effect.kind == fx.JOIN and name not in effect.left_keys:
+                if effect.kind == fx.JOIN and effect.how not in fx.NO_COPY_JOINS and name not in effect.left_keys:       # only a kind that copies the second table's columns can give a suffix
                     right_node = self._right_of(step)
                     right = self._plan[self.end(right_node)] if right_node else None
                     if isinstance(right, Plan) and right.has(name) and name not in effect.right_keys:       # the join gave the right table's `name` the suffix because this column was there

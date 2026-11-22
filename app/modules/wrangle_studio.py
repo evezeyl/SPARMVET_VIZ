@@ -4,6 +4,7 @@
 # @deps
 # provides: class:WrangleStudio, method:build_sidebar_ui (issue #42 — Blueprint's left sidebar, moved here from home_theater.py's sidebar_tools_ui(), mirrors GalleryViewer.build_sidebar_ui(); registered as the "blueprint_main" freestanding panel type), method:_render_action_form, method:_extract_upstream_cols, output:bp_yaml_escape_ui, output:bp_help_panel_ui, function:_resolve_action_doc, reactive.Value:inline_errors (ADR-079/ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface)
 # consumes: app/src/render/pipeline_error_renderers.py (render_blueprint_inline — ADR-094), libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
+# consumes: app/modules/orchestrator_helpers.py (blueprint_is_open — outputs that read HOME state compute only while BLUEPRINT is open)
 # consumes: libs/utils/src/utils/engines.py (plot_engine_slot — the plot preview dict), libs/utils/src/utils/errors.py (DataAnalysisRecipeError), method:DataWrangler.tier_steps (libs/transformer/src/transformer/data_wrangler.py — the steps of a join on a node click, D-0250)
 # provides: function:_enum_preview_legend (BP-ENUM-PREVIEW-1), constants:_LINETYPE_DASHARRAY/_POSITION_DESC
 # consumes: libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)
@@ -21,6 +22,7 @@
 # @end_deps
 
 from pathlib import Path
+from app.modules.orchestrator_helpers import blueprint_is_open
 from shiny import ui, reactive, render
 from app.src.render.pipeline_error_renderers import render_blueprint_inline
 import polars as pl
@@ -599,6 +601,8 @@ class WrangleStudio:
 
         @reactive.Calc
         def processed_data():
+            if not blueprint_is_open(input):
+                return None
             lf = get_base_data()
             if lf is None:
                 return None
@@ -653,6 +657,8 @@ class WrangleStudio:
             ADR-045 / R1: the error text is computed here, in a Calc, so that the plot render and the
             error banner only read it. A @render.* must never write a reactive value.
             """
+            if not blueprint_is_open(input):
+                return None, ""
             viz_id = self.active_viz_id.get()
             data_analysis_recipe_path = self.active_data_analysis_recipe_path.get()
             if not viz_id or not data_analysis_recipe_path:
@@ -748,6 +754,8 @@ class WrangleStudio:
         @output
         @render.table
         def architect_active_table():
+            if not blueprint_is_open(input):
+                return None
             df = processed_data_surgical()
             if df is None:
                 df = processed_data()
