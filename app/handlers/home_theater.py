@@ -31,8 +31,8 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, constant:LEGACY_RECORD_NOTICE
-# consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, effect:_sync_active_space (the open user space as a value of its own, D-0502), constant:LEGACY_RECORD_NOTICE
+# consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open, D-0502), app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumes: app/modules/frame_widths.py (right_panel_open: the right panel follows the mode, D-0375, D-0385; HOME, BLUEPRINT: the nav values)
 # consumes: app/handlers/opening_handlers.py (define_server: the opening of the recipe; opening_waits), app/modules/opening_build.py (opening_signature, plot_render_recipe: the recipe handed to the plot engine, D-0237, D-0239), libs/utils/src/utils/engines.py (plot_engine_slot, through it)
@@ -68,6 +68,7 @@ from app.modules.t3_audit_engine import (
 from utils.recipe_graph import build_graph, source_tables_of_plot
 from utils.na_choice import na_of, no_value_text
 from app.modules.sidebar_registry import is_panel_active
+from app.modules.sidebar_open_panels import open_panels_after_redraw
 from app.handlers.session_handlers import define_session_server
 from app.handlers.export_handlers import define_export_server
 from app.handlers.filter_and_audit_handlers import define_filter_audit_server
@@ -1909,6 +1910,37 @@ def define_server(input, output, session, *,
         )
         ui.modal_show(m)
 
+    # The open user space as a value of its own (D-0502). Before the page has told the server its `sidebar_nav` the read gives the
+    # default "Home"; when the input arrives with the same value the sidebar must not be drawn again. A render that reads the input
+    # itself is invalidated by that first arrival and closes the panels the user opened in the meantime. The effect writes only
+    # when the space really changes (section 14, R3), so the render below follows changes of the space and nothing else.
+    _active_space = reactive.Value(frame_widths.HOME)
+
+    @reactive.Effect
+    def _sync_active_space():
+        now = safe_input(input, "sidebar_nav", frame_widths.HOME)
+        with reactive.isolate():
+            if _active_space.get() != now:
+                _active_space.set(now)
+
+    # What the last draw of the left sidebar held (plain memory of the render, not a reactive value: nothing reads it reactively)
+    _left_drawn = {"space": None, "existing": None}
+
+    def _user_open_panels():
+        """The panels the page says are open in the left accordion, or None when the page has not said yet.
+
+        Read isolated: the answer is only kept, so a click on a panel must not draw the sidebar again (section 14, R4). The
+        accordion input is absent before the page has sent it (SilentException); an empty selection is an answer (nothing open).
+        """
+        with reactive.isolate():
+            try:
+                value = input.nav_accordion()
+            except SilentException:
+                return None
+        if value is None:
+            return []
+        return [value] if isinstance(value, str) else list(value)
+
     # 4. Sidebar Tools (Contextual Data analysis recipe Workbench)
     @output(id="sidebar_tools_ui")
     @render.ui
@@ -1917,7 +1949,7 @@ def define_server(input, output, session, *,
         Relocated Sidebar Management (ADR-038).
         Enforces dedicated App features based control clusters.
         """
-        active_sidebar = safe_input(input, "sidebar_nav", "Home")
+        active_sidebar = _active_space.get()
 
         # Gallery's left sidebar is now built via _build_left_sidebar("gallery", ...)
         # further down (issue #42, "gallery_main" freestanding panel type) — see the
@@ -2073,9 +2105,13 @@ def define_server(input, output, session, *,
             "blueprint_main": _render_blueprint_main,
         }
 
-        def _build_left_sidebar(workspace_key: str, open_panels: list[str]):
+        def _build_left_sidebar(workspace_key: str, open_panels: list[str], keep_user_panels: bool = False):
             """Build the left sidebar from a workspace's slot list (ADR-073, extended
-            issue #42 to cover every workspace, not just Home/Test Lab)."""
+            issue #42 to cover every workspace, not just Home/Test Lab).
+
+            keep_user_panels (HOME, D-0502): when the sidebar of the same user space is drawn again, the panels the user has open
+            and closed stay as they are; `open_panels` (the fixed list) decides only the first draw after a change of space and
+            the panels that are new."""
             sidebar_cfg = bootloader.get_sidebar_config(workspace_key, "left")
             panels = []
             freestanding = []
@@ -2103,6 +2139,18 @@ def define_server(input, output, session, *,
                 panel = renderer()
                 if panel is not None:
                     panels.append(panel)
+            if keep_user_panels:
+                existing = [p._data_value for p in panels]
+                same_space = _left_drawn["space"] == workspace_key
+                open_panels = open_panels_after_redraw(
+                    open_panels,
+                    existing,
+                    _left_drawn["existing"] if same_space else None,
+                    _user_open_panels() if same_space else None,
+                )
+                _left_drawn["space"], _left_drawn["existing"] = workspace_key, existing
+            else:
+                _left_drawn["space"], _left_drawn["existing"] = workspace_key, None
             return ui.div(
                 # Eve, 2026-11-08: Alerts sits between Navigation (above this whole block,
                 # see ui.py) and the accordion, not after it — so it's seen first, not
@@ -2135,7 +2183,7 @@ def define_server(input, output, session, *,
 
         _has_data_analysis_recipe = bootloader.get_data_analysis_recipe_selector().get("visible", True)
         open_panels = ["Data analysis recipe Choice"] if _has_data_analysis_recipe else []
-        return _build_left_sidebar("home", open_panels=open_panels)
+        return _build_left_sidebar("home", open_panels=open_panels, keep_user_panels=True)
 
     # --- Right Sidebar Context Matrix (ADR-039 / ADR-044) ---
     @output
