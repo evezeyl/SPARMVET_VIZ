@@ -70,7 +70,7 @@ def test_the_sources_no_join_links_are_not_lines_and_are_listed_as_outside_as_be
 @pytest.mark.parametrize("recipe_id", sorted(p.stem for p in RECIPES.glob("*.yaml")))
 def test_the_accounting_property_holds_on_every_shipped_recipe_for_every_plot_and_declared_key(recipe_id):
     graph, index = index_of(recipe_id)
-    keys = sorted({name for table in graph.collections() for name in graph.declared_entity_keys(table)})
+    keys = sorted({name for table in graph.collections() for name in graph.declared_entity_keys(table)}) or ["sample_id"]      # a recipe that declares no key: the join column all shipped data share
     walked = no_plot = 0
     for node in (n for n in graph.nodes() if graph.node(n).kind == "T3"):
         for column in keys:
@@ -87,4 +87,4 @@ def test_the_accounting_property_holds_on_every_shipped_recipe_for_every_plot_an
     if recipe_id == DEMO:
         assert walked == 16 and no_plot == 14 * 4                                                        # 16 plots hold sample_id; 14 of them reach the 4 joins, 2 do not
     else:
-        assert walked > 0 or recipe_id == "stress_test_master"                                          # that recipe declares no key its plots carry
+        assert walked > 0 or recipe_id == "stress_test_master"                                          # that recipe declares a key (`id`) that no plot carries

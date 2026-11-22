@@ -114,14 +114,20 @@ def test_L005_a_table_no_plot_reads_reached_only_through_another_table_no_plot_r
     assert len(set(walk.accounted)) == len(walk.accounted)
 
 
-def test_L005_an_unread_table_reached_only_through_a_join_the_walk_cannot_follow_is_grey_with_the_reason_D_0460():
-    # a join that is not left or inner is not read (P7): the column across it is not proved the same one, so the line of the unread table below it is grey with a reason, not ticked
-    recipe = F.recipe({"A": F.schema(["sample_id", "v"], keys=["sample_id"]), "B": F.schema(["sample_id", "w"], keys=["sample_id"])},
-                      {"JA": F.join(["A", "B"], [F.join_step("B", how="semi")]), "JB": F.join(["JA", "B"], [F.join_step("B")])}, {"P": F.plot("A")})
-    tables = {"A": F.table(sample_id=["S1", "S2"], v=["x", "y"]), "B": F.table(sample_id=["S1"], w=["p"])}
-    walk = run(recipe, tables, "T3:P", "v")
-    unread_lines = [x for x in walk.lines if x.no_plot_reads]
-    assert unread_lines and all(x.state == "grey" and x.reason is not None for x in unread_lines)
+def test_L005_an_unread_table_reached_through_a_step_the_walk_cannot_follow_is_grey_with_the_reason_D_0460():
+    # D-0460: a line the app cannot trace is not ticked and says why; the same for a table no plot reads, and for the table built from it. The step is outside the readings
+    # and changes the type of the column (a split makes a list), so the plan alone cannot prove the column the same one.
+    recipe = F.recipe({"A": F.schema(["sample_id", "genes"], keys=["sample_id"]), "B": F.schema(["sample_id", "w"], keys=["sample_id"])},
+                      {"JA": F.join(["A", "B"], [F.join_step("B"), F.str_split(["genes"], ",")]), "JB": F.join(["JA", "B"], [F.join_step("B")])}, {"P": F.plot("A")})
+    tables = {"A": F.table(sample_id=["S1", "S2"], genes=["a,b", "c"]), "B": F.table(sample_id=["S1"], w=["p"])}
+    walk = run(recipe, tables, "T3:P", "genes")
+    assert [x.place for x in walk.lines if x.no_plot_reads] == ["T1:JA", "T1:JB"]
+    for place in ("T1:JA", "T1:JB"):
+        assert line(walk, place).state == "grey" and line(walk, place).reason.code in (STEP_NOT_READ, "cannot_follow"), place
+    assert line(walk, "T1:JA").reason.code == STEP_NOT_READ and line(walk, "T1:JA").reason.get("action") == "polars_str_split"
+    assert ticked(walk) == ["T1:A", "T3:P"]                                                           # the lines with a plot behave as before
+    key = run(recipe, tables, "T3:P", "sample_id")                                                    # a column the step does not touch passes it, ticked
+    assert [(x.place, x.state) for x in key.lines if x.no_plot_reads] == [("T1:B", "tick"), ("T1:JA", "tick"), ("T1:JB", "tick")]     # B too: only joins no plot reads read it
 
 
 def test_L005_a_drop_is_offered_at_a_table_no_plot_reads_like_at_any_place():
@@ -306,7 +312,7 @@ def test_L052_remove_one_sample_in_the_places_ticked_what_is_left_is_offered_in_
     full = run(recipe, tables, "T3:Pd", "sample_id")
     walk = full.within(scope)
     left = holders_after(recipe, tables, walk, "S3")
-    e_chain, u_chain = {"T1:E", "T2:E", "T3:Pe", "T1:JU", "T2:JU"}, {"T1:U", "T2:U", "T3:Pu"}
+    e_chain, u_chain = {"T1:E", "T2:E", "T3:Pe"}, {"T1:U", "T2:U", "T3:Pu"}                  # JU is a line of the lineage group now (D-0451): the step at it takes the sample out
     assert left == {LINEAGE: e_chain | u_chain, JOIN_LINKED: u_chain}[scope]
     offered = {x.place for x in full.lines if x not in walk.lines}
     not_reached = {n for o in full.outside for n in [f"T1:{o.table}"] + graph.lineage_forward(f"T1:{o.table}")}
