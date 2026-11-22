@@ -3,7 +3,7 @@ offered"). The plan of every place is the engine's (`compose_plan_book`), the sa
 
 What is proved:
 - the demo recipe (`1_test_data_ST22_dummy`), the column `sample_id` looked at from a plot: the four joins that no plot reads and that the metadata reaches
-  (FastP_with_metadata, Bracken_with_metadata, ResFinder_with_metadata, AR1_MLST_Serotype_Virulence) are lines of tier 1 that say no plot reads them, ticked like the others (PROVISIONAL, see
+  (FastP_with_metadata, Bracken_with_metadata, ResFinder_with_metadata, AR1_MLST_Serotype_Virulence) are lines of tier 1 that say no plot reads them, with state "tick" = the walk's proof of the same column (PROVISIONAL, see
   `libs/utils/src/utils/lineage_walk.py` P4); every line the walk gave before is still there, unchanged (the number of lines goes from 37 to 41 at the levels T1, T2, T3 and from 44 to 48
   with the source level);
 - the sources that no join links to the lineage (Quality_metrics, Detailed_summary, and Summary, Summary_quality that declare the key) are not lines and are listed as `outside`, as before (D-0415);
@@ -54,6 +54,7 @@ def test_the_four_joins_no_plot_reads_are_lines_of_the_sample_id_and_the_other_l
         no_plot = [x for x in walk.lines if x.no_plot_reads]
         assert [x.place for x in no_plot] == NO_PLOT_READS, levels
         assert len(walk.lines) == before + 4, levels                                                    # 37 -> 41 and 44 -> 48
+        # "tick" is the walk's proof that it is the same column, not a default tick of the dialog (not decided: ledger D-0451).
         assert all(x.tier == "T1" and x.kind == "table" and x.state == "tick" and x.reason is None for x in no_plot)
         assert all(x.occurrences[0].name == "sample_id" and x.occurrences[0].type == "String" for x in no_plot)
         assert all(x.reach.plots == frozenset() and x.reach.n_tables == 0 and x.reach.n_tables_no_plot >= 1 for x in no_plot)

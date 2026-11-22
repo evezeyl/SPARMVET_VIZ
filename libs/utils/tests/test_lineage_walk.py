@@ -72,6 +72,7 @@ def test_L002_collapse_by_steps_counted_from_the_recipe():
     assert set(places(walk)) == indep and len(walk.lines) == 14                       # the 13 lines of DESIGN L002 plus the join no plot reads (D-0451)
     assert {"T2:S", "T2:J1"} <= set(places(walk)) and not {"T2:E", "T2:M", "T2:J2"} & set(places(walk))     # a tier 2 with steps is a place, an empty one is not
     assert places(walk).count("T3:Pc") == 1 and line(walk, "T3:Pc").covers == ("T3:Pc",)    # a plot with its own steps is ONE line
+    # "tick" is the walk's proof that it is the same column, not a default tick of the dialog (not decided: ledger D-0451).
     assert "T1:JU" in places(walk) and line(walk, "T1:JU").state == "tick"            # a join no plot reads is a line, like the others (D-0451, D-0346 changed in this part)
     assert reach(line(walk, "T1:S")) == (5, 5) and reach(line(walk, "T1:J1")) == (2, 3) and reach(line(walk, "T2:S")) == (1, 1)
     assert [reach(line(walk, f"T3:{p}")) for p in ("Ps", "Pe", "Pa", "Pb", "Pc", "Pd")] == [(0, 1)] * 6
@@ -127,6 +128,7 @@ def test_L005_an_unread_table_reached_through_a_step_the_walk_cannot_follow_is_g
     assert line(walk, "T1:JA").reason.code == STEP_NOT_READ and line(walk, "T1:JA").reason.get("action") == "polars_str_split"
     assert ticked(walk) == ["T1:A", "T3:P"]                                                           # the lines with a plot behave as before
     key = run(recipe, tables, "T3:P", "sample_id")                                                    # a column the step does not touch passes it, ticked
+    # "tick" is the walk's proof that it is the same column, not a default tick of the dialog (not decided: ledger D-0451).
     assert [(x.place, x.state) for x in key.lines if x.no_plot_reads] == [("T1:B", "tick"), ("T1:JA", "tick"), ("T1:JB", "tick")]     # B too: only joins no plot reads read it
 
 
@@ -134,6 +136,7 @@ def test_L005_a_drop_is_offered_at_a_table_no_plot_reads_like_at_any_place():
     recipe, tables = F.tiers()
     walk = run(recipe, tables, "T1:M", "year", kind="drop")
     ju = line(walk, "T1:JU")
+    # "tick" is the walk's proof that it is the same column, not a default tick of the dialog (not decided: ledger D-0451).
     assert ju.no_plot_reads and ju.state == "tick" and ju.refusal is None and ju.consequences == ()      # nothing is built from JU and no plot draws it: nothing to break
     assert line(walk, "T1:J1").no_plot_reads is False
 

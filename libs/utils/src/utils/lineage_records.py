@@ -30,7 +30,7 @@ from typing import Any, FrozenSet, Optional, Tuple
 SOURCE, T1, T2, T3 = "source", "T1", "T2", "T3"
 LEVELS = (SOURCE, T1, T2, T3)
 
-# The GROUPS of places (the user ticks; which groups are offered is PROVISIONAL). A line, a note or a place no plot reads carries the smallest group that holds it:
+# The GROUPS of places (the user ticks; which groups are offered is PROVISIONAL). A line or a note carries the smallest group that holds it (a table no plot reads that the walk reaches is a line like any other, D-0451):
 LINEAGE = "lineage"          # above and below the chosen place: back to its sources, then forward from them (D-0347 as written)
 JOIN_LINKED = "join_linked"  # also the tables a join on the same column links to it (the key of a join that both sides equate)
 # There is no group for "the same key, no join links it" (owner, D-0355): a column is never matched by its name alone.
@@ -81,7 +81,7 @@ BUILD_FAILS = "build_fails"                    # the candidate plan fails here (
 CONSEQUENCE_CODES = (STEP_NAMES_COLUMN, PLOT_USES_COLUMN, CLASH_NO_LONGER, BUILD_FAILS)
 FROM_READING, FROM_PLAN = "reading", "plan"
 
-# Why a walk holds no line, no note and no place no plot reads (never a silent empty result, D-0195).
+# Why a walk holds no line and no note (never a silent empty result, D-0195).
 NO_PLACE_AT_THE_LEVELS = "no_place_at_the_chosen_levels"   # parameters: the chosen levels, the levels where the column exists in the lineage, the group
 
 # Why a table is listed as not reached.
