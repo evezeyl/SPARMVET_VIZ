@@ -566,17 +566,19 @@ def hidden(tmp_path):
     return root
 
 
-def test_the_switch_key_is_one_constant_and_unset_today():
-    assert tool.BANNER_SWITCH_KEY is None
+def test_the_switch_key_is_one_constant_and_is_the_accepted_one():
+    assert tool.BANNER_SWITCH_KEY == "branding.show_recipe_name"
+    assert sum(1 for line in Path(tool.__file__).read_text(encoding="utf-8").splitlines() if "show_recipe_name" in line and "BANNER_SWITCH_KEY" in line) == 1
 
 
-def test_an_app_features_file_that_hides_the_banner_is_kept_and_listed_while_the_key_is_unset(hidden, capsys):
+def test_an_app_features_file_that_hides_the_banner_is_kept_and_listed_while_the_key_is_unset(hidden, capsys, monkeypatch):
+    monkeypatch.setattr(tool, "BANNER_SWITCH_KEY", None)
     plan = tool.build_plan(hidden)
     assert plan.texts.get(hidden / "config/app_features/hidden.yaml") is None
     found = [c for c in plan.cases if c.case == "OC15"]
     assert len(found) == 1 and found[0].line == 3
     assert "user.yaml" in found[0].detail and "other.yaml" not in found[0].detail.split("banner of each")[0]
-    assert "'T'" in found[0].detail and "no name yet" in found[0].detail
+    assert "'T'" in found[0].detail and "BANNER_SWITCH_KEY is not set" in found[0].detail
     assert tool.main(["--root", str(hidden), "--apply"]) == 2
     assert "NOT WRITTEN" in capsys.readouterr().err
     assert read(hidden, "config/app_features/hidden.yaml") == HIDDEN_FEATURES
@@ -599,20 +601,18 @@ def test_a_visible_true_ui_title_is_removed_with_what_it_set(tmp_path):
     assert not any(c.case == "OC15" for c in plan.cases)
 
 
-def test_once_the_key_is_named_the_switch_is_written_in_the_deployments_that_use_the_file(hidden, monkeypatch):
-    monkeypatch.setattr(tool, "BANNER_SWITCH_KEY", "branding.show_recipe_banner")
+def test_the_switch_is_written_in_the_one_deployment_that_uses_the_file(hidden):
     plan = tool.build_plan(hidden)
     assert plan.texts[hidden / "config/app_features/hidden.yaml"] == "name: hidden\ndisplay_name: H\nflags:\n  a: true\n"
     user = plan.texts[hidden / "config/deployment/a/user.yaml"]
-    assert user.endswith("  banner:\n    ui_label: \"T\"\n    description: \"S\"\n  show_recipe_banner: false\n")
+    assert user.endswith("  banner:\n    ui_label: \"T\"\n    description: \"S\"\n  show_recipe_name: false\n")
     assert hidden / "config/deployment/a/other.yaml" not in plan.texts           # it uses another app features file
     assert not any(c.case == "OC15" for c in plan.cases)
     assert tool.main(["--root", str(hidden), "--apply"]) == 0
     assert tool.build_plan(hidden).changes == []                                 # a second run changes nothing
 
 
-def test_the_switch_is_not_written_where_no_deployment_uses_the_file(tmp_path, monkeypatch):
-    monkeypatch.setattr(tool, "BANNER_SWITCH_KEY", "branding.show_recipe_banner")
+def test_the_switch_is_not_written_where_no_deployment_uses_the_file(tmp_path):
     root = tmp_path / "copy"
     write(root, "config/app_features/hidden.yaml", HIDDEN_FEATURES)
     write(root, "config/deployment/a/other.yaml", OTHER_DEPLOYMENT)
@@ -620,14 +620,30 @@ def test_the_switch_is_not_written_where_no_deployment_uses_the_file(tmp_path, m
     assert plan.texts == {} and any(c.case == "OC15" and "nowhere to go" in c.detail for c in plan.cases)
 
 
-def test_a_switch_that_cannot_be_placed_keeps_the_ui_title(tmp_path, monkeypatch):
-    monkeypatch.setattr(tool, "BANNER_SWITCH_KEY", "branding.show_recipe_banner")
+def test_a_switch_that_cannot_be_placed_keeps_the_ui_title(tmp_path):
     root = tmp_path / "copy"
     write(root, "config/app_features/hidden.yaml", HIDDEN_FEATURES)
     write(root, "config/deployment/a/user.yaml", "deployment_type: filesystem\ndefault_app_features: hidden\n")     # no branding block
     plan = tool.build_plan(root)
     assert hidden_kept(plan, root)
     assert any(c.case == "OC13" for c in plan.cases) and any(c.case == "OC15" for c in plan.cases)
+
+
+def test_two_deployments_that_name_the_file_are_not_one_to_one_and_nothing_is_written(hidden):
+    write(hidden, "config/deployment/a/second.yaml", USER_DEPLOYMENT)
+    plan = tool.build_plan(hidden)
+    assert hidden / "config/app_features/hidden.yaml" not in plan.texts
+    assert not any(c.rule == "R14" for c in plan.changes)
+    found = [c for c in plan.cases if c.case == "OC15"]
+    assert len(found) == 1 and "not one to one" in found[0].detail and "2 deployments" in found[0].detail
+    assert "show_recipe_name" not in plan.texts.get(hidden / "config/deployment/a/user.yaml", "")
+
+
+def test_a_switch_key_already_written_is_a_conflict_and_the_ui_title_is_kept(hidden):
+    write(hidden, "config/deployment/a/user.yaml", USER_DEPLOYMENT + "  show_recipe_name: true\n")
+    plan = tool.build_plan(hidden)
+    assert any(c.case == "CONFLICT" and "show_recipe_name" in c.detail for c in plan.cases)
+    assert hidden / "config/app_features/hidden.yaml" not in plan.texts
 
 
 def hidden_kept(plan, root):

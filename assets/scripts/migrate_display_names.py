@@ -15,8 +15,9 @@ The rules it applies (one table, `RULES` in this file, each with the ledger line
     deployment_name is removed, when a banner title takes its place              (D-0411)
   app features files:
     the key `ui_title {text, subtitle, visible}` is removed, what it set is printed (D-0411, D-0470);
-    a `visible: false` would move to ONE switch key of the deployment file; that key has no name yet (D-0472),
-    so `BANNER_SWITCH_KEY` is unset, such a file keeps its `ui_title` and the case is listed
+    a `visible: false` moves to ONE switch key of the deployment file, `branding.show_recipe_name: false` (D-0472, D-0474 to be
+    written), only where exactly one deployment names that file as its `default_app_features`; any other case keeps the `ui_title`
+    and is listed. The key is the constant `BANNER_SWITCH_KEY`
 Whatever else it finds that no decision covers is listed, never changed: the banner switch, `display_name` of app features, a name
 that has nowhere to go, `info.subtitle`, the Gallery generator, and so on. Decided points that need no change are listed with their
 counts (registries not renamed, format number 1, old sessions refused); a recipe with no name is listed as "would get the advice".
@@ -104,14 +105,17 @@ RULES: List[Rule] = [
     Rule("R11", "recipe.join", "label", "ui_label", "D-0468", "her words: 2.I think yes because we need to differentiate the recipe and the python code. (the review session's reading, not hers: the display keys `label` of RECIPE files (`info`, table, join, field) become `ui_label`)"),
     Rule("R12", "recipe.field", "label", "ui_label", "D-0468", "her words: 2.I think yes because we need to differentiate the recipe and the python code. (the review session's reading, not hers: the display keys `label` of RECIPE files (`info`, table, join, field) become `ui_label`)"),
     Rule("R13", "app_features.top", "display_name", None, "D-0407", "D-0411 names only `ui_title` of the app features file; D-0412: the key lists are not decided", "OPEN", "OC07"),
-    Rule("R14", "deployment.switch", "ui_title.visible: false", None, "D-0472", "her words: I should sit in the deployement H1; NOT decided: the name of the key and its place inside the deployment file", "OPEN", "OC15"),
+    Rule("R14", "deployment.switch", "ui_title.visible: false", "branding.show_recipe_name: false", "D-0474 (to be written)",
+         "her words: H1 proposal accepted. (D-0472: the switch sits in the deployment file; the key `branding.show_recipe_name: true|false`, read as true when absent; relayed by the coordinator, ledger line not yet written)"),
 ]
 
-# The ONE constant of the recipe banner switch (D-0470, D-0472): the dotted path of its key in a deployment file, for example
-# "branding.<name>" or "<name>". UNSET until the owner names it: while it is None the script refuses to write that key, keeps the
-# `ui_title` of an app features file that says `visible: false` and lists the case (OC15). Set it, and the pass writes
-# `<key>: false` at the end of that block of every deployment that names the app features file as its `default_app_features`.
-BANNER_SWITCH_KEY: Optional[str] = None
+# The ONE constant of the recipe banner switch (D-0470, D-0472, D-0474 to be written): the dotted path of its key in a deployment
+# file, read as true when absent. While it is None the script refuses to write that key, keeps the `ui_title` of an app features
+# file that says `visible: false` and lists the case (OC15). Set, the pass writes `<key>: false` at the end of that block of the
+# deployment that names the app features file as its `default_app_features`, but ONLY where the mapping is one to one: exactly one
+# deployment names that file. A deployment file does not know which app features file hid the banner, and a launch can name another
+# app features file than the default (SPARMVET_APP_FEATURES), so any other case is listed with its facts and written by nobody.
+BANNER_SWITCH_KEY: Optional[str] = "branding.show_recipe_name"
 
 OPEN_CASES: Dict[str, Dict[str, str]] = {
     "OC01": {"title": "A recipe with no name: would get the advice",
@@ -142,9 +146,10 @@ OPEN_CASES: Dict[str, Dict[str, str]] = {
              "words": "The script edits whole lines only; a person must make this change."},
     "OC14": {"title": "A file that cannot be read",
              "words": "The file is not examined; nothing is changed in it."},
-    "OC15": {"title": "The on/off switch of the recipe banner: its key has no name yet",
-             "words": "D-0470: ONE switch stays (show the recipe name: yes or no; no text override). D-0472 (her words: I should sit in the deployement H1): it sits in the DEPLOYMENT file; the key's name "
-                      "and its place are NOT decided. The script cannot write it: such an app features file keeps its `ui_title` until BANNER_SWITCH_KEY is set."},
+    "OC15": {"title": "The on/off switch of the recipe banner: where the mapping app features file -> deployment is not one to one",
+             "words": "D-0470: ONE switch stays (show the recipe name: yes or no; no text override). D-0472 (her words: I should sit in the deployement H1): it sits in the DEPLOYMENT file; "
+                      "the key is `branding.show_recipe_name` (her words: H1 proposal accepted; D-0474 to be written). The script writes it only where exactly one deployment names the "
+                      "app features file as its default; any other case keeps the `ui_title` and is listed here."},
     "CONFLICT": {"title": "A key in the old and in the new spelling, or two old keys for one new key",
                  "words": "Not overwritten: a person chooses which text is kept."},
     "NOTE-NAME": {"title": "Note: the text of a removed deployment_name differs from the banner title",
@@ -530,10 +535,14 @@ class Builder:
                  + "; the banner of each deployment shows: " + ("; ".join(f"{self.rel(d[0].path)}: {d[3]}" for d in users) or "-"))
         skip.add("R09")
         if BANNER_SWITCH_KEY is None:
-            self.case("OC15", doc, ui[0], facts + ". NOT WRITTEN: the key of the switch has no name yet (D-0472); this ui_title is kept")
+            self.case("OC15", doc, ui[0], facts + ". NOT WRITTEN: BANNER_SWITCH_KEY is not set, so the key of the switch is unknown; this ui_title is kept")
             return
         if not users:
             self.case("OC15", doc, ui[0], facts + ". NOT WRITTEN: no deployment names this file as its default, so the switch has nowhere to go; this ui_title is kept")
+            return
+        if len(users) != 1:
+            self.case("OC15", doc, ui[0], facts + f". NOT WRITTEN: {len(users)} deployments name this file as their default, so the mapping is not one to one "
+                      "and the file does not say which of them should hide the banner; this ui_title is kept")
             return
         parts = BANNER_SWITCH_KEY.split(".")
         planned = []
@@ -553,7 +562,7 @@ class Builder:
         for d_doc, pos, text, anchor in planned:
             self.edit(d_doc, pos, pos, text)
             self.plan.changes.append(Change("R14", self.rel(d_doc.path), anchor.start_mark.line + 1, f"{self.rel(doc.path)}: ui_title.visible: false",
-                                            BANNER_SWITCH_KEY, "false", "D-0472", d_doc.kind))
+                                            BANNER_SWITCH_KEY, "false", "D-0474 (to be written)", d_doc.kind))
 
     def keep_ui_title(self, doc: Doc, ui, facts: str) -> None:
         self.case("OC15", doc, ui[0], facts + ". NOT WRITTEN: the switch could not be placed in every deployment; this ui_title is kept")
@@ -807,8 +816,8 @@ def main(argv=None) -> int:
             print(f"REFUSED: --report would overwrite a file the script reads: {target}", file=sys.stderr)
             return 3
     if any(c.case == "OC15" for c in plan.cases):
-        print("NOT WRITTEN: an app features file hides the recipe banner (ui_title.visible: false) and the key of the switch that replaces it has no name yet "
-              "(D-0472: it sits in the deployment file; name and place not decided). That ui_title is kept. Name it in BANNER_SWITCH_KEY and run again.", file=sys.stderr)
+        print("NOT WRITTEN: an app features file hides the recipe banner (ui_title.visible: false) and the switch that replaces it was not written "
+              "(see the case OC15 of the list for the reason). That ui_title is kept.", file=sys.stderr)
     header = ("APPLY" if args.apply else "DRY RUN: nothing is written") + f". Root: {root}"
     for line in lines_of(plan, False, header):
         print(line)
