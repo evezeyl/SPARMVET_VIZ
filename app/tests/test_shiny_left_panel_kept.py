@@ -134,3 +134,40 @@ def test_changing_recipe_leaves_the_left_panels_as_the_user_has_them(fresh):
     assert any("Export" in n for n in before), before
     _choose_recipe(page, "3_test_no_joins")
     assert page.evaluate(_OPEN) == before
+
+
+# Counts how often the left accordion is MOUNTED (added to the page), from before the app starts. A second mount at first load is
+# the double draw: it is hidden from the user by the "keep the user's panels" rule, so only this count shows that the render is not
+# invalidated by the first arrival of `sidebar_nav` (the equality guard of `_sync_active_space`, D-0502, section 14 R3).
+_COUNT_MOUNTS = """(() => { window.__mounts = 0;
+  new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) {
+    if (n.nodeType === 1 && (n.id === 'nav_accordion' || n.querySelector('#nav_accordion'))) window.__mounts++; } })
+    .observe(document, {childList: true, subtree: true}); })();"""
+
+
+def test_the_left_accordion_is_mounted_once_at_first_load(fresh):
+    page, url = fresh
+    page.add_init_script(_COUNT_MOUNTS)
+    page.goto(url)
+    _settle(page)
+    assert page.evaluate("() => window.__mounts") == 1
+
+
+def test_the_left_accordion_is_mounted_once_when_the_nav_input_comes_late(fresh):
+    page, url = fresh
+    page.add_init_script(_COUNT_MOUNTS)
+    _hold_then_release(page, url, lambda: page.wait_for_timeout(2500))
+    assert page.evaluate("() => window.__mounts") == 1
+
+
+def test_closing_every_panel_is_an_answer_of_the_page_not_a_missing_one(fresh):
+    """The page sends `null` (not nothing) when no panel is open; the server reads it as None, which is "the user closed
+    everything" and not a first draw (`_user_open_panels`; py-shiny `_manage_inputs` stores the null as a value)."""
+    page, url = fresh
+    page.goto(url)
+    _settle(page)
+    for name in page.evaluate(_OPEN):
+        _toggle(page, name)
+    assert page.evaluate(_OPEN) == []
+    assert page.evaluate("() => Shiny.shinyapp.$inputValues['nav_accordion']") is None
+    assert page.evaluate("() => 'nav_accordion' in Shiny.shinyapp.$inputValues")

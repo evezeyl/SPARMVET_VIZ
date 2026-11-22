@@ -2,7 +2,7 @@
 
 # @deps
 # consumes: app/handlers/home_theater.py (define_server), app/tests/test_tier3_reader.py (Tier3World)
-# consumed_by: app/tests/test_home_reads_the_plots_table.py, app/tests/test_home_view_choices.py, app/tests/test_filters_change_the_table_not_the_plot.py
+# consumed_by: app/tests/test_home_reads_the_plots_table.py, app/tests/test_home_view_choices.py, app/tests/test_filters_change_the_table_not_the_plot.py, app/tests/test_left_sidebar_redraw_wiring.py
 # @end_deps
 
 `Home` registers what HOME registers (the render functions by output id, the readers it hands to the filter handlers, the effects by name) so
@@ -103,7 +103,7 @@ class Home:
     """`define_server` with fakes. `readers` holds what HOME hands to the filter handlers and the export; `outputs` the render functions by id."""
 
     def __init__(self, world, monkeypatch, *, view="T3", mode="exploration", flags=("interactivity_enabled",), subtab="subtab_p_join",
-                 recipe="tiny", source=None, home_state=None, inputs=None, session_manager=None):
+                 recipe="tiny", source=None, home_state=None, inputs=None, session_manager=None, input_=None):
         self.world = world
         self.readers, self.outputs, self.effects, self.drawn, self.notes = {}, {}, {}, {}, []
         self.drawn_kw = {}         # plot id -> the keyword arguments of the last draw (the aesthetic override, i.e. the Reshuffle pin)
@@ -161,7 +161,7 @@ class Home:
         self._output = output
         self.bootloader = bootloader
         home_theater.define_server(
-            mock.MagicMock(), output, mock.MagicMock(),
+            input_ if input_ is not None else mock.MagicMock(), output, mock.MagicMock(),
             bootloader=bootloader, wrangle_studio=mock.MagicMock(), dev_studio=mock.MagicMock(),
             orchestrator=world.orch, viz_factory=factory, gallery_viewer=mock.MagicMock(),
             current_app_features=mock.MagicMock(), anchor_path=mock.MagicMock(), tier1_anchor=lambda: pl.DataFrame().lazy(),

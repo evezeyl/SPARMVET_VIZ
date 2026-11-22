@@ -1,7 +1,7 @@
 """
 @deps
 provides: function:open_panels_after_redraw
-consumed_by: app/handlers/home_theater.py, app/tests/test_sidebar_open_panels.py
+consumed_by: app/handlers/home_theater.py, app/tests/test_sidebar_open_panels.py, app/tests/test_left_sidebar_redraw_wiring.py
 doc: .claude/rules/ui_implementation_contract.md#11e
 @end_deps
 
