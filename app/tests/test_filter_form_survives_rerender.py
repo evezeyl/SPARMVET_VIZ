@@ -60,6 +60,12 @@ class TestSchemaSignature:
         """A number column on a discrete axis is offered other operators: the form must be built again."""
         assert dialog_schema_signature(TYPES, {"year"}) != dialog_schema_signature(TYPES, set())
 
+    def test_a_discrete_axis_on_a_text_column_does_not_change_it(self):
+        """Only a number column reads the discrete axis (D-0505, D-0506): two plots on one table that differ only there give one form.
+        MUTATION S1 (every discrete column in the signature): this fails."""
+        assert dialog_schema_signature(TYPES, {"sample_id"}) == dialog_schema_signature(TYPES, set())
+        assert dialog_schema_signature(TYPES, {"sample_id", "year"}) == dialog_schema_signature(TYPES, {"year"})
+
     def test_no_table_is_a_signature_of_its_own(self):
         assert dialog_schema_signature({}, set()) == ((), ())
         assert dialog_schema_signature({}, set()) != dialog_schema_signature(TYPES, set())

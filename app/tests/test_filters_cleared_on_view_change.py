@@ -2,7 +2,7 @@
 
 D-0311: "exploration filters are cleared when the viewed tier changes; they are not kept, not checked and not carried silently". The effect
 `_clear_filters_on_view_change` of `define_filter_audit_server` is run on the real HOME readers (`home_harness`). A change of the data
-choice, of the source table, of the open plot (P-B2, PROVISIONAL), of the mode and of the recipe clears the staged and the applied rows and tells
+choice, of the source table, of the table the open plot reads (D-0505, D-0506), of the mode and of the recipe clears the staged and the applied rows and tells
 the user; a change that leaves nothing to clear tells nothing (no notice for nothing); audited steps are never touched.
 
 MUTATION C1 (the effect never clears): every clearing test fails. MUTATION C2 (the notice is told even for nothing): the quiet tests fail.
@@ -59,7 +59,8 @@ def run(tmp_path, monkeypatch):
 @pytest.mark.parametrize("change,word", [
     ({"view": "T1"}, "data you view"),
     ({"mode": "audit"}, "Audit mode"),
-    ({"subtab": "subtab_p_steps"}, "another plot"),
+    ({"subtab": "subtab_p_steps"}, "another table"),    # J with its own tier-3 steps: not the table of p_join
+    ({"subtab": "subtab_p_table"}, "another table"),    # T
 ])
 def test_a_change_of_the_view_clears_the_staged_and_the_applied_filters_and_says_so(run, change, word):
     run.stage(pending=2, applied=1)
@@ -68,6 +69,31 @@ def test_a_change_of_the_view_clears_the_staged_and_the_applied_filters_and_says
     assert run.rows() == (0, 0), "staged rows not yet applied are cleared too"
     [text] = run.notices()
     assert word in text and "removed" in text and "Audited steps are kept" in text
+
+
+def test_a_plot_on_the_same_table_keeps_the_staged_and_the_applied_filters_and_says_nothing(run):
+    """D-0505, D-0506: the filter belongs to the table. p_join and p_jitter both read J: nothing is cleared, no notice. MUTATION K1 (the plot id
+    back in the key): this fails."""
+    run.stage(pending=2, applied=1)
+    with reactive.isolate():
+        before = run.home.readers["current_view_key"]()
+    run.home.set(subtab="subtab_p_jitter")
+    run.step()
+    assert run.rows() == (2, 1) and run.notices() == []
+    with reactive.isolate():
+        assert run.home.readers["current_view_key"]() == before, "the rows built on p_join still belong to the view of p_jitter"
+    run.home.set(subtab="subtab_p_table")
+    run.step()
+    assert run.rows() == (0, 0) and "reads another table" in run.notices()[0]
+
+
+def test_on_t2_a_plot_with_its_own_tier_3_steps_still_shares_the_table_of_its_neighbour(run):
+    run.home.set(view="T2")
+    run.step()
+    run.stage()
+    run.home.set(subtab="subtab_p_steps")
+    run.step()
+    assert run.rows() == (1, 1) and run.notices() == []
 
 
 def test_a_change_of_the_source_table_clears_them(tmp_path, monkeypatch):

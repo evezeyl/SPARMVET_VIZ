@@ -175,3 +175,34 @@ def test_another_operator_still_adds_its_row(page: Page, staged_app):
     _wait_shiny(page)
     _add(page)
     expect(page.locator("#filter_rows_ui")).to_contain_text("value ≥ 3", timeout=10_000)
+
+
+# ---- the line goes when the user changes what it is about (`_clear_add_reason`, R3) --------------------------------------------------
+
+@pytest.fixture
+def shown(page: Page, staged_app):
+    """The form open on `between`, "+ Add" pressed once with empty ends: the line is on screen."""
+    _open_the_filter_form(page, staged_app)
+    _between(page)
+    _add(page)
+    _no_row_and_line(page)
+    return page
+
+
+def test_the_line_goes_when_the_operator_is_changed(shown: Page):
+    shown.locator("#fb_op").select_option("ge")
+    _wait_shiny(shown)
+    expect(shown.locator("#fb_add_reason")).not_to_contain_text("Give both values", timeout=10_000)
+
+
+def test_the_line_goes_when_the_column_is_changed(shown: Page):
+    shown.locator("#fb_col").select_option("group")
+    _wait_shiny(shown)
+    expect(shown.locator("#fb_add_reason")).not_to_contain_text("Give both values", timeout=10_000)
+
+
+def test_the_line_goes_when_an_end_is_typed(shown: Page):
+    shown.locator("#fb_value_lo").fill("2")
+    shown.locator("#fb_value_lo").press("Tab")
+    _wait_shiny(shown)
+    expect(shown.locator("#fb_add_reason")).not_to_contain_text("Give both values", timeout=10_000)

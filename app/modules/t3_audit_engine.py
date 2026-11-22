@@ -13,7 +13,7 @@ extract_t3_filter_rows / extract_t3_drop_columns.
 from __future__ import annotations
 
 # @deps
-# provides: function:refuse_decimal_for_whole_numbers, function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:rows_built_on, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:view_key, function:view_change_notice, function:column_is_in_frame, function:value_box_kind, function:between_ends, class:EmptyBox, class:BetweenIncomplete, constant:BETWEEN_INCOMPLETE_LINE, class:AuditStepError
+# provides: function:refuse_decimal_for_whole_numbers, function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:rows_built_on, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:viewed_table, function:view_key, function:view_change_notice, function:column_is_in_frame, function:value_box_kind, function:between_ends, class:EmptyBox, class:BetweenIncomplete, constant:BETWEEN_INCOMPLETE_LINE, class:AuditStepError
 # consumes: polars, app/modules/orchestrator.py (TIER1_KEY_META, TIER2_KEY_META, tier2_path_for), libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
 # consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_step_order.py, app/tests/test_removed_audit_step_type.py, app/tests/test_audit_error_names_the_plot.py, app/tests/test_filters_cleared_on_recipe_change.py, app/tests/test_filter_value_kept.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
@@ -66,18 +66,32 @@ def filters_cleared_notice(n_pending: int, n_applied: int) -> str | None:
     )
 
 
-def view_key(recipe_id, mode: str, data_view: str, source_table, subtab) -> tuple:
-    """What the table on screen is made of (D-0311, D-0178): the recipe, the mode (exploration or audit), the data choice (SRC, T1, T2, T3), the
-    source table (only meaningful for SRC; None otherwise) and the open plot. An exploration filter is built on this table: when any of them
-    changes, the filters are cleared."""
-    return (recipe_id, mode, data_view, source_table if data_view == "SRC" else None, subtab)
+def viewed_table(data_view: str, target_dataset, plot_id, plot_has_steps: bool) -> tuple | None:
+    """Which table the data choice shows, for the plot open (D-0505, D-0506: a filter belongs to the table, not to the plot).
+
+    "SRC": None (a source table is named by the `source_table` of the key, whatever plot is open). "T1" and "T2": the plot's target table
+    (T2 equals T1 when the target has no tier-2 steps, but the data choice stays a part of the key, so a change between them still clears,
+    D-0311). "T3": the target table, plus the plot's own id only when the recipe writes tier-3 steps for it: such a plot reads another table than
+    its neighbours on the same target, a plot without them reads the table as it is, so two such plots share the table.
+    """
+    if data_view == "SRC":
+        return None
+    own = plot_id if data_view == "T3" and plot_has_steps else None
+    return (target_dataset, own)
+
+
+def view_key(recipe_id, mode: str, data_view: str, source_table, table) -> tuple:
+    """What the table on screen is made of (D-0311, D-0178, D-0506): the recipe, the mode (exploration or audit), the data choice (SRC, T1, T2,
+    T3), the source table (only meaningful for SRC; None otherwise) and the table the open plot reads (`viewed_table`; not the plot itself:
+    two plots on one table share the key). An exploration filter is built on this table: when any of them changes, the filters are cleared."""
+    return (recipe_id, mode, data_view, source_table if data_view == "SRC" else None, table)
 
 
 _VIEW_CAUSES = (
     (1, "you switched to {mode_name} mode ({mode})"),
     (2, "you changed the data you view"),
     (3, "you changed the source table"),
-    (4, "you opened another plot (its table can differ)"),
+    (4, "you opened a plot that reads another table"),
 )
 
 
@@ -513,7 +527,7 @@ def column_bounds(lf, column: str, dtype):
     kind = kind_of(dtype)
     if kind not in ("date", "datetime", "time", "duration"):
         return None
-    # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 6: the boxes of a time, a date or a duration start at the smallest and the largest value of the column.
+    # PROVISIONAL (FILTER-PICKERS-1, an agent's choice, waits for Eve), point 6: the single box of a comparison on a time, a date or a duration starts at the smallest value of the column; the two ends of "between" start empty (D-0504).
     expr = pl.col(column)
     if kind == "date":
         lo, hi = lf.select(expr.min().alias("lo"), expr.max().alias("hi")).collect().row(0)
@@ -831,8 +845,12 @@ def dialog_schema_signature(types: dict, discrete: set) -> tuple:
     columns the plot uses as a discrete axis (it changes the operator list of a number column).
 
     Two tables with the same signature give the same form, whatever their rows. The form is mounted again only when this
-    changes, so a choice the user has just made is not put back by a recompute that changed nothing in it."""
-    return (tuple((name, str(dtype)) for name, dtype in types.items()), tuple(sorted(discrete)))
+    changes, so a choice the user has just made is not put back by a recompute that changed nothing in it.
+
+    Only a number column reads the discrete axis (`ops_for_column`, `value_widget_for`), so only those are in the signature: two plots on one
+    table whose discrete axes differ on a text column give the same form, and what the user typed stays (D-0505, D-0506)."""
+    relevant = sorted(c for c in discrete if kind_of(types.get(c)) in ("int", "float"))
+    return (tuple((name, str(dtype)) for name, dtype in types.items()), tuple(relevant))
 
 
 def stored_key(path, meta_key: str) -> str | None:

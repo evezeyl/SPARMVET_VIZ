@@ -304,5 +304,5 @@ def test_plus_add_stamps_the_row_with_the_view_it_was_built_on(world, monkeypatc
     with reactive.isolate():
         effects["_filter_add_row"]()
         [row] = home.filters_pending.get()
-        assert row["view"] == home.readers["current_view_key"]() == ("tiny", "exploration", "T2", None, "subtab_p_join")
+        assert row["view"] == home.readers["current_view_key"]() == ("tiny", "exploration", "T2", None, ("J", None))
         assert row["column"] == "score" and row["op"] == "ge"
