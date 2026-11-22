@@ -11,8 +11,8 @@ decorators only. It MUST NOT be imported by non-Shiny contexts.
 from __future__ import annotations
 
 # @deps
-# provides: constant:EXPORT_READY_TEXTS, constant:EXPORT_PANEL_FIELDS, constant:EXPORT_WATCHED_FIELDS, function:define_export_server, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
-# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/export_fields_store.py (D-0288, D-0291, D-0296: the Export fields remembered per session, in memory only; defaults D-0294), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table, the same function the orchestrator uses, D-0240; tier2_steps, tier3_steps: which tables and plots have steps; DataAnalysisRecipeKeys.plot_key_of: the key of the table a plot reads), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
+# provides: constant:EXPORT_READY_TEXTS, constant:EXPORT_PANEL_FIELDS, constant:EXPORT_WATCHED_FIELDS, function:define_export_server, function:tables_no_plot_reads, output:system_tools_ui, output:export_bundle_download, output:import_bundle_report, function:_build_methods_section
+# consumes: app/src/www/export_ready.js (D-0270: greys the Export button until the echo of _confirm_export_inputs matches the screen), app/modules/export_fields_store.py (D-0288, D-0291, D-0296: the Export fields remembered per session, in memory only; defaults D-0294), app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/viz_factory/src/viz_factory/viz_factory.py, libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/t3_translator.py (build_mode2_recipe — REPRO-EXPORT-MODES-1), libs/utils/src/utils/recipe_tiers.py (plot_targets, schema_bodies: the tables no plot reads, D-0457), app/modules/cache_keys.py (canonical_hash, engine_fingerprint — REPRO-PROV-1; collection_tier2_key: the tier-2 key recorded per table, the same function the orchestrator uses, D-0240; tier2_steps, tier3_steps: which tables and plots have steps; DataAnalysisRecipeKeys.plot_key_of: the key of the table a plot reads), app/modules/bundle_importer.py (import_bundle, BundleImportError — REPRO-IMPORT-1), app/modules/plot_seeds.py (SEED-HOLDS-1), app/modules/plot_issue_reporter.py (plot_warning_text — D-0269), libs/viz_factory/src/viz_factory/checked_plot.py (plot_warnings — D-0269), polars, shiny
 # consumes: libs/utils/src/utils/engines.py (plot_engine_slot — the engine handed to the plot library, D-0237), app/modules/engine_record.py (engine_record, failed_plot_record: the `engines` part of effective_run.yaml, D-0248)
 #            reactive.Value:session_processing_issues (DIAG-RUNTIME-AUDIT-1 — included in report.qmd Processing Issues section)
 # consumed_by: app/handlers/home_theater.py
@@ -27,6 +27,7 @@ from pathlib import Path
 from shiny import reactive, render, ui
 
 from app.modules.cache_keys import tier2_steps, tier3_steps
+from utils.recipe_tiers import plot_targets, schema_bodies
 from app.modules.error_notice import notice, what_failed
 from app.modules.export_fields_store import (
     EXPORT_FIELD_DEFAULTS as _FIELD_DEFAULTS, EXPORT_LABEL_DEFAULT, EXPORT_LABEL_FIELD, REMEMBERED_EXPORT_FIELDS,
@@ -55,6 +56,22 @@ def exported_tiers(*, has_t2: bool, has_t3: bool) -> list:
     """The tiers whose tables are in the bundle, for the README and the report (HOME-WALK F): T1 always, T2 when a dataset of the plots has tier-2 steps
     (the same condition that writes its T2 file), T3 when a plot has audited or tier-3 steps (the same condition that writes its T3 file)."""
     return ["T1"] + (["T2"] if has_t2 else []) + (["T3"] if has_t3 else [])
+
+
+def tables_no_plot_reads(raw: dict) -> list[str]:
+    """The tables of the recipe that no plot reads, in the order of the recipe: its source tables, then its joins (D-0457).
+
+    D-0457, her words: "Must be and yes must be viewabøenin the data preview", to her remark that the export should maybe export all the
+    tables included in a recipe even if no plot reads them. The export writes the Tier 1 file of each of these. Only Tier 1 can exist for them:
+    the recipe check refuses tier-2 steps on a table or join no plot reads (S07, J14), and a tier 3 is a plot.
+
+    PROVISIONAL (not decided, D-0457 reading to be confirmed): "a table of the recipe" is read as every source table (data schema, metadata,
+    additional dataset) and every join that no plot targets directly; a source that a join reads and no plot targets is one of them. The
+    narrower readings (joins and unlinked sources only) change this one function and nothing else."""
+    targets = plot_targets(raw)
+    joins = raw.get("joins") if isinstance(raw, dict) else None
+    ids = list(schema_bodies(raw)) + (list(joins) if isinstance(joins, dict) else [])
+    return [t for t in dict.fromkeys(ids) if t not in targets]
 
 
 def build_export_provenance(
@@ -955,7 +972,7 @@ def define_export_server(input, output, session, *,
         recipe or raw data; see effective_run.yaml below for the shared verification
         record, and the optional Mode 2 add-on for the recipe/data themselves):
         - plots/          one picture per plot, in the plot format of the panel (SVG by default, D-0294)
-        - data/           T1 TSV for each dataset referenced by active plots
+        - data/           T1 TSV for each dataset referenced by active plots, and for each table that no plot reads (D-0457)
         - t3_steps.yaml   human-readable audit record backing the Methods prose (when T3 has steps)
         - effective_run.yaml   the four verification hashes, per-plot seeds, environment —
                           written identically whether or not Mode 2 is checked
@@ -1005,8 +1022,11 @@ def define_export_server(input, output, session, *,
         # user looked at.
         with reactive.isolate():
             _view = view_keys() if view_keys is not None else None
-        # The tables in scope: the collections the plots of this export read (every export holds all plots of the recipe).
-        _scope_tables_now = sorted({_s.get("target_dataset") for _, _s in export_plot_entries(cfg.raw_config) if _s.get("target_dataset")})
+        # The tables in scope: the collections the plots of this export read (every export holds all plots of the recipe), and the tables no plot reads.
+        # D-0457: it also reads the tables no plot reads (their Tier 1 file is in the bundle), so their keys are checked too.
+        _unread_tables = tables_no_plot_reads(cfg.raw_config)
+        _scope_tables_now = sorted({_s.get("target_dataset") for _, _s in export_plot_entries(cfg.raw_config) if _s.get("target_dataset")}
+                                   | set(_unread_tables))
         _changes = changed_since_view(_view, export_keys, _scope_tables_now)
         if _changes:
             _text = blocked_export_notice(_changes, _view, export_keys, tables=_scope_tables_now)
@@ -1146,6 +1166,13 @@ def define_export_server(input, output, session, *,
                         # recipe: steps and engine); the record keeps its words for a table with no tier-2 steps: empty, "none (T2 equals T1)"
                         "tier2_key": export_keys.tier2_key_of(_ds) if tier2_steps(cfg.raw_config, _ds) else "",
                     }
+            # D-0457: the tables no plot reads are recorded the same way (their Tier 1 file is in the bundle); their Tier 2 key is empty because
+            # the recipe check refuses tier-2 steps on a table no plot reads (S07, J14)
+            for _ds in _unread_tables:
+                stage_keys.setdefault(_ds, {
+                    "tier1_key": export_keys.tier1_key_of(_ds),
+                    "tier2_key": export_keys.tier2_key_of(_ds) if tier2_steps(cfg.raw_config, _ds) else "",
+                })
             # the key of the table a plot reads, only for a plot that has tier-3 steps (a plot with none reads its table: that is the key above)
             plot_keys = {_p: export_keys.plot_key_of(_p) for _p, _spec in all_plots
                          if _spec.get("target_dataset") and tier3_steps(cfg.raw_config, _p)}
@@ -1445,6 +1472,41 @@ def define_export_server(input, output, session, *,
                                     f"{bundle_dir}/{safe_ds}/T3_data_{_t3_pid}_ERROR.txt",
                                     f"T3 data export failed:\n{e}"
                                 )
+
+                # ── Tables that no plot reads (D-0457): their Tier 1 file, read as the others are read (the orchestrator, the keys of
+                # this export), and nothing else: no Tier 2 and no Tier 3 can exist for a table no plot reads (S07, J14), no audit step is
+                # written at such a table here (HOME writes audit steps only at a plot's table), exploration is never exported (D-0327).
+                # PROVISIONAL (not decided, D-0457 reading to be confirmed): which tables these are is `tables_no_plot_reads`.
+                unread_rows: dict[str, dict] = {}          # table -> {"folder", "rows", "columns", "error"} for README and report
+                _folders_used = {_safe_ds_name(_k) for _k in exported_datasets}
+                for ds_key in _unread_tables:
+                    safe_ds = _safe_ds_name(ds_key)
+                    _n = 2
+                    while safe_ds in _folders_used:       # two table ids that give one folder name stay two folders
+                        safe_ds = f"{_safe_ds_name(ds_key)}_{_n}"
+                        _n += 1
+                    _folders_used.add(safe_ds)
+                    try:
+                        lf_t1 = orchestrator.materialize_tier1(
+                            data_analysis_recipe_id=data_analysis_recipe_id,
+                            collection_id=ds_key,
+                            output_path=bootloader.get_location("user_data") / "anchors" / f"{ds_key}.parquet",
+                            keys=export_keys,
+                            on_inputs_changed=_on_build_change,
+                        )
+                        df_t1 = lf_t1.collect()
+                        tsv_path = tmpdir_path / f"{safe_ds}_T1.tsv"
+                        df_t1.write_csv(str(tsv_path), separator="\t")
+                        with open(tsv_path, "rb") as f:
+                            zf.writestr(f"{bundle_dir}/{safe_ds}/T1_data.tsv", f.read())
+                        unread_rows[ds_key] = {"folder": safe_ds, "rows": df_t1.height, "columns": len(df_t1.columns), "error": None}
+                    except Exception as e:
+                        _lost(f"the T1 data of '{ds_key}' (a table no plot reads)", e)
+                        zf.writestr(
+                            f"{bundle_dir}/{safe_ds}/T1_data_ERROR.txt",
+                            f"T1 data export failed:\n{e}"
+                        )
+                        unread_rows[ds_key] = {"folder": safe_ds, "rows": None, "columns": None, "error": str(e)}
 
                 # ── t3_steps.yaml (when T3 has committed changes) — Mode 1 content: the
                 # human-readable audit record backing the Methods prose, not the recipe. ──
@@ -1908,6 +1970,20 @@ def define_export_server(input, output, session, *,
                         qmd_lines.append(f"[{_t3_label} of {_qp(_plot)}]({_data_folder}/T3_data_{_quote(_plot)}.tsv)")
                 qmd_lines.append("")
 
+            # Tables that no plot reads (D-0457). PROVISIONAL wording (not decided).
+            if unread_rows:
+                qmd_lines += [
+                    "### Tables that no plot reads", "",
+                    "These tables are read by no plot of this recipe: their Tier 1 data is in the bundle, no figure is drawn from them.", "",
+                ]
+                for _t, _r in unread_rows.items():
+                    if _r["error"] is None:
+                        qmd_lines.append(f"- {_qp(_t)}: [Raw data (T1)]({_quote(_r['folder'])}/T1_data.tsv), "
+                                         f"{_qp(str(_r['rows']))} rows × {_qp(str(_r['columns']))} columns")
+                    else:
+                        qmd_lines.append(f"- {_qp(_t)}: not written, see `{_quote(_r['folder'])}/T1_data_ERROR.txt`")
+                qmd_lines.append("")
+
             # ── T3 Audit Trail section ────────────────────────────────────
             if _t3_listed:
                 qmd_lines += ["## T3 Audit Trail", ""]
@@ -2088,6 +2164,15 @@ def define_export_server(input, output, session, *,
                 if rendered_report_bytes
                 else "  (report rendering failed — see report_RENDER_FAILED.txt)"
             )
+            # Tables that no plot reads (D-0457), for README. PROVISIONAL wording (not decided).
+            unread_block = ([
+                "Tables that no plot reads (PROVISIONAL wording)", "-" * 20,
+                "These tables are read by no plot of this recipe: their Tier 1 data is in the bundle, no figure is drawn from them.",
+                *[f"  {_t}: " + (f"{_r['folder']}/T1_data.tsv ({_r['rows']} rows x {_r['columns']} columns)" if _r["error"] is None
+                                  else f"NOT WRITTEN, see {_r['folder']}/T1_data_ERROR.txt")
+                  for _t, _r in unread_rows.items()],
+                "",
+            ] if unread_rows else [])
             # Dataset → plots mapping block for README
             mapping_block = ["Dataset → Plots", "-" * 20]
             for ds_key, safe_ds, plot_list in mapping_rows:
@@ -2179,6 +2264,7 @@ def define_export_server(input, output, session, *,
                 "",
                 *mapping_block,
                 "",
+                *unread_block,
                 "Audited T3 steps (always applied to the plot and its data):",
                 *([f"  {_p}: {len(_t3_by_plot.get(_p, []))} step(s), see t3_steps.yaml and the T3 Audit Trail in report.qmd"
                    for _p in sorted(audited_plots)] or ["  none"]),
