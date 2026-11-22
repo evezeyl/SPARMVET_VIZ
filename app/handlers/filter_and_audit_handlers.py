@@ -17,7 +17,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_filter_audit_server, output:filter_whole_number_ui (D-0376), effect:_clear_filters_on_view_change (replaces _clear_filters_on_recipe_change, slice B), output:sidebar_filters, output:filter_rows_ui, output:filter_form_ui, output:filter_type_ui, output:filter_op_ui, output:filter_value_ui, output:filter_closed_text_ui, output:filter_na_ui, output:filter_na_text_ui, output:filter_controls_ui, input:fb_na, input:filter_apply, input:filter_send_to_audit
-# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, dialog_schema_signature, dialog_rows_signature, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/key_drop.py (DropGate: the drop of a key column by place, D-0358), libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
+# consumes: app/modules/session_manager.py (make_audit_step), app/modules/t3_audit_engine.py (view_change_notice, column_is_in_frame, staged_filter_row (view=), describe_filter, op_choice_label, dialog_value, value_choices, column_types, ops_for_column, value_widget_for, value_box_kind, number_range, column_type_line, closed_phrase, CLOSED_CHOICES, dialog_frame, dialog_schema_signature, dialog_rows_signature, AuditStepError, column_bounds, compose_date, compose_time, compose_datetime, compose_duration, control_hint, LIST_ON_DEMAND_FROM, list_note), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/key_drop.py (DropGate: the drop of a key column by place, D-0358), libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py, app/src/bootloader.py (is_enabled), shiny
 # consumed_by: app/handlers/home_theater.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-045, .claude/knowledge/architecture_decisions.md#ADR-049, .claude/knowledge/architecture_decisions.md#ADR-051, .claude/knowledge/architecture_decisions.md#ADR-085, .claude/rules/ui_implementation_contract.md#8
 # @end_deps
@@ -31,7 +31,7 @@ from app.modules.plan_composer import PlanComposerBug
 from app.modules.t3_audit_engine import (
     describe_filter, op_choice_label, OP_WORDS, staged_filter_row, audit_params_from_row,
     CLOSED_CHOICES, closed_phrase, column_type_line, column_types, number_range, ops_for_column,
-    dialog_value, not_offered_line, value_choices, value_widget_for, AuditStepError, dialog_frame, dialog_rows_signature, dialog_schema_signature,
+    dialog_value, not_offered_line, value_box_kind, value_choices, value_widget_for, AuditStepError, dialog_frame, dialog_rows_signature, dialog_schema_signature,
     column_bounds, column_is_in_frame, refuse_decimal_for_whole_numbers, view_change_notice, compose_date, compose_datetime, compose_duration, compose_time, control_hint, LIST_ON_DEMAND_FROM, list_note,
 )
 from utils import key_drop
@@ -352,6 +352,26 @@ def define_filter_audit_server(input, output, session, *,
             if _dialog_rows_signal.get() != rows:
                 _dialog_rows_signal.set(rows)
 
+    # WHY: found 2026-11-22 with timelines over 20 repeats. `filter_value_ui` read `fb_op`, so the value box was drawn again by the server at
+    # every choice of the operator, also when the box did not change kind. A number typed before that redraw arrived was thrown away and
+    # "+ Add row" then added the box's default (the column's minimum): a filter with another value than the typed one, and no word (D-0050).
+    # This Value holds the kind of box (`value_box_kind`) and changes only when the kind changes (R3, idempotent guard). The Effect has a
+    # higher priority than the outputs, so that on a new column the kind is up to date when the value box is drawn.
+    _value_kind_signal = reactive.Value(None)
+
+    @reactive.Effect(priority=10)
+    def _signal_value_kind():
+        if not bootloader.is_enabled("interactivity_enabled"):
+            return
+        _dialog_schema_signal.get()
+        _form_reset.get()
+        _lf, types, disc = _dialog_table_now()
+        col = _selected_column(types)
+        kind = value_box_kind(types.get(col), col in disc, safe_input(input, "fb_op", None))   # reads fb_col and fb_op: the dependencies
+        with reactive.isolate():
+            if _value_kind_signal.get() != kind:
+                _value_kind_signal.set(kind)
+
     def _selected_column(types: dict):
         col = safe_input(input, "fb_col", next(iter(types), None))
         return col if col in types else next(iter(types), None)
@@ -427,21 +447,21 @@ def define_filter_audit_server(input, output, session, *,
         List of values: from the whole column. Number box: the range of the whole column. Two number boxes and the four
         ends for `between`. A comparison on a number column that is a discrete axis uses the number box (Eve, 2026-11-14).
         It depends on the schema signal and the rows signal: a rebuilt table with the same rows does not mount the box again and
-        wipe the value the user has typed.
+        wipe the value the user has typed. For the same reason it does not depend on the operator but on the KIND of box the operator
+        needs (`_value_kind_signal`): a change of operator within one kind (">=" to ">") leaves the box, and what is typed in it,
+        as it is; the operator is read here without subscribing (D-0050).
         """
         _dialog_schema_signal.get()
         _dialog_rows_signal.get()
         _form_reset.get()
+        _value_kind_signal.get()   # the dependency: the box is mounted again when its kind changes, not when the operator does
         lf, types, disc = _dialog_table_now()
         col = _selected_column(types)
         dtype = types.get(col)
-        choices = _op_choices(dtype, col in disc)
-        if not choices:
+        with reactive.isolate():
+            widget = value_box_kind(dtype, col in disc, safe_input(input, "fb_op", None))
+        if widget is None:
             return ui.div()  # the operator slot says why (filter_op_ui)
-        op = safe_input(input, "fb_op", next(iter(choices)))
-        if op not in choices:
-            op = next(iter(choices))
-        widget = value_widget_for(dtype, col in disc, op) if dtype is not None else "text"
         if widget == "list":
             try:
                 labels = list(value_choices(lf, col))
