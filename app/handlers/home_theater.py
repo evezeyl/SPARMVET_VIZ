@@ -1657,18 +1657,20 @@ def define_server(input, output, session, *,
             lf = _apply_filter_rows(lf, _applied_for_view())
         return lf
 
-    def _chooser_key(p_id: str | None) -> str:
+    def _chooser_key(p_id: str | None) -> str | None:
         """The key of the table the column chooser is built for: everything `home_col_selector_ui` depends on (the open recipe and the data it
         was built on, the plot, the data choice, the source table, the audited drops of Audit mode on T3). The chooser emits it with itself
         and the badge compares it with the key of the table now shown; one function gives both, so they cannot differ (D-0050). The recipe
         part is the id the keys are computed for and the two hashes of `_data_analysis_recipe_keys` (the same reactive source the tables are
         read through, so a recipe switch or a data refresh changes it and the chooser, which calls this function, depends on it): after a
-        switch of recipe the old plot id and the old names must not be taken for the new table's."""
+        switch of recipe the old plot id and the old names must not be taken for the new table's. When the recipe keys cannot be read there
+        is NO key (None): a failed key must never equal another key, or a hidden-columns sentence could be said about the wrong table
+        (D-0050). The table's place shows why the recipe cannot be read."""
         try:
             keys = _data_analysis_recipe_keys()
             recipe_part = f"{safe_input(input, 'data_analysis_recipe_id', '')}@{keys.data_analysis_recipe_sha256[:12]}:{keys.data_batch_hash[:12]}"
         except Exception:
-            recipe_part = "recipe-unreadable"
+            return None
         view = data_view.get()
         try:
             table = _effective_source_table(p_id) if view == "SRC" else ""
@@ -1712,7 +1714,8 @@ def define_server(input, output, session, *,
             # belongs to the PREVIOUS table: its names may all exist in the new one, and "N columns hidden" would say that the user hid columns
             # he did not hide (D-0050). Only a chooser built for the table now shown is read.
             built_for = safe_input(input, "preview_col_selector_key", None)
-            if chosen and isinstance(chosen, (list, tuple)) and built_for == _chooser_key(p_id):
+            now_key = _chooser_key(p_id)
+            if chosen and isinstance(chosen, (list, tuple)) and now_key is not None and built_for == now_key:
                 names = lf.collect_schema().names()
                 kept = [c for c in names if c in chosen]
                 # an empty choice shows every column, as the grid does
@@ -1814,7 +1817,7 @@ def define_server(input, output, session, *,
                     },
                 ),
                 # the table this chooser was built for, read by the preview badge (see `_chooser_key`)
-                ui.div(ui.input_text("preview_col_selector_key", None, value=_chooser_key(p_id)), style="display:none;"),
+                ui.div(ui.input_text("preview_col_selector_key", None, value=_chooser_key(p_id) or ""), style="display:none;"),
                 class_="mb-2 w-100 column-picker-container spv-text-xs",
             )
         except Exception:

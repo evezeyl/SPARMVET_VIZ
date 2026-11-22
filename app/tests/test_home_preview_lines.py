@@ -286,3 +286,28 @@ def test_a_change_of_the_data_changes_the_key(world, monkeypatch):
     world.data_file.write_text(world.data_file.read_text() + "sx\tA\t1\n")
     clear_data_analysis_recipe_cache()
     assert chooser_key(home) != before
+
+
+def test_unreadable_recipe_keys_on_both_sides_give_no_hidden_sentence(world, monkeypatch):
+    """A failed key never equals another key (D-0050): when the recipe part of the key cannot be read, the chooser carries no key and the
+    badge says nothing about hidden columns, even when the browser sends back the empty key, or the text a failed key used to be written
+    as, and a column is deselected. The rows are still counted (the table itself reads fine)."""
+    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table")
+    real = world.orch.compute_data_analysis_recipe_keys
+
+    class Unreadable:
+        def __init__(self, keys):
+            self._keys = keys
+
+        def __getattr__(self, name):
+            if name == "data_analysis_recipe_sha256":
+                raise RuntimeError("hash unreadable")
+            return getattr(self._keys, name)
+
+    monkeypatch.setattr(world.orch, "compute_data_analysis_recipe_keys", lambda *a, **k: Unreadable(real(*a, **k)))
+    assert chooser_key(home) == ""
+    for key in ("", None, "recipe-unreadable|p_table|T1||view|"):
+        home.inputs["preview_col_selector"] = ["sample_id"]
+        home.inputs["preview_col_selector_key"] = key
+        text = badge_text(home)
+        assert "hidden" not in text and f"of {ROWS} rows" in text
