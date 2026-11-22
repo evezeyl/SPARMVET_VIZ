@@ -63,7 +63,7 @@ def is_red(x, kind=None, self_join=False):
 # ----------------------------------------------------------------------------------------------------------------------------- the readings
 
 def test_the_kinds_not_yet_followed_are_named_in_one_place_and_never_overlap_the_followed_ones():
-    assert set(fx.NOT_YET_FOLLOWED_JOINS) == {"anti", "right", "full"} and "semi" in fx.FOLLOWED_JOINS
+    assert set(fx.NOT_YET_FOLLOWED_JOINS) == {"anti", "right", "full", "cross"} and "semi" in fx.FOLLOWED_JOINS
     assert not set(fx.NOT_YET_FOLLOWED_JOINS) & set(fx.FOLLOWED_JOINS)
     for how in NOT_YET:
         effect = fx.effect_of({"action": action_names.JOIN, "right_ingredient": "B", "on": "k", "how": how})
@@ -75,8 +75,9 @@ def test_the_kinds_not_yet_followed_are_named_in_one_place_and_never_overlap_the
 
 
 def test_any_other_kind_is_not_followed_either():
-    effect = fx.effect_of({"action": action_names.JOIN, "right_ingredient": "B", "on": "k", "how": "cross"})
-    assert effect.kind == fx.UNREAD and fx.not_yet_followed(effect) == "cross"
+    for kind in ("cross", "banana"):                                  # a kind the engine has and a word it does not have
+        effect = fx.effect_of({"action": action_names.JOIN, "right_ingredient": "B", "on": "k", "how": kind})
+        assert effect.kind == fx.UNREAD and fx.not_yet_followed(effect) == kind
 
 
 # ----------------------------------------------------------------------------------------------------------------------------- the first table
