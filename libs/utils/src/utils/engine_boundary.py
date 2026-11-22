@@ -149,6 +149,7 @@ PLACES: Tuple[EnginePlace, ...] = tuple(_place(*row) for row in (
     ("libs/viz_gallery/src/viz_gallery/example_recipe.py", _P, TABLE_LIBRARY, "builds a gallery example recipe and reads its data with Polars"),
     ("libs/viz_gallery/src/viz_gallery/gallery_manager.py", _P, TABLE_LIBRARY, "checks the gallery examples and reads their data with Polars"),
     (_U + "hashing.py", _P, TABLE_LIBRARY, "reads Parquet metadata; it imports Polars but does not use it"),
+    (_U + "table_compare.py", _P, TABLE_LIBRARY, "compares two collected Polars tables: counted whole-row diff, key check and paired view"),
     ("app/src/server.py", _P, TABLE_LIBRARY, "reads the stored tier 1 table with a Polars Parquet scan"),
     ("app/handlers/gallery_handlers.py", _P, TABLE_LIBRARY, "shows a Polars table with the error when an example cannot load"),
     ("app/handlers/test_lab_handlers.py", _P, TABLE_LIBRARY, "reads uploaded files with Polars for the TEST_LAB tools"),

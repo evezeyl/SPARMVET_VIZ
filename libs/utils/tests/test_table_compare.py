@@ -345,11 +345,14 @@ def test_the_list_of_changed_cells_is_cut_by_the_limit_and_says_so():
 
 def test_a_key_with_a_null_is_rejected_with_the_count():
     original = pl.DataFrame({"k": [1, None, 3], "v": [1, 2, 3]})
-    c = compare(original, original.clone(), key_candidates=[("k",)])
+    audited = pl.DataFrame({"k": [1, 2, 3], "v": [1, 2, 3]})
+    c = compare(original, audited, key_candidates=[("k",)])
     assert c.key_status == tc.KEY_NONE_USABLE and c.paired is None and c.key_used is None
     r = c.key_rejections[0]
     assert (r.columns, r.check, r.table, r.count) == (("k",), tc.CHECK_HAS_NULL, "original", 1) and r.reason
-    assert c.only_in_original.total == 0                                         # layers 1 and 2 are still returned
+    assert c.only_in_original.total == 1 and c.only_in_audited.total == 1         # layers 1 and 2 are still returned (the row with the missing key differs)
+    both = compare(original, original.clone(), key_candidates=[("k",)]).key_rejections[0]
+    assert both.table == "both" and both.count == 1
 
 
 def test_a_key_that_is_not_unique_in_one_table_only_is_rejected_naming_it():
@@ -378,8 +381,8 @@ def test_a_key_column_missing_in_both_tables_is_rejected_for_both():
 
 
 def test_a_key_whose_type_differs_is_rejected():
-    original = pl.DataFrame({"k": [1, 2]})
-    audited = pl.DataFrame({"k": ["1", "2"]})
+    original = pl.DataFrame({"k": [1, 2], "v": [5, 6]})
+    audited = pl.DataFrame({"k": ["1", "2"], "v": [5, 6]})
     r = compare(original, audited, key_candidates=[("k",)]).key_rejections[0]
     assert r.check == tc.CHECK_TYPE_DIFFERS and "Int64" in r.reason and "String" in r.reason
 
