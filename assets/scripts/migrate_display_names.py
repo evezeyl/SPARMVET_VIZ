@@ -17,6 +17,8 @@ The rules it applies (one table, `RULES` in this file, each with the ledger line
     the file itself states (default app features, default recipe, contact). Form and wording are PROVISIONAL (D-0479: not decided);
     the dry run prints every block in full
   app features files:
+    the key `name` is removed (D-0481; ONLY the top-level key of an app features file: the other keys called `name`, a layer's, a recipe's, are never touched);
+    the dry run prints the removed value and lists a `name` that differs from the file name (OC17: the file name is what the launch variable uses);
     the key `ui_title {text, subtitle, visible}` is removed, what it set is printed (D-0411, D-0470);
     a `visible: false` moves to ONE switch key of the deployment file, `branding.show_recipe_name: false` (D-0472, D-0474),
     only where exactly one deployment names that file as its `default_app_features`; any other case keeps the `ui_title`
@@ -25,7 +27,8 @@ Whatever else it finds that no decision covers is listed, never changed: the ban
 that has nowhere to go, `info.subtitle`, the Gallery generator, and so on. Decided points that need no change are listed with their
 counts (registries not renamed, format number 1, old sessions refused); a recipe with no name is listed as "would get the advice".
 A key present in the old and in the new spelling, or two old keys for one new key, is a CONFLICT: reported, not overwritten.
-The text of a removed group or plot `ui_title` is kept nowhere: each one is an OPEN case (OC16) printed in full with the `ui_label` beside it.
+The text of a removed group `ui_title` is kept nowhere: each one is an OPEN case (OC16) printed in full with the `ui_label` beside it.
+The text of a removed plot `ui_title` is compared with the `title` of the plot's `labs` layer (D-0484): same (OC20, decided), DIFFERS (OC18, both texts in full) or no figure title (OC19, not an error, text in full).
 The CODE places that read a `deployment_name` are listed (not changed): the pass must change them.
 
 It edits the TEXT at the positions the YAML parser reports (it reads and writes bytes), so comments, blank lines, line ends (LF or CRLF),
@@ -52,7 +55,7 @@ Examples:
 # provides: script:migrate_display_names
 # consumes: -
 # consumed_by: app/tests/test_migrate_display_names.py
-# doc: .claude/knowledge/decision_ledger.md (D-0407 to D-0412, D-0459, D-0236, D-0468 to D-0475, D-0479), .claude/tasks/tasks.md (NAMES-UI-LABEL-EVERYWHERE), .claude/rules/rules_asset_scripts.md
+# doc: .claude/knowledge/decision_ledger.md (D-0407 to D-0412, D-0459, D-0236, D-0468 to D-0475, D-0479 to D-0484), .claude/tasks/tasks.md (NAMES-UI-LABEL-EVERYWHERE), .claude/rules/rules_asset_scripts.md
 # @end_deps
 import argparse
 import json
@@ -130,6 +133,7 @@ RULES: List[Rule] = [
          "her words: H1 proposal accepted. (D-0472: the switch sits in the deployment file; the key `branding.show_recipe_name: true|false`, read as true when absent)"),
     Rule("R15", "deployment.block", "deployment_name", "a comment block at the top of the file", "D-0479",
          "her words: please ensure those are populated using the current \"deployement_name\" (the review session's reading, not hers: the first line of the block is the former name, then only what the file itself states; form and wording NOT decided, PROVISIONAL)"),
+    Rule("R16", "app_features.top", "name", None, "D-0481", "her words: 1 ok; Have the coordinator for a check for other ways of reading `name` - need to be sure. (the check reported that nothing else needs the key; the review session's reading, not hers: the key `name` of the app features files is removed, the file name is the id)"),
 ]
 
 # The ONE constant of the recipe banner switch (D-0470, D-0472, D-0474): the dotted path of its key in a deployment
@@ -175,9 +179,20 @@ OPEN_CASES: Dict[str, Dict[str, str]] = {
              "words": "D-0409 (1), (2): a group's and a plot's `ui_title` is removed from the format and the report uses the `ui_label`. The removal is applied as decided; the TEXT of each title "
                       "is kept nowhere. Each text is printed in full below, with the `ui_label` that replaces it, so that the owner can say where a longer text belongs (for example `description`)."},
 }
+OPEN_CASES["OC17"] = {"title": "An app features file whose `name` differs from its file name",
+                      "words": "D-0481: the key `name` is removed. The file name is what the launch variable and `default_app_features` use; a `name` that differs from it is a fact the "
+                               "owner should see. Listed, not judged: nothing is changed because of the difference."}
+OPEN_CASES["OC18"] = {"title": "A removed plot `ui_title` that DIFFERS from the figure title (the `labs` layer): the removed text is lost",
+                      "words": "D-0484 (her words: the labs in the plotnine layer has for effect to embed the plot title in the plot iself): the plot `ui_title` is removed and copied nowhere "
+                               "because it already is the figure title. Where it is not, both texts are printed in full; the removal stays applied; she decides what to do with a differing text."}
+OPEN_CASES["OC19"] = {"title": "A plot with no figure title (no `labs` title): NOT an error",
+                      "words": "D-0484 (her words: plot with no labs is a recipe problem - there might be cases where we want the user to provide own title to the plot so not embedding it can be a solution. "
+                               "So we keep open for some flexibility): listed, never refused; the removed text is printed in full so that nothing disappears unseen."}
+OPEN_CASES["OC20"] = {"title": "DECIDED: a removed plot `ui_title` that is the same as the figure title",
+                      "words": "D-0484: the text is removed and copied nowhere, because the `labs` layer of the plot already holds it (exact text equal)."}
 # the order of the sections; the decided ones, the advice and the notes are not open
-CASE_ORDER = ["OC16", "OC15", "OC09", "OC11", "OC13", "OC14", "CONFLICT", "OC05", "OC10", "OC01", "OC02", "OC03", "OC04"]
-DECIDED_CASES = ("OC02", "OC03", "OC04")
+CASE_ORDER = ["OC18", "OC19", "OC16", "OC17", "OC15", "OC09", "OC11", "OC13", "OC14", "CONFLICT", "OC05", "OC10", "OC01", "OC02", "OC03", "OC04", "OC20"]
+DECIDED_CASES = ("OC02", "OC03", "OC04", "OC20")
 ADVICE_CASES = ("OC01",)
 BLOCKING_CASES = ("CONFLICT", "OC13", "OC15")
 
@@ -435,7 +450,9 @@ class Builder:
                         self.case("OC13", doc, k, f"{where}.{r.old} ({r.id}) is removed by {r.ledger} but it sits in a flow mapping or shares its line; a person must remove it")
                         continue
                     self.edit(doc, span[0], span[1], "")
-                    if r.id in ("R04", "R05"):
+                    if r.id == "R05":
+                        self.figure_title(doc, mapping, k, scalar_value(v), where)
+                    if r.id == "R04":
                         label = present.get("ui_label")
                         old_text, label_text = scalar_value(v), scalar_value(label[1]) if label else None
                         if old_text is not None and old_text != label_text:
@@ -445,7 +462,13 @@ class Builder:
                     start, end = k.start_mark.index, k.end_mark.index
                     quote = doc.text[start] if doc.text[start] in "\"'" else ""
                     self.edit(doc, start, end, f"{quote}{new}{quote}")
-                self.change(r, doc, k, where, shown_value(v, full=r.id in ("R04", "R05")))
+                value = shown_value(v, full=r.id in ("R04", "R05"))
+                if r.id == "R16":
+                    value = f"{value}; file name: {doc.path.stem}"
+                    if scalar_value(v) != doc.path.stem:
+                        value += " (DIFFERS)"
+                        self.case("OC17", doc, k, f"name is {scalar_value(v)!r} and the file name is {doc.path.stem!r}")
+                self.change(r, doc, k, where, value)
         for r in rules:
             if r.status == "OPEN" and r.old in present:
                 self.case(r.case, doc, present[r.old][0], f"{where}.{r.old}: {shown_value(present[r.old][1])}")
@@ -453,6 +476,29 @@ class Builder:
         for name in sorted(watch - covered):
             if name in present:
                 self.case("OC09", doc, present[name][0], f"{where}.{name}: {shown_value(present[name][1])}")
+
+    def figure_title(self, doc: Doc, mapping, k, old_text: Optional[str], where: str) -> None:
+        """D-0484: a removed plot `ui_title` is compared with the `title` of the plot's `labs` layer (the figure title)."""
+        layers = find(mapping, "layers")
+        seq = layers[1] if layers else None
+        titles: List[Optional[str]] = []
+        if isinstance(seq, yaml.SequenceNode):
+            for item in seq.value:
+                name = find(item, "name") if isinstance(item, yaml.MappingNode) else None
+                if name is not None and scalar_value(name[1]) == "labs":
+                    params = find(item, "params")
+                    title = find(params[1], "title") if params and isinstance(params[1], yaml.MappingNode) else None
+                    titles.append(scalar_value(title[1]) if title else None)
+        given = [t for t in titles if t]
+        text = old_text or ""
+        count = f" ({len(titles)} labs layers; the last title counts)" if len(titles) > 1 else ""
+        if not given:
+            why = "the plot has a labs layer with no title" if titles else "the plot has no labs layer"
+            self.case("OC19", doc, k, f"{where}.ui_title \"{text}\" is removed; the plot has no figure title ({why}); the removed text is copied nowhere; not an error: a recipe may leave the title out on purpose")
+        elif given[-1] == text:
+            self.case("OC20", doc, k, f"{where}.ui_title is the same as the figure title: \"{text}\"{count}")
+        else:
+            self.case("OC18", doc, k, f"{where}.ui_title DIFFERS from the figure title{count}: removed text \"{text}\"; figure title (labs) \"{given[-1]}\"; the removal is applied, the removed text is lost unless the owner moves it")
 
     # kinds of file
     def recipe(self, doc: Doc) -> None:
@@ -582,8 +628,7 @@ class Builder:
         top = doc.root
         if not isinstance(top, yaml.MappingNode):
             return
-        found_name = find(top, "name")
-        name = (scalar_value(found_name[1]) if found_name else None) or doc.path.stem
+        name = doc.path.stem                           # the file name is the id: a deployment names the file, not a `name` key (D-0481)
         ui = find(top, "ui_title")
         skip: Set[str] = set()
         if ui is None:
@@ -680,6 +725,34 @@ def code_places(b: "Builder", root: Path) -> None:
                     for key in CODE_KEYS:
                         if key in line and not (key == "deployment_name" and kind == "doc" and False):
                             b.plan.code_places.append(CodePlace(rel, number, line.strip()[:110], kind, key))
+
+
+# D-0481: the reads of the app features key `name` found by the check (tmpAI/coordinator/app_features_name/REPORT.md); each is looked up by
+# text in its file, so a moved line is still found. (file, patterns, kind): the pass must change them; this script changes none.
+APP_FEATURES_NAME_KEY = "name (app features file)"
+APP_FEATURES_NAME_PLACES = (
+    ("app/modules/app_features_validator.py", (r'template\.get\("name"', r"Rule 2", r"contains underscores", r'"_" in app_features_id'), "code"),
+    ("app/src/bootloader.py", (r'self\.config\.get\("name"\)',), "code"),
+    ("app/modules/renamed_keys.py", (r'"persona_id": "name"',), "code"),
+    ("app/modules/sidebar_validator.py", (r'template\.get\("name"',), "code"),
+    ("app/tests/test_app_features_validator.py", (r'"name":', r"Rule 2", r"underscore"), "test"),
+    ("app/tests/test_bootloader_launch.py", (r"persona_id",), "test"),
+    (".claude/rules/ui_implementation_contract.md", (r"App features IDs use hyphens",), "doc"),
+    ("docs/troubleshooting/index.qmd", (r"app-features-id-underscore", r"hyphens only"), "doc"),
+    ("docs/reference/environment_variables.qmd", (r"`name` field",), "doc"),
+    ("docs/workflows/ui_app_features.qmd", (r'^name: ',), "doc"),
+)
+
+
+def app_features_name_places(b: "Builder", root: Path) -> None:
+    for rel, patterns, kind in APP_FEATURES_NAME_PLACES:
+        path = root / rel
+        if not path.is_file():
+            continue
+        found = [re.compile(p) for p in patterns]
+        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            if any(f.search(line) for f in found):
+                b.plan.code_places.append(CodePlace(rel, number, line.strip()[:110], kind, APP_FEATURES_NAME_KEY))
 
 
 def classify(rel: str, family: str) -> str:
@@ -806,6 +879,7 @@ def build_plan(root: Path) -> Plan:
     registry_cases(b, root)
     session_cases(b, root)
     code_places(b, root)
+    app_features_name_places(b, root)
 
     # texts
     for path, edits in b.edits.items():
@@ -844,6 +918,8 @@ def lines_of(plan: Plan, md: bool, header: str) -> List[str]:
                f"{sum(len(v) for v in real.values())} listed place(s) in {len(real)} open case(s); "
                f"{len(cases_by.get('CONFLICT', []))} conflict(s); {len(cases_by.get('OC13', []))} change(s) the script cannot place; "
                f"{len([e for e in cases_by.get('OC01', []) if e.file])} recipe(s) would get the advice (no name).")
+    same, differ, none = (len(cases_by.get(c, [])) for c in ("OC20", "OC18", "OC19"))
+    out.append(f"{same + differ + none} plot title(s) removed: {same} same as the figure title, {differ} differ, {none} plot(s) have no figure title (D-0484)")
     out.append("")
     if md:
         out += ["| kind of file | files read | changes |", "|---|---:|---:|"]
@@ -893,7 +969,8 @@ def lines_of(plan: Plan, md: bool, header: str) -> List[str]:
         out.append(("**" + blk.file + "**" if md else blk.file) + f": {blk.placement}")
         out += (["```"] + blk.lines + ["```"]) if md else ["    " + line for line in blk.lines]
     out += ["", h2 + "CODE places that read or write a removed key (the pass must change them; not changed here; text match, a person reads each line)"]
-    for key, why in (("deployment_name", "D-0479: the key goes; the bootloader and the connector hold no deployment name"),
+    for key, why in ((APP_FEATURES_NAME_KEY, "D-0481: the key goes; the validator rule on it and its underscore refusal, the display fallback, the old-key refusal that names it, the tests and the documents that say hyphens only"),
+                     ("deployment_name", "D-0479: the key goes; the bootloader and the connector hold no deployment name"),
                      ("display_name", "D-0480: the key becomes ui_label in app features files (the reader `app_features_display_name`, the allowed keys of the validator, the old-key refusal)")):
         out.append(f"{key} ({why}):")
         for kind, title in (("code", "code"), ("test", "tests"), ("doc", "docs")):
@@ -946,6 +1023,8 @@ def write_refusal(path: Path, real_root: Path) -> Optional[str]:
         return f"REFUSED: {path} is outside the root ({real}); nothing is written"
     if not real.is_file():
         return f"REFUSED: {path} is not a plain file; nothing is written"
+    if not os.access(real.parent, os.W_OK | os.X_OK):
+        return f"REFUSED: the folder {real.parent} cannot be written, so {path} cannot be replaced. Make the folder writable or use another copy; nothing is written"
     links = real.stat().st_nlink
     if links > 1:
         return (f"REFUSED: {path} has {links} hard links: it shares its content with another file (a copy made with `cp -al` shares files "
@@ -1008,8 +1087,16 @@ def main(argv=None) -> int:
             handle.write("\n".join(lines_of(plan, True, "Names pass: dry run report (" + header + ")")) + "\n")
         print(f"report written: {target}")
     if args.apply:
+        done: List[Path] = []
         for path, text in plan.texts.items():
-            write_atomic(path, text)
+            try:
+                write_atomic(path, text)
+            except OSError as exc:
+                print(f"REFUSED: {path} could not be written ({exc.strerror or type(exc).__name__}). "
+                      + (f"Already written: {', '.join(str(p) for p in done)}. " if done else "Nothing was written. ")
+                      + "Take a fresh copy and run again.", file=sys.stderr)
+                return 3
+            done.append(path)
         print(f"applied: {len(plan.texts)} file(s) written")
         return 2 if plan.blocking else 0
     if plan.blocking:
