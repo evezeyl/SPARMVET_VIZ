@@ -53,7 +53,7 @@ def test_L001_equal_chain(scope):
     assert all(not x.notes and x.reason is None and x.occurrences[0].name == "country" and x.occurrences[0].how == "unchanged" for x in walk.lines)
     assert line(walk, "T1:A").occurrences[0].sources[0].table == "A" and line(walk, "T1:A").covers == ("T1:A", "T2:A")     # an empty tier 2 is not a place
     assert [x.is_start for x in walk.lines] == [False, False, True, False]
-    assert walk.gone == () and walk.unread == () and walk.outside == ()
+    assert walk.gone == () and walk.outside == ()
     marker_check(recipe, tables, {"A": ["country"]}, walk)
 
 
@@ -68,26 +68,75 @@ def test_L001_the_key_is_on_both_ingredients():
 def test_L002_collapse_by_steps_counted_from_the_recipe():
     recipe, tables = F.tiers()
     walk = run(recipe, tables, "T3:Pd", "sample_id")
-    indep = {p for p, info in independent_places(recipe).items() if info["plots"]}
-    assert set(places(walk)) == indep and len(walk.lines) == 13                       # the 13 lines of DESIGN L002, counted from the text
+    indep = set(independent_places(recipe)) - {"T1:U"}                                  # U is linked to nothing: the walk does not reach it (D-0415 untouched)
+    assert set(places(walk)) == indep and len(walk.lines) == 14                       # the 13 lines of DESIGN L002 plus the join no plot reads (D-0451)
     assert {"T2:S", "T2:J1"} <= set(places(walk)) and not {"T2:E", "T2:M", "T2:J2"} & set(places(walk))     # a tier 2 with steps is a place, an empty one is not
     assert places(walk).count("T3:Pc") == 1 and line(walk, "T3:Pc").covers == ("T3:Pc",)    # a plot with its own steps is ONE line
-    assert [x.place for x in walk.unread] == ["T1:JU"]                                 # a join no plot reads is not offered (D-0346), counted apart
+    assert "T1:JU" in places(walk) and line(walk, "T1:JU").state == "tick"            # a join no plot reads is a line, like the others (D-0451, D-0346 changed in this part)
     assert reach(line(walk, "T1:S")) == (5, 5) and reach(line(walk, "T1:J1")) == (2, 3) and reach(line(walk, "T2:S")) == (1, 1)
     assert [reach(line(walk, f"T3:{p}")) for p in ("Ps", "Pe", "Pa", "Pb", "Pc", "Pd")] == [(0, 1)] * 6
 
 
-def test_L005_a_table_no_plot_reads_is_not_a_line_until_a_plot_reads_it():
+def test_L005_a_table_no_plot_reads_that_the_walk_reaches_is_a_line_D_0451():
     recipe, tables = F.tiers()
-    assert "T1:JU" not in places(run(recipe, tables, "T3:Pd", "sample_id")) and "T1:U" not in places(run(recipe, tables, "T3:Pd", "sample_id"))
+    walk = run(recipe, tables, "T3:Pd", "sample_id")
+    ju = line(walk, "T1:JU")
+    assert ju.covers == ("T1:JU", "T2:JU") and ju.tier == "T1" and ju.kind == "table"            # tier 1 of the table; its empty tier 2 is not a place
+    assert ju.occurrences[0].name == "sample_id" and ju.occurrences[0].type == "String" and [s.table for s in ju.occurrences[0].sources] == ["E", "M"]
+    assert reach(ju) == (0, 0) and ju.reach.tables_no_plot == {"T1:JU"} and ju.reach.n_tables_no_plot == 1 and ju.reach.plots == frozenset()
+    assert ju.no_plot_reads is True and all(line(walk, p).no_plot_reads is False for p in places(walk) if p != "T1:JU")
+    assert "T1:U" not in places(walk)                                                              # linked to nothing: not reached, so not a line (D-0415 stays)
+    # the reach of E counts JU as a table apart while no plot reads it; when a plot reads it, JU is a table with a plot and nothing else changes in the places
     with_plot = copy.deepcopy(recipe)
     with_plot["analysis_groups"]["g"]["plots"]["Pj"] = F.plot("JU")
-    walk = run(with_plot, tables, "T3:Pd", "sample_id")
-    assert "T1:JU" in places(walk) and "T3:Pj" in places(walk) and walk.unread == ()
-    assert reach(line(walk, "T1:JU")) == (1, 1)
-    # the reach of E counts JU either way: it is built from E (it is its own table, apart in `tables_no_plot` while no plot reads it)
-    before = run(recipe, tables, "T3:Pd", "sample_id")
-    assert line(before, "T1:E").reach.tables_no_plot == {"T1:JU"} and line(walk, "T1:E").reach.tables_no_plot == frozenset()
+    after = run(with_plot, tables, "T3:Pd", "sample_id")
+    assert set(places(after)) == set(places(walk)) | {"T3:Pj"} and line(after, "T1:JU").no_plot_reads is False and reach(line(after, "T1:JU")) == (1, 1)
+    assert line(walk, "T1:E").reach.tables_no_plot == {"T1:JU"} and line(after, "T1:E").reach.tables_no_plot == frozenset()
+
+
+def test_L005_the_line_of_a_table_no_plot_reads_says_a_column_it_does_not_hold_is_gone_there():
+    recipe, tables = F.tiers()
+    recipe["joins"]["JU"]["tier1"]["steps"].append(F.select("sample_id", "gene"))                  # JU keeps no `year`: M's year arrives and is selected away
+    walk = run(recipe, tables, "T1:M", "year")
+    assert "T1:JU" not in places(walk) and "T1:JU" in {g.place for g in walk.gone}                 # a note, not a line: the column is gone there
+    gone = next(g for g in walk.gone if g.place == "T1:JU")
+    assert gone.removed_by is not None and gone.removed_by.action == "polars_select" and gone.reach.tables_no_plot == {"T1:JU"}
+    assert "T1:JU" in walk.accounted                                                              # every place is a line, a note, or accounted for
+
+
+def test_L005_a_table_no_plot_reads_reached_only_through_another_table_no_plot_reads():
+    recipe, tables = F.tiers()
+    recipe["joins"]["JV"] = F.join(["JU", "S"], [F.join_step("S")])                              # JV is built from JU, which no plot reads either
+    walk = run(recipe, tables, "T3:Pd", "sample_id")
+    assert {"T1:JU", "T1:JV"} <= set(places(walk)) and line(walk, "T1:JV").no_plot_reads and line(walk, "T1:JU").no_plot_reads
+    assert line(walk, "T1:JU").reach.tables_no_plot == {"T1:JU", "T1:JV"} and line(walk, "T1:JV").reach.tables_no_plot == {"T1:JV"}
+    assert reach(line(walk, "T1:JU")) == (0, 0) and line(walk, "T1:E").reach.tables_no_plot == {"T1:JU", "T1:JV"}
+    assert len(set(walk.accounted)) == len(walk.accounted)
+
+
+def test_L005_an_unread_table_reached_only_through_a_join_the_walk_cannot_follow_is_grey_with_the_reason_D_0460():
+    # a join that is not left or inner is not read (P7): the column across it is not proved the same one, so the line of the unread table below it is grey with a reason, not ticked
+    recipe = F.recipe({"A": F.schema(["sample_id", "v"], keys=["sample_id"]), "B": F.schema(["sample_id", "w"], keys=["sample_id"])},
+                      {"JA": F.join(["A", "B"], [F.join_step("B", how="semi")]), "JB": F.join(["JA", "B"], [F.join_step("B")])}, {"P": F.plot("A")})
+    tables = {"A": F.table(sample_id=["S1", "S2"], v=["x", "y"]), "B": F.table(sample_id=["S1"], w=["p"])}
+    walk = run(recipe, tables, "T3:P", "v")
+    unread_lines = [x for x in walk.lines if x.no_plot_reads]
+    assert unread_lines and all(x.state == "grey" and x.reason is not None for x in unread_lines)
+
+
+def test_L005_a_drop_is_offered_at_a_table_no_plot_reads_like_at_any_place():
+    recipe, tables = F.tiers()
+    walk = run(recipe, tables, "T1:M", "year", kind="drop")
+    ju = line(walk, "T1:JU")
+    assert ju.no_plot_reads and ju.state == "tick" and ju.refusal is None and ju.consequences == ()      # nothing is built from JU and no plot draws it: nothing to break
+    assert line(walk, "T1:J1").no_plot_reads is False
+
+
+def test_L005_nothing_of_the_old_rule_is_left_in_the_records():
+    # D-0451: a place no plot reads is no longer "counted apart"; the record and the field that said so are gone, not kept beside the new rule
+    import utils.lineage_records as records
+    assert not hasattr(records, "Unread") and "unread" not in {f.name for f in dataclasses.fields(records.Walk)} and not hasattr(records.Walk, "unread")
+    assert "no_plot_reads" not in {f.name for f in dataclasses.fields(records.Line)}                  # derived from the reach, never stored beside it (D-0195, D-0316)
 
 
 def test_L006_a_step_at_the_tier_2_of_a_shared_source_does_not_reach_the_joins():
@@ -126,7 +175,7 @@ def test_L009_a_plot_that_reads_a_source_directly_has_its_own_line_besides_the_t
     tables = {"A": F.table(sample_id=["S1", "S2"], country=["NO", "SE"])}
     walk = run(recipe, tables, "T3:P", "country")
     assert places(walk) == ["T1:A", "T3:P"] and reach(line(walk, "T1:A")) == (1, 1) and reach(line(walk, "T3:P")) == (0, 1)
-    assert walk.gone == () and walk.unread == () and walk.outside == ()
+    assert walk.gone == () and walk.outside == ()
     assert places(run(recipe, tables, "DS:A", "country")) == ["T1:A", "T3:P"]
 
 
@@ -176,7 +225,7 @@ KEY_STARTS = ["DS:S", "DS:E", "DS:M", "T1:S", "T2:S", "T1:E", "T1:M", "T1:J1", "
 
 def shape(walk):
     """What must not depend on the start: the places, their state, reach and column names. (`is_start` and the scope group are relative to the start.)"""
-    return [(x.place, x.state, x.reach, tuple(o.name for o in x.occurrences)) for x in walk.lines], [g.place for g in walk.gone], [u.place for u in walk.unread]
+    return [(x.place, x.state, x.reach, tuple(o.name for o in x.occurrences)) for x in walk.lines], [g.place for g in walk.gone]
 
 
 @pytest.mark.parametrize("scope", [JOIN_LINKED])
@@ -198,7 +247,7 @@ def test_L014_PROVISIONAL_the_group_above_and_below_depends_on_where_the_user_lo
     assert set(places(from_pd.within(LINEAGE))) != set(places(from_pe.within(LINEAGE)))
     assert "T1:E" not in places(from_pd.within(LINEAGE)) and "T3:Pe" not in places(from_pd.within(LINEAGE)) and "T1:E" in places(from_pe.within(LINEAGE))
     assert line(from_pd, "T1:E").scope_group == JOIN_LINKED and line(from_pe, "T1:E").scope_group == LINEAGE      # the group is relative to the start
-    assert len(from_pd.within(LINEAGE).lines) == 11 and len(from_pd.lines) == 13
+    assert len(from_pd.within(LINEAGE).lines) == 12 and len(from_pd.lines) == 14
 
 
 def test_the_groups_of_a_key_tell_above_and_below_and_linked_by_a_join_and_nothing_else():
@@ -211,7 +260,7 @@ def test_the_groups_of_a_key_tell_above_and_below_and_linked_by_a_join_and_nothi
     assert "T1:U" not in groups and "T3:Pu" not in groups                                               # U declares the key, no join links it: not a line
     assert [(o.table, o.column, o.why) for o in walk.outside] == [("U", "sample_id", "declared_key_not_reached")]      # information only
     assert walk.outside[0].reach.plots == {"Pu"}
-    assert [u.place for u in walk.unread] == ["T1:JU"] and walk.unread[0].scope_group == LINEAGE      # JU is built from M, which the chosen place reads
+    assert groups["T1:JU"] == LINEAGE and line(walk, "T1:JU").no_plot_reads                           # JU is built from M, which the chosen place reads
     assert all(x.refusal is None for x in walk.lines)                       # the record can carry "refused here, with the reason"; nothing sets it yet (the drop step)
 
 
@@ -259,7 +308,7 @@ def test_L052_remove_one_sample_in_the_places_ticked_what_is_left_is_offered_in_
     left = holders_after(recipe, tables, walk, "S3")
     e_chain, u_chain = {"T1:E", "T2:E", "T3:Pe", "T1:JU", "T2:JU"}, {"T1:U", "T2:U", "T3:Pu"}
     assert left == {LINEAGE: e_chain | u_chain, JOIN_LINKED: u_chain}[scope]
-    offered = {x.place for x in full.lines if x not in walk.lines} | {u.place for u in full.unread}
+    offered = {x.place for x in full.lines if x not in walk.lines}
     not_reached = {n for o in full.outside for n in [f"T1:{o.table}"] + graph.lineage_forward(f"T1:{o.table}")}
     assert {n for n in left if node_place(recipe, n) not in offered} == u_chain and u_chain <= not_reached      # nothing is left that the walk neither offered nor listed
 
@@ -593,7 +642,8 @@ def test_a_source_table_is_a_line_that_cannot_hold_a_step_PROVISIONAL():
     assert line(walk, "DS:A").tier == "DS" and reach(line(walk, "DS:A")) == (2, 2) and line(walk, "DS:A").occurrences[0].name == "sample_id"
     unread = F.recipe({"A": F.schema(["sample_id"]), "Z": F.schema(["sample_id"])}, {"J": F.join(["A", "Z"], [F.join_step("Z")])}, {"P": F.plot("A")})
     alone = run(unread, {"A": F.table(sample_id=["S1"]), "Z": F.table(sample_id=["S1"])}, "T3:P", "sample_id", levels=("source",))
-    assert places(alone) == ["DS:A"] and [u.place for u in alone.unread] == ["DS:Z"]               # a table nothing reads gets no line (D-0346)
+    assert places(alone) == ["DS:A", "DS:Z"] and not line(alone, "DS:A").no_plot_reads and line(alone, "DS:Z").no_plot_reads      # the source of a table no plot reads is a line too (D-0451)
+    assert line(alone, "DS:Z").state == "grey" and line(alone, "DS:Z").reason.code == NO_STEP_LIST and line(alone, "DS:Z").duplicates == "T1:Z"
 
 
 def test_L034_an_unread_step_that_changes_the_type_of_a_column_is_not_proved_the_same():
@@ -611,7 +661,7 @@ def test_L006_a_tier_2_no_plot_reads_is_applied_nowhere_and_is_not_a_place():
     recipe["joins"]["JU"]["tier2"] = {"steps": [F.keep("year", "gt", 1)]}                   # JU is read by no plot: its tier 2 runs nowhere
     recipe["data_schemas"]["M"]["tier2"] = {"steps": [F.keep("year", "gt", 1)]}             # M is read by joins only: its tier 2 runs nowhere
     walk = run(recipe, tables, "T3:Pd", "sample_id")
-    assert "T2:JU" not in walk.accounted and "T2:M" not in walk.accounted and [u.place for u in walk.unread] == ["T1:JU"]
+    assert "T2:JU" not in walk.accounted and "T2:M" not in walk.accounted and "T1:JU" in places(walk)      # JU's tier 1 is the line; its tier 2 is no place (the checks S07, J14 refuse it)
     assert places(walk) == places(run(*F.tiers(), "T3:Pd", "sample_id"))
 
 

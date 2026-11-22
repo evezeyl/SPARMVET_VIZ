@@ -236,14 +236,14 @@ def test_the_mark_put_in_a_source_column_arrives_in_the_column_the_walk_names_at
                         assert end is not None and occurrence.name in end.columns, (name, sid, column, x.place)
                         assert O.holds_mark(end.select(occurrence.name)), (name, sid, column, x.place, occurrence.name)
                         checked += 1
-                for node in {n for (n, _k) in marked.frames if not n.startswith("DS:")}:       # the other way: every table that holds the mark is a line or a place no plot reads
+                for node in {n for (n, _k) in marked.frames if not n.startswith("DS:")}:       # the other way: every table that holds the mark is a line, also a table no plot reads (D-0451)
                     end = marked.end(node)
                     if end is None:
                         continue
                     for held_column in end.columns:
                         if O.holds_mark(end.select(held_column)):
                             place = index.place_of[node]
-                            assert (place, held_column) in held or place in {u.place for u in walk.unread}, (name, sid, column, node, held_column)
+                            assert (place, held_column) in held, (name, sid, column, node, held_column)
                             holders_seen += 1
     assert checked > 60 and holders_seen > 60 and skipped < checked
 
@@ -293,24 +293,24 @@ def test_no_line_is_grey_for_a_change_the_walk_reads_on_every_fixture_of_this_st
 
 # ----------------------------------------------------------------------------------------------------------------------------- the review's findings
 
-def test_unread_holds_says_whether_the_column_is_in_the_table_no_plot_reads():
+def test_a_table_no_plot_reads_that_keeps_the_column_is_a_line_and_one_that_lost_it_is_a_note_D_0451():
     kept, tables = F.tiers()
     walk = run(kept, tables, "T3:Pd", "sample_id")
-    assert [(u.place, u.holds) for u in walk.unread] == [("T1:JU", True)]                                    # JU keeps sample_id
+    assert [(x.place, x.no_plot_reads) for x in walk.lines if x.no_plot_reads] == [("T1:JU", True)] and "T1:JU" not in {g.place for g in walk.gone}      # JU keeps sample_id
     dropped = copy.deepcopy(kept)
     dropped["joins"]["JU"]["tier1"]["steps"].append(F.select("gene", "year"))                                  # JU no longer holds sample_id (and nothing reads JU)
     gone = run(dropped, tables, "T3:Pd", "sample_id")
-    assert [(u.place, u.holds) for u in gone.unread] == [("T1:JU", False)]
+    assert "T1:JU" not in [x.place for x in gone.lines] and [g.place for g in gone.gone] == ["T1:JU"] and gone.gone[0].removed_by.action == "polars_select"
 
 
 def test_a_start_that_selects_no_place_says_so_with_the_levels_where_the_column_exists():
     recipe, tables = F.tiers(u_declares_key=False)
     walk = run(recipe, tables, "T1:U", "junk", levels=("T3",))                                              # U is read by no plot: nothing at the plot level
-    assert (walk.lines, walk.gone, walk.unread) == ((), (), ())
+    assert (walk.lines, walk.gone) == ((), ())
     reason = walk.nothing
     assert reason.code == NO_PLACE_AT_THE_LEVELS and reason.get("levels") == ("T3",) and reason.get("held_at_levels") == ("source", "T1", "T2")
     anywhere = run(recipe, tables, "T1:U", "junk", levels=("T1",))
-    assert anywhere.nothing is None and [u.place for u in anywhere.unread] == ["T1:U"]                       # counted apart is not silence
+    assert anywhere.nothing is None and [(x.place, x.no_plot_reads, x.is_start) for x in anywhere.lines] == [("T1:U", True, True)]      # the place the user looks at is a line, not silence (D-0451)
     full = run(recipe, tables, "T3:Pd", "sample_id")
     assert full.nothing is None and full.lines
     assert full.within("lineage").nothing is None or full.within("lineage").lines == ()

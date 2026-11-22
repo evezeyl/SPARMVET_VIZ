@@ -76,7 +76,7 @@ def test_I1_every_line_can_be_written_and_names_a_column_the_plan_has_at_the_end
     assert seen > 500                                                                                  # the property is run on every column of every table of every fixture
 
 
-def test_I3_nothing_is_lost_every_place_of_the_reach_is_a_line_a_note_or_counted_apart():
+def test_I3_nothing_is_lost_every_place_of_the_reach_is_a_line_or_a_note():
     seen = 0
     indeps = {name: independent_places(recipe) for name, recipe, tables in fixtures()}
     for name, recipe, tables, node, column, scope, walk in all_walks():
@@ -87,15 +87,34 @@ def test_I3_nothing_is_lost_every_place_of_the_reach_is_a_line_a_note_or_counted
         assert walk.found + walk.grey == len(walk.lines) and walk.found == sum(1 for x in walk.lines if x.state == "tick")
         assert all(x.state == "grey" and x.reason is not None or x.state == "tick" and x.reason is None for x in walk.lines)      # a grey line always says why
         assert all(len(set(a.reach.tables_with_plot) & set(a.reach.tables_no_plot)) == 0 for a in walk.lines)
-        for u in walk.unread:
-            assert not indep[u.place]["plots"]                                                          # a place no plot reads
+        for x in walk.lines:
+            assert x.no_plot_reads == (not indep[x.place]["plots"]), (name, node, column, scope, x.place)      # a place no plot reads is a line, flagged as such (D-0451)
         for x in walk.lines:
             assert indep[x.place]["plots"] == set(x.reach.plots), (name, node, column, scope, x.place)      # the reach of a line is the plots below it, counted from the text
         seen += 1
     assert seen > 500
 
 
-def test_I3_with_the_source_level_every_source_table_in_the_lineage_is_a_grey_line_or_counted_apart():
+def test_I3_every_place_the_lineage_reaches_is_accounted_also_a_table_no_plot_reads_D_0451():
+    """The accounting property, counted another way: from the graph, not from the walk. Every table (a place at its tier 1, tier 2 or tier 3) built from a table that holds
+    the column, in the linked component of the start, is in `accounted` (a line, or a note when the column is gone); the places the walk does not account for are exactly
+    those no such table reaches (a table that no join links to the lineage)."""
+    seen = reached_no_plot = 0
+    for name, recipe, tables in fixtures():
+        graph, plans = setup(recipe, tables)
+        index = LineageIndex(graph, plans)
+        for node, column in all_starts(recipe, tables):
+            walk = index.walk(Start(node, column), levels=TIERS)
+            begin = (node, *index.end(node)[1:], column)
+            holders = {occ[0] for occ in index.component([begin])}
+            reached = {index.place_of[n] for h in holders for n in [h] + index.forward(h) if not n.startswith("DS:")}
+            assert set(walk.accounted) == reached, (name, node, column, sorted(set(walk.accounted) ^ reached))
+            reached_no_plot += sum(1 for x in walk.lines if x.no_plot_reads)
+            seen += 1
+    assert seen > 100 and reached_no_plot > 20                                    # the property is run on many starts, and on lines of tables no plot reads
+
+
+def test_I3_with_the_source_level_every_source_table_in_the_lineage_is_a_grey_line():
     seen = 0
     for name, recipe, tables in fixtures():
         graph, plans = setup(recipe, tables)
@@ -106,7 +125,7 @@ def test_I3_with_the_source_level_every_source_table_in_the_lineage_is_a_grey_li
             accounted = list(walk.accounted)
             assert len(accounted) == len(set(accounted)) and set(accounted) <= set(independent_places(recipe)) | sources, (name, node, column)
             assert not any(x.state == "tick" for x in walk.lines if x.place.startswith("DS:"))             # a source holds no list of steps: never ticked
-            assert {x.place for x in walk.lines if x.place.startswith("DS:")} | {u.place for u in walk.unread if u.place.startswith("DS:")} <= sources
+            assert {x.place for x in walk.lines if x.place.startswith("DS:")} <= sources
             seen += 1
     assert seen > 100
 
@@ -201,7 +220,7 @@ for n, c in (("T3:Pd", "sample_id"), ("T1:J1", "country"), ("DS:E", "gene")):
     for s in GROUPS:
         walk = index.walk(Start(n, c), levels=TIERS).within(s)
         print(repr(walk))
-        print([(list(x.reach.tables_with_plot), list(x.reach.tables_no_plot), list(x.reach.plots)) for x in walk.lines + walk.gone + walk.unread])
+        print([(list(x.reach.tables_with_plot), list(x.reach.tables_no_plot), list(x.reach.plots)) for x in walk.lines + walk.gone])
 """
 
 
@@ -215,7 +234,7 @@ def raw_output():
         for s in GROUPS:
             walk = index.walk(Start(n, c), levels=TIERS).within(s)
             out.append(repr(walk))
-            out.append(str([(list(x.reach.tables_with_plot), list(x.reach.tables_no_plot), list(x.reach.plots)) for x in walk.lines + walk.gone + walk.unread]))
+            out.append(str([(list(x.reach.tables_with_plot), list(x.reach.tables_no_plot), list(x.reach.plots)) for x in walk.lines + walk.gone]))
     return "\n".join(out)
 
 
