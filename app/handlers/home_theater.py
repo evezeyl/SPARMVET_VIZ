@@ -34,6 +34,7 @@ from __future__ import annotations
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, constant:LEGACY_RECORD_NOTICE
 # consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
+# consumes: app/src/www/preview_switch.js (the "All rows" switch it mounts in the header of the data panel needs this script so that a click does not fold the panel; mounted by app/src/ui.py)
 # consumes: app/modules/frame_widths.py (right_panel_open: the right panel follows the mode, D-0375, D-0385; HOME, BLUEPRINT: the nav values)
 # consumes: app/handlers/opening_handlers.py (define_server: the opening of the recipe; opening_waits), app/modules/opening_build.py (opening_signature, plot_render_recipe: the recipe handed to the plot engine, D-0237, D-0239), libs/utils/src/utils/engines.py (plot_engine_slot, through it)
 # consumed_by: app/src/server.py
@@ -1656,6 +1657,19 @@ def define_server(input, output, session, *,
             lf = _apply_filter_rows(lf, _applied_for_view())
         return lf
 
+    def _chooser_key(p_id: str | None) -> str:
+        """The key of the table the column chooser is built for: everything `home_col_selector_ui` depends on (the plot, the data choice, the
+        source table, the audited drops of Audit mode on T3). The chooser emits it with itself and the badge compares it with the key of the
+        table now shown; one function gives both, so they cannot differ (D-0050)."""
+        view = data_view.get()
+        try:
+            table = _effective_source_table(p_id) if view == "SRC" else ""
+        except Exception:
+            table = ""
+        audit_t3 = _in_audit() and view == "T3"
+        drops = ",".join(sorted(_t3_drop_columns())) if audit_t3 else ""
+        return "|".join((str(p_id), view, str(table), "audit" if audit_t3 else "view", drops))
+
     @output
     @render.ui
     def home_data_preview_badge():
@@ -1685,14 +1699,16 @@ def define_server(input, output, session, *,
             lf = _preview_lf(spec, p_id)
             total_rows = int(lf.select(pl.len()).collect().item())   # a lazy count: the table is not held in memory
             chosen = safe_input(input, "preview_col_selector", None)
-            if chosen and isinstance(chosen, (list, tuple)):
+            # The chooser's value says nothing about the table it was built for, so the chooser carries the key of that table (a hidden input
+            # that comes back with it, `_chooser_key`). Right after a switch of table or plot tab (one to two seconds) the chooser still
+            # belongs to the PREVIOUS table: its names may all exist in the new one, and "N columns hidden" would say that the user hid columns
+            # he did not hide (D-0050). Only a chooser built for the table now shown is read.
+            built_for = safe_input(input, "preview_col_selector_key", None)
+            if chosen and isinstance(chosen, (list, tuple)) and built_for == _chooser_key(p_id):
                 names = lf.collect_schema().names()
                 kept = [c for c in names if c in chosen]
-                # an empty choice shows every column, as the grid does. A choice that holds a name that is not a column of this table is the
-                # chooser of the PREVIOUS table, not yet redrawn (one to two seconds after a switch of table or plot tab): no hidden sentence,
-                # it would say that the user hid columns he did not hide (D-0050)
-                stale = any(c not in names for c in chosen)
-                hidden = 0 if (stale or not kept) else len(names) - len(kept)
+                # an empty choice shows every column, as the grid does
+                hidden = 0 if not kept else len(names) - len(kept)
         except Exception:
             total_rows, hidden = None, 0
         return _badge_ui(view_badge(view, has_t2, has_plot_steps(active_cfg().raw_config, p_id), len(_applied_for_view()),
@@ -1789,6 +1805,8 @@ def define_server(input, output, session, *,
                         "plugins": ["remove_button"],
                     },
                 ),
+                # the table this chooser was built for, read by the preview badge (see `_chooser_key`)
+                ui.div(ui.input_text("preview_col_selector_key", None, value=_chooser_key(p_id)), style="display:none;"),
                 class_="mb-2 w-100 column-picker-container spv-text-xs",
             )
         except Exception:

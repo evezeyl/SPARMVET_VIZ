@@ -123,3 +123,48 @@ def test_rows_all_rows_and_hidden_columns(page: Page, shiny_app: ShinyAppProc):
     wait_shiny(page, 30_000)
     assert page.locator("#preview_col_selector + .selectize-control .item").count() == before - 1
     expect(page.locator(BADGE)).to_contain_text("1 column hidden")
+
+
+RECORD = """() => { const t = document.querySelector('#home_data_preview_badge'); window.__badge_texts = [];
+  window.__badge_obs && window.__badge_obs.disconnect();
+  const keep = () => { const x = t.textContent.trim(); const l = window.__badge_texts; if (!l.length || l[l.length - 1] !== x) l.push(x); };
+  window.__badge_obs = new MutationObserver(keep);
+  window.__badge_obs.observe(t, {childList: true, subtree: true, characterData: true}); keep(); }"""
+
+
+def _recorded(page: Page) -> list[str]:
+    return page.evaluate("window.__badge_texts")
+
+
+def test_the_badge_never_says_hidden_columns_the_user_did_not_hide_while_the_table_changes(page: Page, shiny_app: ShinyAppProc):
+    """Every text the badge shows is recorded (a MutationObserver) while the viewed table changes; the chooser needs one to two seconds to be
+    rebuilt for the new table, and in that time the badge must not say that columns are hidden (D-0050)."""
+    _load_data_analysis_recipe(page, shiny_app.url)
+    _switch_all_rows(page, False)
+    set_mode(page, "exploration")
+    _open_data_panel(page)
+    # (a) Source to T1, three times, nothing hidden by the user
+    for _ in range(3):
+        set_view(page, "SRC")
+        page.wait_for_timeout(1500)
+        page.evaluate(RECORD)
+        set_view(page, "T1")
+        page.wait_for_timeout(2500)
+        texts = _recorded(page)
+        assert texts and not any("hidden" in t for t in texts), texts
+    # (b) hide one column in T1; the sentence is true there; then switch to T2: no "hidden" in anything recorded after the switch
+    items = page.locator("#preview_col_selector + .selectize-control .item")
+    expect(items.first).to_be_visible(timeout=10_000)
+    items.first.hover()
+    items.first.locator(".remove").click()
+    wait_shiny(page, 30_000)
+    expect(page.locator(BADGE)).to_contain_text("1 column hidden")
+    page.evaluate(RECORD)
+    set_view(page, "T2")
+    page.wait_for_timeout(2500)
+    texts = _recorded(page)
+    assert texts and not any("hidden" in t for t in texts[1:]) , texts   # texts[0] is what the badge showed at the start of the recording (T1, true)
+    expect(items.first).to_be_visible(timeout=10_000)
+    assert "hidden" not in page.locator(BADGE).inner_text()
+    set_view(page, "T3")   # leave the page as the other tests of the module expect it
+    wait_shiny(page, 30_000)

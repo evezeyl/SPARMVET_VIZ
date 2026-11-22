@@ -9,6 +9,8 @@ that never mounts the column chooser (ui_implementation_contract section 14, rul
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_home_preview_lines.py -q
 """
+import re
+
 import pytest
 from shiny import reactive
 
@@ -36,6 +38,22 @@ def world(tmp_path):
     w.data_file.write_text("\n".join(lines) + "\n")
     clear_data_analysis_recipe_cache()
     return w
+
+
+def chooser_key(home: Home) -> str:
+    """The key the column chooser emits with itself (the table it was built for), read from the rendered chooser."""
+    with reactive.isolate():
+        html = str(home.outputs["home_col_selector_ui"]())
+    hit = re.search(r'id="preview_col_selector_key"[^>]*value="([^"]*)"', html) or re.search(r'value="([^"]*)"[^>]*id="preview_col_selector_key"', html)
+    assert hit, "the chooser must carry the key of its table"
+    return hit.group(1)
+
+
+def choose(home: Home, names, key=None) -> Home:
+    """Give the chooser's value as the browser would send it: the names, with the key of the table it was built for (this one unless given)."""
+    home.inputs["preview_col_selector"] = names
+    home.inputs["preview_col_selector_key"] = chooser_key(home) if key is None else key
+    return home
 
 
 def badge_text(home: Home) -> str:
@@ -87,34 +105,32 @@ def test_a_table_of_zero_rows_says_zero(world, monkeypatch):
 def test_no_hidden_columns_no_sentence(world, monkeypatch):
     home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table")
     assert "hidden" not in badge_text(home)
-    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table", inputs={"preview_col_selector": ["sample_id", "group", "score"]})
+    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), ["sample_id", "group", "score"])
     assert "hidden" not in badge_text(home)
 
 
 def test_unselected_columns_are_counted_as_hidden(world, monkeypatch):
-    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table", inputs={"preview_col_selector": ["sample_id"]})
+    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), ["sample_id"])
     assert "2 columns hidden; add them back in the column chooser" in badge_text(home)
-    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table", inputs={"preview_col_selector": ["sample_id", "group"]})
+    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), ["sample_id", "group"])
     assert "1 column hidden; add it back in the column chooser" in badge_text(home)
 
 
 def test_an_empty_selection_hides_nothing_because_the_grid_then_shows_every_column(world, monkeypatch):
-    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table", inputs={"preview_col_selector": []})
+    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), [])
     assert "hidden" not in badge_text(home)
 
 
 def test_audit_t3_says_the_columns_are_not_dropped(world, monkeypatch):
-    home = Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table",
-                inputs={"preview_col_selector": ["sample_id"]})
+    home = choose(Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table"), ["sample_id"])
     text = badge_text(home)
     assert "2 columns" in text and "not dropped" in text
 
 
 def test_a_column_dropped_by_an_audit_step_is_not_counted_as_hidden(world, monkeypatch):
     nodes = filter_nodes([], drops=["group"])
-    home = Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table",
-                inputs={"preview_col_selector": ["sample_id", "score"]},
-                home_state={"t3_audit_steps_by_plot": {"subtab_p_table": nodes}})
+    home = choose(Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table",
+                       home_state={"t3_audit_steps_by_plot": {"subtab_p_table": nodes}}), ["sample_id", "score"])
     text = badge_text(home)
     assert "hidden" not in text and "not dropped" not in text
 
@@ -137,7 +153,7 @@ def test_the_title_and_the_cut_use_the_one_limit(world, monkeypatch):
 
 def test_the_badge_output_does_not_mount_the_column_chooser(world, monkeypatch):
     """Rule R4: the chooser is mounted by `home_col_selector_ui`; the sentence lives in another output."""
-    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table", inputs={"preview_col_selector": ["sample_id"]})
+    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), ["sample_id"])
     assert "preview_col_selector" not in badge_text(home)
     assert home.outputs["home_data_preview_badge"] is not home.outputs["home_col_selector_ui"]
 
@@ -150,18 +166,31 @@ def test_the_grid_has_no_total_of_its_own(world, monkeypatch):
         assert home.outputs["home_data_preview"]().summary is False
 
 
-def test_a_stale_chooser_gives_no_hidden_sentence_but_keeps_the_row_sentence(world, monkeypatch):
-    """Right after a switch of table or plot tab the chooser still holds the PREVIOUS table's column names for a moment. Those names are
-    not columns of the table now shown, so "N columns hidden" would be untrue: it is not said (D-0050); the row sentence stays."""
-    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table",
-                inputs={"preview_col_selector": ["sample_id", "a_column_of_the_previous_table"]})
+def test_a_chooser_built_for_another_table_gives_no_hidden_sentence_even_when_every_name_exists(world, monkeypatch):
+    """Right after a switch of table or plot tab the chooser still belongs to the PREVIOUS table for a moment. Its names can all exist in the
+    table now shown (Source to T1, T1 to T2), so the names cannot tell: the key of the table it was built for does. A different key: no
+    hidden sentence (it would say that the user hid columns he did not hide, D-0050); the row sentence stays."""
+    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), ["sample_id"], key="p_table|SRC|some_source|view|")
     text = badge_text(home)
     assert "hidden" not in text and "not dropped" not in text
     assert f"Showing {PREVIEW_ROW_LIMIT} of {ROWS} rows" in text
+    # the same names with the key of this very table: counted
+    assert "2 columns hidden" in badge_text(choose(home, ["sample_id"]))
+
+
+def test_no_key_at_all_gives_no_hidden_sentence(world, monkeypatch):
+    """Before the chooser has reported (or when it could not be built) nothing is said about hidden columns."""
+    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table", inputs={"preview_col_selector": ["sample_id"]})
+    assert "hidden" not in badge_text(home)
+
+
+def test_the_key_names_the_view_so_that_a_switch_of_table_changes_it(world, monkeypatch):
+    keys = {v: chooser_key(Home(world, monkeypatch, view=v, subtab="subtab_p_table")) for v in ("T1", "T2", "T3")}
+    assert len(set(keys.values())) == 3
 
 
 def test_a_real_selection_is_still_counted_once_every_name_is_a_column(world, monkeypatch):
-    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table", inputs={"preview_col_selector": ["group", "score"]})
+    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), ["group", "score"])
     assert "1 column hidden; add it back in the column chooser" in badge_text(home)
 
 
@@ -192,3 +221,35 @@ def test_the_badge_total_is_the_true_height_while_the_grid_holds_the_cut(world, 
         assert home.outputs["home_data_preview"]().data.height == ROWS
     text = badge_text(home)
     assert f"{ROWS} rows" in text and "Showing" not in text
+
+
+def _grid_height(home: Home) -> int:
+    with reactive.isolate():
+        return home.outputs["home_data_preview"]().data.height
+
+
+def _badge_count(home: Home) -> int:
+    hit = re.search(r"(?:of )?(\d+) rows", badge_text(home))
+    assert hit, badge_text(home)
+    return int(hit.group(1))
+
+
+def test_the_grid_and_the_badge_read_the_same_table_with_an_exploration_filter(world, monkeypatch):
+    """With "All rows" on the grid holds every row of the table it reads; the badge must count that same table (the filter applies to both)."""
+    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table", inputs={"preview_all_rows": True})
+    assert _grid_height(home) == ROWS
+    with reactive.isolate():
+        key = home.readers["current_view_key"]()
+        home.filters_applied.set([{"column": "score", "op": "ge", "value": 3, "dtype": "Int64", "na": "remove", "view": key}])
+    grid = _grid_height(home)
+    assert 0 < grid < ROWS, "the filter must have cut rows, or this test proves nothing"
+    assert _badge_count(home) == grid
+
+
+def test_the_grid_and_the_badge_read_the_same_table_with_an_applied_audit_step(world, monkeypatch):
+    applied = filter_nodes([{"column": "score", "op": "ge", "value": 4, "dtype": "Int64", "na": "remove"}])
+    home = Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table", inputs={"preview_all_rows": True},
+                home_state={"t3_audit_steps_by_plot": {"subtab_p_table": applied}})
+    grid = _grid_height(home)
+    assert 0 < grid < ROWS
+    assert _badge_count(home) == grid
