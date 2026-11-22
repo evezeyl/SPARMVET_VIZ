@@ -215,16 +215,19 @@ def test_L013_the_reach_holds_sets_and_no_stored_count():
     assert line(walk, "T1:A").reach.plots == {"P1", "P2"}       # P1 is reached through A and through B, counted once
 
 
-def test_L013_a_table_joined_with_itself_is_one_table_and_its_column_exists_twice_PROVISIONAL():
+def test_L013_a_table_joined_with_itself_is_not_followed_YET_and_red_D_0452():
+    """Before D-0452 the column was followed into the copy (`country`, `country_right`: grey `several_columns`, PROVISIONAL O8); now the join is one the app cannot YET follow: the
+    line is grey with the reason `join_not_yet_followed` (a self-join, kind left), also for the key, and the walk does not list the copy of the column."""
     recipe = F.recipe({"A": F.schema(["sample_id", "country"], keys=["sample_id"])}, {"J": F.join(["A"], [F.join_step("A")])}, {"P": F.plot("J")})
     tables = {"A": F.table(sample_id=["S1", "S2"], country=["NO", "SE"])}
     walk = run(recipe, tables, "T1:A", "country")
     j = line(walk, "T1:J")
-    assert [o.name for o in j.occurrences] == ["country", "country_right"]            # a list: the column is there twice
-    assert j.state == "grey" and j.reason.code == SEVERAL_COLUMNS                      # PROVISIONAL (O8): which one a step names is not decided
+    assert [o.name for o in j.occurrences] == ["country"]
+    assert j.state == "grey" and j.reason.code == "join_not_yet_followed" and j.reason.get("self_join") is True and j.reason.get("kind") == "left"
+    assert line(walk, "T1:A").state == "tick"
     assert reach(line(walk, "T1:A")) == (2, 1)                                         # A and J: the self-join is one edge, A is not counted twice
     key = run(recipe, tables, "T1:A", "sample_id")
-    assert line(key, "T1:J").state == "tick" and len(line(key, "T1:J").occurrences) == 1      # the key that both sides equate is one column
+    assert line(key, "T1:J").state == "grey" and line(key, "T1:J").reason.code == "join_not_yet_followed"      # the key too: before, it was ticked
 
 
 # ----------------------------------------------------------------------------------------------------------------------------- scopes
@@ -407,14 +410,14 @@ def test_L021_a_key_under_another_name_is_followed_to_its_name_in_the_other_tabl
     assert (hop.name_before, hop.name_after, hop.join_side) in {("sample_id", "sample_id", "base"), ("isolate", "sample_id", "right")}
 
 
-def test_L022_a_full_join_is_not_read_and_what_depends_on_it_is_grey_with_the_reason_PROVISIONAL():
+def test_L022_a_full_join_is_not_followed_YET_and_what_depends_on_it_is_red_with_the_join_as_the_reason_D_0452():
+    """Before D-0452: a column of the first table was ticked after a full join with the note `unread_step_passed`, and one of the second table was grey `step_not_read`."""
     recipe = F.recipe({"A": F.schema(["sample_id", "country"]), "B": F.schema(["sample_id", "lab"])}, {"J": F.join(["A", "B"], [F.join_step("B", how="full")])}, {"P": F.plot("J")})
     tables = {"A": F.table(sample_id=["S1"], country=["NO"]), "B": F.table(sample_id=["S1"], lab=["X"])}
     walk = run(recipe, tables, "T1:A", "country")
-    assert line(walk, "T1:J").state == "tick"                       # `country` passes the unread join by the plan alone (name and type unchanged)
-    assert [n.code for n in line(walk, "T1:J").notes] == [NOTE_UNREAD_STEP_PASSED]
+    assert line(walk, "T1:J").state == "grey" and line(walk, "T1:J").reason.code == "join_not_yet_followed" and line(walk, "T1:J").notes == ()
     keyed = run(recipe, tables, "T1:B", "lab")
-    assert line(keyed, "T1:J").state == "grey" and line(keyed, "T1:J").reason.code == STEP_NOT_READ and "full" in line(keyed, "T1:J").reason.get("why")
+    assert line(keyed, "T1:J").state == "grey" and line(keyed, "T1:J").reason.code == "join_not_yet_followed" and line(keyed, "T1:J").reason.get("kind") == "full"
 
 
 def test_L026_a_column_dropped_and_created_again_with_the_same_name_is_a_new_column():

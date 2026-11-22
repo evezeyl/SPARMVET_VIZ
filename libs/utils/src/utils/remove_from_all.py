@@ -31,6 +31,13 @@ What this module answers, for a recipe and a column (`describe`):
    Why one list and not only `unsure`: a doubt that writes nothing and a step that may remove nothing are the same fact for the user ("the selection may stay in this table"); the
    screen shows one list before and after, with the plain sentence of `may_stay_sentence` (PROVISIONAL words).
 
+A table behind a join the app cannot YET follow (anti, right, full, a self-join; D-0452, D-0460) is NOT written and is listed in `may_stay` (code `uncertain_link`, the walk's reason `join_not_yet_followed`);
+`may_stay_sentence` then says the full warning with YET in capitals (D-0454, `utils.lineage_sentences`). A semi join is followed (D-0486): the table behind it is written like one behind an inner join.
+
+A table that shares only the NAME of the key (`same_name_not_linked`) is information, not a doubt (P7): it is not in `may_stay`, and `not_reached_sentence` gives the sentence for it, as for every other
+table of `not_reached`, so that no table that holds a column with the key's name is left unsaid. A table whose key the app cannot link to the first table's key because a join it cannot YET follow lies between them is linked
+by the walk with an uncertain link (the second key of such a join, `lineage_walk._join_key_links`): it is a doubt (`uncertain_link`), in `may_stay`, never `same_name_not_linked`.
+
 NOT decided, therefore not done here: whether the option also reaches a source FILE that no recipe table reads (D-0416: "asked only if the build meets it"; a file the
 recipe does not declare is invisible to this logic; a declared table that nothing reads IS reached); whether the user can untick one table of the list in this option
 (D-0416 says the list is shown before she confirms, not that she can change it: `apply` always writes at every reached table); where the unsure and the
@@ -50,10 +57,10 @@ Consumed by: libs/utils/tests/test_remove_from_all.py, app/tests/test_remove_fro
 If deleted: HOME has no way to offer "remove from all the data".
 
 # @deps
-# provides: function:describe, function:apply, function:removal_step, function:not_offered_sentence, function:may_stay_sentence, class:RemoveFromAll, class:KeyPlace, class:NotReached, class:MayStay, class:Applied, constant:WARNING, constant:NOT_OFFERED_CODES, constant:NOT_REACHED_CODES, constant:VALUES_UNPROVED
-# consumes: libs/utils/src/utils/lineage_walk.py (LineageIndex: the links between the columns; certainty_from and uncertain_ends), libs/utils/src/utils/recipe_graph.py (key_families, declared_entity_keys, plots_reading), libs/utils/src/utils/declared_plans.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/audit_copy.py (add_step, remove_step), libs/utils/src/utils/filter_values.py (check_filter), libs/utils/src/utils/na_choice.py (default_na), libs/utils/src/utils/recipe_tiers.py (without_audit_steps), libs/utils/src/utils/lineage_records.py (Reason)
+# provides: function:describe, function:apply, function:removal_step, function:not_offered_sentence, function:may_stay_sentence, function:not_reached_sentence, class:RemoveFromAll, class:KeyPlace, class:NotReached, class:MayStay, class:Applied, constant:WARNING, constant:NOT_OFFERED_CODES, constant:NOT_REACHED_CODES, constant:VALUES_UNPROVED
+# consumes: libs/utils/src/utils/lineage_walk.py (LineageIndex: the links between the columns; certainty_from and uncertain_ends), libs/utils/src/utils/recipe_graph.py (key_families, declared_entity_keys, plots_reading), libs/utils/src/utils/declared_plans.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/audit_copy.py (add_step, remove_step), libs/utils/src/utils/filter_values.py (check_filter), libs/utils/src/utils/na_choice.py (default_na), libs/utils/src/utils/recipe_tiers.py (without_audit_steps), libs/utils/src/utils/lineage_records.py (Reason), libs/utils/src/utils/lineage_sentences.py (join_not_yet_followed_sentence)
 # consumed_by: libs/utils/tests/test_remove_from_all.py, app/tests/test_remove_from_all_demo.py
-# doc: .claude/knowledge/decision_ledger.md (D-0415, D-0416, D-0313, D-0082, D-0355, D-0351), .claude/rules/ui_implementation_contract.md (section 8: the filter row and the value type rule), .claude/design/home_audit_steps.md
+# doc: .claude/knowledge/decision_ledger.md (D-0415, D-0416, D-0313, D-0082, D-0355, D-0351, D-0452, D-0454, D-0460), .claude/rules/ui_implementation_contract.md (section 8: the filter row and the value type rule), .claude/design/home_audit_steps.md
 # @end_deps
 """
 from __future__ import annotations
@@ -65,7 +72,8 @@ from utils import audit_copy, na_choice, recipe_tiers
 from utils.action_names import FILTER
 from utils.declared_plans import declared_plan_book
 from utils.filter_values import FilterValueError, check_filter
-from utils.lineage_records import Certainty, NOTE_AGGREGATED, NOTE_RECOMPUTED, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED as WALK_PLAN_FAILED, Note, Reason
+from utils.lineage_records import Certainty, JOIN_NOT_YET_FOLLOWED, NOTE_AGGREGATED, NOTE_RECOMPUTED, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED as WALK_PLAN_FAILED, Note, Reason
+from utils.lineage_sentences import join_not_yet_followed_sentence
 from utils.lineage_walk import LineageIndex, Occ
 from utils.plan_book import Plan, PlanBook, PlanFailure
 from utils.recipe_graph import RecipeGraph, RecipeGraphError, build_graph
@@ -324,10 +332,24 @@ UNPROVED_KINDS = {NOTE_RECOMPUTED: "recomputed", NOTE_AGGREGATED: "aggregated", 
 def may_stay_sentence(item: MayStay) -> str:
     """The plain sentence for one table of the list: always a whole sentence that starts with "In the table '<name>'" and says the fact. PROVISIONAL words (see `NOT_WRITTEN_REASONS`)."""
     where = f"In the table {item.table!r}"
+    if item.reason is not None and item.reason.code == JOIN_NOT_YET_FOLLOWED:          # D-0454: the warning is the full sentence with YET in capitals, said once
+        return f"{where} nothing is removed. {join_not_yet_followed_sentence(item.reason)} The selection may stay there."
     if item.code == VALUES_UNPROVED:
         kinds = " and ".join(sorted({UNPROVED_KINDS[n.code] for n in item.notes}))
         return f"{where} a removal step is written, but the app cannot prove that the values there match your selection: the key is {kinds} before that step. The selection may stay there."
     return f"{where} nothing is removed: {NOT_WRITTEN_REASONS.get(item.code, item.code)}. The selection may stay there."
+
+
+def not_reached_sentence(item: NotReached) -> str:
+    """The plain sentence for ONE table of `not_reached`, whatever its code, so that no table that holds a column with the name of the key is left unsaid (D-0460: a place the app cannot trace
+    is shown, never silently absent). A doubt (`UNSURE_CODES`) is the sentence of `may_stay_sentence`; a table that shares only the NAME of the key (`SAME_NAME_NOT_LINKED`, information, not a doubt: whether
+    such a column is the key is the owner's question, P7) says that nothing is removed there and why. PROVISIONAL words."""
+    if item.code in UNSURE_CODES:
+        return may_stay_sentence(MayStay(item.table, item.place, item.code, False, item.reason))
+    names = ", ".join(repr(n) for n in (item.reason.get("names", ()) if item.reason is not None else ()) or ())
+    which = f" ({names})" if names else ""
+    return (f"In the table {item.table!r} nothing is removed: it has a column with the name of the key{which}, but no declaration and no join says that it is the key, so the app does not "
+            "treat it as the key. If it holds the same ids, the selection stays there.")
 
 
 def removal_step(column: str, values: Sequence[Any]) -> dict:
