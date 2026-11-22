@@ -165,7 +165,7 @@ Companion of `WHOLE_PICTURE.md` (same folder). This file holds the full list tha
 - **The app.** The plots of all groups are put in one list by id, so a second entry with the same id silently replaces the first (`libs/utils/src/utils/recipe_tiers.py:152-161`) [read]. The recipe check compares plot ids across recipes (X5, `recipe_check.py:1288`) [read]; inside one recipe, by the recipe-redesign proposal's run, it reports nothing, and the load gate refuses such a recipe only through an internal fault (`RECIPE_PROPOSAL_refined.md` in this folder, Part 0 flag 6) [run by the proposal, not by me].
 - **Decided.** "No silent error that is the rule." (D-0050).
 - **Kind.** DEFECT (wrong whatever form is chosen).
-- **Closes.** A plain refusal by the recipe check, tests first. No answer needed.
+- **Closes.** A plain refusal by the recipe check, tests first. No answer needed. Filed as the open task `RESULT-ID-TWICE-NOT-REFUSED` (`.claude/tasks/tasks.md:958`).
 
 ### A24. The defaults when a recipe opens: a builder's choice
 - **The app.** Exploration, and the data choice on T3, marked "PROVISIONAL P-B1" (`app/src/server.py:143-147`) [collected].
@@ -202,6 +202,7 @@ Proposed by you on 22 November: "Well maybe then we need instead to be able to a
 - **c. The drop by place.** D-0358 says "Not built (the code refuses by name ...)". The drop gate by place is built (`libs/utils/src/utils/key_drop.py`) [review].
 - **d. The held branch.** Any record that describes the branch's list as "stays by your choice" (`stays_by_choice`) describes its first commit; at its tip it is `unticked_places` (A4).
 - **e. The right panel.** D-0383 and D-0385 say "not built"; the behaviour is built (`home_theater.py:1401-1425, 2348-2350`; `audit_stack.py:692-700`) [collected].
+- **f. The join with the metadata in tier 1 (found 2026-11-22, evening, by the authors of the recipe proposal).** The ledger line D-0510 holds, among the facts shown to her (block M581), "the recipe check ... has no rule that refuses a join step in tier 2", and its state "DECIDED ("for now"); not built; today the recipe check has no such rule"; D-0523 says "the rule of D-0510 is not built". Wrong: the check refuses every join action in tier 2 and tier 3 with ST05 (`libs/utils/src/utils/recipe_check.py:714-715`, `libs/utils/src/utils/action_names.py:66`, test `libs/utils/tests/test_recipe_check_join_tier1_only.py`) [read, run: 4 passed]. A wrong fact was put to her when she decided; this study tells her so in question 27. The ledger lines are not edited by this study (rule B: nobody rewrites a line); the review session decides how the record is corrected.
 
 ### B3. Rule texts out of date (none changes the code)
 - `rules_data_engine.md` section 1, "The opening of a recipe (DECIDED, not built)": it is built (`app/modules/opening_build.py`, run through `app/handlers/opening_handlers.py`, imported at `home_theater.py:58, 60`) [read].
@@ -308,6 +309,12 @@ Proposed by you on 22 November: "Well maybe then we need instead to be able to a
 ### C18. "A named join takes only source tables" (D-0344) and the derived tables of the recipe redesign
 - D-0344: "we need to be able to join metadata for example to any other original data" and "Yes, revisit if needed".
 - A derived table (`from:` one table) is not a join; it does not break D-0344. A join that takes a derived table as an ingredient would reopen it (the proposal leaves this open). Information for question 2.
+
+### C19. "Other joins could be used after" (D-0510) and "the other data tables can be used in later joins" (D-0523), with the rule that every join is a tier 1 step (ST05)
+- D-0510: "metada is a certain type of data - other joins could be used after but join with metadata must be done at T1 that would simplify removing of samples by key no". D-0523: "As we said the other data tables can be used in later joins." The review session read the first as "joins of other tables may be in tier 2 or later" (its reading).
+- The app: ST05 refuses every join action outside tier 1, for every table, look-up tables included (B2 f). The rule has no ledger line of hers: `recipe_format_spec.md` section 7.5 and the catalogue row ST05 (2026-11-13, commit `5a7ab37b`), following ADR-024 section 2 ("`tier1` (Tidy/Relational): Logic applied to wide data (Join, Clean, Rename, Filter)").
+- Two readings: "after" = later steps within tier 1 (what the app enforces), or a later tier (refused today). On the demo `ST22_Anchor` writes its look-up join (inner, with `APEC_STEC_virulence_genes`) as the last join of tier 1 (`1_test_data_ST22_dummy/wrangling/ST22_Anchor_wrangling_tier1.yaml:30-34`) [read].
+- With form 3 a derived table cannot hold a join (no `ingredients`; ST05), so a look-up join after a count needs either a join that takes a derived table (D-0344) or a look-up join in tier 2 of a join. The question: question 27 of `WHOLE_PICTURE.md` (group "Now", beside question 2).
 
 ---
 
