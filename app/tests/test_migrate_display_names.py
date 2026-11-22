@@ -38,6 +38,12 @@ data_schemas:
   A:
     label: A
     source: {type: local_tsv, path: a.tsv}
+    input_fields:
+      id: {type: String, label: Sample}
+joins:
+  J:
+    label: Joined
+    ingredients: [A]
 analysis_groups:
   g:
     ui_label: G
@@ -62,8 +68,14 @@ info:
   contact: c
 data_schemas:
   A:
-    label: A
+    ui_label: A
     source: {type: local_tsv, path: a.tsv}
+    input_fields:
+      id: {type: String, ui_label: Sample}
+joins:
+  J:
+    ui_label: Joined
+    ingredients: [A]
 analysis_groups:
   g:
     ui_label: G
@@ -225,7 +237,7 @@ def test_a_gallery_bundle_is_planned_like_a_recipe(tree):
 
 def test_counts_per_file_kind(tree):
     plan = tool.build_plan(tree)
-    assert plan.kind_counts["recipes"]["changes"] == 4 and plan.kind_counts["recipes"]["files"] == 2
+    assert plan.kind_counts["recipes"]["changes"] == 7 and plan.kind_counts["recipes"]["files"] == 2
     assert plan.kind_counts["deployment files"]["changes"] == 3
     assert plan.kind_counts["app features files"]["changes"] == 1
 
@@ -403,11 +415,24 @@ def test_open_rule_never_changes_a_file(tree, monkeypatch):
     assert "ui_label: \"My recipe\"" not in plan.texts[tree / "config/data_analysis_recipes/pipelines/r.yaml"]
 
 
-def test_schema_label_is_listed_with_file_and_line_and_not_changed(tree):
+def test_the_label_of_a_table_a_join_and_a_field_becomes_ui_label(tree):
     plan = tool.build_plan(tree)
-    found = [c for c in plan.cases if c.case == "OC08"]
-    assert found and found[0].line == 12 and found[0].file.endswith("r.yaml")
-    assert "    label: A\n" in plan.texts[tree / "config/data_analysis_recipes/pipelines/r.yaml"]
+    rules = {c.rule: c for c in plan.changes if c.rule in ("R10", "R11", "R12")}
+    assert set(rules) == {"R10", "R11", "R12"}
+    assert rules["R10"].line == 12 and rules["R10"].old == "data_schemas.A.label"
+    assert rules["R12"].old == "data_schemas.A.input_fields.id.label" and rules["R11"].old == "joins.J.label"
+    assert all(c.ledger == "D-0468" for c in rules.values())
+    assert not any(c.case == "OC08" for c in plan.cases)
+
+
+def test_the_label_strings_of_the_python_code_are_counted_and_not_renamed(tmp_path):
+    root = tmp_path / "copy"
+    write(root, "libs/viz_factory/src/viz_factory/geoms/core.py", 'X = {"label": "a", "label": "b"}\n')
+    plan = tool.build_plan(root)
+    found = [c for c in plan.cases if c.case == "OC02"]
+    assert found and "2 place" in found[0].detail
+    assert "DECIDED" in tool.OPEN_CASES["OC02"]["title"] and tool.OPEN_CASES["OC02"]["words"].startswith("D-0468")
+    assert (root / "libs/viz_factory/src/viz_factory/geoms/core.py").read_text(encoding="utf-8") == 'X = {"label": "a", "label": "b"}\n'
 
 
 def test_a_recipe_with_no_name_is_listed(tmp_path):
@@ -420,6 +445,8 @@ def test_a_recipe_with_no_name_is_listed(tmp_path):
     nameless = sorted(Path(c.file).name for c in plan.cases if c.case == "OC01")
     assert nameless == ["a.yaml", "b.yaml", "c.yaml", "d.yaml"]
     assert plan.changes == []
+    assert not plan.blocking                 # an advice, not an error (D-0470)
+    assert "WOULD GET THE ADVICE" in "\n".join(tool.lines_of(plan, False, "h"))
 
 
 def test_a_key_in_old_and_new_spelling_is_a_conflict_and_is_not_overwritten(tmp_path):
@@ -478,7 +505,7 @@ def test_info_keys_that_no_decision_renames_are_listed(tmp_path):
 def test_the_format_number_and_the_registries_and_sessions_and_gallery_cases_are_always_listed(tree):
     plan = tool.build_plan(tree)
     assert {"OC02", "OC03", "OC04", "OC05"} <= set(case_ids(plan))
-    assert "D-0236" in tool.OPEN_CASES["OC03"]["words"]
+    assert "D-0469" in tool.OPEN_CASES["OC03"]["words"] and "D-0471" in tool.OPEN_CASES["OC04"]["words"]
 
 
 def test_a_saved_session_with_an_old_name_key_is_listed(tmp_path):
@@ -521,6 +548,90 @@ def test_an_empty_tree_gives_an_empty_plan(tmp_path, capsys):
     root.mkdir()
     assert tool.main(["--root", str(root)]) == 0
     assert "nothing to change" in capsys.readouterr().out
+
+
+# -- the recipe banner switch (D-0470, D-0472) ---------------------------------------------------------------------------
+
+HIDDEN_FEATURES = "name: hidden\ndisplay_name: H\nui_title:\n  text: \"My banner\"\n  subtitle: \"Line\"\n  visible: false\nflags:\n  a: true\n"
+USER_DEPLOYMENT = "deployment_type: filesystem\ndefault_app_features: \"hidden\"\nbranding:\n  theme_css: a.css\n  banner:\n    title: \"T\"\n    subtitle: \"S\"\n"
+OTHER_DEPLOYMENT = "deployment_type: filesystem\ndefault_app_features: \"other\"\nbranding:\n  contact: c\n"
+
+
+@pytest.fixture
+def hidden(tmp_path):
+    root = tmp_path / "copy"
+    write(root, "config/app_features/hidden.yaml", HIDDEN_FEATURES)
+    write(root, "config/deployment/a/user.yaml", USER_DEPLOYMENT)
+    write(root, "config/deployment/a/other.yaml", OTHER_DEPLOYMENT)
+    return root
+
+
+def test_the_switch_key_is_one_constant_and_unset_today():
+    assert tool.BANNER_SWITCH_KEY is None
+
+
+def test_an_app_features_file_that_hides_the_banner_is_kept_and_listed_while_the_key_is_unset(hidden, capsys):
+    plan = tool.build_plan(hidden)
+    assert plan.texts.get(hidden / "config/app_features/hidden.yaml") is None
+    found = [c for c in plan.cases if c.case == "OC15"]
+    assert len(found) == 1 and found[0].line == 3
+    assert "user.yaml" in found[0].detail and "other.yaml" not in found[0].detail.split("banner of each")[0]
+    assert "'T'" in found[0].detail and "no name yet" in found[0].detail
+    assert tool.main(["--root", str(hidden), "--apply"]) == 2
+    assert "NOT WRITTEN" in capsys.readouterr().err
+    assert read(hidden, "config/app_features/hidden.yaml") == HIDDEN_FEATURES
+
+
+def test_the_facts_for_naming_the_switch_are_listed(hidden):
+    plan = tool.build_plan(hidden)
+    text = "\n".join(plan.facts)
+    assert "hidden.yaml: ui_title sets a mapping (text: My banner, subtitle: Line, visible: false)" in text
+    assert "user.yaml: default_app_features = hidden; branding keys: theme_css, banner; banner keys: title, subtitle" in text
+    assert "other.yaml: default_app_features = other; branding keys: contact; banner keys: (no banner)" in text
+
+
+def test_a_visible_true_ui_title_is_removed_with_what_it_set(tmp_path):
+    root = tmp_path / "copy"
+    write(root, "config/app_features/f.yaml", "name: f\nui_title:\n  text: x\n  subtitle: y\n  visible: true\n")
+    plan = tool.build_plan(root)
+    assert plan.texts[root / "config/app_features/f.yaml"] == "name: f\n"
+    assert [c.value for c in plan.changes if c.rule == "R09"] == ["a mapping (text: x, subtitle: y, visible: true)"]
+    assert not any(c.case == "OC15" for c in plan.cases)
+
+
+def test_once_the_key_is_named_the_switch_is_written_in_the_deployments_that_use_the_file(hidden, monkeypatch):
+    monkeypatch.setattr(tool, "BANNER_SWITCH_KEY", "branding.show_recipe_banner")
+    plan = tool.build_plan(hidden)
+    assert plan.texts[hidden / "config/app_features/hidden.yaml"] == "name: hidden\ndisplay_name: H\nflags:\n  a: true\n"
+    user = plan.texts[hidden / "config/deployment/a/user.yaml"]
+    assert user.endswith("  banner:\n    ui_label: \"T\"\n    description: \"S\"\n  show_recipe_banner: false\n")
+    assert hidden / "config/deployment/a/other.yaml" not in plan.texts           # it uses another app features file
+    assert not any(c.case == "OC15" for c in plan.cases)
+    assert tool.main(["--root", str(hidden), "--apply"]) == 0
+    assert tool.build_plan(hidden).changes == []                                 # a second run changes nothing
+
+
+def test_the_switch_is_not_written_where_no_deployment_uses_the_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(tool, "BANNER_SWITCH_KEY", "branding.show_recipe_banner")
+    root = tmp_path / "copy"
+    write(root, "config/app_features/hidden.yaml", HIDDEN_FEATURES)
+    write(root, "config/deployment/a/other.yaml", OTHER_DEPLOYMENT)
+    plan = tool.build_plan(root)
+    assert plan.texts == {} and any(c.case == "OC15" and "nowhere to go" in c.detail for c in plan.cases)
+
+
+def test_a_switch_that_cannot_be_placed_keeps_the_ui_title(tmp_path, monkeypatch):
+    monkeypatch.setattr(tool, "BANNER_SWITCH_KEY", "branding.show_recipe_banner")
+    root = tmp_path / "copy"
+    write(root, "config/app_features/hidden.yaml", HIDDEN_FEATURES)
+    write(root, "config/deployment/a/user.yaml", "deployment_type: filesystem\ndefault_app_features: hidden\n")     # no branding block
+    plan = tool.build_plan(root)
+    assert hidden_kept(plan, root)
+    assert any(c.case == "OC13" for c in plan.cases) and any(c.case == "OC15" for c in plan.cases)
+
+
+def hidden_kept(plan, root):
+    return root / "config/app_features/hidden.yaml" not in plan.texts and not any(c.rule == "R09" for c in plan.changes)
 
 
 # -- the report ----------------------------------------------------------------------------------------------------------
