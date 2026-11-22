@@ -172,7 +172,12 @@ class Home:
         Returns the effects by name (the filter handlers' own: `_clear_filters_on_view_change`, `_filter_apply`...)."""
         from app.handlers import filter_and_audit_handlers as handlers
         monkeypatch.setattr(handlers, "bootloader", self.bootloader)
-        monkeypatch.setattr(reactive, "Effect", lambda fn: self.filter_effects.setdefault(fn.__name__, fn) and fn)
+        def effect(fn=None, *, priority=0):
+            """The stand-in of `reactive.Effect`: used bare (`@reactive.Effect`) or with arguments (`@reactive.Effect(priority=10)`)."""
+            def keep(f):
+                return self.filter_effects.setdefault(f.__name__, f) and f
+            return keep if fn is None else keep(fn)
+        monkeypatch.setattr(reactive, "Effect", effect)
         kw = {k: v for k, v in self.readers.items() if k != "export"}
         self.filter_effects = {}
         handlers.define_filter_audit_server(mock.MagicMock(), self._output, mock.MagicMock(), **kw)
