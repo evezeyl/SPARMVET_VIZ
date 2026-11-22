@@ -48,7 +48,7 @@ from PIL import Image
 from playwright.sync_api import Page, expect
 
 from app.modules.data_analysis_recipe_validator import validate_data_analysis_recipe
-from app.tests.browser_view import set_compare, set_mode, set_view
+from app.tests.browser_view import set_compare, set_mode, set_view, wait_preview_rows
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_shiny_smoke import _open_app, _wait_shiny
 from app.tests.test_shiny_step_order import N, _free_port, _red_pixels, _same_picture
@@ -130,7 +130,7 @@ def broken_app():
 
 def _rows(page: Page, n: int) -> None:
     """The data table says it holds n rows ("... of 15"): a retrying assertion on the app's state."""
-    expect(page.locator("#home_data_preview .shiny-data-grid-summary")).to_contain_text(f" of {n}", timeout=20_000)
+    wait_preview_rows(page, n)
 
 
 def _plot_tab(page: Page, plot_id: str) -> None:

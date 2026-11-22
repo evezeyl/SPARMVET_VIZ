@@ -8,7 +8,6 @@ import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
-import re
 import socket
 import subprocess
 import time
@@ -18,7 +17,7 @@ from pathlib import Path
 import polars as pl
 
 from app.modules.t3_audit_engine import column_is_in_frame, filters_cleared_notice
-from app.tests.browser_view import set_mode, set_view
+from app.tests.browser_view import preview_rows, set_mode, set_view
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_shiny_smoke import _choose_recipe, _open_app, _open_filters_panel, _wait_for_fb_col_option, _wait_shiny
@@ -150,14 +149,10 @@ def _show_table(page: Page, recipe: str) -> None:
 
 
 def _row_count(page: Page) -> int:
-    """Rows of the data preview ("Viewing rows 1 through 15 of 15"), read after Shiny is idle."""
+    """Rows the data preview says its table has (its badge: "15 rows", D-0488), read after Shiny is idle."""
     _wait_shiny(page, 30_000)
-    grid = page.locator("#home_data_preview")
-    expect(grid.locator("tbody tr").first).to_be_visible(timeout=20_000)
-    summary = grid.locator(".shiny-data-grid-summary")
-    if summary.count() == 0:                       # a table that fits one page has no summary line
-        return grid.locator("tbody tr").count()
-    return int(re.search(r" of (\d+)", summary.inner_text()).group(1))
+    expect(page.locator("#home_data_preview").locator("tbody tr").first).to_be_visible(timeout=20_000)
+    return preview_rows(page)
 
 
 def _count_settled(page: Page, expected: int) -> int:

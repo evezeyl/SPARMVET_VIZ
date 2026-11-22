@@ -6,23 +6,20 @@ flipping it changes the rows the filter leaves in the table.
 
 Run: PYTHONPATH=. SPARMVET_APP_FEATURES=qa ./.venv/bin/python -m pytest app/tests/test_shiny_na_tick.py -q
 """
-import re
 
 import pytest
 from playwright.sync_api import Page, expect
 from shiny.run import ShinyAppProc
 
+from app.tests.browser_view import preview_rows, wait_preview_rows
 from app.tests.conftest import shiny_app  # noqa: F401 - re-exports the fixture
 from app.tests.test_shiny_smoke import (
     _choose_recipe, _open_app, _open_filters_panel, _wait_for_fb_col_option, _wait_shiny,
 )
 
-SUMMARY = "#home_data_preview .shiny-data-grid-summary"
-
-
 def _rows_in_grid(page: Page) -> int:
-    page.wait_for_selector(SUMMARY, timeout=15_000)
-    return int(re.search(r"of (\d+)", page.locator(SUMMARY).inner_text()).group(1))
+    """The rows the data preview says its table has (its badge, D-0488)."""
+    return preview_rows(page)
 
 
 def _pick_value(page: Page, value: str) -> None:
@@ -32,8 +29,7 @@ def _pick_value(page: Page, value: str) -> None:
 
 
 def _wait_rows(page: Page, n: int) -> None:
-    page.wait_for_function("([sel, n]) => (document.querySelector(sel)?.innerText || '').includes('of ' + n)",
-                           arg=[SUMMARY, str(n)], timeout=15_000)
+    wait_preview_rows(page, n, 15_000)
 
 
 def test_the_tick_is_preselected_by_operator_and_flipping_it_changes_the_rows(page: Page, shiny_app: ShinyAppProc):

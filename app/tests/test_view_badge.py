@@ -163,3 +163,53 @@ def test_has_plot_steps_reads_the_plots_tier3_of_the_recipe():
     assert has_plot_steps(raw, "with") is True
     assert has_plot_steps(raw, "empty") is False and has_plot_steps(raw, "none") is False
     assert has_plot_steps(raw, "nope") is False and has_plot_steps(raw, None) is False
+
+
+# D-0488: the two facts of every data preview, how many rows and how many columns are hidden (PROVISIONAL words)
+from app.modules.view_badge import PREVIEW_ROW_LIMIT, hidden_columns_note, row_count_note
+
+
+def test_the_row_limit_is_one_number_of_100():
+    assert PREVIEW_ROW_LIMIT == 100
+
+
+@pytest.mark.parametrize("total,all_rows,text", [
+    (0, False, "0 rows"),
+    (1, False, "1 row"),
+    (100, False, "100 rows"),                       # exactly the limit: nothing is cut
+    (101, False, "Showing 100 of 101 rows"),
+    (2340, False, "Showing 100 of 2340 rows"),
+    (2340, True, "2340 rows"),                      # All rows on: the table is shown whole
+    (5, True, "5 rows"),
+])
+def test_row_count_note(total, all_rows, text):
+    assert row_count_note(total, all_rows) == text
+
+
+def test_row_count_note_is_absent_when_the_count_is_unknown():
+    assert row_count_note(None, False) is None      # the table could not be built: its error is shown in the table's place
+
+
+@pytest.mark.parametrize("hidden,audit,text", [
+    (0, False, None), (0, True, None),
+    (1, False, "1 column hidden; add it back in the column chooser"),
+    (3, False, "3 columns hidden; add them back in the column chooser"),
+])
+def test_hidden_columns_note_exploration(hidden, audit, text):
+    assert hidden_columns_note(hidden, audit) == text
+
+
+def test_hidden_columns_note_in_audit_t3_says_they_are_not_dropped():
+    note = hidden_columns_note(3, True)
+    assert "3 columns" in note and "not dropped" in note and "chooser" in note
+
+
+def test_view_badge_carries_the_two_facts_after_the_other_notes():
+    badge = view_badge("T2", False, False, 2, total_rows=2340, all_rows=False, hidden_columns=3)
+    assert badge.notes[0] == "T2=T1"
+    assert badge.notes[-2:] == ("Showing 100 of 2340 rows", "3 columns hidden; add them back in the column chooser")
+
+
+def test_view_badge_without_the_facts_is_unchanged():
+    assert view_badge("T1", True, False).notes == ()
+    assert view_badge("T1", True, False, total_rows=0).notes == ("0 rows",)
