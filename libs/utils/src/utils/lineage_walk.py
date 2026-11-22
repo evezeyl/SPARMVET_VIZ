@@ -46,18 +46,18 @@ table built from the place) reads the column as a key, followed forward by the l
 integrity check and the checker, through `utils.key_drop`); a refused line is grey with `refusal` (the join steps that need it, as data). Where no later join needs the column it can be
 dropped. A column that a later step or a plot uses without being a key is NOT refused: the line carries what it breaks (`Line.consequences`), from the steps the walk reads and,
 when the caller gives the engine's plan of the candidate recipe for a place (`candidates`), from that plan, each reading checked against it (a disagreement is grey with both facts).
-PROVISIONAL (not decided by the owner): P15 a declared entity key that no later join uses is not refused for being declared (D-0297 names join keys, D-0358 says by place): the line
-says so as information (`declared_entity_key` note); P16 a column the walk cannot follow to the end (a plan failure, an unfollowed step) is grey on a drop line and the gate REFUSES the drop (`key_drop`: a drop the walk cannot follow is not
-written; `DropFacts.uncertain`; it replaced the earlier rule "allow it, the engine tells at the build"). This rule is PROVISIONAL and goes to the owner: her words on the worst case are D-0358
-("worth case if a user removes the wrong column then the dependent steps wont work and there will be error / no plot"), which reads as accepting an error at the build, while the gate now
-blocks a drop that may have been harmless (on the demo recipe the columns behind an unpivot); the owner decides which side is the default; P17 without a candidate plan the consequences hold only what the steps the walk reads and the
+P15 a declared entity key that no later join uses is not refused for being declared (decided, D-0448: "Her answer: B"; D-0297 names join keys, D-0358 says by place): the line
+says so as information (`declared_entity_key` note); P16 a column the walk cannot follow to the end (a plan failure, an unfollowed step) is grey on a drop line (the reason says why) and the gate
+REFUSES the drop too (D-0460, "B of needed we try to.fimd a.solutiom later": red and not tickable, no step is written at a place the app cannot follow; `key_drop.DropGate.problem`,
+`DropFacts.uncertain`; it replaces D-0449, which allowed such a drop with a warning). The line and the gate agree: both refuse, and the user chooses another place. How the screen shows a red line
+(the wording, its colour beside the grey of the other reasons) is not decided; this module gives the line grey with the reason. P17 without a candidate plan the consequences hold only what the steps the walk reads and the
 plot mapping say (`consequences_checked` False, stated, never silent).
 
 Consumed by: libs/utils/src/utils/key_drop.py (the gate of a drop), libs/utils/tests/test_lineage_walk.py (the dialog of HOME calls the walk later).
 If deleted: the audit dialog has no way to list its places.
 
 # @deps
-# provides: function:walk, function:LineageIndex.drop_facts, function:LineageIndex.certainty_from, function:LineageIndex.uncertain_ends, class:LineageIndex, class:LineageError, class:ColumnNotFound, class:StartPlanFailed
+# provides: function:walk, function:LineageIndex.drop_facts, function:LineageIndex.drop_consequences, function:LineageIndex.plot_places, function:LineageIndex.certainty_from, function:LineageIndex.uncertain_ends, class:LineageIndex, class:LineageError, class:ColumnNotFound, class:StartPlanFailed
 # consumes: libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/step_effects.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/lineage_records.py
 # consumed_by: libs/utils/src/utils/key_drop.py, libs/utils/src/utils/remove_from_all.py (certainty_from, uncertain_ends), libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py, libs/utils/tests/test_lineage_walk_properties.py, libs/utils/tests/test_lineage_drop.py
 # doc: .claude/knowledge/decision_ledger.md (D-0347, D-0346, D-0351, D-0195, D-0353, D-0352, D-0357, D-0337, D-0356, D-0355, D-0358, D-0297), .claude/design/home_audit_steps.md
@@ -637,6 +637,37 @@ class LineageIndex:
             return DropFacts(place, column)
         return self._facts_at((end[0], end[1], column), place)
 
+    def drop_consequences(self, node_id: str, column: str) -> List[Consequence]:
+        """What the steps the walk reads say a drop of `column` at the end of `node_id` breaks downstream: a later step that names the column (it fails), a plot that draws
+        it, a join that had given the other table's same-named column a suffix (that column keeps its own name now). The same readings as a drop line (`_drop_line`), with no
+        plan of the candidate: a step that uses the column inside a formula is not seen (only names are read, D-0356). Empty for a column the node does not have or a node whose
+        plan failed (the plan failure is a fact of `drop_facts`, never silence). `utils.key_drop` words them in the refusal of a drop the walk cannot follow (D-0460)."""
+        end = self.end(node_id)
+        plan = self._plan[end]
+        if isinstance(plan, PlanFailure) or not plan.has(column):
+            return []
+        return self._reading_consequences(self._forward_costs((end[0], end[1], column)))
+
+    def plot_places(self, node_id: str, column: str) -> List[Tuple[str, str]]:
+        """The plots' own tables (`T3:<plot>`) built from the end of `node_id` where the column still exists: `(node id, the name the column has there)`, by the CERTAIN links of the
+        walk and with the plan of that table holding the name. Nothing is built after a plot, so a drop written there cannot break a later step or formula; no other kind of place is
+        returned (a later formula that reads the column is never read by the app, D-0356). Read-only; `utils.key_drop` words the way out of a refusal from it (D-0460)."""
+        end = self.end(node_id)
+        plan = self._plan[end]
+        if not isinstance(plan, Plan) or not plan.has(column):
+            return []
+        reached = self._forward_costs((end[0], end[1], column))
+        found: List[Tuple[str, str]] = []
+        for nid in self.forward(node_id):
+            node = self.graph.node(nid)
+            there = self._plan[self.end(nid)]
+            if node.kind != "T3" or isinstance(there, PlanFailure):
+                continue
+            names = sorted({o[2] for o, cost in reached.items() if cost == 0 and o[0] == nid and o[1] == len(node.steps) and there.has(o[2])})
+            if len(names) == 1:
+                found.append((nid, names[0]))
+        return found
+
     def _facts_at(self, occ: Occ, place: str) -> DropFacts:
         reached = self._forward_costs(occ)
         needs: List[KeyNeed] = []
@@ -666,7 +697,7 @@ class LineageIndex:
         return ()
 
     def _reading_consequences(self, reached: Iterable[Occ]) -> List[Consequence]:
-        """What the steps the walk reads say a drop breaks: a later step that names the column (it fails), a plot that draws it (it cannot be drawn), a join
+        """What the steps the walk reads say a drop breaks: a later step that names the column (it fails), a plot that draws it, a join
         that gave the other table's same-named column a suffix because of it (that column now keeps its own name, and a step that names the suffixed name fails). A step that uses
         the column inside a formula is not seen here (only names are read, D-0356); the engine's plan of the candidate sees it."""
         found: List[Consequence] = []

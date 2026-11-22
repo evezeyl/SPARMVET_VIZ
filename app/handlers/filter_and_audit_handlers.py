@@ -872,8 +872,9 @@ def define_filter_audit_server(input, output, session, *,
             )
             return
 
-        # A column a join step later reads as a key is refused BY PLACE (D-0358, which modulates D-0297 and §12g.4): this drop is written in the plot's own steps (the
-        # place `T3:<plot>`), after every join, so the rule finds nothing to refuse there today; it is asked all the same, with the place the step has.
+        # A column a join step later reads as a key is refused BY PLACE (D-0358, which modulates D-0297 and §12g.4), and so is a column the app cannot follow to the end (D-0460: red,
+        # not tickable, nothing is written): this drop is written in the plot's own steps (the place `T3:<plot>`), after every join and with nothing built from it, so the rule finds
+        # nothing to refuse there today; it is asked all the same, with the place the step has.
         try:
             problem = key_drop.DropGate(recipe_raw(), recipe_plans() if recipe_plans is not None else None).problem(f"T3:{p_id}", to_drop) if recipe_raw is not None and p_id else None
         except PlanComposerBug:

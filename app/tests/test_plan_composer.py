@@ -14,7 +14,7 @@ What is proved:
 - the composer builds and stores nothing (no `write_anchor`, no file in the folder of the stored tables) and composes each source once;
 - an audit copy: the plan follows the audit steps and the original's plan does not move;
 - the five places of the shipped recipes that the names-only gate allowed (the review of 2026-11-20, finding F2): with the engine's plan the gate refuses them as join keys;
-  without a plan it does not write them either (PROVISIONAL: "Cannot tell"), through `add_step`, the integrity check, the engine's own check of a copy, the checker's AU04 and
+  without a plan it does not write them either (D-0460: "The app cannot YET follow the column ..."), through `add_step`, the integrity check, the engine's own check of a copy, the checker's AU04 and
   the audit run; every caller of the gate in the app hands it the plan (HOME's column box, the session restore, the audit run, the engine's check of a copy);
 - candidate plans: the plan of the recipe with one more audit step; a drop of a column that a later filter needs fails there and the walk reports `build_fails`; a refused drop
   makes no candidate; the audit copy given is not changed.
@@ -315,17 +315,18 @@ def test_the_five_places_are_refused_as_join_keys_with_the_engines_plan(recipe_i
     with_plan = key_drop.DropGate(loaded.raw, book).facts(place, column)
     assert with_plan.refused and with_plan.needs and all(n.certain for n in with_plan.needs[:1])
     sentence = key_drop.key_drop_problem(loaded.raw, place, [column], book)
-    assert sentence and f"the column {column!r} at {place}" in sentence and "it is read as a join key by" in sentence and "Cannot tell" not in sentence
+    assert sentence and f"the column {column!r} at {place}" in sentence and "it is read as a join key by" in sentence and "YET" not in sentence
 
 
 @pytest.mark.parametrize("recipe_id, place, column", FIVE)
-def test_PROVISIONAL_the_five_places_without_the_plan_are_not_written_either_and_the_sentence_says_the_app_could_not_follow(recipe_id, place, column):
-    """The blind gate (names only) cannot follow the five: it does not claim they are keys and it does not write them (no silent allow). PROVISIONAL wording."""
+def test_the_five_places_without_the_plan_are_not_written_either_and_the_sentence_says_the_app_cannot_YET_follow(recipe_id, place, column):
+    """The blind gate (names only) cannot follow the five: it does not claim they are keys and it does not write them (D-0460: red, not tickable). PROVISIONAL wording."""
     orch, loaded, graph, book = shipped(recipe_id)
     blind = key_drop.DropGate(loaded.raw).facts(place, column)
     assert not blind.refused and blind.uncertain
     sentence = key_drop.key_drop_problem(loaded.raw, place, [column])
-    assert sentence and sentence.startswith(f"Cannot tell whether a join later needs the column {column!r} at {place}") and "The drop is not written" in sentence
+    assert sentence and sentence.startswith(f"The app cannot YET follow the column {column!r} at {place} to the end") and "the drop is not written" in sentence
+    assert "read as a join key" not in sentence and "Warning" not in sentence
 
 
 def test_with_the_plan_the_gate_refuses_everything_the_blind_gate_refuses_and_what_stays_unsure_is_pinned_on_the_shipped_recipes():
@@ -366,7 +367,7 @@ def test_add_step_refuses_the_five_with_the_plan_and_does_not_write_them_without
     audit = start_audit(loaded.raw, "1a2b3c4d")
     with pytest.raises(AuditCopyError, match="read as a join key"):
         add_step(audit, place, drop_step(column), "because", plans=book)
-    with pytest.raises(AuditCopyError, match="Cannot tell whether a join later needs"):
+    with pytest.raises(AuditCopyError, match="The app cannot YET follow the column"):
         add_step(audit, place, drop_step(column), "because")
     assert audit.created == 0 and audit.recipe == loaded.raw, "a refused call changes nothing"
 
@@ -385,10 +386,10 @@ def test_the_integrity_check_and_the_checkers_AU04_see_the_five_with_the_plan_an
     hand_made = audit_recipe_with(loaded, "T1:MLST", "sample_id")
     with_plan = integrity_errors(hand_made, loaded.raw, book)
     without = integrity_errors(hand_made, loaded.raw)
-    assert len(with_plan) == 1 and "read as a join key" in with_plan[0] and len(without) == 1 and "Cannot tell whether a join later needs" in without[0]
+    assert len(with_plan) == 1 and "read as a join key" in with_plan[0] and len(without) == 1 and "The app cannot YET follow the column" in without[0]
     au04_plan = [p for p in check_recipe(hand_made, "audit", plans=book).problems if p.code == "AU04"]
     au04_blind = [p for p in check_recipe(hand_made, "audit").problems if p.code == "AU04"]
-    assert len(au04_plan) == 1 and "read as a join key" in au04_plan[0].message and len(au04_blind) == 1 and "Cannot tell" in au04_blind[0].message
+    assert len(au04_plan) == 1 and "read as a join key" in au04_plan[0].message and len(au04_blind) == 1 and "The app cannot YET follow the column" in au04_blind[0].message
 
 
 def test_the_engines_own_check_of_a_copy_carries_the_plan_and_refuses_the_five(tmp_path):
@@ -400,7 +401,7 @@ def test_the_engines_own_check_of_a_copy_carries_the_plan_and_refuses_the_five(t
     with pytest.raises(Exception, match="read as a join key"):
         orch.materialize_tier1(DEMO, "MLST", tmp_path / "MLST.parquet", loaded=with_plan)
     blind = loaded_from_resolved(loaded, hand_made)
-    with pytest.raises(Exception, match="Cannot tell whether a join later needs"):
+    with pytest.raises(Exception, match="The app cannot YET follow the column"):
         orch.materialize_tier1(DEMO, "MLST", tmp_path / "MLST.parquet", loaded=blind)
 
 
@@ -651,5 +652,5 @@ def test_the_cases_that_stay_none_are_those_of_the_recipe_or_the_caller():
         def compose(error=error):
             raise error
         assert plan_book_for_the_gate(compose, told.append) is None
-    assert told == [], "no notice for the cases the rule already explains with 'Cannot tell'"
+    assert told == [], "no notice for the cases the rule already explains with 'The app cannot YET follow'"
     assert plan_book_for_the_gate(lambda: "book", told.append) == "book"

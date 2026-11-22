@@ -202,9 +202,8 @@ def _refuse_if_not_allowed(step: Any, recipe: dict, place: str, plans: Optional[
 
 
 def _key_drop(step: Any, recipe: dict, place: str, gate: Optional[key_drop.DropGate] = None, plans: Optional[PlanBook] = None) -> Optional[str]:
-    """The plain sentence when the step drops a key column AT THIS PLACE (D-0358, D-0297) or a column the app cannot follow to the joins after it (PROVISIONAL: not
-    written, see `utils.key_drop`), else None: ONE rule, `utils.key_drop`. A caller that asks several times on one recipe passes the same `gate`; `plans` is the engine's
-    plan book of the ORIGINAL recipe (the caller that has the engine gives it; without it the rule reads the names the recipe declares)."""
+    """The plain sentence when the step drops a key column AT THIS PLACE (D-0358, D-0297), or a column the app cannot follow to the end (D-0460: red, not written), else None: ONE rule,
+    `utils.key_drop`. A caller that asks several times on one recipe passes the same `gate`; `plans` is the engine's plan book of the ORIGINAL recipe (the caller that has the engine gives it; without it the rule reads the names the recipe declares)."""
     if isinstance(step, dict) and step.get("action") == action_names.DROP:
         return (gate or key_drop.DropGate(recipe, plans)).problem(place, step.get("columns"))
     return None
@@ -217,7 +216,7 @@ def add_step(audit: AuditCopy, place: str, step: dict, comment: str, plans: Opti
     from `comment`). `comment` is the reason, a text that is not empty. The id is `audit_<audit_id>_<created + 1>`: see the module text for what the number counts.
 
     `plans`: the engine's plan book of the ORIGINAL recipe (`app/modules/plan_composer.py`), for the rule of a key drop (`utils.key_drop`); without it the rule reads only the
-    names the recipe declares and a drop it cannot follow is not written."""
+    names the recipe declares: a column behind a step it cannot read is then refused as not followed, and a key behind such a step is named as a key only by the run of the copy, which composes the engine's plan."""
     tier, _, body = _target(audit.recipe, place)
     _refuse_if_not_allowed(step, audit.recipe, place, plans)
     given = [k for k in ("id", AUDIT_COMMENT) if k in step]

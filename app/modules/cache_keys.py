@@ -419,7 +419,7 @@ def loaded_from_resolved(original: LoadedDataAnalysisRecipe, raw: dict, plans: O
     an audit copy that is written to a file is not decided. The original is not changed.
 
     `plans`: the engine's plan book of the ORIGINAL recipe (`app/modules/plan_composer.compose_plan_book`), kept for the engine's own check of the copy (the rule of a key drop,
-    `utils.key_drop`): without it that check reads only the names the recipe declares and a drop it cannot follow is not run."""
+    `utils.key_drop`): without it that check reads only the names the recipe declares and a drop it cannot follow is refused with its own sentence (D-0460), and a key that a join reads behind a step it cannot read is named only when the plan is there."""
     table_parts, coarse_parts = table_key_parts(raw)
     return LoadedDataAnalysisRecipe(
         path=original.path, config=ResolvedRecipe(raw, original_raw=original.raw, plans=plans), files=original.files, signature=original.signature,

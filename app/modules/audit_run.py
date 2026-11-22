@@ -31,7 +31,7 @@ Consumed by: app/tests/test_audit_run.py. If deleted: nothing runs a copy yet; t
 
 # @deps
 # provides: function:run_audit, class:AuditRun, class:TableRun, class:PlotRun, class:AuditRunError
-# consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the original, handed to the check of every copy), app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3 with a handed recipe), app/modules/cache_keys.py (loaded_from_resolved, load_data_analysis_recipe), libs/utils/src/utils/audit_copy.py, libs/utils/src/utils/recipe_graph.py, libs/transformer/src/transformer/anchor.py (read_anchor_if_key)
+# consumes: app/modules/build_failure.py (short_engine_text: the sentence of an audit step that cannot be applied has no plan of the engine), app/modules/plan_composer.py (compose_plan_book: the engine's plan of the original, handed to the check of every copy), app/modules/orchestrator.py (materialize_tier1, materialize_tier2, materialize_tier3 with a handed recipe), app/modules/cache_keys.py (loaded_from_resolved, load_data_analysis_recipe), libs/utils/src/utils/audit_copy.py, libs/utils/src/utils/recipe_graph.py, libs/transformer/src/transformer/anchor.py (read_anchor_if_key)
 # consumed_by: app/tests/test_audit_run.py
 # doc: .claude/knowledge/architecture_decisions.md#adr-101, .claude/knowledge/architecture_decisions.md#adr-105, .claude/design/home_audit_steps.md (section 7.1)
 # @end_deps
@@ -45,6 +45,7 @@ from typing import Callable, Dict, List, Optional
 
 import polars as pl
 
+from app.modules.build_failure import short_engine_text
 from app.modules.cache_keys import (
     DataAnalysisRecipeKeys, LoadedDataAnalysisRecipe, load_data_analysis_recipe, loaded_from_resolved, tier2_steps)
 from app.modules.plan_composer import compose_plan_book
@@ -196,14 +197,31 @@ class _Run:
         cause it. One candidate is named at once; several are tried in order, the first N added to the original on their own (ids and reasons kept), in a
         scratch folder, and the first that fails is named. An error that no audit step can cause (the original's own) is raised as it is."""
         candidates = [m for m in all_audit_steps(self.audit_raw) if m.place in places]
+        if candidates and self.fails_without_audit(attempt):
+            candidates = []                                                          # the author's own step breaks it: no audit step is blamed
         if not candidates:
-            raise error
+            plain = short_engine_text(error, limit=900)
+            if plain == str(error):
+                raise error
+            raise AuditRunError(plain) from error                                   # an error that no audit step causes still never shows the engine's plan
         culprit = candidates[0] if len(candidates) == 1 else self.first_failing(candidates, attempt)
-        why = str(error).strip() + (f" ({error.tip})" if getattr(error, "tip", None) else "")
+        why = short_engine_text(error, limit=900) + (f" ({error.tip})" if getattr(error, "tip", None) else "")   # one line, without the engine's plan (D-0450: a step that cannot be applied ends as a plain error)
         if culprit is None:
             ids = ", ".join(f"{m.step_id} at {m.place}" for m in candidates)
             raise AuditRunError(f"An audit step cannot be applied; it is one of these, which together cannot be applied: {ids}. The engine says: {why}") from error
         raise AuditRunError(f"The audit step {culprit.step_id} at {culprit.place} cannot be applied: {why}", culprit.step_id, culprit.place) from error
+
+    def fails_without_audit(self, attempt) -> bool:
+        """True when the original recipe, with no audit step, fails the same attempt: the failure is the author's, not an audit step's."""
+        scratch = Path(tempfile.mkdtemp(prefix=".audit_probe_", dir=self.audit_dir))
+        try:
+            loaded = loaded_from_resolved(self.original, with_audit_steps(self.original.raw, []), self.plans)
+            attempt(loaded, self.orch.compute_data_analysis_recipe_keys(self.recipe_id, loaded=loaded), scratch, [])
+            return False
+        except Exception:
+            return True
+        finally:
+            shutil.rmtree(scratch, ignore_errors=True)
 
     def first_failing(self, candidates: List[AuditStep], attempt) -> Optional[AuditStep]:
         scratch = Path(tempfile.mkdtemp(prefix=".audit_probe_", dir=self.audit_dir))
@@ -218,6 +236,11 @@ class _Run:
             return None
         finally:
             shutil.rmtree(scratch, ignore_errors=True)
+
+    def plot_places(self, plot_id: str) -> List[str]:
+        """The places whose audit steps can break a plot: its own and the tier 1 and tier 2 of every table it is built from (an audit step there can take away a column that the plot's own steps need)."""
+        node = f"T3:{plot_id}"
+        return [n for n in self.graph.lineage_back(node) if self.graph.node(n).kind in ("T1", "T2")] + [node]
 
     # -- the whole run
     def run(self) -> AuditRun:
@@ -242,7 +265,7 @@ class _Run:
             try:
                 table_audit = self.plot_frame(plot_id, self.audit_loaded, self.keys_audit, self.audit_dir, self.changed)
             except Exception as error:
-                self.refuse(error, [f"T3:{plot_id}"], lambda loaded, keys, out, changed, plot_id=plot_id: self.plot_frame(plot_id, loaded, keys, out, changed))
+                self.refuse(error, self.plot_places(plot_id), lambda loaded, keys, out, changed, plot_id=plot_id: self.plot_frame(plot_id, loaded, keys, out, changed))
             table_original = self.orch.materialize_tier3(self.recipe_id, plot_id, self.original_dir, keys=self.keys_original,
                                                          on_inputs_changed=self.told(self.changed, f"the original's table of the plot '{plot_id}'")).collect()
             plots[plot_id] = PlotRun(plot_id, key_original, key_audit, False, not table_original.equals(table_audit))

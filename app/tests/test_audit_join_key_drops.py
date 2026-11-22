@@ -201,6 +201,19 @@ def test_the_handler_asks_the_rule_with_the_place_of_the_plot_and_follows_its_re
     assert box.notes == [("⛔ STAND-IN: the join at step 1 of T1:J reads sample_id.", "error")]
 
 
+def test_the_handler_refuses_a_column_the_app_cannot_follow_with_the_real_sentence_and_opens_no_dialog(monkeypatch):
+    """D-0460: the real `problem` (only the facts are a stand-in: the real rule finds nothing uncertain at a plot) gives the sentence "The app cannot YET follow ...", the handler tells
+    it as an error and sends nothing to the dialog: no warning path exists any more, the line is red and not tickable."""
+    from utils.lineage_records import DropFacts, Reason, STEP_NOT_READ
+    monkeypatch.setattr(key_drop.DropGate, "facts", lambda self, place, column: DropFacts(place, column, (), (Reason(STEP_NOT_READ, (("node", "T2:J"), ("step", 1), ("action", "polars_unpivot"))),)))
+    box = Box(COMPOSITE_RECIPE, COLUMNS)
+    box.drop(kept=[c for c in COLUMNS if c != "year"])
+    assert box.opened == [] and box.scratch.get() is None
+    (message, kind), = box.notes
+    assert kind == "error" and message.startswith("⛔ The app cannot YET follow the column 'year' at T3:p1 to the end") and "the drop is not written" in message
+    assert "step 1 of T2:J (polars_unpivot), a step the app cannot read" in message
+
+
 def test_without_a_recipe_the_handler_judges_nothing_and_sends_the_drop_to_the_dialog():
     box = Box(None, COLUMNS)
     box.drop(kept=[c for c in COLUMNS if c != "year"])
@@ -332,6 +345,21 @@ def test_split_removes_only_the_refused_drops_and_keeps_the_order_of_the_rest(mo
     assert kept["subtab_p2"] == []
     assert [(r["plot"], r["column"], r["reason"]) for r in refused] == [("subtab_p1", "sample_id", "old"), ("subtab_p2", "gene", "")]
     assert [r["problem"] for r in refused] == ["STAND-IN refusal of ['sample_id'] at T3:p1", "STAND-IN refusal of ['gene'] at T3:p2"], "the place of each step is its plot"
+
+
+def test_split_refuses_a_stored_drop_the_app_cannot_follow_with_the_real_sentence_and_keeps_the_rest(monkeypatch):
+    """D-0460: a restored session that holds a drop at a place the app cannot follow does not restore it, with the sentence "The app cannot YET follow ..." (the real `problem`; only the
+    facts of ONE column are a stand-in, since the real rule finds nothing uncertain at a plot)."""
+    from utils.lineage_records import DropFacts, Reason, STEP_NOT_READ
+    real = key_drop.DropGate.facts
+    monkeypatch.setattr(key_drop.DropGate, "facts", lambda self, place, column: (
+        DropFacts(place, column, (), (Reason(STEP_NOT_READ, (("node", "T2:J"), ("step", 1), ("action", "polars_unpivot"))),)) if column == "year" else real(self, place, column)))
+    by_plot = {"subtab_p1": [drop_step("year", reason="why"), drop_step("source")]}
+    kept, refused = split_key_drops(by_plot, REAL)
+    assert [n["params"]["column"] for n in kept["subtab_p1"]] == ["source"]
+    (item,) = refused
+    assert (item["plot"], item["column"], item["reason"]) == ("subtab_p1", "year", "why")
+    assert item["problem"].startswith("The app cannot YET follow the column 'year' at T3:p1 to the end") and "the drop is not written" in item["problem"]
 
 
 def test_split_does_not_change_its_argument_and_a_drop_the_rule_allows_stays(monkeypatch):
