@@ -253,3 +253,36 @@ def test_the_grid_and_the_badge_read_the_same_table_with_an_applied_audit_step(w
     grid = _grid_height(home)
     assert 0 < grid < ROWS
     assert _badge_count(home) == grid
+
+
+def _second_recipe(world):
+    """The same recipe under another id (and so another file set): what the user opens with a switch of recipe."""
+    text = (world.data_analysis_recipes_dir / "tiny.yaml").read_text().replace("id: tiny\n", "id: tiny2\n", 1)
+    (world.data_analysis_recipes_dir / "tiny2.yaml").write_text(text)
+    clear_data_analysis_recipe_cache()
+
+
+def test_the_key_changes_with_the_recipe(world, monkeypatch):
+    _second_recipe(world)
+    one = chooser_key(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"))
+    two = chooser_key(Home(world, monkeypatch, view="T1", subtab="subtab_p_table", inputs={"data_analysis_recipe_id": "tiny2"}))
+    assert one != two
+
+
+def test_a_chooser_built_for_another_recipe_gives_no_hidden_sentence_even_when_plot_and_view_are_equal(world, monkeypatch):
+    """The third review: after a switch of recipe the old plot id is still the active one for a moment and the names all exist in the new
+    table, so only the recipe part of the key can tell (D-0050)."""
+    _second_recipe(world)
+    old = chooser_key(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"))
+    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table", inputs={"data_analysis_recipe_id": "tiny2"}), ["sample_id"], key=old)
+    text = badge_text(home)
+    assert "hidden" not in text and f"of {ROWS} rows" in text
+    assert "2 columns hidden" in badge_text(choose(home, ["sample_id"]))     # built for this recipe: counted
+
+
+def test_a_change_of_the_data_changes_the_key(world, monkeypatch):
+    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table")
+    before = chooser_key(home)
+    world.data_file.write_text(world.data_file.read_text() + "sx\tA\t1\n")
+    clear_data_analysis_recipe_cache()
+    assert chooser_key(home) != before

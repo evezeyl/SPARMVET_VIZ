@@ -17,7 +17,7 @@ from shiny.run import ShinyAppProc
 
 from app.tests.browser_view import set_mode, set_source, set_view, wait_shiny
 from app.tests.conftest import shiny_app  # noqa: F401
-from app.tests.test_shiny_smoke import _load_data_analysis_recipe
+from app.tests.test_shiny_smoke import _choose_recipe, _load_data_analysis_recipe
 
 BADGE = "#home_data_preview_badge"
 SHOWING = re.compile(r"Showing 100 of (\d+) rows")
@@ -167,4 +167,46 @@ def test_the_badge_never_says_hidden_columns_the_user_did_not_hide_while_the_tab
     expect(items.first).to_be_visible(timeout=10_000)
     assert "hidden" not in page.locator(BADGE).inner_text()
     set_view(page, "T3")   # leave the page as the other tests of the module expect it
+    wait_shiny(page, 30_000)
+
+
+# The badge element is replaced when the recipe is switched, so the observer sits on the document body and reads EVERY badge element in
+# the page at each change (visible or not: during the opening of the new recipe the old theater stays in the page, hidden, behind the
+# opening cover, and a text written there can show when the cover lifts). The browser also re-binds the OLD text in that hidden element for
+# about 70 ms (measured; the server does not send it), so the old text itself is allowed; any other text that says "hidden" is a sentence
+# computed for the new recipe from the old chooser, and is untrue.
+RECORD_BODY = """() => { window.__badge_texts = [];
+  window.__badge_obs && window.__badge_obs.disconnect();
+  const keep = () => { for (const t of document.querySelectorAll('#home_data_preview_badge')) { const x = t.textContent.trim();
+    const l = window.__badge_texts; if (l[l.length - 1] !== x) l.push(x); } };
+  window.__badge_obs = new MutationObserver(keep);
+  window.__badge_obs.observe(document.body, {childList: true, subtree: true, characterData: true}); keep(); }"""
+
+
+def test_the_badge_never_says_hidden_columns_after_a_switch_of_recipe(page: Page, shiny_app: ShinyAppProc):
+    """Third review: hide one column in a recipe, switch recipe; the old plot id is still the active one for a moment and the old chooser's
+    names exist in the new table, but the user hid nothing there: no text of the badge after the switch may say "hidden" (D-0050).
+    This test is the last of the module: it leaves the app on the recipe `1_test_data_ST22_dummy`, view T3, as the others expect."""
+    _load_data_analysis_recipe(page, shiny_app.url)
+    _switch_all_rows(page, False)
+    set_mode(page, "exploration")
+    _open_data_panel(page)
+    set_view(page, "T3")
+    wait_shiny(page, 30_000)
+    for target, back in (("2_test_data_ST22_dummy", "1_test_data_ST22_dummy"), ("3_test_no_joins", "1_test_data_ST22_dummy")):
+        items = page.locator("#preview_col_selector + .selectize-control .item")
+        expect(items.first).to_be_visible(timeout=20_000)
+        items.first.hover()
+        items.first.locator(".remove").click()
+        wait_shiny(page, 30_000)
+        expect(page.locator(BADGE)).to_contain_text("hidden")
+        page.evaluate(RECORD_BODY)
+        for recipe in (target, back):
+            _choose_recipe(page, recipe)
+            page.wait_for_timeout(3000)
+            texts = page.evaluate("window.__badge_texts")
+            untrue = [t for t in texts[1:] if "hidden" in t and t != texts[0]]   # texts[0]: shown before the switch (true, old recipe)
+            assert not untrue, (recipe, untrue, texts)
+            page.evaluate(RECORD_BODY)
+    set_view(page, "T3")
     wait_shiny(page, 30_000)
