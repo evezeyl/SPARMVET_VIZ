@@ -353,6 +353,22 @@ def value_widget_for(dtype, discrete_axis: bool, op: str) -> str:
     return "list"
 
 
+def value_box_kind(dtype, discrete_axis: bool, op) -> str | None:
+    """The kind of value box the Filters form mounts for a column and the operator chosen; None when the column has no filter.
+
+    WHY (D-0050): the form draws the value box again only when this kind changes, never at a change of operator within one kind
+    (a number typed in a box would be thrown away when the server's redraw arrives, and the row added with the box's default). The kind
+    depends on the operator's family only (one value, a list, two values), through `value_widget_for`. An operator the column does not
+    offer reads as the first one it offers, as the operator select shows it.
+    """
+    ops = ops_for_column(dtype, discrete_axis) if dtype is not None else ["in", "not_in", "eq", "ne"]
+    if not ops:
+        return None
+    if op not in ops:
+        op = ops[0]
+    return value_widget_for(dtype, discrete_axis, op) if dtype is not None else "text"
+
+
 # -- what the boxes of a time, a date and time and a duration write (one place, so that the stored text is the one the rule reads)
 
 def _incomplete(what: str, missing: str):
