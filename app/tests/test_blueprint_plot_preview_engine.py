@@ -57,7 +57,8 @@ def preview(tmp_path, entry_engine=None, recipe_engine=None):
     recorder = Recorder()
     frame = pl.DataFrame({"sample_id": ["a", "b", "c"], "year": ["2023", "2023", "2024"]})
     ns.update(self=SimpleNamespace(active_viz_id=Val("p1"), active_data_analysis_recipe_path=Val(str(path))),
-              processed_data_surgical=lambda: frame, processed_data=lambda: frame, viz_factory=recorder)
+              processed_data_surgical=lambda: frame, processed_data=lambda: frame, viz_factory=recorder,
+              input=SimpleNamespace(sidebar_nav=lambda: "Wrangle Studio"))  # BLUEPRINT is the open user space
     return ns["_plot_outcome"](), recorder
 
 
