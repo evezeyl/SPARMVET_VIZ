@@ -171,21 +171,25 @@ def test_the_badge_never_says_hidden_columns_the_user_did_not_hide_while_the_tab
 
 
 # The badge element is replaced when the recipe is switched, so the observer sits on the document body and reads EVERY badge element in
-# the page at each change (visible or not: during the opening of the new recipe the old theater stays in the page, hidden, behind the
-# opening cover, and a text written there can show when the cover lifts). The browser also re-binds the OLD text in that hidden element for
-# about 70 ms (measured; the server does not send it), so the old text itself is allowed; any other text that says "hidden" is a sentence
-# computed for the new recipe from the old chooser, and is untrue.
-RECORD_BODY = """() => { window.__badge_texts = [];
+# the page at each change. A text counts as untrue only when its element is VISIBLE (offsetParent), says "hidden" and differs from the
+# text shown before the switch (the browser re-binds the old text for about 70 ms; the server does not send it).
+RECORD_BODY = """() => { window.__seen = []; window.__before = [...document.querySelectorAll('#home_data_preview_badge')].map(t => t.textContent.trim());
   window.__badge_obs && window.__badge_obs.disconnect();
-  const keep = () => { for (const t of document.querySelectorAll('#home_data_preview_badge')) { const x = t.textContent.trim();
-    const l = window.__badge_texts; if (l[l.length - 1] !== x) l.push(x); } };
+  const keep = () => { for (const t of document.querySelectorAll('#home_data_preview_badge')) {
+    window.__seen.push([t.offsetParent !== null, t.textContent.trim()]); } };
   window.__badge_obs = new MutationObserver(keep);
-  window.__badge_obs.observe(document.body, {childList: true, subtree: true, characterData: true}); keep(); }"""
+  window.__badge_obs.observe(document.body, {childList: true, subtree: true, characterData: true, attributes: true}); keep(); }"""
+
+R1, R2, R3 = "1_test_data_ST22_dummy", "2_test_data_ST22_dummy", "3_test_no_joins"
 
 
 def test_the_badge_never_says_hidden_columns_after_a_switch_of_recipe(page: Page, shiny_app: ShinyAppProc):
-    """Third review: hide one column in a recipe, switch recipe; the old plot id is still the active one for a moment and the old chooser's
-    names exist in the new table, but the user hid nothing there: no text of the badge after the switch may say "hidden" (D-0050).
+    """This browser test is a GUARD that catches the flash only some of the time (it depends on timing: the flash was seen about once in
+    two to four switches of recipe 2 to 3). The PROOF of the rule is the headless test
+    `test_a_chooser_built_for_another_recipe_gives_no_hidden_sentence_even_when_plot_and_view_are_equal`.
+
+    A column is hidden before each switch; the switches alternate 2 to 3 and 3 to 2 several times (and the other pairs). No VISIBLE badge
+    text after a switch may say "hidden" unless it is what the badge showed before the switch (D-0050).
     This test is the last of the module: it leaves the app on the recipe `1_test_data_ST22_dummy`, view T3, as the others expect."""
     _load_data_analysis_recipe(page, shiny_app.url)
     _switch_all_rows(page, False)
@@ -193,7 +197,7 @@ def test_the_badge_never_says_hidden_columns_after_a_switch_of_recipe(page: Page
     _open_data_panel(page)
     set_view(page, "T3")
     wait_shiny(page, 30_000)
-    for target, back in (("2_test_data_ST22_dummy", "1_test_data_ST22_dummy"), ("3_test_no_joins", "1_test_data_ST22_dummy")):
+    for target in (R2, R1, R3, R1, R2, R3, R2, R3, R2, R3, R2, R3, R2, R1):
         items = page.locator("#preview_col_selector + .selectize-control .item")
         expect(items.first).to_be_visible(timeout=20_000)
         items.first.hover()
@@ -201,12 +205,13 @@ def test_the_badge_never_says_hidden_columns_after_a_switch_of_recipe(page: Page
         wait_shiny(page, 30_000)
         expect(page.locator(BADGE)).to_contain_text("hidden")
         page.evaluate(RECORD_BODY)
-        for recipe in (target, back):
-            _choose_recipe(page, recipe)
-            page.wait_for_timeout(3000)
-            texts = page.evaluate("window.__badge_texts")
-            untrue = [t for t in texts[1:] if "hidden" in t and t != texts[0]]   # texts[0]: shown before the switch (true, old recipe)
-            assert not untrue, (recipe, untrue, texts)
-            page.evaluate(RECORD_BODY)
-    set_view(page, "T3")
-    wait_shiny(page, 30_000)
+        _choose_recipe(page, target)
+        page.wait_for_timeout(3000)
+        seen = page.evaluate("window.__seen")
+        before = page.evaluate("window.__before")
+        untrue = [t for vis, t in seen if vis and "hidden" in t and t not in before]
+        assert not untrue, (target, untrue, before)
+        set_mode(page, "exploration")
+        _open_data_panel(page)
+        set_view(page, "T3")
+        wait_shiny(page, 30_000)
