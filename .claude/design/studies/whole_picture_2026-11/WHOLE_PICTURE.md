@@ -135,7 +135,7 @@ You decided: "YES the story of is what I want to show - this is why I wanted the
 The difference for a user is that on the demo she cannot open tier 1 of `MLST` or the 6 tables no plot reads, so she cannot look at the table where a step would be written.
 
 **3. What an export of an audit holds.**
-Today, when an audit exists, the export holds the steps with their reasons and, if its reproducibility box is ticked, a copy of the recipe in which each plot's join is forked with the steps added; it holds no original recipe, no audit recipe, no audit record with a fingerprint, and no log of added and removed steps with the warnings shown.
+Today, when an audit exists, the export holds the steps with their reasons and, if its reproducibility box is ticked, a copy of the recipe in which, for each plot, its join is copied once more with the steps added at its end; it holds no original recipe, no audit recipe, no audit record with a fingerprint, and no log of added and removed steps with the warnings shown.
 You decided: "when audit steps have been added the audit recipe is the truth - so the export must contain the recipe of the audit" (D-0324), the original recipe "1. yes must." (D-0389), and "it is then actually not optional anymore to add the log for the audit to the export" (D-0478).
 The difference for a user is that an export of an audit cannot be re-run from the original recipe, and nothing in it proves that its recipe was not edited by hand or shows what she was warned of.
 
@@ -163,7 +163,7 @@ Your sentences:
 **Reading A:** the default tick is tier 1 of each original table. For `mlst_bar`: `MLST` and `metadata_schema`.
 **Reading B:** the default tick is the end of tier 1 of each table that joins the metadata. For `mlst_bar`: `MLST_with_metadata` and the 12 other tables that join the metadata. The original tables stay as read.
 
-**What was run.** Three runs on the demo recipe, one entity each: two entities that are in every original file, and one that is not in the ResFinder file. They used the real data and the real engine, through the library's run of the audit copy, not HOME's screen. Version 1 of this document made the first run; a review reproduced it with the two other entities. All three show the same pattern.
+**What was run.** Three runs on the demo recipe, one entity each: two entities that are in every original file, and one that is not in the ResFinder file. They used the real data and the real engine, through code that builds the audited tables without a screen, not through HOME. Version 1 of this document made the first run; a review reproduced it with the two other entities. All three show the same pattern.
 
 | Removing one entity, on the demo | Reading A | Reading B |
 |---|---|---|
@@ -434,7 +434,7 @@ Recommendation (mine): (b), because it follows both of your use cases.
 
 #### 5. A place where the entity key is made again: ticked, or only a note?
 - **Situation:** you listed the cases where the propagation does not work, "except keys recomputation, key under another column name weiht no join, key rewritten by a step", and asked "could we detect those cases and inform about the possible got you" (D-0508). Depends on question 1.
-- **Today:** the library's walk of the lineage marks such a place with a note; no screen shows it; the demo has no such place.
+- **Today:** code that follows the lineage, built but used on no screen yet, marks such a place with a note; the demo has no such place.
 - **Question:** when a step makes the entity key again (for example a join that computes it from another column), is that place ticked by default?
 - **(a) Ticked, with the line "the entity key is made again here".**
   - What you would see: one more ticked line, with that sentence. In a small test recipe of the review, the entity then leaves that table; without the tick it stayed.
@@ -447,7 +447,7 @@ Recommendation (mine): (a). It is the earliest place of that branch for the key,
 
 #### 6. A table that no plot reads, reached by the dialog: ticked like the others?
 - **Situation:** you answered "Yes" when asked whether such a table is "a tickable line in the normal dialog, ticked by default, like the others" (D-0451; the question's words are the review session's). Since then the default became "tick low" (D-0508). Depends on question 1.
-- **Today:** no such dialog; the library's walk returns such a table as a line and marks that no plot reads it.
+- **Today:** no such dialog; the code that follows the lineage (used on no screen yet) returns such a table as a line and marks that no plot reads it.
 - **Question:** does such a table follow the same default as any other table, and does its line say that no plot reads it?
 - **(a) The same default; its line adds "no plot reads this table; it is in the export".**
   - What you would see (under 1 b, from `mlst_bar`): the 4 joins that no plot reads (`FastP_with_metadata` and three others) among the 13 ticked lines, each with that sentence.
@@ -566,7 +566,7 @@ Recommendation (mine): (a). A reader of the Publication part then sees both with
 
 #### 17. The Reshuffle: how is its seed step written?
 - **Situation:** you decided "A - but then we need to be able to add it as a step at the correct place in audit", and "when the user is happy with the reshuffle a seed step with the reshuffling needs to be written"; "this reshuffling is not critical for now" (D-0341).
-- **Today:** in Audit mode a click writes a new seed for the plot, with no reason and no Apply, and it is exported.
+- **Today:** in Audit mode a click writes a new seed for the plot (the number that fixes the random placement of points), with no reason and no Apply, and it is exported.
 - **Question:** how is the seed step written in the audit recipe?
 - **(a) A new kind of audit step at the plot's own place, with a reason.** Reopens: D-0322 in part ("A : for now yes only filter and drops").
 - **(b) A second list in the plot entry of the audit recipe, run after the author's layers,** like the second list of a tier (my idea, not studied). Reopens: nothing.
@@ -644,5 +644,5 @@ Recommendation (mine): (b). One file, readable by a person and searchable by tab
 ## 9. What nobody checked
 
 - No browser was used, and no screen of the dialog or of a picker exists: every "what you would see" is described, not shown.
-- The runs on "the earliest place" are three runs on the demo recipe, one entity each, through the library and not HOME's screen, with the places listed by hand.
+- The runs on "the earliest place" are three runs on the demo recipe, one entity each, through code without a screen and not through HOME, with the places listed by hand.
 - The recipe redesign was read, not run by me; its own runs are on a part of the demo recipe. The details of what was and was not checked are at the end of `BUILD_ORDER.md` and `RECIPE_REDESIGN_REVIEW.md`.
