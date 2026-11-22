@@ -636,10 +636,13 @@ def lines_of(plan: Plan, md: bool, header: str) -> List[str]:
                f"{sum(len(v) for v in real.values())} listed place(s) in {len(real)} open case(s); "
                f"{len(cases_by.get('CONFLICT', []))} conflict(s); {len(cases_by.get('OC13', []))} removal(s) the script cannot place.")
     out.append("")
-    out.append(("| " if md else "  ") + f"{'kind of file':<22} {'files read':>10} {'changes':>8}" + (" |" if md else ""))
+    if md:
+        out += ["| kind of file | files read | changes |", "|---|---:|---:|"]
+    else:
+        out.append(f"  {'kind of file':<22} {'files read':>10} {'changes':>8}")
     for kind in KIND_ORDER:
         n = plan.kind_counts.get(kind, {"files": 0, "changes": 0})
-        out.append(("| " if md else "  ") + f"{kind:<22} {n['files']:>10} {n['changes']:>8}" + (" |" if md else ""))
+        out.append(f"| {kind} | {n['files']} | {n['changes']} |" if md else f"  {kind:<22} {n['files']:>10} {n['changes']:>8}")
     by_rule = Counter(c.rule for c in placed)
     out.append("")
     out.append("by rule: " + (", ".join(f"{r.id} {r.old}->{r.new or 'REMOVED'} ({r.ledger}) x{by_rule[r.id]}" for r in RULES if r.status == "APPLY") or "-"))
