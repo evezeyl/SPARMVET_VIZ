@@ -21,6 +21,7 @@
 # @end_deps
 
 from pathlib import Path
+from app.modules.orchestrator_helpers import blueprint_is_open
 from shiny import ui, reactive, render
 from app.src.render.pipeline_error_renderers import render_blueprint_inline
 import polars as pl
@@ -599,6 +600,8 @@ class WrangleStudio:
 
         @reactive.Calc
         def processed_data():
+            if not blueprint_is_open(input):
+                return None
             lf = get_base_data()
             if lf is None:
                 return None
@@ -653,6 +656,8 @@ class WrangleStudio:
             ADR-045 / R1: the error text is computed here, in a Calc, so that the plot render and the
             error banner only read it. A @render.* must never write a reactive value.
             """
+            if not blueprint_is_open(input):
+                return None, ""
             viz_id = self.active_viz_id.get()
             data_analysis_recipe_path = self.active_data_analysis_recipe_path.get()
             if not viz_id or not data_analysis_recipe_path:
@@ -748,6 +753,8 @@ class WrangleStudio:
         @output
         @render.table
         def architect_active_table():
+            if not blueprint_is_open(input):
+                return None
             df = processed_data_surgical()
             if df is None:
                 df = processed_data()

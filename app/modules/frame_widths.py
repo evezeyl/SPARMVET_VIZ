@@ -43,6 +43,7 @@ PANELS = {"left": LEFT, "right": RIGHT}
 
 # The user spaces (the values of the input `sidebar_nav`)
 HOME = "Home"
+BLUEPRINT = "Wrangle Studio"
 
 
 def css_width(panel: PanelWidth) -> str:
