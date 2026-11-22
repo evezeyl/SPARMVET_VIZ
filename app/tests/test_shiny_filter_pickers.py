@@ -181,10 +181,12 @@ def test_a_date_has_a_date_picker_for_each_comparison_and_two_for_between(page: 
     _choose_op(page, "eq")
     _set_date(page, "#fb_value input", "2020-01-02")
     _add_and_apply(page, "day = 2020-01-02", 1)                  # s2
-    # between: two pickers that start at the smallest and the largest date, the four ends
+    # between: two pickers that start EMPTY (D-0504: no end is a value the user did not choose), the four ends
     _choose_op(page, "between")
-    expect(page.locator("#fb_value_lo input")).to_have_value("2020-01-01", timeout=5_000)
-    expect(page.locator("#fb_value_hi input")).to_have_value("2020-01-03", timeout=5_000)
+    expect(page.locator("#fb_value_lo input")).to_have_value("", timeout=5_000)
+    expect(page.locator("#fb_value_hi input")).to_have_value("", timeout=5_000)
+    _set_date(page, "#fb_value_lo input", "2020-01-01")
+    _set_date(page, "#fb_value_hi input", "2020-01-03")
     labels = page.locator("input[name=fb_closed]").evaluate_all("els => els.map(e => e.value)")
     assert labels == ["both", "left", "right", "none"]
     for closed, rows in (("both", 3), ("left", 2), ("right", 2), ("none", 1)):
@@ -229,8 +231,11 @@ def test_a_time_is_three_boxes_that_start_at_the_exact_smallest_and_largest_time
     _set(page, "#fb_s", 0.25)
     _add_and_apply(page, "clock = 10:30:00.25", 1)               # s3 only: the digits are kept
     _choose_op(page, "between")
-    expect(page.locator("#fb_s_hi")).to_have_value("0.25", timeout=5_000)   # the largest time, exact
-    _add_and_apply(page, "clock between 09:00:00 and 10:30:00.25", 3)   # s1, s2, s3: the default ends keep every row with a value
+    for box in ("#fb_h_lo", "#fb_min_lo", "#fb_s_lo", "#fb_h_hi", "#fb_min_hi", "#fb_s_hi"):
+        expect(page.locator(box)).to_have_value("", timeout=5_000)   # D-0504: the ends start empty
+    for box, value in (("#fb_h_lo", 9), ("#fb_min_lo", 0), ("#fb_s_lo", 0), ("#fb_h_hi", 10), ("#fb_min_hi", 30), ("#fb_s_hi", 0.25)):
+        _set(page, box, value)   # the smallest and the largest time of the column, typed by the user
+    _add_and_apply(page, "clock between 09:00:00 and 10:30:00.25", 3)   # s1, s2, s3: every row with a value
 
 
 def test_a_duration_is_a_number_and_a_unit(page: Page, typed_app):
@@ -245,8 +250,13 @@ def test_a_duration_is_a_number_and_a_unit(page: Page, typed_app):
     _wait_shiny(page)
     _add_and_apply(page, "span > 1.5 h", 1)                      # s3 (2 h)
     _choose_op(page, "between")
-    expect(page.locator("#fb_value_hi")).to_have_value("2", timeout=5_000)
-    expect(page.locator("#fb_unit_hi")).to_have_value("h")
+    expect(page.locator("#fb_value_lo")).to_have_value("", timeout=5_000)   # D-0504: the ends start empty
+    expect(page.locator("#fb_value_hi")).to_have_value("")
+    _set(page, "#fb_value_lo", 1)
+    page.locator("#fb_unit_lo").select_option("min")
+    _set(page, "#fb_value_hi", 2)
+    page.locator("#fb_unit_hi").select_option("h")
+    _wait_shiny(page)
     _add_and_apply(page, "span between 1 min and 2 h", 3)
 
 
@@ -303,8 +313,11 @@ def test_a_cleared_date_box_stays_empty_stages_nothing_and_says_what_to_do(page:
     _clear_date(page, selector, key)
     expect(page.locator(selector)).to_have_value("")                     # no date was put in its place
     page.locator("#filter_add_row").click()
-    expect(page.locator("#shiny-notification-panel")).to_contain_text("No date is chosen, so no filter is added", timeout=10_000)
-    expect(page.locator("#shiny-notification-panel")).to_contain_text("Suggestion: choose a date")
+    if op == "between":   # D-0504: an empty end of between is the one line about both ends, near the boxes
+        expect(page.locator("#fb_add_reason")).to_contain_text("Give both values for 'between'", timeout=10_000)
+    else:
+        expect(page.locator("#shiny-notification-panel")).to_contain_text("No date is chosen, so no filter is added", timeout=10_000)
+        expect(page.locator("#shiny-notification-panel")).to_contain_text("Suggestion: choose a date")
     expect(page.locator("#filter_rows_ui")).to_contain_text("No filters yet")
 
 
@@ -382,3 +395,13 @@ def test_a_date_picked_in_the_calendar_is_staged_as_picked(page: Page, typed_app
     expect(page.locator("#fb_value input")).to_have_value("2020-01-15")
     page.locator("#filter_add_row").click()
     expect(page.locator("#filter_rows_ui")).to_contain_text("day > 2020-01-15", timeout=10_000)
+
+
+@pytest.mark.parametrize("column", ["day", "start", "clock", "span"])
+def test_between_on_every_kind_adds_nothing_until_both_ends_are_given(page: Page, typed_app, column):
+    """D-0504: the rule is on the operator; a date, a date and time, a time of day and a duration give the one line and no row, with the ends empty."""
+    _open_dialog(page, typed_app, column)
+    _choose_op(page, "between")
+    page.locator("#filter_add_row").click()
+    expect(page.locator("#fb_add_reason")).to_contain_text("Give both values for 'between'", timeout=10_000)
+    expect(page.locator("#filter_rows_ui")).to_contain_text("No filters yet")
