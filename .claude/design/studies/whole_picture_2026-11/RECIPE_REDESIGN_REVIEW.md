@@ -6,7 +6,7 @@ Your order: "Id like the opus agent that is looking at the whole picture to have
 
 ## 1. What I read
 
-- `tmpAI/panel/tables_as_results/refined/PROPOSAL_FOR_THE_OWNER.md` (the main tree): Parts 0, 1, 2.2 (the form 3 file), 3 (your case), 4 (where the derived table lives), 5 ("Table to view"), 6 (tried against the recipe check), 7 (the forms compared) and 8 (recommendation) in full; Parts 2.3 to 2.7 (the files of forms 4 and 5, the reads summary, the split into files) by their headings and their differences from form 3 only.
+- The refined proposal, now copied into this folder as `RECIPE_PROPOSAL_refined.md` (from `tmpAI/panel/tables_as_results/refined/PROPOSAL_FOR_THE_OWNER.md` of the main tree, unchanged; D-0419): Parts 0, 1, 2.2 (the form 3 file), 3 (your case), 4 (where the derived table lives), 5 ("Table to view"), 6 (tried against the recipe check), 7 (the forms compared) and 8 (recommendation) in full; Parts 2.3 to 2.7 (the files of forms 4 and 5, the reads summary, the split into files) by their headings and their differences from form 3 only.
 - In `tmpAI/panel/tables_as_results/`: `FACTS.md`, `FACTS_2.md`, `TABLE_FOR_THE_OWNER_5.md`, `VIEWPOINTS_5.md`, `PROPOSALS_AFTER_YOUR_ANSWERS.md`, `trials/REPORT.md` in full; `TABLE_FOR_THE_OWNER.md` to `TABLE_FOR_THE_OWNER_4.md` by their flags and options (first 30 lines each); `VIEWPOINTS.md` to `VIEWPOINTS_3.md` by their verdicts and flags (searched, not read line by line).
 - Your lines: D-0063, D-0306, D-0344, D-0485, D-0487, D-0488, D-0489, D-0490, D-0492, D-0495, D-0496, D-0514 to D-0518, D-0523 to D-0526.
 - Not run by me: none of the proposal's scripts. Its numbers below are its own runs, labelled so.
@@ -84,7 +84,7 @@ Consequences for a user, not cost.
 ### 4.4 A table as a result, and its export by id
 - Easier: a table result is the last stage of one table, so the table on screen and the file exported are the same object.
 - Open: the proposal does not say how the export names the file of a table result ("Part 1 -A", D-0490: named from the entry's id), nor what happens when a plot result and a table result read the same derived table (the same rows written twice under two ids, or once).
-- The "Showing 100 of N rows" sentence matters more for a table result (D-0488; the branch exists, not merged).
+- The "Showing 100 of N rows" sentence matters more for a table result (D-0488; merged on `dev` as `d2e92547`).
 
 ### 4.5 The two parts of the reproducibility bundle
 - Not changed by the form: "original" and "final_audited" each hold a recipe of the same form, and the data once (D-0490, D-0492).

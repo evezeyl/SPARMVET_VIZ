@@ -25,10 +25,10 @@ Each slice replaces one part completely: after it, no part exists twice and noth
 - Closes: A21. Tests (if rebuilt): an upload with no declared place is not offered; an upload under an existing name is refused and the file's hash is equal before and after; a new name is added.
 - Not "no answer needed": the handler is dead code today, so there is nothing a user can test until she chooses.
 
-### Slice 3. One representation of an audit step: the audit recipe. NO ANSWER NEEDED for the representation; two consequences must be told to her first.
+### Slice 3. One representation of an audit step: the audit recipe. NEEDS question 26 (the sessions saved before the change). NO ANSWER NEEDED for the representation itself; consequence 1 must be told to her first.
 - What: HOME writes each step into the library's audit copy, in the decided form (`steps` untouched, a second list `audit_steps`, `audit_comment`, the id; D-0332, D-0329, D-0321), at the place where it writes today (the plot's own tier 3: the line "this plot only" of D-0346), through today's dialog until slice 4 replaces it. The session holds the audit recipe in `audit/` with its plain text file and its record (D-0319, D-0423, D-0333); a hand-edited audit recipe is refused at reopening (D-0331); "Remove step" removes one step (D-0314); a session of an edited original recipe is refused with the plain line (D-0362, through `audit_of`, D-0339). Removed in the same slice: HOME's node store, the flat list and the `__legacy__` reader of the session file, the stale comments (`home_theater.py:287`, `orchestrator_helpers.py:53`), the title "My Adjustments".
 - **Consequence 1 (not stated in version 1, found by the review of the code claims):** HOME's plot and table move from the in-memory `audited_frame` (`app/modules/t3_audit_engine.py:771`) to an engine run of the audit copy (`app/modules/audit_run.py`, `plan_composer.compose_candidate_plan_book`, which have no running caller today). It is bigger than pointing today's dialog at a new form.
-- **Consequence 2, for her in plain words:** the session file gets a new format number, and by "A - best to clean all old sessions" (D-0312) every session saved in the older format is refused and removed: her saved sessions will not open after this slice. Said in part 5 of `WHOLE_PICTURE.md`.
+- **Consequence 2, a decision that does not exist:** the session file gets a new format number. She decided once, for sessions that held "My view": "A - best to clean all old sessions" (D-0312). Whether the same holds for this change is not decided; it is question 26 of `WHOLE_PICTURE.md` (refused and removed, converted once, or refused but kept). The slice does not start before her answer.
 - After it: she does what she does today, but her session holds an audit recipe she can open and read, a proof against hand edits, and a real "Remove step".
 - Closes: A11, A12, A13, A16, part of A7. Tests on the demo: a filter on `mlst_bar` with a reason gives `audit/` with one step in the tier 3 `audit_steps` of `mlst_bar` and its `audit_comment`; the copy minus its audit steps equals the original (D-0040); an edited byte gives a refusal at reopening; of two steps one is removed, the other stays and the plot follows; an edited original recipe gives a refused session with the plain line; an old session file is refused with its plain line.
 - Order (forced): before slice 4. Both change `filter_and_audit_handlers.py`, `audit_stack.py` and `session_manager.py`; slice 4 builds on the representation of slice 3.
@@ -72,8 +72,8 @@ Each slice replaces one part completely: after it, no part exists twice and noth
 - The good-practice page with what is decided (D-0461, D-0462, D-0486, D-0498, the three gotchas of D-0508). **NO ANSWER NEEDED**; the list of operations to avoid waits for the catalogue of uncertainties (D-0464).
 - Tests: a small recipe that joins the metadata in tier 2 is refused with a plain line; a recipe with one plot id in two groups is refused with a plain line; the demo passes.
 
-### Slice 11. The two sentences of the data preview. NO ANSWER NEEDED.
-- What: the branch `task/home-preview-rows-columns` ("N columns hidden", "Showing 100 of N rows"; D-0488) reviewed and merged; the grid's own line no longer says "of 100" for a larger table.
+### Slice 11. The two sentences of the data preview. DONE: merged on `dev` as `d2e92547`.
+- What: the branch `task/home-preview-rows-columns` (the screen texts `K columns hidden` and `Showing 100 of N rows`; D-0488) was reviewed and merged on `dev` (`d2e92547`, 2026-11-22). Whether the grid's own line still says "of 100" for a larger table was not checked in this pass.
 - Closes: A22.
 
 ---
@@ -87,7 +87,7 @@ Each slice replaces one part completely: after it, no part exists twice and noth
 - Slice 7 before any change to a demo recipe; slice 9's format with slice 7.
 - Slice 8 not before her decision on the picker (D-0496).
 
-**A possible order:** slice 0; slices 1, 10 (its decided parts) and 11 beside it; slice 3, after telling her its two consequences; slice 4 once questions 1 and 3 to 12 are answered; slices 5 and 6; slice 7 once question 2 and the names are answered; slice 9; slice 8 if she chooses a picker; slice 2 when she answers question 24.
+**A possible order:** slice 0; slices 1, 10 (its decided parts) and 11 beside it; slice 3, after telling her consequence 1 and after her answer to question 26; slice 4 once questions 1 and 3 to 12 are answered; slices 5 and 6; slice 7 once question 2 and the names are answered; slice 9; slice 8 if she chooses a picker; slice 2 when she answers question 24.
 
 ---
 

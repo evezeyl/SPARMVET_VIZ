@@ -87,7 +87,7 @@ Companion of `WHOLE_PICTURE.md` (same folder). This file holds the full list tha
 - **Decided.** "the original recipe is never edited during auditing steps ... Audit only add steps ... Full recipe edit is only in blueprint" (D-0102); "Audit add steps to a copy of an original_recipe : the audit_recipe," (D-0143); the form: "Id go for F4 - seems easier also to see what has been modified or not" (D-0332); "when audit steps have been added the audit recipe is the truth - so the export must contain the recipe of the audit" (D-0324).
 - **A user sees.** The reason under two key names (`reason` in HOME, `audit_comment` in the copy); in the reproducibility part, tables she never wrote (`<join>__t3_<plot>`).
 - **Kind.** BUILT BUT OLD.
-- **Closes.** One representation: HOME writes the audit copy, the session holds it, the export writes it. Two consequences (`BUILD_ORDER.md`): HOME's plot and table then come from an engine run of the audit copy; the session file changes form, and older session files are refused (D-0312: "A - best to clean all old sessions").
+- **Closes.** One representation: HOME writes the audit copy, the session holds it, the export writes it. Two consequences (`BUILD_ORDER.md`): HOME's plot and table then come from an engine run of the audit copy; the session file changes form. What happens to the session files of today's form is not decided: D-0312 ("A - best to clean all old sessions") was about sessions that held "My view"; question 26 of `WHOLE_PICTURE.md` asks her.
 
 ### A12. The session file keeps two older forms of the audit steps
 - **The app.** A flat list "kept for bw compat" and a reader of a `__legacy__` bucket (`session_manager.py:509-523, 572-576`) [collected].
@@ -155,14 +155,14 @@ Companion of `WHOLE_PICTURE.md` (same folder). This file holds the full list tha
 - **Closes.** Question 24: remove the code, or rebuild it under a declared upload place. Not without your answer.
 
 ### A22. The data preview's count of rows
-- **The app.** With "All rows" off, the grid's own line reads "Viewing rows 1 through 9 of 100" for a table of 1000 rows (`home_theater.py:1692-1702`; the same call run in a scratch app, `tmpAI/panel/tables_as_results/trials/REPORT.md`) [run by that trial, not by me]. The sentences "N columns hidden" and "Showing 100 of N rows" are on the branch `task/home-preview-rows-columns`, not on `dev` [read: the branch exists].
+- **The app.** With "All rows" off, the grid's own line reads "Viewing rows 1 through 9 of 100" for a table of 1000 rows (`home_theater.py:1692-1702`; the same call run in a scratch app, `tmpAI/panel/tables_as_results/trials/REPORT.md`) [run by that trial, not by me]. The screen texts `K columns hidden` and `Showing 100 of N rows` are merged on `dev` as `d2e92547` (2026-11-22) [read: the merge commit]; whether the grid's own line still says "of 100" was not checked in this pass.
 - **Decided.** "flag 3 - hah ok but we can say that xx columns are hidden and the user can add those again", and "Those sentences were supposed to be added in every preview I think" (D-0488).
 - **A user sees.** "of 100" for a table that has more rows.
-- **Kind.** NOT BUILT on `dev`; a misleading line today.
-- **Closes.** The branch, after its review. No answer needed.
+- **Kind.** The two sentences are BUILT on `dev`; the grid's own line not re-checked.
+- **Closes.** Closed by `d2e92547` for the two sentences. No answer needed.
 
 ### A23. A plot id written in two groups is not refused
-- **The app.** The plots of all groups are put in one list by id, so a second entry with the same id silently replaces the first (`libs/utils/src/utils/recipe_tiers.py:152-161`) [read]. The recipe check compares plot ids across recipes (X5, `recipe_check.py:1288`) [read]; inside one recipe, by the recipe-redesign proposal's run, it reports nothing, and the load gate refuses such a recipe only through an internal fault (`tmpAI/panel/tables_as_results/refined/PROPOSAL_FOR_THE_OWNER.md`, flag 6) [run by the proposal, not by me].
+- **The app.** The plots of all groups are put in one list by id, so a second entry with the same id silently replaces the first (`libs/utils/src/utils/recipe_tiers.py:152-161`) [read]. The recipe check compares plot ids across recipes (X5, `recipe_check.py:1288`) [read]; inside one recipe, by the recipe-redesign proposal's run, it reports nothing, and the load gate refuses such a recipe only through an internal fault (`RECIPE_PROPOSAL_refined.md` in this folder, Part 0 flag 6) [run by the proposal, not by me].
 - **Decided.** "No silent error that is the rule." (D-0050).
 - **Kind.** DEFECT (wrong whatever form is chosen).
 - **Closes.** A plain refusal by the recipe check, tests first. No answer needed.
