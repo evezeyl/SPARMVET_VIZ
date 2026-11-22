@@ -5,12 +5,13 @@ A study, not a decision: nothing is built from it before you answer (D-0507).
 > **START HERE**
 >
 > 1. Read parts 1 to 5: about 2,800 words, with the diagram and the sketch.
-> 2. Then answer questions 1 and 2 (part 8, group "Now").
+> 2. Then answer questions 1, 2 and 27 (part 8, group "Now").
 >    - Question 1 may need the table of part 6.1.
 >    - Question 2 needs only the example of part 7.3.
+>    - Question 27 needs only part 6.4. It corrects a wrong fact you were given on 22 November.
 > 3. Everything else can wait. Questions 3 to 26 do not need an answer today.
 >
-> Parts 1 to 5, part 6.1, part 7.3 and the two questions together: about 5,300 words.
+> Parts 1 to 5, parts 6.1 and 6.4, part 7.3 and the three questions together: about 6,500 words.
 
 ---
 
@@ -21,7 +22,7 @@ A study, not a decision: nothing is built from it before you answer (D-0507).
 3. Under each option of a question, "Reopens:" names an earlier decision of yours that this option would change.
 4. The app is data agnostic. On the demo recipe the entity is a sample and the entity key is `sample_id`. Everywhere else this document says "the entity".
 5. Where I only read the code, or ran something on the demo recipe only, I say so. Nothing here was seen on a screen.
-6. The other files of this folder are for the builders (`DIFFERENCES.md`, `PARTS_TABLES.md`, `BUILD_ORDER.md`, `RECIPE_REDESIGN_REVIEW.md`, `RECIPE_PROPOSAL_refined.md`). You do not need them to answer.
+6. The other files of this folder are for the builders (`DIFFERENCES.md`, `PARTS_TABLES.md`, `BUILD_ORDER.md`, `RECIPE_REDESIGN_REVIEW.md`, `RECIPE_PROPOSAL_refined.md`, `RECIPE_PROPOSAL_answers.md`, `RECIPE_PROPOSAL_dialog_walkthrough.md`). You do not need them to answer.
 
 ---
 
@@ -32,7 +33,7 @@ A study, not a decision: nothing is built from it before you answer (D-0507).
   - `data_schemas`: results of analysis about the entities;
   - `metadata_schema`: the information about the entities, one table;
   - `additional_datasets_schemas`: look-up tables, such as a list of genes of interest, used in later joins.
-- **Tier 1:** clean each table, and join it with the metadata where that is needed (my wording; the join with the metadata in tier 1 is yours, D-0523).
+- **Tier 1:** clean each table, and join it with the metadata where that is needed (my wording; the join with the metadata in tier 1 is yours, D-0523). The app already enforces it: the recipe check refuses every join written in tier 2 or tier 3, for every table (part 6.4).
 - **Tier 2:** compute, for example add a column or count (my wording).
 - **Tier 3:** the table a result is made from. It is still data, never the plot (D-0514). With no steps of its own it is the same table as tier 2 (D-0343).
 - **A join:** a table made by putting several tables side by side on a key column. A left join keeps every row of its first table, even when the second table has nothing for it.
@@ -72,7 +73,8 @@ TIER 1 of each original table (clean)                       <- A here
 STILL TIER 1, in the joined table: the join with the metadata
    MLST_with_metadata: MLST joined with the metadata on the entity key
    (a join with the metadata, when needed, is done here and never
-    in another tier, D-0523)                                <- B here (end of tier 1)
+    in another tier, D-0523; the recipe check already refuses
+    a join in any other tier)                               <- B here (end of tier 1)
                              |
 TIER 2 (compute)
    MLST_with_metadata: add an era; keep the years 2023 to 2025
@@ -123,7 +125,7 @@ RESULT
 1. When a recipe opens, the app builds every table and draws every plot once (D-0326).
 2. The original data files are read as they are, and "Source" in HOME shows a file as read (D-0310).
 3. Tier 1 cleans each table: `MLST` keeps three columns.
-4. Still in tier 1, the joined table `MLST_with_metadata` joins the MLST results with the metadata on the entity key (D-0523).
+4. Still in tier 1, the joined table `MLST_with_metadata` joins the MLST results with the metadata on the entity key (D-0523). This already works as you decided: the recipe check refuses a join written in another tier.
 5. Tier 2 computes: it adds an era and keeps the years 2023 to 2025.
 6. Tier 3 is the table the result is made from; `mlst_bar` has no steps of its own, so it is the same table as tier 2 (D-0343).
 7. The result is the plot `mlst_bar`; a result may also be a table (D-0485).
@@ -201,6 +203,8 @@ Your sentences:
 - "no T0 - as the T1 includes the join whith metadata that allows to modiffy at the join keeping the raw data unchanged" (D-0509);
 - "T has been removed - because we join all data sets with metadata in T1 when necesary (and not in other tiers) - and if No metadata join is needed. As we said the other data tables can be used in later joins." (D-0523).
 
+The join with the metadata in tier 1 is already what the app enforces: the recipe check refuses every join written in tier 2 or tier 3 (part 6.4).
+
 **Reading A:** the default tick is tier 1 of each original table. For `mlst_bar`: `MLST` and `metadata_schema`.
 **Reading B:** the default tick is the end of tier 1 of each table that joins the metadata. For `mlst_bar`: `MLST_with_metadata` and the 12 other tables that join the metadata. The Source view stays as read in both readings.
 
@@ -211,12 +215,15 @@ Your sentences:
 | Started from `mlst_bar` | 2 lines ticked. 13 plots change. The entity stays in 7 plots: in 4 that never meet MLST or the metadata, and in 3 with no source and no country. | 13 lines ticked. 13 plots change. The entity stays only in the 4 plots that never meet the metadata. No metadata is emptied. |
 | "Remove from all the data" | 11 places. The entity is in no plot. | 19 places. The entity is in no plot. 8 of the 11 original tables keep it at tier 1. |
 | Your case: keep it in the quality results only (D-0499) | Untick FastP, Quast and Bracken: it stays in the 3 quality plots without its metadata, and in one more plot. | Untick 2 tables: it stays in exactly the 3 quality plots, with its metadata. |
+| A summary table made from a join (the recipe proposal's form, part 7), on a small part of the demo | The removed entity appears in the summary of reads as a new group with an empty country and an empty year: 10 rows instead of 9, the total still 42. Nobody ticked that summary. | 9 rows, total 41: the entity leaves the summary with its metadata. |
 
 The entity that is not in ResFinder stays in one plot fewer (6 and 3). The 3 quality plots are `qc_reads_horizontal_barplot` (it loses the source, the year and the country), `assembly_quality_dotplot` and `miaou`, a plot that draws the source (both lose the source and the country).
 
 **Why they differ.** A left join keeps every row of its first table, even when the second table has nothing for it. In five joins of the demo the results table comes first and the metadata second; in two more a results table is the base and the metadata comes later. Under reading A, from `mlst_bar`, the entity leaves the metadata but not the FastP, Quast or Bracken results. So its rows stay in the tables that join those results with the metadata, and in the three quality plots they show no source and no country (and no year in one of them). Under reading B the removal comes after the join, so the row leaves with its metadata.
 
 **Limits.** The places of each reading were listed by hand: the lineage of `mlst_bar` back to its original tables, then forward from them. If the dialog also ticked the other original tables that meet the metadata in a join (FastP, Quast, Bracken, ResFinder, VirulenceFinder), reading A would empty no metadata (reasoned, not run). Whether those tables belong to the lineage of `mlst_bar` is not decided; as I read your words "So basic lineage is up to it can only go backwards when on its way up or forward when on its way backwards" (D-0451), they do not.
+
+The last row of the table was run by the authors of the recipe proposal, with the real engine, on a small part of the demo: two joins with the metadata (MLST and FastP), not the 13 of the demo. The summary table does not exist in the app yet, so its steps were run in its place on the joined table (a route the proposal checked: it gives the same rows as a direct computation). I ran their script again and got the same numbers. Details: `RECIPE_PROPOSAL_dialog_walkthrough.md`, part 3.
 
 Question 1 asks you to choose.
 
@@ -234,11 +241,26 @@ Your decision of 20 November stands: "8 - No we had decided to clear them- Only 
 
 Question 15 asks you to choose.
 
+### 6.4 "Other joins could be used after": in which tier?
+
+Your sentences:
+- "metada is a certain type of data - other joins could be used after but join with metadata must be done at T1 that would simplify removing of samples by key no" (D-0510);
+- "As we said the other data tables can be used in later joins." (D-0523).
+
+As the review session read the first one then: "joins of other tables may be in tier 2 or later" (its reading, not your words).
+
+What the app does today: the recipe check refuses every join written in tier 2 or tier 3, for every table, look-up tables included. A join of a look-up table (a table of `additional_datasets_schemas`, for example a list of genes of interest) is written in tier 1 of a join today. On the demo, `ST22_Anchor` does exactly this: it starts from the metadata, joins four more tables to it (left joins), then the list of genes (an inner join, which keeps only the genes of the list), all in tier 1.
+
+**Reading A:** "after" means later steps of tier 1: the metadata join first, then the other joins, all in tier 1. This is what the app enforces today.
+**Reading B:** "after" means a later tier: a join of another table may be written in tier 2. The app refuses that today.
+
+Question 27 asks you to choose.
+
 ---
 
 ## 7. How the recipe redesign fits the whole picture
 
-You asked me to review the proposal for the recipe form from the whole picture (D-0526). The proposal is copied into this folder as `RECIPE_PROPOSAL_refined.md`. The form stays your choice (D-0496). The details and the evidence are in `RECIPE_REDESIGN_REVIEW.md`.
+You asked me to review the proposal for the recipe form from the whole picture (D-0526). The proposal is copied into this folder as `RECIPE_PROPOSAL_refined.md`. The form stays your choice (D-0496). The details and the evidence are in `RECIPE_REDESIGN_REVIEW.md`. I asked the authors of the proposal eleven questions (you allowed the exchange, D-0526); their answers and their new walk-through of the audit dialog are copied into this folder as `RECIPE_PROPOSAL_answers.md` and `RECIPE_PROPOSAL_dialog_walkthrough.md` (not confirmed by you). Parts 7.4 to 7.6 below use them.
 
 To answer question 2 you need only part 7.3. Parts 7.1, 7.2 and 7.4 to 7.6 are the background.
 
@@ -367,10 +389,10 @@ analysis_groups:
 On the demo data (the proposal's run): `mlst_bar` shows 33 rows; the table result shows 6 rows (Norway 2024: 19, and five more). A plot of the same derived table would show the same 6 rows.
 
 **7.4 What form 3 makes easier or harder in the rest of the picture.**
-- *The places of an audit step.* A derived table is one more table, so one more place: its tier 1, and its tier 2 only while the entity key still exists there. For a removal by the entity key the earliest place is always further up (question 1), so the default ticks do not change (my assumption; asked to the authors of the proposal). New: a step written at a derived table changes only the results made from it, and "this result only" stays possible (D-0346).
-- *The join with the metadata.* It stays a tier 1 step of a join of raw data tables (D-0523). A derived table is made from a table that already has the metadata ("derived tables should already have the metadata joined", D-0511), so it never joins it (as I read D-0511; whether a derived table may join anything is asked to the authors).
-- *The story of the data.* Every summary gets a name and one definition, so the story is clearer, and one table longer. But "Table to view" (Source, T1, T2, T3) cannot show the whole chain of a result made from a derived table: the join's tier 2 that it reads is not among the four choices. This is your question of D-0518: "I am just wondering of how to make it navigate". The picker (question 13) would answer it; the proposal leaves it open.
-- *A table as a result, and its export.* A table result is simply the last stage of one table, so the table on screen and the file exported are the same object. The proposal does not say how the export names it (your "Part 1 -A" of D-0490 names it from the result's id), nor what happens when a plot and a table read the same derived table.
+- *The places of an audit step.* A derived table is one more table, so one more place: its tier 1, and its tier 2 only while the entity key still exists there. For a removal by the entity key the earliest place is always further up (question 1), so the default ticks do not change (run on the demo slice by the authors of the proposal). On a derived table, reading A has a visible effect: the removed entity stays in a reads summary as a group with an empty country and year (10 rows instead of 9, total still 42), because the left join keeps the row of the first table; reading B does not do that (part 6.1, last row of the table). For a column the derived table makes itself (for example the year written as text) the earliest-place rule is not defined. New: a step written at a derived table changes only the results made from it, and "this result only" stays possible (D-0346).
+- *The join with the metadata.* It stays a tier 1 step of a join of raw data tables (D-0523); the app already enforces this (part 6.4). A derived table is made from a table that already has the metadata ("derived tables should already have the metadata joined", D-0511), so it never joins it (as I read D-0511; a derived table cannot join anything: the recipe check refuses a join outside tier 1 of a join, and a derived table has no list of tables to join). A join with a look-up table is written before the derived table. A look-up join after a count would need either a join that takes a derived table, which reopens "a named join takes only source tables" (D-0344), or a join in tier 2 (question 27).
+- *The story of the data.* Every summary gets a name and one definition, so the story is clearer, and one table longer. But "Table to view" (Source, T1, T2, T3) cannot show the whole chain of a result made from a derived table: the join's tier 2 that it reads is not among the four choices. This is your question of D-0518: "I am just wondering of how to make it navigate". The entity column does not exist at the derived table's tier 2 or at a table result of an aggregate (run): to remove an entity the user starts from the derived table's T1, or from a Source line, not from the result. The picker (question 13) would answer it; the proposal leaves it open.
+- *A table as a result, and its export.* A table result is simply the last stage of one table, so the table on screen and the file exported are the same object. The proposal does not say it; the authors answer: a file named from the result's id for each TABLE result, with the same rows as the derived table's own `T2_data.tsv` (a plot result keeps the table's file, and gets `T3_data_<id>.tsv` only when audited). Options for you: that, or only a line in the README that maps the id to the table's file, or an id file for every result (`RECIPE_PROPOSAL_answers.md`, question 3). The export loop, the key check's scope and the list of tables no plot reads look only at the plots' tables today, and must count derived tables and table results.
 - *The two parts of the reproducibility bundle.* Not changed: both parts hold recipes of the same form.
 - *The comparison of original and audited (D-0489).* Easier: the result is one table at its last stage, the same for a plot and its table, so the pair to compare is clear.
 - *The lineage picker.* A derived table has one parent (`from:`), so it is easy to draw in an outline.
@@ -378,12 +400,12 @@ On the demo data (the proposal's run): `mlst_bar` shows 33 rows; the table resul
 - *BLUEPRINT.* It must write this format without replacing a recipe by mistake and without losing comments (D-0495). Its map knows sources, joins and plots today; it needs a derived table and a table result.
 
 **7.5 Where the proposal and the whole picture disagree, or leave a hole.**
-1. The proposal's dialog walk-through ticks every place (D-0316). Your later default is "tick low" (D-0508), and which place is earliest is still open (question 1). The walk-through should be redone.
+1. The proposal's dialog walk-through ticks every place (D-0316). Your later default is "tick low" (D-0508), and which place is earliest is still open (question 1). The walk-through was redone (`RECIPE_PROPOSAL_dialog_walkthrough.md`).
 2. Two reading rules in one recipe: a join reads its ingredients after tier 1; `from:` reads its table after its last stage. Both are needed (the proposal shows that making joins read tier 2 would change results silently), so the recipe documentation must say both plainly.
 3. "Table to view" for a result made from a derived table: what "Source" means there is open in the proposal (three readings), and the full chain is not reachable (7.4).
 4. The export of a table result by its id, and of two results that read one table, is not in the proposal.
-5. A table read only by a derived table: the recipe check refuses its tier 2 today. The proposal says the check must count a derived table as a reader. This meets question 21 (the tiers of a table no plot reads).
-6. A result id written in two groups is not refused today: the second silently replaces the first (the proposal's flag 6). This is a defect of today, whatever the form.
+5. A table read only by a derived table, or only by a table result: today the app counts only plots as readers of a table. So such a table would get its tier 2 refused by the recipe check, and the export would not write its tier 2, although a result is made from it. The app already builds that tier 2 (run by the authors of the proposal). The places of the app that count readers must also count derived tables and table results (details for the builders: `RECIPE_REDESIGN_REVIEW.md` 4.10). This meets question 21 (the tiers of a table no plot reads).
+6. A result id written in two groups is not refused today: the second silently replaces the first (the proposal's flag 6). This is a defect of today, whatever the form; it is already filed to be fixed.
 7. The proposal's examples still use `ui_title` and `label`, which your names decisions remove or rename (D-0484, D-0468).
 
 **7.6 What could be simpler, seen from the whole.**
@@ -391,7 +413,7 @@ On the demo data (the proposal's run): `mlst_bar` shows 33 rows; the table resul
 - A join that takes a derived table as an ingredient would reopen "a named join takes only source tables" (D-0344). The proposal leaves it open (its point 10); nothing in your case needs it. Information.
 - On screen, the last stage of a result could be called "Result" rather than "T3", as in the badge you accepted ("I like the badge that says result or earlier stage this is accepted", D-0487). "T3" would then need no explanation.
 
-Recommendation (mine): form 3, with one level of derived tables for now, and the walk-through of the dialog redone with your default of D-0508. It meets what you asked on your own criteria (one table, one definition; a definition before its use; a plot and its table show the same numbers by construction), and the proposal's runs on a part of the demo recipe support it.
+Recommendation (mine): form 3, with one level of derived tables for now (the walk-through of the dialog has been redone with your default of D-0508, readings A and B). It meets what you asked on your own criteria (one table, one definition; a definition before its use; a plot and its table show the same numbers by construction), and the proposal's runs on a part of the demo recipe support it.
 
 ---
 
@@ -399,13 +421,13 @@ Recommendation (mine): form 3, with one level of derived tables for now, and the
 
 You asked for the questions that block the most work first (D-0519). The questions keep the numbers of the earlier version, so that the other files still point at the right question; here they are grouped by when you need them.
 
-- **Now: questions 1 and 2.** Question 1 shapes the audit dialog; question 2 shapes the one move of the demo recipes, and with it the names.
+- **Now: questions 1, 2 and 27.** Question 1 shapes the audit dialog; question 2 shapes the one move of the demo recipes, and with it the names; question 27 decides where a join with a look-up table may be written, which is part of the recipe form that question 2 confirms (part 7.4: a derived table cannot join anything).
 - **Next, because they shape the screens: questions 3, 13, 15 and 26.** Question 3 is the shape of the dialog; 13 is the lineage picker (option (c) of question 2 depends on it); 15 is a conflict between two of your own sentences about the export; 26 must be answered before the audit steps move to the audit recipe.
 - **Can wait until that part is built; my recommendation stands unless you object.** 18 questions, in five groups: the rest of the dialog (4 to 9), the audit log (10, 11, 12, 25), the export (16), the words and defaults on screen (18, 19, 20, 23), clean-up (21, 22, 24). Two more come later: 14 follows 13, and 17 is the Reshuffle, which you said "is not critical for now" (D-0341).
 
-You can accept all my recommendations of a group in one answer, for example "the audit log: accept". Questions 15, 17 and 26 have no recommendation.
+You can accept all my recommendations of a group in one answer, for example "the audit log: accept". Questions 15, 17, 26 and 27 have no recommendation.
 
-### Now: the two questions that block the most
+### Now: the three questions that block the most
 
 #### 1. Where is "the earliest place" that the dialog ticks?
 - **Situation:** you decided that the dialog ticks the earliest places by default (D-0508), and your sentences can be read in two ways (part 6.1).
@@ -415,6 +437,7 @@ You can accept all my recommendations of a group in one answer, for example "the
 - **(a) Tier 1 of each original table.**
   - Your sentences that point here: "the earliest place of each branch - which is the original data basically" (D-0501); "we tick low (early) near the original table" (D-0508).
   - What you would see, removing one entity from `mlst_bar`: two ticked lines, "MLST, tier 1" and "metadata_schema, tier 1". After Apply, 13 plots change. The entity stays in 7 plots: in 4 that never meet MLST or the metadata, and in the 3 quality plots as rows with no source and no country (`miaou`, which draws the source, among them).
+  - Also run, on a small part of the demo with a summary table made from a join (the recipe proposal's form, part 7): the removed entity appears in that summary as a new group with an empty country and year, 10 rows instead of 9, the total still 42, although nobody ticked it. Under (b) it does not. Limits: two joins with the metadata, not the 13 of the demo; the summary table was emulated, because the app does not have it yet (part 6.1).
   - For: the step is written where the data enter, and a computation over all entities never sees the removed one.
   - Against: three plots change in a way you did not ask for; in your case of D-0499 the entity stays in the quality plots without its metadata.
   - Reopens: nothing.
@@ -452,6 +475,24 @@ Recommendation (mine): (b). On the demo it leaves no row without its metadata, a
 - **(a2) Any number of levels.** For: a summary of a summary can be its own table. Against: the story of a result can grow by several tables. Reopens: nothing.
 
 Recommendation (mine): (a) with (a1). The proposal's runs on a part of the demo recipe favour form 3 on your own criteria, and one level keeps the story short. Nine more questions come only after the form (the names of the keys, and when a table result opens on the result); none of them blocks today; they are listed in `RECIPE_REDESIGN_REVIEW.md` part 7.
+
+#### 27. Joins after the join with the metadata: only in tier 1, or also in tier 2? (part 6.4)
+- **Situation:** you decided that the join with the metadata is done in tier 1, and you wrote "other joins could be used after" (D-0510) and "the other data tables can be used in later joins" (D-0523). When you decided D-0510, the facts put to you spoke of a rule of the recipe check that refuses a join in tier 2. You were told that the check has no such rule. It has one. I am sorry for the wrong fact.
+- **Today:** the recipe check refuses every join written in tier 2 or tier 3, for every table: the metadata, a results table and a look-up table alike. The refusal says to move the join to tier 1. So your rule for the metadata is already enforced, and a join with a look-up table (a table of `additional_datasets_schemas`, for example a list of genes of interest) can only be a tier 1 step of a join. This rule was written in the recipe format specification ("`polars_join` only in tier1", not your words) and follows the architecture decision on the three tiers of April 2026 ("tier1 (Tidy/Relational): Logic applied to wide data (Join, Clean, Rename, Filter)"; "tier2 (Plot-Prep): Visual-specific transformations (Unpivot/Long-format, Summarize, Aggregate)", not your words). No line of your decision ledger states it. A result never holds a join in any option: it has no list of tables to join.
+- **Question:** does "after" mean later steps within tier 1, or may a join of another table be written in tier 2?
+- **(a) Keep today's rule: every join is a tier 1 step.** "After" means later steps within tier 1: the join with the metadata first, then the joins with look-up tables.
+  - What you would see on the demo: no change. `ST22_Anchor` starts from the metadata, joins four more tables (left joins), then the list of genes (an inner join, which keeps only the genes of the list), all in tier 1, as today. A look-up join after a count needs the count first in tier 1 of the join, or, under form 3 (question 2), a join that takes a derived table, which reopens "a named join takes only source tables" (D-0344).
+  - For: one rule for every join; every table a join brings in is there from the end of tier 1, so an audit step at a later place always sees the joined columns.
+  - Against: tier 1 then holds cleaning, joins and any count that a later look-up join needs, so "tier 1 cleans, tier 2 computes" (part 2) is not true for every recipe.
+  - Reopens: nothing.
+- **(b) Allow a join with a look-up table in tier 2 of a join; keep the refusal for the metadata.**
+  - What you would see on the demo: nothing has to change; the inner join with the list of genes of `ST22_Anchor` may stay in tier 1 or move to its tier 2. A recipe could count genes in tier 2 and then join the count with the list of genes of interest in the same tier, with no derived table. A join with any other table (the metadata or a results table) written in tier 2 is still refused, with a plain line.
+  - For: it reads "later joins" (D-0523) as a later tier, as the review session read D-0510 ("joins of other tables may be in tier 2 or later", its reading); a look-up join after a count needs no extra table.
+  - Against: a join in tier 2 adds a table to the story of the data at tier 2. On screen, the look-up table enters the lineage after the computations, and an inner join there removes rows after every place of tier 1 (on the demo, the genes not in the list).
+  - Reopens: no line of your ledger. It changes the rule of the recipe format specification and of the architecture decision on the three tiers quoted above. "A named join takes only source tables" (D-0344) is not reopened: a look-up table is a source table, listed among the join's tables.
+- **(c) Neither: say what you meant.**
+
+No recommendation: your two sentences fit both readings, and the demo needs neither change.
 
 ### Next: the questions that shape the screens
 
@@ -738,4 +779,5 @@ No recommendation: the study you asked for in D-0341 has not been made.
 
 - No browser was used, and no screen of the dialog or of a picker exists: every "what you would see" is described, not shown.
 - The runs on "the earliest place" are three runs on the demo recipe, one entity each, through code without a screen and not through HOME, with the places listed by hand.
-- The recipe redesign was read, not run by me; its own runs are on a part of the demo recipe. The details of what was and was not checked are at the end of `BUILD_ORDER.md` and `RECIPE_REDESIGN_REVIEW.md`.
+- The recipe redesign was read, not run by me; its own runs are on a part of the demo recipe. The details of what was and was not checked are at the end of `BUILD_ORDER.md` and `RECIPE_REDESIGN_REVIEW.md`. The authors of the proposal ran the dialog walk-through again for me on the demo slice and the reads summary (`RECIPE_PROPOSAL_dialog_walkthrough.md`); the real lineage walk was not run on it (it does not know derived tables), and the lines of the dialog are reasoned from the columns of each place. I ran their walk-through script once more and got the same numbers for the reads summary.
+- The fact that the recipe check refuses every join outside tier 1 was read in the code, and its test was run in this pass (it passes: a join in tier 2 of a join, in tier 2 of a source table and in tier 3 of a plot are refused). The authors of the proposal also ran it with a join of the metadata in those three places.
