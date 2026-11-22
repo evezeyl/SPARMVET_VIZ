@@ -1,7 +1,7 @@
 """The value the user typed in the Filters panel is not thrown away when the operator is chosen (D-0050: no silent error).
 
 # @deps
-# consumes: app/modules/t3_audit_engine.py (value_widget_for, ops_for_column), app/handlers/filter_and_audit_handlers.py (filter_value_ui), app/tests/test_shiny_plot_errors.py (staged_app), app/tests/browser_view.py
+# consumes: app/modules/t3_audit_engine.py (value_widget_for, ops_for_column, value_box_kind), app/handlers/filter_and_audit_handlers.py (filter_value_ui), app/tests/test_shiny_plot_errors.py (staged_app), app/tests/browser_view.py
 # @end_deps
 
 The defect (found with timelines over 20 repeats): the server drew the value box again at every choice of the operator, also when the

@@ -530,7 +530,7 @@
 
 ## `app/tests/test_filter_value_kept.py`
 - **Role:** `info`
-- **consumes:** `app/modules/t3_audit_engine.py (value_widget_for`, `ops_for_column)`, `app/handlers/filter_and_audit_handlers.py (filter_value_ui)`, `app/tests/test_shiny_plot_errors.py (staged_app)`, `app/tests/browser_view.py`
+- **consumes:** `app/modules/t3_audit_engine.py (value_widget_for`, `ops_for_column`, `value_box_kind)`, `app/handlers/filter_and_audit_handlers.py (filter_value_ui)`, `app/tests/test_shiny_plot_errors.py (staged_app)`, `app/tests/browser_view.py`
 
 ## `app/tests/test_filter_whole_numbers.py`
 - **Role:** `info`
