@@ -144,7 +144,7 @@ def test_the_same_export_without_a_change_hands_over_the_bundle(tmp_path, monkey
     assert not [t for t, _ in notes if t == "error"]
 
 
-def test_a_plot_with_no_target_table_reads_HOMES_stored_table_and_builds_nothing_in_the_export(tmp_path, monkeypatch):
+def test_a_plot_with_no_target_table_reads_HOMES_stored_table_and_builds_nothing_for_it_in_the_export(tmp_path, monkeypatch):
     """Round 4 point 2, run: the export's fallback `tier1_anchor()` is a read of the table HOME stored (server.py: a scan of
     `anchor_path`), not a build, so there is no build of the export that could change under it and nothing to report to the refusal.
     What it reads is not key-checked against the export's keys: recorded for Eve in the report (a choice), not changed here."""
@@ -155,13 +155,15 @@ def test_a_plot_with_no_target_table_reads_HOMES_stored_table_and_builds_nothing
     view = world.orch.compute_data_analysis_recipe_keys("tiny")
     reads = []
     builds = []
-    monkeypatch.setattr(world.orch, "materialize_tier1", lambda *a, **k: builds.append("tier1"))
-    monkeypatch.setattr(world.orch, "materialize_tier2", lambda *a, **k: builds.append("tier2"))
+    monkeypatch.setattr(world.orch, "materialize_tier1", lambda *a, **k: builds.append(("tier1", k["collection_id"])))
+    monkeypatch.setattr(world.orch, "materialize_tier2", lambda *a, **k: builds.append(("tier2", k["collection_id"])))
     function = _download_function(world, view, [], monkeypatch,
                                   tier1_anchor=lambda: reads.append("read") or pl.DataFrame({"x": [1]}).lazy())
     yielded = _run(function)
     assert reads, "the plot without a target reads HOME's table through tier1_anchor()"
-    assert builds == [], "and the export builds no table for it"
+    # D-0457: the export now writes the Tier 1 file of every table that no plot reads (here T and C: the plot targets none), through
+    # the orchestrator; nothing is built FOR the plot, and no Tier 2 is built (a table no plot reads has none).
+    assert builds == [("tier1", "T"), ("tier1", "C")], "the export builds the tables no plot reads, and nothing for the plot without a target"
     assert len(yielded) == 1
 
 

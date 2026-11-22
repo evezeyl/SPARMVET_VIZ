@@ -111,9 +111,9 @@ def test_the_refusal_has_the_same_file_and_form_as_the_refusal_for_a_change_sinc
 
 
 def test_the_export_refuses_at_the_end_before_it_hands_over_the_bundle():
-    """The download checks the list the five builds fill, after the bundle is made and before it is yielded."""
+    """The download checks the list the six builds fill (the sixth is the loop over the tables no plot reads, D-0457), after the bundle is made and before it is yielded."""
     source = (ROOT / "app" / "handlers" / "export_handlers.py").read_text()
-    assert source.count("on_inputs_changed=_on_build_change") == 5
+    assert source.count("on_inputs_changed=_on_build_change") == 6
     check = source.index("refusal_for_build_changes(_build_changes")
     assert source.rindex("zf.writestr", 0, check) > 0 and source.index("yield buf.read()", check) > check
 
