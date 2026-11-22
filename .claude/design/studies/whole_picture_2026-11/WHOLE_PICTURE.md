@@ -1,17 +1,333 @@
-# The whole picture: how HOME is meant to work (2026-11-22, version 3)
+# The whole picture: how HOME is meant to work (2026-11-22, version 5: built backwards from your goals, second pass)
 
-A study, not a decision: nothing is built from it before you answer (D-0507).
+A study, not a decision: nothing is built from it before you answer (D-0507, D-0528).
 
 > **START HERE**
 >
-> 1. Read parts 1 to 5: about 2,800 words, with the diagram and the sketch.
-> 2. Then answer questions 1, 2 and 27 (part 8, group "Now").
->    - Question 1 may need the table of part 6.1.
->    - Question 2 needs only the example of part 7.3.
->    - Question 27 needs only part 6.4. It corrects a wrong fact you were given on 22 November.
-> 3. Everything else can wait. Questions 3 to 26 do not need an answer today.
+> 1. Read part 0.1 to 0.7: your goals, whether each is reached, the path, the route of the work, what must be modified, what the evidence shows, and your questions now. About fifteen minutes, with one table and one sketch.
+> 2. Then answer the questions written in full in part 0.8: 28 first, then 1, 29, 17, 4 and 30; and the table of my eleven readings, in one line ("accept all", or the numbers you refuse).
+> 3. Question 2 (the recipe form) when you want tables as results and the one move of the demo recipes. It does not block the audit.
+> 4. Everything else can wait.
 >
-> Parts 1 to 5, parts 6.1 and 6.4, part 7.3 and the three questions together: about 6,500 words.
+> Parts 1 to 9 are the earlier study (version 3), kept as background: they describe the dialog as decided, which is option (c) of question 28. The detail and the evidence of part 0 are in `GOALS_REVIEW.md`.
+
+---
+
+## 0. Your goals, and how to get there (the goals review, third pass: after the independent review)
+
+**How to read this part.** Your words are between quotation marks, exactly as you typed them; the number after them is their line in the decision ledger. "My reading" and "mine" mark what is not yours. "Suggestion:" comes before a remedy.
+
+**Words used here.**
+- The **entity**: what one value of the entity key names. On the demo recipe it is a sample, and the key is `sample_id`.
+- An **observation**: a row of a table (my reading of your word).
+- A **tier**: a stage of a table in the recipe. Tier 1 cleans a table (and joins it with the metadata); tier 2 computes; tier 3 is the table a result is made from.
+- The **lineage**: the path of a table, from the original data files to the results.
+- A **place**: one table at one tier, where an audit step can be written. Its **reach**: the tables and results that depend on it.
+- The **audit recipe**: the copy of the recipe that holds your audit steps; the original recipe never changes.
+
+The detail is in `GOALS_REVIEW.md`. It also covers the six places you agreed to add (D-0529): trust in the whole result, the author and the user, BLUEPRINT, the help, where the app runs, and how you will know a goal is reached.
+
+### 0.1 Your passage (D-0528)
+
+> "What i want is to make allow the user to make audits in an clear, scientifically correct , reproducible and transparent way, 7 want to provide a tool the user can use to do good data science and help provide visualisations it can use for publication (incl. Tables an plot) it can trust, and audit is done to allow making small correction to results where some "observations" must be removed. I want to know how to get there, and then our current code needs to be adapted, which implies reviewing decisions or changing strategy that hoder to get there. This includes recipe structure and how we perform the audit steps and how it is presented clearly with the necessary information so the user can make informed and good choices. Our role is to provide the tool, the reproducibility, transparency, reliability - however we cannot take choices for the user because it depends on the user context. I want the whole picture to be reviewed again and adapted to my goals. I want to go how to succeed at making the app to reach my objectives and then i need to know what needs to be modified (from our plans already planned and from current code - eg. What build are ok and what needs to be adjusted)"
+
+### 0.2 Your goals, and whether they are reached
+
+From your passage (the review session read six goals in it; I checked each against your words):
+- **Clear, correct audits:** audits that are clear, scientifically correct, reproducible and transparent.
+- **Good data science:** the app is a tool for good data science.
+- **Results you can trust:** results for publication, plots and tables, that the user can trust.
+- **Small corrections by removal:** the audit is for small corrections, removing some observations.
+- **Clear choices:** each choice shown clearly, with the information needed to choose well.
+- **The app does not choose:** the app gives the tool, the reproducibility, the transparency and the reliability; the choice is the user's, "because it depends on the user context" (D-0528). And since: "We cannot choose for him..the app cannot decide the scope" (D-0531).
+
+From earlier decisions, one line each:
+- **Nothing silent:** "No silent error that is the rule." (D-0050)
+- **No wrong result from a wrong scope:** "Sorry do not get wrong results because we did not select the correct scope" (D-0450)
+- **Every recipe:** "remember we are data agnostic so sample id is the example" (D-0512)
+- **The author and the user:** "well the problem is that the user might not be the author" (D-0500)
+- **The story of the data:** "YES the story of is what I want to show - this is why I wanted the lineages" (D-0508)
+- **Well built:** "We aim for one source of truth." (D-0065)
+- **The way there:** "I would prefer to have the big line done as fast as possible" (D-0521)
+
+Some of your goals pull against each other; I do not resolve them (`GOALS_REVIEW.md` 2.4).
+
+**Is each goal reached?** "Today" is the app on `dev` on 22 November. "As decided" is your decisions, once built. The last column is my reading.
+
+| Goal | Today you see | As decided, once built, you would see | Still missing (my reading) |
+|---|---|---|---|
+| Clear, correct audits | A step only at the open plot's table; the export has no original and no audit recipe. | Each step in the audit recipe, at the places you tick; a fingerprint; an export with an original and an audited part. | The effect on each result, before you confirm (0.6, point 1). |
+| Good data science | A step always comes after everything: a removed entity still counts in a mean computed earlier. On the demo, "before" and "after" give other z-scores for all 41 other entities. | You can tick a place before such a computation. | A line that says which places come before it. |
+| Results you can trust | What you see is exported. Plots only. Only the audited picture is exported, and the exported T1 and T2 tables are the originals. | Tables as results; the original and the audited picture both exported. | How many observations each result lost; audited T1 and T2 tables, or a plain line that they are the originals (0.6, point 6). |
+| Small corrections by removal | Filters and column drops; a Reshuffle button with no reason. | The same; the Reshuffle becomes a step (how: not decided). | The Reshuffle removes no observation (question 17); column drops: question 29. |
+| Clear choices | "This plot only / All plots / All plots except"; no lineage. | The lineage as a propagation; a line per place with its reach; "table changed" and "picture changed" per plot. | The effect as a number; the screen words (part 0.8, the table of my readings). |
+| The app does not choose | Starts on "This plot only": a builder's choice. | You tick places; your default is named. | Which places are "the earliest" (question 1). |
+| Nothing silent; no wrong scope | A plot whose table lacks the column is skipped, with a line. | Red lines where the app cannot follow a column. | A removal that misses a result is seen only if measured (0.6, point 1). |
+
+### 0.3 The path (mine): the scope stays yours, and the app measures the effect
+
+**The principle.** You choose the scope: the places in the lineage where a step is written. The app does not choose it (D-0531). The app shows you the lineage, what each place reaches, and the effect of your ticks on each result, measured before you confirm. A default is named as a default, with its reason, and you can change it. The only place the app fills in by itself is "Remove from all the data", and only when you ask for it.
+
+**The path, on the demo recipe.**
+1. Open the recipe: every table is built and every result drawn once. [built]
+2. Look, in Exploration: a result, its table, its earlier stages, and any table by its name. Nothing is saved. [built, except "any table by name"]
+3. Find a bad entity: on the demo, sample `10668076`, whose sequencing failed.
+4. In Audit mode, from the table where you see it, ask to remove it, with a reason.
+5. The dialog shows the lineage as a propagation, one line per place with its reach. Your default, the earliest places, starts ticked and is named on screen as a starting point (question 1).
+6. Under the lines, the measured effect on each result: "n observations removed" or "unchanged"; where it happens, "still found here" or "the values of other observations change here". Each change of a tick is measured again.
+7. Confirm. The step goes into the audit recipe at the places you ticked, with its reason. The log keeps the places, ticked by default or by you, and the effects shown.
+8. Check with Compare; take any one step out with "Remove step".
+9. Export: the audited results with the originals beside them; a report with the observations removed from each result, and why; the log; the original and the audited reproducibility parts.
+
+```text
++-- Create audit step -----------------------------------------------------+
+| Remove the rows where sample_id = 10668076                               |
+| Reason: [ sequencing failed, lab notes of 12 April                     ] |
+|                                                                          |
+| Where the step is written (ticked: starting point, the earliest places)  |
+|   original files -> tier 1 -> tier 2 -> results                          |
+|  [x] MLST, tier 1                             reach: n tables, n results |
+|  [x] metadata_schema, tier 1                  reach: n tables, n results |
+|  [ ] MLST_with_metadata, end of tier 1        reach: n tables, n results |
+|  [ ] this result only: mlst_bar               reach: 1 result            |
+|  ... one line per place of the lineage                                   |
+|  [ ] Remove from all the data (off; it lists every table first)          |
+|                                                                          |
+| Effect on each result, measured on the audit recipe:                     |
+|  mlst_bar                      n observations removed                    |
+|  year_distribution             n observations removed                    |
+|  qc_reads_horizontal_barplot   still found: 1 observation, with its      |
+|                                source, year and country now empty        |
+|  ... one line per result that changes                                    |
+|                                              [ Cancel ]   [ Confirm ]    |
++--------------------------------------------------------------------------+
+```
+
+This screen does not exist yet; "n" is a number the app would count. The effect lines come from three runs on the demo, one entity each, with the places listed by hand (part 6.1): with this default the entity stayed in 7 plots, and in 3 of them its source and country were emptied, because a left join keeps the row of its first table.
+
+**The choices that are yours:** question 28 (places first, results first, or as decided without the measured effect); question 1 (the default); questions 29 and 17 (what an audit step may be); question 4 (the default for a filter on another column).
+
+### 0.4 The route of the work: what you can do after each step
+
+In order. Each step replaces one part completely; nothing is built before you answer the question it needs.
+1. **The records agree.** No change on screen. No question.
+2. **Filters follow the table you view.** On the demo, filters set under `mlst_bar` stay when you open `year_distribution`, which reads the same table. Built on a branch, in review. No question.
+3. **Any table, also one that no result reads.** You open `FastP_with_metadata` in the data preview. Needs question 13: how you reach such a table (a picker, or a list of tables by name).
+4. **One form of an audit step: the audit recipe.** Your session holds an audit recipe you can read; a hand edit is refused at reopening; "Remove step" takes out one step. Needs question 26, and questions 29 and 17 for what a step may be.
+5. **The dialog of places, with the measured effect.** You remove `10668076` at the places you tick and see the effect on each result before you confirm. Needs questions 28 and 1, then 3 to 9 as they remain.
+6. **The export of an audit.** The export holds the original and the audited part, the fingerprint and the log; the report counts the observations removed from each result. Needs question 15.
+7. **The report by groups.** The report reads by the groups you see in HOME. No question.
+8. **Tables as results, and the one move of the demo recipes.** A summary table can be a result, exported under its name. Needs question 2 and the names.
+9. **Later:** the lineage picker that tells the story from the original files; BLUEPRINT's rebuild.
+
+The December demo: `GOALS_REVIEW.md` 4.11 proposes steps 1 to 7, and a check you can do yourself for each goal.
+
+### 0.5 What must be modified (in short; the full lists are in `GOALS_REVIEW.md` section 5)
+
+**(i) Your plans.** My reading; you may object to any line.
+- **Keep:** the audit recipe, a copy that never changes the original; its fingerprint and its folder; the log, always exported; the two export parts; "Remove step"; the places you tick, with your default; "Remove from all the data" as the one automatic placement, off until you ask; the join with the metadata in tier 1; tables as results; the names pass.
+- **Change, if you agree:** the effect on each result, measured, beside "table changed" and "picture changed" (question 28); no Reshuffle in HOME (question 17); the export's T1 and T2 files audited, or marked as the originals (0.6, point 6). Column drops stay as decided, in my revised view (question 29).
+- **Later:** the lineage picker, unless question 13 asks for it now; question 27.
+- My reading of your goals answers eleven questions (10 to 12, 16, 18 to 22, 24, 25); part 0.8 lists them in one table. Nothing is built from them until you say yes.
+
+**(ii) The code on `dev`, in what you see.** [read] = I read the code; [inventory] = the inventory of 22 November, not re-read by me.
+- **Stays:** the mode switch, "Table to view", the filter panel, the sentences under the preview, the build at opening, Compare, the export's refusal when a file changed since you looked. [inventory]
+- **Adjusted:** filters kept while the table is the same (a branch, in review); "Send to Audit" from any table, not only T3; four pieces built this month that no screen reaches yet (the listing of places, the audit recipe builder, its run, the comparison of two tables) connected to the dialog; a plain message when Audit mode opens if your folder cannot be written. [read; the fact check of 22 November]
+- **Replaced:** the dialog "This plot only / All plots" by the dialog of places; the bin that removes a step from every plot by "Remove step"; the warning that opens a session whose recipe was edited, by a refusal; the export's one tick box by two ticks. [read]
+- **Removed:** the copy of a join that the export writes with the steps baked in; the old forms in the session file; column drops if question 29 is (a); the Reshuffle if question 17 is (c). If you agree: code that no screen reaches (the plot styles, kept unused on purpose since 5 November; the recipe upload, question 24). The held branch of "remove from all the data" is not merged as it is: its sentences about unticked tables were false on the demo. [read; two reviews]
+
+**(iii) Need not be touched:** the tiers, the fixed random seed, the rule that every join is in tier 1, the three kinds of table, Exploration, the Gallery. [inventory]
+
+### 0.6 What the evidence shows, and what I think you may be missing
+
+You asked: "So if i miss something i want a good argumentation of why and how .." (D-0532). Each point says what the evidence shows, why it matters, how it would work, the alternatives, and the question that is yours. An independent review checked this part (`GOALS_REVIEW.md` section 11); where it changed my view, the point says so.
+
+**1. The effect at a place does not tell the effect at the results.**
+- Evidence: two reviews wrote sentences about tables where no step is written ("stays", "removed upstream"); each kind was false somewhere, on the demo or on small test recipes. In three runs on the demo, one entity each, with the places listed by hand, the earliest places read as "tier 1 of each original table" left the entity in 7 plots; in 3 of them its source and country were emptied. The independent review reproduced these numbers [run].
+- Why it matters: a user learns the effect of a choice only from effects that are true. The rows counted at a place cannot show a row that a left join keeps further down.
+- How: before you confirm, the app builds the audit recipe with your ticks (the dialog you decided already builds it, to say "picture changed") and compares each result with the original: the observations removed, and two signals where they occur. The comparison code exists and gives such lines on the demo [run, the independent review].
+- Alternatives: (a) this measured effect; (b) the same, starting from the results; (c) as decided: the rows at each place, and "table changed" and "picture changed" for each plot.
+- Your choice: question 28. It reopens in part your rule of no warnings about effects further down, and your preference for the check where the step is applied.
+
+**2. Your case: keep the poor-quality entity in the quality results.** With "remove from all the data" as you decided it (every table that holds the key, 27 places on the demo), unticking the two tables that the quality plots read is not enough: all 17 plots change and the entity is in none, because the original tables are still ticked. With six places unticked (those two, and `FastP`, `Quast`, `Bracken` and the metadata), it stays in exactly the 3 quality plots, with its metadata, and 14 plots change [run, mine, one entity]. The independent review found my first sentence on this wrong; it was. With the measured effect, you would see this before you confirm.
+
+**3. The default.** Read as tier 1 of each original table, "the earliest" empties metadata in 3 plots; read as the end of tier 1 of each table that joins the metadata, it empties none [run]. Either is a starting point that the screen names as such. Your choice: question 1.
+
+**4. Column drops (my view changed).** My first reading was that a column is not an observation. The independent review showed why that is not enough: a user who is not the author and must publish a table without a column would otherwise edit the exported file by hand, outside every record. I withdraw my recommendation to take drops out of the audit. Your choice: question 29.
+
+**5. The Reshuffle.** My reading: a new arrangement of random points removes no observation, and a reader cannot tell whether the arrangement shown was picked among several. Today the seed is written into the recipe copy that the export makes, and recorded in its run file, which no code reads back [read]. The independent review does not rank the options. Your choice: question 17.
+
+**6. The export's data files (found by the independent review).** The T1 and T2 files of the export are the original tables; only the T3 file of a plot is audited, and the import never checks the audit steps [read]. A reader who takes the T2 file publishes an observation you removed. Suggestion: in the audited part, write the audited tables, or a plain line in their place saying they are the originals; check the audit recipe's fingerprint at import.
+
+**7. Sentences read from the recipe** (a choice of the builders, not yours): the code of "remove from all the data" lists tables where the entity "may stay"; on the demo all six were false alarms [run]. Suggestion: show only measured effects.
+
+### 0.7 Your questions now
+
+In this order. The six to answer first are written in full in 0.8, so that you need not go further.
+1. **Question 28:** do you start from the places (as decided) or from the results (the app proposes places that you see and can change)? And is the effect on each result measured before you confirm?
+2. **Question 1:** which places are "the earliest", the ones that start ticked?
+3. **Question 29:** does the audit keep column drops?
+4. **Question 17:** how is a Reshuffle kept, or is it removed from HOME?
+5. **Question 4:** does a filter on another column than the entity key start with the same default?
+6. **Question 30 (new):** a deployment where your place cannot be written: is the audit offered?
+7. **Eleven answers I read from your goals** (0.8, one table): "accept all", or the numbers you refuse.
+8. Then: question 2 (the recipe form), question 13 (before step 3 of the route), question 26 (before step 4) and question 15 (before step 6), in part 8.
+
+After these: questions 3 and 5 to 9, the details of the dialog. Later: 27 and 14. Which of your decisions and builds already match your goals, and can go on: `MATCH_LIST.md`.
+
+### 0.8 The questions to answer first, in full
+
+Each question can be answered alone. "Reopens" names an earlier decision of yours that the option would change; it is information, not a reason.
+
+#### 28. Where do you start in the dialog, and is the effect on each result measured before you confirm?
+- **Situation:** you decided that the scope is the user's: "We cannot choose for him..the app cannot decide the scope" (D-0531). The user ticks the places in the lineage (D-0093, D-0355), with the earliest places ticked by default (D-0508). Before you confirm, the dialog you decided shows the rows at each place, and for each plot "table changed" and "picture changed" (D-0316, D-0318). Two reviews and three runs on the demo found that what happens at a result cannot be read from the place (0.6, point 1).
+- **Withdrawn:** the app choosing the places for you, from the results you tick, without showing them as yours to change. Your words of D-0531 rule it out, and a check found intentions it could not write: before or after a join with the same results; "year xx not shown" at one plot against removing the entities at tier 1; one intermediate table only. Option (b) below is not that: the app only proposes; every place stays visible and yours to change, like a default tick.
+- **Today:** "This plot only / All plots / All plots except…"; a step is written only at the table of the open plot.
+- **Question:** which dialog do you want?
+- **(a) Places, as decided, with the effect on each result measured.**
+  - What you would see: the sketch of 0.3. The lineage as a propagation; one line per place, with its reach; your default ticked and named "starting point". Under the lines, for each result: "n observations removed" or "unchanged"; and "still found here" or "the values of other observations change here" where it happens. When you change a tick, the effects are measured again.
+  - For: every intention can be written: before or after a join, one table only, one result only. You see the effect of each tick on what you publish before you confirm.
+  - Against: you think in places. For "keep the entity in the quality results only" you find the places to untick yourself (six on the demo), guided by the effects.
+  - Reopens: D-0501 in part, both of its parts: an effect line per result is shown, further down than the step ("I would just shows the differents where applied and no per table warnings about downstream effects"), and a count at the plot comes back ("The count of rows removed at the plot ... so I think I would removing it"); D-0508 in part ("Id rather the check is more where you apply it"). It extends D-0318: counts beside "changed".
+- **(b) Results first: the app proposes places that you see and change.**
+  - What you would see: above the lineage, the list of results with ticks. When you tick results, the app ticks the places that reach exactly them, marked "proposed"; you can change any place; the effects are measured as in (a). If a place you changed no longer matches a result you ticked, the dialog names that result.
+  - For: a case said in results, such as "keep the entity in the quality results only", is one untick per result; the places stay yours to change.
+  - Against: two lists to keep in agreement; a proposal can steer the choice, even when it is named.
+  - Reopens: as (a); and in part D-0508 ("we tick low (early) near the original table": the default ticks come from the results you tick); D-0194 and D-0316 (all places ticked "so it show clearly the extend of where it will be removed": the extent is shown by the effects instead); D-0415 part A ("I mean we need the lineage of where it was selected (eg. T3) then all ticks by default"); D-0022 in part (the ledger records, without your words, that the only automatic placement is "remove from all tables": here the app proposes and you confirm).
+- **(c) As decided, without the measured effect.**
+  - What you would see: the sketch of part 3: the place lines, the rows at each place, and "table changed" and "picture changed" for each plot.
+  - For: a shorter dialog, with no effect lines; you check the effect after Apply, with Compare.
+  - Against: a removal that does not reach a result, for example a row kept by a left join, is not shown before you confirm.
+  - Reopens: nothing.
+- **(d) Neither: say what you mean.**
+- **Not reopened by any option:** the place stays yours (D-0093, D-0355; "we go back the lineage and forward and the user choose which data it affects", D-0053); a table that no result reads is a line (D-0451); nothing is written that you did not tick (D-0022).
+
+Recommendation (mine): (a). It keeps every place yours, and only a measured effect is true at the results (0.6, point 1). The independent review recommends the same.
+
+#### 1. Where is "the earliest place" that the dialog ticks?
+- **Situation:** you decided that the dialog ticks the earliest places by default (D-0508), and your sentences can be read in two ways (part 6.1).
+- **Why it matters:** a left join keeps every row of its first table, even when the second table has nothing for it. On the demo, if the removal is written before the joins with the metadata, the entity leaves the metadata but not the quality results. The removed entity then still shows in 3 quality plots, as rows with no source and no country (and no year in one of them).
+- **Today:** there is no such dialog; a step is written only at the table of the open plot.
+- **Question:** is the earliest place tier 1 of each original table, or the end of tier 1 of each table that joins the metadata?
+- **(a) Tier 1 of each original table.**
+  - Your sentences that point here: "the earliest place of each branch - which is the original data basically" (D-0501); "we tick low (early) near the original table" (D-0508).
+  - What you would see, removing one entity from `mlst_bar`: two ticked lines, "MLST, tier 1" and "metadata_schema, tier 1". After Apply, 13 plots change. The entity stays in 7 plots: in 4 that never meet MLST or the metadata, and in the 3 quality plots as rows with no source and no country (`miaou`, which draws the source, among them).
+  - Also run, on a small part of the demo with a summary table made from a join (the recipe proposal's form, part 7): the removed entity appears in that summary as a new group with an empty country and year, 10 rows instead of 9, the total still 42, although nobody ticked it. Under (b) it does not. Limits: two joins with the metadata, not the 13 of the demo; the summary table was emulated, because the app does not have it yet (part 6.1).
+  - For: the step is written where the data enter, and a computation over all entities never sees the removed one.
+  - Against: three plots change in a way you did not ask for; in your case of D-0499 the entity stays in the quality plots without its metadata.
+  - Reopens: nothing.
+- **(b) The end of tier 1 of each table that joins the metadata** (on a branch that never meets the metadata: the end of tier 1 of the first table its results read).
+  - Your sentence that points here: "the T1 includes the join whith metadata that allows to modiffy at the join keeping the raw data unchanged" (D-0509).
+  - What you would see: 13 ticked lines, one per table that joins the metadata, for example "MLST_with_metadata, end of tier 1 (after the join with the metadata)" (the sketch of part 3). After Apply, 13 plots change; the entity stays only in the 4 plots that never meet the metadata; no row is left without its metadata.
+  - For: the row leaves with its metadata; your case of D-0499 keeps the entity in exactly the 3 quality plots, with its metadata.
+  - Against: 13 lines to read before you confirm, and the audit recipe shows the same step 13 times; a computation over all entities written in tier 1 after the join would run before the removal (not the case on the demo).
+  - Reopens: nothing written. It reads "near the original table" (D-0508) as: just after the original table is joined with its metadata.
+- **(c) Neither: say what you meant.**
+
+The Source view stays as read in both readings.
+
+Recommendation (mine): (b). On the demo it leaves no row without its metadata, and it gives your case of D-0499 exactly. You may have meant (a): "near the original table" (D-0508) points to it. The evidence is three runs on the demo, with places listed by hand (part 6.1).
+
+Added by the goals review: the screen names the default "starting point", never "the right places". Under (a) or (b) of question 28, the measured effect shows what either default does before you confirm.
+
+#### 29. Does the audit keep column drops?
+- **Situation:** an audit step is a filter, a removal by the entity key, or a column drop: "A : for now yes only filter and drops" (D-0322). Your passage gives the audit's purpose: "small correction to results where some "observations" must be removed" (D-0528). My first reading was that a column is not an observation; the independent review showed why a drop can still serve you (see (a), Against).
+- **Today:** in Audit mode, while you view T3, a column chooser under the data preview can send "drop these columns" to the audit, for the open plot.
+- **Question:** does the audit keep column drops, and where?
+- **(a) No: the audit removes observations only.**
+  - What you would see: no column control that writes an audit step. The column chooser still hides columns from your view.
+  - For: the audit holds only what your passage names, removals of observations.
+  - Against: a user who is not the author and must publish a table without a column asks the author, or edits the exported file by hand, outside every record.
+  - Reopens: D-0322 in part.
+- **(b) Yes, as decided: at the places you tick, refused where a later join needs the column.**
+  - What you would see: the column chooser in Audit mode; a drop written at the places you tick; a plain line refuses it where a later join reads the column.
+  - For: a drop is recorded, with its reason, instead of a hand edit; the places stay yours.
+  - Against: one more kind of audit step, with its own check.
+  - Reopens: nothing.
+- **(c) Only at the result's own table, recorded with a reason** (the independent review's proposal).
+  - What you would see: the column chooser in Audit mode, for the table of the open result only.
+  - For: a recorded drop that can never break a later join.
+  - Against: you cannot drop a column at an earlier table: the app limits where a drop may be written.
+  - Reopens: D-0358 and D-0371 in part (a key drop is refused by place only where a later join reads it); it meets "the app cannot decide the scope" (D-0531).
+- **(d) Neither: say what you mean.**
+
+Recommendation (mine, changed after the independent review): (b). A drop is recorded with its reason, the places stay yours, and the check keeps a drop from breaking a later join. The independent review recommends (c).
+
+#### 17. The Reshuffle: how is it kept, or is it removed from HOME?
+- **Situation:** you decided "A - but then we need to be able to add it as a step at the correct place in audit", and "when the user is happy with the reshuffle a seed step with the reshuffling needs to be written"; "this reshuffling is not critical for now but a good thing" (D-0341).
+- **Today:** in Audit mode a click gives the random points of a plot a new arrangement (a new seed, the number that fixes the random placement), with no reason and no Apply. The export writes the seed into the recipe copy it makes and records it in its run file; no code reads the run file back at a re-run.
+- **Question:** how is a reshuffle kept, or is it offered at all?
+- **(a) A new kind of audit step at the plot's own place, with a reason.**
+  - What you would see: after a Reshuffle, a step "new arrangement of the random points of this plot" in the list of audit steps, with a reason, like a filter.
+  - For: the new arrangement is recorded and exported with its reason. Against: an audit step that removes no observation. Reopens: D-0322 in part ("A : for now yes only filter and drops").
+- **(b) A second list in the plot's part of the audit recipe, run after the layers the author wrote** (my idea, not studied).
+  - What you would see: the same as (a) on screen; the difference is only in the file.
+  - For: the author's part stays untouched. Against: not studied. Reopens: nothing.
+- **(c) No Reshuffle in HOME.**
+  - What you would see: no Reshuffle button; the random points are always placed as the recipe says, with its seed ("Fixed 0 by default fixed and simple", D-0056).
+  - For: the figure a reader sees is the one the recipe fixes, not one picked among several arrangements; the audit stays a removal of observations.
+  - Against: a user who finds an arrangement unclear asks the author to change the seed in the recipe.
+  - Reopens: D-0341 ("A - but then we need to be able to add it as a step at the correct place in audit").
+- **(d) Kept without a reason: the seed recorded in the audit's record or the run file, and read back at a re-run** (the independent review's proposal).
+  - What you would see: the Reshuffle button as today; the export names the seed; a re-run draws the same picture.
+  - For: no new kind of step; the picture can be drawn again. Against: a change of the figure with no reason. Reopens: D-0341 in part (the step "at the correct place in audit").
+- **(e) Neither: say what you mean.**
+- **A fact for every option but (c):** the audit recipe you decided keeps the author's parts untouched (D-0332), so the seed cannot stay in the recipe copy once that copy is removed; a home for it (a step, a second list, the record or the run file) must be chosen first.
+
+Recommendation (mine): (c), for the reasons under (c). The independent review does not rank the options.
+
+#### 4. A filter that belongs to one plot only: which places start ticked?
+- **Situation:** your example: a year with so few entities that you hide it from one plot only, "but then it will do the filter in T3 and not T1" (D-0199). Depends on questions 1 and 3.
+- **Today:** every step is written at the open plot's table, so this case works today.
+- **Question:** does a filter on a column other than the entity key start with the same default ticks as a removal of an entity?
+- **(a) One default for every step: the earliest places.**
+  - What you would see, hiding the year 2023 from `mlst_bar`: the earliest places ticked; 13 plots lose 2023 unless you untick them and tick "this plot only".
+  - For: one rule. Against: your year case needs unticking every time. Reopens: D-0199 in part ("but then it will do the filter in T3 and not T1"): by default the step would go to the earliest places, not to the plot's own table.
+- **(b) The default depends on the kind of step:** a removal by the entity key starts at the earliest places; any other filter starts at the place where you started it.
+  - What you would see: "[x] this plot only: mlst_bar"; 1 plot changes.
+  - For: it follows both of your cases: "my most frequent use case is the sample is bad" (D-0194) and your year case (D-0199). Against: two rules to learn.
+  - Reopens: D-0508 in part: "we tick low" would hold for a removal by the entity key only.
+- **(c) Always the place where you started; the earliest places are one click away.**
+  - What you would see, removing the entity `10668076` from `mlst_bar`: "[x] this result only: mlst_bar" ticked; the earliest places listed, unticked.
+  - For: you see first what you touched. Against: a bad entity is removed from one plot unless you click. Reopens: D-0508 ("we tick low (early) near the original table").
+- **(d) Neither: say what you mean.**
+
+Recommendation (mine): (b). A removal of an entity then reaches what depends on it, and a filter on a value stays where you built it, unless you tick more.
+
+Added by the goals review: this question holds as written under options (a) and (c) of question 28. Under (b) of question 28, the same choice is made in results: for an entity, every result that holds it starts ticked; for a condition on another column, the result where you started.
+
+
+#### 30. A deployment where your place cannot be written: is the audit offered? (new)
+- **Situation:** the audit recipe, its record and its log live in your session folder, in your own place (D-0319, D-0340, D-0423). Your words: "as long as it can be saved in session in all deploymenets possibilities and exported in a directory the user can write I think we have our goal done." (D-0422). A deployment can bind your place read-only (for example a container); then nothing can be kept in a session.
+- **Today:** the audit is applied in memory; at Apply a technical warning says "T3 ghost save failed ... T3 state was applied in-memory but will not survive a page refresh."
+- **Question:** in such a deployment, is the audit offered?
+- **(a) Offered, kept in memory, exported only.**
+  - What you would see: when you open Audit mode, one plain line: "This app cannot keep your audit after you close it. Export it before you close." (wording mine). The export holds the audit recipe, its record and its log.
+  - For: you can still correct and publish; the export is complete. Against: a closed tab loses the audit. Reopens: nothing.
+- **(b) Not offered.**
+  - What you would see: no Audit mode, with one line saying why.
+  - For: nothing can be lost. Against: no correction in that deployment. Reopens: nothing.
+- **(c) Neither: say what you mean.**
+
+Recommendation (mine): (a). The export is the record, and you are told before you start.
+
+#### Eleven answers I read from your goals: accept all, or name the ones you refuse
+
+These are my reading, not your answers. Nothing is built from them until you say yes. Answer in one line: "accept all", or the numbers you refuse. Their full text is in part 8.
+
+| Question | My reading | What you would see |
+|---|---|---|
+| 10. What the log keeps of a warning | (c) both the words you saw and the facts | each line you were shown, with its numbers, in the log |
+| 11. Does the log mark how each place was chosen? | (a) every place: ticked by default, ticked by you, unticked by you, left unticked | a log line such as "MLST_with_metadata, end of tier 1: ticked by default; written" |
+| 12. A step you cancel before confirming | (a) not kept | only confirmed steps in the log |
+| 16. Where the export shows the original plot | (a) both pictures in the Publication part | `mlst_bar_original.png` beside `mlst_bar.png` |
+| 18. What opens first | (a) as built: the table the plot is drawn from | under `mlst_bar`, its table of 33 rows |
+| 19. The words of the stages | (c) plain words with the stage | "Cleaned table (T1)" |
+| 20. Comparisons on dates in the filter panel | (a) as built: before, after, between | a date filter "between two dates" |
+| 21. Tier 2 on a table that no result reads | (b) allowed, built, shown and exported | its T2 in the data preview and in the export |
+| 22. A look-up table that holds an entity key | (a) an advice of the recipe check, never a refusal | on the demo, an advice naming `VirulenceFinder` |
+| 24. The recipe upload code that no screen offers | (a) removed; an upload is built when a deployment declares a place for it | nothing changes on screen |
+| 25. The form of the log in the export | (b) one structured file a person can read | one file beside the audit recipe |
 
 ---
 
@@ -22,7 +338,7 @@ A study, not a decision: nothing is built from it before you answer (D-0507).
 3. Under each option of a question, "Reopens:" names an earlier decision of yours that this option would change.
 4. The app is data agnostic. On the demo recipe the entity is a sample and the entity key is `sample_id`. Everywhere else this document says "the entity".
 5. Where I only read the code, or ran something on the demo recipe only, I say so. Nothing here was seen on a screen.
-6. The other files of this folder are for the builders (`DIFFERENCES.md`, `PARTS_TABLES.md`, `BUILD_ORDER.md`, `RECIPE_REDESIGN_REVIEW.md`, `RECIPE_PROPOSAL_refined.md`, `RECIPE_PROPOSAL_answers.md`, `RECIPE_PROPOSAL_dialog_walkthrough.md`). You do not need them to answer.
+6. The other files of this folder are for the builders (`GOALS_REVIEW.md`, `DIFFERENCES.md`, `PARTS_TABLES.md`, `BUILD_ORDER.md`, `RECIPE_REDESIGN_REVIEW.md`, `RECIPE_PROPOSAL_refined.md`, `RECIPE_PROPOSAL_answers.md`, `RECIPE_PROPOSAL_dialog_walkthrough.md`). You do not need them to answer. `GOALS_REVIEW.md` holds the detail of part 0, if you want it.
 
 ---
 
@@ -86,7 +402,7 @@ RESULT
    the plot mlst_bar
 ```
 
-**The audit dialog: drawn from your decisions; not built.** It holds open points (questions 1, 3 and 7). Demo values, reading B of question 1, removing one entity from `mlst_bar`.
+**The audit dialog: drawn from your decisions; not built.** This is the dialog as decided, option (c) of question 28; part 0.3 adds the effect measured on each result, option (a). It holds open points (questions 1, 3 and 7). Demo values, reading B of question 1, removing one entity from `mlst_bar`.
 
 ```text
 +-- Create audit step ----------------------------------------------------------+
@@ -135,7 +451,7 @@ RESULT
 - A filter belongs to the table you view, not to the plot (D-0506; decided, not built), and it is cleared when the table you view changes (D-0311).
 - It is also cleared when you switch between Exploration and Audit (D-0361).
 
-**One audit, on `mlst_bar`.** Steps 1, 2 and 11 work today. Step 3 is not decided (question 13). Steps 4 to 10 and 12 to 14 are decided and not built.
+**One audit, on `mlst_bar`.** This is the audit as decided, option (c) of question 28; part 0.3 adds the effect measured on each result, option (a). Steps 9 to 14 hold under every option. Steps 1, 2 and 11 work today. Step 3 is not decided (question 13). Steps 4 to 10 and 12 to 14 are decided and not built.
 1. In `mlst_bar` you see an unexpected sequence type, and the table under it shows the sample (the entity of the demo) that carries it; your lab notes say its sequencing failed.
 2. You switch to Audit mode, and the right panel opens (D-0375).
 3. You open the table where you see the entity key and ask to remove this value, with a reason.
@@ -419,39 +735,52 @@ Recommendation (mine): form 3, with one level of derived tables for now (the wal
 
 ## 8. What stays yours to choose
 
+### Seen from your goals (second pass, 22 November)
+
+Your passage (D-0528) and your words of D-0531 change which questions come first. Three questions are new (28, 29, 30); question 17 got two added options, question 29 a third one. The numbers do not change. The questions marked Now, and the table of my eleven readings (nothing is built from them until you say yes), are in part 0.8.
+
+| Question | Status |
+|---|---|
+| **28** (new) | **Now, first.** Where you start in the dialog (places or results), and whether the effect on each result is measured before you confirm. |
+| **1** | **Now, after 28.** Which places are "the earliest", the ones ticked by default. |
+| **29** (new) | **Now.** Column drops in the audit. |
+| **17** | **Now.** The Reshuffle: options (c), none in HOME, and (d), the seed kept without a reason, were added. |
+| **4** | **Now.** The default for a filter on another column than the entity key. |
+| **30** (new) | **Now.** A deployment where your place cannot be written: is the audit offered? |
+| **2** | Needed for tables as results and the one move of the demo recipes; not for the audit. |
+| **26** | Before the audit steps move to the audit recipe. |
+| **15** | Before the export of an audit. |
+| 3, 5, 6, 7, 8 | After 28 and 1: the details of the dialog. With 28 (a) or (b), a removal that misses a result (5) and a computation over all observations (8) also show in the measured effects. |
+| 9 | With 28 (a) or (b), the effect is measured before you confirm, so a count after Apply is not needed. With 28 (c), the question stays. |
+| 10, 11, 12, 25 | My reading of your goals and of D-0478 ("so we can show that the user has been warned and that is is a user decision"): 10 (c), 11 (a), 12 (a), 25 (b). You may object. |
+| 16 | My reading of G3 and of D-0147: (a), both pictures in the Publication part. You may object. |
+| 18, 19, 20 | My reading of G3 and G5: 18 (a), 19 (c), 20 (a). You may object. |
+| 21 | My reading of G2 and of "Why Tier 2 refuses ? its still data wrangling" (D-0514): (b). You may object. |
+| 22 | My reading of E4 and of D-0498: (a), an advice, never a refusal. You may object. |
+| 24 | My reading of E6: (a), remove the code that no screen reaches. You may object. |
+| 23 | Later, with the lineage picker. |
+| 27 | Later: no goal needs it now; today's rule, every join in tier 1, stays until a recipe needs a look-up join after a count. |
+| 13 | Before step 3 of the route (part 0.4): how you open a table that no result reads (a picker, or a list of tables by name; D-0457 leaves the way in open). |
+| 14 | Later, if question 13 gives a picker. |
+
+### Now, from your goals
+
+Questions 28, 1, 29, 17, 4 and the new question 30 are written in full in part 0.8, with the table of my eleven readings.
+
+### Version 3's grouping (before your goals)
+
 You asked for the questions that block the most work first (D-0519). The questions keep the numbers of the earlier version, so that the other files still point at the right question; here they are grouped by when you need them.
 
 - **Now: questions 1, 2 and 27.** Question 1 shapes the audit dialog; question 2 shapes the one move of the demo recipes, and with it the names; question 27 decides where a join with a look-up table may be written, which is part of the recipe form that question 2 confirms (part 7.4: a derived table cannot join anything).
 - **Next, because they shape the screens: questions 3, 13, 15 and 26.** Question 3 is the shape of the dialog; 13 is the lineage picker (option (c) of question 2 depends on it); 15 is a conflict between two of your own sentences about the export; 26 must be answered before the audit steps move to the audit recipe.
 - **Can wait until that part is built; my recommendation stands unless you object.** 18 questions, in five groups: the rest of the dialog (4 to 9), the audit log (10, 11, 12, 25), the export (16), the words and defaults on screen (18, 19, 20, 23), clean-up (21, 22, 24). Two more come later: 14 follows 13, and 17 is the Reshuffle, which you said "is not critical for now" (D-0341).
 
-You can accept all my recommendations of a group in one answer, for example "the audit log: accept". Questions 15, 17, 26 and 27 have no recommendation.
+You can accept all my recommendations of a group in one answer, for example "the audit log: accept". Questions 15, 17, 26 and 27 have no recommendation (version 3; the goals review now recommends (c) for question 17).
 
-### Now: the three questions that block the most
+### Version 3's "Now": the three questions that blocked the most (see the table above for their status now)
 
 #### 1. Where is "the earliest place" that the dialog ticks?
-- **Situation:** you decided that the dialog ticks the earliest places by default (D-0508), and your sentences can be read in two ways (part 6.1).
-- **Why it matters:** a left join keeps every row of its first table, even when the second table has nothing for it. On the demo, if the removal is written before the joins with the metadata, the entity leaves the metadata but not the quality results. The removed entity then still shows in 3 quality plots, as rows with no source and no country (and no year in one of them).
-- **Today:** there is no such dialog; a step is written only at the table of the open plot.
-- **Question:** is the earliest place tier 1 of each original table, or the end of tier 1 of each table that joins the metadata?
-- **(a) Tier 1 of each original table.**
-  - Your sentences that point here: "the earliest place of each branch - which is the original data basically" (D-0501); "we tick low (early) near the original table" (D-0508).
-  - What you would see, removing one entity from `mlst_bar`: two ticked lines, "MLST, tier 1" and "metadata_schema, tier 1". After Apply, 13 plots change. The entity stays in 7 plots: in 4 that never meet MLST or the metadata, and in the 3 quality plots as rows with no source and no country (`miaou`, which draws the source, among them).
-  - Also run, on a small part of the demo with a summary table made from a join (the recipe proposal's form, part 7): the removed entity appears in that summary as a new group with an empty country and year, 10 rows instead of 9, the total still 42, although nobody ticked it. Under (b) it does not. Limits: two joins with the metadata, not the 13 of the demo; the summary table was emulated, because the app does not have it yet (part 6.1).
-  - For: the step is written where the data enter, and a computation over all entities never sees the removed one.
-  - Against: three plots change in a way you did not ask for; in your case of D-0499 the entity stays in the quality plots without its metadata.
-  - Reopens: nothing.
-- **(b) The end of tier 1 of each table that joins the metadata** (on a branch that never meets the metadata: the end of tier 1 of the first table its results read).
-  - Your sentence that points here: "the T1 includes the join whith metadata that allows to modiffy at the join keeping the raw data unchanged" (D-0509).
-  - What you would see: 13 ticked lines, one per table that joins the metadata, for example "MLST_with_metadata, end of tier 1 (after the join with the metadata)" (the sketch of part 3). After Apply, 13 plots change; the entity stays only in the 4 plots that never meet the metadata; no row is left without its metadata.
-  - For: the row leaves with its metadata; your case of D-0499 keeps the entity in exactly the 3 quality plots, with its metadata.
-  - Against: 13 lines to read before you confirm, and the audit recipe shows the same step 13 times; a computation over all entities written in tier 1 after the join would run before the removal (not the case on the demo).
-  - Reopens: nothing written. It reads "near the original table" (D-0508) as: just after the original table is joined with its metadata.
-- **(c) Neither: say what you meant.**
-
-The Source view stays as read in both readings.
-
-Recommendation (mine): (b). On the demo it leaves no row without its metadata, and it gives your case of D-0499 exactly. You may have meant (a): "near the original table" (D-0508) points to it. The evidence is three runs on the demo, with places listed by hand (part 6.1).
+Moved to part 0.8, with its full text.
 
 #### 2. The recipe form: do you confirm form 3?
 - **Situation:** you asked for tier 3 defined like tiers 1 and 2 and before the results, a result that is a plot or a table, and the place of `from:` (D-0516, D-0517). "Form 3" is the proposal's name for this form: every table is defined in the data part (the source tables, the joins, then "derived tables", each made with `from:` from ONE table), and a result only names one table. You have not confirmed it (D-0496). By your own order, the demo recipes are moved once, after the recipe design is final (D-0525).
@@ -559,20 +888,7 @@ No recommendation: it depends on whether the sessions you keep today hold audits
 ### Can wait: the rest of the audit dialog (9 depends on question 1)
 
 #### 4. A filter that belongs to one plot only: which places start ticked?
-- **Situation:** your example: a year with so few entities that you hide it from one plot only, "but then it will do the filter in T3 and not T1" (D-0199). Depends on questions 1 and 3.
-- **Today:** every step is written at the open plot's table, so this case works today.
-- **Question:** does a filter on a column other than the entity key start with the same default ticks as a removal of an entity?
-- **(a) One default for every step: the earliest places.**
-  - What you would see, hiding the year 2023 from `mlst_bar`: the earliest places ticked; 13 plots lose 2023 unless you untick them and tick "this plot only".
-  - For: one rule. Against: your year case needs unticking every time. Reopens: D-0199 in part ("but then it will do the filter in T3 and not T1"): by default the step would go to the earliest places, not to the plot's own table.
-- **(b) The default depends on the kind of step:** a removal by the entity key starts at the earliest places; any other filter starts at the place where you started it.
-  - What you would see: "[x] this plot only: mlst_bar"; 1 plot changes.
-  - For: it follows both of your cases: "my most frequent use case is the sample is bad" (D-0194) and your year case (D-0199). Against: two rules to learn.
-  - Reopens: D-0508 in part: "we tick low" would hold for a removal by the entity key only.
-- **(c) Always the place where you started; the earliest places are one click away.**
-  - For: you see first what you touched. Against: a bad entity is removed from one plot unless you click. Reopens: D-0508 ("we tick low (early) near the original table").
-
-Recommendation (mine): (b), because it follows both of your use cases.
+Moved to part 0.8, with its full text.
 
 #### 5. A place where the entity key is made again: ticked, or only a note?
 - **Situation:** you listed the cases where the propagation does not work, "except keys recomputation, key under another column name weiht no join, key rewritten by a step", and asked "could we detect those cases and inform about the possible got you" (D-0508). Depends on question 1.
@@ -764,20 +1080,15 @@ Recommendation (mine): (a). No deployment declares an upload place today, so no 
 
 Recommendation (mine): (a), your proposal, which reopens nothing.
 
-#### 17. The Reshuffle: how is its seed step written?
-- **Situation:** you decided "A - but then we need to be able to add it as a step at the correct place in audit", and "when the user is happy with the reshuffle a seed step with the reshuffling needs to be written"; "this reshuffling is not critical for now" (D-0341).
-- **Today:** in Audit mode a click writes a new seed for the plot (the number that fixes the random placement of points), with no reason and no Apply, and it is exported.
-- **Question:** how is the seed step written in the audit recipe?
-- **(a) A new kind of audit step at the plot's own place, with a reason.** Reopens: D-0322 in part ("A : for now yes only filter and drops").
-- **(b) A second list in the plot entry of the audit recipe, run after the layers written in the recipe,** like the second list of a tier (my idea, not studied). Reopens: nothing.
-
-No recommendation: the study you asked for in D-0341 has not been made.
+#### 17. The Reshuffle: how is it kept, or is it removed from HOME?
+Moved to part 0.8, with its full text and two added options.
 
 ---
 
 ## 9. What nobody checked
 
 - No browser was used, and no screen of the dialog or of a picker exists: every "what you would see" is described, not shown.
+- The goals review (part 0 and `GOALS_REVIEW.md`) ran nothing new: its path is a design, its dialog does not exist, and its numbers on the demo are the runs of this study (part 6.1). Its section 9 lists the ledger lines and the code lines it read.
 - The runs on "the earliest place" are three runs on the demo recipe, one entity each, through code without a screen and not through HOME, with the places listed by hand.
 - The recipe redesign was read, not run by me; its own runs are on a part of the demo recipe. The details of what was and was not checked are at the end of `BUILD_ORDER.md` and `RECIPE_REDESIGN_REVIEW.md`. The authors of the proposal ran the dialog walk-through again for me on the demo slice and the reads summary (`RECIPE_PROPOSAL_dialog_walkthrough.md`); the real lineage walk was not run on it (it does not know derived tables), and the lines of the dialog are reasoned from the columns of each place. I ran their walk-through script once more and got the same numbers for the reads summary.
 - The fact that the recipe check refuses every join outside tier 1 was read in the code, and its test was run in this pass (it passes: a join in tier 2 of a join, in tier 2 of a source table and in tier 3 of a plot are refused). The authors of the proposal also ran it with a join of the metadata in those three places.
