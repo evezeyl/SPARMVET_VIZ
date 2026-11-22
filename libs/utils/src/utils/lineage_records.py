@@ -58,7 +58,12 @@ CANNOT_FOLLOW = "cannot_follow"                # no trace could be made (a plan 
 NO_STEP_LIST = "no_step_list"                  # a source table holds no list of steps (D-0332): the line is returned, a step cannot be written there (PROVISIONAL)
 KEY_NEEDED_LATER = "key_needed_later"          # a drop here is refused: a join step later (here or in a table built from this one) uses the column as a key (D-0358, D-0297)
 CONSEQUENCE_DISAGREES = "consequence_disagrees"   # what the readings say a drop breaks and what the engine's plan of the candidate says differ (D-0351): both facts are in the reason
-REASON_CODES = (PLAN_FAILED, STEP_NOT_READ, READING_DISAGREES, SEVERAL_COLUMNS, CANNOT_FOLLOW, NO_STEP_LIST, KEY_NEEDED_LATER, CONSEQUENCE_DISAGREES)
+# A join the app cannot YET follow (D-0452: anti, right, full and self-joins; D-0460: a line the app cannot trace is red and cannot be ticked; D-0454: the warning is a full
+# sentence with YET in capitals, `utils.lineage_sentences`). Parameters: `node` (the table the join step is written in, `T1:<table>`), `step` (its number), `action`, `kind` (the `how` of
+# the join), `how` (the same), `right` (the table the step reads), `self_join` (True when the table is joined with a table it already holds). The state of the line is `grey`: the library
+# returns the state and this reason; how "red" is shown on screen is not decided and not built.
+JOIN_NOT_YET_FOLLOWED = "join_not_yet_followed"
+REASON_CODES = (PLAN_FAILED, STEP_NOT_READ, READING_DISAGREES, SEVERAL_COLUMNS, CANNOT_FOLLOW, NO_STEP_LIST, KEY_NEEDED_LATER, CONSEQUENCE_DISAGREES, JOIN_NOT_YET_FOLLOWED)
 
 # The notes under a line: a closed list. They are DATA (a code and parameters: node, step, action, the names and the types before and after, the direction); the
 # words the user reads are written later in their own module. `direction` says whether the path from the place the user chose crosses the step with the

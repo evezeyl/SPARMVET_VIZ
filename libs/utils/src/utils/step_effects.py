@@ -27,8 +27,11 @@ every registered action outside the two is `unread`.
 The actions that only remove, reorder or pick rows (`join_keys.ROW_STEPS`) need no reading of their arguments: the name of
 the action says that the columns stay. They are imported, never copied.
 
-A join is read only for `how` = left or inner (the kinds shipped recipes use); any other kind (full, right, semi, anti,
-cross, as-of, on conditions) is `unread` (PROVISIONAL: grey with the reason; the owner's question O8).
+A join is read only for `how` = left, inner or semi (`FOLLOWED_JOINS`); a semi join copies no column of the second table (`NO_COPY_JOINS`; D-0486: the owner chose to build it, "if build and
+correctly tested then should not the test detect mistakes"). The kinds anti, right and full are not followed YET (D-0452: "The app cannot YET follow these joins"; `NOT_YET_FOLLOWED_JOINS`), and any other
+kind (cross, an unknown word) is unread too: the walk gives such a line the reason `join_not_yet_followed` and the line cannot be ticked (D-0460: "B; if needed we try to find a solution later";
+the sentence with YET in capitals, D-0454: `utils.lineage_sentences`). A join of a table with a table it already holds (a self-join, `join_keys.self_join`) is not followed YET either, whatever its
+kind; the walk decides that (it needs the node), not `effect_of`. As-of joins and joins on conditions are other actions: unread, as before.
 
 Pure: step dictionaries and plans in, small records out. No Polars, no file, no engine.
 
@@ -36,10 +39,10 @@ Consumed by: libs/utils/src/utils/lineage_walk.py, libs/utils/tests/test_step_ef
 If deleted: the walk cannot follow a column across a step.
 
 # @deps
-# provides: function:effect_of, function:predict, function:agreement_problem, function:unread_pairs, class:Effect, class:PredictedColumn, class:Source, constant:READINGS, constant:FOLLOWED_JOINS, constant:VALUE_CHANGES, constant:NOTE_CHANGES
+# provides: function:effect_of, function:not_yet_followed, function:predict, function:agreement_problem, function:unread_pairs, class:Effect, class:PredictedColumn, class:Source, constant:READINGS, constant:FOLLOWED_JOINS, constant:NO_COPY_JOINS, constant:NOT_YET_FOLLOWED_JOINS, constant:VALUE_CHANGES, constant:NOTE_CHANGES
 # consumes: libs/utils/src/utils/join_keys.py, libs/utils/src/utils/action_names.py, libs/utils/src/utils/plan_book.py
 # consumed_by: libs/utils/src/utils/lineage_walk.py, libs/utils/src/utils/declared_plans.py, libs/utils/tests/test_step_effects.py, libs/utils/tests/test_lineage_walk_follow.py
-# doc: .claude/knowledge/decision_ledger.md (D-0351, D-0353, D-0356, D-0357), .claude/design/home_audit_steps.md
+# doc: .claude/knowledge/decision_ledger.md (D-0351, D-0353, D-0356, D-0357, D-0452, D-0454, D-0460, D-0486), .claude/design/home_audit_steps.md
 # @end_deps
 """
 from __future__ import annotations
@@ -61,8 +64,12 @@ READINGS: Dict[str, Tuple[str, ...]] = {
     action_names.GROUP_BY: ("by", "named_aggs"),
 }
 
-# The kinds of join the readings follow (PROVISIONAL, O8): the others are `unread`.
-FOLLOWED_JOINS = ("left", "inner")
+# The kinds of join the readings follow: left and inner (the kinds the shipped recipes use) and semi (D-0486). The others are `unread` and red (see the module text).
+FOLLOWED_JOINS = ("left", "inner", "semi")
+# The kinds whose result holds the first table's columns only: the second table's other columns are not copied and nothing is renamed (proved on the engine in `test_lineage_semi_join.py`).
+NO_COPY_JOINS = ("semi",)
+# The kinds the app cannot YET follow, named to the user (D-0452; D-0454). A kind outside both lists (cross, an unknown word) is not followed either.
+NOT_YET_FOLLOWED_JOINS = ("anti", "right", "full")
 
 KEEPS, RENAME, DROP, SELECT, JOIN, WRITES, CAST, GROUP, UNREAD = "keeps", "rename", "drop", "select", "join", "writes", "cast", "group", "unread"
 
@@ -153,7 +160,7 @@ def effect_of(step: Any) -> Effect:
     if action == action_names.JOIN:
         how, right = step.get("how", "left"), step.get("right_ingredient")
         if how not in FOLLOWED_JOINS:
-            return Effect(UNREAD, action, why=f"a join of kind {how!r} is not followed yet")
+            return Effect(UNREAD, action, how=str(how), right=right if isinstance(right, str) else "", why=f"a join of kind {how!r} is not followed yet")
         left_keys, right_keys = join_keys.key_columns(step)
         if not isinstance(right, str) or not left_keys or len(left_keys) != len(right_keys):
             return Effect(UNREAD, action, why="the join has no readable key columns or no right table")
@@ -161,10 +168,17 @@ def effect_of(step: Any) -> Effect:
     raise AssertionError(f"READINGS lists {action} but effect_of has no reading for it")      # a listed action without a reading is a bug of this module, never a silent unread
 
 
+def not_yet_followed(effect: Effect) -> Optional[str]:
+    """The kind of join (`how`) when this effect is a `polars_join` step of a kind the app cannot YET follow (D-0452), else None. A self-join is decided by the walk, not here."""
+    if effect.kind == UNREAD and effect.action == action_names.JOIN and effect.how and effect.how not in FOLLOWED_JOINS:
+        return effect.how
+    return None
+
+
 def predict(effect: Effect, before: Plan, right: Optional[Plan]) -> Tuple[PredictedColumn, ...]:
     """The columns after a read step, from the columns before (and the right table's, for a join). Polars semantics, stated once:
     a rename is simultaneous; a select keeps the order written; a left or inner join keeps the table's columns, merges each right key into
-    its left key, and copies the other right columns, with the suffix when the table at this step already has the name."""
+    its left key, and copies the other right columns, with the suffix when the table at this step already has the name (a semi join copies none)."""
     left = [Source("left", n) for n in before.names]
     if effect.kind == KEEPS:
         return tuple(PredictedColumn(n, (Source("left", n),)) for n in before.names)
@@ -198,6 +212,8 @@ def predict(effect: Effect, before: Plan, right: Optional[Plan]) -> Tuple[Predic
             out.append(PredictedColumn(source.name, (source, Source("right", rk)), CHANGE_KEY_OTHER_NAME if rk != source.name else None))
         else:
             out.append(PredictedColumn(source.name, (source,)))
+    if effect.how in NO_COPY_JOINS:                                    # semi: the first table's columns only; nothing of the second table is copied, nothing is renamed
+        return tuple(out)
     taken = set(before.names)
     for name in right.names:
         if name in keys:

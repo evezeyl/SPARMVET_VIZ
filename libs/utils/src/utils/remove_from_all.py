@@ -31,6 +31,9 @@ What this module answers, for a recipe and a column (`describe`):
    Why one list and not only `unsure`: a doubt that writes nothing and a step that may remove nothing are the same fact for the user ("the selection may stay in this table"); the
    screen shows one list before and after, with the plain sentence of `may_stay_sentence` (PROVISIONAL words).
 
+A table behind a join the app cannot YET follow (anti, right, full, a self-join; D-0452, D-0460) is NOT written and is listed in `may_stay` (code `uncertain_link`, the walk's reason `join_not_yet_followed`);
+`may_stay_sentence` then says the full warning with YET in capitals (D-0454, `utils.lineage_sentences`). A semi join is followed (D-0486): the table behind it is written like one behind an inner join.
+
 NOT decided, therefore not done here: whether the option also reaches a source FILE that no recipe table reads (D-0416: "asked only if the build meets it"; a file the
 recipe does not declare is invisible to this logic; a declared table that nothing reads IS reached); whether the user can untick one table of the list in this option
 (D-0416 says the list is shown before she confirms, not that she can change it: `apply` always writes at every reached table); where the unsure and the
@@ -51,9 +54,9 @@ If deleted: HOME has no way to offer "remove from all the data".
 
 # @deps
 # provides: function:describe, function:apply, function:removal_step, function:not_offered_sentence, function:may_stay_sentence, class:RemoveFromAll, class:KeyPlace, class:NotReached, class:MayStay, class:Applied, constant:WARNING, constant:NOT_OFFERED_CODES, constant:NOT_REACHED_CODES, constant:VALUES_UNPROVED
-# consumes: libs/utils/src/utils/lineage_walk.py (LineageIndex: the links between the columns; certainty_from and uncertain_ends), libs/utils/src/utils/recipe_graph.py (key_families, declared_entity_keys, plots_reading), libs/utils/src/utils/declared_plans.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/audit_copy.py (add_step, remove_step), libs/utils/src/utils/filter_values.py (check_filter), libs/utils/src/utils/na_choice.py (default_na), libs/utils/src/utils/recipe_tiers.py (without_audit_steps), libs/utils/src/utils/lineage_records.py (Reason)
+# consumes: libs/utils/src/utils/lineage_walk.py (LineageIndex: the links between the columns; certainty_from and uncertain_ends), libs/utils/src/utils/recipe_graph.py (key_families, declared_entity_keys, plots_reading), libs/utils/src/utils/declared_plans.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/audit_copy.py (add_step, remove_step), libs/utils/src/utils/filter_values.py (check_filter), libs/utils/src/utils/na_choice.py (default_na), libs/utils/src/utils/recipe_tiers.py (without_audit_steps), libs/utils/src/utils/lineage_records.py (Reason), libs/utils/src/utils/lineage_sentences.py (join_not_yet_followed_sentence)
 # consumed_by: libs/utils/tests/test_remove_from_all.py, app/tests/test_remove_from_all_demo.py
-# doc: .claude/knowledge/decision_ledger.md (D-0415, D-0416, D-0313, D-0082, D-0355, D-0351), .claude/rules/ui_implementation_contract.md (section 8: the filter row and the value type rule), .claude/design/home_audit_steps.md
+# doc: .claude/knowledge/decision_ledger.md (D-0415, D-0416, D-0313, D-0082, D-0355, D-0351, D-0452, D-0454, D-0460), .claude/rules/ui_implementation_contract.md (section 8: the filter row and the value type rule), .claude/design/home_audit_steps.md
 # @end_deps
 """
 from __future__ import annotations
@@ -65,7 +68,8 @@ from utils import audit_copy, na_choice, recipe_tiers
 from utils.action_names import FILTER
 from utils.declared_plans import declared_plan_book
 from utils.filter_values import FilterValueError, check_filter
-from utils.lineage_records import Certainty, NOTE_AGGREGATED, NOTE_RECOMPUTED, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED as WALK_PLAN_FAILED, Note, Reason
+from utils.lineage_records import Certainty, JOIN_NOT_YET_FOLLOWED, NOTE_AGGREGATED, NOTE_RECOMPUTED, NOTE_UNREAD_STEP_PASSED, PLAN_FAILED as WALK_PLAN_FAILED, Note, Reason
+from utils.lineage_sentences import join_not_yet_followed_sentence
 from utils.lineage_walk import LineageIndex, Occ
 from utils.plan_book import Plan, PlanBook, PlanFailure
 from utils.recipe_graph import RecipeGraph, RecipeGraphError, build_graph
@@ -324,6 +328,8 @@ UNPROVED_KINDS = {NOTE_RECOMPUTED: "recomputed", NOTE_AGGREGATED: "aggregated", 
 def may_stay_sentence(item: MayStay) -> str:
     """The plain sentence for one table of the list: always a whole sentence that starts with "In the table '<name>'" and says the fact. PROVISIONAL words (see `NOT_WRITTEN_REASONS`)."""
     where = f"In the table {item.table!r}"
+    if item.reason is not None and item.reason.code == JOIN_NOT_YET_FOLLOWED:          # D-0454: the warning is the full sentence with YET in capitals, said once
+        return f"{where} nothing is removed. {join_not_yet_followed_sentence(item.reason)} The selection may stay there."
     if item.code == VALUES_UNPROVED:
         kinds = " and ".join(sorted({UNPROVED_KINDS[n.code] for n in item.notes}))
         return f"{where} a removal step is written, but the app cannot prove that the values there match your selection: the key is {kinds} before that step. The selection may stay there."
