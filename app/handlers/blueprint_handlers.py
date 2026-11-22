@@ -26,6 +26,7 @@ from __future__ import annotations
 # consumes: app/modules/blueprint_plot_view.py (plot_view: the mapping and layers of a plot node), app/modules/blueprint_tier_refusal.py (other_tier_refusal: the text of the Save refusal, PROVISIONAL), app/modules/plot_defaults_form.py (the plot_defaults form: what it shows and writes), libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py, libs/blueprint_arch/src/blueprint_arch/agent_adapter.py, libs/blueprint_arch/src/blueprint_arch/agent_context.py, libs/blueprint_arch/src/blueprint_arch/agent_tools.py, libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py, app/modules/orchestrator.py, libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py, libs/utils/src/utils/config_loader.py, libs/utils/src/utils/action_names.py, libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text, text_to_value)
 # consumes: app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe, validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result, never blocking; uploaded_recipe_report, load_uploaded_recipe, load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)
 # consumes: app/modules/validate_runner.py (run_structure_check, could_not_run_result, StructureCheckError — the child process of Validate uses sys.executable, D-0050)
+# consumes: app/modules/orchestrator_helpers.py (blueprint_is_open — outputs and effects that read HOME state compute only while BLUEPRINT is open)
 # consumes: libs/utils/src/utils/recipe_check.py (plot_keys), libs/utils/src/utils/recipe_tiers.py (author_steps) — tier keys and plot entry keys of recipe format 1 (D-0250, D-0252)
 # consumes: function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)
 # consumes: libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)
@@ -76,6 +77,7 @@ from blueprint_arch.blueprint_mapper import BlueprintMapper
 from utils.action_names import JOIN
 from utils.recipe_check import plot_keys
 from utils.recipe_tiers import AUDIT_STEPS, author_steps
+from app.modules.orchestrator_helpers import blueprint_is_open
 from app.modules.blueprint_plot_view import plot_view
 from app.modules.blueprint_tier_refusal import other_tier_refusal
 from app.modules.plot_defaults_form import form_values, merged_plot_defaults, theme_choices
@@ -941,7 +943,7 @@ def define_server(input, output, session, *,
     @reactive.Effect
     def sync_blueprint_mapper():
         """Syncs TubeMap from the Architect's own data analysis recipe selector."""
-        if safe_input(input, "sidebar_nav", "Home") != "Wrangle Studio":
+        if not blueprint_is_open(input, safe_input):
             return
         path_str = safe_input(input, "stored_data_analysis_recipe_selector", None)
         if not path_str:
@@ -970,7 +972,7 @@ def define_server(input, output, session, *,
     @reactive.event(input.sidebar_nav)
     def _init_wrangle_data_analysis_recipes():
         """Auto-discovery of Master data analysis recipes in config/ directory."""
-        if input.sidebar_nav() != "Wrangle Studio":
+        if not blueprint_is_open(input, safe_input):
             return
 
         config_dir = Path("config/data_analysis_recipes/pipelines")
@@ -1717,6 +1719,8 @@ def define_server(input, output, session, *,
     def bp_plot_defaults_form_ui():
         """Edit form for data analysis recipe-level plot_defaults (data analysis recipe root node). VIZFAC-BLUEPRINT-FORM-1."""
         # Only render when active_cfg is available and no sub-component is selected
+        if not blueprint_is_open(input, safe_input):
+            return ui.div()
         if active_cfg is None:
             return ui.div()
         active_id = wrangle_studio.active_viz_id.get() if wrangle_studio is not None else None
