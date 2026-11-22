@@ -47,6 +47,8 @@ The coordinator reads the tag of the task (CLAUDE.md section 2) and picks the wo
 Effort levels: low, medium, high, xhigh, max (what exists depends on the model). Precedence, highest first: the effort the coordinator passes in the Agent call, then the `effort` in the agent file, then the session effort. The environment variable `CLAUDE_CODE_EFFORT_LEVEL`, if set, overrides all of them: leave it unset.
 The model follows the same order: the model the coordinator passes, the `model` in the agent file, `CLAUDE_CODE_SUBAGENT_MODEL` (set to `sonnet` in `settings.json`, so an agent without a definition is never Fable), the main model.
 
+A study, a panel or a search that the owner requests in order to answer a question that blocks a build is started first, before builds and records that do not need her answer; the worker is told it is the priority; the result is put before her as soon as it is ready (Eve, 2026-11-22, ledger `D-0476`; her words: "I want the agent to prioritize the search I request - when I need additional information to answer questions that are blocking the build"; the "started first" wording is the review session's reading).
+
 ## 4. Changing model or effort in the middle of a task
 
 A worker stops (budget, wrong tag, a harder part found). The coordinator:
