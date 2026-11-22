@@ -1,6 +1,6 @@
 """
 @deps
-provides: function:view_badge, function:plot_badge, function:has_tier2_steps, function:has_plot_steps, class:ViewBadge
+provides: function:row_count_note, function:hidden_columns_note, const:PREVIEW_ROW_LIMIT, function:view_badge, function:plot_badge, function:has_tier2_steps, function:has_plot_steps, class:ViewBadge
 consumes: app/modules/cache_keys.py
 consumed_by: app/handlers/home_theater.py, app/tests/test_view_badge.py
 doc: https://github.com/evezeyl/SPARMVET_VIZ/issues/17, .claude/knowledge/architecture_decisions.md#adr-086
@@ -39,6 +39,31 @@ PLOT_STEPS_NOTE_NO_TIER2 = "T3 = T2 = T1 plus this plot's own steps of the recip
 SOURCE_NOTE = "as read from its file, before any recipe step"
 AUDITED_TABLE_NOTE = "the table the audited plot is drawn from: T3 plus {n} audited step(s)"
 
+# D-0488: one number for the cut of the preview, its title and its sentence. PROVISIONAL words below (the owner reads them).
+PREVIEW_ROW_LIMIT = 100
+
+
+def row_count_note(total_rows: Optional[int], all_rows: bool) -> Optional[str]:
+    """How many rows the table has, and how many of them the grid shows. None when the count is not known (the table could not be built:
+    its error is shown in the table's place and this sentence must not hide or repeat it)."""
+    if total_rows is None:
+        return None
+    if not all_rows and total_rows > PREVIEW_ROW_LIMIT:
+        return f"Showing {PREVIEW_ROW_LIMIT} of {total_rows} rows"
+    return f"{total_rows} row" + ("" if total_rows == 1 else "s")
+
+
+def hidden_columns_note(hidden: int, audit_t3: bool) -> Optional[str]:
+    """How many columns the column chooser hides from the grid. In Audit mode on T3 an unselected column is a candidate for an audit drop:
+    it is not shown, but it is not dropped until it is sent to audit."""
+    if hidden <= 0:
+        return None
+    n = f"{hidden} column" + ("" if hidden == 1 else "s")
+    if audit_t3:
+        return f"{n} not shown, not dropped; add {'it' if hidden == 1 else 'them'} back in the column chooser or send {'it' if hidden == 1 else 'them'} to audit as a drop"
+    return f"{n} hidden; add {'it' if hidden == 1 else 'them'} back in the column chooser"
+
+
 SOURCE_LABELS = {"SRC": "Source", "T1": "T1", "T2": "T2", "T3": "T3"}
 
 
@@ -67,7 +92,8 @@ def has_plot_steps(raw_config: dict, plot_id: Optional[str]) -> bool:
 
 
 def view_badge(view: str, has_tier2: bool, plot_has_steps: bool, preview_filters: int = 0, *, mode: str = "exploration",
-               audited_steps: int = 0, source_table: Optional[str] = None) -> ViewBadge:
+               audited_steps: int = 0, source_table: Optional[str] = None, total_rows: Optional[int] = None, all_rows: bool = False,
+               hidden_columns: int = 0) -> ViewBadge:
     """The badge of the data table.
 
     view            "SRC" (Source), "T1", "T2" or "T3"
@@ -77,8 +103,11 @@ def view_badge(view: str, has_tier2: bool, plot_has_steps: bool, preview_filters
     mode            "exploration" or "audit"; in Audit mode T3 carries the audited steps of the plot
     audited_steps   how many audited steps the plot has (read only in Audit mode, on T3)
     source_table    the id of the source table shown (view "SRC")
+    total_rows      rows of exactly the table the grid is cut from (None: unknown, no sentence); all_rows: the "All rows" switch (D-0488)
+    hidden_columns  columns the column chooser hides from the grid (D-0488)
     """
-    audited = mode == "audit" and view == "T3" and audited_steps > 0
+    audited_mode_t3 = mode == "audit" and view == "T3"
+    audited = audited_mode_t3 and audited_steps > 0
     label = f"Viewing: {SOURCE_LABELS.get(view, view)}" + (" (audited)" if audited else "")
     notes: list[str] = []
     if view == "SRC":
@@ -99,6 +128,9 @@ def view_badge(view: str, has_tier2: bool, plot_has_steps: bool, preview_filters
             notes.append("T3=T2" if has_tier2 else "T3=T2=T1")
     if preview_filters and mode == "exploration":
         notes.append(f"{preview_filters} preview filter(s) on, not saved; they change this table only, never a plot")
+    for extra in (row_count_note(total_rows, all_rows), hidden_columns_note(hidden_columns, audited_mode_t3)):
+        if extra:
+            notes.append(extra)
     return ViewBadge(view=view, label=label, notes=tuple(notes), tone="audited" if audited else "plain")
 
 

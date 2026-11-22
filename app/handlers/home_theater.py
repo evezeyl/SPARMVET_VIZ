@@ -32,7 +32,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (home_theater), output:dynamic_tabs, output:home_data_preview, output:home_col_selector_ui, output:col_drop_audit_btn_ui, output:sidebar_nav_ui, output:sidebar_tools_ui, output:right_sidebar_content_ui, output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui, output:source_table_ui, output:audit_strip_ui, output:plot_badge_{p_id}, output:plot_reshuffle_{p_id} (Audit mode only, D-0341), effect:_track_view_inputs, effect:_drive_right_panel, effect:_open_audit_mode_after_restore, constant:LEGACY_RECORD_NOTICE
-# consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
+# consumes: app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe, for the rule of a key drop), app/modules/orchestrator.py (plot_read_error_text, read_source: the Source view, D-0310), app/modules/wrangle_studio.py, app/modules/test_lab_studio.py, app/modules/gallery_viewer.py, libs/viz_factory/src/viz_factory/viz_factory.py (render, show_draw_errors), libs/utils/src/utils/config_loader.py, app/modules/t3_audit_engine.py (_apply_filter_rows, filter_rows_from_nodes, audited_frame, stored_table_identity, source_table_identity, rows_built_on, view_key, AuditStepError), app/modules/view_badge.py (view_badge, plot_badge, has_plot_steps, has_tier2_steps, PREVIEW_ROW_LIMIT), libs/utils/src/utils/recipe_graph.py (build_graph, source_tables_of_plot), app/modules/session_manager.py (LegacySessionError), app/modules/plot_seeds.py, app/modules/sidebar_registry.py, app/handlers/session_handlers.py, app/handlers/export_handlers.py, app/handlers/filter_and_audit_handlers.py, app/handlers/data_import_handlers.py
 #              libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-AUDIT-1, via session.on_flushed capture)
 # consumes: app/modules/frame_widths.py (right_panel_open: the right panel follows the mode, D-0375, D-0385)
 # consumes: app/handlers/opening_handlers.py (define_server: the opening of the recipe; opening_waits), app/modules/opening_build.py (opening_signature, plot_render_recipe: the recipe handed to the plot engine, D-0237, D-0239), libs/utils/src/utils/engines.py (plot_engine_slot, through it)
@@ -54,7 +54,7 @@ from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_change_notice import inputs_changed_during_build_notice, notice_after_data_change
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
 from app.modules.orchestrator import plot_read_error_text
-from app.modules.view_badge import has_plot_steps, has_tier2_steps, plot_badge, view_badge
+from app.modules.view_badge import PREVIEW_ROW_LIMIT, row_count_note, has_plot_steps, has_tier2_steps, plot_badge, view_badge
 from app.modules.opening_build import opening_signature, plot_render_recipe
 from app.modules.plan_composer import compose_plan_book, plan_book_for_the_gate
 from app.handlers.opening_handlers import define_server as define_opening_server, opening_cover_text, opening_waits
@@ -1637,25 +1637,63 @@ def define_server(input, output, session, *,
             _set_active(val)
             return
 
+    def _preview_lf(spec, p_id):
+        """The lazy table the data preview shows the head of: the view's table, then (Audit mode, T3) the audited steps, or (Exploration) the
+        filters built on this view. The grid and the badge's row count both read it, so the count is the count of what the grid is cut from
+        (D-0488). Raises what the table raises (an AuditStepError, a read error): each caller decides what to show."""
+        lf = _resolve_active_lf(spec)
+        # ADR-098 (issue #56), D-0311: exploration filters change the table of the view shown (Source, T1, T2 or T3), never saved and
+        # never a plot. They do not exist in Audit mode, where T3 is the audited table.
+        # PLOT-TABLE-ORDER-1: in Audit mode the T3 table is the plot's table after the audited steps in their recorded order, the
+        # same call as the audited plot and the results bundle. A step that cannot run raises AuditStepError: it is shown below in
+        # the table's place and in the Alerts panel, never skipped.
+        if _in_audit():
+            if data_view.get() == "T3":
+                lf = audited_frame(lf, _active_plot_t3_nodes(), p_id)
+        else:
+            # review F3: only the filters built on this very view; one built on another table is not applied, whatever the clearing effect did
+            lf = _apply_filter_rows(lf, _applied_for_view())
+        return lf
+
     @output
     @render.ui
     def home_data_preview_badge():
         """What the data preview shows now (issue #17). Its own output: a filter change redraws only
         this badge, not the table. Reads the data choice, the mode and the active plot."""
-        if not bootloader.is_enabled("interactivity_enabled"):
-            return ui.div()
         subtab = active_home_subtab.get()
         p_id = subtab.removeprefix("subtab_") if subtab else None
         spec = _resolve_active_spec(p_id)
+        if not bootloader.is_enabled("interactivity_enabled"):
+            # no view choice and no column chooser here, but the preview still says how many rows the table has (D-0488)
+            try:
+                note = row_count_note(int(_preview_lf(spec, p_id).select(pl.len()).collect().item()),
+                                      bool(safe_input(input, "preview_all_rows", False)))
+            except Exception:
+                note = None
+            return ui.div(ui.tags.span(note, class_="spv-view-note"), class_="spv-view-badge-row") if note else ui.div()
         has_t2 = has_tier2_steps(active_cfg().raw_config, (spec or {}).get("target_dataset"))
         view = data_view.get()
         try:
             table = _effective_source_table(p_id) if view == "SRC" else None
         except Exception:
             table = None   # the table itself says why it cannot be shown
+        # D-0488: rows and hidden columns of exactly the table the grid is cut from. A table that cannot be built gives no sentence: the grid
+        # shows (and reports) the error in the table's place, the badge stays quiet so that the error is neither hidden nor repeated.
+        total_rows, hidden = None, 0
+        try:
+            lf = _preview_lf(spec, p_id)
+            total_rows = int(lf.select(pl.len()).collect().item())   # a lazy count: the table is not held in memory
+            chosen = safe_input(input, "preview_col_selector", None)
+            if chosen and isinstance(chosen, (list, tuple)):
+                names = lf.collect_schema().names()
+                kept = [c for c in names if c in chosen]
+                hidden = len(names) - len(kept) if kept else 0   # an empty choice shows every column, as the grid does
+        except Exception:
+            total_rows, hidden = None, 0
         return _badge_ui(view_badge(view, has_t2, has_plot_steps(active_cfg().raw_config, p_id), len(_applied_for_view()),
                                    mode="audit" if _in_audit() else "exploration", audited_steps=_audited_step_count(subtab),
-                                   source_table=table))
+                                   source_table=table, total_rows=total_rows, all_rows=bool(safe_input(input, "preview_all_rows", False)),
+                                   hidden_columns=hidden))
 
     @output
     @render.text
@@ -1663,7 +1701,7 @@ def define_server(input, output, session, *,
         """Accordion title; states the 100-row cap unless 'All rows' is on. Reads only preview_all_rows (ADR-045 R4)."""
         if safe_input(input, "preview_all_rows", False):
             return "Data Preview"
-        return "Data Preview (max. first 100 rows)"
+        return f"Data Preview (max. first {PREVIEW_ROW_LIMIT} rows)"
 
     # Phase 21-D/F: Data preview — scoped to active plot's dataset, with filters + col selector.
     @output
@@ -1676,21 +1714,10 @@ def define_server(input, output, session, *,
         spec = _resolve_active_spec(p_id)
 
         try:
-            lf = _resolve_active_lf(spec)
-            # ADR-098 (issue #56), D-0311: exploration filters change the table of the view shown (Source, T1, T2 or T3), never saved and
-            # never a plot. They do not exist in Audit mode, where T3 is the audited table.
-            # PLOT-TABLE-ORDER-1: in Audit mode the T3 table is the plot's table after the audited steps in their recorded order, the
-            # same call as the audited plot and the results bundle. A step that cannot run raises AuditStepError: it is shown below in
-            # the table's place and in the Alerts panel, never skipped.
-            if _in_audit():
-                if data_view.get() == "T3":
-                    lf = audited_frame(lf, _active_plot_t3_nodes(), p_id)
-            else:
-                # review F3: only the filters built on this very view; one built on another table is not applied, whatever the clearing effect did
-                lf = _apply_filter_rows(lf, _applied_for_view())
+            lf = _preview_lf(spec, p_id)
             # PREVIEW-ALLROWS-1: respect the "Show all rows" toggle; default 100-row cap.
             show_all = safe_input(input, "preview_all_rows", False)
-            df = lf.collect() if show_all else lf.head(100).collect()
+            df = lf.collect() if show_all else lf.head(PREVIEW_ROW_LIMIT).collect()
 
             # Apply column visibility selection (Phase 21-F-4) — preview-only filter
             visible = safe_input(input, "preview_col_selector", None)
@@ -1699,7 +1726,8 @@ def define_server(input, output, session, *,
                 if visible_cols:
                     df = df.select(visible_cols)
 
-            return render.DataGrid(df, filters=False, height="300px")
+            # summary off: the grid counts the table it is handed (the first 100 rows), so "of 100" would read as the table's total; the badge says the size (D-0488)
+            return render.DataGrid(df, filters=False, height="300px", summary=False)
         except Exception as e:
             if isinstance(e, AuditStepError):
                 _report_plot_exception(e, "T3Audit", "audit steps of the data preview")
