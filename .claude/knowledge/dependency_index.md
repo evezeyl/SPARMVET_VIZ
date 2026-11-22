@@ -105,7 +105,7 @@
 ## `app/handlers/blueprint_handlers.py`
 - **Role:** `ref`
 - **provides:** `function:define_server (blueprint_handlers)`, `output:blueprint_agent_panel_ui`, `output:bp_branch_ui`, `output:bp_branch_preview_ui`, `output:bp_groups_inventory_ui`, `effect:_bp_apply_node_handler`, `effect:_bp_save_yaml_hatch`, `effect:_load_component_from_selection`, `effect:_handle_branch_preview`, `effect:_handle_branch_write (BP-BRANCH-NODE-1 — node-level lineage bifurcation`, `replaces Visual Fork)`, `effects:_handle_grp_action/_handle_create_group_btn/_handle_grp_submit/_handle_plt_submit/_handle_move_plt_submit (BP-GROUPS-1)`, `helper:_do_refresh_blueprint (BP-GROUPS-1 — extracts data analysis recipe rebuild logic so CRUD Effects can call it after mutations)`, `output:bp_meta_form_ui`, `effect:_handle_meta_save (BP-META-1 — data analysis recipe info: block read/edit form)`, `effects:_handle_new_data_analysis_recipe_btn/_handle_new_data_analysis_recipe_submit (BP-NEW-1 — create data analysis recipe from scratch)`, `function:_warn_on_upload`, `output:bp_validate_ui`, `effect:_handle_validate (BP-VALIDATE-1 — three merged checks: validate_data_analysis_recipe (real engine load path`, `issue #53) + audit_data_analysis_recipe_coherence.py subprocess (static shape) + validate_data_analysis_recipe_data (data vs contract))`, `helpers:_draft_key/_write_bp_draft/_read_bp_draft`, `effect:_autosave_blueprint_draft`, `output:bp_draft_status_ui (BP-AUTOSAVE-1 — data analysis recipe-draft ghost save/restore)`, `outputs:joint_designer_status_ui/joint_left_schema_ui/joint_right_schema_ui/joint_key_pickers_ui/joint_preview_ui`, `effects:_jd_run_preview/_jd_apply/_jd_load_for_edit (BP-JOINT-1)`, `function:_serialise_component_for_save (BP-PLOT-COMMIT-1 — plot_spec/wrangling commit)`, `helper:_bundle_filename (full-data analysis recipe zip)`, `output:bp_import_error_ui (ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface for component/recipe import failures)`
-- **consumes:** `app/modules/blueprint_plot_view.py (plot_view: the mapping and layers of a plot node)`, `app/modules/blueprint_tier_refusal.py (other_tier_refusal: the text of the Save refusal`, `PROVISIONAL)`, `app/modules/plot_defaults_form.py (the plot_defaults form: what it shows and writes)`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/action_names.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result`, `never blocking; uploaded_recipe_report`, `load_uploaded_recipe`, `load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)`, `app/modules/validate_runner.py (run_structure_check`, `could_not_run_result`, `StructureCheckError — the child process of Validate uses sys.executable`, `D-0050)`, `libs/utils/src/utils/recipe_check.py (plot_keys)`, `libs/utils/src/utils/recipe_tiers.py (author_steps) — tier keys and plot entry keys of recipe format 1 (D-0250`, `D-0252)`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (check_join_keys`, `compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `libs/blueprint_arch/src/blueprint_arch/new_recipe.py (new_recipe_draft — BP-NEW-1`, `recipe format 1)`, `libs/utils/src/utils/recipe_factory.py (write_recipe)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError`, `make_render_payload — DIAG-RUNTIME-BLUEPRINT-1`, `wired to screen 2026-11-08 ADR-094)`, `app/src/render/pipeline_error_renderers.py (render_blueprint_inline)`, `libs/utils/src/utils/fix_text.py (fix_prefix)`, `libs/utils/src/utils/errors.py (SPARMVET_Error)`, `app/modules/data_change_notice.py (inputs_changed_during_build_notice)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
+- **consumes:** `app/modules/blueprint_plot_view.py (plot_view: the mapping and layers of a plot node)`, `app/modules/blueprint_tier_refusal.py (other_tier_refusal: the text of the Save refusal`, `PROVISIONAL)`, `app/modules/plot_defaults_form.py (the plot_defaults form: what it shows and writes)`, `libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py`, `libs/blueprint_arch/src/blueprint_arch/agent_adapter.py`, `libs/blueprint_arch/src/blueprint_arch/agent_context.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tools.py`, `libs/blueprint_arch/src/blueprint_arch/agent_tool_parser.py`, `app/modules/orchestrator.py`, `libs/blueprint_arch/src/blueprint_arch/blueprint_mapper.py`, `libs/utils/src/utils/config_loader.py`, `libs/utils/src/utils/action_names.py`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `app/modules/data_analysis_recipe_validator.py (validate_data_analysis_recipe`, `validate_data_analysis_recipe_data — issue #53; checker_advices — J12/J13 shown in the Validate result`, `never blocking; uploaded_recipe_report`, `load_uploaded_recipe`, `load_config_or_problems — BP-UPLOAD-EXIT-1; no bare ConfigManager call)`, `app/modules/validate_runner.py (run_structure_check`, `could_not_run_result`, `StructureCheckError — the child process of Validate uses sys.executable`, `D-0050)`, `app/modules/orchestrator_helpers.py (blueprint_is_open — outputs and effects that read HOME state compute only while BLUEPRINT is open)`, `libs/utils/src/utils/recipe_check.py (plot_keys)`, `libs/utils/src/utils/recipe_tiers.py (author_steps) — tier keys and plot entry keys of recipe format 1 (D-0250`, `D-0252)`, `function:generate_branch_plan (libs/blueprint_arch/src/blueprint_arch/data_analysis_recipe_navigator.py — BP-BRANCH-NODE-1)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog — BP-FORMS-1; get_component_catalog — BP-COMPONENT-FORMS-1; __mapping__ aes form inputs bp_map_* — BP-MAPPING-FORM-1)`, `function:normalise_plot_spec`, `function:serialise_plot_spec (libs/viz_factory/src/viz_factory/plot_config_resolver.py — BP-PLOT-LOAD-1 + BP-PLOT-COMMIT-1)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (check_join_keys`, `compute_key_match`, `build_join_step`, `parse_join_step — BP-JOINT-1 Joint Designer pane)`, `libs/blueprint_arch/src/blueprint_arch/group_plot_manager.py (list_groups_plots`, `create_group`, `delete_group`, `create_plot`, `delete_plot`, `assign_plot — BP-GROUPS-1)`, `libs/blueprint_arch/src/blueprint_arch/new_recipe.py (new_recipe_draft — BP-NEW-1`, `recipe format 1)`, `libs/utils/src/utils/recipe_factory.py (write_recipe)`, `reactive.Value:active_component_path (WrangleStudio — BP-PLOT-COMMIT-1; Save target file); node marker _tier (source-tier routing on commit)`, `libs/utils/src/utils/pipeline_error.py (PipelineError`, `make_render_payload — DIAG-RUNTIME-BLUEPRINT-1`, `wired to screen 2026-11-08 ADR-094)`, `app/src/render/pipeline_error_renderers.py (render_blueprint_inline)`, `libs/utils/src/utils/fix_text.py (fix_prefix)`, `libs/utils/src/utils/errors.py (SPARMVET_Error)`, `app/modules/data_change_notice.py (inputs_changed_during_build_notice)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; _load_component_from_selection watches it)`
 - **consumed_by:** `app/src/server.py`, `app/handlers/home_theater.py (ui.output_ui("blueprint_agent_panel_ui")`, `ui.output_ui("bp_branch_ui")`, `ui.output_ui("bp_groups_inventory_ui")`, `ui.output_ui("bp_meta_form_ui"))`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-039`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-076`, `.claude/knowledge/architecture_decisions.md#ADR-082`
 
@@ -139,8 +139,8 @@
 
 ## `app/handlers/home_theater.py`
 - **Role:** `ref`
-- **provides:** `function:define_server (home_theater)`, `output:dynamic_tabs`, `output:home_data_preview`, `output:home_col_selector_ui`, `output:col_drop_audit_btn_ui`, `output:sidebar_nav_ui`, `output:sidebar_tools_ui`, `output:right_sidebar_content_ui`, `output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui`, `output:source_table_ui`, `output:audit_strip_ui`, `output:plot_badge_{p_id}`, `output:plot_reshuffle_{p_id} (Audit mode only`, `D-0341)`, `effect:_track_view_inputs`, `effect:_drive_right_panel`, `effect:_open_audit_mode_after_restore`, `constant:LEGACY_RECORD_NOTICE`
-- **consumes:** `app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe`, `for the rule of a key drop)`, `app/modules/orchestrator.py (plot_read_error_text`, `read_source: the Source view`, `D-0310)`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py (render`, `show_draw_errors)`, `libs/utils/src/utils/config_loader.py`, `app/modules/t3_audit_engine.py (_apply_filter_rows`, `filter_rows_from_nodes`, `audited_frame`, `stored_table_identity`, `source_table_identity`, `rows_built_on`, `view_key`, `AuditStepError)`, `app/modules/view_badge.py (view_badge`, `plot_badge`, `has_plot_steps`, `has_tier2_steps)`, `libs/utils/src/utils/recipe_graph.py (build_graph`, `source_tables_of_plot)`, `app/modules/session_manager.py (LegacySessionError)`, `app/modules/plot_seeds.py`, `app/modules/sidebar_registry.py`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`, `app/modules/frame_widths.py (right_panel_open: the right panel follows the mode`, `D-0375`, `D-0385)`, `app/handlers/opening_handlers.py (define_server: the opening of the recipe; opening_waits)`, `app/modules/opening_build.py (opening_signature`, `plot_render_recipe: the recipe handed to the plot engine`, `D-0237`, `D-0239)`, `libs/utils/src/utils/engines.py (plot_engine_slot`, `through it)`
+- **provides:** `function:define_server (home_theater)`, `output:dynamic_tabs`, `output:home_data_preview`, `output:home_col_selector_ui`, `output:col_drop_audit_btn_ui`, `output:sidebar_nav_ui`, `output:sidebar_tools_ui`, `output:right_sidebar_content_ui`, `output:plot_cell_{p_id} (per-plot); HELP-INLINE-1: btn_help_ws + _show_workspace_help; 22-J-10: mounts aesthetic_style_panel_ui slot; PROP-2: output:filter_inventory_ui`, `output:source_table_ui`, `output:audit_strip_ui`, `output:plot_badge_{p_id}`, `output:plot_reshuffle_{p_id} (Audit mode only`, `D-0341)`, `effect:_track_view_inputs`, `effect:_drive_right_panel`, `effect:_open_audit_mode_after_restore`, `effect:_sync_active_space (the open user space as a value of its own`, `D-0502)`, `constant:LEGACY_RECORD_NOTICE`
+- **consumes:** `app/modules/plan_composer.py (compose_plan_book: the engine's plan of the open recipe`, `for the rule of a key drop)`, `app/modules/orchestrator.py (plot_read_error_text`, `read_source: the Source view`, `D-0310)`, `app/modules/wrangle_studio.py`, `app/modules/test_lab_studio.py`, `app/modules/gallery_viewer.py`, `libs/viz_factory/src/viz_factory/viz_factory.py (render`, `show_draw_errors)`, `libs/utils/src/utils/config_loader.py`, `app/modules/t3_audit_engine.py (_apply_filter_rows`, `filter_rows_from_nodes`, `audited_frame`, `stored_table_identity`, `source_table_identity`, `rows_built_on`, `view_key`, `AuditStepError)`, `app/modules/view_badge.py (view_badge`, `plot_badge`, `has_plot_steps`, `has_tier2_steps`, `PREVIEW_ROW_LIMIT)`, `libs/utils/src/utils/recipe_graph.py (build_graph`, `source_tables_of_plot)`, `app/modules/session_manager.py (LegacySessionError)`, `app/modules/plot_seeds.py`, `app/modules/sidebar_registry.py`, `app/modules/sidebar_open_panels.py (open_panels_after_redraw: the left panels the user has open stay open`, `D-0502)`, `app/handlers/session_handlers.py`, `app/handlers/export_handlers.py`, `app/handlers/filter_and_audit_handlers.py`, `app/handlers/data_import_handlers.py`, `app/src/www/preview_switch.js (the "All rows" switch it mounts in the header of the data panel needs this script so that a click does not fold the panel; mounted by app/src/ui.py)`, `app/modules/frame_widths.py (right_panel_open: the right panel follows the mode`, `D-0375`, `D-0385; HOME`, `BLUEPRINT: the nav values)`, `app/handlers/opening_handlers.py (define_server: the opening of the recipe; opening_waits)`, `app/modules/opening_build.py (opening_signature`, `plot_render_recipe: the recipe handed to the plot engine`, `D-0237`, `D-0239)`, `libs/utils/src/utils/engines.py (plot_engine_slot`, `through it)`
 - **consumed_by:** `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-043`, `.claude/knowledge/architecture_decisions.md#ADR-044`, `.claude/knowledge/architecture_decisions.md#ADR-045`, `.claude/knowledge/architecture_decisions.md#ADR-047`, `.claude/knowledge/architecture_decisions.md#ADR-051`, `.claude/knowledge/architecture_decisions.md#ADR-073`, `.claude/knowledge/architecture_decisions.md#ADR-085`, `.claude/knowledge/architecture_decisions.md#ADR-094`, `.claude/knowledge/architecture_decisions.md#ADR-097`, `.claude/knowledge/architecture_decisions.md#ADR-099`, `.claude/rules/ui_implementation_contract.md#4`, `.claude/rules/ui_implementation_contract.md#5`
 
@@ -284,9 +284,9 @@
 
 ## `app/modules/frame_widths.py`
 - **Role:** `ref`
-- **provides:** `function:css_width`, `function:data_attributes`, `function:right_panel_open`, `constant:LEFT`, `constant:RIGHT`, `constant:MAIN_MIN_SHARE`
+- **provides:** `function:css_width`, `function:data_attributes`, `function:right_panel_open`, `constant:LEFT`, `constant:RIGHT`, `constant:MAIN_MIN_SHARE`, `constant:HOME`, `constant:BLUEPRINT`
 - **consumes:** `none`
-- **consumed_by:** `app/src/ui.py`, `app/handlers/home_theater.py`, `app/tests/test_frame_widths.py`, `app/tests/test_panel_widths_browser.py`
+- **consumed_by:** `app/src/ui.py`, `app/handlers/home_theater.py`, `app/modules/orchestrator_helpers.py`, `app/tests/test_frame_widths.py`, `app/tests/test_panel_widths_browser.py`
 - **doc:** `.claude/rules/rules_css_style_spec.md#12`, `.claude/rules/ui_implementation_contract.md#2`
 
 ## `app/modules/gallery_examples.py`
@@ -340,9 +340,9 @@
 
 ## `app/modules/orchestrator_helpers.py`
 - **Role:** `ref`
-- **provides:** `safe_input`, `DEFAULT_HOME_STATE`
-- **consumes:** `—`
-- **consumed_by:** `app.src.server`
+- **provides:** `safe_input`, `blueprint_is_open`, `DEFAULT_HOME_STATE`
+- **consumes:** `app/modules/frame_widths.py (HOME`, `BLUEPRINT: the nav values)`
+- **consumed_by:** `app.src.server`, `app/modules/wrangle_studio.py (blueprint_is_open)`, `app/handlers/blueprint_handlers.py (blueprint_is_open)`
 - **doc:** `ADR-045 (Two-Category Law §5 — shared utility functions)`
 
 ## `app/modules/plan_composer.py`
@@ -386,6 +386,12 @@
 - **consumed_by:** `app/src/bootloader.py (limits)`, `app/tests/test_session_import_safety.py`, `app/src/server.py`, `app/handlers/home_theater.py`, `app/handlers/audit_stack.py`, `app/handlers/session_handlers.py`, `app/handlers/filter_and_audit_handlers.py (make_audit_step)`, `app/modules/bundle_importer.py (LegacySessionError)`
 - **doc:** `.claude/rules/ui_implementation_contract.md#12d`, `.claude/knowledge/architecture_decisions.md#ADR-097`
 
+## `app/modules/sidebar_open_panels.py`
+- **Role:** `ref`
+- **provides:** `function:open_panels_after_redraw`
+- **consumed_by:** `app/handlers/home_theater.py`, `app/tests/test_sidebar_open_panels.py`, `app/tests/test_left_sidebar_redraw_wiring.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md#11e`
+
 ## `app/modules/sidebar_registry.py`
 - **Role:** `ref`
 - **provides:** `PANEL_REGISTRY (dict)`, `is_panel_active (function)`
@@ -423,7 +429,7 @@
 
 ## `app/modules/view_badge.py`
 - **Role:** `ref`
-- **provides:** `function:view_badge`, `function:plot_badge`, `function:has_tier2_steps`, `function:has_plot_steps`, `class:ViewBadge`
+- **provides:** `function:row_count_note`, `function:hidden_columns_note`, `const:PREVIEW_ROW_LIMIT`, `function:view_badge`, `function:plot_badge`, `function:has_tier2_steps`, `function:has_plot_steps`, `class:ViewBadge`
 - **consumes:** `app/modules/cache_keys.py`
 - **consumed_by:** `app/handlers/home_theater.py`, `app/tests/test_view_badge.py`
 - **doc:** `https://github.com/evezeyl/SPARMVET_VIZ/issues/17`, `.claude/knowledge/architecture_decisions.md#adr-086`
@@ -431,7 +437,7 @@
 ## `app/modules/wrangle_studio.py`
 - **Role:** `ref`
 - **provides:** `class:WrangleStudio`, `method:build_sidebar_ui (issue #42 — Blueprint's left sidebar`, `moved here from home_theater.py's sidebar_tools_ui()`, `mirrors GalleryViewer.build_sidebar_ui(); registered as the "blueprint_main" freestanding panel type)`, `method:_render_action_form`, `method:_extract_upstream_cols`, `output:bp_yaml_escape_ui`, `output:bp_help_panel_ui`, `function:_resolve_action_doc`, `reactive.Value:inline_errors (ADR-079/ADR-094 PIPELINE-ERROR-WIRE-2 — blueprint_inline surface)`, `function:_enum_preview_legend (BP-ENUM-PREVIEW-1)`, `constants:_LINETYPE_DASHARRAY/_POSITION_DESC`, `reactive.Value:active_component_path (BP-PLOT-COMMIT-1 — loaded fragment file path`, `Save target); node marker _tier on action stubs (source-tier routing on commit`, `set from bp_action_context)`, `reactive.Value:joint_request`, `reactive.Value:joint_edit_idx (BP-JOINT-1 — shared with blueprint_handlers Joint Designer wiring); nav_panel "joint_designer" in architect_internal_tabs`
-- **consumes:** `app/src/render/pipeline_error_renderers.py (render_blueprint_inline — ADR-094)`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `libs/utils/src/utils/engines.py (plot_engine_slot — the plot preview dict)`, `libs/utils/src/utils/errors.py (DataAnalysisRecipeError)`, `method:DataWrangler.tier_steps (libs/transformer/src/transformer/data_wrangler.py — the steps of a join on a node click`, `D-0250)`, `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `search_actions`, `get_actions_for_context; get_component_catalog`, `search_components`, `get_components_for_context — BP-COMPONENT-FORMS-1)`, `node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1/BP-MAPPING-FORM-1); action key ({"action":...}) for wrangling nodes`, `__mapping__ node: dedicated aes form with bp_map_{key} inputs (BP-MAPPING-FORM-1); method:_extract_upstream_cols drives column picker choices`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `loaded via ui.py head)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (JOIN_HOW_OPTIONS — BP-JOINT-1 Joint Designer pane)`
+- **consumes:** `app/src/render/pipeline_error_renderers.py (render_blueprint_inline — ADR-094)`, `libs/blueprint_arch/src/blueprint_arch/widget_text.py (value_to_text`, `text_to_value)`, `app/modules/orchestrator_helpers.py (blueprint_is_open — outputs that read HOME state compute only while BLUEPRINT is open)`, `libs/utils/src/utils/engines.py (plot_engine_slot — the plot preview dict)`, `libs/utils/src/utils/errors.py (DataAnalysisRecipeError)`, `method:DataWrangler.tier_steps (libs/transformer/src/transformer/data_wrangler.py — the steps of a join on a node click`, `D-0250)`, `libs/transformer/src/transformer/actions/base.py (AVAILABLE_WRANGLING_ACTIONS)`, `libs/blueprint_arch/src/blueprint_arch/schema_registry.py (get_action_catalog`, `search_actions`, `get_actions_for_context; get_component_catalog`, `search_components`, `get_components_for_context — BP-COMPONENT-FORMS-1)`, `node discriminator: component key ({"component":...}) for plot layer nodes (BP-PLOT-LOAD-1/BP-COMPONENT-FORMS-1/BP-MAPPING-FORM-1); action key ({"action":...}) for wrangling nodes`, `__mapping__ node: dedicated aes form with bp_map_{key} inputs (BP-MAPPING-FORM-1); method:_extract_upstream_cols drives column picker choices`, `app/src/bootloader.py (method:get_palettes — via self._bootloader`, `optional)`, `reactive.Value:selected_lineage_rel (passed from server.py — BP-LINEAGE-NAV-1; handle_lineage_node_click writes to it instead of js_eval)`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `loaded via ui.py head)`, `libs/blueprint_arch/src/blueprint_arch/join_designer.py (JOIN_HOW_OPTIONS — BP-JOINT-1 Joint Designer pane)`
 - **consumed_by:** `app/handlers/home_theater.py`, `app/handlers/blueprint_handlers.py`, `app/handlers/audit_stack.py`, `app/src/server.py`
 - **doc:** `.claude/knowledge/architecture_decisions.md#ADR-004`, `.claude/knowledge/architecture_decisions.md#ADR-075`, `.claude/knowledge/architecture_decisions.md#ADR-082`
 
@@ -465,7 +471,7 @@
 ## `app/src/ui.py`
 - **Role:** `ref`
 - **provides:** `app_ui (Shiny UI definition`, `page_fillable layout)`
-- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `included via ui.tags.script)`, `app/src/www/export_ready.js (D-0270`, `included via ui.tags.script)`, `app/src/www/gallery_select_all.js (GALLERY-CHECK-1`, `included via ui.tags.script`, `only with gallery_enabled)`, `app/src/www/panel_widths.js (D-0381`, `D-0382`, `D-0384: the drag of the side panels)`, `app/modules/frame_widths.py (the widths)`
+- **consumes:** `pathlib`, `shiny`, `app.src.bootloader`, `base64`, `mimetypes`, `app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1`, `included via ui.tags.script)`, `app/src/www/export_ready.js (D-0270`, `included via ui.tags.script)`, `app/src/www/gallery_select_all.js (GALLERY-CHECK-1`, `included via ui.tags.script`, `only with gallery_enabled)`, `app/src/www/preview_switch.js (the "All rows" switch of the data preview does not fold the data panel)`, `app/src/www/panel_widths.js (D-0381`, `D-0382`, `D-0384: the drag of the side panels)`, `app/modules/frame_widths.py (the widths)`
 - **consumed_by:** `app.src.main`
 - **doc:** `ADR-027`, `ADR-029a`, `ADR-030`, `ADR-039`, `ADR-052`
 
@@ -477,7 +483,7 @@
 ## `app/tests/browser_view.py`
 - **Role:** `info`
 - **consumes:** `app/handlers/home_theater.py (the inputs home_mode`, `data_view`, `source_table`, `audit_compare)`
-- **consumed_by:** `app/tests/test_shiny_step_order.py`, `app/tests/test_tier_decides_filter_form.py`, `app/tests/test_filter_form_survives_rerender.py`, `app/tests/test_shiny_plot_tier3.py`, `app/tests/test_shiny_seed_places.py`, `app/tests/test_shiny_plot_errors.py`, `app/tests/test_filters_cleared_on_recipe_change.py`, `app/tests/test_shiny_session_restore.py`, `app/tests/test_shiny_apply_blocked.py`, `app/tests/test_export_download.py`, `app/tests/test_shiny_smoke.py`
+- **consumed_by:** `app/tests/test_shiny_na_tick.py`, `app/tests/test_shiny_step_order.py`, `app/tests/test_tier_decides_filter_form.py`, `app/tests/test_filter_form_survives_rerender.py`, `app/tests/test_shiny_plot_tier3.py`, `app/tests/test_shiny_seed_places.py`, `app/tests/test_shiny_plot_errors.py`, `app/tests/test_filters_cleared_on_recipe_change.py`, `app/tests/test_shiny_session_restore.py`, `app/tests/test_shiny_apply_blocked.py`, `app/tests/test_export_download.py`, `app/tests/test_shiny_smoke.py`
 
 ## `app/tests/debug_pipeline_connector.py`
 - **Role:** `info`
@@ -495,7 +501,7 @@
 ## `app/tests/home_harness.py`
 - **Role:** `info`
 - **consumes:** `app/handlers/home_theater.py (define_server)`, `app/tests/test_tier3_reader.py (Tier3World)`
-- **consumed_by:** `app/tests/test_home_reads_the_plots_table.py`, `app/tests/test_home_view_choices.py`, `app/tests/test_filters_change_the_table_not_the_plot.py`
+- **consumed_by:** `app/tests/test_home_reads_the_plots_table.py`, `app/tests/test_home_view_choices.py`, `app/tests/test_filters_change_the_table_not_the_plot.py`, `app/tests/test_left_sidebar_redraw_wiring.py`
 
 ## `app/tests/test_audit_step_refused_not_skipped.py`
 - **Role:** `info`
@@ -550,9 +556,22 @@
 - **consumes:** `app/modules/data_analysis_recipe_validator.py (engine_load_problems`, `validate_data_analysis_recipe)`, `app/src/bootloader.py (Bootloader._gate_one)`, `libs/utils/src/utils/recipe_tiers.py (tier3_steps)`
 - **doc:** `.claude/rules/rules_data_analysis_recipe_structure.md#11`, `.claude/knowledge/decision_ledger.md (D-0306`, `D-0029`, `D-0063)`
 
+## `app/tests/test_home_preview_lines.py`
+- **Role:** `info`
+- **consumes:** `app/tests/home_harness.py (Home`, `ViewWorld)`, `app/modules/view_badge.py (PREVIEW_ROW_LIMIT)`, `app/handlers/home_theater.py (home_data_preview_badge`, `home_data_preview_title)`
+
+## `app/tests/test_home_preview_lines_browser.py`
+- **Role:** `info`
+- **consumes:** `app/tests/browser_view.py`, `app/tests/test_shiny_smoke.py (_load_data_analysis_recipe`, `_wait_shiny)`, `app/handlers/home_theater.py (home_data_preview_badge`, `preview_all_rows`, `preview_col_selector)`
+
 ## `app/tests/test_home_reads_the_plot_entry.py`
 - **Role:** `info`
 - **consumes:** `app/handlers/home_theater.py (group_tab_label`, `plot_tab_label`, `plot_list_label`, `_collect_all_group_plot_ids)`, `app/handlers/audit_stack.py (plot_target_dataset)`, `app/modules/session_manager.py (extract_primary_keys)`
+
+## `app/tests/test_left_sidebar_redraw_wiring.py`
+- **Role:** `info`
+- **consumes:** `app/tests/home_harness.py (Home`, `ViewWorld)`, `app/handlers/home_theater.py (sidebar_tools_ui`, `_sync_active_space)`, `app/modules/sidebar_open_panels.py`
+- **doc:** `.claude/rules/ui_implementation_contract.md#11e`
 
 ## `app/tests/test_migrate_display_names.py`
 - **Role:** `info`
@@ -1209,22 +1228,29 @@
 ## `libs/utils/src/utils/key_drop.py`
 - **Role:** `ref`
 - **provides:** `function:DropGate.ways_out`, `function:key_drop_problem`, `function:drop_facts`, `function:key_drop_sentence`, `function:key_drop_unfollowed_sentence`, `function:place_of_steps_path`, `class:DropGate`
-- **consumes:** `libs/utils/src/utils/lineage_walk.py (LineageIndex.drop_facts)`, `libs/utils/src/utils/declared_plans.py`, `libs/utils/src/utils/recipe_graph.py`, `libs/utils/src/utils/recipe_tiers.py (without_audit_steps)`
+- **consumes:** `libs/utils/src/utils/lineage_walk.py (LineageIndex.drop_facts)`, `libs/utils/src/utils/lineage_sentences.py (join_phrase)`, `libs/utils/src/utils/declared_plans.py`, `libs/utils/src/utils/recipe_graph.py`, `libs/utils/src/utils/recipe_tiers.py (without_audit_steps)`
 - **consumed_by:** `libs/utils/src/utils/audit_copy.py`, `libs/utils/src/utils/recipe_check.py`, `app/modules/session_manager.py`, `app/handlers/filter_and_audit_handlers.py`, `libs/utils/tests/test_key_drop.py`
-- **doc:** `.claude/knowledge/decision_ledger.md (D-0358`, `D-0297`, `D-0322`, `D-0448`, `D-0460`, `D-0454`, `D-0450)`, `.claude/design/home_audit_steps.md`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0358`, `D-0297`, `D-0322`, `D-0448`, `D-0460`, `D-0454`, `D-0450`, `D-0452)`, `.claude/design/home_audit_steps.md`
 
 ## `libs/utils/src/utils/lineage_records.py`
 - **Role:** `ref`
-- **provides:** `class:Walk`, `class:Line`, `class:Gone`, `class:Outside`, `class:Occurrence`, `class:Hop`, `class:StepRef`, `class:SourceColumn`, `class:Reach`, `class:Reason`, `class:Note`, `class:Start`, `class:SortedSet`, `class:KeyNeed`, `class:Consequence`, `class:DropFacts`, `class:Certainty`, `constant:GROUPS`, `constant:LEVELS`, `constant:HOW_VALUES`, `constant:REASON_CODES`, `constant:NOTE_CODES`, `constant:VALUE_NOTES`, `constant:CONSEQUENCE_CODES`
-- **consumed_by:** `libs/utils/src/utils/lineage_walk.py`, `libs/utils/src/utils/remove_from_all.py`, `libs/utils/tests/test_lineage_walk.py`, `libs/utils/tests/test_lineage_walk_follow.py`
-- **doc:** `.claude/knowledge/decision_ledger.md (D-0346`, `D-0347`, `D-0195`, `D-0351`, `D-0353`, `D-0337`, `D-0357`, `D-0358`, `D-0297`, `D-0451`, `D-0447)`
+- **provides:** `class:Walk`, `class:Line`, `class:Gone`, `class:Outside`, `class:Occurrence`, `class:Hop`, `class:StepRef`, `class:SourceColumn`, `class:Reach`, `class:Reason`, `class:Note`, `class:Start`, `class:SortedSet`, `class:KeyNeed`, `class:Consequence`, `class:DropFacts`, `class:Certainty`, `constant:GROUPS`, `constant:LEVELS`, `constant:HOW_VALUES`, `constant:REASON_CODES`, `constant:NOTE_CODES`, `constant:VALUE_NOTES`, `constant:CONSEQUENCE_CODES`, `constant:JOIN_NOT_YET_FOLLOWED`
+- **consumed_by:** `libs/utils/src/utils/lineage_walk.py`, `libs/utils/src/utils/remove_from_all.py`, `libs/utils/src/utils/lineage_sentences.py (Reason)`, `libs/utils/src/utils/key_drop.py (JOIN_NOT_YET_FOLLOWED)`, `libs/utils/tests/test_lineage_walk.py`, `libs/utils/tests/test_lineage_walk_follow.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0346`, `D-0347`, `D-0195`, `D-0351`, `D-0353`, `D-0337`, `D-0357`, `D-0358`, `D-0297`, `D-0451`, `D-0447`, `D-0452`, `D-0454`, `D-0460)`
+
+## `libs/utils/src/utils/lineage_sentences.py`
+- **Role:** `ref`
+- **provides:** `function:join_not_yet_followed_sentence`, `function:join_phrase`, `function:kinds_named`
+- **consumes:** `libs/utils/src/utils/lineage_records.py (Reason)`, `libs/utils/src/utils/step_effects.py (NOT_YET_FOLLOWED_JOINS)`
+- **consumed_by:** `libs/utils/src/utils/key_drop.py`, `libs/utils/src/utils/remove_from_all.py`, `libs/utils/tests/test_lineage_unfollowed_join.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0452`, `D-0454`, `D-0460`, `D-0486)`
 
 ## `libs/utils/src/utils/lineage_walk.py`
 - **Role:** `ref`
 - **provides:** `function:walk`, `function:LineageIndex.drop_facts`, `function:LineageIndex.drop_consequences`, `function:LineageIndex.plot_places`, `function:LineageIndex.certainty_from`, `function:LineageIndex.uncertain_ends`, `class:LineageIndex`, `class:LineageError`, `class:ColumnNotFound`, `class:StartPlanFailed`
 - **consumes:** `libs/utils/src/utils/recipe_graph.py`, `libs/utils/src/utils/join_keys.py (JOIN_ACTIONS`, `key_columns)`, `libs/utils/src/utils/step_effects.py`, `libs/utils/src/utils/plan_book.py`, `libs/utils/src/utils/lineage_records.py`
 - **consumed_by:** `libs/utils/src/utils/key_drop.py`, `libs/utils/src/utils/remove_from_all.py (certainty_from`, `uncertain_ends)`, `libs/utils/tests/test_lineage_walk.py`, `libs/utils/tests/test_lineage_walk_follow.py`, `libs/utils/tests/test_lineage_walk_properties.py`, `libs/utils/tests/test_lineage_drop.py`
-- **doc:** `.claude/knowledge/decision_ledger.md (D-0347`, `D-0346`, `D-0351`, `D-0195`, `D-0353`, `D-0352`, `D-0357`, `D-0337`, `D-0356`, `D-0355`, `D-0358`, `D-0297`, `D-0451)`, `.claude/design/home_audit_steps.md`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0347`, `D-0346`, `D-0351`, `D-0195`, `D-0353`, `D-0352`, `D-0357`, `D-0337`, `D-0356`, `D-0355`, `D-0358`, `D-0297`, `D-0451`, `D-0452`, `D-0454`, `D-0460`, `D-0486)`, `.claude/design/home_audit_steps.md`
 
 ## `libs/utils/src/utils/missing_values.py`
 - **Role:** `ref`
@@ -1288,9 +1314,9 @@
 
 ## `libs/utils/src/utils/recipe_graph.py`
 - **Role:** `ref`
-- **provides:** `function:build_graph`, `function:source_tables_of_plot`, `function:source_tables_of_table`, `class:RecipeGraph`, `class:RecipeGraphError`, `class:GraphProblem`, `class:Node`, `class:ColumnInfo`, `method:RecipeGraph.declared_entity_keys`
-- **consumes:** `libs/utils/src/utils/recipe_tiers.py`, `libs/utils/src/utils/join_keys.py`, `libs/utils/src/utils/action_names.py`
-- **consumed_by:** `libs/utils/tests/test_recipe_graph.py`, `libs/utils/src/utils/lineage_walk.py (declared_entity_keys`, `key_family_of`, `lineage_forward`, `plot_columns)`, `libs/utils/src/utils/declared_plans.py (column_info`, `parents)`, `libs/utils/src/utils/key_drop.py (build_graph)`, `app/tests/test_read_source.py (source_tables_of_plot: the source tables that feed a plot`, `for the Source view of HOME`, `D-0310)`
+- **provides:** `function:build_graph`, `function:source_tables_of_plot`, `function:source_tables_of_table`, `function:key_candidates_for`, `function:key_candidate_sources`, `class:RecipeGraph`, `class:RecipeGraphError`, `class:GraphProblem`, `class:Node`, `class:ColumnInfo`, `method:RecipeGraph.declared_entity_keys`
+- **consumes:** `libs/utils/src/utils/recipe_tiers.py`, `libs/utils/src/utils/join_keys.py`, `libs/utils/src/utils/action_names.py`, `libs/utils/src/utils/step_effects.py (effect_of`, `for the key candidates)`
+- **consumed_by:** `libs/utils/tests/test_recipe_graph.py`, `libs/utils/tests/test_key_candidates.py (key_candidates_for)`, `libs/utils/src/utils/lineage_walk.py (declared_entity_keys`, `key_family_of`, `lineage_forward`, `plot_columns)`, `libs/utils/src/utils/declared_plans.py (column_info`, `parents)`, `libs/utils/src/utils/key_drop.py (build_graph)`, `app/tests/test_read_source.py (source_tables_of_plot: the source tables that feed a plot`, `for the Source view of HOME`, `D-0310)`
 - **doc:** `.claude/knowledge/architecture_decisions.md#adr-099`, `.claude/knowledge/architecture_decisions.md#adr-101`, `.claude/design/home_stage2_mechanism_spec.md (sections 1 to 3`, `P3)`, `.claude/design/home_audit_steps.md (D1`, `5a points 3`, `8`, `18)`
 
 ## `libs/utils/src/utils/recipe_loader.py`
@@ -1321,10 +1347,10 @@
 
 ## `libs/utils/src/utils/remove_from_all.py`
 - **Role:** `ref`
-- **provides:** `function:describe`, `function:apply`, `function:removal_step`, `function:not_offered_sentence`, `function:may_stay_sentence`, `class:RemoveFromAll`, `class:KeyPlace`, `class:NotReached`, `class:MayStay`, `class:Applied`, `constant:WARNING`, `constant:NOT_OFFERED_CODES`, `constant:NOT_REACHED_CODES`, `constant:VALUES_UNPROVED`
-- **consumes:** `libs/utils/src/utils/lineage_walk.py (LineageIndex: the links between the columns; certainty_from and uncertain_ends)`, `libs/utils/src/utils/recipe_graph.py (key_families`, `declared_entity_keys`, `plots_reading)`, `libs/utils/src/utils/declared_plans.py`, `libs/utils/src/utils/plan_book.py`, `libs/utils/src/utils/audit_copy.py (add_step`, `remove_step)`, `libs/utils/src/utils/filter_values.py (check_filter)`, `libs/utils/src/utils/na_choice.py (default_na)`, `libs/utils/src/utils/recipe_tiers.py (without_audit_steps)`, `libs/utils/src/utils/lineage_records.py (Reason)`
+- **provides:** `function:describe`, `function:apply`, `function:removal_step`, `function:not_offered_sentence`, `function:may_stay_sentence`, `function:not_reached_sentence`, `class:RemoveFromAll`, `class:KeyPlace`, `class:NotReached`, `class:MayStay`, `class:Applied`, `constant:WARNING`, `constant:NOT_OFFERED_CODES`, `constant:NOT_REACHED_CODES`, `constant:VALUES_UNPROVED`
+- **consumes:** `libs/utils/src/utils/lineage_walk.py (LineageIndex: the links between the columns; certainty_from and uncertain_ends)`, `libs/utils/src/utils/recipe_graph.py (key_families`, `declared_entity_keys`, `plots_reading)`, `libs/utils/src/utils/declared_plans.py`, `libs/utils/src/utils/plan_book.py`, `libs/utils/src/utils/audit_copy.py (add_step`, `remove_step)`, `libs/utils/src/utils/filter_values.py (check_filter)`, `libs/utils/src/utils/na_choice.py (default_na)`, `libs/utils/src/utils/recipe_tiers.py (without_audit_steps)`, `libs/utils/src/utils/lineage_records.py (Reason)`, `libs/utils/src/utils/lineage_sentences.py (join_not_yet_followed_sentence)`
 - **consumed_by:** `libs/utils/tests/test_remove_from_all.py`, `app/tests/test_remove_from_all_demo.py`
-- **doc:** `.claude/knowledge/decision_ledger.md (D-0415`, `D-0416`, `D-0313`, `D-0082`, `D-0355`, `D-0351)`, `.claude/rules/ui_implementation_contract.md (section 8: the filter row and the value type rule)`, `.claude/design/home_audit_steps.md`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0415`, `D-0416`, `D-0313`, `D-0082`, `D-0355`, `D-0351`, `D-0452`, `D-0454`, `D-0460)`, `.claude/rules/ui_implementation_contract.md (section 8: the filter row and the value type rule)`, `.claude/design/home_audit_steps.md`
 
 ## `libs/utils/src/utils/signature_params.py`
 - **Role:** `ref`
@@ -1334,10 +1360,10 @@
 
 ## `libs/utils/src/utils/step_effects.py`
 - **Role:** `ref`
-- **provides:** `function:effect_of`, `function:predict`, `function:agreement_problem`, `function:unread_pairs`, `class:Effect`, `class:PredictedColumn`, `class:Source`, `constant:READINGS`, `constant:FOLLOWED_JOINS`, `constant:VALUE_CHANGES`, `constant:NOTE_CHANGES`
+- **provides:** `function:effect_of`, `function:not_yet_followed`, `function:predict`, `function:agreement_problem`, `function:unread_pairs`, `class:Effect`, `class:PredictedColumn`, `class:Source`, `constant:READINGS`, `constant:FOLLOWED_JOINS`, `constant:NO_COPY_JOINS`, `constant:NOT_YET_FOLLOWED_JOINS`, `constant:VALUE_CHANGES`, `constant:NOTE_CHANGES`
 - **consumes:** `libs/utils/src/utils/join_keys.py`, `libs/utils/src/utils/action_names.py`, `libs/utils/src/utils/plan_book.py`
 - **consumed_by:** `libs/utils/src/utils/lineage_walk.py`, `libs/utils/src/utils/declared_plans.py`, `libs/utils/tests/test_step_effects.py`, `libs/utils/tests/test_lineage_walk_follow.py`
-- **doc:** `.claude/knowledge/decision_ledger.md (D-0351`, `D-0353`, `D-0356`, `D-0357)`, `.claude/design/home_audit_steps.md`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0351`, `D-0353`, `D-0356`, `D-0357`, `D-0452`, `D-0454`, `D-0460`, `D-0486)`, `.claude/design/home_audit_steps.md`
 
 ## `libs/utils/src/utils/step_migration.py`
 - **Role:** `ref`
@@ -1357,6 +1383,12 @@
 - **provides:** `function:load_strict`, `class:DuplicateKeyError`
 - **consumed_by:** `libs/blueprint_arch/src/blueprint_arch/widget_text.py`
 - **doc:** `.claude/design/recipe_format_spec.md (check T10)`
+
+## `libs/utils/src/utils/table_compare.py`
+- **Role:** `ref`
+- **provides:** `function:compare`, `class:Comparison`, `class:RowList`, `class:TypeChange`, `class:NotComputed`, `class:KeyRejection`, `class:CellChange`, `class:CellChanges`, `class:ColumnChange`, `class:PairedView`, `class:Limitation`, `constant:CANNOT_CATCH`
+- **consumed_by:** `libs/utils/tests/test_table_compare.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0485`, `D-0488`, `D-0489)`, `.claude/rules/rules_runtime_environment.md (engine marks)`
 
 ## `libs/utils/src/utils/ui_schema.py`
 - **Role:** `ref`
@@ -1382,6 +1414,16 @@
 ## `libs/utils/tests/test_engines.py`
 - **Role:** `ref`
 - **consumes:** `libs/utils/src/utils/engines.py`, `libs/utils/src/utils/recipe_check.py`, `libs/utils/src/utils/recipe_spec.yaml`
+
+## `libs/utils/tests/test_key_candidates.py`
+- **Role:** `ref`
+- **consumes:** `libs/utils/src/utils/recipe_graph.py (key_candidates_for`, `key_candidate_sources)`, `libs/utils/src/utils/recipe_loader.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0485`, `D-0489)`
+
+## `libs/utils/tests/test_table_compare.py`
+- **Role:** `ref`
+- **consumes:** `libs/utils/src/utils/table_compare.py`
+- **doc:** `.claude/knowledge/decision_ledger.md (D-0485`, `D-0488`, `D-0489)`
 
 ## `libs/viz_factory/src/viz_factory/arguments.py`
 - **Role:** `plot`
