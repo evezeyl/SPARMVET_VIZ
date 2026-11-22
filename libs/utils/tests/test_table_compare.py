@@ -10,6 +10,8 @@ demo file. Each limit that the module states in `CANNOT_CATCH` has a test named 
 # @end_deps
 """
 import math
+import random
+from collections import Counter
 
 import polars as pl
 import pytest
@@ -512,6 +514,159 @@ def test_the_four_kinds_with_one_sample_removed_upstream():
     assert kinds["long"].paired is None and kinds["long"].only_in_original.total == 3
 
 
+# ----------------------------------------------------------------------------------------------------- review of 2026-11-22: NaN keys, order, sizes
+
+def test_a_one_row_table_with_a_nan_key_is_refused_not_read_as_no_change():
+    original = pl.DataFrame({"k": [NAN], "v": [1]})
+    audited = pl.DataFrame({"k": [NAN], "v": [2]})
+    c = compare(original, audited, key_candidates=[("k",)])
+    assert c.key_status == tc.KEY_NONE_USABLE and c.paired is None
+    rejection = c.key_rejections[0]
+    assert rejection.check == tc.CHECK_HAS_NAN and rejection.table == "both" and rejection.count == 1 and "NaN" in rejection.reason
+    assert c.only_in_original.total == 1 and c.only_in_audited.total == 1          # layers 1 and 2 still tell the value changed
+
+
+def test_a_nan_in_the_key_of_one_table_only_is_refused_naming_that_table():
+    original = pl.DataFrame({"k": [1.0, 2.0], "v": [1, 2]})
+    audited = pl.DataFrame({"k": [1.0, NAN], "v": [1, 2]})
+    r = compare(original, audited, key_candidates=[("k",)]).key_rejections[0]
+    assert (r.check, r.table, r.count) == (tc.CHECK_HAS_NAN, "audited", 1)
+
+
+def test_a_nan_in_one_part_of_a_composite_key_is_refused():
+    original = pl.DataFrame({"a": ["x", "y"], "b": [1.0, NAN], "v": [1, 2]})
+    c = compare(original, original.clone(), key_candidates=[("a", "b")])
+    assert c.key_status == tc.KEY_NONE_USABLE and c.key_rejections[0].check == tc.CHECK_HAS_NAN
+
+
+def test_the_next_candidate_is_tried_after_a_nan_key():
+    original = pl.DataFrame({"k": [NAN], "id": [1], "v": [1]})
+    audited = pl.DataFrame({"k": [NAN], "id": [1], "v": [2]})
+    c = compare(original, audited, key_candidates=[("k",), ("id",)])
+    assert c.key_used == ("id",) and c.paired.n_rows_changed == 1 and c.key_rejections[0].check == tc.CHECK_HAS_NAN
+
+
+def test_a_float_key_without_nan_still_pairs():
+    original = pl.DataFrame({"k": [1.5, 2.5], "v": [1, 2]})
+    audited = pl.DataFrame({"k": [1.5, 2.5], "v": [1, 3]})
+    c = compare(original, audited, key_candidates=[("k",)])
+    assert c.key_used == ("k",) and c.paired.n_paired == 2 and c.paired.n_rows_changed == 1
+
+
+def _random_frame(rng, kinds, n):
+    pools = {"i": ([1, 2, 3, None], pl.Int64), "f": ([0.5, 1.5, NAN, None, float("inf")], pl.Float64),
+             "s": (["a", "b", "", None], pl.String), "b": ([True, False, None], pl.Boolean)}
+    return pl.DataFrame({f"c{i}": pl.Series([rng.choice(pools[k][0]) for _ in range(n)], dtype=pools[k][1]) for i, k in enumerate(kinds)})
+
+
+def _normal(value):
+    return "NaN" if isinstance(value, float) and value != value else value
+
+
+def test_property_whenever_a_key_is_used_no_row_is_lost_or_invented():
+    """With a used key: removed + paired = rows of the original and added + paired = rows of the audited table, for random small tables with
+    nulls, NaN, inf, duplicates and mixed types (a fixed seed)."""
+    rng = random.Random(20261122)
+    used = 0
+    for _ in range(300):
+        kinds = [rng.choice("ifsb") for _ in range(rng.randint(1, 4))]
+        a = _random_frame(rng, kinds, rng.randint(0, 8))
+        b = _random_frame(rng, kinds, rng.randint(0, 8)) if rng.random() < 0.4 else a.filter(pl.Series([rng.random() > 0.2 for _ in range(a.height)], dtype=pl.Boolean))
+        if b.height and rng.random() < 0.5:
+            b = b.with_columns(pl.col(b.columns[0]).shuffle(seed=1))
+        for column in a.columns:
+            c = compare(a, b, key_candidates=[(column,)])
+            if c.key_status != tc.KEY_USED:
+                continue
+            used += 1
+            p = c.paired
+            assert p.removed.total + p.n_paired == a.height and p.added.total + p.n_paired == b.height, (a, b, column)
+            ka = {_normal(r[a.columns.index(column)]): r for r in a.rows()}
+            kb = {_normal(r[b.columns.index(column)]): r for r in b.rows()}
+            changed = sum(1 for k in ka if k in kb for x, y in zip(ka[k], kb[k]) if _normal(x) != _normal(y))
+            assert changed == p.changed_cells.total, (a, b, column)
+    assert used > 20                                              # the property is not vacuous
+
+
+def test_the_property_holds_for_a_multiset_of_rows_without_a_key():
+    rng = random.Random(7)
+    for _ in range(100):
+        kinds = [rng.choice("ifsb") for _ in range(rng.randint(1, 3))]
+        a, b = _random_frame(rng, kinds, rng.randint(0, 8)), _random_frame(rng, kinds, rng.randint(0, 8))
+        c = compare(a, b)
+        count = lambda f: Counter(tuple(_normal(x) for x in r) for r in f.rows())
+        assert Counter(tuple(_normal(x) for x in r) for r in c.only_in_original.rows) == count(a) - count(b)
+        assert Counter(tuple(_normal(x) for x in r) for r in c.only_in_audited.rows) == count(b) - count(a)
+
+
+def test_only_the_order_of_the_columns_differs_and_the_record_says_so():
+    a = pl.DataFrame({"a": [1, 2], "b": ["x", "y"]})
+    b = a.select(["b", "a"])
+    c = compare(a, b)
+    assert c.equal is False and c.column_order_same is False
+    assert c.only_in_original.total == 0 and c.only_in_audited.total == 0 and c.row_order_same is True
+
+
+def test_the_same_columns_in_the_same_order_say_so():
+    assert compare(aggregate(), aggregate()).column_order_same is True
+
+
+def test_the_column_order_looks_at_the_common_columns_only():
+    a = pl.DataFrame({"a": [1], "b": [2], "c": [3]})
+    assert compare(a, a.with_columns(pl.lit(1).alias("extra"))).column_order_same is True
+    assert compare(a, a.select(["c", "b"])).column_order_same is False
+
+
+def test_the_range_of_a_change_in_large_whole_numbers_is_exact():
+    big = 2 ** 62
+    original = pl.DataFrame({"k": [1], "v": pl.Series([big], dtype=pl.Int64)})
+    audited = pl.DataFrame({"k": [1], "v": pl.Series([big + 1], dtype=pl.Int64)})
+    v = compare(original, audited, key_candidates=[("k",)]).paired.columns[0]
+    assert (v.n_changed, v.smallest_change, v.largest_change) == (1, 1, 1)
+
+
+def test_the_range_of_a_change_does_not_overflow_at_the_ends_of_the_type():
+    original = pl.DataFrame({"k": [1], "v": pl.Series([-2 ** 63], dtype=pl.Int64)})
+    audited = pl.DataFrame({"k": [1], "v": pl.Series([2 ** 63 - 1], dtype=pl.Int64)})
+    v = compare(original, audited, key_candidates=[("k",)]).paired.columns[0]
+    assert v.smallest_change == v.largest_change == 2 ** 64 - 1
+    original = pl.DataFrame({"k": [1], "u": pl.Series([2 ** 64 - 1], dtype=pl.UInt64)})
+    audited = pl.DataFrame({"k": [1], "u": pl.Series([0], dtype=pl.UInt64)})
+    u = compare(original, audited, key_candidates=[("k",)]).paired.columns[0]
+    assert u.smallest_change == -(2 ** 64 - 1)
+
+
+def test_changes_to_or_from_missing_and_non_finite_values_are_counted_apart_from_the_range():
+    original = pl.DataFrame({"k": [1, 2, 3, 4, 5], "v": [1.0, None, 1.0, NAN, 2.0]})
+    audited = pl.DataFrame({"k": [1, 2, 3, 4, 5], "v": [4.0, 2.0, float("inf"), 1.0, None]})
+    v = compare(original, audited, key_candidates=[("k",)]).paired.columns[0]
+    assert v.n_changed == 5
+    assert (v.n_to_or_from_null, v.n_to_or_from_non_finite) == (2, 2)
+    assert (v.smallest_change, v.largest_change) == (3.0, 3.0)                  # the one finite change
+    assert v.n_changed == v.n_to_or_from_null + v.n_to_or_from_non_finite + 1
+
+
+def test_a_column_with_only_non_finite_changes_has_no_range_but_a_count():
+    original = pl.DataFrame({"k": [1], "v": [1.0]})
+    audited = pl.DataFrame({"k": [1], "v": [NAN]})
+    v = compare(original, audited, key_candidates=[("k",)]).paired.columns[0]
+    assert v.n_changed == 1 and v.n_to_or_from_non_finite == 1 and v.smallest_change is None and v.largest_change is None
+
+
+def test_a_text_column_counts_changes_to_or_from_missing():
+    original = pl.DataFrame({"k": [1, 2], "t": ["a", None]})
+    audited = pl.DataFrame({"k": [1, 2], "t": [None, "b"]})
+    t = compare(original, audited, key_candidates=[("k",)]).paired.columns[0]
+    assert t.n_changed == 2 and t.n_to_or_from_null == 2 and t.n_to_or_from_non_finite == 0
+
+
+def test_a_candidate_that_names_a_column_twice_is_refused_plainly():
+    t = pl.DataFrame({"k": [1, 2], "v": [1, 2]})
+    c = compare(t, t.clone(), key_candidates=[("k", "k"), ("k",)])
+    assert c.key_rejections[0].check == tc.CHECK_DUPLICATED_COLUMN and "'k'" in c.key_rejections[0].reason
+    assert c.key_used == ("k",)
+
+
 # ----------------------------------------------------------------------------------------------------- the cases it cannot catch
 
 def test_the_list_of_limits_is_plain_text_with_one_test_each():
@@ -584,3 +739,17 @@ def test_the_module_carries_its_engine_mark_and_is_listed():
     assert place.engines == ("python-polars",)
     first = open(tc.__file__, encoding="utf-8").read().splitlines()[0]
     assert first == place.mark
+
+
+def test_limit_zero_and_negative_zero_are_equal():
+    original = pl.DataFrame({"k": [1], "v": [0.0]})
+    audited = pl.DataFrame({"k": [1], "v": [-0.0]})
+    c = compare(original, audited, key_candidates=[("k",)])
+    assert c.equal is True and c.paired.n_rows_changed == 0              # a change of the sign of zero leaves no trace
+
+
+def test_limit_a_change_to_a_non_finite_value_has_no_size():
+    original = pl.DataFrame({"k": [1], "v": [1.0]})
+    audited = pl.DataFrame({"k": [1], "v": [float("inf")]})
+    v = compare(original, audited, key_candidates=[("k",)]).paired.columns[0]
+    assert v.n_changed == 1 and v.smallest_change is None and v.n_to_or_from_non_finite == 1
