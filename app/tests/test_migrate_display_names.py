@@ -109,7 +109,8 @@ branding:
     subtitle: "S"   # a comment
   contact: "c@x"
 """
-DEPLOYMENT_AFTER = """deployment_type: filesystem
+DEPLOYMENT_BLOCK = "# X\n" + tool.BLOCK_MARKER_LINE + "\n# Default app features: f\n# Contact: c@x\n"
+DEPLOYMENT_AFTER = DEPLOYMENT_BLOCK + """deployment_type: filesystem
 default_app_features: "f"
 branding:
   theme_css: "a.css"
@@ -129,7 +130,7 @@ flags:
   a: true
 """
 APP_FEATURES_AFTER = """name: "f"
-display_name: "F name"
+ui_label: "F name"
 flags:
   a: true
 """
@@ -220,13 +221,23 @@ def test_group_and_plot_ui_title_are_removed_with_their_value_shown(tree):
 def test_banner_keys_are_renamed_and_deployment_name_is_removed(tree):
     plan = tool.build_plan(tree)
     assert plan.texts[tree / "config/deployment/demo/d.yaml"] == DEPLOYMENT_AFTER
-    assert {"R06", "R07", "R08"} <= set(rules_of(plan))
+    assert {"R06", "R07", "R08", "R15"} <= set(rules_of(plan))
 
 
-def test_app_features_ui_title_block_is_removed_and_display_name_is_listed_not_changed(tree):
+def test_app_features_ui_title_block_is_removed_and_display_name_becomes_ui_label_and_name_stays(tree):
     plan = tool.build_plan(tree)
-    assert plan.texts[tree / "config/app_features/f.yaml"] == APP_FEATURES_AFTER
-    assert any(c.case == "OC07" and "display_name" in c.detail for c in plan.cases)
+    assert plan.texts[tree / "config/app_features/f.yaml"] == APP_FEATURES_AFTER      # `name: "f"` (the id) is untouched
+    assert {"R09", "R13"} <= set(rules_of(plan))
+    assert not any(c.case == "OC07" for c in plan.cases)
+    assert [c.ledger for c in plan.changes if c.rule == "R13"] == ["D-0480"]
+
+
+def test_an_app_features_file_with_display_name_and_ui_label_is_a_conflict_and_is_not_changed(tmp_path):
+    root = tmp_path / "copy"
+    text = "name: f\ndisplay_name: A\nui_label: B\n"
+    write(root, "config/app_features/f.yaml", text)
+    plan = tool.build_plan(root)
+    assert plan.texts == {} and any(c.case == "CONFLICT" and "display_name" in c.detail for c in plan.cases)
 
 
 def test_a_gallery_bundle_is_planned_like_a_recipe(tree):
@@ -238,8 +249,8 @@ def test_a_gallery_bundle_is_planned_like_a_recipe(tree):
 def test_counts_per_file_kind(tree):
     plan = tool.build_plan(tree)
     assert plan.kind_counts["recipes"]["changes"] == 7 and plan.kind_counts["recipes"]["files"] == 2
-    assert plan.kind_counts["deployment files"]["changes"] == 3
-    assert plan.kind_counts["app features files"]["changes"] == 1
+    assert plan.kind_counts["deployment files"]["changes"] == 4          # the banner title, the subtitle, the name, the comment block
+    assert plan.kind_counts["app features files"]["changes"] == 2          # the ui_title block, display_name -> ui_label
 
 
 # -- what is kept, byte for byte -----------------------------------------------------------------------------------------
@@ -473,24 +484,231 @@ def test_a_removal_in_a_flow_mapping_is_listed_as_not_placeable(tmp_path):
     assert [c.case for c in plan.cases if c.case == "OC13"] == ["OC13"]
 
 
-def test_a_deployment_name_with_no_banner_to_take_it_is_listed_and_kept(tmp_path):
+def test_a_deployment_name_with_no_banner_is_removed_and_goes_into_the_comment_block(tmp_path):
     root = tmp_path / "copy"
     text = "deployment_type: filesystem\ndeployment_name: \"Only name\"\nbranding:\n  contact: c\n"
     write(root, "config/deployment/local/l.yaml", text)
     plan = tool.build_plan(root)
-    assert plan.changes == [] and plan.texts == {}
-    assert any(c.case == "OC06" and "Only name" in c.detail for c in plan.cases)
+    assert plan.texts[root / "config/deployment/local/l.yaml"] == "# Only name\n" + tool.BLOCK_MARKER_LINE + "\n# Contact: c\n" + "deployment_type: filesystem\nbranding:\n  contact: c\n"
+    assert not any(c.case == "OC06" for c in plan.cases)
 
 
-def test_a_deployment_name_that_differs_from_the_banner_title_is_noted(tree):
+def test_the_comment_block_comes_first_and_an_existing_header_comment_is_kept_below_it(tmp_path):
+    root = tmp_path / "copy"
+    text = "# Header of the file\n# second line\ndeployment_type: filesystem\ndeployment_name: N\ndefault_data_analysis_recipe: rec\n"
+    write(root, "config/deployment/local/l.yaml", text)
+    plan = tool.build_plan(root)
+    assert plan.texts[root / "config/deployment/local/l.yaml"] == (
+        "# N\n" + tool.BLOCK_MARKER_LINE + "\n# Default recipe: rec\n# Header of the file\n# second line\ndeployment_type: filesystem\ndefault_data_analysis_recipe: rec\n")
+    placed = [b for b in plan.blocks if b.file.endswith("l.yaml")]
+    assert len(placed) == 1 and "before the existing leading comment (2 line(s))" in placed[0].placement
+
+
+def test_an_empty_or_absent_deployment_name_gets_no_block(tmp_path):
+    root = tmp_path / "copy"
+    write(root, "config/deployment/a/empty.yaml", "deployment_type: filesystem\ndeployment_name: \"\"\ndefault_app_features: f\n")
+    write(root, "config/deployment/a/absent.yaml", "deployment_type: filesystem\ndefault_app_features: f\n")
+    plan = tool.build_plan(root)
+    assert plan.texts[root / "config/deployment/a/empty.yaml"] == "deployment_type: filesystem\ndefault_app_features: f\n"      # the key goes, no block
+    assert root / "config/deployment/a/absent.yaml" not in plan.texts
+    assert plan.blocks == []
+
+
+def test_a_line_the_file_cannot_fill_is_left_out_and_nothing_is_invented(tmp_path):
+    root = tmp_path / "copy"
+    write(root, "config/deployment/a/n.yaml", "deployment_name: Only\ndeployment_type: filesystem\n")
+    plan = tool.build_plan(root)
+    assert plan.texts[root / "config/deployment/a/n.yaml"] == "# Only\n" + tool.BLOCK_MARKER_LINE + "\ndeployment_type: filesystem\n"
+
+
+def test_the_comment_block_is_written_once_and_a_second_run_changes_nothing(tree):
+    assert tool.main(["--root", str(tree), "--apply"]) == 0
+    first = read(tree, "config/deployment/demo/d.yaml")
+    assert first == DEPLOYMENT_AFTER and first.count(tool.BLOCK_MARKER_LINE) == 1
     plan = tool.build_plan(tree)
-    assert any(c.case == "NOTE-NAME" and '"X"' in c.detail and '"T"' in c.detail for c in plan.cases)
-
-
-def test_a_removed_ui_title_that_differs_from_ui_label_is_counted_as_a_loss_of_text(tree):
+    assert plan.changes == [] and plan.blocks == []
+    # a file that already holds the block and gets the key back: the block is not written twice
+    write(tree, "config/deployment/demo/d.yaml", first + "deployment_name: Y\n")
     plan = tool.build_plan(tree)
-    notes = [c for c in plan.cases if c.case == "NOTE-TEXT"]
-    assert len(notes) == 3
+    assert plan.texts[tree / "config/deployment/demo/d.yaml"].count(tool.BLOCK_MARKER_LINE) == 1
+
+
+def test_the_dry_run_prints_every_block_in_full(tree, capsys):
+    tool.main(["--root", str(tree)])
+    out = capsys.readouterr().out
+    assert "COMMENT BLOCKS" in out and "PROVISIONAL" in out and "D-0479" in out
+    for line in DEPLOYMENT_BLOCK.splitlines():
+        assert line in out
+    assert "config/deployment/demo/d.yaml" in out
+
+
+def test_the_code_places_that_read_a_deployment_name_are_listed_and_not_changed(tmp_path):
+    root = tmp_path / "copy"
+    write(root, "app/src/bootloader.py", "x = 1\nself.deployment_name = a.get('deployment_name')\n")
+    write(root, "libs/connector/src/connector/base.py", "def get_deployment_name(self):\n    return 1\n")
+    write(root, "app/tests/test_dep.py", "body = {'deployment_name': 'x'}\n")
+    write(root, "libs/other/tests/test_o.py", "nothing here\n")
+    write(root, "app/src/server.py", "a = bootloader.app_features_display_name\n")
+    write(root, "app/modules/renamed_keys.py", "OLD = {'display_name': 'ui_label'}\n")
+    write(root, "docs/ref.qmd", "the `display_name` key\n")
+    before = digest(root)
+    plan = tool.build_plan(root)
+    places = {(c.file, c.line) for c in plan.code_places}
+    assert ("app/src/bootloader.py", 2) in places and ("libs/connector/src/connector/base.py", 1) in places and ("app/tests/test_dep.py", 1) in places
+    assert not any("test_o.py" in c.file for c in plan.code_places)
+    names = {(c.file, c.line, c.key, c.kind) for c in plan.code_places}
+    assert ("app/src/server.py", 1, "display_name", "code") in names and ("app/modules/renamed_keys.py", 1, "display_name", "code") in names
+    assert ("docs/ref.qmd", 1, "display_name", "doc") in names
+    assert digest(root) == before
+
+
+def test_a_removed_ui_title_that_differs_from_ui_label_is_an_open_case_with_the_full_text(tree):
+    plan = tool.build_plan(tree)
+    lost = [c for c in plan.cases if c.case == "OC16"]
+    assert len(lost) == 3
+    detail = " ".join(c.detail for c in lost)
+    assert "A longer group name" in detail and "A longer plot name" in detail and "A long title on two lines" in detail
+    assert 'ui_label is "P"' in detail
+    assert any(c.rule == "R05" for c in plan.changes)       # the removal itself stays applied
+
+
+def test_a_long_removed_title_is_printed_in_full(tmp_path, capsys):
+    root = tmp_path / "copy"
+    long_text = " ".join(f"word{i}" for i in range(40))
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml",
+          "id: r\nspec_version: 1\ninfo:\n  ui_label: R\nanalysis_groups:\n  g:\n    ui_label: G\n    plots:\n      p:\n        ui_label: P\n        ui_title: \"" + long_text + "\"\n")
+    tool.main(["--root", str(root)])
+    out = capsys.readouterr().out
+    assert out.count(long_text) >= 2                      # in the list of changes and in the open case
+    assert "OC16" in out and "kept nowhere" in out
+    assert "1 listed place(s) in 1 open case(s)" in out.split("Summary")[1].split("\n")[1]
+
+
+# -- safety: nothing is written through a shared file, nothing outside the report, all or nothing -----------------------------
+
+def hardlink_copy(source: Path, target: Path) -> None:
+    """What `cp -al` does: every file of the copy is the same file (same inode) as the original."""
+    import os
+    for path in sorted(source.rglob("*")):
+        destination = target / path.relative_to(source)
+        if path.is_dir():
+            destination.mkdir(parents=True, exist_ok=True)
+        else:
+            os.link(path, destination)
+
+
+def test_a_hard_linked_copy_is_refused_and_the_original_keeps_its_bytes(tree, tmp_path, capsys):
+    link = tmp_path / "linked"
+    hardlink_copy(tree, link)
+    before = digest(tree)
+    assert tool.main(["--root", str(link), "--apply"]) == 3
+    assert "hard link" in capsys.readouterr().err
+    assert digest(tree) == before and digest(link) == before
+
+
+def test_a_write_never_goes_through_a_shared_inode(tmp_path):
+    original = tmp_path / "a.yaml"
+    original.write_bytes(b"old\n")
+    shared = tmp_path / "b.yaml"
+    import os
+    os.link(original, shared)
+    tool.write_atomic(shared, "new\n")
+    assert original.read_bytes() == b"old\n" and shared.read_bytes() == b"new\n"
+    assert not [p for p in tmp_path.iterdir() if p.name not in ("a.yaml", "b.yaml")]      # no temporary file left
+
+
+def test_a_mixed_root_writes_nothing_before_it_refuses(tmp_path, capsys):
+    import os
+    root = tmp_path / "copy"
+    write(root, "config/app_features/a.yaml", APP_FEATURES)
+    outside = tmp_path / "outside"
+    write(outside, "b.yaml", APP_FEATURES)
+    (root / "config/app_features").mkdir(parents=True, exist_ok=True)
+    os.symlink(outside / "b.yaml", root / "config/app_features/b.yaml")
+    assert tool.main(["--root", str(root), "--apply"]) == 3
+    assert read(root, "config/app_features/a.yaml") == APP_FEATURES           # the inside file was planned first and is still untouched
+    assert (outside / "b.yaml").read_text(encoding="utf-8") == APP_FEATURES
+    assert "outside" in capsys.readouterr().err
+
+
+def test_the_report_cannot_replace_a_tracked_file_in_a_dry_run(tree, capsys):
+    target = tree / "README.md"
+    target.write_text("keep\n", encoding="utf-8")
+    assert tool.main(["--root", str(tree), "--report", str(target)]) == 3
+    assert target.read_text(encoding="utf-8") == "keep\n"
+    assert "already exists" in capsys.readouterr().err
+
+
+def test_the_report_inside_the_root_must_be_under_tmpAI(tree, capsys):
+    refused = tree / "notes" / "report.md"
+    assert tool.main(["--root", str(tree), "--report", str(refused)]) == 3
+    assert not refused.exists() and "tmpAI" in capsys.readouterr().err
+    allowed = tree / "tmpAI" / "r.md"
+    tool.main(["--root", str(tree), "--report", str(allowed)])
+    assert allowed.is_file()
+
+
+def test_the_report_refuses_a_second_write_to_the_same_name(tree, tmp_path):
+    report = tmp_path / "out" / "r.md"
+    tool.main(["--root", str(tree), "--report", str(report)])
+    first = report.read_bytes()
+    assert tool.main(["--root", str(tree), "--report", str(report)]) == 3
+    assert report.read_bytes() == first
+
+
+# -- line ends and the byte order mark -----------------------------------------------------------------------------------------
+
+def test_crlf_line_ends_are_kept_byte_for_byte_outside_the_changed_keys(tmp_path):
+    root = tmp_path / "copy"
+    raw = RECIPE.replace("\n", "\r\n").encode("utf-8")
+    path = root / "config/data_analysis_recipes/pipelines/r.yaml"
+    path.parent.mkdir(parents=True)
+    path.write_bytes(raw)
+    assert tool.main(["--root", str(root), "--apply"]) == 0
+    assert path.read_bytes() == RECIPE_AFTER.replace("\n", "\r\n").encode("utf-8")
+    dep = root / "config/deployment/d.yaml"
+    dep.parent.mkdir(parents=True)
+    dep.write_bytes(DEPLOYMENT.replace("\n", "\r\n").encode("utf-8"))
+    assert tool.main(["--root", str(root), "--apply"]) == 0
+    assert dep.read_bytes() == DEPLOYMENT_AFTER.replace("\n", "\r\n").encode("utf-8")
+
+
+def test_a_byte_order_mark_is_kept(tmp_path):
+    root = tmp_path / "copy"
+    path = root / "config/data_analysis_recipes/pipelines/r.yaml"
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b"\xef\xbb\xbf" + RECIPE.encode("utf-8"))
+    assert tool.main(["--root", str(root), "--apply"]) == 0
+    assert path.read_bytes() == b"\xef\xbb\xbf" + RECIPE_AFTER.encode("utf-8")
+    dep = root / "config/deployment/d.yaml"
+    dep.parent.mkdir(parents=True)
+    dep.write_bytes(b"\xef\xbb\xbf" + DEPLOYMENT.encode("utf-8"))
+    assert tool.main(["--root", str(root), "--apply"]) == 0
+    assert dep.read_bytes() == b"\xef\xbb\xbf" + DEPLOYMENT_AFTER.encode("utf-8")      # the block comes after the mark
+
+
+# -- the files read and not examined ---------------------------------------------------------------------------------------------
+
+def test_every_file_read_but_not_examined_is_listed_and_the_ones_with_display_keys_are_named(tmp_path, capsys):
+    root = tmp_path / "copy"
+    for i in range(15):
+        write(root, f"config/data_analysis_recipes/frag/f{i}.yaml", "steps: []\n" if i else "steps: []\nnested:\n  label: L\n")
+    plan = tool.build_plan(root)
+    assert len(plan.unexamined) == 15
+    assert [u for u, _ in plan.unexamined_keys] == ["config/data_analysis_recipes/frag/f0.yaml"]
+    tool.main(["--root", str(root)])
+    out = capsys.readouterr().out
+    assert out.count("config/data_analysis_recipes/frag/f") >= 16 and "f14.yaml" in out
+    assert "label" in out.split("not examined")[1]
+
+
+# -- the words of the script are true ------------------------------------------------------------------------------------------------
+
+def test_the_script_cites_written_lines_only():
+    text = Path(tool.__file__).read_text(encoding="utf-8")
+    assert "to be written" not in text and "no words of hers" not in text and "not yet written" not in text
+    assert "D-0475" in text and "D-0479" in text
+    assert "writes nothing except the report file you name" in text
 
 
 def test_info_keys_that_no_decision_renames_are_listed(tmp_path):
@@ -552,7 +770,7 @@ def test_an_empty_tree_gives_an_empty_plan(tmp_path, capsys):
 
 # -- the recipe banner switch (D-0470, D-0472) ---------------------------------------------------------------------------
 
-HIDDEN_FEATURES = "name: hidden\ndisplay_name: H\nui_title:\n  text: \"My banner\"\n  subtitle: \"Line\"\n  visible: false\nflags:\n  a: true\n"
+HIDDEN_FEATURES = "name: hidden\nui_label: H\nui_title:\n  text: \"My banner\"\n  subtitle: \"Line\"\n  visible: false\nflags:\n  a: true\n"
 USER_DEPLOYMENT = "deployment_type: filesystem\ndefault_app_features: \"hidden\"\nbranding:\n  theme_css: a.css\n  banner:\n    title: \"T\"\n    subtitle: \"S\"\n"
 OTHER_DEPLOYMENT = "deployment_type: filesystem\ndefault_app_features: \"other\"\nbranding:\n  contact: c\n"
 
@@ -603,7 +821,7 @@ def test_a_visible_true_ui_title_is_removed_with_what_it_set(tmp_path):
 
 def test_the_switch_is_written_in_the_one_deployment_that_uses_the_file(hidden):
     plan = tool.build_plan(hidden)
-    assert plan.texts[hidden / "config/app_features/hidden.yaml"] == "name: hidden\ndisplay_name: H\nflags:\n  a: true\n"
+    assert plan.texts[hidden / "config/app_features/hidden.yaml"] == "name: hidden\nui_label: H\nflags:\n  a: true\n"
     user = plan.texts[hidden / "config/deployment/a/user.yaml"]
     assert user.endswith("  banner:\n    ui_label: \"T\"\n    description: \"S\"\n  show_recipe_name: false\n")
     assert hidden / "config/deployment/a/other.yaml" not in plan.texts           # it uses another app features file
@@ -677,3 +895,12 @@ def test_help_names_the_modes_and_the_refusal(capsys):
     out = capsys.readouterr().out
     for word in ("--root", "--apply", "--report", "DRY RUN", "D-0407"):
         assert word in out
+
+
+def test_a_name_on_the_first_line_of_a_file_with_a_byte_order_mark_is_removed_and_the_mark_stays_first(tmp_path):
+    root = tmp_path / "copy"
+    path = root / "config/deployment/d.yaml"
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b"\xef\xbb\xbfdeployment_name: N\r\ndeployment_type: filesystem\r\n")
+    assert tool.main(["--root", str(root), "--apply"]) == 0
+    assert path.read_bytes() == b"\xef\xbb\xbf# N\r\n" + tool.BLOCK_MARKER_LINE.encode() + b"\r\ndeployment_type: filesystem\r\n"

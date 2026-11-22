@@ -12,28 +12,35 @@ The rules it applies (one table, `RULES` in this file, each with the ledger line
     the `label` of tables, joins and input fields -> ui_label                     (D-0468)
   deployment files:
     branding.banner.title -> ui_label, branding.banner.subtitle -> description    (D-0411)
-    deployment_name is removed, when a banner title takes its place              (D-0411)
+    deployment_name is removed from every deployment file, no name key in its place (D-0411, D-0479);
+    a short COMMENT block is written at the top of each file that had the key: its first line is the former name, then only what
+    the file itself states (default app features, default recipe, contact). Form and wording are PROVISIONAL (D-0479: not decided);
+    the dry run prints every block in full
   app features files:
     the key `ui_title {text, subtitle, visible}` is removed, what it set is printed (D-0411, D-0470);
-    a `visible: false` moves to ONE switch key of the deployment file, `branding.show_recipe_name: false` (D-0472, D-0474 to be
-    written), only where exactly one deployment names that file as its `default_app_features`; any other case keeps the `ui_title`
+    a `visible: false` moves to ONE switch key of the deployment file, `branding.show_recipe_name: false` (D-0472, D-0474),
+    only where exactly one deployment names that file as its `default_app_features`; any other case keeps the `ui_title`
     and is listed. The key is the constant `BANNER_SWITCH_KEY`
-Whatever else it finds that no decision covers is listed, never changed: the banner switch, `display_name` of app features, a name
+Whatever else it finds that no decision covers is listed, never changed: the banner switch, a name
 that has nowhere to go, `info.subtitle`, the Gallery generator, and so on. Decided points that need no change are listed with their
 counts (registries not renamed, format number 1, old sessions refused); a recipe with no name is listed as "would get the advice".
 A key present in the old and in the new spelling, or two old keys for one new key, is a CONFLICT: reported, not overwritten.
+The text of a removed group or plot `ui_title` is kept nowhere: each one is an OPEN case (OC16) printed in full with the `ui_label` beside it.
+The CODE places that read a `deployment_name` are listed (not changed): the pass must change them.
 
-It edits the TEXT at the positions the YAML parser reports, so comments, blank lines, key order, quoting and `!include` lines stay
-byte for byte outside the changed keys. A second run on a migrated copy finds nothing to change.
+It edits the TEXT at the positions the YAML parser reports (it reads and writes bytes), so comments, blank lines, line ends (LF or CRLF),
+a byte order mark, key order, quoting and `!include` lines stay byte for byte outside the changed keys. A second run on a migrated copy finds nothing to change.
 
 Modes:
-  (default)   DRY RUN: nothing is written.
-  --report F  also write the list as markdown to the file F (never over a file it scans).
+  (default)   DRY RUN: writes nothing except the report file you name with --report.
+  --report F  also write the list as markdown to the NEW file F: F must not exist, and inside the project folder it must be under tmpAI/.
   --apply     writes the planned changes, but ONLY on a copy: --root must be given and must not be the repository itself, a folder
               that contains it or a git working tree. On the repository it refuses (exit 3): the pass waits for the owner's answers.
+              Every target is checked BEFORE the first write (inside the root, a plain file, no hard link: all or nothing), and each
+              file is written through a temporary file and `os.replace`, so a file that shares its inode with another one is never truncated.
 
 Exit codes: dry run 0 = nothing to change, 1 = something would change; --apply 0 = written; 2 = a conflict, a place that cannot
-be placed or a banner switch with no key name exists (what could be placed is still planned or written); 3 = refused to run (--apply on the repository, bad --report).
+be placed or a banner switch with no key name exists (what could be placed is still planned or written); 3 = refused to run (--apply on the repository, a target that cannot be written safely, bad --report).
 
 Examples:
   PYTHONPATH=. .venv/bin/python assets/scripts/migrate_display_names.py
@@ -45,13 +52,15 @@ Examples:
 # provides: script:migrate_display_names
 # consumes: -
 # consumed_by: app/tests/test_migrate_display_names.py
-# doc: .claude/knowledge/decision_ledger.md (D-0407 to D-0412, D-0459, D-0236), .claude/tasks/tasks.md (NAMES-UI-LABEL-EVERYWHERE), .claude/rules/rules_asset_scripts.md
+# doc: .claude/knowledge/decision_ledger.md (D-0407 to D-0412, D-0459, D-0236, D-0468 to D-0475, D-0479), .claude/tasks/tasks.md (NAMES-UI-LABEL-EVERYWHERE), .claude/rules/rules_asset_scripts.md
 # @end_deps
 import argparse
 import json
 import os
 import re
+import shutil
 import sys
+import tempfile
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -74,6 +83,18 @@ SCAN = (
 KIND_ORDER = ("recipes", "recipe templates", "Gallery bundles", "test fixtures", "deployment files", "deployment templates", "app features files")
 SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".pytest_cache"}
 INCLUDE_TAG = "!include"
+
+# PROVISIONAL (form and wording not decided: D-0479). The comment block written at the top of a deployment file that had a
+# `deployment_name`. ONE template: the first line is the former name (BLOCK_NAME_LINE), the second is the fixed marker line that
+# says the block exists (a second run finds it and writes nothing), then one line per fact the FILE ITSELF states, in this order;
+# a line the file cannot fill is left out. Nothing here is read by the app, and nothing is invented.
+BLOCK_NAME_LINE = "# {name}"
+BLOCK_MARKER_LINE = "# Description of this deployment, written by the names pass; the app does not read it."
+BLOCK_FACTS = (
+    ("Default app features", ("default_app_features",)),
+    ("Default recipe", ("default_data_analysis_recipe",)),
+    ("Contact", ("branding", "contact")),
+)
 
 
 @dataclass(frozen=True)
@@ -99,17 +120,19 @@ RULES: List[Rule] = [
     Rule("R05", "recipe.plot", "ui_title", None, "D-0409", "(2) ... the plot's `ui_title` as the report name goes with it; D-0410: `ui_title` leaves the recipe format entirely"),
     Rule("R06", "deployment.banner", "title", "ui_label", "D-0411", "`title` becomes `ui_label`, `subtitle` becomes `description` (re-check row 3)"),
     Rule("R07", "deployment.banner", "subtitle", "description", "D-0411", "`title` becomes `ui_label`, `subtitle` becomes `description` (re-check row 3)"),
-    Rule("R08", "deployment.top", "deployment_name", None, "D-0411", "`deployment_name` is REMOVED; the banner's `ui_label` is the deployment's name (re-check row 4); kept and listed when no banner title can take the name"),
+    Rule("R08", "deployment.top", "deployment_name", None, "D-0479", "her words: Q1 - suggestion accepted - please ensure those are populated using the current \"deployement_name\" Q2 C (the review session's reading, not hers: `deployment_name` is removed from every deployment file, with no name key in its place; D-0411 point 4)"),
     Rule("R09", "app_features.top", "ui_title", None, "D-0411", "The app features key `ui_title {text, subtitle, visible}` ... is REMOVED (re-check row 1)"),
     Rule("R10", "recipe.schema", "label", "ui_label", "D-0468", "her words: 2.I think yes because we need to differentiate the recipe and the python code. (the review session's reading, not hers: the display keys `label` of RECIPE files (`info`, table, join, field) become `ui_label`)"),
     Rule("R11", "recipe.join", "label", "ui_label", "D-0468", "her words: 2.I think yes because we need to differentiate the recipe and the python code. (the review session's reading, not hers: the display keys `label` of RECIPE files (`info`, table, join, field) become `ui_label`)"),
     Rule("R12", "recipe.field", "label", "ui_label", "D-0468", "her words: 2.I think yes because we need to differentiate the recipe and the python code. (the review session's reading, not hers: the display keys `label` of RECIPE files (`info`, table, join, field) become `ui_label`)"),
-    Rule("R13", "app_features.top", "display_name", None, "D-0407", "D-0411 names only `ui_title` of the app features file; D-0412: the key lists are not decided", "OPEN", "OC07"),
-    Rule("R14", "deployment.switch", "ui_title.visible: false", "branding.show_recipe_name: false", "D-0474 (to be written)",
-         "her words: H1 proposal accepted. (D-0472: the switch sits in the deployment file; the key `branding.show_recipe_name: true|false`, read as true when absent; relayed by the coordinator, ledger line not yet written)"),
+    Rule("R13", "app_features.top", "display_name", "ui_label", "D-0480", "her words: display_name to ui_label. (D-0407: every display key carries the prefix; the key `name`, the id of the file, is not touched)"),
+    Rule("R14", "deployment.switch", "ui_title.visible: false", "branding.show_recipe_name: false", "D-0474",
+         "her words: H1 proposal accepted. (D-0472: the switch sits in the deployment file; the key `branding.show_recipe_name: true|false`, read as true when absent)"),
+    Rule("R15", "deployment.block", "deployment_name", "a comment block at the top of the file", "D-0479",
+         "her words: please ensure those are populated using the current \"deployement_name\" (the review session's reading, not hers: the first line of the block is the former name, then only what the file itself states; form and wording NOT decided, PROVISIONAL)"),
 ]
 
-# The ONE constant of the recipe banner switch (D-0470, D-0472, D-0474 to be written): the dotted path of its key in a deployment
+# The ONE constant of the recipe banner switch (D-0470, D-0472, D-0474): the dotted path of its key in a deployment
 # file, read as true when absent. While it is None the script refuses to write that key, keeps the `ui_title` of an app features
 # file that says `visible: false` and lists the case (OC15). Set, the pass writes `<key>: false` at the end of that block of the
 # deployment that names the app features file as its `default_app_features`, but ONLY where the mapping is one to one: exactly one
@@ -126,15 +149,11 @@ OPEN_CASES: Dict[str, Dict[str, str]] = {
     "OC03": {"title": "DECIDED: the recipe format number stays 1",
              "words": "D-0469 (her words: we are still in development so the same format can stay): the recipe format number stays 1. The count shows the spec_version of every master recipe."},
     "OC04": {"title": "DECIDED: old session files are refused, not converted",
-             "words": "D-0471 (the review session's reading, resting on D-0312; no words of hers confirm this point): old session files are refused with a plain line, no conversion. The script lists where a session holds a name key and never touches a session."},
+             "words": "D-0475 (her words: 3, 4, 6, 7. accepted.; point 4 as the review session reports it: a saved session with an old name key is refused with a plain line, no conversion, resting on D-0312, D-0471): "
+                      "old session files are refused, not converted. The script lists where a session holds a name key and never touches a session."},
     "OC05": {"title": "What the Gallery writes in `info`, and where a Gallery description lives",
              "words": "D-0408: NOT decided: what the Gallery generator writes in `info` (Gallery question Q8). The KEY of a Gallery bundle is renamed like any recipe's "
                       "(D-0407: `ui_` in every file kind; D-0468: the `label` of recipe files); what `info` is for in an example is open."},
-    "OC06": {"title": "deployment_name with no banner title to take it",
-             "words": "D-0411: `deployment_name` is REMOVED; the banner's `ui_label` is the deployment's name. With no banner title the name would be lost: "
-                      "the key is kept and listed. Give the deployment a banner, or accept that the name goes?"},
-    "OC07": {"title": "The key `display_name` of app features files",
-             "words": "D-0407: every display key carries the prefix; D-0411 names only the app features key `ui_title`; D-0412: the key lists are not decided."},
     "OC09": {"title": "Display-like keys that no decision names (for example `info.subtitle`)",
              "words": "D-0408: `info` is the free information block: every key written is shown. No line renames or removes these keys."},
     "OC10": {"title": "Comments that name an old key (a person must reword them)",
@@ -148,17 +167,16 @@ OPEN_CASES: Dict[str, Dict[str, str]] = {
              "words": "The file is not examined; nothing is changed in it."},
     "OC15": {"title": "The on/off switch of the recipe banner: where the mapping app features file -> deployment is not one to one",
              "words": "D-0470: ONE switch stays (show the recipe name: yes or no; no text override). D-0472 (her words: I should sit in the deployement H1): it sits in the DEPLOYMENT file; "
-                      "the key is `branding.show_recipe_name` (her words: H1 proposal accepted; D-0474 to be written). The script writes it only where exactly one deployment names the "
+                      "the key is `branding.show_recipe_name` (her words: H1 proposal accepted; D-0474). The script writes it only where exactly one deployment names the "
                       "app features file as its default; any other case keeps the `ui_title` and is listed here."},
     "CONFLICT": {"title": "A key in the old and in the new spelling, or two old keys for one new key",
                  "words": "Not overwritten: a person chooses which text is kept."},
-    "NOTE-NAME": {"title": "Note: the text of a removed deployment_name differs from the banner title",
-                  "words": "D-0411 (4): the banner's `ui_label` is the deployment's name; the old name text is not kept."},
-    "NOTE-TEXT": {"title": "Note: the text of a removed `ui_title` differs from the `ui_label`",
-                  "words": "D-0409: the removed text is kept nowhere (it is printed in the list of changes)."},
+    "OC16": {"title": "The longer title of a group or a plot is removed and kept nowhere: where does the text go?",
+             "words": "D-0409 (1), (2): a group's and a plot's `ui_title` is removed from the format and the report uses the `ui_label`. The removal is applied as decided; the TEXT of each title "
+                      "is kept nowhere. Each text is printed in full below, with the `ui_label` that replaces it, so that the owner can say where a longer text belongs (for example `description`)."},
 }
 # the order of the sections; the decided ones, the advice and the notes are not open
-CASE_ORDER = ["OC15", "OC07", "OC09", "OC06", "OC11", "OC13", "OC14", "CONFLICT", "OC05", "OC10", "OC01", "OC02", "OC03", "OC04", "NOTE-NAME", "NOTE-TEXT"]
+CASE_ORDER = ["OC16", "OC15", "OC09", "OC11", "OC13", "OC14", "CONFLICT", "OC05", "OC10", "OC01", "OC02", "OC03", "OC04"]
 DECIDED_CASES = ("OC02", "OC03", "OC04")
 ADVICE_CASES = ("OC01",)
 BLOCKING_CASES = ("CONFLICT", "OC13", "OC15")
@@ -192,6 +210,22 @@ class Case:
 
 
 @dataclass
+class Block:
+    file: str
+    lines: List[str]
+    placement: str
+
+
+@dataclass
+class CodePlace:
+    file: str
+    line: int
+    text: str
+    kind: str                  # code, test or doc
+    key: str = "deployment_name"
+
+
+@dataclass
 class Plan:
     root: Path
     changes: List[Change] = field(default_factory=list)
@@ -201,6 +235,9 @@ class Plan:
     scanned: Set[Path] = field(default_factory=set)
     unexamined: List[str] = field(default_factory=list)
     facts: List[str] = field(default_factory=list)     # what the owner needs to name the banner switch (D-0472)
+    blocks: List[Block] = field(default_factory=list)  # the comment blocks of D-0479
+    code_places: List[CodePlace] = field(default_factory=list)
+    unexamined_keys: List[Tuple[str, str]] = field(default_factory=list)
 
     @property
     def blocking(self) -> List[Case]:
@@ -213,6 +250,7 @@ class Doc:
     text: str
     root: Optional[yaml.Node]
     kind: str
+    nl: str = "\n"            # the line end the file uses (the first one it has)
 
 
 # -- small helpers on the YAML node graph ---------------------------------------------------------------------------------
@@ -255,10 +293,10 @@ def scalar_value(node) -> Optional[str]:
     return None
 
 
-def shown_value(node) -> str:
+def shown_value(node, full: bool = False) -> str:
     text = scalar_value(node)
     if text is not None:
-        return text if len(text) <= 90 else text[:87] + "..."
+        return text if (full or len(text) <= 90) else text[:87] + "..."
     if isinstance(node, yaml.MappingNode):
         return "a mapping (" + ", ".join(f"{key_text(k)}: {scalar_value(v) if scalar_value(v) is not None else '(empty)'}" for k, v in node.value) + ")"
     return "(empty)"
@@ -274,6 +312,8 @@ def removal_range(doc: Doc, mapping, k, v) -> Optional[Tuple[int, int]]:
         return None
     text = doc.text
     start = text.rfind("\n", 0, k.start_mark.index) + 1
+    if start == 0 and text.startswith("\ufeff"):
+        start = 1                                    # the byte order mark is not part of the first line
     if text[start:k.start_mark.index].strip():
         return None
     key_line_end = after_line(text, k.end_mark.index)
@@ -322,8 +362,9 @@ class Builder:
         if path in self.docs:
             return self.docs[path]
         try:
-            text = path.read_text(encoding="utf-8")
-            doc = Doc(path, text, yaml.compose(text, Loader=yaml.SafeLoader), kind)
+            text = path.read_bytes().decode("utf-8")      # bytes: line ends and the byte order mark stay as they are
+            first = text.find("\n")
+            doc = Doc(path, text, yaml.compose(text, Loader=yaml.SafeLoader), kind, "\r\n" if first > 0 and text[first - 1] == "\r" else "\n")
         except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:
             self.docs[path] = None
             self.case("OC14", None, None, f"cannot be read: {str(exc).splitlines()[0] if str(exc) else type(exc).__name__}", self.rel(path))
@@ -398,12 +439,13 @@ class Builder:
                         label = present.get("ui_label")
                         old_text, label_text = scalar_value(v), scalar_value(label[1]) if label else None
                         if old_text is not None and old_text != label_text:
-                            self.case("NOTE-TEXT", doc, k, f"{where}.ui_title \"{old_text}\" is removed; ui_label is \"{label_text}\"")
+                            self.case("OC16", doc, k, f"{where}.ui_title \"{old_text}\" is removed and kept nowhere; "
+                                      + (f"ui_label is \"{label_text}\"" if label_text is not None else "there is no ui_label beside it"))
                 else:
                     start, end = k.start_mark.index, k.end_mark.index
                     quote = doc.text[start] if doc.text[start] in "\"'" else ""
                     self.edit(doc, start, end, f"{quote}{new}{quote}")
-                self.change(r, doc, k, where, shown_value(v))
+                self.change(r, doc, k, where, shown_value(v, full=r.id in ("R04", "R05")))
         for r in rules:
             if r.status == "OPEN" and r.old in present:
                 self.case(r.case, doc, present[r.old][0], f"{where}.{r.old}: {shown_value(present[r.old][1])}")
@@ -486,17 +528,10 @@ class Builder:
         bres = self.mapping_of(doc, branding[1]) if branding else None
         banner = find(bres[1], "banner") if bres else None
         ares = self.mapping_of(bres[0], banner[1]) if (bres and banner) else None
-        skip: Set[str] = set()
         name = find(top, "deployment_name")
+        self.apply_place(doc, top, "deployment.top", "", watch={"title", "subtitle", "label", "display_name", "ui_title"})
         if name is not None:
-            title = next((find(ares[1], k) for k in ("title", "ui_label") if ares and find(ares[1], k)), None)
-            if title is None:
-                skip.add("R08")
-                self.case("OC06", doc, name[0], f"deployment_name \"{scalar_value(name[1])}\" has no banner title to take it; the key is kept")
-            elif scalar_value(name[1]) != scalar_value(title[1]):
-                banner_title = f"\"{scalar_value(title[1])}\"" if scalar_value(title[1]) else "empty (a hidden banner)"
-                self.case("NOTE-NAME", doc, name[0], f"deployment_name \"{scalar_value(name[1])}\" is removed; the banner title is {banner_title}")
-        self.apply_place(doc, top, "deployment.top", "", skip=skip, watch={"title", "subtitle", "label", "display_name", "ui_title"})
+            self.comment_block(doc, top, name)
         if ares:
             self.apply_place(ares[0], ares[1], "deployment.banner", "branding.banner")
         default = find(top, "default_app_features")
@@ -509,6 +544,39 @@ class Builder:
         self.plan.facts.append(f"{self.rel(doc.path)}: default_app_features = {scalar_value(default[1]) if default else '(none)'}; "
                                f"branding keys: {branding_keys}; banner keys: {banner_keys}; the banner shows: {shows}")
         self.deployments.append((doc, scalar_value(default[1]) if default else None, bres[1] if bres else None, shows))
+
+    def comment_block(self, doc: Doc, top, name) -> None:
+        """D-0479: the former `deployment_name` goes into a comment block at the top of the file (PROVISIONAL form: BLOCK_* constants)."""
+        text = scalar_value(name[1])
+        removed = any(c.rule == "R08" and c.file == self.rel(doc.path) for c in self.plan.changes)
+        if not text or not removed or BLOCK_MARKER_LINE in doc.text:
+            return
+        lines = [BLOCK_NAME_LINE.format(name=text), BLOCK_MARKER_LINE]
+        for label, path in BLOCK_FACTS:
+            node, holder = top, doc
+            for part in path:
+                found = find(node, part)
+                if found is None:
+                    node = None
+                    break
+                node = found[1]
+                if is_include(node):
+                    res = self.mapping_of(holder, node)
+                    node, holder = (res[1], res[0]) if res else (None, holder)
+            value = scalar_value(node) if node is not None else None
+            if value:
+                lines.append(f"# {label}: {value}")
+        at = 1 if doc.text.startswith("\ufeff") else 0
+        leading = 0
+        for line in doc.text[at:].splitlines():
+            if not line.startswith("#"):
+                break
+            leading += 1
+        placement = ("at the top of the file, before the existing leading comment (%d line(s)), which is kept below it" % leading) if leading \
+            else "at the top of the file (the file has no leading comment)"
+        self.edit(doc, at, at, doc.nl.join(lines) + doc.nl)
+        self.plan.blocks.append(Block(self.rel(doc.path), lines, placement))
+        self.plan.changes.append(Change("R15", self.rel(doc.path), 1, "deployment_name", "a comment block at the top of the file", text, "D-0479", doc.kind))
 
     def app_features(self, doc: Doc) -> None:
         top = doc.root
@@ -556,13 +624,13 @@ class Builder:
                 return self.keep_ui_title(doc, ui, facts)
             col = parent.value[0][0].start_mark.column
             pos = after_line(d_doc.text, content_end(parent.value[-1][1]))
-            lead = "\n" if pos == len(d_doc.text) and not d_doc.text.endswith("\n") else ""
-            planned.append((d_doc, pos, f"{lead}{' ' * col}{parts[-1]}: false\n", parent.value[0][0]))
+            lead = d_doc.nl if pos == len(d_doc.text) and not d_doc.text.endswith("\n") else ""
+            planned.append((d_doc, pos, f"{lead}{' ' * col}{parts[-1]}: false{d_doc.nl}", parent.value[0][0]))
         skip.discard("R09")
         for d_doc, pos, text, anchor in planned:
             self.edit(d_doc, pos, pos, text)
             self.plan.changes.append(Change("R14", self.rel(d_doc.path), anchor.start_mark.line + 1, f"{self.rel(doc.path)}: ui_title.visible: false",
-                                            BANNER_SWITCH_KEY, "false", "D-0474 (to be written)", d_doc.kind))
+                                            BANNER_SWITCH_KEY, "false", "D-0474", d_doc.kind))
 
     def keep_ui_title(self, doc: Doc, ui, facts: str) -> None:
         self.case("OC15", doc, ui[0], facts + ". NOT WRITTEN: the switch could not be placed in every deployment; this ui_title is kept")
@@ -572,6 +640,46 @@ class Builder:
             m = COMMENT.search(line)
             if m and OLD_WORDS.search(m.group(1)):
                 self.case("OC10", doc, None, m.group(1).strip()[:110], line=number)
+
+
+def display_keys(node, found: Optional[list] = None) -> list:
+    """The display-like keys written anywhere in a file (key, first line), for the files the script reads but does not examine."""
+    found = [] if found is None else found
+    if isinstance(node, yaml.MappingNode):
+        for k, v in node.value:
+            t = key_text(k)
+            if t in DISPLAYISH | {"ui_label"} and t not in {x for x, _ in found}:
+                found.append((t, k.start_mark.line + 1))
+            display_keys(v, found)
+    elif isinstance(node, yaml.SequenceNode):
+        for v in node.value:
+            display_keys(v, found)
+    return found
+
+
+CODE_KEYS = ("deployment_name", "display_name")      # D-0479, D-0480: the old keys that code, tests and docs still read or write
+DOC_FOLDERS = ("docs", ".claude/rules")
+
+
+def code_places(b: "Builder", root: Path) -> None:
+    """Where code, tests and docs read or write a removed key (listed for the pass; never changed). Text match: a person reads each line."""
+    for folder, suffixes in (("app", (".py",)), ("libs", (".py",)), ("assets/scripts", (".py",)), ("scripts", (".py",)),
+                             ("docs", (".qmd", ".md")), (".claude/rules", (".md",))):
+        base = root / folder
+        if not base.is_dir():
+            continue
+        for dirpath, dirnames, filenames in os.walk(base):
+            dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS)
+            for n in sorted(filenames):
+                if not n.endswith(suffixes) or "migrate_display_names" in n:
+                    continue
+                path = Path(dirpath) / n
+                rel = b.rel(path)
+                kind = "doc" if folder in DOC_FOLDERS else "test" if ("tests" in Path(rel).parts or n.startswith("test_")) else "code"
+                for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+                    for key in CODE_KEYS:
+                        if key in line and not (key == "deployment_name" and kind == "doc" and False):
+                            b.plan.code_places.append(CodePlace(rel, number, line.strip()[:110], kind, key))
 
 
 def classify(rel: str, family: str) -> str:
@@ -687,6 +795,9 @@ def build_plan(root: Path) -> Plan:
         if (doc is not None and family in ("recipe", "fixture", "gallery") and isinstance(doc.root, yaml.MappingNode)
                 and find(doc.root, "spec_version") is None and path not in b.included and path.name != "data_analysis_recipe.yaml"):
             b.plan.unexamined.append(b.rel(path))
+            keys = display_keys(doc.root)
+            if keys:
+                b.plan.unexamined_keys.append((b.rel(path), ", ".join(f"{k} (line {n})" for k, n in keys)))
     b.case("OC03", None, None, "spec_version found in " + (", ".join(f"{k} x{n}" for k, n in sorted(formats.items())) or "no recipe") + " master recipe(s)")
     bundles_meta = len(list((root / "assets/gallery_data").glob("*/example_meta.md"))) if (root / "assets/gallery_data").is_dir() else 0
     b.case("OC05", None, None, f"{gallery_bundles} Gallery bundle(s); keys written in their `info`: "
@@ -694,6 +805,7 @@ def build_plan(root: Path) -> Plan:
            + f"; {bundles_meta} bundle(s) with an example_meta.md (the guidance text)")
     registry_cases(b, root)
     session_cases(b, root)
+    code_places(b, root)
 
     # texts
     for path, edits in b.edits.items():
@@ -726,6 +838,7 @@ def lines_of(plan: Plan, md: bool, header: str) -> List[str]:
     def section_of(case: str) -> str:
         return "decided" if case in DECIDED_CASES else "advice" if case in ADVICE_CASES else "note" if case.startswith("NOTE") else "open"
     real = {k: [e for e in v if e.file or e.line] for k, v in cases_by.items() if section_of(k) == "open"}
+    real = {k: v for k, v in real.items() if v}
     out += ["", h2 + "Summary"]
     out.append(f"{len(plan.changes)} change(s) in {len(plan.texts)} file(s); "
                f"{sum(len(v) for v in real.values())} listed place(s) in {len(real)} open case(s); "
@@ -770,17 +883,35 @@ def lines_of(plan: Plan, md: bool, header: str) -> List[str]:
                 out.append(("- " if md else "  ") + where + e.detail)
 
     block("open", "CANNOT BE DECIDED BY THE SCRIPT", "(listed, never changed; each line is a place a person or the owner decides)")
+    out += ["", h2 + "COMMENT BLOCKS the script would write at the top of each deployment file (D-0479; form and wording PROVISIONAL: not decided)",
+            "(the first line is the former `deployment_name`; the second is the fixed marker line that tells a second run that the block exists; then only what the file itself states. "
+            "Read the wording: it can be changed in one place, the BLOCK_* constants at the top of the script, before anything is applied.)"]
+    if not plan.blocks:
+        out.append("no block would be written")
+    for blk in plan.blocks:
+        out.append("")
+        out.append(("**" + blk.file + "**" if md else blk.file) + f": {blk.placement}")
+        out += (["```"] + blk.lines + ["```"]) if md else ["    " + line for line in blk.lines]
+    out += ["", h2 + "CODE places that read or write a removed key (the pass must change them; not changed here; text match, a person reads each line)"]
+    for key, why in (("deployment_name", "D-0479: the key goes; the bootloader and the connector hold no deployment name"),
+                     ("display_name", "D-0480: the key becomes ui_label in app features files (the reader `app_features_display_name`, the allowed keys of the validator, the old-key refusal)")):
+        out.append(f"{key} ({why}):")
+        for kind, title in (("code", "code"), ("test", "tests"), ("doc", "docs")):
+            places = [c for c in plan.code_places if c.kind == kind and c.key == key]
+            out.append(f"  {title}: {len(places)} place(s) in {len({c.file for c in places})} file(s)")
+            out += [("  - " if md else "    ") + f"{c.file}:{c.line}: {c.text}" for c in places]
     out += ["", h2 + "Facts to name the recipe banner switch (D-0472)",
             "(per deployment file: its default app features file and the keys of its `branding` block; per app features file: what its `ui_title` sets today. "
             "The list of allowed deployment keys does not exist yet: D-0412 asks for it, it comes with the deployment standard; today the only refusal tables are "
             "app/modules/renamed_keys.py and the readers app/src/bootloader.py:591, 874, 877-879)"]
     out += [("- " if md else "  ") + f for f in plan.facts]
     block("advice", "WOULD GET THE ADVICE (no recipe name)", "(not an error, D-0470: the file name is shown where a name is needed)")
-    block("decided", "DECIDED, nothing for the script to change (counts only)", "(D-0468, D-0469, D-0471)")
-    block("note", "Notes on the changes above", "(consequences of rules that are applied)")
+    block("decided", "DECIDED, nothing for the script to change (counts only)", "(D-0468, D-0469, D-0471, D-0475)")
     if plan.unexamined:
-        out += ["", f"{len(plan.unexamined)} file(s) read but not examined as a recipe (no spec_version, included by no recipe): "
-                + ", ".join(plan.unexamined[:12]) + (" ..." if len(plan.unexamined) > 12 else "")]
+        out += ["", h2 + f"{len(plan.unexamined)} file(s) read but not examined (no spec_version, included by no recipe)"]
+        out += [("- " if md else "  ") + f for f in plan.unexamined]
+        out += ["", f"{len(plan.unexamined_keys)} of them hold display-like keys (label, name, title, subtitle, display_name, ui_title, ui_label) that the script did not look at:"]
+        out += [("- " if md else "  ") + f"{f}: {keys}" for f, keys in plan.unexamined_keys]
     return out
 
 
@@ -797,10 +928,52 @@ def apply_refusal(root: Path, given: bool) -> Optional[str]:
     return None
 
 
+def report_refusal(target: Path, root: Path) -> Optional[str]:
+    """A dry run writes nothing except the report file: it must be a NEW file, and inside the project folder only under tmpAI/."""
+    if target.exists() or target.is_symlink():
+        return f"REFUSED: --report would overwrite a file that already exists: {target}. Name a new file."
+    real = Path(os.path.realpath(target))
+    for base in {Path(os.path.realpath(root)), Path(os.path.realpath(PROJECT_ROOT))}:
+        if real.is_relative_to(base) and not real.is_relative_to(base / "tmpAI"):
+            return f"REFUSED: --report {target} lies inside the project folder {base} but not under tmpAI/. Name a file under tmpAI/ or outside the folder."
+    return None
+
+
+def write_refusal(path: Path, real_root: Path) -> Optional[str]:
+    """Why a planned file must not be written, or None. Checked for EVERY file before the first one is written."""
+    real = Path(os.path.realpath(path))
+    if not real.is_relative_to(real_root):
+        return f"REFUSED: {path} is outside the root ({real}); nothing is written"
+    if not real.is_file():
+        return f"REFUSED: {path} is not a plain file; nothing is written"
+    links = real.stat().st_nlink
+    if links > 1:
+        return (f"REFUSED: {path} has {links} hard links: it shares its content with another file (a copy made with `cp -al` shares files "
+                "with the original, possibly with tracked files of the repository). Make a real copy (`cp -r`); nothing is written")
+    return None
+
+
+def write_atomic(path: Path, text: str) -> None:
+    """Write through a temporary file in the same folder and `os.replace`: a file that shares an inode with another is never truncated."""
+    real = Path(os.path.realpath(path))
+    fd, tmp = tempfile.mkstemp(dir=real.parent, prefix=".names_", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(text.encode("utf-8"))
+            handle.flush()
+            os.fsync(handle.fileno())
+        shutil.copymode(real, tmp)
+        os.replace(tmp, real)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--root", default=None, help="the folder to read (default: the project root); the folder that holds config/ and assets/gallery_data/")
-    parser.add_argument("--report", default=None, help="also write the list as markdown to this file")
+    parser.add_argument("--report", default=None, help="also write the list as markdown to this NEW file (it must not exist; inside the project folder only under tmpAI/)")
     parser.add_argument("--apply", action="store_true", help="write the changes; only on a copy (--root given, not the repository, not a git working tree)")
     args = parser.parse_args(argv)
     root = Path(os.path.abspath(args.root)) if args.root else PROJECT_ROOT
@@ -809,29 +982,34 @@ def main(argv=None) -> int:
         if refusal:
             print(refusal, file=sys.stderr)
             return 3
-    plan = build_plan(root)
-    if args.report:
-        target = Path(os.path.abspath(args.report))
-        if target in plan.scanned or Path(os.path.realpath(target)) in {Path(os.path.realpath(p)) for p in plan.scanned}:
-            print(f"REFUSED: --report would overwrite a file the script reads: {target}", file=sys.stderr)
+    target = Path(os.path.abspath(args.report)) if args.report else None
+    if target is not None:
+        refusal = report_refusal(target, root)
+        if refusal:
+            print(refusal, file=sys.stderr)
             return 3
+    plan = build_plan(root)
+    if args.apply:
+        real_root = Path(os.path.realpath(root))
+        for path in plan.texts:
+            refusal = write_refusal(path, real_root)
+            if refusal:
+                print(refusal, file=sys.stderr)
+                return 3
     if any(c.case == "OC15" for c in plan.cases):
         print("NOT WRITTEN: an app features file hides the recipe banner (ui_title.visible: false) and the switch that replaces it was not written "
               "(see the case OC15 of the list for the reason). That ui_title is kept.", file=sys.stderr)
-    header = ("APPLY" if args.apply else "DRY RUN: nothing is written") + f". Root: {root}"
+    header = ("APPLY" if args.apply else "DRY RUN: writes nothing except the report file you name") + f". Root: {root}"
     for line in lines_of(plan, False, header):
         print(line)
-    if args.report:
+    if target is not None:
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text("\n".join(lines_of(plan, True, "Names pass: dry run report (" + header + ")")) + "\n", encoding="utf-8")
+        with target.open("x", encoding="utf-8", newline="") as handle:
+            handle.write("\n".join(lines_of(plan, True, "Names pass: dry run report (" + header + ")")) + "\n")
         print(f"report written: {target}")
     if args.apply:
-        real_root = Path(os.path.realpath(root))
         for path, text in plan.texts.items():
-            if not Path(os.path.realpath(path)).is_relative_to(real_root):
-                print(f"REFUSED: {path} is outside the root; nothing more is written", file=sys.stderr)
-                return 3
-            path.write_text(text, encoding="utf-8")
+            write_atomic(path, text)
         print(f"applied: {len(plan.texts)} file(s) written")
         return 2 if plan.blocking else 0
     if plan.blocking:
