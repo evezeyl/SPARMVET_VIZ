@@ -129,8 +129,7 @@ ui_title:
 flags:
   a: true
 """
-APP_FEATURES_AFTER = """name: "f"
-ui_label: "F name"
+APP_FEATURES_AFTER = """ui_label: "F name"
 flags:
   a: true
 """
@@ -226,8 +225,8 @@ def test_banner_keys_are_renamed_and_deployment_name_is_removed(tree):
 
 def test_app_features_ui_title_block_is_removed_and_display_name_becomes_ui_label_and_name_stays(tree):
     plan = tool.build_plan(tree)
-    assert plan.texts[tree / "config/app_features/f.yaml"] == APP_FEATURES_AFTER      # `name: "f"` (the id) is untouched
-    assert {"R09", "R13"} <= set(rules_of(plan))
+    assert plan.texts[tree / "config/app_features/f.yaml"] == APP_FEATURES_AFTER      # the key `name` is removed (D-0481)
+    assert {"R09", "R13", "R16"} <= set(rules_of(plan))
     assert not any(c.case == "OC07" for c in plan.cases)
     assert [c.ledger for c in plan.changes if c.rule == "R13"] == ["D-0480"]
 
@@ -237,7 +236,8 @@ def test_an_app_features_file_with_display_name_and_ui_label_is_a_conflict_and_i
     text = "name: f\ndisplay_name: A\nui_label: B\n"
     write(root, "config/app_features/f.yaml", text)
     plan = tool.build_plan(root)
-    assert plan.texts == {} and any(c.case == "CONFLICT" and "display_name" in c.detail for c in plan.cases)
+    assert plan.texts == {root / "config/app_features/f.yaml": "display_name: A\nui_label: B\n"}      # only the name key goes; the conflict is not overwritten
+    assert any(c.case == "CONFLICT" and "display_name" in c.detail for c in plan.cases)
 
 
 def test_a_gallery_bundle_is_planned_like_a_recipe(tree):
@@ -250,7 +250,7 @@ def test_counts_per_file_kind(tree):
     plan = tool.build_plan(tree)
     assert plan.kind_counts["recipes"]["changes"] == 7 and plan.kind_counts["recipes"]["files"] == 2
     assert plan.kind_counts["deployment files"]["changes"] == 4          # the banner title, the subtitle, the name, the comment block
-    assert plan.kind_counts["app features files"]["changes"] == 2          # the ui_title block, display_name -> ui_label
+    assert plan.kind_counts["app features files"]["changes"] == 3          # the ui_title block, display_name -> ui_label, the name key
 
 
 # -- what is kept, byte for byte -----------------------------------------------------------------------------------------
@@ -321,10 +321,10 @@ def test_a_removed_last_key_of_a_file_without_a_final_newline(tmp_path):
     root = tmp_path / "copy"
     write(root, "config/app_features/f.yaml", "name: f\nui_title: {text: a}")
     plan = tool.build_plan(root)
-    assert plan.texts[root / "config/app_features/f.yaml"] == "name: f\n"      # a flow VALUE is fine: its pair sits in a block mapping
+    assert plan.texts[root / "config/app_features/f.yaml"] == ""      # a flow VALUE is fine: its pair sits in a block mapping
     write(root, "config/app_features/f.yaml", "name: f\nui_title: a")
     plan = tool.build_plan(root)
-    assert plan.texts[root / "config/app_features/f.yaml"] == "name: f\n"
+    assert plan.texts[root / "config/app_features/f.yaml"] == ""
 
 
 # -- the dry run writes nothing ------------------------------------------------------------------------------------------
@@ -565,10 +565,9 @@ def test_the_code_places_that_read_a_deployment_name_are_listed_and_not_changed(
 def test_a_removed_ui_title_that_differs_from_ui_label_is_an_open_case_with_the_full_text(tree):
     plan = tool.build_plan(tree)
     lost = [c for c in plan.cases if c.case == "OC16"]
-    assert len(lost) == 3
-    detail = " ".join(c.detail for c in lost)
-    assert "A longer group name" in detail and "A longer plot name" in detail and "A long title on two lines" in detail
-    assert 'ui_label is "P"' in detail
+    assert len(lost) == 1 and "A longer group name" in lost[0].detail          # a group has no figure: its text is still kept nowhere
+    notitle = " ".join(c.detail for c in plan.cases if c.case == "OC19")      # the two plots of the tree have no labs layer
+    assert "A longer plot name" in notitle and "A long title on two lines" in notitle
     assert any(c.rule == "R05" for c in plan.changes)       # the removal itself stays applied
 
 
@@ -579,8 +578,8 @@ def test_a_long_removed_title_is_printed_in_full(tmp_path, capsys):
           "id: r\nspec_version: 1\ninfo:\n  ui_label: R\nanalysis_groups:\n  g:\n    ui_label: G\n    plots:\n      p:\n        ui_label: P\n        ui_title: \"" + long_text + "\"\n")
     tool.main(["--root", str(root)])
     out = capsys.readouterr().out
-    assert out.count(long_text) >= 2                      # in the list of changes and in the open case
-    assert "OC16" in out and "kept nowhere" in out
+    assert out.count(long_text) >= 2                      # in the list of changes and in the case
+    assert "OC19" in out and "no figure title" in out
     assert "1 listed place(s) in 1 open case(s)" in out.split("Summary")[1].split("\n")[1]
 
 
@@ -771,6 +770,7 @@ def test_an_empty_tree_gives_an_empty_plan(tmp_path, capsys):
 # -- the recipe banner switch (D-0470, D-0472) ---------------------------------------------------------------------------
 
 HIDDEN_FEATURES = "name: hidden\nui_label: H\nui_title:\n  text: \"My banner\"\n  subtitle: \"Line\"\n  visible: false\nflags:\n  a: true\n"
+HIDDEN_NO_NAME = HIDDEN_FEATURES.replace("name: hidden\n", "")
 USER_DEPLOYMENT = "deployment_type: filesystem\ndefault_app_features: \"hidden\"\nbranding:\n  theme_css: a.css\n  banner:\n    title: \"T\"\n    subtitle: \"S\"\n"
 OTHER_DEPLOYMENT = "deployment_type: filesystem\ndefault_app_features: \"other\"\nbranding:\n  contact: c\n"
 
@@ -792,14 +792,14 @@ def test_the_switch_key_is_one_constant_and_is_the_accepted_one():
 def test_an_app_features_file_that_hides_the_banner_is_kept_and_listed_while_the_key_is_unset(hidden, capsys, monkeypatch):
     monkeypatch.setattr(tool, "BANNER_SWITCH_KEY", None)
     plan = tool.build_plan(hidden)
-    assert plan.texts.get(hidden / "config/app_features/hidden.yaml") is None
+    assert plan.texts[hidden / "config/app_features/hidden.yaml"] == HIDDEN_NO_NAME          # only the name key goes; the ui_title is kept
     found = [c for c in plan.cases if c.case == "OC15"]
     assert len(found) == 1 and found[0].line == 3
     assert "user.yaml" in found[0].detail and "other.yaml" not in found[0].detail.split("banner of each")[0]
     assert "'T'" in found[0].detail and "BANNER_SWITCH_KEY is not set" in found[0].detail
     assert tool.main(["--root", str(hidden), "--apply"]) == 2
     assert "NOT WRITTEN" in capsys.readouterr().err
-    assert read(hidden, "config/app_features/hidden.yaml") == HIDDEN_FEATURES
+    assert read(hidden, "config/app_features/hidden.yaml") == HIDDEN_NO_NAME
 
 
 def test_the_facts_for_naming_the_switch_are_listed(hidden):
@@ -814,14 +814,14 @@ def test_a_visible_true_ui_title_is_removed_with_what_it_set(tmp_path):
     root = tmp_path / "copy"
     write(root, "config/app_features/f.yaml", "name: f\nui_title:\n  text: x\n  subtitle: y\n  visible: true\n")
     plan = tool.build_plan(root)
-    assert plan.texts[root / "config/app_features/f.yaml"] == "name: f\n"
+    assert plan.texts[root / "config/app_features/f.yaml"] == ""
     assert [c.value for c in plan.changes if c.rule == "R09"] == ["a mapping (text: x, subtitle: y, visible: true)"]
     assert not any(c.case == "OC15" for c in plan.cases)
 
 
 def test_the_switch_is_written_in_the_one_deployment_that_uses_the_file(hidden):
     plan = tool.build_plan(hidden)
-    assert plan.texts[hidden / "config/app_features/hidden.yaml"] == "name: hidden\nui_label: H\nflags:\n  a: true\n"
+    assert plan.texts[hidden / "config/app_features/hidden.yaml"] == "ui_label: H\nflags:\n  a: true\n"
     user = plan.texts[hidden / "config/deployment/a/user.yaml"]
     assert user.endswith("  banner:\n    ui_label: \"T\"\n    description: \"S\"\n  show_recipe_name: false\n")
     assert hidden / "config/deployment/a/other.yaml" not in plan.texts           # it uses another app features file
@@ -835,7 +835,7 @@ def test_the_switch_is_not_written_where_no_deployment_uses_the_file(tmp_path):
     write(root, "config/app_features/hidden.yaml", HIDDEN_FEATURES)
     write(root, "config/deployment/a/other.yaml", OTHER_DEPLOYMENT)
     plan = tool.build_plan(root)
-    assert plan.texts == {} and any(c.case == "OC15" and "nowhere to go" in c.detail for c in plan.cases)
+    assert plan.texts == {root / "config/app_features/hidden.yaml": HIDDEN_NO_NAME} and any(c.case == "OC15" and "nowhere to go" in c.detail for c in plan.cases)
 
 
 def test_a_switch_that_cannot_be_placed_keeps_the_ui_title(tmp_path):
@@ -850,7 +850,7 @@ def test_a_switch_that_cannot_be_placed_keeps_the_ui_title(tmp_path):
 def test_two_deployments_that_name_the_file_are_not_one_to_one_and_nothing_is_written(hidden):
     write(hidden, "config/deployment/a/second.yaml", USER_DEPLOYMENT)
     plan = tool.build_plan(hidden)
-    assert hidden / "config/app_features/hidden.yaml" not in plan.texts
+    assert plan.texts[hidden / "config/app_features/hidden.yaml"] == HIDDEN_NO_NAME
     assert not any(c.rule == "R14" for c in plan.changes)
     found = [c for c in plan.cases if c.case == "OC15"]
     assert len(found) == 1 and "not one to one" in found[0].detail and "2 deployments" in found[0].detail
@@ -861,11 +861,11 @@ def test_a_switch_key_already_written_is_a_conflict_and_the_ui_title_is_kept(hid
     write(hidden, "config/deployment/a/user.yaml", USER_DEPLOYMENT + "  show_recipe_name: true\n")
     plan = tool.build_plan(hidden)
     assert any(c.case == "CONFLICT" and "show_recipe_name" in c.detail for c in plan.cases)
-    assert hidden / "config/app_features/hidden.yaml" not in plan.texts
+    assert plan.texts[hidden / "config/app_features/hidden.yaml"] == HIDDEN_NO_NAME
 
 
 def hidden_kept(plan, root):
-    return root / "config/app_features/hidden.yaml" not in plan.texts and not any(c.rule == "R09" for c in plan.changes)
+    return plan.texts.get(root / "config/app_features/hidden.yaml") == HIDDEN_NO_NAME and not any(c.rule == "R09" for c in plan.changes)
 
 
 # -- the report ----------------------------------------------------------------------------------------------------------
@@ -904,3 +904,296 @@ def test_a_name_on_the_first_line_of_a_file_with_a_byte_order_mark_is_removed_an
     path.write_bytes(b"\xef\xbb\xbfdeployment_name: N\r\ndeployment_type: filesystem\r\n")
     assert tool.main(["--root", str(root), "--apply"]) == 0
     assert path.read_bytes() == b"\xef\xbb\xbf# N\r\n" + tool.BLOCK_MARKER_LINE.encode() + b"\r\ndeployment_type: filesystem\r\n"
+
+
+# -- the key `name` of the app features files (D-0481), file names (D-0483), write failures ----------------------------------
+
+def test_the_key_name_of_an_app_features_file_is_removed_and_the_rest_is_byte_for_byte(tmp_path):
+    root = tmp_path / "copy"
+    text = "# header\nname: \"f\"   # the id\nflags:\n  a: true\n"
+    write(root, "config/app_features/f.yaml", text)
+    plan = tool.build_plan(root)
+    assert plan.texts[root / "config/app_features/f.yaml"] == "# header\nflags:\n  a: true\n"
+    change = [c for c in plan.changes if c.rule == "R16"]
+    assert len(change) == 1 and change[0].ledger == "D-0481" and change[0].new is None and change[0].line == 2
+    assert "file name: f" in change[0].value and "DIFFERS" not in change[0].value
+    assert not any(c.case == "OC17" for c in plan.cases)
+
+
+NESTED = """name: top-of-a-recipe
+spec_version: 1
+id: r
+info:
+  ui_label: R
+data_schemas:
+  A:
+    source: {type: local_tsv, path: a.tsv}
+analysis_groups:
+  g:
+    ui_label: G
+    plots:
+      p:
+        ui_label: P
+        layers:
+          - name: geom_bar
+            params: {}
+"""
+
+
+def test_a_key_called_name_anywhere_else_is_never_touched(tmp_path):
+    root = tmp_path / "copy"
+    recipe = write(root, "config/data_analysis_recipes/pipelines/r.yaml", NESTED)
+    deployment = write(root, "config/deployment/d/d.yaml", "name: not-an-app-features-file\ndeployment_type: filesystem\nbranding:\n  name: x\n")
+    features = write(root, "config/app_features/f.yaml", "name: f\nflags:\n  a: true\nworkspaces:\n  home:\n    left_sidebar:\n      panels:\n        - name: n\n          type: t\nlayers:\n  - name: geom_bar\n")
+    plan = tool.build_plan(root)
+    assert [c.rule for c in plan.changes if c.file.endswith("r.yaml")] == []
+    assert recipe not in plan.texts or "name: top-of-a-recipe" in plan.texts[recipe]
+    assert "name: not-an-app-features-file" in plan.texts.get(deployment, deployment.read_text(encoding="utf-8"))
+    after = plan.texts[features]
+    assert after.startswith("flags:") and after.count("name:") == 2 and "- name: n" in after and "- name: geom_bar" in after
+    assert [c.rule for c in plan.changes if c.file.endswith("f.yaml")].count("R16") == 1
+
+
+def test_a_name_that_differs_from_the_file_name_is_removed_and_listed(tmp_path, capsys):
+    root = tmp_path / "copy"
+    write(root, "config/app_features/pipeline-x.yaml", "name: pipeline_x\nflags: {}\n")
+    write(root, "config/app_features/same.yaml", "name: same\nflags: {}\n")
+    plan = tool.build_plan(root)
+    listed = [c for c in plan.cases if c.case == "OC17"]
+    assert len(listed) == 1 and listed[0].file.endswith("pipeline-x.yaml") and "'pipeline_x'" in listed[0].detail and "'pipeline-x'" in listed[0].detail
+    assert any("DIFFERS" in c.value for c in plan.changes if c.rule == "R16")
+    assert plan.texts[root / "config/app_features/pipeline-x.yaml"] == "flags: {}\n"
+    tool.main(["--root", str(root)])
+    out = capsys.readouterr().out
+    assert "OC17" in out and "value: pipeline_x; file name: pipeline-x (DIFFERS)" in out
+
+
+@pytest.mark.parametrize("order", [
+    "name: f\ndisplay_name: A\nflags: {}\n",
+    "display_name: A\nname: f\nflags: {}\n",
+    "display_name: A\nflags: {}\nname: f\n",
+])
+def test_the_name_rule_and_the_display_name_rule_give_the_same_result_in_any_order_and_a_second_run_changes_nothing(tmp_path, order):
+    root = tmp_path / "copy"
+    write(root, "config/app_features/f.yaml", order)
+    assert tool.main(["--root", str(root), "--apply"]) == 0
+    result = read(root, "config/app_features/f.yaml")
+    assert "name: f" not in result and "ui_label: A" in result and "display_name" not in result and "flags: {}" in result
+    before = digest(root)
+    assert tool.build_plan(root).changes == [] and tool.main(["--root", str(root), "--apply"]) == 0
+    assert digest(root) == before
+
+
+def test_the_code_places_of_the_name_key_are_listed_from_the_real_tree_and_not_changed():
+    plan = tool.build_plan(ROOT)
+    places = {(c.file, c.kind) for c in plan.code_places if c.key == tool.APP_FEATURES_NAME_KEY}
+    expected = {rel for rel, _p, _k in tool.APP_FEATURES_NAME_PLACES}
+    assert {f for f, _ in places} == expected          # every named file still has a line that matches (a moved line is found by text)
+    lines = {(c.file, c.text) for c in plan.code_places if c.key == tool.APP_FEATURES_NAME_KEY}
+    assert any(f == "app/src/bootloader.py" and 'config.get("name")' in t for f, t in lines)
+    assert any(f == "app/modules/renamed_keys.py" and "persona_id" in t for f, t in lines)
+    assert any(f == "app/modules/app_features_validator.py" and "Rule 2" in t for f, t in lines)
+    assert any(f == "app/modules/sidebar_validator.py" for f, _ in lines)
+
+
+def test_the_dry_run_prints_the_code_places_of_the_name_key(tmp_path, capsys):
+    root = tmp_path / "copy"
+    write(root, "app/modules/renamed_keys.py", '    "persona_id": "name",\n')
+    tool.main(["--root", str(root)])
+    out = capsys.readouterr().out
+    assert "name (app features file) (D-0481" in out and "app/modules/renamed_keys.py:1" in out
+
+
+# a name like `my-file_2026-11-17.yaml` has both characters in every kind of file (D-0483): nothing in the script restricts either
+
+STAMPED = "my-file_2026-11-17"
+
+
+def test_hyphens_and_underscores_are_both_free_in_the_file_names_of_every_kind_of_file(tmp_path):
+    root = tmp_path / "copy"
+    write(root, f"config/data_analysis_recipes/pipelines/{STAMPED}.yaml", RECIPE.replace("id: r", f"id: {STAMPED}"))
+    write(root, f"config/data_analysis_recipes/pipelines/{STAMPED}/plots/p_file.yaml", PLOT_FILE)
+    write(root, f"config/deployment/demo/{STAMPED}.yaml", DEPLOYMENT)
+    write(root, f"config/app_features/{STAMPED}.yaml", APP_FEATURES)
+    write(root, f"assets/gallery_data/{STAMPED}/data_analysis_recipe.yaml", GALLERY)
+    plan = tool.build_plan(root)
+    files = {c.file for c in plan.changes}
+    assert {f"config/data_analysis_recipes/pipelines/{STAMPED}.yaml", f"config/deployment/demo/{STAMPED}.yaml",
+            f"config/app_features/{STAMPED}.yaml", f"assets/gallery_data/{STAMPED}/data_analysis_recipe.yaml"} <= files
+    assert plan.kind_counts["app features files"]["files"] == 1 and plan.kind_counts["deployment files"]["files"] == 1
+    assert tool.main(["--root", str(root), "--apply"]) == 0
+    assert read(root, f"config/app_features/{STAMPED}.yaml") == APP_FEATURES_AFTER
+    assert tool.build_plan(root).changes == []
+
+
+def test_an_app_features_file_with_both_characters_in_its_name_is_matched_by_the_deployment_that_names_it(tmp_path):
+    root = tmp_path / "copy"
+    write(root, f"config/app_features/{STAMPED}.yaml", HIDDEN_FEATURES.replace("name: hidden", f"name: {STAMPED}"))
+    write(root, "config/deployment/a/user.yaml", USER_DEPLOYMENT.replace('"hidden"', f'"{STAMPED}"'))
+    plan = tool.build_plan(root)
+    assert any(c.rule == "R14" for c in plan.changes) and not any(c.case == "OC15" for c in plan.cases)
+
+
+def test_a_deployment_is_matched_by_the_file_name_and_not_by_a_name_key(tmp_path):
+    root = tmp_path / "copy"
+    write(root, "config/app_features/hidden.yaml", HIDDEN_FEATURES.replace("name: hidden", "name: something-else"))
+    write(root, "config/deployment/a/user.yaml", USER_DEPLOYMENT)
+    plan = tool.build_plan(root)
+    assert any(c.rule == "R14" for c in plan.changes)
+
+
+@pytest.mark.skipif(hasattr(__import__("os"), "geteuid") and __import__("os").geteuid() == 0, reason="root can write anywhere")
+def test_a_folder_that_cannot_be_written_is_refused_before_the_first_write(tree, capsys):
+    import os
+    folder = tree / "config/deployment/demo"
+    before = digest(tree)
+    os.chmod(folder, 0o555)
+    try:
+        assert tool.main(["--root", str(tree), "--apply"]) == 3
+        err = capsys.readouterr().err
+        assert "cannot be written" in err and "nothing is written" in err and "Traceback" not in err
+        assert digest(tree) == before                 # no earlier file was written
+    finally:
+        os.chmod(folder, 0o755)
+
+
+def test_a_write_that_fails_after_the_check_ends_with_a_plain_message_not_a_traceback(tree, capsys, monkeypatch):
+    real = tool.write_atomic
+    calls = []
+
+    def flaky(path, text):
+        calls.append(path)
+        if len(calls) == 2:
+            raise PermissionError(13, "Permission denied")
+        real(path, text)
+
+    monkeypatch.setattr(tool, "write_atomic", flaky)
+    assert tool.main(["--root", str(tree), "--apply"]) == 3
+    err = capsys.readouterr().err
+    assert "could not be written" in err and "Permission denied" in err and "Already written" in err and str(calls[0]) in err and "Traceback" not in err
+
+
+# -- the removed plot `ui_title` against the figure title of its `labs` layer (D-0484) -----------------------------------------
+
+def plot_recipe(plot_body: str, include: bool = False) -> str:
+    head = "id: r\nspec_version: 1\ninfo:\n  ui_label: R\nanalysis_groups:\n  g:\n    ui_label: G\n    plots:\n"
+    if include:
+        return head + "      p: !include 'r/plots/p.yaml'\n"
+    return head + "      p:\n" + "".join("        " + line + "\n" for line in plot_body.splitlines())
+
+
+def cases_of(plan, case):
+    return [c for c in plan.cases if c.case == case]
+
+
+LABS = "layers:\n  - name: geom_bar\n  - name: labs\n    params:\n      title: \"{t}\"\n"
+
+
+def test_a_removed_plot_title_equal_to_the_labs_title_is_listed_as_the_same(tmp_path):
+    root = tmp_path / "copy"
+    body = 'ui_label: P\nui_title: "Counts per year"\n' + LABS.format(t="Counts per year")
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe(body))
+    plan = tool.build_plan(root)
+    assert len(cases_of(plan, "OC20")) == 1 and not cases_of(plan, "OC18") and not cases_of(plan, "OC19") and not cases_of(plan, "OC16")
+    assert "same as the figure title" in cases_of(plan, "OC20")[0].detail
+    assert any(c.rule == "R05" for c in plan.changes)
+
+
+def test_a_removed_plot_title_that_differs_from_the_labs_title_prints_both_texts_in_full(tmp_path):
+    root = tmp_path / "copy"
+    body = 'ui_label: P\nui_title: "Counts per year"\n' + LABS.format(t="Counts per year, all farms")
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe(body))
+    plan = tool.build_plan(root)
+    found = cases_of(plan, "OC18")
+    assert len(found) == 1 and "DIFFERS from the figure title" in found[0].detail
+    assert "Counts per year" in found[0].detail and "Counts per year, all farms" in found[0].detail
+    assert any(c.rule == "R05" for c in plan.changes)       # the removal stays applied
+
+
+def test_an_included_plot_entry_is_compared_too(tmp_path):
+    root = tmp_path / "copy"
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe("", include=True))
+    write(root, "config/data_analysis_recipes/pipelines/r/plots/p.yaml", 'ui_label: P\nui_title: A\n' + LABS.format(t="A"))
+    plan = tool.build_plan(root)
+    assert len(cases_of(plan, "OC20")) == 1 and cases_of(plan, "OC20")[0].file.endswith("r/plots/p.yaml")
+
+
+@pytest.mark.parametrize("layers", ["layers:\n  - name: geom_bar\n  - name: labs\n    params:\n      x: Year\n",
+                                    "layers:\n  - name: geom_bar\n  - name: labs\n",
+                                    "layers:\n  - name: geom_bar\n",
+                                    ""])
+def test_a_plot_with_no_figure_title_is_listed_with_the_removed_text_and_is_not_an_error(tmp_path, layers, capsys):
+    root = tmp_path / "copy"
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe('ui_label: P\nui_title: "A very long removed title"\n' + layers))
+    plan = tool.build_plan(root)
+    found = cases_of(plan, "OC19")
+    assert len(found) == 1 and "A very long removed title" in found[0].detail and "no figure title" in found[0].detail
+    assert not plan.blocking
+    assert tool.main(["--root", str(root), "--apply"]) == 0
+    assert "ui_title" not in read(root, "config/data_analysis_recipes/pipelines/r.yaml")
+
+
+def test_two_labs_layers_the_last_title_counts_and_the_detail_says_so(tmp_path):
+    root = tmp_path / "copy"
+    body = ('ui_label: P\nui_title: "T1"\nlayers:\n  - name: labs\n    params: {title: "T1"}\n  - name: labs\n    params: {title: "T2"}\n')
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe(body))
+    found = cases_of(tool.build_plan(root), "OC18")
+    assert len(found) == 1 and "2 labs layers" in found[0].detail and "T2" in found[0].detail
+
+
+def test_the_summary_counts_the_differing_and_missing_titles_as_cases_to_read_and_the_same_ones_apart(tmp_path, capsys):
+    root = tmp_path / "copy"
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe('ui_label: P\nui_title: "A"\n' + LABS.format(t="A")))
+    tool.main(["--root", str(root)])
+    out = capsys.readouterr().out
+    assert "0 listed place(s) in 0 open case(s)" in out.split("Summary")[1].split("\n")[1]
+    assert "1 plot title(s) removed: 1 same as the figure title, 0 same except spaces, 0 differ, 0 plot(s) have no figure title" in out
+
+
+def test_a_plain_name_key_inside_a_nested_mapping_of_an_app_features_file_stays(tmp_path):
+    root = tmp_path / "copy"
+    features = write(root, "config/app_features/f.yaml", "name: f\nflags:\n  name: keep\n  deeper:\n    name: keep too\n")
+    plan = tool.build_plan(root)
+    after = plan.texts[features]
+    assert "name: keep\n" in after and "name: keep too" in after and not after.startswith("name:")
+    assert [c.rule for c in plan.changes if c.file.endswith("f.yaml")].count("R16") == 1
+
+
+# -- exact comparison of the removed plot title; what the pass does not read (D-0484) --------------------------------------------
+
+@pytest.mark.parametrize("removed, figure", [("Title C ", "Title C"), ("Title  C", "Title C"), ("Title\tC", "Title C")])
+def test_a_title_equal_only_after_spaces_are_collapsed_is_its_own_visible_result(tmp_path, capsys, removed, figure):
+    root = tmp_path / "copy"
+    body = "ui_label: P\nui_title: \"" + removed.replace("\t", "\\t") + "\"\n" + LABS.format(t=figure)
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe(body))
+    plan = tool.build_plan(root)
+    assert not cases_of(plan, "OC20") and not cases_of(plan, "OC18")
+    found = cases_of(plan, "OC21")
+    assert len(found) == 1 and "same except spaces" in found[0].detail
+    assert f'"{removed}"' in found[0].detail and f'"{figure}"' in found[0].detail
+    assert any(c.rule == "R05" for c in plan.changes)
+    tool.main(["--root", str(root)])
+    assert "1 same except spaces" in capsys.readouterr().out
+
+
+def test_an_exactly_equal_title_is_still_the_same(tmp_path):
+    root = tmp_path / "copy"
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe('ui_label: P\nui_title: "Title C"\n' + LABS.format(t="Title C")))
+    plan = tool.build_plan(root)
+    assert len(cases_of(plan, "OC20")) == 1 and not cases_of(plan, "OC21")
+
+
+def test_a_plot_with_only_a_ggtitle_layer_says_no_figure_title_in_a_labs_layer_and_names_the_ggtitle(tmp_path):
+    root = tmp_path / "copy"
+    body = 'ui_label: P\nui_title: "T"\nlayers:\n  - name: geom_bar\n  - name: ggtitle\n    params:\n      label: "T"\n'
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe(body))
+    found = cases_of(tool.build_plan(root), "OC19")
+    assert len(found) == 1 and "no figure title in a labs layer" in found[0].detail
+    assert "the plot has a ggtitle layer, which this pass does not read: its text is not compared" in found[0].detail
+
+
+def test_a_plot_without_a_ggtitle_layer_does_not_mention_it(tmp_path):
+    root = tmp_path / "copy"
+    write(root, "config/data_analysis_recipes/pipelines/r.yaml", plot_recipe('ui_label: P\nui_title: "T"\nlayers:\n  - name: geom_bar\n'))
+    found = cases_of(tool.build_plan(root), "OC19")
+    assert "no figure title in a labs layer" in found[0].detail and "ggtitle" not in found[0].detail
