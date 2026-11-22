@@ -1094,6 +1094,7 @@ class _Check:
             self.add("G01", "analysis_groups", "analysis_groups is a mapping of id to group", "write group id: {label, plots}")
             return
         plots_found = 0
+        first_group: Dict[str, Any] = {}  # plot id -> the first group that wrote it (P07)
         for gid, group in groups.items():
             path = f"analysis_groups.{gid}"
             if not isinstance(group, dict):
@@ -1113,6 +1114,14 @@ class _Check:
                 continue
             for pid, plot in plots.items():
                 plots_found += 1
+                if pid in first_group:
+                    # P07: PROVISIONAL wording (the owner judges words later). Without it the app lists the plots by id and the later entry
+                    # silently replaces the earlier one (`recipe_tiers.plot_entries`), D-0050.
+                    self.add("P07", f"{path}.plots.{pid}",
+                             f"the plot id {pid!r} is written in two groups, {first_group[pid]!r} and {gid!r}",
+                             "give each plot its own id, or remove one of the two entries")
+                else:
+                    first_group[pid] = gid
                 self.plot(plot, f"{path}.plots.{pid}", pid)
         if self.profile in ("run", "gallery", "audit") and plots_found == 0:
             self.add("T09", "analysis_groups", "profile run needs at least one group with one plot", "add a group with a plot")
