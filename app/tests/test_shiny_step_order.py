@@ -108,7 +108,7 @@ def _table_text(page: Page) -> str:
 
 
 def _expect_rows(page: Page, n: int) -> None:
-    """The data table says it holds n rows ("Viewing rows 1 through 15 of 15"): a retrying assertion on the app's state."""
+    """The data table says it holds n rows (the badge of the preview: "15 rows", or "Showing 100 of N rows"): a retrying assertion on the app's state."""
     wait_preview_rows(page, n)
 
 

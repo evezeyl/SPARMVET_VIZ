@@ -4,6 +4,7 @@
 # consumes: app/src/www/bp_expr_editor.js (BP-EXPR-EDITOR-1, included via ui.tags.script)
 # consumes: app/src/www/export_ready.js (D-0270, included via ui.tags.script)
 # consumes: app/src/www/gallery_select_all.js (GALLERY-CHECK-1, included via ui.tags.script, only with gallery_enabled)
+# consumes: app/src/www/preview_switch.js (the "All rows" switch of the data preview does not fold the data panel)
 # consumes: app/src/www/panel_widths.js (D-0381, D-0382, D-0384: the drag of the side panels), app/modules/frame_widths.py (the widths)
 # consumed_by: app.src.main
 # doc: ADR-027, ADR-029a, ADR-030, ADR-039, ADR-052
@@ -119,6 +120,8 @@ app_ui = ui.page_fillable(
         # [GALLERY-CHECK-1] "Select all" of a Gallery filter group is done in the page, not by a server answer that can arrive late.
         *gallery_script_tags(),
         *panel_widths_script_tags(),
+        # the "All rows" switch of the data preview sits in a panel header: its click must not fold the panel
+        ui.tags.script(src=_versioned("/preview_switch.js")),
         # [ADR-039] Cytoscape.js Tube-Map Integration (replaces Mermaid + svg-pan-zoom)
         # Cytoscape core + dagre layout plugin for ranked-LR hierarchical DAG.
         ui.tags.script(src=_versioned("/vendor/cytoscape.min.js")),

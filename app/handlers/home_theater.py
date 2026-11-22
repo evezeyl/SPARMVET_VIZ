@@ -1250,6 +1250,7 @@ def define_server(input, output, session, *,
                             class_="me-3",
                         ),
                         # PREVIEW-ALLROWS-1: "Show all rows" toggle — off by default (100-row cap).
+                        # the switch sits inside the panel's header button; app/src/www/preview_switch.js keeps its click from folding the panel
                         ui.input_switch("preview_all_rows", "All rows", value=False),
                         class_="d-flex align-items-center justify-content-between w-100 pe-3",
                     ),
@@ -1687,7 +1688,11 @@ def define_server(input, output, session, *,
             if chosen and isinstance(chosen, (list, tuple)):
                 names = lf.collect_schema().names()
                 kept = [c for c in names if c in chosen]
-                hidden = len(names) - len(kept) if kept else 0   # an empty choice shows every column, as the grid does
+                # an empty choice shows every column, as the grid does. A choice that holds a name that is not a column of this table is the
+                # chooser of the PREVIOUS table, not yet redrawn (one to two seconds after a switch of table or plot tab): no hidden sentence,
+                # it would say that the user hid columns he did not hide (D-0050)
+                stale = any(c not in names for c in chosen)
+                hidden = 0 if (stale or not kept) else len(names) - len(kept)
         except Exception:
             total_rows, hidden = None, 0
         return _badge_ui(view_badge(view, has_t2, has_plot_steps(active_cfg().raw_config, p_id), len(_applied_for_view()),

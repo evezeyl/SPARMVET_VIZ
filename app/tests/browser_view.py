@@ -56,3 +56,10 @@ def preview_rows(page: Page) -> int:
 def wait_preview_rows(page: Page, n: int, timeout: int = 20_000) -> None:
     """Retrying assertion: the data preview says its table has n rows."""
     page.wait_for_function(_ROWS_JS, arg=n, timeout=timeout)
+
+
+def wait_preview_rows_below(page: Page, n: int, timeout: int = 20_000) -> None:
+    """Retrying assertion: the data preview says its table has fewer than n rows."""
+    page.wait_for_function(
+        r"""(n) => { const t = (document.querySelector('#home_data_preview_badge') || {}).innerText || '';
+                    const m = t.match(/(?:of )?(\d+) rows?\b/); return !!m && +m[1] < n; }""", arg=n, timeout=timeout)

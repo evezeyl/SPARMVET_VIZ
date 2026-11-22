@@ -59,8 +59,42 @@ def _switch_all_rows(page: Page, on: bool) -> None:
     wait_shiny(page, 30_000)
 
 
+ACC_BUTTON = "#acc_home_data .accordion-button"
+
+
+def _open_data_panel(page: Page) -> None:
+    """Open the data panel on purpose (not by luck of its last state) and wait until it has finished opening, so that nothing moves under a hover."""
+    wait_shiny(page, 30_000)
+    if page.locator(ACC_BUTTON).first.get_attribute("aria-expanded") != "true":
+        page.locator(ACC_BUTTON).first.click()
+    expect(page.locator(ACC_BUTTON).first).to_have_attribute("aria-expanded", "true", timeout=10_000)
+    page.wait_for_function("() => !document.querySelector('#acc_home_data .accordion-collapse.collapsing')", timeout=10_000)
+    wait_shiny(page, 30_000)
+
+
+def test_the_all_rows_switch_does_not_fold_the_data_panel(page: Page, shiny_app: ShinyAppProc):
+    """The switch sits in the header of the accordion panel; a click on it must change the switch only, never open or fold the panel."""
+    _load_data_analysis_recipe(page, shiny_app.url)
+    _open_data_panel(page)
+    for on in (True, False, True, False):
+        page.locator("#preview_all_rows").click(force=True)
+        page.wait_for_function("(on) => document.getElementById('preview_all_rows').checked === on", arg=on, timeout=10_000)
+        wait_shiny(page, 30_000)
+        page.wait_for_timeout(600)   # a folding animation takes about 350 ms
+        expect(page.locator(ACC_BUTTON).first).to_have_attribute("aria-expanded", "true")
+    # and the label text of the switch does the same
+    page.locator("label[for=preview_all_rows]").click()
+    page.wait_for_timeout(600)
+    expect(page.locator(ACC_BUTTON).first).to_have_attribute("aria-expanded", "true")
+    assert page.locator("#preview_all_rows").is_checked()
+    page.locator("label[for=preview_all_rows]").click()   # leave it as found
+    page.wait_for_function("() => !document.getElementById('preview_all_rows').checked", timeout=10_000)
+    wait_shiny(page, 30_000)
+
+
 def test_rows_all_rows_and_hidden_columns(page: Page, shiny_app: ShinyAppProc):
     _load_data_analysis_recipe(page, shiny_app.url)
+    _switch_all_rows(page, False)   # the page is shared by the tests of this module: start from the default, whatever the test before left
     n = _find_big_table(page)
     assert n > 100
     expect(page.locator(BADGE)).to_contain_text(f"Showing 100 of {n} rows")
@@ -76,11 +110,9 @@ def test_rows_all_rows_and_hidden_columns(page: Page, shiny_app: ShinyAppProc):
     expect(page.locator(BADGE)).to_contain_text(f"Showing 100 of {n} rows")
     # no hidden column at the start; take one out: the count appears and the chooser keeps the user's choice
     assert "hidden" not in page.locator(BADGE).inner_text()
+    _open_data_panel(page)
     items = page.locator("#preview_col_selector + .selectize-control .item")
-    if not items.first.is_visible():
-        # a click on the switch in the accordion header can also fold the panel (the header is one button): open it again
-        page.locator("#acc_home_data .accordion-button").first.click()
-        expect(items.first).to_be_visible(timeout=10_000)
+    expect(items.first).to_be_visible(timeout=10_000)
     before = items.count()
     assert before >= 2
     items.first.hover()   # the remove link of a selectize item shows on hover

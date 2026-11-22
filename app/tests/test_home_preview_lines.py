@@ -148,3 +148,47 @@ def test_the_grid_has_no_total_of_its_own(world, monkeypatch):
     home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table")
     with reactive.isolate():
         assert home.outputs["home_data_preview"]().summary is False
+
+
+def test_a_stale_chooser_gives_no_hidden_sentence_but_keeps_the_row_sentence(world, monkeypatch):
+    """Right after a switch of table or plot tab the chooser still holds the PREVIOUS table's column names for a moment. Those names are
+    not columns of the table now shown, so "N columns hidden" would be untrue: it is not said (D-0050); the row sentence stays."""
+    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table",
+                inputs={"preview_col_selector": ["sample_id", "a_column_of_the_previous_table"]})
+    text = badge_text(home)
+    assert "hidden" not in text and "not dropped" not in text
+    assert f"Showing {PREVIEW_ROW_LIMIT} of {ROWS} rows" in text
+
+
+def test_a_real_selection_is_still_counted_once_every_name_is_a_column(world, monkeypatch):
+    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table", inputs={"preview_col_selector": ["group", "score"]})
+    assert "1 column hidden; add it back in the column chooser" in badge_text(home)
+
+
+def test_audit_t3_counts_the_audited_table_and_a_pending_step_changes_nothing(world, monkeypatch):
+    applied = filter_nodes([{"column": "score", "op": "ge", "value": 4, "dtype": "Int64", "na": "remove"}])
+    expected = sum(1 for i in range(ROWS) if 1 + i % 4 >= 4)
+    assert 0 < expected < ROWS
+    home = Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table",
+                home_state={"t3_audit_steps_by_plot": {"subtab_p_table": applied}})
+    text = badge_text(home)
+    assert f"{expected} rows" in text and f"of {ROWS} rows" not in text
+    # a step that is only pending (not applied) does not change the table, so it does not change the count
+    pending = filter_nodes([{"column": "score", "op": "ge", "value": 4, "dtype": "Int64", "na": "remove"}])
+    home = Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table",
+                home_state={"_pending_t3_nodes": pending})
+    assert f"Showing {PREVIEW_ROW_LIMIT} of {ROWS} rows" in badge_text(home)
+
+
+def test_the_badge_total_is_the_true_height_while_the_grid_holds_the_cut(world, monkeypatch):
+    """For a table of more than 100 rows: the grid holds 100 rows and the sentence gives the table's real height; with "All rows" on the
+    grid holds every row and the sentence says so."""
+    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table")
+    with reactive.isolate():
+        assert home.outputs["home_data_preview"]().data.height == PREVIEW_ROW_LIMIT
+    assert f"Showing {PREVIEW_ROW_LIMIT} of {ROWS} rows" in badge_text(home)
+    home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table", inputs={"preview_all_rows": True})
+    with reactive.isolate():
+        assert home.outputs["home_data_preview"]().data.height == ROWS
+    text = badge_text(home)
+    assert f"{ROWS} rows" in text and "Showing" not in text
