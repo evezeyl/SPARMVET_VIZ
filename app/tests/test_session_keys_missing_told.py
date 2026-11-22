@@ -45,7 +45,12 @@ class Home:
 
     def __init__(self, tmp_path, monkeypatch, source_files=None, input_object=None, discovered=None):
         self.functions, self.notes = {}, []
-        monkeypatch.setattr(reactive, "Effect", lambda fn: self.functions.setdefault(fn.__name__, fn))
+        def effect(fn=None, *, priority=0):
+            """Used bare (`@reactive.Effect`) or with arguments (`@reactive.Effect(priority=10)`)."""
+            def keep(f):
+                return self.functions.setdefault(f.__name__, f)
+            return keep if fn is None else keep(fn)
+        monkeypatch.setattr(reactive, "Effect", effect)
         monkeypatch.setattr(reactive, "event", lambda *a, **k: (lambda fn: fn))
         monkeypatch.setattr(reactive, "Calc", lambda fn: fn)
         monkeypatch.setattr(render, "ui", lambda fn=None, **k: fn if fn else (lambda f: f))
