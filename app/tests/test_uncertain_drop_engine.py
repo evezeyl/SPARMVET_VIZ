@@ -35,7 +35,7 @@ import polars as pl
 import pytest
 
 from app.modules.audit_run import AuditRunError, run_audit
-from app.modules.cache_keys import clear_data_analysis_recipe_cache
+from app.modules.cache_keys import clear_data_analysis_recipe_cache, loaded_from_resolved
 from app.tests.test_plan_composer import ABROMICS, DEMO, shipped
 from app.tests.uncertain_drop_world import World, author_version, build_all, changed_tables, lost_and_rest, step_drop, tsv_frame, with_author_step
 from utils import key_drop
@@ -466,89 +466,122 @@ def suggestion_of(said: str) -> str:
 
 
 def offered_places(w, place: str, column: str, *, blind: bool = False):
-    """The places the gate names as a way out for the refused drop (`DropGate.ways_out`)."""
-    return key_drop.DropGate(w.original.raw, None if blind else w.plans).ways_out(place, column).places
+    """The ways out the gate offers for the refused drop (`DropGate.ways_out`): `(place, the name of the column there)`, plots' own tables only."""
+    return key_drop.DropGate(w.original.raw, None if blind else w.plans).ways_out(place, column)
 
 
-def assert_every_way_out_is_written_and_builds(w, place: str, column: str, *, blind: bool = False):
-    """The sentence may never again advise a step that fails: each offered place takes the drop (`add_step`, with or without the engine's plan) and the engine builds the table meant,
-    with the column gone there and every other column of every table as before."""
-    ways = offered_places(w, place, column, blind=blind)
+def assert_every_way_out_is_written_and_builds(w, place: str, column: str):
+    """The sentence may never advise a step that fails: each offered place takes the drop of the column under the name it has there (`add_step`) and the engine builds the table meant,
+    with that column gone from THAT plot's table and every other column of every other table as before."""
+    ways = offered_places(w, place, column)
     assert ways, "the case needs a way out"
     before = w.original_built()
-    for way in ways:
+    for way, name in ways:
+        assert way.startswith("T3:"), "only a plot's own table is ever offered"
         audit = start_audit(w.original.raw, "1a2b3c4d")
-        add_step(audit, way, step_drop(column), "because", plans=None if blind else w.plans)
-        assert audit.created == 1
+        add_step(audit, way, step_drop(name), "because", plans=w.plans)
         after = w.audit_built(audit)
         assert not after.error, (way, after.error)
-        lost, gained, rest_same = lost_and_rest(before.tables[way], after.tables[way])
-        assert (lost, gained, rest_same) == ({column}, set(), True), (way, lost, gained, rest_same)
+        assert changed_tables(before, after) == {way}, (way, changed_tables(before, after))
+        assert lost_and_rest(before.tables[way], after.tables[way]) == ({name}, set(), True)
     return ways
 
 
-def test_the_refusal_of_a_melted_column_offers_no_later_place_and_not_the_plots_table_where_a_drop_ends_as_an_engine_error(tmp_path):
-    """Review 2, case 1: `a` is melted by the unpivot of the tier 2, so after it `a` is a value of `variable`, not a column. No later place exists for it, and a drop at the plot's own
-    table is an engine error (the premise, run here), so the sentence offers neither; it says what is true. The label "Suggestion:" is before the remedy."""
+NO_PLACE = "the app finds no place where it can show that this drop works, so none can be written for now"
+SCOPE = "removes the column for that plot only; the column stays in the other tables and plots"
+
+
+def test_the_refusal_of_a_melted_column_offers_nothing_and_does_not_claim_what_it_cannot_prove(tmp_path):
+    """`a` is melted by the unpivot of the tier 2, so after it `a` is a value of `variable`. No place is offered (a drop at the plot's table is an engine error, run here); the sentence
+    says only that the app finds no place it can show, with no claim about tables and no scope clause (there is no place to be scoped)."""
     w = world(tmp_path, {"T": T, "B": B}, {"T": {"tier1": [], "tier2": [unpivot(["a", "b"], ["sample_id", "c"])]}, "B": {}}, {}, {"Q": plot("T")})
     assert offered_places(w, "T1:T", "a") == ()
     built = w.drop_built("T3:Q", "a")
     assert built.error and '"a" not found' in built.error, "the premise: a drop of a melted column at the plot's table fails"
     said = refusal(w, "T1:T", "a")
     advice = suggestion_of(said)
-    assert "T3:Q" not in advice and "plot's own table" not in advice and "T2:T" not in advice
-    assert "no longer a column" in advice and "YET" in advice and "for now" in advice
-    assert "cannot be drawn" not in said and "row filter" not in said
+    assert NO_PLACE in advice and "YET" in said
+    assert "no longer a column" not in said and "only possible before" not in said and "of any table" not in said
+    assert SCOPE not in said and "T3:Q" not in advice and "cannot be drawn" not in said and "row filter" not in said
 
 
-def test_the_refusal_of_a_column_that_survives_offers_the_later_place_and_a_drop_there_is_written_and_builds(tmp_path):
-    """Review 2, case c: `q2` is refused at T1:T because the unpivot of plot R is not read, but it still exists in the table of plot P, which nothing is built after. That place is named;
-    the drop is written there and the engine builds the table meant. The place of R, the table T2:T (R is built from it) and the origin are not offered (the gate refuses them as well)."""
+def test_the_refusal_of_a_column_that_survives_at_one_plot_offers_only_that_plot_and_says_the_scope(tmp_path):
+    """`q2` is refused at T1:T because the unpivot of plot R is not read, but it still exists in the table of plot P, which nothing is built after. That plot's table is the only place named
+    (never T1 or T2 places, never R where it is gone); the drop is written there and the engine builds the table meant. The sentence says the drop removes the column for that plot only."""
     w = world(tmp_path, {"T": NUMBERS, "B": B}, {"T": {"tier1": [], "tier2": [TOTAL]}, "B": {}}, {},
               {"P": plot("T"), "R": plot("T", tier3=[unpivot(["q1"], ["sample_id"])])})
-    ways = assert_every_way_out_is_written_and_builds(w, "T1:T", "q2")
-    assert ways == ("T3:P",)
-    advice = suggestion_of(refusal(w, "T1:T", "q2"))
-    assert "T3:P" in advice and "still exists" in advice and "T3:R" not in advice and "no longer" not in advice
+    assert assert_every_way_out_is_written_and_builds(w, "T1:T", "q2") == (("T3:P", "q2"),)
+    said = refusal(w, "T1:T", "q2")
+    advice = suggestion_of(said)
+    assert "T3:P" in advice and SCOPE in advice and "T3:R" not in advice and "T2:" not in advice and "T1:" not in advice
+    assert "no longer a column" not in said and NO_PLACE not in advice
 
 
-def test_the_refusal_without_the_engines_plan_offers_the_plots_table_when_the_recipe_itself_shows_the_column_there(tmp_path):
-    """Review 2, case 3 (blind): the plan declared by the recipe has the column at the other plot's table, so that is the one place offered, and it is written and builds."""
-    w = world(tmp_path, {"T": NUMBERS, "B": B}, {"T": {"tier1": [], "tier2": [TOTAL]}, "B": {}}, {},
+def test_a_renamed_column_is_offered_at_the_plot_under_the_name_it_has_there_and_the_drop_builds(tmp_path):
+    """`q2` renamed to `w` in tier 2: the sentence never says the column is no longer a column; it offers the plot's table only because the walk links `w` to `q2` and the plan shows it there,
+    and the suggestion names `w`, the name at that table; a drop of `w` there builds with exactly that column gone."""
+    rename = {"action": "polars_rename", "mapping": {"q2": "w"}}
+    w = world(tmp_path, {"T": NUMBERS, "B": B}, {"T": {"tier1": [], "tier2": [TOTAL, rename]}, "B": {}}, {},
               {"P": plot("T"), "R": plot("T", tier3=[unpivot(["q1"], ["sample_id"])])})
-    assert assert_every_way_out_is_written_and_builds(w, "T1:T", "q2", blind=True) == ("T3:P",)
-    assert "T3:P" in suggestion_of(refusal(w, "T1:T", "q2", blind=True))
+    assert assert_every_way_out_is_written_and_builds(w, "T1:T", "q2") == (("T3:P", "w"),)
+    said = refusal(w, "T1:T", "q2")
+    assert "T3:P" in said and "'w'" in suggestion_of(said) and SCOPE in said
+    assert "no longer a column" not in said and "of any table" not in said
 
 
-def test_the_refusal_without_the_plan_behind_an_unread_step_offers_nothing_it_cannot_know(tmp_path):
-    """Review 2, case 3 (blind) with a step the recipe does not describe before the join: no later plan is known, so no place is offered and the sentence says the app cannot tell."""
-    w = join_world(tmp_path, [FILL])
-    assert offered_places(w, "T1:T", "a", blind=True) == ()
-    advice = suggestion_of(refusal(w, "T1:T", "a", blind=True))
-    assert "cannot tell where else" in advice and "T3:P" not in advice and "T1:J" not in advice and "plot's own table" not in advice
-
-
-def test_a_place_that_would_fail_at_the_build_is_not_offered(tmp_path):
-    """A later place where the column is still named by a step the walk reads, or drawn by a plot, is no way out: the drop there would stop the build."""
+def test_a_plot_that_draws_the_column_is_not_offered_and_the_sentence_says_no_place(tmp_path):
+    """P draws q2: a drop of q2 at P's table would stop the plot, so it is not offered."""
     w = world(tmp_path, {"T": NUMBERS, "B": B}, {"T": {"tier1": [], "tier2": [TOTAL]}, "B": {}}, {},
               {"P": plot("T", x="q2"), "R": plot("T", tier3=[unpivot(["q1"], ["sample_id"])])})
     assert offered_places(w, "T1:T", "q2") == (), "P draws q2"
     assert any(c.code == PLOT_USES_COLUMN for c in key_drop.DropGate(w.original.raw, w.plans)._index.drop_consequences("T3:P", "q2")), "the walk reads the plot that draws it"
+    said = refusal(w, "T1:T", "q2")
+    assert NO_PLACE in said and SCOPE not in said
 
 
-def test_every_way_out_of_every_refusal_of_the_demo_recipe_is_taken_by_the_gate(tmp_path):
-    """The shipped demo recipe, with the engine's plan: for each column the gate refuses as not followed, every place the sentence offers takes the drop (written, one step)."""
+def test_without_the_engines_plan_nothing_is_offered_and_the_sentence_says_the_app_finds_no_place(tmp_path):
+    """The declared plan is not proof enough: blind, even a case where the recipe itself shows the column at a plot's table offers nothing."""
+    w = world(tmp_path, {"T": NUMBERS, "B": B}, {"T": {"tier1": [], "tier2": [TOTAL]}, "B": {}}, {},
+              {"P": plot("T"), "R": plot("T", tier3=[unpivot(["q1"], ["sample_id"])])})
+    assert offered_places(w, "T1:T", "q2", blind=True) == ()
+    said = refusal(w, "T1:T", "q2", blind=True)
+    assert NO_PLACE in suggestion_of(said) and SCOPE not in said and "T3:P" not in suggestion_of(said)
+    w2 = join_world(tmp_path / "j", [FILL])
+    said2 = refusal(w2, "T1:T", "a", blind=True)
+    assert NO_PLACE in suggestion_of(said2) and SCOPE not in said2
+
+
+def test_no_t1_or_t2_place_is_ever_offered_because_a_later_formula_may_read_the_column(tmp_path):
+    """The review's case on the demo recipe: `n50` at T1:Quast no longer offers T1:QA_population_zscore (a later formula reads it, never read by the app, D-0356), nor any T1 or T2 place."""
+    orch, loaded, book, found = uncertain_places(DEMO, with_plan=True)
+    gate = key_drop.DropGate(loaded.raw, book)
+    assert ("T1:Quast", "n50") in found
+    assert all(p.startswith("T3:") for p, _ in gate.ways_out("T1:Quast", "n50"))
+    said = gate.problem("T1:Quast", ["n50"])
+    assert "T1:QA_population_zscore" not in suggestion_of(said) and "T2:" not in suggestion_of(said)
+    for place, column in found:
+        assert all(p.startswith("T3:") for p, _ in gate.ways_out(place, column)), (place, column)
+
+
+def test_every_way_out_of_every_refusal_of_the_demo_recipe_is_written_and_built_and_changes_only_that_plots_table(tmp_path):
+    """The shipped demo recipe with the engine's plan: for EVERY refusal, EVERY offered plot table takes the drop (written), the engine builds, and the result against the original is exactly
+    that column gone from that plot's table and nothing else changed (every other table and column identical). The count is asserted above zero so that the test cannot pass empty."""
     orch, loaded, book, found = uncertain_places(DEMO, with_plan=True)
     assert found
     gate = key_drop.DropGate(loaded.raw, book)
+    before = build_all(orch, DEMO, loaded, tmp_path / "orig")
+    assert not before.error
     offered = 0
-    for place, column in found:
-        for way in gate.ways_out(place, column).places:
+    for index, (place, column) in enumerate(found):
+        for j, (way, name) in enumerate(gate.ways_out(place, column)):
             audit = start_audit(loaded.raw, "1a2b3c4d")
-            add_step(audit, way, step_drop(column), "because", plans=book)
-            assert audit.created == 1
+            add_step(audit, way, step_drop(name), "because", plans=book)
+            after = build_all(orch, DEMO, loaded_from_resolved(loaded, audit.recipe, book), tmp_path / f"a{index}_{j}")
+            assert not after.error, (place, column, way, after.error)
+            assert changed_tables(before, after) == {way}, (place, column, way, changed_tables(before, after))
+            assert lost_and_rest(before.tables[way], after.tables[way]) == ({name}, set(), True), (place, column, way)
             offered += 1
-    print("demo: ways out offered", offered)
+    assert offered > 0
 
 
 # ------------------------------------------------------------------------------------------------------------------- a plot broken by an audit step upstream (review 2, finding F1)

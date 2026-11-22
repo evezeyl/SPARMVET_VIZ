@@ -156,7 +156,7 @@ def test_where_the_recipe_cannot_say_what_a_step_does_the_drop_is_refused_in_one
     said = key_drop.key_drop_problem(recipe, "T1:A", ["sample_id"])
     assert said and said.startswith("The app cannot YET follow the column 'sample_id' at T1:A to the end") and "read as a join key" not in said
     assert "could not work out the columns of T1:A" in said and "polars_fill_null" in said and "the drop is not written" in said      # no engine here: the recipe alone cannot say what the step does
-    assert "Suggestion: for 'sample_id': the app cannot tell where else" in said and "the plot's own table" not in said and "another place" not in said   # blind and after an unread step: no way out is invented
+    assert "Suggestion: for 'sample_id' the app finds no place where it can show that this drop works, so none can be written for now." in said and "removes the column for that plot only" not in said   # blind: nothing is offered, nothing is claimed
     assert said.count(". ") == 1 and said.endswith("."), "two short sentences, the second after the label"
     assert "may fail" not in said and "will fail" not in said and "Warning" not in said and "pl.all()" not in said and "Cannot tell" not in said      # no promise, no leftover of the old texts
     _, real = setup(recipe, tables)

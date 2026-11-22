@@ -57,7 +57,7 @@ Consumed by: libs/utils/src/utils/key_drop.py (the gate of a drop), libs/utils/t
 If deleted: the audit dialog has no way to list its places.
 
 # @deps
-# provides: function:walk, function:LineageIndex.drop_facts, function:LineageIndex.drop_consequences, function:LineageIndex.later_places, function:LineageIndex.certainty_from, function:LineageIndex.uncertain_ends, class:LineageIndex, class:LineageError, class:ColumnNotFound, class:StartPlanFailed
+# provides: function:walk, function:LineageIndex.drop_facts, function:LineageIndex.drop_consequences, function:LineageIndex.plot_places, function:LineageIndex.certainty_from, function:LineageIndex.uncertain_ends, class:LineageIndex, class:LineageError, class:ColumnNotFound, class:StartPlanFailed
 # consumes: libs/utils/src/utils/recipe_graph.py, libs/utils/src/utils/join_keys.py (JOIN_ACTIONS, key_columns), libs/utils/src/utils/step_effects.py, libs/utils/src/utils/plan_book.py, libs/utils/src/utils/lineage_records.py
 # consumed_by: libs/utils/src/utils/key_drop.py, libs/utils/src/utils/remove_from_all.py (certainty_from, uncertain_ends), libs/utils/tests/test_lineage_walk.py, libs/utils/tests/test_lineage_walk_follow.py, libs/utils/tests/test_lineage_walk_properties.py, libs/utils/tests/test_lineage_drop.py
 # doc: .claude/knowledge/decision_ledger.md (D-0347, D-0346, D-0351, D-0195, D-0353, D-0352, D-0357, D-0337, D-0356, D-0355, D-0358, D-0297), .claude/design/home_audit_steps.md
@@ -648,22 +648,24 @@ class LineageIndex:
             return []
         return self._reading_consequences(self._forward_costs((end[0], end[1], column)))
 
-    def later_places(self, node_id: str, column: str) -> List[Tuple[str, str]]:
-        """Where the column of the end of `node_id` is afterwards, by node, in the order of the lineage: `(node id, state)` for every node built from it. State `present`: the plan
-        of that node has a column of this name that the walk reaches from this column (any link, certain or not); `absent`: the plan is known and has no such column there (a step
-        removed or melted it); `unknown`: the plan of that node failed. Read-only; `utils.key_drop` words the way out of a refusal from it (D-0460)."""
+    def plot_places(self, node_id: str, column: str) -> List[Tuple[str, str]]:
+        """The plots' own tables (`T3:<plot>`) built from the end of `node_id` where the column still exists: `(node id, the name the column has there)`, by the CERTAIN links of the
+        walk and with the plan of that table holding the name. Nothing is built after a plot, so a drop written there cannot break a later step or formula; no other kind of place is
+        returned (a later formula that reads the column is never read by the app, D-0356). Read-only; `utils.key_drop` words the way out of a refusal from it (D-0460)."""
         end = self.end(node_id)
         plan = self._plan[end]
-        reached = self._forward_costs((end[0], end[1], column)) if isinstance(plan, Plan) and plan.has(column) else {}
+        if not isinstance(plan, Plan) or not plan.has(column):
+            return []
+        reached = self._forward_costs((end[0], end[1], column))
         found: List[Tuple[str, str]] = []
         for nid in self.forward(node_id):
+            node = self.graph.node(nid)
             there = self._plan[self.end(nid)]
-            if isinstance(there, PlanFailure):
-                found.append((nid, "unknown"))
-            elif there.has(column) and any(o[0] == nid and o[1] == len(self.graph.node(nid).steps) and o[2] == column for o in reached):
-                found.append((nid, "present"))
-            else:
-                found.append((nid, "absent"))
+            if node.kind != "T3" or isinstance(there, PlanFailure):
+                continue
+            names = sorted({o[2] for o, cost in reached.items() if cost == 0 and o[0] == nid and o[1] == len(node.steps) and there.has(o[2])})
+            if len(names) == 1:
+                found.append((nid, names[0]))
         return found
 
     def _facts_at(self, occ: Occ, place: str) -> DropFacts:

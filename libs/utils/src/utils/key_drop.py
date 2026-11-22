@@ -21,7 +21,7 @@ such a drop with a warning, and the review of 2026-11-21 shows why that was not 
 results because we did not select the correct scope"). The user chooses another place; a place becomes tickable when its step kind is followed. The sentence says which column, at
 which place, the step where the app loses it and why, what the walk can still read downstream (a step that names the column, a plot that draws it, a same-named column of a join
 that a plot would read under the same name: `LineageIndex.drop_consequences`), that the app cannot YET follow it (the capital YET is decided for the join, D-0454), and "Suggestion:" with what can be done IN FACT, from the places after it that the walk knows
-(`DropGate.ways_out`: a place where the column still exists, is followed and would build; or that no such place exists and why; never a fixed phrase). It promises nothing about the build. The WHOLE sentence is PROVISIONAL (the builder's wording; the owner reads it, D-0297: plain words). What the engine does with such a
+(`DropGate.ways_out`: only the own table of a plot, where nothing is built after it, with its scope said; else that the app finds no place it can show; D-0450). It promises nothing about the build. The WHOLE sentence is PROVISIONAL (the builder's wording; the owner reads it, D-0297: plain words). What the engine does with such a
 drop if it were written is proved in `app/tests/test_uncertain_drop_engine.py` (the table meant, a plain error, or a different table).
 
 A declared entity key (`is_entity_key`) is not refused for being declared: it is dropped by place like any key, refused only where a later join reads it (D-0448, "Her answer: B"; D-0297
@@ -41,7 +41,7 @@ If deleted: no caller can refuse the drop of a key column by place.
 """
 from __future__ import annotations
 
-from typing import Any, List, NamedTuple, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence, Tuple
 
 from utils import recipe_tiers
 from utils.declared_plans import declared_plan_book
@@ -50,14 +50,6 @@ from utils.lineage_records import (
 from utils.lineage_walk import LineageIndex
 from utils.plan_book import PlanBook
 from utils.recipe_graph import RecipeGraph, RecipeGraphError, build_graph
-
-
-class WaysOut(NamedTuple):
-    """The places where a refused drop could be written instead (`places`, node ids in the order of the lineage), whether the column is known to be gone from every later table
-    (`known_absent`) and whether some later plan is unknown (`unknown`)."""
-    places: Tuple[str, ...]
-    known_absent: bool
-    unknown: bool
 
 
 class DropGate:
@@ -69,6 +61,7 @@ class DropGate:
         self.graph: Optional[RecipeGraph] = None
         self.error: Optional[str] = None
         self._index: Optional[LineageIndex] = None
+        self._with_plan = plans is not None
         self._plot_targets = recipe_tiers.plot_targets(raw) if isinstance(raw, dict) else set()
         try:
             self.graph = build_graph(recipe_tiers.without_audit_steps(raw) if isinstance(raw, dict) else raw)
@@ -105,26 +98,22 @@ class DropGate:
         unsure = [(f, self._index.drop_consequences(place, f.column) if self._index is not None else [], self.ways_out(place, f.column)) for f in every if f.uncertain]
         return key_drop_unfollowed_sentence(unsure) if unsure else None
 
-    def ways_out(self, place: str, column: str) -> WaysOut:
-        """Where else a drop of this column can be written and followed, from facts the walk has: the places built from `place` where the column still exists (the plan, by the
-        links of the walk), where the gate would accept the drop (not refused, not uncertain), where the app writes a step (the tier 2 of a table no plot reads is not one) and where
-        no later step that the walk reads names the column and no plot draws it (such a drop would fail at the build). `known_absent`: the plan is known at every later place and
-        none holds the column (a step melted or removed it). `unknown`: a later plan is missing (a step the app cannot read)."""
-        if self._index is None or self.graph is None:
-            return WaysOut((), False, True)
-        states = self._index.later_places(place, column)
-        places: List[str] = []
-        for nid, state in states:
-            node = self.graph.node(nid)
-            if state != "present" or (node.kind == "T2" and node.name not in self._plot_targets):
-                continue
-            there = self._index.drop_facts(nid, column)
+    def ways_out(self, place: str, column: str) -> Tuple[Tuple[str, str], ...]:
+        """The ONLY places the app can show that a drop works (D-0460, D-0450; PROVISIONAL): the own tables of plots built from `place`, `(place, the name of the column there)`. Nothing is
+        built after a plot, so a drop there cannot break a later step or formula (the app never reads formulas, D-0356); so no T1 or T2 place is ever offered. Needs the engine's plan
+        (the plan a recipe declares is not proof enough: without it nothing is offered). The column must exist there under a name the walk links to the dropped column, the plot must not
+        draw it, and the gate must accept the drop there."""
+        if self._index is None or self.graph is None or not self._with_plan:
+            return ()
+        places: List[Tuple[str, str]] = []
+        for nid, name in self._index.plot_places(place, column):
+            there = self._index.drop_facts(nid, name)
             if there.refused or there.uncertain:
                 continue
-            if any(c.code in (STEP_NAMES_COLUMN, PLOT_USES_COLUMN) for c in self._index.drop_consequences(nid, column)):
+            if any(c.code in (STEP_NAMES_COLUMN, PLOT_USES_COLUMN) for c in self._index.drop_consequences(nid, name)):
                 continue
-            places.append(nid)
-        return WaysOut(tuple(places), bool(states) and all(state == "absent" for _, state in states), any(state == "unknown" for _, state in states))
+            places.append((nid, name))
+        return tuple(places)
 
 
 def drop_facts(raw: Any, place: str, column: str, plans: Optional[PlanBook] = None) -> Optional[DropFacts]:
@@ -186,22 +175,24 @@ def _consequence_sentence(found: Consequence) -> str:
     return f"the app reads this downstream: {found.code}"
 
 
-def _way_out_sentence(column: str, ways: WaysOut) -> str:
-    """What can be done about one column, only from facts the walk has (D-0460, PROVISIONAL wording): a place where the column still exists and the app can follow it, or the plain
-    fact that there is none and why. Nothing is offered that the app would refuse or that would fail at the build."""
-    if ways.places:
-        shown = ", ".join(ways.places[:3])
-        return f"for {column!r} write the drop at a place where the column still exists and the app can follow it, for example {shown}"
-    if ways.known_absent:
-        return (f"for {column!r}: after that step it is no longer a column of any table, so a drop is only possible before it, and there the app cannot YET follow it; "
-                "no drop of this column can be written for now")
-    return f"for {column!r}: the app cannot tell where else this column could be dropped, so no drop of it can be written for now"
+def _way_out_sentence(column: str, ways: Sequence[Tuple[str, str]]) -> str:
+    """What can be done about one column, only from what the app can prove (D-0460, PROVISIONAL wording): the own tables of plots where the drop cannot break a later step, or the plain
+    fact that the app finds no such place. It claims nothing else (not where the column goes, not that no other place exists)."""
+    if not ways:
+        return f"for {column!r} the app finds no place where it can show that this drop works, so none can be written for now"
+    shown = ", ".join(f"{p}" + (f" (the column is called {n!r} there)" if n != column else "") for p, n in ways[:3])
+    more = f" and {len(ways) - 3} more" if len(ways) > 3 else ""
+    return f"for {column!r} write the drop at the table of a plot instead, for example {shown}{more}"
 
 
-def key_drop_unfollowed_sentence(found: Sequence[Tuple[DropFacts, Sequence[Consequence], WaysOut]]) -> str:
+SCOPE_CLAUSE = "A drop written there removes the column for that plot only; the column stays in the other tables and plots."
+
+
+def key_drop_unfollowed_sentence(found: Sequence[Tuple[DropFacts, Sequence[Consequence], Sequence[Tuple[str, str]]]]) -> str:
     """Two short sentences for a drop the app cannot follow to the end (D-0460: the drop is not written; the line is red and cannot be ticked): the column and the place, the step where
-    the app loses it and why, what the walk reads downstream, that the app cannot YET follow it (the capital word, D-0454); then "Suggestion:" and what can be done IN FACT, built from
-    what the walk knows of the places after it (`DropGate.ways_out`), never a fixed phrase. No promise about the build. PROVISIONAL: the whole wording is the builder's; the owner reads it."""
+    the app loses it and why, what the walk reads downstream, that the app cannot YET follow it (the capital word, D-0454); then "Suggestion:" with only what the app can prove
+    (`DropGate.ways_out`: a plot's own table) and, when one is offered, that the drop there removes the column for that plot only (D-0450). No promise about the build. PROVISIONAL: the
+    whole wording is the builder's; the owner reads it."""
     details: List[str] = []
     for facts, consequences, _ in found:
         text = f"{facts.column!r}: {_why_not_followed(facts)}"
@@ -209,7 +200,8 @@ def key_drop_unfollowed_sentence(found: Sequence[Tuple[DropFacts, Sequence[Conse
         details.append(text + ("; " + "; ".join(read) if read else ""))
     named = " and ".join(f"the column {f.column!r} at {f.place}" for f, _, _ in found)
     advice = "; ".join(_way_out_sentence(f.column, ways) for f, _, ways in found)
-    return f"The app cannot YET follow {named} to the end ({'; '.join(details)}), so the drop is not written. Suggestion: {advice}."
+    scope = " " + SCOPE_CLAUSE if any(ways for _, _, ways in found) else ""
+    return f"The app cannot YET follow {named} to the end ({'; '.join(details)}), so the drop is not written. Suggestion: {advice}.{scope}"
 
 
 def place_of_steps_path(raw: Any, steps_path: str) -> Optional[str]:
