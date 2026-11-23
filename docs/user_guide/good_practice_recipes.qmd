@@ -55,11 +55,11 @@ A plot id is written once in a recipe. The same id in two groups is refused with
 
 The app removes by the key. Three ways of writing a recipe make the key hard to follow. Avoid them when you make a recipe.
 
-**1. A step recomputes the key.** A step writes the key column again under the same name, for example `polars_with_columns` with a new formula for `sample_id`, or an aggregate. The app sees that the step writes that column name. It does not read the formula, so it cannot know whether the new values come from the old key. What happens: the line is followed, and a note says that the column is recomputed (or aggregated, or that the group key now sits on one row per group) at that step. When the user asks to remove from all the data, the table is listed as a table where the selection may stay, because the app cannot prove that the values still match.
+**1. A step recomputes the key.** A step writes the key column again under the same name, for example `polars_with_columns` with a new formula for `sample_id`, or an aggregate. The app sees that the step writes that column name. It does not read the formula, so it cannot know whether the new values come from the old key. What happens: the line is followed, and a note says that the column is recomputed (or aggregated, or that the group key now sits on one row per group) at that step. These notes are data of the lineage walk. No screen shows them yet. The option "remove from all the data" says nothing about such a table: it reports only the places it reaches, the places where it writes a step and the tables it does not reach.
 
-**2. The key under another column name, with no join and no rename.** A table holds the entity key under a name of its own (for example `isolate` in one table and `sample_id` in another) and nothing in the recipe links them. The app never links by name or by guess. A rename step, or a join on the two columns, links them, and both are followed. Without any of these, the table is **not detected today** as holding the key. When a table holds a column that has exactly the name of the key but no declaration and no join links it, the app lists the table as not reached, with the reason. It writes nothing there.
+**2. The key under another column name, with no join and no rename.** A table holds the entity key under a name of its own (for example `isolate` in one table and `sample_id` in another) and nothing in the recipe links them. The app never links by name or by guess. A rename step, or a join on the two columns, links them, and both are followed. Without any of these, the table is **not detected today** as holding the key. When a table holds a column that has exactly the name of the key but no declaration and no join links it, "remove from all the data" lists the table among the tables it does not reach (code `same_name_not_linked`) and writes nothing there.
 
-**3. The key is rewritten by a step.** For example, a step strips, lower-cases or recodes the ids. The values after the step are then not the values the user typed. The app detects the step when it writes the key column by name (as in the first gotcha). It cannot read what the formula does. It says that it cannot prove that the values match, and the selection may stay in that table. A step that the app does not read (see the next section) is detected only as a note, when the engine shows the same name and type before and after.
+**3. The key is rewritten by a step.** For example, a step strips, lower-cases or recodes the ids. The values after the step are then not the values the user typed. The app detects the step only when it writes the key column by name (as in the first gotcha), and the walk then notes it as data. It cannot read what the formula does, so it cannot tell that the ids were changed. A step that the app does not read (see the next section) gives only a note that the values may have changed, when the engine shows the same name and type before and after. Beyond these notes, a rewritten key is **not detected today**.
 
 ## What the app follows, and what it does not
 
@@ -71,7 +71,7 @@ It does not read any other step. For such a step, the app knows only what the en
 
 A line the app cannot trace is shown as a place it cannot follow. The line cannot be ticked, and the app gives the reason. The step is never guessed. The app also never decides the scope for the user: the user chooses the places.
 
-The sentence for a join that is not followed begins with: "The app cannot YET follow this column through this kind of join". The capital word YET is fixed. The rest of the wording may change. The screen that shows these lines is still being built; the library that decides them and the sentences are built.
+The drop gate (`key_drop.py`) uses a sentence for a join that is not followed. It begins with: "The app cannot YET follow this column through this kind of join". The capital word YET is fixed. The rest of the wording may change. The screen that shows these lines is not built yet; the library that decides them and the sentence are built. A table behind such a join is not written by "remove from all the data" and is in its list of tables not reached.
 
 ## Joins the app cannot follow yet
 
@@ -117,10 +117,10 @@ These are not rules. Do not rely on them.
 - [Data Literacy](data_literacy.qmd): tidy data and the golden rules of wrangling.
 - [Standards YAML](../appendix/Standards_yaml.qmd): the keys of `input_fields`, including `is_entity_key`.
 
-<!-- Sources (verified 2026-11-23 on dev e3607030).
+<!-- Sources (verified 2026-11-23 on dev 882983c6).
 Checks: E03 recipe_check.py:449-460; ST05 recipe_check.py:715 with action_names.py:66 and tests/test_recipe_check_join_tier1_only.py; P07 recipe_check.py:1117-1123; J08 recipe_check.py:1083; J13 recipe_check.py:906.
 Undeclared columns not imported: libs/ingestion/src/ingestion/ingestor.py:65-75.
 READINGS, FOLLOWED_JOINS, NOT_YET_FOLLOWED_JOINS: libs/utils/src/utils/step_effects.py. Row steps: join_keys.py:34-41.
-Notes and reasons: lineage_records.py (recomputed_here, aggregated_here, one_row_per_group_after_this_step, unread_step_passed, join_not_yet_followed). Sentence: lineage_sentences.py. Key family and same-name rule: recipe_graph.py key_families; remove_from_all.py (may_stay, same_name_not_linked).
+Notes and reasons: lineage_records.py (recomputed_here, aggregated_here, one_row_per_group_after_this_step, unread_step_passed, join_not_yet_followed). Sentence: lineage_sentences.py. Key family: recipe_graph.py key_families; remove_from_all.py docstring item 5 (places, not_reached, Applied; D-0501) and same_name_not_linked.
 Decisions: D-0461, D-0498, D-0500, D-0486, D-0464, D-0462, D-0508, D-0510, D-0523, D-0460, D-0454, D-0355.
 -->
