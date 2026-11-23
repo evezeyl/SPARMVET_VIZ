@@ -32,7 +32,7 @@ metadata_schema:
   source: {type: local_tsv, path: data/meta.tsv}
   null_values: ["-"]
   input_fields:
-    sample_id: {type: String, original_name: sample_id, is_entity_key: true}
+    sample_id: {type: String, original_name: sample_id, is_entity_id: true}
     year: {type: Int64}
   tier1: {steps: []}
 data_schemas:
@@ -57,7 +57,7 @@ additional_datasets_schemas:
   extra:
     label: extra
     input_fields:
-      sample_id: {type: String, is_entity_key: true}
+      sample_id: {type: String, is_entity_id: true}
     tier1: {steps: []}
 joins:
   J:
@@ -116,7 +116,7 @@ def build_scratch(root: Path) -> None:
     (root / "data/meta.tsv").write_text(META, encoding="utf-8")
     (root / "assets/gallery_data/g1").mkdir(parents=True)
     (root / "assets/gallery_data/g1/data_analysis_recipe.yaml").write_text(GALLERY, encoding="utf-8")
-    (root / "notes.md").write_text("the key is_entity_key here\n", encoding="utf-8")
+    (root / "notes.md").write_text("the key is_entity_key here\n", encoding="utf-8")   # the old name in a note: section 2 is done and lists no line
 
 
 def snapshot(root: Path) -> dict:
@@ -202,15 +202,6 @@ def test_a_tier_file_included_by_two_recipes_names_both(scratch):
     assert "table `J`" in line
 
 
-def test_the_tool_own_files_are_listed_apart_in_section_2(scratch):
-    (scratch / "assets/scripts").mkdir(parents=True)
-    (scratch / "assets/scripts/dry_run_big_move.py").write_text("x = 'is_entity_key'\n", encoding="utf-8")
-    s = "\n".join(section(tool.build(scratch), 2))
-    assert "Without the files of this dry-run tool there are 3 lines" in s
-    assert "the dry-run tool itself" in s and "1 line(s) in 1 file(s)" in s
-    assert not [l for l in s.splitlines() if l.startswith("- assets/scripts/dry_run_big_move.py")]
-
-
 def test_ledger_tags_are_not_in_the_lines_she_reads(scratch):
     lines = tool.build(scratch)
     assert "[D-" not in "\n".join(section(lines, 6) + section(lines, 4) + section(lines, 3) + section(lines, 5))
@@ -225,10 +216,19 @@ def test_additional_table_with_entity_id(scratch):
     assert "table `extra`" in s and "moved under the data schemas" in s
 
 
-def test_entity_key_rename_counts_per_kind(scratch):
-    s = "\n".join(section(tool.build(scratch), 2))
-    assert "recipe or template file: 2 line(s)" in s
-    assert "docs and design notes: 1 line(s)" in s
+def test_section_2_is_done_and_lists_no_line_even_when_the_old_name_stands_in_a_file(scratch):
+    lines = tool.build(scratch)
+    body = section(lines, 2)
+    assert any("DONE" in l for l in body)
+    assert not [l for l in body if l.startswith("- ")]
+    assert not any("the key is_entity_key here" in l for l in lines)
+
+
+def test_the_entity_id_is_read_from_the_new_name_only(scratch):
+    s = "\n".join(section(tool.build(scratch), 7))
+    assert "table `extra`" in s
+    (scratch / "config/data_analysis_recipes/r.yaml").write_text((scratch / "config/data_analysis_recipes/r.yaml").read_text(encoding="utf-8").replace("is_entity_id", "is_entity_key"), encoding="utf-8")
+    assert "table `extra`" not in "\n".join(section(tool.build(scratch), 7))
 
 
 def test_needs_the_owner_names_the_unresolved_places(scratch):
@@ -246,7 +246,7 @@ def test_header_counts_equal_the_entries_listed(scratch):
     for n in (2, 3, 4, 5, 6, 7):
         entries = [l for l in section(lines, n) if l.startswith("- ")]
         assert counts[n] == len(entries), n
-    assert counts[2] == 3 and counts[3] == 2 and counts[6] == 4
+    assert counts[2] == 0 and counts[3] == 2 and counts[6] == 4
 
 
 def test_first_screen_exists_names_each_decision_and_comes_first(scratch):

@@ -55,7 +55,7 @@ class World:
                                "data_schemas": {}, "joins": dict(joins or {}),
                                "analysis_groups": {"g": {"ui_label": "G", "plots": {pid: {"ui_label": pid, **body} for pid, body in (plots or {}).items()}}}}
         for name, body in schemas.items():
-            fields = {c: {"original_name": c, "type": "Int64" if tables[name][c].dtype == pl.Int64 else "String", "label": c, **({"is_entity_key": True} if c == "sample_id" else {})}
+            fields = {c: {"original_name": c, "type": "Int64" if tables[name][c].dtype == pl.Int64 else "String", "label": c, **({"is_entity_id": True} if c == "sample_id" else {})}
                       for c in tables[name].columns}
             raw["data_schemas"][name] = {"source": {"type": "local_tsv", "path": str(self.data / f"{name}.tsv")}, "null_values": [], "strip": False,
                                          "input_fields": fields, "tier1": {"steps": list(body.get("tier1", []))},

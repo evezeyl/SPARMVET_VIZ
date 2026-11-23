@@ -6,7 +6,7 @@ tmpAI/). There is no --apply. It never runs the engine and never guesses: where 
 
 Sections (each line: file, line, what stands there now, what would stand there, the ledger number of the rule):
   1. the names pass (the list of assets/scripts/migrate_display_names.py, reused, not duplicated)           D-0407 to D-0412, D-0468 to D-0484
-  2. `is_entity_key` -> `is_entity_id`: every line that holds it, counted per kind of file                  D-0562, D-0567
+  2. `is_entity_key` -> `is_entity_id`: DONE (2026-11-23); the section stays so that the numbers do not move, no lines left   D-0562, D-0567
   3. the joined tables whose FIRST ingredient is the metadata block (and tables whose only one it is)       D-0586
   4. the tier files that end with a polars_select / polars_drop (the fixed column lists)                    D-0586, D-0587
   5. the tables that declare no entity id (a name like sample_id is shown as a CANDIDATE only)              D-0569
@@ -34,7 +34,6 @@ import os
 import re
 import subprocess
 import sys
-from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -44,14 +43,11 @@ import yaml
 from utils import action_names
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-OLD_KEY = "is_entity_key"
 NEW_KEY = "is_entity_id"
 METADATA = "metadata_schema"
 # the actions that REPLACE the set of columns, as far as libs/utils/src/utils/step_effects.py READINGS tells: a select keeps only its list,
 # a group-by keeps only its keys and its aggregates. Pivot, unpivot and similar steps are not in that source and are not examined.
 KEEP_ONLY_ACTIONS = (action_names.SELECT, action_names.GROUP_BY)
-TOOL_FILES = {"assets/scripts/dry_run_big_move.py", "app/tests/test_dry_run_big_move.py", ".claude/rules/rules_toolchain.md"}
-SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".pytest_cache", "tmpAI", "tmp"}
 CANDIDATE = re.compile(r"^(sample_?id|sample|isolate_?id|isolate|accession|id|strain|strain_?id)$", re.I)
 DROP_NULLS = action_names.DROP_NULLS
 MARKER_WAYS = ("a marker column that exists before this step is not carried unless it is in the list; her two ways (D-0587): add the marker columns "
@@ -241,7 +237,7 @@ def fields_of(R: Recipes, block: yaml.MappingNode, bfile: Path, master: Path):
 
 
 def entity_fields(fields) -> List[str]:
-    return [s for s, (_, v, _) in (fields or {}).items() if isinstance(v, yaml.MappingNode) and OLD_KEY in mp(v) and truthy(mp(v)[OLD_KEY][1])]
+    return [s for s, (_, v, _) in (fields or {}).items() if isinstance(v, yaml.MappingNode) and NEW_KEY in mp(v) and truthy(mp(v)[NEW_KEY][1])]
 
 
 # -- sections --------------------------------------------------------------------------------------------------------------
@@ -263,64 +259,14 @@ def section_names(root: Path, rep: Report) -> None:
         rep.need("section 1", f"{len(opens)} place(s) listed by the names pass under 'CANNOT BE DECIDED BY THE SCRIPT' (read them in section 1)")
 
 
-def tracked_files(root: Path) -> List[Path]:
-    if (root / ".git").exists():
-        try:
-            out = subprocess.run(["git", "-C", str(root), "ls-files", "-z"], capture_output=True, check=True, timeout=60).stdout
-            return [root / p for p in out.decode("utf-8", "replace").split("\0") if p]
-        except (OSError, subprocess.SubprocessError):
-            pass
-    files = []
-    for dp, dn, fn in os.walk(root):
-        dn[:] = [d for d in dn if d not in SKIP_DIRS]
-        files += [Path(dp) / f for f in fn]
-    return files
-
-
-def kind_of_file(rel: str) -> str:
-    if rel.endswith("recipe_spec.yaml") and "libs/utils" in rel:
-        return "the specification (recipe_spec.yaml)"
-    if rel.startswith("config/data_analysis_recipes/") or rel.startswith("assets/gallery_data/"):
-        return "input_fields file" if "input_fields" in rel else "recipe or template file"
-    if rel.startswith(".claude/rules/"):
-        return "rules"
-    if rel.endswith((".md", ".qmd", ".txt")):
-        return "docs and design notes"
-    if rel.endswith(".py"):
-        return "tests" if ("/tests/" in rel or rel.startswith("tests/") or "/test_" in rel or rel.split("/")[-1].startswith("test_")) else "code"
-    return "other"
-
-
 def section_entity_key(root: Path, rep: Report) -> None:
-    per_kind: Counter = Counter()
-    lines: List[Tuple[str, int, str, str]] = []
-    for p in tracked_files(root):
-        if not p.is_file():
-            continue
-        try:
-            text = p.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
-            continue
-        if OLD_KEY not in text:
-            continue
-        rel = str(p.relative_to(root))
-        for n, line in enumerate(text.splitlines(), 1):
-            if OLD_KEY in line:
-                lines.append((rel, n, kind_of_file(rel), line.strip()))
-                per_kind[kind_of_file(rel)] += 1
-    own = [x for x in lines if x[0] in TOOL_FILES]
-    lines = [x for x in lines if x[0] not in TOOL_FILES]
-    per_kind = Counter(x[2] for x in lines)
-    rep.add(2, f"Ledger D-0562 and D-0567. The column mark `is_entity_key` would be renamed `is_entity_id` everywhere it is written. This is a text rename: the lines are listed, none is changed. "
-               f"Without the files of this dry-run tool there are {len(lines)} lines. Lines per kind of file:")
-    for k, n in sorted(per_kind.items()):
-        rep.add(2, f"* {k}: {n} line(s) in {len({a for a, _, c, _ in lines if c == k})} file(s)")
-    rep.add(2, f"* the dry-run tool itself (it names the old key on purpose; it is updated when the rename is applied): {len(own)} line(s) in {len({x[0] for x in own})} file(s), listed apart and not counted above")
-    rep.add(2, "")
-    for rel, n, k, text in lines:
-        rep.add(2, f"- {rel}:{n} ({k}): `{OLD_KEY}` becomes `{NEW_KEY}` [D-0562, D-0567]. Now: `{text[:140]}`")
-    rep.stat["rename_lines"] = len(lines)
-    rep.stat["rename_tool_lines"] = len(own)
+    """Section 2 is DONE: the mark was renamed `is_entity_id` everywhere (D-0562, D-0567) and the recipe check refuses the old name (FD03).
+
+    It lists no line any more (the old name still stands in the ledger, the studies, the logs and the tests of the refusal, on purpose).
+    """
+    rep.add(2, "Ledger D-0562 and D-0567. DONE on 2026-11-23: the column mark was renamed `is_entity_id` in the specification, the recipe check, the code, the recipes, "
+               "the input_fields files, the tests, the documentation and the rules. A recipe that still writes `is_entity_key` is refused by the recipe check (FD03) with the new name. "
+               "No line is left to change.")
 
 
 # -- the joins that start from the metadata ----------------------------------------------------------------------------------
@@ -481,7 +427,7 @@ def section_select(R: Recipes, rep: Report) -> None:
 # -- the entity id -----------------------------------------------------------------------------------------------------------
 
 def section_entity_missing(R: Recipes, rep: Report) -> None:
-    rep.add(5, "Ledger D-0569. Tables that have no column marked as the entity id (`is_entity_key` today). Where a column is named like an id (for example `sample_id`) "
+    rep.add(5, "Ledger D-0569. Tables that have no column marked as the entity id (`is_entity_id`). Where a column is named like an id (for example `sample_id`) "
                "it is shown as a candidate: a name only, not a decision. A table with no such column is a table with no id column. "
                "The Gallery examples are counted here and listed in the annex at the end.")
     rep.add(5, "")
@@ -668,7 +614,7 @@ def section_additional(R: Recipes, rep: Report) -> None:
 
 TITLES = {
     1: "The names pass (mechanical)",
-    2: "`is_entity_key` becomes `is_entity_id` (mechanical, D-0562, D-0567)",
+    2: "`is_entity_key` becomes `is_entity_id` (DONE, D-0562, D-0567)",
     3: "Joined tables that start from the metadata (D-0586)",
     4: "Steps that keep only a list of columns (D-0586, D-0587)",
     5: "Tables with no entity id declared (D-0569)",
@@ -676,7 +622,7 @@ TITLES = {
     7: "Tables under `additional_datasets_schemas` that declare the entity id",
 }
 ORDER = (6, 3, 4, 5, 7, 2, 1)       # what needs her first; the long mechanical lists last
-INTRO_LAST = {2: "A mechanical rename: no decision for her; listed so that she can see every place.",
+INTRO_LAST = {2: "Done: nothing to read here.",
               1: "The names pass is a mechanical migration of the display-name keys (the list of assets/scripts/migrate_display_names.py, reused as it is)."}
 
 
@@ -720,9 +666,7 @@ def first_screen(rep: Report) -> List[str]:
     n += 1
     if st.get("names_open"):
         out.append(f"{n}. {st['names_open']} names that no rule covers (listed in section 1): " + "; ".join(tx.get("names_titles", [])) + ".")
-    tool = st.get("rename_tool_lines", 0)
-    out += ["", f"Only a mechanical rename, no decision: the names pass ({rep.counts.get(1, 0)} changes) and `is_entity_key` to `is_entity_id` ({rep.counts.get(2, 0)} lines, "
-               f"not counting {tool} line(s) in the dry-run tool's own files)."]
+    out += ["", f"Only a mechanical rename, no decision: the names pass ({rep.counts.get(1, 0)} changes). The rename `is_entity_key` to `is_entity_id` is done and is no longer listed."]
     return out
 
 

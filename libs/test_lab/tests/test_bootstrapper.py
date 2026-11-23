@@ -131,7 +131,7 @@ class TestOutputStructure:
         bs.bootstrap([minimal_tsv], "test_proj", tmp_path)
         frag = tmp_path / "test_proj" / "test_proj" / "samples_input_fields.yaml"
         data = yaml.safe_load(frag.read_text())
-        assert data["sample_id"]["is_entity_key"] is True
+        assert data["sample_id"]["is_entity_id"] is True
 
 
 

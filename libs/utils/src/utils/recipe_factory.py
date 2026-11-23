@@ -77,7 +77,7 @@ def minimal_schema(path: str, columns: Mapping[str, Union[str, Mapping[str, Any]
     if entity_key is not None:
         if entity_key not in fields:
             raise ValueError(f"entity_key {entity_key!r} is not one of the columns {list(fields)}")
-        fields[entity_key]["is_entity_key"] = True
+        fields[entity_key]["is_entity_id"] = True
     schema: Dict[str, Any] = {
         "label": label if label is not None else Path(path).stem,
         "source": {"type": source_type, "path": str(path)},

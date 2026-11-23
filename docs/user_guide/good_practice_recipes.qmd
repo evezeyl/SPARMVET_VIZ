@@ -34,7 +34,7 @@ The recipe checker already refuses one case. A column that both tables of a join
 
 ### Declare the ID key
 
-Mark the column that identifies the entity with `is_entity_key: true` in the `input_fields` of its table. The app uses this declaration to decide which column is the key when a removal by key is asked. A column that a join equates with the declared key is taken as the same key.
+Mark the column that identifies the entity with `is_entity_id: true` in the `input_fields` of its table. The app uses this declaration to decide which column is the key when a removal by key is asked. A column that a join equates with the declared key is taken as the same key.
 
 The user may not be the author. Without a declaration, the app has no way to tell the user which column is the key.
 
@@ -120,7 +120,7 @@ These are not rules. Do not rely on them.
 
 - [The Audit Pipeline](audit_pipeline.qmd): how the user creates and reviews audit steps, and what the primary-key warning means.
 - [Data Literacy](data_literacy.qmd): tidy data and the golden rules of wrangling.
-- [Standards YAML](../appendix/Standards_yaml.qmd): the keys of `input_fields`, including `is_entity_key`.
+- [Standards YAML](../appendix/Standards_yaml.qmd): the keys of `input_fields`, including `is_entity_id`.
 
 <!-- Sources (verified 2026-11-23 on dev 882983c6).
 Checks: E03 recipe_check.py:449-460; ST05 recipe_check.py:715 with action_names.py:66 and tests/test_recipe_check_join_tier1_only.py; P07 recipe_check.py:1117-1123; J08 recipe_check.py:1083; J13 recipe_check.py:906.

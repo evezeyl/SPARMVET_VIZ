@@ -26,7 +26,7 @@ data_schemas:
     null_values: []
     strip: true
     input_fields:
-      id: {type: String, is_entity_key: true}
+      id: {type: String, is_entity_id: true}
     wrangling: {tier1: []}
 plot_defaults:
   default_font_family: Arial

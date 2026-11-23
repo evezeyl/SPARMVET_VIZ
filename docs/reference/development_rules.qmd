@@ -224,7 +224,7 @@ This registry tracks the purpose, inputs/outputs, and core logic of the various 
 1. **Implicit Polars Execution Scope**: 
    - `libs/` maintains pure `LazyFrame` processing until `viz_factory` rendering. Avoid using `.collect()` inside standard action decorators in order to preserve optimization and cross-decorator deferment.
 2. **Key-as-ID Join Resolution**:
-   - Multi-dataset Assembly declares its join keys in the join step (`on`, or `left_on` and `right_on`, always as lists). `is_entity_key: true` on an input field documents which column identifies the entity of a table; it does not drive the join.
+   - Multi-dataset Assembly declares its join keys in the join step (`on`, or `left_on` and `right_on`, always as lists). `is_entity_id: true` on an input field documents which column identifies the entity of a table; it does not drive the join.
 3. **Dynamic Decorator Loading (`@register_action`)**: 
    - Rule scripts (like `libs/transformer/src/transformer/actions/modified.py`) are passively initialized through the local module directory `__init__.py`. This executes their `@register_action(name)` block to populate the global `AVAILABLE_WRANGLING_ACTIONS` dictionary upon app boot.
 4. **The Last Tier-1 Step as a Safe `.select()` Guard**:

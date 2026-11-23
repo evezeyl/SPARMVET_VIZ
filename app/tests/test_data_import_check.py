@@ -34,7 +34,7 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: Sample ID, type: String, label: Sample, is_entity_key: true}}
+      sample_id: {{original_name: Sample ID, type: String, label: Sample, is_entity_id: true}}
       country: {{original_name: Country, type: String, label: Country}}
       year: {{original_name: Year, type: Int64, label: Year}}
     tier1: {{steps: []}}
@@ -43,7 +43,7 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      id: {{type: String, label: Id, is_entity_key: true}}
+      id: {{type: String, label: Id, is_entity_id: true}}
       value: {{type: Float64, label: Value}}
     tier1: {{steps: []}}
   W:
@@ -51,7 +51,7 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      id: {{type: String, label: Id, is_entity_key: true}}
+      id: {{type: String, label: Id, is_entity_id: true}}
     tier1: {{steps: []}}
 {extra}analysis_groups:
   g:

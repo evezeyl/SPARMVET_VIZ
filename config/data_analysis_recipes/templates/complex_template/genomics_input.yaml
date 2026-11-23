@@ -1,7 +1,7 @@
 sample_id:
   original_name: "Accession"
   type: "String"
-  is_entity_key: true
+  is_entity_id: true
 gene_presence:
   original_name: "Gene_List"
   type: "String"

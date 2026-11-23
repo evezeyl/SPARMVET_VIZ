@@ -33,7 +33,7 @@ analysis_groups:
         mapping: {x: id}
         layers: [{name: geom_col}]
 """
-FIELDS_INLINE = "{id: {type: String, is_entity_key: true}}"
+FIELDS_INLINE = "{id: {type: String, is_entity_id: true}}"
 
 
 def write(path, text):
@@ -53,7 +53,7 @@ def test_a_clean_recipe_loads_without_problem(tmp_path):
 
 
 def test_a_clean_recipe_with_a_bare_fragment_passes_the_whole_check(tmp_path):
-    write(tmp_path / "r" / "fields.yaml", "id: {type: String, is_entity_key: true}\n")
+    write(tmp_path / "r" / "fields.yaml", "id: {type: String, is_entity_id: true}\n")
     path = write(tmp_path / "r.yaml", MINIMAL % "!include r/fields.yaml")
     assert check_recipe_file(path).problems == []
 
@@ -102,7 +102,7 @@ def test_an_absolute_include_is_t11(tmp_path):
 
 
 def test_a_fragment_that_repeats_the_key_it_is_included_under_is_f01(tmp_path):
-    write(tmp_path / "r" / "fields.yaml", "input_fields:\n  id: {type: String, is_entity_key: true}\n")
+    write(tmp_path / "r" / "fields.yaml", "input_fields:\n  id: {type: String, is_entity_id: true}\n")
     path = write(tmp_path / "r.yaml", MINIMAL % "!include r/fields.yaml")
     raw, problems = load_recipe(path)
     assert codes(problems) == ["F01"]
@@ -125,7 +125,7 @@ def test_an_unquoted_on_is_t07_with_the_path(tmp_path):
 
 
 def test_a_nested_include_uses_the_recipe_folder(tmp_path):
-    write(tmp_path / "r" / "inner.yaml", "{type: String, is_entity_key: true}\n")
+    write(tmp_path / "r" / "inner.yaml", "{type: String, is_entity_id: true}\n")
     write(tmp_path / "r" / "fields.yaml", "id: !include r/inner.yaml\n")
     path = write(tmp_path / "r.yaml", MINIMAL % "!include r/fields.yaml")
     assert check_recipe_file(path).problems == []

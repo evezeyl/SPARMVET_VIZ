@@ -50,7 +50,7 @@ def _source(name: str, field: str, ftype: str = "String", file: str | None = Non
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}}
+      sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_id: true}}
       {field}: {{original_name: {field}, type: {ftype}, label: {field}}}
     tier1: {{steps: []}}
 """

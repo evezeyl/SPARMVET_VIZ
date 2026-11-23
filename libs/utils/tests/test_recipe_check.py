@@ -49,14 +49,14 @@ def valid():
                 "label": "A", "description": "One row per sample.",
                 "source": {"type": "local_tsv", "path": "assets/test_data/a.tsv"},
                 "null_values": [], "strip": True,
-                "input_fields": {"id": {"type": "String", "is_entity_key": True}, "v": {"type": "Float64"}},
+                "input_fields": {"id": {"type": "String", "is_entity_id": True}, "v": {"type": "Float64"}},
                 "tier1": {"steps": []},
             },
             "B": {
                 "label": "B", "description": "One row per sample.",
                 "source": {"type": "local_tsv", "path": "assets/test_data/b.tsv"},
                 "null_values": ["NA"], "strip": False,
-                "input_fields": {"id": {"type": "String", "is_entity_key": True}, "w": {"type": "Int64"}},
+                "input_fields": {"id": {"type": "String", "is_entity_id": True}, "w": {"type": "Int64"}},
                 "tier1": {"steps": []},
             },
         },
@@ -133,7 +133,7 @@ CASES = [
     ("E02", "E", lambda r: r.update(entity={"noun": "s", "plural": "ss", "population": "Nope"}), "run"),
     ("E03", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["id"].update(type="Int64"), "run"),
     ("E02", "E", lambda r: (r.update(entity={"noun": "s", "plural": "ss", "population": "A"}),
-                            r["data_schemas"]["A"]["input_fields"]["id"].pop("is_entity_key")), "run"),
+                            r["data_schemas"]["A"]["input_fields"]["id"].pop("is_entity_id")), "run"),
     ("S01", "E", lambda r: r["data_schemas"]["A"].update(info={"x": 1}), "run"),
     ("S01", "E", lambda r: r["data_schemas"]["A"].update(output_fields={}), "run"),
     ("S01", "E", lambda r: r["data_schemas"]["A"].update(fields={}), "run"),
@@ -165,8 +165,9 @@ CASES = [
     ("FD02", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(type="Binary"), "run"),
     ("FD02", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(type="Utf8"), "run"),
     ("FD03", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["id"].update(is_primary_key=True), "run"),
+    ("FD03", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["id"].update(is_entity_key=True), "run"),
     ("FD04", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(source_name="V"), "run"),
-    ("FD05", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["id"].update(is_entity_key="yes"), "run"),
+    ("FD05", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["id"].update(is_entity_id="yes"), "run"),
     ("FD05", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(type="Enum"), "run"),
     ("FD05", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(categories=["a"]), "run"),
     ("FD05", "E", lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(precision=5), "run"),
@@ -266,6 +267,26 @@ def test_each_row_of_the_catalogue_is_found_with_the_fix(code, severity, change,
     assert all(isinstance(p, Problem) for p in result.problems)
     if severity == "E" and code not in ("ST08",):
         assert found[0].fix or code in ("T01",), f"{code} names no fix"
+
+
+@pytest.mark.parametrize("old", ["is_entity_key", "is_primary_key"])
+def test_an_old_name_of_the_entity_id_mark_is_refused_with_the_new_name_and_the_mark_is_not_read(old):
+    """D-0562: `is_entity_key` was renamed `is_entity_id`; no alias, no fallback read. The refusal names the replacement."""
+    raw = mutated(lambda r: r["data_schemas"]["A"]["input_fields"]["id"].update({old: True}))
+    raw["data_schemas"]["A"]["input_fields"]["id"].pop("is_entity_id")
+    raw["entity"] = {"noun": "sample", "plural": "samples", "population": "A"}
+    result = check(raw, file_stem="r")
+    found = [p for p in result.problems if p.code == "FD03"]
+    assert len(found) == 1 and found[0].severity == "E"
+    assert old in found[0].message and found[0].fix == "is_entity_id"
+    assert found[0].path.endswith(f"input_fields.id.{old}")
+    assert "E02" in result.codes()     # the old mark does not count as the entity id: nothing falls back to it
+
+
+def test_the_new_name_is_accepted_and_the_specification_lists_it():
+    assert check(valid(), file_stem="r").problems == []
+    assert "is_entity_id" in spec()["elements"]["field"]["optional"]
+    assert "is_entity_key" not in spec()["elements"]["field"]["optional"]
 
 
 def test_a_join_tier2_that_a_plot_reads_is_not_refused():

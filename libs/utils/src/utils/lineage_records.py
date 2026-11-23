@@ -74,7 +74,7 @@ NOTE_RECOMPUTED = "recomputed_here"              # a compute step writes the col
 NOTE_AGGREGATED = "aggregated_here"              # a group-by aggregate that keeps the name (D-0353); `knows_source_of_values` is False
 NOTE_ONE_ROW_PER_GROUP = "one_row_per_group_after_this_step"   # a group-by key keeps its name; the rows after the step are the groups (D-0353)
 VALUE_NOTES = (NOTE_ANOTHER_TYPE, NOTE_RECOMPUTED, NOTE_AGGREGATED, NOTE_ONE_ROW_PER_GROUP)
-NOTE_DECLARED_ENTITY_KEY = "declared_entity_key"   # a drop here removes a column that a table declares `is_entity_key`: information for the dialog; it is no refusal (D-0358)
+NOTE_DECLARED_ENTITY_KEY = "declared_entity_key"   # a drop here removes a column that a table declares `is_entity_id`: information for the dialog; it is no refusal (D-0358)
 NOTE_CODES = (NOTE_UNREAD_STEP_PASSED, NOTE_DECLARED_ENTITY_KEY) + VALUE_NOTES
 
 # What dropping a column breaks later, as data (D-0358: "the dependent steps wont work and there will be error / no plot"). `source` says where the fact comes from:
@@ -198,7 +198,7 @@ class Certainty:
 @dataclass(frozen=True)
 class DropFacts:
     """Whether a column can be dropped at the end of a node, by place (D-0358): the join steps that need it as a key (`needs`, with `certain` per need), the facts
-    that stop the walk from following it (`unfollowed`, as reasons), and whether it comes from a column a table declares `is_entity_key` (`declared`, the source
+    that stop the walk from following it (`unfollowed`, as reasons), and whether it comes from a column a table declares `is_entity_id` (`declared`, the source
     columns). Derived: `refused` is a certain need; `uncertain` is an uncertain need or a stop. The same facts decide the lines of a drop walk and the gate."""
     place: str
     column: str
@@ -333,7 +333,7 @@ class Walk:
     lines: Tuple[Line, ...]
     gone: Tuple[Gone, ...]
     outside: Tuple[Outside, ...]
-    key_basis: str = "declared entity keys (is_entity_key) and the key pairs of the joins of the recipe; never the column name alone"
+    key_basis: str = "declared entity keys (is_entity_id) and the key pairs of the joins of the recipe; never the column name alone"
     start_type: str = ""                         # the engine type of the column at the place the user chose: each line holds its own, the difference is the note
     held_at_levels: Tuple[str, ...] = ()         # the levels (`LEVELS`) at which the column exists in the lineage, whatever levels were chosen
 

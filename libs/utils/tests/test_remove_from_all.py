@@ -2,7 +2,7 @@
 
 What is proved, on small recipes with their real tables replayed in plain Polars by the oracle of the lineage tests (nothing of the walk is used to say what is
 expected):
-- the option is offered only for the ENTITY KEY, the key a recipe declares (`is_entity_key`, D-0313, D-0082): never for another column, also when that column is
+- the option is offered only for the ENTITY KEY, the key a recipe declares (`is_entity_id`, D-0313, D-0082): never for another column, also when that column is
   used to join; a recipe that declares no entity key gets "not offered" with a plain reason;
 - it reaches EVERY table that holds the key at the end of its tier 1, whatever the lineage: also a table no plot reads, a table no join links (it declares the same
   key), a join, and a table that holds the key under another name; a table that does not hold it is not reached; what the app cannot follow is listed, never guessed;
@@ -313,7 +313,7 @@ def test_a_table_the_app_could_not_follow_or_plan_is_in_not_reached_with_its_cod
 
 
 @pytest.mark.parametrize("reason, text", [
-    (rfa.Reason(rfa.NO_ENTITY_KEY_DECLARED), "This recipe does not say which column is the entity key (the id of the thing each row describes), so removing from all the data is not offered. Declare the key in the recipe (is_entity_key)."),
+    (rfa.Reason(rfa.NO_ENTITY_KEY_DECLARED), "This recipe does not say which column is the entity key (the id of the thing each row describes), so removing from all the data is not offered. Declare the key in the recipe (is_entity_id)."),
     (rfa.Reason(rfa.NOT_THE_ENTITY_KEY, (("column", "x"), ("declared", ("sample_id",)))),
      "The column 'x' is not the entity key of this recipe (the entity key is: sample_id), so removing from all the data is not offered for it. Use a filter on this column instead."),
     (rfa.Reason(rfa.RECIPE_CANNOT_BE_DRAWN, (("sentence", "a join has no table."),)), "The recipe cannot be read as a whole, so removing from all the data is not offered: a join has no table."),

@@ -2,7 +2,7 @@
 
 What it does to a recipe in format 0 (the unversioned recipes before 2026-11-13):
 - adds `spec_version`, `data_engine` and `plot_engine` after `id`;
-- renames `info.display_name` to `label`, `is_primary_key` to `is_entity_key`, `source_name` to `original_name`;
+- renames `info.display_name` to `label`, `is_primary_key` and `is_entity_key` to `is_entity_id`, `source_name` to `original_name`;
 - turns every field type into its Polars name (`categorical` was always a String);
 - writes into every schema the settings the hidden sanitiser applied (`null_values` with its 14 texts and `strip: true`),
   so no table changes (spec 7.3);
@@ -37,7 +37,7 @@ from utils.step_migration import NotConvertible, convert_step
 # What ingestion/sanitizer.py turned into null in every text column, in its order (evidence section 20).
 SANITISER_TEXTS = ("", "NA", "N/A", "None", "null", "NaN", "-", "na", "n/a", "none", "nan", "NULL", "n.a.", "N.A.")
 
-_FIELD_KEY_RENAMES = {"is_primary_key": "is_entity_key", "source_name": "original_name"}
+_FIELD_KEY_RENAMES = {"is_primary_key": "is_entity_id", "is_entity_key": "is_entity_id", "source_name": "original_name"}
 _SCHEMA_SECTIONS = ("data_schemas", "additional_datasets_schemas")
 _ENGINES = (("spec_version", "1"), ("data_engine", DATA_ENGINE), ("plot_engine", PLOT_ENGINE))
 
@@ -341,7 +341,7 @@ def _schema_facts(schema: yaml.Node, base: Path) -> Optional[Tuple[List[str], Li
         types[slug.value] = declared
         if declared in _TEXT_TYPES:
             out.append(slug.value)
-        for key_name in ("is_entity_key", "is_primary_key"):
+        for key_name in ("is_entity_id", "is_entity_key", "is_primary_key"):
             flag = _find(definition, key_name) if isinstance(definition, yaml.MappingNode) else None
             if flag and isinstance(flag[1], yaml.ScalarNode) and str(flag[1].value).lower() == "true":
                 keys.append(slug.value)

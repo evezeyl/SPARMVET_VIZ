@@ -22,7 +22,7 @@ data_schemas:
       lab_id:
         original_name: lab_id
         type: String
-        is_entity_key: true
+        is_entity_id: true
         label: Source Laboratory
       submission_date:
         original_name: submission_date

@@ -2,7 +2,7 @@
 
 The recipe is the one place of the shipped recipes where ids are outside the common set ON PURPOSE (D-0205 keeps one set of
 ids everywhere else). What is checked: the recipe passes the checker and the data check, it declares the sample id of each
-table (`is_entity_key`, the two tables name it with different columns), it runs through the real path, the left join keeps
+table (`is_entity_id`, the two tables name it with different columns), it runs through the real path, the left join keeps
 every left sample, the right-only ids are absent, the left-only samples have an empty country, and every number written in
 `info.description` equals the data. The data files are what the generator writes with its default seed.
 
@@ -79,8 +79,8 @@ def test_the_recipe_declares_which_column_is_the_sample_id_in_each_table():
     raw = _raw()
     declared = {}
     for name, table in (("sequenced", raw["data_schemas"]["sequenced"]), ("metadata_schema", raw["metadata_schema"])):
-        keys = [(slug, f["original_name"]) for slug, f in table["input_fields"].items() if f.get("is_entity_key")]
-        assert len(keys) == 1, f"{name} must declare exactly one is_entity_key field"
+        keys = [(slug, f["original_name"]) for slug, f in table["input_fields"].items() if f.get("is_entity_id")]
+        assert len(keys) == 1, f"{name} must declare exactly one is_entity_id field"
         declared[name] = keys[0][1]
     assert declared == {"sequenced": "Accession", "metadata_schema": "ID"}, "the two tables name the id differently on purpose"
     assert raw["entity"]["population"] == "sequenced"

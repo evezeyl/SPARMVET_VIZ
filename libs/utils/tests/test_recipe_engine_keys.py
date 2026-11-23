@@ -41,11 +41,11 @@ def valid():
         "data_schemas": {
             "A": {"label": "A", "description": "One row per sample.",
                   "source": {"type": "local_tsv", "path": "assets/test_data/a.tsv"}, "null_values": [], "strip": True,
-                  "input_fields": {"id": {"type": "String", "is_entity_key": True, "label": "Id"}, "v": {"type": "Float64"}},
+                  "input_fields": {"id": {"type": "String", "is_entity_id": True, "label": "Id"}, "v": {"type": "Float64"}},
                   "tier1": {"steps": []}},
             "B": {"label": "B", "description": "One row per sample.",
                   "source": {"type": "local_tsv", "path": "assets/test_data/b.tsv"}, "null_values": [], "strip": False,
-                  "input_fields": {"id": {"type": "String", "is_entity_key": True}, "w": {"type": "Int64"}},
+                  "input_fields": {"id": {"type": "String", "is_entity_id": True}, "w": {"type": "Int64"}},
                   "tier1": {"steps": []}},
         },
         "joins": {"AB": {"label": "AB", "description": "One row per sample, A with B.",
@@ -438,7 +438,7 @@ data_schemas:
     source: {type: local_tsv, path: assets/test_data/a.tsv}
     null_values: []
     strip: true
-    input_fields: {id: {type: String, is_entity_key: true}, v: {type: Float64}}
+    input_fields: {id: {type: String, is_entity_id: true}, v: {type: Float64}}
 %(tier)s
 analysis_groups:
   g:

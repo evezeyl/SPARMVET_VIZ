@@ -242,10 +242,10 @@ def test_the_script_writes_a_recipe_that_passes_the_checker_loads_and_reads_its_
     assert samples["null_values"] == [] and samples["strip"] is False
     assert {name: field["type"] for name, field in samples["input_fields"].items()} == {
         "sample_id": "String", "country": "String", "reads": "Int64"}
-    assert samples["input_fields"]["sample_id"]["is_entity_key"] is True
-    assert "is_entity_key" not in samples["input_fields"]["country"]
+    assert samples["input_fields"]["sample_id"]["is_entity_id"] is True
+    assert "is_entity_id" not in samples["input_fields"]["country"]
     assert raw["metadata_schema"]["input_fields"]["year"]["type"] == "Int64"
-    assert raw["metadata_schema"]["input_fields"]["sample_id"]["is_entity_key"] is True
+    assert raw["metadata_schema"]["input_fields"]["sample_id"]["is_entity_id"] is True
 
 
 def test_the_script_refuses_a_recipe_with_an_unknown_action_name_like_the_app_does(project, monkeypatch, capsys):
@@ -289,7 +289,7 @@ def test_a_column_header_that_is_not_a_plain_name_keeps_its_original_name(projec
     path = project / "recipes" / "scaffold.yaml"
     assert judged(path, catalogs) == []
     fields = load_recipe(path)[0]["data_schemas"]["odd"]["input_fields"]
-    assert fields["sample_id"] == {"type": "String", "original_name": "Sample ID", "label": "Sample Id", "is_entity_key": True}
+    assert fields["sample_id"] == {"type": "String", "original_name": "Sample ID", "label": "Sample Id", "is_entity_id": True}
     assert fields["read_count_n"]["original_name"] == "Read-Count (n)"
     assert validate_data_analysis_recipe_data(path, project / "data") == []
 
@@ -346,7 +346,7 @@ def test_a_table_without_the_key_column_is_written_without_a_key_and_the_script_
     path = project / "recipes" / "scaffold.yaml"
     assert judged(path, catalogs) == []
     fields = load_recipe(path)[0]["data_schemas"]["samples"]["input_fields"]
-    assert not [name for name, field in fields.items() if "is_entity_key" in field]
+    assert not [name for name, field in fields.items() if "is_entity_id" in field]
 
 
 def test_the_help_of_the_script_says_what_it_writes(capsys):

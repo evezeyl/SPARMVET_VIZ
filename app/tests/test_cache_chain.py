@@ -66,7 +66,7 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}}
+      sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_id: true}}
       group: {{original_name: group, type: {group_type}, label: Group}}
     tier1: !include 'tiny/wrangling/T_tier1.yaml'
 joins:

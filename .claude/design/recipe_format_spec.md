@@ -42,7 +42,7 @@ data_schemas:
     null_values: ["", "NA"]            # required: which texts mean a missing value (7.3)
     strip: true                        # required: strip whitespace before reading
     input_fields:
-      sample_id: {type: String, is_entity_key: true}
+      sample_id: {type: String, is_entity_id: true}
       reads: {type: Int64}
     tier1:                             # a tier is its own key of the table: no wrangling container
       data_engine: python-polars       # optional, first key; without it the recipe's data_engine applies
@@ -56,7 +56,7 @@ data_schemas:
     source: {type: local_tsv, path: assets/test_data/quality.tsv}
     null_values: []
     strip: true
-    input_fields: {sample_id: {type: String, is_entity_key: true}}
+    input_fields: {sample_id: {type: String, is_entity_id: true}}
     tier1: {steps: []}
 joins:
   Combined:
@@ -114,7 +114,7 @@ Each line: the decision, why in a few words, who and when. *Ref* is the label of
 
 | # | Decision | Why | Eve | Ref |
 |---|---|---|---|---|
-| DEC13 | `is_primary_key` becomes `is_entity_key` | a generic word: the format knows no field-specific term | 2026-11-13 | 4 |
+| DEC13 | `is_primary_key` becomes `is_entity_key`; renamed `is_entity_id` on 2026-11-23 (D-0562, D-0567) | a generic word: the format knows no field-specific term | 2026-11-13 | 4 |
 | DEC14 | **The column-name aliases are removed** (`column`, `source`, `source_column`, `target_column` for `columns`, and the other spellings of section 12) | aliases are legacy terms; choose once and apply in the libraries too | 2026-11-13 | 25 |
 | DEC15 | **One name per role for the parameters of `modif_` and `step_` actions and for the audit** (H1): input columns are `columns` (a list), outputs `new_column` or `new_columns`, one `separator`. In a `polars_` action the Polars parameter names win (DEC32) | one vocabulary the audit and the forms can rely on | 2026-11-13 | 21, 14 |
 | DEC16 | **A schema plotted directly applies its own tier-2 list** (engine fix, issue #77); on a schema that is only an ingredient `tier2` is an error | a list that is never applied is a silent wrong result | 2026-11-12 | 6 |
@@ -406,7 +406,7 @@ The three sections share one id space; a repeated id is an error (today the seco
 | `time_unit`, `time_zone` | o | for `Datetime` |
 | `original_name` | o | the column name in the file when it differs (exact match); shown in Blueprint |
 | `label` | o | display name (default: the slug) |
-| `is_entity_key` | o | `true` when the column identifies the entity (it repeats in long tables) |
+| `is_entity_id` | o | `is_entity_id: true` marks the column that identifies the entity (on the demo, the sample). It is the column used to join a table with the metadata and to find the entity's rows, for example to remove an entity from the analysis. If its values are unique in the table, it is also the key of the table: one row per entity. If its values repeat, the table has several rows per entity (a long table, for example one row per sample and gene). The column then refers to the entity, and a row is identified by the entity id together with the other columns that distinguish the rows. (D-0562, D-0567; renamed from `is_entity_key` on 2026-11-23, refused with the new name) |
 | `null_values`, `strip` | o | override of the schema's setting for this column |
 
 **The type** (DEC27). The type is read from Polars, not from a list of ours: the allow-list is the set of Polars dtypes that the installed Polars can read from text with the CSV reader, produced by a probe test that tries every dtype on sample text (R9), so a Polars upgrade shows what changed. The declared dtype is given to the reader (`schema_overrides`), which fails strictly and names the value: a `String` `2022.0` into `Int64` fails ("could not parse `2022.0` as dtype `i64`"). A plain `cast` from text does **not** work for `Boolean`, `Datetime`, `Time`, `Duration`, `Decimal` (run on Polars 1.40.1), which is why the type is handed to the reader. `Enum` needs its levels, `Decimal` its precision. A `Categorical` key does not join with a `String` key: the join fails loudly (`SchemaError`, verified), never silently. A TSV column whose cells are all whole numbers is read as `Int64` by Polars on its own; the declared type makes that a choice written in the recipe. Old names (`numeric`, `utf8`, `integer`, `int`, `i64`, `float`, `string`, `character`, `categorical`) are refused with the replacement named; `categorical` always meant `String`, so its message is "this was String". Run A rewrites the shipped recipes (the tables do not change; ingestion made `categorical` a String). History that matters: four type lists disagreed (rule file, user docs, `ingestor.py:162-170`, `MetadataValidator.DTYPE_MAP`); `utf8`, `boolean` and `i64` were not cast by the ingestor; 4 fixtures declare `i64`.
@@ -666,7 +666,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | I03 | E | `info.display_name` | `label` |
 | E01 | E | unknown key in `entity`; `noun`/`plural`/`population` missing | |
 | E02 | E | `population` unknown, or its table has no entity key | |
-| E03 | E | a field marked `is_entity_key` (the sample id) has a number type (an integer, a float or a decimal); D-0225, D-0067 | declare it as `String` (or `Categorical`): a number as an id loses leading zeros, makes 001, 1 and 1.0 one sample, and gives join and type problems |
+| E03 | E | a field marked `is_entity_id` (the sample id) has a number type (an integer, a float or a decimal); D-0225, D-0067 | declare it as `String` (or `Categorical`): a number as an id loses leading zeros, makes 001, 1 and 1.0 one sample, and gives join and type problems |
 | S01 | E | unknown key in a schema (`info`, `fields`, `id`, `output_fields`, ...) | replacement |
 | S02 | E | repeated schema id; use of the reserved id | |
 | S03 | E | schema without `label` | add it |
@@ -678,9 +678,9 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | S09 | E | `null_values` missing or not a list of texts, or `strip` missing or not a boolean (also as a field override) | the two keys and their forms; the documentation on missing values |
 | FD01 | E | unknown field property | replacement |
 | FD02 | E | `type` missing, or not a Polars dtype that a text file can hold; an old name (`numeric`, `utf8`, `integer`, `string`, ...) | the allowed dtypes; `categorical`: "this was String" |
-| FD03 | E | `is_primary_key` | `is_entity_key` |
+| FD03 | E | `is_primary_key`; `is_entity_key` (renamed 2026-11-23, D-0562) | `is_entity_id` |
 | FD04 | E | `source_name` | `original_name` |
-| FD05 | E | `is_entity_key` not true/false; `categories` missing for `Enum` or not a list of text; `precision`, `scale`, `format`, `time_unit`, `time_zone` on a type that does not use them | |
+| FD05 | E | `is_entity_id` not true/false; `categories` missing for `Enum` or not a list of text; `precision`, `scale`, `format`, `time_unit`, `time_zone` on a type that does not use them | |
 | FD06 | E | a field entry is a bare string | `{type: String}` |
 | ST01 | E | step without `action` (shorthand), or not a mapping | |
 | ST02 | E | unknown action; an old action name | did-you-mean; the new name from the old-name table |
@@ -758,7 +758,8 @@ Refused at once; the message names the new form. Mechanism: `utils/legacy_keys.p
 | schema | `id` (inside the schema) | removed (the key is the id) |
 | schema | `output_fields` | removed: the published columns are the last step of the collection's tier 1 |
 | (no key) | the hidden sanitiser | `null_values` and `strip` on the schema (run A writes the 14 texts and `strip: true`) |
-| field | `is_primary_key` | `is_entity_key` |
+| field | `is_primary_key` | `is_entity_id` |
+| field | `is_entity_key` | `is_entity_id` |
 | field | `source_name` | `original_name` |
 | field | `categorical` | `String` ("this was String"); `Categorical` stays a type for those who write it |
 | field | `utf8`, `string`, `character` | `String` |

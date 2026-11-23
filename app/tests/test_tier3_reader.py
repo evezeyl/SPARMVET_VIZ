@@ -88,7 +88,7 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: String, label: Sample, is_entity_key: true}}
+      sample_id: {{original_name: sample_id, type: String, label: Sample, is_entity_id: true}}
       group: {{original_name: group, type: String, label: Group}}
       score: {{original_name: score, type: Int64, label: Score}}
     tier1: {{steps: []}}

@@ -3,7 +3,7 @@ sample_id:
   type: String
   null_values: ["", "-"]
   label: "Sample ID"
-  is_entity_key: true
+  is_entity_id: true
 source:
   original_name: "Source"
   type: String

@@ -394,11 +394,11 @@ class RecipeGraph:
 
     # ------------------------------------------------------------------ key families
     def key_families(self) -> List[Tuple[str, ...]]:
-        """The key families: the columns declared `is_entity_key` in any schema, joined into one family when a join equates them
+        """The key families: the columns declared `is_entity_id` in any schema, joined into one family when a join equates them
         (`on`, or `left_on` with `right_on`). Never found from equal column names alone. A family is a sorted tuple of column
         names; the list is sorted. A join on columns that no schema declares as a key makes no family (`home_audit_steps.md` 5a points 3, 13)."""
         declared = {name for body in self._schema_bodies() if isinstance(body.get("input_fields"), dict)
-                    for name, field in body["input_fields"].items() if isinstance(field, dict) and field.get("is_entity_key") is True}
+                    for name, field in body["input_fields"].items() if isinstance(field, dict) and field.get("is_entity_id") is True}
         parent: Dict[str, str] = {}
 
         def find(name: str) -> str:
@@ -425,14 +425,14 @@ class RecipeGraph:
         return sorted(families)
 
     def declared_entity_keys(self, table_id: str) -> Tuple[str, ...]:
-        """The columns a schema declares `is_entity_key` in its `input_fields`, in the order written; empty for a join or for a schema
+        """The columns a schema declares `is_entity_id` in its `input_fields`, in the order written; empty for a join or for a schema
         that declares none. KeyError for an id that is not a table of the recipe. The declaration only: the name is never guessed."""
         if table_id not in self._bodies:
             raise KeyError(f"no table {table_id!r} in the recipe graph")
         if self._nodes[f"T1:{table_id}"].collection_kind != "schema":
             return ()
         fields = self._bodies[table_id].get("input_fields")
-        return tuple(name for name, field in fields.items() if isinstance(field, dict) and field.get("is_entity_key") is True) if isinstance(fields, dict) else ()
+        return tuple(name for name, field in fields.items() if isinstance(field, dict) and field.get("is_entity_id") is True) if isinstance(fields, dict) else ()
 
     def key_family_of(self, column: str) -> Optional[Tuple[str, ...]]:
         """The key family a column belongs to, or None."""
@@ -572,7 +572,7 @@ def key_candidate_sources(raw: Any, entry_id: str, declared: Any = None) -> List
     1. the key the author DECLARED for the table, given by the caller as `declared` (None: none; its name and place in the recipe are not decided, D-0489);
     2. the group columns of the LAST aggregation among the steps of its tier 1 and tier 2 (read through `step_effects.effect_of`), followed through the
        later steps;
-    3. the entity key declared (`is_entity_key`) on each ingredient, followed through all the steps.
+    3. the entity key declared (`is_entity_id`) on each ingredient, followed through all the steps.
     A column is followed through a rename and kept by a join, a computed column and a cast; it is NOT offered when a later step drops it, when a select does
     not name it, when an aggregation does not group by it, or when a later step is one the walk does not read. Each candidate is listed once.
 

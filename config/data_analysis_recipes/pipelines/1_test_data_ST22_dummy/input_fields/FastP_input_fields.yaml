@@ -2,7 +2,7 @@ sample_id:
   original_name: "sample_id"
   type: String
   label: "Sample ID"
-  is_entity_key: true
+  is_entity_id: true
 total_reads:
   original_name: "total_reads"
   type: Float64

@@ -15,7 +15,7 @@ What the script decides, so that it can be checked:
     review it: a column of codes such as 007 is read as a number;
   - no text is declared as "missing" (`null_values: []`) and no whitespace is stripped (`strip: false`):
     the author states what means missing in each file;
-  - a column named by --primary_key_data is marked `is_entity_key: true`; a table without such a column is written
+  - a column named by --primary_key_data is marked `is_entity_id: true`; a table without such a column is written
     without a key, and the script says so.
 
 What it refuses, with a message, before anything is written: a file that is not tab-separated (.tsv), a file outside
@@ -120,7 +120,7 @@ def fields_of(table: pl.DataFrame, key_columns: Sequence[str], path: Path) -> Tu
             field["original_name"] = str(column)
         field["label"] = str(column).replace('_', ' ').title()
         if column == key:
-            field["is_entity_key"] = True
+            field["is_entity_id"] = True
         fields[slug] = field
     return fields, key
 
@@ -235,7 +235,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
                         help="Tab-separated metadata file; written as metadata_schema. Optional.")
     parser.add_argument("--primary_key_data", nargs='+', required=True,
                         help="Name(s) of the column that identifies the entity (for example sample_id); in each data "
-                             "file the first name found is marked is_entity_key.")
+                             "file the first name found is marked is_entity_id.")
     parser.add_argument("--primary_key_metadata", required=False,
                         help="Name of the key column of the metadata file. Optional.")
     parser.add_argument("--out_file", "--outfile", required=False,

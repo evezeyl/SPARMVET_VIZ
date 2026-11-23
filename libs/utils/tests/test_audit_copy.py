@@ -78,11 +78,11 @@ def original() -> dict:
         "data_schemas": {
             "A": {"label": "A", "description": "One row per sample.", "source": {"type": "local_tsv", "path": "assets/test_data/a.tsv"},
                   "null_values": [], "strip": True,
-                  "input_fields": {"id": {"type": "String", "is_entity_key": True}, "v": {"type": "Float64"}},
+                  "input_fields": {"id": {"type": "String", "is_entity_id": True}, "v": {"type": "Float64"}},
                   "tier1": {"steps": [{"action": "polars_drop", "columns": ["nothing_here"]}]}},
             "B": {"label": "B", "description": "One row per sample.", "source": {"type": "local_tsv", "path": "assets/test_data/b.tsv"},
                   "null_values": ["NA"], "strip": False,
-                  "input_fields": {"id": {"type": "String", "is_entity_key": True}, "w": {"type": "Int64"}},
+                  "input_fields": {"id": {"type": "String", "is_entity_id": True}, "w": {"type": "Int64"}},
                   "tier1": {"steps": []}},
         },
         "joins": {

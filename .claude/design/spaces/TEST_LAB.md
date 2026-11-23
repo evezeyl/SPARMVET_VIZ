@@ -407,7 +407,7 @@ sample_id:
   type: Categorical
   label: Sample Id
   original_name: sample_id
-  is_entity_key: true
+  is_entity_id: true
 collection_date:
   type: Categorical
   label: Collection Date
@@ -454,7 +454,7 @@ sample_id:
   type: Categorical
   label: Sample Id
   original_name: sample_id
-  is_entity_key: true
+  is_entity_id: true
 amr_gene:
   type: Categorical
   label: Amr Gene

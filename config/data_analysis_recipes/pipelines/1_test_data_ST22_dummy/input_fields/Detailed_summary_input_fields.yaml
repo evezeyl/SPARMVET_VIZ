@@ -2,7 +2,7 @@ sample_id:
   original_name: sample_id
   type: String
   label: Sample Id
-  is_entity_key: true
+  is_entity_id: true
 data:
   original_name: Data
   type: String

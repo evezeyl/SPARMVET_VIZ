@@ -45,7 +45,7 @@ Only the columns written in `input_fields` are read. A declared column that is m
 | --- | --- | --- |
 | `original_name` | Exact column header in the source file when it differs from the slug. Drives the rename step in the ingestor. | `original_name: "SampleName"` |
 | `label` | Human-readable label for UI filters and plot axes (also the default axis title of a plot). | `label: "Sample ID"` |
-| `is_entity_key` | Marks the column that identifies the entity of the table (was `is_primary_key`). Informational: join keys are written in the join step. | `is_entity_key: true` |
+| `is_entity_id` | Marks the column that identifies the entity (on the demo, the sample). It is the column used to join a table with the metadata and to find the entity's rows, for example to remove an entity from the analysis. If its values are unique in the table, it is also the key of the table: one row per entity. If its values repeat, the table has several rows per entity (a long table, for example one row per sample and gene). The column then refers to the entity, and a row is identified by the entity id together with the other columns that distinguish the rows. Informational: join keys are written in the join step. (Was `is_primary_key`, then `is_entity_key`: both are refused with the new name.) | `is_entity_id: true` |
 | `null_values`, `strip` | Override the schema's setting for this field. | `null_values: ["", "NA"]` |
 | `categories` | The levels of an `Enum` field. | `categories: [low, high]` |
 | `format` | Format text for `Date`, `Datetime` and `Time` fields. | `format: "%Y-%m-%d"` |

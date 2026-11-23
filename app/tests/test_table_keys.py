@@ -71,7 +71,7 @@ def field(label="Group"):
 
 def schema(*, steps=(), tier2=()):
     return {"source": {"type": "local_tsv", "path": "/nowhere.tsv"}, "null_values": [], "strip": False,
-            "input_fields": {"sample_id": {"original_name": "sample_id", "type": "Categorical", "label": "Sample", "is_entity_key": True},
+            "input_fields": {"sample_id": {"original_name": "sample_id", "type": "Categorical", "label": "Sample", "is_entity_id": True},
                              "group": field()},
             "tier1": {"steps": list(steps)}, "tier2": {"steps": list(tier2)}}
 
@@ -496,7 +496,7 @@ class Staged:
         # the tables share `sample_id` (the key) and `group` (declared once per side): a shared non-key column is refused (J08),
         # so the second ingredient publishes only its key and one new column.
         raw["data_schemas"]["B"]["input_fields"] = {
-            "sample_id": {"original_name": "sample_id", "type": "Categorical", "label": "Sample", "is_entity_key": True},
+            "sample_id": {"original_name": "sample_id", "type": "Categorical", "label": "Sample", "is_entity_id": True},
             "group": {"original_name": "group", "type": "Categorical", "label": "Group B"}}
         raw["data_schemas"]["B"]["tier1"]["steps"] = [{"action": "polars_rename", "mapping": {"group": "group_b"}}]
         raw["joins"]["J"]["tier1"]["steps"] = [{"action": "polars_join", "right_ingredient": "B", "on": ["sample_id"], "how": "left",

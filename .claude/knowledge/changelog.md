@@ -4,6 +4,15 @@ Breaking changes are marked ⚠️. Renames that affect the data analysis recipe
 
 ---
 
+## [2026-11-23] - The mark `is_entity_key` is now `is_entity_id` (branch `task/rename-is-entity-id`; D-0562, D-0567)
+
+- 🔑 ⚠️ **`is_entity_key` is renamed `is_entity_id`**, one name for all cases (D-0562): the field is not a row key, it refers to the entity (on the demo, the sample); when its values are unique in the table it is also the key of the table, when they repeat the table has several rows per entity. The approved sentence is the description in the specification (`recipe_format_spec.md`) and in `docs/appendix/Standards_yaml.qmd` (D-0567). The same columns are marked; nothing else of the recipes changed.
+- ⚠️ **A recipe that still writes `is_entity_key` (or `is_primary_key`) in a field is refused** by the recipe check, code FD03, with the new name (`is_entity_id`); there is no alias and no fallback read (the old mark is not read: a population table that carries only the old mark gets E02). `libs/utils/src/utils/recipe_migration.py` rewrites both old names. Every shipped recipe, `input_fields` file, template, Gallery bundle and test recipe was rewritten.
+- `assets/scripts/dry_run_big_move.py`: section 2 (this rename) is done and lists no line; the tool reads the new name when it looks for the declared entity id.
+- Not changed on purpose: the Python identifiers and prose that say "entity key" as a concept (`declared_entity_keys`, the `entity_key=` argument of `minimal_schema`, the notes `NOTE_DECLARED_ENTITY_KEY`); the ledger, the studies and the logs keep the old name as history.
+
+---
+
 ## [2026-11-18] — Engine keys: the data analysis recipe shape, the engines, the cache version 5 (branch `task/engine-keys`; D-0219 to D-0258)
 
 Recipe format 1 was amended before its first release (D-0236): no format 2. One migration run rewrote every data analysis recipe, template, retest scenario, test data analysis recipe and the 34 gallery bundles (`assets/scripts/migrate_recipe_engine_keys.py`, safe to run twice, prints every change); a data analysis recipe in the earlier shape is refused with the new form and the tool named.

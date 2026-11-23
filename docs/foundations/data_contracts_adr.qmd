@@ -60,7 +60,7 @@ data_schemas:
         original_name: "SampleName"   # exact header in TSV
         type: String
         label: "Sample ID"
-        is_entity_key: true
+        is_entity_id: true
       gene:
         original_name: "Gene_Name"
         type: String
@@ -131,12 +131,12 @@ input_fields:
   sample_id:
     original_name: "SampleName"   # raw header, renamed to 'sample_id' automatically
     type: String
-    is_entity_key: true
+    is_entity_id: true
 ```
 
 When different datasets use different names for the same concept (`SampleName`, `ID`, `sample_id`), each dataset declares its own `original_name` and the slugs become the common internal language for joins.
 
-`is_entity_key: true` is informational: it documents which column identifies the entity of the table (when the optional `entity` block names a schema as its `population`, that schema must have one) but does not drive automatic renaming across datasets. Join keys are always written in the `joins` step list with `on` or `left_on`/`right_on`. The old name `is_primary_key` is refused.
+`is_entity_id: true` is informational: it documents which column identifies the entity of the table (when the optional `entity` block names a schema as its `population`, that schema must have one) but does not drive automatic renaming across datasets. Join keys are always written in the `joins` step list with `on` or `left_on`/`right_on`. The old name `is_primary_key` is refused.
 
 ---
 
