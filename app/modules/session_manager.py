@@ -291,6 +291,10 @@ class SessionManager:
         except OSError:
             return False
 
+    def start_warning(self) -> str | None:
+        """The one warning to show at session start: the text when saving is off, else None."""
+        return None if self.writable else self.not_writable_text()
+
     def not_writable_text(self) -> str:
         """PROVISIONAL wording (the owner reads it): the one plain warning shown when sessions cannot be saved."""
         return (f"The user folder cannot be written ({self.root.parent}): sessions cannot be saved in this "

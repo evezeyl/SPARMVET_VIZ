@@ -293,6 +293,12 @@ def import_bundle(zip_bytes: bytes, *, bootloader) -> ImportResult:
         raise
 
     sm = SessionManager(Path(bootloader.get_location("user_data")))
+    if not sm.writable:
+        # PROVISIONAL wording: the import must not report a session record that was never stored.
+        shutil.rmtree(imports_dir / imported_id, ignore_errors=True)
+        dest_recipe_path.unlink(missing_ok=True)
+        raise BundleImportError(
+            f"The bundle was not imported and nothing was written. {sm.not_writable_text()}")
     local_recipe_sha256_this = sm.compute_data_analysis_recipe_sha256(dest_recipe_path)
     # The files the engine will read for this recipe, found by the one function that also reads them: the hash,
     # the session key and the stored keys of the imported run cover exactly these.

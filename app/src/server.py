@@ -148,10 +148,17 @@ def server(input, output, session):
 
     # Session manager — Location 4 from connector
     session_manager = SessionManager(bootloader.get_location("user_data"))
-    if not session_manager.writable:
-        # D-0581: a warning, not a stop. One plain line; sessions are not saved in this run.
+    _start_warning = session_manager.start_warning()
+    if _start_warning:
+        # D-0581: a warning, not a stop. One plain line, shown once (an Effect with no reactive reads: the notifier
+        # reads and writes the log, so it runs isolated; ui_implementation_contract.md section 14).
         from app.modules.notification_utils import make_notifier
-        make_notifier(notification_log)(session_manager.not_writable_text(), type="warning", duration=15)
+
+        @reactive.Effect
+        def _warn_user_folder_not_writable():
+            with reactive.isolate():
+                make_notifier(notification_log)(_start_warning, type="warning", duration=15)
+            _warn_user_folder_not_writable.destroy()
 
     # Per-session Blueprint Architect state (declared here so wrangle_studio.define_server
     # can reference them via lambda before blueprint_handlers registers them)

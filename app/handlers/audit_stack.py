@@ -1037,7 +1037,7 @@ def _write_t3_ghost(state: dict, session_manager, notif_log: list | None = None)
     session_key = SessionManager.compute_session_key(msig, dbh)
     if not session_manager.writable:
         return "⚠️ " + notice(
-            "The audit steps were applied in this view but not saved: the user folder cannot be written",
+            "The audit steps were applied in this view but not saved: the user folder cannot be written",  # PROVISIONAL wording
             "export the bundle to keep the steps, or fix the user folder and restart")
     try:
         session_manager.write_t3_ghost(

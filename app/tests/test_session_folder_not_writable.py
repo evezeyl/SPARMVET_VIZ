@@ -52,3 +52,24 @@ def test_writable_folder_behaves_as_before(tmp_path):
     assert path is not None and path.exists()
     assert [s["session_key"] for s in sm.list_all_sessions()] == ["k1"]
     assert not (tmp_path / SessionManager.SESSIONS_DIR / ".write_probe").exists()
+
+
+def test_start_warning_text_only_when_not_writable(tmp_path_factory, ro_folder):
+    assert SessionManager(ro_folder).start_warning() == SessionManager(ro_folder).not_writable_text()
+    assert SessionManager(tmp_path_factory.mktemp("ok")).start_warning() is None
+
+
+def test_notifier_runs_isolated_outside_a_reactive_context():
+    """The start warning calls the notifier in an isolated block; outside one, reading the log raises."""
+    from unittest import mock
+
+    from shiny import reactive
+
+    from app.modules.notification_utils import make_notifier
+    log = reactive.Value([])
+    with mock.patch("app.modules.notification_utils.ui.notification_show") as show:
+        with pytest.raises(RuntimeError):
+            make_notifier(log)("x")
+        with reactive.isolate():
+            make_notifier(log)("x", type="warning")
+    assert show.call_count == 2
