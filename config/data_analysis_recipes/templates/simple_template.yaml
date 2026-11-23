@@ -21,7 +21,7 @@ data_schemas:
       sample_id:
         original_name: ID
         type: String
-        is_entity_key: true
+        is_entity_id: true
       value:
         original_name: Measurement
         type: Float64
@@ -46,7 +46,7 @@ metadata_schema:
     sample_id:
       original_name: ID
       type: String
-      is_entity_key: true
+      is_entity_id: true
     category:
       original_name: Category
       type: String

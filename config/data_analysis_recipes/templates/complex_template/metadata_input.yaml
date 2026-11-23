@@ -1,7 +1,7 @@
 sample_id:
   original_name: "ID"
   type: "String"
-  is_entity_key: true
+  is_entity_id: true
 country:
   original_name: "Location"
   type: "String"

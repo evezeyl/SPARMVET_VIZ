@@ -20,7 +20,7 @@ data_schemas:
     null_values: []
     strip: true
     input_fields:
-      sample_id: {original_name: sample_id, type: String, label: Sample, is_entity_key: true}
+      sample_id: {original_name: sample_id, type: String, label: Sample, is_entity_id: true}
       gene: {original_name: gene, type: String, label: Gene}
       predicted_phenotype: {original_name: predicted_phenotype, type: String, label: Phenotype}
     tier1:

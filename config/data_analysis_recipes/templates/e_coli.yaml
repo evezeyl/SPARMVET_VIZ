@@ -21,7 +21,7 @@ data_schemas:
       sample_id:
         original_name: sample_id
         type: String
-        is_entity_key: true
+        is_entity_id: true
         label: Sample ID
       serotype:
         original_name: serotype
@@ -55,7 +55,7 @@ metadata_schema:
     sample_id:
       original_name: isolate_id
       type: String
-      is_entity_key: true
+      is_entity_id: true
     collection_date:
       original_name: collection_date
       type: Categorical
