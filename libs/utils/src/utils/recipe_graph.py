@@ -441,6 +441,49 @@ class RecipeGraph:
     def _schema_bodies(self) -> List[dict]:
         return [self._bodies[t] for t in self.collections() if self._nodes[f"T1:{t}"].collection_kind == "schema"]
 
+    # ------------------------------------------------------------------ the rule of places
+    # PROVISIONAL names (the builder's, not decided by the owner): places, below, chosen_places_problem, derived_places.
+    # The rule (D-0553, D-0555, D-0560): the user chooses at most one place on a path; the places below a chosen one are derived.
+    # `lineage_forward` is the "below" of the study; the first node of an original table (`DS:`, the file as read) is a node and never a place.
+    def places(self) -> List[str]:
+        """The nodes where an audit step may be written, in graph order: the tier 1 of every table, the tier 2 of a table that a plot reads
+        (a tier 2 that no plot reads is run nowhere, S07, J14), and the tier 3 of every plot. A `DS:` node is never a place."""
+        return [nid for nid, node in self._nodes.items()
+                if node.kind in ("T1", "T3") or (node.kind == "T2" and node.read_by_plot)]
+
+    def below(self, place: str) -> List[str]:
+        """Every node reached from a place downstream (a join reads the tier 1 of its ingredients, tier 2 reads tier 1, a plot reads its target's
+        tier 2), not the place itself, in graph order. KeyError for an id that is not a node."""
+        return self.lineage_forward(place)
+
+    def chosen_places_problem(self, chosen: Iterable[str]) -> Optional[str]:
+        """None when the set of chosen places is valid, else one plain sentence. Valid: every id is a place and none lies below another chosen one
+        (the tier-1 places of several original tables may be chosen together). An empty set is valid (nothing chosen)."""
+        ids = list(dict.fromkeys(chosen))
+        allowed = set(self.places())
+        for nid in ids:
+            if nid not in self._nodes:
+                return f"'{nid}' is not a place of this recipe."
+            if nid not in allowed:
+                return (f"'{nid}' is not a place where a step can be written: it is the file as read, not a table after a tier." if self._nodes[nid].kind == "DS"
+                        else f"'{nid}' is not a place where a step can be written: no plot reads that tier 2.")
+        for upper in ids:
+            below = set(self.below(upper))
+            for lower in ids:
+                if lower in below:
+                    return (f"'{lower}' lies below '{upper}': choose one of them, not both. "
+                            f"The places below a chosen place are derived and cannot be chosen in the same step.")
+        return None
+
+    def derived_places(self, chosen: Iterable[str]) -> List[str]:
+        """The places that lie below a chosen place (they cannot be chosen in the same step), in graph order; a chosen place is not listed
+        unless it lies below another chosen one. KeyError for an id that is not a node."""
+        reached: Set[str] = set()
+        for nid in chosen:
+            reached.update(self.below(nid))
+        allowed = set(self.places())
+        return [nid for nid in self._nodes if nid in reached and nid in allowed]
+
 
 # ---------------------------------------------------------------------- building
 
@@ -455,6 +498,30 @@ def source_tables_of_plot(graph: "RecipeGraph", plot_id: str) -> List[str]:
     if not graph.has_node(f"T3:{plot_id}"):
         raise KeyError(f"The recipe has no plot '{plot_id}'.")
     return [graph.node(n).name for n in graph.source_tables(f"T3:{plot_id}")]
+
+
+def _graph_of(recipe: Any) -> "RecipeGraph":
+    return recipe if isinstance(recipe, RecipeGraph) else build_graph(recipe)
+
+
+def places_of(recipe: Any) -> List[str]:
+    """The places of a recipe (a resolved recipe or a RecipeGraph): see `RecipeGraph.places`. PROVISIONAL name."""
+    return _graph_of(recipe).places()
+
+
+def below(recipe: Any, place: str) -> List[str]:
+    """Every node below a place: see `RecipeGraph.below`. PROVISIONAL name."""
+    return _graph_of(recipe).below(place)
+
+
+def chosen_places_problem(recipe: Any, chosen: Iterable[str]) -> Optional[str]:
+    """None when the chosen places are a valid set, else one plain sentence: see `RecipeGraph.chosen_places_problem`. PROVISIONAL name."""
+    return _graph_of(recipe).chosen_places_problem(chosen)
+
+
+def derived_places(recipe: Any, chosen: Iterable[str]) -> List[str]:
+    """The places below the chosen ones: see `RecipeGraph.derived_places`. PROVISIONAL name."""
+    return _graph_of(recipe).derived_places(chosen)
 
 
 def source_tables_of_table(graph: "RecipeGraph", table_id: str) -> List[str]:
