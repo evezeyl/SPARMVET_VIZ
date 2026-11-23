@@ -51,7 +51,7 @@ data_schemas:
     null_values: []
     strip: true
     input_fields:
-      sample_id: {{original_name: sample_id, type: String, is_entity_key: true}}
+      sample_id: {{original_name: sample_id, type: String, is_entity_id: true}}
       gene: {{original_name: Gene, type: String}}
       cge_predicted_phenotype: {{original_name: CGE Predicted Phenotype, type: String}}
     tier1: {{steps: []}}

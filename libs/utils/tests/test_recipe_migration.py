@@ -61,7 +61,7 @@ def test_the_field_types_become_polars_names():
 
 def test_the_field_keys_are_renamed():
     fields = load(migrate_text(OLD, role="recipe")[0])["data_schemas"]["A"]["input_fields"]["sample_id"]
-    assert fields["is_entity_key"] is True and fields["original_name"] == "Sample ID"
+    assert fields["is_entity_id"] is True and fields["original_name"] == "Sample ID"
     assert "is_primary_key" not in fields and "source_name" not in fields
 
 
@@ -97,7 +97,7 @@ def test_the_result_is_the_same_recipe_otherwise():
 def test_an_input_fields_fragment_is_migrated_by_its_role():
     fragment = "sample_id:\n  type: categorical\n  is_primary_key: true\nreads: {type: numeric}\n"
     new, _ = migrate_text(fragment, role="input_fields")
-    assert load(new) == {"sample_id": {"type": "Categorical", "is_entity_key": True}, "reads": {"type": "Float64"}}
+    assert load(new) == {"sample_id": {"type": "Categorical", "is_entity_id": True}, "reads": {"type": "Float64"}}
 
 
 def test_a_wrapped_fragment_is_unwrapped_and_dedented():
@@ -210,3 +210,10 @@ def test_strip_whitespace_without_columns_takes_the_text_fields_of_its_schema(tm
     migrate_recipe_file(recipe, apply=True)
     step = yaml.safe_load(recipe.read_text(encoding="utf-8"))["data_schemas"]["T"]["wrangling"]["tier1"][0]
     assert step["action"] == "polars_str_strip_chars" and step["columns"] == ["b"]   # a categorical field was cast before the step, so it was not a String column
+
+
+def test_the_migration_renames_the_old_entity_key_mark():
+    fragment = "sample_id:\n  type: String\n  is_entity_key: true\nreads: {type: Float64}\n"
+    new, report = migrate_text(fragment, role="input_fields")
+    assert load(new) == {"sample_id": {"type": "String", "is_entity_id": True}, "reads": {"type": "Float64"}}
+    assert any("is_entity_key -> is_entity_id" in line for line in report)

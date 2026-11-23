@@ -34,7 +34,7 @@ data_schemas:
     null_values: []
     strip: true
     input_fields:
-      id: {type: String, is_entity_key: true}
+      id: {type: String, is_entity_id: true}
       v: {type: Float64, label: A value}
     wrangling:
       tier1: []
@@ -429,16 +429,16 @@ def test_label_becomes_ui_label_at_groups_and_plot_entries_only(tmp_path):
 
 
 def test_the_pending_places_follow_the_label_keys_table_so_her_answer_is_a_one_line_change(tmp_path):
-    write(tmp_path / "r" / "fields.yaml", "id: {type: String, is_entity_key: true}\nv: {type: Float64, label: A value}\n")
+    write(tmp_path / "r" / "fields.yaml", "id: {type: String, is_entity_id: true}\nv: {type: Float64, label: A value}\n")
     text = JOIN_OLD.replace("""    input_fields:
-      id: {type: String, is_entity_key: true}
+      id: {type: String, is_entity_id: true}
       v: {type: Float64, label: A value}
 """, "    input_fields: !include r/fields.yaml\n")
     path = write(tmp_path / "r.yaml", text)
     run([path], label_keys={"info": "ui_label", "schema": "ui_label", "join": "ui_label", "field": "ui_label"})
     new = read(path)
     assert "info:\n  ui_label: R\n" in new and "  A:\n    ui_label: A\n" in new and "  J:\n    ui_label: J\n" in new
-    assert read(tmp_path / "r" / "fields.yaml") == "id: {type: String, is_entity_key: true}\nv: {type: Float64, ui_label: A value}\n"
+    assert read(tmp_path / "r" / "fields.yaml") == "id: {type: String, is_entity_id: true}\nv: {type: Float64, ui_label: A value}\n"
 
 
 def test_only_the_places_the_table_names_are_renamed(tmp_path):

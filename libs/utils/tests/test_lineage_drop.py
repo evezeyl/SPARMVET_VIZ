@@ -192,7 +192,7 @@ def test_a_key_dropped_after_the_last_join_that_reads_it_is_allowed():
 
 
 def test_L029_a_declared_entity_key_that_no_later_join_reads_is_not_refused_for_being_declared():
-    """Decided (D-0448, "Her answer: B"): D-0297 names JOIN keys, D-0358 says by place: a key a table declares (`is_entity_key`) is no reason to refuse by itself; the line says it is a declared key (information)."""
+    """Decided (D-0448, "Her answer: B"): D-0297 names JOIN keys, D-0358 says by place: a key a table declares (`is_entity_id`) is no reason to refuse by itself; the line says it is a declared key (information)."""
     recipe, tables = F.tiers(u_declares_key=True, u_plot=True)
     walk = run(recipe, tables, "T1:U", "sample_id", kind="drop")
     assert line(walk, "T1:U").refusal is None and line(walk, "T1:U").state == "tick"

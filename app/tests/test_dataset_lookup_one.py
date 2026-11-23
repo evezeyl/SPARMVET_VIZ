@@ -43,7 +43,7 @@ data_schemas:
 {source}    null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_key: true}}
+      sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_id: true}}
     tier1: {{steps: []}}
     tier2: {{steps: []}}
 joins:

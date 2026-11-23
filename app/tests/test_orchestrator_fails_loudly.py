@@ -80,7 +80,7 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: {left_type}, label: Sample, is_entity_key: true}}
+      sample_id: {{original_name: sample_id, type: {left_type}, label: Sample, is_entity_id: true}}
       group: {{original_name: group, type: Categorical, label: Group}}
     tier1: {{steps: []}}
     tier2: {{steps: []}}

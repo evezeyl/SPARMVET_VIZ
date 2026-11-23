@@ -32,7 +32,7 @@ def _template_with_float_key(tmp_path) -> Path:
 
 
 def test_the_shipped_template_with_a_float_key_is_advised_j13_and_refused_only_by_e03(tmp_path):
-    """The key is the sample id (is_entity_key): a number there is refused by E03 (D-0225). J13 itself stays an advice and refuses nothing."""
+    """The key is the sample id (is_entity_id): a number there is refused by E03 (D-0225). J13 itself stays an advice and refuses nothing."""
     path = _template_with_float_key(tmp_path)
     problems = validate_data_analysis_recipe(path)
     assert problems and all(p.problem.startswith("[E03]") for p in problems), "only E03 refuses; the advice J13 does not"

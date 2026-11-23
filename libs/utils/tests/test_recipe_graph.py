@@ -378,9 +378,9 @@ def test_the_columns_a_plot_uses():
 
 def test_key_families_link_the_declared_keys_through_the_join_columns():
     a = schema(["sample_id", "v"])
-    a["input_fields"]["sample_id"]["is_entity_key"] = True
+    a["input_fields"]["sample_id"]["is_entity_id"] = True
     b = schema(["isolate", "w"])
-    b["input_fields"]["isolate"]["is_entity_key"] = True
+    b["input_fields"]["isolate"]["is_entity_id"] = True
     c = schema(["other", "z"])
     step = {"action": "polars_join", "right_ingredient": "B", "left_on": "sample_id", "right_on": "isolate", "how": "left"}
     graph = build_graph(recipe({"A": a, "B": b, "C": c}, {"J": join(["A", "B"], [step])}))
@@ -390,8 +390,8 @@ def test_key_families_link_the_declared_keys_through_the_join_columns():
 
 def test_declared_keys_of_two_unlinked_tables_are_two_families():
     a, b = schema(["ka"]), schema(["kb"])
-    a["input_fields"]["ka"]["is_entity_key"] = True
-    b["input_fields"]["kb"]["is_entity_key"] = True
+    a["input_fields"]["ka"]["is_entity_id"] = True
+    b["input_fields"]["kb"]["is_entity_id"] = True
     assert build_graph(recipe({"A": a, "B": b})).key_families() == [("ka",), ("kb",)]
 
 
@@ -550,7 +550,7 @@ def test_the_graph_builds_over_every_shipped_recipe_and_every_plot_reaches_a_sou
 
 
 def test_declared_entity_keys_are_the_declaration_only():
-    raw = {"data_schemas": {"A": {**schema(["sample_id", "x"]), "input_fields": {"sample_id": {"type": "String", "is_entity_key": True}, "x": {"type": "String"}}},
+    raw = {"data_schemas": {"A": {**schema(["sample_id", "x"]), "input_fields": {"sample_id": {"type": "String", "is_entity_id": True}, "x": {"type": "String"}}},
                             "B": schema(["id"])},
            "joins": {"J": join(["A", "B"])}, "analysis_groups": {"g": {"plots": {"P": plot("J")}}}}
     graph = build_graph(raw)

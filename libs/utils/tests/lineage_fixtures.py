@@ -68,7 +68,7 @@ def unpivot(on: Sequence[str], index: Sequence[str]) -> dict:
 
 
 def schema(columns: Sequence[str], tier1: Sequence[dict] = (), tier2: Optional[Sequence[dict]] = None, keys: Sequence[str] = ()) -> dict:
-    fields = {c: ({"type": "String", "is_entity_key": True} if c in keys else {"type": "String"}) for c in columns}
+    fields = {c: ({"type": "String", "is_entity_id": True} if c in keys else {"type": "String"}) for c in columns}
     body: dict = {"source": {"type": "local_tsv", "path": "x.tsv"}, "input_fields": fields, "tier1": {"steps": list(tier1)}}
     if tier2 is not None:
         body["tier2"] = {"steps": list(tier2)}

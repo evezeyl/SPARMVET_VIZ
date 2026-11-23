@@ -291,7 +291,7 @@ def test_a_float_key_is_advised_j13_and_does_not_block(dtype):
     raw = valid()
     for table in ("A", "B"):
         raw["data_schemas"][table]["input_fields"]["id"]["type"] = dtype
-        raw["data_schemas"][table]["input_fields"]["id"].pop("is_entity_key")
+        raw["data_schemas"][table]["input_fields"]["id"].pop("is_entity_id")
     problems = advices(raw, "J13")
     assert len(problems) == 2, "one advice per table that declares the key as a float"
     assert all(p.severity == "A" for p in problems)
@@ -312,7 +312,7 @@ def test_a_float_sample_id_is_refused_e03_and_still_advised_j13(dtype):
 def test_a_float_key_declared_on_one_side_only_is_advised_once_with_j09_as_the_error():
     raw = valid()
     raw["data_schemas"]["B"]["input_fields"]["id"]["type"] = "Float64"
-    raw["data_schemas"]["B"]["input_fields"]["id"].pop("is_entity_key")
+    raw["data_schemas"]["B"]["input_fields"]["id"].pop("is_entity_id")
     assert len(advices(raw, "J13")) == 1 and codes(raw) == ["J09"]
 
 

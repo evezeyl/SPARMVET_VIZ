@@ -74,7 +74,7 @@ def test_given_schemas_and_plots_are_used_as_they_are():
     recipe = minimal_recipe("tiny", schemas=schemas, plots=plots)
     assert check_recipe(recipe, "run", file_stem="tiny").errors == []
     assert list(recipe["data_schemas"]) == ["reads"]
-    assert recipe["data_schemas"]["reads"]["input_fields"]["sample_id"] == {"type": "String", "is_entity_key": True}
+    assert recipe["data_schemas"]["reads"]["input_fields"]["sample_id"] == {"type": "String", "is_entity_id": True}
     assert recipe["data_schemas"]["reads"]["input_fields"]["reads"] == {"type": "Int64"}
     assert recipe["analysis_groups"]["main"]["plots"]["reads_per_sample"]["layers"] == [{"name": "geom_col"}]
 

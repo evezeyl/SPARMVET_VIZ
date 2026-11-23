@@ -22,7 +22,7 @@ DEMO = REPO / "config" / "data_analysis_recipes" / "pipelines" / "1_test_data_ST
 
 
 def schema(*key_columns, other=("x",), **extra):
-    fields = {name: {"type": "String", "is_entity_key": True} for name in key_columns}
+    fields = {name: {"type": "String", "is_entity_id": True} for name in key_columns}
     fields.update({name: {"type": "String"} for name in other})
     return {"source": {"type": "local_tsv", "path": "x.tsv"}, "input_fields": fields, **extra}
 

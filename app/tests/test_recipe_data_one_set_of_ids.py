@@ -45,7 +45,7 @@ ALLOWED_OUTSIDE = {
         {"ACC0001", "ACC0002"},
         "the lesson recipe that teaches a left join: its two tables have ids that do not match on purpose "
         "(config/data_analysis_recipes/templates/left_join_lesson.yaml, app/tests/test_left_join_lesson.py); "
-        "the id column is the one the recipe declares with is_entity_key (Accession and ID), not a name guess",
+        "the id column is the one the recipe declares with is_entity_id (Accession and ID), not a name guess",
     ),
 }
 
@@ -75,10 +75,10 @@ def read_file(path):
 
 
 def id_column_of(table):
-    """The file column that holds the sample id: the field declared `is_entity_key`, else the field `sample_id`."""
+    """The file column that holds the sample id: the field declared `is_entity_id`, else the field `sample_id`."""
     fields = table.get("input_fields") or {}
     for key, spec in fields.items():
-        if isinstance(spec, dict) and spec.get("is_entity_key"):
+        if isinstance(spec, dict) and spec.get("is_entity_id"):
             return spec.get("original_name", key)
     for key, spec in fields.items():
         name = spec.get("original_name", key) if isinstance(spec, dict) else key
@@ -259,7 +259,7 @@ def test_the_lesson_exception_is_narrow_and_read_from_the_declared_id_column():
     """Exactly the two named ids are allowed in the lesson; a third foreign id fails, and the id column is the declared one."""
     tables = CHECKED["left_join_lesson"]
     assert problems_of("left_join_lesson", tables, "metadata_schema") == []
-    assert tables["sequenced"][1] == "Accession" and tables["metadata_schema"][1] == "ID", "the declared is_entity_key columns"
+    assert tables["sequenced"][1] == "Accession" and tables["metadata_schema"][1] == "ID", "the declared is_entity_id columns"
     found = problems_of("left_join_lesson", tables, "metadata_schema",
                         allowed_outside={("left_join_lesson", "sequenced"): ({"ACC0001"}, "x")})
     assert any("ACC0002" in p and "ACC0001" not in p for p in found), found
