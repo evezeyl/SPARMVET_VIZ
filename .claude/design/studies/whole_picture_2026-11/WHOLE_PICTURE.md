@@ -19,11 +19,11 @@ A study, not a decision: nothing is built from it before you answer (D-0507, D-0
 
 **Words used here.**
 - The **entity**: what one value of the entity key names. On the demo recipe it is a sample, and the key is `sample_id`.
-- An **observation**: a row of a table (my reading of your word).
-- A **tier**: a stage of a table in the recipe. Tier 1 cleans a table (and joins it with the metadata); tier 2 computes; tier 3 is the table a result is made from.
-- The **lineage**: the path of a table, from the original data files to the results.
-- A **place**: one table at one tier, where an audit step can be written. Its **reach**: the tables and results that depend on it.
-- The **audit recipe**: the copy of the recipe that holds your audit steps; the original recipe never changes.
+- An **observation**: a row of a table (my reading of your word). @eve : yes
+- A **tier**: a stage of a table in the recipe. Tier 1 cleans a table (and joins it with the metadata); tier 2 computes; tier 3 is the table a result is made from. @eve : the tiers division is not that simple because it depends but we have some rulbut that can be seen as such in a way. Eg t2 can be a place where we can have common steps for different t3 . and t1 can have common steps for differents t2, only t3 cannot hold things that are used by different results ... this is more a process to avoid doing recalculation that can be costly and allow branching to a next step that will be unique to resutls 
+- The **lineage**: the path of a table, from the original data files to the results. @eve : must correspond to the pass of data to different tiers used ----to the results back forth back -
+- A **place**: one table at one tier, where an audit step can be written. Its **reach**: the tables and results that depend on it. @eve: yes audit steps can be written at each tier after the original tier block. The original recipe steps are always kept
+- The **audit recipe**: the copy of the recipe that holds your audit steps; the original recipe never changes. @eve yes correct
 
 The detail is in `GOALS_REVIEW.md`. It also covers the six places you agreed to add (D-0529): trust in the whole result, the author and the user, BLUEPRINT, the help, where the app runs, and how you will know a goal is reached.
 
@@ -43,14 +43,14 @@ From your passage (the review session read six goals in it; I checked each again
 
 From earlier decisions, one line each:
 - **Nothing silent:** "No silent error that is the rule." (D-0050)
-- **No wrong result from a wrong scope:** "Sorry do not get wrong results because we did not select the correct scope" (D-0450)
+- **No wrong result from a wrong scope:** "Sorry do not get wrong results because we did not select the correct scope" (D-0450) @eve we have to try to inform the user so it can make wrong decisions. But we cant prevent the user to make wrong decisions if he really wants. Our job is to try to give as clear information as possible - so the user has elements it needs to be able to make a good decision (if it does we have informed him). 
 - **Every recipe:** "remember we are data agnostic so sample id is the example" (D-0512)
 - **The author and the user:** "well the problem is that the user might not be the author" (D-0500)
 - **The story of the data:** "YES the story of is what I want to show - this is why I wanted the lineages" (D-0508)
 - **Well built:** "We aim for one source of truth." (D-0065)
 - **The way there:** "I would prefer to have the big line done as fast as possible" (D-0521)
 
-Some of your goals pull against each other; I do not resolve them (`GOALS_REVIEW.md` 2.4).
+Some of your goals pull against each other; I do not resolve them (`GOALS_REVIEW.md` 2.4). @eve : I do not agree : we deliver a tool that allow he the goals of reliability - correct science, transparency, reproducibility, information providing - the user uses the tool - it is not our role to decide its a bad choice - we provide good tools - the user choice its own, 
 
 **Is each goal reached?** "Today" is the app on `dev` on 22 November. "As decided" is your decisions, once built. The last column is my reading.
 
@@ -74,10 +74,24 @@ Some of your goals pull against each other; I do not resolve them (`GOALS_REVIEW
 3. Find a bad entity: on the demo, sample `10668076`, whose sequencing failed.
 4. In Audit mode, from the table where you see it, ask to remove it, with a reason.
 5. The dialog shows the lineage as a propagation, one line per place with its reach. Your default, the earliest places, starts ticked and is named on screen as a starting point (question 1).
-6. Under the lines, the measured effect on each result: "n observations removed" or "unchanged"; where it happens, "still found here" or "the values of other observations change here". Each change of a tick is measured again.
-7. Confirm. The step goes into the audit recipe at the places you ticked, with its reason. The log keeps the places, ticked by default or by you, and the effects shown.
+6. Under the lines, the measured effect on each result: "n observations removed" or "unchanged"; where it happens, "still found here" or "the values of other observations change here". Each change of a tick is measured again. @eve: I think to show the effect the steps after needs to be applied because all the steps after the place of change need to be recalculated - you cannot see effect if you do not recalculate. Recalculating each trial can be too costly - the can still remove a step from the audit after apply but preview cost much computation- I do not see how effect could be calculated without recomputation of all the steps after the change. 
+7. Confirm. The step goes into the audit recipe at the places you ticked, with its reason. The log keeps the places, ticked by default or by you, and the effects shown. @eve again after apply.
 8. Check with Compare; take any one step out with "Remove step".
-9. Export: the audited results with the originals beside them; a report with the observations removed from each result, and why; the log; the original and the audited reproducibility parts.
+9. Export: the audited results with the originals beside them; a report with the observations removed from each result, and why; the log; the original and the audited reproducibility parts. 
+@eve : here I think is what what goes wrong: the user can only chose where to write the step in one corect scope - all the steps after are the following history. and are derived.  
+
+The only exception is if the user wants to one or several eg all FIRST T1 (right after the original data) to speed up things. So the step must be duplicated in all those T1 - this because of independent histories. But the user can only choose one scope per history - all the steps are derived - the user cannot choose anymore - if he want another choice he must add another step audit step later - choosing a different scope.
+
+For metadata joins - we need to ensure that eg. if one sample is removed from one other T1 after the original data that the join is a  T1 original -> left_join -> metadata 
+
+If the user wants to remove from metada it must choose the T1 of metadata and remove there (not advised)
+
+All the derived steps must get a "~" after that will clarify where it applies but the user can only choose one scope per original T1 on where to apply the step. 
+
+
+What would be best is to show the lineage/history on the audit step - a bit more structured 
+
+
 
 ```text
 +-- Create audit step -----------------------------------------------------+
@@ -104,6 +118,8 @@ Some of your goals pull against each other; I do not resolve them (`GOALS_REVIEW
 ```
 
 This screen does not exist yet; "n" is a number the app would count. The effect lines come from three runs on the demo, one entity each, with the places listed by hand (part 6.1): with this default the entity stayed in 7 plots, and in 3 of them its source and country were emptied, because a left join keeps the row of its first table.
+
+@eve: I think its because the steps were added in T3 and not in the correct place - this needs to be revised. 
 
 **The choices that are yours:** question 28 (places first, results first, or as decided without the measured effect); question 1 (the default); questions 29 and 17 (what an audit step may be); question 4 (the default for a filter on another column).
 
