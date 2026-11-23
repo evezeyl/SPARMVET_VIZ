@@ -181,7 +181,7 @@ def test_a_removal_in_a_join_tier_is_seen(scratch):
     s = "\n".join(section(tool.build(scratch), 6))
     assert "the metadata's own steps do not remove them" in s
     assert "`J` removes them" in s and "r/J.yaml:8" in s and "polars_drop_nulls" not in s
-    assert "`Fine`" in s and "does not" in s
+    assert "`Alone`, `Fine` do not" in s
 
 
 def test_a_removal_in_the_metadata_own_tier_is_seen(scratch):
