@@ -11,6 +11,24 @@
 
 ---
 
+## REVIEW OF 2026-11-23 (her order, ledger D-0577, D-0578): what her decisions since changed in the seven questions
+
+The seven questions of this file were written before D-0573 to D-0576 and D-0579. Her new decisions touch five of them (Q1, Q3, Q5, Q6, Q7). Nothing is deleted. The line "where the metadata is the first table of a left join, the entity's rows stay, with the ResFinder columns empty" (half page, item 4) stays true of today's recipes.
+
+| Question | Status | Deciding line |
+|---|---|---|
+| Q1 A parent reused in another graph | STILL OPEN; touched: the completion makes the metadata feed every completed result table (an edge from its file under reading (α), from its tier 1 under (β); new question 8 of `CAUSE_AND_SOLUTIONS_ZEROS.md`) | D-0574 |
+| Q2 "Each T1 coming from the parent": which place | STILL OPEN | |
+| Q3 The recipe form | STILL OPEN; one decided element: the completion block on each result table | D-0574 |
+| Q4 The default place where her rule says nothing | STILL OPEN; the join place default (D-0549) stands | D-0549 |
+| Q5 What "Remove from all the data" writes | STILL OPEN; touched: the library step is built, the screen with the ticks is not (D-0499, D-0531, D-0501); under reading (β) the completed result tables lie below the metadata, which adds nested pairs | D-0574 |
+| Q6 "Can remain" before Apply | CHANGED MEANING, narrower: with the result table first and the completion, a removal at the result table is complete; the note is needed for metadata-first joins and for paths through other originals (the 23 virulence genes) | D-0549, D-0574 |
+| Q7 "Remove step"; the side of the metadata; the entity key | "Remove step": STILL OPEN. The side of the metadata: CHANGED, now new question 12 (a rule, an advice or documentation). The entity key: CHANGED, partly settled: the shipped recipes declare their ids (D-0569) and the block needs a declared id (D-0574); whether the format requires it is the recipes file's (iii) and the new question 6 | D-0569, D-0574 |
+
+The one list of what she still has to answer is in `CAUSE_AND_SOLUTIONS_ZEROS.md` (section "Added 2026-11-23 (ledger D-0573 to D-0579)").
+
+---
+
 ## HALF PAGE FOR HER
 
 What the two agents agree on after the restart:
@@ -42,6 +60,8 @@ The questions, in the order that the two agents propose (each answer changes the
 What the screen shows today: a step is written at the finished table of one plot ("this plot only / all plots / all plots except"). The place list, the tree view, "Remove from all the data" and the audit copy exist only as code that no screen calls, except the rule that refuses to drop a key column, which HOME calls.
 
 ### Q1 A parent reused in another graph: what should the app do?
+
+> **Update of 2026-11-23 (ledger D-0578):** STILL OPEN; touched: the completion makes the metadata feed every completed result table (an edge from its file under reading (α), from its tier 1 under (β); question 8 of the new list in `CAUSE_AND_SOLUTIONS_ZEROS.md`) (D-0574).
 **The situation.** A table that several tables read can carry a step into results you are not looking at. On the demo, a step at the MLST table also changes `virulence_bar`, `virulence_variants` and the exported `AR1_MLST_Serotype_Virulence`; a step at the metadata changes 13 of the 17 plots in 4 groups; six parents feed results in more than one analysis group. Starting from `mlst_bar`, 12 other plots lie below its originals; from `amr_heatmap`, 4; from `qc_reads_horizontal_barplot`, 13.
 **Your reimport rule, run on MLST.** MLST becomes three source tables that read the same file, each read by one table. Result: all 17 plot tables equal the original's; the three graphs are separate; a step at MLST changes 5 tables instead of 10. The author writes 2 new schema entries (10 lines each, the same includes) and changes 2 ingredient lines and 1 `right_ingredient` line; the rebuild of the demo took about 1 s either way. It does not split: a joined table read by several plots (`Quast_with_metadata`'s two plots are in two groups), `ST22_Anchor` (6 originals), a calculation over all entities. The metadata is read by 13 tables: 13 copies, or the one exception (then a step at its first place still reaches 13 of the 17 plots, and you call that place "not advised"). In a deployment that finds files by table name, each copy needs its own file named by its table.
 **The options:**
@@ -81,6 +101,8 @@ What the screen shows today: a step is written at the finished table of one plot
 **What the two agents think.** Both leave it to you. Sonnet leans to (b) as a named default where a branch has no metadata join, and none where unsure. Opus: "same level" read as the level of a joined table points to `T1:QA_L50_integer` (a table made from Quast alone, at the level of `Quast_with_metadata`); for `amr_heatmap` there is no table at that level, only ResFinder's own tier 2, so (b) is the nearest reading of your words there; a reading, not a lean. [D-0549, D-0550, D-0553, D-0547]
 
 ### Q5 What does "Remove from all the data" write?
+
+> **Update of 2026-11-23 (ledger D-0578):** STILL OPEN; touched: the library step is built, the screen with the ticks is not (D-0499, D-0531, D-0501); under reading (β) the completed result tables lie below the metadata, which adds nested pairs (D-0574).
 **The situation.** Decided: tier 1 of every table that holds the key (27 places on the demo). Under your rule it holds nested pairs (35), so it is not one valid step.
 **Options, from our runs (two entities; the valid form of (c): one entity).**
 - (a) The 27 places in two steps: the first places, then the joined tables. 17 plots change, the entity in none. The exported tier 1 files lose the entity everywhere. [the two steps: reasoned, not run; the same places in one list: run]
@@ -92,6 +114,8 @@ What the screen shows today: a step is written at the finished table of one plot
 **What the two agents think.** Neither agent chooses. (c) is the review session's reading and was not decided ("to be asked once when the plan is checked", ledger D-0550, not her words). [D-0416, D-0553, D-0549, D-0457]
 
 ### Q6 May the app say, before Apply, that the entity can remain in a place below?
+
+> **Update of 2026-11-23 (ledger D-0578):** CHANGED MEANING, narrower: with the result table first and the completion, a removal at the result table is complete; the note is needed for metadata-first joins and for paths through other originals (the 23 virulence genes) (D-0549, D-0574).
 **The situation.** "~" is not "changed". At `T1:ResFinder`, `qa_fanout_rows_per_sample` and its table lie below and stay identical although the entity is in them (23 rows, a count per sample); at `T1:FastP`, 3 plots lie below and 1 changes. Where the metadata is the first table of a left join, the entity's rows stay with the columns of the chosen table empty.
 
 > **Correction of 2026-11-23 (ledger D-0563; see `CAUSE_AND_SOLUTIONS_ZEROS.md`):** the 23 are the entity's 23 virulence genes, which come from the VirulenceFinder table and which a step at the ResFinder table does not touch; the table counts the genes that are present, not rows. The two tables stay identical because the place chosen does not cover that path and because the join starts from the metadata; it is not a count of an empty row.
@@ -104,6 +128,8 @@ What the screen shows today: a step is written at the finished table of one plot
 **What the two agents think.** Neither decides. For a note: your words "eg. left join keeps the rows of the second table - ensure you removed in second table if this is what you want (or something similar)" and "try to give as clear information as possible - so the user has elements it needs to be able to make a good decision". Against warnings: "I would just shows the differents where applied and no per table warnings about downstream effects"; "again after apply". "1 of 2" alone does not tell the entity's fate: with the first place of every original except the metadata chosen, `MLST_with_metadata` and `QA_AMR_per_sample` both show 1 of 2; the entity is gone from the first (the covered table is its first table) and stays in the second (the uncovered metadata is its first table). Sonnet leans to (d): the structure is information, the entity's fate belongs after Apply. Opus gives no lean; it shows what the structure and the runs say. [D-0477, D-0543, D-0501, D-0545, D-0546]
 
 ### Q7 The earlier questions on "Remove step", the side of the metadata and the entity key
+
+> **Update of 2026-11-23 (ledger D-0578):** "Remove step": STILL OPEN. The side of the metadata: CHANGED, now question 12 of the new list (a rule, an advice or documentation). The entity key: CHANGED, partly settled: the shipped recipes declare their ids (D-0569) and the block needs a declared id (D-0574).
 - "Remove step" (one step or the whole decision): unchanged. One decision written at several places stays one event in the audit log (provisional). [D-0314, D-0315, D-0478]
 - The side of the metadata (a rule, an advice or documentation): the runs add a fact. Where the metadata is the first table of a left join, a step at the data table leaves the entity's rows (`QA_AMR_per_sample` 1 row, `ST22_Anchor` 7, `QA_fanout_exhibit` 23). A rule "the metadata is the right table" would make the 4 demo joins with the metadata first be rewritten. [D-0547, D-0549, D-0550]
   > **Correction of 2026-11-23 (ledger D-0563; see `CAUSE_AND_SOLUTIONS_ZEROS.md`):** the 23 are the entity's 23 virulence genes, which come from the VirulenceFinder table and which a step at the ResFinder table does not touch; the table counts the genes that are present, not rows. The two tables stay identical because the place chosen does not cover that path and because the join starts from the metadata; it is not a count of an empty row.
@@ -268,3 +294,5 @@ Statuses: STANDS (her words, recipe keys or checker code: no old lineage code); 
 None. The one difference of number in G14 (11 plots, not 12) was confirmed by Opus: the plot `qa_aggregated_no_key` never held the entity.
 
 Signed by both agents: Sonnet (this file) and Opus (OPUS_signs_paths_v1.md and OPUS_signs_paths_v2.md; all replacements applied; C7 with the number 11, confirmed by Opus)
+
+**D-0573 to D-0579 additions and the review:** Sonnet (this file) and Opus (`OPUS_checks_review_v1.md`, S1 to S18 applied).

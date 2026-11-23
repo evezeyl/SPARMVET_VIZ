@@ -10,6 +10,85 @@ Tags: [HER WORDS D-n] / [RECIPE FILE] / [GRAPH SCRIPT] (each agent's own parse o
 
 ---
 
+## REVIEW OF 2026-11-23 (her order, ledger D-0577 and D-0578): what her decisions since changed in this file
+
+**Why.** This file was written before her answers D-0568 to D-0576 and her D-0579. Since then she decided: the metadata is refused when its ids are wrong; two checks of the ids (X, Y); the completion of a result table with the marker "not in original data", in the recipe, required on every result table, confirmed once per data batch, noted in a separate log, also in the export; "stopping first" is her question. She wrote about the code: "the code is not build yet" [HER WORDS D-0573]. So "what is true today" and "what is decided and to build" are kept apart in each row.
+
+**The words used for the status.** STILL TRUE (nothing in her words touches it). SETTLED (her words answer it; the line is named). CHANGED MEANING (the text is true of today's recipes, but the question it answers is no longer the same). SUPERSEDED (replaced; kept as history). STILL OPEN. Where only the agents say so, the row says "the agents' reading" and the line to confirm with her.
+
+**The half page**
+
+| Item | Status | Deciding line |
+|---|---|---|
+| 1 A join with the metadata is written in tier 1 | STILL TRUE | D-0510 |
+| 2 Two ways of writing a result; the metadata first with the counts filled with 0 gives a false zero | CHANGED MEANING: with the completion decided, a per-entity result can start from the result table and keep every entity; the false zero at a table's own place is accepted; the facts stay true of today's recipes | D-0569, D-0573, D-0574 |
+| 3 A zero cannot tell "analysed, nothing found" from "not analysed"; a removed entity also shows 0 | SPLIT: the first half stays true (the risk the recipe maker takes); "a removed entity also shows 0" is SUPERSEDED: with the completion a removed entity is absent or has no line, and an added line is marked | D-0572, D-0573 |
+| 4 Three kinds of join; rows multiply | STILL TRUE | |
+| 5 Nothing checks today (uniqueness, side, block meaning, look-up key, inner join; two recipes declare no id) | STILL TRUE of the code; CHANGED in what is to be built: the metadata's ids are refused when wrong, two checks of the ids are decided, the recipes declare their ids | D-0569, D-0573 |
+| 6 The engine does not run the check | STILL TRUE; weightier: a refusal of the metadata holds only where the check runs | D-0573 |
+| 7 The five forms tried | STILL TRUE (history); a new decided element, the completion block, was not among them | D-0574 |
+| 8 The rename counts | STILL TRUE (counts of that date) | D-0562 |
+| "Since the list was written, her words D-0563 to D-0566" | add one line: D-0567 to D-0578 and D-0579 | |
+| "Before the demo recipe can be touched: (iii), (iv), (v) answered, a solution chosen for the join that starts from the metadata" | CHANGED: the solution is decided in substance (the completion, D-0574); (iii) partly settled, (iv) narrower, (v) the form of the block is open | D-0574 |
+
+**Her eight questions of the file**
+
+| Question | Status | Deciding line |
+|---|---|---|
+| (viii) The engine does not run the recipe check: a gap, or by design? | STILL OPEN, weightier | D-0573 |
+| (iii) Must the entity id be declared; where is "unique" judged | CHANGED MEANING, partly SETTLED: the shipped recipes declare their ids (D-0569); the completion needs a declared id on a result table (D-0574; whether a table with none says so is the new question 6); for the metadata a repeated id may be an error (new question 2); where uniqueness of a result table's id is judged: STILL OPEN | D-0569, D-0573, D-0574 |
+| (iv) "The join should not start with the metadata": rule, advice or documentation | STILL OPEN, narrower: the completion is the "solution we do not have yet" of D-0564, so the result-table-first join keeps every entity (new question 12) | D-0564, D-0574 |
+| (ii) A result per entity with zeros: the default place for a removal | CHANGED MEANING: with the result table first a removal at the result table is complete; the default at the join (D-0549) stands; the "can remain" sentence (PATHS Q6) is needed only for metadata-first joins and paths through other originals | D-0549, D-0574 |
+| (i) A system for joins that are not metadata | STILL OPEN | |
+| (vii) An inner look-up join removes rows | STILL OPEN | |
+| (vi) A look-up join after tier 1 (her question 27) | STILL OPEN | |
+| (v) The recipe form (PATHS Q3) | STILL OPEN; one decided element: the completion block on each result table | D-0574 |
+
+**The 19 agreed points**
+
+| Point | Status | Deciding line |
+|---|---|---|
+| G1 The three blocks | STILL TRUE; the metadata block is the population of the two checks; the completion applies to result tables (data schemas), never to look-up tables | D-0574 |
+| G2 VirulenceFinder moves to `data_schemas` | STILL TRUE, not done; after the move it gets the completion block | D-0523, D-0574 |
+| G3 Joins in tier 1, source tables only | STILL TRUE | D-0344, D-0510 |
+| G4 The entity id | STILL TRUE, with a new fact: the entity id is the condition for the completion; the metadata's ids are checked and refused when wrong | D-0562, D-0567, D-0573, D-0574 |
+| G5 A result per observation | STILL TRUE | |
+| G6 A result per entity with zeros (the metadata first, the fill with 0, the false zero) | SUPERSEDED as the way to give zeros; its facts stay true of today's recipes (agents' reading, to confirm) | D-0573, D-0574 |
+| G7 A zero cannot tell analysed from not analysed; an entity with metadata and no observation exists in the result only when the metadata is the first table | SPLIT: the first half STILL TRUE (the accepted risk); the second half SUPERSEDED: with the completion it exists with the result table first | D-0572, D-0574 |
+| G8 A removal at a table with no entity id is refused by the engine | STILL TRUE | |
+| G9 Three kinds of join | STILL TRUE | |
+| G10 The tiers as shared steps; the audit block | STILL TRUE | D-0539, D-0541 |
+| G11 A table result has no form yet | STILL TRUE of the code; the design is decided (D-0485, D-0487), its key open | D-0485, D-0487 |
+| G12 Uniqueness differs between the file and tier 1 | STILL TRUE (a fact); "where unique is judged" is question (iii) | |
+| G13 What nothing checks today | STILL TRUE of the code; the id check, the overlap and the two checks are decided, not built | D-0570, D-0573 |
+| G14 An inner look-up join removes rows | STILL TRUE | |
+| G15 The rename `is_entity_key` to `is_entity_id` | STILL TRUE (decided, not done) | D-0562, D-0567 |
+| G16 The engine does not run the check | STILL TRUE | |
+| G17 Reading rules and parents | STILL TRUE, with a new fact: a completed result table also reads the metadata (an edge from the metadata's file under reading (α), from its tier 1 under (β); new question 8) | D-0574 |
+| G18 The forms as tried | STILL TRUE (history); the completion block was not tried | |
+| G19 A rule "metadata on the right" would forbid the zeros pattern written with the metadata first | CHANGED MEANING: with the completion the zeros can be written with the result table first, so such a rule forbids only a spelling | D-0574 |
+
+**The demo recipe candidates and the rest**
+
+| Row | Status | Deciding line |
+|---|---|---|
+| The rename `is_entity_id` | STILL TRUE (YES, decided) | D-0562 |
+| VirulenceFinder moves | STILL TRUE (YES) | D-0523 |
+| An `entity` block | STILL TRUE (only under some answers) | |
+| The metadata moved off the first place in the 4 joins | CHANGED: no longer needs a solution to be chosen; remains a choice under new question 12 | D-0574 |
+| A kind on each join step; the inner look-ups; the reimport copies; the APEC joins in tier 2; the declared default key; joins of joins | STILL TRUE (only under their questions) | |
+| NEW (decided in substance): the completion block with its stated meaning on every result table; on the demo 9 data tables today (10 after the VirulenceFinder move), only ResFinder receives lines (4) | NEW | D-0574 |
+| NEW: ResFinder's steps that stamp "Detected" and count rows are adapted | NEW | D-0573 |
+| NEW: `qa_amr_genes_per_sample`, whose text says "4 with 0 genes", follows the stated meaning | NEW | D-0573 |
+| NEW: `demo_abromics`'s metadata without its 3 id-less lines | NEW (dry run) | D-0569, D-0573 |
+| NEW: the two recipes with no declared id declare it | NEW (dry run) | D-0569 |
+| "The old recipe study": the line "result: plot | table stays a direction (D-0487)" | CHANGED: a decided design, not built; its key open | D-0485, D-0487 |
+| Facts F1 to F6 | STILL TO RUN, only when she asks; the expected numbers of F6 hold for today's recipe | |
+
+**What stays hers to answer, from this file.** (viii), (i), (vii), (vi), (v), and narrower (ii), (iii) and (iv). They are now in the one list of `CAUSE_AND_SOLUTIONS_ZEROS.md` (section "Added 2026-11-23 (ledger D-0573 to D-0579)"), with the questions that her answers created. Where this file and that list differ, that list is the later.
+
+---
+
 ## HALF PAGE FOR HER
 
 **What both agents agree on** (the numbers come from runs made separately that gave the same result):
@@ -17,7 +96,9 @@ Tags: [HER WORDS D-n] / [RECIPE FILE] / [GRAPH SCRIPT] (each agent's own parse o
 2. A result can be written in two ways, and where a removal is written matters for each:
    - **A result per observation** (the data table first, the metadata second). Removing the entity at the data table or at the join takes it out. Removing it at the metadata only empties the metadata values of its rows.
    - **A result per entity with zeros** (the metadata first, the counts filled with 0). Removing the entity at the table of counts leaves it in the result with a **false zero**: the entity is still there and shows 0. Only the join place or the metadata takes it out.
+   > **Update of 2026-11-23 (ledger D-0573, D-0574):** the "metadata first, counts filled with 0, false zero" way is no longer the way to give zeros; the completion with the marker "not in original data" is decided. The false-zero facts stay true of today's recipes. See the review section at the top.
 3. A zero cannot tell "analysed, nothing found" from "not analysed". Both show 0. A removed entity also shows 0 there.
+   > **Update of 2026-11-23 (ledger D-0572, D-0573):** the first sentence stays true. "A removed entity also shows 0 there" is superseded: an added line carries the marker "not in original data", and a removed entity is absent.
 4. There are three kinds of join: with the metadata, between two analysis tables on the entity id, and a look-up (another column; the right table has no entity id). Where the right side repeats the entity id, rows multiply (the metadata's 42 rows become 617 or 1731 in some demo tables).
 5. Nothing checks today: that the entity id is unique where it is said to be, which side the metadata is on, what a block holds, that a look-up key is unique, or that an inner look-up join removes rows. In two shipped recipes four entity joins declare no entity id at all.
 6. The recipe check runs when the app opens a recipe and in BLUEPRINT. The engine does not run it: a script that builds a recipe directly gets no check, and an unknown key is ignored silently there.
@@ -26,7 +107,7 @@ Tags: [HER WORDS D-n] / [RECIPE FILE] / [GRAPH SCRIPT] (each agent's own parse o
 
 **The sentence for the specification of `is_entity_id` is approved by her** (ledger D-0567; her words: "yes it seems good"). It is in G15.
 
-**Since the list was written, her words D-0563 to D-0566:** she asked for the cause of the two tables that stayed identical, then said "well there we have it the join should not start with the medata or we need a solution we do not have yet ." (D-0564), then "H1, H2 appear to be a consequence of that - so I think we need to find solution for that and then retest." (D-0565), then "no need to test that now then" (D-0566). The cause and a catalogue of solutions (no run) are in `CAUSE_AND_SOLUTIONS_ZEROS.md`. In short: the entity stayed because its 23 rows come by another path than the one she chose, and because the metadata is the first table of the join. A zero and a removal at the data table are the same state of the table; the catalogue lists what can be written and what the user would see.
+**Since the list was written, her words D-0563 to D-0566:** she asked for the cause of the two tables that stayed identical, then said "well there we have it the join should not start with the medata or we need a solution we do not have yet ." (D-0564), then "H1, H2 appear to be a consequence of that - so I think we need to find solution for that and then retest." (D-0565), then "no need to test that now then" (D-0566). The cause and a catalogue of solutions (no run) are in `CAUSE_AND_SOLUTIONS_ZEROS.md`. In short: the entity stayed because its 23 rows come by another path than the one she chose, and because the metadata is the first table of the join. A zero and a removal at the data table are the same state of the table; the catalogue lists what can be written and what the user would see. Then D-0567 to D-0579 (the review section at the top).
 
 **The two agents differ on one wording only:** see "Open between the two agents" at the end.
 
@@ -67,6 +148,8 @@ How to read: "the entity" is what each row of the metadata is about (in the demo
 
 ### (iii) Must the entity id be declared? And where is "unique" judged?
 
+> **Update of 2026-11-23 (ledger D-0578):** CHANGED MEANING, partly SETTLED: the shipped recipes declare their ids (D-0569); the completion needs a declared id on a result table (D-0574; whether a table with none says so is question 6 of the new list); for the metadata a repeated id may be an error (question 2); where uniqueness of a result table's id is judged: STILL OPEN.
+
 **Her words.** "specify that if its unique then it is a key if not it refers to the column used for the join (eg. to the metadata)", "I think is_entity_id for all cases", "in some cases is_entity_id is a real key instead no ..." [D-0562]. The sentence she approved says "If its values are unique in the table, it is also the key of the table" [D-0567]. It does not say whether "the table" is the file or the table after tier 1: that is the question below, and her sentence is not an answer to it.
 **What is the case today.** The flag is optional. The demo declares it in 10 files (11 tables). In `2_test_data_ST22_dummy` and `figshare_integration` 4 entity joins declare nothing, so the app sees them like look-up joins. Uniqueness is checked nowhere. When the flag is missing, today's library (no screen calls it) does not offer "remove from all the data", with a plain sentence (`remove_from_all.py:170`; old code, described only). [RECIPE FILE; CODE READ]
 **A new fact.** Uniqueness changes between the file and tier 1. The raw `Summary` file has 42 rows for 42 entities. The table `Summary` after tier 1 has 623 rows for 42. `ResFinder` has 70 rows for 38 entities at both. The flag is written on the fields of the file; the joins read the table after tier 1. [RECIPE FILE; ENGINE RUN, Opus RR2; file read, Sonnet]
@@ -74,6 +157,8 @@ How to read: "the entity" is what each row of the metadata is about (in the demo
 **Leans (as leans):** Sonnet: (a) or (c) for the declaration, (d) as information. Opus: (c), and the uniqueness shown as information both in the file and after tier 1, since they differ. **Consequence:** (b) would make 2 shipped recipes invalid until they declare the id. **Reopens:** nothing decided. **Links:** PATHS Q5, Q7.
 
 ### (iv) Her direction: "the join should not start with the metadata". A rule, an advice or documentation?
+
+> **Update of 2026-11-23 (ledger D-0578):** STILL OPEN, narrower: the completion is the "solution we do not have yet" of D-0564, so the result-table-first join keeps every entity (question 12 of the new list; D-0564, D-0574).
 
 **Her words.**
 - "The metadata should be the right table -- best practice and would solve problems (some users will have metadata for more samples so that will allow to join what really is in T1 without the extra in metadata)" [D-0549]
@@ -89,6 +174,8 @@ How to read: "the entity" is what each row of the metadata is about (in the demo
 **Lean (as a lean):** (b), because she wrote "best practice" and the earlier choice between a rule and an advice (D-0510) went to a rule only for the join with the metadata in tier 1. **Reopens:** nothing decided. (a) would forbid the result per entity with zeros written with the metadata first (G6); whether a right join with the metadata second is also forbidden depends on whether the rule is about the order in the file or about which table keeps all its rows (see the catalogue, candidate (e)). **Links:** PATHS Q7; decides (ii).
 
 ### (ii) A result per entity with zeros: where does the removal go by default, and what does the user see?
+
+> **Update of 2026-11-23 (ledger D-0578):** CHANGED MEANING: with the result table first a removal at the result table is complete; the default at the join (D-0549) stands; the "can remain" sentence (PATHS Q6) is needed only for metadata-first joins and paths through other originals. Still hers, narrower (D-0549, D-0574).
 
 **Her words.** "my case where I want to remove the samples from all analyses BUT the ones that show the bad quality" [D-0549]; "where original T1+ metadata are joined" [D-0549]; her direction of D-0564 and D-0565 above.
 **What she sees today.** In HOME the audit writes a step at the plot's own table (T3); the choice of an earlier place is decided and not built [D-0316 to D-0318, D-0337]. The plot shows the entities; a bar with 0 looks like "nothing found".
@@ -126,6 +213,8 @@ How to read: "the entity" is what each row of the metadata is about (in the demo
 
 ### (v) The recipe form (PATHS Q3)
 
+> **Update of 2026-11-23 (ledger D-0578):** STILL OPEN; one decided element: the completion block on each result table (D-0574).
+
 **What runs.** Today's form and her reimport rule (D-0556). Both express her quality case through the join place. Refused: one trunk (J04; the engine also fails); a declared default place (S01 or J01 by where the key is written; the engine ignores the key); `from:` and derived tables (T03 or J01; the engine ignores `from:`; `derived_tables` was not run in the engine, fact F1). What each needs: a new key in the check and the engine (declared default); the check, the engine and the graph (derived tables); J04 and the engine's reading of ingredients (one trunk). [ENGINE RUN, both; CHECKER, both]
 **Her words.** "Yes, revisit if needed" [D-0344] for a join of joins; "yes we need the from:" [D-0517]; form 3 not confirmed [D-0496].
 **Options.** (a) Keep today's form, with the reimport rule as an advice. (b) One trunk. (c) A declared default place. (d) Derived tables. (e) Neither: say what you meant.
@@ -147,7 +236,11 @@ How to read: "the entity" is what each row of the metadata is about (in the demo
 
 **G6. A result per entity with zeros.** The metadata first; the observations counted to the entity grain (a second table on the same file, or a group by the entity id after the join); then the empty counts filled with 0. A removal at the metadata or at the join place removes the entity. A removal at the counted table, or at the data table of the one-graph form, leaves the entity with a FALSE ZERO (3 to 0 in Sonnet's scratch world, 2 to 0 in Opus's). [ENGINE RUN, both] Enforced today: nothing. When not followed: the result changes in meaning without any message.
 
+> **Update of 2026-11-23 (ledger D-0573, D-0574):** SUPERSEDED as the way to give zeros (the agents' reading, to confirm); the facts stay true of today's recipes.
+
 **G7. A zero cannot tell "analysed, nothing found" from "not analysed".** Both show 0. An entity with metadata and no observation exists in the result only when the metadata is the first table. [ENGINE RUN, Opus RR4; Sonnet `world2.full`]
+
+> **Update of 2026-11-23 (ledger D-0572, D-0574):** the first half stays true. The sentence "an entity with metadata and no observation exists in the result only when the metadata is the first table" is superseded: with the completion it exists with the result table first.
 
 **G8. A removal at a table that holds no entity id is refused by the engine**: a look-up table, `T1:APEC_STEC_virulence_genes`, and 3 places in Sonnet's demo run. [ENGINE RUN, both]
 
@@ -171,6 +264,8 @@ How to read: "the entity" is what each row of the metadata is about (in the demo
 
 **G17. Reading rules and parents.** A join reads the tier 1 of each ingredient [CODE READ `orchestrator.py:269-283`]; a step written at a shared table changes every result that reads it [HER WORDS D-0555; PATHS G17, G18]. A look-up table read by several joins is such a shared parent, and it never takes a removal by the entity.
 
+> **Update of 2026-11-23 (ledger D-0574):** new fact: a completed result table also reads the metadata; the parent is the metadata's file (reading α) or its tier 1 (reading β).
+
 **G18. The recipe forms as tried.**
 
 | Form | Engine | Check | Graph |
@@ -185,6 +280,8 @@ How to read: "the entity" is what each row of the metadata is about (in the demo
 [ENGINE RUN, both; CHECKER, both]
 
 **G19. A rule "metadata on the right" would forbid pattern 2 written with the metadata first.** The 4 demo joins with the metadata first are `ST22_Anchor`, `QA_AMR_per_sample`, `QA_fanout_exhibit`, `QA_population_zscore`. [REASONED; RECIPE FILE; READ SCAN]
+
+> **Update of 2026-11-23 (ledger D-0574):** CHANGED MEANING: with the completion the zeros pattern can be written with the result table first; such a rule forbids only a spelling.
 
 ---
 
@@ -224,6 +321,7 @@ Checked against `RECIPE_PROPOSAL_refined.md` (flags of Part 0, Part 3), `RECIPE_
 - "a result's tier 3 written by the audit only" is one place among others on a path (D-0553).
 - The default ticks of D-0508 are now her defaults D-0549 and D-0550.
 - "result: plot | table" stays a direction (D-0487); form 3 stays a candidate (D-0496).
+  > **Update of 2026-11-23:** a table as a result is a decided design, not built; its key is open (D-0485, D-0487).
 - The duplicate result id is no longer an open defect: the task `RESULT-ID-TWICE-NOT-REFUSED` is marked done in `.claude/tasks/tasks.md:984` (the answers file cites line 958 and "not started"). Whether the refusal works now is a fact to run (F5).
 - The study's file counts (answers Q8) are for the renames of the plot keys; the rename of this file (`is_entity_id`) is a different move with its own count (G15).
 
@@ -254,3 +352,5 @@ Checked against `RECIPE_PROPOSAL_refined.md` (flags of Part 0, Part 3), `RECIPE_
 None.
 
 **Signed by both agents: Sonnet (this file) and Opus (OPUS_signs_recipes_v1.md and OPUS_signs_recipes_v2.md; all replacements applied; the spec sentence of `is_entity_id` is the wording approved by the owner, D-0567)**
+
+**D-0573 to D-0579 additions and the review:** Sonnet (this file) and Opus (`OPUS_checks_review_v1.md`, S1 to S18 applied).
