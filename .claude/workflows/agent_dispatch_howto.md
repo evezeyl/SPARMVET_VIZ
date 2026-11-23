@@ -83,6 +83,8 @@ Flag first, even if all viewpoints like the option: anything that changes a resu
 - Not enforced by any tool: "do not read big files" and "do not do work in a Bash command the hook does not know". Those are rules: if the coordinator does it anyway, tell it to delegate.
 - There is no `.claude/models` folder in Claude Code; the model is a line in each agent file.
 
+- **Waiting for a process (owner's order, channel block M625; found 2026-11-23: nine loops, 14 to 19 hours old).** An agent that waits for a process never loops on `pgrep -f <pattern>`: the pattern is in the loop's own command line, so the loop matches itself and never ends. It waits on the process id it started (`wait <PID>`, or `while kill -0 <PID> 2>/dev/null; do sleep 10; done`), or runs the command in the foreground, or uses the harness's own background notification. Every waiting loop has an upper time limit (`timeout`). Before it reports, an agent checks that it leaves no process behind and says so in its report. The brief of every worker that runs something says this.
+
 ## 8. The "Decisions" block of a brief (Eve, 2026-11-16: point 5 = A, `D-0164`; her addition `D-0165`; point 6 = C, `D-0166`)
 
 **[ADDED by an agent, not Eve's words]** The wording of this section is an agent's; the decisions are hers and are named by number. The full definition is in `.claude/workflows/decision_compliance.md` section 6.
