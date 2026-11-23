@@ -50,6 +50,7 @@ METADATA = "metadata_schema"
 # the actions that REPLACE the set of columns, as far as libs/utils/src/utils/step_effects.py READINGS tells: a select keeps only its list,
 # a group-by keeps only its keys and its aggregates. Pivot, unpivot and similar steps are not in that source and are not examined.
 KEEP_ONLY_ACTIONS = (action_names.SELECT, action_names.GROUP_BY)
+TOOL_FILES = {"assets/scripts/dry_run_big_move.py", "app/tests/test_dry_run_big_move.py", ".claude/rules/rules_toolchain.md"}
 SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".pytest_cache", "tmpAI", "tmp"}
 CANDIDATE = re.compile(r"^(sample_?id|sample|isolate_?id|isolate|accession|id|strain|strain_?id)$", re.I)
 DROP_NULLS = action_names.DROP_NULLS
@@ -101,6 +102,7 @@ class Recipes:
         self.root = root
         self.report = report
         self.cache: Dict[Path, Optional[Tuple[str, yaml.Node]]] = {}
+        self.used_by: Dict[Path, set] = {}      # included file -> the master recipes that include it (directly or through another include)
 
     def rel(self, p: Path) -> str:
         try:
@@ -133,12 +135,24 @@ class Recipes:
                     self.report.need(f"{self.rel(cur)}:{node.start_mark.line + 1}", f"`!include {node.value}` names a file that was not found")
                     return None, cur
                 cur = target
+                self.used_by.setdefault(target, set()).add(master)
                 node = self.load(cur)
                 if node is None:
                     return None, cur
             else:
                 return node, cur
         return None, cur
+
+
+    def used_token(self, f: Path, recipe: Path) -> str:
+        """A placeholder, replaced at the end (when every recipe has been read) by the list of ALL recipes that include the file f."""
+        return "" if f == recipe else f"@@USED:{self.rel(f)}@@"
+
+    def used_text(self, rel_file: str) -> str:
+        users = sorted(self.rel(m) for p, ms in self.used_by.items() if self.rel(p) == rel_file for m in ms)
+        if len(users) < 2:
+            return ""
+        return f" This file is used by {len(users)} recipes: " + ", ".join(f"`{u}`" for u in users) + "."
 
 
 def mp(node) -> Dict[str, Tuple[yaml.Node, yaml.Node]]:
@@ -244,6 +258,8 @@ def section_names(root: Path, rep: Report) -> None:
              and c.case not in getattr(tool, "DECIDED_CASES", ()) and c.case not in getattr(tool, "ADVICE_CASES", ())]
     if opens:
         rep.stat["names_open"] = len(opens)
+        titles = sorted({tool.OPEN_CASES[c.case]["title"] for c in opens})
+        rep.texts["names_titles"] = titles
         rep.need("section 1", f"{len(opens)} place(s) listed by the names pass under 'CANNOT BE DECIDED BY THE SCRIPT' (read them in section 1)")
 
 
@@ -292,13 +308,19 @@ def section_entity_key(root: Path, rep: Report) -> None:
             if OLD_KEY in line:
                 lines.append((rel, n, kind_of_file(rel), line.strip()))
                 per_kind[kind_of_file(rel)] += 1
-    rep.add(2, "The column mark `is_entity_key` would be renamed `is_entity_id` everywhere it is written. This is a text rename: the lines are listed, none is changed. Lines per kind of file:")
+    own = [x for x in lines if x[0] in TOOL_FILES]
+    lines = [x for x in lines if x[0] not in TOOL_FILES]
+    per_kind = Counter(x[2] for x in lines)
+    rep.add(2, f"Ledger D-0562 and D-0567. The column mark `is_entity_key` would be renamed `is_entity_id` everywhere it is written. This is a text rename: the lines are listed, none is changed. "
+               f"Without the files of this dry-run tool there are {len(lines)} lines. Lines per kind of file:")
     for k, n in sorted(per_kind.items()):
         rep.add(2, f"* {k}: {n} line(s) in {len({a for a, _, c, _ in lines if c == k})} file(s)")
+    rep.add(2, f"* the dry-run tool itself (it names the old key on purpose; it is updated when the rename is applied): {len(own)} line(s) in {len({x[0] for x in own})} file(s), listed apart and not counted above")
     rep.add(2, "")
     for rel, n, k, text in lines:
         rep.add(2, f"- {rel}:{n} ({k}): `{OLD_KEY}` becomes `{NEW_KEY}` [D-0562, D-0567]. Now: `{text[:140]}`")
     rep.stat["rename_lines"] = len(lines)
+    rep.stat["rename_tool_lines"] = len(own)
 
 
 # -- the joins that start from the metadata ----------------------------------------------------------------------------------
@@ -350,7 +372,7 @@ def joins_of(R: Recipes, path: Path, top):
 
 
 def section_joins(R: Recipes, rep: Report) -> None:
-    rep.add(3, "In these joined tables the FIRST table is the metadata. The rule (D-0586) is that a recipe does not start from the metadata: "
+    rep.add(3, "Ledger D-0586. In these joined tables the FIRST table is the metadata. The rule is that a recipe does not start from the metadata: "
                "the table is to be rewritten with the data table first; the metadata is then added to it, keeping every row of the data table. "
                "The rewriting is written by hand and shown in a second dry run (it depends on the completion of the ids, which is not built). "
                "Each line gives the joined table, its tables in order, and what its join steps do today.")
@@ -365,10 +387,10 @@ def section_joins(R: Recipes, rep: Report) -> None:
             if ings[0] == METADATA and len(ings) > 1:
                 kinds = join_kinds(R, mp(node)["tier1"][1], f, path) if "tier1" in mp(node) else []
                 rep.add(3, f"- {where}: recipe `{R.rel(path)}`, joined table `{name}`. Tables in order: {', '.join(ings)}. Join steps today: "
-                           + ("; ".join(kinds) if kinds else "none found in its tier 1") + ". [D-0586]")
+                           + ("; ".join(kinds) if kinds else "none found in its tier 1") + "." + R.used_token(f, path))
                 rep.bump("joins_first_meta")
             elif ings == [METADATA]:
-                only_meta.append(f"- {where}: recipe `{R.rel(path)}`, joined table `{name}` is made from the metadata alone: it joins nothing. The rule does not touch it; the owner's point. [D-0586]")
+                only_meta.append(f"- {where}: recipe `{R.rel(path)}`, joined table `{name}` is made from the metadata alone: it joins nothing. The rule does not touch it; the owner's point." + R.used_token(f, path))
     rep.add(3, "")
     rep.add(3, "Joined tables made from the metadata alone:")
     for line in only_meta:
@@ -401,23 +423,24 @@ def tiers_of(R: Recipes, path: Path, top: yaml.MappingNode):
 
 def position_words(k: int, n: int) -> str:
     if n == 1:
-        return "the only step of the tier"
+        return "the only step in that stage"
     if k == 1:
-        return f"the FIRST step of {n}"
+        return f"the first step of {n} in that stage"
     if k == n:
-        return f"the LAST step of {n}"
-    return f"step {k} of {n}"
+        return f"the last step of {n} in that stage"
+    return f"step {k} of {n} in that stage"
 
 
 def section_select(R: Recipes, rep: Report) -> None:
-    rep.add(4, "A step that keeps only the listed columns (`polars_select`), or that rebuilds the table from its group columns and its totals "
-               "(`polars_group_by`), does not carry any other column that exists before it. A marker column (D-0586, D-0587) added before such a step "
-               "would be lost at that step, wherever the step stands in the tier (first, last or between). Each line says where. "
+    rep.add(4, "Ledger D-0586 and D-0587. A step that keeps only the listed columns (`polars_select`), or a step that groups the rows and keeps the group columns "
+               "and the computed totals (`polars_group_by`), does not carry any other column that exists before it. A marker column added before such a step "
+               "would be lost at that step, wherever the step stands in its stage (tier 1 is the first stage of a table, tier 2 the second): first, last or between. "
+               "Each line says where, for example \"the first step of 10 in that stage\". A tier file that several recipes include is listed once, with every recipe that uses it. "
                "What this section does NOT cover: a step that only removes named columns (`polars_drop`) keeps all the others and is not listed; "
                "other steps that rebuild the columns (pivot, unpivot and similar) are NOT examined here, because no reliable list in the project says which actions do it "
                "(libs/utils/src/utils/step_effects.py reads only the select and the group-by).")
     rep.add(4, "")
-    seen = set()
+    entries: Dict[Tuple[Path, int], dict] = {}
     for path, kind, top in masters(R):
         for name, tier, steps, f in tiers_of(R, path, top):
             items = seq(steps)
@@ -427,20 +450,30 @@ def section_select(R: Recipes, rep: Report) -> None:
                 if action not in KEEP_ONLY_ACTIONS:
                     continue
                 key = (f, st.start_mark.line)
-                if key in seen:
+                if key in entries:
+                    entries[key]["uses"].append((R.rel(path), name, tier))
                     continue
-                seen.add(key)
                 if action == action_names.SELECT:
                     node = (m.get("exprs") or m.get("columns") or (None, None))[1]
                     what = "keeps only " + (flow_text(node) if node is not None else "(no column list found: read the step)")
-                    rep.bump("select_" + ("first" if k == 1 and len(items) > 1 else "last" if k == len(items) and len(items) > 1 else "only" if len(items) == 1 else "middle"))
+                    place = "first" if k == 1 and len(items) > 1 else "last" if k == len(items) and len(items) > 1 else "only" if len(items) == 1 else "middle"
+                    stat = "select_" + place
                 else:
                     by = m.get("by")
                     aggs = m.get("named_aggs")
                     names = [x.value for x, _ in aggs[1].value] if aggs and isinstance(aggs[1], yaml.MappingNode) else []
-                    what = f"rebuilds the table from the group columns {flow_text(by[1]) if by else '(not found)'} and the totals {names or '(not found)'}"
-                    rep.bump("group_by")
-                rep.add(4, f"- {R.rel(f)}:{st.start_mark.line + 1}: recipe `{R.rel(path)}`, table `{name}`, {tier}, {position_words(k, len(items))}: `{action}` {what}. [D-0586, D-0587]")
+                    what = f"groups the rows by {flow_text(by[1]) if by else '(not found)'} and keeps the totals {names or '(not found)'}"
+                    stat = "group_by"
+                entries[key] = {"file": f, "line": st.start_mark.line + 1, "k": k, "n": len(items), "action": action, "what": what, "stat": stat, "uses": [(R.rel(path), name, tier)]}
+    for e in entries.values():
+        rep.bump(e["stat"])
+        uses = sorted(set(e["uses"]))
+        recipes = sorted({u[0] for u in uses})
+        if len(recipes) == 1:
+            who = f"recipe `{recipes[0]}`, table `{uses[0][1]}`, {uses[0][2]}"
+        else:
+            who = f"used by {len(recipes)} recipes: " + ", ".join(f"`{r}` (table `{t}`, {tr})" for r, t, tr in uses)
+        rep.add(4, f"- {R.rel(e['file'])}:{e['line']}: {who}. {position_words(e['k'], e['n']).capitalize()}: `{e['action']}` {e['what']}.")
     rep.say("select_ways", MARKER_WAYS)
     rep.need("section 4", "which of her two ways (D-0587) each of these steps takes is not decided by any rule")
 
@@ -448,7 +481,7 @@ def section_select(R: Recipes, rep: Report) -> None:
 # -- the entity id -----------------------------------------------------------------------------------------------------------
 
 def section_entity_missing(R: Recipes, rep: Report) -> None:
-    rep.add(5, "Tables that have no column marked as the entity id (`is_entity_key` today). Where a column is named like an id (for example `sample_id`) "
+    rep.add(5, "Ledger D-0569. Tables that have no column marked as the entity id (`is_entity_key` today). Where a column is named like an id (for example `sample_id`) "
                "it is shown as a candidate: a name only, not a decision. A table with no such column is a table with no id column. "
                "The Gallery examples are counted here and listed in the annex at the end.")
     rep.add(5, "")
@@ -472,10 +505,10 @@ def section_entity_missing(R: Recipes, rep: Report) -> None:
                         line = f"recipe `{R.rel(path)}`, table `{name}`: no id declared and no column with an id-like name (no id column). [D-0569]"
                         owner = "has no id column: a reference table, or a declaration for the owner"
                 if gallery:
-                    rep.add("annex", f"- {where}: {line}")
+                    rep.add("annex", f"- {where}: {line}" + R.used_token(f, path))
                     rep.bump("gallery_cand" if cands else "gallery_noid")
                 else:
-                    rep.add(5, f"- {where}: {line}")
+                    rep.add(5, f"- {where}: {line}" + R.used_token(f, path))
                     rep.bump("tables_cand" if cands else "tables_noid")
                     rep.need(where, f"table `{name}`: {owner}")
                     if cands:
@@ -492,8 +525,8 @@ def readers_of_metadata(R: Recipes, path: Path, top) -> List[str]:
 
 def removals_by_table(R: Recipes, master: Path, top, id_names: List[str]) -> Dict[str, List[str]]:
     """{table: [file:line (what)]} for every table that reads the metadata (the metadata itself and the joins that list it), in every tier."""
-    readers = set(readers_of_metadata(R, master, top)) | {METADATA}
-    found: Dict[str, List[str]] = {t: [] for t in readers}
+    readers = [METADATA] + readers_of_metadata(R, master, top)
+    found: Dict[str, List[str]] = {t: [] for t in readers}   # insertion order: the order of the recipe, never a set
     for table, tier, steps, f in tiers_of(R, master, top):
         if table not in readers:
             continue
@@ -528,9 +561,9 @@ def describe_cell(raw: str, nulls: set) -> str:
 
 
 def section_metadata_lines(R: Recipes, rep: Report) -> None:
-    rep.add(6, "For each recipe with a metadata table: the lines of its data file where the id cell is empty, only spaces, or a missing-value mark that the recipe declares. "
+    rep.add(6, "Ledger D-0569 and D-0594. For each recipe with a metadata table: the lines of its data file where the id cell is empty, only spaces, or a missing-value mark that the recipe declares. "
                "The file is read as text, not by the engine; each cell is shown as written in the file. Then it says which steps of the recipe already remove such lines. "
-               "The move (D-0569) would remove these lines from the metadata itself.")
+               "The move would remove these lines from the metadata itself.")
     rep.add(6, "")
     for path, kind, top in masters(R):
         blocks = blocks_of(R, path, top, METADATA)
@@ -598,6 +631,7 @@ def section_metadata_lines(R: Recipes, rep: Report) -> None:
             rep.need(spath, f"the metadata file could not be read ({type(exc).__name__})")
             continue
         removal = removals_by_table(R, path, top, [slug, colname])
+        removers_names = [rname] if any(v for t, v in removal.items() if t != METADATA) else []
         own = removal.pop(METADATA, [])
         removers = {t: v for t, v in removal.items() if v}
         keepers = [t for t, v in removal.items() if not v]
@@ -614,20 +648,20 @@ def section_metadata_lines(R: Recipes, rep: Report) -> None:
         if bad:
             rep.bump("meta_bad", len(bad))
             rep.bump("meta_files")
-            rep.say("meta_bad", f"{len(bad)} line(s) of `{shown}` have no usable id. Today: " + "; ".join(parts_) + ".")
+            rep.texts.setdefault("meta_files", []).append((shown, len(bad), Path(removers_names[0]).stem if removers_names else ""))
         if bad and (keepers or not (own or removers)):
             rep.need(shown, f"{len(bad)} metadata line(s) have no usable id and not every table that reads the metadata removes them ("
                             + ("does not: " + ", ".join(keepers) if keepers else "no step removes them") + "): how the removal is written is the move's design")
 
 
 def section_additional(R: Recipes, rep: Report) -> None:
-    rep.add(7, "Tables registered under `additional_datasets_schemas` that declare an entity id. The owner's earlier point: they are to be moved under the data schemas (listed only).")
+    rep.add(7, "Ledger: none given (the owner\u0027s earlier point). Tables registered under `additional_datasets_schemas` that declare an entity id. The owner's earlier point: they are to be moved under the data schemas (listed only).")
     rep.add(7, "")
     for path, kind, top in masters(R):
         for name, node, f in blocks_of(R, path, top, "additional_datasets_schemas"):
             ids = entity_fields(fields_of(R, node, f, path))
             if ids:
-                rep.add(7, f"- {R.rel(f)}:{node.start_mark.line + 1}: recipe `{R.rel(path)}`, table `{name}` declares the entity id ({', '.join(ids)}) under `additional_datasets_schemas`.")
+                rep.add(7, f"- {R.rel(f)}:{node.start_mark.line + 1}: recipe `{R.rel(path)}`, table `{name}` declares the entity id ({', '.join(ids)}) under `additional_datasets_schemas`." + R.used_token(f, path))
 
 
 # -- output ----------------------------------------------------------------------------------------------------------------
@@ -657,8 +691,11 @@ def first_screen(rep: Report) -> List[str]:
     st, tx = rep.stat, rep.texts
     out = ["## What needs you", ""]
     n = 1
-    if st.get("meta_bad"):
-        out.append(f"{n}. " + " ".join(tx.get("meta_bad", [])) + " The move would remove them from the metadata itself: do you want that? (section 6)")
+    for shown, nbad, who in tx.get("meta_files", []):
+        today = (f"Today the recipe `{who}` removes them in its join" if who else "Today no step of its recipe removes them")
+        out.append(f"{n}. The shipped data file `{shown}` has {nbad} line(s) with no id. {today}. Your order was to remove such lines from the metadata (D-0569), "
+                   f"and the app itself does not clean data (D-0594): so the maintainers would delete these {nbad} line(s) from the shipped file, and the removal step and the test "
+                   "that count them would change with it. Confirm, or keep them as a lesson about messy data? (section 6)")
         n += 1
     if st.get("joins_only_meta"):
         out.append(f"{n}. {st['joins_only_meta']} joined table(s) are made from the metadata alone; the rule 'do not start from the metadata' does not touch them. What do you want for them? (section 3)")
@@ -668,9 +705,9 @@ def first_screen(rep: Report) -> List[str]:
         n += 1
     keep = sum(st.get(k, 0) for k in ("select_first", "select_last", "select_middle", "select_only", "group_by"))
     if keep:
-        out.append(f"{n}. {keep} step(s) keep only a fixed list of columns ({st.get('select_first', 0)} first in their tier, {st.get('select_last', 0)} last, "
-                   f"{st.get('select_middle', 0) + st.get('select_only', 0)} elsewhere or alone, {st.get('group_by', 0)} group-by) and would not carry a marker column. "
-                   "For each, which of your two ways (add the marker to the list, or drop it by a visible step)? (section 4)")
+        out.append(f"{n}. {keep} steps keep only a fixed list of columns and would not carry a marker column. Your two ways: add the marker column to the list, or treat the marked lines at tier 1 "
+                   f"and drop the marker by a visible step. One way for all, or per group ({st.get('select_first', 0)} first in their stage, {st.get('select_last', 0)} last, "
+                   f"{st.get('select_middle', 0) + st.get('select_only', 0)} elsewhere or alone, {st.get('group_by', 0)} group-by)? (section 4)")
         n += 1
     if st.get("tables_cand") or st.get("tables_noid"):
         out.append(f"{n}. {st.get('tables_cand', 0)} table(s) of {len(set(tx.get('cand_recipes', [])))} recipe(s) declare no entity id, but a column named like an id exists (a candidate, not a decision); "
@@ -682,8 +719,10 @@ def first_screen(rep: Report) -> List[str]:
     out.append(f"{n}. Tables under `additional_datasets_schemas` that declare the entity id: {rep.counts.get(7, 0)}; to be moved under the data schemas (your earlier point). (section 7)")
     n += 1
     if st.get("names_open"):
-        out.append(f"{n}. {st['names_open']} place(s) of the names pass that no decision covers. (section 1, 'cannot be decided')")
-    out += ["", f"Only a mechanical rename, no decision: the names pass ({rep.counts.get(1, 0)} changes) and `is_entity_key` to `is_entity_id` ({rep.counts.get(2, 0)} lines)."]
+        out.append(f"{n}. {st['names_open']} names that no rule covers (listed in section 1): " + "; ".join(tx.get("names_titles", [])) + ".")
+    tool = st.get("rename_tool_lines", 0)
+    out += ["", f"Only a mechanical rename, no decision: the names pass ({rep.counts.get(1, 0)} changes) and `is_entity_key` to `is_entity_id` ({rep.counts.get(2, 0)} lines, "
+               f"not counting {tool} line(s) in the dry-run tool's own files)."]
     return out
 
 
@@ -699,6 +738,12 @@ def build(root: Path) -> List[str]:
     section_additional(R, rep)
     for n in range(2, 8):
         rep.counts.setdefault(n, 0)
+    tag = re.compile(r" ?\[D-[0-9D, \-]+\]")
+    tok = re.compile(r"@@USED:(.*?)@@")
+    for key, lines_ in rep.sections.items():
+        rep.sections[key] = [tok.sub(lambda m: R.used_text(m.group(1)), l) if key != 1 else l for l in lines_]
+        if key != 1:
+            rep.sections[key] = [tag.sub("", l) for l in rep.sections[key]]
     out = ["# Dry run of the big move", "",
            f"Date: {datetime.date.today().isoformat()}. Commit of the worktree: {git_commit(root)}. Root: {root}", "",
            "Nothing was changed. This is a list for the owner to read.", ""]

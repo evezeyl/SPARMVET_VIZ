@@ -147,9 +147,9 @@ def test_joins_from_the_metadata_are_listed_and_the_others_not(scratch):
 
 def test_keep_only_steps_are_listed_with_their_place_and_a_drop_is_not(scratch):
     s = "\n".join(section(tool.build(scratch), 4))
-    assert "table `J`, tier1, the LAST step of 2: `polars_select` keeps only [sample_id, gene]" in s
-    assert "table `Fine`, tier1, the FIRST step of 2: `polars_select`" in s
-    assert "table `genes`, tier1, the only step of the tier: `polars_group_by`" in s
+    assert "table `J`, tier1. The last step of 2 in that stage: `polars_select` keeps only [sample_id, gene]" in s
+    assert "table `Fine`, tier1. The first step of 2 in that stage: `polars_select`" in s
+    assert "table `genes`, tier1. The only step in that stage: `polars_group_by`" in s
     assert not [l for l in s.splitlines() if l.startswith("- ") and "polars_drop" in l]
     assert "NOT examined" in s
 
@@ -180,8 +180,10 @@ def test_a_removal_in_a_join_tier_is_seen(scratch):
     (scratch / "config/data_analysis_recipes/r/J.yaml").write_text(J_REMOVES, encoding="utf-8")
     s = "\n".join(section(tool.build(scratch), 6))
     assert "the metadata's own steps do not remove them" in s
-    assert "`J` removes them" in s and "r/J.yaml:8" in s and "polars_drop_nulls" not in s
-    assert "`Alone`, `Fine` do not" in s
+    assert "the join `J` removes them" in s and "r/J.yaml:8" in s and "polars_drop_nulls" not in s
+    tail = s.split("do not", 1)                  # the tables that do not remove them are named, in whatever order
+    assert "`Alone`" in s and "`Fine`" in s and len(tail) == 2
+    assert s.index("`Alone`") > s.index("removes them") and s.index("`Fine`") > s.index("removes them")
 
 
 def test_a_removal_in_the_metadata_own_tier_is_seen(scratch):
@@ -189,6 +191,33 @@ def test_a_removal_in_the_metadata_own_tier_is_seen(scratch):
     p.write_text(RECIPE.replace("  tier1: {steps: []}\ndata_schemas:", "  tier1:\n    steps:\n      - action: polars_drop_nulls\n        subset: [sample_id]\ndata_schemas:", 1), encoding="utf-8")
     s = "\n".join(section(tool.build(scratch), 6))
     assert "the metadata's own steps remove them" in s
+
+
+def test_a_tier_file_included_by_two_recipes_names_both(scratch):
+    other = RECIPE.replace("id: r\n", "id: r2\n").replace("r/J.yaml", "r/J.yaml")
+    (scratch / "config/data_analysis_recipes/r2.yaml").write_text(other, encoding="utf-8")
+    s = "\n".join(section(tool.build(scratch), 4))
+    line = next(l for l in s.splitlines() if "J.yaml" in l and l.startswith("- "))
+    assert "used by 2 recipes" in line and "`config/data_analysis_recipes/r.yaml`" in line and "`config/data_analysis_recipes/r2.yaml`" in line
+    assert "table `J`" in line
+
+
+def test_the_tool_own_files_are_listed_apart_in_section_2(scratch):
+    (scratch / "assets/scripts").mkdir(parents=True)
+    (scratch / "assets/scripts/dry_run_big_move.py").write_text("x = 'is_entity_key'\n", encoding="utf-8")
+    s = "\n".join(section(tool.build(scratch), 2))
+    assert "Without the files of this dry-run tool there are 3 lines" in s
+    assert "the dry-run tool itself" in s and "1 line(s) in 1 file(s)" in s
+    assert not [l for l in s.splitlines() if l.startswith("- assets/scripts/dry_run_big_move.py")]
+
+
+def test_ledger_tags_are_not_in_the_lines_she_reads(scratch):
+    lines = tool.build(scratch)
+    assert "[D-" not in "\n".join(section(lines, 6) + section(lines, 4) + section(lines, 3) + section(lines, 5))
+
+
+def test_the_order_of_the_names_does_not_matter_and_runs_are_equal(scratch):
+    assert tool.build(scratch) == tool.build(scratch)
 
 
 def test_additional_table_with_entity_id(scratch):
@@ -227,7 +256,7 @@ def test_first_screen_exists_names_each_decision_and_comes_first(scratch):
     end = next(k for k in range(i + 1, len(lines)) if lines[k].startswith("## "))
     screen = "\n".join(lines[i:end])
     assert end - i <= 25
-    for words in ("have no usable id", "made from the metadata alone", "keep only a fixed list of columns",
+    for words in ("line(s) with no id", "made from the metadata alone", "keep only a fixed list of columns",
                   "declare no entity id", "The Gallery examples declare no entity id", "Only a mechanical rename"):
         assert words in screen, words
     order = [l for l in lines if l.startswith("## ")]
