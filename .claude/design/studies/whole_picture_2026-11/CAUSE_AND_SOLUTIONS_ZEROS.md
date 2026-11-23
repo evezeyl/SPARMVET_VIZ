@@ -684,6 +684,7 @@ Not in the text above. It answers her question 1 and reopens some earlier words;
 **Our sentence corrected.** "they always hold an added line" was wrong. A table made from the metadata alone holds a "not in metadata" line ONLY IF the line is added to the metadata table itself (placement (i) below) AND some result file of the recipe has an id outside the metadata. On the demo neither happens (0 ids outside the metadata [ESTABLISHED: OVERLAP section 1]). Under (ii) they never hold one.
 
 **Open, hers: WHERE is the "not in metadata" line added?**
+> **ANSWERED by D-0589: recipe-wide**, placement (i) (the review session's reading of her words below): with a metadata file attached, every result table and the metadata receive the ids they lack, with or without a join.
 - **(i) In the metadata table itself, for the whole recipe,** whenever some result file has an id outside it.
   - Every table that reads the metadata inherits the line, the two metadata-only tables included.
   - The metadata table's key then depends on every result file (a stored table's key holds the content of the files it reads [CODE READ `app/modules/cache_keys.py:14-20`]): a change in any data file rebuilds the metadata and everything below it.
@@ -702,13 +703,48 @@ Not in the text above. It answers her question 1 and reopens some earlier words;
   - (ii): the metadata keeps its 10 lines, and the join `sequenced` + metadata shows the 2 rows with empty metadata values and the marker.
   - On the demo: nothing either way.
 - Lean (Opus, as a lean): (ii): it is her reading of the metadata-only tables; the metadata stays one file's content, with no dependency on every data file and no new edge; and it can be written today with visible steps.
+  > **Superseded by D-0589** (her words go the other way; kept as history).
 - Lean (Sonnet, as a lean): (ii), for the reason of her purpose, fewer lineage problems: (i) adds an edge from every result file into the metadata's first place and makes the metadata's key depend on every data file, which she did not want for the two metadata-only tables; (ii) adds no edge and leaves the metadata exactly the file's content. What she would see on `left_join_lesson`: the metadata keeps its 10 lines and the join shows the 2 rows with empty metadata values and the marker. The price: every join that meets the metadata needs its marker (today written by visible steps; a join option or the app could write it), the metadata table does not hold the equal id sets by itself, and it reopens the placement of her "yes" of D-0585 (information, not an argument).
+  > **Superseded by D-0589** (her words go the other way; kept as history).
 - Neither: say what you meant.
 
 **Her question: "is the metadata registred under metadata schema or under dataschema ?"**
 - **Under its own top-level key `metadata_schema`** [RECIPE FILE `1_test_data_ST22_dummy.yaml:149`], apart from `data_schemas` (line 16) and `additional_datasets_schemas` (line 122).
 - `metadata_schema` is a reserved schema id [CODE READ `libs/utils/src/utils/recipe_spec.yaml:80`], and the block is optional [`recipe_spec.yaml:24`]. The completion rule would name it by that id.
 - **The edge case she means:** a recipe whose metadata is a data schema (`figshare_integration`). The checks cannot know which table is the metadata unless the recipe names it (the `metadata_schema` block, or `entity.population`): still hers (question 13).
+
+### Added 2026-11-23 (ledger D-0588): her view: a table that holds the entity data itself is original data
+
+**Her words, exact (her view, "I think", not a final decision).** "why would you join it to itself ? what is the usage here ? it seems to be a very edge case test ... A note I am not sure that haviing a metadata table schema is good when there is no other data - I think it should be registred as data schema - that would make more sense - the metadata is to add information that is maybe sensitivy - about the entities, here everything is already in one table. That is a good case for a guidelines in the documentation - I think if there is only "metadata" then it should go under the original_data - that will also help for the lineage and it does not makes sense to have metadata without metadata" [HER WORDS D-0588]
+The review session's reading, not her words: "metadata without metadata" means "metadata without data".
+
+**Her questions "why would you join it to itself ? what is the usage here ?"**
+- **Not a self-join.** Each of the two QA tables is an entry of `joins:` with ONE ingredient, `metadata_schema`, and one step in tier 1 [RECIPE FILE `1_test_data_ST22_dummy.yaml:265-270, 289-295`].
+- **`QA_year_types`** guards two things:
+  - a year read as a number must be shown as "2024", not "2024.0", and stay a number for range filters (plot `qa_year_label`);
+  - facets written in `mapping` must give 3 panels (plot `qa_facet_by_mapping`, issue 65) [RECIPE FILE: their descriptions].
+- **`QA_aggregated_no_key`** guards the reach of the audit: its tier 2 counts the samples per country and year, so it holds no `sample_id`, and a removal by id cannot change it (plot `qa_aggregated_no_key`, issue 60) [RECIPE FILE `QA_aggregated_no_key_tier2.yaml`; the plot's description].
+- **Do they need the metadata?** Only its columns: `year` and `country` (and `sample_id`, to count). In the demo only the metadata declares `year` and `country` [RECIPE FILE: of the demo's input-field files, only `metadata_schema_input_fields.yaml` has them]. So no data table of the demo could feed these canaries alone; rebuilt elsewhere, each would need a data table joined with the metadata, data first. Otherwise they stay on the metadata.
+
+**Facts for her view (by reading).**
+- **The format:** `data_schemas` is required and `metadata_schema` is optional [CODE READ `libs/utils/src/utils/recipe_spec.yaml:23-24`]. So a recipe with only data schemas is legal today, and a recipe with no `data_schemas` is refused by the check. Whether an empty `data_schemas` passes: not read.
+- **The recipe check** reads the metadata block only when it is there [CODE READ `recipe_check.py:356-357, 381-384`]; no code found that requires it. E02 (a declared population's table and its id field) and E03 (a number type refused on an id field) apply to any table [CODE READ `recipe_check.py:332-348, 445-458`].
+- **With no metadata block,** the two completions have nothing to complete from, and the id check (both directions) has nothing to compare with, unless the recipe declares a population (`entity.population`).
+- **The Gallery** registers each bundle's one `example_data.tsv` under `data_schemas` [RECIPE FILE `assets/gallery_data/bar_simple/data_analysis_recipe.yaml:11, 16`].
+- **No shipped recipe** has a metadata block and no data table: every recipe with a `metadata_schema` has at least one data schema [READ SCAN of `config/data_analysis_recipes`].
+
+**The point for her (her view; hers to decide).** A recipe whose only real table is "metadata":
+- (a) a guideline only (the documentation, D-0583);
+- (b) an advice of the recipe check: "this recipe has a metadata table and no data table: register it as data";
+- (c) a rule the check refuses.
+
+What she would see: the demo has 9 data tables, so its metadata stays the metadata, and her view does not move the two QA tables by itself (they read the metadata of a recipe that has data). A Gallery bundle is already registered as data, so nothing changes there.
+
+- Lean (Opus, as a lean): (a). The format already requires `data_schemas` and keeps the metadata optional, which is the shape of her view. An advice would need the check to judge what a table holds, which it cannot read from the recipe.
+- Lean (Sonnet, as a lean): (a) now, and one fact to read first: whether an empty `data_schemas` passes the check (not read). If it does, the case "a metadata block and no data table" is a STRUCTURAL condition the check can see without judging what a table holds, and I would then lean (b), an advice. What she would see: a recipe maker who registers a lone metadata file as the metadata gets a one-line advice at the check instead of a silent oddity; on the demo and in every Gallery bundle nothing changes (no shipped recipe has a metadata block and no data table: my search read the 50 recipe files that have `analysis_groups` under `config`, `assets` and `libs`, 8 with a `metadata_schema`, all 8 with a non-empty `data_schemas`).
+- Neither: say what you meant.
+
+**For the held documentation task (D-0583), in her words:** "if there is only "metadata" then it should go under the original_data - that will also help for the lineage".
 
 **Next question (item 2). A line of the metadata with no usable id** (empty, spaces, `-`).
 - It can never be matched. With your purpose (data first, metadata second, `left`) it adds no row, and nothing in the result shows it; only the red warning and the log name it.
@@ -726,7 +762,80 @@ Not in the text above. It answers her question 1 and reopens some earlier words;
 
 ---
 
+### Added 2026-11-23 (ledger D-0589): the completion is recipe-wide, with or without a join; her use case
+
+**Her words, exact.** "yes we should consider results where no metadata is joined - I think that as long as a metadata file is attached then all the original results should received the ids - whether or not the join - Our pipeline is supposed to work on set where ids are identical both between results and metadata - if not we need to add the ids to tables and metadata respectively even in an abscence of join and need clearly to treat what those missing ids mean ... I think that is our use case ..." [HER WORDS D-0589]
+
+**What her words say (she writes "I think": her view of the use case, recorded as she wrote it).**
+- "as long as a metadata file is attached then all the original results should received the ids - whether or not the join".
+- **The use case:** "Our pipeline is supposed to work on set where ids are identical both between results and metadata".
+- **If not:** "add the ids to tables and metadata respectively even in an abscence of join and need clearly to treat what those missing ids mean".
+- The review session's reading: this is placement (i) of the D-0587 sub-section; both leans for (ii) are superseded.
+
+**Consequences, by reading and reasoning (no new numbers).**
+- **(a) A result table that no join touches still shows the added lines.** On the demo, four plots read a table with no metadata join: `amr_heatmap` (reads `ResFinder`), `phenotype_genome_length_fragmentation` (reads `Summary` and `Summary_quality`), `qa_sequence_type_missing` (reads `QA_ST_with_NA`, made from `Summary_quality`) and `qa_l50_integer` (reads `QA_L50_integer`, made from `Quast`) [READ SCAN of the demo recipe, Sonnet agent in the check; the four are named in `DIFFERENCES.md:229` and `GOALS_REVIEW_sonnet.md:412`]. Only ResFinder lacks ids (38 of 42); `Summary`, `Summary_quality` and `Quast` hold all 42 and get nothing [ESTABLISHED: OVERLAP section 1]. So on the demo only `amr_heatmap` gets added lines (4); the other three plots are unchanged. How they are drawn is the run already registered. The recipe's steps must say how the added lines are treated (the required meaning, D-0574, D-0586). [bullet (a) corrected by the Sonnet agent in the check: the plots and the source tag]
+- **(b) The two metadata-only tables hold a "not in metadata" line WHENEVER the metadata is completed**, not "always". On the demo: never (0 ids outside the metadata). On `left_join_lesson`: 2 [ESTABLISHED: OVERLAP section 1].
+- **(c) Keys and places.** The completed metadata reads every result file, and every completed result table reads the metadata file (a stored table's key holds the files it reads [CODE READ `app/modules/cache_keys.py:14-20`]). So a change in any file rebuilds every table below it ("we need to ensure that everystep after a change in a place is recalculated" [HER WORDS D-0560]): a fact, not a cost argument. Her rule of places (D-0553: at most one chosen place on a path; the original parents may all be chosen) holds in one way and not in the other:
+  - **(A) The completion reads the FILES as read**, before any place. The first places stay original parents side by side, no place lies below another, and an audit step never changes what is completed.
+  - **(B) The completion follows the places** (it reads the tables after their steps): an entity removed at the metadata is no longer added to the results; but a result table's first place then lies below the metadata's, two places on one path.
+  - Which one her use case (her words: "ids are identical both between results and metadata") points to is hers.
+- **(d) No cycle** when both completions read the files: the union of the ids is computed once from the files, and each table is completed to it. A cycle appears only if the metadata is completed from completed result tables, which are themselves completed from the completed metadata (both under (B)).
+- **(e) "Equal id sets" is the state AFTER the completion**; the data check reports the differences found BEFORE it.
+  - Equal in every table only if each result table is completed to the union, and not to the metadata file alone. Otherwise an id found only in another result file reaches the metadata but not the other result tables.
+- **(f) "Recipes do not start from the metadata" (D-0586) stands** for the joins.
+- **(g) No metadata attached: no completion,** and no id check unless the recipe declares a population. The recipe check reads the metadata block only when present and requires none [CODE READ `libs/utils/src/utils/recipe_check.py:356-357, 381-384`]: today it says nothing there.
+  > **CHANGED by D-0590:** with no metadata attached, the original tables complete each other ("Case 1 no metadata -> completions and reverification of test 3"). The sentence above is kept as history.
+
+**What remains hers, one at a time.**
+1. **The completion reads the files as read (A), or follows the places (B)?** (This is the earlier question "which metadata", now for both directions.) On the demo, remove at the metadata one of the 4 ids that ResFinder lacks: with (A) ResFinder keeps its added line for it; with (B) it is no longer added, and ResFinder's first place lies below the metadata's. Lean (Opus, as a lean): (A): no cycle, her rule of places holds, and an audit step never changes what is completed.
+   Lean (Sonnet, as a lean): (A), for the same reasons; the price is that an entity removed at the metadata alone is still added, marked, to a result table that lacks it, so the removal must be written at every first place ("Remove from all the data"; audit steps run after the completion, `data_wrangler.py:92`), which is what her purpose of one clean left join wants anyway. Neither: say what you meant.
+2. **The reference of a result table's completion: the metadata's ids, or the union of all ids (every table identical)?** On the demo: no difference (0 ids outside the metadata). With two result files, an id that only one of them holds: under "the union" it is added, marked, to the other one too. Lean (Opus, as a lean): the union, her use case "ids are identical both between results and metadata".
+   Lean (Sonnet, as a lean): the union: only then are the sets identical in every table, as her use case says. On `left_join_lesson` (one result table, `sequenced`) the two references give the same: the metadata gains `ACC0001` and `ACC0002`, `sequenced` gains its 2 missing metadata ids; the difference shows only with two result files. Neither: say what you meant.
+   > **ANSWERED by D-0590:** the union ("All should unique ids should be equivalent betwen original data, and metadata"); this is the review session's and the agents' reading of "equivalent", one line to confirm with her.
+3. **Item 2: a line of the metadata with no usable id.** Under the recipe-wide completion it cannot be given to any result table: it has no id to give. Only the metadata holds it, and it never matches. The options (a), (b), (c) of item 2 stand. Neither: say what you meant.
+4. **The rest of the list, by title:** the marker's form and name; the block's form and tables; before or after the recipe's tier-1 steps; the log's directory; where the red warning shows; a dummy id; how "data first" is enforced; a recipe with no metadata block (question 13) and her view of D-0588; the count per target; the threshold; the two QA tables (D-0587, her "a)").
+
+---
+
+### Added 2026-11-23 (ledger D-0590): a third check of the id sets, in all cases; the completion with no metadata
+
+**Her words, exact.** "If no metadata added - and I think that actually should be a 3d step done in all the cases (after having filed ids for tests 1 and 2) that the unique ids of each original data are compared to each other (and to the unique ids of metadata when existing) . Case 1 no metadata -> completions and reverification of test 3. Case 2. metadata existed - All should unique ids should be equivalent betwen original data, and metadata (if not I think we have a bug)." [HER WORDS D-0590]
+
+**What her words say (she writes "I think").**
+- A third step "in all the cases", after the ids are filled for her tests 1 and 2: the unique ids of each original table are compared with each other, and with the metadata's when there is one.
+- No metadata: "completions and reverification of test 3".
+- With a metadata: all unique ids "should be equivalent betwen original data, and metadata (if not I think we have a bug)".
+- Readings, not her words:
+  - the three checks are named by their content (the ids of a result file not in the metadata; the ids of the metadata not in a result file; the id sets compared);
+  - a failed third check is a red warning and a line in the log, never a stop (D-0581).
+
+**Points for her, by reading and reasoning.**
+- **(a) Which tables take part when there is no metadata:** those that declare an entity id. A reference table with none stays out: the APEC list (`1_test_data_ST22_dummy.yaml:134`) declares none [RECIPE FILE `input_fields/APEC_STEC_virulence_genes_input_fields.yaml`].
+  - Two tables whose ids name DIFFERENT kinds of entity would complete each other wrongly: each would gain the other's ids, marked.
+  - How the recipe says that its tables describe one population: the optional `entity.population` names one table [CODE READ `libs/utils/src/utils/recipe_spec.yaml:29-30`], or every table that declares the entity id counts. Hers.
+- **(b) What a line added from ANOTHER result table means:** the required meaning per table (D-0574, D-0586) covers "not in original data". With no metadata there is no "not in metadata" marker: there is nothing to add it to.
+- **(c) "Unique ids"** are read after the declared strip and null words of the read [CODE READ `libs/ingestion/src/ingestion/declared.py:115-120`]: an id repeated within one table counts once; an empty id is no id only if the declared null words list it (a cell of spaces stays text when `null_values` is empty) [paragraph corrected by the Sonnet agent in the check].
+- **(d) The order, once per data batch:** the metadata's own ids (a warning); the two completions; the third check.
+- **(e) A failed third check:**
+  - a line in the log, words PROVISIONAL: "check of the id sets failed: N ids differ between <tables>", and the red warning where there is a panel; with no panel only the person who reads the log sees it (D-0585);
+  - it checks the app's own work ("I think we have a bug"), so when it is built it becomes a test: the expectation is written now and run when the code exists (D-0580).
+- **(f)** The "equal id sets" line of the data check (D-0586 sub-section) is the report BEFORE the completion; the third check is the proof AFTER it.
+- **(g)** With (A) the third check compares the completed tables as read, before any audit step, so an audit removal never makes it fail. With (B) a removal at one place can make it fail.
+- **On the demo (case 2):** after the completion ResFinder holds 38 + 4 = 42 ids, and so does every other table that declares the entity id (nine data tables: `Summary`, `Quality_metrics`, `Detailed_summary`, `FastP`, `Quast`, `Bracken`, `ResFinder`, `MLST`, `VirulenceFinder`; `Summary_quality` is the same file as `Summary`) and the metadata, so the third check passes; the APEC list declares none and stays out [ESTABLISHED: OVERLAP section 1 counts; RECIPE FILE: `is_entity_key` in the nine `input_fields` files; REASONED for the state after the completion; corrected by the Sonnet agent in the check].
+
+**What remains hers, one at a time.**
+1. **(A) or (B):** the completion reads the files as read, or follows the places. With (A) the third check never fails after an audit step. Lean (Opus, as a lean): (A).
+   Lean (Sonnet, as a lean): (A), as for the completion with a metadata (D-0589): the third check then never fails after an audit step, so a failure means a bug of the app and not a user's removal. Neither: say what you meant.
+2. **The population when there is no metadata:** every table that declares an entity id, or the table named by `entity.population`. Lean (Opus, as a lean): the named population when the recipe gives one; with none named, every table that declares the entity id, and the warning says that they are treated as one population. 
+   Lean (Sonnet, as a lean): the same as Opus. What she would see: on `figshare_integration` (no metadata block; three tables `fg_metadata`, `fg_phenotypes`, `fg_genotypes`, each with a `sample_id` [ESTABLISHED: OVERLAP, D-0569 dry-run list]) the three tables would complete each other once they declare their ids; on the demo nothing (it has a metadata). Neither: say what you meant.
+3. **Item 2: a line of the metadata with no usable id.** It can be given to no table, and the third check ignores it (it has no id). The options (a), (b), (c) of item 2 stand. Neither: say what you meant.
+4. **The rest, by title:** the marker's form and name; the block's form and tables; before or after the recipe's tier-1 steps; the log's directory; where the red warning shows; a dummy id; how "data first" is enforced; a recipe with no metadata block and her view of D-0588; the count per target; the threshold; the two QA tables.
+
+---
+
 ## THE CAUSE, AND WHAT WAS FOUND
+
+
 
 ### The 14 tables below the ResFinder table: not classified, by order
 
@@ -790,7 +899,7 @@ None of it was run (D-0566), so none is "verified on a scratch copy": the candid
 
 ## THE CATALOGUE OF SOLUTIONS
 
-Her rules this stays inside: every join is in tier 1 [CODE READ `recipe_check.py:715`, `action_names.py:66`]; at most one chosen place on a path [HER WORDS D-0553]; the default place is where the original and the metadata are joined [HER WORDS D-0549]; every table below a change is recalculated [HER WORDS D-0560]. The chain: `qa_amr_genes_per_sample` reads `QA_AMR_per_sample` = metadata, left join ResFinder, select; tier 2 groups by the entity and counts the genes; the plot's own text: "A sample without any AMR gene must appear at 0, not disappear. T1 is long (74 rows), T2 has one row per sample (42)" and "Expect 42 samples: 4 with 0 genes, 70 genes in total". [RECIPE FILE]
+Her rules this stays inside: every join is in tier 1 [CODE READ `recipe_check.py:715`, `action_names.py:66`]; at most one chosen place on a path [HER WORDS D-0553]; the default place is where the original and the metadata are joined [HER WORDS D-0549]; "we need to ensure that everystep after a change in a place is recalculated" [HER WORDS D-0560] [quote corrected 2026-11-23]. The chain: `qa_amr_genes_per_sample` reads `QA_AMR_per_sample` = metadata, left join ResFinder, select; tier 2 groups by the entity and counts the genes; the plot's own text: "A sample without any AMR gene must appear at 0, not disappear. T1 is long (74 rows), T2 has one row per sample (42)" and "Expect 42 samples: 4 with 0 genes, 70 genes in total". [RECIPE FILE]
 
 **The rule behind all candidates.** To show an entity with no data row, the table must take the entity from a table that holds all entities. That table is the retained side of a join. Written first with `left`, or second with `right` or `full`, the audit sees the same thing: a table that reads the metadata as one of its incoming paths. A removal that covers only the data original cannot remove the entity from the population path (k of n paths, k < n). [REASONED; ESTABLISHED: PATHS G8 "~ means below, not gone"]
 
@@ -1000,3 +1109,9 @@ None.
 **D-0587 additions:** Opus (OPUS_m647_final.md) and Sonnet (checked and pasted).
 
 Note on D-0587: the Sonnet check changed two places of the Opus text: the bullet that read her "a)" as an answer (block 1) and the note under the lean (block 4); her "a)" has two readings (an answer, option (a); or her own point on the edge case), and the options (a) to (c) for the two tables stay open until she confirms.
+
+**D-0588 additions:** Opus (OPUS_m648_final.md) and Sonnet (checked and pasted).
+
+**D-0589 additions:** Opus (OPUS_m649_final.md) and Sonnet (checked and pasted).
+
+**D-0590 additions:** Opus (OPUS_m650_final.md) and Sonnet (checked and pasted).
