@@ -6,6 +6,8 @@
 **Signed by both agents:** Sonnet (this file) and Opus (`OPUS_signs_v2.md` with its replacements, `OPUS_signs_v3.md`).
 **Order:** the half page for her; the eight questions; the agreed points with their evidence; the facts still to run.
 
+> **NOTE of 2026-11-23, after this file was signed (ledger D-0558, D-0559).** The owner ordered that no conclusion may rest on the old lineage code ("well we cannot do on the old structure on the lineage true --- no point it would inject errors in conclusions"). Some points below were established through that code (the lineage walk, its records, the place list of "remove from all the data") or through runs that used it. Until they are rechecked by engine runs and by a graph computed independently from the recipe, these are **NOT to be taken as signed**: the agreed points G11, G15 (the part that rests on a run), G16, G17, G24, G26; the claim about the demo in G27 (the small test recipe itself, mean 30 against 25, holds by hand); the numbers of the demo quoted in questions Q1 to Q4; the sentence in Q5 that "can remain here" is certain only at a join on the entity key; and the count of 27 places. This list is the Sonnet design agent's; the Opus design agent's list is still to come and may add points. Her answer to Q1 (ledger D-0553) stands: it is her rule, not a result of that code. Both agents have restarted their work on independent paths and derived places under the new evidence rules; the recheck is part of it.
+
 ## HALF PAGE FOR HER
 
 What the two agents agree on:
