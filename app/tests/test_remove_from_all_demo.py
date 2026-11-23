@@ -85,17 +85,11 @@ def test_places_that_the_key_reaches_through_steps_the_app_cannot_read_or_groups
     assert all(not p.notes for p in demo.option.places if p.table in ("Quality_metrics", "FastP", "metadata_schema"))
 
 
-SELECTION_MAY_STAY = ["Summary", "Summary_quality", "Detailed_summary", "Quast_with_metadata", "Summary_phenotype_length_fragmentation", "QA_ST_with_NA"]
-
-
-def test_the_explicit_list_names_exactly_the_tables_where_the_key_passes_a_step_the_app_cannot_read_before_and_after_apply(demo):
-    """F1: on the demo the removal is PROVED to work only where the key passes steps the app reads; in these 6 tables it passes a step it cannot read (its plan shows the same name
-    and type, nothing more), so the list says "values may differ". The test of the data above shows that here the sample IS gone: the list is a statement of what is proved, not a failure."""
-    assert [m.table for m in demo.option.may_stay] == SELECTION_MAY_STAY
-    assert all(m.written and m.code == rfa.VALUES_UNPROVED and m.notes for m in demo.option.may_stay)
-    assert demo.option.unsure == ()
-    assert demo.applied.not_written == () and [m.table for m in demo.applied.may_differ] == SELECTION_MAY_STAY
-    assert all(rfa.may_stay_sentence(m) for m in demo.option.may_stay)
+def test_apply_without_a_list_writes_at_every_reached_place_as_before_and_the_library_says_nothing_about_other_tables(demo):
+    """D-0501: no statement about a table where no step is written. With no list given (PROVISIONAL P8) every reached place is written and none is left."""
+    assert demo.applied.ticked_given is False and demo.applied.not_written == ()
+    assert list(demo.applied.written) == [p.place for p in demo.option.places] and demo.option.unsure == ()
+    assert not hasattr(demo.option, "may_stay") and not hasattr(demo.applied, "may_differ")
 
 
 def test_the_column_is_offered_only_when_it_is_the_declared_key_not_for_the_join_columns_of_the_recipe(demo):
@@ -167,3 +161,50 @@ def test_describing_the_option_builds_nothing_and_applies_nothing(demo, tmp_path
     rfa.describe(demo.loaded.raw, "sample_id", plans=demo.plans)
     run = run_audit(demo.orch, RECIPE_ID, start_audit(demo.loaded.raw, AUD).recipe, demo.anchors, tmp_path / "audit")
     assert run.built_tables == [] and run.affected_plots == [] and list((tmp_path / "audit").glob("*.parquet")) == []
+
+
+# ---- the owner's case (D-0499, D-0531): keep the entity in the quality results only. MEASURED, not said. This test is why the option has no screen yet:
+# ---- without a measured effect per result the user cannot see which places to untick.
+
+ENTITY = "10668076"
+QUALITY_PLACES_TO_UNTICK = ["QC_Reads_Anchor", "Quast_with_metadata", "FastP", "Quast", "Bracken", "metadata_schema"]
+
+
+def _entity_rows_per_plot(demo, audit_recipe, out_dir):
+    """Run the audit copy with the app's own run, then read each plot's own table the way the app reads it and count the rows of the entity (any text column equal to it)."""
+    from app.modules.cache_keys import loaded_from_resolved
+    run = run_audit(demo.orch, RECIPE_ID, audit_recipe, demo.anchors, out_dir)
+    loaded = loaded_from_resolved(load_data_analysis_recipe(PIPELINES / f"{RECIPE_ID}.yaml"), audit_recipe, demo.plans)
+    keys = demo.orch.compute_data_analysis_recipe_keys(RECIPE_ID, loaded=loaded)
+    original_keys = demo.orch.compute_data_analysis_recipe_keys(RECIPE_ID, loaded=load_data_analysis_recipe(PIPELINES / f"{RECIPE_ID}.yaml"))
+    counts = {}
+    for plot_id in demo.graph.plots():
+        target = demo.graph.plot_target(plot_id)
+        same_t1 = keys.tier1_key_of(target) == original_keys.tier1_key_of(target)
+        t2_same = keys.tier2_key_of(target) == original_keys.tier2_key_of(target)
+        frame = demo.orch.materialize_tier3(RECIPE_ID, plot_id, demo.anchors if same_t1 else out_dir, keys=keys, loaded=loaded,
+                                            tier2_path=None if t2_same else out_dir / f"{target}__T2.parquet").collect()
+        counts[plot_id] = sum(int(frame.select(pl.col(c).cast(pl.String).eq(ENTITY).sum()).item() or 0) for c in frame.columns if frame.schema[c] in (pl.String, pl.Categorical))
+    return run, counts
+
+
+def test_the_owners_case_the_entity_stays_in_exactly_the_three_quality_plots_only_when_six_places_are_unticked_measured(demo, tmp_path):
+    places = [p.place for p in demo.option.places]
+    assert len(places) == 27 and all(f"T1:{t}" in places for t in QUALITY_PLACES_TO_UNTICK)
+    _, before = _entity_rows_per_plot(demo, start_audit(demo.loaded.raw, AUD).recipe, tmp_path / "none")
+    assert sorted(k for k, n in before.items() if n == 0) == ["qa_aggregated_no_key"], "the entity is in 16 of the 17 plots (the 17th groups it away) before any removal: a test of nothing otherwise"
+
+    def untick(tables):
+        audit = start_audit(demo.loaded.raw, AUD)
+        applied = rfa.apply(audit, demo.option, [ENTITY], "kept in the quality results only", plans=demo.plans, ticked=[p for p in places if p not in {f"T1:{t}" for t in tables}])
+        assert applied.not_written == tuple(f"T1:{t}" for t in sorted(tables, key=lambda t: places.index(f"T1:{t}"))) and applied.ticked_given is True
+        return audit.recipe
+
+    # two places unticked (what the owner could expect to be enough): the entity is gone from every plot, because the source tables below are still ticked
+    run2, two = _entity_rows_per_plot(demo, untick(QUALITY_PLACES_TO_UNTICK[:2]), tmp_path / "two")
+    assert {k for k, n in two.items() if n > 0} == set() and len(run2.affected_plots) == 17
+    # six places unticked: the entity stays in exactly three plots
+    run6, six = _entity_rows_per_plot(demo, untick(QUALITY_PLACES_TO_UNTICK), tmp_path / "six")
+    stays = sorted(k for k, n in six.items() if n > 0)
+    print("MEASURED six unticked: entity stays in", stays, "affected plots:", len(run6.affected_plots))
+    assert len(stays) == 3 and len(run6.affected_plots) == 14

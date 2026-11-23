@@ -3,15 +3,15 @@
 The gap this file closes (review of the branch `task/lineage-unfollowed-join-red`): behind an anti, right, full or self-join the walk linked the first table's key
 to the joined table and nothing else, so the key column of the OTHER table was not linked to the first table's key at all. A sample could stay in a table and no
 line told the user: a walk from `T1:A sample_id` listed no line for `T1:B`, and "remove from all the data" with the key declared only at one of the two tables put
-the other table in `not_reached` with the code `same_name_not_linked`, which is not in `may_stay`.
+the other table in `not_reached` with the code `same_name_not_linked`, which is a fact of the walk, not a doubt.
 
 The rule (D-0460: a place the app cannot trace is shown, red, not tickable; never silently absent): for a join NOT YET followed, the first table's key and the
 second table's key (by `on`, or by `left_on` and `right_on`) are linked by an UNCERTAIN link that carries the reason `join_not_yet_followed` and the join's facts. The
-other table is then a red line in the walk, in either direction, and a table in `may_stay` with the full sentence (YET in capitals) in "remove from all the data".
+other table is then a red line in the walk, in either direction, and a table in `not_reached` (data, code `uncertain_link`) in "remove from all the data"; the library writes no sentence about it (D-0501).
 
 Also here: the sentence is true for every kind (anti, right, full, cross, an unknown word, a self-join); the lists of kinds are ONE partition (every kind the engine's
 join action accepts is followed or not yet followed, never both, never neither); and "remove from all the data" tells the user about EVERY table that holds a column of
-the key's name (written, may stay, or a listed reason), also a table that shares only the name (`same_name_not_linked`).
+the key's name (written, or in `not_reached` with its code), also a table that shares only the name (`same_name_not_linked`).
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest libs/utils/tests/test_lineage_unfollowed_join_keys.py -q
 """
@@ -89,21 +89,18 @@ def test_a_plain_column_of_the_other_table_is_not_linked_to_the_key(how):
 @pytest.mark.parametrize("other_name", ["sample_id", "isolate"])
 @pytest.mark.parametrize("declared", ["A", "B", "AB"])
 @pytest.mark.parametrize("how", NOT_YET)
-def test_the_table_the_key_reaches_only_through_such_a_join_is_written_nowhere_and_listed_with_the_sentence(how, declared, other_name):
+def test_the_table_the_key_reaches_only_through_such_a_join_is_written_nowhere_and_listed_as_not_reached(how, declared, other_name):
     recipe, tables = keyed(how, declared, other_name)
     option = described(recipe, tables)
     assert option.offered
     assert [p.table for p in option.places] == [t for t in "AB" if t in declared]       # written only where the key is declared (each holds it at its own start)
-    stays = {m.table: m for m in option.may_stay}
+    stays = {m.table: m for m in option.not_reached}
     assert set(stays) == {"J"} | {t for t in "AB" if t not in declared}                  # every other table is listed, never silently absent
     for table, item in stays.items():
         if (how, other_name, table) == ("full", "isolate", "J"):                         # a full join on two names keeps BOTH key columns: the table says so (several columns), still listed
-            assert not item.written and item.code == rfa.SEVERAL_COLUMNS
-            assert rfa.may_stay_sentence(item).startswith("In the table 'J'")
+            assert item.code == rfa.SEVERAL_COLUMNS
             continue
-        assert not item.written and item.code == rfa.UNCERTAIN_LINK and item.reason.code == JOIN_NOT_YET_FOLLOWED, table
-        said = rfa.may_stay_sentence(item)
-        assert said.startswith(f"In the table {table!r}") and said.count("YET") == 1 and how in said and said.rstrip().endswith("The selection may stay there."), said
+        assert item.code == rfa.UNCERTAIN_LINK and item.reason.code == JOIN_NOT_YET_FOLLOWED and item.reason.get("kind") == how, table
     assert [n.table for n in option.not_reached if n.code == rfa.SAME_NAME_NOT_LINKED] == []   # no longer the silent code
 
 
@@ -118,7 +115,8 @@ def test_nothing_is_written_at_a_table_reached_only_through_such_a_link(how, dec
     written = {s.place for s in audit_copy.all_audit_steps(audit.recipe)}
     assert written == {f"T1:{declared}"} and len(applied.step_ids) == 1
     other = "B" if declared == "A" else "A"
-    assert {m.table for m in applied.not_written} == {other, "J"}                         # the user is told, after the apply too
+    assert applied.written == (f"T1:{declared}",) and applied.not_written == ()           # nothing else is reached, so nothing is 'not written' by choice
+    assert {n.table for n in option.not_reached} == {other, "J"}                          # the tables not reached stay data of the option
 
 
 def selfjoin(how, declared=True):
@@ -127,12 +125,11 @@ def selfjoin(how, declared=True):
 
 
 @pytest.mark.parametrize("how", ["left", "inner", "anti", "semi"])
-def test_a_self_join_lists_the_joined_table_with_the_sentence_and_writes_only_at_the_declared_table(how):
+def test_a_self_join_lists_the_joined_table_as_not_reached_and_writes_only_at_the_declared_table(how):
     recipe, tables = selfjoin(how)
     option = described(recipe, tables)
-    assert [p.table for p in option.places] == ["A"] and [m.table for m in option.may_stay] == ["J"]
-    said = rfa.may_stay_sentence(option.may_stay[0])
-    assert "YET" in said and "self-join" in said
+    assert [p.table for p in option.places] == ["A"] and [n.table for n in option.not_reached] == ["J"]
+    assert option.not_reached[0].reason.get("self_join") is True
 
 
 def test_a_self_join_walk_lists_the_joined_table_as_red_from_either_side():
@@ -144,7 +141,7 @@ def test_a_self_join_walk_lists_the_joined_table_as_red_from_either_side():
 def test_the_key_through_a_followed_join_is_still_written_at_both_tables():
     recipe, tables = keyed("left", "A")
     option = described(recipe, tables)
-    assert [p.table for p in option.places] == ["A", "B", "J"] and option.may_stay == ()
+    assert [p.table for p in option.places] == ["A", "B", "J"] and option.not_reached == ()
 
 
 # ----------------------------------------------------------------------------------------------------------------------------- no table is silently absent
@@ -169,7 +166,7 @@ def fixture_cases():
 
 
 def silent_tables(recipe, plans):
-    """The tables of the recipe that hold a column with the name of the key at the end of their tier 1 and that "remove from all the data" says nothing about. [] is the rule."""
+    """The tables of the recipe that hold a column with the name of the key at the end of their tier 1 and that "remove from all the data" lists nowhere (neither written nor not reached). [] is the rule."""
     graph = build_graph(recipe)
     index = LineageIndex(graph, plans)
     declared = {name for t in graph.collections() if graph.node(f"T1:{t}").collection_kind == "schema" for name in graph.declared_entity_keys(t)}
@@ -191,10 +188,7 @@ def silent_tables(recipe, plans):
             if item is None:
                 missing.append((key, table))
                 continue
-            said = rfa.not_reached_sentence(item)
-            assert said.startswith(f"In the table {table!r}") and said.strip().endswith("."), said
-            if item.code in rfa.UNSURE_CODES:
-                assert table in {m.table for m in option.may_stay}, (key, table, item.code)
+            assert item.code in rfa.NOT_REACHED_CODES, (key, table, item.code)
     return missing
 
 
@@ -220,23 +214,14 @@ def test_the_scan_finds_the_shipped_recipes():
     assert len(list(shipped_recipes())) >= 20
 
 
-def test_a_table_that_shares_only_the_name_is_listed_with_a_plain_sentence_not_written():
+def test_a_table_that_shares_only_the_name_is_listed_as_not_reached_and_not_written():
     recipe, tables = keyed("left", "A")
     recipe["data_schemas"]["N"] = F.schema(["sample_id", "note"])
     tables["N"] = F.table(sample_id=["S1"], note=["n"])
     option = described(recipe, tables)
     same = [n for n in option.not_reached if n.table == "N"]
     assert [n.code for n in same] == [rfa.SAME_NAME_NOT_LINKED] and "N" not in {p.table for p in option.places}
-    said = rfa.not_reached_sentence(same[0])
-    assert said.startswith("In the table 'N'") and "sample_id" in said and "no declaration and no join" in said
-    assert "PROVISIONAL" in Path(rfa.__file__).read_text()
-
-
-def test_every_code_of_the_closed_list_has_a_sentence():
-    for code in rfa.NOT_REACHED_CODES:
-        item = rfa.NotReached("T", "T1:T", code, Reason(code, (("names", ("sample_id",)),)))
-        said = rfa.not_reached_sentence(item)
-        assert said.startswith("In the table 'T'") and said.endswith("."), (code, said)
+    assert same[0].reason.get("names") == ("sample_id",)
 
 
 # ----------------------------------------------------------------------------------------------------------------------------- the sentence is true for every kind

@@ -50,7 +50,7 @@ PROVISIONAL behaviour (the owner has not decided; each place is marked in the co
   they are and the places after it are red; seen from a start after it the places before it are red. NOT decided: whether only the places after the join should be red (the owner's question); how a red line is
   shown; the words beyond the capital YET (`utils.lineage_sentences`, PROVISIONAL). A column written under its own name from another column is not told apart from the readable cases (see P3).
   The KEY columns of such a join (`_join_key_links`, by `on` or by `left_on` and `right_on`) are linked, the first table's and the second table's, by an uncertain link with the same reason: the second table is then a red line
-  in the walk, seen from either side, and a table "remove from all the data" lists (`may_stay`); without the link the second table's key (the same name as the first's) ended at the step and nothing told the user that the
+  in the walk, seen from either side, and a table "remove from all the data" lists in `not_reached` (data); without the link the second table's key (the same name as the first's) ended at the step and nothing told the user that the
   sample could stay there (review of 2026-11-22). A join with no readable key (cross) links none; as-of joins and joins on conditions are other actions and are not covered here (they are not read).
 - P13 a source line next to a tier 1 without steps is the same table: it stays grey `no_step_list` and carries `duplicates` (the tier 1 place), so that a caller shows one line.
 - P14 a walk that selects no place says so (`Walk.nothing`); which levels the column exists at is `Walk.held_at_levels`.
