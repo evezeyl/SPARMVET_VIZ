@@ -503,6 +503,9 @@ def define_session_server(input, output, session, *,
         if session_manager is None:
             return
         count = len(session_manager.list_all_sessions())
+        if not session_manager.writable:
+            _notify(session_manager.not_writable_text(), type="warning", duration=8)
+            return
         ui.modal_show(ui.modal(
             f"This permanently deletes all {count} saved session(s). This cannot be undone.",
             title="Delete all sessions?",

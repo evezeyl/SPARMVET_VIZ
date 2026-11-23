@@ -11,11 +11,15 @@ from app.handlers.audit_stack import _write_t3_ghost
 
 
 class _BrokenSessionManager:
+    writable = True
+
     def write_t3_ghost(self, **kwargs):
         raise OSError("Read-only file system: '/sessions'")
 
 
 class _WorkingSessionManager:
+    writable = True
+
     def write_t3_ghost(self, **kwargs):
         return None
 
@@ -45,3 +49,14 @@ def test_keys_that_are_missing_give_a_warning_and_no_write_attempt():
     although nothing was saved. It still makes no write attempt; it now says so (details: test_session_keys_missing_told.py)."""
     warning = _write_t3_ghost({}, _BrokenSessionManager())
     assert warning is not None and "not saved" in warning and "Suggestion:" in warning
+
+
+def test_not_writable_folder_says_not_saved_and_does_not_try():
+    class _Off(_WorkingSessionManager):
+        writable = False
+
+        def write_t3_ghost(self, **kwargs):
+            raise AssertionError("must not be called")
+
+    warning = _write_t3_ghost(_STATE, _Off())
+    assert "not saved" in warning and "user folder cannot be written" in warning
