@@ -344,8 +344,8 @@ class _Check:
             self.add("E02", "entity.population", f"population {population!r} is not a table of this recipe", "name a schema or a join")
         elif population in schemas and isinstance(schemas[population], dict):
             fields_ = schemas[population].get("input_fields")
-            if isinstance(fields_, dict) and not any(isinstance(f, dict) and f.get("is_entity_key") for f in fields_.values()):
-                self.add("E02", "entity.population", f"{population!r} has no field with is_entity_key: true", "mark the key column")
+            if isinstance(fields_, dict) and not any(isinstance(f, dict) and f.get("is_entity_id") for f in fields_.values()):
+                self.add("E02", "entity.population", f"{population!r} has no field with is_entity_id: true", "mark the key column")
 
     # -- schemas and fields
     def all_schemas(self, raw: dict) -> Dict[str, Any]:
@@ -446,10 +446,10 @@ class _Check:
         """E03 (D-0225, D-0067): the declared entity key (the sample id) is a String or a Categorical, never a number.
 
         A number as an id loses leading zeros and makes 001, 1 and 1.0 one sample, and it gives join and type problems.
-        Only a column marked is_entity_key is judged: nothing is guessed from a column name. A type that cannot be read is
+        Only a column marked is_entity_id is judged: nothing is guessed from a column name. A type that cannot be read is
         left to FD02 and FD05.
         """
-        if not isinstance(definition, dict) or definition.get("is_entity_key") is not True:
+        if not isinstance(definition, dict) or definition.get("is_entity_id") is not True:
             return
         declared = _declared_dtype(definition)
         if declared is not None and declared.is_numeric():
@@ -482,7 +482,7 @@ class _Check:
         for key in definition:
             if key in known:
                 continue
-            code = "FD03" if key == "is_primary_key" else "FD04" if key == "source_name" else "FD01"
+            code = "FD03" if key in ("is_primary_key", "is_entity_key") else "FD04" if key == "source_name" else "FD01"
             if key in renamed:
                 self.add(code, f"{path}.{key}", f"{key} was renamed", renamed[key])
             else:
@@ -504,8 +504,8 @@ class _Check:
             if type_ == "Enum" and not (isinstance(definition.get("categories"), list) and definition["categories"]
                                          and all(isinstance(c, str) for c in definition["categories"])):
                 self.add("FD05", f"{path}.categories", "an Enum needs its levels, in order", "write categories: [low, high]")
-        if "is_entity_key" in definition and not isinstance(definition["is_entity_key"], bool):
-            self.add("FD05", f"{path}.is_entity_key", "is_entity_key is true or false", "write true or false")
+        if "is_entity_id" in definition and not isinstance(definition["is_entity_id"], bool):
+            self.add("FD05", f"{path}.is_entity_id", "is_entity_id is true or false", "write true or false")
         self.missing_values(definition, path, required=False)
 
     # -- steps

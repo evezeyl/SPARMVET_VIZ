@@ -1331,7 +1331,7 @@ class WrangleStudio:
             badge_cls, badge_text = _type_badge(ftype)
             label       = meta.get("label", "")
             orig        = meta.get("original_name", "")
-            is_pk       = meta.get("is_entity_key", False)
+            is_pk       = meta.get("is_entity_id", False)
             description = meta.get("description", "")
 
             # Header row: slug + type badge + PK marker

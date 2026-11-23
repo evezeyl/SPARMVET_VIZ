@@ -865,7 +865,7 @@ class LineageIndex:
     # ------------------------------------------------------------------ what is not reached
     def _outside(self, linked: Set[Occ]) -> Tuple[Outside, ...]:
         """The source tables that declare a key of the same family as the lineage's and that no join links to it: plain information (never a line, never matched by
-        the name alone: only `is_entity_key` declarations and the key pairs of joins are used)."""
+        the name alone: only `is_entity_id` declarations and the key pairs of joins are used)."""
         g = self.graph
         reached = {g.node(o[0]).name for o in linked if g.node(o[0]).kind == "DS"}
         names: Set[str] = set()

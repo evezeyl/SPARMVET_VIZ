@@ -24,7 +24,7 @@ that a plot would read under the same name: `LineageIndex.drop_consequences`), t
 (`DropGate.ways_out`: only the own table of a plot, where nothing is built after it, with its scope said; else that the app finds no place it can show; D-0450). It promises nothing about the build. The WHOLE sentence is PROVISIONAL (the builder's wording; the owner reads it, D-0297: plain words). What the engine does with such a
 drop if it were written is proved in `app/tests/test_uncertain_drop_engine.py` (the table meant, a plain error, or a different table).
 
-A declared entity key (`is_entity_key`) is not refused for being declared: it is dropped by place like any key, refused only where a later join reads it (D-0448, "Her answer: B"; D-0297
+A declared entity key (`is_entity_id`) is not refused for being declared: it is dropped by place like any key, refused only where a later join reads it (D-0448, "Her answer: B"; D-0297
 names join keys, D-0358 says by place); the facts carry it as information.
 
 Pure: a recipe dictionary in, facts or a sentence out. No file, no data, no engine.

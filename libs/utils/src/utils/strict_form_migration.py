@@ -184,7 +184,7 @@ class _Run:
             role = _find(definition, "role") if isinstance(definition, yaml.MappingNode) and not definition.flow_style else None
             if role is not None:
                 edits.append((*_pair_span(fields_text, *role), ""))
-                self.report.append(f"{where}.input_fields.{slug.value}: role removed (nothing reads it; the key of a table is is_entity_key)")
+                self.report.append(f"{where}.input_fields.{slug.value}: role removed (nothing reads it; the key of a table is is_entity_id)")
         if target is None:
             self.edits += edits
         elif edits:

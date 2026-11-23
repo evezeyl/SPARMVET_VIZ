@@ -8,7 +8,7 @@ explicit act (2); the list of the tables it reaches is known BEFORE anything is 
 entity key, never for another column (D-0415, D-0313).
 
 What this module answers, for a recipe and a column (`describe`):
-1. Is the option offered? Only when the column is THE ENTITY KEY: a key that the recipe declares (`is_entity_key` on a field, D-0313, D-0082) or a column that a join of
+1. Is the option offered? Only when the column is THE ENTITY KEY: a key that the recipe declares (`is_entity_id` on a field, D-0313, D-0082) or a column that a join of
    the recipe equates with one (the "key family" of `RecipeGraph.key_families`, the same basis as the lineage walk: declarations and join key pairs, never the name
    alone). A column that a join uses but that is not declared the key is information (`utils.join_keys`), not the entity key: it is not offered. A recipe that
    declares no entity key gets "not offered" and a reason.
@@ -76,7 +76,7 @@ from utils.recipe_graph import RecipeGraph, RecipeGraphError, build_graph
 WARNING = "This removes your selection from any data that holds it."
 
 # Why the option is not offered: a closed list. The sentence is `not_offered_sentence` (PROVISIONAL words).
-NO_ENTITY_KEY_DECLARED = "no_entity_key_declared"     # the recipe declares no `is_entity_key` anywhere
+NO_ENTITY_KEY_DECLARED = "no_entity_key_declared"     # the recipe declares no `is_entity_id` anywhere
 NOT_THE_ENTITY_KEY = "not_the_entity_key"             # the column is not the entity key (it may be a join column, a plain column, or absent)
 RECIPE_CANNOT_BE_DRAWN = "recipe_cannot_be_drawn"     # the recipe cannot be drawn as a graph: nothing can be said about its tables
 UNKNOWN_PLACE = "unknown_place"                       # the place asked is not a place of the recipe
@@ -167,7 +167,7 @@ def not_offered_sentence(reason: Reason) -> str:
     """The plain sentence for a reason the option is not offered. PROVISIONAL words (the owner reads them)."""
     code = reason.code
     if code == NO_ENTITY_KEY_DECLARED:
-        return "This recipe does not say which column is the entity key (the id of the thing each row describes), so removing from all the data is not offered. Declare the key in the recipe (is_entity_key)."
+        return "This recipe does not say which column is the entity key (the id of the thing each row describes), so removing from all the data is not offered. Declare the key in the recipe (is_entity_id)."
     if code == NOT_THE_ENTITY_KEY:
         declared = ", ".join(str(n) for n in reason.get("declared", ()) or ()) or "none"
         return (f"The column {reason.get('column')!r} is not the entity key of this recipe (the entity key is: {declared}), so removing from all the data is not offered for it. "

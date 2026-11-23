@@ -12,7 +12,7 @@ Writes the two small synthetic tables that `config/data_analysis_recipes/templat
 `left_join_lesson_sequenced.tsv` (Accession, Gene) and `left_join_lesson_metadata.tsv` (ID, Country).
 
 No real data. The two tables name the sample id with DIFFERENT column names (Accession and ID) on purpose: the
-recipe declares which column is the sample id (`is_entity_key`), it is not guessed from a name.
+recipe declares which column is the sample id (`is_entity_id`), it is not guessed from a name.
 
 The ids do NOT match on purpose, in both directions, to teach what a left join does:
 - 10 sequenced samples (the left table): ACC0001 to ACC0010;

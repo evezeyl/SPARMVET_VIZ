@@ -157,7 +157,7 @@ class DataAnalysisRecipeScaffolder:
                 "original_name": col,
             }
             if safe_col in ("id", "sample_id", "isolate_id"):
-                fields[safe_col]["is_entity_key"] = True
+                fields[safe_col]["is_entity_id"] = True
             if df[col].n_unique() == len(df):
                 pk_candidates.append(safe_col)
         return fields, pk_candidates

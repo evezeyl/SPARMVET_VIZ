@@ -38,7 +38,7 @@ elements:
     types: [local_tsv, local_parquet]
   field:
     required: [type]
-    optional: [categories, precision, scale, format, time_unit, time_zone, original_name, is_entity_key, null_values, strip]
+    optional: [categories, precision, scale, format, time_unit, time_zone, original_name, is_entity_id, null_values, strip]
   join:
     required: [ingredients, tier1]
     optional: [description, comment, labels, tier2]
@@ -104,7 +104,8 @@ renamed:
     sub_category: "removed"
     comments: "comment"
   field:
-    is_primary_key: "is_entity_key"
+    is_primary_key: "is_entity_id"
+    is_entity_key: "is_entity_id"
     source_name: "original_name"
   join:
     info: "description"
