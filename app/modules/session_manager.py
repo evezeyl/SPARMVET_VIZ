@@ -260,6 +260,10 @@ def _not_a_mapping_line(where: str, data) -> str:
     return f"{where} is not a session file: it holds {kind}, not the record of a session."
 
 
+class SessionsNotWritable(RuntimeError):
+    """The sessions folder cannot be written: nothing is saved, exported or imported (D-0581)."""
+
+
 class SessionManager:
     """Manages session identity, T1/T2 ghost, and T3 ghost files.
 
@@ -271,7 +275,26 @@ class SessionManager:
 
     def __init__(self, location_4: Path):
         self.root = Path(location_4) / self.SESSIONS_DIR
-        self.root.mkdir(parents=True, exist_ok=True)
+        self.writable = self._probe_writable()
+
+    def _probe_writable(self) -> bool:
+        """True when the sessions folder can be made and a file written in it (a real write: mkdir alone passes on a read-only folder).
+
+        D-0581: a folder that cannot be written is a warning, never a stop: saving is off and the session still starts.
+        """
+        try:
+            self.root.mkdir(parents=True, exist_ok=True)
+            probe = self.root / ".write_probe"
+            probe.write_text("x")
+            probe.unlink()
+            return True
+        except OSError:
+            return False
+
+    def not_writable_text(self) -> str:
+        """PROVISIONAL wording (the owner reads it): the one plain warning shown when sessions cannot be saved."""
+        return (f"The user folder cannot be written ({self.root.parent}): sessions cannot be saved in this "
+                "deployment. Everything else works.")
 
     # ------------------------------------------------------------------
     # 22-A-2: Data analysis recipe SHA256
@@ -314,7 +337,8 @@ class SessionManager:
     def session_dir(self, session_key: str) -> Path:
         """Returns (and creates) the session directory."""
         d = self.root / session_key
-        d.mkdir(parents=True, exist_ok=True)
+        if self.writable:
+            d.mkdir(parents=True, exist_ok=True)
         return d
 
     # ------------------------------------------------------------------
@@ -346,6 +370,8 @@ class SessionManager:
         `on_problem(text)` is called when the earlier record cannot be read: it is rewritten (as always) and its label is
         lost; the text tells the user so (D-0050).
         """
+        if not self.writable:
+            return None
         path = self.session_dir(session_key) / "assembly.json"
         if label is None:
             label = ""
@@ -498,6 +524,8 @@ class SessionManager:
         `t3_audit_steps` argument is kept for backward compatibility with callers
         not yet updated and is stored alongside as a flattened convenience.
         """
+        if not self.writable:
+            return None
         if t3_audit_steps_by_plot is None:
             t3_audit_steps_by_plot = {}
         t3_audit_steps_by_plot = normalise_audit_steps(t3_audit_steps_by_plot)
@@ -606,6 +634,8 @@ class SessionManager:
         session; both are still the case, and each is named as `{"session_key", "name", "reason", "kind"}` (kind "session": the session is not listed; "save": it is listed) so that the screen can
         tell the user (D-0050).
         """
+        if not self.writable:
+            return [], []
         sessions = []
         unreadable = []
         for assembly_file in self.root.glob("*/assembly.json"):
@@ -646,6 +676,8 @@ class SessionManager:
 
     def export_session_zip(self, session_key: str) -> bytes:
         """Zip {session_key}/ into in-memory bytes for download."""
+        if not self.writable:
+            raise SessionsNotWritable(self.not_writable_text())
         import io
         d = self.session_dir(session_key)
         buf = io.BytesIO()
@@ -670,6 +702,8 @@ class SessionManager:
         `<key>_imported_<time>`, PROVISIONAL naming, its own session_key and a label that says it was imported).
         A zip that is refused, or an import that fails, leaves no file behind.
         """
+        if not self.writable:
+            raise SessionsNotWritable(self.not_writable_text())
         import io
         limits = limits or SessionImportLimits.default()
         if on_exists not in (None, "replace", "keep_both"):
@@ -773,6 +807,8 @@ class SessionManager:
 
     def delete_session(self, session_key: str) -> None:
         """Remove the entire session directory."""
+        if not self.writable:
+            return None
         d = self.root / session_key
         if d.exists():
             shutil.rmtree(d)
@@ -782,6 +818,8 @@ class SessionManager:
         deleting one by one. Reuses delete_session() per key rather than rmtree-ing the
         root directly, so a legacy/malformed session entry can't abort the whole sweep.
         Returns the number of sessions deleted."""
+        if not self.writable:
+            return 0
         keys = [s["session_key"] for s in self.list_all_sessions()]
         deleted: list[str] = []
         for i, sk in enumerate(keys):
@@ -812,6 +850,8 @@ class SessionManager:
 
     def set_session_label(self, session_key: str, label: str) -> None:
         """Set the session's label in assembly.json — works even before any Apply."""
+        if not self.writable:
+            return None
         path = self.session_dir(session_key) / "assembly.json"
         if not path.exists():
             return
