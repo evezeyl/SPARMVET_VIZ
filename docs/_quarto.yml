@@ -62,6 +62,7 @@ book:
     chapters:
       - user_guide/yaml_101.qmd # YAML basics and Text Editor recommendations
       - user_guide/blueprint_data_analysis_recipe_authoring.qmd # Step-by-step data analysis recipe authoring guide for bioscientists
+      - user_guide/good_practice_recipes.qmd # Good practice for recipe authors: the key, the joins the app can follow, the limits of the lineage
       - user_guide/data_literacy.qmd # Tidy Data (1 var/col), Spelling, Case-sensitivity
       - workflows/dashboard_app.qmd # The UI layout and App features mapping
       - workflows/ui_app_features.qmd # Eight app features files — feature flags, ADR-076/077, panel slot registry
