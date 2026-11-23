@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Ridgeline Advanced
+  ui_label: Ridgeline Advanced
   description: >-
     Visualizes densities across multiple categories. Excellent for comparing distributions side-by-side using vertical
     faceting.
   submission_date: '2026-04-10'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 200 rows and 3 columns (id, species, growth_index).
     source: {type: local_tsv, path: ./assets/gallery_data/ridgeline_advanced/example_data.tsv}

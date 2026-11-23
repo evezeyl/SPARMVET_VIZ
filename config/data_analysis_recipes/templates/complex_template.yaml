@@ -6,13 +6,13 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: "Complex Enterprise Demo"
+  ui_label: "Complex Enterprise Demo"
   description: "Modular data analysis recipe using !include for relational integrity and reuse."
   version: "1.0"
 
 data_schemas:
   genomics:
-    label: "genomics"
+    ui_label: "genomics"
     source:
       type: "local_tsv"
       path: "./assets/test_data/genomics_data.tsv"
@@ -24,7 +24,7 @@ data_schemas:
     tier1: !include 'complex_template/genomics_wrangling.yaml'
 
 metadata_schema:
-  label: "Metadata"
+  ui_label: "Metadata"
   source:
     type: "local_tsv"
     path: "./assets/test_data/metadata.tsv"
@@ -37,7 +37,7 @@ metadata_schema:
 
 joins:
   master_assembly:
-    label: "master assembly"
+    ui_label: "master assembly"
     description: "Joins genomics with metadata."
     ingredients:
       - dataset_id: "genomics"

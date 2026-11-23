@@ -1,5 +1,4 @@
 ui_label: "AMR Heatmap"
-ui_title: AMR Genes Presence by Category
 description: "Heatmap showing AMR gene presence across samples."
 taxonomy: {"family": "Correlation", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Intermediate"}
 target_dataset: ResFinder

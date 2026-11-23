@@ -1,3 +1,7 @@
+# SPARMVET — Production (Posit Connect)
+# Description of this deployment, written by the names pass; the app does not read it.
+# Default app features: pipeline-static
+# Default recipe: my_pipeline
 # SPARMVET_VIZ — Posit Connect Deployment Template (ADR-048)
 #
 # Copy this file, fill in the path values, and point SPARMVET_DEPLOYMENT at
@@ -18,7 +22,6 @@
 #   so the Data Import panel is suppressed and data is always pipeline-provided.
 
 deployment_type: filesystem
-deployment_name: "SPARMVET — Production (Posit Connect)"
 
 # The data analysis recipe to load at startup.
 # Relative to project_root below.

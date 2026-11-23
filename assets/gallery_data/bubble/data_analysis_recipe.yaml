@@ -3,7 +3,7 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Bubble Chart
+  ui_label: Bubble Chart
   description: >-
     Encode three numeric variables simultaneously: position (x, y) and magnitude (bubble size). Use when you want
     to show the relationship between two continuous axes while also conveying a third quantity (e.g. sample size,
@@ -11,7 +11,7 @@ info:
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 5 rows and 4 columns (species, sample_size, mean_resistance, pct_resistant).
     source: {type: local_tsv, path: ./assets/gallery_data/bubble/example_data.tsv}

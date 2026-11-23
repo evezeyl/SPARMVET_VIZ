@@ -10,12 +10,12 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: "ST22 analysis lineage (sequential build)"
+  ui_label: "ST22 analysis lineage (sequential build)"
   description: "Improved ST22 Analysis Lineage - Sequential Build"
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
 
 metadata_schema:
-  label: "metadata"
+  ui_label: "metadata"
   description: "One row per sample with its source, year and country of isolation."
   source:
     type: "local_tsv"
@@ -27,7 +27,7 @@ metadata_schema:
 
 data_schemas:
   amr_data:
-    label: "amr data"
+    ui_label: "amr data"
     description: "One row per resistance gene hit reported by ResFinder (a sample can have several); only hits with identity of at least 90 and overlap of at least 60 percent are kept."
     source:
       type: "local_tsv"
@@ -37,7 +37,7 @@ data_schemas:
     input_fields: !include 2_test_data_ST22_dummy_fractional_year/input_fields/amr_data.yaml
     tier1: !include 2_test_data_ST22_dummy_fractional_year/wrangling/amr_data.yaml
   plasmid_data:
-    label: "plasmid data"
+    ui_label: "plasmid data"
     description: "One row per plasmid hit reported by PlasmidFinder (a sample can have several); only hits with identity of at least 90 and overlap of at least 60 percent are kept."
     source:
       type: "local_tsv"
@@ -49,14 +49,14 @@ data_schemas:
 
 joins:
   AMR_Profile_Joint:
-    label: "AMR Profile Joint"
+    ui_label: "AMR Profile Joint"
     description: "One row per resistance gene hit with the sample's source, year and country (inner join: a sample with no hit, or not in the metadata, has no row), and the flag Multiresistant that is Yes when the hits of the sample name more than one distinct predicted phenotype (a drug, not a drug class; a missing phenotype is not counted)."
     ingredients:
       - dataset_id: amr_data
       - dataset_id: metadata_schema
     tier1: !include 2_test_data_ST22_dummy_fractional_year/assembly/AMR_Profile_Joint.yaml
   Plasmid_Profile_Joint:
-    label: "Plasmid Profile Joint"
+    ui_label: "Plasmid Profile Joint"
     description: "One row per plasmid hit with the sample's source, year and country (inner join: a sample with no plasmid hit, or not in the metadata, has no row), sorted by year, source and country."
     ingredients:
       - dataset_id: plasmid_data

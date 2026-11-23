@@ -3,7 +3,7 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Figshare AMR Triple-Source Integration
+  ui_label: Figshare AMR Triple-Source Integration
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
   category: Integration Demo
   tags:
@@ -20,7 +20,7 @@ info:
 # Fragment files: figshare_integration/{input_fields,wrangling,output_fields}/
 data_schemas:
   fg_metadata:
-    label: "fg metadata"
+    ui_label: "fg metadata"
     description: "One row per animal sample with host species, specimen source, final diagnosis and infection site."
     source:
       type: local_tsv
@@ -31,7 +31,7 @@ data_schemas:
     tier1: !include 'figshare_integration/wrangling/fg_metadata_wrangling.yaml'
 
   fg_phenotypes:
-    label: "fg phenotypes"
+    ui_label: "fg phenotypes"
     description: "One row per sample and antibiotic test (MIC id) with the breakpoint and the predicted phenotype."
     source:
       type: local_tsv
@@ -42,7 +42,7 @@ data_schemas:
     tier1: !include 'figshare_integration/wrangling/fg_phenotypes_wrangling.yaml'
 
   fg_genotypes:
-    label: "fg genotypes"
+    ui_label: "fg genotypes"
     description: "One row per resistance gene line reported for a sample, with the gene type, identifier, gene family and resistance class; the same gene can appear on more than one row of a sample."
     source:
       type: local_tsv
@@ -55,7 +55,7 @@ data_schemas:
 # ── Assembly Data Analysis Recipes ────────────────────────────────────────────────────────
 joins:
   figshare_triple_join:
-    label: "figshare triple join"
+    ui_label: "figshare triple join"
     description: '3-way left join: metadata (anchor) -> phenotypes -> genotypes.
       Phenotypes expand rows per antibiotic (MIC). Genotypes expand rows per detected
       gene. The join is intentionally "long" to enable faceted visualisation.'

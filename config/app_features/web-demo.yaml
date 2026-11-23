@@ -1,8 +1,7 @@
 # UI App features: Web Demo
 # Pure exploration view — filters only, no export, no gallery, no ingestion.
 # App features badge hidden. Suitable for demos and public-facing presentations.
-name: "web-demo"
-display_name: "Web Demo"
+ui_label: "Web Demo"
 
 flags:
   interactivity_enabled: true

@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Bar Simple
+  ui_label: Bar Simple
   description: >-
     Essential for comparing counts across categories. In the Scientific Cookbook, this is the 'Staple' for categorical
     distribution.
   submission_date: '2026-04-10'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 100 rows and 4 columns (id, species, amr_class, value).
     source: {type: local_tsv, path: ./assets/gallery_data/bar_simple/example_data.tsv}

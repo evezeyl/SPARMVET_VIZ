@@ -1,21 +1,21 @@
 sample_id:
   original_name: "sample_id"
   type: String
-  label: "Sample ID"
+  ui_label: "Sample ID"
   is_entity_id: true
 gene:
   original_name: "Gene"
   type: String
-  label: "AMR Gene"
+  ui_label: "AMR Gene"
 predicted_phenotype:
   original_name: "Predicted Phenotype"
   type: String
-  label: "Predicted Phenotype"
+  ui_label: "Predicted Phenotype"
 identity:
   original_name: "%Identity"
   type: Float64
-  label: "Identity %"
+  ui_label: "Identity %"
 overlap:
   original_name: "%Overlap"
   type: Float64
-  label: "Overlap %"
+  ui_label: "Overlap %"

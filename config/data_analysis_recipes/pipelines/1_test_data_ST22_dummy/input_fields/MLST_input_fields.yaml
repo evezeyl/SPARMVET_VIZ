@@ -1,48 +1,48 @@
 sample_id:
   original_name: "sample_id"
   type: String
-  label: "Sample ID"
+  ui_label: "Sample ID"
   is_entity_id: true
 scheme:
   original_name: "Scheme"
   type: String
   null_values: ["N/A"]
-  label: "MLST Scheme"
+  ui_label: "MLST Scheme"
 sequence_type:
   original_name: "Sequence Type"
   type: String
   null_values: ["-"]
-  label: "Sequence Type"
+  ui_label: "Sequence Type"
 locus_1:
   original_name: "Locus 1"
   type: String
   null_values: ["-"]
-  label: "Locus 1"
+  ui_label: "Locus 1"
 locus_2:
   original_name: "Locus 2"
   type: String
   null_values: ["N/A"]
-  label: "Locus 2"
+  ui_label: "Locus 2"
 locus_3:
   original_name: "Locus 3"
   type: String
-  label: "Locus 3"
+  ui_label: "Locus 3"
 locus_4:
   original_name: "Locus 4"
   type: String
   null_values: ["N/A"]
-  label: "Locus 4"
+  ui_label: "Locus 4"
 locus_5:
   original_name: "Locus 5"
   type: String
-  label: "Locus 5"
+  ui_label: "Locus 5"
 locus_6:
   original_name: "Locus 6"
   type: String
   null_values: ["-"]
-  label: "Locus 6"
+  ui_label: "Locus 6"
 locus_7:
   original_name: "Locus 7"
   type: String
   null_values: [""]
-  label: "Locus 7"
+  ui_label: "Locus 7"

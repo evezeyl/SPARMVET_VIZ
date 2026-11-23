@@ -3,13 +3,13 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Point Simple
+  ui_label: Point Simple
   description: >-
     The 'Trace' plot. Ideal for identifying correlations between two numeric variables or time series.
   submission_date: '2026-04-10'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 100 rows and 4 columns (id, date, growth_index, species).
     source: {type: local_tsv, path: ./assets/gallery_data/point_simple/example_data.tsv}

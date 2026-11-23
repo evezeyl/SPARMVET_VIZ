@@ -1,6 +1,5 @@
 # UI App features: Pipeline Exploration Simple
-name: "pipeline-exploration-simple"
-display_name: "Pipeline Exploration - Simple"
+ui_label: "Pipeline Exploration - Simple"
 
 flags:
   # Can the user interact with the Tier 3 View? (Toggleable/Collapsible)

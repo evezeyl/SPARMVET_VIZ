@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Line Chart (Simple)
+  ui_label: Line Chart (Simple)
   description: >-
     Use when you have a single numeric variable measured over time and want to reveal a trend or trajectory. Ideal
     for longitudinal AMR resistance rates, annual incidence, or cumulative counts at one aggregation level.
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 7 rows and 3 columns (year, mean_resistance, n_isolates).
     source: {type: local_tsv, path: ./assets/gallery_data/line_simple/example_data.tsv}

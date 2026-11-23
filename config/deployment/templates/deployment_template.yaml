@@ -1,3 +1,8 @@
+# My Pipeline — Institution Name
+# Description of this deployment, written by the names pass; the app does not read it.
+# Default app features: pipeline-static
+# Default recipe: pipeline_name
+# Contact: team@example.org
 # SPARMVET Deployment Template
 #
 # Authority: ADR-048 — Multi-System Deployment Architecture
@@ -20,7 +25,6 @@
 deployment_type: filesystem
 
 # Human-readable label shown in app footer (optional).
-deployment_name: "My Pipeline — Institution Name"
 
 # ─── Default startup state (both optional) ────────────────────────────────────
 # default_data_analysis_recipe: the data analysis recipe that opens at startup, by file name

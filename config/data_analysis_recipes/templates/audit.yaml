@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Lab Submission Audit
+  ui_label: Lab Submission Audit
   category: Quality Control
   description: 'Template for auditing lab submission data: TAT monitoring, throughput,
     and status tracking.'
   version: '1.0'
 data_schemas:
   submission_logs:
-    label: "submission logs"
+    ui_label: "submission logs"
     source:
       type: local_tsv
       path: ./assets/audit_data/submission_logs.tsv
@@ -23,19 +23,19 @@ data_schemas:
         original_name: lab_id
         type: String
         is_entity_id: true
-        label: Source Laboratory
+        ui_label: Source Laboratory
       submission_date:
         original_name: submission_date
         type: Categorical
-        label: Date of Submission
+        ui_label: Date of Submission
       status:
         original_name: status
         type: String
-        label: Processing Status
+        ui_label: Processing Status
       turnaround_time:
         original_name: turnaround_time
         type: Float64
-        label: TAT (Days)
+        ui_label: TAT (Days)
     tier1:
       steps: []
       # strip_whitespace: removed by the migration, it had nothing to act on (no String column at that point)
@@ -48,7 +48,6 @@ analysis_groups:
     plots:
       tat_distribution:
         ui_label: "Tat Distribution"
-        ui_title: Turnaround Time by Laboratory
         description: "Distribution of turnaround times per laboratory."
         taxonomy: {"family": "Distribution", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
         target_dataset: submission_logs
@@ -68,7 +67,6 @@ analysis_groups:
     plots:
       submission_status:
         ui_label: "Submission Status"
-        ui_title: Submissions by Current Status
         description: "Submissions by current processing status."
         taxonomy: {"family": "Ranking", "pattern": "2 Categorical", "difficulty": "Beginner"}
         target_dataset: submission_logs

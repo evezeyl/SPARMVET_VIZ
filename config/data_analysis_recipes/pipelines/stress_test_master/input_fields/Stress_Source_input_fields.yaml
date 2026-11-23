@@ -2,20 +2,20 @@ id:
   original_name: "id"
   type: "String"
   is_entity_id: true
-  label: "ID"
+  ui_label: "ID"
 species:
   original_name: "species"
   type: "String"
-  label: "Species"
+  ui_label: "Species"
 amr_class:
   original_name: "amr_class"
   type: "String"
-  label: "AMR Class"
+  ui_label: "AMR Class"
 collection_date:
   original_name: "collection_date"
   type: "Categorical"
-  label: "Collection Date"
+  ui_label: "Collection Date"
 value:
   original_name: "value"
   type: "Float64"
-  label: "Value"
+  ui_label: "Value"

@@ -1,6 +1,5 @@
 # UI App features: Pipeline Exploration Advanced
-name: "pipeline-exploration-advanced"
-display_name: "Pipeline Exploration - Advanced"
+ui_label: "Pipeline Exploration - Advanced"
 
 flags:
   # Can the user interact with the Tier 3 View?

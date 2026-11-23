@@ -1,5 +1,4 @@
 ui_label: "Phenotype Genome Length Fragmentation"
-ui_title: "Phenotype Score correlation with Assembly Metrics"
 description: "Each point is one sample and one quality measure (genome length, N50, number of contigs): the measure against the phenotype count (resistance points of the sample), coloured by sequence type, with a trend line, one panel per measure."
 # Plot Spec: Correlating Resistance Scores with Assembly Quality
 # Authoritative Standard: ADR-029a Plot Builder Scope

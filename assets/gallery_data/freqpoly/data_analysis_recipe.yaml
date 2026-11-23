@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Frequency Polygon
+  ui_label: Frequency Polygon
   description: >-
     A line-based alternative to histogram. Connects bin midpoints with lines instead of bars — ideal for overlaying
     multiple groups without the visual clutter of stacked/overlapping bars.
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 45 rows and 2 columns (species, mic_value).
     source: {type: local_tsv, path: ./assets/gallery_data/freqpoly/example_data.tsv}

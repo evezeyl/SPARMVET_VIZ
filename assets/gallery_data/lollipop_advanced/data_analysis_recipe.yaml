@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Lollipop Advanced
+  ui_label: Lollipop Advanced
   description: >-
     A cleaner alternative to Bar Charts, especially for many categories. Emphasizes the data points rather than
     the bars.
   submission_date: '2026-04-10'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 4 rows and 4 columns (id, species, avg_growth, y_zero).
     source: {type: local_tsv, path: ./assets/gallery_data/lollipop_advanced/example_data.tsv}

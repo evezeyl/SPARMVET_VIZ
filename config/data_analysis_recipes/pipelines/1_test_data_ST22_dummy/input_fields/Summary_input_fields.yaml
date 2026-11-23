@@ -4,12 +4,12 @@
 sample_id:
   original_name: "sample_id"
   type: String
-  label: "Sample ID"
+  ui_label: "Sample ID"
   is_entity_id: true
 quality_module:
   original_name: "Quality Module"
   type: String
-  label: "Quality Module" # IF YOU are sure you will not change the display it is ok to put in input field
+  ui_label: "Quality Module" # IF YOU are sure you will not change the display it is ok to put in input field
 # NOTE: I can omit this column from the import BUT then it will be ingested as is
 # NOTE: This will prevent any standardization / renaming 
 # NOTE: If my intent is to drop the column from the output, I should omit it from the import AND the output_fields  
@@ -18,7 +18,7 @@ taxon:
   original_name: "Detected main taxon"
   # NOTE: to drop the column from the output, omit it from output_fields (type stays required)
   type: String # type is required on every field (no default)
-  label: "Detected Main Taxon" # if omitted its default to origina_name. This is only of UI display
+  ui_label: "Detected Main Taxon" # if omitted its default to origina_name. This is only of UI display
 # keep will require wrangling
 genotype:
   original_name: "Genotype"
@@ -56,23 +56,23 @@ ST:
   # by the time it reaches the output stage.
   type: String
   null_values: ["-"]
-  label: "ST"
+  ui_label: "ST"
 # keep interesting for stats
 genome_length:
   original_name: "Genome Length"
   type: Float64
-  label: "Genome Length"
+  ui_label: "Genome Length"
 # keep interesting for stats
 N50:
   original_name: "N50 value"
   type: Float64
 
-  label: "N50 value"
+  ui_label: "N50 value"
 # keep interesting for stats
 contigs_sup300bp:
   original_name: "Number of Contigs Greater Than Or Equal To 300 bp"
   type: Float64
-  label: "Contigs >= 300bp"
+  ui_label: "Contigs >= 300bp"
 # I want to drop this column
 # quality_module_feedback:
 #   original_name: "Quality Module Feedback"

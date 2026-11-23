@@ -1,6 +1,5 @@
 # UI App features: Pipeline Static
-name: "pipeline-static"
-display_name: "Automated Pipeline - Static"
+ui_label: "Automated Pipeline - Static"
 
 flags:
   # Can the user interact with the Tier 3 View?

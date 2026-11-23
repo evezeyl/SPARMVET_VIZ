@@ -1,5 +1,4 @@
 ui_label: "QA Sequence Type Missing"
-ui_title: "QA: samples per sequence type"
 description: "A missing sequence type must stay visible as missing. Canary for missing values. The 2 samples without a sequence type must be visible as missing, not dropped and not filled."
 taxonomy: {"family": "Ranking", "pattern": "1 Categorical", "difficulty": "Simple"}
 target_dataset: QA_ST_with_NA

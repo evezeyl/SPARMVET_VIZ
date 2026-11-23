@@ -4,7 +4,7 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Test pair of modif_join_where
+  ui_label: Test pair of modif_join_where
   description: 'A join on conditions needs two ingredients: the left data is modif_join_where_test.tsv
     and the right data modif_join_where_test_right.tsv. Run by the assembler, not by the
     wrangler (1:1:1 law, rules_data_engine.md section 2).'
@@ -18,13 +18,13 @@ data_schemas:
     input_fields:
       id:
         type: String
-        label: id
+        ui_label: id
       lo:
         type: Int64
-        label: lo
+        ui_label: lo
       hi:
         type: Int64
-        label: hi
+        ui_label: hi
     tier1:
       steps: []
     tier2:
@@ -38,10 +38,10 @@ data_schemas:
     input_fields:
       rid:
         type: String
-        label: rid
+        ui_label: rid
       v:
         type: Int64
-        label: v
+        ui_label: v
     tier1:
       steps: []
     tier2:

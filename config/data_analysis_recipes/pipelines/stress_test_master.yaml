@@ -3,13 +3,13 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: 'STRESS: Master Performance Baseline'
+  ui_label: 'STRESS: Master Performance Baseline'
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
   description: Bulletproof stress test data analysis recipe for verifying Tier 3 responsiveness
     and Comparison Theater.
 data_schemas:
   Stress_Source:
-    label: "Stress Source"
+    ui_label: "Stress Source"
     description: "One row per synthetic record (species, collection date, antibiotic class, value); generated to test speed, not real isolates."
     source:
       type: local_tsv
@@ -20,7 +20,7 @@ data_schemas:
     tier1: !include 'stress_test_master/wrangling/Stress_Source_wrangling.yaml'
 joins:
   Master_Collection:
-    label: "Master Collection"
+    ui_label: "Master Collection"
     description: "The stress table as it is (no join step), kept as the one collection the plot reads."
     ingredients:
     - dataset_id: Stress_Source

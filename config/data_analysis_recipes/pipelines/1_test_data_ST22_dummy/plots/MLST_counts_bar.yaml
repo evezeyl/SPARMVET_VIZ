@@ -1,5 +1,4 @@
 ui_label: "MLST Bar"
-ui_title: MLST Sequence Type Distribution by Country
 description: "Bar chart showing frequency of sequence types by territory. Bar chart showing the frequency of MLST sequence types, filled by the origin country."
 taxonomy: {"family": "Ranking", "pattern": "2 Categorical", "difficulty": "Simple"}
 target_dataset: MLST_with_metadata

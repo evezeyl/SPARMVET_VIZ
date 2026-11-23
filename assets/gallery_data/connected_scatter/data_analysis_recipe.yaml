@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Connected Scatter Plot
+  ui_label: Connected Scatter Plot
   description: >-
     Connects scatter points with lines ordered by a third implicit variable (usually time). Reveals how the relationship
     between two variables evolves — ideal for showing consumption-resistance feedback loops.
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 16 rows and 4 columns (drug_class, year, resistance_rate, consumption_ddd).
     source: {type: local_tsv, path: ./assets/gallery_data/connected_scatter/example_data.tsv}

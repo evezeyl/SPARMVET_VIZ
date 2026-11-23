@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Area Chart
+  ui_label: Area Chart
   description: >-
     Emphasises the cumulative magnitude of a metric over time rather than just its direction. More visually impactful
     than a line when the area under the curve carries meaning (e.g. total resistance burden, cumulative cases).
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 7 rows and 2 columns (year, resistance_pct).
     source: {type: local_tsv, path: ./assets/gallery_data/area_simple/example_data.tsv}

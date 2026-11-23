@@ -4,7 +4,7 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Test pair of polars_join_asof
+  ui_label: Test pair of polars_join_asof
   description: 'An as-of join needs two ingredients: the left data is polars_join_asof_test.tsv
     and the right data polars_join_asof_test_right.tsv, both sorted ascending on t.
     Run by the assembler, not by the wrangler (1:1:1 law, rules_data_engine.md section 2).'
@@ -18,16 +18,16 @@ data_schemas:
     input_fields:
       id:
         type: String
-        label: id
+        ui_label: id
       site:
         type: String
-        label: site
+        ui_label: site
       t:
         type: Int64
-        label: t
+        ui_label: t
       x:
         type: Int64
-        label: x
+        ui_label: x
     tier1:
       steps: []
     tier2:
@@ -41,13 +41,13 @@ data_schemas:
     input_fields:
       site:
         type: String
-        label: site
+        ui_label: site
       t:
         type: Int64
-        label: t
+        ui_label: t
       v:
         type: Int64
-        label: v
+        ui_label: v
     tier1:
       steps: []
     tier2:

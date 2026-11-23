@@ -1,5 +1,4 @@
 ui_label: "QA L50 Integer"
-ui_title: "QA: samples per L50 (integer column)"
 description: "Integer column for threshold filters (L50 >= 8.5 must keep 9, not 8). Canary for thresholds on an integer column. A filter \"L50 >= 8.5\" must remove the bar at 8 and keep 9; \"L50 < 8.5\" must keep 8."
 taxonomy: {"family": "Distribution", "pattern": "1 Numeric", "difficulty": "Simple"}
 target_dataset: QA_L50_integer

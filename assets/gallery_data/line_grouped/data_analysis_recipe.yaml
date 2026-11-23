@@ -3,14 +3,14 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Line Chart (Grouped)
+  ui_label: Line Chart (Grouped)
   description: >-
     Compare resistance trends across multiple organisms or drug classes simultaneously. Reveals diverging or converging
     trajectories that species-level aggregation would obscure.
   submission_date: '2026-05-03'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       The data of this example: 35 rows and 3 columns (year, species, mean_resistance).
     source: {type: local_tsv, path: ./assets/gallery_data/line_grouped/example_data.tsv}

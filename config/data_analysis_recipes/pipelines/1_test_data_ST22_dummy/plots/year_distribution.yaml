@@ -1,5 +1,4 @@
 ui_label: "Year Distribution"
-ui_title: Sample Count by Year (T1 = all years, T2 = 2023–2025 only)
 description: "Bars count samples (one row per sample) per year, coloured by country. The result (T2) keeps only the years 2023 to 2025; the raw data table (T1) also holds 2022, so compare the two data tables to verify the toggle."
 taxonomy: {"family": "Ranking", "pattern": "1 Numeric, 1 Categorical", "difficulty": "Simple"}
 target_dataset: MLST_with_metadata

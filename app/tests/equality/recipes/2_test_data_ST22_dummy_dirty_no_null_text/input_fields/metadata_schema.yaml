@@ -1,16 +1,16 @@
 sample_id:
   type: String
   original_name: sample_id
-  label: Sample ID
+  ui_label: Sample ID
 Source:
   type: String
   original_name: Source
-  label: Biological Source
+  ui_label: Biological Source
 Year:
   type: Float64
   original_name: Year
-  label: Sampling Year
+  ui_label: Sampling Year
 Country:
   type: String
   original_name: Country
-  label: Country of Origin
+  ui_label: Country of Origin
