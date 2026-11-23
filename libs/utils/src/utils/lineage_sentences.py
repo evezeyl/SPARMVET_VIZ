@@ -4,18 +4,18 @@ The owner (D-0454): "she wants the full sentence, with YET in capital letters". 
 (`libs/utils/tests/test_lineage_unfollowed_join.py`). Everything else in the sentence is PROVISIONAL (the review session's proposal in the bracket of D-0454; the owner reads it):
 the list of kinds named, the sentence that says what may change, the clause for an anti join, "Check them before you confirm".
 
-One function turns the reason into the sentence; the library returns the sentence as text and never a colour or HTML (how a red line is shown is not decided, not built). The same
-sentence is read by the drop gate (`utils.key_drop`) and by the list of tables "remove from all the data" leaves untouched (`utils.remove_from_all`), so that one fact has one wording.
+One function turns the reason into the sentence; the library returns the sentence as text and never a colour or HTML (how a red line is shown is not decided, not built). The
+sentence is read by the drop gate (`utils.key_drop`) (D-0501: "remove from all the data" no longer says anything about tables where it writes no step).
 
 Pure: a `Reason` in, a string out. No file, no engine.
 
-Consumed by: libs/utils/src/utils/key_drop.py, libs/utils/src/utils/remove_from_all.py, libs/utils/tests/test_lineage_unfollowed_join.py.
+Consumed by: libs/utils/src/utils/key_drop.py, libs/utils/tests/test_lineage_unfollowed_join.py.
 If deleted: a red line has no sentence for the user.
 
 # @deps
 # provides: function:join_not_yet_followed_sentence, function:join_phrase, function:kinds_named
 # consumes: libs/utils/src/utils/lineage_records.py (Reason), libs/utils/src/utils/step_effects.py (NOT_YET_FOLLOWED_JOINS)
-# consumed_by: libs/utils/src/utils/key_drop.py, libs/utils/src/utils/remove_from_all.py, libs/utils/tests/test_lineage_unfollowed_join.py
+# consumed_by: libs/utils/src/utils/key_drop.py, libs/utils/tests/test_lineage_unfollowed_join.py
 # doc: .claude/knowledge/decision_ledger.md (D-0452, D-0454, D-0460, D-0486)
 # @end_deps
 """

@@ -212,18 +212,16 @@ def test_a_drop_walk_marks_the_places_the_gate_refuses():
 
 
 @pytest.mark.parametrize("how", NOT_YET)
-def test_remove_from_all_the_data_does_not_write_behind_such_a_join_and_lists_the_table_with_the_sentence(how):
+def test_remove_from_all_the_data_does_not_write_behind_such_a_join_and_lists_the_table_as_not_reached(how):
     recipe, tables = two(how)
     option = rfa.describe(recipe, "sample_id", plans=O.replay(recipe, tables).plans)
     assert option.offered and [p.table for p in option.places] == ["A", "B"]             # the tables before the join are reached (each holds the key at its own start)
-    stays = {m.table: m for m in option.may_stay}
-    assert set(stays) == {"J"} and stays["J"].code == rfa.UNCERTAIN_LINK and stays["J"].reason.code == JOIN_NOT_YET_FOLLOWED
-    said = rfa.may_stay_sentence(stays["J"])
-    assert said.startswith("In the table 'J'") and "YET" in said and how in said and said.rstrip().endswith("The selection may stay there.")
+    left = {n.table: n for n in option.not_reached}
+    assert set(left) == {"J"} and left["J"].code == rfa.UNCERTAIN_LINK and left["J"].reason.code == JOIN_NOT_YET_FOLLOWED   # data only: the library says no sentence about J (D-0501)
 
 
 @pytest.mark.parametrize("how", FOLLOWED)
 def test_remove_from_all_the_data_reaches_the_table_behind_a_followed_join(how):
     recipe, tables = two(how)
     option = rfa.describe(recipe, "sample_id", plans=O.replay(recipe, tables).plans)
-    assert [p.table for p in option.places] == ["A", "B", "J"] and not any(m.table == "J" for m in option.may_stay)
+    assert [p.table for p in option.places] == ["A", "B", "J"] and option.not_reached == ()
