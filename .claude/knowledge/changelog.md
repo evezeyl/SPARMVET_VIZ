@@ -4,6 +4,19 @@ Breaking changes are marked ⚠️. Renames that affect the data analysis recipe
 
 ---
 
+## [2026-11-23] - The names pass: one name key, `ui_label`, everywhere (branch `task/names-pass`; D-0409, D-0410, D-0411, D-0468, D-0474, D-0479 to D-0484, D-0497)
+
+- 🔑 ⚠️ **`ui_label` is the one name key of the recipe** (D-0409, D-0410, D-0468). `info.label`, `info.name`, `info.display_name` and `info.ui_title` become `info.ui_label`; the `label` of a table, a join and an input field becomes `ui_label`. The old keys are refused by the recipe check with the new name (I03, S01, J01, FD01). `info.ui_label` is optional: without it the file name is shown and the check gives an ADVICE (I01, severity A; the words are PROVISIONAL). The format number stays 1 (D-0469). Applied to the 188 files of the repository by `assets/scripts/migrate_display_names.py --apply --in-worktree` (524 changes).
+- 🔑 ⚠️ **`ui_title` is removed** from groups and plot entries (D-0409, D-0484; the 25 removed texts equal the figure title of their plot). The old key is refused with the new name (G01, P01). Nothing invents a name any more: a group is its `ui_label`, a plot is its `ui_label` (no `description` as a tab, no plot id in title case, no `name`).
+- ⚠️ **The export report uses the same `ui_label` as HOME and is built by group** (D-0484): the group `ui_label` is a `##` heading, the plot `ui_label` a `###` (PROVISIONAL heading levels; the two parts `# Results` and `# Technical` of D-0491 are NOT built here).
+- ⚠️ **The deployment banner** `branding.banner`: `title` becomes `ui_label`, `subtitle` becomes `description` (D-0411); the old keys are refused at start. **`deployment_name` is removed** from the deployment files (D-0479) and refused at start; `Bootloader.deployment_name` and `BaseConnector.get_deployment_name()` are removed. A comment block with the former text was written at the top of each deployment file (PROVISIONAL form).
+- ⚠️ **The recipe banner in HOME** shows `info.ui_label` (the file name when there is none) and no longer `info.subtitle`, which stays a free key of `info` (D-0482). A new switch `branding.show_recipe_name: true|false` in the deployment file hides it (true when absent; D-0474). The app features key `ui_title {text, subtitle, visible}` is removed and refused.
+- ⚠️ **App features files**: `display_name` becomes `ui_label` (D-0480); the key `name` is removed (D-0481): the id is the file name, hyphens and underscores are both free (D-0483); the rule "no underscore in the id" of `AppFeaturesValidator` and its troubleshooting entry are removed. The export writes the app features file as `Web Demo (web-demo)` (the `ui_label` and the file name, D-0497) in the README, the report and the picture metadata.
+- The user-visible words "entity key" now read "entity id" (messages of the recipe check E02 and of "remove from all the data", the user guide).
+- Not changed on purpose: the allowed-key lists of deployment and app features files (they wait for the deployment standard, D-0412); the `label` strings of the Python registries (D-0468); the plot-node labels of the TubeMap; `docs/UML/app.mdj`.
+
+---
+
 ## [2026-11-23] - The mark `is_entity_key` is now `is_entity_id` (branch `task/rename-is-entity-id`; D-0562, D-0567)
 
 - 🔑 ⚠️ **`is_entity_key` is renamed `is_entity_id`**, one name for all cases (D-0562): the field is not a row key, it refers to the entity (on the demo, the sample); when its values are unique in the table it is also the key of the table, when they repeat the table has several rows per entity. The approved sentence is the description in the specification (`recipe_format_spec.md`) and in `docs/appendix/Standards_yaml.qmd` (D-0567). The same columns are marked; nothing else of the recipes changed.

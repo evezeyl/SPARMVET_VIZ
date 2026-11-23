@@ -80,8 +80,8 @@ locations:
 ## Optional fields
 
 ```yaml
-# Human-readable label — shown in app footer for identification
-deployment_name: "AMR Pipeline — Galaxy EU"
+# A deployment has no name key (the old deployment_name is refused at start): describe it in a comment, for example
+# "AMR Pipeline - Galaxy EU"
 
 # Data analysis recipe to load at startup, by file name without .yaml (found in locations.data_analysis_recipes)
 # If ABSENT → the selector appears when the app features show it; if they hide it the app stops with a message
@@ -251,8 +251,8 @@ The dev fallback is at `config/deployment/local/local.yaml`. It uses the full sc
 
 ```yaml
 # config/deployment/local/local.yaml — dev fallback (level 4)
+# SPARMVET_VIZ (Local Dev)
 deployment_type: filesystem
-deployment_name: "SPARMVET_VIZ (Local Dev)"
 locations:
   raw_data: "assets/test_data/"
   data_analysis_recipes: "config/data_analysis_recipes/pipelines/"

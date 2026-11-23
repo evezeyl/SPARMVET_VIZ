@@ -54,7 +54,7 @@ Use this when the data is already in the correct format after the join. The join
 ```yaml
 joins:
   Combined:
-    label: Combined table
+    ui_label: Combined table
     ingredients: [{dataset_id: amr_data}, {dataset_id: sample_metadata}]
     tier1:
       steps:

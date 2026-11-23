@@ -5,7 +5,7 @@ plot_engine: python-plotnine
 info:
   ui_label: ST22 Dummy Dataset
   contact: "Eve (evezeyl@gmail.com) — contact in case of problems"
-  subtitle: E. coli ST22 — AMR & Virulence Research (demo)   # optional — shown under title in Home
+  subtitle: E. coli ST22 — AMR & Virulence Research (demo)   # optional free key: the Info panel shows it; the HOME banner does not (D-0482)
   category: AMR Research
   description: Hyper-modular data analysis recipe structure with dedicated subdirectories and
     annotated assembly steps.

@@ -11215,7 +11215,7 @@
 											"top": 56,
 											"width": 798,
 											"height": 13,
-											"text": "Title banner: display_name and subtitle of info",
+											"text": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -12096,7 +12096,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Title banner: display_name and subtitle of info",
+							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name",
 							"tags": [
 								{
 									"_type": "Tag",
@@ -12502,7 +12502,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1l62kunOxA="
 							},
-							"name": "Title banner: display_name and subtitle of info"
+							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name"
 						},
 						{
 							"_type": "WFText",
@@ -23986,7 +23986,7 @@
 											"top": 56,
 											"width": 798,
 											"height": 13,
-											"text": "Title banner: display_name and subtitle of info",
+											"text": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -24810,7 +24810,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Title banner: display_name and subtitle of info"
+							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name"
 						},
 						{
 							"_type": "WFText",
@@ -24818,7 +24818,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9Suy2Pgxvw="
 							},
-							"name": "Title banner: display_name and subtitle of info"
+							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name"
 						},
 						{
 							"_type": "WFPanel",
@@ -25610,7 +25610,7 @@
 											"top": 56,
 											"width": 798,
 											"height": 13,
-											"text": "Title banner: display_name and subtitle of info",
+											"text": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name",
 											"horizontalAlignment": 0,
 											"wordWrap": true
 										}
@@ -26756,7 +26756,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Title banner: display_name and subtitle of info"
+							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name"
 						},
 						{
 							"_type": "WFText",
@@ -26764,7 +26764,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGhy9UugmWXWBE="
 							},
-							"name": "Title banner: display_name and subtitle of info"
+							"name": "Title banner: info.ui_label (the file name when absent), hidden by branding.show_recipe_name"
 						},
 						{
 							"_type": "WFPanel",
@@ -89618,7 +89618,7 @@
 											"top": 265,
 											"width": 281,
 											"height": 13,
-											"text": "display_name",
+											"text": "ui_label",
 											"horizontalAlignment": 0
 										},
 										{
@@ -94830,7 +94830,7 @@
 							"_parent": {
 								"$ref": "AAAAAAGht1wlj3HtZrs="
 							},
-							"name": "display_name",
+							"name": "ui_label",
 							"type": ""
 						},
 						{

@@ -14,7 +14,7 @@ Every column defined in `input_fields` or `metadata_schema` follows the **ADR-04
 column_slug:          # snake_case internal name, used for lookup and joins
   original_name: "RawColumnName"   # exact column header in the source TSV file
   type: String                     # a Polars type name, see the type table below
-  label: "Human Label"             # displayed in UI filters and axis labels
+  ui_label: "Human Label"             # displayed in UI filters and axis labels (ui_label is the short name)
 ```
 
 The `column_slug` is the key the engine uses internally after renaming. `original_name` is what the ingestor looks for in your actual data file. They can differ:
@@ -24,11 +24,11 @@ input_fields:
   sample_id:
     original_name: "SampleName"   # source file has "SampleName"
     type: String
-    label: "Sample ID"
+    ui_label: "Sample ID"
   identity_score:
     original_name: "%Identity"    # source file has "%Identity"
     type: Float64
-    label: "Sequence Identity (%)"
+    ui_label: "Sequence Identity (%)"
 ```
 
 Only the columns written in `input_fields` are read. A declared column that is missing from the file stops the load, and the import reports how many file columns were not declared.
@@ -231,7 +231,7 @@ The `joins` block defines how wrangled datasets are joined into a single analysi
 ```yaml
 joins:
   AMR_Profile_Joint:
-    label: "AMR profile"
+    ui_label: "AMR profile"
     ingredients:
       - dataset_id: amr_data
       - dataset_id: sample_metadata
@@ -269,14 +269,14 @@ A fragment file holds the content of the key it is included under and does not r
 sample_id:
   original_name: sample_id
   type: String
-  label: Sample ID
+  ui_label: Sample ID
 
 # NOT this (the wrapper key repeats the include key; refused by the data analysis recipe check, F01):
 input_fields:
   sample_id:
     original_name: sample_id
     type: String
-    label: Sample ID
+    ui_label: Sample ID
 ```
 
 The `!include` path is always **relative to the master data analysis recipe file's directory**, and may not reach outside the project.

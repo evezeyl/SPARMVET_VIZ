@@ -50,7 +50,7 @@ Joins are written in the `joins` block, where `tier1` (and `tier2`) are written 
 ```yaml
 joins:
   Combined:
-    label: Combined table
+    ui_label: Combined table
     ingredients: [{dataset_id: Anchor}, {dataset_id: metadata}]
     tier1:
       steps:

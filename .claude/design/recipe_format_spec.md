@@ -5,7 +5,7 @@
 **Tags.** **DECIDED**: Eve decided it (date), or an ADR does. **RECOMMENDED**: the two sessions agree, Eve has not answered. **OPEN**: a question, with its recommendation if there is one. **CODE**: a fact read or run in the code (file:line). A tag in brackets after a heading applies to the whole section.
 **Old labels.** The labels `O1` to `O33` and `N1` to `N14` of the earlier drafts are kept in the column *Ref*, because issues, tasks and the evidence file use them; a bare number there is a row of the earlier decisions table. Decisions are `DEC01` to `DEC57`, recommendations `R1` to `R11`, open questions `Q2` to `Q5` (`Q1` was answered, DEC49); the registry gaps of section 8 are `RG1` to `RG6`; the gallery design points are `D1` to `D7`.
 **Terms.** *Recipe* = a data analysis recipe, a YAML file. *Schema* = a data schema (one input table). *Collection* = a join, or a schema that is plotted directly. *Tier 1/2/3* = the steps that build, reshape and finally audit a table.
-**Amendment of format 1 (2026-11-17).** Format 1 was amended before its first release, on 2026-11-17, by decision of Eve (D-0236: "Format 1 is amended before its first release; no format 2"). The amendment is in section 2.1 (DEC50 to DEC57): a tier is its own key with an optional `data_engine` and `steps`; a plot entry holds its content directly with no `spec:`; the app-side names are `ui_label` and `ui_title`; the engines are used and may be named per tier and per plot; four dead `plot_defaults` keys are removed. Every place of this file that showed the earlier shape was changed in the same pass; where it names a place by its earlier name, the text says so. The status line above dates from 2026-11-13: since then the checker, the loader, the rewrite tools and this amendment have been built.
+**Amendment of format 1 (2026-11-17).** Format 1 was amended before its first release, on 2026-11-17, by decision of Eve (D-0236: "Format 1 is amended before its first release; no format 2"). The amendment is in section 2.1 (DEC50 to DEC57): a tier is its own key with an optional `data_engine` and `steps`; a plot entry holds its content directly with no `spec:`; the app-side name is `ui_label` (and, since the names pass of 2026-11-23, the only one: `ui_title` is removed); the engines are used and may be named per tier and per plot; four dead `plot_defaults` keys are removed. Every place of this file that showed the earlier shape was changed in the same pass; where it names a place by its earlier name, the text says so. The status line above dates from 2026-11-13: since then the checker, the loader, the rewrite tools and this amendment have been built.
 **RULE** (Eve, 2026-11-13): the recipe describes the science (data science); it must be correctly designed and correctly applied. What the recipe specifies must be done. Libraries that depend on it must be science compliant.
 
 ## 1. How it works, on one page
@@ -29,13 +29,13 @@ spec_version: 1
 data_engine: python-polars             # the default engine of every tier of the recipe (a tier may name its own, below)
 plot_engine: python-plotnine           # the default engine of every plot (a plot entry may name its own)
 info:
-  label: My recipe
+  ui_label: My recipe
   description: >-
     What the recipe answers, for which population, from which data.
 entity: {noun: sample, plural: samples, population: Anchor}      # optional
 data_schemas:
   Anchor:
-    label: Anchor table
+    ui_label: Anchor table
     description: >-
       One row per sample (42 rows) ...
     source: {type: local_tsv, path: assets/test_data/anchor.tsv}   # development path (7.3)
@@ -50,7 +50,7 @@ data_schemas:
         - {action: modif_filter, column: reads, op: ge, value: 1000, na: remove, comment: too few reads to trust}
     tier2: {steps: []}                 # optional; or `tier2: !include Anchor_tier2.yaml` (the file holds data_engine and steps)
   Quality:
-    label: Quality table
+    ui_label: Quality table
     description: >-
       One row per sample (42 rows) ...
     source: {type: local_tsv, path: assets/test_data/quality.tsv}
@@ -60,7 +60,7 @@ data_schemas:
     tier1: {steps: []}
 joins:
   Combined:
-    label: Combined table
+    ui_label: Combined table
     ingredients: [{dataset_id: Anchor}, {dataset_id: Quality}]
     tier1:                             # the tiers of a join are written the same way: no steps container
       steps:
@@ -74,7 +74,6 @@ analysis_groups:
       reads_per_sample:                # a plot entry holds its content directly: there is no spec key
         plot_engine: python-plotnine   # optional, first key; without it the recipe's plot_engine applies
         ui_label: Reads per sample     # the short name of the sub-tab (required)
-        ui_title: Number of reads of each sample   # optional: the longer name used by the report; without it the report uses ui_label
         description: Number of reads of each sample.
         target_dataset: Combined
         mapping: {x: sample_id, y: reads}
@@ -176,12 +175,13 @@ Decision 2026-11-15 (Eve), CATEGORICAL-MIGRATION-1: the shipped recipes declare 
 |---|---|---|---|---|
 | DEC50 | **A tier is written as its own key** (`tier1:`, `tier2:` in a table and in a join; `tier3:` in a plot entry): the key, then the optional `data_engine:` (first key), then `steps:` with the list. No outer container: `wrangling:` (table), `steps:` (join) and `steps: {tier3: ...}` (plot entry) are removed. `tier1` is required in a table and in a join. `!include` stays optional per tier (`tier1: !include f.yaml`, the file holds `data_engine` and `steps`), for tables, joins and plots alike | one way to write a tier everywhere; an included file can say which engine it is for | 2026-11-18; D-0250, D-0237 | new |
 | DEC51 | **A plot entry has no `spec:` key.** Its content (`target_dataset`, `mapping`, `layers`, `theme`, `palette`, ...) is written in the entry itself, or the WHOLE entry is in an included file (label, description, taxonomy, content, optional engine line); the include sits at the entry level (`p: !include plots/p.yaml`). The 34 gallery bundles take the same shape in the same pass | cleaner; one reader; one checker | 2026-11-17/18; D-0237, D-0251, D-0252 | new |
-| DEC52 | **Names.** The app-side name `label` of a group and of a plot entry becomes `ui_label` (the short name: HOME tab, gallery and Blueprint lists); a new key `ui_title` holds the longer name used by the report and the headings; the report uses `ui_title`, else `ui_label`. The text of the figure (axis names, legend names, figure title) is written only in the `labs` layer; `title:` is removed from the plot content. Keys are lowercase snake_case. The `label` of `info`, of a table, of a join and of an input field stays `label` for now (PENDING Eve, one table in `recipe_spec.yaml`: `label_keys`) | `labs` stays plotnine and the others stay UI; the title of the UI does not leak into the plot | 2026-11-18; D-0253 | new |
+| DEC52 | **Names.** The app-side name `label` of a group and of a plot entry becomes `ui_label` (the short name: HOME tab, gallery and Blueprint lists); a new key `ui_title` held the longer name used by the report (REMOVED 2026-11-23, DEC58). The text of the figure (axis names, legend names, figure title) is written only in the `labs` layer; `title:` is removed from the plot content. Keys are lowercase snake_case. The `label` of `info`, of a table, of a join and of an input field was left for the owner (DEC58 renames them) | `labs` stays plotnine and the others stay UI; the title of the UI does not leak into the plot | 2026-11-18; D-0253 | new |
 | DEC53 | **The engines are used.** The top gives the defaults; a tier (`data_engine`), a plot entry (`plot_engine`) or a tier 3 may override; without a key the recipe's value applies; the code chooses the engine named (D-0219). Every registry entry (every registered action and plot component) carries a field `engine`; the checker refuses a step or a layer written in a block of another engine (EN02, EN03). The names are an open list (DEC05). Each library has one small entry file that names its engine and exposes `ENTRY` (`engine_python_polars.py`, `engine_python_plotnine.py`; the file name is `engine_` plus the engine value with `-` turned into `_`); the libraries do not import each other, `app/` joins them. Tier 3 gets the key too; a value the app has no library for is refused with "no library for this engine in this app" | the engine keys are used, not placeholders | 2026-11-17; D-0219, D-0237, D-0238, D-0239, D-0247 | new |
 | DEC54 | **Cache keys.** The plot engine enters no table key. The tier-2 engine is an argument of the tier-2 key, and each tier's engine is in its own key; the keys of earlier stages do not change. The cache version goes from 4 to 5, so every stored table is rebuilt once (the results do not change) | a changed engine must not serve a table of another engine; a changed plot engine does not change a table | 2026-11-17; D-0240 | new |
 | DEC55 | **Dead keys are removed.** A recipe key that does nothing is removed from the structure (D-0220). The four `plot_defaults` keys `default_font_family`, `facet_panel_spacing`, `legend_position` and `optimisation` are removed; the checker refuses each with a tombstone text (PD02); the font, the legend position and the panel spacing are set through a theme layer; the automatic axis-text adjustment has no switch of its own (an `element_text` layer overrides it for an axis). Themes are code (D-0256: a named theme is a registered component, no theme folder, no theme file). A recipe or a plot that names no theme gets plotnine's own default (`theme_gray`): the built-in `theme_bw` injection is removed, and the migration wrote `theme_bw` once in the `plot_defaults` of every shipped recipe and gallery bundle that had a plot with no complete theme of its own (35 files, listed by the tool), so the pictures stay the same (D-0258) | a key that does nothing is dead code; nothing changes silently | 2026-11-17/18; D-0220, D-0241, D-0242, D-0256, D-0258 | new |
 | DEC56 | **The export record** `effective_run.yaml` holds the engine per table tier and per plot, the library versions of the engines used, and the theme as applied per plot (component names and values) | in a Publication export the recipe is not in the bundle, so this record is the only place the engine is written | 2026-11-17; D-0248 | new |
 | DEC57 | **Format 1 was amended before its first release, on 2026-11-17, by decision of Eve; there is no format 2.** Every place of the format is changed in the same pass (spec, checker and messages, renamed-keys refusal, the rewrite tool, the shipped recipes, templates, gallery bundles, tests, docs, rules) and one migration run rewrote every recipe and bundle (`assets/scripts/migrate_recipe_engine_keys.py`) | "we are still in development so no problem - ensure all changes are propagated" (D-0236) | 2026-11-17/18; D-0236, D-0255 | new |
+| DEC58 | **One name key, `ui_label`, everywhere (the names pass, built 2026-11-23).** `ui_label` is the name of the recipe (`info.ui_label`, optional, an advice when missing: the file name is shown), of a table, a join, an input field, a group and a plot entry (D-0410, D-0468). `ui_title` is removed from groups and plot entries: the export report uses the same `ui_label` as HOME and is built by group (the group `ui_label` a `##` heading, the plot `ui_label` a `###`), and nothing invents a name (no `description` as a tab, no plot id in title case; D-0409, D-0484). The old `info.label`, `info.name`, `info.display_name`, `info.ui_title` and the old `label` and `ui_title` of the other elements are refused with the new name. `info.subtitle` stays a free key of `info`, which the HOME banner does not read (D-0482). The format number stays 1 (D-0469) | one word for one thing; what the user saw in HOME is what the export shows | 2026-11-23; D-0409, D-0410, D-0468, D-0469, D-0482, D-0484 | new |
 
 **The gallery** (section 9): **DEC47** examples are standard recipes in a `gallery` profile, `taxonomy` on the plot entry (required in the gallery, five axes, `geom` derived), the specification is also a data file so the gallery terms live in one place (D1 to D3; 2026-11-13, Ref 21). **DEC48** D4 to D7 as recommended: the checker runs at index rebuild, at app start and in the tests; previews come by the app's path; the tag strip of `example_meta.md` is generated from `taxonomy`; the data contract of an example is generated and reviewed (2026-11-13, Ref O1).
 
@@ -346,7 +346,7 @@ A key must be unique **inside one mapping** (ADR-041). The same slug in differen
 
 - `key: !include 'path/to/file.yaml'` puts the content of the file exactly where the key is. The path is relative to the folder of the recipe `[CODE, config_loader.py:55; nested includes use the same folder]` and **must stay inside the project**: no absolute path, and the resolved path lies under the project root, the nearest ancestor of the recipe with a `pyproject.toml` (else the recipe's folder); a caller may name another root (`ConfigManager(..., include_root=...)`). The shipped Abromics recipe includes a fragment of `assets/ref_data/` from `config/`, so "inside the recipe's folder" would break it; section 15, check T11.
 - **The fragment holds the value itself, with no wrapper key** `[DECIDED, ADR-041 point 3]`. A file whose only top-level key repeats the key it is included under is refused with "remove the wrapper line" (F01). Today the loader removes the wrapper silently (`config_loader.py:77-97`), a compatibility default ADR-041 prohibits. The ST22 recipe has 68 includes: 56 bare, 12 wrapped; over all recipes 33 are wrapped.
-- **Where an include may sit** (DEC50, DEC51): per tier (`tier1: !include f.yaml`; the file holds the tier's own keys `data_engine` and `steps`), at the plot entry (`p: !include plots/p.yaml`; the file holds the WHOLE entry: `ui_label`, `ui_title`, `description`, `comment`, `taxonomy`, the plot content, `tier3`, and an optional first line `plot_engine`), in `input_fields`, `source` and the other values as before. A file that holds two tier keys under one tier key (the old fragment of the table, which started with `tier1:` and was included as `wrangling:`) is refused with the rewrite tool named; the rewrite tool splits it into one file per tier.
+- **Where an include may sit** (DEC50, DEC51): per tier (`tier1: !include f.yaml`; the file holds the tier's own keys `data_engine` and `steps`), at the plot entry (`p: !include plots/p.yaml`; the file holds the WHOLE entry: `ui_label`, `description`, `comment`, `taxonomy`, the plot content, `tier3`, and an optional first line `plot_engine`), in `input_fields`, `source` and the other values as before. A file that holds two tier keys under one tier key (the old fragment of the table, which started with `tier1:` and was included as `wrangling:`) is refused with the rewrite tool named; the rewrite tool splits it into one file per tier.
 - A missing file is an error naming the file (T02).
 
 ### 6.2 Comments `[DECIDED, DEC07]`
@@ -364,9 +364,9 @@ Columns: R required, o optional, a advice (never blocks).
 
 | Key | | Meaning |
 |---|---|---|
-| `label` | R | the short name of the recipe (was `display_name`) |
+| `ui_label` | a | the name of the recipe: the HOME banner and the lists show it; without it the file name is shown and the checker gives an advice (I01; D-0410, D-0470). Was `display_name`, then `label` |
 | `description` | a | what the recipe answers, for which population, from which data (section 13) |
-| `subtitle` | o | shown under the title in HOME |
+| `subtitle` | o | a free key like the others of `info`: the Info panel shows it, the HOME banner does not read it (D-0482) |
 | `contact` | a | who to call when the recipe fails; the load gate shows it (ADR-094) |
 | `version` | o | text; the author's own version |
 | `comment` | o | the author's note (6.2) |
@@ -381,7 +381,7 @@ Columns: R required, o optional, a advice (never blocks).
 
 | Key | | Meaning |
 |---|---|---|
-| `label` | R | short name |
+| `ui_label` | R | the name of the table or the join (was `label`; D-0468) |
 | `description` | a | the grain (what one row is), the entities, what the recipe already removed, how missing values are treated |
 | `comment` | o | the author's note |
 | `source` | R | `{type, path}`; `type` is `local_tsv` or `local_parquet`; `path` is the **development path** (DEC30): used when the deployment's `data_lookup` is `data_analysis_recipe_paths`, ignored in production (`by_dataset_id`). The fuzzy search of a file by dataset name in the ingestor (`ingestor.py:80-92`) goes |
@@ -405,7 +405,7 @@ The three sections share one id space; a repeated id is an error (today the seco
 | `format` | o | the parse format for `Date`, `Datetime`, `Time` |
 | `time_unit`, `time_zone` | o | for `Datetime` |
 | `original_name` | o | the column name in the file when it differs (exact match); shown in Blueprint |
-| `label` | o | display name (default: the slug) |
+| `ui_label` | o | the name of the column shown to the user (default: the slug); was `label` (D-0468) |
 | `is_entity_id` | o | `is_entity_id: true` marks the column that identifies the entity (on the demo, the sample). It is the column used to join a table with the metadata and to find the entity's rows, for example to remove an entity from the analysis. If its values are unique in the table, it is also the key of the table: one row per entity. If its values repeat, the table has several rows per entity (a long table, for example one row per sample and gene). The column then refers to the entity, and a row is identified by the entity id together with the other columns that distinguish the rows. (D-0562, D-0567; renamed from `is_entity_key` on 2026-11-23, refused with the new name) |
 | `null_values`, `strip` | o | override of the schema's setting for this column |
 
@@ -465,7 +465,7 @@ Why: stay aligned with Polars so that a recipe reads like the Polars code and a 
 
 | Key | | Meaning |
 |---|---|---|
-| `label` | R | short name |
+| `ui_label` | R | the name of the table or the join (was `label`; D-0468) |
 | `description` | a | what one row is, which tables are combined and how, what is removed, what a missing value means here |
 | `comment` | o | the author's note |
 | `ingredients` | R | list of `{dataset_id: <schema id>}`, at least one; **the first is the base**. A bare id (`- FastP`) is refused |
@@ -481,21 +481,19 @@ Why: stay aligned with Polars so that a recipe reads like the Polars code and a 
 
 | Key | | Meaning |
 |---|---|---|
-| `ui_label` | R | the short name of the tab (was `label`; renamed 2026-11-17, DEC52) |
-| `ui_title` | o | a longer name, used by the report and the headings; without it the report uses `ui_label` |
+| `ui_label` | R | the name of the group: the tab in HOME and the `##` heading of the export report (was `label`; renamed 2026-11-17, DEC52) |
 | `description` | a | the question the plots of the group answer |
 | `comment` | o | the author's note |
 | `plots` | R | mapping `plot id -> plot entry`; at least one in profile `run` |
 
-The fallback "label, else description, else id" (`home_theater.py:1119`) goes: 4 of the 5 ST22 groups had the tab text in `description`. The order of the groups is the tab order `[DECIDED]`.
+The fallback "label, else description, else id" goes (removed 2026-11-23, D-0409): a group is named by its `ui_label` and nothing else. The order of the groups is the tab order `[DECIDED]`.
 
 `plots.<plot id>` (snake_case, unique over all recipes); the order is the sub-tab order `[DECIDED]`. **The entry holds the content of the plot directly; there is no `spec:` key** (DEC51). The keys the checker accepts (`libs/utils/src/utils/recipe_spec.yaml`, element `plot`), in the order where they are present: `plot_engine` first, then `ui_label`, `ui_title`, `description`, `comment`, `taxonomy`, then the content, then `tier3`:
 
 | Key | | Meaning |
 |---|---|---|
 | `plot_engine` | o | the engine that draws this plot; without it the recipe's `plot_engine` applies. A value the app has no library for is refused with "no library for this engine in this app" (T06) |
-| `ui_label` | R | the short name of the plot's tab (was `label`; DEC52) |
-| `ui_title` | o | a longer name used by the report; without it the report uses `ui_label` |
+| `ui_label` | R | the name of the plot: the tab in HOME and the `###` heading of the export report (was `label`; DEC52) |
 | `description` | a | what it shows, what is counted, which subset it leaves out |
 | `comment` | o | the author's note |
 | `taxonomy` | o | classification for the Gallery (section 9); required in profile `gallery` |
@@ -505,7 +503,7 @@ The fallback "label, else description, else id" (`home_theater.py:1119`) goes: 4
 | `theme`, `facet_by`, `palette`, `labels`, `guides`, `filters` | o | the other plot content (7.8) |
 | `tier3` | o | the steps applied to this plot's table after its tier 2, written like any tier (DEC50): `data_engine` (optional) and `steps`. Any registered action; the audit mode writes only filters and drops here. Omitted or empty means the plot reads its table as it is `[DECIDED, DEC17]` |
 
-Any other key is refused (P01). Refused with the new form: `spec` (the content is written in the entry), `steps` (write `tier3` directly), `title` (the figure title is written in a `labs` layer and the report name in `ui_title`, D-0253), `label` (renamed `ui_label`), and the gallery keys `family`, `pattern`, `difficulty` (they are `taxonomy`). The whole entry may be in its own file, included at the entry (`p: !include plots/p.yaml`); the file holds the entry's own keys and no wrapper key (F01).
+Any other key is refused (P01). Refused with the new form: `spec` (the content is written in the entry), `steps` (write `tier3` directly), `title` (the figure title is written in a `labs` layer; the report name is the `ui_label`, D-0253, D-0409), `label` (renamed `ui_label`), and the gallery keys `family`, `pattern`, `difficulty` (they are `taxonomy`). The whole entry may be in its own file, included at the entry (`p: !include plots/p.yaml`); the file holds the entry's own keys and no wrapper key (F01).
 
 **Who reads `tier3`** `[DECIDED, DEC17; order R1]`. **Reader (built):** the engine, not HOME: `DataOrchestrator.materialize_tier3` (`app/modules/orchestrator.py`; the name is PROVISIONAL in its docstring). Its key is the T2 key's labelled parts plus the part of the tier-3 steps (`DataAnalysisRecipeKeys.plot_key_of`; D-0025, ADR-101); an empty list gives the T2 key, so nothing is stored twice (`home_audit_steps.md` point 15). The plot, the plot's T3 table and the export all read this one node, so the plot equals its table. Today the T3 table is not stored; storing it by key at the opening of the recipe is DECIDED, not built (D-0343). **Writer:** the audit adds steps (with `id` and a reason); the author's steps carry none. On `dev` the audit copy in memory appends them to the same list with the reason in `comment`; DECIDED, not built: a second list `audit_steps` with `audit_comment` (D-0329, D-0332). P05 is retired (`recipe_check.py:1064`). **`filters` of the plot entry:** the migration is R1 (check P06).
 
@@ -588,13 +586,13 @@ spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
 info:
-  label: Bar Simple
+  ui_label: Bar Simple
   description: >-
     Number of records per species, coloured by antimicrobial class: the basic bar chart.
   submission_date: '2026-04-10'
 data_schemas:
   example:
-    label: Example data
+    ui_label: Example data
     description: >-
       One row per record (100 rows): a species, an antimicrobial class and a numeric value.
     source: {type: local_tsv, path: ./assets/gallery_data/bar_simple/example_data.tsv}
@@ -661,15 +659,15 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | T11 | E | an `!include` target that is an absolute path or resolves (symlinks followed) outside the project root, found by the loader | put the fragment inside the project |
 | F01 | E | fragment wrapper repeats the include key | remove the wrapper line |
 | F02 | E | fragment has the wrong type (a list for a mapping) | |
-| I01 | E | `info` not a mapping, or `label` missing | add `label` |
+| I01 | E / A | `info` not a mapping (E); `info.ui_label` missing (A: advice, the file name is shown; PROVISIONAL words, D-0470) | write `ui_label` |
 | I02 | A | `info.description` or `info.contact` missing | write it (section 13) |
-| I03 | E | `info.display_name` | `label` |
+| I03 | E | `info.display_name`, `info.label`, `info.name`, `info.ui_title` | `ui_label` (a longer text goes in `description`) |
 | E01 | E | unknown key in `entity`; `noun`/`plural`/`population` missing | |
-| E02 | E | `population` unknown, or its table has no entity key | |
+| E02 | E | `population` unknown, or its table has no `is_entity_id` | |
 | E03 | E | a field marked `is_entity_id` (the sample id) has a number type (an integer, a float or a decimal); D-0225, D-0067 | declare it as `String` (or `Categorical`): a number as an id loses leading zeros, makes 001, 1 and 1.0 one sample, and gives join and type problems |
 | S01 | E | unknown key in a schema (`info`, `fields`, `id`, `output_fields`, ...) | replacement |
 | S02 | E | repeated schema id; use of the reserved id | |
-| S03 | E | schema without `label` | add it |
+| S03 | E | schema without `ui_label` (the old `label` is told as renamed) | add it |
 | S04 | A | schema without `description` | write it |
 | S05 | E | `source` missing, type not `local_tsv`/`local_parquet`, `path` missing | |
 | S06 | E | a schema without `tier1`; a tier that is not a mapping, has no `steps`, has `steps` that is not a list, or holds a key other than `data_engine` and `steps` (a tier key inside a tier included); the old container `wrangling` (removed 2026-11-17) | `tier1: {steps: []}`; the rewrite tool |
@@ -699,7 +697,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | ST14 | A | every `polars_top_k` / `polars_bottom_k` step (advice, PROVISIONAL D42, Eve 2026-11-15; the checker cannot know whether ties exist): exactly k rows, which tied rows are kept is not fixed (do not rely on it), a NaN comes first in `top_k` and last in `bottom_k`, rows with no value fill the k rows | add a row number (`polars_with_row_index`) last in `by`; to keep every row tied with the k best use `polars_rank` (method `min`) and a filter |
 | ST15 | A | a sum (`polars_sum`, `polars_cum_sum`, a `.sum()` of `pl.col('x')` in `polars_group_by`) on a column declared `Int32` or `UInt32` in the schema's own `input_fields` (advice, PROVISIONAL D43, Eve 2026-11-15; the total wraps around above about 2 thousand million with no error). Only where the declared type is known: the schema's own wrangling until a step that may change the columns; a `polars_cast` is followed. Not seen (said in the advice): a sum inside another formula (`polars_with_columns`), a join result, a type made 32-bit by an earlier step | write a `polars_cast` step to `Int64` for the column before the sum |
 | J01 | E | unknown key in a join (`info`, `output_fields`, `final_contract`, ...) | replacement |
-| J02 | E | join without `label` | |
+| J02 | E | join without `ui_label` (the old `label` is told as renamed) | |
 | J03 | A | join without `description` | |
 | D01 | A | a `description` (info, schema, join, group or plot) with more `(` than `)`: probably cut where an unquoted ` #` started a YAML comment (RECIPE-FIXES-1, 2026-11-16) | put the text in quotes |
 | J04 | E | `ingredients` missing, empty, not `{dataset_id}` items, unknown id, repeated id | |
@@ -715,7 +713,7 @@ Severity: **E** error (HOME refuses; Blueprint reports and does not block buildi
 | J14 | E | `tier2` of a join that no plot reads (the steps would run nowhere; same rule as S07 for a schema; 2026-11-15, follow-up of RECIPE-DATASET-TIER2-1) | plot this join, or remove the steps |
 | G01 | E | group without `ui_label`; unknown key; the old `label` (told once as renamed `ui_label`) | |
 | G02 | A | group without `description` | |
-| P01 | E | plot entry without `ui_label`; unknown key (`info`, and the removed `spec`, `title`, `label`, `family`, `pattern`, `difficulty`: each is told once with its new form) | `description`; the content in the entry; `labs` and `ui_title`; `ui_label`; `taxonomy` |
+| P01 | E | plot entry without `ui_label`; unknown key (`info`, and the removed `spec`, `title`, `ui_title`, `label`, `family`, `pattern`, `difficulty`: each is told once with its new form) | `description`; the content in the entry; `labs`; `ui_label`; `ui_label`; `taxonomy` |
 | P02 | A | plot without `description` | |
 | P03 | E | plot id not snake_case | |
 | P04 | E | `tier3` of a plot entry written wrongly (the same rules as S06); the old container `steps` of a plot entry (removed 2026-11-17) | `tier3: {steps: [...]}`; the rewrite tool |
@@ -746,10 +744,10 @@ Refused at once; the message names the new form. Mechanism: `utils/legacy_keys.p
 
 | Where | Old | New |
 |---|---|---|
-| `info` | `display_name` | `label` |
+| `info` | `display_name`, `label`, `name`, `ui_title` | `ui_label` |
 | top level | (no `spec_version`: format 0) | `spec_version: 1` and the replacements of this table, by `migrate_recipe_format.py` |
 | top level | `description` | `info.description` |
-| top level | `name`, `pipeline_id` | `info.label`, `id` |
+| top level | `name`, `pipeline_id` | `info.ui_label`, `id` |
 | top level | `metadata` | `metadata_schema` |
 | top level | `plots`, `wrangling`, `input_fields`, `output_fields` | inside a group / inside a schema (`wrangling` is not a key of a schema either since 2026-11-17: write `tier1` and `tier2`) |
 | top level | `type`, `join_manifests` | removed / `joins` |
@@ -792,8 +790,9 @@ Refused at once; the message names the new form. Mechanism: `utils/legacy_keys.p
 | plot entry | `steps: {tier3: [...]}` | `tier3: {steps: [...]}` directly in the plot entry |
 | any tier | `tier1: [...]` (a list) | `tier1: {steps: [...]}` |
 | plot entry | `spec: {...}` (also `spec: !include f`) | the content in the entry; `p: !include f` with the whole entry in the file |
-| group, plot entry | `label` | `ui_label` (short name); `ui_title` for a longer name used by the report |
-| plot entry | `title` (root of the plot content) | removed: the figure title is written in the `labs` layer, the report name in `ui_title` |
+| group, plot entry | `label`, `ui_title` | `ui_label` (the one name: tab, lists and report); `ui_title` is removed (D-0409) |
+| schema, join, input field | `label` | `ui_label` (D-0468) |
+| plot entry | `title` (root of the plot content) | removed: the figure title is written in the `labs` layer; the report name is the `ui_label` |
 | `plot_defaults` | `default_font_family`, `facet_panel_spacing`, `legend_position`, `optimisation` | removed (tombstone PD02); a theme layer sets font, legend and spacing |
 | (no key) | the built-in `theme_bw` of a plot with no theme | `theme: theme_bw` written once in `plot_defaults` by the tool, listed; without a theme the plot is drawn with plotnine's own default |
 

@@ -912,6 +912,7 @@ Without the guard, the effect re-fires every tick and produces an infinite react
 - **CSS lives in `config/ui/theme.css`** — not inline in Python code. This is the authoritative base stylesheet, loaded at startup by `app/src/ui.py` via `bootloader.get_theme_css_path()` and injected via `ui.tags.style()`.
 - **New UI styling MUST go in `config/ui/theme.css`** (or an app features specific override CSS file). Do not add `style=` attributes on individual components unless the value is truly one-off and cannot be expressed as a reusable CSS rule.
 - **Branding belongs to the deployment** (ADR-091): the `branding:` block of the deployment file declares `theme_css: "config/ui/theme.css"`. A deployment overrides this key to point at a custom CSS file — no Python changes needed. `bootloader.get_theme_css_path()` resolves the active path.
+- **The banners (names pass, D-0410, D-0411, D-0470, D-0474, D-0482).** The deployment banner is `branding.banner` of the deployment file: `logo_url`, `ui_label` (the name) and `description` (one line of text); the old keys `title` and `subtitle` are refused at start with the new names. The recipe banner in HOME shows the recipe's `info.ui_label` (the file name when the recipe has none) and nothing else of `info` (`info.subtitle` is a free key that the banner does not read); `branding.show_recipe_name: false` in the deployment file hides it, the key being read as `true` when absent (`app/modules/recipe_banner.py`). The app features file has no banner key: its `ui_title` is removed and refused with this text, and it has no `name`: its id is its file name and its `ui_label` the name shown (D-0480, D-0481).
 
 ---
 
@@ -932,7 +933,7 @@ See `config/deployment/local/local.yaml` for the dev template.
 
 ## App features
 
-Defined in app features files: `config/app_features/<app_features_id>.yaml`. App features IDs use hyphens, never underscores (e.g. `pipeline-exploration-advanced`, not `pipeline_exploration_advanced`).
+Defined in app features files: `config/app_features/<app_features_id>.yaml`. The id of an app features file is its file name; hyphens and underscores are both free in a file name (D-0481, D-0483), and the file has no `name` key. Its `ui_label` is the name shown to the user; the export writes both, for example `Web Demo (web-demo)` (D-0497).
 
 Feature visibility flags: `interactivity_enabled`, `comparison_mode_enabled`, `session_management_enabled`, `export_enabled`, `import_helper_enabled`, `metadata_ingestion_enabled`, `data_ingestion_enabled`, `blueprint_enabled`, `test_lab_enabled`, `gallery_enabled`.
 

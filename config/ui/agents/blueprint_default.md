@@ -142,7 +142,7 @@ joins:
 
 **`analysis_groups` plot_ids must be globally unique snake_case.** A plot is written directly
 under its id (inline, or included from a file). There is no `spec:` key; the plot keeps its
-labels in `ui_label` and `ui_title`:
+name in `ui_label` (the tab and the report show the same text):
 ```yaml
 analysis_groups:
   amr_overview:
@@ -153,7 +153,6 @@ analysis_groups:
 The included plot file:
 ```yaml
 ui_label: "Multi-Resistance by Year"
-ui_title: Multi-Resistance by Year
 target_dataset: FastP_with_metadata
 mapping:
   x: Year
