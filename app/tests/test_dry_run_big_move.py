@@ -42,7 +42,11 @@ data_schemas:
     input_fields:
       sample_id: {type: String}
       gene: {type: String}
-    tier1: {steps: []}
+    tier1:
+      steps:
+        - action: polars_group_by
+          by: [sample_id]
+          named_aggs: {n: "pl.len()"}
   ref:
     label: ref
     source: {type: local_tsv, path: data/ref.tsv}
@@ -72,7 +76,12 @@ joins:
     ingredients:
       - dataset_id: genes
       - dataset_id: metadata_schema
-    tier1: {steps: []}
+    tier1:
+      steps:
+        - action: polars_select
+          exprs: [sample_id]
+        - action: polars_drop
+          columns: [x]
 """
 J_STEPS = """steps:
   - action: polars_join
@@ -82,7 +91,21 @@ J_STEPS = """steps:
   - action: polars_select
     exprs: [sample_id, gene]
 """
-META = "sample_id\tyear\ns1\t2020\n\t2021\n   \t2022\n-\t2023\ns2\t2024\n"
+J_REMOVES = J_STEPS + """  - action: polars_drop_nulls
+    subset: [sample_id]
+"""
+GALLERY = """id: g1
+spec_version: 1
+data_schemas:
+  example:
+    label: e
+    source: {type: local_tsv, path: x.tsv}
+    input_fields:
+      id: {type: String}
+      value: {type: Float64}
+    tier1: {steps: []}
+"""
+META = 'sample_id\tyear\ns1\t2020\n\t2021\n   \t2022\n-\t2023\ns2\t2024\n""\t2025\n'
 
 
 def build_scratch(root: Path) -> None:
@@ -91,6 +114,8 @@ def build_scratch(root: Path) -> None:
     (root / "config/data_analysis_recipes/r/J.yaml").write_text(J_STEPS, encoding="utf-8")
     (root / "data").mkdir()
     (root / "data/meta.tsv").write_text(META, encoding="utf-8")
+    (root / "assets/gallery_data/g1").mkdir(parents=True)
+    (root / "assets/gallery_data/g1/data_analysis_recipe.yaml").write_text(GALLERY, encoding="utf-8")
     (root / "notes.md").write_text("the key is_entity_key here\n", encoding="utf-8")
 
 
@@ -114,35 +139,61 @@ def scratch(tmp_path):
 
 def test_joins_from_the_metadata_are_listed_and_the_others_not(scratch):
     s = "\n".join(section(tool.build(scratch), 3))
-    assert "table `J`" in s and "how=inner" in s and "to be rewritten with the data table first" in s
-    assert "table `Fine`" not in s.split("Tables whose ONLY")[0]
-    only = s.split("Tables whose ONLY")[1]
-    assert "table `Alone`" in only and "table `J`" not in only
+    assert "joined table `J`" in s and "keeps only the rows found in both tables" in s and "data table first" in s
+    first, only = s.split("Joined tables made from the metadata alone:")
+    assert "joined table `Fine`" not in first and "joined table `Alone`" not in first
+    assert "joined table `Alone`" in only and "joined table `J`" not in only
 
 
-def test_fixed_column_list_is_listed_without_choosing(scratch):
+def test_keep_only_steps_are_listed_with_their_place_and_a_drop_is_not(scratch):
     s = "\n".join(section(tool.build(scratch), 4))
-    assert "table `J`" in s and "polars_select" in s and "[sample_id, gene]" in s
-    assert "her two ways" in s
+    assert "table `J`, tier1, the LAST step of 2: `polars_select` keeps only [sample_id, gene]" in s
+    assert "table `Fine`, tier1, the FIRST step of 2: `polars_select`" in s
+    assert "table `genes`, tier1, the only step of the tier: `polars_group_by`" in s
+    assert not [l for l in s.splitlines() if l.startswith("- ") and "polars_drop" in l]
+    assert "NOT examined" in s
 
 
-def test_entity_id_not_declared(scratch):
-    s = "\n".join(section(tool.build(scratch), 5))
-    assert "table `genes`" in s and "CANDIDATE" in s and "sample_id" in s
+def test_entity_id_not_declared_and_gallery_in_the_annex(scratch):
+    lines = tool.build(scratch)
+    s = "\n".join(section(lines, 5))
+    assert "table `genes`" in s and "a candidate, not a decision" in s and "`sample_id`" in s
     assert "table `ref`" in s and "no id column" in s
     assert "table `metadata_schema`" not in s and "table `extra`" not in s
+    assert "g1/data_analysis_recipe.yaml" not in s and "1 have a column named like an id" in s
+    annex = "\n".join(lines[next(i for i, l in enumerate(lines) if l.startswith("## Annex")):])
+    assert "assets/gallery_data/g1/data_analysis_recipe.yaml" in annex
 
 
-def test_metadata_lines_with_no_usable_id(scratch):
+def test_metadata_lines_exact_and_in_plain_words(scratch):
     s = section(tool.build(scratch), 6)
-    lines = [l for l in s if l.startswith("  - ")]
-    assert [l.split(":")[1] for l in lines] == ["3", "4", "5"] or [l.split(".tsv:")[1].split(":")[0] for l in lines] == ["3", "4", "5"]
-    assert "no step of the recipe removes a missing id" in "\n".join(s)
+    found = [(l.split(".tsv:")[1].split(":")[0], l.split("the id cell is ")[1]) for l in s if l.startswith("- ")]
+    assert [n for n, _ in found] == ["3", "4", "5", "7"]
+    assert found[0][1].startswith("(empty)")
+    assert found[1][1].startswith("(only spaces)")
+    assert found[2][1].startswith("`-` (a dash, a declared missing-value mark)")
+    assert found[3][1].startswith('`""` (two quote marks, read as empty)')
+    assert "the metadata's own steps do not remove them" in "\n".join(s)
+
+
+def test_a_removal_in_a_join_tier_is_seen(scratch):
+    (scratch / "config/data_analysis_recipes/r/J.yaml").write_text(J_REMOVES, encoding="utf-8")
+    s = "\n".join(section(tool.build(scratch), 6))
+    assert "the metadata's own steps do not remove them" in s
+    assert "`J` removes them" in s and "r/J.yaml:8" in s and "polars_drop_nulls" not in s
+    assert "`Fine`" in s and "does not" in s
+
+
+def test_a_removal_in_the_metadata_own_tier_is_seen(scratch):
+    p = scratch / "config/data_analysis_recipes/r.yaml"
+    p.write_text(RECIPE.replace("  tier1: {steps: []}\ndata_schemas:", "  tier1:\n    steps:\n      - action: polars_drop_nulls\n        subset: [sample_id]\ndata_schemas:", 1), encoding="utf-8")
+    s = "\n".join(section(tool.build(scratch), 6))
+    assert "the metadata's own steps remove them" in s
 
 
 def test_additional_table_with_entity_id(scratch):
     s = "\n".join(section(tool.build(scratch), 7))
-    assert "table `extra`" in s and "to be moved under the data schemas" in s
+    assert "table `extra`" in s and "moved under the data schemas" in s
 
 
 def test_entity_key_rename_counts_per_kind(scratch):
@@ -154,14 +205,34 @@ def test_entity_key_rename_counts_per_kind(scratch):
 def test_needs_the_owner_names_the_unresolved_places(scratch):
     lines = tool.build(scratch)
     owner = "\n".join(lines[next(i for i, l in enumerate(lines) if l.startswith("## Needs the owner")):])
-    assert "table `ref` has no id column" in owner and "section 4" in owner
+    assert "table `ref`: has no id column" in owner and "section 4" in owner
+    assert "g1/data_analysis_recipe.yaml" not in owner.split("## 2.")[0]
+    assert "The Gallery examples: 0 have no id column and 1 have a column named `id`" in owner.split("## 2.")[0]
 
 
-def test_removing_step_is_seen(scratch):
-    p = scratch / "config/data_analysis_recipes/r.yaml"
-    p.write_text(RECIPE.replace("  tier1: {steps: []}\ndata_schemas:", "  tier1:\n    steps:\n      - action: polars_drop_nulls\n        subset: [sample_id]\ndata_schemas:", 1), encoding="utf-8")
-    s = "\n".join(section(tool.build(scratch), 6))
-    assert "polars_drop_nulls" in s and "none: no step" not in s
+def test_header_counts_equal_the_entries_listed(scratch):
+    lines = tool.build(scratch)
+    counts = {int(l.split(".")[0][2:]): int(l.split(": ")[-1].split(" ")[0]) for l in lines if l.startswith("- ") and l[2].isdigit() and "." in l[:6]}
+    assert set(counts) == {1, 2, 3, 4, 5, 6, 7}
+    for n in (2, 3, 4, 5, 6, 7):
+        entries = [l for l in section(lines, n) if l.startswith("- ")]
+        assert counts[n] == len(entries), n
+    assert counts[2] == 3 and counts[3] == 2 and counts[6] == 4
+
+
+def test_first_screen_exists_names_each_decision_and_comes_first(scratch):
+    lines = tool.build(scratch)
+    i = next(k for k, l in enumerate(lines) if l.startswith("## What needs you"))
+    assert i == min(k for k, l in enumerate(lines) if l.startswith("## "))
+    end = next(k for k in range(i + 1, len(lines)) if lines[k].startswith("## "))
+    screen = "\n".join(lines[i:end])
+    assert end - i <= 25
+    for words in ("have no usable id", "made from the metadata alone", "keep only a fixed list of columns",
+                  "declare no entity id", "The Gallery examples declare no entity id", "Only a mechanical rename"):
+        assert words in screen, words
+    order = [l for l in lines if l.startswith("## ")]
+    nums = [l.split(".")[0][3:] for l in order if l[3:4].isdigit()]
+    assert nums == ["6", "3", "4", "5", "7", "2", "1"]
 
 
 def test_nothing_in_the_project_changes_and_report_is_the_only_file(scratch, tmp_path):
@@ -172,5 +243,5 @@ def test_nothing_in_the_project_changes_and_report_is_the_only_file(scratch, tmp
     text = report.read_text(encoding="utf-8")
     assert "Nothing was changed. This is a list for the owner to read." in text
     assert tool.main(["--project-root", str(scratch), "--report", str(report)]) == 3      # never overwrites
-    assert tool.main(["--project-root", str(scratch), "--report", str(scratch / "inside.md")]) == 3   # not inside the project outside tmpAI
+    assert tool.main(["--project-root", str(scratch), "--report", str(scratch / "inside.md")]) == 3   # not inside the project outside tmpAI/
     assert snapshot(scratch) == before
