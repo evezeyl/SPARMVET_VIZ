@@ -1,6 +1,8 @@
 # The big view: recipe design, audit, lineage, and what can be coded now (2026-11-23)
 Status: for the owner's reading. Written by the coordinator; fact-checked by an independent agent on 2026-11-23 (11 statements corrected). Ledger: D-0598, D-0599. Nothing here is built by this page.
 
+Words used on this page: a name in the recipe file (what developers call a YAML key); a column name; the entity id (the column that identifies the entity); the fingerprint of a stored table (what developers call a cache key). The bare word "key" is avoided (D-0602).
+
 Written by the coordinator from the ledger and the study files, by reading only. No run was made. An independent agent checked every statement against the ledger and the files; it found 11 statements to correct, and they are corrected below. Not verified by it: what the held audit branch contains (section 3), which is taken from the builder's own report. Where a number comes from a run of an earlier day, the study file that holds it is named.
 
 Your order: "can we move on the big view - what is the recipe design, audit lineage, what can we code now ... ?" (D-0598) and "we need the logic first" (D-0599).
@@ -10,7 +12,7 @@ Your order: "can we move on the big view - what is the recipe design, audit line
 1. A recipe is a directed graph: the tiers are its nodes, the results are its leaves, and the user chooses at most one node on a path (your words, D-0553). The agents' description of it, not your words: a node is a table at a tier; the original files are the roots; a joined table reads the tier 1 of its ingredients; a plot reads one table.
 2. A recipe does not start a join from the metadata. The original data is joined with a left join on the metadata, when a metadata join is needed. (D-0586)
 3. Before anything else, the ids are made equal: every original table and the metadata are completed to the union of all ids, with a marker ("not in original data", "not in metadata"), and the recipe says what the marked lines mean. Nothing blocks: the app warns and writes a log. (D-0572 to D-0591)
-4. An audit step is a filter, a column drop or a removal by key, written at a place the user chooses. In one step the user chooses at most one place on a path; the original parents may all be chosen; everything below is derived and cannot be chosen. (D-0553, D-0322, D-0535)
+4. An audit step is a filter, a column drop or a removal by the entity id (the column that identifies the entity), written at a place the user chooses. In one step the user chooses at most one place on a path; the original parents may all be chosen; everything below is derived and cannot be chosen. (D-0553, D-0322, D-0535)
 5. After a change at a place, every table below it is recalculated; no stored table of before is served. (D-0560)
 6. The app never cleans data in HOME. It shows what is wrong; the user cleans, in the recipe or before the data enters the app. (D-0593 to D-0597)
 
@@ -30,7 +32,7 @@ Your order: "can we move on the big view - what is the recipe design, audit line
 - B. The recipe form itself: the proposal "form 3" (blocks in order: original tables, joined tables, derived tables, results) is not confirmed (D-0496). The questions of `RECIPES_FROM_THE_MODEL_AGREED.md` that remain after the review of today are listed at its top.
 - C. With no metadata: which tables are one population (the one the recipe names, or every table that declares the id).
 
-**Kept for after the big line (small; the agents' lean is provisional meanwhile):** the block's key names; before or after the recipe's tier-1 steps; the marker's exact form; the log's file name and directory; how often the "I have read this" button is shown; a dummy id; how "data first" is enforced (check, advice, documentation); the count per target; the threshold; the two metadata-only test tables.
+**Kept for after the big line (small; the agents' lean is provisional meanwhile):** the names used inside the block of the recipe; before or after the recipe's tier-1 steps; the marker's exact form; the log's file name and directory; how often the "I have read this" button is shown; a dummy id; how "data first" is enforced (check, advice, documentation); the count per target; the threshold; the two metadata-only test tables.
 
 ## 3. Audit: where it stands
 
@@ -52,9 +54,9 @@ Your order: "can we move on the big view - what is the recipe design, audit line
 
 **Decided:** the investigation runs must not rest on the old lineage structure (D-0558, D-0559); a parent reused in another graph: both graphs must be shown (D-0555; how is not decided); every run states beforehand what it tests, what is expected and why it does not rest on the old structure (D-0561).
 
-**Not yet your decision, the agents' proposal:** the lineage of the app IS the graph of section 1, read from the recipe keys, and replaces the old lineage code.
+**Not yet your decision, the agents' proposal:** the lineage of the app IS the graph of section 1, read from the recipe file itself (its blocks and names), and replaces the old lineage code.
 
-**Established by runs of earlier days** (each variant rebuilt from scratch; `PATHS_AND_DERIVED_AGREED.md`, points at lines 35 and 40): on the demo the graph has 85 nodes and 55 places where the engine accepts a step; for every one of them, "below" equals "its key changed"; a stored table under an old key is never served.
+**Established by runs of earlier days** (each variant rebuilt from scratch; `PATHS_AND_DERIVED_AGREED.md`, points at lines 35 and 40): on the demo the graph has 85 nodes and 55 places where the engine accepts a step; for every one of them, "below" equals "the fingerprint of its stored table changed"; a stored table with an old fingerprint is never served.
 
 **In the code today (read, not run):** `libs/utils/src/utils/recipe_graph.py` already exists as one model of the recipe graph, beside the older `lineage_walk.py`, `lineage_records.py` and `lineage_sentences.py`. HOME's audit dialog uses neither for places: it writes audit steps at the plot's table (`app/modules/t3_audit_engine`).
 
