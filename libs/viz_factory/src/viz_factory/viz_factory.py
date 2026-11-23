@@ -222,7 +222,7 @@ class VizFactory:
             known = spec_key_names()
             close = difflib.get_close_matches(str(unknown[0]), known, n=1, cutoff=0.6)
             if unknown[0] == "title":
-                fix = "remove it and write the figure title in a labs layer (its title argument); the name used by the report is ui_title (D-0253)"
+                fix = "remove it and write the figure title in a labs layer (its title argument); the name used by the report is its ui_label (D-0409)"
             else:
                 fix = f"write {close[0]}" if close else "remove it, or write one of " + ", ".join(known)
             raise plot_failure(

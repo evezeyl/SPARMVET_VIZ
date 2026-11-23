@@ -19,7 +19,7 @@ FIRST_VERSION = "1.0.0"
 def new_recipe_draft(recipe_id: str, label: str, *, description: str, author: str, created: str) -> dict:
     """A recipe with no table, no join and no plot yet; `recipe_id` is also the name of its file.
 
-    `label` is the short name shown to the user (`info.label`; it was `info.name`) and is required by the format.
+    `label` is the short name shown to the user (written as `info.ui_label`; before it was `info.name`, then `info` plus `label`) and is required by the format.
     `description`, `author` and `created` (a date as text) are written as given, also when empty.
     """
     if not label or not label.strip():

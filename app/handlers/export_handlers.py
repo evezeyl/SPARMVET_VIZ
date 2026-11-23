@@ -373,7 +373,7 @@ def export_plot_entries(raw_config: dict) -> list[tuple[str, dict]]:
     """[(plot_id, plot entry)] of the recipe, in the order of its groups: the plots an export draws.
 
     The entry IS the plot content (D-0237): `target_dataset`, `mapping` and `layers` are written in it, with the app-side keys
-    (`ui_label`, `ui_title`, `plot_engine`, ...) beside them. An empty entry is not a plot. A recipe with no group falls back to a
+    (`ui_label`, `plot_engine`, ...) beside them. An empty entry is not a plot. A recipe with no group falls back to a
     root `plots` mirror (the loader's)."""
     found = [(p_id, entry)
              for gspec in (raw_config.get("analysis_groups") or {}).values()
@@ -381,13 +381,27 @@ def export_plot_entries(raw_config: dict) -> list[tuple[str, dict]]:
     return found or list((raw_config.get("plots") or {}).items())
 
 
-def plot_report_name(entry, p_id: str) -> str:
-    """The name of a plot in the report (headings, captions, audit prose): `ui_title`, else `ui_label` (D-0253), else the plot id in
-    title case (a recipe the checker refused has no `ui_label`; the report is never left without a name).
+def export_plot_groups(raw_config: dict) -> list[tuple[str | None, list[tuple[str, dict]]]]:
+    """[(group ui_label, [(plot_id, plot entry)])] in the order of the groups: the report is built by group (D-0484).
 
-    The text of the figure is not read here: it is written only in the `labs` layer of the plot."""
+    The label of a group is its `ui_label`, the same text as its tab in HOME (D-0409); the recipe check requires it (G01), so none is invented.
+    A group with no plot keeps its place with an empty list, so that the report says it has none. A recipe with no group falls back to the
+    root `plots` mirror, which has no group: its label is None."""
+    groups = [(g["ui_label"], [(p_id, entry) for p_id, entry in (g.get("plots") or {}).items() if entry])
+              for g in (raw_config.get("analysis_groups") or {}).values()]
+    if groups:
+        return groups
+    mirror = list((raw_config.get("plots") or {}).items())
+    return [(None, mirror)] if mirror else []
+
+
+def plot_report_name(entry, p_id: str) -> str:
+    """The name of a plot in the report (headings, captions, audit prose): its `ui_label`, the same text as its tab in HOME (D-0409).
+
+    The recipe check requires `ui_label` (P01); a plot that is not in the recipe (an audit step of a plot the recipe no longer has) is
+    named by its id as written, never by a text made from it. The text of the figure is not read here: it is written only in the `labs` layer."""
     entry = entry if isinstance(entry, dict) else {}
-    return entry.get("ui_title") or entry.get("ui_label") or p_id.replace("_", " ").title()
+    return entry.get("ui_label") or p_id
 
 
 def plot_report_lines(p_id: str, label: str, caption: str, fig_id: str, plot_ext: str, failure: str | None) -> list:
@@ -501,7 +515,7 @@ def _build_methods_section(
     for p_id, nodes in (t3_by_plot or {}).items():
         plot_label = _qp(next(
             (plot_report_name(s, p_id) for pid, s in all_plots if pid == p_id),
-            p_id.replace("_", " ").title(),
+            p_id,
         ))
         for n in nodes:
             nt = n.get("node_type", "")
@@ -550,7 +564,7 @@ def _build_methods_section(
     for p_id, overrides in (t3_aesthetic_overrides or {}).items():
         plot_label = _qp(next(
             (plot_report_name(s, p_id) for pid, s in all_plots if pid == p_id),
-            p_id.replace("_", " ").title(),
+            p_id,
         ))
         if overrides:
             keys = [k for k in ("fill", "colour", "alpha", "shape", "size", "theme") if k in overrides]
@@ -1927,13 +1941,18 @@ def define_export_server(input, output, session, *,
             # QMD image paths point to _render/ (Quarto-compatible copies).
             # _render/ is written into the Quarto temp dir alongside report.qmd.
             # The user-facing plots/ folder in the zip keeps the chosen format.
-            qmd_lines += ["## Plots", ""]
-            for p_id, spec in all_plots:
-                label = plot_report_name(spec, p_id)
-                ds_note = spec.get("target_dataset") or "—"
-                fig_id = f"fig-{_re.sub(r'[^A-Za-z0-9]', '-', p_id)}"
-                caption = f"{_qp(label)} — dataset: {_qc(ds_note)}"
-                qmd_lines += plot_report_lines(p_id, label, caption, fig_id, plot_ext, failed_plots.get(p_id))
+            # The report is built by group (D-0484): the `ui_label` of a group is a `##` heading, the `ui_label` of each of its plots a `###`.
+            # PROVISIONAL (heading levels not decided by D-0484 alone; D-0491 adds two parts, `# Results` and `# Technical`, and is not built here).
+            for _group_label, _group_plots in export_plot_groups(cfg.raw_config):
+                qmd_lines += [f"## {_qp(_group_label) if _group_label is not None else 'Plots'}", ""]
+                if not _group_plots:
+                    qmd_lines += ["This group has no plot.", ""]   # PROVISIONAL wording (D-0491 leaves it open)
+                for p_id, spec in _group_plots:
+                    label = plot_report_name(spec, p_id)
+                    ds_note = spec.get("target_dataset") or "—"
+                    fig_id = f"fig-{_re.sub(r'[^A-Za-z0-9]', '-', p_id)}"
+                    caption = f"{_qp(label)} — dataset: {_qc(ds_note)}"
+                    qmd_lines += plot_report_lines(p_id, label, caption, fig_id, plot_ext, failed_plots.get(p_id))
 
             qmd_lines += [
                 "## Data files",
@@ -1989,7 +2008,7 @@ def define_export_server(input, output, session, *,
                 qmd_lines += ["## T3 Audit Trail", ""]
                 for _pid, _nodes in _t3_listed.items():
                     _section_label = _qp(next(
-                        (plot_report_name(s, _pid) for p, s in all_plots if p == _pid), _pid.replace("_", " ").title()
+                        (plot_report_name(s, _pid) for p, s in all_plots if p == _pid), _pid
                     ))
                     qmd_lines += [
                         f"### {_section_label}",

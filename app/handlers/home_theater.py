@@ -51,6 +51,7 @@ from shiny import reactive, render, ui
 from shiny.session import session_context
 from app.modules import frame_widths
 from app.modules.error_notice import notice
+from app.modules.recipe_banner import recipe_banner_title
 from app.modules.cache_keys import load_data_analysis_recipe
 from app.modules.data_change_notice import inputs_changed_during_build_notice, notice_after_data_change
 from app.modules.data_analysis_recipe_validator import rejected_recipe_text
@@ -104,18 +105,18 @@ def _safe_id(label: str) -> str:
 
 
 def group_tab_label(group_id: str, group: dict) -> str:
-    """The text of a group tab: `ui_label`, else `description`, else the group id (D-0253)."""
-    return group.get("ui_label") or group.get("description", group_id)
+    """The text of a group tab: its `ui_label`. The recipe check requires it (G01), so no other text is invented here (D-0409)."""
+    return group["ui_label"]
 
 
 def plot_tab_label(p_id: str, entry: dict) -> str:
-    """The text of a plot tab: `ui_label`, else the plot id in title case (D-0253)."""
-    return entry.get("ui_label") or p_id.replace("_", " ").title()
+    """The text of a plot tab: its `ui_label`. The recipe check requires it (P01), so no other text is invented here (D-0409)."""
+    return entry["ui_label"]
 
 
 def plot_list_label(p_id: str, entry: dict | None) -> str:
-    """The name of a plot in a list of the audit dialogs: `ui_label`, else the plot id as written (D-0253)."""
-    return (entry or {}).get("ui_label") or (entry or {}).get("name") or p_id
+    """The name of a plot in a list of the audit dialogs: its `ui_label`, else the plot id as written (a plot that is not in the recipe has no entry)."""
+    return (entry or {}).get("ui_label") or p_id
 
 
 def _collect_all_group_plot_ids(bootloader) -> list[tuple[str, dict]]:
@@ -1139,23 +1140,12 @@ def define_server(input, output, session, *,
         cfg = active_cfg()
         groups = cfg.raw_config.get("analysis_groups", {})
 
-        # --- UI-TITLE-1: data analysis recipe title banner ---
-        # Resolution: app features ui_title.text override > data analysis recipe info.label > nothing.
-        # If resolved title is empty or app features sets ui_title.visible=false: no banner.
-        _ui_title_cfg = bootloader.config.get("ui_title", {})
-        _title_visible = _ui_title_cfg.get("visible", True)
-        _title_text = (
-            _ui_title_cfg.get("text")
-            or cfg.raw_config.get("info", {}).get("label", "")
-        )
-        _subtitle_text = (
-            _ui_title_cfg.get("subtitle")
-            or cfg.raw_config.get("info", {}).get("subtitle", "")
-        )
-        if _title_visible and _title_text:
+        # --- the recipe banner: info.ui_label (the file name when there is none), hidden by branding.show_recipe_name: false in the
+        # deployment file (D-0410, D-0470, D-0474). It reads nothing from the app features file and not info.subtitle (D-0482).
+        _title_text = recipe_banner_title(cfg.raw_config.get("info"), data_analysis_recipe_id, bootloader.show_recipe_name())
+        if _title_text:
             home_title_banner = ui.div(
                 ui.tags.span(_title_text, class_="banner-title"),
-                *([ui.tags.span(_subtitle_text, class_="banner-subtitle")] if _subtitle_text else []),
                 class_="view-title-banner",
                 style="margin-bottom: 8px;",
             )
@@ -1278,7 +1268,7 @@ def define_server(input, output, session, *,
                 # Wrap top-level plots in a synthetic single group
                 plot_subtabs = []
                 for p_id, plot_spec in top_plots.items():
-                    tab_label = p_id.replace("_", " ").title()
+                    tab_label = plot_tab_label(p_id, plot_spec)
                     plot_subtabs.append(
                         ui.nav_panel(
                             tab_label,
@@ -1906,7 +1896,7 @@ def define_server(input, output, session, *,
             nav_items.append(ui.nav_panel("Gallery", value="Gallery"))
 
         badge = (
-            ui.h6(f"Active: {perm.replace('_', ' ').title()}",
+            ui.h6(f"Active: {perm}",
                   class_="text-muted px-2 py-1 mb-1 border-bottom spv-text-meta")
             if bootloader.is_enabled("show_app_features_badge")
             else None
@@ -2070,8 +2060,8 @@ def define_server(input, output, session, *,
             return ui.accordion_panel(
                 "Deployment",
                 ui.div(
-                    ui.tags.small(banner.get("title", ""), class_="fw-bold d-block"),
-                    ui.tags.small(banner.get("subtitle", ""), class_="text-muted d-block"),
+                    ui.tags.small(banner.get("ui_label", ""), class_="fw-bold d-block"),
+                    ui.tags.small(banner.get("description", ""), class_="text-muted d-block"),
                     class_="p-1"
                 ),
                 icon=ui.tags.i(class_="bi bi-building")

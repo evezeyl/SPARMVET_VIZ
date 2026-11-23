@@ -61,10 +61,6 @@ class BaseConnector(ABC):
         """Return the default app features ID from the deployment, or None if not set."""
         return self._deployment.get("default_app_features")
 
-    def get_deployment_name(self) -> str:
-        """Return the human-readable deployment label."""
-        return self._deployment.get("deployment_name", "SPARMVET_VIZ")
-
     def get_deployment_type(self) -> str:
         """Return the deployment_type string (filesystem / irida / galaxy)."""
         return self._deployment.get("deployment_type", "filesystem")

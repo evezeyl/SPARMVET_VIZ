@@ -74,7 +74,7 @@ _VALID_PLOT_DEFAULTS_KEYS: frozenset = frozenset(plot_defaults_keys()[0])
 _REMOVED_PLOT_DEFAULTS_KEYS: frozenset = frozenset(plot_defaults_keys()[1])
 
 # The keys of a plot entry come from the recipe specification (`utils.recipe_check.plot_keys`), the list the recipe checker
-# reads: the CONTENT keys are what this library draws from; the ENTRY keys (ui_label, ui_title, description, comment,
+# reads: the CONTENT keys are what this library draws from; the ENTRY keys (ui_label, description, comment,
 # taxonomy, plot_engine, tier3) belong to the app and are ignored here, not refused (D-0237, D-0253). A key on neither list
 # is refused by VizFactory.render (`unknown_spec_keys`). `title` is on neither: the figure title is the `title` argument of a
 # labs layer (D-0253). Keys that are not content are moved into `_meta` by normalise_plot_spec.

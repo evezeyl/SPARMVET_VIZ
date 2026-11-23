@@ -333,7 +333,7 @@ class Walk:
     lines: Tuple[Line, ...]
     gone: Tuple[Gone, ...]
     outside: Tuple[Outside, ...]
-    key_basis: str = "declared entity keys (is_entity_id) and the key pairs of the joins of the recipe; never the column name alone"
+    key_basis: str = "declared entity ids (is_entity_id) and the key pairs of the joins of the recipe; never the column name alone"
     start_type: str = ""                         # the engine type of the column at the place the user chose: each line holds its own, the difference is the note
     held_at_levels: Tuple[str, ...] = ()         # the levels (`LEVELS`) at which the column exists in the lineage, whatever levels were chosen
 

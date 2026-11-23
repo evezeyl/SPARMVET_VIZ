@@ -10,13 +10,13 @@ What it writes, rule by rule (the checker `check_recipe_file` is the judge; a re
      `tier1: {steps: []}` (the checker accepts an empty tier); a table or a join without `tier1` gets `tier1: {steps: []}` (required).
   b. The plot entry has no `spec:` (D-0237). Its content is written in the entry; a plot whose spec was in its own file
      (`spec: !include plots/p.yaml`) becomes `p: !include plots/p.yaml` and that file holds the WHOLE entry (D-0252). Key order
-     written: plot_engine (if there), ui_label, ui_title, description, comment, taxonomy, the content, tier3.
-  c. Names (D-0253). `label` becomes `ui_label` at groups and plot entries. The pending places (`info`, tables and joins, the
-     entries of `input_fields`) are renamed only when the table `label_keys` of `recipe_spec.yaml` says `ui_label` for them: Eve's
-     answer is a one-line change of that table followed by a re-run.
+     written: plot_engine (if there), ui_label, description, comment, taxonomy, the content, tier3.
+  c. Names (D-0253, D-0410, D-0468). `label` becomes `ui_label` at groups, plot entries, `info`, tables, joins and the entries of
+     `input_fields`.
   d. The old `title:` of a plot content (D-0253, D-0255, D-0258; PROVISIONAL reading of the coordinator, not objected to): the text
      is written as the `title` argument of the plot's `labs` layer (added when there is none; set when there is one: today the root
-     title is applied after the layers and wins over a labs title, so the picture stays the same) AND as `ui_title` of the entry.
+     title is applied after the layers and wins over a labs title, so the picture stays the same). The entry gets no other key for it:
+     `ui_title` is removed from the format (D-0409).
   e. The four dead `plot_defaults` keys are removed; each removal is printed with its old value and the recipe (D-0242, D-0241).
   f. Theme (D-0258). A recipe in which a plot would be drawn with the built-in `theme_bw` (no complete theme named for it, neither
      in the plot nor in `plot_defaults`) gets `theme_bw` written once in `plot_defaults`: a plot theme (L4) wins over it (L2), so one
@@ -29,7 +29,7 @@ prints (`--check`). A second run finds nothing to change.
 
 # @deps
 # provides: function:migrate, class:Result, class:Event
-# consumes: libs/utils/src/utils/recipe_spec.yaml (label_keys, removed), libs/utils/src/utils/recipe_check.py (spec), libs/utils/src/utils/recipe_migration.py (_content_end)
+# consumes: libs/utils/src/utils/recipe_spec.yaml (removed), libs/utils/src/utils/recipe_check.py (spec), libs/utils/src/utils/recipe_migration.py (_content_end)
 # consumed_by: assets/scripts/migrate_recipe_engine_keys.py, libs/utils/tests/test_engine_keys_migration.py
 # doc: .claude/design/recipe_format_spec.md (4.1), decisions D-0236, D-0237, D-0241, D-0242, D-0250 to D-0253, D-0255, D-0258
 # @end_deps
@@ -47,7 +47,7 @@ from utils.recipe_check import spec as recipe_spec
 from utils.recipe_migration import _content_end
 
 _SCHEMA_SECTIONS = ("data_schemas", "additional_datasets_schemas")
-_ENTRY_ORDER = ("plot_engine", "label", "ui_label", "ui_title", "description", "comment", "taxonomy")
+_ENTRY_ORDER = ("plot_engine", "label", "ui_label", "description", "comment", "taxonomy")
 _TIER_KEYS = {"schema": ("tier1", "tier2"), "join": ("tier1", "tier2"), "plot": ("tier3",)}
 
 
@@ -239,11 +239,10 @@ def classify(text: str) -> str:
 # -- the unit ----------------------------------------------------------------------------------------------------------
 
 class _Unit:
-    def __init__(self, partial_theme: Callable[[str], bool], label_keys: Optional[Dict[str, str]] = None,
+    def __init__(self, partial_theme: Callable[[str], bool],
                  removed_keys: Optional[List[str]] = None, theme_name: str = "theme_bw") -> None:
         self.partial_theme = partial_theme
         spec = recipe_spec()
-        self.label_keys = label_keys if label_keys is not None else dict(spec["label_keys"])
         self.removed_keys = removed_keys if removed_keys is not None else list(spec["removed"]["plot_defaults"])
         self.theme_name = theme_name
         self.result = Result()
@@ -513,7 +512,7 @@ class _Unit:
         return out, included
 
     def move_title(self, text0: str, where: str, path: Path, defaults_labs: bool) -> str:
-        """The old `title:` of the content: into the labs layer, and as ui_title; returns the new text."""
+        """The old `title:` of the content: into the labs layer; returns the new text."""
         root = _compose(text0)
         tp = _find(root, "title")
         if tp is None:
@@ -595,19 +594,7 @@ class _Unit:
         a, b = _ls(text, tkey.start_mark.index), _pair_end(text, tkey, tval)
         text = text[:a] + text[b:]
         _valid(text)
-        root = _compose(text)
-        if _find(root, "ui_title") is None:
-            lab = _find(root, "ui_label")
-            if lab is not None:
-                at = _pair_end(text, *lab)
-                pad = " " * lab[0].start_mark.column
-            else:
-                at, pad = 0, ""
-            text = text[:at] + f"{pad}ui_title: {shown}\n" + text[at:]
-            _valid(text)
-            self.event("title", path, where, f"title {shown} moved: {note}; ui_title written")
-        else:
-            self.event("title", path, where, f"title {shown} moved: {note}; ui_title was already there and is kept")
+        self.event("title", path, where, f"title {shown} moved: {note}")
         return text
 
     def convert_entry_steps(self, text0: str, where: str, path: Path, base: Path) -> str:
@@ -690,36 +677,32 @@ class _Unit:
         self.event("label", path, where, f"{old} -> {new}")
 
     def names(self, path: Path) -> None:
-        """label -> ui_label at groups (always, D-0253) and, where `label_keys` says so, at the pending places."""
+        """label -> ui_label at groups, `info`, tables, joins and the entries of `input_fields` (D-0253, D-0410, D-0468)."""
         path = Path(os.path.realpath(path))
         root = _compose(self.texts[path])
         groups = _find(root, "analysis_groups")
         for gk in [k.value for k, _ in _pairs(groups[1])] if groups else []:
             self.rename_key(path, ["analysis_groups", gk], "label", "ui_label", f"analysis_groups.{gk}")
-        if self.label_keys.get("info") == "ui_label":
-            self.rename_key(path, ["info"], "label", "ui_label", "info")
+        self.rename_key(path, ["info"], "label", "ui_label", "info")
         schemas = [section_key for section_key in self._schemas(root)]
         joins = self._joins(root)
-        if self.label_keys.get("schema") == "ui_label":
-            for name in schemas:
-                self.rename_key(path, name.split("."), "label", "ui_label", name)
-        if self.label_keys.get("join") == "ui_label":
-            for name in joins:
-                self.rename_key(path, name.split("."), "label", "ui_label", name)
-        if self.label_keys.get("field") == "ui_label":
-            for name in schemas:
-                node = self._element(_compose(self.texts[path]), name)
-                fields = _find(node, "input_fields") if node is not None else None
-                if fields is None:
-                    continue
-                if _is_include(fields[1]):
-                    target = Path(os.path.realpath(path.parent / fields[1].value))
-                    if target.is_file():
-                        for slug in [k.value for k, _ in _pairs(_compose(self.read(target)))]:
-                            self.rename_key(target, [slug], "label", "ui_label", f"{fields[1].value}.{slug}")
-                elif isinstance(fields[1], yaml.MappingNode):
-                    for slug in [k.value for k, _ in _pairs(fields[1])]:
-                        self.rename_key(path, name.split(".") + ["input_fields", slug], "label", "ui_label", f"{name}.input_fields.{slug}")
+        for name in schemas:
+            self.rename_key(path, name.split("."), "label", "ui_label", name)
+        for name in joins:
+            self.rename_key(path, name.split("."), "label", "ui_label", name)
+        for name in schemas:
+            node = self._element(_compose(self.texts[path]), name)
+            fields = _find(node, "input_fields") if node is not None else None
+            if fields is None:
+                continue
+            if _is_include(fields[1]):
+                target = Path(os.path.realpath(path.parent / fields[1].value))
+                if target.is_file():
+                    for slug in [k.value for k, _ in _pairs(_compose(self.read(target)))]:
+                        self.rename_key(target, [slug], "label", "ui_label", f"{fields[1].value}.{slug}")
+            elif isinstance(fields[1], yaml.MappingNode):
+                for slug in [k.value for k, _ in _pairs(fields[1])]:
+                    self.rename_key(path, name.split(".") + ["input_fields", slug], "label", "ui_label", f"{name}.input_fields.{slug}")
 
     @staticmethod
     def _schemas(root) -> List[str]:
@@ -910,14 +893,14 @@ def _walk_includes(path: Path, seen: Set[Path]) -> None:
 
 
 def migrate(paths: List[Path], partial_theme: Callable[[str], bool] = lambda name: False, *,
-            label_keys: Optional[Dict[str, str]] = None, theme_name: str = "theme_bw", orphan_fragments: bool = False) -> Result:
+            theme_name: str = "theme_bw", orphan_fragments: bool = False) -> Result:
     """Plan the rewrite of the recipes under `paths` (files or folders); nothing is written. The caller writes `Result.texts`.
 
     `partial_theme(name)` says whether a `theme_*` component only sets some properties of the theme (the plot library knows;
     this library does not import it). An old tier fragment that no recipe in `paths` includes is listed and not rewritten, because
     a recipe outside `paths` may include it; with `orphan_fragments` it is rewritten on its own (give every recipe that may
     include it)."""
-    unit = _Unit(partial_theme, label_keys=label_keys, theme_name=theme_name)
+    unit = _Unit(partial_theme, theme_name=theme_name)
     files: List[Path] = []
     explicit: Set[Path] = set()
     for item in map(Path, paths):

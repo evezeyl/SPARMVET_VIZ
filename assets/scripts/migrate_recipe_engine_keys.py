@@ -7,9 +7,8 @@ What it does, for a recipe and every file it includes, as one unit:
     `<name>_tier1.yaml` and `<name>_tier2.yaml` (PROVISIONAL naming) and the old file is removed;
   - the plot entry has no `spec:`: the content is written in the entry; a plot whose content was in its own file keeps that file,
     which now holds the WHOLE entry (D-0237, D-0252);
-  - `label` becomes `ui_label` at groups and plot entries (D-0253); the pending places (info, tables and joins, the entries of
-    input_fields) follow the table `label_keys` of libs/utils/src/utils/recipe_spec.yaml: they are renamed only when it says ui_label;
-  - the old plot `title:` is written in the `labs` layer of the plot and as `ui_title` of the entry (PROVISIONAL reading of D-0253);
+  - `label` becomes `ui_label` at groups, plot entries, info, tables, joins and the entries of input_fields (D-0253, D-0410, D-0468);
+  - the old plot `title:` is written in the `labs` layer of the plot (PROVISIONAL reading of D-0253); no `ui_title` is written, the key is removed (D-0409);
   - the four dead `plot_defaults` keys are removed and each is printed with its old value (D-0241, D-0242);
   - a recipe whose plots would be drawn with the built-in theme_bw gets `theme_bw` written in `plot_defaults` (D-0258).
 It edits the text, so comments, blank lines and `!include` lines stay. It PRINTS every change and a summary table. A file with

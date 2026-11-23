@@ -44,7 +44,7 @@ def main():
     parser.add_argument("--deployment_file", required=True,
                         help="Output filename (e.g., local_test.yaml). Written to config/deployment/local/.")
     parser.add_argument("--description", required=True,
-                        help="Human-readable description of this test deployment.")
+                        help="Description of this test deployment, written as a comment at the top of the file (a deployment has no name key, D-0479).")
     parser.add_argument("--project_root", required=False, default=".",
                         help="Project root path (default: '.' — repository root).")
     parser.add_argument("--app-features", required=False, default="developer",
@@ -65,7 +65,6 @@ def main():
     # ADR-048 deployment schema
     deployment = {
         "deployment_type": "filesystem",
-        "deployment_name": args.description,
         "project_root": args.project_root,
         "locations": {
             "raw_data":     "assets/test_data/",
@@ -82,6 +81,8 @@ def main():
     }
 
     with open(out_path, "w") as f:
+        for line in args.description.splitlines() or [""]:
+            f.write(f"# {line}\n")
         yaml.dump(deployment, f, sort_keys=False, default_flow_style=False)
 
     print(f"Deployment written: {out_path}")

@@ -534,7 +534,7 @@ def define_server(input, output, session, *,
         """Pure: serialise the live logic_stack back to the component file's dict shape.
 
         BP-PLOT-COMMIT-1 (ADR-083 §8). Routes by component role:
-          - plot_spec     -> the plot entry (D-0252): the keys that belong to the app (ui_label, ui_title, description,
+          - plot_spec     -> the plot entry (D-0252): the keys that belong to the app (ui_label, description,
                              taxonomy, plot_engine, ...) first, then the content with mapping + layers taken from the
                              live stack (authoritative); the other keys of the file are kept as they are.
           - wrangling     -> the tier file (D-0250): {data_engine (kept when the file has it), steps: [...]}.
@@ -2544,7 +2544,7 @@ def define_server(input, output, session, *,
         info = raw.get("info") or {}
         can_edit = bootloader.is_enabled("data_analysis_recipe_edit_enabled")
 
-        name_val    = info.get("name", "")
+        name_val    = info.get("ui_label", "")
         desc_val    = info.get("description", "")
         author_val  = info.get("author", "")
         version_val = info.get("version", "")
@@ -2612,7 +2612,7 @@ def define_server(input, output, session, *,
 
         info: dict = raw.get("info") or {}
         if name:
-            info["name"] = name
+            info["ui_label"] = name
         if desc:
             info["description"] = desc
         if author:
@@ -2702,7 +2702,7 @@ def define_server(input, output, session, *,
         author  = (safe_input(input, "bp_new_author", "") or "").strip()
         today   = datetime.now().strftime("%Y-%m-%d")
 
-        # a draft in recipe format 1 (id, spec_version, engines, info.label); the pure part is new_recipe_draft
+        # a draft in recipe format 1 (id, spec_version, engines, info.ui_label); the pure part is new_recipe_draft
         try:
             write_recipe(dest, new_recipe_draft(
                 slug, display_name, description=desc, author=author, created=today))

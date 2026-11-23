@@ -197,7 +197,7 @@ class BlueprintMapper:
         subgraphs: dict = {}
         for pid, pspec in all_plots.items():
             safe_pid = self._safe_node_id(pid)
-            label = pid.replace("_", " ").title()
+            label = str(pspec.get("ui_label") or pid).replace('"', "'")   # the same name as the tab in HOME (D-0409); no double quote inside a Mermaid label
             node_def = f'{safe_pid}[["{label}\\nPlot"]]'
             self.style_classes.append(f'class {safe_pid} plot')
             all_known.add(safe_pid)
@@ -401,7 +401,7 @@ class BlueprintMapper:
 
         for pid, pspec in all_plots.items():
             safe_pid = _safe(pid)
-            label = pid.replace("_", " ").title()
+            label = pspec.get("ui_label") or pid   # the same name as the tab in HOME (D-0409)
             group = plot_to_group.get(pid, "Ungrouped")
             elements.append(_node(safe_pid, label, "plot", pid, 3, group))
             all_known.add(safe_pid)

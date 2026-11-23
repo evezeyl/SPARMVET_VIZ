@@ -167,10 +167,10 @@ def not_offered_sentence(reason: Reason) -> str:
     """The plain sentence for a reason the option is not offered. PROVISIONAL words (the owner reads them)."""
     code = reason.code
     if code == NO_ENTITY_KEY_DECLARED:
-        return "This recipe does not say which column is the entity key (the id of the thing each row describes), so removing from all the data is not offered. Declare the key in the recipe (is_entity_id)."
+        return "This recipe does not say which column is the entity id (the id of the thing each row describes), so removing from all the data is not offered. Declare the entity id in the recipe (is_entity_id: true on that column)."
     if code == NOT_THE_ENTITY_KEY:
         declared = ", ".join(str(n) for n in reason.get("declared", ()) or ()) or "none"
-        return (f"The column {reason.get('column')!r} is not the entity key of this recipe (the entity key is: {declared}), so removing from all the data is not offered for it. "
+        return (f"The column {reason.get('column')!r} is not the entity id of this recipe (the entity id is: {declared}), so removing from all the data is not offered for it. "
                 "Use a filter on this column instead.")
     if code == RECIPE_CANNOT_BE_DRAWN:
         return f"The recipe cannot be read as a whole, so removing from all the data is not offered: {reason.get('sentence')}"

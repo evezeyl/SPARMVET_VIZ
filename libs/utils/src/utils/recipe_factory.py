@@ -79,7 +79,7 @@ def minimal_schema(path: str, columns: Mapping[str, Union[str, Mapping[str, Any]
             raise ValueError(f"entity_key {entity_key!r} is not one of the columns {list(fields)}")
         fields[entity_key]["is_entity_id"] = True
     schema: Dict[str, Any] = {
-        "label": label if label is not None else Path(path).stem,
+        "ui_label": label if label is not None else Path(path).stem,
         "source": {"type": source_type, "path": str(path)},
         "null_values": list(null_values),
         "strip": strip,
@@ -99,7 +99,7 @@ def minimal_join(ingredients: Iterable[str], tier1: Iterable[dict], *, label: Op
     """
     ids = list(ingredients)
     join: Dict[str, Any] = {
-        "label": label if label is not None else " + ".join(ids),
+        "ui_label": label if label is not None else " + ".join(ids),
         "ingredients": [{"dataset_id": dataset_id} for dataset_id in ids],
         "tier1": {"steps": copy.deepcopy(list(tier1))},
     }
@@ -161,7 +161,7 @@ def minimal_recipe(recipe_id: str = "minimal", *, label: Optional[str] = None,
         "spec_version": format_spec["format_version"],
         "data_engine": format_spec["engines"]["data_engine"][0],
         "plot_engine": format_spec["engines"]["plot_engine"][0],
-        "info": {"label": label if label is not None else recipe_id},
+        "info": {"ui_label": label if label is not None else recipe_id},
         "data_schemas": schemas,
     }
     if joins is not None:

@@ -343,7 +343,7 @@ window.cyFit     = cyFit;
         """)
     ),
 
-    # Optional app features banner — logo + title injected from ui_banner key in app features file
+    # Optional deployment banner: logo, ui_label and description from branding.banner of the deployment file
     *([ui.div(
         *([ui.tags.img(
             src=_resolve_logo_src(bootloader.get_ui_banner().get("logo_url", "")),
@@ -351,13 +351,13 @@ window.cyFit     = cyFit;
             alt="Logo",
         )] if _resolve_logo_src(bootloader.get_ui_banner().get("logo_url", "")) else []),
         *([ui.tags.span(
-            bootloader.get_ui_banner()["title"],
+            bootloader.get_ui_banner()["ui_label"],
             class_="sparmvet-banner-title",
-        )] if bootloader.get_ui_banner().get("title") else []),
+        )] if bootloader.get_ui_banner().get("ui_label") else []),
         *([ui.tags.span(
-            bootloader.get_ui_banner()["subtitle"],
+            bootloader.get_ui_banner()["description"],
             class_="sparmvet-banner-subtitle",
-        )] if bootloader.get_ui_banner().get("subtitle") else []),
+        )] if bootloader.get_ui_banner().get("description") else []),
         class_="sparmvet-banner",
     )] if bootloader.get_ui_banner() else []),
 

@@ -1329,7 +1329,7 @@ class WrangleStudio:
 
             ftype = meta.get("type", meta.get("dtype", "")).lower()
             badge_cls, badge_text = _type_badge(ftype)
-            label       = meta.get("label", "")
+            label       = meta.get("ui_label", "")
             orig        = meta.get("original_name", "")
             is_pk       = meta.get("is_entity_id", False)
             description = meta.get("description", "")

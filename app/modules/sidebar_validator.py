@@ -51,7 +51,7 @@ class SidebarValidator:
             return errors
 
         features = template.get("flags", {})
-        app_features_id = template.get("name", template_path)
+        app_features_id = template_path   # the id of an app features file is its file name (D-0481)
 
         if "data_analysis_recipe_selector_visible" not in features:
             ms = template.get("data_analysis_recipe_selector", {})
