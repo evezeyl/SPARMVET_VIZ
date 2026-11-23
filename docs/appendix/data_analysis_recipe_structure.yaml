@@ -8,7 +8,7 @@ basename_mirroring_mandate:
 
 directory_taxonomy:
   info: "The top-level metadata block (free-form; label is required). A gallery example classifies itself with the taxonomy key of the plot entry, not here."
-  input_fields: "Defines the columns that are read (keys: type, original_name, label, is_entity_key, null_values, strip). type is a Polars type name and is required."
+  input_fields: "Defines the columns that are read (keys: type, original_name, label, is_entity_id, null_values, strip). type is a Polars type name and is required."
   tiers: "Each tier is a key of its table, join or plot entry (tier1, tier2; tier3 at the plot entry): a mapping with an optional data_engine as its first key and steps (the list). There is no wrangling key and no steps container. An included tier file is written `tier1: !include <file>`; the file holds data_engine and steps."
   join: "A join is written under joins: with its ingredients and its tiers (tier1, tier2), each a mapping with steps. The published columns are the last step of tier1 (polars_select or polars_drop). Top-level data analysis recipe key: joins:."
   plots: "Contains the plot entries of analysis_groups that are written in their own file. The file holds the WHOLE entry (ui_label, ui_title, description, comment, taxonomy, the plot content, tier3); there is no spec key. It is included as `<plot_id>: !include <file>`."

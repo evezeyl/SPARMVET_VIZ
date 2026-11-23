@@ -694,7 +694,7 @@ joins:
 
 Both true primary keys (`sample_id`) and secondary/accessory keys used in long-format joins (`gene_id` in Resfinder-style tables) qualify. The set is computed once per session and recomputed on data analysis recipe reassembly.
 
-**DECIDED, not built as described here (D-0313, D-0082):** both lists exist and are named differently: "the entity key" (declared in the recipe with `is_entity_key`; it drives the key warning and "remove from all tables") and "columns used to join" (the set above, shown as information). As built, the set above is what `primary_key_warning` uses (`session_manager.extract_primary_keys`).
+**DECIDED, not built as described here (D-0313, D-0082):** both lists exist and are named differently: "the entity key" (declared in the recipe with `is_entity_id`; it drives the key warning and "remove from all tables") and "columns used to join" (the set above, shown as information). As built, the set above is what `primary_key_warning` uses (`session_manager.extract_primary_keys`).
 
 **"Remove from all the data": DECIDED, built as a library step; no screen (D-0499, D-0531, D-0501).** `utils.remove_from_all.apply(..., ticked=...)` writes the removal at tier 1 only of the places the user left ticked; without a list it writes at every reached place (PROVISIONAL, the default is not decided). The library says nothing about a table where no step is written (no "may stay" sentence). The screen with the ticks is not built: the measured case of the owner (keep the entity in the quality results only) needs six places unticked, and the user cannot yet see that before confirming (`app/tests/test_remove_from_all_demo.py`).
 

@@ -208,7 +208,7 @@ Common primary geoms: `geom_bar`, `geom_col` (needs `y`), `geom_point`, `geom_ti
 
 `type` is required on every field and is a Polars dtype that a text file can hold, written with its Polars name (`String`, `Categorical`, `Int64`, `Float64`, `Boolean`, ...); the declared dtype is given to the reader, which fails strictly and names the value (D-0035, D-0057; built, check FD02). `String` and `Categorical` are both valid types (D-0057). The old names `categorical`, `utf8`, `string`, `character`, `numeric`, `integer`, `int`, `i64`, `float` are refused with the replacement named; `categorical` always meant `String` ("this was String").
 
-**Primary key rule:** the sample id is a string or a categorical, never a number: a number gives join and type problems (it loses leading zeros, and type-parity mismatches in `polars_join` steps). The checker refuses a number type on a field marked `is_entity_key` (code E03; D-0225).
+**Primary key rule:** the sample id is a string or a categorical, never a number: a number gives join and type problems (it loses leading zeros, and type-parity mismatches in `polars_join` steps). The checker refuses a number type on a field marked `is_entity_id` (code E03; D-0225).
 
 ---
 
