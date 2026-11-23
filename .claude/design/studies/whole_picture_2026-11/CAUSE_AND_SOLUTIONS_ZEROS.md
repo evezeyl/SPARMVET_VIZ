@@ -536,12 +536,14 @@ Not in the text above. It answers her question 1 and reopens some earlier words;
 | D-0569 (b): the data check only informs | consistent | UNCHANGED |
 | D-0574: the completion lives in the recipe, required on every result table; the recipe does not record the count | stays; the recipe states how the marked cases are processed | UNCHANGED |
 | D-0575, D-0576: the record is in the export; a separate log | stays; the log is now written automatically, in a specific directory, also where no session exists | EXTENDED |
-| "reopens one of my decision to allow deployements with no panel (static deployements)" | **her words say "reopens"; the review session reads that her decision to allow such deployments stands and the new principle is what lets them work** ("letting the static deployements work"). One line to confirm with her | TO CONFIRM |
+| "reopens one of my decision to allow deployements with no panel (static deployements)" | **her words say "reopens"; the review session reads that her decision to allow such deployments stands and the new principle is what lets them work** ("letting the static deployements work"). One line to confirm with her | CONFIRMED by D-0584 ("yes that was that") |
+| D-0573, the review session's reading confirmed by her "yes" (kept here): "There is NO marker "not in metadata" in her flow" (check X; the earlier note of the D-0573 section) | an id of a result file in no metadata is entered automatically as a line of the metadata table, the other values missing, with a marker column "not in metadata" | CHANGED by D-0585 |
 
 ### Where her words do NOT say something (points for her)
 
 1. **Answered by D-0582** ("b) that is good"): with a panel, a red warning and an "I have read this" button that does not block; the user may upload a corrected metadata whenever he wants. Still hers: once per data batch or at each opening; what is recorded with no session; how the user reaches the log and what the export says (questions 9 and 10 below).
 2. **"The missing ids, 2 sided, are fed automatically": what is fed for an id of a result file that is not in the metadata?** For the other side (an id of the metadata not in a result file) her earlier words say: a line with the marker "not in original data". For this side her earlier flow had NO marker and the user added the id by hand. Automatic means the app does it. Options: (i) nothing is added to the metadata; the warning is red and logged; a join from the result table keeps the rows with empty metadata values (what the lesson template shows today); (ii) a line is added to the metadata table for the id, every other column empty, with a marker (a second marker, "not in metadata": this reverses the earlier "no marker"); (iii) the recipe says how, with no app default. What she would see: on `left_join_lesson`, 2 ids (`ACC0001`, `ACC0002`) of the file `sequenced` are not in its metadata [ESTABLISHED: OVERLAP section 1]: (i) the 2 rows keep empty metadata and a red warning; (ii) the metadata gains 2 lines marked "not in metadata"; on the demo nothing (0 ids outside the metadata). Lean (Sonnet, as a lean): (ii), because her words say both sides are fed and a recipe that is told how to process "those cases" needs the cases to be marked; to confirm that a second marker is what she means. Lean (Opus, as a lean): (ii) as well, for the same reason. What (ii) changes, said plainly: the entity enters the metadata table, so it enters every table that starts from the metadata with its metadata values empty (a count per entity includes it; a plot by country shows an empty country); with no panel only the log and the export say so. Neither: say what you meant.
+   > **Answered by D-0585 (2026-11-23):** option (ii): a line is added to the metadata table with a marker. The earlier "no marker" is changed (see the table above). The lean of the text that follows is history.
 3. **A line of the metadata with no usable id** (empty, spaces, `-`). It cannot be matched and cannot be completed. Under "no blocking" what happens to it? (a) kept: it stays in the metadata table, a red warning names the lines, the log records them; the recipe may drop it by a visible step as `demo_abromics` does (`demo_abromics.yaml:44-47`); (b) dropped by the app before the recipe reads, warned and logged; (c) the app does nothing and does not warn. Kept lines count: a grouping by the id makes one entity of all missing ids, an anti-join lists each [POLARS SEMANTICS; ESTABLISHED: CAUSE, D-0570 fact 6]. What she would see: the demo's metadata has none (42 distinct ids); `demo_abromics` as shipped has 3 lines (file lines 5, 6, 11): (a) red warning, 3 lines, then the recipe's own step removes them; (b) the app removes them first. Lean (Sonnet): (a): nothing is changed in the data without the recipe saying so (D-0574: "it would modify the recipe" is her argument for the log). Lean (Opus): (a), and the recipe states how such lines are processed, as for the marked lines, so that no line without an id enters a result without a written rule; a line that stays enters every table that starts from the metadata as one more entity, and with no panel only the log and the export show it. Neither: say what you meant.
 4. **What happens to an id repeated in the metadata** is not said either; the same options as 3.
 
@@ -579,7 +581,7 @@ Not in the text above. It answers her question 1 and reopens some earlier words;
 
 ### The next order, one at a time
 
-1. **What is fed for a result-file id that is not in the metadata** (new A). Lean: a line with a marker.
+1. **What is fed for a result-file id that is not in the metadata** (new A). ANSWERED by D-0585: a line is entered in the metadata table (the id, the other values missing) with a marker column named "not in metadata" (her "yes"; the name is the review session's suggestion).
 2. **A metadata line with no usable id** (rewritten 2). Lean: kept and warned.
 3. **The button "I have read this": once per data batch or at each opening; the record with no session** (rewritten 9; question 4 answered by D-0582). Lean: once per data batch.
 4. **Unattended: what the required meaning must say; the marker** (rewritten 5). Lean: few words.
@@ -590,7 +592,52 @@ Not in the text above. It answers her question 1 and reopens some earlier words;
 9. **A dummy id** (11). Lean: a note in the log.
 10. **The join order** (12). Lean: an advice.
 11. **A recipe with no metadata block** (13); **count per target** (14); **threshold** (15).
-12. **One line to confirm**: her decision to allow no-panel deployments stands (new B).
+12. **One line to confirm**: her decision to allow no-panel deployments stands (new B). CONFIRMED by D-0584 ("yes that was that").
+
+### Added 2026-11-23 (ledger D-0584, D-0585): her purpose; item 12 confirmed; item 1 answered
+
+**Her words, exact.** "the line to confirm first - yes that was that. After my answer : we have done this mechansism so that the data can always use left joints to join with the metadata - limiting lineages problems. It would enter the id that must be added and the rest as missing values -> or I think there was a column that was added with the marker - so those type of missing values can be treated appropriately by the recipe maker. What is what you meant ?" [HER WORDS D-0584]. "1. yes because it cannot be done if the deployement is  static because there is no user to do the fix - the only fix can happen in there is a person surveilling the logs in the static deployements - this must be clear in the documentation. 2. yes" [HER WORDS D-0585]
+
+**Decided in her words.**
+- The decision to allow deployments with no panel stands: "yes that was that" [D-0584].
+- **The purpose of the whole mechanism:** "so that the data can always use left joints to join with the metadata - limiting lineages problems" [D-0584].
+- **An id of a result file that is in no metadata is entered:** the id, the rest as missing values, with a marker column, "so those type of missing values can be treated appropriately by the recipe maker" [D-0584]. She answered "1. yes" to the review session's question whether this reverses the earlier "no marker" [D-0585]. The name "not in metadata" is the review session's suggestion; she answered "2. yes" [D-0585].
+- **The reason, in her words:** a static deployment has no user to do the fix; "the only fix can happen in there is a person surveilling the logs"; "this must be clear in the documentation" [D-0585]. (The held documentation task D-0583 carries it: the guidelines say early that a static deployment needs a person who reads the log of the ids.)
+- **Not in her words:** the identifier of the marker column; whether the recipe must state a meaning for this marker; whether the marker column must be kept in the published columns of a table.
+
+**What follows, by reading (no new derivation).**
+1. **What a table that starts from the metadata shows for an added line:** one more entity, its metadata values empty (country, source, year), the marker set. A count per entity includes it; a plot by country shows an empty country.
+   - On the demo, six tables start from the metadata: four join a data table (`ST22_Anchor`, `QA_AMR_per_sample`, `QA_fanout_exhibit`, `QA_population_zscore`), and two are made from the metadata alone (`QA_year_types`, `QA_aggregated_no_key`) [ESTABLISHED: this file, the line "Joined tables that start from the metadata (first ingredient `metadata_schema`): 7" (6 in the demo recipe); RECIPE FILE `1_test_data_ST22_dummy.yaml:265-270` and `:289-294`: their only ingredient is `metadata_schema`; READ SCAN, both agents]. On the demo no id is added (0 ids outside the metadata).
+   - **Flag (a result can change with no word in the table):** in a join with the data table first, the data id already kept its row before the completion, with its metadata values empty. After the completion it matches the added line, and the marker reaches the result only if the join's last `polars_select` keeps the marker column; the demo's joins publish a fixed list of columns [RECIPE FILE, for example `QA_AMR_per_sample_tier1.yaml`]. Otherwise nothing in the table says that the entity has no metadata; only the log and the warning say it.
+   - The same holds for the marker "not in original data" in a table that starts from the metadata.
+2. **With her purpose, the 4 joins with a data table would be written data first, metadata second, `left`.** A dry-run candidate of the one big move (D-0525), listed only, not applied. The 2 tables made from the metadata alone cannot be written that way (they read no data table), so they always hold an added line. Whether "data first" is a rule, an advice or documentation stays her question 12.
+3. **Which completion keeps which rows:**
+   - In a join with the data table first and the metadata second, `left`, the completion "not in original data" keeps every metadata id. The completion "not in metadata" adds no row there (a left join from the data already kept the id); it adds the marker.
+   - In a table that starts from the metadata, the completion "not in metadata" brings in every data id.
+   - So with both completions, a left join loses no row in either direction.
+   - What still breaks it:
+     - a tier-1 filter that removes every line of an entity (on the demo, 6 entities of `Detailed_summary`);
+     - a metadata line with no usable id (it never matches);
+     - an id repeated in the metadata (rows multiply [ESTABLISHED: RECIPES G9, G13]);
+     - the same id written two ways in the two tables (two entities, one marked on each side).
+4. **A question for her: does the recipe need a stated meaning for "not in metadata", as it does for "not in original data"?**
+   - On `left_join_lesson`: 2 ids (`ACC0001`, `ACC0002`) of `sequenced` are in no metadata [ESTABLISHED: OVERLAP section 1]; the metadata (10 ids) gains 2 lines with empty values and the marker.
+   - With a required meaning, the check asks the recipe to say what such lines are (for example "kept, shown as unknown", or "excluded"). Without it, they pass as entities with empty values and only the log says so. On the demo: none.
+   - Lean (Sonnet, as a lean): required, for the same reason as the first marker.
+   - Lean (Opus, as a lean): required, for the same reason ("I think we need to force" [D-0574]), and the check advises when a table's published columns drop a marker column, so that the marker reaches the result.
+   - Neither: say what you meant.
+
+**Next question (item 2). A line of the metadata with no usable id** (empty, spaces, `-`).
+- It can never be matched. With your purpose (data first, metadata second, `left`) it adds no row, and nothing in the result shows it; only the red warning and the log name it.
+- In a table that starts from the metadata, all such lines together make one entity with no id [POLARS SEMANTICS; ESTABLISHED: D-0570 fact 6].
+- Should the line:
+  - (a) stay in the metadata table, the recipe removing it by a visible step as `demo_abromics` does (`demo_abromics.yaml:44-47`);
+  - (b) be removed by the app before the recipe reads, said in the warning and the log;
+  - (c) nothing?
+- On the demo: none (42 distinct ids). `demo_abromics` as shipped has 3 such lines (file lines 5, 6, 11): (a) a red warning "3 lines have no id", then its own step removes them (27 rows); (b) the app removes them first.
+- Lean (Sonnet, as a lean): (a): the app changes no data without the recipe saying so.
+- Lean (Opus, as a lean): (a), and the recipe states how such lines are processed, as for the two markers, so that no line without an id enters a table that starts from the metadata without a written rule.
+- Neither: say what you meant.
 
 ---
 
@@ -860,3 +907,5 @@ None.
 **D-0573 to D-0579 additions and the review:** Sonnet (this file) and Opus (`OPUS_checks_review_v1.md`, S1 to S18 applied).
 
 **D-0581 and D-0582 additions:** Sonnet (this file) and Opus (`OPUS_checks_noblock_v1.md`, R1 to R20 applied).
+
+**D-0584 and D-0585 additions:** Sonnet (this file) and Opus (OPUS_item1_final.md).
