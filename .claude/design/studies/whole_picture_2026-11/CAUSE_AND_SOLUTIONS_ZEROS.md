@@ -612,8 +612,10 @@ Not in the text above. It answers her question 1 and reopens some earlier words;
    - On the demo, six tables start from the metadata: four join a data table (`ST22_Anchor`, `QA_AMR_per_sample`, `QA_fanout_exhibit`, `QA_population_zscore`), and two are made from the metadata alone (`QA_year_types`, `QA_aggregated_no_key`) [ESTABLISHED: this file, the line "Joined tables that start from the metadata (first ingredient `metadata_schema`): 7" (6 in the demo recipe); RECIPE FILE `1_test_data_ST22_dummy.yaml:265-270` and `:289-294`: their only ingredient is `metadata_schema`; READ SCAN, both agents]. On the demo no id is added (0 ids outside the metadata).
    - **Flag (a result can change with no word in the table):** in a join with the data table first, the data id already kept its row before the completion, with its metadata values empty. After the completion it matches the added line, and the marker reaches the result only if the join's last `polars_select` keeps the marker column; the demo's joins publish a fixed list of columns [RECIPE FILE, for example `QA_AMR_per_sample_tier1.yaml`]. Otherwise nothing in the table says that the entity has no metadata; only the log and the warning say it.
    > **Answered by D-0586:** "yes flag column kept"; it may be removed as a last step for the plots only after the missing values are treated. Dry-run candidates, listed only: the tables whose tier 1 ends with a fixed column list (`polars_select`) and must keep the marker columns: the data tables `MLST` and `VirulenceFinder`, and the joins `ST22_Anchor`, `AR1_MLST_Serotype_Virulence`, `QA_AMR_per_sample`, `QA_fanout_exhibit`, `QA_population_zscore`, `QA_ST_with_NA` and `QA_L50_integer` [RECIPE FILE: `polars_select` in their tier-1 files].
+   > **Her cost note, D-0587:** "then the fixed column list will need to be increased by the column that keeps the markers - or the missing data processed before and T1 and the column that keeps the markers explicitely dropped." Both ways are recipe-side; they go in the dry run (D-0525), listed only.
    - The same holds for the marker "not in original data" in a table that starts from the metadata.
 2. **With her purpose, the 4 joins with a data table would be written data first, metadata second, `left`.** A dry-run candidate of the one big move (D-0525), listed only, not applied. The 2 tables made from the metadata alone cannot be written that way (they read no data table), so they always hold an added line. Whether "data first" is a rule, an advice or documentation stays her question 12.
+   > **Corrected by D-0587:** "so they always hold an added line" is wrong. A metadata-only table holds a "not in metadata" line only if the line is added to the metadata table itself (placement (i), open) and a result file has an id outside the metadata. Her words: "here there is no original table".
 3. **Which completion keeps which rows:**
    - In a join with the data table first and the metadata second, `left`, the completion "not in original data" keeps every metadata id. The completion "not in metadata" adds no row there (a left join from the data already kept the id); it adds the marker.
    - In a table that starts from the metadata, the completion "not in metadata" brings in every data id.
@@ -653,12 +655,14 @@ Not in the text above. It answers her question 1 and reopens some earlier words;
   - `qa_facet_by_mapping`: `facet_by` written in `mapping` must give 3 panels (issue 65);
   - `qa_aggregated_no_key`: an aggregate with no `sample_id`, so a removal by id cannot change it (issue 60).
 - **They join nothing,** so "a recipe does not start a join from the metadata" does not touch them, unless she means "no table is made from the metadata at all". An added "not in metadata" line would appear in them: an empty year or country, counted in `qa_aggregated_no_key`.
+  > **Corrected by D-0587:** "would appear in them" holds only under placement (i) and only when a result file has an id outside the metadata; under (ii) they are untouched.
 - **Options (hers), with what she would see:**
   - (a) Leave them as test tables of the QA canaries: the same three plots, made from the metadata.
   - (b) Rebuild the same canaries from a data table joined with the metadata, data first: the same three plots, made the way her rule writes recipes.
   - (c) Remove them: the QA canaries group loses these three plots, and the failure modes they guard are no longer shown.
   - Lean (Opus, as a lean): (b): the shipped demo then shows only the form her rule asks for, and the canaries keep testing what they test.
   - Lean (Sonnet, as a lean): (a): these tables join nothing, so her rule about joins does not touch them, and each exists to isolate one failure mode that needs no data table (the year label without ".0"; an aggregate with no `sample_id`, the fixture of the reach tests of issue 60, `QA_aggregated_no_key_tier1.yaml`). Rebuilding changes a shipped fixture for a rule they do not break. What does change in them is that an added "not in metadata" line enters them (an empty year and country, one more group counted in `qa_aggregated_no_key`): so the required meaning of D-0586 must say how those lines are treated there. (c) loses the three plots.
+  > **Her words, D-0587:** "They break no rule to my opinion", and she asks "what to do with the two metadata-only tables?"; whether her "a)" answers the option (a) above is to be confirmed by her (two readings, see the D-0587 sub-section). The sentence of this lean about an added line entering them holds only under placement (i) (see the D-0587 sub-section).
   - Neither: say what you meant.
 
 **The goal "equal id sets", in the data check.**
@@ -667,9 +671,49 @@ Not in the text above. It answers her question 1 and reopens some earlier words;
 - It is shown with the other notes on the ids: the red warning where there is a panel, Data Import after an upload, BLUEPRINT's Validate, the log of the ids and the export.
 - On the demo: every result table except ResFinder reads "the same ids"; ResFinder reads "4 in the metadata only, 0 in this file only" [ESTABLISHED: OVERLAP section 1].
 
+### Added 2026-11-23 (ledger D-0587): where the "not in metadata" line is added; the two metadata-only tables
+
+**Her words, exact.** "QA_year_types and QA_aggregated_no_key - so they old only metadata - but in the previous chat it said " They cannot be written that way, so they always hold an added line." why - there is no original data - all is metadata so all the ids are considered complete no  ? why should they always hold an added line ? They break no rule to my opinion - the line with "not in metadata" can only be done in an id is missing from the medata and is found in an original table - here there is no original table. Cost for the demo recipe - then the fixed column list will need to be increased by the column that keeps the markers - or the missing data processed before and T1 and the column that keeps the markers explicitely dropped. The goal "equal id sets" is also planned - yes. Question: what to do with the two metadata-only tables? a) this gives us an edge case - is the metadata registred under metadata schema or under dataschema ?" [HER WORDS D-0587]
+
+**What her words say.**
+- The two tables break no rule: "They break no rule to my opinion". She asks what to do with them ("Question: what to do with the two metadata-only tables?"); her "a)" has two readings, neither confirmed by her: the review session and the Opus agent read it as her answer, option (a), leave them; the Sonnet agent reads it as the first of her own points (the edge case of where the metadata is registered). One line to confirm with her: did your "a)" mean "leave the two tables as they are"? [two readings; changed in the check, 2026-11-23]
+- A "not in metadata" line needs an id that is missing from the metadata AND found in an original table.
+- **The cost for the demo:** where a join ends with a fixed column list, either the list gains the marker column, or "the missing data processed before and T1 and the column that keeps the markers explicitely dropped".
+- The goal "equal id sets" is planned ("yes").
+
+**Our sentence corrected.** "they always hold an added line" was wrong. A table made from the metadata alone holds a "not in metadata" line ONLY IF the line is added to the metadata table itself (placement (i) below) AND some result file of the recipe has an id outside the metadata. On the demo neither happens (0 ids outside the metadata [ESTABLISHED: OVERLAP section 1]). Under (ii) they never hold one.
+
+**Open, hers: WHERE is the "not in metadata" line added?**
+- **(i) In the metadata table itself, for the whole recipe,** whenever some result file has an id outside it.
+  - Every table that reads the metadata inherits the line, the two metadata-only tables included.
+  - The metadata table's key then depends on every result file (a stored table's key holds the content of the files it reads [CODE READ `app/modules/cache_keys.py:14-20`]): a change in any data file rebuilds the metadata and everything below it.
+  - The graph gains an edge from every result file into the metadata's first place. The places themselves stay as they are (under D-0553 the first places remain separate).
+  - The Source view still shows the file; the metadata's T1 shows the added lines, marked. Static deployment: automatic, written in the log. "Equal id sets": every table then carries the union of the ids.
+  - The format needs a block on `metadata_schema` (or one for the whole recipe), and the app builds the metadata after reading every result file.
+- **(ii) Only where a data table meets the metadata.** With the data first, a left join already keeps the data row, with empty metadata values. The marker means "the metadata had no line for this id" and is computed at the join.
+  - The metadata table, its key, its Source view and its T1 stay exactly the metadata; there is no new edge.
+  - The two metadata-only tables are untouched (her reading).
+  - It can be written TODAY by the author, in visible steps: `in_metadata: pl.lit(True)` in the metadata's tier 1, then a fill of the empty values after the join. Or the join step (or the app) writes the marker: a new join option.
+  - Static deployment and the log: the data check's note lists the ids, as decided; nothing is added to a table. "Equal id sets": the joined tables hold every data id; the metadata holds its own ids.
+  - **Reopens (information):** her "yes" of D-0585 was to "a line of the metadata table"; (ii) moves the marker to the join.
+- **A join of TWO data tables, then the metadata** (data first): under (i) each row finds a metadata line or an added, marked line; under (ii) a row whose id is not in the metadata gets empty metadata values and the marker from that join.
+- **What she would see on `left_join_lesson`** (2 ids, `ACC0001` and `ACC0002`, of `sequenced` are in no metadata of 10 ids [ESTABLISHED: OVERLAP section 1]):
+  - (i): the metadata table has 12 lines, 2 of them marked, in every table that reads it;
+  - (ii): the metadata keeps its 10 lines, and the join `sequenced` + metadata shows the 2 rows with empty metadata values and the marker.
+  - On the demo: nothing either way.
+- Lean (Opus, as a lean): (ii): it is her reading of the metadata-only tables; the metadata stays one file's content, with no dependency on every data file and no new edge; and it can be written today with visible steps.
+- Lean (Sonnet, as a lean): (ii), for the reason of her purpose, fewer lineage problems: (i) adds an edge from every result file into the metadata's first place and makes the metadata's key depend on every data file, which she did not want for the two metadata-only tables; (ii) adds no edge and leaves the metadata exactly the file's content. What she would see on `left_join_lesson`: the metadata keeps its 10 lines and the join shows the 2 rows with empty metadata values and the marker. The price: every join that meets the metadata needs its marker (today written by visible steps; a join option or the app could write it), the metadata table does not hold the equal id sets by itself, and it reopens the placement of her "yes" of D-0585 (information, not an argument).
+- Neither: say what you meant.
+
+**Her question: "is the metadata registred under metadata schema or under dataschema ?"**
+- **Under its own top-level key `metadata_schema`** [RECIPE FILE `1_test_data_ST22_dummy.yaml:149`], apart from `data_schemas` (line 16) and `additional_datasets_schemas` (line 122).
+- `metadata_schema` is a reserved schema id [CODE READ `libs/utils/src/utils/recipe_spec.yaml:80`], and the block is optional [`recipe_spec.yaml:24`]. The completion rule would name it by that id.
+- **The edge case she means:** a recipe whose metadata is a data schema (`figshare_integration`). The checks cannot know which table is the metadata unless the recipe names it (the `metadata_schema` block, or `entity.population`): still hers (question 13).
+
 **Next question (item 2). A line of the metadata with no usable id** (empty, spaces, `-`).
 - It can never be matched. With your purpose (data first, metadata second, `left`) it adds no row, and nothing in the result shows it; only the red warning and the log name it.
 - What her rule of D-0586 changes: with no table that starts a join from the metadata, such a line adds no row anywhere, except in the two tables made from the metadata alone (`QA_year_types`, `QA_aggregated_no_key`), where it is one more entity with no id.
+- What placement (i) or (ii) changes for it: nothing. A metadata line with no usable id is in the metadata table either way; neither placement adds or removes it.
 - In a table that starts from the metadata, all such lines together make one entity with no id [POLARS SEMANTICS; ESTABLISHED: D-0570 fact 6].
 - Should the line:
   - (a) stay in the metadata table, the recipe removing it by a visible step as `demo_abromics` does (`demo_abromics.yaml:44-47`);
@@ -952,3 +996,7 @@ None.
 **D-0584 and D-0585 additions:** Sonnet (this file) and Opus (OPUS_item1_final.md).
 
 **D-0586 additions:** Opus (OPUS_m645_final.md) and Sonnet (checked and pasted).
+
+**D-0587 additions:** Opus (OPUS_m647_final.md) and Sonnet (checked and pasted).
+
+Note on D-0587: the Sonnet check changed two places of the Opus text: the bullet that read her "a)" as an answer (block 1) and the note under the lean (block 4); her "a)" has two readings (an answer, option (a); or her own point on the edge case), and the options (a) to (c) for the two tables stay open until she confirms.
