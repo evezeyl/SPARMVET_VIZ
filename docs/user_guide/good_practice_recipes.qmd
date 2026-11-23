@@ -10,22 +10,27 @@ A short word list first.
 
 - The **entity** is the thing one row of your main table describes. In the demo recipe it is a sample.
 - The **entity key** is the column that identifies the entity. In the demo it is `sample_id`.
-- An **audit step** removes observations from the results. The user chooses the place where it is written.
+- A **tier** is a list of steps of a table. **Tier 1** is the first list: it belongs to the table itself, and everything built from the table reads its result. Tier 2 and tier 3 come after it and serve the plots.
+- A **joined table** is a table that the recipe builds by joining other tables.
+- An **audit step** removes observations from the results. It is written in the audit of HOME.
 - The **lineage** of a column is the path the column takes through the tables of the recipe: read, renamed, joined, copied.
+- **Remove from all the data** is an option of the audit: it removes the values of the entity key from every table that holds the key. The library for it is built; its screen is not.
 
 ## Why the place of a step matters
 
 An audit step is written at one place of the recipe. Where it is written decides which tables, and so which results, it reaches. A step written near the original table is carried on by every table built from it. A step written late reaches only what is built after it.
 
-So the user does not choose which entity stays. The user chooses where the removal is applied. The same entity can be gone from one result and still present in another. This is why the recipe must let the app follow the key from table to table. The rules below serve this.
+Today HOME writes an audit step at the last stage of the plot's own table (tier 3). Choosing the place among the stages is decided but not built yet.
+
+What stays true: it is not the entity that stays or goes, it is where the removal is applied. The same entity can be gone from one result and still present in another. This is why the recipe must let the app follow the key from table to table. The rules below serve this.
 
 ## Rules for the author
 
 ### One column name, one meaning
 
-Do not use the same column name for two different meanings in different tables. The app never treats two columns as the same only because their names are equal. Two columns are linked only when the recipe says so: by a declared key, a join on them, or a rename.
+Do not use the same column name for two different meanings in different tables. In the lineage, and in the key of "remove from all the data" when it is asked at a given place, two columns with the same name are the same column only when the recipe links them: by a declared key, a join on them, or a rename. Two exceptions today: HOME's warning on a filter of a key column takes the names of the columns used as join keys; and "remove from all the data", when it is asked for a column with no place, judges the column by its name.
 
-The recipe checker (`recipe_check.py`) already refuses one case. A column that both tables of a join carry and that is not a join key is refused (check J08), because Polars would rename the second one silently. Rename or drop one of the two before the join.
+The recipe checker already refuses one case. A column that both tables of a join carry and that is not a join key is refused (check J08), because Polars would rename the second one silently. Rename or drop one of the two before the join.
 
 ### Declare the ID key
 
@@ -35,17 +40,17 @@ The user may not be the author. Without a declaration, the app has no way to tel
 
 The recipe checker refuses a key declared as a number (check E03). Declare it as `String` (or `Categorical`). A number as an id loses leading zeros and turns `001`, `1` and `1.0` into one entity. It also gives join and type problems. The checker advises the same when a join key is a floating-point number (J13).
 
-### Join with the metadata in tier 1
+### Joins go in tier 1
 
 A join step is allowed in tier 1 only. The checker refuses a join (also an as-of join and a join on a condition) written in tier 2 or tier 3 (check ST05). So the join of a table with its metadata is a tier-1 step of the joined table, and the raw data files stay unchanged.
 
 ### Import only the columns you need
 
-A column that you do not declare in `input_fields` is not read. The import tells you that it was left out. If another table will give the real values of a column (for example updated metadata), do not declare that column in the first table. Do not read it and drop it afterwards: a drop can break the lineage.
+A column that you do not declare in `input_fields` is not read. The import writes a line about it in the server console; the user does not see it in the app. If another table will give the real values of a column (for example updated metadata), do not declare that column in the first table. Do not read it and drop it afterwards: a drop can break the lineage.
 
 ### Keep the identity columns until the last select
 
-Keep the identity columns (the entity key, the gene, the accession) through the steps of tier 1 and tier 2. Remove them only in the last `polars_select` of the tier 1 of the collection. The app does not check this. It is a rule of practice.
+Keep the identity columns (the entity key, the gene, the accession) through the steps of tier 1 and tier 2. Remove them only in the last `polars_select` of the tier 1 of the collection. The recipe checker has no check on this. It is a rule of practice.
 
 ### Write a plot id once
 
@@ -55,9 +60,9 @@ A plot id is written once in a recipe. The same id in two groups is refused with
 
 The app removes by the key. Three ways of writing a recipe make the key hard to follow. Avoid them when you make a recipe.
 
-**1. A step recomputes the key.** A step writes the key column again under the same name, for example `polars_with_columns` with a new formula for `sample_id`, or an aggregate. The app sees that the step writes that column name. It does not read the formula, so it cannot know whether the new values come from the old key. What happens: the line is followed, and a note says that the column is recomputed (or aggregated, or that the group key now sits on one row per group) at that step. These notes are data of the lineage walk. No screen shows them yet. The option "remove from all the data" says nothing about such a table: it reports only the places it reaches, the places where it writes a step and the tables it does not reach.
+**1. A step recomputes the key.** A step writes the key column again under the same name, for example `polars_with_columns` with a new formula for `sample_id`, or an aggregate. The app sees that the step writes that column name. It does not read the formula, so it cannot know whether the new values come from the old key. What happens: the app writes a note for each such step. You cannot see these notes on screen yet.
 
-**2. The key under another column name, with no join and no rename.** A table holds the entity key under a name of its own (for example `isolate` in one table and `sample_id` in another) and nothing in the recipe links them. The app never links by name or by guess. A rename step, or a join on the two columns, links them, and both are followed. Without any of these, the table is **not detected today** as holding the key. When a table holds a column that has exactly the name of the key but no declaration and no join links it, "remove from all the data" lists the table among the tables it does not reach (code `same_name_not_linked`) and writes nothing there.
+**2. The key under another column name, with no join and no rename.** A table holds the entity key under a name of its own (for example `isolate` in one table and `sample_id` in another) and nothing in the recipe links them. The lineage never links by name or by guess. A rename step, or a join on the two columns, links them, and both are followed. Without any of these, the table is **not detected today** as holding the key. The opposite case: a table holds a column with exactly the name of the key, but no declaration and no join links it. The app does not treat such a table as holding the key. It lists it as a table it did not reach, and writes nothing there.
 
 **3. The key is rewritten by a step.** For example, a step strips, lower-cases or recodes the ids. The values after the step are then not the values the user typed. The app detects the step only when it writes the key column by name (as in the first gotcha), and the walk then notes it as data. It cannot read what the formula does, so it cannot tell that the ids were changed. A step that the app does not read (see the next section) gives only a note that the values may have changed, when the engine shows the same name and type before and after. Beyond these notes, a rewritten key is **not detected today**.
 
@@ -65,17 +70,17 @@ The app removes by the key. Three ways of writing a recipe make the key hard to 
 
 The app follows a column through the steps it can read. It reads the names the step writes, never the formula.
 
-It follows these steps (`READINGS` in `step_effects.py`): `polars_rename`, `polars_join`, `polars_drop`, `polars_select`, `polars_with_columns` (the names it writes), `polars_cast` and `polars_group_by` (the group columns and the names of the aggregates). It also follows steps that only remove, reorder or pick rows and cannot change the columns: `modif_filter`, `polars_sort`, `polars_unique`, `polars_drop_nulls`, `polars_sample`, `polars_head`, `polars_tail`, `polars_slice`, `polars_limit`, `polars_gather_every`, `polars_remove`, `polars_top_k` and `polars_bottom_k`.
+It follows these steps: `polars_rename`, `polars_join`, `polars_drop`, `polars_select`, `polars_with_columns` (the names it writes), `polars_cast` and `polars_group_by` (the group columns and the names of the aggregates). It also follows steps that only remove, reorder or pick rows and cannot change the columns: `modif_filter`, `polars_sort`, `polars_unique`, `polars_drop_nulls`, `polars_sample`, `polars_head`, `polars_tail`, `polars_slice`, `polars_limit`, `polars_gather_every`, `polars_remove`, `polars_top_k` and `polars_bottom_k`.
 
 It does not read any other step. For such a step, the app knows only what the engine shows across it: which names stay with the same type, which change type, which vanish, which appear. Where a name and a type stay the same, the app adds a note that the values may have changed.
 
-A line the app cannot trace is shown as a place it cannot follow. The line cannot be ticked, and the app gives the reason. The step is never guessed. The app also never decides the scope for the user: the user chooses the places.
+A line the app cannot trace is shown as a place it cannot follow. The line cannot be ticked, and the app gives the reason. The step is never guessed.
 
-The drop gate (`key_drop.py`) uses a sentence for a join that is not followed. It begins with: "The app cannot YET follow this column through this kind of join". The capital word YET is fixed. The rest of the wording may change. The screen that shows these lines is not built yet; the library that decides them and the sentence are built. A table behind such a join is not written by "remove from all the data" and is in its list of tables not reached.
+When a user drops a column in HOME, the app checks the drop. If the column crosses a join the app cannot follow, the message begins: "The app cannot YET follow this column through this kind of join". The word YET is written in capitals on purpose, to say that this is a limit of today. The rest of the wording may change. HOME writes the drop at the plot's own table, after every join, so this message is rare today. The list of places with such lines is not built yet. A table behind such a join is not written by "remove from all the data"; it is in that option's list of tables not reached.
 
 ## Joins the app cannot follow yet
 
-The `how` of a `polars_join` step decides whether the app follows it (`FOLLOWED_JOINS` and `NOT_YET_FOLLOWED_JOINS` in `step_effects.py`).
+The `how` of a `polars_join` step decides whether the app follows it.
 
 | Kind of join | Followed today | What to do |
 |---|---|---|
