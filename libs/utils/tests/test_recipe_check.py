@@ -43,17 +43,17 @@ CATALOGS = {
 def valid():
     return {
         "id": "r", "spec_version": 1, "data_engine": "python-polars", "plot_engine": "python-plotnine",
-        "info": {"label": "R", "description": "What it answers", "contact": "me"},
+        "info": {"ui_label": "R", "description": "What it answers", "contact": "me"},
         "data_schemas": {
             "A": {
-                "label": "A", "description": "One row per sample.",
+                "ui_label": "A", "description": "One row per sample.",
                 "source": {"type": "local_tsv", "path": "assets/test_data/a.tsv"},
                 "null_values": [], "strip": True,
                 "input_fields": {"id": {"type": "String", "is_entity_id": True}, "v": {"type": "Float64"}},
                 "tier1": {"steps": []},
             },
             "B": {
-                "label": "B", "description": "One row per sample.",
+                "ui_label": "B", "description": "One row per sample.",
                 "source": {"type": "local_tsv", "path": "assets/test_data/b.tsv"},
                 "null_values": ["NA"], "strip": False,
                 "input_fields": {"id": {"type": "String", "is_entity_id": True}, "w": {"type": "Int64"}},
@@ -62,7 +62,7 @@ def valid():
         },
         "joins": {
             "AB": {
-                "label": "AB", "description": "One row per sample, A with B.",
+                "ui_label": "AB", "description": "One row per sample, A with B.",
                 "ingredients": [{"dataset_id": "A"}, {"dataset_id": "B"}],
                 "tier1": {"steps": [{"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "left"}]},
                 "labels": {"v": "Value"},
@@ -124,7 +124,7 @@ CASES = [
     ("T06", "E", lambda r: r.update(plot_engine="python-polars"), "run"),
     ("T09", "E", lambda r: r.update(analysis_groups={}), "run"),
     ("I01", "E", lambda r: r.update(info="text"), "run"),
-    ("I01", "E", lambda r: r["info"].pop("label"), "run"),
+    ("I01", "A", lambda r: r["info"].pop("ui_label"), "run"),
     ("I02", "A", lambda r: r["info"].pop("description"), "run"),
     ("I02", "A", lambda r: r["info"].pop("contact"), "run"),
     ("I03", "E", lambda r: r["info"].update(display_name="x"), "run"),
@@ -139,7 +139,7 @@ CASES = [
     ("S01", "E", lambda r: r["data_schemas"]["A"].update(fields={}), "run"),
     ("S02", "E", lambda r: r.update(additional_datasets_schemas={"A": copy.deepcopy(r["data_schemas"]["A"])}), "run"),
     ("S02", "E", lambda r: r["data_schemas"].update(metadata_schema=copy.deepcopy(r["data_schemas"]["A"])), "run"),
-    ("S03", "E", lambda r: r["data_schemas"]["A"].pop("label"), "run"),
+    ("S03", "E", lambda r: r["data_schemas"]["A"].pop("ui_label"), "run"),
     ("S04", "A", lambda r: r["data_schemas"]["A"].pop("description"), "run"),
     ("S05", "E", lambda r: r["data_schemas"]["A"].pop("source"), "run"),
     ("S05", "E", lambda r: r["data_schemas"]["A"]["source"].update(type="remote"), "run"),
@@ -190,7 +190,7 @@ CASES = [
     ("J01", "E", lambda r: r["joins"]["AB"].update(output_fields={}), "run"),
     ("J01", "E", lambda r: r["joins"]["AB"].update(final_contract={"id": {}}), "run"),
     ("J01", "E", lambda r: r["joins"]["AB"].update(info="s"), "run"),
-    ("J02", "E", lambda r: r["joins"]["AB"].pop("label"), "run"),
+    ("J02", "E", lambda r: r["joins"]["AB"].pop("ui_label"), "run"),
     ("J03", "A", lambda r: r["joins"]["AB"].pop("description"), "run"),
     ("D01", "A", lambda r: r["joins"]["AB"].update(description="One row per sample (issue"), "run"),
     ("J04", "E", lambda r: r["joins"]["AB"].update(ingredients=["A", "B"]), "run"),

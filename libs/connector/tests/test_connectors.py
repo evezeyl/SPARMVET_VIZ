@@ -41,7 +41,6 @@ FS_DEPLOYMENT_WITH_ROOT = {
     "project_root": "/data/pipeline/",
     "default_data_analysis_recipe": "data_analysis_recipes/amr/master.yaml",
     "default_app_features": "pipeline-static",
-    "deployment_name": "AMR Pipeline",
     "locations": MINIMAL_LOCATIONS,
 }
 
@@ -108,8 +107,7 @@ class TestFilesystemConnector:
             "project_root": str(tmp_path),
             "default_data_analysis_recipe": "data_analysis_recipes/amr/master.yaml",
             "default_app_features": "pipeline-static",
-            "deployment_name": "AMR Pipeline",
-            "locations": MINIMAL_LOCATIONS,
+                    "locations": MINIMAL_LOCATIONS,
         }
         c = FilesystemConnector(deployment)
         paths = c.resolve_paths()
@@ -148,13 +146,8 @@ class TestFilesystemConnector:
         c = FilesystemConnector(FS_DEPLOYMENT)
         assert c.get_default_app_features() is None
 
-    def test_get_deployment_name(self):
-        c = FilesystemConnector(FS_DEPLOYMENT_WITH_ROOT)
-        assert c.get_deployment_name() == "AMR Pipeline"
-
-    def test_get_deployment_name_default(self):
-        c = FilesystemConnector(FS_DEPLOYMENT)
-        assert c.get_deployment_name() == "SPARMVET_VIZ"
+    def test_a_connector_has_no_deployment_name(self):
+        assert not hasattr(FilesystemConnector(FS_DEPLOYMENT_WITH_ROOT), "get_deployment_name")   # removed (D-0479)
 
     def test_get_deployment_type(self):
         c = FilesystemConnector(FS_DEPLOYMENT)

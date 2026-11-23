@@ -41,8 +41,8 @@ def test_the_version_and_the_engines_are_read_from_the_specification_data():
 
 
 def test_the_label_is_the_id_unless_given():
-    assert minimal_recipe("tiny")["info"] == {"label": "tiny"}
-    assert minimal_recipe("tiny", label="Tiny recipe")["info"] == {"label": "Tiny recipe"}
+    assert minimal_recipe("tiny")["info"] == {"ui_label": "tiny"}
+    assert minimal_recipe("tiny", label="Tiny recipe")["info"] == {"ui_label": "Tiny recipe"}
 
 
 def test_no_old_key_is_written():
@@ -164,7 +164,7 @@ def test_the_written_text_keeps_the_order_of_the_keys(tmp_path):
     """The order of the groups is the order of the tabs: a writer that sorts would put `a_last` first."""
     recipe = minimal_recipe("tiny")
     main = recipe["analysis_groups"].pop("main")
-    recipe["analysis_groups"] = {"z_first": main, "a_last": {"label": "Last", "plots": {}}}
+    recipe["analysis_groups"] = {"z_first": main, "a_last": {"ui_label": "Last", "plots": {}}}
     path = write_recipe(tmp_path / "tiny.yaml", recipe)
     text = path.read_text(encoding="utf-8")
     assert [text.index(f"\n{key}:") for key in TOP_ORDER[1:]] == sorted(text.index(f"\n{key}:") for key in TOP_ORDER[1:])

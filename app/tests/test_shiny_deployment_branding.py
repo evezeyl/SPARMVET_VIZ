@@ -1,8 +1,8 @@
 """What the two customized deployments SHOW in a browser (demo-vetinst and web-demo).
 
-TODAY'S BEHAVIOUR, RECORDED BEFORE THE RENAME OF D-0411. The rename of the deployment banner keys
-(`title` -> `ui_label`, `subtitle` -> `description`; owner decision, not built) must keep this file green: the VALUES
-shown stay the same. The keys are read through `deployment_branding_keys` (one place to change).
+The proof of D-0411 (the deployment banner keys `title` -> `ui_label`, `subtitle` -> `description`): the VALUES shown are the ones
+recorded before the rename. The keys are read through `deployment_branding_keys`. The recipe banner shows the recipe's `info.ui_label`
+and no longer its `info.subtitle` (D-0410, D-0482).
 Browser test: each deployment is started with the app features it declares as its default, about 20-40 s each.
 """
 import socket
@@ -26,9 +26,8 @@ CASES = {
 }
 # the banner colour each deployment's own stylesheet sets (assets/demo/*.css, section 1); the base theme sets none
 BANNER_BACKGROUND = {"demo-vetinst": "rgb(0, 79, 110)", "web-demo": "rgb(0, 245, 200)"}
-# the recipe banner of the default recipe 1_test_data_ST22_dummy (its info: label and subtitle)
+# the recipe banner of the default recipe 1_test_data_ST22_dummy (its info.ui_label)
 RECIPE_TITLE = "ST22 Dummy Dataset"
-RECIPE_LINE = "E. coli ST22 — AMR & Virulence Research (demo)"
 
 
 def _free_port() -> int:
@@ -61,7 +60,7 @@ def test_customized_deployment_shows_what_its_file_sets(page: Page, tmp_path, na
             expect(bar).to_have_count(1, timeout=40_000)
             _wait_shiny(page, 60_000)
 
-            # today's behaviour, recorded before the rename of D-0411: the banner title and line are the file's values
+            # the banner title and line are the file's values
             title, line = banner_title(banner), banner_line(banner)
             if title:
                 expect(bar.locator(".sparmvet-banner-title")).to_have_text(title)
@@ -81,10 +80,10 @@ def test_customized_deployment_shows_what_its_file_sets(page: Page, tmp_path, na
             background = bar.evaluate("e => getComputedStyle(e).backgroundColor")
             assert background == BANNER_BACKGROUND[name]
 
-            # today's behaviour: HOME shows the recipe banner of the default recipe
+            # HOME shows the recipe banner of the default recipe: its info.ui_label, and no subtitle (the recipe keeps info.subtitle, which the banner does not read)
             recipe_title = page.locator(".view-title-banner .banner-title")
             expect(recipe_title).to_have_text(RECIPE_TITLE, timeout=60_000)
-            expect(page.locator(".view-title-banner .banner-subtitle")).to_have_text(RECIPE_LINE)
+            expect(page.locator(".view-title-banner .banner-subtitle")).to_have_count(0)
         finally:
             proc.terminate()
             proc.wait(timeout=20)

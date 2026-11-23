@@ -39,12 +39,12 @@ def test_the_checker_can_fail_on_a_shipped_recipe(tmp_path):
     shutil.copytree(source.parent, work)
     target = work / source.name
     text = target.read_text()
-    assert "\n    label:" in text
+    assert "\n    ui_label:" in text
     lines = text.split("\n")
-    first = next(i for i, line in enumerate(lines) if line.startswith("    label:"))
+    first = next(i for i, line in enumerate(lines) if line.startswith("    ui_label:"))
     target.write_text("\n".join(lines[:first] + lines[first + 1:]))
     result = check_recipe_file(target, "run", catalogs=CATALOGS, base=ROOT)
-    assert any("label" in p.message for p in result.errors)
+    assert any("ui_label" in p.message for p in result.errors)
 
 
 # -- no shipped pipeline step is without a description (advice S04 schema, J03 join, G02 group, P02 plot)

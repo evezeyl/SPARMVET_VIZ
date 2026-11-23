@@ -36,7 +36,6 @@ def _empty_deployment(tmp_path) -> Path:
         locations[key] = str(root / key)
     body = {
         "deployment_type": "filesystem",
-        "deployment_name": "empty-recipes-test",
         "default_app_features": "qa",  # selector visible, so this is the non-fatal path
         "locations": locations,
     }

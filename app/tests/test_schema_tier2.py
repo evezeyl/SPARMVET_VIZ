@@ -63,7 +63,7 @@ class SchemaWorld:
             params: {}""" if plot_t else ""
         entry = self.recipes / "tiny.yaml"
         entry.write_text(f"""id: tiny
-info: {{label: Tiny}}
+info: {{ui_label: Tiny}}
 data_engine: python-polars
 plot_engine: python-plotnine
 data_schemas:
@@ -72,8 +72,8 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: String, label: Sample, is_entity_id: true}}
-      group: {{original_name: group, type: String, label: Group}}
+      sample_id: {{original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}}
+      group: {{original_name: group, type: String, ui_label: Group}}
     tier1: {{steps: []}}
     tier2: !include 'tiny/wrangling/T_tier2.yaml'
 joins:

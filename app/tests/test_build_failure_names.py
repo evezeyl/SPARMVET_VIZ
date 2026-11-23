@@ -48,7 +48,7 @@ class World:
         (self.data_dir / "T.tsv").write_text(data)
         tier3 = f"        tier3: {{steps: {json.dumps(list(p3))}}}\n" if p3 else ""
         (self.recipes / "tiny.yaml").write_text(f"""id: tiny
-info: {{label: Tiny}}
+info: {{ui_label: Tiny}}
 data_engine: python-polars
 plot_engine: python-plotnine
 data_schemas:
@@ -57,9 +57,9 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: String, label: Sample, is_entity_id: true}}
-      group: {{original_name: group, type: String, label: Group}}
-      score: {{original_name: score, type: String, label: Score}}
+      sample_id: {{original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}}
+      group: {{original_name: group, type: String, ui_label: Group}}
+      score: {{original_name: score, type: String, ui_label: Score}}
     tier1: {{steps: {json.dumps(list(t1))}}}
 joins:
   C:

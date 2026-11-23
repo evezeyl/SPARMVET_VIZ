@@ -178,7 +178,7 @@ try:
     from app.src.bootloader import bootloader as bl2  # noqa: E402
 
     ms = bl2.get_data_analysis_recipe_selector()
-    record("App features loaded", PASS, bl2.app_features_display_name)
+    record("App features loaded", PASS, bl2.app_features_label_with_id)
     record("default data analysis recipe", INFO, bl2.get_default_data_analysis_recipe())
     record("data_lookup", INFO, bl2.data_lookup)
     record("testing_mode", INFO, str(bl2.get_testing_mode()))

@@ -22,7 +22,7 @@ from utils.recipe_factory import minimal_join, minimal_schema
 
 def two_step_recipe():
     raw = tiny_recipe()
-    raw["data_schemas"]["B"] = minimal_schema("./assets/test_data/tiny/A.tsv", {"a": {"type": "String", "label": "A"}}, label="B")
+    raw["data_schemas"]["B"] = minimal_schema("./assets/test_data/tiny/A.tsv", {"a": {"type": "String", "ui_label": "A"}}, label="B")
     raw["data_schemas"]["B"]["description"] = "One row per a."
     ok = {"action": "polars_join", "right_ingredient": "B", "on": ["a"], "how": "left", "maintain_order": "left_right"}
     bad = {"action": "polars_join", "right_ingredient": "Ghost", "on": ["a"], "how": "left", "maintain_order": "left_right"}  # not an ingredient of the join

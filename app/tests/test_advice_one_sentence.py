@@ -25,7 +25,7 @@ from app.tests.tiny_recipe import tiny_recipe, write_tiny
 from utils.recipe_loader import check_recipe_file
 
 ROOT = Path(__file__).resolve().parents[2]
-JOIN_ANTI = {"AA": {"label": "AA", "description": "A with itself.", "ingredients": [{"dataset_id": "A"}],
+JOIN_ANTI = {"AA": {"ui_label": "AA", "description": "A with itself.", "ingredients": [{"dataset_id": "A"}],
                     "tier1": {"steps": [{"action": "polars_join", "right_ingredient": "A", "on": ["a"], "how": "anti", "maintain_order": "left_right"}]}}}
 
 

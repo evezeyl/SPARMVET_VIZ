@@ -34,7 +34,7 @@ def _deployment(tmp_path, name="dep.yaml", recipe=None, **extra):
     for key in ("raw_data", "data_analysis_recipes", "cache", "user_data", "gallery"):
         (root / key).mkdir(parents=True, exist_ok=True)
         locations[key] = str(root / key)
-    body = {"deployment_type": "filesystem", "deployment_name": name, "locations": locations}
+    body = {"deployment_type": "filesystem", "locations": locations}
     if recipe:  # a recipe that exists in the recipes folder and is the deployment default
         # Minimal but valid (ADR-094 load gate): a non-empty analysis_groups with one group
         # and one plot clears ConfigManager's own "analysis_groups required" check (an empty
@@ -55,7 +55,6 @@ def test_deployment_variable_selects_the_deployment_file(tmp_path, monkeypatch):
     b = Bootloader()
     assert b.deployment_path == dep
     assert b.deployment_level == 1
-    assert b.deployment_name == "dep.yaml"
 
 
 def test_deployment_variable_pointing_nowhere_stops_the_app(tmp_path, monkeypatch):
@@ -232,11 +231,11 @@ def test_an_unset_variable_in_a_path_stops_the_app(tmp_path, monkeypatch, capsys
 def test_branding_comes_from_the_deployment(tmp_path, monkeypatch):
     dep, _ = _deployment(tmp_path, **{"default_app_features": "qa",
                                       "branding": {"theme_css": "assets/demo/web_demo.css",
-                                                   "banner": {"title": "Hello"}}})
+                                                   "banner": {"ui_label": "Hello"}}})
     monkeypatch.setenv("SPARMVET_DEPLOYMENT", str(dep))
     b = Bootloader()
     assert b.get_theme_css_path().name == "web_demo.css"
-    assert b.get_ui_banner() == {"title": "Hello"}
+    assert b.get_ui_banner() == {"ui_label": "Hello"}
 
 
 def test_default_branding_is_the_base_stylesheet_and_no_banner(tmp_path, monkeypatch):
@@ -288,7 +287,7 @@ def test_old_deployment_key_stops_the_app_and_names_the_new_one(tmp_path, monkey
     assert "default_persona" in err and "default_app_features" in err
 
 
-@pytest.mark.parametrize("old, new", [("persona_id", "name"), ("features", "flags"),
+@pytest.mark.parametrize("old, new", [("features", "flags"),
                                       ("manifest_selector", "data_analysis_recipe_selector")])
 def test_old_app_features_key_stops_the_app_and_names_the_new_one(tmp_path, monkeypatch, capsys, old, new):
     dep, _ = _deployment(tmp_path)

@@ -65,8 +65,8 @@ def test_the_field_keys_are_renamed():
     assert "is_primary_key" not in fields and "source_name" not in fields
 
 
-def test_display_name_becomes_label():
-    assert load(migrate_text(OLD, role="recipe")[0])["info"]["label"] == "Old recipe"
+def test_display_name_becomes_ui_label():
+    assert load(migrate_text(OLD, role="recipe")[0])["info"]["ui_label"] == "Old recipe"
 
 
 def test_each_schema_gets_the_old_sanitiser_as_explicit_settings():

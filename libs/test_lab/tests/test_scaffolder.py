@@ -271,7 +271,7 @@ class TestWhatTheScaffolderWritesPassesTheChecker:
         assert self.judged(master) == []
         from utils.recipe_loader import load_recipe
         raw, _ = load_recipe(master)
-        assert list(raw["joins"]["proj_joint"]) == ["label", "ingredients", "tier1"]
+        assert list(raw["joins"]["proj_joint"]) == ["ui_label", "ingredients", "tier1"]
         assert [s["right_ingredient"] for s in raw["joins"]["proj_joint"]["tier1"]["steps"]] == ["amr_results", "metadata_schema"]
         assert [i["dataset_id"] for i in raw["joins"]["proj_joint"]["ingredients"]] == ["samples", "amr_results", "metadata_schema"]
 
@@ -284,4 +284,4 @@ class TestWhatTheScaffolderWritesPassesTheChecker:
         assert self.judged(master) == []
         from utils.recipe_loader import load_recipe
         table = load_recipe(master)[0]["data_schemas"]["samples"]
-        assert table["label"] and table["tier1"] == {"steps": steps}
+        assert table["ui_label"] and table["tier1"] == {"steps": steps}

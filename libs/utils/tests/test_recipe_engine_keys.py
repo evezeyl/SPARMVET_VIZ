@@ -2,7 +2,7 @@
 
 New shape: a tier is written as its own key (`tier1`, `tier2` in a table and in a join, `tier3` in a plot entry), holding a mapping
 with an optional `data_engine` and `steps`; a plot entry has no `spec:` (its content is written in the entry, or the whole entry is in
-an included file); `ui_label` and `ui_title` name a group or a plot; the four dead `plot_defaults` keys are refused. Every old
+an included file); `ui_label` names a group or a plot; the four dead `plot_defaults` keys are refused. Every old
 shape is refused with the key, where to write it now, and the rewrite tool by name.
 
 Each rule has an accepted case and a refused case. The refused ones were made to fail once by breaking the rule (see the report).
@@ -37,18 +37,18 @@ def valid():
     """A small recipe in the new shape."""
     return {
         "id": "r", "spec_version": 1, "data_engine": "python-polars", "plot_engine": "python-plotnine",
-        "info": {"label": "R", "description": "What it answers", "contact": "me"},
+        "info": {"ui_label": "R", "description": "What it answers", "contact": "me"},
         "data_schemas": {
-            "A": {"label": "A", "description": "One row per sample.",
+            "A": {"ui_label": "A", "description": "One row per sample.",
                   "source": {"type": "local_tsv", "path": "assets/test_data/a.tsv"}, "null_values": [], "strip": True,
-                  "input_fields": {"id": {"type": "String", "is_entity_id": True, "label": "Id"}, "v": {"type": "Float64"}},
+                  "input_fields": {"id": {"type": "String", "is_entity_id": True, "ui_label": "Id"}, "v": {"type": "Float64"}},
                   "tier1": {"steps": []}},
-            "B": {"label": "B", "description": "One row per sample.",
+            "B": {"ui_label": "B", "description": "One row per sample.",
                   "source": {"type": "local_tsv", "path": "assets/test_data/b.tsv"}, "null_values": [], "strip": False,
                   "input_fields": {"id": {"type": "String", "is_entity_id": True}, "w": {"type": "Int64"}},
                   "tier1": {"steps": []}},
         },
-        "joins": {"AB": {"label": "AB", "description": "One row per sample, A with B.",
+        "joins": {"AB": {"ui_label": "AB", "description": "One row per sample, A with B.",
                          "ingredients": [{"dataset_id": "A"}, {"dataset_id": "B"}],
                          "tier1": {"steps": [{"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "left"}]}}},
         "analysis_groups": {"g": {"ui_label": "G", "description": "Question.", "plots": {
@@ -134,7 +134,7 @@ def test_a_recipe_in_the_old_shape_is_refused_as_a_whole_with_the_tool_named_eac
 TIER_CASES = [
     ("table, no steps", lambda r: r["data_schemas"]["A"].update(tier1={"data_engine": "python-polars"}), "S06", "steps"),
     ("table, steps not a list", lambda r: r["data_schemas"]["A"].update(tier1={"steps": "x"}), "S06", "list"),
-    ("table, a key that is not a tier key", lambda r: r["data_schemas"]["A"].update(tier1={"steps": [], "label": "x"}), "S06", "label"),
+    ("table, a key that is not a tier key", lambda r: r["data_schemas"]["A"].update(tier1={"steps": [], "ui_label": "x"}), "S06", "ui_label"),
     ("table, no tier1", lambda r: r["data_schemas"]["A"].pop("tier1"), "S06", "tier1"),
     ("join, no tier1", lambda r: r["joins"]["AB"].pop("tier1"), "J07", "tier1"),
     ("join, a tier inside a tier (an old fragment)", lambda r: r["joins"]["AB"].update(tier1={"tier1": {"steps": []}}), "J07", "tier1"),
@@ -296,18 +296,22 @@ def test_the_plot_content_is_judged_where_it_is_now_with_the_old_codes():
     assert found(mutated(lambda r: p(r).update(unknown_key=1)), "P01")
 
 
-def test_a_title_in_the_plot_is_refused_with_where_to_write_the_two_names():
+def test_a_title_in_the_plot_is_refused_with_where_to_write_the_figure_title_and_the_name():
     raw = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(title="Old title"))
     problem = found(raw, "P01")[0]
     assert problem.path == "analysis_groups.g.plots.p.title"
-    for words in ("labs", "ui_title", TOOL):
+    for words in ("labs", "ui_label", TOOL):
         assert words in problem.text()
-    assert "Old title" not in raw["analysis_groups"]["g"]["plots"]["p"].get("ui_title", "")
+    assert "ui_title" not in problem.text()                 # the key is removed (D-0409)
 
 
-def test_the_ui_names_are_accepted_and_label_is_refused_as_renamed_at_group_and_plot():
-    ok = mutated(lambda r: (r["analysis_groups"]["g"].update(ui_title="Long group name"), r["analysis_groups"]["g"]["plots"]["p"].update(ui_title="Long plot name", plot_engine="python-plotnine")))
+def test_ui_label_is_accepted_and_label_and_ui_title_are_refused_as_renamed_or_removed_at_group_and_plot():
+    ok = mutated(lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(plot_engine="python-plotnine"))
     assert check(ok).problems == []
+    for code, change in (("G01", lambda r: r["analysis_groups"]["g"].update(ui_title="x")),
+                         ("P01", lambda r: r["analysis_groups"]["g"]["plots"]["p"].update(ui_title="x"))):
+        problem = found(mutated(change), code)
+        assert problem and "ui_label" in problem[0].text() and "removed" in problem[0].text(), problem
     group = mutated(lambda r: r["analysis_groups"]["g"].update(label="G"))
     problem = found(group, "G01")[0]
     assert problem.path == "analysis_groups.g.label" and "ui_label" in problem.text() and "renamed" in problem.text()
@@ -328,196 +332,25 @@ def test_a_group_or_plot_with_only_the_old_label_is_told_the_rename_once_not_als
     assert len(texts) == 2 and all("renamed" in t for t in texts)
 
 
-# -- the three places that keep `label` until Eve answers (M271), in one table ----------------------------------------------------
+# -- the other places that are named: info, a table, a join and an input field use ui_label too (D-0410, D-0468) --------------------------
 
-def test_the_three_pending_places_still_use_label_and_the_table_names_them():
-    assert spec()["label_keys"] == {"info": "label", "schema": "label", "join": "label", "field": "label"}
-    # accepted as written today
+def test_the_names_of_info_a_table_a_join_and_a_field_are_ui_label_and_the_old_label_is_refused_with_it():
+    assert "label_keys" not in spec()                       # the table that held the pending answer is gone
     assert check(valid()).problems == []
-    # refused when missing, with the key the table names
-    assert found(mutated(lambda r: r["info"].pop("label")), "I01")
-    assert found(mutated(lambda r: r["data_schemas"]["A"].pop("label")), "S03")
-    assert found(mutated(lambda r: r["joins"]["AB"].pop("label")), "J02")
-    # ui_label is NOT yet a key of these places
-    assert found(mutated(lambda r: r["data_schemas"]["A"].update(ui_label="A")), "S01")
-    assert found(mutated(lambda r: r["joins"]["AB"].update(ui_label="A")), "J01")
-    assert found(mutated(lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(ui_label="V")), "FD01")
+    assert found(mutated(lambda r: r["data_schemas"]["A"].pop("ui_label")), "S03")
+    assert found(mutated(lambda r: r["joins"]["AB"].pop("ui_label")), "J02")
+    assert found(mutated(lambda r: r["data_schemas"]["A"].update(label="A")), "S01")
+    assert found(mutated(lambda r: r["joins"]["AB"].update(label="A")), "J01")
+    assert found(mutated(lambda r: r["data_schemas"]["A"]["input_fields"]["v"].update(label="V")), "FD01")
+    assert found(mutated(lambda r: r["info"].update(label="R")), "I03")
 
-
-def test_changing_the_table_changes_the_three_places_in_one_line(monkeypatch):
-    """The answer of Eve is one line per place in recipe_spec.yaml (`label_keys`): the checker follows the table."""
-    import utils.recipe_check as module
-    changed = copy.deepcopy(spec())
-    changed["label_keys"] = {"info": "ui_label", "schema": "ui_label", "join": "ui_label", "field": "ui_label"}
-    monkeypatch.setattr(module, "spec", lambda: changed)
-    raw = mutated(lambda r: (r["info"].update(ui_label=r["info"].pop("label")),
-                             [t.update(ui_label=t.pop("label")) for t in (r["data_schemas"]["A"], r["data_schemas"]["B"], r["joins"]["AB"])],
-                             r["data_schemas"]["A"]["input_fields"]["id"].update(ui_label=r["data_schemas"]["A"]["input_fields"]["id"].pop("label"))))
-    assert check(raw).problems == []
-    # and the old key is then the unknown one
-    assert found(mutated(lambda r: None), "S01") and found(mutated(lambda r: None), "J01")
-
-
-# -- plot_defaults: the four dead keys are tombstones, the live ones stay -----------------------------------------------------------
-
-DEAD = {"default_font_family": "Liberation Sans", "facet_panel_spacing": 0.1, "legend_position": "right", "optimisation": {"auto_axis_text": True}}
-
-
-@pytest.mark.parametrize("key", sorted(DEAD))
-def test_a_dead_plot_defaults_key_is_refused_with_a_tombstone(key):
-    problems = found(mutated(lambda r: r.update(plot_defaults={"theme": "theme_bw", key: DEAD[key]})), "PD02")
-    assert [p.path for p in problems] == [f"plot_defaults.{key}"]
-    text = problems[0].text("r.yaml")
-    for words in ("REMOVED", "D-0242", "2026-11-17", TOOL, "Tombstone expires", "the key did nothing"):
-        assert words in text, (key, words)
-    assert found(mutated(lambda r: r.update(plot_defaults={key: DEAD[key]})), "PD01") == []  # not also "unknown key"
-
-
-def test_the_live_plot_defaults_keys_are_still_accepted():
-    raw = mutated(lambda r: r.update(plot_defaults={"palette": "p", "theme": "theme_bw", "random_state": 3, "layers": [{"name": "theme_bw"}]}))
-    assert check(raw).problems == []
-
-
-def test_plot_defaults_without_the_dead_keys_is_empty_of_tombstones_and_a_truly_unknown_key_is_still_pd01():
-    assert found(mutated(lambda r: r.update(plot_defaults={"theme": "theme_bw"})), "PD02") == []
-    assert found(mutated(lambda r: r.update(plot_defaults={"colour_wheel": 1})), "PD01")
-
-
-# -- the gallery profile reads the entry without spec ------------------------------------------------------------------------------
-
-TAXONOMY = {"family": "Distribution", "pattern": "1 Numeric", "difficulty": "Simple", "show": "frequency", "sample_size": "medium+"}
-
-
-def gallery_raw():
-    raw = valid()
-    raw["analysis_groups"]["g"]["plots"]["p"]["taxonomy"] = dict(TAXONOMY)
-    raw["data_schemas"] = {"A": {**raw["data_schemas"]["A"], "source": {"type": "local_tsv", "path": "./assets/gallery_data/r/example_data.tsv"}}}
-    raw.pop("joins")
-    raw["analysis_groups"]["g"]["plots"]["p"]["target_dataset"] = "A"
-    return raw
-
-
-def test_a_gallery_example_in_the_new_shape_passes_the_gallery_profile():
-    result = check(gallery_raw(), "gallery", file_stem="r")
-    assert [p.code for p in result.errors if p.code.startswith("GP")] == []
-
-
-def test_gallery_checks_read_the_taxonomy_of_the_entry():
-    raw = gallery_raw()
-    del raw["analysis_groups"]["g"]["plots"]["p"]["taxonomy"]
-    assert [p.code for p in check(raw, "gallery", file_stem="r").errors if p.code.startswith("GP")] == ["GP02"]
-    raw = gallery_raw()
-    raw["analysis_groups"]["g"]["plots"]["p"]["taxonomy"]["family"] = "Nope"
-    assert [p.code for p in check(raw, "gallery", file_stem="r").errors if p.code.startswith("GP")] == ["GP03"]
-    raw = gallery_raw()
-    raw["analysis_groups"]["g2"] = copy.deepcopy(raw["analysis_groups"]["g"])
-    assert "GP01" in check(raw, "gallery", file_stem="r").codes()
-
-
-def test_a_gallery_example_in_the_old_shape_is_refused_by_the_same_checker():
-    raw = gallery_raw()
-    plot = raw["analysis_groups"]["g"]["plots"]["p"]
-    raw["analysis_groups"]["g"]["plots"]["p"] = {"label": "P", "taxonomy": plot["taxonomy"],
-                                                 "spec": {k: plot[k] for k in ("target_dataset", "mapping", "layers")}}
-    codes = check(raw, "gallery", file_stem="r").codes()
-    assert "P01" in codes
-
-
-# -- the include forms, read from files (loader rule F01 and the checker) -----------------------------------------------------------
-
-RECIPE = """
-id: r
-spec_version: 1
-data_engine: python-polars
-plot_engine: python-plotnine
-info: {label: R, description: d, contact: c}
-data_schemas:
-  A:
-    label: A
-    description: One row per sample.
-    source: {type: local_tsv, path: assets/test_data/a.tsv}
-    null_values: []
-    strip: true
-    input_fields: {id: {type: String, is_entity_id: true}, v: {type: Float64}}
-%(tier)s
-analysis_groups:
-  g:
-    ui_label: G
-    description: d
-    plots:
-%(plot)s
-"""
-INLINE_TIER = "    tier1:\n      steps: []\n"
-INLINE_PLOT = "      p:\n        ui_label: P\n        description: d\n        target_dataset: A\n        mapping: {x: id}\n        layers: [{name: geom_col}]\n"
-
-
-def write(path, text):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(textwrap.dedent(text) if text.startswith("\n") else text)
-    return path
-
-
-def recipe_file(tmp_path, tier=INLINE_TIER, plot=INLINE_PLOT):
-    return write(tmp_path / "r.yaml", RECIPE % {"tier": tier.rstrip("\n"), "plot": plot.rstrip("\n")})
-
-
-def test_an_inline_tier_and_an_inline_plot_pass_the_whole_check(tmp_path):
-    assert check_recipe_file(recipe_file(tmp_path), catalogs=CATALOGS).problems == []
-
-
-def test_a_tier_in_an_included_file_passes_and_the_file_root_is_the_tiers_own_content(tmp_path):
-    write(tmp_path / "r" / "A_tier1.yaml", "data_engine: python-polars\nsteps:\n  - {action: polars_filter_demo, columns: [v], na: keep}\n")
-    path = recipe_file(tmp_path, tier="    tier1: !include r/A_tier1.yaml\n")
-    assert check_recipe_file(path, catalogs=CATALOGS).problems == []
-    raw, _ = load_recipe(path)
-    assert raw["data_schemas"]["A"]["tier1"]["steps"][0]["action"] == "polars_filter_demo"
-
-
-def test_a_whole_plot_entry_in_its_own_file_passes_and_the_include_sits_at_the_entry(tmp_path):
-    write(tmp_path / "r" / "plots" / "p.yaml", "ui_label: P\ndescription: d\ntarget_dataset: A\nmapping: {x: id}\nlayers: [{name: geom_col}]\n")
-    path = recipe_file(tmp_path, plot="      p: !include r/plots/p.yaml\n")
-    assert check_recipe_file(path, catalogs=CATALOGS).problems == []
-
-
-def test_an_included_tier_whose_file_repeats_the_tier_key_is_a_wrapper_f01(tmp_path):
-    write(tmp_path / "r" / "A_tier1.yaml", "tier1:\n  steps: []\n")
-    path = recipe_file(tmp_path, tier="    tier1: !include r/A_tier1.yaml\n")
-    assert [p.code for p in load_recipe(path)[1]] == ["F01"]
-    assert "tier1" in load_recipe(path)[1][0].path and "remove" in load_recipe(path)[1][0].fix
-
-
-def test_an_included_plot_entry_whose_file_repeats_the_plot_id_is_a_wrapper_f01(tmp_path):
-    write(tmp_path / "r" / "plots" / "p.yaml", "p:\n  ui_label: P\n  target_dataset: A\n  mapping: {x: id}\n  layers: [{name: geom_col}]\n")
-    path = recipe_file(tmp_path, plot="      p: !include r/plots/p.yaml\n")
-    assert [p.code for p in load_recipe(path)[1]] == ["F01"]
-
-
-def test_an_old_fragment_that_holds_both_tiers_included_under_one_tier_is_refused_by_the_check(tmp_path):
-    write(tmp_path / "r" / "A_wrangling.yaml", "tier1:\n  steps: []\ntier2:\n  steps: []\n")
-    path = recipe_file(tmp_path, tier="    tier1: !include r/A_wrangling.yaml\n")
-    result = check_recipe_file(path, catalogs=CATALOGS)
-    assert [p.path for p in result.errors] == ["data_schemas.A.tier1.tier1", "data_schemas.A.tier1.tier2", "data_schemas.A.tier1"]
-    assert TOOL in result.errors[0].text() and "its own table, join or plot entry" in result.errors[0].message
-
-
-def test_an_old_fragment_included_at_wrangling_and_a_spec_include_are_refused_with_the_tool(tmp_path):
-    write(tmp_path / "r" / "A_wrangling.yaml", "tier1: []\n")
-    write(tmp_path / "r" / "plots" / "p.yaml", "target_dataset: A\nmapping: {x: id}\nlayers: [{name: geom_col}]\n")
-    text = RECIPE % {"tier": "    wrangling: !include r/A_wrangling.yaml", "plot": "      p:\n        ui_label: P\n        spec: !include r/plots/p.yaml"}
-    result = check_recipe_file(write(tmp_path / "r.yaml", text), catalogs=CATALOGS)
-    texts = [p.text("r.yaml") for p in result.errors]
-    assert any("data_schemas.A.wrangling" in t and TOOL in t for t in texts)
-    assert any("analysis_groups.g.plots.p.spec" in t and TOOL in t for t in texts)
-
-
-# ---- the keys of a plot entry: the app's and the plot content's, one list for the checker and the plot library ------
 
 def test_the_entry_keys_and_the_content_keys_split_the_keys_the_checker_accepts():
     entry, content = plot_keys()
     plot = spec()["elements"]["plot"]
     assert set(entry) | set(content) == set(plot["required"]) | set(plot["optional"])
     assert not set(entry) & set(content)
-    assert set(entry) == {"plot_engine", "ui_label", "ui_title", "description", "comment", "taxonomy", "tier3"}
+    assert set(entry) == {"plot_engine", "ui_label", "description", "comment", "taxonomy", "tier3"}
     assert {"target_dataset", "mapping", "layers", "theme", "palette", "facet_by", "labels", "guides", "filters"} == set(content)
 
 

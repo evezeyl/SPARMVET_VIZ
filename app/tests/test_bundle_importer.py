@@ -32,7 +32,7 @@ def _make_recipe(root: Path, recipe_id: str, data_path: Path) -> Path:
     """A minimal, real recipe — same shape as test_cache_keys.py's make_data_analysis_recipe."""
     entry = root / f"{recipe_id}.yaml"
     entry.write_text(f"""id: {recipe_id}
-info: {{display_name: Tiny}}
+info: {{ui_label: Tiny}}
 data_engine: python-polars
 plot_engine: python-plotnine
 data_schemas:
@@ -41,8 +41,8 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_id: true}}
-      group: {{original_name: group, type: Categorical, label: Group}}
+      sample_id: {{original_name: sample_id, type: Categorical, ui_label: Sample, is_entity_id: true}}
+      group: {{original_name: group, type: Categorical, ui_label: Group}}
     tier1: {{steps: []}}
     tier2: {{steps: []}}
 joins:

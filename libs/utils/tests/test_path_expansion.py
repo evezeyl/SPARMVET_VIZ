@@ -22,10 +22,10 @@ def test_plain_path_is_unchanged():
 def test_deployment_dict_is_expanded_in_place(monkeypatch):
     monkeypatch.setenv("HOME", "/home/anna")
     cfg = {"project_root": "~/p", "locations": {"cache": "${HOME}/c", "gallery": "gallery/"},
-           "deployment_name": "~keep~"}
+           "default_app_features": "~keep~"}
     assert expand_deployment_paths(cfg, "dep.yaml") == []
     assert cfg["project_root"] == "/home/anna/p" and cfg["locations"]["cache"] == "/home/anna/c"
-    assert cfg["deployment_name"] == "~keep~"  # not a path key
+    assert cfg["default_app_features"] == "~keep~"  # not a path key
 
 
 def test_unset_variable_gives_an_error_naming_it_and_leaves_the_value(monkeypatch):

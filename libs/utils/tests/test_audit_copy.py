@@ -74,19 +74,19 @@ WHY = "the reason"
 def original() -> dict:
     return {
         "id": "r", "spec_version": 1, "data_engine": "python-polars", "plot_engine": "python-plotnine",
-        "info": {"label": "R", "description": "What it answers", "contact": "me"},
+        "info": {"ui_label": "R", "description": "What it answers", "contact": "me"},
         "data_schemas": {
-            "A": {"label": "A", "description": "One row per sample.", "source": {"type": "local_tsv", "path": "assets/test_data/a.tsv"},
+            "A": {"ui_label": "A", "description": "One row per sample.", "source": {"type": "local_tsv", "path": "assets/test_data/a.tsv"},
                   "null_values": [], "strip": True,
                   "input_fields": {"id": {"type": "String", "is_entity_id": True}, "v": {"type": "Float64"}},
                   "tier1": {"steps": [{"action": "polars_drop", "columns": ["nothing_here"]}]}},
-            "B": {"label": "B", "description": "One row per sample.", "source": {"type": "local_tsv", "path": "assets/test_data/b.tsv"},
+            "B": {"ui_label": "B", "description": "One row per sample.", "source": {"type": "local_tsv", "path": "assets/test_data/b.tsv"},
                   "null_values": ["NA"], "strip": False,
                   "input_fields": {"id": {"type": "String", "is_entity_id": True}, "w": {"type": "Int64"}},
                   "tier1": {"steps": []}},
         },
         "joins": {
-            "AB": {"label": "AB", "description": "One row per sample, A with B.", "ingredients": [{"dataset_id": "A"}, {"dataset_id": "B"}],
+            "AB": {"ui_label": "AB", "description": "One row per sample, A with B.", "ingredients": [{"dataset_id": "A"}, {"dataset_id": "B"}],
                    "tier1": {"steps": [{"action": "polars_join", "right_ingredient": "B", "on": "id", "how": "left"}]},
                    "tier2": {"steps": [FILTER_W]}, "labels": {"v": "Value"}},
         },
@@ -135,7 +135,7 @@ def test_the_audit_copy_is_a_deep_copy_equal_to_the_original_and_independent_of_
     audit = start(base)
     assert audit.recipe == base and audit.recipe is not base and audit.original == base and audit.original is not audit.recipe
     audit.recipe["data_schemas"]["A"]["tier1"]["steps"].append({"action": "x"})
-    audit.recipe["info"]["label"] = "changed"
+    audit.recipe["info"]["ui_label"] = "changed"
     assert base == snapshot and audit.original == snapshot
 
 
@@ -598,13 +598,13 @@ def test_an_audit_list_that_is_not_a_list_is_named(base):
 
 def test_a_key_changed_added_or_removed_anywhere_else_is_named(base):
     audit = start(base)
-    audit.recipe["info"]["label"] = "other"
+    audit.recipe["info"]["ui_label"] = "other"
     audit.recipe["data_schemas"]["A"]["strip"] = False
     del audit.recipe["data_schemas"]["A"]["null_values"]
     audit.recipe["joins"]["AB"]["labels"] = {"v": "Value", "w": "W"}
     audit.recipe["extra"] = 1
     errors = integrity_errors(audit.recipe, base)
-    assert any("info.label was changed" in e for e in errors)
+    assert any("info.ui_label was changed" in e for e in errors)
     assert any("data_schemas.A.strip was changed" in e for e in errors)
     assert any("data_schemas.A.null_values was removed from the copy" in e for e in errors)
     assert any("joins.AB.labels" in e for e in errors)

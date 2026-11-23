@@ -79,7 +79,7 @@ class Tier3World:
         plot_engine_line = f"        plot_engine: {plot_engine_on_entry}\n" if plot_engine_on_entry else ""
         tier3_text = f"        tier3:\n{engine_line}          steps: {json.dumps(list(tier3))}\n" if tier3 is not None else ""
         (self.data_analysis_recipes_dir / "tiny.yaml").write_text(f"""id: tiny
-info: {{label: Tiny}}
+info: {{ui_label: Tiny}}
 data_engine: python-polars
 plot_engine: {recipe_plot_engine}
 data_schemas:
@@ -88,9 +88,9 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: String, label: Sample, is_entity_id: true}}
-      group: {{original_name: group, type: String, label: Group}}
-      score: {{original_name: score, type: Int64, label: Score}}
+      sample_id: {{original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}}
+      group: {{original_name: group, type: String, ui_label: Group}}
+      score: {{original_name: score, type: Int64, ui_label: Score}}
     tier1: {{steps: []}}
 joins:
   C:

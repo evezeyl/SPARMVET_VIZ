@@ -101,7 +101,7 @@ def _checker_says(left_cols, right_cols, left_keys, right_keys, form, self_join)
         return {n: dict(TYPES[t]) for n, t in cols.items()}
 
     def schema(label, cols):
-        return {"label": label, "description": "One row per sample.", "source": {"type": "local_tsv", "path": f"assets/test_data/{label.lower()}.tsv"},
+        return {"ui_label": label, "description": "One row per sample.", "source": {"type": "local_tsv", "path": f"assets/test_data/{label.lower()}.tsv"},
                 "null_values": [], "strip": True, "input_fields": fields(cols), "tier1": {"steps": []}}
 
     step = {"action": "polars_join", "right_ingredient": right_id, "how": "left"}
@@ -115,9 +115,9 @@ def _checker_says(left_cols, right_cols, left_keys, right_keys, form, self_join)
         schemas["B"] = schema("B", right_cols)
         ingredients.append({"dataset_id": "B"})
     raw = {"id": "r", "spec_version": 1, "data_engine": "python-polars", "plot_engine": "python-plotnine",
-           "info": {"label": "R", "description": "What it answers", "contact": "me"},
+           "info": {"ui_label": "R", "description": "What it answers", "contact": "me"},
            "data_schemas": schemas,
-           "joins": {"AB": {"label": "AB", "description": "d", "ingredients": ingredients, "tier1": {"steps": [step]}, "labels": {}}},
+           "joins": {"AB": {"ui_label": "AB", "description": "d", "ingredients": ingredients, "tier1": {"steps": [step]}, "labels": {}}},
            "analysis_groups": {"g": {"ui_label": "G", "description": "Q.", "plots": {"p": {"ui_label": "P", "description": "D.",
                "target_dataset": "AB", "mapping": {"x": "id"}, "layers": [{"name": "geom_col"}]}}}}}
     problems = check_recipe(raw, "run").problems

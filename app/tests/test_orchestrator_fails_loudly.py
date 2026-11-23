@@ -71,7 +71,7 @@ def _two_tables(tmp_path, left_type="Categorical", right_type="Categorical", rig
     on = "'on': [sample_id]" if right_key == "sample_id" else f"left_on: [sample_id]\n          right_on: [{right_key}]"
     entry = world.data_analysis_recipes_dir / "tiny.yaml"
     entry.write_text(f"""id: tiny
-info: {{label: Tiny}}
+info: {{ui_label: Tiny}}
 data_engine: python-polars
 plot_engine: python-plotnine
 data_schemas:
@@ -80,8 +80,8 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: {left_type}, label: Sample, is_entity_id: true}}
-      group: {{original_name: group, type: Categorical, label: Group}}
+      sample_id: {{original_name: sample_id, type: {left_type}, ui_label: Sample, is_entity_id: true}}
+      group: {{original_name: group, type: Categorical, ui_label: Group}}
     tier1: {{steps: []}}
     tier2: {{steps: []}}
   R:
@@ -89,8 +89,8 @@ data_schemas:
     null_values: []
     strip: false
     input_fields:
-      {right_key}: {{original_name: {right_key}, type: {right_type}, label: Sample}}
-      year: {{original_name: year, type: Int64, label: Year}}
+      {right_key}: {{original_name: {right_key}, type: {right_type}, ui_label: Sample}}
+      year: {{original_name: year, type: Int64, ui_label: Year}}
     tier1: {{steps: []}}
     tier2: {{steps: []}}
 joins:

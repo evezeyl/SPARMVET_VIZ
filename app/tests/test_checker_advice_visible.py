@@ -49,7 +49,7 @@ def test_the_shipped_template_has_no_advice():
 def test_a_recipe_with_an_advice_stays_available_and_its_advice_is_listed_for_home(tmp_path, monkeypatch):
     dep, root = _deployment(tmp_path)
     recipe = tiny_recipe("selfjoin")
-    recipe["joins"] = {"AA": {"label": "AA", "description": "A with itself.", "ingredients": [{"dataset_id": "A"}],
+    recipe["joins"] = {"AA": {"ui_label": "AA", "description": "A with itself.", "ingredients": [{"dataset_id": "A"}],
                               "tier1": {"steps": [{"action": "polars_join", "right_ingredient": "A", "on": ["a"], "how": "left", "maintain_order": "left_right"}]}}}
     write_tiny(root / "data_analysis_recipes", recipe)
     write_tiny(root / "data_analysis_recipes", tiny_recipe("plain"))

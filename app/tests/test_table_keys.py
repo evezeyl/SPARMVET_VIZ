@@ -66,12 +66,12 @@ def _fresh_cache():
 
 
 def field(label="Group"):
-    return {"original_name": "group", "type": "Categorical", "label": label}
+    return {"original_name": "group", "type": "Categorical", "ui_label": label}
 
 
 def schema(*, steps=(), tier2=()):
     return {"source": {"type": "local_tsv", "path": "/nowhere.tsv"}, "null_values": [], "strip": False,
-            "input_fields": {"sample_id": {"original_name": "sample_id", "type": "Categorical", "label": "Sample", "is_entity_id": True},
+            "input_fields": {"sample_id": {"original_name": "sample_id", "type": "Categorical", "ui_label": "Sample", "is_entity_id": True},
                              "group": field()},
             "tier1": {"steps": list(steps)}, "tier2": {"steps": list(tier2)}}
 
@@ -84,7 +84,7 @@ def recipe() -> dict:
     """Tables A and B, a join J of them (with a tier 2), a table X that reads nothing of A and B and is plotted directly (with a
     tier 2), and a plot on each."""
     return {
-        "id": "r", "spec_version": 1, "data_engine": "python-polars", "plot_engine": "python-plotnine", "info": {"label": "R"},
+        "id": "r", "spec_version": 1, "data_engine": "python-polars", "plot_engine": "python-plotnine", "info": {"ui_label": "R"},
         "data_schemas": {"A": schema(), "B": schema(), "X": schema(tier2=[FILTER_A])},
         "joins": {"J": join("A", "B", tier2=[FILTER_A])},
         "analysis_groups": {"g": {"ui_label": "G", "plots": {
@@ -204,7 +204,7 @@ def test_a_tier2_change_moves_no_tier1_key_and_a_plot_change_moves_no_key():
     plot_changed = copy.deepcopy(before)
     plot_changed["analysis_groups"]["g"]["plots"]["pj"]["mapping"] = {"x": "sample_id"}
     plot_changed["plot_defaults"] = {"theme": "theme_bw"}
-    plot_changed["info"] = {"label": "another"}
+    plot_changed["info"] = {"ui_label": "another"}
     plot_changed["plot_engine"] = "engine-x"
     assert t1_keys(before) == t1_keys(plot_changed)
 
@@ -292,7 +292,7 @@ def test_a_coarse_key_also_holds_a_part_of_the_recipe_that_belongs_to_no_table()
 def test_the_definition_of_a_table_leaves_out_its_tier2_and_the_engine_written_on_its_tier1_and_nothing_else():
     body = schema(steps=[FILTER_A], tier2=[FILTER_B])
     body["tier1"]["data_engine"] = "python-polars"
-    body["label"] = "A label"
+    body["ui_label"] = "A label"
     kept = table_definition_for_key(body)
     assert "tier2" not in kept and "data_engine" not in kept["tier1"] and kept["tier1"]["steps"] == [FILTER_A]
     assert body["tier2"]["steps"] == [FILTER_B] and body["tier1"]["data_engine"] == "python-polars", "the recipe itself is not changed"
@@ -303,7 +303,7 @@ def test_labels_of_a_table_are_in_the_key_today_the_owners_open_point():
     `table_definition_for_key` and this test together."""
     before = recipe()
     after = copy.deepcopy(before)
-    after["data_schemas"]["A"]["input_fields"]["group"]["label"] = "Another label"
+    after["data_schemas"]["A"]["input_fields"]["group"]["ui_label"] = "Another label"
     assert moved(t1_keys(before), t1_keys(after)) == {"A", "J"}
     joined = copy.deepcopy(before)
     joined["joins"]["J"]["description"] = "a new description of the join"
@@ -496,8 +496,8 @@ class Staged:
         # the tables share `sample_id` (the key) and `group` (declared once per side): a shared non-key column is refused (J08),
         # so the second ingredient publishes only its key and one new column.
         raw["data_schemas"]["B"]["input_fields"] = {
-            "sample_id": {"original_name": "sample_id", "type": "Categorical", "label": "Sample", "is_entity_id": True},
-            "group": {"original_name": "group", "type": "Categorical", "label": "Group B"}}
+            "sample_id": {"original_name": "sample_id", "type": "Categorical", "ui_label": "Sample", "is_entity_id": True},
+            "group": {"original_name": "group", "type": "Categorical", "ui_label": "Group B"}}
         raw["data_schemas"]["B"]["tier1"]["steps"] = [{"action": "polars_rename", "mapping": {"group": "group_b"}}]
         raw["joins"]["J"]["tier1"]["steps"] = [{"action": "polars_join", "right_ingredient": "B", "on": ["sample_id"], "how": "left",
                                                  "maintain_order": "left_right"}]

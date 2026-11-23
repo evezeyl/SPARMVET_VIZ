@@ -65,20 +65,20 @@ class Project:
 spec_version: 1
 data_engine: python-polars
 plot_engine: python-plotnine
-info: {{label: Tiny}}
+info: {{ui_label: Tiny}}
 data_schemas:
   T:
-    label: T
+    ui_label: T
     source: {{type: local_tsv, path: data/T.tsv}}
     null_values: []
     strip: false
     input_fields:
-      sample_id: {{original_name: sample_id, type: Categorical, label: Sample, is_entity_id: true}}
-      group: {{original_name: group, type: Categorical, label: Group}}
+      sample_id: {{original_name: sample_id, type: Categorical, ui_label: Sample, is_entity_id: true}}
+      group: {{original_name: group, type: Categorical, ui_label: Group}}
     tier1: {{steps: []}}
 joins:
   C:
-    label: C
+    ui_label: C
     ingredients:
       - dataset_id: T
     tier1: {{steps: []}}

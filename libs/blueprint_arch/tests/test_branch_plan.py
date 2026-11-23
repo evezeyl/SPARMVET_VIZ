@@ -105,8 +105,8 @@ def test_a_schema_branch_reads_the_same_file_in_the_same_way(master):
     for key in ("source", "null_values", "strip", "input_fields"):
         assert branch[key] == source[key]
     assert branch["null_values"] == ["", "NA"] and branch["strip"] is True
-    assert branch["label"] == "Samples (branch)"
-    assert list(branch) == ["label", "source", "null_values", "strip", "input_fields", "tier1"]
+    assert branch["ui_label"] == "Samples (branch)"
+    assert list(branch) == ["ui_label", "source", "null_values", "strip", "input_fields", "tier1"]
 
 
 def test_a_schema_branch_reuses_an_included_fields_file(tmp_path):
@@ -149,10 +149,10 @@ def test_a_join_branch_gives_a_valid_recipe_that_loads(master):
     apply_plan(master, plan)
     assert check_recipe_file(master).errors == []
     branch = ConfigManager(str(master)).raw_config["joins"]["C_b"]
-    assert branch["label"] == "Combined (branch)"
+    assert branch["ui_label"] == "Combined (branch)"
     assert branch["ingredients"] == [{"dataset_id": "samples"}, {"dataset_id": "reads"}]
     assert branch["tier1"] == {"steps": []}
-    assert list(branch) == ["label", "ingredients", "tier1"]
+    assert list(branch) == ["ui_label", "ingredients", "tier1"]
 
 
 def test_the_tier_file_of_a_join_branch_is_a_tier_not_a_flat_list(master):
@@ -229,14 +229,14 @@ def test_a_plot_written_without_a_ui_label_is_refused(tmp_path):
 def test_a_label_with_a_quote_and_a_colon_stays_valid_text(tmp_path):
     recipe = recipe_with_a_join()
     recipe["analysis_groups"]["main"]["plots"]["per_year"]["ui_label"] = 'Samples: the "good" ones'
-    recipe["data_schemas"]["samples"]["label"] = 'Samples: the "good" ones'
+    recipe["data_schemas"]["samples"]["ui_label"] = 'Samples: the "good" ones'
     master = write_master(tmp_path, recipe)
     apply_plan(master, generate_branch_plan(str(master), "per_year", "plot_spec", "per_year_b"))
     apply_plan(master, generate_branch_plan(str(master), "samples", "wrangling", "samples_b"))
     raw, problems = load_recipe(master)
     assert problems == []
     assert raw["analysis_groups"]["main"]["plots"]["per_year_b"]["ui_label"] == 'Samples: the "good" ones (branch)'
-    assert raw["data_schemas"]["samples_b"]["label"] == 'Samples: the "good" ones (branch)'
+    assert raw["data_schemas"]["samples_b"]["ui_label"] == 'Samples: the "good" ones (branch)'
 
 
 # -- what is refused

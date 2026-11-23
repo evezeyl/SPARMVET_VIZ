@@ -984,16 +984,13 @@ def test_the_name_rule_and_the_display_name_rule_give_the_same_result_in_any_ord
     assert digest(root) == before
 
 
-def test_the_code_places_of_the_name_key_are_listed_from_the_real_tree_and_not_changed():
+def test_no_code_place_of_the_removed_name_key_is_left_in_the_real_tree():
+    """The names pass is built (2026-11-23): the reads of the app features key `name` (the validator rule, the display fallback, the
+    sidebar validator label) are gone; the dry run lists none of them. The refusal table `renamed_keys.py` names `persona_id` and `name`
+    as removed keys on purpose, and is not a read."""
     plan = tool.build_plan(ROOT)
-    places = {(c.file, c.kind) for c in plan.code_places if c.key == tool.APP_FEATURES_NAME_KEY}
-    expected = {rel for rel, _p, _k in tool.APP_FEATURES_NAME_PLACES}
-    assert {f for f, _ in places} == expected          # every named file still has a line that matches (a moved line is found by text)
-    lines = {(c.file, c.text) for c in plan.code_places if c.key == tool.APP_FEATURES_NAME_KEY}
-    assert any(f == "app/src/bootloader.py" and 'config.get("name")' in t for f, t in lines)
-    assert any(f == "app/modules/renamed_keys.py" and "persona_id" in t for f, t in lines)
-    assert any(f == "app/modules/app_features_validator.py" and "Rule 2" in t for f, t in lines)
-    assert any(f == "app/modules/sidebar_validator.py" for f, _ in lines)
+    reads = [c for c in plan.code_places if c.key == tool.APP_FEATURES_NAME_KEY and c.kind == "code"]
+    assert reads == [], [(c.file, c.line, c.text) for c in reads]
 
 
 def test_the_dry_run_prints_the_code_places_of_the_name_key(tmp_path, capsys):

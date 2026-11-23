@@ -33,7 +33,7 @@ def test_data_analysis_recipe_has_no_step_problems(path):
 # action and plot component registries); a recipe it refuses is not handed to the engine. Each problem carries the
 # permanent code of the check, the place in the recipe and the fix.
 
-JOIN = {"label": "J", "ingredients": [{"dataset_id": "A"}], "tier1": {"steps": []}}
+JOIN = {"ui_label": "J", "ingredients": [{"dataset_id": "A"}], "tier1": {"steps": []}}
 SORT = {"action": "polars_sort", "by": ["a"], "maintain_order": True}
 
 
@@ -93,8 +93,8 @@ def test_a_removed_key_is_refused_and_the_fix_names_the_replacement(tmp_path):
 
 
 def test_a_missing_label_is_refused(tmp_path):
-    problems = _problems(tmp_path, lambda r: r["data_schemas"]["A"].pop("label"))
-    assert [p.location for p in problems] == ["data_schemas.A"] and "label" in problems[0].problem
+    problems = _problems(tmp_path, lambda r: r["data_schemas"]["A"].pop("ui_label"))
+    assert [p.location for p in problems] == ["data_schemas.A"] and "ui_label" in problems[0].problem
 
 
 def test_an_action_that_is_not_registered_is_refused(tmp_path):

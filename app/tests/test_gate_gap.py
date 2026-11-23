@@ -32,8 +32,7 @@ def _deployment(tmp_path, contact=None):
     for key in ("raw_data", "data_analysis_recipes", "cache", "user_data", "gallery"):
         (root / key).mkdir(parents=True, exist_ok=True)
         locations[key] = str(root / key)
-    body = {"deployment_type": "filesystem", "deployment_name": "dep",
-            "default_app_features": "qa", "locations": locations}
+    body = {"deployment_type": "filesystem", "default_app_features": "qa", "locations": locations}
     if contact:
         body["branding"] = {"contact": contact}
     path = tmp_path / "dep.yaml"

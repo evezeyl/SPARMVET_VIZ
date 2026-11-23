@@ -94,7 +94,7 @@ def _running(work: Path, with_broken: bool):
     for key in ("cache", "user_data"):
         Path(locations[key]).mkdir(exist_ok=True)
     deployment = work / "deployment.yaml"
-    deployment.write_text(yaml.safe_dump({"deployment_type": "filesystem", "deployment_name": "plot tier3", "locations": locations,
+    deployment.write_text(yaml.safe_dump({"deployment_type": "filesystem", "locations": locations,
                                           "default_data_analysis_recipe": "t", "default_app_features": "qa"}), encoding="utf-8")
     port = _free_port()
     with open(work / "server.log", "w") as out:

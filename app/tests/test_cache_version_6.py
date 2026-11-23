@@ -209,7 +209,7 @@ def _deployment(tmp_path):
         (root / key).mkdir(parents=True, exist_ok=True)
         locations[key] = str(root / key)
     path = tmp_path / "dep.yaml"
-    path.write_text(yaml.safe_dump({"deployment_type": "filesystem", "deployment_name": "dep", "default_app_features": "qa",
+    path.write_text(yaml.safe_dump({"deployment_type": "filesystem", "default_app_features": "qa",
                                     "locations": locations}))
     return path, root / "user_data" / "anchors"
 

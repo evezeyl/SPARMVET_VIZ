@@ -100,7 +100,7 @@ def test_a_candidate_is_listed_once():
 def test_the_sources_say_where_each_candidate_comes_from():
     raw = recipe(entry_steps=[GROUP])
     assert key_candidate_sources(raw, "J", declared=["country"]) == [(("country",), "declared in the recipe"), (("country", "year"), "group-by columns of the last aggregation")]
-    assert key_candidate_sources(recipe(), "J") == [(("sample_id",), "entity key declared on an ingredient")]
+    assert key_candidate_sources(recipe(), "J") == [(("sample_id",), "entity id declared on an ingredient")]
 
 
 @pytest.mark.parametrize("bad", [[], [""], [1], {"a": 1}, 3, [["a"]]])

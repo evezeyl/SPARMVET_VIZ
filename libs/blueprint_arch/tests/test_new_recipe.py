@@ -39,9 +39,9 @@ def test_the_keys_of_format_1_come_first_and_in_order():
 
 def test_the_name_typed_in_the_form_is_the_label_not_an_old_key():
     info = draft()["info"]
-    assert info["label"] == "My analysis"
+    assert info["ui_label"] == "My analysis"
     assert "name" not in info and "display_name" not in info
-    assert list(info) == ["label", "description", "author", "version", "created", "tags"]
+    assert list(info) == ["ui_label", "description", "author", "version", "created", "tags"]
     assert info["description"] == "What it answers" and info["author"] == "The team"
     assert info["version"] == "1.0.0" and info["created"] == "2026-11-14" and info["tags"] == []
 
@@ -64,7 +64,7 @@ def test_the_written_file_passes_the_checker_and_keeps_the_order(tmp_path):
     path = write_recipe(tmp_path / "my_analysis.yaml", draft(label="Prøver: the \"good\" ones"))
     assert check_recipe_file(path, "build").errors == []
     raw, problems = load_recipe(path)
-    assert problems == [] and raw["info"]["label"] == "Prøver: the \"good\" ones"
+    assert problems == [] and raw["info"]["ui_label"] == "Prøver: the \"good\" ones"
     text = path.read_text(encoding="utf-8")
-    assert text.startswith("id: my_analysis\nspec_version: 1\ndata_engine: python-polars\nplot_engine: python-plotnine\ninfo:\n  label:")
+    assert text.startswith("id: my_analysis\nspec_version: 1\ndata_engine: python-polars\nplot_engine: python-plotnine\ninfo:\n  ui_label:")
     assert text.index("data_schemas:") < text.index("joins:") < text.index("analysis_groups:")

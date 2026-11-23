@@ -6,7 +6,7 @@ a test that lists `assets/test_data` or `config/` in parallel never sees it. The
 One exception, forced by the app: Blueprint lists its recipes from `config/data_analysis_recipes/pipelines` of the working
 folder and ignores the deployment's recipes location, so a test that drives Blueprint (`blueprint=True`) must put the staged
 RECIPE there; only its recipe files go there (its data, cache and user data stay in the work folder) and they are removed at the end.
-Its `info.label` is unique, so a test can see whether anything of the recipe is still on the page.
+Its `info.ui_label` is unique, so a test can see whether anything of the recipe is still on the page.
 """
 import contextlib
 import os
@@ -54,7 +54,7 @@ def stage(blueprint: bool = False) -> Path:
     text = (PIPELINES / f"{SOURCE}.yaml").read_text()
     text = text.replace(f"./assets/test_data/{SOURCE}/", f"{rel_data}/{STAGE}/")
     text = text.replace(f"{SOURCE}/", f"{STAGE}/")
-    text = text.replace(f"id: {SOURCE}", f"id: {STAGE}", 1).replace(f"label: {LABEL_OF_SOURCE}", f"label: {LABEL}", 1)
+    text = text.replace(f"id: {SOURCE}", f"id: {STAGE}", 1).replace(f"ui_label: {LABEL_OF_SOURCE}", f"ui_label: {LABEL}", 1)
     (recipes / f"{STAGE}.yaml").write_text(text)
     if not blueprint:
         # a second, healthy recipe: when the open one is dropped by the gate, HOME shows another (the shipped folder has many)
@@ -68,7 +68,7 @@ def stage(blueprint: bool = False) -> Path:
     for key in ("cache", "user_data"):
         Path(locations[key]).mkdir()
     deployment = WORK / "deployment.yaml"
-    deployment.write_text(yaml.safe_dump({"deployment_type": "filesystem", "deployment_name": "gate stage", "locations": locations,
+    deployment.write_text(yaml.safe_dump({"deployment_type": "filesystem", "locations": locations,
                                           "default_data_analysis_recipe": STAGE, "default_app_features": "qa"}), encoding="utf-8")
     return deployment
 
