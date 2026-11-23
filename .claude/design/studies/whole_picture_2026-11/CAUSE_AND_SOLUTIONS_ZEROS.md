@@ -476,6 +476,7 @@ Each question is hers. Each says what she would see on the demo. Each ends with 
 **Question 6. The block in the recipe: its form, the tables it covers, its names.** (i) A block that the app reads (the app adds the lines when it reads the file) or a first step you write in tier 1. (ii) "Every result table": a result table with no entity id says "no entity id" in its block, or must declare one first (your order D-0569: "Have the recipes declaire entity id"). (iii) The key names and what each holds. On the demo: ResFinder carries one block with its meaning; the APEC list has no entity id and is never completed; the 3 tables of `2_test_data_ST22_dummy` have no id today and must declare one. Lean: a block the app reads; declare the id first; the agents propose the key names after your answer. Neither: say what you meant.
 
 **Question 7. When in the table: before or after the recipe's own tier-1 steps?** Your words: "an automatic completion at (first step)"; "this might be before T1 a step the app does". On the demo: before, ResFinder's stamp would read "Detected" on the 4 lines and its row count would give 1 for them (the recipe's steps must change); `Detailed_summary` (42 ids in the file, 36 after its filters) gets no added line and 6 entities are absent. After: the steps do not see the added lines and cannot say how to process them. Lean: before. Neither: say what you meant.
+> **Added by D-0586:** her sentence "the treatmenet of the missing data must be defined before the filter likely - is it NA is it 0" supports the completion before the recipe's own tier-1 steps: the marked lines exist when the recipe states their treatment, before any filter can remove an entity (on the demo, the 6 entities of `Detailed_summary`). "likely" leaves the question open: still hers.
 
 **Question 8. Which metadata does the completion read?** As read from its file (after the id check), or after its tier 1? On the demo: remove one of the 4 added entities at the metadata's place: from the file, it stays in ResFinder marked; after tier 1, it is no longer added, but ResFinder's place lies below the metadata's (one place per path: refused). Lean: as read. Neither: say what you meant.
 
@@ -490,6 +491,7 @@ Each question is hers. Each says what she would see on the demo. Each ends with 
 **Question 11. A temporary id (an unknown or false id added to the metadata with a dummy fill).** The app cannot tell a dummy from a real id unless it is marked. (a) a note given at upload and kept in the log, with a warning in the export while the log says dummy ids were declared and the data still holds them; (b) a column of the metadata the app reads; (c) nothing: the user's responsibility. It does not leave through the metadata (the result file still holds the id): it leaves through a removal by key, "remove from all the data", or a new file. On the demo: none; a dummy would appear in every plot with its dummy values until removed. Lean (Sonnet and Opus): (a). Neither: say what you meant.
 
 **Question 12. The join order: a rule, an advice, or documentation?** With the completion, a join with the result table first and the metadata second keeps every entity. On the demo: remove one detected entity at ResFinder: result table first, 41 samples; metadata first and the marker read, 42 rows with 1 shown as "no line"; metadata first and genes only, 42 samples with 5 in the bar at 0. Lean (both): an advice. Neither: say what you meant.
+> **Changed by D-0586:** the direction is decided in her words ("recipes should not start from the metadata"). How it is enforced (refused by the check, an advice, or documentation) is NOT stated: still hers.
 
 **Question 13. A recipe with no metadata block** (`figshare_integration`: its metadata is a data schema). The checks cannot run. The check says so, or the recipe names its metadata. On the demo: none; `figshare_integration` shows the message. Lean: the recipe names it (in the dry run). Neither: say what you meant.
 
@@ -609,6 +611,7 @@ Not in the text above. It answers her question 1 and reopens some earlier words;
 1. **What a table that starts from the metadata shows for an added line:** one more entity, its metadata values empty (country, source, year), the marker set. A count per entity includes it; a plot by country shows an empty country.
    - On the demo, six tables start from the metadata: four join a data table (`ST22_Anchor`, `QA_AMR_per_sample`, `QA_fanout_exhibit`, `QA_population_zscore`), and two are made from the metadata alone (`QA_year_types`, `QA_aggregated_no_key`) [ESTABLISHED: this file, the line "Joined tables that start from the metadata (first ingredient `metadata_schema`): 7" (6 in the demo recipe); RECIPE FILE `1_test_data_ST22_dummy.yaml:265-270` and `:289-294`: their only ingredient is `metadata_schema`; READ SCAN, both agents]. On the demo no id is added (0 ids outside the metadata).
    - **Flag (a result can change with no word in the table):** in a join with the data table first, the data id already kept its row before the completion, with its metadata values empty. After the completion it matches the added line, and the marker reaches the result only if the join's last `polars_select` keeps the marker column; the demo's joins publish a fixed list of columns [RECIPE FILE, for example `QA_AMR_per_sample_tier1.yaml`]. Otherwise nothing in the table says that the entity has no metadata; only the log and the warning say it.
+   > **Answered by D-0586:** "yes flag column kept"; it may be removed as a last step for the plots only after the missing values are treated. Dry-run candidates, listed only: the tables whose tier 1 ends with a fixed column list (`polars_select`) and must keep the marker columns: the data tables `MLST` and `VirulenceFinder`, and the joins `ST22_Anchor`, `AR1_MLST_Serotype_Virulence`, `QA_AMR_per_sample`, `QA_fanout_exhibit`, `QA_population_zscore`, `QA_ST_with_NA` and `QA_L50_integer` [RECIPE FILE: `polars_select` in their tier-1 files].
    - The same holds for the marker "not in original data" in a table that starts from the metadata.
 2. **With her purpose, the 4 joins with a data table would be written data first, metadata second, `left`.** A dry-run candidate of the one big move (D-0525), listed only, not applied. The 2 tables made from the metadata alone cannot be written that way (they read no data table), so they always hold an added line. Whether "data first" is a rule, an advice or documentation stays her question 12.
 3. **Which completion keeps which rows:**
@@ -621,14 +624,52 @@ Not in the text above. It answers her question 1 and reopens some earlier words;
      - an id repeated in the metadata (rows multiply [ESTABLISHED: RECIPES G9, G13]);
      - the same id written two ways in the two tables (two entities, one marked on each side).
 4. **A question for her: does the recipe need a stated meaning for "not in metadata", as it does for "not in original data"?**
+   > **Answered by D-0586 (2026-11-23):** "A : required meaning".
    - On `left_join_lesson`: 2 ids (`ACC0001`, `ACC0002`) of `sequenced` are in no metadata [ESTABLISHED: OVERLAP section 1]; the metadata (10 ids) gains 2 lines with empty values and the marker.
    - With a required meaning, the check asks the recipe to say what such lines are (for example "kept, shown as unknown", or "excluded"). Without it, they pass as entities with empty values and only the log says so. On the demo: none.
    - Lean (Sonnet, as a lean): required, for the same reason as the first marker.
    - Lean (Opus, as a lean): required, for the same reason ("I think we need to force" [D-0574]), and the check advises when a table's published columns drop a marker column, so that the marker reaches the result.
    - Neither: say what you meant.
 
+### Added 2026-11-23 (ledger D-0586): recipes do not start from the metadata; the marker column is kept; missing values are treated before a filter; equal id sets as a goal
+
+**Her words, exact.** "A - we agreed that recipes should not start from the metadata - which means that the recipes it appears have to be changed - it means 1. fix the ids missing in both original and metadata 2. original data -> joinleft on metadata - when there is the need for a metadata join - exactly - we need to look at those made from the metadata alone - it is test recipes I think - not mine - so maybe they need to be differently - do they only hold metadata ? - yes flag column kept - can be removed eg. last step for the plots if really  necessary ... after having treated the missing values correctly (depending on the purpose - sorry this is context dependent ) - breaking step - because the treatmenet of the missing data must be defined before the filter likely - is it NA is it 0 ... if treated correctly I hope it will solve this. Also a reason to have recipes where the sets of metadata and original data are equal. Important. A : required meaning." [HER WORDS D-0586]
+
+**Decided in her words.**
+- **Question A:** a required meaning for "not in metadata" ("A : required meaning").
+- **Recipes should not start from the metadata.** The order: "1. fix the ids missing in both original and metadata"; "2. original data -> joinleft on metadata - when there is the need for a metadata join".
+- **The marker column is kept** ("yes flag column kept"). It "can be removed eg. last step for the plots if really  necessary", only "after having treated the missing values correctly"; the treatment is "context dependent".
+- **The treatment of the missing data comes before a filter:** "the treatmenet of the missing data must be defined before the filter likely - is it NA is it 0".
+- **Equal sets of ids of the metadata and of the original data:** "a reason to have recipes where the sets of metadata and original data are equal. Important."
+- **Readings, not her words:** the four demo joins that start from the metadata (`ST22_Anchor`, `QA_AMR_per_sample`, `QA_fanout_exhibit`, `QA_population_zscore`) are rewritten with the data table first in the one dry run (D-0525; listed only). Her "we agreed" refers to D-0564. Her "breaking step" is read as "the step that removes rows".
+
+**Her question "do they only hold metadata ?": the two tables made from the metadata alone.**
+- **Yes.** Each has one ingredient, `metadata_schema` [RECIPE FILE `1_test_data_ST22_dummy.yaml:265-270, 289-295`].
+  - `QA_year_types` adds a column `year_label` (the year as text) [RECIPE FILE `wrangling/QA_year_types.yaml`].
+  - `QA_aggregated_no_key` adds the same column, then counts `sample_id` per `country` and `year_label` in tier 2 [RECIPE FILE `QA_aggregated_no_key_tier1.yaml`, `_tier2.yaml`].
+  - Both are called "QA canary" in their descriptions.
+- **The plots that read them** are in the group "QA canaries (not for publication): each plot isolates one failure mode" [RECIPE FILE `1_test_data_ST22_dummy.yaml:337-348`]:
+  - `qa_year_label`: the year label has no ".0" and the numeric year stays numeric;
+  - `qa_facet_by_mapping`: `facet_by` written in `mapping` must give 3 panels (issue 65);
+  - `qa_aggregated_no_key`: an aggregate with no `sample_id`, so a removal by id cannot change it (issue 60).
+- **They join nothing,** so "a recipe does not start a join from the metadata" does not touch them, unless she means "no table is made from the metadata at all". An added "not in metadata" line would appear in them: an empty year or country, counted in `qa_aggregated_no_key`.
+- **Options (hers), with what she would see:**
+  - (a) Leave them as test tables of the QA canaries: the same three plots, made from the metadata.
+  - (b) Rebuild the same canaries from a data table joined with the metadata, data first: the same three plots, made the way her rule writes recipes.
+  - (c) Remove them: the QA canaries group loses these three plots, and the failure modes they guard are no longer shown.
+  - Lean (Opus, as a lean): (b): the shipped demo then shows only the form her rule asks for, and the canaries keep testing what they test.
+  - Lean (Sonnet, as a lean): (a): these tables join nothing, so her rule about joins does not touch them, and each exists to isolate one failure mode that needs no data table (the year label without ".0"; an aggregate with no `sample_id`, the fixture of the reach tests of issue 60, `QA_aggregated_no_key_tier1.yaml`). Rebuilding changes a shipped fixture for a rule they do not break. What does change in them is that an added "not in metadata" line enters them (an empty year and country, one more group counted in `qa_aggregated_no_key`): so the required meaning of D-0586 must say how those lines are treated there. (c) loses the three plots.
+  - Neither: say what you meant.
+
+**The goal "equal id sets", in the data check.**
+- [TODAY] The data check builds each table alone and compares no ids [CODE READ `app/modules/data_analysis_recipe_validator.py:485`; ESTABLISHED: OVERLAP section 2].
+- [TO BUILD] One line per result table, words PROVISIONAL: "In <table>: the same ids as the metadata." or "In <table>: N ids are in the metadata only, M in this file only."
+- It is shown with the other notes on the ids: the red warning where there is a panel, Data Import after an upload, BLUEPRINT's Validate, the log of the ids and the export.
+- On the demo: every result table except ResFinder reads "the same ids"; ResFinder reads "4 in the metadata only, 0 in this file only" [ESTABLISHED: OVERLAP section 1].
+
 **Next question (item 2). A line of the metadata with no usable id** (empty, spaces, `-`).
 - It can never be matched. With your purpose (data first, metadata second, `left`) it adds no row, and nothing in the result shows it; only the red warning and the log name it.
+- What her rule of D-0586 changes: with no table that starts a join from the metadata, such a line adds no row anywhere, except in the two tables made from the metadata alone (`QA_year_types`, `QA_aggregated_no_key`), where it is one more entity with no id.
 - In a table that starts from the metadata, all such lines together make one entity with no id [POLARS SEMANTICS; ESTABLISHED: D-0570 fact 6].
 - Should the line:
   - (a) stay in the metadata table, the recipe removing it by a visible step as `demo_abromics` does (`demo_abromics.yaml:44-47`);
@@ -909,3 +950,5 @@ None.
 **D-0581 and D-0582 additions:** Sonnet (this file) and Opus (`OPUS_checks_noblock_v1.md`, R1 to R20 applied).
 
 **D-0584 and D-0585 additions:** Sonnet (this file) and Opus (OPUS_item1_final.md).
+
+**D-0586 additions:** Opus (OPUS_m645_final.md) and Sonnet (checked and pasted).
