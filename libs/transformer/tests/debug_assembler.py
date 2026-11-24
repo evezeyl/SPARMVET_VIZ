@@ -2,7 +2,7 @@
 # @deps
 # provides: script:debug_assembler
 # mirrors: app/modules/orchestrator.py
-# consumes: libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)
+# consumes: libs/utils/src/utils/id_completion.py, libs/ingestion/src/ingestion/ingestor.py, libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/data_assembler.py, libs/utils/src/utils/config_loader.py (full-pipeline data analysis recipes only)
 # consumed_by: libs/viz_factory/tests/debug_gallery.py, libs/transformer/tests/test_debug_assembler.py
 # doc: .claude/rules/rules_agent_role_bioscientist.md#7
 # @end_deps
@@ -27,6 +27,7 @@ try:
     from transformer.data_wrangler import DataWrangler
     from transformer.data_assembler import DataAssembler
     from transformer.anchor import write_anchor
+    from utils.id_completion import complete_table, participants, read_ids, union_of
 except ImportError as e:
     print(
         f"❌  ERROR: [Layer 2 Runner] Core imports failed. Check .venv install. {e}")
@@ -87,11 +88,20 @@ def run_assembler_debug(data_analysis_recipe_path: str, data_dir_override: str =
 
     # 4. Ingest all schemas upfront (mirrors the orchestrator: the declared types, `strip` and `null_values` are applied
     #    by the ingestion itself, then the tier-1 steps of the dataset). A failure stops the run: nothing is skipped.
+    #    Before any step, every table that takes part in the completion of the ids gets a line for each entity id it lacks and its marker column
+    #    (`utils.id_completion`, the same calls as `DataOrchestrator._completed`): a recipe step may read a marker column, as the shipped ResFinder does.
+    read_plain: Dict[str, pl.LazyFrame] = {ds_id: ingestor.ingest(ds_id, ds_schema)[0] for ds_id, ds_schema in all_schemas.items()}
+    parts = participants(data_analysis_recipe)
+    if parts:
+        read = [read_ids(read_plain[p.table], p) for p in parts]
+        union = union_of(read)
+        own_ids = {t.table: t.ids for t in read}
+        for p in parts:
+            read_plain[p.table] = complete_table(read_plain[p.table], p, union, own_ids[p.table])
     ingredients: Dict[str, pl.LazyFrame] = {}
     for ds_id, ds_schema in all_schemas.items():
-        lf, _ = ingestor.ingest(ds_id, ds_schema)
         rules = DataWrangler.tier_steps(ds_schema, "tier1")
-        ingredients[ds_id] = DataWrangler().run(lf, rules)
+        ingredients[ds_id] = DataWrangler().run(read_plain[ds_id], rules)
 
     # 5. Assembly Execution Loop
     for assembly_id, assembly_info in assemblies.items():

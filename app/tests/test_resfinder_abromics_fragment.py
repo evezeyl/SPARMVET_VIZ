@@ -50,6 +50,7 @@ data_schemas:
     source: {{type: local_tsv, path: {resfinder}}}
     null_values: []
     strip: true
+    completion: {{marker: ResFinder_not_in_original_data, meaning: no result for this entity}}
     input_fields:
       sample_id: {{original_name: sample_id, type: String, is_entity_id: true}}
       gene: {{original_name: Gene, type: String}}
@@ -95,7 +96,10 @@ def _run(folder: Path) -> pl.DataFrame:
     orchestrator = DataOrchestrator(folder, ROOT / "assets" / "test_data")
     with contextlib.redirect_stdout(io.StringIO()):
         keys = orchestrator.compute_data_analysis_recipe_keys("recipe")
-        return orchestrator.materialize_tier1("recipe", "classes", folder / "a.parquet", keys=keys).collect()
+        table = orchestrator.materialize_tier1("recipe", "classes", folder / "a.parquet", keys=keys).collect()
+    # the marker column of the completion of the ids is not part of what these steps replace: the old tables have none. The data of this test is complete, so no line is added.
+    assert not any(table[c].any() for c in table.columns if c.endswith("not_in_original_data"))
+    return table.drop([c for c in table.columns if c.endswith("not_in_original_data")])
 
 
 def _fragment_steps() -> dict:

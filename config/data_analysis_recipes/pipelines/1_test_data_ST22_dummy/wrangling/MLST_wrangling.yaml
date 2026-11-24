@@ -1,6 +1,8 @@
 steps:
+  # the select keeps the table's own marker column (added by the app to an entity with no line in the file), so that a table or a plot made
+  # from this one can tell an added line from a line of the file (PROVISIONAL: the agent's choice, D-0613)
   - action: polars_select
-    exprs: [sample_id, scheme, sequence_type]
+    exprs: [sample_id, scheme, sequence_type, MLST_not_in_original_data]
   # Ingestion already turns "-", "NA", "N/A", "None", "null", "NaN" and empty cells into real
   # nulls (DataSanitizer), so rules matching those never fire: fill the nulls instead.
   # "unknown" is not one of those markers, so it is replaced here.

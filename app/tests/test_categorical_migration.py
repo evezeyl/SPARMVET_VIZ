@@ -90,22 +90,72 @@ def _counts(data: pl.DataFrame, column: str):
 
 PLOTS = [(r, p) for r, plots in sorted(COUNTS_BEFORE.items()) for p in sorted(plots)]
 
+# The plots whose counts the completion of the ids changed (D-0613) and that the recipe's own steps now treat (the one big move, D-0613; the ledger lines are in the changelog of 2026-11-24).
+# ResFinder gets 4 lines for the entities of the metadata that it lacks (38 of 42). The recipe says what such a line means (the `completion` of ResFinder: the tool ran and found
+# no resistance gene): its status is "Not Found", not "Detected", and it counts as 0 genes. The expected numbers below are the counts recorded before the migration plus these changes, each
+# explained; any other difference fails the test:
+# - `amr_heatmap` draws 4 rows more: the 4 entities, with no gene and no phenotype (empty), status "Not Found" (4 rows), one row each;
+# - `virulence_bar` and `virulence_variants` read `status` through `ST22_Anchor`: the 31 rows of the 4 entities read "Not Found" (they were empty before the completion).
+EMPTY = "<null>"
+ADDED_IDS = ["40503315", "52676003", "75442817", "87836481"]
+CHANGES_BY_THE_COMPLETION = {
+    ("1_test_data_ST22_dummy", "amr_heatmap"): {"rows": 74, "set": {"gene": {EMPTY: 4}, "predicted_phenotype": {EMPTY: 4}, "sample_id": {i: 1 for i in ADDED_IDS}, "status": {"Not Found": 4}}},
+    ("1_test_data_ST22_dummy", "virulence_bar"): {"rows": 617, "set": {"status": {EMPTY: None, "Not Found": 31}}},
+    ("1_test_data_ST22_dummy", "virulence_variants"): {"rows": 617, "set": {"status": {EMPTY: None, "Not Found": 31}}},
+}
+
+
+def _expected(recipe_id, plot_id):
+    """(rows, {column: [[value, n], ...]}) recorded before the migration, with the changes of the completion applied (None removes a value)."""
+    before = COUNTS_BEFORE[recipe_id][plot_id]
+    change = CHANGES_BY_THE_COMPLETION.get((recipe_id, plot_id))
+    if change is None:
+        return before["rows"], before["counts"]
+    counts = {c: {v: n for v, n in pairs} for c, pairs in before["counts"].items()}
+    for column, edits in change["set"].items():
+        table = counts.setdefault(column, {})
+        for value, n in edits.items():
+            if n is None:
+                table.pop(value, None)
+            else:
+                table[value] = n
+    return change["rows"], {c: sorted([v, n] for v, n in table.items()) for c, table in counts.items()}
+
 
 @pytest.mark.parametrize("recipe_id,plot_id", PLOTS, ids=[f"{r}:{p}" for r, p in PLOTS])
 def test_counts_per_category_equal_to_before(recipe_id, plot_id):
     plot, fig = _render(recipe_id, plot_id)
     data = pl.from_pandas(plot.data)
-    before = COUNTS_BEFORE[recipe_id][plot_id]
-    assert data.height == before["rows"]
-    for column, counts in before["counts"].items():
+    rows, expected_counts = _expected(recipe_id, plot_id)
+    assert data.height == rows
+    for column, counts in expected_counts.items():
         assert column in data.columns, f"{plot_id}: column {column} vanished"
         assert _counts(data, column) == counts, f"{plot_id}: counts of {column} changed"
 
 
 # -- (2) no value lost or null: the content of every table equals the one before --------------
 
+# The tables whose content is NOT the one recorded before the migration. Two causes, both decided: the completion of the ids (D-0613: every table that takes part carries a marker column
+# `<table>_not_in_original_data`; ResFinder has the 4 added lines and the status "Not Found") and the one big move of the recipes (D-0586, D-0610, D-0613: a joined table starts from a data table, so
+# its rows come in another order, the content being the same; the two QA tables made from the metadata alone carry their own marker; MLST keeps its own marker in `3_test_no_joins` too; the figshare join
+# carries the three markers). Rows are never added or lost by the move: the row counts of every table of the list are the ones of the file (checked by `test_golden_baseline`). No other table moves.
+CONTENT_CHANGED_BY_THE_COMPLETION = {
+    f"{recipe}/{kind}/{name}" for (recipe, kind), names in {
+        ("1_test_data_ST22_dummy", "t1"): ["Bracken_with_metadata", "FastP_with_metadata", "MLST_with_metadata", "QA_AMR_per_sample", "QA_aggregated_no_key", "QA_fanout_exhibit", "QA_year_types",
+                                           "QC_Reads_Anchor", "ResFinder", "ResFinder_with_metadata", "ST22_Anchor"],
+        ("1_test_data_ST22_dummy", "t2"): ["Bracken_with_metadata", "FastP_with_metadata", "MLST_with_metadata", "QA_AMR_per_sample", "QA_fanout_exhibit", "QA_year_types", "QC_Reads_Anchor", "ResFinder",
+                                           "ResFinder_with_metadata", "ST22_Anchor"],
+        ("1_test_data_ST22_dummy", "plots"): ["amr_heatmap", "mlst_bar", "qa_amr_genes_per_sample", "qa_facet_by_mapping", "qa_fanout_rows_per_sample", "qa_year_label", "qc_reads_horizontal_barplot",
+                                              "virulence_bar", "virulence_variants", "year_distribution"],
+        ("3_test_no_joins", "t1"): ["MLST"], ("3_test_no_joins", "t2"): ["MLST"], ("3_test_no_joins", "plots"): ["sequence_type_counts"],
+        ("demo_abromics", "t1"): ["demo_join"], ("demo_abromics", "t2"): ["demo_join"], ("demo_abromics", "plots"): ["demo_st_by_source"],
+        ("figshare_integration", "t1"): ["figshare_triple_join"], ("figshare_integration", "t2"): ["figshare_triple_join"],
+        ("figshare_integration", "plots"): ["plot_a_phenotype_bar", "plot_b_genotype_bar", "plot_c_resistance_class"],
+    }.items() for name in names} | {"stress_test_master/plots/stress_species_amr", "stress_test_master/t1/Master_Collection", "stress_test_master/t2/Master_Collection"}
+
+
 def test_every_table_has_the_content_it_had_before():
-    """Rows, column names and the content hash of T1, T2 and every plotted table; the type text is not compared."""
+    """Rows, column names and the content hash of T1, T2 and every plotted table; the type text is not compared. The tables the completion of the ids changed are listed, no more."""
     found = gb.build(RECIPES / "pipelines", RAW, sorted(CONTENT_BEFORE), True)["recipes"]
     problems = []
     for recipe_id, kinds in CONTENT_BEFORE.items():
@@ -115,7 +165,7 @@ def test_every_table_has_the_content_it_had_before():
                 got = {"rows": now.get("rows"), "names": [c.split(":")[0] for c in now.get("columns", [])], "sha256": now.get("sha256")}
                 if got != rec:
                     problems.append(f"{recipe_id}/{kind}/{name}")
-    assert not problems, problems
+    assert set(problems) == CONTENT_CHANGED_BY_THE_COMPLETION, (sorted(set(problems) - CONTENT_CHANGED_BY_THE_COMPLETION), sorted(CONTENT_CHANGED_BY_THE_COMPLETION - set(problems)))
 
 
 # -- (3) the Enum --------------------------------------------------------------------------

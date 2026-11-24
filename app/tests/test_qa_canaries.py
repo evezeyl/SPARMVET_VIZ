@@ -117,7 +117,7 @@ def test_fanout_exhibit_multiplies_rows_as_documented(stage, raw_config):
     """EXHIBIT of issue 68: the numbers below are the defect, they are not a target. When the join is fixed or
     the check is built, change this test on purpose."""
     res = _tsv("test_data_ResFinder_*.tsv").group_by("sample_id").len().rename({"len": "n_res"})
-    spec = raw_config["additional_datasets_schemas"]["VirulenceFinder"]
+    spec = raw_config["data_schemas"]["VirulenceFinder"]
     with_stage = stage.orchestrator.prepare_ingredient("VirulenceFinder", spec, recipe=raw_config).collect()
     vir = with_stage.group_by("sample_id").len().rename({"len": "n_vir"})
     both = (

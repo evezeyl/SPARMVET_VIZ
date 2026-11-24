@@ -83,7 +83,7 @@ def test_no_select_keeps_the_assembled_order(tmp_path):
     w = Tier2World(tmp_path)
     w.write_data_analysis_recipe(steps_tier2=[FILTER_A])
     t1, t2 = _columns(w)
-    assert t1 == t2 and set(t1) == {"sample_id", "group"}
+    assert t1 == t2 and set(t1) == {"sample_id", "group", "not_in_original_data"}   # the marker column of the completion of the ids is a normal column
 
 
 # -- the key itself: the order of a select is in it, the order of unordered things is not ------

@@ -26,6 +26,9 @@ data_schemas:
       path: "./assets/test_data/left_join_lesson/left_join_lesson_sequenced.tsv"
     null_values: []
     strip: true
+    completion:
+      marker: sequenced_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
     input_fields:
       sample_id:
         original_name: "Accession"
@@ -45,6 +48,9 @@ metadata_schema:
     path: "./assets/test_data/left_join_lesson/left_join_lesson_metadata.tsv"
   null_values: []
   strip: true
+  completion:
+    marker: metadata_schema_not_in_original_data
+    meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
   input_fields:
     sample_id:
       original_name: "ID"

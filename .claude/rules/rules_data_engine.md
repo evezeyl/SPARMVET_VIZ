@@ -14,6 +14,10 @@ deps:
 
 To resolve 22-minute render bottlenecks and orchestrate Polars data hand-offs, the VIGAS-P pipeline strictly adheres to a three-tier lifecycle:
 
+### Before Tier 1: the read of the files and the completion of the ids
+
+The first place of every table is Tier 1. Before its steps run, the files are read as they are (strip, the missing-value words of the recipe, the declared type) and the ids are made equal: every table that declares an entity id (and the metadata) gets a line for each id of the union that it lacks, with a yes/no marker column; nothing is removed or changed, nothing blocks, the checks are warnings with a log (`libs/utils/src/utils/id_completion.py`, `rules_data_analysis_recipe_structure.md` section 13; D-0572 to D-0599, D-0613). There is no T0 place (D-0613): the user cannot choose a place before the completion, and no step of an audit runs before it.
+
 ### Tier 1 (The Trunk): Relational Anchor
 
 - **Definition:** Logic applied to a common data source (identified by ID or Path) that is shared by ALL plots dependent on that source. This guarantees the fully composed and joined dataset remains highly generic.

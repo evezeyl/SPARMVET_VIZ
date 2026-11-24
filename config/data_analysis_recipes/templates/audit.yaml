@@ -18,6 +18,9 @@ data_schemas:
     # field is declared on that field: null_values: ["NA"] under the field (assets/scripts/declare_missing_values.py).
     null_values: []
     strip: true
+    completion:
+      marker: submission_logs_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
     input_fields:
       lab_id:
         original_name: lab_id

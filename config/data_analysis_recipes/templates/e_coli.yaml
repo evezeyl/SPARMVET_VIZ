@@ -17,6 +17,9 @@ data_schemas:
     # field is declared on that field: null_values: ["NA"] under the field (assets/scripts/declare_missing_values.py).
     null_values: []
     strip: true
+    completion:
+      marker: amr_results_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
     input_fields:
       sample_id:
         original_name: sample_id
@@ -51,6 +54,9 @@ metadata_schema:
   # field is declared on that field: null_values: ["NA"] under the field (assets/scripts/declare_missing_values.py).
   null_values: []
   strip: true
+  completion:
+    marker: metadata_schema_not_in_original_data
+    meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
   input_fields:
     sample_id:
       original_name: isolate_id

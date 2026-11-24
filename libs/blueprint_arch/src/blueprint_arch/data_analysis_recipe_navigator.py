@@ -966,6 +966,7 @@ def generate_branch_plan(
       wrangling / input_fields                   → branch a data_schema:
           SHARED  : source, null_values, strip (copied inline: the same file, read
                     in the same way; a key the source schema lacks is not invented),
+                    completion (copied, its marker renamed to the branch's id: E06),
                     input_fields (!include reused)
           DIVERGE : new tier 1 file (steps: [])
       join                                       → branch an assembly:
@@ -1024,6 +1025,15 @@ def generate_branch_plan(
         for key in ("null_values", "strip"):
             if key in block:
                 lines.append(_render_block_key(key, block[key], indent=4))
+
+        # The branch reads the same ids, so it takes part in the completion of the ids as its table does: the block is copied (what an added line means is the
+        # same for the same file), with the marker renamed to the branch's own id, because two tables never share a marker (E06; D-0613). A table of
+        # `additional_datasets_schemas` is never completed, so it has no block to copy.
+        completion = block.get("completion") if section == "data_schemas" else None
+        if isinstance(completion, dict) and isinstance(completion.get("marker"), str):
+            marker = completion["marker"]
+            kept = marker[len(schema_id) + 1:] if marker.startswith(f"{schema_id}_") and len(marker) > len(schema_id) + 1 else marker
+            lines.append(_render_block_key("completion", {**completion, "marker": f"{new_id}_{kept}"}, indent=4))
 
         inp_raw = block.get("input_fields")
         inp_inc = _inc_path(inp_raw)

@@ -195,13 +195,16 @@ def test_the_source_table_is_read_with_its_declared_types(world, monkeypatch):
 
 
 def test_a_missing_source_file_is_a_plain_text_in_the_tables_place_and_the_app_stays_usable(world, monkeypatch):
-    """The plain IngestionError text, not a traceback; the other views and the plot still work."""
+    """The plain IngestionError text, not a traceback; the Source view of the other table still works."""
     (world.data_dir / "M.tsv").unlink()
     home = Home(world, monkeypatch)
     shown = table(home, "SRC", "p_join", "M")
     assert shown.columns == ["Error"] and "Source table 'M' could not be read" in shown["Error"][0]
     assert "Traceback" not in shown["Error"][0]
-    assert ids(table(home, "T3", "p_table")) == ["s1", "s2", "s3", "s4"], "T and its views do not depend on M"
+    # T and M both declare an entity id, so they take part in the completion of the ids: T cannot be built without the ids of M (D-0613), and says so in plain words, naming M.
+    # The file of T as read (the Source view) does not need M.
+    built = table(home, "T3", "p_table")
+    assert built.columns == ["Error"] and "The ids of the table 'M' could not be read" in built["Error"][0] and "Traceback" not in built["Error"][0]
     assert ids(table(home, "SRC", "p_table", "T")) == ["s1", "s2", "s3", "s4", "s5"]
 
 

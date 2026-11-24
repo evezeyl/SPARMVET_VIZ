@@ -33,7 +33,7 @@ def test_the_normal_join_still_builds(tmp_path):
 
 def test_a_plain_schema_still_builds_as_a_collection(tmp_path):
     world = World(tmp_path)
-    assert _build(world, "T").columns == ["sample_id", "group"]
+    assert _build(world, "T").columns == ["sample_id", "group", "not_in_original_data"]   # the marker column of the completion of the ids
 
 
 def test_an_unknown_collection_fails_and_is_not_replaced_by_the_first_join(tmp_path):
@@ -79,6 +79,7 @@ data_schemas:
     source: {{type: local_tsv, path: {world.data_file}}}
     null_values: []
     strip: false
+    completion: {{marker: T_not_in_original_data, meaning: no result for this entity}}
     input_fields:
       sample_id: {{original_name: sample_id, type: {left_type}, ui_label: Sample, is_entity_id: true}}
       group: {{original_name: group, type: Categorical, ui_label: Group}}

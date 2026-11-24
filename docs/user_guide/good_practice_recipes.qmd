@@ -40,9 +40,40 @@ The user may not be the author. Without a declaration, the app has no way to tel
 
 The recipe checker refuses a key declared as a number (check E03). Declare it as `String` (or `Categorical`). A number as an id loses leading zeros and turns `001`, `1` and `1.0` into one entity. It also gives join and type problems. The checker advises the same when a join key is a floating-point number (J13).
 
+### Say what a line added for a missing id means (the `completion` block)
+
+The app makes the ids equal before anything else, when it reads your files. Your pipeline is meant to give the same entities in every result file and in the metadata. When it does not, the app adds, to each table, a line for every entity id the table lacks. This is what it does and what it does not do.
+
+- **What is made equal.** The set of ids is the union of the ids of the metadata and of the ids of every table of `data_schemas` that declares an entity id. Each of these tables gets a line for every id of the union it does not have. The tables of `additional_datasets_schemas` (look-ups, databases) are never completed.
+- **What an added line holds.** The id, every other value missing, and a yes/no column that is true on the added lines and false on the others. Every table gets a marker named `<table>_not_in_original_data` (the metadata too: `metadata_schema_not_in_original_data`): the entity is in another table or in the metadata, and this table has no line for it. You write the name of the column in the `completion` block of the table. Two tables never share a marker name (a join of three of them would hold two columns of one name; check E06), which is why the table is in the name. The app's own words for such a line, in the log, the export and the warnings, are `missing in original table`. Nothing is removed or changed in your data: only lines are added.
+- **A marked line is not a zero.** It carries no value. What a count, a sum or a label of your recipe does with it is your choice, so the recipe must say what such a line means, for each table, in a sentence of your own. In every table that declares an entity id write, next to `strip`:
+
+```yaml
+completion:
+  marker: ResFinder_not_in_original_data     # the name of the yes/no column the app adds: <table>_not_in_original_data
+  meaning: "The tool ran and found no resistance gene for this entity: Not Found, counted as 0."   # your sentence, about this table
+```
+
+  The sentence is yours: it says what an added line means for that table (a result that was not produced, an entity that was not sent to the tool, a tool that ran and found nothing). The metadata gets its own sentence. The checker refuses a table that declares an entity id and has no such block (E04), a block with a wrong key, a missing or empty sentence or a wrong column name (E05, E06), and a block where nothing is completed (E07); it does not judge what your sentence says. The generators write a starting sentence that claims nothing ("Not yet stated by the recipe maker: ..."): replace it. The recipe never records how many lines were added.
+- **Keep the marker column.** A `polars_select` that lists a fixed set of columns drops the marker: add it to the list if the results need it (the shipped tables MLST and VirulenceFinder do, in their first step), or treat the added lines before that step (the shipped table ResFinder gives them the status `Not Found` and counts them as 0 genes) and drop the marker on purpose (the shipped joined tables do). The count of rows of a table that was completed includes the added lines.
+- **A line with no usable id** (an id that is missing, empty or only spaces) is not an id. It stays where it is, it is not completed and it is listed in the log. The app does not remove or repair it: you remove it with a visible step of the recipe.
+- **Nothing blocks.** The app compares the ids and tells you: which ids of a result table are not in the metadata, which ids of the metadata are not in a result table, and, after the completion, that every table holds the same ids (a difference there is a bug of the app). These are warnings. They never refuse or hide a recipe.
+- **The app does no data cleaning in HOME.** If the ids are written differently by the programs of a pipeline (for example `program1-ID1` and `program2-ID1`), the data must be cleaned before it enters the app, in your own tools or in the Test Lab where it is switched on. The log of the ids shows the mismatch; it does not repair it.
+- **Read the log.** What the checks found is written automatically to the log of the ids (in the user folder, and in every export as `id_log.yaml`). The person who uses the results must read it. In a deployment with no panel and no user (a static deployment), nobody is there to answer a warning: **only a person who reads the logs of that deployment can act on a mismatch of the ids.** This must be organised by the people who run it.
+
 ### Joins go in tier 1
 
 A join step is allowed in tier 1 only. The checker refuses a join (also an as-of join and a join on a condition) written in tier 2 or tier 3 (check ST05). So the join of a table with its metadata is a tier-1 step of the joined table, and the raw data files stay unchanged.
+
+### Start a joined table from a data table, and bring the metadata in with a left join
+
+Advice only: the checker does not refuse a recipe that starts from the metadata (how this would be enforced is not decided).
+
+- **The first ingredient of a joined table is one of your data tables** (a result of a tool), not the metadata. Then the metadata is added with `polars_join`, `how: left`, so that every line of the data stays and gets its source, year, country and so on. The app has already given every data table a line for each id of the metadata (see the `completion` block above), so a left join from a data table loses no entity.
+- **Do not use an inner join with the metadata.** It drops, without a word, the data lines whose id the metadata does not have. If you want such lines out, remove them with a visible step (`modif_filter` or `polars_drop_nulls`) and say why in a comment.
+- **A look-up list is different.** A table of `additional_datasets_schemas` (a reference list, a database) may be joined with `how: inner`: there the filter is the point (for example "keep only the genes of this list"). Say so in a comment.
+- **A table made from the metadata alone** (for example a table that only adds a label column to the metadata) is not a join of one table: declare it as a table of `data_schemas` that reads the same file as the metadata, with its own name, its own marker (`<name>_not_in_original_data`) and its own steps. The file is read a second time under the other name; the plots that read it name it in `target_dataset`.
+- **A table of results that the entities may lack must say what the added lines mean** before the join (see above): the recipe states it in tier 1 of that table (a stamp such as `Not Found`, a count that counts only the lines of the file), so that the joined tables inherit a correct value.
 
 ### Import only the columns you need
 

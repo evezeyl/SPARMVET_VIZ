@@ -5,6 +5,8 @@ import yaml
 import pytest
 from pathlib import Path
 
+START = "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."   # the starting sentence of the specification
+
 
 @pytest.fixture
 def samples_tsv(tmp_path):
@@ -285,3 +287,18 @@ class TestWhatTheScaffolderWritesPassesTheChecker:
         from utils.recipe_loader import load_recipe
         table = load_recipe(master)[0]["data_schemas"]["samples"]
         assert table["ui_label"] and table["tier1"] == {"steps": steps}
+
+    def test_a_table_with_an_entity_id_states_the_completion_block_and_the_metadata_its_own(self, samples_tsv, amr_tsv, meta_tsv, tmp_path):
+        """D-0574, D-0613: the table that declares an entity id says what a line added for a missing id means; the starting sentence of the specification is the default."""
+        from test_lab.scaffolder import DataAnalysisRecipeScaffolder
+        from utils.recipe_loader import load_recipe
+        zb = DataAnalysisRecipeScaffolder().scaffold([samples_tsv, amr_tsv], "proj", metadata_path=meta_tsv)
+        raw, _ = load_recipe(self.extracted(zb, tmp_path / "out", "proj"))
+        declares = lambda table: any(f.get("is_entity_id") for f in table["input_fields"].values())
+        for name, table in raw["data_schemas"].items():
+            if declares(table):
+                assert table["completion"] == {"marker": f"{name}_not_in_original_data", "meaning": START}
+            else:
+                assert "completion" not in table
+        assert raw["metadata_schema"]["completion"] == {"marker": "metadata_schema_not_in_original_data", "meaning": START}
+

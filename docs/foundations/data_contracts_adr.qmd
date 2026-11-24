@@ -136,7 +136,7 @@ input_fields:
 
 When different datasets use different names for the same concept (`SampleName`, `ID`, `sample_id`), each dataset declares its own `original_name` and the slugs become the common internal language for joins.
 
-`is_entity_id: true` is informational: it documents which column identifies the entity of the table (when the optional `entity` block names a schema as its `population`, that schema must have one) but does not drive automatic renaming across datasets. Join keys are always written in the `joins` step list with `on` or `left_on`/`right_on`. The old name `is_primary_key` is refused.
+`is_entity_id: true` is informational: it documents which column identifies the entity of the table (when the optional `entity` block names a schema as its `population`, that schema must have one) but does not drive automatic renaming across datasets. Join keys are always written in the `joins` step list with `on` or `left_on`/`right_on`. The old name `is_primary_key` is refused. A table that declares an entity id also states a `completion` block (the marker column and what an added line means): the app adds a line for every entity id the table lacks when it reads the files, before tier 1 (`utils.id_completion`; check E04).
 
 ---
 

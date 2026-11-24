@@ -28,6 +28,8 @@ CATALOG = {**CATALOGS, "actions": {**CATALOGS["actions"], "polars_join_asof": AS
 
 def asof_recipe():
     raw = copy.deepcopy(valid())
+    for table in ("A", "B"):
+        raw["data_schemas"][table].pop("completion")   # these tables declare no entity id below, so nothing is completed (E07 otherwise)
     raw["data_schemas"]["A"]["input_fields"] = {"id": {"type": "String"}, "t": {"type": "Int64"}, "site": {"type": "String"}}
     raw["data_schemas"]["B"]["input_fields"] = {"t": {"type": "Int64"}, "site": {"type": "String"}, "w": {"type": "Int64"}}
     raw["joins"]["AB"]["tier1"]["steps"] = [{"action": "polars_join_asof", "right_ingredient": "B", "on": "t", "by": ["site"], "strategy": "backward"}]

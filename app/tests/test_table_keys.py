@@ -42,6 +42,7 @@ from app.modules.cache_keys import (
 from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, DataOrchestrator, tier2_path_for
 from app.modules.session_manager import SessionManager
 from utils.config_loader import ConfigManager
+from utils.id_completion import plan_material
 from utils.recipe_graph import build_graph
 from utils.recipe_tiers import collection_bodies
 
@@ -70,8 +71,9 @@ def field(label="Group"):
 
 
 def schema(*, steps=(), tier2=()):
+    """A table of the shared recipe: it declares no entity id, so it takes part in no completion of the ids (that coupling of the keys is tested in test_id_completion.py)."""
     return {"source": {"type": "local_tsv", "path": "/nowhere.tsv"}, "null_values": [], "strip": False,
-            "input_fields": {"sample_id": {"original_name": "sample_id", "type": "Categorical", "ui_label": "Sample", "is_entity_id": True},
+            "input_fields": {"sample_id": {"original_name": "sample_id", "type": "Categorical", "ui_label": "Sample"},
                              "group": field()},
             "tier1": {"steps": list(steps)}, "tier2": {"steps": list(tier2)}}
 
@@ -390,6 +392,31 @@ def upstream_names(raw: dict) -> dict:
     return {t: {graph.node(n).name for n in graph.lineage_back(f"T1:{t}") if graph.node(n).kind == "T1"} | {t} for t in graph.collections()}
 
 
+# What the completion of the ids reads of a table that takes part (`utils.id_completion.plan_material`): a change there moves the key of every table that reads ANY table
+# that takes part, not only of the tables built from this one (the union of the ids is made from all of them).
+COMPLETION_KEYS = ("null_values", "strip", "source", "completion")
+
+
+def decides_the_ids(raw: dict, table: str, leaf: tuple) -> bool:
+    """True when the value at `leaf` of the table decides which ids the table holds: the schema's own words (`null_values`, `strip`, `source`, `completion`) or a field
+    that declares the entity id (any other field of the table does not)."""
+    if not leaf:
+        return False
+    if leaf[0] in COMPLETION_KEYS:
+        return True
+    body = collection_bodies(raw)[table]
+    return leaf[0] == "input_fields" and len(leaf) > 1 and isinstance(body.get("input_fields", {}).get(leaf[1]), dict) and body["input_fields"][leaf[1]].get("is_entity_id") is True
+
+
+def coupled_tables(raw: dict) -> set:
+    """The tables that read at least one table that takes part in the completion of the ids, read from the graph (not from the code under test)."""
+    taking_part = set(plan_material(raw))
+    if not taking_part:
+        return set()
+    graph = build_graph(raw)
+    return {t for t in graph.collections() if {graph.node(n).name for n in graph.source_tables(f"T1:{t}")} & taking_part}
+
+
 @pytest.mark.parametrize("path", SHIPPED, ids=lambda p: str(Path(p).relative_to(ROOT)))
 def test_a_changed_input_changes_the_key_of_every_table_that_depends_on_it_and_no_other(path):
     """The gate of ADR-101 point 3, over every table of every shipped recipe: each value written in a table's definition is changed
@@ -422,7 +449,9 @@ def test_a_changed_input_changes_the_key_of_every_table_that_depends_on_it_and_n
                 except Exception:
                     graph_ok = False
                 if graph_ok:
-                    assert moved(base, after) == readers, f"{table}: changing {leaf} moved {sorted(moved(base, after))}, expected {sorted(readers)}"
+                    # a value that decides the ids of a table that takes part also moves every table that reads any table that takes part (the completion)
+                    coupled = (coupled_tables(raw) | coupled_tables(mutated)) if table in plan_material(raw) and decides_the_ids(raw, table, leaf) else set()
+                    assert moved(base, after) == readers | coupled, f"{table}: changing {leaf} moved {sorted(moved(base, after))}, expected {sorted(readers | coupled)}"
                 else:
                     assert readers <= moved(base, after), f"{table}: changing {leaf} must move at least {sorted(readers)}"
             checked += 1
@@ -449,7 +478,8 @@ def test_a_data_file_moves_the_key_of_the_tables_that_read_it_and_no_other_on_ev
     sources = {graph.node(n).name for n in graph.nodes() if graph.node(n).kind == "DS"}
     for source in sources:
         readers = {t for t in graph.collections() if source in {graph.node(n).name for n in graph.source_tables(f"T1:{t}")}}
-        assert moved(base, t1_keys(raw, {**files, source: "changed"})) == readers, f"file of {source}"
+        coupled = coupled_tables(raw) if source in plan_material(raw) else set()   # the file of a table that takes part is read by every table that reads one (the completion)
+        assert moved(base, t1_keys(raw, {**files, source: "changed"})) == readers | coupled, f"file of {source}"
 
 
 @pytest.mark.parametrize("path", SHIPPED, ids=lambda p: str(Path(p).relative_to(ROOT)))
@@ -496,7 +526,7 @@ class Staged:
         # the tables share `sample_id` (the key) and `group` (declared once per side): a shared non-key column is refused (J08),
         # so the second ingredient publishes only its key and one new column.
         raw["data_schemas"]["B"]["input_fields"] = {
-            "sample_id": {"original_name": "sample_id", "type": "Categorical", "ui_label": "Sample", "is_entity_id": True},
+            "sample_id": {"original_name": "sample_id", "type": "Categorical", "ui_label": "Sample"},
             "group": {"original_name": "group", "type": "Categorical", "ui_label": "Group B"}}
         raw["data_schemas"]["B"]["tier1"]["steps"] = [{"action": "polars_rename", "mapping": {"group": "group_b"}}]
         raw["joins"]["J"]["tier1"]["steps"] = [{"action": "polars_join", "right_ingredient": "B", "on": ["sample_id"], "how": "left",

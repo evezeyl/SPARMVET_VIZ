@@ -45,13 +45,45 @@ def read_schema(path: Path, fields: dict, null_values: list[str], strip: bool = 
     return text.select(**out)
 
 
-def schema_table(name: str, files: dict[str, Path], null_values: list[str]) -> pl.DataFrame:
+SCHEMA_READS = {"metadata_schema": ("metadata", METADATA_FIELDS), "amr_data": ("amr", AMR_FIELDS),
+                "plasmid_data": ("plasmid", PLASMID_FIELDS)}
+
+
+def _usable(ids: pl.Series) -> pl.Series:
+    """The ids that can name an entity: not missing, not empty, not only spaces."""
+    ids = ids.drop_nulls()
+    return ids.filter(ids.str.strip_chars() != "")
+
+
+def read_completed(name: str, files: dict[str, Path], null_values: list[str], complete: bool) -> pl.DataFrame:
+    """One table as read from its file; when the recipe has a `completion` block, with the lines the table lacks.
+
+    recipe: `completion: {marker: <table>_not_in_original_data}` on each of the three tables, all with `is_entity_id`
+    on sample_id. Meaning written here from the recipe, not from the engine: the entity ids that the three tables name
+    are put together (a line with no usable id names nobody and takes no part); each table gets one line for every id it
+    lacks (the id; every other value missing); a yes/no column named by the recipe, true on an added line, false on
+    the table's own lines, is the last column. Nothing is removed or changed. Recipe silent: where the added lines go
+    (chosen: after the table's own lines, ascending by id).
+    """
+    own = {n: read_schema(files[f], fields, null_values) for n, (f, fields) in SCHEMA_READS.items()}
+    if not complete:
+        return own[name]
+    union = pl.concat([_usable(t["sample_id"]) for t in own.values()]).unique().sort()
+    table = own[name]
+    lacking = union.filter(~union.is_in(_usable(table["sample_id"]).implode()))
+    marker = f"{name}_not_in_original_data"
+    added = pl.DataFrame({"sample_id": lacking}).join(table.clear(), on="sample_id", how="left").select(table.columns)
+    return pl.concat([table.with_columns(pl.lit(False).alias(marker)),
+                      added.with_columns(pl.lit(True).alias(marker))])
+
+
+def schema_table(name: str, files: dict[str, Path], null_values: list[str], complete: bool = False) -> pl.DataFrame:
     """The tier 1 table of one data schema (metadata_schema, amr_data, plasmid_data)."""
     if name == "metadata_schema":
         # recipe: wrangling: {tier1: []}
-        return read_schema(files["metadata"], METADATA_FIELDS, null_values)
+        return read_completed(name, files, null_values, complete)
     if name == "amr_data":
-        amr = read_schema(files["amr"], AMR_FIELDS, null_values)
+        amr = read_completed(name, files, null_values, complete)
         # recipe (wrangling/amr_data.yaml): modif_filter identity ge 90, na: remove
         #   keep identity >= 90; a missing identity is removed (what a comparison does in Polars); a NaN is a number
         #   (docs: "A NaN is a number, not a missing value, and `na` does not touch it"), so NaN >= 90 is true.
@@ -59,7 +91,7 @@ def schema_table(name: str, files: dict[str, Path], null_values: list[str]) -> p
         # recipe: modif_filter overlap ge 60, na: remove (same rule)
         return amr.filter(pl.col("overlap") >= 60)
     if name == "plasmid_data":
-        plasmid = read_schema(files["plasmid"], PLASMID_FIELDS, null_values)
+        plasmid = read_completed(name, files, null_values, complete)
         # recipe (wrangling/plasmid_data.yaml): the same two filters
         return plasmid.filter(pl.col("identity") >= 90).filter(pl.col("overlap") >= 60)
     raise KeyError(name)
@@ -123,19 +155,19 @@ def plasmid_join(plasmid: pl.DataFrame, metadata: pl.DataFrame) -> pl.DataFrame:
     return t.select("Year", "Source", "Country", "plasmid_name", "sample_id", "accession")
 
 
-def reference_table(name: str, files: dict[str, Path], null_values: list[str]) -> pl.DataFrame:
+def reference_table(name: str, files: dict[str, Path], null_values: list[str], complete: bool = False) -> pl.DataFrame:
     """One table of the recipe by name. The tier 2 of every table is its tier 1 (no `tier2` step in this recipe).
 
     Raises when the data cannot be read or cast as the recipe says (an input of a join that cannot be built makes the
     join impossible).
     """
     if name in ("metadata_schema", "amr_data", "plasmid_data"):
-        return schema_table(name, files, null_values)
-    metadata = schema_table("metadata_schema", files, null_values)
+        return schema_table(name, files, null_values, complete)
+    metadata = schema_table("metadata_schema", files, null_values, complete)
     if name == "AMR_Profile_Joint":
-        return amr_join(schema_table("amr_data", files, null_values), metadata)
+        return amr_join(schema_table("amr_data", files, null_values, complete), metadata)
     if name == "Plasmid_Profile_Joint":
-        return plasmid_join(schema_table("plasmid_data", files, null_values), metadata)
+        return plasmid_join(schema_table("plasmid_data", files, null_values, complete), metadata)
     raise KeyError(name)
 
 

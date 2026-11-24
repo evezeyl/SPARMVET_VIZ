@@ -12,6 +12,12 @@ import yaml
 import re
 
 from utils.engines import DATA_ENGINE, PLOT_ENGINE
+from utils.recipe_check import spec as recipe_spec
+
+# The names of a column that the bootstrapper marks `is_entity_id` (PROVISIONAL, as before: by name, the author corrects it).
+ENTITY_ID_NAMES = ("id", "sample_id", "isolate_id")
+# The completion block of the specification (marker suffix and starting sentence): a table that declares an entity id gets one (D-0574).
+COMPLETION_SPEC = recipe_spec()["completion"]
 
 
 class IncludeRef:
@@ -79,7 +85,7 @@ class DataAnalysisRecipeBootstrapper:
                 "ui_label": col.replace('_', ' ').title(),
                 "original_name": col
             }
-            if safe_col in ["id", "sample_id", "isolate_id"]:
+            if safe_col in ENTITY_ID_NAMES:
                 fields[safe_col]["is_entity_id"] = True
             # Annotate high-uniqueness columns as PK candidates
             if df[col].n_unique() == len(df):
@@ -103,18 +109,33 @@ class DataAnalysisRecipeBootstrapper:
         except ValueError:
             return str(resolved)
 
+    def declares_entity_id(self, tsv_path: Path) -> bool:
+        """True when `write_table_files` marks a column of this file `is_entity_id` (the same rule, by the name of the column): the table then needs a
+        `completion` block in the master recipe (D-0574)."""
+        header = pl.read_csv(tsv_path, separator='\t', n_rows=1).columns
+        return any(self._sanitize_name(col) in ENTITY_ID_NAMES for col in header)
+
     @staticmethod
-    def table_block(recipe_id: str, table_id: str, source_path: str, label: str) -> Dict[str, Any]:
-        """The table entry of the master recipe: the keys in the order of the specification, the two files included."""
-        return {
+    def table_block(recipe_id: str, table_id: str, source_path: str, label: str, entity_id: bool = False, metadata: bool = False) -> Dict[str, Any]:
+        """The table entry of the master recipe: the keys in the order of the specification, the two files included.
+
+        `entity_id`: the table declares an entity id, so it takes part in the completion of the ids and states what an added line means (the starting
+        sentence of the specification: the author replaces it with what an added line means for the table); `metadata`: it is the metadata table, whose id is
+        `metadata_schema`. The marker of every table carries its table id (`<table id>_not_in_original_data`, the owner's pattern): two tables never share a
+        marker (E06), and the ids of the tables of one run are distinct."""
+        block: Dict[str, Any] = {
             "ui_label": label,
             "source": {"type": "local_tsv", "path": source_path},
             # No default for missing values (spec 7.3): the author states what means missing in this file
             "null_values": [],
             "strip": False,
-            "input_fields": IncludeRef(f"{recipe_id}/{table_id}_input_fields.yaml"),
-            "tier1": IncludeRef(f"{recipe_id}/{table_id}_wrangling.yaml"),
         }
+        if entity_id:
+            owner = "metadata_schema" if metadata else table_id
+            block["completion"] = {"marker": f"{owner}_{COMPLETION_SPEC['marker_suffix']}", "meaning": COMPLETION_SPEC["starting_meaning"]}
+        block["input_fields"] = IncludeRef(f"{recipe_id}/{table_id}_input_fields.yaml")
+        block["tier1"] = IncludeRef(f"{recipe_id}/{table_id}_wrangling.yaml")
+        return block
 
     def bootstrap(
         self,
@@ -166,7 +187,8 @@ class DataAnalysisRecipeBootstrapper:
 
             # Add to master config
             datasets_config[dataset_id] = self.table_block(
-                data_analysis_recipe_id, dataset_id, self.source_path(tsv_p), dataset_id.replace('_', ' ').capitalize())
+                data_analysis_recipe_id, dataset_id, self.source_path(tsv_p), dataset_id.replace('_', ' ').capitalize(),
+                entity_id=self.declares_entity_id(tsv_p))
 
         # Write Master Data Analysis Recipe
         master_data_analysis_recipe: Dict[str, Any] = {
@@ -187,7 +209,8 @@ class DataAnalysisRecipeBootstrapper:
             meta_id = self._sanitize_name(metadata_path.stem)
             self.write_table_files(fragments_dir, meta_id, metadata_path, [])
             master_data_analysis_recipe["metadata_schema"] = self.table_block(
-                data_analysis_recipe_id, meta_id, self.source_path(metadata_path), "Metadata")
+                data_analysis_recipe_id, meta_id, self.source_path(metadata_path), "Metadata",
+                entity_id=self.declares_entity_id(metadata_path), metadata=True)
 
         master_data_analysis_recipe["joins"] = {}
         master_data_analysis_recipe["analysis_groups"] = {}

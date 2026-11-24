@@ -19,6 +19,9 @@ data_schemas:
       path: ./assets/test_data/retest/samples.tsv
     null_values: []
     strip: true
+    completion:
+      marker: Samples_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
     input_fields:
       sample_id: {original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}
       group: {original_name: group, type: String, ui_label: Group}

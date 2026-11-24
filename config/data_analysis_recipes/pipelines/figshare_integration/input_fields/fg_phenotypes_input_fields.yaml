@@ -2,6 +2,7 @@ sample_id:
   original_name: sample_id
   type: String
   ui_label: Sample Id
+  is_entity_id: true
 mic_id:
   original_name: mic_id
   type: String

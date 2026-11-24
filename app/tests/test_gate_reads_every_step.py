@@ -131,4 +131,4 @@ def test_the_validator_uses_the_one_reader_of_the_engine():
     assert "self.ingredient_parts(" in inspect.getsource(orchestrator.DataOrchestrator.prepare_ingredient)
     assert "wrangler.tier_steps(ds_schema" in inspect.getsource(orchestrator.DataOrchestrator.ingredient_parts)
     assert REGISTRY["python-polars"].wrangler is DataWrangler
-    assert "DataWrangler.tier_steps" in inspect.getsource(validator.validate_data_analysis_recipe_data)
+    assert "DataWrangler.tier_steps" in inspect.getsource(validator.check_data_analysis_recipe_data)

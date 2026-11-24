@@ -21,6 +21,7 @@ from app.tests.home_harness import Home, ViewWorld
 
 AUDIT = ("interactivity_enabled", "t3_sandbox_enabled", "comparison_mode_enabled", "session_management_enabled", "export_enabled")
 ROWS = 150
+MARKER = "T_not_in_original_data"   # the marker column of the completion of the ids: a normal column of the table from tier 1 on
 
 
 @pytest.fixture(autouse=True)
@@ -105,14 +106,14 @@ def test_a_table_of_zero_rows_says_zero(world, monkeypatch):
 def test_no_hidden_columns_no_sentence(world, monkeypatch):
     home = Home(world, monkeypatch, view="T1", subtab="subtab_p_table")
     assert "hidden" not in badge_text(home)
-    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), ["sample_id", "group", "score"])
+    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), ["sample_id", "group", "score", MARKER])
     assert "hidden" not in badge_text(home)
 
 
 def test_unselected_columns_are_counted_as_hidden(world, monkeypatch):
     home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), ["sample_id"])
-    assert "2 columns hidden; add them back in the column chooser" in badge_text(home)
-    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), ["sample_id", "group"])
+    assert "3 columns hidden; add them back in the column chooser" in badge_text(home)
+    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), ["sample_id", "group", MARKER])
     assert "1 column hidden; add it back in the column chooser" in badge_text(home)
 
 
@@ -124,13 +125,13 @@ def test_an_empty_selection_hides_nothing_because_the_grid_then_shows_every_colu
 def test_audit_t3_says_the_columns_are_not_dropped(world, monkeypatch):
     home = choose(Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table"), ["sample_id"])
     text = badge_text(home)
-    assert "2 columns" in text and "not dropped" in text
+    assert "3 columns" in text and "not dropped" in text
 
 
 def test_a_column_dropped_by_an_audit_step_is_not_counted_as_hidden(world, monkeypatch):
     nodes = filter_nodes([], drops=["group"])
     home = choose(Home(world, monkeypatch, view="T3", mode="audit", flags=AUDIT, subtab="subtab_p_table",
-                       home_state={"t3_audit_steps_by_plot": {"subtab_p_table": nodes}}), ["sample_id", "score"])
+                       home_state={"t3_audit_steps_by_plot": {"subtab_p_table": nodes}}), ["sample_id", "score", MARKER])
     text = badge_text(home)
     assert "hidden" not in text and "not dropped" not in text
 
@@ -175,7 +176,7 @@ def test_a_chooser_built_for_another_table_gives_no_hidden_sentence_even_when_ev
     assert "hidden" not in text and "not dropped" not in text
     assert f"Showing {PREVIEW_ROW_LIMIT} of {ROWS} rows" in text
     # the same names with the key of this very table: counted
-    assert "2 columns hidden" in badge_text(choose(home, ["sample_id"]))
+    assert "3 columns hidden" in badge_text(choose(home, ["sample_id"]))
 
 
 def test_no_key_at_all_gives_no_hidden_sentence(world, monkeypatch):
@@ -190,7 +191,7 @@ def test_the_key_names_the_view_so_that_a_switch_of_table_changes_it(world, monk
 
 
 def test_a_real_selection_is_still_counted_once_every_name_is_a_column(world, monkeypatch):
-    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), ["group", "score"])
+    home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table"), ["group", "score", MARKER])
     assert "1 column hidden; add it back in the column chooser" in badge_text(home)
 
 
@@ -277,7 +278,7 @@ def test_a_chooser_built_for_another_recipe_gives_no_hidden_sentence_even_when_p
     home = choose(Home(world, monkeypatch, view="T1", subtab="subtab_p_table", inputs={"data_analysis_recipe_id": "tiny2"}), ["sample_id"], key=old)
     text = badge_text(home)
     assert "hidden" not in text and f"of {ROWS} rows" in text
-    assert "2 columns hidden" in badge_text(choose(home, ["sample_id"]))     # built for this recipe: counted
+    assert "3 columns hidden" in badge_text(choose(home, ["sample_id"]))     # built for this recipe: counted
 
 
 def test_a_change_of_the_data_changes_the_key(world, monkeypatch):

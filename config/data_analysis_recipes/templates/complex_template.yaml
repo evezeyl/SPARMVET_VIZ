@@ -20,6 +20,9 @@ data_schemas:
     # field is declared on that field: null_values: ["NA"] under the field (assets/scripts/declare_missing_values.py).
     null_values: []
     strip: true
+    completion:
+      marker: genomics_not_in_original_data
+      meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
     input_fields: !include 'complex_template/genomics_input.yaml'
     tier1: !include 'complex_template/genomics_wrangling.yaml'
 
@@ -32,6 +35,9 @@ metadata_schema:
   # field is declared on that field: null_values: ["NA"] under the field (assets/scripts/declare_missing_values.py).
   null_values: []
   strip: true
+  completion:
+    marker: metadata_schema_not_in_original_data
+    meaning: "Not yet stated by the recipe maker: an added line only says that this entity has no line in this table."
   input_fields: !include 'complex_template/metadata_input.yaml'
   tier1: {steps: []}
 

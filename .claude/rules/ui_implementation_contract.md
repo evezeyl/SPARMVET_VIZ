@@ -295,6 +295,8 @@ Row filters live in the left sidebar (Home mode only). In Exploration they are b
 
 **Provenance obligation (NOT built; waits for the owner, task DATA-IMPORT-OVERWRITE, together with the overwrite of the recipe's data file with no copy of the old one):** The original uploaded filename (not just its path) is stored in a sidecar file (e.g., `metadata_provenance.yaml` in Location 1) so that exports and session files can reference it. This filename is included in `README.txt` and `report.qmd` of any subsequent export bundle.
 
+**The ids after a replacement (D-0572 to D-0599, D-0613; built 2026-11-24):** the file the user uploads is read as it is; at the next read the app makes the ids equal (a line for each entity id of the union that a table that takes part lacks, with a yes/no marker; `rules_data_analysis_recipe_structure.md` section 13) and the three checks of the ids are warnings with a log (`<user_data>/_id_logs`, and `id_log.yaml` in every export). Data Import does not clean the file and does not add the lines itself: a metadata with a line that has no usable id, or an id written two ways, is shown in that log, never repaired (D-0593 to D-0596).
+
 **What is NOT replaced:** Raw instrument data (sequencing results, VCF files, etc.) — only the metadata source. The data analysis recipe's `input_fields` contract determines which file is considered "metadata" for validation purposes.
 
 **Status:** the check (a full read of the file), the format refusal, the all-or-nothing Apply, the shared files and the place are built (steps 2 to 8 above). Not built: the record of the original file name and the keeping of the replaced file (task DATA-IMPORT-OVERWRITE), the conversion of a comma-separated or Excel file.

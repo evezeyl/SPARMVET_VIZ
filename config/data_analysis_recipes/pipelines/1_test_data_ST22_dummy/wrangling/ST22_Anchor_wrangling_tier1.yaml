@@ -1,9 +1,11 @@
 steps:
   # RELATIONAL ANCHOR: Master Cross-Dataset Integration
   # Purpose: Create a "Wide" Anchor table with metadata + AMR + MLST + Virulence.
+  # The table starts from an original data table (FastP: one line per sample) and the metadata is brought in by a left join, so every
+  # line of the data stays (the recipe does not start from the metadata, D-0586).
 
   - action: polars_join
-    right_ingredient: FastP
+    right_ingredient: metadata_schema
     'on': [sample_id]
     how: left
     maintain_order: left_right

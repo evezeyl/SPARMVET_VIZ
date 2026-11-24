@@ -4,9 +4,12 @@ offered"). The plan of every place is the engine's (`compose_plan_book`), the sa
 What is proved:
 - the demo recipe (`1_test_data_ST22_dummy`), the column `sample_id` looked at from a plot: the four joins that no plot reads and that the metadata reaches
   (FastP_with_metadata, Bracken_with_metadata, ResFinder_with_metadata, AR1_MLST_Serotype_Virulence) are lines of tier 1 that say no plot reads them, with state "tick" = the walk's proof of the same column (PROVISIONAL, see
-  `libs/utils/src/utils/lineage_walk.py` P4); every line the walk gave before is still there, unchanged (the number of lines goes from 37 to 41 at the levels T1, T2, T3 and from 44 to 48
-  with the source level);
-- the sources that no join links to the lineage (Quality_metrics, Detailed_summary, and Summary, Summary_quality that declare the key) are not lines and are listed as `outside`, as before (D-0415);
+  `libs/utils/src/utils/lineage_walk.py` P4); every line the walk gave before is still there, unchanged, except the four of the two QA tables made from the metadata alone (see below):
+  the other lines are 33 at the levels T1, T2, T3 and 40 with the source level (they were 37 and 44), so the totals are 37 and 44;
+- the one big move (D-0610, D-0613) made `QA_year_types` and `QA_aggregated_no_key` data schemas on the metadata file: no join links them to the metadata any more, so the walk does not reach them.
+  The four lines it lost are `T1:QA_year_types`, `T1:QA_aggregated_no_key` and the plots `qa_year_label` and `qa_facet_by_mapping`; the two tables are listed as `outside` with the sources no join links
+  (a removal of a sample by its id does not reach them: the consequence is reported to the owner);
+- the sources that no join links to the lineage (Quality_metrics, Detailed_summary, Summary, Summary_quality and the two QA tables that read the metadata file) are not lines and are listed as `outside` (D-0415);
 - on every shipped recipe and every plot and declared key: the accounting property holds (each place once; every table the lineage reaches is a line or a note; the places not accounted for are
   exactly those no linked table reaches); the numbers of the tables no plot reads are counted so that an empty check cannot pass.
 
@@ -49,11 +52,11 @@ def demo():
 
 def test_the_four_joins_no_plot_reads_are_lines_of_the_sample_id_and_the_other_lines_are_the_same(demo):
     _graph, index = demo
-    for levels, before in ((TIERS, 37), (WITH_SOURCE, 44)):
+    for levels, before in ((TIERS, 33), (WITH_SOURCE, 40)):
         walk = index.walk(Start("T3:miaou", "sample_id"), levels=levels)
         no_plot = [x for x in walk.lines if x.no_plot_reads]
         assert [x.place for x in no_plot] == NO_PLOT_READS, levels
-        assert len(walk.lines) == before + 4, levels                                                    # 37 -> 41 and 44 -> 48
+        assert len(walk.lines) == before + 4, levels                                                    # 33 -> 37 and 40 -> 44
         # "tick" is the walk's proof that it is the same column, not a default tick of the dialog (not decided: ledger D-0451).
         assert all(x.tier == "T1" and x.kind == "table" and x.state == "tick" and x.reason is None for x in no_plot)
         assert all(x.occurrences[0].name == "sample_id" and x.occurrences[0].type == "String" for x in no_plot)
@@ -64,8 +67,8 @@ def test_the_four_joins_no_plot_reads_are_lines_of_the_sample_id_and_the_other_l
 def test_the_sources_no_join_links_are_not_lines_and_are_listed_as_outside_as_before(demo):
     _graph, index = demo
     walk = index.walk(Start("T3:miaou", "sample_id"), levels=TIERS)
-    assert sorted(o.table for o in walk.outside) == ["Detailed_summary", "Quality_metrics", "Summary", "Summary_quality"]
-    assert not {"T1:Quality_metrics", "T1:Detailed_summary"} & set(walk.accounted)
+    assert sorted(o.table for o in walk.outside) == ["Detailed_summary", "QA_aggregated_no_key", "QA_year_types", "Quality_metrics", "Summary", "Summary_quality"]
+    assert not {"T1:Quality_metrics", "T1:Detailed_summary", "T1:QA_year_types", "T1:QA_aggregated_no_key"} & set(walk.accounted)
 
 
 @pytest.mark.parametrize("recipe_id", sorted(p.stem for p in RECIPES.glob("*.yaml")))
@@ -86,6 +89,6 @@ def test_the_accounting_property_holds_on_every_shipped_recipe_for_every_plot_an
             no_plot += sum(1 for x in walk.lines if x.no_plot_reads)
             walked += 1
     if recipe_id == DEMO:
-        assert walked == 16 and no_plot == 14 * 4                                                        # 16 plots hold sample_id; 14 of them reach the 4 joins, 2 do not
+        assert walked == 16 and no_plot == 12 * 4                                                        # 16 plots hold sample_id; 12 of them reach the 4 joins, 4 do not (the plots of the two QA tables made from the metadata alone read tables the lineage does not reach)
     else:
         assert walked > 0 or recipe_id == "stress_test_master"                                          # that recipe declares a key (`id`) that no plot carries

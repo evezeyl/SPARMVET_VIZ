@@ -1,8 +1,9 @@
 # QA canary, an EXHIBIT of a known defect (issue #68): two long tables joined on the same key multiply
 # the rows (each AMR gene row meets each virulence gene row of the sample). Do not copy this pattern.
+# The table starts from the ResFinder table (data first); the metadata and the VirulenceFinder table are left-joined to it.
 steps:
   - action: polars_join
-    right_ingredient: ResFinder
+    right_ingredient: metadata_schema
     'on': [sample_id]
     how: left
     maintain_order: left_right

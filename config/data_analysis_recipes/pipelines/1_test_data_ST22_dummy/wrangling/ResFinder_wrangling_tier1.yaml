@@ -1,4 +1,7 @@
 steps:
+  # status of the ResFinder result of an entity. The marker column is added by the app to an entity that has no line in the ResFinder file (see the
+  # `completion` block of ResFinder in the recipe): for it the tool ran and found no resistance gene, so its status is Not Found (D-0613, the owner's reading
+  # of ResFinder); every line of the file itself is a gene that was found.
   - action: polars_with_columns
     named_exprs:
-      status: pl.lit('Detected')
+      status: pl.when(pl.col('ResFinder_not_in_original_data')).then(pl.lit('Not Found')).otherwise(pl.lit('Detected'))

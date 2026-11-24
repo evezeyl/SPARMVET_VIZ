@@ -204,7 +204,7 @@ def test_a_join_branch_runs_and_gives_the_table_of_its_base(project, catalogs):
     orchestrator = DataOrchestrator(project / "recipes", project / "data")
     table = orchestrator.materialize_tier1("tiny", "C_b", project / "anchors" / "C_b.parquet")
     assert [row["sample_id"] for row in rows(table)] == ["s2", "s3"]
-    assert table.collect_schema().names() == ["sample_id", "country", "reads"]
+    assert table.collect_schema().names() == ["sample_id", "country", "reads", "samples_not_in_original_data"]   # the table of its base, with the marker column of the completion of the ids
 
 
 # -- 5. the script create_data_analysis_recipe.py

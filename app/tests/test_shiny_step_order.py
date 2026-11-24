@@ -262,6 +262,9 @@ def _export_bundle(page: Page) -> zipfile.ZipFile:
 
 # -- the reference: plain Polars from the raw file, and a direct render of it --------------------------------------------------
 
+MARKER = "t_not_in_original_data"   # the marker column of the completion of the ids of the staged table `t`
+
+
 def _raw() -> pl.DataFrame:
     return pl.read_csv(WORK / "t.tsv", separator="\t", schema_overrides={"sample_id": pl.String})
 
@@ -288,7 +291,9 @@ def _check_bundle(archive: zipfile.ZipFile, reference: pl.DataFrame, dropped: bo
     names = archive.namelist()
     assert not any(n.endswith("EXPORT_NOT_CREATED.txt") for n in names), "the export was refused"
     data = pl.read_csv(io.BytesIO(_bundle_file(archive, f"/T3_data_{PLOT}.tsv")), separator="\t", schema_overrides={"sample_id": pl.String})
-    expected = reference.drop("score") if dropped else reference
+    # The marker column of the completion of the ids is an ordinary yes/no column of the table (the flag column is kept, D-0586): the exported T3 table holds it, false on every line of this
+    # file (it lacks no id). The picture does not use it.
+    expected = (reference.drop("score") if dropped else reference).with_columns(pl.lit(False).alias(MARKER))
     assert data.height == expected.height < N, f"the T3 data file has {data.height} rows, the reference {expected.height}"
     assert data.columns == expected.columns, (data.columns, expected.columns)
     assert data.sort("sample_id").equals(expected.sort("sample_id")), "rows or values differ from the reference"
@@ -319,7 +324,7 @@ def test_the_filter_dialog_does_not_offer_a_column_that_an_earlier_audit_step_dr
     assert "score" in page.locator("#fb_col option").evaluate_all("els => els.map(e => e.value)")
     _drop_step(page, 1)
     page.wait_for_function("() => ![...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
-    assert page.locator("#fb_col option").evaluate_all("els => els.map(e => e.value)") == ["sample_id", "year"]
+    assert page.locator("#fb_col option").evaluate_all("els => els.map(e => e.value)") == ["sample_id", "year", MARKER]   # the marker of the ids completion is a column of the table
     # the other views are the tables as they are: T2 still offers the column
     set_view(page, "T2")
     page.wait_for_function("() => [...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
@@ -386,7 +391,7 @@ def test_the_dialog_of_another_plot_is_not_emptied_by_a_drop_on_this_one(page: P
     page.wait_for_function("() => [...document.querySelectorAll('#fb_col option')].some(o => o.value === 'score')", timeout=20_000)
     _wait_shiny(page, 30_000)
     states = page.evaluate("() => window.__dialogStates")
-    assert states and states[-1] == "sample_id,year,score", states
+    assert states and states[-1] == f"sample_id,year,score,{MARKER}", states
     assert "" not in states, f"the dialog was empty for a moment: {states}"
     # and back: plot A still has the drop
     page.locator(".nav-link:has-text('per year')").first.click()

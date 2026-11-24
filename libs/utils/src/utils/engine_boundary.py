@@ -148,6 +148,7 @@ PLACES: Tuple[EnginePlace, ...] = tuple(_place(*row) for row in (
     ("libs/id_reconciliation/src/id_reconciliation/matcher.py", _P, TABLE_LIBRARY, "matches ID lists with plain Python; it imports Polars but does not use it"),
     ("libs/viz_gallery/src/viz_gallery/example_recipe.py", _P, TABLE_LIBRARY, "builds a gallery example recipe and reads its data with Polars"),
     ("libs/viz_gallery/src/viz_gallery/gallery_manager.py", _P, TABLE_LIBRARY, "checks the gallery examples and reads their data with Polars"),
+    (_U + "id_completion.py", _P, TABLE_LIBRARY, "reads the id column of a table and adds the lines for the ids it lacks with Polars frames"),
     (_U + "hashing.py", _P, TABLE_LIBRARY, "reads Parquet metadata; it imports Polars but does not use it"),
     (_U + "table_compare.py", _P, TABLE_LIBRARY, "compares two collected Polars tables: counted whole-row diff, key check and paired view"),
     ("app/src/server.py", _P, TABLE_LIBRARY, "reads the stored tier 1 table with a Polars Parquet scan"),

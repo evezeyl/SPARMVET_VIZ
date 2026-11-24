@@ -1,7 +1,7 @@
 """
 @deps
 provides: function:load_data_analysis_recipe, function:tier1_material, function:tier1_engines, function:tier2_engine, function:collection_tier2_key, function:plot_tier3_key, function:tier3_key, function:tier3_engine, function:tier2_steps (from utils.recipe_tiers), function:tier3_steps (from utils.recipe_tiers), function:tier1_key, function:tier2_key, function:table_key_parts, function:table_definition_for_key, function:dataset_file_hashes, function:batch_hash_of, constant:ENGINE_CACHE_VERSION, constant:CACHE_VERSION_META, constant:STORED_TABLES_REBUILT_NOTICE, function:data_analysis_recipe_fileset_hash, function:data_analysis_recipe_keys, class:LoadedDataAnalysisRecipe, class:DataAnalysisRecipeKeys, class:TableKeyParts, class:ResolvedRecipe, function:loaded_from_resolved, function:tier1_audit_part, function:audit_part
-consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/engines.py (tier_engine: the one reading of the engine of a tier), libs/utils/src/utils/recipe_graph.py (build_graph: lineage_back, source_tables, parents: which definitions and which data files a table depends on, ADR-101), libs/utils/src/utils/audit_copy.py (audit_operation), libs/utils/src/utils/recipe_tiers.py (audit_steps_of, tier2_parts, tier3_parts, without_audit_steps: the audit_steps lists of a copy are the audit parts of a key, not its definition)
+consumes: libs/utils/src/utils/id_completion.py (plan_material: what the completion of the ids reads of the recipe, part of the key of a table that reads a table that takes part), libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_tiers.py, libs/utils/src/utils/engines.py (tier_engine: the one reading of the engine of a tier), libs/utils/src/utils/recipe_graph.py (build_graph: lineage_back, source_tables, parents: which definitions and which data files a table depends on, ADR-101), libs/utils/src/utils/audit_copy.py (audit_operation), libs/utils/src/utils/recipe_tiers.py (audit_steps_of, tier2_parts, tier3_parts, without_audit_steps: the audit_steps lists of a copy are the audit parts of a key, not its definition)
 consumed_by: app/modules/orchestrator.py, app/modules/session_manager.py, app/src/server.py, app/src/bootloader.py, app/handlers/export_handlers.py, app/tests/test_cache_keys.py, app/tests/test_engine_keys.py, app/tests/test_table_keys.py, app/tests/test_tier3_reader.py, app/tests/test_audit_keys.py, app/modules/audit_run.py
 doc: .claude/knowledge/architecture_decisions.md#adr-089, .claude/knowledge/architecture_decisions.md#adr-101, docs/foundations/reproducibility_hash_schema.qmd
 @end_deps
@@ -70,6 +70,7 @@ from utils.audit_copy import audit_operation, integrity_errors
 from utils.errors import RecipeLoadError
 from utils.config_loader import ConfigManager
 from utils.engines import tier_engine
+from utils.id_completion import plan_material
 from utils.recipe_graph import RecipeGraphError, build_graph
 # The one reading of a collection's tier-2 list (issue #77); `tier2_steps` is used from here by the app.
 from utils.recipe_tiers import (  # noqa: F401 - tier2_steps and tier3_steps are part of this module's interface
@@ -259,6 +260,9 @@ def table_key_parts(raw: dict) -> tuple[dict[str, TableKeyParts], TableKeyParts]
     bodies = collection_bodies(raw)
     shared = canonical_hash({k: v for k, v in raw.items()
                              if k not in _TABLE_SECTIONS and k not in _DOWNSTREAM_TOP_LEVEL and k != "data_engine"})
+    # The completion of the ids (utils.id_completion, D-0613): a table that takes part gets a line for every id of the union of all the tables that take part,
+    # so a table that reads one of them depends on the data files and on the id declarations of ALL of them (the metadata among them).
+    completion = plan_material(raw)
     parts: dict[str, TableKeyParts] = {}
     for table in graph.collections():
         node = f"T1:{table}"
@@ -267,11 +271,15 @@ def table_key_parts(raw: dict) -> tuple[dict[str, TableKeyParts], TableKeyParts]
         if not datasets:
             parts[table] = _coarse_parts(raw, table)
             continue
+        completion_material: tuple = ()
+        if completion and set(datasets) & set(completion):
+            datasets = tuple(sorted(set(datasets) | set(completion)))
+            completion_material = (canonical_hash(completion),)
         definition = {name: {"path": graph.node(f"T1:{name}").path,
                              "reads": [graph.node(p).name for p in graph.parents(f"T1:{name}")],
                              "definition": table_definition_for_key(bodies[name])} for name in upstream}
         engines = {name: tier_engine(raw, bodies[name], "tier1") for name in upstream}
-        parts[table] = TableKeyParts(table, canonical_hash(engines), key_part("rC", shared, canonical_hash(definition)), datasets,
+        parts[table] = TableKeyParts(table, canonical_hash(engines), key_part("rC", shared, canonical_hash(definition), *completion_material), datasets,
                                      audit=tier1_audit_part(bodies, upstream))
     return parts, coarse
 

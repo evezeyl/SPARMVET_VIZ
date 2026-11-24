@@ -138,15 +138,18 @@ class TestTheRealFormFollowsTheViewShown:
         with reactive.isolate():
             return _options(str(home.outputs["filter_form_ui"]()))
 
+    # The marker column of the completion of the ids is an ordinary yes/no column of the table (the flag column is kept, D-0586): it is offered in the form from tier 1 on, one for
+    # each table that takes part (T and M here). The Source view shows the file as read, so it has none.
+    JOIN = ["sample_id", "group", "score", "T_not_in_original_data", "site", "M_not_in_original_data"]
+
     @pytest.mark.parametrize("view,source,expected", [
         ("SRC", "T", ["sample_id", "group", "score"]), ("SRC", "M", ["sample_id", "site"]),
-        ("T1", None, ["sample_id", "group", "score", "site"]), ("T2", None, ["sample_id", "group", "score", "site"]),
-        ("T3", None, ["sample_id", "group", "score", "site"])])
+        ("T1", None, JOIN), ("T2", None, JOIN), ("T3", None, JOIN)])
     def test_a_plot_on_a_join(self, tmp_path, monkeypatch, view, source, expected):
         assert self.columns(tmp_path, monkeypatch, view, "p_join", source) == expected
 
-    @pytest.mark.parametrize("view,expected", [("T1", ["sample_id", "group", "score", "site"]), ("T2", ["sample_id", "group", "score", "site"]),
-                                               ("T3", ["sample_id", "group", "score"])])
+    @pytest.mark.parametrize("view,expected", [("T1", JOIN), ("T2", JOIN),
+                                               ("T3", ["sample_id", "group", "score", "T_not_in_original_data", "M_not_in_original_data"])])   # `site` dropped by the plot's own steps
     def test_a_plot_with_its_own_tier3_steps(self, tmp_path, monkeypatch, view, expected):
         assert self.columns(tmp_path, monkeypatch, view, "p_steps") == expected
 

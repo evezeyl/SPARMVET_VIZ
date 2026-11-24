@@ -33,6 +33,7 @@ data_schemas:
     source: {type: local_tsv, path: assets/test_data/a.tsv}
     null_values: []
     strip: true
+    completion: {marker: not_in_original_data, meaning: no result for this entity}
     input_fields:
       id: {type: String, is_entity_id: true}
       v: {type: Float64, label: A value}

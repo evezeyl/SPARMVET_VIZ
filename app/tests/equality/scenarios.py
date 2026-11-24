@@ -22,6 +22,8 @@ SCENARIOS = {
     "dirty_no_null_text": (HERE / "recipes", "2_test_data_ST22_dummy_dirty_no_null_text", HERE / "data/dirty", []),
     "fractional_year": (HERE / "recipes", "2_test_data_ST22_dummy_fractional_year", HERE / "data/fractional_year", [""]),
 }
+# The scenarios whose recipe has a `completion` block (the shipped one); the written test recipes have none.
+COMPLETED = {"clean"}
 SCHEMA_TABLES = ["metadata_schema", "amr_data", "plasmid_data"]
 JOIN_TABLES = ["AMR_Profile_Joint", "Plasmid_Profile_Joint"]
 ALL_TABLES = SCHEMA_TABLES + JOIN_TABLES
@@ -39,7 +41,7 @@ def hand_table(scenario: str, name: str):
 
 @lru_cache(maxsize=None)
 def _hand_table(scenario: str, name: str):
-    return reference.reference_table(name, files_of(scenario), SCENARIOS[scenario][3])
+    return reference.reference_table(name, files_of(scenario), SCENARIOS[scenario][3], scenario in COMPLETED)
 
 
 @lru_cache(maxsize=None)

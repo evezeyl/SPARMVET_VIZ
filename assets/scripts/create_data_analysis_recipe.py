@@ -170,7 +170,7 @@ def build(recipe_id: str, data_files: Sequence[Path], key_columns: Sequence[str]
         fields, key = fields_of(read_table(metadata_file), [metadata_key] if metadata_key else [], metadata_file)
         if metadata_key and key is None:
             print(f"Note: the key column {metadata_key!r} is not in {metadata_file}; the metadata table is written without a key.")
-        metadata = minimal_schema(project_path(metadata_file), fields, label="Metadata")
+        metadata = minimal_schema(project_path(metadata_file), fields, label="Metadata", table_id=METADATA_ID)
         # the place of metadata_schema is after the data schemas (the order of the specification)
         recipe = {key_: value for key_, value in recipe.items() if key_ != "analysis_groups"} | {
             METADATA_ID: metadata, "analysis_groups": recipe["analysis_groups"]}

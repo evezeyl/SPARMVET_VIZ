@@ -23,6 +23,7 @@ Mutation index (grep "MUTATION"; each seen failing):
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_export_unread_tables.py -q
 """
 import io
+import re
 import zipfile
 from types import SimpleNamespace
 
@@ -43,14 +44,19 @@ def _fresh_cache():
     clear_data_analysis_recipe_cache()
 
 
-def _source(name: str, field: str, ftype: str = "String", file: str | None = None) -> str:
-    """A source table whose data file is `data/<file or name>.tsv` (`DATA/` is replaced by the data folder of the world)."""
+def _source(name: str, field: str, ftype: str = "String", file: str | None = None, entity: bool = True) -> str:
+    """A source table whose data file is `data/<file or name>.tsv` (`DATA/` is replaced by the data folder of the world). `entity=False`: the table declares no entity id, so it
+    takes no part in the completion of the ids (a look-up)."""
+    plain = name.strip("'")
+    marker = re.sub(r"\W", lambda m: f"_{ord(m.group()):02x}_", plain)   # one marker per table, whatever the characters of its id (two tables never share one, E06)
+    completion = f"    completion: {{marker: {marker}_not_in_original_data, meaning: no result for this entity}}\n" if entity else ""
+    entity_mark = ", is_entity_id: true" if entity else ""
     return f"""  {name}:
-    source: {{type: local_tsv, path: DATA/{file or name.strip("'")}.tsv}}
+    source: {{type: local_tsv, path: DATA/{file or plain}.tsv}}
     null_values: []
     strip: false
-    input_fields:
-      sample_id: {{original_name: sample_id, type: Categorical, ui_label: Sample, is_entity_id: true}}
+{completion}    input_fields:
+      sample_id: {{original_name: sample_id, type: Categorical, ui_label: Sample{entity_mark}}}
       {field}: {{original_name: {field}, type: {ftype}, ui_label: {field}}}
     tier1: {{steps: []}}
 """
@@ -150,7 +156,10 @@ def test_the_bundle_holds_a_tier1_file_for_each_table_no_plot_reads(tmp_path, mo
     assert "EXPORT_NOT_CREATED.txt" not in members
     for table in ("T", "U", "V", "D"):
         assert members[f"{table}/T1_data.tsv"] == _table_tsv(world, table, tmp_path), table
-    assert members["U/T1_data.tsv"].decode().splitlines() == ["sample_id\tweight", "u1\t1.5", "u2\t2.5", "u3\t3.5"]
+    # U keeps its three lines as they are and gets one marked line for each id of the other tables (the completion of the ids): the lines of T (s1, s2, s3) and of V (v1, v2)
+    assert members["U/T1_data.tsv"].decode().splitlines() == [
+        "sample_id\tweight\tU_not_in_original_data", "u1\t1.5\tfalse", "u2\t2.5\tfalse", "u3\t3.5\tfalse",
+        "s1\t\ttrue", "s2\t\ttrue", "s3\t\ttrue", "v1\t\ttrue", "v2\t\ttrue"]
     assert not [n for n in members if n.startswith(("T/", "U/", "V/", "D/")) and n != f"{n.split('/')[0]}/T1_data.tsv"], \
         "tier 1 only: no T2 or T3 file, no plot folder, for a table no plot reads"
 
@@ -163,7 +172,7 @@ def test_the_plotted_table_keeps_its_files_and_every_other_member_is_unchanged(t
     assert "C/T2_data.tsv" not in members, "C has no tier 2 steps"
     new = {f"{t}/T1_data.tsv" for t in "TUVD"}
     assert sorted(set(members) - new) == sorted(
-        ["C/T1_data.tsv", "C/plots/p.png", "README.txt", "report.qmd", "effective_run.yaml", "lineage/lineage_graph.json"]
+        ["C/T1_data.tsv", "C/plots/p.png", "README.txt", "report.qmd", "effective_run.yaml", "lineage/lineage_graph.json", "id_log.yaml"]
         + [n for n in members if n.startswith("report_")]), sorted(members)
 
 
@@ -232,7 +241,7 @@ def test_a_table_no_plot_reads_that_cannot_be_loaded_is_written_as_an_error_and_
     """MUTATION U3 fails here. Same as a plot's table that fails today: an `*_ERROR.txt` in the bundle (naming the table and the reason)
     and an error notification; the rest of the bundle is complete, nothing is skipped silently (D-0050)."""
     class Bad(Wide):
-        extra_sources = _source("W", "n", "Int64")
+        extra_sources = _source("W", "n", "Int64", entity=False)   # a look-up: it takes no part in the completion, so its failure does not stop the other tables
 
         def write_data_analysis_recipe(self, **kw):
             super().write_data_analysis_recipe(**kw)
@@ -298,7 +307,8 @@ def test_two_tables_that_read_the_same_data_file_get_two_files_and_two_key_lines
 
     world = Twin(tmp_path)
     members = _members(_zip(_export(world, monkeypatch)[0]))
-    assert members["U/T1_data.tsv"] == members["U2/T1_data.tsv"], "the same data file, read by two tables"
+    # the same data file, read by two tables: the same table apart from the name of the marker column each one has (one marker per table)
+    assert members["U/T1_data.tsv"].replace(b"U_not_in_original_data", b"marker") == members["U2/T1_data.tsv"].replace(b"U2_not_in_original_data", b"marker")
     readme = members["README.txt"].decode()
     assert "  U: tier1_key=" in readme and "  U2: tier1_key=" in readme
 
@@ -314,7 +324,8 @@ def test_two_tables_whose_folder_names_would_be_equal_are_not_mixed(tmp_path, mo
 
     world = Clash(tmp_path)
     members = _members(_zip(_export(world, monkeypatch)[0]))
-    assert b"u1" in members["a_b/T1_data.tsv"] and b"z1" not in members["a_b/T1_data.tsv"], "the first table keeps its folder and its data"
-    assert b"z1" in members["a_b_2/T1_data.tsv"], "the second table has its own folder"
+    # each table has its own lines (marked false); the lines of the other table are added to it, marked true (the completion of the ids)
+    assert b"u1\t1.5\tfalse" in members["a_b/T1_data.tsv"] and b"z1\t7.5\tfalse" not in members["a_b/T1_data.tsv"], "the first table keeps its folder and its data"
+    assert b"z1\t7.5\tfalse" in members["a_b_2/T1_data.tsv"] and b"u1\t1.5\tfalse" not in members["a_b_2/T1_data.tsv"], "the second table has its own folder"
     readme = members["README.txt"].decode()
     assert "a b: a_b_2/T1_data.tsv" in readme and "a_b: a_b/T1_data.tsv" in readme

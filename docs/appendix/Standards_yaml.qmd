@@ -54,6 +54,17 @@ Only the columns written in `input_fields` are read. A declared column that is m
 
 Every data schema also states `null_values` and `strip` (see the authoring guide): there is no default.
 
+### The `completion` block of a schema
+
+A table of `data_schemas`, and the `metadata_schema`, that declares an entity id (`is_entity_id: true`) states in a `completion` block what a line that the app adds for an entity id the table lacks means. The block is required for such a table (check E04) and refused for any other (E07).
+
+| Key | Description | Example |
+| --- | --- | --- |
+| `marker` | The name of the yes/no column the app adds: true on an added line, false on the table's own lines. A name of letters, digits and underscores that is not a field of the table and that no other table uses (E06): by convention `<table>_not_in_original_data` for every table, the metadata included (`metadata_schema_not_in_original_data`): write the table into it. | `marker: ResFinder_not_in_original_data` |
+| `meaning` | A sentence that you write: what an added line means for THIS table. It is required, and the checker does not judge it (a missing or empty sentence is refused, E05). The app shows it beside its own words for an added line, `missing in original table`. | `meaning: "The tool ran and found no resistance gene for this entity: Not Found, counted as 0."` |
+
+The app adds the lines when it reads the files, before the steps of tier 1. See the page "Good Practice for Writing Recipes".
+
 ### Valid Types
 
 | Type | What it is | When to use it |

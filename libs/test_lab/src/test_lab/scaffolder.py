@@ -19,7 +19,7 @@ import yaml
 from utils import action_names
 from utils.engines import DATA_ENGINE, PLOT_ENGINE
 
-from test_lab.bootstrapper import DataAnalysisRecipeBootstrapper, IncludeRef, represent_include
+from test_lab.bootstrapper import ENTITY_ID_NAMES, DataAnalysisRecipeBootstrapper, IncludeRef, represent_include
 
 
 yaml.add_representer(IncludeRef, represent_include, Dumper=yaml.SafeDumper)
@@ -156,7 +156,7 @@ class DataAnalysisRecipeScaffolder:
                 "ui_label": col.replace('_', ' ').title(),
                 "original_name": col,
             }
-            if safe_col in ("id", "sample_id", "isolate_id"):
+            if safe_col in ENTITY_ID_NAMES:
                 fields[safe_col]["is_entity_id"] = True
             if df[col].n_unique() == len(df):
                 pk_candidates.append(safe_col)
@@ -193,7 +193,8 @@ class DataAnalysisRecipeScaffolder:
         data_schemas = {}
         for tsv_p, dataset_id in zip(tsv_paths, dataset_ids):
             data_schemas[dataset_id] = self._bs.table_block(
-                data_analysis_recipe_id, dataset_id, self._bs.source_path(tsv_p), dataset_id.replace('_', ' ').capitalize())
+                data_analysis_recipe_id, dataset_id, self._bs.source_path(tsv_p), dataset_id.replace('_', ' ').capitalize(),
+                entity_id=self._bs.declares_entity_id(tsv_p))
 
         master: Dict[str, Any] = {
             "id": data_analysis_recipe_id,
@@ -211,7 +212,8 @@ class DataAnalysisRecipeScaffolder:
         if metadata_path is not None:
             meta_id = self._bs._sanitize_name(Path(metadata_path).stem)
             master["metadata_schema"] = self._bs.table_block(
-                data_analysis_recipe_id, meta_id, self._bs.source_path(metadata_path), "Metadata")
+                data_analysis_recipe_id, meta_id, self._bs.source_path(metadata_path), "Metadata",
+                entity_id=self._bs.declares_entity_id(metadata_path), metadata=True)
 
         master["joins"] = joins_config
         master["analysis_groups"] = {}

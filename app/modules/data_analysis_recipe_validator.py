@@ -1,7 +1,7 @@
 # engine: python-polars (runs a plan on one row and catches Polars errors)
 """
 @deps
-provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:checker_advices, const:SHOWN_ADVICES, function:home_advice_entries, function:validate_advice_entries, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, function:rejected_recipe_text (GATE-GAP-1), class:DataAnalysisRecipeProblem
+provides: function:load_uploaded_recipe, function:load_config_or_problems, function:uploaded_recipe_report, function:validate_data_analysis_recipe, function:checker_problems, function:checker_advices, const:SHOWN_ADVICES, function:home_advice_entries, function:validate_advice_entries, function:engine_load_problems, function:checker_catalogs, function:validate_data_analysis_recipe_data, function:check_data_analysis_recipe_data (the problems and the three checks of the ids, warnings only), class:DataCheck, function:find_data_analysis_recipes, function:read_data_analysis_recipe_header, function:resolve_contact, function:rejected_recipe_text (GATE-GAP-1), class:DataAnalysisRecipeProblem
 consumes: libs/utils/src/utils/config_loader.py, libs/utils/src/utils/recipe_loader.py (load_recipe), libs/utils/src/utils/recipe_loader.py (check_recipe_file), libs/utils/src/utils/recipe_tiers.py (tier3_steps: the lookup `materialize_tier3` uses; the tier-3 steps count as read), libs/utils/src/utils/recipe_graph.py (build_graph: the graph the checker's column checks need, J08), libs/transformer/src/transformer/data_wrangler.py, libs/transformer/src/transformer/actions/base.py (ACTION_SCHEMAS), libs/viz_factory/src/viz_factory/arguments.py (argument_catalog), app/modules/engine_registry.py (engine_tables: the `engine` field of every action and component, D-0238), app/modules/orchestrator.py
 consumed_by: app/tests/test_upload_load_never_exits.py, app/tests/test_upload_recipe_check.py, app/tests/test_data_analysis_recipe_validator.py, app/tests/test_data_analysis_recipe_data_check.py, app/tests/test_retest_data_analysis_recipes.py, app/handlers/blueprint_handlers.py (_handle_validate, BP-VALIDATE-1/VALIDATE-UI-1), app/src/bootloader.py (HOME load gate, ADR-094)
 doc: .claude/tasks/tasks.md (BP-VALIDATE-1, VALIDATE-UI-1), .claude/rules/rules_data_engine.md#3, .claude/knowledge/architecture_decisions.md#ADR-094
@@ -482,16 +482,36 @@ def _declared_columns(fields) -> list[str]:
     return list(fields) if isinstance(fields, dict) else []
 
 
+@dataclass(frozen=True)
+class DataCheck:
+    """What the check of the data found: `problems` (a recipe with one is refused by HOME's gate) and `ids`, the three checks of the ids (`utils.id_completion`),
+    which are WARNINGS ONLY: they never make a problem and never refuse or hide a recipe (D-0581). `ids` is None when no table takes part in the completion or
+    when the checks could not be made (`ids_error` then says why; the reading problems of the tables are in `problems`)."""
+    problems: list
+    ids: Optional[object] = None
+    ids_error: Optional[str] = None
+
+
 def validate_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Union[str, Path],
                            data_lookup: str = "data_analysis_recipe_paths",
                            imports_dir: Union[str, Path, None] = None) -> list[DataAnalysisRecipeProblem]:
-    """Read every dataset of the data analysis recipe and check its declared fields against the real columns.
+    """The problems of `check_data_analysis_recipe_data`, alone: what refuses a recipe (HOME's gate and BLUEPRINT's Validate call this). The checks of the ids are
+    not made here: they are warnings, and the opening of a recipe in HOME makes them once (`app/modules/id_check_run.py`)."""
+    return check_data_analysis_recipe_data(path, raw_data_dir, data_lookup, imports_dir, with_ids=False).problems
+
+
+def check_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Union[str, Path],
+                           data_lookup: str = "data_analysis_recipe_paths",
+                           imports_dir: Union[str, Path, None] = None, with_ids: bool = True) -> DataCheck:
+    """Read every dataset of the data analysis recipe and check its declared fields against the real columns, then make the three checks of the ids.
 
     Unlike validate_data_analysis_recipe this reads the data files (issue #18). For each data schema it
     builds the dataset the way the app does (input contract, tier-1 wrangling) and reports:
       - a dataset that cannot be loaded (missing file, missing input column, value that does not
         fit its type), with the engine's message and tip;
       - a wrangling step that cannot run on the declared types.
+    Every table is read through the completion of the ids (`DataOrchestrator.prepare_ingredient`), so a table that takes part sees the lines the completion
+    adds. The checks of the ids (`DataOrchestrator.id_report`) are made at the end and are returned in `ids`: warnings only, never a problem.
     """
     from app.modules.orchestrator import DataOrchestrator
 
@@ -502,7 +522,7 @@ def validate_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Uni
         with redirect_stderr(captured):
             raw = ConfigManager(str(path)).raw_config
     except (Exception, SystemExit) as exc:
-        return [DataAnalysisRecipeProblem(name, "load", _load_error_text(captured.getvalue(), exc))]
+        return DataCheck([DataAnalysisRecipeProblem(name, "load", _load_error_text(captured.getvalue(), exc))])
 
     orchestrator = DataOrchestrator(path.parent, Path(raw_data_dir), data_lookup=data_lookup, imports_dir=imports_dir)
     schemas: list[tuple[str, str, dict]] = []
@@ -542,7 +562,13 @@ def validate_data_analysis_recipe_data(path: Union[str, Path], raw_data_dir: Uni
             problems.append(DataAnalysisRecipeProblem(
                 name, location, f"wrangling cannot run on this dataset: {exc}",
                 "Suggestion: look at the wrangling step that the message names and at the values of the column it reads, then change the step or correct the data."))
-    return problems
+    # The checks of the ids (D-0581, D-0590): warnings only. A table that could not be read is already a problem above; the checks need every table that takes part.
+    ids, ids_error = None, None
+    try:
+        ids = orchestrator.id_report(path.stem, raw) if with_ids else None
+    except Exception as exc:   # the checks never refuse a recipe: what stops them is said (a table that cannot be read is also a problem above)
+        ids_error = f"the checks of the ids could not be made: {exc}"
+    return DataCheck(problems, ids, ids_error)
 
 
 def read_data_analysis_recipe_header(path: Union[str, Path]) -> Optional[dict]:

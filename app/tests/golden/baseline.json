@@ -75,11 +75,12 @@
       "predicted_phenotype:String",
       "identity:Float64",
       "overlap:Float64",
+      "ResFinder_not_in_original_data:Boolean",
       "status:String",
       "total_gene_count:UInt32"
      ],
-     "rows": 70,
-     "sha256": "3e76b2351b149382c1ae13b460f0ba4061f923413f5623c0e3a3d4db68ec6d53"
+     "rows": 74,
+     "sha256": "a151df8e7d268dd8fdf0734afbc10ce1c0e1aecb66e1e2757ede5021d47ae0ee"
     },
     "assembly_quality_dotplot": {
      "columns": [
@@ -108,13 +109,15 @@
       "sample_id:String",
       "scheme:String",
       "sequence_type:String",
+      "MLST_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
       "country:String",
+      "metadata_schema_not_in_original_data:Boolean",
       "era:String"
      ],
      "rows": 33,
-     "sha256": "478daf6f05899b82b2b9105e21aefceb855798ec694ad9160dc233558e6cf4e5"
+     "sha256": "73c9b30d37dcd4c683c29c8f7f6fe283a2bb61cf9d980606240dbbb91b4a5509"
     },
     "phenotype_genome_length_fragmentation": {
      "columns": [
@@ -143,7 +146,7 @@
       "n_amr_genes:UInt32"
      ],
      "rows": 42,
-     "sha256": "c4f1a2365b420755e5bd98ae1abdc2e62d7b4f21f88c09dd5145cf0dc6a34cce"
+     "sha256": "deade86d74dbf7af4ce053e44665160a111a146d8c20c71b9c3d4b70aeb25b76"
     },
     "qa_facet_by_mapping": {
      "columns": [
@@ -151,10 +154,11 @@
       "source:String",
       "year:Float64",
       "country:String",
+      "QA_year_types_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "f030eb8355ff1a37145cbc71a077f335a1216610e9015e0f075e09e0e79e2484"
+     "sha256": "7a96f4e886be5fac5797b28e88e3e92015f44a9e412ad383c9a4300ea0c5a4dd"
     },
     "qa_fanout_rows_per_sample": {
      "columns": [
@@ -162,7 +166,7 @@
       "rows_per_sample:UInt32"
      ],
      "rows": 42,
-     "sha256": "eb22d405ad94b84936e4e53aecba7b8b6aa527e98a55a55a38e8b2290f707e5f"
+     "sha256": "ff1094a73f99692eedd9d66e3ead1889bd0fec0880b83a5a1ad367ee5b236fdd"
     },
     "qa_l50_integer": {
      "columns": [
@@ -196,10 +200,11 @@
       "source:String",
       "year:Float64",
       "country:String",
+      "QA_year_types_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "f030eb8355ff1a37145cbc71a077f335a1216610e9015e0f075e09e0e79e2484"
+     "sha256": "7a96f4e886be5fac5797b28e88e3e92015f44a9e412ad383c9a4300ea0c5a4dd"
     },
     "qc_reads_horizontal_barplot": {
      "columns": [
@@ -207,18 +212,22 @@
       "total_reads:Float64",
       "q30_rate:Float64",
       "gc_content:Float64",
+      "FastP_not_in_original_data:Boolean",
       "n50:Float64",
       "total_length:Float64",
       "largest_contig:Float64",
       "L50:Float64",
+      "Quast_not_in_original_data:Boolean",
       "taxon_1:String",
       "proportion_1:Float64",
+      "Bracken_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
-      "country:String"
+      "country:String",
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "233348ea64a3c9e1323f0f9be5fe1972b8f797a8efc45ee29070ecbcec2d8b43"
+     "sha256": "251bfc0e160495bd8592c32d76b7d3cb474c57af8a0e4fc7693e2ffede6e8aef"
     },
     "virulence_bar": {
      "columns": [
@@ -236,7 +245,7 @@
       "virulence_count:UInt32"
      ],
      "rows": 617,
-     "sha256": "98b42b80be15cc63a8df596e02960c9da5e75d1c602956be13b34951ddf7a6dc"
+     "sha256": "f2edeff5a8203565d2f289adcb8a2feb5b7f91cd605d9a3d2db444d9823bc574"
     },
     "virulence_variants": {
      "columns": [
@@ -254,20 +263,22 @@
       "virulence_count:UInt32"
      ],
      "rows": 617,
-     "sha256": "98b42b80be15cc63a8df596e02960c9da5e75d1c602956be13b34951ddf7a6dc"
+     "sha256": "f2edeff5a8203565d2f289adcb8a2feb5b7f91cd605d9a3d2db444d9823bc574"
     },
     "year_distribution": {
      "columns": [
       "sample_id:String",
       "scheme:String",
       "sequence_type:String",
+      "MLST_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
       "country:String",
+      "metadata_schema_not_in_original_data:Boolean",
       "era:String"
      ],
      "rows": 33,
-     "sha256": "478daf6f05899b82b2b9105e21aefceb855798ec694ad9160dc233558e6cf4e5"
+     "sha256": "73c9b30d37dcd4c683c29c8f7f6fe283a2bb61cf9d980606240dbbb91b4a5509"
     }
    },
    "t1": {
@@ -290,12 +301,14 @@
       "sample_id:String",
       "taxon_1:String",
       "proportion_1:Float64",
+      "Bracken_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
-      "country:String"
+      "country:String",
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "1df5cd8f9043fa9ce551f30d732149bc4298299cdbadfad4fe549f4a1663ca6e"
+     "sha256": "e02e5b7928e352bb162405e74c3a2b152466204b5b5c58d42744c79cbc44f3e0"
     },
     "FastP_with_metadata": {
      "columns": [
@@ -303,24 +316,28 @@
       "total_reads:Float64",
       "q30_rate:Float64",
       "gc_content:Float64",
+      "FastP_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
-      "country:String"
+      "country:String",
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "d6b1e0cd71d4883779fa95a438d31d59e76a21ef968b8ccb5bcccfa2f804853f"
+     "sha256": "099ae8798a32a178817c4021500beabfb86f15dcdc74f88789c22be51422b101"
     },
     "MLST_with_metadata": {
      "columns": [
       "sample_id:String",
       "scheme:String",
       "sequence_type:String",
+      "MLST_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
-      "country:String"
+      "country:String",
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "bc765d50c6b1a7efacb8ca370e30babf3145013eff71da08343dcefd99b13cb7"
+     "sha256": "b1daaa3892549d4d2a435c4d53132ab29e38ce95000248fa400600cc1dd06f63"
     },
     "QA_AMR_per_sample": {
      "columns": [
@@ -332,7 +349,7 @@
       "predicted_phenotype:String"
      ],
      "rows": 74,
-     "sha256": "79048c15e9cd5d73aaa4e975715afa1230c02c722920fe99c1735c5c07fa2f62"
+     "sha256": "212373534e85db708d224f303f06f22dc2edc7225e945eb920e94a08ad808f3f"
     },
     "QA_L50_integer": {
      "columns": [
@@ -356,10 +373,11 @@
       "source:String",
       "year:Float64",
       "country:String",
+      "QA_aggregated_no_key_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "f030eb8355ff1a37145cbc71a077f335a1216610e9015e0f075e09e0e79e2484"
+     "sha256": "882b61e310ae7507c38fef5010b5455d8dd4484c34523764a35f9fa9515ddb33"
     },
     "QA_fanout_exhibit": {
      "columns": [
@@ -369,7 +387,7 @@
       "VF_gene:String"
      ],
      "rows": 1731,
-     "sha256": "e29dd86aafd48174a4def61ba30f0b3363face68e7e76d422bdbb1d9dd9540c0"
+     "sha256": "754765e87fbe8e5407191a4783450ec45e3c57406744a6a29a8457753396c2dc"
     },
     "QA_population_zscore": {
      "columns": [
@@ -386,10 +404,11 @@
       "source:String",
       "year:Float64",
       "country:String",
+      "QA_year_types_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "f030eb8355ff1a37145cbc71a077f335a1216610e9015e0f075e09e0e79e2484"
+     "sha256": "7a96f4e886be5fac5797b28e88e3e92015f44a9e412ad383c9a4300ea0c5a4dd"
     },
     "QC_Reads_Anchor": {
      "columns": [
@@ -397,18 +416,22 @@
       "total_reads:Float64",
       "q30_rate:Float64",
       "gc_content:Float64",
+      "FastP_not_in_original_data:Boolean",
       "n50:Float64",
       "total_length:Float64",
       "largest_contig:Float64",
       "L50:Float64",
+      "Quast_not_in_original_data:Boolean",
       "taxon_1:String",
       "proportion_1:Float64",
+      "Bracken_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
-      "country:String"
+      "country:String",
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "233348ea64a3c9e1323f0f9be5fe1972b8f797a8efc45ee29070ecbcec2d8b43"
+     "sha256": "251bfc0e160495bd8592c32d76b7d3cb474c57af8a0e4fc7693e2ffede6e8aef"
     },
     "Quast_with_metadata": {
      "columns": [
@@ -428,10 +451,11 @@
       "predicted_phenotype:String",
       "identity:Float64",
       "overlap:Float64",
+      "ResFinder_not_in_original_data:Boolean",
       "status:String"
      ],
-     "rows": 70,
-     "sha256": "17d7acce887ddb97c7c83ae61ba8d58061aff1c80e9e451f0e29eb60fa1fdcb7"
+     "rows": 74,
+     "sha256": "7f268866b697e8d1633864c6e1e326488685d8f3d11c4bf71ed85e38a015cb02"
     },
     "ResFinder_with_metadata": {
      "columns": [
@@ -440,13 +464,15 @@
       "predicted_phenotype:String",
       "identity:Float64",
       "overlap:Float64",
+      "ResFinder_not_in_original_data:Boolean",
       "status:String",
       "source:String",
       "year:Float64",
-      "country:String"
+      "country:String",
+      "metadata_schema_not_in_original_data:Boolean"
      ],
-     "rows": 70,
-     "sha256": "123daa9f084ba7885c6583b2de82c5fcf2e0edf70aad2b33789580288445efd6"
+     "rows": 74,
+     "sha256": "7ac84f84a4f2f5dd4f0a3d6dac1d955971ae6871cb096c3ad71d0a979efe8a46"
     },
     "ST22_Anchor": {
      "columns": [
@@ -463,7 +489,7 @@
       "phenotype:String"
      ],
      "rows": 617,
-     "sha256": "4e69d962fc3626f21c6431260885ecb3803f5ddd547d910ff627922b281a3bda"
+     "sha256": "e2f968db996b8ecad162887d1e24643e8a182ae6c7919adb1e2b1abf8d5ede02"
     },
     "Summary_phenotype_length_fragmentation": {
      "columns": [
@@ -497,12 +523,14 @@
       "sample_id:String",
       "taxon_1:String",
       "proportion_1:Float64",
+      "Bracken_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
-      "country:String"
+      "country:String",
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "1df5cd8f9043fa9ce551f30d732149bc4298299cdbadfad4fe549f4a1663ca6e"
+     "sha256": "e02e5b7928e352bb162405e74c3a2b152466204b5b5c58d42744c79cbc44f3e0"
     },
     "FastP_with_metadata": {
      "columns": [
@@ -510,25 +538,29 @@
       "total_reads:Float64",
       "q30_rate:Float64",
       "gc_content:Float64",
+      "FastP_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
-      "country:String"
+      "country:String",
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "d6b1e0cd71d4883779fa95a438d31d59e76a21ef968b8ccb5bcccfa2f804853f"
+     "sha256": "099ae8798a32a178817c4021500beabfb86f15dcdc74f88789c22be51422b101"
     },
     "MLST_with_metadata": {
      "columns": [
       "sample_id:String",
       "scheme:String",
       "sequence_type:String",
+      "MLST_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
       "country:String",
+      "metadata_schema_not_in_original_data:Boolean",
       "era:String"
      ],
      "rows": 33,
-     "sha256": "478daf6f05899b82b2b9105e21aefceb855798ec694ad9160dc233558e6cf4e5"
+     "sha256": "73c9b30d37dcd4c683c29c8f7f6fe283a2bb61cf9d980606240dbbb91b4a5509"
     },
     "QA_AMR_per_sample": {
      "columns": [
@@ -537,7 +569,7 @@
       "n_amr_genes:UInt32"
      ],
      "rows": 42,
-     "sha256": "c4f1a2365b420755e5bd98ae1abdc2e62d7b4f21f88c09dd5145cf0dc6a34cce"
+     "sha256": "deade86d74dbf7af4ce053e44665160a111a146d8c20c71b9c3d4b70aeb25b76"
     },
     "QA_L50_integer": {
      "columns": [
@@ -570,7 +602,7 @@
       "rows_per_sample:UInt32"
      ],
      "rows": 42,
-     "sha256": "eb22d405ad94b84936e4e53aecba7b8b6aa527e98a55a55a38e8b2290f707e5f"
+     "sha256": "ff1094a73f99692eedd9d66e3ead1889bd0fec0880b83a5a1ad367ee5b236fdd"
     },
     "QA_population_zscore": {
      "columns": [
@@ -588,10 +620,11 @@
       "source:String",
       "year:Float64",
       "country:String",
+      "QA_year_types_not_in_original_data:Boolean",
       "year_label:String"
      ],
      "rows": 42,
-     "sha256": "f030eb8355ff1a37145cbc71a077f335a1216610e9015e0f075e09e0e79e2484"
+     "sha256": "7a96f4e886be5fac5797b28e88e3e92015f44a9e412ad383c9a4300ea0c5a4dd"
     },
     "QC_Reads_Anchor": {
      "columns": [
@@ -599,18 +632,22 @@
       "total_reads:Float64",
       "q30_rate:Float64",
       "gc_content:Float64",
+      "FastP_not_in_original_data:Boolean",
       "n50:Float64",
       "total_length:Float64",
       "largest_contig:Float64",
       "L50:Float64",
+      "Quast_not_in_original_data:Boolean",
       "taxon_1:String",
       "proportion_1:Float64",
+      "Bracken_not_in_original_data:Boolean",
       "source:String",
       "year:Float64",
-      "country:String"
+      "country:String",
+      "metadata_schema_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "233348ea64a3c9e1323f0f9be5fe1972b8f797a8efc45ee29070ecbcec2d8b43"
+     "sha256": "251bfc0e160495bd8592c32d76b7d3cb474c57af8a0e4fc7693e2ffede6e8aef"
     },
     "Quast_with_metadata": {
      "columns": [
@@ -630,11 +667,12 @@
       "predicted_phenotype:String",
       "identity:Float64",
       "overlap:Float64",
+      "ResFinder_not_in_original_data:Boolean",
       "status:String",
       "total_gene_count:UInt32"
      ],
-     "rows": 70,
-     "sha256": "3e76b2351b149382c1ae13b460f0ba4061f923413f5623c0e3a3d4db68ec6d53"
+     "rows": 74,
+     "sha256": "a151df8e7d268dd8fdf0734afbc10ce1c0e1aecb66e1e2757ede5021d47ae0ee"
     },
     "ResFinder_with_metadata": {
      "columns": [
@@ -643,13 +681,15 @@
       "predicted_phenotype:String",
       "identity:Float64",
       "overlap:Float64",
+      "ResFinder_not_in_original_data:Boolean",
       "status:String",
       "source:String",
       "year:Float64",
-      "country:String"
+      "country:String",
+      "metadata_schema_not_in_original_data:Boolean"
      ],
-     "rows": 70,
-     "sha256": "123daa9f084ba7885c6583b2de82c5fcf2e0edf70aad2b33789580288445efd6"
+     "rows": 74,
+     "sha256": "7ac84f84a4f2f5dd4f0a3d6dac1d955971ae6871cb096c3ad71d0a979efe8a46"
     },
     "ST22_Anchor": {
      "columns": [
@@ -667,7 +707,7 @@
       "virulence_count:UInt32"
      ],
      "rows": 617,
-     "sha256": "98b42b80be15cc63a8df596e02960c9da5e75d1c602956be13b34951ddf7a6dc"
+     "sha256": "f2edeff5a8203565d2f289adcb8a2feb5b7f91cd605d9a3d2db444d9823bc574"
     },
     "Summary_phenotype_length_fragmentation": {
      "columns": [
@@ -788,10 +828,11 @@
      "columns": [
       "sample_id:String",
       "scheme:String",
-      "sequence_type:String"
+      "sequence_type:String",
+      "MLST_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "7bc2989e1c0e151fd74024730aaa9568fda07912904e2530c63a129c8f1b1008"
+     "sha256": "dae12a4fa9a06d116dc162d01adb0a9ae1d7faed486f2c68f79951e8d361809c"
     }
    },
    "t1": {
@@ -799,10 +840,11 @@
      "columns": [
       "sample_id:String",
       "scheme:String",
-      "sequence_type:String"
+      "sequence_type:String",
+      "MLST_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "7bc2989e1c0e151fd74024730aaa9568fda07912904e2530c63a129c8f1b1008"
+     "sha256": "dae12a4fa9a06d116dc162d01adb0a9ae1d7faed486f2c68f79951e8d361809c"
     }
    },
    "t2": {
@@ -810,10 +852,11 @@
      "columns": [
       "sample_id:String",
       "scheme:String",
-      "sequence_type:String"
+      "sequence_type:String",
+      "MLST_not_in_original_data:Boolean"
      ],
      "rows": 42,
-     "sha256": "7bc2989e1c0e151fd74024730aaa9568fda07912904e2530c63a129c8f1b1008"
+     "sha256": "dae12a4fa9a06d116dc162d01adb0a9ae1d7faed486f2c68f79951e8d361809c"
     }
    }
   },
@@ -828,7 +871,7 @@
       "country:String"
      ],
      "rows": 27,
-     "sha256": "c3070a3dda40a9a37a41262149fe6c86a237586d92d30bfb9d6bae1e2449dcd5"
+     "sha256": "c9d08fa3f6dfffcc41ffb4d31b0c0e762846d65d9c488e0e5565ea691ce7a5aa"
     }
    },
    "t1": {
@@ -841,7 +884,7 @@
       "country:String"
      ],
      "rows": 27,
-     "sha256": "c3070a3dda40a9a37a41262149fe6c86a237586d92d30bfb9d6bae1e2449dcd5"
+     "sha256": "c9d08fa3f6dfffcc41ffb4d31b0c0e762846d65d9c488e0e5565ea691ce7a5aa"
     }
    },
    "t2": {
@@ -854,7 +897,7 @@
       "country:String"
      ],
      "rows": 27,
-     "sha256": "c3070a3dda40a9a37a41262149fe6c86a237586d92d30bfb9d6bae1e2449dcd5"
+     "sha256": "c9d08fa3f6dfffcc41ffb4d31b0c0e762846d65d9c488e0e5565ea691ce7a5aa"
     }
    }
   },
@@ -868,17 +911,20 @@
       "specimen_source_tissue:String",
       "final_diagnosis:String",
       "animal_infection_site_uti:String",
+      "fg_metadata_not_in_original_data:Boolean",
       "mic_id:String",
       "breakpoint:Categorical",
       "predicted_phenotype:Categorical",
+      "fg_phenotypes_not_in_original_data:Boolean",
       "gene:String",
       "gene_type:String",
       "gene_identifier:String",
       "gene_name_family:String",
-      "resistance_class:String"
+      "resistance_class:String",
+      "fg_genotypes_not_in_original_data:Boolean"
      ],
      "rows": 203146,
-     "sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
+     "sha256": "b4e346f656ebb01fa9c348f5580d9d3f312f01ca37b29b70945be6c7ac1a003f"
     },
     "plot_b_genotype_bar": {
      "columns": [
@@ -888,17 +934,20 @@
       "specimen_source_tissue:String",
       "final_diagnosis:String",
       "animal_infection_site_uti:String",
+      "fg_metadata_not_in_original_data:Boolean",
       "mic_id:String",
       "breakpoint:Categorical",
       "predicted_phenotype:Categorical",
+      "fg_phenotypes_not_in_original_data:Boolean",
       "gene:String",
       "gene_type:String",
       "gene_identifier:String",
       "gene_name_family:String",
-      "resistance_class:String"
+      "resistance_class:String",
+      "fg_genotypes_not_in_original_data:Boolean"
      ],
      "rows": 203146,
-     "sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
+     "sha256": "b4e346f656ebb01fa9c348f5580d9d3f312f01ca37b29b70945be6c7ac1a003f"
     },
     "plot_c_resistance_class": {
      "columns": [
@@ -908,17 +957,20 @@
       "specimen_source_tissue:String",
       "final_diagnosis:String",
       "animal_infection_site_uti:String",
+      "fg_metadata_not_in_original_data:Boolean",
       "mic_id:String",
       "breakpoint:Categorical",
       "predicted_phenotype:Categorical",
+      "fg_phenotypes_not_in_original_data:Boolean",
       "gene:String",
       "gene_type:String",
       "gene_identifier:String",
       "gene_name_family:String",
-      "resistance_class:String"
+      "resistance_class:String",
+      "fg_genotypes_not_in_original_data:Boolean"
      ],
      "rows": 203146,
-     "sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
+     "sha256": "b4e346f656ebb01fa9c348f5580d9d3f312f01ca37b29b70945be6c7ac1a003f"
     }
    },
    "t1": {
@@ -930,17 +982,20 @@
       "specimen_source_tissue:String",
       "final_diagnosis:String",
       "animal_infection_site_uti:String",
+      "fg_metadata_not_in_original_data:Boolean",
       "mic_id:String",
       "breakpoint:Categorical",
       "predicted_phenotype:Enum(categories=['S', 'I', 'R', 'NI'])",
+      "fg_phenotypes_not_in_original_data:Boolean",
       "gene:String",
       "gene_type:String",
       "gene_identifier:String",
       "gene_name_family:String",
-      "resistance_class:String"
+      "resistance_class:String",
+      "fg_genotypes_not_in_original_data:Boolean"
      ],
      "rows": 203146,
-     "sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
+     "sha256": "b4e346f656ebb01fa9c348f5580d9d3f312f01ca37b29b70945be6c7ac1a003f"
     }
    },
    "t2": {
@@ -952,17 +1007,20 @@
       "specimen_source_tissue:String",
       "final_diagnosis:String",
       "animal_infection_site_uti:String",
+      "fg_metadata_not_in_original_data:Boolean",
       "mic_id:String",
       "breakpoint:Categorical",
       "predicted_phenotype:Enum(categories=['S', 'I', 'R', 'NI'])",
+      "fg_phenotypes_not_in_original_data:Boolean",
       "gene:String",
       "gene_type:String",
       "gene_identifier:String",
       "gene_name_family:String",
-      "resistance_class:String"
+      "resistance_class:String",
+      "fg_genotypes_not_in_original_data:Boolean"
      ],
      "rows": 203146,
-     "sha256": "37527eafee37da03ca630f90062e328dc35ef03a204f1e6698006b73e841c7b3"
+     "sha256": "b4e346f656ebb01fa9c348f5580d9d3f312f01ca37b29b70945be6c7ac1a003f"
     }
    }
   },
@@ -974,10 +1032,11 @@
       "species:String",
       "collection_date:Categorical",
       "amr_class:String",
-      "value:Float64"
+      "value:Float64",
+      "Stress_Source_not_in_original_data:Boolean"
      ],
      "rows": 10000,
-     "sha256": "a6715bab3f412803ba042bbc8a2bf3e7300138559849cb004b392dec4cddb398"
+     "sha256": "6ed30e9b40bda7f323b5f6c7825769de35306a332b9732f5137e11c6ae42bdcb"
     }
    },
    "t1": {
@@ -987,10 +1046,11 @@
       "species:String",
       "collection_date:Categorical",
       "amr_class:String",
-      "value:Float64"
+      "value:Float64",
+      "Stress_Source_not_in_original_data:Boolean"
      ],
      "rows": 10000,
-     "sha256": "a6715bab3f412803ba042bbc8a2bf3e7300138559849cb004b392dec4cddb398"
+     "sha256": "6ed30e9b40bda7f323b5f6c7825769de35306a332b9732f5137e11c6ae42bdcb"
     }
    },
    "t2": {
@@ -1000,10 +1060,11 @@
       "species:String",
       "collection_date:Categorical",
       "amr_class:String",
-      "value:Float64"
+      "value:Float64",
+      "Stress_Source_not_in_original_data:Boolean"
      ],
      "rows": 10000,
-     "sha256": "a6715bab3f412803ba042bbc8a2bf3e7300138559849cb004b392dec4cddb398"
+     "sha256": "6ed30e9b40bda7f323b5f6c7825769de35306a332b9732f5137e11c6ae42bdcb"
     }
    }
   }
