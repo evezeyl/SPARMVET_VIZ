@@ -330,3 +330,42 @@ def test_a_drop_of_a_key_column_at_a_table_whose_join_reads_it_is_refused_in_the
     _close_notices(page)
     page.keyboard.press("Escape")
     expect(page.locator("#propagation_confirm")).to_have_count(0, timeout=5_000)
+
+
+def test_a_filter_at_tier2_of_resfinder_changes_the_plot_that_reads_that_tier2_and_remove_gives_it_back(ready: Page, expected):
+    """Demo step T2: the same mechanism at the tier 2 of a table that a plot reads. The dialog lists the tier 2 of ResFinder (it has tier-2 steps and the AMR Heatmap reads it);
+    with it ticked, the audit card says "Table ResFinder (tier 2)", the plot and its T3 table are audited, the T1 and T2 views still show the original tables, and the bin
+    gives the original back."""
+    page = ready
+    _amr_plot(page)
+    set_view(page, "T3")
+    wait_preview_rows(page, expected["amr_before"], timeout=30_000)
+    _send_filter(page)
+    page.locator("#propagation_choice input[value=place]").check(force=True)
+    expect(page.locator("#propagation_places_wrapper")).to_be_visible(timeout=5_000)
+    _tick(page, "T2:ResFinder")
+    page.locator("#propagation_confirm").click()
+    _wait_shiny(page)
+    box = page.locator('input[id^="t3_reason_"]').first
+    expect(box).to_be_visible(timeout=15_000)
+    expect(page.locator("#audit_nodes_tier3")).to_contain_text("Written at Table ResFinder (tier 2)", timeout=10_000)
+    box.fill(REASON)
+    box.press("Tab")
+    expect(page.locator("#btn_apply").first).to_be_enabled(timeout=15_000)
+    page.locator("#btn_apply").first.click()
+    _wait_shiny(page)
+    try:
+        wait_preview_rows(page, expected["amr_after"], timeout=60_000)
+        expect(page.locator("#plot_badge_amr_heatmap")).to_contain_text("its table changed", timeout=20_000)
+        set_view(page, "T2")
+        wait_preview_rows(page, expected["amr_before"], timeout=30_000)
+        set_view(page, "T1")
+        wait_preview_rows(page, expected["amr_before"], timeout=30_000)
+        set_view(page, "T3")
+        wait_preview_rows(page, expected["amr_after"], timeout=30_000)
+    finally:
+        _amr_plot(page)
+        if page.locator("[id^='t3_delete_']").count():
+            page.locator("[id^='t3_delete_']").first.click()
+            _wait_shiny(page)
+            wait_preview_rows(page, expected["amr_before"], timeout=60_000)
