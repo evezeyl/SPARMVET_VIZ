@@ -1181,7 +1181,8 @@ def define_export_server(input, output, session, *,
         # The plots an audit step reaches (at their own tier 3 or at a table above them). The plots whose table is not their target's Tier 2 as it is: the user
         # audited them, or the recipe writes tier-3 steps for them. Each has its own T3 data file in the bundle (the plot is drawn from it).
         audited_plots = {p for p, _ in all_plots if p in _place_plot_ids}
-        t3_table_plots = audited_plots | {p for p, _ in all_plots if tier3_steps(cfg.raw_config, p)}
+        recipe_t3_plots = {p for p, _ in all_plots if tier3_steps(cfg.raw_config, p)}      # the plots whose recipe writes tier-3 steps of its own (the table of such a plot is part of the Result)
+        t3_table_plots = audited_plots | recipe_t3_plots
 
         # PLOT-TABLE-ORDER-1: check before anything is written. If the audit steps cannot run (in their recorded order, tier 1, tier 2, tier 3), the table, the plot
         # and the exported recipe would differ or fail: nothing is exported. The one read of the export builds the audit copy, which names the step and its place.
@@ -2102,7 +2103,7 @@ def define_export_server(input, output, session, *,
                     if (_data_key, _plot) in _t3_written:
                         _t3_label = "Data of the plot after the audit steps (T3)" if _plot in audited_plots else "Data of the plot (T3)"
                         qmd_lines.append(f"[{_t3_label} of {_qp(_plot)}]({_data_folder}/T3_data_{_quote(_plot)}.tsv)  ")
-                        qmd_lines.append(f"*{_qp(t3_file_sentence(_data_folder, _plot, _plot in audited_plots, bool(tier3_steps(cfg.raw_config, _plot))))}*  ")
+                        qmd_lines.append(f"*{_qp(t3_file_sentence(_data_folder, _plot, _plot in audited_plots, _plot in recipe_t3_plots))}*  ")
                 qmd_lines.append("")
 
             # Tables that no plot reads (D-0457). PROVISIONAL wording (not decided).
@@ -2344,7 +2345,7 @@ def define_export_server(input, output, session, *,
                 mapping_block.append(f"    plots: {', '.join(plot_list)}")
                 for _p in plot_list:
                     if _p in t3_table_plots:
-                        mapping_block.append("    " + t3_file_sentence(safe_ds, _p, _p in audited_plots, bool(tier3_steps(cfg.raw_config, _p))))
+                        mapping_block.append("    " + t3_file_sentence(safe_ds, _p, _p in audited_plots, _p in recipe_t3_plots))
 
             # Decision hashes block for README
             _dh = prov.get("decision_hashes", {})

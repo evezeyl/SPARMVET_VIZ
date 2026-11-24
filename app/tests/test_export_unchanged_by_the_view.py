@@ -1,8 +1,9 @@
 """The export holds the Result plus the audited steps whatever the mode and the data choice on screen (slice B; ui_implementation_contract 7.2).
 
-The one thing the mode decides is the AUDITED TABLE FILES (owner, 2026-11-24): an export made in Audit mode writes, beside the original, the audited table of every table
-an audit step changes; here the only step is written at the tier 3 of a plot, which changes no table, so there is no such file in any mode and the content is the same
-(`test_export_audited_tables.py` holds the cases with a step at a table).
+The two things the mode decides are the AUDITED TABLE FILES (owner, 2026-11-24): an export made in Audit mode writes, beside the original, the audited table of every table
+an audit step changes (here the only step is written at the tier 3 of a plot, which changes no table, so there is no such file in any mode; `test_export_audited_tables.py` holds the
+cases with a step at a table), and the AUDIT RECIPE folder `audit_recipe/` (D-0622), which only an export made in Audit mode holds; it is left out of the comparison here and its presence
+by mode is asserted on its own.
 
 The real export generator (run as `test_export_download_path.py` runs it) is called three times on the same recipe, data and audited steps with a
 different record of the screen (`screen_view`): "Exploration mode, data view T3", "Audit mode, data view Source (table 'T')", "Audit mode, data
@@ -49,6 +50,8 @@ def _content(bundle: zipfile.ZipFile) -> dict:
     out = {}
     for full in bundle.namelist():
         name = full.split("/", 1)[-1]   # the first folder is named with the time of the export
+        if name.startswith("audit_recipe/"):
+            continue                    # only an export made in Audit mode holds it (D-0622): compared on its own below
         data = bundle.read(full)
         if name.endswith(".png"):
             out[name] = Image.open(io.BytesIO(data)).convert("RGB").tobytes()
@@ -68,6 +71,8 @@ def test_the_content_does_not_depend_on_the_view(tmp_path, monkeypatch):
     assert not any("EXPORT_NOT_CREATED" in n for n in contents[0])
     for other in contents[1:]:
         assert other == contents[0], "the export differs with the view on screen"
+    holds = [any(n.startswith("audit_recipe/") or "/audit_recipe/" in n for n in b.namelist()) for b in bundles]
+    assert holds == [False, True, True], "the audit recipe is in the exports made in Audit mode and in no other"
 
 
 def test_the_readme_records_the_mode_and_the_data_choice(tmp_path, monkeypatch):
@@ -85,5 +90,5 @@ def test_the_readme_differs_only_in_the_timestamp_and_the_screen_view_line(tmp_p
         readme = bundle.read(next(n for n in bundle.namelist() if n.endswith("/README.txt"))).decode().splitlines()
         # the one sentence about the table files names the mode (the Audit mode writes audited table files where a step changes a table: here none does)
         lines.append([l for l in readme if not l.startswith(("Timestamp", "Screen view")) and "table files" not in l and "audited table" not in l and "Exploration mode" not in l
-                      and "no audit step changes a table" not in l])
+                      and "no audit step changes a table" not in l and "audit_recipe" not in l and "audit recipe" not in l])
     assert lines[0] == lines[1]
