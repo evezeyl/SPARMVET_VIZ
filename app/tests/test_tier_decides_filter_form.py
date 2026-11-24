@@ -5,7 +5,7 @@ D-0178: "a filter is built on the table of the view shown: if the user is on T1 
 the plot's table after its audited steps (a value an audited step removed is not listed and the table does not show it); in Exploration
 T3 holds no audited step. Changing the view changes the list in every direction with no page reload.
 
-Headless: the pure functions the form is made of (`dialog_frame`, `value_choices`, `dialog_rows_signature`, `stored_table_identity`), and the
+Headless: the pure functions the form is made of (`dialog_frame` below, a table that is audited on T3 in Audit mode only, `value_choices`, `dialog_rows_signature`, `stored_table_identity`), and the
 REAL form (`filter_form_ui` of `define_filter_audit_server`, run on the real HOME readers) for each of the four views of a plot on a join.
 Browser (qa app features): the real form of the real app on a small staged recipe (30 samples; the audited step keeps score >= 16, so it
 removes the samples s1 to s15). The value list and the table rows are checked separately, so a failure says which one is wrong.
@@ -27,7 +27,8 @@ from shiny import reactive
 from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, tier2_path_for
 from app.modules.data_analysis_recipe_validator import validate_data_analysis_recipe
 from app.modules.session_manager import make_audit_step
-from app.modules.t3_audit_engine import dialog_frame, dialog_rows_signature, stored_table_identity, value_choices
+from app.modules.t3_audit_engine import dialog_rows_signature, stored_table_identity, value_choices
+from app.tests.audit_nodes import audited_lf
 from app.tests.browser_view import set_mode, set_view
 from app.tests.subprocess_env import app_command, app_env
 from app.tests.test_filters_cleared_on_recipe_change import _choose_column_firmly, _choose_operator
@@ -57,8 +58,14 @@ def _listed(lf, column):
     return list(value_choices(lf, column))
 
 
+def dialog_frame(lf, nodes, with_audited_steps):
+    """The table the form's value list is read from: the audit steps are in the table of the audit copy on T3 in Audit mode (`home_theater._resolve_active_lf`), and on any other
+    view the table is as it is. Here the steps are run by the engine's own actions on a frame (`audited_lf`), so the claim is about the steps and not about a second function."""
+    return audited_lf(lf, nodes) if with_audited_steps else lf
+
+
 class TestValueListFollowsTheViewShown:
-    """`dialog_frame` is what the form's value list is read from: the audited steps apply on T3 in Audit mode only."""
+    """The table the form's value list is read from: the audited steps are in it on T3 in Audit mode only."""
 
     def test_a_removed_sample_is_not_listed_in_audit_t3_and_is_listed_on_every_other_view(self):
         nodes = [_step("sample_id", "not_in", ["s1"])]
@@ -155,8 +162,8 @@ class TestTheRealFormFollowsTheViewShown:
 
     def test_audit_mode_t3_does_not_offer_a_column_an_audited_step_dropped(self, tmp_path, monkeypatch):
         world = ViewWorld(tmp_path)
-        drop = make_audit_step("drop_column", {"column": "group"}, plot_scope="subtab_p_join", reason="r")
-        state = {"t3_audit_steps_by_plot": {"subtab_p_join": [drop]}}
+        drop = make_audit_step("drop_column", {"column": "group"}, plot_scope="__places__", reason="r", place="T3:p_join")
+        state = {"t3_audit_steps_by_plot": {"__places__": [drop]}}
         flags = ("interactivity_enabled", "t3_sandbox_enabled", "comparison_mode_enabled")
         for mode, view, expected_has_group in (("audit", "T3", False), ("audit", "T2", True), ("exploration", "T3", True)):
             home = Home(world, monkeypatch, view=view, mode=mode, flags=flags, home_state=state, subtab="subtab_p_join")

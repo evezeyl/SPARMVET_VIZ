@@ -111,9 +111,11 @@ def test_the_refusal_has_the_same_file_and_form_as_the_refusal_for_a_change_sinc
 
 
 def test_the_export_refuses_at_the_end_before_it_hands_over_the_bundle():
-    """The download checks the list the six builds fill (the sixth is the loop over the tables no plot reads, D-0457), after the bundle is made and before it is yielded."""
+    """The download checks the list the builds fill, after the bundle is made and before it is yielded. The builds are four calls that name the callback: the one read of the table a plot
+    reads (`_read_plot_table`, used by the check before the export, the plot and the data file of the plot; it passes the callback to `materialize_tier3` and to the audited read), the T1
+    build, the T2 build and the loop over the tables no plot reads (D-0457)."""
     source = (ROOT / "app" / "handlers" / "export_handlers.py").read_text()
-    assert source.count("on_inputs_changed=_on_build_change") == 6
+    assert source.count("on_inputs_changed=_on_build_change") == 4
     check = source.index("refusal_for_build_changes(_build_changes")
     assert source.rindex("zf.writestr", 0, check) > 0 and source.index("yield buf.read()", check) > check
 

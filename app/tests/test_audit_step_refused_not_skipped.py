@@ -1,14 +1,14 @@
 """A step the app cannot apply is refused with a plain message, never skipped in silence (PLOT-TABLE-ORDER-1, review round 3).
 
 # @deps
-# consumes: app/modules/renamed_keys.py, app/modules/t3_audit_engine.py, app/modules/session_manager.py, app/modules/bundle_importer.py
+# consumes: app/modules/renamed_keys.py, app/modules/audit_places.py, app/modules/session_manager.py, app/modules/bundle_importer.py
 # @end_deps
 
 Eve's rule. A step is refused when its type is not one of the known ones (`filter_row`, `exclusion_row`, `drop_column`,
 `aesthetic_override`; the seed pin `random_seed` is known to the report and the bundle record), or when it lacks what it needs
 to run (the column, the operator, the value). Every entry point refuses it with the step (number, plot, what is missing)
 and, first, what the user can do in the app; a maintainer's pointer to the file comes after. Entry points: the audit list
-(`audited_frame`), a stored session file, an imported session zip, the `t3_steps.yaml` of an imported bundle.
+(`audit_copy_for`, the audit copy's one entry), a stored session file, an imported session zip, the `t3_steps.yaml` of an imported bundle.
 
 Decided here (point 2 of the round): a step that is switched off (`active: false`) is refused all the same, in every entry
 point. Nothing in the app creates an inactive step today (`ui_implementation_contract.md` 12c, F-07: deletion is real removal),
@@ -25,22 +25,25 @@ import pytest
 import yaml
 
 from app.modules.bundle_importer import BundleImportError, import_bundle
-from app.modules.session_manager import LegacySessionError, SessionManager
-from app.modules.t3_audit_engine import AuditStepError, audit_failures, audited_frame
+from app.modules.session_manager import SESSION_FORMAT_VERSION, LegacySessionError, SessionManager
+from app.modules.audit_places import PLACES_BUCKET, audit_copy_for, place_nodes
+from app.tests.test_audit_places import small
+from blueprint_arch.t3_translator import UntranslatableNode
+from utils.audit_copy import AuditCopyError, all_audit_steps
 
 REMOVED = "developer_" + "raw_yaml"
 FRAME = pl.LazyFrame({"x": [1, 2, 3, 4], "y": ["a", "b", "c", "d"]})
 
-GOOD_FILTER = {"id": "f1", "node_type": "filter_row", "params": {"column": "x", "op": "ge", "value": 2}, "reason": "keep high"}
+GOOD_FILTER = {"id": "f1", "node_type": "filter_row", "params": {"column": "id", "op": "ge", "value": 2}, "reason": "keep high", "place": "T3:P"}
 BAD_STEPS = {
-    "an unknown type": {"id": "u", "node_type": "mystery_step", "params": {"column": "x"}, "reason": "r"},
-    "a name like the removed one": {"id": "s", "node_type": REMOVED + "2", "params": {}, "reason": "r"},
-    "a filter without a column": {"id": "n", "node_type": "filter_row", "params": {"op": "ge", "value": 2}, "reason": "r"},
-    "a filter without an operator": {"id": "o", "node_type": "filter_row", "params": {"column": "x", "value": 2}, "reason": "r"},
-    "a filter without a value": {"id": "v", "node_type": "filter_row", "params": {"column": "x", "op": "ge"}, "reason": "r"},
-    "an exclusion without a value": {"id": "e", "node_type": "exclusion_row", "params": {"column": "x", "op": "not_in"}, "reason": "r"},
-    "a drop without a column": {"id": "d", "node_type": "drop_column", "params": {}, "reason": "r"},
-    "a step without a type": {"id": "t", "params": {"column": "x"}, "reason": "r"},
+    "an unknown type": {"id": "u", "node_type": "mystery_step", "params": {"column": "x"}, "reason": "r", "place": "T3:P"},
+    "a name like the removed one": {"id": "s", "node_type": REMOVED + "2", "params": {}, "reason": "r", "place": "T3:P"},
+    "a filter without a column": {"id": "n", "node_type": "filter_row", "params": {"op": "ge", "value": 2}, "reason": "r", "place": "T3:P"},
+    "a filter without an operator": {"id": "o", "node_type": "filter_row", "params": {"column": "x", "value": 2}, "reason": "r", "place": "T3:P"},
+    "a filter without a value": {"id": "v", "node_type": "filter_row", "params": {"column": "x", "op": "ge"}, "reason": "r", "place": "T3:P"},
+    "an exclusion without a value": {"id": "e", "node_type": "exclusion_row", "params": {"column": "x", "op": "not_in"}, "reason": "r", "place": "T3:P"},
+    "a drop without a column": {"id": "d", "node_type": "drop_column", "params": {}, "reason": "r", "place": "T3:P"},
+    "a step without a type": {"id": "t", "params": {"column": "x"}, "reason": "r", "place": "T3:P"},
 }
 
 
@@ -48,43 +51,42 @@ BAD_STEPS = {
 
 @pytest.mark.parametrize("name", sorted(BAD_STEPS))
 def test_the_audit_list_refuses_a_step_it_cannot_apply(name):
-    with pytest.raises(AuditStepError) as caught:
-        audited_frame(FRAME, [GOOD_FILTER, BAD_STEPS[name]], "the_plot")
+    with pytest.raises((AuditCopyError, UntranslatableNode)) as caught:
+        audit_copy_for(small(), [GOOD_FILTER, BAD_STEPS[name]])
     text = str(caught.value)
-    assert "audit step 2 of the plot 'the_plot'" in text, text
-    assert "cannot be applied" in text or "was removed" in text, text
-    assert "Fix:" in text and "new session" in text, "the user is told what to do in the app"
-    assert caught.value.pipeline_error is not None
+    if isinstance(caught.value, AuditCopyError):
+        assert "The audit step 2" in text and "at Plot P (tier 3)" in text and "is refused" in text, text
+        assert "Fix:" in text and "new session" in text, "the user is told what to do in the app"
+    else:
+        assert "not translatable" in text, text
 
 
 def test_the_message_says_what_is_missing():
-    with pytest.raises(AuditStepError, match=r"needs the operator"):
-        audited_frame(FRAME, [BAD_STEPS["a filter without an operator"]])
-    with pytest.raises(AuditStepError, match=r"needs the column"):
-        audited_frame(FRAME, [BAD_STEPS["a drop without a column"]])
-    with pytest.raises(AuditStepError, match=r"the type 'mystery_step'"):
-        audited_frame(FRAME, [BAD_STEPS["an unknown type"]])
+    with pytest.raises(AuditCopyError, match=r"needs the operator"):
+        audit_copy_for(small(), [BAD_STEPS["a filter without an operator"]])
+    with pytest.raises(AuditCopyError, match=r"needs the column"):
+        audit_copy_for(small(), [BAD_STEPS["a drop without a column"]])
+    with pytest.raises(AuditCopyError, match=r"the type 'mystery_step'"):
+        audit_copy_for(small(), [BAD_STEPS["an unknown type"]])
 
 
 def test_a_value_of_zero_or_false_is_a_value():
-    step = {"id": "z", "node_type": "filter_row", "params": {"column": "x", "op": "ge", "value": 0}, "reason": "r"}
-    assert audited_frame(FRAME, [step]).collect().height == 4
+    step = {"id": "z", "node_type": "filter_row", "params": {"column": "id", "op": "ge", "value": 0}, "reason": "r", "place": "T3:P"}
+    (written,) = all_audit_steps(audit_copy_for(small(), [step]).recipe)
+    assert written.step["value"] == 0
 
 
-def test_known_steps_pass_and_style_steps_are_not_data_steps():
-    style = {"id": "a", "node_type": "aesthetic_override", "params": {"alpha": 0.5}}
-    assert audited_frame(FRAME, [style, GOOD_FILTER]).collect().height == 3
+def test_known_steps_pass_and_a_style_step_is_not_a_data_step_and_is_never_skipped_in_silence():
+    style = {"id": "a", "node_type": "aesthetic_override", "params": {"alpha": 0.5}, "place": "T3:P"}
+    assert len(all_audit_steps(audit_copy_for(small(), [GOOD_FILTER]).recipe)) == 1
+    with pytest.raises(UntranslatableNode, match="aesthetic_override"):
+        audit_copy_for(small(), [style, GOOD_FILTER])
 
 
-def test_a_switched_off_bad_step_is_refused_too_one_rule_everywhere():
-    with pytest.raises(AuditStepError, match="audit step 1"):
-        audited_frame(FRAME, [{**BAD_STEPS["an unknown type"], "active": False}, GOOD_FILTER])
-
-
-def test_the_export_check_finds_every_plot_with_a_step_it_cannot_apply():
-    failing = audit_failures([("a", lambda: FRAME, [BAD_STEPS["an unknown type"]]), ("ok", lambda: FRAME, [GOOD_FILTER]),
-                              ("b", lambda: FRAME, [BAD_STEPS["a drop without a column"]])])
-    assert [p for p, _ in failing] == ["a", "b"]
+def test_a_switched_off_step_is_not_one_of_the_steps_the_audit_runs_and_a_bad_one_is_refused_where_files_are_read():
+    off = {**BAD_STEPS["an unknown type"], "active": False}
+    assert place_nodes({PLACES_BUCKET: [off, GOOD_FILTER]}) == [GOOD_FILTER], "nothing runs a step that is off"
+    # the entry points that READ a file refuse it (below): an inactive bad step is refused like any other
 
 
 # -- a stored session file and an imported session zip ------------------------------------------------------------------
@@ -93,9 +95,9 @@ def _session(tmp_path, steps):
     sm = SessionManager(tmp_path)
     key = "abc123def456:0123456789ab"
     folder = sm.session_dir(key)
-    (folder / "assembly.json").write_text(json.dumps({"session_key": key, "data_analysis_recipe_id": "r", "label": "", "schema_version": 3}))
-    ghost = {"session_key": key, "saved_at": "2026-11-15T10:00:00", "schema_version": 3,
-             "t3_audit_steps_by_plot": {"subtab_p": steps}, "t3_audit_steps": []}
+    (folder / "assembly.json").write_text(json.dumps({"session_key": key, "data_analysis_recipe_id": "r", "label": "", "schema_version": SESSION_FORMAT_VERSION}))
+    ghost = {"session_key": key, "saved_at": "2026-11-15T10:00:00", "schema_version": SESSION_FORMAT_VERSION,
+             "t3_audit_steps_by_plot": {PLACES_BUCKET: steps}, "t3_audit_steps": []}
     (folder / "t3_20261115_100000.json").write_text(json.dumps(ghost))
     return sm, key
 
@@ -106,12 +108,12 @@ def test_a_session_file_refuses_a_step_the_app_cannot_apply(tmp_path, name):
     with pytest.raises(LegacySessionError) as caught:
         sm.list_t3_ghosts(key)
     text = str(caught.value)
-    assert "audit step 2 of the plot 'subtab_p'" in text, text
+    assert "audit step 2 of the audit list" in text, text
     assert text.index("new session") < text.index("t3_audit_steps_by_plot"), "the app action comes first, the maintainer's pointer after"
 
 
 def test_a_session_file_with_good_steps_is_read(tmp_path):
-    sm, key = _session(tmp_path, [GOOD_FILTER, {"id": "a", "node_type": "aesthetic_override", "params": {"alpha": 0.5}}])
+    sm, key = _session(tmp_path, [GOOD_FILTER, {"id": "a", "node_type": "aesthetic_override", "params": {"alpha": 0.5}, "place": "T3:P"}])
     assert len(sm.list_t3_ghosts(key)) == 1
 
 

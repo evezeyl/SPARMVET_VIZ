@@ -20,7 +20,7 @@ import re
 import pytest
 from shiny import reactive
 
-from app.modules.session_manager import (SessionImportRefused, SessionManager, make_audit_step, session_id_collisions,
+from app.modules.session_manager import (SESSION_FORMAT_VERSION, SessionImportRefused, SessionManager, make_audit_step, session_id_collisions,
                                          session_input_id_part, session_input_id_parts)
 from app.tests.test_session_clicks_once import SAFE, KEY_A, KEY_B, _flush, _live
 from app.tests.test_session_import_safety import BIG, Screen, _session_zip, _tree, _zip_of
@@ -62,13 +62,13 @@ def test_the_mapping_does_not_depend_on_the_listing_order():
 # --------------------------------------------------------------------------- (b) the real effect
 
 def _step(reason):
-    return make_audit_step("filter_row", {"column": "a", "op": "eq", "value": 1, "dtype": "Int64"}, "subtab_p", reason)
+    return make_audit_step("filter_row", {"column": "a", "op": "eq", "value": 1, "dtype": "Int64"}, "__places__", reason, place="T3:p")
 
 
 def _add_pair(live):
     for key, tag, reason in ((X, "x", "from x"), (Y, "y", "from y")):
         live.manager.write_assembly_ghost(key, "tiny", tag * 64, "b" * 64, {}, {})
-        live.manager.write_t3_ghost(key, "tiny", tag * 64, "b" * 64, t3_audit_steps_by_plot={"subtab_p": [_step(reason)]})
+        live.manager.write_t3_ghost(key, "tiny", tag * 64, "b" * 64, t3_audit_steps_by_plot={"__places__": [_step(reason)]})
     return session_input_id_parts([s["session_key"] for s in live.manager.list_all_sessions()])
 
 
@@ -104,7 +104,7 @@ def test_restoring_one_of_two_colliding_sessions_restores_that_one(tmp_path, mon
         live.input.set(f"session_restore_{parts[X]}", 1)
         await _flush(6)
         assert len(live.texts("Session restored")) == 1, live.notes
-        reasons = [n["reason"] for n in live.state()["t3_audit_steps_by_plot"]["subtab_p"]]
+        reasons = [n["reason"] for n in live.state()["t3_audit_steps_by_plot"]["__places__"]]
         assert reasons == ["from x"], reasons
     asyncio.run(scenario())
 
@@ -139,8 +139,8 @@ def test_the_panel_without_a_collision_has_no_notice(tmp_path, monkeypatch):
 
 def test_a_zip_whose_t3_file_holds_another_key_is_refused_and_nothing_is_written(tmp_path):
     sm = SessionManager(tmp_path / "user")
-    members = [(f"{KEY_A}/assembly.json", json.dumps({"session_key": KEY_A, "data_analysis_recipe_id": "t", "schema_version": 3})),
-               (f"{KEY_A}/t3_20261118T000000.json", json.dumps({"session_key": KEY_B, "schema_version": 3}))]
+    members = [(f"{KEY_A}/assembly.json", json.dumps({"session_key": KEY_A, "data_analysis_recipe_id": "t", "schema_version": SESSION_FORMAT_VERSION})),
+               (f"{KEY_A}/t3_20261118T000000.json", json.dumps({"session_key": KEY_B, "schema_version": SESSION_FORMAT_VERSION}))]
     before = _tree(sm.root) if sm.root.exists() else []
     with pytest.raises(SessionImportRefused) as err:
         sm.import_session_zip(_zip_of(members), limits=BIG)

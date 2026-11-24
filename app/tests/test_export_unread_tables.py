@@ -32,6 +32,7 @@ import pytest
 
 from app.handlers.export_handlers import tables_no_plot_reads
 from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe
+from app.tests.audit_export_harness import FLAGS, audit_kwargs
 from app.tests.audit_nodes import filter_nodes
 from app.tests.test_cache_chain import World, bump
 from app.tests.test_export_download_path import _download_function, _run
@@ -291,11 +292,9 @@ def test_audit_steps_of_the_plot_never_change_these_files(tmp_path, monkeypatch)
     """HOME writes an audit step only at a plot's table (T3 of the plot): the files of the tables no plot reads are the same."""
     plain = _members(_zip(_export(Wide(tmp_path / "a"), monkeypatch)[0]))
     world = Wide(tmp_path / "b")
-    home_state = SimpleNamespace(get=lambda: {"t3_audit_steps_by_plot": {"subtab_p": filter_nodes(
-        [{"column": "group", "op": "eq", "value": "A", "dtype": "Categorical", "na": "remove"}])}})
-    audited = _members(_zip(_export(world, monkeypatch, home_state=home_state,
-                                    t3_filter_rows=lambda subtab: [{"column": "group"}] if subtab == "subtab_p" else [],
-                                    t3_drop_columns=lambda subtab: [])[0]))
+    nodes = [{**n, "place": "T3:p", "plot_scope": "__places__", "created_at": "t"} for n in filter_nodes(
+        [{"column": "group", "op": "eq", "value": "A", "dtype": "Categorical", "na": "remove"}])]
+    audited = _members(_zip(_export(world, monkeypatch, flags=FLAGS, **audit_kwargs(world, nodes))[0]))
     assert "C/T3_data_p.tsv" in audited, "the audit step is applied to the plot's table"
     for table in ("T", "U", "V", "D"):
         assert audited[f"{table}/T1_data.tsv"] == plain[f"{table}/T1_data.tsv"], table

@@ -34,7 +34,10 @@ from app.modules.cache_keys import (
     clear_data_analysis_recipe_cache, data_analysis_recipe_keys, load_data_analysis_recipe, plot_tier3_key, tier3_steps)
 from app.modules.engine_registry import PlotEngines
 from app.modules.orchestrator import DataOrchestrator
-from app.modules.t3_audit_engine import AuditStepError, audited_frame
+from app.modules.audit_places import PLACES_BUCKET
+from app.modules.audit_run import AuditRunError
+from app.modules.audit_view import PlaceAudit
+from app.tests.audit_export_harness import FLAGS, audit_kwargs
 from app.tests.audit_nodes import filter_nodes
 from app.tests.test_export_download_path import _download_function, _run
 from app.tests.test_table_keys import ROOT, SHIPPED, load_raw
@@ -336,23 +339,28 @@ def test_every_plot_of_every_shipped_recipe_has_the_key_of_its_table_because_non
 # =====================================================================================================================
 
 
+def _audited(world, plot, nodes):
+    """The table `plot` reads in the audit copy made from `nodes` (steps written at the plot's own tier 3), lazy; its original table when the copy leaves it as it is."""
+    audit = PlaceAudit(world.orch, world.anchors, world.root / "audit_anchors")
+    placed = [{**n, "place": f"T3:{plot}", "plot_scope": PLACES_BUCKET} for n in nodes]
+    lazy = audit.plot_lazy("tiny", plot, placed)
+    return lazy if lazy is not None else world.orch.materialize_tier3("tiny", plot, world.anchors, keys=world.keys())
+
+
 def test_the_audit_nodes_of_my_view_apply_on_top_of_the_plots_table(tmp_path):
     world = Tier3World(tmp_path)
-    base = world.orch.materialize_tier3("tiny", "p_steps", world.anchors, keys=world.keys())
     nodes = filter_nodes([{"column": "score", "op": "le", "value": 4, "dtype": "Int64", "na": "remove"}])
-    assert ids(audited_frame(base, nodes, "p_steps").collect()) == ["s3", "s4"], "the recipe's s3..s5, then the audited score <= 4"
+    assert ids(_audited(world, "p_steps", nodes).collect()) == ["s3", "s4"], "the recipe's s3..s5, then the audited score <= 4"
 
 
 def test_an_audit_node_on_a_column_the_plots_tier3_dropped_is_an_error_naming_the_plot(tmp_path):
     """The audit sees the plot's table after its tier 3: a column the recipe dropped is not there to filter (never skipped)."""
     world = Tier3World(tmp_path)
-    base = world.orch.materialize_tier3("tiny", "p_steps", world.anchors, keys=world.keys())
     nodes = filter_nodes([{"column": "group", "op": "eq", "value": "A", "dtype": "String", "na": "remove"}])
-    with pytest.raises(AuditStepError) as error:
-        audited_frame(base, nodes, "p_steps")
-    assert "p_steps" in str(error.value)
-    plain = world.orch.materialize_tier3("tiny", "p_plain", world.anchors, keys=world.keys())
-    assert ids(audited_frame(plain, nodes, "p_plain").collect()) == ["s1", "s2"], "the other plot still has the column"
+    with pytest.raises(AuditRunError) as error:
+        _audited(world, "p_steps", nodes)
+    assert "T3:p_steps" in str(error.value)
+    assert ids(_audited(world, "p_plain", nodes).collect()) == ["s1", "s2"], "the other plot still has the column"
 
 
 # =====================================================================================================================
@@ -417,19 +425,16 @@ def test_the_export_of_a_recipe_with_no_tier3_steps_has_no_t3_file_and_no_plot_k
 
 
 def test_the_export_applies_the_audited_steps_on_top_of_the_recipes_tier3(tmp_path, monkeypatch):
-    """A plot with recipe steps AND an audited step: the table, the picture and the T3 file hold both, the recipe's first."""
-    from types import SimpleNamespace
-    home_state = SimpleNamespace(get=lambda: {"t3_audit_steps_by_plot": {"subtab_p_steps": filter_nodes(
-        [{"column": "score", "op": "le", "value": 4, "dtype": "Int64", "na": "remove"}])}})
+    """A plot with recipe steps AND an audited step (written at its own tier 3): the table, the picture and the T3 file hold both, the recipe's first."""
     world = Tier3World(tmp_path)
     view = world.orch.compute_data_analysis_recipe_keys("tiny")
+    nodes = [{**n, "place": "T3:p_steps", "plot_scope": PLACES_BUCKET, "created_at": "t"} for n in filter_nodes(
+        [{"column": "score", "op": "le", "value": 4, "dtype": "Int64", "na": "remove"}])]
     drawn: dict = {}
     real_render = PlotEngines.render
     monkeypatch.setattr(PlotEngines, "render", lambda self, df, recipe, plot_id, **kw: (
         drawn.__setitem__(plot_id, sorted(df.collect()["sample_id"].to_list())), real_render(self, df, recipe, plot_id, **kw))[1])
-    yielded = _run(_download_function(world, view, [], monkeypatch, home_state=home_state,
-                                      t3_filter_rows=lambda subtab: [{"column": "score"}] if subtab == "subtab_p_steps" else [],
-                                      t3_drop_columns=lambda subtab: []))
+    yielded = _run(_download_function(world, view, [], monkeypatch, flags=FLAGS, **audit_kwargs(world, nodes)))
     bundle = zipfile.ZipFile(io.BytesIO(yielded[0]))
     assert "EXPORT_NOT_CREATED.txt" not in bundle.namelist()
     assert drawn["p_steps"] == ["s3", "s4"] and drawn["p_plain"] == ["s1", "s2", "s3", "s4", "s5"]

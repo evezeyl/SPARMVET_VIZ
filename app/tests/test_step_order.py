@@ -27,9 +27,10 @@ How each test was seen to fail (mutation check, 2026-11-14), see the comment abo
 Not tested here (they depend on the unconfirmed stage-2 mechanism or on an open choice; listed in the report of
 TEST-ORDER-1): the audit compiler writing a step at T1 or T2 of a table (P5, API not confirmed), the series key of
 T3 (P4), a filter on a column that a step of the same node drops (order of a drop and a filter on the same column is
-not decided). The mechanism pinned by the audit-step tests (HOME's `audited_frame` on the stored T2; the per-plot
-export copy `{collection}__t3_{plot}`) is today's: package P5 of `.claude/design/home_stage2_mechanism_spec.md` (v0.1,
-not yet confirmed by Eve) replaces it with the audit copy of the recipe, and those tests then move to that copy.
+not decided). The audit-step tests (from "(3) and (4)" on) run the mechanism that HOME and the export use since the third tier went
+through the audit copy (demo step 7): the steps are nodes written at the place `T3:<plot>`, the table of the plot is the table of the audit copy
+(`PlaceAudit`, run by the real engine), and the exported recipe is the original with the steps baked into the plot's own `tier3.steps`
+(`bake_place_steps`), re-run by the real engine. The old pure function on a frame (`audited_frame`) and the per-plot fork of a join are gone.
 
 Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_step_order.py -q
 """
@@ -40,10 +41,14 @@ import polars as pl
 import pytest
 import yaml
 
-from app.modules.t3_audit_engine import AuditStepError, audited_frame
-from app.modules.cache_keys import clear_data_analysis_recipe_cache, tier2_key
+from app.modules.audit_places import audit_copy_for, bake_place_steps
+from app.modules.audit_run import AuditRunError
+from app.modules.audit_view import PlaceAudit
+from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe, tier2_key
 from app.modules.orchestrator import DataOrchestrator
-from blueprint_arch.t3_translator import build_mode2_recipe
+from app.modules.plan_composer import compose_plan_book
+from utils.audit_copy import all_audit_steps
+from utils.recipe_graph import build_graph
 from utils import action_names
 from utils.config_loader import ConfigManager
 
@@ -121,7 +126,7 @@ def variant(raw_config: dict, collection: str, *, tier1_extra=None, tier2=None) 
     """A copy of the resolved recipe: steps appended at the end of a join's tier-1 list, and/or its tier-2 list replaced.
 
     `plots` is the loader's internal mirror of `analysis_groups`; a recipe written with it does not load again
-    (removed the same way as `build_mode2_recipe` does).
+    (removed the same way as `bake_place_steps` callers must).
     """
     cfg = copy.deepcopy(raw_config)
     cfg.pop("plots", None)
@@ -147,6 +152,42 @@ def run(tmp_path_factory):
         tier2 = orchestrator.materialize_tier2(RECIPE_ID, collection, anchor, keys=keys).collect()
         return tier1, tier2, keys
     return _run
+
+
+@pytest.fixture(scope="module")
+def run_plot(tmp_path_factory):
+    """run_plot(cfg, plot_id) -> the table the plot reads (its Tier 3, collected) when the recipe is written to a file and run by the real engine."""
+    def _run_plot(cfg: dict, plot_id: str):
+        folder = tmp_path_factory.mktemp("recipe_plot")
+        cfg = copy.deepcopy(cfg)
+        cfg.pop("plots", None)
+        (folder / f"{RECIPE_ID}.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True))
+        clear_data_analysis_recipe_cache()
+        orchestrator = DataOrchestrator(folder, ROOT / "assets" / "test_data")
+        keys = orchestrator.compute_data_analysis_recipe_keys(RECIPE_ID)
+        return orchestrator.materialize_tier3(RECIPE_ID, plot_id, folder, keys=keys).collect()
+    return _run_plot
+
+
+class AuditWorld:
+    """The real audit copy of the shipped recipe: `table(nodes, plot)` is the table `plot` reads when the audit steps `nodes` are committed (the original's when none reaches it)."""
+    def __init__(self, root: Path):
+        clear_data_analysis_recipe_cache()
+        self.orch = DataOrchestrator(RECIPES_DIR, ROOT / "assets" / "test_data")
+        self.loaded = load_data_analysis_recipe(RECIPES_DIR / f"{RECIPE_ID}.yaml")
+        self.plans = compose_plan_book(self.orch, RECIPE_ID, self.loaded, build_graph(self.loaded.raw))
+        self.anchors = root / "anchors"
+        self.audit = PlaceAudit(self.orch, self.anchors, root / "audit")
+
+    def table(self, nodes, plot=ZPLOT):
+        lazy = self.audit.plot_lazy(RECIPE_ID, plot, nodes, self.plans)
+        return (lazy if lazy is not None else self.orch.materialize_tier3(RECIPE_ID, plot, self.anchors)).collect()
+
+
+@pytest.fixture(scope="module")
+def world(tmp_path_factory):
+    yield AuditWorld(tmp_path_factory.mktemp("audit_world"))
+    clear_data_analysis_recipe_cache()
 
 
 @pytest.fixture(scope="module")
@@ -307,50 +348,41 @@ def test_a_different_order_gives_a_different_key_even_when_the_data_is_equal(run
 
 # ── (3) and (4): HOME's audit step (T3) runs after the recipe; the export re-run equals the audit data ──
 
-def exclusion(node_id: str, sample_ids: list) -> dict:
+def exclusion(node_id: str, sample_ids: list, plot: str = ZPLOT) -> dict:
     return {"id": node_id, "node_type": "exclusion_row", "params": {"column": "sample_id", "op": "not_in", "value": list(sample_ids)},
-            "reason": "test"}
+            "reason": "test", "place": f"T3:{plot}", "plot_scope": "__places__"}
 
 
-def filter_row(node_id: str, column: str, op: str, value) -> dict:
-    return {"id": node_id, "node_type": "filter_row", "params": {"column": column, "op": op, "value": value}, "reason": "test"}
+def filter_row(node_id: str, column: str, op: str, value, plot: str = ZPLOT) -> dict:
+    return {"id": node_id, "node_type": "filter_row", "params": {"column": column, "op": op, "value": value}, "reason": "test",
+            "place": f"T3:{plot}", "plot_scope": "__places__"}
 
 
-def drop_column(node_id: str, column: str) -> dict:
-    return {"id": node_id, "node_type": "drop_column", "params": {"column": column}, "reason": "test"}
+def drop_column(node_id: str, column: str, plot: str = ZPLOT) -> dict:
+    return {"id": node_id, "node_type": "drop_column", "params": {"column": column}, "reason": "test", "place": f"T3:{plot}", "plot_scope": "__places__"}
 
 
-def test_home_audit_step_runs_after_the_recipe_tier2(original, removed, oracle_after):
-    """Application order T1, recipe T2, then T3 (5a point 4): HOME's audited data of the canary plot is the removal
-    applied to the stored T2, so the other samples keep their z-score over every sample.
+def test_home_audit_step_runs_after_the_recipe_tier2(world, removed, oracle_after):
+    """Application order T1, recipe T2, then the audit steps at T3 (5a point 4): the audited table of the canary plot (the audit copy's) is the removal
+    applied to the table the plot reads, so the other samples keep their z-score over every sample.
 
     Seen failing: comparing with oracle_before (the removal placed before the statistic).
-    This is today's mechanism; package P5 of `.claude/design/home_stage2_mechanism_spec.md` (v0.1, not yet confirmed by
-    Eve) replaces it with the audit copy of the recipe, and the test then moves to that copy.
     """
-    _, tier2, _ = original
-    audited = audited_frame(tier2.lazy(), [exclusion("n1", [removed])]).collect()
-    assert_z_equals(audited, oracle_after, "HOME audit data of qa_population_zscore")
+    assert_z_equals(world.table([exclusion("n1", [removed])]), oracle_after, "HOME audit data of qa_population_zscore")
 
 
 def test_the_export_writes_the_audit_steps_after_the_recipe_tier2_in_recorded_order(raw_config, removed, threshold):
-    """The exported recipe keeps the lineage order: the join's own tier-2 first, then the audit steps in the order
-    they were recorded.
+    """The exported recipe keeps the lineage order: the join's own tier 2 is not touched (no fork of the join), and the audit steps are the plot's own
+    `tier3.steps`, in the order they were recorded.
 
-    Seen failing: reversing the node list given to the translator.
-    This is today's mechanism; package P5 of `.claude/design/home_stage2_mechanism_spec.md` (v0.1, not yet confirmed by
-    Eve) replaces it with the audit copy of the recipe, and the test then moves to that copy.
+    Seen failing: reversing the node list given to `bake_place_steps`.
     """
     nodes = [exclusion("n1", [removed]), filter_row("n2", "n50", "ge", threshold)]
-    exported, skipped = build_mode2_recipe(raw_config, {ZPLOT: nodes})
-    assert not skipped
-    fork = f"{ZSCORE}__t3_{ZPLOT}"
-    own_tier2 = raw_config["joins"][ZSCORE]["tier2"]["steps"]
-    fork_tier2 = exported["joins"][fork]["tier2"]["steps"]
-    assert fork_tier2[: len(own_tier2)] == own_tier2, "the recipe's own tier-2 steps must come first, unchanged"
-    added = fork_tier2[len(own_tier2):]
-    assert [(s["column"], s["op"]) for s in added] == [("sample_id", "not_in"), ("n50", "ge")], "not the recorded order"
-    assert exported["joins"][fork]["tier1"]["steps"] == raw_config["joins"][ZSCORE]["tier1"]["steps"]
+    exported = bake_place_steps(raw_config, nodes)
+    assert exported["joins"] == raw_config["joins"], "the join is not forked: the steps are the plot's own"
+    plot = exported["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]
+    assert plot["target_dataset"] == ZSCORE
+    assert [(s["column"], s["op"]) for s in plot["tier3"]["steps"]] == [("sample_id", "not_in"), ("n50", "ge")], "not the recorded order"
 
 
 CONCORDANCE_CASES = {
@@ -365,28 +397,23 @@ CONCORDANCE_CASES = {
 
 
 @pytest.mark.parametrize("case", sorted(CONCORDANCE_CASES))
-def test_the_exported_recipe_rerun_equals_the_audit_data(run, raw_config, original, raw_samples, removed, threshold, case):
-    """(4): the exported recipe (the translator's fork), written to a file and re-run from the raw data by the real
-    engine, gives exactly the data HOME shows for the plot (`audited_frame` on the stored T2).
+def test_the_exported_recipe_rerun_equals_the_audit_data(run_plot, world, raw_config, original, raw_samples, removed, threshold, case):
+    """(4): the exported recipe (the original with the steps baked into the plot's `tier3.steps`), written to a file and re-run from the raw data by the real
+    engine, gives exactly the data HOME shows for the plot (the table of the audit copy).
 
-    Seen failing: removing the last translated step from the fork of the exported recipe (every case with steps
-    fails; "no-step" has no fork); and changing the oracle of one case (the threshold, the removed sample).
+    Seen failing: removing the last baked step from the plot of the exported recipe (every case with steps fails; "no-step" has none); and changing the
+    oracle of one case (the threshold, the removed sample).
     Oracle: the raw files with plain Polars (z-score over all samples, then the steps in order; the z-score is
     computed by `_zscore` over the raw N50 values), compared with BOTH the audit data and the re-run: same samples,
     z-scores and columns. All seven cases have this full oracle.
-    This is today's mechanism; package P5 of `.claude/design/home_stage2_mechanism_spec.md` (v0.1, not yet confirmed by
-    Eve) replaces it with the audit copy of the recipe, and the test then moves to that copy.
     """
     nodes = CONCORDANCE_CASES[case](removed, threshold)
     _, tier2, _ = original
-    home = plain(audited_frame(tier2.lazy(), nodes).collect())
+    home = plain(world.table(nodes))
 
-    exported, skipped = build_mode2_recipe(raw_config, {ZPLOT: nodes})
-    assert not skipped, skipped
-    target = exported["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]["target_dataset"]
-    assert (target == ZSCORE) == (not nodes), "a plot with audit steps reads its fork, one without reads the join"
-    _, rerun, _ = run(exported, target)
-    rerun = plain(rerun)
+    exported = bake_place_steps(raw_config, nodes)
+    assert ("tier3" in exported["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]) == bool(nodes), "a plot with audit steps has them as its own tier 3, one without has none"
+    rerun = plain(run_plot(exported, ZPLOT))
     expected = _zscore(raw_samples)
     for node in nodes:
         params = node["params"]
@@ -415,20 +442,16 @@ def l50_original(run, raw_config):
 
 # 8.5 was an xfail until issue #62 was fixed by HOME-EXPLORE-1 (numeric comparison in HOME).
 @pytest.mark.parametrize("value", [8, 8.5])
-def test_rerun_equals_audit_data_for_a_threshold_on_an_integer_column(run, raw_config, l50_original, value):
+def test_rerun_equals_audit_data_for_a_threshold_on_an_integer_column(run_plot, world, raw_config, value):
     """(4) on the integer canary: `L50 >= value` gives the same rows in HOME and in the re-run of the export.
     The oracle is the raw Quast file compared as numbers (rule of #62).
 
     Seen failing (before #62 was fixed): HOME kept the samples with L50 = 8 for `>= 8.5` and the re-run did not.
     Seen failing (the integer case): an oracle with `>`.
     """
-    _, tier2, _ = l50_original
-    nodes = [filter_row("n1", "L50", "ge", value)]
-    home = audited_frame(tier2.lazy(), nodes).collect()
-    exported, skipped = build_mode2_recipe(raw_config, {L50PLOT: nodes})
-    assert not skipped, skipped
-    target = exported["analysis_groups"]["QA Canaries"]["plots"][L50PLOT]["target_dataset"]
-    _, rerun, _ = run(exported, target)
+    nodes = [filter_row("n1", "L50", "ge", value, plot=L50PLOT)]
+    home = world.table(nodes, L50PLOT)
+    rerun = run_plot(bake_place_steps(raw_config, nodes), L50PLOT)
 
     quast = _tsv("test_data_Quast_*.tsv")
     expected = sorted(quast.filter(pl.col("L50") >= value)["sample_id"].cast(pl.String).to_list())
@@ -440,17 +463,18 @@ def test_rerun_equals_audit_data_for_a_threshold_on_an_integer_column(run, raw_c
 # ── N13 (PLOT-TABLE-ORDER-1): one audit list, one order, in the table, the plot, the bundle and the exported recipe ──
 # Decided by Eve 2026-11-14 (no silent error; the plot follows the table; the export is checked) and 2026-11-15 (the order
 # written in the recipe is the order performed in the audit; an engine that cannot filter a column that is not there
-# returns an error). The ORDER RULE (the recorded order) is DECIDED 2026-11-15 (S2-1): it lives in `audit_steps_in_order` only.
+# returns an error). The ORDER RULE (inside a tier the order written; between tiers tier 1, tier 2, tier 3) lives in the audit copy only
+# (`utils.audit_copy`, `utils.recipe_tiers.step_list`).
 
-def _home_plot_data(t2: pl.DataFrame, raw_config: dict, nodes: list) -> pl.DataFrame:
-    """The rows the PLOT gets: the audited frame (the one function HOME's plot and the bundle's plot call) handed to the
+def _home_plot_data(table: pl.DataFrame, raw_config: dict) -> pl.DataFrame:
+    """The rows the PLOT gets: the audited table (the one table HOME's plot and the bundle's plot read) handed to the
     real VizFactory with the recipe's own plot spec. The spec carries no `filters` key: the audited steps are not applied
     twice, and not in a second order, inside the factory."""
     from viz_factory import VizFactory
 
     spec = copy.deepcopy(raw_config["analysis_groups"]["QA Canaries"]["plots"][ZPLOT])
     assert "filters" not in spec
-    figure = VizFactory().render(audited_frame(t2.lazy(), nodes), {"plots": {ZPLOT: spec}, "plot_defaults": {}}, ZPLOT)
+    figure = VizFactory().render(table.lazy(), {"plots": {ZPLOT: spec}, "plot_defaults": {}}, ZPLOT)
     return pl.from_pandas(figure.data)
 
 
@@ -460,12 +484,11 @@ def _signature(frame: pl.DataFrame) -> tuple:
     return (sorted(frame.columns), frame["sample_id"].to_list(), [round(v, 9) for v in frame["n50_zscore"].to_list()])
 
 
-def _four_ways(original, raw_config, run, nodes):
-    """The table, the plot, the results bundle's `T3_data_<plot>.tsv` (written and read back) and the re-run of the
+def _four_ways(world, run_plot, raw_config, nodes):
+    """The table (the audit copy's), the plot, the results bundle's `T3_data_<plot>.tsv` (written and read back) and the re-run of the
     exported recipe, for one audit list. A way that cannot run gives the exception it raised."""
     import io
 
-    _, tier2, _ = original
     out = {}
 
     def way(name, make):
@@ -474,21 +497,16 @@ def _four_ways(original, raw_config, run, nodes):
         except BaseException as exc:   # the engine's own error is a SparmvetError / PanicException: keep whatever it is
             out[name] = exc
 
-    way("table", lambda: audited_frame(tier2.lazy(), nodes).collect())
-    way("plot", lambda: _home_plot_data(tier2, raw_config, nodes))
+    way("table", lambda: world.table(nodes))
+    way("plot", lambda: _home_plot_data(world.table(nodes), raw_config))
 
     def bundle():
         buffer = io.BytesIO()
-        audited_frame(tier2.lazy(), nodes).collect().write_csv(buffer, separator="\t")
+        world.table(nodes).write_csv(buffer, separator="\t")
         return pl.read_csv(io.BytesIO(buffer.getvalue()), separator="\t", schema_overrides={"sample_id": pl.String})
     way("bundle", bundle)
 
-    def rerun():
-        exported, skipped = build_mode2_recipe(raw_config, {ZPLOT: nodes})
-        assert not skipped, skipped
-        target = exported["analysis_groups"]["QA Canaries"]["plots"][ZPLOT]["target_dataset"]
-        return run(exported, target)[1]
-    way("rerun", rerun)
+    way("rerun", lambda: run_plot(bake_place_steps(raw_config, nodes), ZPLOT))
     return out
 
 
@@ -501,16 +519,15 @@ ORDERS = {
 
 
 @pytest.mark.parametrize("order", [o for o in sorted(ORDERS) if not o.startswith("A")])
-def test_table_plot_bundle_and_rerun_agree_for_an_order_that_can_run(original, raw_config, raw_samples, run, threshold, order):
+def test_table_plot_bundle_and_rerun_agree_for_an_order_that_can_run(world, raw_config, raw_samples, run_plot, threshold, order):
     """B, C1, C2: the table, the plot, the bundle file and the re-run of the exported recipe have the same rows and values,
     and the row count equals the oracle (the raw files in plain Polars), so four equal no-ops cannot pass.
 
-    Seen failing: the old order (all filters, then all drops) breaks nothing here by itself; the old plot path (drops
-    first, the filter skipped) gives 42 rows for B; the mutation that makes `audit_steps_in_order` reverse the list
-    breaks B and C2 (a filter on a column that the drop removed) with an AuditStepError.
+    Seen failing: the old plot path (drops first, the filter skipped) gave 42 rows for B; the mutation that makes the audit copy run the steps
+    of a tier in reverse order breaks B and C2 (a filter on a column that the drop removed) with an AuditRunError.
     """
     nodes = ORDERS[order](threshold)
-    ways = _four_ways(original, raw_config, run, nodes)
+    ways = _four_ways(world, run_plot, raw_config, nodes)
     for name, result in ways.items():
         assert isinstance(result, pl.DataFrame), f"{order}: the {name} way raised {result!r}"
     if "country" in order:
@@ -527,76 +544,71 @@ def test_table_plot_bundle_and_rerun_agree_for_an_order_that_can_run(original, r
     assert ways["bundle"]["sample_id"].to_list() == plain(ways["table"])["sample_id"].to_list(), f"{order}: bundle file differs"
 
 
-def test_a_drop_then_a_filter_on_one_column_is_an_error_in_the_table_the_plot_the_bundle_and_the_rerun(original, raw_config, run, threshold):
+def test_a_drop_then_a_filter_on_one_column_is_an_error_in_the_table_the_plot_the_bundle_and_the_rerun(world, raw_config, run_plot, threshold):
     """Order A: no way returns rows, none skips the filter. The table, the plot and the bundle raise the same
-    AuditStepError, which names the step (number and reason), the column, the step that removed it and the fix; the
+    AuditRunError, which names the audit step (its id) and its place and gives the engine's own words (the column is not in the table); the
     re-run of the exported recipe stops with the engine's own error.
 
     Seen failing: the old code gave 21 rows (table, bundle) and 42 rows (plot) and no error.
     """
-    ways = _four_ways(original, raw_config, run, ORDERS["A drop n50, then filter n50"](threshold))
+    ways = _four_ways(world, run_plot, raw_config, ORDERS["A drop n50, then filter n50"](threshold))
     for name in ("table", "plot", "bundle"):
         error = ways[name]
-        assert isinstance(error, AuditStepError), f"{name}: {error!r}"
+        assert isinstance(error, AuditRunError), f"{name}: {error!r}"
     texts = {str(ways[name]) for name in ("table", "plot", "bundle")}
     assert len(texts) == 1, "the three places say the same thing"
     text = texts.pop()
-    assert "audit step 2" in text and "n50" in text, text
-    assert "audit step 1" in text and "removed it" in text, "it says which step removed the column"
-    assert "Fix: remove audit step 1 or audit step 2" in text, text
-    assert 'reason: "test"' in text, "it gives the reason of the step"
-    assert "column 'n50' is not in the table" in text, "the engine's own words"
-    assert ways["table"].pipeline_error is not None, "the Alerts panel gets the same text"
+    assert f"at T3:{ZPLOT}" in text and "n50" in text and "cannot be applied" in text, text
+    assert ways["table"].place == f"T3:{ZPLOT}" and ways["table"].step_id.endswith("_2"), "it names the second step (the filter) and its place"
     assert isinstance(ways["rerun"], BaseException) and "n50" in str(ways["rerun"]) and "not in the table" in str(ways["rerun"])
 
 
-def test_an_audit_step_on_a_column_that_never_existed_names_the_columns_and_the_fix(original):
-    """No earlier step removed the column: the error says the table has other columns, never "removed it"."""
-    _, tier2, _ = original
-    with pytest.raises(AuditStepError) as caught:
-        audited_frame(tier2.lazy(), [filter_row("f", "no_such_column", "ge", 1)]).collect()
+def test_an_audit_step_on_a_column_that_never_existed_names_the_step_and_the_column(world):
+    """No earlier step removed the column: the audit copy refuses the step, naming it, its place and the column."""
+    with pytest.raises(AuditRunError) as caught:
+        world.table([filter_row("f", "no_such_column", "ge", 1)])
     text = str(caught.value)
-    assert "audit step 1" in text and "no_such_column" in text and "sample_id" in text, text
-    assert "removed it" not in text and "remove audit step 1 from the plot's audit list" in text, text
+    assert f"at T3:{ZPLOT}" in text and "no_such_column" in text and caught.value.step_id.endswith("_1"), text
 
 
-def test_a_drop_of_a_column_that_an_earlier_step_dropped_is_an_error_too(original):
+def test_a_drop_of_a_column_that_an_earlier_step_dropped_is_an_error_too(world):
     """Case G of the evidence: the re-run stops on it, so the table must not ignore it (table = re-run)."""
+    with pytest.raises(AuditRunError) as caught:
+        world.table([drop_column("a", "n50"), drop_column("b", "n50")])
+    assert caught.value.step_id.endswith("_2") and caught.value.place == f"T3:{ZPLOT}"
+
+
+def test_a_step_that_is_not_active_is_not_run_and_the_steps_that_are_keep_their_numbers_in_the_order_written(world, threshold):
+    """An inactive step is not a step of the audit (`place_nodes` leaves it out); the others are numbered in the order they were written."""
+    from app.modules.audit_places import PLACES_BUCKET, place_nodes
+    nodes = [{**drop_column("x", "country"), "active": False}, drop_column("d", "n50"), filter_row("f", "n50", "ge", threshold)]
+    active = place_nodes({PLACES_BUCKET: nodes})
+    assert [n["id"] for n in active] == ["d", "f"]
+    with pytest.raises(AuditRunError) as caught:
+        world.table(active)
+    assert caught.value.step_id.endswith("_2"), "the filter is the second audit step"
+
+
+def test_no_step_gives_the_table_unchanged(world, original):
     _, tier2, _ = original
-    with pytest.raises(AuditStepError, match=r"audit step 2.*audit step 1"):
-        audited_frame(tier2.lazy(), [drop_column("a", "n50"), drop_column("b", "n50")])
+    assert world.audit.plot_lazy(RECIPE_ID, ZPLOT, [], world.plans) is None
+    assert plain(world.table([])).equals(plain(tier2))
 
 
-def test_the_number_of_a_step_counts_the_active_data_steps_of_the_list(original, threshold):
-    """An inactive step and a plot style step are not counted; a step that was removed from the list is gone."""
-    _, tier2, _ = original
-    nodes = [{"node_type": "aesthetic_override", "params": {"alpha": 0.5}, "id": "a"},
-             {**drop_column("x", "country"), "active": False},
-             drop_column("d", "n50"), filter_row("f", "n50", "ge", threshold)]
-    with pytest.raises(AuditStepError, match=r"audit step 2 .*audit step 1"):
-        audited_frame(tier2.lazy(), nodes)
-
-
-def test_no_step_gives_the_frame_unchanged(original):
-    _, tier2, _ = original
-    assert audited_frame(tier2.lazy(), []).collect().equals(tier2)
-
-
-def test_an_exclusion_on_a_dropped_column_is_an_error_not_a_skip(original):
+def test_an_exclusion_on_a_dropped_column_is_an_error_not_a_skip(world):
     """Case E of the evidence: the table kept 41 rows, the plot 42 and the re-run stopped."""
-    _, tier2, _ = original
-    with pytest.raises(AuditStepError, match="n50"):
-        audited_frame(tier2.lazy(), [drop_column("d", "n50"), exclusion("e", ["1"]) | {"params": {"column": "n50", "op": "not_in", "value": [1.0]}}])
+    with pytest.raises(AuditRunError, match="n50"):
+        world.table([drop_column("d", "n50"), exclusion("e", ["1"]) | {"params": {"column": "n50", "op": "not_in", "value": [1.0]}}])
 
 
-def test_the_order_rule_is_in_one_function(raw_config):
-    """The decided order (2026-11-15, S2-1): the list order. This test pins the one function that carries the rule, so that
-    changing the rule is a change of that function and of this test only."""
-    from app.modules.t3_audit_engine import audit_steps_in_order
-
+def test_the_order_rule_is_in_the_audit_copy(world, raw_config):
+    """The decided order (2026-11-15, S2-1): inside a tier the list order. The audit copy writes the steps of a place in the order of the nodes, after the
+    author's steps; changing the rule is a change of the copy and of this test only."""
     nodes = [filter_row("f", "n50", "ge", 1), drop_column("d", "n50"), exclusion("e", ["1"])]
-    assert [(s["number"], s["kind"], s["column"]) for s in audit_steps_in_order(nodes)] == [
-        (1, "filter", "n50"), (2, "drop", "n50"), (3, "filter", "sample_id")]
+    steps = all_audit_steps(audit_copy_for(world.loaded.raw, nodes, world.plans).recipe)
+    assert [(s.place, s.step["action"], s.step.get("column") or s.step.get("columns")[0]) for s in steps] == [
+        (f"T3:{ZPLOT}", "modif_filter", "n50"), (f"T3:{ZPLOT}", "polars_drop", "n50"), (f"T3:{ZPLOT}", "modif_filter", "sample_id")]
+    assert [s.step_id.rsplit("_", 1)[1] for s in steps] == ["1", "2", "3"], "numbered in the order written"
 
 
 def test_vizfactory_does_not_skip_a_filter_on_a_missing_column():
@@ -612,13 +624,12 @@ def test_vizfactory_does_not_skip_a_filter_on_a_missing_column():
         VizFactory().render(frame, {"plots": {"p": spec}, "plot_defaults": {}}, "p")
 
 
-def test_the_plot_path_gets_the_rows_of_the_table_path_for_a_filter_then_a_drop_on_one_column(original, raw_config, raw_samples, threshold):
-    """Order B through the real function: the plot has the rows of the table, which are the oracle's (raw files).
+def test_the_plot_path_gets_the_rows_of_the_table_path_for_a_filter_then_a_drop_on_one_column(world, raw_config, raw_samples, threshold):
+    """Order B through the real mechanism: the plot has the rows of the table, which are the oracle's (raw files).
     Was an xfail: the plot had 42 rows, the table 21.
     """
-    _, tier2, _ = original
     nodes = [filter_row("f", "n50", "ge", threshold), drop_column("d", "n50")]
-    table = audited_frame(tier2.lazy(), nodes).collect()
+    table = world.table(nodes)
     expected = raw_samples.filter(pl.col("n50") >= threshold)
     assert table.height == expected.height < raw_samples.height
-    assert _home_plot_data(tier2, raw_config, nodes).height == table.height
+    assert _home_plot_data(table, raw_config).height == table.height

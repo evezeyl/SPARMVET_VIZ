@@ -5,7 +5,7 @@ Each writer is run for real, and what it wrote is judged three ways:
   2. the loader of the app (`validate_data_analysis_recipe`, which loads through `ConfigManager`);
   3. where the recipe has data, the engine (`validate_data_analysis_recipe_data`, `DataOrchestrator`).
 
-The writers: `utils.recipe_factory` (the shared helper), the forked recipe of an export (`build_mode2_recipe`, written
+The writers: `utils.recipe_factory` (the shared helper), the baked recipe of an export (`bake_place_steps`, written
 the way `export_handlers.py` writes it), Blueprint's new-recipe form (`new_recipe_draft`), Blueprint's branch
 (`generate_branch_plan`) and the scripts `assets/scripts/create_data_analysis_recipe.py` and `SF_create_data_analysis_recipe.py`.
 The Test Lab writers have their own tests in `libs/test_lab/tests` (they run the checker on what they write).
@@ -25,7 +25,7 @@ from app.modules.data_analysis_recipe_validator import checker_catalogs, validat
 from app.modules.orchestrator import DataOrchestrator
 from blueprint_arch.data_analysis_recipe_navigator import generate_branch_plan
 from blueprint_arch.new_recipe import new_recipe_draft
-from blueprint_arch.t3_translator import build_mode2_recipe
+from app.modules.audit_places import bake_place_steps
 from utils import action_names
 from utils.config_loader import ConfigManager
 from utils.recipe_factory import minimal_join, minimal_plot, minimal_recipe, minimal_schema, write_recipe
@@ -102,29 +102,28 @@ def test_the_default_recipe_of_the_factory_passes_the_checker_with_the_real_regi
     assert validate_data_analysis_recipe(path) == []
 
 
-# -- 2. the forked recipe of an export
+# -- 2. the baked recipe of an export (the audit steps are the plot's own tier-3 steps)
 
-T3_OF_THE_PLOT = {"tiny_plot": [
-    {"id": "n1", "node_type": "filter_row", "params": {"column": "country", "op": "eq", "value": "NO"}, "reason": "one country"},
-    {"id": "n2", "node_type": "exclusion_row", "params": {"column": "sample_id", "op": "not_in", "value": ["s9"]}, "reason": "a bad sample"},
-    {"id": "n3", "node_type": "drop_column", "params": {"column": "country"}, "reason": "not needed"},
-]}
+T3_OF_THE_PLOT = [
+    {"id": "n1", "node_type": "filter_row", "params": {"column": "country", "op": "eq", "value": "NO"}, "reason": "one country", "place": "T3:tiny_plot"},
+    {"id": "n2", "node_type": "exclusion_row", "params": {"column": "sample_id", "op": "not_in", "value": ["s9"]}, "reason": "a bad sample", "place": "T3:tiny_plot"},
+    {"id": "n3", "node_type": "drop_column", "params": {"column": "country"}, "reason": "not needed", "place": "T3:tiny_plot"},
+]
 
 
-def export_fork(project: Path, t3_by_plot: dict) -> Path:
-    """What the export does (export_handlers.py, "Mode 2 add-on"): load, fork, write as YAML into the bundle."""
+def export_baked(project: Path, nodes: list) -> Path:
+    """What the export does (export_handlers.py, "Mode 2 add-on"): load, bake the audit steps into their places, write as YAML into the bundle."""
     source = write_recipe(project / "recipes" / "tiny.yaml", tiny_recipe())
-    forked, skipped = build_mode2_recipe(ConfigManager(str(source)).raw_config, t3_by_plot)
-    assert skipped == {}
+    baked = bake_place_steps(ConfigManager(str(source)).raw_config, nodes)
     bundle = project / "bundle" / "data_analysis_recipes_reproducibility"
     bundle.mkdir(parents=True)
     path = bundle / "tiny.yaml"
-    path.write_text(yaml.safe_dump(forked, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    path.write_text(yaml.safe_dump(baked, sort_keys=False, allow_unicode=True), encoding="utf-8")
     return path
 
 
-def test_the_forked_recipe_of_an_export_passes_the_checker_and_loads(project, catalogs):
-    path = export_fork(project, T3_OF_THE_PLOT)
+def test_the_baked_recipe_of_an_export_passes_the_checker_and_loads(project, catalogs):
+    path = export_baked(project, T3_OF_THE_PLOT)
     assert judged(path, catalogs) == []
     assert validate_data_analysis_recipe(path) == []
     text = path.read_text(encoding="utf-8")
@@ -132,23 +131,22 @@ def test_the_forked_recipe_of_an_export_passes_the_checker_and_loads(project, ca
     assert not [word for word in OLD_WORDS if word in text]
 
 
-def test_the_forked_recipe_gives_the_audited_table_when_it_is_run(project, catalogs):
-    """The steps of the audit are in the fork, so the engine alone rebuilds what the user validated."""
-    path = export_fork(project, T3_OF_THE_PLOT)
+def test_the_baked_recipe_gives_the_audited_table_when_it_is_run(project, catalogs):
+    """The steps of the audit are the plot's own tier-3 steps, so the engine alone rebuilds what the user validated."""
+    path = export_baked(project, T3_OF_THE_PLOT)
     raw, problems = load_recipe(path)
     assert problems == []
-    fork_id = raw["analysis_groups"]["main"]["plots"]["tiny_plot"]["target_dataset"]
-    assert fork_id == "C__t3_tiny_plot"
+    assert raw["analysis_groups"]["main"]["plots"]["tiny_plot"]["target_dataset"] == "C", "the join is not forked: the plot still reads it"
     orchestrator = DataOrchestrator(path.parent, project / "data")
-    anchor = project / "anchors" / "fork.parquet"
-    assert rows(orchestrator.materialize_tier2("tiny", fork_id, anchor)) == [{"sample_id": "s3"}]
-    # the join the fork was copied from is still there and gives the table without the audit steps
+    anchors = project / "anchors"
+    assert rows(orchestrator.materialize_tier3("tiny", "tiny_plot", anchors)) == [{"sample_id": "s3"}]
+    # the join the plot reads is still there and gives the table without the audit steps
     assert rows(orchestrator.materialize_tier2("tiny", "C", project / "anchors" / "C.parquet")) == [
         {"sample_id": "s2", "country": "SE"}, {"sample_id": "s3", "country": "NO"}]
 
 
 def test_an_export_without_audit_steps_writes_the_recipe_unchanged(project, catalogs):
-    path = export_fork(project, {})
+    path = export_baked(project, [])
     assert judged(path, catalogs) == []
     raw, _ = load_recipe(path)
     assert raw == tiny_recipe()

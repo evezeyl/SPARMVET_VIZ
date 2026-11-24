@@ -19,7 +19,7 @@ from __future__ import annotations
 
 # @deps
 # provides: function:define_server (audit_stack), output:audit_nodes_header_ui, output:audit_nodes_tier2, output:audit_nodes_tier3, output:processing_issues_ui, output:aesthetic_style_panel_ui (22-J-10)
-# consumes: app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
+# consumes: app/modules/frame_widths.py (HOME: the user space of the audit panel), app/modules/audit_places.py (PLACES_BUCKET, place_words, plots_below: the audit steps of every tier), app/modules/wrangle_studio.py, app/modules/error_notice.py (notice — VERIF-FIX-2), app/modules/session_manager.py, libs/transformer/src/transformer/data_wrangler.py
 #           libs/utils/src/utils/pipeline_error.py (PipelineError — DIAG-RUNTIME-T3APPLY-1), home_mode (the reactive value of app/src/server.py: the badge and Apply are shown in Audit mode only, D-0377)
 # consumed_by: app/src/server.py
 # doc: .claude/rules/ui_implementation_contract.md#12a-12c, .claude/knowledge/architecture_decisions.md#ADR-044, .claude/knowledge/architecture_decisions.md#ADR-094 (gatekeeper fix text + _write_t3_ghost warning now reach the screen, processing_issues_ui shows fix/who)
@@ -29,11 +29,14 @@ from collections import Counter
 
 from shiny import reactive, render, ui
 
+from utils import recipe_tiers
 from utils.fix_text import fix_label
+from utils.recipe_graph import RecipeGraphError, build_graph
 from app.modules.error_notice import notice
 from utils.na_choice import na_of, no_value_text
 from utils.pipeline_error import PipelineError
 from app.modules import frame_widths
+from app.modules.audit_places import PLACES_BUCKET, place_words, plots_below
 from app.modules.cache_keys import tier2_steps
 from app.modules.session_manager import (
     make_audit_step,
@@ -187,11 +190,11 @@ def define_server(input, output, session, *,
     @reactive.Effect
     @reactive.event(input.btn_apply)
     def handle_apply():
-        """Commit pending T3 nodes — Phase 22-J / ADR-049 per-plot version.
+        """Commit pending audit nodes, at any tier.
 
-        Pending nodes carry their target `plot_scope` (set by the propagation
-        expansion in home_theater._handle_propagation_confirm). Commit means
-        appending each node into t3_audit_steps_by_plot[node.plot_scope].
+        Pending nodes carry their `place` (`T1:<table>`, `T2:<table>` or `T3:<plot>`, set by the dialog, `filter_and_audit_handlers._stage_nodes`)
+        and the bucket `plot_scope` (`PLACES_BUCKET`). Commit means appending each node, in the order staged, to t3_audit_steps_by_plot[node.plot_scope];
+        the audit copy is made from that list in that order.
 
         Reasons are read from live `t3_reason_<id_suffix>` inputs; multiple
         propagated copies share the same suffix (because they share `id`),
@@ -301,7 +304,7 @@ def define_server(input, output, session, *,
         total_nodes = sum(len(v) for v in by_plot.values())
         _notify(
             f"✅ audit steps applied — {total_nodes} node(s) across "
-            f"{len([k for k, v in by_plot.items() if v])} plot stack(s).",
+            f"{len({n.get('place') for v in by_plot.values() for n in v})} place(s).",
             type="message", duration=4,
         )
 
@@ -325,6 +328,19 @@ def define_server(input, output, session, *,
         if home_mode.get() == "audit" and audit_pending.get():
             return ui.div("⏳ Pending", class_="audit-pending-badge text-center")
         return ui.div()
+
+    _graph_memo: dict = {}
+
+    def _graph_of_open_recipe():
+        """The recipe graph of the open recipe, kept while the recipe is the same object; None when it cannot be drawn (the card then says nothing of the place's reach)."""
+        raw = active_cfg().raw_config
+        if _graph_memo.get("raw") is not raw:
+            try:
+                _graph_memo.clear()
+                _graph_memo.update(raw=raw, graph=build_graph(raw))
+            except RecipeGraphError:
+                _graph_memo.update(raw=raw, graph=None)
+        return _graph_memo.get("graph")
 
     def _active_target_ds() -> str:
         """Return the target_dataset for the currently active plot.
@@ -419,29 +435,32 @@ def define_server(input, output, session, *,
         except Exception:
             pass
         state = home_state.get()
-        # Phase 22-J: per-plot view. Show only the active plot's committed
-        # stack plus pending nodes targeting this plot (or any plot — pending
-        # nodes carry plot_scope set during propagation expansion).
+        # The steps this plot is built from, at any tier: written at its own tier 3 or at a table it is built from (the audit copy runs them all in one order).
+        # One step is one card here; a decision written for several plots has one node per plot and the card of this plot is its node.
         active_subtab = state.get("active_plot_subtab") or ""
         by_plot = state.get("t3_audit_steps_by_plot", {}) or {}
-        committed_here = list(by_plot.get(active_subtab, []))
         pending_all = list(state.get("_pending_t3_nodes", []))
-        pending_here = [n for n in pending_all
-                        if n.get("plot_scope") == active_subtab]
+        open_plot = active_subtab.removeprefix("subtab_")
+        reach_of: dict[str, list[str]] = {}
+        graph = _graph_of_open_recipe()
+        if graph is not None:
+            for node in list(by_plot.get(PLACES_BUCKET, [])) + pending_all:
+                place = node.get("place") or ""
+                if place and place not in reach_of and graph.has_node(place):
+                    reach_of[place] = plots_below(graph, [place])
+            committed_here = [n for n in by_plot.get(PLACES_BUCKET, []) if open_plot in reach_of.get(n.get("place") or "", [])]
+            pending_here = [n for n in pending_all if open_plot in reach_of.get(n.get("place") or "", [])]
+        else:
+            committed_here, pending_here = [], []
 
-        # For "Applied to N plots" badge: count unique plot_scopes per id.
+        # For "Applied to N plots" badge: the plots a decision was written at, at their own tier 3 (one node per plot, one id).
         scope_count_by_id: dict[str, int] = {}
-        for plot_id, nodes in by_plot.items():
-            for n in nodes:
-                nid = n.get("id", "")
-                if nid:
-                    scope_count_by_id[nid] = scope_count_by_id.get(nid, 0) + 1
-        for n in pending_all:
+        for n in list(by_plot.get(PLACES_BUCKET, [])) + pending_all:
             nid = n.get("id", "")
-            if nid:
+            if nid and (n.get("place") or "").startswith("T3:"):
                 scope_count_by_id[nid] = scope_count_by_id.get(nid, 0) + 1
 
-        all_nodes = committed_here + pending_here
+        all_nodes = sorted(committed_here + pending_here, key=lambda n: n.get("created_at", ""))
 
         # Orphan/legacy nodes for this session
         orphaned = list(by_plot.get("__legacy__", []))
@@ -457,7 +476,7 @@ def define_server(input, output, session, *,
 
         blocked_ids = set(gatekeeper_blocked(pending_all + [n for nodes in by_plot.values() for n in nodes]))
         adj_header = ui.div(
-            ui.h6(f"My Adjustments (Tier 3) — {active_subtab.removeprefix('subtab_') or 'plot'}",
+            ui.h6(f"My Adjustments — {active_subtab.removeprefix('subtab_') or 'plot'}",
                   class_="m-0 spv-flex-1"),
             ui.span(
                 f"{len(blocked_ids)} need reason",
@@ -503,6 +522,13 @@ def define_server(input, output, session, *,
                 class_="spv-badge-pk-warn",
             ) if pk_warn else ui.span()
 
+            place = node.get("place") or ""
+            # a step at the plot's own tier 3 needs no word of reach (it is this plot's); a step at a table says where and how many plots are built from there
+            place_banner = ui.div(
+                f"Written at {place_words(place)}: {len(reach_of.get(place, []))} plot(s) are built from there.",
+                class_="spv-text-xxs text-muted",
+            ) if place and not place.startswith("T3:") else ui.span()
+
             id_suffix = _safe_input_suffix(nid)
 
             if needs_reason and is_active:
@@ -535,6 +561,7 @@ def define_server(input, output, session, *,
                         class_="spv-audit-header-row",
                     ),
                     pk_banner,
+                    place_banner,
                     ui.div(
                         summary,
                         class_="spv-text-sm mt-1",
@@ -860,8 +887,7 @@ def define_server(input, output, session, *,
 
         # Collect all subtabs for the except-picker.
         try:
-            all_specs = state.get("t3_audit_steps_by_plot", {})
-            all_subs = list(all_specs.keys())
+            all_subs = [f"subtab_{p}" for p in recipe_tiers.plot_entries(active_cfg().raw_config)]
         except Exception:
             all_subs = [active_sub]
         others = [s for s in all_subs if s != active_sub]
@@ -920,8 +946,7 @@ def define_server(input, output, session, *,
             except_picks = []
 
         try:
-            all_specs = state.get("t3_audit_steps_by_plot", {})
-            all_subs = list(all_specs.keys())
+            all_subs = [f"subtab_{p}" for p in recipe_tiers.plot_entries(active_cfg().raw_config)]
         except Exception:
             all_subs = [active_sub]
 

@@ -12,7 +12,7 @@ Places where a drop is CREATED or ENTERS the app, and what each one does:
   4. a RESTORED session (`session_handlers._restore_session`)                               asks the rule for each stored drop with its place (these tests)
   5. an IMPORTED session zip, then restored                                                  the same as 4 (the zip is only unpacked)
   6. an imported reproducibility bundle                                                      holds no audit steps of the app: the audit is written into the frozen recipe by the export
-  7. the export (`audited_frame`)                                                            applies the steps it is given; it is given the steps of the view
+  7. the export (the audit copy)                                                            applies the steps it is given; it is given the steps of the view
 
 `test_only_one_place_creates_a_column_drop` fails when a seventh place that makes a `drop_column` step appears: a new place must
 come here with its own test.
@@ -43,7 +43,8 @@ from shiny.types import SilentException
 import app.handlers.session_handlers as session_handlers
 from app.handlers import filter_and_audit_handlers as handlers
 from app.modules.session_manager import SessionManager, extract_primary_keys, make_audit_step, split_key_drops
-from app.modules.t3_audit_engine import audited_frame
+from app.modules.audit_places import PLACES_BUCKET, audit_copy_for
+from utils.audit_copy import all_audit_steps
 from utils import key_drop
 
 APP = Path(handlers.__file__).resolve().parents[1]
@@ -70,11 +71,22 @@ def plotted(*join_steps):
 
 
 def drop_step(column, plot="subtab_p1", reason="", step_id=None):
-    return make_audit_step("drop_column", {"column": column}, plot_scope=plot, reason=reason, node_id=step_id)
+    """A drop written at the tier 3 of a plot (the place `T3:<plot>`, in the one bucket)."""
+    return make_audit_step("drop_column", {"column": column}, plot_scope=PLACES_BUCKET, reason=reason, node_id=step_id, place=f"T3:{plot.removeprefix('subtab_')}")
 
 
 def filter_step(column, plot="subtab_p1"):
-    return make_audit_step("filter_row", {"column": column, "op": "eq", "value": 1, "dtype": "Int64"}, plot_scope=plot, reason="r")
+    return make_audit_step("filter_row", {"column": column, "op": "eq", "value": 1, "dtype": "Int64"}, plot_scope=PLACES_BUCKET, reason="r", place=f"T3:{plot.removeprefix('subtab_')}")
+
+
+def bucket(**by_plot):
+    """The stored form: every step in the one bucket, in the order given (plot after plot)."""
+    return {PLACES_BUCKET: [n for nodes in by_plot.values() for n in nodes]}
+
+
+def at(by_bucket, plot):
+    """The steps of a bucket written at the tier 3 of `plot`."""
+    return [n for n in by_bucket[PLACES_BUCKET] if n["place"] == f"T3:{plot}"]
 
 
 # ---------------------------------------------------------------------------------------------------- which columns are keys
@@ -155,7 +167,7 @@ class Box:
             _propagation_scratch=self.scratch,
             _open_propagation_modal=lambda nodes, subtab, kind: self.opened.append((nodes, kind)),
             _resolve_active_spec=lambda p_id: {}, _resolve_active_lf=lambda spec, tier=None: (self.frame.lazy() if tier == "T3" else pytest.fail(f"read tier {tier!r}, not T3: an audit step is written at the plot's table")),
-            _t3_drop_columns=lambda: [], safe_input=lambda i, k, d=None: i.get(k, d), input={"preview_col_selector": kept},
+            safe_input=lambda i, k, d=None: i.get(k, d), input={"preview_col_selector": kept},
             ui=SimpleNamespace(update_selectize=lambda *a, **k: None), recipe_raw=lambda: self.raw, recipe_plans=lambda: self.plans,
         )()
 
@@ -260,17 +272,19 @@ def test_the_dialog_carries_the_non_key_drop_into_the_pending_steps_of_the_chose
     (nodes, _), = box.opened
     state = Val({"active_plot_subtab": "subtab_p1", "_pending_t3_nodes": []})
     notes = []
+    scratch = Val({"nodes": nodes, "kind": "drop"})
+    stage = closure("_stage_nodes", home_state=state, _propagation_scratch=scratch)
     closure(
         "_handle_propagation_confirm",
-        home_state=state, _propagation_scratch=Val({"nodes": nodes, "kind": "drop"}),
+        home_state=state, _propagation_scratch=scratch, _stage_nodes=stage,
         safe_input=lambda i, k, d=None: {"propagation_choice": "all"}.get(k, d), input={},
         active_home_subtab=Val("subtab_p1"), _all_plot_subtab_ids=lambda: ["subtab_p1", "subtab_p2"],
         _plot_has_column=lambda plot, column: True, _plot_label=lambda s: s,
         _notify=lambda message, **kw: notes.append(message), ui=SimpleNamespace(modal_remove=lambda: None),
     )()
     pending = state.get()["_pending_t3_nodes"]
-    assert sorted((n["plot_scope"], n["node_type"], n["params"]["column"]) for n in pending) == [
-        ("subtab_p1", "drop_column", "year"), ("subtab_p2", "drop_column", "year")]
+    assert sorted((n["place"], n["plot_scope"], n["node_type"], n["params"]["column"]) for n in pending) == [
+        ("T3:p1", PLACES_BUCKET, "drop_column", "year"), ("T3:p2", PLACES_BUCKET, "drop_column", "year")]
     assert len({n["id"] for n in pending}) == 1, "the copies of one decision share one id"
 
 
@@ -326,8 +340,8 @@ def refuse_keys(monkeypatch, *columns):
 
 
 def test_split_keeps_every_drop_at_a_plot_when_the_real_rule_finds_nothing_to_refuse():
-    """D-0358: a stored drop sits in the stack of a plot, the place `T3:<plot>`, after every join; the real rule refuses nothing there. Before (by name) the key drops were refused."""
-    by_plot = {"subtab_p1": [drop_step("sample_id"), drop_step("source"), drop_step("gene")], "subtab_p2": [drop_step("sample_id", plot="subtab_p2")]}
+    """D-0358: a stored drop is written at the place `T3:<plot>`, after every join; the real rule refuses nothing there. Before (by name) the key drops were refused."""
+    by_plot = bucket(p1=[drop_step("sample_id"), drop_step("source"), drop_step("gene")], p2=[drop_step("sample_id", plot="subtab_p2")])
     kept, refused = split_key_drops(by_plot, REAL)
     assert kept == by_plot and refused == []
 
@@ -335,16 +349,16 @@ def test_split_keeps_every_drop_at_a_plot_when_the_real_rule_finds_nothing_to_re
 def test_split_removes_only_the_refused_drops_and_keeps_the_order_of_the_rest(monkeypatch):
     """MUTATION K1 fails here."""
     refuse_keys(monkeypatch, "sample_id", "gene")
-    by_plot = {
-        "subtab_p1": [filter_step("year"), drop_step("sample_id", reason="old"), drop_step("source"), filter_step("sample_id")],
-        "subtab_p2": [drop_step("gene", plot="subtab_p2")],
-    }
+    by_plot = bucket(
+        p1=[filter_step("year"), drop_step("sample_id", reason="old"), drop_step("source"), filter_step("sample_id")],
+        p2=[drop_step("gene", plot="subtab_p2")],
+    )
     kept, refused = split_key_drops(by_plot, REAL)
-    assert [(n["node_type"], n["params"]["column"]) for n in kept["subtab_p1"]] == [
+    assert [(n["node_type"], n["params"]["column"]) for n in at(kept, "p1")] == [
         ("filter_row", "year"), ("drop_column", "source"), ("filter_row", "sample_id")]
-    assert kept["subtab_p2"] == []
-    assert [(r["plot"], r["column"], r["reason"]) for r in refused] == [("subtab_p1", "sample_id", "old"), ("subtab_p2", "gene", "")]
-    assert [r["problem"] for r in refused] == ["STAND-IN refusal of ['sample_id'] at T3:p1", "STAND-IN refusal of ['gene'] at T3:p2"], "the place of each step is its plot"
+    assert at(kept, "p2") == []
+    assert [(r["place"], r["column"], r["reason"]) for r in refused] == [("T3:p1", "sample_id", "old"), ("T3:p2", "gene", "")]
+    assert [r["problem"] for r in refused] == ["STAND-IN refusal of ['sample_id'] at T3:p1", "STAND-IN refusal of ['gene'] at T3:p2"], "the place of each step is the place it is written at"
 
 
 def test_split_refuses_a_stored_drop_the_app_cannot_follow_with_the_real_sentence_and_keeps_the_rest(monkeypatch):
@@ -354,45 +368,53 @@ def test_split_refuses_a_stored_drop_the_app_cannot_follow_with_the_real_sentenc
     real = key_drop.DropGate.facts
     monkeypatch.setattr(key_drop.DropGate, "facts", lambda self, place, column: (
         DropFacts(place, column, (), (Reason(STEP_NOT_READ, (("node", "T2:J"), ("step", 1), ("action", "polars_unpivot"))),)) if column == "year" else real(self, place, column)))
-    by_plot = {"subtab_p1": [drop_step("year", reason="why"), drop_step("source")]}
+    by_plot = bucket(p1=[drop_step("year", reason="why"), drop_step("source")])
     kept, refused = split_key_drops(by_plot, REAL)
-    assert [n["params"]["column"] for n in kept["subtab_p1"]] == ["source"]
+    assert [n["params"]["column"] for n in at(kept, "p1")] == ["source"]
     (item,) = refused
-    assert (item["plot"], item["column"], item["reason"]) == ("subtab_p1", "year", "why")
+    assert (item["place"], item["column"], item["reason"]) == ("T3:p1", "year", "why")
     assert item["problem"].startswith("The app cannot YET follow the column 'year' at T3:p1 to the end") and "the drop is not written" in item["problem"]
 
 
 def test_split_does_not_change_its_argument_and_a_drop_the_rule_allows_stays(monkeypatch):
     refuse_keys(monkeypatch, "sample_id")
-    by_plot = {"subtab_p1": [drop_step("sample_id"), drop_step("year")]}
-    before = [dict(n) for n in by_plot["subtab_p1"]]
+    by_plot = bucket(p1=[drop_step("sample_id"), drop_step("year")])
+    before = [dict(n) for n in by_plot[PLACES_BUCKET]]
     kept, refused = split_key_drops(by_plot, REAL)
-    assert by_plot["subtab_p1"] == before
-    assert [n["params"]["column"] for n in kept["subtab_p1"]] == ["year"] and len(refused) == 1
+    assert by_plot[PLACES_BUCKET] == before
+    assert [n["params"]["column"] for n in at(kept, "p1")] == ["year"] and len(refused) == 1
 
 
 def test_split_with_no_recipe_or_no_steps_refuses_nothing(monkeypatch):
     refuse_keys(monkeypatch, "sample_id")
-    by_plot = {"subtab_p1": [drop_step("sample_id")], "subtab_p2": []}
+    by_plot = bucket(p1=[drop_step("sample_id")], p2=[])
     assert split_key_drops(by_plot, None) == (by_plot, [])
     assert split_key_drops({}, REAL) == ({}, [])
     assert split_key_drops(None, REAL) == ({}, [])
     assert len(split_key_drops(by_plot, REAL)[1]) == 1, "with a recipe the stand-in refusal does apply: the first assertion is about the absence of a recipe"
 
 
-def test_split_lists_every_copy_of_a_propagated_step_and_keeps_a_style_step(monkeypatch):
+def test_split_lists_every_copy_of_a_decision_written_at_several_places_and_keeps_a_style_step(monkeypatch):
     refuse_keys(monkeypatch, "sample_id")
-    style = make_audit_step("aesthetic_override", {"alpha": 0.5}, plot_scope="subtab_p1")
-    by_plot = {"subtab_p1": [style, drop_step("sample_id", step_id="same")], "subtab_p2": [drop_step("sample_id", plot="subtab_p2", step_id="same")]}
+    style = make_audit_step("aesthetic_override", {"alpha": 0.5}, plot_scope=PLACES_BUCKET, place="T3:p1")
+    by_plot = bucket(p1=[style, drop_step("sample_id", step_id="same")], p2=[drop_step("sample_id", plot="subtab_p2", step_id="same")])
     kept, refused = split_key_drops(by_plot, REAL)
-    assert kept["subtab_p1"] == [style]
-    assert [(r["plot"], r["id"]) for r in refused] == [("subtab_p1", "same"), ("subtab_p2", "same")]
+    assert at(kept, "p1") == [style]
+    assert [(r["place"], r["id"]) for r in refused] == [("T3:p1", "same"), ("T3:p2", "same")]
 
 
 def test_split_refuses_a_switched_off_drop_too_when_the_rule_refuses_it(monkeypatch):
     refuse_keys(monkeypatch, "sample_id")
     off = {**drop_step("sample_id"), "active": False}
-    assert split_key_drops({"subtab_p1": [off]}, REAL)[1][0]["column"] == "sample_id"
+    assert split_key_drops(bucket(p1=[off]), REAL)[1][0]["column"] == "sample_id"
+
+
+def test_a_step_with_no_place_is_not_judged_and_not_refused_by_the_key_rule(monkeypatch):
+    """The refusal of a step with no place is the file's (`refused_audit_step_problem(place_required=True)`): the key rule has no place to ask about."""
+    refuse_keys(monkeypatch, "sample_id")
+    nowhere = {k: v for k, v in drop_step("sample_id").items() if k != "place"}
+    kept, refused = split_key_drops({PLACES_BUCKET: [nowhere]}, REAL)
+    assert refused == [] and kept == {PLACES_BUCKET: [nowhere]}
 
 
 # ------------------------------------------------------------------------ places 4 and 5: the real session screen, real files
@@ -481,14 +503,18 @@ class Screen:
             await reactive.flush()
 
 
-SAVED = {
-    "subtab_p1": [filter_step("year"), drop_step("sample_id", reason="not needed", step_id="k1"), drop_step("source", reason="noise", step_id="n1")],
-    "subtab_p2": [drop_step("sample_id", plot="subtab_p2", reason="not needed", step_id="k1")],
-}
+SAVED = bucket(
+    p1=[filter_step("year"), drop_step("sample_id", reason="not needed", step_id="k1"), drop_step("source", reason="noise", step_id="n1")],
+    p2=[drop_step("sample_id", plot="subtab_p2", reason="not needed", step_id="k1")],
+)
 
 
 def steps_of(state):
-    return {plot: [(n["node_type"], n["params"].get("column")) for n in nodes] for plot, nodes in state["t3_audit_steps_by_plot"].items()}
+    """{place: [(type, column)]} of the steps in the state, in the order they are stored; a place with no step is not a key."""
+    found: dict = {}
+    for n in state["t3_audit_steps_by_plot"][PLACES_BUCKET]:
+        found.setdefault(n["place"], []).append((n["node_type"], n["params"].get("column")))
+    return found
 
 
 def test_a_restored_session_with_a_drop_the_rule_refuses_restores_the_rest_and_tells_which_step_and_why(tmp_path, monkeypatch):
@@ -499,10 +525,10 @@ def test_a_restored_session_with_a_drop_the_rule_refuses_restores_the_rest_and_t
         s = Screen(tmp_path, monkeypatch, raw=REAL)
         s.write(SAVED)
         await s.restore()
-        assert steps_of(s.state()) == {"subtab_p1": [("filter_row", "year"), ("drop_column", "source")], "subtab_p2": []}
+        assert steps_of(s.state()) == {"T3:p1": [("filter_row", "year"), ("drop_column", "source")]}
         told = s.texts("STAND-IN")
         assert len(told) == 1, s.notes
-        assert "sample_id" in told[0] and "subtab_p1" in told[0] and "subtab_p2" in told[0]
+        assert "sample_id" in told[0] and "Plot p1 (tier 3)" in told[0] and "Plot p2 (tier 3)" in told[0]
         assert "not needed" in told[0], "the reason the user wrote is in the message"
         assert "row filter or row exclusion" in told[0]
         assert any(t == "warning" for t, m in s.notes if "STAND-IN" in m)
@@ -516,7 +542,7 @@ def test_a_restored_session_keeps_a_key_drop_at_a_plot_and_says_nothing_about_ke
         s = Screen(tmp_path, monkeypatch, raw=REAL)
         s.write(SAVED)
         await s.restore()
-        assert steps_of(s.state()) == {"subtab_p1": [("filter_row", "year"), ("drop_column", "sample_id"), ("drop_column", "source")], "subtab_p2": [("drop_column", "sample_id")]}
+        assert steps_of(s.state()) == {"T3:p1": [("filter_row", "year"), ("drop_column", "sample_id"), ("drop_column", "source")], "T3:p2": [("drop_column", "sample_id")]}
         assert s.texts("join key") == [] and s.texts("is read as") == []
     asyncio.run(scenario())
 
@@ -545,9 +571,9 @@ def test_a_restored_session_without_a_refused_drop_says_nothing_about_keys(tmp_p
 
     async def scenario():
         s = Screen(tmp_path, monkeypatch, raw=REAL)
-        s.write({"subtab_p1": [filter_step("sample_id"), drop_step("source", reason="noise")]})
+        s.write(bucket(p1=[filter_step("sample_id"), drop_step("source", reason="noise")]))
         await s.restore()
-        assert steps_of(s.state())["subtab_p1"] == [("filter_row", "sample_id"), ("drop_column", "source")]
+        assert steps_of(s.state())["T3:p1"] == [("filter_row", "sample_id"), ("drop_column", "source")]
         assert s.texts("STAND-IN") == []
     asyncio.run(scenario())
 
@@ -561,7 +587,7 @@ def test_a_restore_without_an_open_recipe_applies_the_steps_as_saved(tmp_path, m
         s = Screen(tmp_path, monkeypatch, raw=None)
         s.write(SAVED)
         await s.restore()
-        assert ("drop_column", "sample_id") in steps_of(s.state())["subtab_p1"]
+        assert ("drop_column", "sample_id") in steps_of(s.state())["T3:p1"]
         assert s.texts("STAND-IN") == []
     asyncio.run(scenario())
 
@@ -577,9 +603,9 @@ def test_an_imported_session_zip_with_a_refused_drop_is_restored_the_same_way(tm
         target = Screen(tmp_path, monkeypatch, raw=REAL, name="this_machine")
         assert target.manager.import_session_zip(zip_bytes) == KEY
         assert any(n["node_type"] == "drop_column" and n["params"]["column"] == "sample_id"
-                   for n in target.manager.list_t3_ghosts(KEY)[0]["t3_audit_steps_by_plot"]["subtab_p1"]), "the import itself keeps the file as it is"
+                   for n in target.manager.list_t3_ghosts(KEY)[0]["t3_audit_steps_by_plot"][PLACES_BUCKET]), "the import itself keeps the file as it is"
         await target.restore()
-        assert steps_of(target.state()) == {"subtab_p1": [("filter_row", "year"), ("drop_column", "source")], "subtab_p2": []}
+        assert steps_of(target.state()) == {"T3:p1": [("filter_row", "year"), ("drop_column", "source")]}
         assert len(target.texts("STAND-IN")) == 1
     asyncio.run(scenario())
 
@@ -600,11 +626,11 @@ def test_restore_does_not_change_the_saved_file(tmp_path, monkeypatch):
 # --------------------------------------------------------------------------------------------- place 7: the export and the view
 
 def test_the_export_and_the_view_apply_the_steps_they_are_given_a_key_drop_at_a_plot_is_applied():
-    """Pins today's behaviour: `audited_frame` does not know the join keys; it drops what the list says. By place (D-0358) a key column dropped in a plot's own steps is
-    a legitimate step (nothing is built from the plot), so the list may hold one and the export applies it, as the view does."""
-    lf = pl.DataFrame({"sample_id": ["a"], "year": [1]}).lazy()
-    assert audited_frame(lf, [drop_step("sample_id")], "p1").collect_schema().names() == ["year"]
-    assert audited_frame(lf, [drop_step("year")], "p1").collect_schema().names() == ["sample_id"]
+    """By place (D-0358) a key column dropped in a plot's own steps is a legitimate step (nothing is built from the plot), so the audit copy (the one source of the view and the
+    export) writes it at `T3:<plot>`: the same step in the exported recipe and in the table of the view."""
+    for column in ("sample_id", "year"):
+        (written,) = all_audit_steps(audit_copy_for(REAL, [drop_step(column, reason="why")]).recipe)
+        assert written.place == "T3:p1" and written.step["action"] == "polars_drop" and written.step["columns"] == [column]
 
 
 # ------------------------------------------------------------------------------------------------ review item 8 (slice B)

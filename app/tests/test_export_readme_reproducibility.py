@@ -45,7 +45,7 @@ def test_built_completely_says_included(tmp_path, monkeypatch):
 
 def test_a_build_that_raised_says_requested_and_not_built(tmp_path, monkeypatch):
     """Fails without the fix: the README said "included" while the folder held only ERROR.txt."""
-    monkeypatch.setattr("blueprint_arch.t3_translator.build_mode2_recipe", mock.Mock(side_effect=ValueError("cannot translate")))
+    monkeypatch.setattr("app.handlers.export_handlers.bake_place_steps", mock.Mock(side_effect=ValueError("cannot translate")))
     zf, line, _notes = _export(tmp_path, monkeypatch, True)
     assert any(n.endswith("data_analysis_recipes_reproducibility/ERROR.txt") for n in zf.namelist())
     assert line.startswith("Reproducibility  : requested") and "NOT built" in line

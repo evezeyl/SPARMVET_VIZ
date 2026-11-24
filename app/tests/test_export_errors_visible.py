@@ -130,7 +130,7 @@ def test_the_generator_tells_which_pictures_got_no_keys(tmp_path, monkeypatch):
 
 def test_a_reproducibility_step_that_fails_is_told(tmp_path, monkeypatch):
     """MUTATION E6 fails here. Before: ERROR.txt inside the zip and nothing on the screen."""
-    monkeypatch.setattr("blueprint_arch.t3_translator.build_mode2_recipe", mock.Mock(side_effect=ValueError("cannot translate")))
+    monkeypatch.setattr("app.handlers.export_handlers.bake_place_steps", mock.Mock(side_effect=ValueError("cannot translate")))
     notes = []
     archive = _bundle(World(tmp_path), notes, monkeypatch, {"export_include_reproducibility": True})
     assert any(n.endswith("data_analysis_recipes_reproducibility/ERROR.txt") for n in archive.namelist()), "as before"

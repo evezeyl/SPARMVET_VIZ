@@ -104,11 +104,37 @@ class AuditRun:
     tables: Dict[str, TableRun] = field(default_factory=dict)
     plots: Dict[str, PlotRun] = field(default_factory=dict)
     inputs_changed: tuple = ()   # one sentence per build whose inputs changed while it ran ("the data files changed"): that table was not stored
+    context: Optional["_Run"] = field(default=None, compare=False, repr=False)   # what `plot_table` needs to read a plot of the copy (set by `run_audit`)
 
     @property
     def affected_plots(self) -> List[str]:
         """The plots whose table differs in content between the original and the audit run, in the order of the recipe."""
         return [plot_id for plot_id, run in self.plots.items() if run.affected]
+
+    def plot_table(self, plot_id: str, told: Optional[Callable[[InputsChanged], None]] = None) -> Optional[pl.LazyFrame]:
+        """The table a plot reads in the copy, LAZY, read from the tables this run placed; None when the copy leaves the plot's table as it is (the plot's key is the
+        original's: the plot lies below no audit step), so that the caller reads the original's table as it always does. KeyError for a plot the recipe does not have.
+        `told` receives what a build says when its inputs changed while it read (the same callback as `materialize_tier3`)."""
+        if plot_id not in self.plots:
+            raise KeyError(f"The recipe has no plot '{plot_id}'.")
+        if self.plots[plot_id].reused or self.context is None:
+            return None
+        return self.context.plot_lazy(plot_id, told)
+
+    def audited_frames(self) -> Dict[str, Dict[str, pl.DataFrame]]:
+        """The tables the copy changes, at each tier where it changes them: `{table: {"T1": frame, "T2": frame}}`, a tier left out when the copy's table at that tier is
+        the original's (a table beside the place has no entry). The frames are read from the stored tables of this run (the audit's own folder), collected. The export
+        writes them beside the originals (PROVISIONAL form, owner 2026-11-24)."""
+        found: Dict[str, Dict[str, pl.DataFrame]] = {}
+        for table, run in self.tables.items():
+            frames: Dict[str, pl.DataFrame] = {}
+            if run.t1 != FROM_ORIGINAL:
+                frames["T1"] = pl.read_parquet(run.t1_path)
+            if run.t2 not in (FROM_ORIGINAL, NONE) and run.t2_path is not None:
+                frames["T2"] = pl.read_parquet(run.t2_path)
+            if frames:
+                found[table] = frames
+        return found
 
     @property
     def built_tables(self) -> List[str]:
@@ -184,6 +210,12 @@ class _Run:
                                         on_inputs_changed=self.told(changed, f"the audit's table '{table}' (tier 2)"))
         return TableRun(table, k1o, k1c, t1, t1_path, k2o, k2c, t2, t2_path)
 
+    def plot_lazy(self, plot_id: str, told: Optional[Callable[[InputsChanged], None]] = None) -> pl.LazyFrame:
+        """The lazy table of a plot of the copy, over the tables the run placed (the Tier 3 of a copy is stored nowhere, see `materialize_tier3`)."""
+        target = self.graph.plot_target(plot_id)
+        return self.orch.materialize_tier3(self.recipe_id, plot_id, self.t1_dir(target, self.keys_audit, self.audit_dir), keys=self.keys_audit,
+                                           loaded=self.audit_loaded, tier2_path=self.t2_path(target, self.keys_audit, self.audit_dir), on_inputs_changed=told)
+
     def plot_frame(self, plot_id: str, loaded: LoadedDataAnalysisRecipe, keys: DataAnalysisRecipeKeys, out_dir: Path, changed: List[str]) -> pl.DataFrame:
         """The table a plot reads in the copy, collected. The tables under it are those `copy_table` placed."""
         target = self.graph.plot_target(plot_id)
@@ -257,6 +289,7 @@ class _Run:
             except Exception as error:
                 self.refuse(error, places, lambda loaded, keys, out, changed, table=table: self.copy_table(table, loaded, keys, out, changed))
         plots: Dict[str, PlotRun] = {}
+        failures: List[AuditRunError] = []     # every plot whose table cannot be built from the audit steps is named, not only the first (the export tells them all)
         for plot_id in self.graph.plots():
             key_original, key_audit = self.keys_original.plot_key_of(plot_id), self.keys_audit.plot_key_of(plot_id)
             if key_original == key_audit:
@@ -265,12 +298,20 @@ class _Run:
             try:
                 table_audit = self.plot_frame(plot_id, self.audit_loaded, self.keys_audit, self.audit_dir, self.changed)
             except Exception as error:
-                self.refuse(error, self.plot_places(plot_id), lambda loaded, keys, out, changed, plot_id=plot_id: self.plot_frame(plot_id, loaded, keys, out, changed))
+                try:
+                    self.refuse(error, self.plot_places(plot_id), lambda loaded, keys, out, changed, plot_id=plot_id: self.plot_frame(plot_id, loaded, keys, out, changed))
+                except AuditRunError as refused:
+                    failures.append(refused)
+                    continue
             table_original = self.orch.materialize_tier3(self.recipe_id, plot_id, self.original_dir, keys=self.keys_original,
                                                          on_inputs_changed=self.told(self.changed, f"the original's table of the plot '{plot_id}'")).collect()
             plots[plot_id] = PlotRun(plot_id, key_original, key_audit, False, not table_original.equals(table_audit))
+        if failures:
+            first = failures[0]
+            texts = list(dict.fromkeys(str(f) for f in failures))      # the same step that breaks several plots is told once
+            raise first if len(texts) == 1 else AuditRunError(" ".join(texts), first.step_id, first.place)
         self.clean(tables)
-        return AuditRun(self.recipe_id, self.audit_dir, tables, plots, tuple(self.changed))
+        return AuditRun(self.recipe_id, self.audit_dir, tables, plots, tuple(self.changed), self)
 
     def clean(self, tables: Dict[str, TableRun]) -> None:
         """Take out of the audit's folder the stored tables that are the original's again: a leftover that cannot be served today can be served by a

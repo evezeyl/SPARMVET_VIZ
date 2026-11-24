@@ -147,7 +147,7 @@ Ticking **"Also include a reproducibility/reimport bundle"** in the Export panel
 
 This add-on is for the reader who wants to **re-run** your analysis, not just check it — a collaborator continuing the work, or a reviewer who wants to reproduce a number themselves. It is never a replacement for the always-included content; checking the box only adds to the bundle, it changes nothing in what was already there (and `effective_run.yaml` is identical either way, which is how you can prove the two are the same analysis — see the field-by-field comparison above).
 
-Not every audited step can always be rewritten as a real recipe action (some filter operators the engine doesn't yet support as a standalone step). When that happens, the affected plot is named in `effective_run.yaml`'s `t3_translation_skipped` field — the plot and its data are still in the always-included content, just not replayable from the recipe yet.
+Every audited step is written into the recipe as a real recipe action, at the place where you wrote it: the tier 1 or tier 2 of a table, or the own steps of a plot (the join is not copied per plot any more). If a step cannot be written as an action, the reproducibility part stops with an error file (`ERROR.txt`) and the README says so; no step is left out in silence. Older bundles may name plots in `effective_run.yaml`'s `t3_translation_skipped` field; the import still reads it.
 
 ---
 

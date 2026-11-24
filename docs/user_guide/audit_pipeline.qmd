@@ -63,6 +63,23 @@ When you author an audit decision that's eligible for propagation, SPARMVET show
 
 Linked deletion: if you've propagated to multiple plots and later click 🗑 on the node in *any* of those plots, the node is removed from *all* of them. The audit pipeline thinks of a propagated node as one decision applied many places, not many independent decisions.
 
+## Where the step is written: at this plot, or at a table it is built from
+
+The three choices above write the step at the **tier 3 of each plot** (the last step of the plot's own table). A fourth choice acts **earlier in the recipe**:
+
+- **At a table this plot is built from** — the step is written at the tier 1 (or the tier 2) of a table the plot is built from, for example the table *ResFinder*. Every table and every plot built from that table is then built again from it, and they all show the audited result. The dialog lists each table with what is built from it ("2 other tables and 5 plots are built from it"), so you see how far the step reaches before you confirm. "Built from it" does not say that the table changes: the plot badge tells you afterwards, for each plot, whether its table changed or is the same as the original.
+- You choose **one place on a path**. A table and a table built from it cannot both be chosen in one step, and neither can a table and the plot built from it (the list also holds the line "Plot … (tier 3)"); the dialog says which two. The first tables of several *original* tables may be chosen together. Two separate decisions at different places are fine: they are applied tier by tier (tier 1, then tier 2, then tier 3), and inside a tier in the order you wrote them.
+- Only the tables that hold the column of your step are listed.
+- A drop of a column that a later join reads as a key is refused at its place, with the join named.
+
+A typical case: the app adds a line "missing in original table" for a sample that has no ResFinder result (its marker column `ResFinder_not_in_original_data` is true). To leave these lines out of every analysis built from ResFinder, filter on the marker at the **tier 1 of ResFinder**, with your reason. The plots that read those lines lose them; a plot that does not read them keeps its table and says so in its badge; a plot built from other tables is not touched.
+
+The audit card says where the step is written. **Compare** shows the original plot beside the audited one. The **T1** and **T2** views always show the original tables; the **T3** view is the audited table. The 🗑 of the card removes the step and every table and plot is built again without it. In the export, the data file of each plot built from the table is the audited table, `t3_steps.yaml` lists the step with its place (`steps_by_place`), the README and the report say where it is written and why, and the reproducibility recipe holds it as a plain step at the end of that tier (for a step at a plot: in the plot's own tier-3 steps).
+
+### The table files of an export made in Audit mode
+
+When you export while you are in **Audit** mode, every table that an audit step changes (the table of the place and every table built from it) comes **twice** in the bundle: the original, `T1_data.tsv`, and the audited one beside it, `T1_data_audited.tsv` (and `T2_data_audited.tsv` for a tier 2). The original is unchanged. A table that no step changes has only its original, and a step written at a plot changes no table, only that plot's `T3_data_<plot>.tsv`. The README and the report tell, for each table, which file is which and which steps made the difference. When you export in **Exploration** mode the table files are the originals only, whatever audit steps exist (the plots and the plot's T3 file are always audited); the README says so.
+
 ### Propagation preview — read it before you confirm
 
 Before you click *Add to audit pipeline*, the modal shows a per-plot preview of where the filter will actually land:

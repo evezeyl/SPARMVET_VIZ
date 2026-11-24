@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from app.modules.session_manager import LegacySessionError, SessionManager
+from app.modules.session_manager import SESSION_FORMAT_VERSION, LegacySessionError, SessionManager
 from utils.config_loader import ConfigManager
 
 REPO = Path(__file__).resolve().parents[2]
@@ -85,7 +85,7 @@ def sm(tmp_path):
 
 # D-0312: a session saved before the redesign carries no format number and is refused as a whole, nothing is converted
 # (the older rename-key refusal and its migration hint stay for a file that has the current number and old keys).
-CURRENT_KEYS_OLD_NAMES = {**OLD_SESSION, "schema_version": 3}
+CURRENT_KEYS_OLD_NAMES = {**OLD_SESSION, "schema_version": SESSION_FORMAT_VERSION}
 
 
 def test_old_assembly_ghost_is_refused_as_saved_by_an_older_version(sm):

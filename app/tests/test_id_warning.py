@@ -225,3 +225,32 @@ def test_the_opening_without_a_warning_slot_still_runs_the_checks_and_does_not_f
     opening = Opening(Tier3World(tmp_path), monkeypatch)
     opening.run()
     assert len(calls) == 1 and opening.current()["status"] == "ready"
+
+
+# -- the export sentence and the title say only what is true (found by the review of the id warning) ----------------------------
+
+def test_the_export_says_the_ids_were_not_equal_only_when_they_really_differ(tmp_path):
+    from dataclasses import replace
+    from app.modules.id_check_run import IdCheckRun
+    from app.modules.id_warning import ids_differ
+    from utils.id_log import LogOutcome
+    # 1. ids that really differ: the sentence says so
+    differ, _, _ = run_of(tmp_path / "d", {"A": ["s1"]}, metadata=["s1", "s2"])
+    assert ids_differ(differ) and "were not equal" in export_sentences(differ, ReadStatus(False))[0]
+    # 2. the checks could not be made: the sentence says that, never "not equal"
+    failed = IdCheckRun(report=None, lines=(), outcome=None, error="the table A cannot be read")
+    assert not ids_differ(failed) and has_warning(failed)
+    text = "\n".join(export_sentences(failed, ReadStatus(False)))
+    assert "could not be made" in text and "not known whether the ids" in text and "were not equal" not in text and "The ids are equal" not in text
+    # 3. the ids are equal and only the log could not be written: the sentence says that, never "not equal"
+    equal, _, _ = run_of(tmp_path / "e", {"A": ["s1"]}, metadata=["s1"])
+    broken = replace(equal, outcome=LogOutcome(written=False, new=True, path=None, text="the entry", problem="the folder cannot be written"))
+    assert not ids_differ(broken) and has_warning(broken)
+    text = "\n".join(export_sentences(broken, ReadStatus(False)))
+    assert "equal in every table" in text and "could not be written" in text and "were not equal" not in text and "written automatically" not in text
+    assert ids_differ(replace(differ, error="x")), "a difference stays a difference when a check also failed"
+
+
+def test_the_title_of_the_warning_is_true_when_the_only_finding_is_the_log():
+    from app.handlers.id_warning_handlers import LOG_TITLE, TITLE
+    assert LOG_TITLE == "The log of the ids could not be written." and TITLE != LOG_TITLE

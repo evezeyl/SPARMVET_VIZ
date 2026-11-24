@@ -16,9 +16,9 @@ import pytest
 import transformer.actions  # noqa: F401
 from app.modules.renamed_keys import audit_step_defect
 from app.modules.t3_audit_engine import (
-    _apply_filter_rows, audited_frame, compose_datetime, compose_duration, compose_time, dialog_value, ops_for_column, staged_filter_row,
+    _apply_filter_rows, compose_datetime, compose_duration, compose_time, dialog_value, ops_for_column, staged_filter_row,
 )
-from app.tests.audit_nodes import filter_nodes, home_plot_data
+from app.tests.audit_nodes import audited_lf, filter_nodes, home_plot_data
 from blueprint_arch.t3_translator import translate_t3_node
 from transformer.actions.base import AVAILABLE_WRANGLING_ACTIONS
 
@@ -42,7 +42,7 @@ def home_table(rows):
 
 
 def bundle(rows):
-    return audited_frame(FRAME.lazy(), filter_nodes(rows)).collect()["s"].to_list()
+    return audited_lf(FRAME.lazy(), filter_nodes(rows)).collect()["s"].to_list()
 
 
 def plot(rows):
@@ -174,7 +174,7 @@ def test_a_value_of_false_or_zero_passes_the_check_of_an_audit_step(column, op, 
     row = dialog_row(column, op, **widgets)
     node = {"node_type": "filter_row", "params": {k: row[k] for k in ("column", "op", "value", "na")}}
     assert audit_step_defect(node) is None, row
-    assert len(audited_frame(FRAME.lazy(), [{**node, "reason": "r"}]).collect()) >= 0
+    assert len(audited_lf(FRAME.lazy(), [{**node, "reason": "r"}]).collect()) >= 0
 
 
 @pytest.mark.parametrize("dtype", [pl.Date, pl.Boolean, pl.Time, pl.Duration, pl.Datetime("us")])

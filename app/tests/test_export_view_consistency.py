@@ -9,8 +9,7 @@ Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_export_view_consis
 import pytest
 
 from app.handlers.export_handlers import blocked_export_notice, changed_since_view
-from app.modules.t3_audit_engine import AuditStepError, audited_frame
-from app.tests.audit_nodes import filter_nodes
+from app.tests.audit_nodes import audited_lf as audited_frame, filter_nodes
 from app.modules.cache_keys import clear_data_analysis_recipe_cache
 from app.tests.test_cache_chain import FILTER_A, FILTER_B
 from app.tests.test_tier2_store import Tier2World
@@ -102,8 +101,8 @@ def test_my_view_applies_column_drops_and_refuses_unknown_ones(world):
     never ignored; the columns that are there are dropped."""
     out = audited_frame(base(world), filter_nodes([], ["group"])).collect()
     assert out.columns == ["sample_id", "not_in_original_data"]   # the marker column of the completion of the ids is a normal column of the table
-    with pytest.raises(AuditStepError, match="no_such_column"):
-        audited_frame(base(world), filter_nodes([], ["group", "no_such_column"]))
+    with pytest.raises(Exception, match="no_such_column"):
+        audited_frame(base(world), filter_nodes([], ["group", "no_such_column"])).collect()
 
 
 def test_my_view_with_a_filter_that_removes_every_row_is_empty_not_an_error(world):
@@ -128,7 +127,7 @@ AUDITED = [{"column": "sample_id", "op": "ne", "value": "s2", "dtype": "Utf8"}]
 def test_the_rule_has_no_way_to_let_exploration_in():
     """The function takes only the audit steps of the plot: exploration filters are not an argument at all."""
     import inspect
-    assert list(inspect.signature(audited_frame).parameters) == ["lf", "nodes", "plot_id"]
+    assert list(inspect.signature(audited_frame).parameters) == ["lf", "nodes"]
 
 
 def test_the_audited_removal_really_removes_the_rows_from_the_data(world):
@@ -138,13 +137,16 @@ def test_the_audited_removal_really_removes_the_rows_from_the_data(world):
 
 
 def test_an_export_whose_audit_steps_cannot_run_is_refused_with_the_reason(world):
-    """PLOT-TABLE-ORDER-1: the text of EXPORT_NOT_CREATED.txt names the plot, the step, the column and the step that removed it."""
+    """PLOT-TABLE-ORDER-1: the text of EXPORT_NOT_CREATED.txt gives the reason the audit copy names (the step, its place, the engine's words)
+    and the plot whose table showed it; the steps themselves refuse to run on the table (the filter on a column the drop removed)."""
     from app.handlers.export_handlers import blocked_audit_notice
+    from app.modules.audit_run import AuditRunError
 
     nodes = filter_nodes([{"column": "sample_id", "op": "ne", "value": "s2", "dtype": "Utf8"}], ["group"])
     nodes += filter_nodes([{"column": "group", "op": "eq", "value": "A", "dtype": "Utf8"}])
-    with pytest.raises(AuditStepError) as caught:
-        audited_frame(base(world), nodes)
-    text = blocked_audit_notice([("the_plot", caught.value)])
+    with pytest.raises(Exception, match="group"):
+        audited_frame(base(world), nodes).collect()
+    error = AuditRunError("The audit step audit_1a2b3c4d_3 at T3:the_plot cannot be applied: column 'group' is not in the table", "audit_1a2b3c4d_3", "T3:the_plot")
+    text = blocked_audit_notice([("the_plot", error)])
     assert text.startswith("EXPORT NOT CREATED") and "'the_plot'" in text
-    assert "audit step 3" in text and "audit step 2" in text and "group" in text and "nothing was exported" in text
+    assert "audit_1a2b3c4d_3" in text and "T3:the_plot" in text and "group" in text and "nothing was exported" in text

@@ -1,0 +1,83 @@
+"""What HOME and the export read when audit steps are written at a place (tier 1, tier 2 or tier 3) (HOME audit, demo steps 2 and 7).
+
+One object per open recipe: it makes the audit copy of the recipe from the committed place nodes (`audit_places.audit_copy_for`), runs it (`audit_run.run_audit`, which builds
+into a folder of its own and never touches the stored tables of the original) and hands out the table a plot reads in the copy. Every reader of the audited plot (the plot, the
+T3 table, the filter dialog, the results bundle) asks this one object, so they cannot differ ("a plot equals its table").
+
+- No place node: nothing is built, the audit folder is removed when it exists (a stored table that cannot be served today is not left for a later bug,
+  `rules_verification_testing.md` section 9) and every plot reads its original table (the answer is None).
+- Place nodes (tier 1, tier 2 or tier 3): the run is made once per (recipe, data, nodes); a plot no step reaches reads its original table (None); a plot a step reaches (written at its own tier 3 or at a table it is built from) reads the lazy table of the copy.
+- A step that cannot be applied raises `AuditRunError`, naming the step and its place: never skipped (D-0102). The caller shows it in the place of the plot.
+
+Pure of Shiny. Consumed by: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/tests/test_audit_view.py.
+
+# @deps
+# provides: class:PlaceAudit, constant:AUDIT_ERRORS
+# consumes: app/modules/audit_places.py (audit_copy_for, nodes_signature), app/modules/audit_run.py (run_audit, AuditRun), app/modules/cache_keys.py (load_data_analysis_recipe), app/modules/orchestrator.py (DataOrchestrator)
+# consumed_by: app/handlers/home_theater.py, app/handlers/export_handlers.py, app/tests/test_audit_view.py
+# doc: .claude/rules/ui_implementation_contract.md#12g, .claude/knowledge/architecture_decisions.md#adr-101
+# @end_deps
+"""
+from __future__ import annotations
+
+import shutil
+from pathlib import Path
+from typing import Any, Callable, Iterable, List, Optional
+
+from app.modules.audit_places import audit_copy_for, nodes_signature
+from app.modules.audit_run import AuditRun, AuditRunError, run_audit
+from app.modules.cache_keys import load_data_analysis_recipe
+from app.modules.orchestrator import DataOrchestrator, InputsChanged
+from blueprint_arch.t3_translator import UntranslatableNode
+from utils.audit_copy import AuditCopyError
+from utils.plan_book import PlanBook
+
+# What the audit copy raises when a committed step cannot be made into a step of the copy or cannot be run, each with a plain sentence that names the step and its place:
+# every reader shows it in the place of the table or the plot, never skips the step (D-0102).
+AUDIT_ERRORS = (AuditRunError, AuditCopyError, UntranslatableNode)
+
+
+class PlaceAudit:
+    """The audit of one recipe whose steps are written at places. `original_dir`: the stored tables of the original; `audit_dir`: the folder of the copy's own tables
+    (not inside `original_dir`, `run_audit` refuses it)."""
+
+    def __init__(self, orchestrator: DataOrchestrator, original_dir: Path, audit_dir: Path) -> None:
+        self.orch = orchestrator
+        self.original_dir = Path(original_dir)
+        self.audit_dir = Path(audit_dir)
+        self._memo: Optional[tuple] = None          # (signature, AuditRun)
+
+    def run_of(self, recipe_id: str, nodes: Iterable[dict], plans: Optional[PlanBook] = None) -> Optional[AuditRun]:
+        """The run of the copy made from `nodes` (the committed place nodes), or None when there is none. Raises `AuditRunError`, `AuditCopyError` or `UntranslatableNode`
+        with a plain sentence when the copy cannot be made or run; nothing is kept then."""
+        listed = list(nodes)
+        if not listed:
+            self._memo = None
+            shutil.rmtree(self.audit_dir, ignore_errors=True)
+            return None
+        keys = self.orch.compute_data_analysis_recipe_keys(recipe_id)
+        signature = (recipe_id, keys.data_analysis_recipe_sha256, keys.data_batch_hash, nodes_signature(listed))
+        if self._memo is not None and self._memo[0] == signature:
+            return self._memo[1]
+        self._memo = None
+        original = load_data_analysis_recipe(self.orch.data_analysis_recipes_dir / f"{recipe_id}.yaml")
+        audit = audit_copy_for(original.raw, listed, plans)
+        run = run_audit(self.orch, recipe_id, audit.recipe, self.original_dir, self.audit_dir)
+        self._memo = (signature, run)
+        return run
+
+    def plot_lazy(self, recipe_id: str, plot_id: str, nodes: Iterable[dict], plans: Optional[PlanBook] = None,
+                  told: Optional[Callable[[InputsChanged], None]] = None) -> Optional[Any]:
+        """The table `plot_id` reads in the copy, a Polars lazy frame (typed `Any`: this file names no engine); None when there is no copy or no step reaches the plot (neither at its own tier 3 nor at a table it is built from): it then reads its original table."""
+        run = self.run_of(recipe_id, nodes, plans)
+        if run is None:
+            return None
+        for text in run.inputs_changed:                 # a table of the run was built while its inputs changed and was not stored: the caller is told, as for every build
+            if told is not None:
+                told(InputsChanged(text))
+        return run.plot_table(plot_id, told)
+
+    def affected_plots(self, recipe_id: str, nodes: Iterable[dict], plans: Optional[PlanBook] = None) -> List[str]:
+        """The plots whose table differs in CONTENT between the original and the copy, in the order of the recipe (ADR-101 point 6: a step that removes nothing affects none)."""
+        run = self.run_of(recipe_id, nodes, plans)
+        return [] if run is None else run.affected_plots

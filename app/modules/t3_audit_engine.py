@@ -6,16 +6,16 @@ Two-Category Law (ADR-045): this module is a non-Shiny module
 (no @render.* / @reactive.* decorators) and may be imported from any
 context — handlers, modules, scripts, tests.
 
-Initial scope (24-A): _apply_filter_rows. Future steps will add
-extract_t3_filter_rows / extract_t3_drop_columns.
+Scope: the filter dialog's helpers (values, operators, widgets, the identity of the table it reads) and the exploration filter `_apply_filter_rows`. The audit steps
+themselves (a filter or a column drop written at a tier) are not applied here: the audit copy (`utils.audit_copy`, run by `app/modules/audit_view.py`) holds them.
 """
 
 from __future__ import annotations
 
 # @deps
-# provides: function:refuse_decimal_for_whole_numbers, function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:filter_rows_from_nodes, function:staged_filter_row, function:rows_built_on, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:audited_frame, function:audit_steps_in_order, function:dialog_frame, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:audit_failures, function:filters_cleared_notice, function:viewed_table, function:view_key, function:view_change_notice, function:column_is_in_frame, function:value_box_kind, function:between_ends, class:EmptyBox, class:BetweenIncomplete, constant:BETWEEN_INCOMPLETE_LINE, class:AuditStepError
-# consumes: polars, app/modules/orchestrator.py (TIER1_KEY_META, TIER2_KEY_META, tier2_path_for), libs/utils/src/utils/errors.py, libs/utils/src/utils/pipeline_error.py, libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
-# consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_step_order.py, app/tests/test_removed_audit_step_type.py, app/tests/test_audit_error_names_the_plot.py, app/tests/test_filters_cleared_on_recipe_change.py, app/tests/test_filter_value_kept.py
+# provides: function:refuse_decimal_for_whole_numbers, function:dialog_value, function:not_offered_line, function:column_types, function:value_choices, function:pick_values, function:number_range, function:typed_operand, function:compose_date, function:compose_time, function:compose_datetime, function:compose_duration, function:column_bounds, function:control_hint, function:readable_duration, function:list_note, constant:LIST_ON_DEMAND_FROM, function:ops_for_column, function:value_widget_for, function:column_type_line, function:closed_phrase, function:between_prose, constant:CLOSED_CHOICES, function:_apply_filter_rows, function:staged_filter_row, function:rows_built_on, function:audit_params_from_row, function:inapplicable_filter_rows, function:describe_filter, function:op_choice_label, function:dialog_schema_signature, function:stored_key, function:stored_table_identity, function:source_table_identity, function:dialog_rows_signature, function:filters_cleared_notice, function:viewed_table, function:view_key, function:view_change_notice, function:column_is_in_frame, function:value_box_kind, function:between_ends, class:EmptyBox, class:BetweenIncomplete, constant:BETWEEN_INCOMPLETE_LINE
+# consumes: polars, app/modules/orchestrator.py (TIER1_KEY_META, TIER2_KEY_META, tier2_path_for), libs/utils/src/utils/filter_values.py, libs/utils/src/utils/missing_values.py, libs/utils/src/utils/na_choice.py
+# consumed_by: app/handlers/home_theater.py, app/handlers/filter_and_audit_handlers.py, app/handlers/export_handlers.py, app/tests/test_filter_dialog_values.py, app/tests/test_filter_four_way_pickers.py, app/tests/test_filters_cleared_on_recipe_change.py, app/tests/test_filter_value_kept.py
 # doc: .claude/knowledge/architecture_decisions.md#ADR-051
 # @end_deps
 
@@ -29,9 +29,6 @@ import polars as pl
 
 from utils import action_names
 from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, tier2_path_for
-from app.modules.renamed_keys import FIX_IN_APP, audit_step_defect
-from utils.errors import TransformationError
-from utils.pipeline_error import PipelineError
 from utils.filter_values import (
     UNIT_NS, FilterValueError, duration_ns, filter_condition, kind_of, read_filter_value, type_words, unit_and_zone,
 )
@@ -627,31 +624,6 @@ def inapplicable_filter_rows(lf, filter_rows: list) -> list:
     return [f for f in filter_rows if f.get("column") is not None and f.get("column") not in names]
 
 
-def filter_rows_from_nodes(nodes: list) -> list[dict]:
-    """The filter rows of the active `filter_row` and `exclusion_row` audit steps, with their `na` choice.
-
-    A step written before the choice existed has no `na` and is carried as "remove", what it always did.
-    """
-    rows: list[dict] = []
-    for n in nodes:
-        if not n.get("active", True) or n.get("node_type") not in ("filter_row", "exclusion_row"):
-            continue
-        p = n.get("params", {})
-        if "column" not in p:
-            continue
-        row = {
-            "column": p.get("column"),
-            "op": p.get("op", "eq"),
-            "value": p.get("value"),
-            "dtype": p.get("dtype", "Utf8"),
-            "na": na_of(p),
-        }
-        if row["op"] == "between":
-            row["closed"] = p.get("closed", "both")
-        rows.append(row)
-    return rows
-
-
 def staged_filter_row(column: str, op: str, value, dtype: str, na_tick: bool | None, closed: str = "both", view: tuple | None = None) -> dict:
     """The filter row the "+ Add" button stages: the tick of the dialog is recorded, never dropped.
 
@@ -717,129 +689,6 @@ def _apply_filter_rows(lf, filter_rows: list) -> "pl.LazyFrame":
         # NA-RULE-63: "keep" adds the rows with no value; a row without `na` removes them
         lf = lf.filter(keep_missing(condition, col, na_of(f)))
     return lf
-
-
-# -- the audited steps of a plot, in one place (PLOT-TABLE-ORDER-1) -------------------------------------------------
-
-class AuditStepError(TransformationError):
-    """An audited step that cannot run on the table it meets: its column is not there.
-
-    The message says which step (its number in the plot's list and its reason), the column, the step that removed it
-    (when one did) and the fix. It carries a `PipelineError`, so the Alerts panel and the Processing issues table hold the same
-    text. The HOME table, the HOME plot and the export show or write it; none of them skips the step.
-    """
-
-
-def _of_plot(plot_id: str | None) -> str:
-    return f" of the plot '{plot_id}'" if plot_id else ""
-
-
-def _step_words(step: dict, plot_id: str | None = None) -> str:
-    what = (f"drop column {step['column']}" if step["kind"] == "drop"
-            else describe_filter(step["column"], step["row"]["op"], step["row"]["value"], step["row"]["na"],
-                                 step["row"].get("closed")))
-    reason = f', reason: "{step["reason"]}"' if step["reason"] else ""
-    return f"audit step {step['number']}{_of_plot(plot_id)} ({what}{reason})"
-
-
-def _step_error(step: dict, remover: dict | None, columns: list, plot_id: str | None = None) -> AuditStepError:
-    column = step["column"]
-    engine = f"step {action_names.DROP if step['kind'] == 'drop' else action_names.FILTER}: column {column!r} is not in the table"
-    if remover is not None:
-        why = f"The {_step_words(remover, plot_id)} removed it before."
-        fix = (f"remove audit step {remover['number']} or audit step {step['number']} from the plot's audit list "
-               "(the steps run in the order they were recorded)")
-    else:
-        why = f"The table has the columns {', '.join(columns)}."
-        fix = f"remove audit step {step['number']} from the plot's audit list, or use a column of the table"
-    problem = f"The {_step_words(step, plot_id)} cannot run: {engine}. {why}"
-    pipeline_error = PipelineError(
-        component="T3Audit", problem=problem, location=f"audit step {step['number']}{_of_plot(plot_id)}",
-        fix=fix[:1].upper() + fix[1:] + ".", who="analyst", category="t3_apply", surface="audit_panel",
-        evidence={"plot": plot_id, "audit_step": step["number"], "column": column,
-                  "removed_by_audit_step": remover["number"] if remover else None},
-        reference="ui_implementation_contract.md section 12 and 14; PLOT-TABLE-ORDER-1")
-    return AuditStepError(f"{problem} Fix: {fix}.", tip=fix[:1].upper() + fix[1:] + ".", pipeline_error=pipeline_error)
-
-
-def _refused_step_error(node: dict, number: int, defect: str, plot_id: str | None) -> AuditStepError:
-    """A step the app cannot apply (unknown or removed type, or missing what it needs): refused, never skipped in silence."""
-    reason = f', reason: "{node["reason"]}"' if node.get("reason") else ""
-    off = ", switched off" if not node.get("active", True) else ""
-    problem = f"The audit step {number}{_of_plot(plot_id)} (id {node.get('id', '?')}{reason}{off}) is refused: {defect}."
-    fix = (f"remove audit step {number} with the trash icon of the audit panel, or {FIX_IN_APP}")
-    pipeline_error = PipelineError(
-        component="T3Audit", problem=problem, location=f"audit step {number}{_of_plot(plot_id)}",
-        fix=fix[:1].upper() + fix[1:] + ".", who="analyst", category="t3_apply", surface="audit_panel",
-        evidence={"plot": plot_id, "audit_step": number, "step_type": node.get("node_type")}, reference="PLOT-TABLE-ORDER-1")
-    return AuditStepError(f"{problem} Fix: {fix}.", tip=fix[:1].upper() + fix[1:] + ".", pipeline_error=pipeline_error)
-
-
-def audit_steps_in_order(nodes: list, plot_id: str | None = None) -> list[dict]:
-    """The data steps of a plot's audit list, in the order they are applied: THE ORDER RULE (one place).
-
-    DECIDED 2026-11-15 (Eve, S2-1): the recorded order, the order of the list ("steps in the order written in the recipe and
-    performed in the audit in the same order"). It is also the order the exported recipe is written in
-    (`blueprint_arch.t3_translator.translate_plot_steps`). If the rule is ever changed, change this function only; every
-    consumer (HOME table, HOME plot, Compare, the results bundle, the check before an export, the filter dialog) reads the
-    steps from here.
-
-    A step is `{"number", "kind": "filter" | "drop", "column", "reason", "row"}`; `row` is the filter row (`filter_rows_from_nodes`).
-    `number` is the position, counted from 1, among the active steps of the list (a plot style step is not counted: it is
-    not a step of the data). A step the app cannot apply (an unknown or removed type, or a step without its column, operator or
-    value) raises `AuditStepError`, switched off or not: it is never skipped in silence.
-    """
-    steps: list[dict] = []
-    number = 0      # position among the active data steps: what the messages say
-    position = 0    # position among all data steps, switched off or not: what a refusal says
-    for node in nodes:
-        if node.get("node_type") in ("aesthetic_override", "random_seed"):
-            continue
-        position += 1
-        defect = audit_step_defect(node)
-        if defect:
-            raise _refused_step_error(node, position, defect, plot_id)
-        if not node.get("active", True):
-            continue
-        number += 1
-        kind = node["node_type"]
-        params = node.get("params") or {}
-        if kind in ("filter_row", "exclusion_row"):
-            row = filter_rows_from_nodes([node])[0]
-            steps.append({"number": number, "kind": "filter", "column": row["column"], "reason": node.get("reason", ""), "row": row})
-        else:
-            steps.append({"number": number, "kind": "drop", "column": params["column"], "reason": node.get("reason", ""), "row": None})
-    return steps
-
-
-def audited_frame(lf, nodes: list, plot_id: str | None = None):
-    """The audited data of one plot: its audited steps applied to its base frame, in the order of `audit_steps_in_order`.
-
-    The base is the table the plot reads (the stored Tier 2, Tier 1 when the table has no tier2 steps, plus the plot's own tier-3 steps):
-    build rule T3 > T2 > T1. The ONE function for HOME's T3 table in Audit mode, HOME's audited plot (also in Compare), the results bundle (`T3_data_<plot>.tsv` and the plot), the check before an
-    export and the column list of the filter dialog: they cannot differ. A step whose column is not in the table at that point
-    (never there, or removed by an earlier step) raises `AuditStepError`, which names the plot (`plot_id`); it is never skipped.
-    Exploration filters are not an argument: they are not audited and are never exported (HOME applies them with
-    `_apply_filter_rows` before calling this).
-    """
-    removed_by: dict[str, dict] = {}
-    for step in audit_steps_in_order(nodes, plot_id):
-        columns = lf.collect_schema().names()
-        if step["column"] not in columns:
-            raise _step_error(step, removed_by.get(step["column"]), columns, plot_id)
-        if step["kind"] == "drop":
-            lf = lf.drop(step["column"])
-            removed_by[step["column"]] = step
-        else:
-            lf = _apply_filter_rows(lf, [step["row"]])
-    return lf
-
-
-def dialog_frame(lf, nodes: list, with_audited_steps: bool, plot_id: str | None = None):
-    """The table the filter dialog acts on. In Audit mode on T3 (`with_audited_steps`): the plot's table after its audited steps (a column
-    that an earlier step dropped is not offered, a value list holds the rows that are still there). On any other view: the table shown, as
-    it is (Source, T1, T2, and T3 in Exploration, where no audited step is on the table). DECIDED 2026-11-15 (Eve, S2-1 (a)); D-0178."""
-    return audited_frame(lf, nodes, plot_id) if with_audited_steps else lf
 
 
 def dialog_schema_signature(types: dict, discrete: set) -> tuple:
@@ -909,7 +758,7 @@ def dialog_rows_signature(table_identity, audit_nodes) -> tuple:
     """Which rows the dialog's table holds, as a value: equal for the same rows, different when they can differ.
 
     The rows are decided by (a) the stored table the dialog reads (`stored_table_identity`) and (b) the plot's audited steps that
-    Audit mode applies to it on T3 (`audited_frame`; empty on every other view): every step in full (its type, column, operator, the whole list
+    Audit mode applies to it on T3 (the audit copy's table; empty on every other view): every step in full (its type, column, operator, the whole list
     of values, `na`, `closed`, its reason) and their order. Exploration filters are not an input: the dialog does not apply them
     (`filter_and_audit_handlers._active_frame`). Nothing is read from the printed plan of the table: a plan is only the text of the
     steps and drops what makes two tables differ (a long list of values is printed truncated, a rewritten file prints the same).
@@ -929,18 +778,3 @@ def dialog_rows_signature(table_identity, audit_nodes) -> tuple:
     except (TypeError, ValueError):
         return ("uncovered", object())
     return ("rows", table_identity, steps)
-
-
-def audit_failures(plots: list) -> list[tuple[str, AuditStepError]]:
-    """The plots whose audited steps cannot run: `plots` is a list of `(plot_id, make_base_frame, nodes)`; every failing plot
-    is returned with its error (not only the first), a plot without steps is not looked at. The check the export makes before it
-    writes anything: it runs `audited_frame`, so it says what the table and the plot say."""
-    failing: list[tuple[str, AuditStepError]] = []
-    for plot_id, make_base, nodes in plots:
-        if not nodes:
-            continue
-        try:
-            audited_frame(make_base(), nodes, plot_id)
-        except AuditStepError as error:
-            failing.append((plot_id, error))
-    return failing

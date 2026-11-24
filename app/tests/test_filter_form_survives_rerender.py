@@ -26,8 +26,9 @@ from shiny.run import ShinyAppProc
 import app.handlers.filter_and_audit_handlers as h
 from app.modules.orchestrator import TIER1_KEY_META, TIER2_KEY_META, tier2_path_for
 from app.modules.session_manager import make_audit_step
-from app.modules.t3_audit_engine import (audited_frame, dialog_rows_signature, dialog_schema_signature, stored_key,
+from app.modules.t3_audit_engine import (dialog_rows_signature, dialog_schema_signature, stored_key,
                                           stored_table_identity)
+from app.tests.audit_nodes import audited_lf
 from app.tests.browser_view import set_view
 from app.tests.conftest import shiny_app  # noqa: F401
 from app.tests.test_shiny_filter_types import typed_app  # noqa: F401 - a recipe of one table with an integer year on a discrete axis
@@ -96,7 +97,7 @@ def _identity(t1, tier="T2", unstored=0, view_key="vk"):
 
 
 def _rows_after(parquet, nodes):
-    return sorted(audited_frame(pl.scan_parquet(parquet), nodes, "p").collect()["sample_id"].to_list())
+    return sorted(audited_lf(pl.scan_parquet(parquet), nodes).collect()["sample_id"].to_list())
 
 
 class TestRowsSignatureOfTheAuditedSteps:
@@ -121,7 +122,7 @@ class TestRowsSignatureOfTheAuditedSteps:
         a = [_step("sample_id", "not_in", ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7"])]
         b = [_step("sample_id", "not_in", ["s0", "s1", "s2", "s19", "s4", "s5", "s6", "s7"])]
         assert _rows_after(table, a) != _rows_after(table, b), "the two step lists must leave other rows"
-        assert _old_plan_signature(audited_frame(pl.scan_parquet(table), a), "k1") == _old_plan_signature(audited_frame(pl.scan_parquet(table), b), "k1"), \
+        assert _old_plan_signature(audited_lf(pl.scan_parquet(table), a), "k1") == _old_plan_signature(audited_lf(pl.scan_parquet(table), b), "k1"), \
             "the defect of the plan text was not reproduced (the Polars version prints the whole list?)"
         assert self._sig(table, a) != self._sig(table, b)
 
@@ -129,7 +130,7 @@ class TestRowsSignatureOfTheAuditedSteps:
         a = [_step("sample_id", "not_in", [f"s{i}" for i in range(0, 8)])]
         b = [_step("sample_id", "not_in", [f"s{i}" for i in range(0, 4)] + ["s9"] + [f"s{i}" for i in range(4, 8)])]   # one longer; first two and last equal
         assert _rows_after(table, a) != _rows_after(table, b)
-        assert _old_plan_signature(audited_frame(pl.scan_parquet(table), a), "k1") == _old_plan_signature(audited_frame(pl.scan_parquet(table), b), "k1")
+        assert _old_plan_signature(audited_lf(pl.scan_parquet(table), a), "k1") == _old_plan_signature(audited_lf(pl.scan_parquet(table), b), "k1")
         assert self._sig(table, a) != self._sig(table, b)
 
     def test_a_changed_na_choice_or_closed_end_is_not_equal(self, table):
@@ -253,11 +254,11 @@ def _define_handler(interactivity: bool, tier: str, nodes: list, mode: str = "au
             h.define_filter_audit_server(
                 _AnyInput(), lambda fn: fn, None,
                 applied_filters=reactive.Value([]), _pending_filters=reactive.Value([]), _propagation_scratch=reactive.Value({}),
-                home_state=reactive.Value({"t3_audit_steps_by_plot": {"subtab_p": nodes}}), in_audit=lambda: mode == "audit",
+                home_state=reactive.Value({"t3_audit_steps_by_plot": {"__places__": nodes}}), in_audit=lambda: mode == "audit",
                 data_view=reactive.Value(tier), view_source_table=lambda: None, current_view_key=lambda: None,
                 active_home_subtab=reactive.Value("subtab_p"), safe_input=lambda inp, key, default=None: default,
                 _resolve_active_spec=lambda p: {"target_dataset": "t", "plot": p}, _resolve_active_lf=make_lf,
-                _spec_discrete_axes=lambda spec: ([], []), _t3_drop_columns=lambda *a: [], _all_plot_subtab_ids=lambda: [],
+                _spec_discrete_axes=lambda spec: ([], []), audit_nodes_for=lambda *a: [], _all_plot_subtab_ids=lambda: [],
                 _plot_label=lambda sub: sub, _table_identity=identity)
             await reactive.flush()
     asyncio.run(main())

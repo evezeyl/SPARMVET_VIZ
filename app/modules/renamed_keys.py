@@ -243,11 +243,12 @@ _NEEDS_WORDS = {"column": "the column", "op": "the operator", "value": "the valu
 FIX_IN_APP = "start a new session from the recipe and record the filter or the column removal again with the filter dialog"
 
 
-def audit_step_defect(step, type_key: str = "node_type", flat: bool = False) -> str | None:
+def audit_step_defect(step, type_key: str = "node_type", flat: bool = False, place_required: bool = False) -> str | None:
     """Why the app cannot apply this audit step, in a few words, or None when it can.
 
     `type_key` is `node_type` in a session file and in the audit list and `action` in the `t3_steps.yaml` of a bundle, where the
-    parameters sit in the step itself (`flat`).
+    parameters sit in the step itself (`flat`). `place_required`: a step of a session file must say where it is written (`T1:<table>`, `T2:<table>` or `T3:<plot>`):
+    every audit step is written at a place, none in a per-plot list.
     """
     if not isinstance(step, dict):
         return "it is not a step (a mapping with a type and parameters)"
@@ -256,6 +257,8 @@ def audit_step_defect(step, type_key: str = "node_type", flat: bool = False) -> 
         return f"it has the type '{kind}', which was removed: {REMOVED_AUDIT_STEP_TYPES[kind]}"
     if kind not in KNOWN_AUDIT_STEP_TYPES:
         return f"it has the type {kind!r}, which this app does not know, so it cannot be applied"
+    if place_required and not str(step.get("place") or "").partition(":")[2]:
+        return "it does not say where it is written (a table or a plot, as T1:<table>, T2:<table> or T3:<plot>), so it cannot be applied"
     params = step if flat else (step.get("params") or {})
     missing = [k for k in _STEP_NEEDS.get(kind, ()) if params.get(k) is None or params.get(k) == ""]
     if missing:
@@ -263,7 +266,7 @@ def audit_step_defect(step, type_key: str = "node_type", flat: bool = False) -> 
     return None
 
 
-def refused_audit_step_problem(steps_by_plot: dict, where: str, type_key: str = "node_type", flat: bool = False) -> str | None:
+def refused_audit_step_problem(steps_by_plot: dict, where: str, type_key: str = "node_type", flat: bool = False, place_required: bool = False) -> str | None:
     """A message naming the first audit step of `{plot: [step, ...]}` that the app cannot apply, else None.
 
     The user's action in the app comes first; the pointer for a maintainer (where the step is in the file) after it.
@@ -274,13 +277,14 @@ def refused_audit_step_problem(steps_by_plot: dict, where: str, type_key: str = 
             if isinstance(step, dict) and step.get(type_key) in ("aesthetic_override", "random_seed"):
                 continue
             number += 1
-            defect = audit_step_defect(step, type_key, flat)
+            defect = audit_step_defect(step, type_key, flat, place_required)
             if defect:
                 reason = f', reason: "{step["reason"]}"' if isinstance(step, dict) and step.get("reason") else ""
                 ident = f"id {step.get('id', '?')}" if isinstance(step, dict) and step.get("id") else "no id"
-                return (f"{where} cannot be read: the audit step {number} of the plot '{plot}' ({ident}{reason}) is refused, {defect}. "
+                of_list = "of the audit list" if str(plot).startswith("__") else f"of the plot '{plot}'"
+                return (f"{where} cannot be read: the audit step {number} {of_list} ({ident}{reason}) is refused, {defect}. "
                         f"The file is refused as a whole, nothing of it is used. Fix: {FIX_IN_APP}. For a maintainer: the step is "
-                        f"entry {number} of the list of the plot '{plot}' in `t3_audit_steps_by_plot` (the step list of the file); "
+                        f"entry {number} of the list '{plot}' in `t3_audit_steps_by_plot` (the step list of the file); "
                         f"taking that entry out makes the file readable again.")
     return None
 
@@ -289,7 +293,7 @@ def refused_audit_step_in_ghost(raw: dict, where: str) -> str | None:
     """`refused_audit_step_problem` for a stored session file: the per-plot lists and the flat legacy list."""
     by_plot = raw.get("t3_audit_steps_by_plot")
     if isinstance(by_plot, dict) and by_plot:
-        problem = refused_audit_step_problem(by_plot, where)
+        problem = refused_audit_step_problem(by_plot, where, place_required=True)
         if problem:
             return problem
     flat = raw.get("t3_audit_steps")

@@ -42,6 +42,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypedDict
 
+from app.modules.audit_places import place_words
 from app.modules.cache_keys import batch_hash_of, canonical_hash, dataset_file_hashes
 from utils import join_keys, key_drop
 from utils.na_choice import with_na
@@ -64,6 +65,8 @@ class AuditStep(TypedDict, total=False):
     active: bool                # legacy soft-delete flag — Phase 22-I switched to hard delete
     primary_key_warning: bool   # True when authoring touched a join key (ADR-049, §12g.5)
     gallery_source: dict        # optional: {gallery_id, gallery_yaml_hash}
+    place: str                  # where the step is written: `T1:<table>`, `T2:<table>` or `T3:<plot>` (the three tiers are one mechanism); every committed node lives in the bucket `__places__`
+    started_from: str           # the plot sub-tab the user was on when sending the step
 
 
 def make_audit_step(
@@ -74,8 +77,13 @@ def make_audit_step(
     gallery_source: dict | None = None,
     primary_key_warning: bool = False,
     node_id: str | None = None,
+    place: str | None = None,
+    started_from: str | None = None,
 ) -> AuditStep:
     """Create a new AuditStep.
+
+    An audit step carries `place` (`T1:<table>`, `T2:<table>` or `T3:<plot>`: where it is written, HOME audit) and `started_from` (the plot sub-tab the
+    user sent it from); its `plot_scope` is the bucket `__places__` (`audit_places.PLACES_BUCKET`).
 
     Parameters
     ----------
@@ -103,6 +111,9 @@ def make_audit_step(
         node["primary_key_warning"] = True
     if gallery_source:
         node["gallery_source"] = gallery_source
+    if place:
+        node["place"] = place
+        node["started_from"] = started_from or ""
     return node
 
 
@@ -136,50 +147,50 @@ def extract_primary_keys(data_analysis_recipe_raw_config: dict) -> list[str]:
 
 
 def split_key_drops(by_plot: dict[str, list[dict]], recipe_raw: Any, plans: Any = None) -> tuple[dict[str, list[dict]], list[dict]]:
-    """Separate the stored `drop_column` steps that the rule of a key drop refuses AT THEIR PLACE from the rest of the per-plot audit stacks.
+    """Separate the stored `drop_column` steps that the rule of a key drop refuses AT THEIR PLACE from the rest of the stored audit steps.
 
     WHY: the audit refuses to drop a column that a join step later reads as a key, by place (D-0358, which modulates D-0297; `utils.key_drop`), but a session saved
-    before that rule, or written by hand, can hold such a step, and Restore puts stored steps straight into the view. A stored step sits in the stack of a plot, so
-    its place is `T3:<plot>` (the subtab id `subtab_<plot>` without its prefix): nothing is built from a plot, so today the rule finds nothing to refuse there and the
-    steps are kept; the question is still asked, so that a step stored at another place is judged the same way. Returns `(kept, refused)`: `kept` is a copy of
-    `by_plot` without the refused steps (every other step, in its order, plots that become empty stay as empty lists); `refused` lists them, one entry per step copy
-    as `{"plot", "id", "column", "reason", "problem"}` (`reason` is what the user wrote, `problem` the sentence of the rule). Without a recipe nothing is judged. The
+    before that rule, or written by hand, can hold such a step, and Restore puts stored steps straight into the view. Every stored step carries its `place`
+    (`T1:<table>`, `T2:<table>` or `T3:<plot>`) and is judged THERE: a key that a join reads later is refused and not restored; at the tier 3 of a plot nothing is built from it, so the
+    rule finds nothing to refuse and the step is kept (the question is still asked). Returns `(kept, refused)`: `kept` is a copy of
+    `by_plot` without the refused steps (every other step, in its order, buckets that become empty stay as empty lists); `refused` lists them, one entry per step copy
+    as `{"place", "id", "column", "reason", "problem"}` (`reason` is what the user wrote, `problem` the sentence of the rule). Without a recipe nothing is judged. The
     argument is not changed. `plans`: the engine's plan book of the open recipe (`app/modules/plan_composer.py`); without it the rule reads only the names the recipe declares and
     a drop it cannot follow is refused too, with the sentence "The app cannot YET follow ..." (D-0460, `utils.key_drop`); a key that a join reads behind a step it cannot read is named as a key only when the plan is there.
     """
     gate = key_drop.DropGate(recipe_raw, plans) if isinstance(recipe_raw, dict) else None
     kept: dict[str, list[dict]] = {}
     refused: list[dict] = []
-    for plot, nodes in (by_plot or {}).items():
-        kept[plot] = []
-        place = f"T3:{plot.removeprefix('subtab_')}"
+    for bucket, nodes in (by_plot or {}).items():
+        kept[bucket] = []
         for node in nodes or []:
             column = (node.get("params") or {}).get("column") if isinstance(node, dict) else None
-            problem = gate.problem(place, [column]) if gate is not None and isinstance(node, dict) and node.get("node_type") == "drop_column" and isinstance(column, str) else None
+            place = (node.get("place") or "") if isinstance(node, dict) else ""
+            problem = gate.problem(place, [column]) if gate is not None and place and node.get("node_type") == "drop_column" and isinstance(column, str) else None
             if problem:
-                refused.append({"plot": plot, "id": node.get("id", ""), "column": column, "reason": node.get("reason", ""), "problem": problem})
+                refused.append({"place": place, "id": node.get("id", ""), "column": column, "reason": node.get("reason", ""), "problem": problem})
             else:
-                kept[plot].append(node)
+                kept[bucket].append(node)
     return kept, refused
 
 
 def key_drop_notice(refused: list[dict], restored_ids: int) -> str:
     """The sentence that tells the user which stored steps were not restored because they drop a column a join still needs, and why (the sentence of the rule).
 
-    PROVISIONAL wording (D-0297 asks for plain words; the texts go to Eve with the other texts). One entry per decision (a decision propagated to several plots has
-    one copy per plot and one id): its column, the plots, the reason the user wrote, the sentence of the rule. `restored_ids` is how many other decisions were restored.
+    PROVISIONAL wording (D-0297 asks for plain words; the texts go to Eve with the other texts). One entry per decision (a decision written at several places has
+    one copy per place and one id): its column, the places, the reason the user wrote, the sentence of the rule. `restored_ids` is how many other decisions were restored.
     """
     from app.modules.error_notice import notice
     by_decision: dict[tuple, dict] = {}
     for item in refused:
-        entry = by_decision.setdefault((item["id"] or f"{item['plot']}/{item['column']}", item["column"]),
-                                       {"column": item["column"], "plots": [], "reason": item["reason"], "problem": item.get("problem", "")})
-        entry["plots"].append(item["plot"])
+        entry = by_decision.setdefault((item["id"] or f"{item['place']}/{item['column']}", item["column"]),
+                                       {"column": item["column"], "places": [], "reason": item["reason"], "problem": item.get("problem", "")})
+        entry["places"].append(place_words(item["place"]))
         entry["reason"] = entry["reason"] or item["reason"]
     parts = []
     for entry in by_decision.values():
         why = f", your reason was: \"{entry['reason']}\"" if entry["reason"] else ""
-        parts.append(f"dropping the column {entry['column']} (plot {', '.join(entry['plots'])}{why}): {entry['problem']}")
+        parts.append(f"dropping the column {entry['column']} (written at {', '.join(entry['places'])}{why}): {entry['problem']}")
     n = len(by_decision)
     what = f"{n} step(s) of the saved session were not restored: {' '.join(parts)} The other {restored_ids} step(s) were restored"
     return notice(what, "use a row filter or row exclusion instead; the saved file is not changed")
@@ -213,8 +224,9 @@ class LegacySessionError(ValueError):
 
 # The format number of a session file (assembly.json and t3_*.json). Every writer writes it and every reader compares it
 # (D-0312): a file with no number, a lower one or a higher one is refused as a whole, nothing is converted. Number 3 is the
-# first of the redesigned sessions; the files written before it carried no number (assembly.json) or 2 (t3_*.json).
-SESSION_FORMAT_VERSION = 3
+# first of the redesigned sessions; the files written before it carried no number (assembly.json) or 2 (t3_*.json). Number 4 added the audit steps
+# written at a table (`place`); number 5 is the form in which EVERY audit step is written at a place (`T1:`, `T2:` or `T3:`), none in a per-plot list.
+SESSION_FORMAT_VERSION = 5
 
 
 def session_format_problem(data, where: str) -> str | None:

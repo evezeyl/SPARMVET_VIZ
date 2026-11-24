@@ -1,0 +1,286 @@
+"""The audit of steps written at a place upstream of a plot, run by the engine (HOME audit, demo step 2): `app/modules/audit_view.py`, `audit_places.audit_copy_for`.
+
+Proved on the demo `1_test_data_ST22_dummy` and its real data (the engine builds the tables):
+- a filter written at the tier 1 of ResFinder (a sample removed) reaches the plots that are built from ResFinder and no plot beside them: those read their original table
+  (`plot_table` is None) and are not affected; the table a plot below reads in the copy is its original table without the sample;
+- the original's stored tables are byte for byte what they were (nothing is overwritten, nothing is served as audited);
+- a filter at the tier 2 of ResFinder rebuilds only that tier 2 (the tier 1 table of the copy is the original's);
+- removing the step gives the original back: the audit folder is gone, every plot reads its original table;
+- the same steps run once (the run is kept), the same steps with another reason do not run again, other parameters do;
+- a step the engine cannot apply is refused naming its id and its place, never skipped; a key dropped where a later join reads it, a place that does not exist and a step without a
+  reason are refused in plain words and nothing is built.
+
+- the third tier is the same mechanism (demo step 7): a step written at the tier 3 of a plot (`T3:<plot>`) reaches that plot and no other, also not another plot that reads the SAME table
+  (`mlst_bar` and `year_distribution` read MLST_with_metadata); it builds no table at tier 1 or tier 2 (the stored tables are the original's); the steps of the three tiers run in the order
+  tier 1, tier 2, tier 3 whatever order they were written in, and inside a tier in the order written; a tier-3 step that cannot be applied is refused naming its id and `T3:<plot>`.
+
+Mutation index (each seen failing): MUTATION V1 `AuditRun.plot_table` returns None for every plot (the audited table is never read); MUTATION V2 `run_of` ignores the nodes
+(always None); MUTATION V3 `nodes_signature` leaves the parameters out (the memo serves the old run).
+
+Run: PYTHONPATH=. ./.venv/bin/python -m pytest app/tests/test_audit_view.py -q
+"""
+import hashlib
+from pathlib import Path
+from unittest import mock
+
+import polars as pl
+import pytest
+
+from app.modules.audit_places import PLACES_BUCKET, audit_copy_for, place_nodes
+from app.modules.audit_run import AuditRunError, run_audit
+from app.modules.audit_view import PlaceAudit
+from app.modules.cache_keys import clear_data_analysis_recipe_cache, load_data_analysis_recipe
+from app.modules.orchestrator import DataOrchestrator
+from app.modules.plan_composer import compose_plan_book
+from app.modules.session_manager import make_audit_step
+from blueprint_arch.t3_translator import UntranslatableNode
+from utils.audit_copy import AuditCopyError, start_audit
+from utils.recipe_graph import build_graph
+
+ROOT = Path(__file__).resolve().parents[2]
+RECIPE_ID = "1_test_data_ST22_dummy"
+PIPELINES = ROOT / "config" / "data_analysis_recipes" / "pipelines"
+
+
+class World:
+    def __init__(self, root: Path):
+        clear_data_analysis_recipe_cache()
+        self.orch = DataOrchestrator(PIPELINES, ROOT / "assets" / "test_data")
+        self.loaded = load_data_analysis_recipe(PIPELINES / f"{RECIPE_ID}.yaml")
+        self.graph = build_graph(self.loaded.raw)
+        self.plans = compose_plan_book(self.orch, RECIPE_ID, self.loaded, self.graph)
+        self.anchors, self.audit_dir = root / "anchors", root / "audit_anchors"
+        base = run_audit(self.orch, RECIPE_ID, start_audit(self.loaded.raw, "1a2b3c4d").recipe, self.anchors, root / "audit_none")
+        self.ids = sorted(pl.read_parquet(base.tables["ResFinder"].t1_path)["sample_id"].drop_nulls().unique().to_list())
+        self.victim = self.ids[0]
+        self.below = {p for p in self.graph.plots() if f"T3:{p}" in self.graph.below("T1:ResFinder")}
+
+    def stored(self):
+        return {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(self.anchors.glob("*.parquet"))}
+
+    def audit(self):
+        return PlaceAudit(self.orch, self.anchors, self.audit_dir)
+
+    def node(self, place="T1:ResFinder", value=None, column="sample_id", reason="the sample was resequenced", node_type="filter_row", params=None):
+        params = params if params is not None else {"column": column, "op": "ne", "value": value or self.victim, "na": "keep"}
+        return make_audit_step(node_type, params, plot_scope=PLACES_BUCKET, reason=reason, place=place, started_from="subtab_amr_heatmap")
+
+    def original_table(self, plot_id):
+        return self.orch.materialize_tier3(RECIPE_ID, plot_id, self.anchors).collect()
+
+
+@pytest.fixture(scope="module")
+def world(tmp_path_factory):
+    yield World(tmp_path_factory.mktemp("audit_view"))
+    clear_data_analysis_recipe_cache()
+
+
+def test_a_filter_at_tier1_of_resfinder_reaches_the_plots_below_it_and_no_plot_beside_it(world):
+    audit = world.audit()
+    nodes = [world.node()]
+    before = world.stored()
+    affected = set(audit.affected_plots(RECIPE_ID, nodes, world.plans))
+    assert "amr_heatmap" in affected and affected <= world.below, (affected, world.below)
+    beside = [p for p in world.graph.plots() if p not in world.below]
+    assert beside and all(audit.plot_lazy(RECIPE_ID, p, nodes, world.plans) is None for p in beside), "a plot beside the place reads its original table"
+    assert "mlst_bar" in beside
+    audited = audit.plot_lazy(RECIPE_ID, "amr_heatmap", nodes, world.plans).collect()
+    original = world.original_table("amr_heatmap")
+    assert world.victim in original["sample_id"].to_list() and world.victim not in audited["sample_id"].to_list()
+    assert audited.height < original.height
+    assert audited.equals(original.filter(pl.col("sample_id") != world.victim)), "the audited table is the original without the sample, nothing else changed"
+    assert world.stored() == before, "the original's stored tables are byte-identical: nothing was overwritten"
+    # every plot below the place has a key of its own (the plot_table of a plot whose key equals the original's is None)
+    run = audit.run_of(RECIPE_ID, nodes, world.plans)
+    assert all(run.plots[p].reused is False for p in affected)
+
+
+def test_a_filter_at_tier2_of_resfinder_rebuilds_only_that_tier2(world):
+    audit = world.audit()
+    nodes = [world.node(place="T2:ResFinder")]
+    run = audit.run_of(RECIPE_ID, nodes, world.plans)
+    table = run.tables["ResFinder"]
+    assert table.t1 == "original" and table.t2 == "built"
+    assert audit.affected_plots(RECIPE_ID, nodes, world.plans) == ["amr_heatmap"]
+    assert world.victim not in audit.plot_lazy(RECIPE_ID, "amr_heatmap", nodes, world.plans).collect()["sample_id"].to_list()
+
+
+def test_removing_the_step_gives_the_original_back_and_leaves_no_file(world):
+    audit = world.audit()
+    nodes = [world.node()]
+    assert audit.run_of(RECIPE_ID, nodes, world.plans) is not None and world.audit_dir.exists()
+    assert audit.run_of(RECIPE_ID, [], world.plans) is None
+    assert not world.audit_dir.exists(), "what the audit built is removed with the last step"
+    assert audit.plot_lazy(RECIPE_ID, "amr_heatmap", [], world.plans) is None
+    assert audit.affected_plots(RECIPE_ID, [], world.plans) == []
+
+
+def other_id(audit):
+    return audit._memo[0][3][0][0]
+
+
+def test_the_same_steps_run_once_a_new_reason_does_not_run_again_other_parameters_do(world):
+    audit = world.audit()
+    node = world.node()
+    with mock.patch("app.modules.audit_view.run_audit", wraps=run_audit) as run:
+        first = audit.run_of(RECIPE_ID, [node], world.plans)
+        assert audit.run_of(RECIPE_ID, [node], world.plans) is first and run.call_count == 1
+        again = audit.run_of(RECIPE_ID, [{**node, "reason": "another reason, same data"}], world.plans)
+        assert again is first and run.call_count == 1, "the reason changes no data"
+        other = audit.run_of(RECIPE_ID, [world.node(value=world.ids[1])], world.plans)
+        assert other is not first and run.call_count == 2
+        edited = audit.run_of(RECIPE_ID, [{**world.node(value=world.ids[1]) | {"id": other_id(audit)}, "params": {**node["params"], "value": world.ids[2]}}], world.plans)
+        assert edited is not other and run.call_count == 3, "the same id with another value is another audit"
+
+
+def test_two_steps_at_two_places_apply_in_order_each_after_the_author_steps(world):
+    audit = world.audit()
+    nodes = [world.node(place="T1:ResFinder", value=world.ids[0]), world.node(place="T2:ResFinder", value=world.ids[1])]
+    got = audit.plot_lazy(RECIPE_ID, "amr_heatmap", nodes, world.plans).collect()
+    gone = {world.ids[0], world.ids[1]}
+    assert not gone & set(got["sample_id"].to_list())
+    assert got.equals(world.original_table("amr_heatmap").filter(~pl.col("sample_id").is_in(list(gone))))
+
+
+def test_a_step_the_engine_cannot_apply_is_refused_with_its_id_and_its_place_never_skipped(world):
+    audit = world.audit()
+    audit.run_of(RECIPE_ID, [], world.plans)         # an empty audit folder to begin with: what an earlier run left is kept by a refused one, it is not what this run built
+    bad = world.node(column="no_such_column", params={"column": "no_such_column", "op": "eq", "value": "x", "na": "remove"})
+    with pytest.raises(AuditRunError) as excinfo:
+        audit.run_of(RECIPE_ID, [bad], world.plans)
+    assert "T1:ResFinder" in str(excinfo.value) and "audit_" in str(excinfo.value)
+    assert not world.audit_dir.exists() or not any(world.audit_dir.rglob("*.parquet")), "a run that failed leaves nothing it built"
+
+
+def test_a_key_dropped_where_a_later_join_reads_it_a_missing_place_and_a_missing_reason_are_refused_before_anything_is_built(world):
+    audit = world.audit()
+    audit.run_of(RECIPE_ID, [], world.plans)
+    drop_key = world.node(node_type="drop_column", params={"column": "sample_id"})
+    with pytest.raises(AuditCopyError, match="sample_id"):
+        audit.run_of(RECIPE_ID, [drop_key], world.plans)
+    with pytest.raises(AuditCopyError, match="no table or join"):
+        audit.run_of(RECIPE_ID, [world.node(place="T1:no_such_table")], world.plans)
+    with pytest.raises(AuditCopyError, match="reason"):
+        audit.run_of(RECIPE_ID, [world.node(reason="")], world.plans)
+    assert not world.audit_dir.exists() or not any(world.audit_dir.rglob("*.parquet"))
+
+
+def test_a_node_with_no_registered_action_is_refused_in_plain_words(world):
+    with pytest.raises(UntranslatableNode):
+        audit_copy_for(world.loaded.raw, [world.node(node_type="aesthetic_override", params={"fill": "red"})], world.plans)
+
+
+def test_place_nodes_are_the_active_nodes_of_the_bucket_in_commit_order():
+    a, b = {"id": "a", "place": "T1:X"}, {"id": "b", "place": "T1:Y", "active": False}
+    plain = {"id": "c"}
+    assert place_nodes({PLACES_BUCKET: [a, b, plain], "subtab_p": [{"id": "z", "place": "T1:X"}]}) == [a]
+    assert place_nodes({}) == [] and place_nodes(None) == []
+
+
+def test_a_step_that_removes_nothing_moves_the_keys_and_no_row_so_no_plot_is_affected_and_the_badge_says_so(world):
+    """ADR-101 point 6: equal content under different keys. The plots below the place read the table of the copy (not None), none is AFFECTED."""
+    from app.modules.view_badge import plot_badge
+    audit = world.audit()
+    nodes = [world.node(params={"column": "sample_id", "op": "ne", "value": "no_such_sample_id", "na": "keep"})]
+    run = audit.run_of(RECIPE_ID, nodes, world.plans)
+    assert all(run.plots[p].reused is False for p in world.below) and audit.affected_plots(RECIPE_ID, nodes, world.plans) == []
+    assert audit.plot_lazy(RECIPE_ID, "amr_heatmap", nodes, world.plans).collect().equals(world.original_table("amr_heatmap"))
+    badge = plot_badge("audit", False, True, audited_steps=1, upstream_steps=1, table_changed=False)
+    assert "its table is the same as the original" in " ".join(badge.notes)
+    assert "its table changed" in " ".join(plot_badge("audit", False, True, audited_steps=1, upstream_steps=1, table_changed=True).notes)
+    assert "table" not in " ".join(plot_badge("audit", False, True, audited_steps=1, upstream_steps=0, table_changed=None).notes).replace("audited step(s) on this plot", "")
+
+
+def test_a_build_whose_inputs_changed_is_told_to_the_caller_so_that_the_export_can_refuse(world):
+    from app.modules.orchestrator import InputsChanged
+    audit = world.audit()
+    told = []
+    fake = mock.Mock(inputs_changed=("the audit's table 'ResFinder' (tier 1): the data files changed; it was returned and not stored",), plot_table=mock.Mock(return_value="LAZY"))
+    with mock.patch.object(PlaceAudit, "run_of", return_value=fake):
+        assert audit.plot_lazy(RECIPE_ID, "amr_heatmap", [world.node()], world.plans, told=told.append) == "LAZY"
+    assert told == [InputsChanged("the audit's table 'ResFinder' (tier 1): the data files changed; it was returned and not stored")]
+
+
+# -- the third tier (demo step 7) ----------------------------------------------------------------------------------------
+
+def mlst_victim(world):
+    return world.original_table("mlst_bar")["sample_id"].to_list()[0]
+
+
+def test_a_step_at_the_tier3_of_one_plot_changes_that_plot_and_not_another_plot_that_reads_the_same_table(world):
+    audit = world.audit()
+    victim = mlst_victim(world)
+    nodes = [world.node(place="T3:mlst_bar", value=victim)]
+    before = world.stored()
+    assert world.graph.plot_target("mlst_bar") == world.graph.plot_target("year_distribution"), "the two plots read one table"
+    run = audit.run_of(RECIPE_ID, nodes, world.plans)
+    assert audit.affected_plots(RECIPE_ID, nodes, world.plans) == ["mlst_bar"]
+    assert victim not in audit.plot_lazy(RECIPE_ID, "mlst_bar", nodes, world.plans).collect()["sample_id"].to_list()
+    assert audit.plot_lazy(RECIPE_ID, "year_distribution", nodes, world.plans) is None, "the other plot reads its original table"
+    table = run.tables["MLST_with_metadata"]
+    assert table.t1 == "original" and table.t2 in ("original", "none"), "a step at a plot builds no table at tier 1 or tier 2"
+    assert world.stored() == before, "the original's stored tables are what they were"
+    assert audit.plot_lazy(RECIPE_ID, "mlst_bar", nodes, world.plans).collect().equals(world.original_table("mlst_bar").filter(pl.col("sample_id") != victim))
+
+
+def test_all_plots_is_one_node_per_plot_with_one_id_and_removing_by_that_id_removes_every_copy(world):
+    audit = world.audit()
+    victim = mlst_victim(world)
+    one = world.node(place="T3:mlst_bar", value=victim)
+    two = world.node(place="T3:year_distribution", value=victim) | {"id": one["id"]}
+    both = [one, two]
+    assert set(audit.affected_plots(RECIPE_ID, both, world.plans)) == {"mlst_bar", "year_distribution"}
+    for plot in ("mlst_bar", "year_distribution"):
+        assert victim not in audit.plot_lazy(RECIPE_ID, plot, both, world.plans).collect()["sample_id"].to_list()
+    by_plot = {PLACES_BUCKET: both}
+    removed = [n for n in by_plot[PLACES_BUCKET] if n["id"] != one["id"]]              # what the panel's Remove step does: every node of the id
+    assert removed == [] and audit.affected_plots(RECIPE_ID, removed, world.plans) == []
+    assert audit.plot_lazy(RECIPE_ID, "mlst_bar", removed, world.plans) is None and not world.audit_dir.exists()
+
+
+def test_the_steps_of_the_three_tiers_run_tier_by_tier_whatever_order_they_were_written_in(world):
+    audit = world.audit()
+    ids = world.ids
+    t1 = world.node(place="T1:ResFinder", value=ids[0])
+    t2 = world.node(place="T2:ResFinder", value=ids[1])
+    t3 = world.node(place="T3:amr_heatmap", value=ids[2])
+    expected = world.original_table("amr_heatmap").filter(~pl.col("sample_id").is_in(ids[:3]))
+    for written in ([t1, t2, t3], [t3, t2, t1], [t2, t3, t1]):
+        got = audit.plot_lazy(RECIPE_ID, "amr_heatmap", written, world.plans).collect()
+        assert got.equals(expected), "every step is applied once, at its own tier"
+    # a column dropped at the tier 3 is still there for a filter written at the tier 2 AFTER it (tier 2 runs first); written the other way round it is the same
+    drop3 = world.node(place="T3:amr_heatmap", node_type="drop_column", params={"column": "identity"})
+    filter2 = world.node(place="T2:ResFinder", params={"column": "identity", "op": "ge", "value": 0.0, "na": "remove"})
+    for written in ([drop3, filter2], [filter2, drop3]):
+        got = audit.plot_lazy(RECIPE_ID, "amr_heatmap", written, world.plans).collect()
+        assert "identity" not in got.columns and got.height > 0
+
+
+def test_inside_a_tier_the_steps_run_in_the_order_written_and_a_step_on_a_column_an_earlier_step_dropped_is_refused_naming_it_and_its_place(world):
+    audit = world.audit()
+    drop = world.node(place="T3:amr_heatmap", node_type="drop_column", params={"column": "identity"})
+    keep = world.node(place="T3:amr_heatmap", params={"column": "identity", "op": "ge", "value": 0.0, "na": "remove"})
+    ok = audit.plot_lazy(RECIPE_ID, "amr_heatmap", [keep, drop], world.plans).collect()
+    assert "identity" not in ok.columns, "filter then drop: both applied"
+    with pytest.raises(AuditRunError) as excinfo:
+        audit.plot_lazy(RECIPE_ID, "amr_heatmap", [drop, keep], world.plans)
+    text = str(excinfo.value)
+    assert "T3:amr_heatmap" in text and "audit_" in text and excinfo.value.place == "T3:amr_heatmap", text
+    assert not world.audit_dir.exists() or not any(world.audit_dir.rglob("*.parquet")), "a refused run leaves nothing it built"
+
+
+def test_a_tier3_step_a_key_drop_and_a_missing_plot_are_judged_like_any_other_place(world):
+    audit = world.audit()
+    with pytest.raises(AuditCopyError, match="no plot 'no_such_plot'"):
+        audit.run_of(RECIPE_ID, [world.node(place="T3:no_such_plot")], world.plans)
+    with pytest.raises(AuditCopyError, match="reason"):
+        audit.run_of(RECIPE_ID, [world.node(place="T3:amr_heatmap", reason="")], world.plans)
+    with pytest.raises(UntranslatableNode):
+        audit_copy_for(world.loaded.raw, [world.node(place="T3:amr_heatmap", node_type="aesthetic_override", params={"fill": "red"})], world.plans)
+
+
+def test_a_tier3_step_that_removes_nothing_is_told_as_the_same_as_the_original(world):
+    audit = world.audit()
+    nodes = [world.node(place="T3:amr_heatmap", params={"column": "sample_id", "op": "ne", "value": "no_such_sample_id", "na": "keep"})]
+    assert audit.affected_plots(RECIPE_ID, nodes, world.plans) == []
+    assert audit.plot_lazy(RECIPE_ID, "amr_heatmap", nodes, world.plans).collect().equals(world.original_table("amr_heatmap"))
