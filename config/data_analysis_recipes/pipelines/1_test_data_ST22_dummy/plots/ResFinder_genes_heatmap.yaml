@@ -2,6 +2,13 @@ ui_label: "AMR Heatmap"
 description: "Heatmap showing AMR gene presence across samples."
 taxonomy: {"family": "Correlation", "pattern": "1 Numeric, 2 Categorical", "difficulty": "Intermediate"}
 target_dataset: ResFinder
+tier3:
+  steps:
+  # an entity with no ResFinder line has no gene: its tile sits under the category NOT DETECTED on the gene axis, not under an empty gene (D-0623).
+  # Only this plot's table changes: ResFinder's tier 1 and tier 2 (and the status Not Found they hold) feed other tables and stay as they are.
+  - action: polars_fill_null
+    columns: [gene]
+    value: NOT DETECTED
 layers:
 - name: geom_tile
   params:

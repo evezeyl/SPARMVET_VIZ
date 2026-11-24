@@ -80,7 +80,7 @@
       "total_gene_count:UInt32"
      ],
      "rows": 74,
-     "sha256": "a151df8e7d268dd8fdf0734afbc10ce1c0e1aecb66e1e2757ede5021d47ae0ee"
+     "sha256": "9fbe8e67afd69b1ce9087bbaf9d3c2bc40a499874615142ae690fc903aa6ef50"
     },
     "assembly_quality_dotplot": {
      "columns": [

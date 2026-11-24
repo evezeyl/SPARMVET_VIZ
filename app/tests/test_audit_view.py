@@ -78,6 +78,7 @@ def world(tmp_path_factory):
 def test_a_filter_at_tier1_of_resfinder_reaches_the_plots_below_it_and_no_plot_beside_it(world):
     audit = world.audit()
     nodes = [world.node()]
+    original = world.original_table("amr_heatmap")   # read first: the heatmap has its own tier 3 step (D-0623), so reading its original stores its T3 file
     before = world.stored()
     affected = set(audit.affected_plots(RECIPE_ID, nodes, world.plans))
     assert "amr_heatmap" in affected and affected <= world.below, (affected, world.below)
@@ -85,7 +86,6 @@ def test_a_filter_at_tier1_of_resfinder_reaches_the_plots_below_it_and_no_plot_b
     assert beside and all(audit.plot_lazy(RECIPE_ID, p, nodes, world.plans) is None for p in beside), "a plot beside the place reads its original table"
     assert "mlst_bar" in beside
     audited = audit.plot_lazy(RECIPE_ID, "amr_heatmap", nodes, world.plans).collect()
-    original = world.original_table("amr_heatmap")
     assert world.victim in original["sample_id"].to_list() and world.victim not in audited["sample_id"].to_list()
     assert audited.height < original.height
     assert audited.equals(original.filter(pl.col("sample_id") != world.victim)), "the audited table is the original without the sample, nothing else changed"

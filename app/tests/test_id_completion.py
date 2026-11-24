@@ -163,6 +163,20 @@ def test_the_resfinder_table_counts_the_four_added_lines_as_zero_genes(tmp_path)
     assert table.filter(~pl.col(MARKER))["total_gene_count"].min() >= 1
 
 
+def test_the_heatmap_table_shows_the_four_entities_under_not_detected_and_no_gene_is_empty(tmp_path):
+    """The table of `amr_heatmap` (its own tier 3 step, D-0623): the four entities with no ResFinder line sit under the gene category NOT DETECTED, no gene is empty;
+    the ResFinder table the other plots read keeps its empty gene and its status Not Found."""
+    orchestrator, _ = demo()
+    heat = quiet(orchestrator.materialize_tier3, DEMO, "amr_heatmap", tmp_path).collect()
+    assert heat["gene"].null_count() == 0 and (heat["gene"] == "").sum() == 0
+    added = heat.filter(pl.col(MARKER))
+    assert sorted(added["sample_id"].to_list()) == sorted(NOT_IN_ORIGINAL) and added["gene"].to_list() == ["NOT DETECTED"] * 4
+    assert heat.filter(~pl.col(MARKER))["gene"].str.contains("NOT DETECTED").sum() == 0
+    assert heat.height == 74
+    other = quiet(orchestrator.materialize_tier2, DEMO, "ResFinder", tmp_path / "ResFinder.parquet").collect()
+    assert other.filter(pl.col(MARKER))["gene"].null_count() == 4, "ResFinder itself is unchanged: other tables read it"
+
+
 def test_the_qa_amr_plot_table_has_42_entities_and_4_of_them_at_zero(tmp_path):
     """`qa_amr_genes_per_sample` reads QA_AMR_per_sample: 42 entities, 4 with 0 genes, 70 genes in total (its own subtitle)."""
     orchestrator, _ = demo()
