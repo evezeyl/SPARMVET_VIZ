@@ -26,6 +26,9 @@ data_schemas:
       path: "./assets/test_data/left_join_lesson/left_join_lesson_sequenced.tsv"
     null_values: []
     strip: true
+    completion:
+      marker: not_in_original_data
+      meaning: no result for this entity
     input_fields:
       sample_id:
         original_name: "Accession"
@@ -45,6 +48,9 @@ metadata_schema:
     path: "./assets/test_data/left_join_lesson/left_join_lesson_metadata.tsv"
   null_values: []
   strip: true
+  completion:
+    marker: not_in_metadata
+    meaning: no metadata for this entity
   input_fields:
     sample_id:
       original_name: "ID"

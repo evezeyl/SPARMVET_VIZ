@@ -19,6 +19,9 @@ data_schemas:
       path: ./assets/test_data/retest/genes_renamed_header.tsv   # EDIT HERE (RT-30): use genes.tsv, restart the app, it works
     null_values: []
     strip: true
+    completion:
+      marker: not_in_original_data
+      meaning: no result for this entity
     input_fields:
       sample_id: {original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}
       gene: {original_name: gene, type: String, ui_label: Gene}

@@ -17,6 +17,9 @@ data_schemas:
     # field is declared on that field: null_values: ["NA"] under the field (assets/scripts/declare_missing_values.py).
     null_values: []
     strip: true
+    completion:
+      marker: not_in_original_data
+      meaning: no result for this entity
     input_fields:
       sample_id:
         original_name: sample_id
@@ -51,6 +54,9 @@ metadata_schema:
   # field is declared on that field: null_values: ["NA"] under the field (assets/scripts/declare_missing_values.py).
   null_values: []
   strip: true
+  completion:
+    marker: not_in_metadata
+    meaning: no metadata for this entity
   input_fields:
     sample_id:
       original_name: isolate_id

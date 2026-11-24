@@ -16,6 +16,9 @@ data_schemas:
       path: assets/test_data/STRESS/STRESS_data.tsv
     null_values: []
     strip: true
+    completion:
+      marker: not_in_original_data
+      meaning: no result for this entity
     input_fields: !include 'stress_test_master/input_fields/Stress_Source_input_fields.yaml'
     tier1: !include 'stress_test_master/wrangling/Stress_Source_wrangling.yaml'
 joins:

@@ -24,6 +24,9 @@ data_schemas:
       path: ./assets/test_data/1_test_data_ST22_dummy/test_data_MLST_results_20260307_105756.tsv
     null_values: []
     strip: true
+    completion:
+      marker: not_in_original_data
+      meaning: no result for this entity
     input_fields: !include '1_test_data_ST22_dummy/input_fields/MLST_input_fields.yaml'
     tier1: !include '1_test_data_ST22_dummy/wrangling/MLST_wrangling.yaml'
 

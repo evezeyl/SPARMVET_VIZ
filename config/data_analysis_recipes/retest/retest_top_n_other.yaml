@@ -19,6 +19,9 @@ data_schemas:
       path: ./assets/test_data/retest/variants.tsv
     null_values: []
     strip: true
+    completion:
+      marker: not_in_original_data
+      meaning: no result for this entity
     input_fields:
       sample_id: {original_name: sample_id, type: String, ui_label: Sample, is_entity_id: true}
       variant: {original_name: variant, type: String, ui_label: Variant}
